@@ -337,10 +337,9 @@ using TBracketedCommentListPtr = SBracketedCommentList*;
 struct SAlignRawSeq {
 //  ============================================================================
     SAlignRawSeq(): 
-        id(nullptr), sequence_data(nullptr), next(nullptr)
+        sequence_data(nullptr), next(nullptr)
     {};
     ~SAlignRawSeq() {
-        delete[] id;
         delete sequence_data;
         delete next;
     };
@@ -350,18 +349,7 @@ struct SAlignRawSeq {
         SAlignRawSeq* list) 
     { return tAppendNew<SAlignRawSeq>(list, new SAlignRawSeq); };
 
-    void
-    SetId(
-        const char* id_) 
-    {
-        if (id) {
-            delete[] id;
-        }
-        id = new char[1 + strlen(id_)];
-        strcpy(id, id_);
-    };
-
-    char *                id;
+    string mId;
     TLineInfoPtr          sequence_data;
     list<int> mIdLines;
     struct SAlignRawSeq * next;
@@ -456,16 +444,16 @@ sReportError(
  */
 static void 
 s_ReportBadCharError(
-    char* id,
+    const string& id,
     char bad_char,
     int num_bad,
     int offset,
     int line_number,
-    const char* reason,
+    const string& reason,
     ILineErrorListener* pEl)
 {
     const char * errFormat = "%d bad characters (%c) found at position %d (%s).";
-    string errMessage = StrPrintf(errFormat, num_bad, bad_char, offset, reason);
+    string errMessage = StrPrintf(errFormat, num_bad, bad_char, offset, reason.c_str());
     
     sReportError(
         id,
@@ -499,7 +487,7 @@ s_ReportInconsistentID(
  */
 static void 
 s_ReportInconsistentBlockLine(
-    char* id,
+    const string& id,
     int line_number,
     ILineErrorListener* pEl)
 {
@@ -585,7 +573,7 @@ s_ReportDuplicateIDError(
  */
 static void
 s_ReportMissingSequenceData(
-    const char* id,
+    const string& id,
     ILineErrorListener* pEl)
 {
     sReportError(
@@ -1311,15 +1299,12 @@ s_GetFASTAExpectedNumbers(
  */
 static bool 
 s_IsTwoNumbersSeparatedBySpace (
-    const char* str)
+    const string& str)
 {
     const CTempString DIGITS("0123456789");
 
-    if (!str) {
-        return false;
-    }
-    string teststr(str), first, second;
-    NStr::SplitInTwo(teststr, " \t", first, second, NStr::fSplit_MergeDelimiters);
+    string first, second;
+    NStr::SplitInTwo(str, " \t", first, second, NStr::fSplit_MergeDelimiters);
     if (second.empty()) {
         return false;
     }
@@ -1634,7 +1619,7 @@ s_FindComment(
     if (!string) {
         return nullptr;
     }
-   
+
     const char* cp_start = strstr (string, "[");
     if (!cp_start) {
         return nullptr;
@@ -1645,7 +1630,6 @@ s_FindComment(
     }
     return new SCommentLoc(cp_start, cp_end);
 }
-
 
 /* This function removes a comment from a line. */
 static void 
@@ -1669,9 +1653,9 @@ s_RemoveCommentFromLine (
     }
 
     /* if we have read an organism comment and that's all there was on the
-     * line, get rid of the arrow character as well so it doesn't end up 
-     * in the sequence data
-     */
+    * line, get rid of the arrow character as well so it doesn't end up 
+    * in the sequence data
+    */
     if ( linestring [0] == '>') {
         offset = 1;
         while (isspace(linestring[offset])) {
@@ -1682,7 +1666,7 @@ s_RemoveCommentFromLine (
         }
     }
     /* if the line ends with a number preceded by a space, 
-     * and is not the PHYLIP header, truncate it at the space */
+    * and is not the PHYLIP header, truncate it at the space */
     offset = len = strlen(linestring);
     while (offset > 0 && isdigit(linestring[offset - 1])) {
         offset--;
@@ -1697,7 +1681,7 @@ s_RemoveCommentFromLine (
     if (strspn (linestring, " \t\r") == strlen (linestring)) {
         linestring [0] = 0;
     }
-    
+
 }
 
 
@@ -1735,16 +1719,12 @@ static bool s_IsOrganismComment(
  */
 static TCommentLocPtr 
 s_FindOrganismComment (
-    const char * string)
+    const string& line)
 {
     TCommentLocPtr clp, next_clp;
 
-    if (!string) {
-        return nullptr;
-    }
-
-    clp = s_FindComment (string);
-    while (clp  &&  !s_IsOrganismComment (clp)) {
+    clp = s_FindComment (line.c_str());
+    while (clp  &&  !s_IsOrganismComment(clp)) {
         const char * pos = clp->end;
         clp = s_FindComment (pos);
     }
@@ -1767,16 +1747,19 @@ s_FindOrganismComment (
 /* This function removes an organism comment from a line. */
 static void 
 s_RemoveOrganismCommentFromLine (
-    char * string)
+    string& line)
 {
-    TCommentLocPtr clp = s_FindOrganismComment (string);
+    TCommentLocPtr clp = s_FindOrganismComment(line);
 
     while (clp) {
         if (clp->end) {
-            memmove((char*)clp->start, clp->end+1, strlen(clp->end));
+            // punch out comment
+            auto trimmedLine = line.substr(0, clp->start - line.c_str());
+            trimmedLine += line.substr(clp->end - line.c_str() + 1);
+            line = trimmedLine;
         }
         delete clp;
-        clp = s_FindOrganismComment (string);
+        clp = s_FindOrganismComment(line);
     }
 }
 
@@ -1817,7 +1800,7 @@ s_FindAlignRawSeqById(
     TAlignRawSeqPtr arsp;
 
     for (arsp = list; arsp; arsp = arsp->next) {
-        if (id == arsp->id) {
+        if (id == arsp->mId) {
             return arsp;
         }
     }
@@ -1838,7 +1821,7 @@ s_FindAlignRawSeqOffsetById(
     int             offset;
 
     for (arsp = list, offset = 0; arsp; arsp = arsp->next, offset++) {
-        if (id == arsp->id) {
+        if (id == arsp->mId) {
             return offset;
         }
     }
@@ -1850,7 +1833,7 @@ s_FindAlignRawSeqOffsetById(
  * Nth sequence is stored, unless there aren't that many sequences, in which
  * case NULL is returned.
  */
-static char * 
+string 
 s_GetAlignRawSeqIDByOffset(
     TAlignRawSeqPtr list,
     int  offset)
@@ -1865,9 +1848,9 @@ s_GetAlignRawSeqIDByOffset(
         index++;
     }
     if (index == offset  &&  arsp) {
-        return arsp->id;
+        return arsp->mId;
     } else {
-        return nullptr;
+        return "";
     }
 }
 
@@ -1898,7 +1881,7 @@ s_AddAlignRawSeqById(
         if (!list) {
             list = arsp;
         }
-        arsp->SetId(id.c_str());
+        arsp->mId = id;
     }
     arsp->sequence_data = s_AddLineInfo (arsp->sequence_data,
                                        data,
@@ -2149,7 +2132,6 @@ s_FindInterleavedBlocks(
 {
     TLengthListPtr llp, llp_next;
     TSizeInfoPtr   size_list, best_ptr;
-    TIntLinkPtr    new_offset;
     int            line_counter;
 
     afrp->block_size = 0;
@@ -2566,7 +2548,7 @@ s_BlockIsConsistent(
     TLineInfoPtr   lip;
     TLengthListPtr list, this_pattern, best;
     int            len, block_offset, id_offset;
-    char *         tmp_id;
+    string tmpId;
     bool          rval;
     char *         cp;
 
@@ -2625,24 +2607,19 @@ s_BlockIsConsistent(
                  */
                 len = 10;
             }        
-            tmp_id = new char[len + 1];
-            strncpy (tmp_id, cp, len);
-            tmp_id [len] = 0;
+            tmpId = string(cp).substr(0, len);
             cp += len;
             cp += strspn (cp, " \t\r");
         } else {
-            tmp_id = s_GetAlignRawSeqIDByOffset (afrp->sequences, block_offset);
+            tmpId = s_GetAlignRawSeqIDByOffset (afrp->sequences, block_offset);
         }
         this_pattern = s_GetBlockPattern (cp);
         if ( ! s_DoLengthPatternsMatch (this_pattern, best)) {
             rval = false;
             s_ReportInconsistentBlockLine (
-                tmp_id, lip->line_num, afrp->mpErrorListener);
+                tmpId, lip->line_num, afrp->mpErrorListener);
         }
         delete this_pattern;
-        if (has_ids) {
-            delete[] tmp_id;
-        }
     }
     delete list;
     return rval;
@@ -3223,7 +3200,7 @@ s_CreateOffsetList(
     TLengthListPtr anchorpattern)
 {
     int          line_counter;
-    TIntLinkPtr  offset_list, new_offset;
+    TIntLinkPtr  offset_list;
     TSizeInfoPtr sip;
 
     if (!list  ||  !anchorpattern) {
@@ -3781,12 +3758,12 @@ s_ReprocessIds (
         } else {
             line_num = -1;
         }
-        s_RemoveOrganismCommentFromLine (arsp->id);
-        auto id = s_GetIdFromString (arsp->id);
+        s_RemoveOrganismCommentFromLine (arsp->mId);
+        auto id = s_GetIdFromString (arsp->mId);
         if (!id.empty()) {
-            arsp->SetId(id.c_str());
+            arsp->mId = id;
         }
-        s_AddStringCount (arsp->id, line_num, stringCounts);
+        s_AddStringCount (arsp->mId.c_str(), line_num, stringCounts);
     }
     for (auto stringCount: stringCounts) {
         _ASSERT(stringCount.mLineNumbers.size() == 1); //sanity check!
@@ -3804,10 +3781,10 @@ s_ReprocessIds (
  */
 static int 
 s_ReportRepeatedBadCharsInSequence(
-    TLineInfoReaderPtr   lirp,
-    char *               id,
-    const char *         reason,
-    ILineErrorListener*  pEl)
+    TLineInfoReaderPtr lirp,
+    const string& id,
+    const string& reason,
+    ILineErrorListener* pEl)
 {
     int bad_line_num = s_LineInfoReaderGetCurrentLineNumber (lirp);
     int bad_line_offset = s_LineInfoReaderGetCurrentLineOffset (lirp);
@@ -3914,7 +3891,7 @@ s_FindBadDataCharsInSequence(
             /* Report error - found character that is not beginning gap
                    in beginning gap */
                 data_position = s_ReportRepeatedBadCharsInSequence (
-                    lirp, arsp->id,
+                    lirp, arsp->mId,
                     "expect only beginning gap characters here",
                     pEl);
                 rval = true;
@@ -3935,7 +3912,7 @@ s_FindBadDataCharsInSequence(
 
     if (! found_middle_start) {
         delete lirp;
-        s_ReportMissingSequenceData (arsp->id, pEl);
+        s_ReportMissingSequenceData (arsp->mId, pEl);
         return true;
     }
 
@@ -3959,12 +3936,12 @@ s_FindBadDataCharsInSequence(
                 /* report error - unable to get master char */
                 if (master_arsp == arsp) {
                     data_position = s_ReportRepeatedBadCharsInSequence (
-                        lirp, arsp->id,
+                        lirp, arsp->mId,
                         "can't specify match chars in first sequence",
                         pEl);
                 } else {
                     data_position = s_ReportRepeatedBadCharsInSequence (
-                        lirp, arsp->id,
+                        lirp, arsp->mId,
                         "can't find source for match chars",
                         pEl);
                 }
@@ -3979,7 +3956,7 @@ s_FindBadDataCharsInSequence(
         } else {
             /* Report error - found bad character in middle */
             data_position = s_ReportRepeatedBadCharsInSequence (
-                lirp, arsp->id,
+                lirp, arsp->mId,
                 "expect only sequence, missing, match, and middle gap characters here",
                 pEl);
             rval = true;
@@ -3993,7 +3970,7 @@ s_FindBadDataCharsInSequence(
         if (sequenceInfo.EndGap().find(curr_char) == string::npos) {
         /* Report error - found bad character in middle */
             data_position = s_ReportRepeatedBadCharsInSequence (
-                lirp, arsp->id,
+                lirp, arsp->mId,
                 "expect only end gap characters here",
                 pEl);
             rval = true;
@@ -4047,7 +4024,6 @@ s_ConvertDataToOutput(
     TAlignRawSeqPtr   arsp;
     int               index;
     //int             * best_length;
-    TLineInfoPtr      lip;
     int               curr_seg;
 
     if (!afrp  ||  !afrp->sequences) {
@@ -4083,7 +4059,7 @@ s_ConvertDataToOutput(
         alignInfo.mSequences [index] = string( sequenceLi ? sequenceLi : "");
         lengths = s_AddSizeInfo(lengths, alignInfo.mSequences[index].size());
 
-        alignInfo.mIds[index] = string(arsp->id ? arsp->id : "");
+        alignInfo.mIds[index] = string(arsp->mId);
     }
     best_length = s_GetMostPopularSize (lengths);
     if (best_length == 0  &&  lengths) {
