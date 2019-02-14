@@ -1669,6 +1669,7 @@ namespace {
         CSeq_id_Handle m_Id;
         CRange<TSeqPos> m_Range;
         CFeatInfo* m_Info;
+        bool m_SplitRange;
 
         // min start coordinate for all entries after this
         TSeqPos m_MinFrom;
@@ -1699,6 +1700,7 @@ namespace {
                        CFeatInfo& info, SBestInfo* best,
                        bool by_product = false)
             : m_Info(&info),
+              m_SplitRange(false),
               m_Best(best)
             {
                 if ( by_product ) {
@@ -1722,6 +1724,7 @@ namespace {
             : m_Id(it->first),
               m_Range(it->second.GetOverlappingRange()),
               m_Info(&info),
+              m_SplitRange(false),
               m_Best(best)
             {
                 // id may be non-canonical
@@ -1786,6 +1789,7 @@ namespace {
             return false;
         }
         // 0-start, end-circular end
+        range_info.m_SplitRange = true;
         range_info.m_Range.SetTo(stop);
         rr.push_back(range_info);
         range_info.m_Range.SetFrom(start);
@@ -2571,7 +2575,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     Int8 overlap;
                     try {
                         if ( kOptimizeTestOverlap && overlap_type == eOverlap_Subset &&
-                             ci->m_Id && pc->m_Id &&
+                             ci->m_Id && pc->m_Id && !ci->m_SplitRange && !pc->m_SplitRange &&
                              s_IsNotSubrange(ci->m_Range, pc->m_Range) ) {
                             // fast check with simple locations failed
                             overlap = -1;
