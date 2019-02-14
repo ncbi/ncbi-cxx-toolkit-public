@@ -338,6 +338,7 @@ SNetServiceImpl::SNetServiceImpl(const string& api_name, const string& service_n
     m_Listener(listener),
     m_ServerPool(new SNetServerPoolImpl(listener)),
     m_ServiceName(service_name),
+    m_RoundRobin(0),
     m_APIName(api_name),
     m_ClientName(client_name)
 {
@@ -347,6 +348,7 @@ SNetServiceImpl::SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prot
     m_Listener(prototype->m_Listener->Clone()),
     m_ServerPool(prototype->m_ServerPool),
     m_ServiceName(server->m_Address.AsString()),
+    m_RoundRobin(prototype->m_RoundRobin.load()),
     m_APIName(prototype->m_APIName),
     m_ClientName(prototype->m_ClientName),
     m_UseSmartRetries(prototype->m_UseSmartRetries),
@@ -362,6 +364,7 @@ SNetServiceImpl::SNetServiceImpl(const string& service_name, SNetServiceImpl* pr
     m_ServerPool(prototype->m_ServerPool),
     m_ServiceName(service_name),
     m_RebalanceStrategy(new CSimpleRebalanceStrategy(prototype->m_RebalanceStrategy)),
+    m_RoundRobin(prototype->m_RoundRobin.load()),
     m_APIName(prototype->m_APIName),
     m_ClientName(prototype->m_ClientName),
     m_UseSmartRetries(prototype->m_UseSmartRetries),
@@ -1291,7 +1294,10 @@ CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode)
         if (servers->m_Servers.begin() < servers->m_SuppressedBegin) {
             if (mode == eSortByLoad)
                 return new SNetServiceIterator_OmitPenalized(servers);
-            else
+            else if (mode == eRoundRobin) {
+                auto begin = servers->m_Servers.begin() + m_Impl->m_RoundRobin++ % servers->m_Servers.size();
+                return new SNetServiceIterator_Circular(servers, begin);
+            } else
                 return new SNetServiceIterator_RandomPivot(servers);
         }
     } else

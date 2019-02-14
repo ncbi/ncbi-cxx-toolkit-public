@@ -92,6 +92,7 @@ class NCBI_XCONNECT_EXPORT CNetService
     enum EIterationMode {
         eSortByLoad,
         eRandomize,
+        eRoundRobin,
         eIncludePenalized
     };
 

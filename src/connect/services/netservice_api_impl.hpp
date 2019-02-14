@@ -357,6 +357,7 @@ public:
     SDiscoveredServers* m_ServerGroupPool = nullptr;
     unsigned m_LatestDiscoveryIteration = 0;
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
+    atomic<size_t> m_RoundRobin;
 
 private:
     string m_APIName;
