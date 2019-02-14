@@ -1,20 +1,20 @@
 Line No    : 1
-Severity   : Error
+Severity   : Warning
 Message    : Line 1 could not be assigned to an interleaved block
              Contents of unused line: BEGIN DATA;
 
 Line No    : 2
-Severity   : Error
+Severity   : Warning
 Message    : Line 2 could not be assigned to an interleaved block
              Contents of unused line: Dimensions NTax=5 NChar=48;
 
 Line No    : 3
-Severity   : Error
+Severity   : Warning
 Message    : Line 3 could not be assigned to an interleaved block
              Contents of unused line: Format DataType-DNA Interleave=yes Gap =- Missing=?;
 
 Line No    : 4
-Severity   : Error
+Severity   : Warning
 Message    : Line 4 could not be assigned to an interleaved block
              Contents of unused line: Matrix
 

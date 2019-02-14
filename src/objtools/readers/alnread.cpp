@@ -430,7 +430,7 @@ void
 sReportError(
     const string& id,
     int lineNumber,
-    EAlnErr errCode,
+    EDiagSev severity,
     const string& description,
     ILineErrorListener* pEl)
 //  ============================================================================
@@ -444,7 +444,7 @@ sReportError(
     string message = sMakeErrorMessage(id, description);;
     AutoPtr<CObjReaderLineException> pErr(
         CObjReaderLineException::Create(
-            EDiagSev::eDiag_Error,
+            severity,
             lineNumber,
             message,
             ILineError::eProblem_GeneralParsingError));
@@ -470,7 +470,7 @@ s_ReportBadCharError(
     sReportError(
         id,
         line_number,
-        eAlnErr_BadData,
+        EDiagSev::eDiag_Error,
         errMessage,
         pEl);
 }
@@ -488,7 +488,7 @@ s_ReportInconsistentID(
     sReportError(
         id,
         line_number,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Error,
         "Found unexpected ID",
         pEl);
 }
@@ -506,7 +506,7 @@ s_ReportInconsistentBlockLine(
     sReportError(
         id,
         line_number,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Error,
         "Inconsistent block line formatting",
         pEl);
 }
@@ -533,7 +533,7 @@ s_ReportLineLengthError(
     sReportError(
         id,
         lip->line_num,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Error,
         errMessage,
         pEl);
 }
@@ -556,7 +556,7 @@ s_ReportBlockLengthError(
     sReportError(
         id,
         line_num,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Error,
         errMessage,
         pEl);
 }
@@ -574,7 +574,7 @@ s_ReportDuplicateIDError(
     sReportError(
         id,
         line_num,
-        eAlnErr_BadData,
+        EDiagSev::eDiag_Warning,
         "Duplicate ID!  Sequences will be concatenated!",
         pEl);
 }
@@ -591,7 +591,7 @@ s_ReportMissingSequenceData(
     sReportError(
         id,
         -1,
-        eAlnErr_Fatal,
+        EDiagSev::eDiag_Fatal,
         "No data found",
         pEl);
 }
@@ -614,7 +614,7 @@ s_ReportBadSequenceLength(
     sReportError(
         id,
         -1,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Error,
         errMessage,
         pEl);
 }
@@ -635,7 +635,7 @@ s_ReportIncorrectNumberOfSequences(
     sReportError(
         "",
         -1,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Error,
         errMessage,
         pEl);
 }
@@ -653,7 +653,7 @@ s_ReportIncorrectSequenceLength(
     sReportError(
         "",
         -1,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Error,
         errMessage,
         pEl);
 }
@@ -669,7 +669,7 @@ s_ReportASN1Error(
     sReportError(
         "",
         -1,
-        eAlnErr_BadData,
+        EDiagSev::eDiag_Fatal,
         "This is an ASN.1 file which cannot be read by this function",
         pEl);
 }
@@ -700,7 +700,7 @@ s_ReportUnusedLine(
         sReportError(
             "",
             line_num_start,
-            eAlnErr_BadFormat,
+            EDiagSev::eDiag_Warning,
             errMessage,
             pEl);
         return;
@@ -715,7 +715,7 @@ s_ReportUnusedLine(
     sReportError(
         "",
         line_num_start,
-        eAlnErr_BadFormat,
+        EDiagSev::eDiag_Warning,
         errMessage,
         pEl);
 }

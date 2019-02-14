@@ -1,5 +1,5 @@
 Line No    : 5
-Severity   : Error
+Severity   : Warning
 Message    : At ID 'seq1': Duplicate ID!  Sequences will be concatenated!
 
 Line No    : 12

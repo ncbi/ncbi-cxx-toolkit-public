@@ -1,8 +1,4 @@
 Line No    : None (Encountered during pre or post processing)
-Severity   : Error
-Message    : This is an ASN.1 file which cannot be read by this function
-
-Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
-Message    : Error reading alignment: Invalid input or alphabet
+Message    : This is an ASN.1 file which cannot be read by this function
 
