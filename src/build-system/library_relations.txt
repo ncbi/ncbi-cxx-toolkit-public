@@ -80,6 +80,7 @@ alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
 an_core needs 16S_common
+an_core needs gcaccess_utils
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
 an_core needs gpipe_fileutils
@@ -89,6 +90,7 @@ an_core needs reftrack_access
 an_core needs simple_asm
 an_core needs xgencoll
 an_euk_pipeline needs bag_access
+an_euk_pipeline needs gcaccess_utils
 an_euk_pipeline needs gpipe_an_base
 an_euk_pipeline needs gpipe_val
 an_euk_pipeline needs reftrack_access
@@ -197,6 +199,7 @@ bsoncxx needs3party bson-1.0
 build_config needs aligndb_reader
 build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
+build_config needs gcaccess_utils
 build_config needs gpipe_xmlutil
 build_config needs reftrack_access
 build_config needs simple_asm
@@ -372,10 +375,13 @@ gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
 gc_asn_access needs aligndb_reader
+gc_asn_access needs gcaccess_utils
 gc_asn_access needs ncbi_xcache_netcache
 gc_asn_access needs simple_asm
 gc_asn_access needs xgencoll
 gc_assm_rpt needs gcaccess_utils
+gc_assm_rpt needs simple_asm
+gc_assm_rpt needs xgencoll
 gc_common needs xutil
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
@@ -385,8 +391,9 @@ gc_schedule needs ncbi_xcache_netcache
 gc_utils needs $(GPIPE_COMMON_LIBS)
 gc_utils needs gc_common
 gc_utils needs gpipe_objutil
-gcaccess_utils needs simple_asm
-gcaccess_utils needs xgencoll
+gcaccess_utils needs gc_load_utils
+gcaccess_utils needs gencoll_client
+gcaccess_utils needs seqgapscan
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcedit needs idload_utils
@@ -512,14 +519,18 @@ gpipe_ftp needs aligndb_reader
 gpipe_ftp needs gcaccess_utils
 gpipe_ftp needs gpinit
 gpipe_ftp needs gpipe_alnutil
+gpipe_ftp needs simple_asm
 gpipe_ftp needs xalgoalignutil
+gpipe_ftp needs xgencoll
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs aligndb_reader
 gpipe_ftp_new needs gcaccess_utils
 gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs gpipe_alnutil
+gpipe_ftp_new needs simple_asm
 gpipe_ftp_new needs xalgoalignutil
+gpipe_ftp_new needs xgencoll
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs gpinit_access
@@ -1223,6 +1234,7 @@ sybtcl64 needs3party sybunic64
 sybunic64 needs3party $(ORIG_LIBS)
 tables needs3party $(ORIG_LIBS)
 tax_xml needs bacterial_pipeline_proc
+tax_xml needs gcaccess_utils
 tax_xml needs simple_asm
 tax_xml needs xgencoll
 taxon needs xser
