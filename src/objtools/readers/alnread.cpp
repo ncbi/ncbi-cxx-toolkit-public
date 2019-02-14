@@ -84,6 +84,14 @@ struct SLineInfo {
     { 
         SetData(data_); 
     };
+    SLineInfo(
+        const SLineInfo& rhs):
+        data(nullptr), line_num(rhs.line_num), line_offset(rhs.line_offset), 
+        delete_me(rhs.delete_me), next(nullptr)
+    {
+        SetData(rhs.data);
+    };
+
     
     ~SLineInfo() { 
         delete[] data; 
@@ -218,24 +226,20 @@ using TIntLinkPtr = SIntLink*;
 //  ============================================================================
 struct SStringCount {
 //  ============================================================================
-    SStringCount(): 
-        string(nullptr), num_appearances(0), next(nullptr)
-    {};
-
-    ~SStringCount() {
-        delete next;
+    SStringCount(
+        const string& str,
+        int lineNum): 
+        mString(str)
+    {
+        mLineNumbers.push_back(lineNum);
     };
 
-    static SStringCount*
-    AppendNew(
-        SStringCount* list) { return tAppendNew<SStringCount>(list, new SStringCount); };
+    void AddOccurrence(
+        int lineNum) { mLineNumbers.push_back(lineNum); };
 
-    char* string;
-    int num_appearances;
+    string mString;
     list<int> mLineNumbers;
-    SStringCount* next;
 };
-using TStringCountPtr = SStringCount*;
 
 //  ============================================================================
 struct SSizeInfo {
@@ -333,12 +337,11 @@ using TBracketedCommentListPtr = SBracketedCommentList*;
 struct SAlignRawSeq {
 //  ============================================================================
     SAlignRawSeq(): 
-        id(nullptr), sequence_data(nullptr), id_lines(nullptr), next(nullptr)
+        id(nullptr), sequence_data(nullptr), next(nullptr)
     {};
     ~SAlignRawSeq() {
         delete[] id;
         delete sequence_data;
-        delete id_lines;
         delete next;
     };
 
@@ -360,7 +363,7 @@ struct SAlignRawSeq {
 
     char *                id;
     TLineInfoPtr          sequence_data;
-    TIntLinkPtr           id_lines;
+    list<int> mIdLines;
     struct SAlignRawSeq * next;
 };
 using TAlignRawSeqPtr = SAlignRawSeq*;
@@ -371,14 +374,13 @@ struct SAlignFileRaw {
     SAlignFileRaw(
         ILineErrorListener* pEl):
         marked_ids(false), line_list(nullptr),
-        deflines(nullptr), num_deflines(0), block_size(0), 
+        block_size(0), 
         offset_list(nullptr), sequences(nullptr), mpErrorListener(pEl),
         alphabet_(""), expected_num_sequence(0),
         expected_sequence_len(0), align_format_found(false)
     {};
 
     ~SAlignFileRaw() {
-        delete deflines;
         delete line_list;
         delete sequences;
         delete offset_list;
@@ -386,8 +388,7 @@ struct SAlignFileRaw {
 
     TLineInfoPtr         line_list;
     TAlignRawSeqPtr      sequences;
-    TLineInfoPtr         deflines;
-    int                  num_deflines;
+    list<SLineInfo> mDeflines;
     bool                 marked_ids;
     int                  block_size;
     TIntLinkPtr          offset_list;
@@ -399,18 +400,9 @@ struct SAlignFileRaw {
 };
 using TAlignRawFilePtr = SAlignFileRaw*;
 
-/* Function declarations
- */
-static bool s_AfrpInitLineData( 
-    TAlignRawFilePtr, istream&);
-static void s_AfrpProcessFastaGap(
-    TAlignRawFilePtr afrp, TLengthListPtr * patterns, bool * last_line_was_marked_id, char* plinestr, int overall_line_count);
-
-/* These functions are used for storing and transmitting information
- * about errors encountered while reading the alignment data.
- */
-
+//  ============================================================================
 string StrPrintf(const char *format, ...)
+//  ============================================================================
 {
     va_list args;
     va_start(args, format);
@@ -1233,41 +1225,20 @@ s_FindNthDataChar(
  * The function returns list if list was not NULL, or a pointer to the
  * newly created SStringCount structure otherwise.
  */
-static TStringCountPtr 
+void
 s_AddStringCount (
-    char *          string,
+    const char* str,
     int             line_num,
-    TStringCountPtr list
+    //TStringCountPtr list
+    list<SStringCount>& stringCounts
 )
 {
-    TStringCountPtr  add_to, last = nullptr;
-
-    if (!string) {
-        for (add_to = list; add_to  &&  add_to->string; add_to = add_to->next) {
-            last = add_to;
-        }
-    } else {
-        for (add_to = list;
-             add_to &&  (!add_to->string  ||  strcmp(string, add_to->string) != 0);
-             add_to = add_to->next) {
-            last = add_to;
+    for (auto stringCount: stringCounts) {
+        if (stringCount.mString == str) {
+            stringCount.AddOccurrence(line_num);
         }
     }
-    
-    if (!add_to) {
-        add_to = SStringCount::AppendNew(last);
-        if (!list) {
-            list = add_to;
-        }
-        if (add_to) {
-            add_to->string = string;
-        }
-    }
-    if (add_to) {
-        add_to->num_appearances ++;
-        add_to->mLineNumbers.push_back(line_num);
-    }
-    return list;   
+    stringCounts.push_back(SStringCount(str, line_num));
 }
 
 /* The following functions are used to analyze specific kinds of lines
@@ -1824,15 +1795,10 @@ static bool s_ReadDefline(
         const char* defline_offset = is_nexus_type ?
             line + 1 :
             strpbrk(line, " \t");
-
-        if (defline_offset) {
-            afrp->deflines = s_AddLineInfo(afrp->deflines, defline_offset, 
-                    line_num, 0);
+        if (!defline_offset) {
+            defline_offset = "";
         }
-        else {
-            afrp->deflines = s_AddLineInfo(afrp->deflines, "", line_num, 0);
-        }
-        afrp->num_deflines++;
+        afrp->mDeflines.push_back(SLineInfo(defline_offset, line_num, 0));
         return true;
     }
     return false;
@@ -1938,7 +1904,7 @@ s_AddAlignRawSeqById(
                                        data,
                                        data_line_num,
                                        data_line_offset);
-    SIntLink::CreateOrAppend(id_line_num, arsp->id_lines);
+    arsp->mIdLines.push_back(id_line_num);
     return list;
 }
 
@@ -2696,7 +2662,6 @@ s_ProcessBlockLines(
     TLineInfoPtr    lip;
     char *          linestring;
     char *          cp;
-    char *          this_id;
     int             len;
     int             line_number;
     bool           this_block_has_ids;
@@ -3802,19 +3767,17 @@ static bool
 s_ReprocessIds (
     TAlignRawFilePtr afrp)
 {
-    TStringCountPtr list;
+    list<SStringCount> stringCounts;
     int             line_num;
     bool           rval = true;
-    char *          defline;
 
     if (!afrp) {
         return false;
     }
 
-    list = nullptr;
     for (auto arsp = afrp->sequences; arsp; arsp = arsp->next) {
-        if (arsp->id_lines) {
-            line_num = arsp->id_lines->ival;
+        if (!arsp->mIdLines.empty()) {
+            line_num = arsp->mIdLines.front();
         } else {
             line_num = -1;
         }
@@ -3823,17 +3786,11 @@ s_ReprocessIds (
         if (!id.empty()) {
             arsp->SetId(id.c_str());
         }
-        list = s_AddStringCount (arsp->id, line_num, list);
+        s_AddStringCount (arsp->id, line_num, stringCounts);
     }
-
-    for (auto scp = list;  scp;  scp = scp->next) {
-        if (scp->num_appearances > 1) {
-            _ASSERT(scp->num_appearances > 1);
-            // this should never happen !!!
-        }
+    for (auto stringCount: stringCounts) {
+        _ASSERT(stringCount.mLineNumbers.size() == 1); //sanity check!
     }
-    /* free string count list */
-    delete list;
     return rval;
 }
 
@@ -4097,7 +4054,7 @@ s_ConvertDataToOutput(
         return false;
     }
 
-    auto numDeflines = afrp->num_deflines;
+    auto numDeflines = afrp->mDeflines.size();
     auto numSequences  = 0;
     for (arsp = afrp->sequences;  arsp;  arsp = arsp->next) {
         numSequences++;
@@ -4106,12 +4063,11 @@ s_ConvertDataToOutput(
 
     /* copy in deflines */
     alignInfo.mDeflines.resize(numDeflines);
-    for (lip = afrp->deflines, index = 0;
-            lip  &&  index < afrp->num_deflines;
-            lip = lip->next, index++) {
-        alignInfo.mDeflines[index] =  {lip->line_num, string(lip->data ? lip->data : "")};
+    index = 0;
+    for (auto defline: afrp->mDeflines) {
+        alignInfo.mDeflines[index] =  {defline.line_num, string(defline.data ? defline.data : "")};
+        ++index;
     }
-
     /* we need to store length information about different segments separately */
     TSizeInfoPtr lengths = nullptr;
     int best_length = 0;

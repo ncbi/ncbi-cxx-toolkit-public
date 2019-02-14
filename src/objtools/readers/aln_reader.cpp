@@ -127,6 +127,7 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
     return strdup(s.c_str());
 }
 
+
 CAlnReader::~CAlnReader()
 {
 }

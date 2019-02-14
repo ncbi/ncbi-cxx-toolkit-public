@@ -88,6 +88,8 @@
 #include <objtools/writers/gvf_writer.hpp>
 #include <objtools/writers/aln_writer.hpp>
 
+#include <misc/data_loaders_util/data_loaders_util.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -296,7 +298,12 @@ int CAnnotWriterApp::Run()
 
 	CONNECT_Init(&GetConfig());
     m_pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*m_pObjMngr);
+    //CGBDataLoader::RegisterInObjectManager(*m_pObjMngr);
+
+static const CDataLoadersUtil::TLoaders default_loaders =
+    CDataLoadersUtil::fAsnCache | CDataLoadersUtil::fGenbank;
+CDataLoadersUtil::SetupObjectManager(args, *m_pObjMngr, default_loaders);
+
     m_pScope.Reset(new CScope(*m_pObjMngr));
     m_pScope->AddDefaults();
 

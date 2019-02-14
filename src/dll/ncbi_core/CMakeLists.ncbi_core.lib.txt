@@ -9,7 +9,6 @@ NCBI_begin_lib(ncbi_core SHARED)
     util/compress/api/compress
     util/tables/tables
     util/sequtil/sequtil
-    util/creaders/creaders
     util/xregexp/xregexp
     util/diff/xdiff
     util/qparse/xqueryparse
