@@ -261,6 +261,9 @@ CSoapServerApplication::x_FindListeners(const CSoapMessage& request)
     for (i = content.begin(); i != content.end(); ++i) {
         string name = (*i)->GetThisTypeInfo()->GetName();
         string ns_name = (*i)->GetNamespaceName();
+        if (ns_name.empty() && (*i)->GetThisTypeInfo()->GetDataSpec() != EDataSpec::eXSD ) {
+            ns_name = m_DefNamespace;
+        }
         const TListeners* listeners = x_FindListenersByName(name,ns_name);
         if (listeners) {
             return listeners;
