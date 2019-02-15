@@ -1,0 +1,22 @@
+Line No    : 15
+Severity   : Warning
+Message    : Line 15 could not be assigned to an interleaved block
+             Contents of unused line: This line isn't used.
+
+Line No    : 16
+Severity   : Warning
+Message    : Line 16 could not be assigned to an interleaved block
+             Contents of unused line: And neither is this line.
+
+Line No    : 10
+Severity   : Error
+Message    : At ID 'SEQ1': Expected line length 20, actual length 8
+
+Line No    : None (Encountered during pre or post processing)
+Severity   : Error
+Message    : At ID 'SEQ1': Expected sequence length 20, actual length 28
+
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
+

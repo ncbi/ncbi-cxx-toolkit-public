@@ -1519,6 +1519,7 @@ s_SkippableNexusComment (
         return false;
     }
     string str = NStr::TruncateSpaces(str_);
+    NStr::ToLower(str);
     if (!NStr::EndsWith(str, ';')) {
         return false;
     }
@@ -1550,9 +1551,10 @@ s_IsAlnFormatString (
         return false;
     }
     string str(str_);
+    NStr::ToLower(str);
     return (NStr::StartsWith(str, "matrix")  ||
-        NStr::StartsWith(str, "#NEXUS")  ||
-        NStr::StartsWith(str, "CLUSTAL W")  ||
+        NStr::StartsWith(str, "#nexus")  ||
+        NStr::StartsWith(str, "clustal w")  ||
         s_SkippableNexusComment (str_)  ||
         s_IsTwoNumbersSeparatedBySpace (str_)  ||
         s_IsConsensusLine (str_));
@@ -1581,12 +1583,10 @@ static bool s_SkippableString (char * str_)
  */
 static bool 
 s_FoundStopLine (
-    const char * str_)
+    const string& str_)
 {
-    if (!str_) {
-        return false;
-    }
     string str(str_);
+    NStr::ToLower(str);
     return (NStr::StartsWith(str, "endblock")  ||  NStr::StartsWith(str, "end;"));
 }
 
@@ -2087,35 +2087,38 @@ s_FindUnusedLines(
     line_counter = 0;
     line_val = afrp->line_list;
 
-    while (llp  &&  line_val  &&  (!offset  ||  line_counter < offset->ival)) {
-        if (llp->lengthrepeats) {
-            s_ReportUnusedLine (line_counter,
-                                line_counter + llp->num_appearances - 1,
-                                line_val,
-                                afrp->mpErrorListener);
-            if (offset != afrp->offset_list) {
-                rval = true;
+    while (llp != NULL  &&  line_val != NULL) {
+        while (llp  &&  line_val  &&  (!offset  ||  line_counter < offset->ival)) {
+            if (llp->lengthrepeats) {
+                s_ReportUnusedLine (line_counter,
+                                    line_counter + llp->num_appearances - 1,
+                                    line_val,
+                                    afrp->mpErrorListener);
+                line_val->data[0] = 0;
+                if (offset != afrp->offset_list) {
+                    rval = true;
+                }
             }
+            line_counter += llp->num_appearances;
+            for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
+                line_val = line_val->next;
+            }
+            llp = llp->next;
         }
-        line_counter += llp->num_appearances;
-        for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
-            line_val = line_val->next;
+        block_line_counter = 0;
+        while (block_line_counter < afrp->block_size  &&  llp) {
+            block_line_counter += llp->num_appearances;
+            line_counter += llp->num_appearances;
+            for (skip = 0;
+                skip < llp->num_appearances  &&  line_val;
+                skip++) {
+                line_val = line_val->next;
+            }
+            llp = llp->next;
         }
-        llp = llp->next;
-    }
-    block_line_counter = 0;
-    while (block_line_counter < afrp->block_size  &&  llp) {
-        block_line_counter += llp->num_appearances;
-        line_counter += llp->num_appearances;
-        for (skip = 0;
-            skip < llp->num_appearances  &&  line_val;
-            skip++) {
-            line_val = line_val->next;
+        if (offset) {
+            offset = offset->next;
         }
-        llp = llp->next;
-    }
-    if (offset) {
-        offset = offset->next;
     }
     return rval;
 }

@@ -1,23 +1,3 @@
-Line No    : 1
-Severity   : Warning
-Message    : Line 1 could not be assigned to an interleaved block
-             Contents of unused line: BEGIN DATA;
-
-Line No    : 2
-Severity   : Warning
-Message    : Line 2 could not be assigned to an interleaved block
-             Contents of unused line: Dimensions NTax=3 NChar=48;
-
-Line No    : 3
-Severity   : Warning
-Message    : Line 3 could not be assigned to an interleaved block
-             Contents of unused line: Format DataType-DNA Interleave=yes Gap =- Missing=?;
-
-Line No    : 4
-Severity   : Warning
-Message    : Line 4 could not be assigned to an interleaved block
-             Contents of unused line: Matrix
-
 Line No    : 6
 Severity   : Error
 Message    : At ID 'seq1': Inconsistent block line formatting

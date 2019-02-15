@@ -1,26 +1,14 @@
-Line No    : 7
-Severity   : Error
-Message    : At ID 'MATRIX': Expected line length 48, actual length 4
-
-Line No    : 8
-Severity   : Error
-Message    : At ID '--GCAAGCATGCATGCAAAATTTTGCGGCCCATGCATG--ATGCATGC': Expected line length 48, actual length 4
-
-Line No    : 9
-Severity   : Error
-Message    : At ID 'AT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC': Expected line length 48, actual length 4
-
 Line No    : 10
 Severity   : Error
-Message    : At ID 'ATGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC': Expected line length 48, actual length 4
+Message    : At ID 'SEQ4': Expected 0 lines in block, found 0
 
 Line No    : 11
 Severity   : Error
 Message    : At ID 'ATGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G': Expected 0 lines in block, found 0
 
-Line No    : 8
+Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Message    : At ID 'MATRIX': 1 bad characters (1) found at position 3 (expect only end gap characters here).
+Message    : Expected 5 sequences, found 4
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
