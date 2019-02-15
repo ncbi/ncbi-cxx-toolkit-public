@@ -140,10 +140,14 @@ public:
 
 	const string getRid() {return m_rid;}
 	const string getLastError() {return m_lastError;}
+	void setLastError(const string& lastError) { m_lastError = lastError;}
 	bool getHits(CRef<CSeq_align_set> & hits);
-	bool checkDone();
+	bool checkDone();    
 	CCdCore* getCd() {return m_cd;}
 	CRef<CSeq_align_set> getAlignments() {return m_hits;}
+    const CRef<CSeq_align_set>& GetAlignments() const {return m_hits;}
+	void SetAlignments(CRef<CSeq_align_set>& hits) { m_hits.Reset(hits); }
+    
 	//drive update
 	bool checkBlastAndUpdate();
 	void setHitsNeeded(int num) {m_hitsNeeded = num;}
@@ -159,6 +163,7 @@ public:
 						CRef< CSeq_entry > seqEntry);
 	static bool retrieveSeq(CID1Client& client, CRef<CSeq_id> seqID, 
 		CRef<CSeq_entry>& seqEntry);
+	CdUpdateParameters& getUpdateParameters() {return m_config;}
 	CDUpdateStats& getStats() {return m_stats;}
 	static int pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef, 
 						   vector< CRef< CBioseq > >&  bioseqVec);
