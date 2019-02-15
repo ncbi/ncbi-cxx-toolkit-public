@@ -299,13 +299,13 @@ CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlob(
 {
     CRef<CCDD_Reply> cdd_reply = m_Client->AskBlob(serial_number, blob_id);
     CRef<CID2_Reply> id2_reply = x_CreateID2_Reply(serial_number, *cdd_reply);
-    CID2_Reply::TReply& reply = id2_reply->SetReply();
     if (id2_reply == nullptr  ||  !id2_reply->IsSetReply()
         ||  !id2_reply->GetReply().IsGet_blob()) {
         // Not a blob reply.
         return id2_reply;
     }
 
+    CID2_Reply::TReply& reply = id2_reply->SetReply();
     CID2_Reply_Get_Blob& gb = reply.SetGet_blob();
     gb.SetBlob_id().Assign(blob_id);
     CID2_Reply_Data& data = gb.SetData();
