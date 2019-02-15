@@ -1,6 +1,6 @@
 WATCHERS = camacho boratyng
 
-APP = hit_matrix.cgi
+APP = hit_matrix.cgi.REAL
 SRC = blast_hitmatrix cgi_hit_matrix
 
 LIB_ = w_hit_matrix gui_glmesa w_gl w_data w_wx \
