@@ -2340,6 +2340,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GXNM\ts\tGuangxi Natural History Museum, Herbarium\t\t\t",
 "GXSP\ts\tGuangxi School of Pharmacy\t\t\t",
 "GZAC\ts\tGuizhou Agricultural College, College of Life Science\t\t\t",
+"GZCC\tc\tGuizhou Culture Collection\t\t\t",
 "GZM\ts\tGiessener Zoologisches Museum\t\t\t",
 "GZTM\ts\tGuizhou Institute of Traditional Chinese Medicine\t\t\t",
 "GZU\ts\tKarl-Franzens-Universitat Graz\t\t\t",

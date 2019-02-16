@@ -2307,6 +2307,7 @@ GXMI	s	Guangxi Institute of Traditional Medical and Pharmaceutical Sciences
 GXNM	s	Guangxi Natural History Museum, Herbarium			
 GXSP	s	Guangxi School of Pharmacy			
 GZAC	s	Guizhou Agricultural College, College of Life Science			
+GZCC	c	Guizhou Culture Collection			
 GZM	s	Giessener Zoologisches Museum			
 GZTM	s	Guizhou Institute of Traditional Chinese Medicine			
 GZU	s	Karl-Franzens-Universitat Graz			
