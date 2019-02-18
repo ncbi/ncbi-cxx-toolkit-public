@@ -1001,9 +1001,6 @@ ngalign_app needs ncbi_xloader_asn_cache
 ngalign_app needs xngalign
 nghttp2 needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
-notary needs xid_utils
-notary needs3party $(KRB5_LIBS)
-notary needs3party $(OPENSSL_LIBS)
 nsl needs3party $(ORIG_LIBS)
 objannotation needs objspdi
 objcoords needs xser
