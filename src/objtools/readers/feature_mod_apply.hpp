@@ -50,9 +50,10 @@ class CFeatModApply
 {
 public:
 
+    using TSkippedMods = CModAdder::TSkippedMods;
     using FReportError = CModAdder::FReportError;
 
-    CFeatModApply(CBioseq& bioseq, FReportError fReportError);
+    CFeatModApply(CBioseq& bioseq, FReportError fReportError, TSkippedMods& skipped_mods);
     virtual ~CFeatModApply(void);
 
     using TModEntry = CModHandler::TMods::value_type;
@@ -76,9 +77,11 @@ private:
             const CSeq_loc& feat_loc);
 
     CRef<CSeq_loc> x_GetWholeSeqLoc(void);
+    CRef<CSeq_feat> m_pProtein;
+
     CBioseq& m_Bioseq;
     FReportError m_fReportError;
-    CRef<CSeq_feat> m_pProtein;
+    TSkippedMods& m_SkippedMods;
 };
 
 END_SCOPE(objects)

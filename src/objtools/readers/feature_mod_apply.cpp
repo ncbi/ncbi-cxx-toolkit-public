@@ -54,9 +54,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CFeatModApply::CFeatModApply(CBioseq& bioseq, FReportError fReportError) : 
+CFeatModApply::CFeatModApply(CBioseq& bioseq, 
+        FReportError fReportError,
+        TSkippedMods& skipped_mods) : 
     m_Bioseq(bioseq),
-    m_fReportError(fReportError) {}
+    m_fReportError(fReportError),
+    m_SkippedMods(skipped_mods) {}
 
 
 CFeatModApply::~CFeatModApply() {}
@@ -89,6 +92,9 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
 
         if (m_fReportError) {
             m_fReportError(msg, eDiag_Error);
+            for (const auto& mod_data : mod_entry.second) {
+                m_SkippedMods.push_back(mod_data);
+            }
             return true;
         }
 

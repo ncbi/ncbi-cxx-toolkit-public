@@ -1,8 +1,8 @@
 Line No    : 5
-Severity   : Warning
+Severity   : Error
 Message    : germline modifier has invalid value: "val1".
 
 Line No    : 9
-Severity   : Warning
+Severity   : Error
 Message    : rearranged modifier has invalid value: "val1".
 

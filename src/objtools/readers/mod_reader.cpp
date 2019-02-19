@@ -369,7 +369,9 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                                    fReportError,
                                    skipped_mods);
                 
-    CFeatModApply feat_mod_apply(bioseq, fReportError);
+    CFeatModApply feat_mod_apply(bioseq, 
+                                 fReportError,
+                                 skipped_mods);
 
     for (const auto& mod_entry : mod_handler.GetMods()) {
         try {
@@ -399,6 +401,9 @@ void CModAdder::Apply(const CModHandler& mod_handler,
             // Report unrecognised modifier
             string msg = "Unrecognized modifier: " + x_GetModName(mod_entry) + ".";
             if (fReportError) {
+                skipped_mods.insert(skipped_mods.end(),
+                    mod_entry.second.begin(),
+                    mod_entry.second.end());
                 fReportError(msg, eDiag_Warning);
                 continue;
             }

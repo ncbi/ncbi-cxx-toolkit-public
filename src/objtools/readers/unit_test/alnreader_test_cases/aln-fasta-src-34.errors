@@ -1,4 +1,4 @@
 Line No    : 13
-Severity   : Warning
+Severity   : Error
 Message    : metagenomic modifier has invalid value: "val1".
 
