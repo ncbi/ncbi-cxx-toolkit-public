@@ -2674,7 +2674,6 @@ static const char* const sc_BadProtNameText [] = {
   "hypothetical orf",
   "hypothetical phage protein",
   "hypothetical prophage protein",
-  "hypothetical protein",
   "hypothetical protein (fragment)",
   "hypothetical protein (multi-domain)",
   "hypothetical protein (phage associated)",
