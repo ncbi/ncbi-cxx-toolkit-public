@@ -2773,16 +2773,21 @@ DEFINE_STATIC_ARRAY_MAP(TBadProtNameSet, sc_BadProtName, sc_BadProtNameText);
 
 void CProtValidator::x_ReportUninformativeNames() 
 {
-    if (!m_Feat.GetData().GetProt().IsSetName()) {
+    if (!m_Imp.IsRefSeq()) {
         return;
     }
-    if (!m_Imp.IsRefSeq()) {
+    if (!m_Feat.GetData().GetProt().IsSetName()) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoNameForProtein,
+                 "Protein name is not set");
         return;
     }
     for (auto it : m_Feat.GetData().GetProt().GetName()) {
         string search = it;
         search = NStr::ToLower(search);
-        if (sc_BadProtName.find (search.c_str()) != sc_BadProtName.end()
+        if (search.empty()) {
+            PostErr (eDiag_Error, eErr_SEQ_FEAT_NoNameForProtein,
+                     "Protein name is empty");
+        } else if (sc_BadProtName.find (search.c_str()) != sc_BadProtName.end()
             || NStr::Find(search, "=") != string::npos
             || NStr::Find(search, "~") != string::npos
             || NStr::FindNoCase(search, "uniprot") != string::npos
