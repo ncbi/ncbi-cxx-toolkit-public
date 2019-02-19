@@ -1258,3 +1258,21 @@ if(GLPK_FOUND)
   set(NCBI_COMPONENT_GLPK_LIBS    ${GLPK_LIBS})
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} GLPK")
 endif()
+
+#############################################################################
+# XALAN
+if (XALAN_FOUND)
+  set(NCBI_COMPONENT_XALAN_FOUND YES)
+  set(NCBI_COMPONENT_XALAN_INCLUDE ${XALAN_INCLUDE})
+  set(NCBI_COMPONENT_XALAN_LIBS    ${XALAN_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} XALAN")
+endif()
+
+#############################################################################
+# XERCES
+if (XERCES_FOUND)
+  set(NCBI_COMPONENT_XERCES_FOUND YES)
+  set(NCBI_COMPONENT_XERCES_INCLUDE ${XERCES_INCLUDE})
+  set(NCBI_COMPONENT_XERCES_LIBS    ${XERCES_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} XERCES")
+endif()

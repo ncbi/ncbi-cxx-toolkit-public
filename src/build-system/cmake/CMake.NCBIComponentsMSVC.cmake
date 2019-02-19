@@ -109,6 +109,9 @@ else()
     set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1)
 endif()
 
+set(NCBI_ThirdParty_XALAN       ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.10.0-20080814)
+set(NCBI_ThirdParty_XERCES      ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/2.8.0)
+
 #############################################################################
 macro(NCBI_define_component _name)
   if (DEFINED NCBI_ThirdParty_${_name})
@@ -407,3 +410,19 @@ if (EXISTS "${NCBI_ThirdParty_GRPC}/include" AND EXISTS "${NCBI_ThirdParty_GRPC}
 else()
   set(NCBI_COMPONENT_PROTOBUF_FOUND NO)
 endif()
+
+##############################################################################
+# XALAN
+NCBI_define_component(XALAN xalan-c.lib XalanMessages.lib)
+
+##############################################################################
+# XERCES
+NCBI_define_component(XERCES xerces-c.lib)
+if(NCBI_COMPONENT_XERCES_FOUND)
+  if(BUILD_SHARED_LIBS)
+    set(NCBI_COMPONENT_XERCES_DEFINES XERCES_DLL)
+  else()
+    set(NCBI_COMPONENT_XERCES_DEFINES XML_LIBRARY)
+  endif()
+endif()
+
