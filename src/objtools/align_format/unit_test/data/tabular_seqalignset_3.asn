@@ -1,0 +1,429 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1354
+      },
+      {
+        id str "blast_score",
+        value int 1354
+      },
+      {
+        id str "e_value",
+        value real { 0, 10, 0 }
+      },
+      {
+        id str "bit_score",
+        value real { 52616845807214, 10, -11 }
+      },
+      {
+        id str "num_ident",
+        value int 268
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 268
+      },
+      {
+        id str "hsp_percent_coverage",
+        value real { 272198404785643, 10, -13 }
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 444,
+          gi 27806577
+        },
+        loc {
+          int {
+            from 32,
+            to 835,
+            strand plus,
+            id gi 444
+          },
+          int {
+            from 0,
+            to 267,
+            strand unknown,
+            id gi 27806577
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1344
+      },
+      {
+        id str "blast_score",
+        value int 1344
+      },
+      {
+        id str "e_value",
+        value real { 0, 10, 0 }
+      },
+      {
+        id str "bit_score",
+        value real { 522316462312967, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 266
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 268
+      },
+      {
+        id str "hsp_percent_coverage",
+        value real { 272198404785643, 10, -13 }
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 444,
+          gi 555955787
+        },
+        loc {
+          int {
+            from 32,
+            to 835,
+            strand plus,
+            id gi 444
+          },
+          int {
+            from 0,
+            to 267,
+            strand unknown,
+            id gi 555955787
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1344
+      },
+      {
+        id str "blast_score",
+        value int 1344
+      },
+      {
+        id str "e_value",
+        value real { 0, 10, 0 }
+      },
+      {
+        id str "bit_score",
+        value real { 522316462312967, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 265
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 268
+      },
+      {
+        id str "hsp_percent_coverage",
+        value real { 272198404785643, 10, -13 }
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 444,
+          gi 300669780
+        },
+        loc {
+          int {
+            from 32,
+            to 835,
+            strand plus,
+            id gi 444
+          },
+          int {
+            from 0,
+            to 267,
+            strand unknown,
+            id gi 300669780
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1340
+      },
+      {
+        id str "blast_score",
+        value int 1340
+      },
+      {
+        id str "e_value",
+        value real { 0, 10, 0 }
+      },
+      {
+        id str "bit_score",
+        value real { 520775664009297, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 265
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 267
+      },
+      {
+        id str "hsp_percent_coverage",
+        value real { 272198404785643, 10, -13 }
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 444,
+          gi 742093586
+        },
+        loc {
+          int {
+            from 32,
+            to 835,
+            strand plus,
+            id gi 444
+          },
+          int {
+            from 0,
+            to 267,
+            strand unknown,
+            id gi 742093586
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1340
+      },
+      {
+        id str "blast_score",
+        value int 1340
+      },
+      {
+        id str "e_value",
+        value real { 0, 10, 0 }
+      },
+      {
+        id str "bit_score",
+        value real { 520775664009297, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 264
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 268
+      },
+      {
+        id str "hsp_percent_coverage",
+        value real { 272198404785643, 10, -13 }
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 444,
+          gi 84993680
+        },
+        loc {
+          int {
+            from 32,
+            to 835,
+            strand plus,
+            id gi 444
+          },
+          int {
+            from 0,
+            to 267,
+            strand unknown,
+            id gi 84993680
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1335
+      },
+      {
+        id str "blast_score",
+        value int 1335
+      },
+      {
+        id str "e_value",
+        value real { 0, 10, 0 }
+      },
+      {
+        id str "bit_score",
+        value real { 518849666129711, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 263
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 268
+      },
+      {
+        id str "hsp_percent_coverage",
+        value real { 272198404785643, 10, -13 }
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 444,
+          gi 594064064
+        },
+        loc {
+          int {
+            from 32,
+            to 835,
+            strand plus,
+            id gi 444
+          },
+          int {
+            from 0,
+            to 267,
+            strand unknown,
+            id gi 594064064
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1330
+      },
+      {
+        id str "blast_score",
+        value int 1330
+      },
+      {
+        id str "e_value",
+        value real { 0, 10, 0 }
+      },
+      {
+        id str "bit_score",
+        value real { 516923668250124, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 262
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 268
+      },
+      {
+        id str "hsp_percent_coverage",
+        value real { 272198404785643, 10, -13 }
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 444,
+          gi 595763446
+        },
+        loc {
+          int {
+            from 32,
+            to 835,
+            strand plus,
+            id gi 444
+          },
+          int {
+            from 0,
+            to 267,
+            strand unknown,
+            id gi 595763446
+          }
+        }
+      }
+    }
+  }
+}

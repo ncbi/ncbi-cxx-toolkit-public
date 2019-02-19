@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
 
 BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
 
-    const string seqAlignFileName_in = "data/tabular_seqalignset_2.asn";
+    const string seqAlignFileName_in = "data/tabular_seqalignset_3.asn";
     CRef<CSeq_align_set> sa(new CSeq_align_set);
 
     ifstream in(seqAlignFileName_in.c_str());
@@ -297,8 +297,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     		ctab.Print();
     	}
 
-        const string ref[8] = {
-		"X12497	XP_012015192	PREDICTED: interleukin-1 alpha isoform X1 [Ovis aries]",
+        const string ref[7] = {		
 		"X12497	NP_776517	interleukin-1 alpha precursor [Bos taurus]",
 		"X12497	XP_005890049	PREDICTED: interleukin-1 alpha [Bos mutus]",
 		"X12497	BAJ11606	interleukin 1 alpha [Syncerus caffer]",
@@ -310,10 +309,10 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	string output = CNcbiOstrstreamToString(output_stream);
     	vector<string> results;
     	NStr::Split(output, "\n", results);
-    	for(unsigned int i=0; i < 8; i++) {
+    	for(unsigned int i=0; i < 7; i++) {
             CNcbiOstrstream oss;
             oss << "Failed to find '" << ref[i] << "' in '" << output;
-            string msg = CNcbiOstrstreamToString(oss);
+            string msg = CNcbiOstrstreamToString(oss);            
     	    BOOST_REQUIRE_MESSAGE(results[i].find(ref[i]) != NPOS, msg);
     	}
     }
@@ -329,8 +328,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	}
 
     	string output = CNcbiOstrstreamToString(output_stream);
-        const string ref[8] = {
-            "PREDICTED: interleukin-1 alpha isoform X1 [Ovis aries]",
+        const string ref[7] = {            
 	    "interleukin-1 alpha precursor [Bos taurus]<>RecName: Full=Interleukin-1 alpha; Short=IL-1 alpha; Flags: Precursor<>pre-interleukin-1 alpha [Bos taurus]<>interleukin 1-alpha [Bos taurus]<>interleukin-1 alpha precursor [Bos taurus]<>TPA: interleukin-1 alpha precursor [Bos taurus]",
 	    "PREDICTED: interleukin-1 alpha [Bos mutus]<>Interleukin-1 alpha [Bos mutus]",
 	    "interleukin 1 alpha [Syncerus caffer]",
@@ -340,7 +338,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
             "interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis]"}; 
     	vector<string> results;
     	NStr::Split(output, "\n", results);
-    	for(unsigned int i=0; i < 8; i++) {
+    	for(unsigned int i=0; i < 7; i++) {
             CNcbiOstrstream oss;
             oss << "Failed to find '" << ref[i] << "' in '" << output;
             string msg = CNcbiOstrstreamToString(oss);
