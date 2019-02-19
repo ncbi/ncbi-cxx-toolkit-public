@@ -2070,7 +2070,6 @@ s_FindUnusedLines(
     TLengthListPtr pattern_list,
     TAlignRawFilePtr afrp)
 {
-    TIntLinkPtr    offset;
     TLengthListPtr llp;
     int            line_counter;
     int            block_line_counter;
@@ -2082,20 +2081,27 @@ s_FindUnusedLines(
         return false;
     }
 
-    offset = afrp->offset_list;
     llp = pattern_list;
     line_counter = 0;
     line_val = afrp->line_list;
 
-    while (llp != NULL  &&  line_val != NULL) {
-        while (llp  &&  line_val  &&  (!offset  ||  line_counter < offset->ival)) {
+    list<int> offsetList;
+    for (auto it = afrp->offset_list; it; it = it->next) {
+        offsetList.push_back(it->ival);
+    }
+    auto offsetIt = offsetList.begin();
+
+    while (llp  &&  line_val) {  //while lines available
+
+        // if past all sequence data then line definitely not used
+        if (offsetIt == offsetList.end()) {  
             if (llp->lengthrepeats) {
                 s_ReportUnusedLine (line_counter,
                                     line_counter + llp->num_appearances - 1,
                                     line_val,
                                     afrp->mpErrorListener);
                 line_val->data[0] = 0;
-                if (offset != afrp->offset_list) {
+                if (offsetIt != offsetList.begin()) {
                     rval = true;
                 }
             }
@@ -2104,7 +2110,29 @@ s_FindUnusedLines(
                 line_val = line_val->next;
             }
             llp = llp->next;
+            continue;
         }
+
+        // otherwise, it must be sequence data or already used (i.e. zeroed out)
+        if (line_counter < *offsetIt) {
+            if (llp->lengthrepeats) {
+                s_ReportUnusedLine (line_counter,
+                    line_counter + llp->num_appearances - 1,
+                    line_val,
+                    afrp->mpErrorListener);
+                line_val->data[0] = 0;
+                if (offsetIt != offsetList.begin()) {
+                    rval = true;
+                }
+            }
+            line_counter += llp->num_appearances;
+            for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
+                line_val = line_val->next;
+            }
+            llp = llp->next;
+            continue;
+        }
+
         block_line_counter = 0;
         while (block_line_counter < afrp->block_size  &&  llp) {
             block_line_counter += llp->num_appearances;
@@ -2116,9 +2144,7 @@ s_FindUnusedLines(
             }
             llp = llp->next;
         }
-        if (offset) {
-            offset = offset->next;
-        }
+        offsetIt++;
     }
     return rval;
 }
@@ -2721,7 +2747,6 @@ s_ProcessAlignRawFileByBlockOffsets(
     TAlignRawFilePtr afrp)
 {
     int           line_counter;
-    TIntLinkPtr   offset_ptr;
     TLineInfoPtr  lip;
     bool         first_block = true;
     bool         in_taxa_comment = false;
@@ -2731,21 +2756,25 @@ s_ProcessAlignRawFileByBlockOffsets(
     }
  
     line_counter = 0;
-    offset_ptr = afrp->offset_list;
+    list<int> offsets;
+    for (auto it = afrp->offset_list; it; it = it->next) {
+        offsets.push_back(it->ival);
+    }
+    auto offsetIt = offsets.begin();
     lip = afrp->line_list;
-    while (lip  &&  offset_ptr  &&  (in_taxa_comment  ||  !s_FoundStopLine (lip->data))) {
+    while (lip  &&  offsetIt != offsets.end()  &&  (in_taxa_comment  ||  !s_FoundStopLine (lip->data))) {
         if (in_taxa_comment) {
-            if (strncmp (lip->data, "end;", 4) == 0) {
+            if (NStr::StartsWith(lip->data, "end;")) {
                 in_taxa_comment = false;
             } 
-        } else if (lip->data  &&  strncmp (lip->data, "begin taxa;", 11) == 0) {
+        } else if (lip->data  &&  NStr::StartsWith(lip->data, "begin taxa;")) {
             in_taxa_comment = true;
         }
-        if (line_counter == offset_ptr->ival) {
+        if (line_counter == *offsetIt) {
             s_RemoveCommentsFromBlock (lip, afrp->block_size);
             s_ProcessBlockLines (afrp, lip, afrp->block_size, first_block);
             first_block = false;
-            offset_ptr = offset_ptr->next;
+            offsetIt++;
         }
         lip = lip->next;
         line_counter ++;
@@ -2765,7 +2794,6 @@ s_CreateSequencesBasedOnTokenPatterns(
 {
     TLineInfoPtr lip;
     int          line_counter;
-    TIntLinkPtr  offset_ptr, next_offset_ptr;
     char *       curr_id;
     TSizeInfoPtr sip;
     int          pattern_line_counter;
@@ -2779,12 +2807,18 @@ s_CreateSequencesBasedOnTokenPatterns(
         return;
     }
 
+    list<int> offsets;
+    for (auto it = offset_list; it; it = it->next) {
+        offsets.push_back(it->ival);
+    }
+    
+
     line_counter = 0;
     lip = token_list;
   
-    for (offset_ptr = offset_list; offset_ptr  &&  lip; offset_ptr = offset_ptr->next) {
-        next_offset_ptr = offset_ptr->next;
-        while (line_counter < offset_ptr->ival - 1  &&  lip) {
+    for (auto offsetIt = offsets.begin(); offsetIt != offsets.end()  &&  lip; offsetIt++) {
+        auto nextOffsetIt = std::next(offsetIt);
+        while (line_counter < *offsetIt - 1  &&  lip) {
             lip = lip->next;
             line_counter ++;
         }
@@ -2800,11 +2834,11 @@ s_CreateSequencesBasedOnTokenPatterns(
             line_counter ++;
             for (sip = anchorpattern->lengthrepeats;
                     sip  &&  lip  &&  
-                      (!next_offset_ptr  ||  line_counter < next_offset_ptr->ival - 1);
+                        (nextOffsetIt == offsets.end()  ||  line_counter < *nextOffsetIt - 1);
                     sip = sip->next) {
                 for (pattern_line_counter = 0;
                         pattern_line_counter < sip->num_appearances  &&  lip  &&  
-                          (!next_offset_ptr  ||  line_counter < next_offset_ptr->ival - 1);
+                            (nextOffsetIt == offsets.end()  ||  line_counter < *nextOffsetIt - 1);
                         pattern_line_counter ++) {
                     if (lip->data[0]  !=  ']'  &&  lip->data[0]  != '[') {
                         if (strlen (lip->data) != sip->size_value) {
@@ -2825,7 +2859,7 @@ s_CreateSequencesBasedOnTokenPatterns(
             if (sip  &&  lip ) {
                 s_ReportBlockLengthError (
                     curr_id, lip->line_num, afrp->block_size,
-                    line_counter - offset_ptr->ival, afrp->mpErrorListener);
+                    line_counter - *offsetIt, afrp->mpErrorListener);
             }
         }
     }
@@ -2927,7 +2961,6 @@ static void
 s_RemoveBasePairCountCommentsFromData (
     TAlignRawFilePtr afrp)
 {
-    TIntLinkPtr  this_offset, next_offset;
     TLineInfoPtr lip;
     int          line_count;
     char *       cp;
@@ -2935,13 +2968,19 @@ s_RemoveBasePairCountCommentsFromData (
     if (!afrp  ||  !afrp->offset_list) {
         return;
     }
-    this_offset = afrp->offset_list;
-    next_offset = this_offset->next;
+
+    list<int> offsets;
+    for (auto it = afrp->offset_list; it; it = it->next) {
+        offsets.push_back(it->ival);
+    }
+    auto thisOffset = offsets.begin();
+    auto nextOffset = std::next(thisOffset);
+
     lip = afrp->line_list;
     line_count = 0;
-    while (lip  &&  this_offset) {
-        if (line_count == this_offset->ival) {
-            while (lip  &&  (next_offset  ||  line_count < next_offset->ival - 1)) {
+    while (lip  &&  thisOffset != offsets.end()) {
+        if (line_count == *thisOffset) {
+            while (lip  &&  (nextOffset == offsets.end()  ||  line_count < *nextOffset - 1)) {
                 cp = lip->data;
                 if (cp) {
                     cp += strspn (cp, " \t\r\n1234567890");
@@ -2952,9 +2991,9 @@ s_RemoveBasePairCountCommentsFromData (
                 line_count ++;
                 lip = lip->next;
             }
-            this_offset = this_offset->next;
-            if (this_offset) {
-                next_offset = this_offset->next;
+            thisOffset++;
+            if (nextOffset != offsets.end()) {
+                nextOffset++;
             }
         } else {
             line_count ++;
@@ -3264,6 +3303,44 @@ s_ForecastPattern(
     return -1;
 }
 
+static int  
+s_ForecastPattern(
+    int          line_start,
+    int          pattern_length,
+    list<int>::const_iterator currentOffset,
+    list<int>::const_iterator endOffset,
+    int          sip_offset,
+    TSizeInfoPtr sizeList)
+{
+
+    if (!sizeList) {
+        return -1;
+    }
+
+    for (auto offset = sip_offset; offset < sizeList->num_appearances; offset++) {
+        auto line_counter = line_start + offset;
+        auto num_chars = sizeList->size_value * (sizeList->num_appearances - offset); 
+        auto sip = sizeList;
+        while (num_chars < pattern_length  &&
+            (currentOffset == endOffset  ||  line_counter < *currentOffset)  &&  sip->next) {
+            sip = sip->next;
+            for (auto end_offset = 0;
+                end_offset < sip->num_appearances
+                &&  num_chars < pattern_length
+                &&  (currentOffset == endOffset  ||  line_counter < *currentOffset);
+                end_offset++) {
+                num_chars += sip->size_value;
+                line_counter ++;
+            }
+        }
+        if (num_chars == pattern_length) {
+            return line_start + offset;
+        }
+    }
+    return -1;
+}
+
+
 
 /* This function examines the offset list and searches for holes where blocks
  * of sequence data without the exact expected formatting might exist.  The
@@ -3319,17 +3396,17 @@ s_AugmentOffsetList(
         } else if (skipped_previous) {
             line_skip = 0;
             while (
-                    sip  &&  
-                    line_skip < sip->num_appearances  &&  
-                    num_additional_offsets < max_additional_offsets  &&  
-                    (!next_offset  ||  line_counter < next_offset->ival)) {
+                sip  &&  
+                line_skip < sip->num_appearances  &&  
+                num_additional_offsets < max_additional_offsets  &&  
+                (!next_offset  ||  line_counter < next_offset->ival)) {
                 /* see if we can build a pattern that matches the pattern 
-                 * length we want
-                 */
+                * length we want
+                */
                 forecast_position = s_ForecastPattern (line_counter,
-                                                     pattern_length,
-                                                     next_offset, line_skip,
-                                                     sip);
+                    pattern_length,
+                    next_offset, line_skip,
+                    sip);
                 if (forecast_position > 0) {
                     new_offset = SIntLink::AppendNew(forecast_position, NULL);
                     num_additional_offsets++;
@@ -3342,13 +3419,13 @@ s_AugmentOffsetList(
                     }
                     prev_offset = new_offset;
                     /* now advance sip and line counter past the end 
-                     * of the pattern we have just created
-                     */
+                    * of the pattern we have just created
+                    */
                     num_chars = 0;
                     while (num_chars < pattern_length  &&  sip) {
                         for (line_skip = 0;
                             line_skip < sip->num_appearances  &&  
-                              num_chars < pattern_length;
+                            num_chars < pattern_length;
                             line_skip++) {
                             num_chars += sip->size_value;
                             line_counter ++;
@@ -3371,12 +3448,11 @@ s_AugmentOffsetList(
         }
     }
     if (num_additional_offsets >= max_additional_offsets) {
-      delete offset_list;
-      offset_list = nullptr;
+        delete offset_list;
+        offset_list = nullptr;
     }
     return offset_list;
 }
-
 
 /* This function finds the most frequently occurring distance between
  * two sequence data blocks and returns that value.
@@ -3571,58 +3647,58 @@ static void s_InsertNewOffsets(
 
     lip = token_list;
     prev_offset = nullptr;
-    for (new_offset = offset_list; new_offset  &&  lip; new_offset = new_offset->next) {
+    for (new_offset = offset_list; new_offset  &&  lip; 
+            prev_offset = new_offset, new_offset = new_offset->next) {
         if (!prev_offset) {
             /* just advance through tokens */
             for (line_diff = 0; lip  &&  line_diff < new_offset->ival; line_diff ++) {
                 lip = lip->next;
             }
-        } else {
-            if (new_offset->ival - prev_offset->ival == block_length) {
-                /* just advance through tokens */
-                for (line_diff = 0;
-                        lip  &&  line_diff < new_offset->ival - prev_offset->ival;
-                        line_diff++) {
-                    lip = lip->next;
-                }
-            } else {
-                /* look for intermediate breaks */
-                int num_chars = 0;
-                for (line_diff = 0;
-                        lip  &&  line_diff < new_offset->ival - prev_offset->ival
-                          &&  num_chars < best_num_chars;
-                        line_diff ++) {
-                    num_chars += (lip->data ? strlen(lip->data) : 0);
-                    lip = lip->next;
-                }
-                if (!lip) {
-                  return;
-                }
-                /* set new offset at first line of next pattern */
-                line_diff ++;
-                lip = lip->next;
-                if (line_diff < new_offset->ival - prev_offset->ival) {
-                    int line_start = line_diff + prev_offset->ival;
-                    /* advance token pointer to new piece */
-                    while (lip  &&  line_diff < new_offset->ival - prev_offset->ival) {
-                        lip = lip->next;
-                        line_diff ++;
-                    }
-                    /* insert new offset value */
-                    auto splice_offset = SIntLink::AppendNew(line_start, nullptr);
-                    if (!splice_offset) {
-                        return;
-                    }
-                    splice_offset->next = new_offset;
-                    prev_offset->next = splice_offset;
-
-                    s_CountCharactersBetweenOffsets (lip,
-                                       new_offset->ival - splice_offset->ival,
-                                       best_num_chars);
-                }
-            }
+            continue;
         }
-        prev_offset = new_offset;
+        if (new_offset->ival - prev_offset->ival == block_length) {
+            /* just advance through tokens */
+            for (line_diff = 0;
+                    lip  &&  line_diff < new_offset->ival - prev_offset->ival;
+                    line_diff++) {
+                lip = lip->next;
+            }
+            continue;
+        }
+        /* look for intermediate breaks */
+        int num_chars = 0;
+        for (line_diff = 0;
+                lip  &&  line_diff < new_offset->ival - prev_offset->ival
+                    &&  num_chars < best_num_chars;
+                line_diff ++) {
+            num_chars += (lip->data ? strlen(lip->data) : 0);
+            lip = lip->next;
+        }
+        if (!lip) {
+            return;
+        }
+        /* set new offset at first line of next pattern */
+        line_diff ++;
+        lip = lip->next;
+        if (line_diff < new_offset->ival - prev_offset->ival) {
+            int line_start = line_diff + prev_offset->ival;
+            /* advance token pointer to new piece */
+            while (lip  &&  line_diff < new_offset->ival - prev_offset->ival) {
+                lip = lip->next;
+                line_diff ++;
+            }
+            /* insert new offset value */
+            auto splice_offset = SIntLink::AppendNew(line_start, nullptr);
+            if (!splice_offset) {
+                return;
+            }
+            splice_offset->next = new_offset;
+            prev_offset->next = splice_offset;
+
+            s_CountCharactersBetweenOffsets (lip,
+                                new_offset->ival - splice_offset->ival,
+                                best_num_chars);
+        }
     }
     
     /* iterate through the last block */
