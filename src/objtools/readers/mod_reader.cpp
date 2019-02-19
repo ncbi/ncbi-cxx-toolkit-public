@@ -215,9 +215,23 @@ void CModHandler::AddMods(const TModList& mods,
         if (!allow_multiple_values &&
             !first_occurrence) {
             rejected_mods.push_back(mod);
-            string msg = mod.GetName() + " conflicts with previously encountered modifier.";
+
+            string msg;
+            EDiagSev sev;
+            if (NStr::EqualNocase(accepted_mods[canonical_name].front().GetValue(),
+                                  mod.GetValue())) {
+                msg = mod.GetName() + "=" 
+                    + mod.GetValue() + " duplicates previously encountered modifier.";
+                sev = eDiag_Warning;
+            }
+            else {
+                msg = mod.GetName() + "=" 
+                    + mod.GetValue() + " conflicts with previously encountered modifier.";
+                sev = eDiag_Error;
+            }
+
             if (m_fReportError) {
-                m_fReportError(msg, eDiag_Warning);
+                m_fReportError(msg, sev);
                 continue;
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
@@ -355,7 +369,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                                    fReportError,
                                    skipped_mods);
                 
-    CFeatModApply feat_mod_apply(bioseq);
+    CFeatModApply feat_mod_apply(bioseq, fReportError);
 
     for (const auto& mod_entry : mod_handler.GetMods()) {
         try {
@@ -384,6 +398,10 @@ void CModAdder::Apply(const CModHandler& mod_handler,
 
             // Report unrecognised modifier
             string msg = "Unrecognized modifier: " + x_GetModName(mod_entry) + ".";
+            if (fReportError) {
+                fReportError(msg, eDiag_Warning);
+                continue;
+            }
             NCBI_THROW(CModReaderException, eUnknownModifier, msg);
         }
         catch(const CModReaderException& e) {
@@ -391,10 +409,11 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     mod_entry.second.begin(),
                     mod_entry.second.end());
             if (fReportError) {
-                fReportError(e.GetMsg(), eDiag_Warning);
-                continue;
+                fReportError(e.GetMsg(), eDiag_Error);
+            } 
+            else { 
+                throw; // rethrow e
             }
-            throw; // rethrow e
         }
     }
 }

@@ -54,8 +54,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CFeatModApply::CFeatModApply(CBioseq& bioseq) : 
-    m_Bioseq(bioseq) {}
+CFeatModApply::CFeatModApply(CBioseq& bioseq, FReportError fReportError) : 
+    m_Bioseq(bioseq),
+    m_fReportError(fReportError) {}
 
 
 CFeatModApply::~CFeatModApply() {}
@@ -85,6 +86,12 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
         string msg = "Cannot apply " 
                    + name_string 
                    + " on nucleotide sequence.";
+
+        if (m_fReportError) {
+            m_fReportError(msg, eDiag_Error);
+            return true;
+        }
+
         NCBI_THROW(CModReaderException, eInvalidModifier, msg);
     }
 

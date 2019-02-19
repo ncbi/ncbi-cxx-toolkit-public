@@ -10,3 +10,5 @@ function     activity1
 activity     activity2
 Ec_Number    ec1
 EC-number    ec2
+topology     circular
+topology     cirCular

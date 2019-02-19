@@ -49,7 +49,10 @@ class CSeqFeatData;
 class CFeatModApply
 {
 public:
-    CFeatModApply(CBioseq& bioseq);
+
+    using FReportError = CModAdder::FReportError;
+
+    CFeatModApply(CBioseq& bioseq, FReportError fReportError);
     virtual ~CFeatModApply(void);
 
     using TModEntry = CModHandler::TMods::value_type;
@@ -74,6 +77,7 @@ private:
 
     CRef<CSeq_loc> x_GetWholeSeqLoc(void);
     CBioseq& m_Bioseq;
+    FReportError m_fReportError;
     CRef<CSeq_feat> m_pProtein;
 };
 

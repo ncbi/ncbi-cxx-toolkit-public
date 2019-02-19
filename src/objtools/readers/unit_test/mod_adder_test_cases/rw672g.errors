@@ -14,14 +14,17 @@ Problem:        gene_syn is deprecated - ignoring
 Problem:        gene-synonym is deprecated - ignoring
 
                 Warning:
+Problem:        topology=cirCular duplicates previously encountered modifier.
+
+                Error:
 Problem:        Cannot apply activity, function on nucleotide sequence.
 
-                Warning:
+                Error:
 Problem:        Cannot apply EC-number, Ec_Number on nucleotide sequence.
 
-                Warning:
+                Error:
 Problem:        Cannot apply protein on nucleotide sequence.
 
-                Warning:
+                Error:
 Problem:        Cannot apply protein-desc on nucleotide sequence.
 

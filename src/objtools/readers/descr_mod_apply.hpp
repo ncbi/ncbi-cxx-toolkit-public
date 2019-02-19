@@ -44,7 +44,7 @@ class CDescrModApply
 {
 public:
     using TSkippedMods = CModAdder::TSkippedMods;
-    using FReportError = function<void(const string& message, EDiagSev severity)>;
+    using FReportError = CModAdder::FReportError;
 
     CDescrModApply(CBioseq& bioseq, FReportError fReportError, TSkippedMods& skipped_mods);
     virtual ~CDescrModApply();
