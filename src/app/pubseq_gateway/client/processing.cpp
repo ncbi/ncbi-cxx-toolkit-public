@@ -29,11 +29,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <queue>
-#include <sstream>
-
 #include <serial/enumvalues.hpp>
 
+#include "performance.hpp"
 #include "processing.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -280,13 +278,15 @@ int CProcessing::OneRequest(shared_ptr<CPSG_Request> request)
             }
         }
 
-        for (auto it = reply_items.begin(); it != reply_items.end(); ++it) {
+        for (auto it = reply_items.begin(); it != reply_items.end();) {
             auto reply_item = *it;
             auto reply_item_status = reply_item->GetStatus(kTryTimeout);
 
             if (reply_item_status != EPSG_Status::eInProgress) {
                 it = reply_items.erase(it);
                 m_JsonOut << CJsonResponse(reply_item_status, reply_item);
+            } else {
+                ++it;
             }
         }
     }
@@ -337,10 +337,17 @@ void CRetriever::Run()
             m_Replies.emplace_back(move(reply));
         }
 
-        for (auto it = m_Replies.begin(); it != m_Replies.end(); ++it) {
+        for (auto it = m_Replies.begin(); it != m_Replies.end();) {
             auto reply = *it;
 
-            while (auto item = reply->GetNextItem(kZeroTimeout)) {
+            for (;;) {
+                auto item = reply->GetNextItem(kZeroTimeout);
+                
+                if (!item) {
+                    ++it;
+                    break;
+                }
+
                 if (item->GetType() != CPSG_ReplyItem::eEndOfReply) {
                     m_Items.emplace_back(move(item));
 
@@ -352,13 +359,15 @@ void CRetriever::Run()
             }
         }
 
-        for (auto it = m_Items.begin(); it != m_Items.end(); ++it) {
+        for (auto it = m_Items.begin(); it != m_Items.end();) {
             auto item = *it;
             auto status = item->GetStatus(kZeroTimeout);
 
             if (status != EPSG_Status::eInProgress) {
                 it = m_Items.erase(it);
                 m_Reporter.Add(item);
+            } else {
+                ++it;
             }
         }
     }
@@ -445,17 +454,150 @@ string s_GetId(const CJson_Document& req_doc)
     return id;
 }
 
+int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string& service)
+{
+    SPostProcessing post_processing(raw_metrics);
+
+    string request;
+    vector<shared_ptr<CPSG_Request>> requests;
+    cerr << "Preparing requests: ";
+
+    // Read requests from cin
+    while (ReadRequest(request)) {
+        CJson_Document json_doc;
+
+        if (!json_doc.ParseString(request)) {
+            cerr << "Error in request '" << s_GetId(json_doc) << "': " << json_doc.GetReadError() << endl;
+            return -1;
+        } else if (!RequestSchema().Validate(json_doc)) {
+            cerr << "Error in request '" << s_GetId(json_doc) << "': " << RequestSchema().GetValidationError() << endl;
+            return -1;
+        } else {
+            CJson_ConstObject json_obj(json_doc.GetObject());
+            auto method = json_obj["method"].GetValue().GetString();
+            auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
+            auto user_context = make_shared<SMetrics>();
+            auto request = CreateRequest(method, user_context, params.GetObject());
+            requests.emplace_back(move(request));
+            if (requests.size() % 2000 == 0) cerr << '.';
+        }
+    }
+
+    atomic_int start(user_threads);
+    atomic_int to_submit(requests.size());
+    auto wait = [&]() { while (start > 0) this_thread::sleep_for(chrono::nanoseconds(1)); };
+
+    auto l = [&]() {
+        shared_ptr<CPSG_Queue> queue;
+        
+        if (service.empty()) {
+            queue = shared_ptr<CPSG_Queue>(shared_ptr<CPSG_Queue>(), &m_Queue);
+        } else {
+            queue = make_shared<CPSG_Queue>(service);
+        }
+
+        start--;
+        wait();
+
+        for (;;) {
+            auto i = to_submit--;
+
+            if (i <= 0) break;
+
+            // Submit
+            {
+                auto& request = requests[requests.size() - i];
+                auto metrics = request->GetUserContext<SMetrics>();
+
+                metrics->Set(SMetricType::eStart);
+                _VERIFY(queue->SendRequest(request, CDeadline::eInfinite));
+                metrics->Set(SMetricType::eSubmit);
+            }
+
+            // Response
+            auto reply = queue->GetNextReply(CDeadline::eInfinite);
+            _ASSERT(reply);
+
+            auto request = reply->GetRequest();
+            auto metrics = request->GetUserContext<SMetrics>();
+
+            metrics->Set(SMetricType::eReply);
+            bool success = reply->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess;
+            metrics->Set(SMetricType::eDone);
+
+            while (success) {
+                auto reply_item = reply->GetNextItem(CDeadline::eInfinite);
+                _ASSERT(reply_item);
+
+                if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
+
+                metrics->NewItem();
+                success = reply_item->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess;
+            }
+
+            if (success) metrics->SetSuccess();
+        }
+    };
+
+    vector<thread> threads;
+    threads.reserve(user_threads);
+
+    // Start threads in advance so it won't affect metrics
+    for (size_t i = 0; i < user_threads; ++i) {
+        threads.emplace_back(l);
+    }
+
+    wait();
+
+    // Start processing replies
+    cerr << "\nSubmitting requests: ";
+    int previous = requests.size() / 2000;
+
+    while (to_submit > 0) {
+        int current = to_submit / 2000;
+
+        if (current < previous) {
+            cerr << '.';
+            previous = current;
+        }
+    }
+
+    cerr << "\nWaiting for threads: " << user_threads << '\n';
+
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    // Output metrics
+    cerr << "Outputting metrics: ";
+    size_t output = 0;
+
+    for (auto& request : requests) {
+        auto metrics = request->GetUserContext<SMetrics>();
+        cout << *metrics;
+        if (++output % 2000 == 0) cerr << '.';
+    }
+
+    cerr << '\n';
+    return 0;
+}
+
+bool CProcessing::ReadRequest(string& request)
+{
+    for (;;) {
+        if (!getline(cin, request)) {
+            return false;
+        } else if (!request.empty()) {
+            return true;
+        }
+    }
+}
+
 void CProcessing::ReadCommands(bool echo)
 {
     string request;
 
-    for (;;) {
-        if (!getline(cin, request)) {
-            return;
-        } else if (request.empty()) {
-            continue;
-        }
-
+    while (ReadRequest(request)) {
         CJson_Document json_doc;
 
         if (!json_doc.ParseString(request)) {
@@ -480,19 +622,23 @@ void CProcessing::ReadCommands(bool echo)
             }
 
             auto user_context = make_shared<SUserContext>(id, m_RequestsCounter);
-            shared_ptr<CPSG_Request> request;
-            CJson_ConstObject params_obj(params.GetObject());
-
-            if (method == "biodata") {
-                request = CreateRequest<CPSG_Request_Biodata>(move(user_context), params_obj);
-            } else if (method == "blob") {
-                request = CreateRequest<CPSG_Request_Blob>(move(user_context), params_obj);
-            } else if (method == "resolve") {
-                request = CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
-            }
-
+            auto request = CreateRequest(method, move(user_context), params.GetObject());
             m_Sender.Add(move(request));
         }
+    }
+}
+
+shared_ptr<CPSG_Request> CProcessing::CreateRequest(const string& method, shared_ptr<void> user_context,
+        const CJson_ConstObject& params_obj)
+{
+    if (method == "biodata") {
+        return CreateRequest<CPSG_Request_Biodata>(move(user_context), params_obj);
+    } else if (method == "blob") {
+        return CreateRequest<CPSG_Request_Blob>(move(user_context), params_obj);
+    } else if (method == "resolve") {
+        return CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
+    } else {
+        return {};
     }
 }
 

@@ -66,6 +66,7 @@ NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 NCBI_PARAM_DEF(string,   PSG, debug_printout,         "none");
+NCBI_PARAM_DEF(unsigned, PSG, requests_per_io,        1);
 
 NCBI_PARAM_ENUM_ARRAY(EPSG_UseCache, PSG, use_cache)
 {
@@ -75,29 +76,50 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_UseCache, PSG, use_cache)
 };
 NCBI_PARAM_ENUM_DEF(EPSG_UseCache, PSG, use_cache, EPSG_UseCache::eDefault);
 
+// Performance reporting for psg_client performance mode
+NCBI_PARAM_DEF(bool, PSG, internal_psg_client_performance_mode, false);
+
 struct SDebugPrintout
 {
-    SDebugPrintout() : m_Level(GetLevel()) {}
+    enum EType { eSend = 1000, eReceive, ePush, ePop };
+
+    SDebugPrintout() : m_Level(GetLevel()), m_Perf(TPSG_PerformanceMode::GetDefault()) {}
 
     explicit operator bool() { return m_Level != eNone; }
-    string Print(SPSG_Reply::SChunk& chunk) { return m_Level == eNone ? "" : PrintImpl(chunk); }
+    void Print(string id, const string& authority, const string& path);
+    void Print(string id, SPSG_Reply::SChunk& chunk);
+    void Print(string id, EType type);
 
     static SDebugPrintout& GetInstance() { static SDebugPrintout instance; return instance; }
 
 private:
     enum ELevel { eNone, eSome, eAll };
 
-    string PrintImpl(SPSG_Reply::SChunk& chunk);
-
+    static double GetSeconds() { return chrono::duration<double, milli>(chrono::steady_clock::now().time_since_epoch()).count(); }
     static ELevel GetLevel();
 
     const ELevel m_Level;
+    const bool m_Perf;
+    mutex m_Mutex;
 };
 
-string SDebugPrintout::PrintImpl(SPSG_Reply::SChunk& chunk)
+void SDebugPrintout::Print(string id, const string& authority, const string& path)
+{
+    if (m_Perf) {
+        ostringstream os;
+        os << fixed << id << '\t' << GetSeconds() << '\t' << eSend << '\t' << this_thread::get_id() << "\tHost '" << authority << "' to get request '" << path << '\'';
+        lock_guard<mutex> lock(m_Mutex);
+        cout << os.str() << endl;
+    } else {
+        ERR_POST(Warning << id << ": Host '" << authority << "' to get request '" << path << '\'');
+    }
+}
+
+void SDebugPrintout::Print(string id, SPSG_Reply::SChunk& chunk)
 {
     auto& args = chunk.args;
     ostringstream os;
+
     os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
 
     if ((m_Level == eAll) || (args.GetValue("item_type") != "blob") || (args.GetValue("chunk_type") != "data")) {
@@ -109,11 +131,31 @@ string SDebugPrintout::PrintImpl(SPSG_Reply::SChunk& chunk)
         os << "<BINARY DATA OF " << accumulate(chunk.data.begin(), chunk.data.end(), 0ul, l) << " BYTES>";
     }
 
-    return NStr::PrintableString(os.str());
+    if (m_Perf) {
+        auto data = NStr::PrintableString(os.str());
+        os.str(string());
+        os << fixed << id << '\t' << GetSeconds() << '\t' << eReceive << '\t' << this_thread::get_id() << '\t' << data;
+        lock_guard<mutex> lock(m_Mutex);
+        cout << os.str() << endl;
+    } else {
+        ERR_POST(Warning << id << ": " << NStr::PrintableString(os.str()));
+    }
+}
+
+void SDebugPrintout::Print(string id, EType type)
+{
+    if (m_Perf) {
+        ostringstream os;
+        os << fixed << id << '\t' << GetSeconds() << '\t' << type << '\t' << this_thread::get_id();
+        lock_guard<mutex> lock(m_Mutex);
+        cout << os.str() << endl;
+    }
 }
 
 SDebugPrintout::ELevel SDebugPrintout::GetLevel()
 {
+    if (TPSG_PerformanceMode::GetDefault()) return eSome;
+
     const auto& value = TPSG_DebugPrintout::GetDefault();
 
     for (auto all : { "all", "data" }) {
@@ -166,9 +208,9 @@ string SPSG_Error::LibUv(int errc, const char* details)
 
 void SPSG_Reply::SState::AddError(const string& message)
 {
-    switch (m_State) {
+    switch (m_State.load()) {
         case eInProgress:
-            m_State = eError;
+            SetState(eError);
             /* FALL THROUGH */
 
         case eError:
@@ -191,16 +233,17 @@ string SPSG_Reply::SState::GetError()
 
 void SPSG_Reply::SetState(SState::EState state)
 {
-    reply_item.GetLock()->state.SetState(state);
+    reply_item.GetUnsafe().state.SetState(state);
     auto items_locked = items.GetLock();
     auto& items = *items_locked;
 
     for (auto& item : items) {
-        item.GetLock()->state.SetState(state);
+        item.GetUnsafe().state.SetState(state);
     }
 }
 
-SPSG_Receiver::SPSG_Receiver(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
+SPSG_Receiver::SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
+    m_Id(id),
     m_Reply(reply),
     m_Queue(queue)
 {
@@ -277,7 +320,7 @@ void SPSG_Receiver::Add()
     assert(m_Queue);
 
     if (auto& printout = SDebugPrintout::GetInstance()) {
-        ERR_POST(Warning << printout.Print(m_Buffer.chunk));
+        printout.Print(m_Id, m_Buffer.chunk);
     }
 
     auto& chunk = m_Buffer.chunk;
@@ -364,6 +407,7 @@ void SPSG_Receiver::Add()
 
         } else if (chunk_type == "data") {
             item.chunks.push_back(move(chunk));
+            item.state.SetNotEmpty();
 
         } else {
             item.state.AddError("Protocol error: unknown chunk type");
@@ -388,12 +432,13 @@ namespace HCT {
 
 /** http2_request */
 
-http2_request::http2_request(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path) :
+http2_request::http2_request(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path) :
     m_session_data(nullptr),
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
     m_full_path(move(full_path)),
-    m_reply(move(reply), move(queue))
+    m_reply(id, move(reply), move(queue)),
+    m_id(id)
 {
 }
 
@@ -421,9 +466,9 @@ void http2_request::do_complete()
 
 /** http2_reply */
 
-http2_reply::http2_reply(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
+http2_reply::http2_reply(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
     m_Reply(reply),
-    m_Receiver(reply, queue),
+    m_Receiver(id, reply, queue),
     m_Queue(queue),
     m_session_data(nullptr)
 {
@@ -445,8 +490,7 @@ void http2_reply::on_status(int status)
 
     if (status == CRequestStatus::e200_Ok) return;
 
-    auto reply_item_locked = m_Reply->reply_item.GetLock();
-    auto& state = reply_item_locked->state;
+    auto& state = m_Reply->reply_item.GetUnsafe().state;
 
     if (status == CRequestStatus::e404_NotFound) {
         state.SetState(SPSG_Reply::SState::eNotFound);
@@ -1185,6 +1229,8 @@ void http2_session::process_requests()
                 if (!m_io->m_req_queue.pop_move(req)) {
                     ERR_POST(Trace << this << ": process_requests: no more req in queue");
                     break;
+                } else if (auto& printout = SDebugPrintout::GetInstance()) {
+                    printout.Print(req->m_id, SDebugPrintout::ePop);
                 }
 
                 req->on_queue(this);
@@ -1217,8 +1263,8 @@ void http2_session::process_requests()
                     MAKE_NV (":path",      path.c_str(), path.length())
                 };
 
-                if (SDebugPrintout::GetInstance()) {
-                    ERR_POST(Warning << "Host '" << authority << "' to get request '" << path << '\'');
+                if (auto& printout = SDebugPrintout::GetInstance()) {
+                    printout.Print(req->m_id, authority, path);
                 }
 
                 int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, sizeof(hdrs) / sizeof(hdrs[0]), NULL, req.get());
@@ -1346,7 +1392,7 @@ void io_thread::on_timer(uv_timer_t*)
         set<CNetServer::SAddress> discovered;
 
         // Gather all discovered addresses
-        for (auto it = m_Service.Iterate(CNetService::eSortByLoad); it; ++it) {
+        for (auto it = m_Service.Iterate(CNetService::eRoundRobin); it; ++it) {
             discovered.insert((*it).GetAddress());
         }
 
@@ -1386,9 +1432,19 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req)
         NCBI_THROW_FMT(CPSG_Exception, eInternalError, "IO thread is dead: " << static_cast<int>(m_state.load()));
     }
 
+    if (m_RequestsToAdd-- <= 0) {
+        m_RequestsToAdd = TPSG_RequestsPerIo::GetDefault();
+        return false;
+    }
+
+    auto req_id = req->m_id;
     auto rv = m_req_queue.push_move(req);
 
     if (rv) {
+        if (auto& printout = SDebugPrintout::GetInstance()) {
+            printout.Print(req_id, SDebugPrintout::ePush);
+        }
+
         wake();
     } else {
         uv_async_send(&m_wake);
@@ -1420,7 +1476,7 @@ void io_thread::execute(uv_sem_t* sem)
     auto usem = make_c_unique(sem, uv_sem_post);
 
     try {
-        for (auto it = m_Service.Iterate(CNetService::eSortByLoad); it; ++it) {
+        for (auto it = m_Service.Iterate(CNetService::eRoundRobin); it; ++it) {
             m_Sessions.emplace_back(this, (*it).GetAddress());
         }
     }
@@ -1461,7 +1517,7 @@ void io_thread::execute(uv_sem_t* sem)
 
 /** io_coordinator */
 
-io_coordinator::io_coordinator(const string& service_name) : m_cur_idx(0)
+io_coordinator::io_coordinator(const string& service_name) : m_cur_idx(0), m_request_id(1)
 {
     auto service = CNetService::Create("psg", service_name, kEmptyStr);
 
@@ -1491,13 +1547,15 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::millisec
     auto deadline = chrono::system_clock::now() + timeout;
     if (m_io.size() == 0)
         NCBI_THROW(CPSG_Exception, eInternalError, "IO is not open");
+
+    size_t first = m_cur_idx.load();
     while(true) {
-        size_t idx = m_cur_idx.load();
+        size_t idx = first;
         if (m_io[idx]->add_request_move(req)) return true;
 
         m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_io.size(),  memory_order_release, memory_order_relaxed);
 
-        if (m_cur_idx.load() == 0) {
+        if (m_cur_idx.load() == first) {
             auto wait_ms = deadline - chrono::system_clock::now();
             if (wait_ms <= chrono::milliseconds::zero()) {
                 return false;

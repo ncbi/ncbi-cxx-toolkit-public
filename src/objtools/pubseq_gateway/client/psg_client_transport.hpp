@@ -88,9 +88,16 @@ typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 NCBI_PARAM_DECL(string, PSG, debug_printout);
 typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
 
+NCBI_PARAM_DECL(unsigned, PSG, requests_per_io);
+typedef NCBI_PARAM_TYPE(PSG, requests_per_io) TPSG_RequestsPerIo;
+
 enum class EPSG_UseCache { eDefault, eNo, eYes };
 NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
 typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
+
+// Performance reporting for psg_client performance mode
+NCBI_PARAM_DECL(bool, PSG, internal_psg_client_performance_mode);
+typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_performance_mode) TPSG_PerformanceMode;
 
 struct SPSG_Future
 {
@@ -128,7 +135,7 @@ struct SPSG_ThreadSafe : SPSG_Future
 
         // A safe and elegant RAII alternative to explicit scopes or 'unlock' method.
         // It allows locks to be declared inside 'if' condition.
-        explicit operator bool() const { return true; }
+        using unique_lock<std::mutex>::operator bool;
 
     private:
         SLock(T* c, std::mutex& m) : unique_lock(m), m_Object(c) {}
@@ -143,6 +150,10 @@ struct SPSG_ThreadSafe : SPSG_Future
 
     SLock<      TType> GetLock()       { return { &m_Object, m_Mutex }; }
     SLock<const TType> GetLock() const { return { &m_Object, m_Mutex }; }
+
+    // E.g. to access atomic members
+          TType& GetUnsafe()       { return m_Object; }
+    const TType& GetUnsafe() const { return m_Object; }
 
 private:
     TType m_Object;
@@ -206,20 +217,25 @@ struct SPSG_Reply
             eError,
         };
 
+        SState() : m_State(eInProgress), m_Returned(false), m_Empty(true) {}
+
         EState GetState() const { return m_State; }
         string GetError();
 
         bool InProgress() const { return m_State == eInProgress; }
         bool Returned() const { return m_Returned; }
+        bool Empty() const { return m_Empty; }
 
-        void SetState(EState state) { if (m_State == eInProgress) m_State = state; }
+        void SetState(EState state) { auto expected = eInProgress; m_State.compare_exchange_strong(expected, state); }
 
         void AddError(const string& message);
-        void SetReturned() { assert(!m_Returned); m_Returned = true; }
+        bool SetReturned() { bool expected = false; return m_Returned.compare_exchange_strong(expected, true); }
+        void SetNotEmpty() { bool expected = true; m_Empty.compare_exchange_strong(expected, false); }
 
     private:
-        EState m_State = eInProgress;
-        bool m_Returned = false;
+        atomic<EState> m_State;
+        atomic_bool m_Returned;
+        atomic_bool m_Empty;
         queue<string> m_Messages;
     };
 
@@ -253,7 +269,7 @@ private:
 
 struct SPSG_Receiver
 {
-    SPSG_Receiver(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue);
+    SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue);
 
     void operator()(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
 
@@ -280,6 +296,7 @@ private:
         size_t data_to_read = 0;
     };
 
+    const string m_Id;
     SBuffer m_Buffer;
     shared_ptr<SPSG_Reply> m_Reply;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
@@ -303,17 +320,17 @@ private:
     mutable std::shared_ptr<SPSG_Future> m_Queue;
     std::atomic<http2_session*> m_session_data;
 public:
-    http2_reply(shared_ptr<SPSG_Reply> reply, std::shared_ptr<SPSG_Future> queue);
+    http2_reply(string id, shared_ptr<SPSG_Reply> reply, std::shared_ptr<SPSG_Future> queue);
 
     ~http2_reply()
     {
         assert(m_Reply);
-        assert(!m_session_data || !m_Reply->reply_item.GetLock()->state.InProgress());
+        assert(!m_session_data || !m_Reply->reply_item.GetUnsafe().state.InProgress());
     }
     void set_session(http2_session* session_data)
     {
         assert(m_Reply);
-        assert(m_Reply->reply_item.GetLock()->state.InProgress());
+        assert(m_Reply->reply_item.GetUnsafe().state.InProgress());
 
         http2_session* previous_session_data = m_session_data;
         assert((previous_session_data == nullptr) != (session_data == nullptr));
@@ -323,13 +340,13 @@ public:
     bool get_canceled() const
     {
         assert(m_Reply);
-        return m_Reply->reply_item.GetLock()->state.GetState() == SPSG_Reply::SState::eCanceled;
+        return m_Reply->reply_item.GetUnsafe().state.GetState() == SPSG_Reply::SState::eCanceled;
     }
     void append_data(const char* data, size_t len)
     {
         assert(m_Reply);
 
-        if (m_Reply->reply_item.GetLock()->state.GetState() != SPSG_Reply::SState::eInProgress) return;
+        if (m_Reply->reply_item.GetUnsafe().state.GetState() != SPSG_Reply::SState::eInProgress) return;
 
         m_Receiver(data, len);
     }
@@ -338,7 +355,7 @@ public:
     void error(const std::string& err)
     {
         assert(m_Reply);
-        m_Reply->reply_item.GetLock()->state.AddError(err);
+        m_Reply->reply_item.GetUnsafe().state.AddError(err);
     }
 };
 
@@ -362,7 +379,9 @@ private:
     void do_complete();
     http2_reply m_reply;
 public:
-    http2_request(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path);
+    const string m_id;
+
+    http2_request(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path);
 
     ~http2_request()
     {
@@ -579,6 +598,7 @@ private:
     uv_async_t m_wake;
     uv_timer_t m_timer;
     CNetService m_Service;
+    atomic_int m_RequestsToAdd;
     std::thread m_thrd;
 
     static void s_on_wake(uv_async_t* handle)
@@ -610,6 +630,7 @@ public:
         m_wake({0}),
         m_timer({0}),
         m_Service(service),
+        m_RequestsToAdd(TPSG_RequestsPerIo::GetDefault()),
         m_thrd(s_execute, this, &sem)
     {}
     ~io_thread();
@@ -634,10 +655,12 @@ class io_coordinator
 private:
     std::vector<std::unique_ptr<io_thread>> m_io;
     std::atomic<std::size_t> m_cur_idx;
+    std::atomic<std::size_t> m_request_id;
 public:
     io_coordinator(const string& service_name);
     void create_io(CNetService service);
     bool add_request(std::shared_ptr<http2_request> req, chrono::milliseconds timeout);
+    string get_new_request_id() { return to_string(m_request_id++); }
 };
 
 };

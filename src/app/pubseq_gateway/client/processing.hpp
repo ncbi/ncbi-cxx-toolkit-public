@@ -214,6 +214,7 @@ public:
 
     int OneRequest(shared_ptr<CPSG_Request> request);
     int Interactive(bool echo);
+    int Performance(size_t user_threads, bool raw_metrics, const string& service);
 
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
@@ -223,9 +224,14 @@ public:
 
 private:
     void ReadCommands(bool echo);
+    void PerformanceReply();
 
+    static bool ReadRequest(string& request);
     static CJson_Schema& RequestSchema();
     static CPSG_BioId::TType GetBioIdType(string type);
+
+    static shared_ptr<CPSG_Request> CreateRequest(const string& method, shared_ptr<void> user_context,
+            const CJson_ConstObject& params_obj);
 
     template <class TRequest>
     static shared_ptr<TRequest> CreateRequestImpl(shared_ptr<void> user_context, const CArgs& input);
