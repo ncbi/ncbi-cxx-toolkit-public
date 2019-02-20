@@ -3855,7 +3855,6 @@ MANCH	s	University of Manchester
 MAND	s	Agricultural College and Research Institute			
 MANK	s	Minnesota State University-Mankato, Department of Biological Sciences			
 MAO	c	Mircen Afrique Ouest			
-MAPA	s	Museu Anchieta Porto Alegra			
 MAPR	s	University of Puerto Rico, Mayagueez Campus, Biology Department			
 MAR	c	Grasslands Rhizobium Collection			
 MAR<BRA>	s	Universidade Federal do Maranhao			
@@ -4045,7 +4044,7 @@ MG<BRA>	s	Museu Paraense Emilio Goeldi, Departamento de Botanica
 MG<CHN>	s	Museum of Zoology			
 MGA	s	Instituto Pedagogico de Varones			
 MGAB	s	Muzeul de Istorie Naturala "Grigore Antipa"			
-MGAP	s	Museu Anchieta			
+MGAP	s	Museu Anchieta	MAPA		
 MGB	s	Museo de Geologia (del Seminario Diocesano) de Barcelona			
 MGC	s	Universidad de Malaga, Departamento de Biologia Vegetal			
 MGDL	s	Museum d'Histoire Naturalle du Grand-Duchy de Luxembourg			
