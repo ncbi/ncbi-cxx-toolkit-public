@@ -383,4 +383,43 @@ BOOST_AUTO_TEST_CASE(TestMaskedSequenceData)
     }
 }
 
+
+
+BOOST_AUTO_TEST_CASE(TestPDBIds)
+{
+    CTmpFile tmpfile;
+    const string& tmp_fname = tmpfile.GetFileName();
+    CSeqDB db("data/test_pdb_v5", CSeqDB::eProtein);
+    const string format_spec("%i %T");
+    ofstream out(tmp_fname.c_str());
+    CBlastDB_SeqFormatter f(format_spec, db, out);
+    CBlastDB_FormatterConfig config;
+    CNcbiIfstream in_ids("data/pdb_ids.test");
+    string line(kEmptyStr);
+    while (getline(in_ids, line)) {
+    	vector<blastdb::TOid> oids;
+    	vector<string> d;
+    	NStr::Split(line, " ", d);
+    	db.AccessionToOids(d[1], oids);
+    	BOOST_REQUIRE_EQUAL(oids.size(), 1);
+    	BOOST_REQUIRE_EQUAL(oids[0], NStr::StringToInt(d[0]));
+    	f.Write(oids[0], config, d[1]);
+    }
+    out.close();
+
+    CNcbiIfstream in(tmp_fname.c_str());
+    while (getline(in, line)) {
+    	vector<string> t;
+    	NStr::Split(line, " ", t);
+    	BOOST_REQUIRE_EQUAL(t[0].find("pdb|"),0);
+    }
+
+   	vector<blastdb::TOid> oids;
+   	db.AccessionToOids("2V64", oids);
+   	BOOST_REQUIRE_EQUAL(oids.size(), 2);
+   	BOOST_REQUIRE_EQUAL(oids[0], 8);
+   	BOOST_REQUIRE_EQUAL(oids[1], 10);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
