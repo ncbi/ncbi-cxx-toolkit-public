@@ -38,6 +38,7 @@
 #include "blob_task/insert.hpp"
 #include "blob_task/delete.hpp"
 #include "nannot_task/insert.hpp"
+#include "nannot_task/delete.hpp"
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
@@ -200,7 +201,7 @@ void CCassBlobOp::InsertBlobExtended(unsigned int op_timeout_ms,
 
 void CCassBlobOp::InsertNAnnot(
     unsigned int op_timeout_ms,
-    int32_t key, unsigned int max_retries,
+    int32_t, unsigned int max_retries,
     CBlobRecord * blob, CNAnnotRecord * annot,
     TDataErrorCallback error_cb,
     unique_ptr<CCassBlobWaiter> & waiter
@@ -209,6 +210,21 @@ void CCassBlobOp::InsertNAnnot(
     waiter.reset(new CCassNAnnotTaskInsert(
         op_timeout_ms, m_Conn, m_Keyspace,
         blob, annot, max_retries,
+        move(error_cb)
+    ));
+}
+
+void CCassBlobOp::DeleteNAnnot(
+    unsigned int op_timeout_ms,
+    unsigned int max_retries,
+    CNAnnotRecord * annot,
+    TDataErrorCallback error_cb,
+    unique_ptr<CCassBlobWaiter> & waiter
+)
+{
+    waiter.reset(new CCassNAnnotTaskDelete(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        annot, max_retries,
         move(error_cb)
     ));
 }

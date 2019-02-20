@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__NANNOT_TASK__INSERT_HPP
-#define OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__NANNOT_TASK__INSERT_HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__NANNOT_TASK__DELETE_HPP
+#define OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__NANNOT_TASK__DELETE_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -30,7 +30,7 @@
  *
  * File Description:
  *
- * Cassandra insert named annotation task.
+ * Cassandra delete named annotation task.
  *
  */
 
@@ -43,29 +43,28 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-#include "../blob_task/insert_extended.hpp"
+#include "../blob_task/delete.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-class CCassNAnnotTaskInsert
+class CCassNAnnotTaskDelete
     : public CCassBlobWaiter
 {
-    enum EBlobInserterState {
+    enum ENAnnotDeleterState {
         eInit = 0,
-        eWaitingBlobInserted,
-        eInsertNAnnotInfo,
-        eWaitingNAnnotInfoInserted,
+        eWaitingBioseqNADeleted,
+        eDeleteBlobRecord,
+        eWaitingDeleteBlobRecord,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
 
  public:
-    CCassNAnnotTaskInsert(
+    CCassNAnnotTaskDelete(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
-        CBlobRecord * blob,
         CNAnnotRecord * annot,
         unsigned int max_retries,
         TDataErrorCallback data_error_cb
@@ -75,11 +74,10 @@ class CCassNAnnotTaskInsert
     virtual void Wait1(void) override;
 
  private:
-    CBlobRecord * m_Blob;
     CNAnnotRecord * m_Annot;
-    unique_ptr<CCassBlobTaskInsertExtended> m_BlobInsertTask;
+    unique_ptr<CCassBlobTaskDelete> m_BlobDeleteTask;
 };
 
 END_IDBLOB_SCOPE
 
-#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__NANNOT_TASK__INSERT_HPP
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__NANNOT_TASK__DELETE_HPP

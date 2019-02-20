@@ -451,6 +451,11 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
                      CBlobRecord * blob, CNAnnotRecord * annot,
                      TDataErrorCallback error_cb,
                      unique_ptr<CCassBlobWaiter> & waiter);
+    void DeleteNAnnot(unsigned int op_timeout_ms,
+                     unsigned int max_retries,
+                     CNAnnotRecord * annot,
+                     TDataErrorCallback error_cb,
+                     unique_ptr<CCassBlobWaiter> & waiter);
     void FetchNAnnot(unsigned int op_timeout_ms,
         unsigned int max_retries,
         const string & accession,

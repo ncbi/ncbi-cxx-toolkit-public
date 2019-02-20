@@ -27,19 +27,17 @@
  *
  * File Description:
  *
- * Cassandra insert named annotation task.
+ * Cassandra detele named annotation task.
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include "insert.hpp"
+#include "delete.hpp"
 
 #include <memory>
 #include <string>
-#include <tuple>
 #include <utility>
-#include <vector>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -48,24 +46,22 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-CCassNAnnotTaskInsert::CCassNAnnotTaskInsert(
+CCassNAnnotTaskDelete::CCassNAnnotTaskDelete(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
-        CBlobRecord * blob,
         CNAnnotRecord * annot,
         unsigned int max_retries,
         TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, blob->GetKey(), true,
+        op_timeout_ms, conn, keyspace, annot->GetSatKey(), true,
         max_retries, move(data_error_cb)
       )
-    , m_Blob(blob)
     , m_Annot(annot)
 {}
 
-void CCassNAnnotTaskInsert::Wait1()
+void CCassNAnnotTaskDelete::Wait1()
 {
     bool b_need_repeat;
     do {
@@ -76,65 +72,64 @@ void CCassNAnnotTaskInsert::Wait1()
                 return;
 
             case eInit: {
-                m_BlobInsertTask = unique_ptr<CCassBlobTaskInsertExtended>(
-                     new CCassBlobTaskInsertExtended(
-                         m_OpTimeoutMs, m_Conn, m_Keyspace,
-                         m_Blob, true, m_MaxRetries,
-                         [this]
-                         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
-                         {this->m_ErrorCb(status, code, severity, message);}
-                     )
-                );
-                m_State = eWaitingBlobInserted;
-                break;
-            }
-
-            case eWaitingBlobInserted: {
-                if (m_BlobInsertTask->Wait()) {
-                    if (m_BlobInsertTask->HasError()) {
-                        m_State = eError;
-                        m_LastError = m_BlobInsertTask->LastError();
-                    } else {
-                        m_State = eInsertNAnnotInfo;
-                        b_need_repeat = true;
-                    }
-                    m_BlobInsertTask.reset();
-                }
-                break;
-            }
-
-            case eInsertNAnnotInfo: {
                 m_QueryArr.resize(1);
                 m_QueryArr[0] = { m_Conn->NewQuery(), 0};
-                auto qry = m_QueryArr[0].query;
-                string sql = "INSERT INTO " + GetKeySpace() + ".bioseq_na "
-                      "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop, annot_info)"
-                      "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                qry->SetSQL(sql, 9);
-                qry->BindStr(0, m_Annot->GetAccession());
-                qry->BindInt16(1, m_Annot->GetVersion());
-                qry->BindInt16(2, m_Annot->GetSeqIdType());
-                qry->BindStr(3, m_Annot->GetAnnotName());
-                qry->BindInt32(4, m_Annot->GetSatKey());
-                qry->BindInt64(5, m_Annot->GetModified());
-                qry->BindInt32(6, m_Annot->GetStart());
-                qry->BindInt32(7, m_Annot->GetStop());
-                qry->BindStr(8, m_Annot->GetAnnotInfo());
+                auto query = m_QueryArr[0].query;
+                string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
+                    "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
+                    "IF sat_key = ? AND modified = ?";
+                query->SetSQL(sql, 6);
+                query->SetSerialConsistency(CASS_CONSISTENCY_LOCAL_SERIAL);
+                query->BindStr(0, m_Annot->GetAccession());
+                query->BindInt16(1, m_Annot->GetVersion());
+                query->BindInt16(2, m_Annot->GetSeqIdType());
+                query->BindStr(3, m_Annot->GetAnnotName());
+                query->BindInt32(4, m_Annot->GetSatKey());
+                query->BindInt64(5, m_Annot->GetModified());
 
                 UpdateLastActivity();
-                qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
-                m_State = eWaitingNAnnotInfoInserted;
+                query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, false);
+                m_State = eWaitingBioseqNADeleted;
                 break;
             }
 
-            case eWaitingNAnnotInfoInserted: {
+            case eWaitingBioseqNADeleted: {
+                auto query = m_QueryArr[0].query;
                 if (!CheckReady(m_QueryArr[0])) {
                     break;
                 }
-                CloseAll();
-                m_State = eDone;
+                query->NextRow();
+                bool applied = query->FieldGetBoolValue(0);
+                m_State = applied ? eDeleteBlobRecord : eDone;
+                b_need_repeat = true;
                 break;
             }
+
+            case eDeleteBlobRecord: {
+                m_BlobDeleteTask = unique_ptr<CCassBlobTaskDelete>(
+                    new CCassBlobTaskDelete(
+                         m_OpTimeoutMs, m_Conn, m_Keyspace,
+                         true, m_Annot->GetSatKey(), true,  m_MaxRetries,
+                         [this]
+                         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+                         {this->m_ErrorCb(status, code, severity, message);}
+                    )
+                );
+                break;
+            }
+
+            case eWaitingDeleteBlobRecord:
+                if (m_BlobDeleteTask->Wait()) {
+                    if (m_BlobDeleteTask->HasError()) {
+                        m_State = eError;
+                        m_LastError = m_BlobDeleteTask->LastError();
+                    } else {
+                        CloseAll();
+                        m_State = eDone;
+                    }
+                    m_BlobDeleteTask.reset();
+                }
+                break;
 
             default: {
                 char msg[1024];
