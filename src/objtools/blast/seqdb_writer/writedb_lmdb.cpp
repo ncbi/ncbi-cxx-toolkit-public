@@ -137,6 +137,8 @@ void CWriteDB_LMDB::x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOi
     	kv_pdb_mol.id = seqid->GetPdb().GetMol().Get();
     	kv_pdb_mol.oid = oid;
     	m_list.push_back(kv_pdb_mol);
+    	// mol code should be case insensitive but c++ tooklit
+    	// is not converting it all to uppercase now
     	string id_upper = kv_pdb_mol.id;
     	NStr::ToUpper(id_upper);
     	if(kv_pdb_mol.id != id_upper) {
@@ -145,6 +147,12 @@ void CWriteDB_LMDB::x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOi
        		kv_u.oid = oid;
        		m_list.push_back(kv_u);
        	}
+    	SKeyValuePair kv;
+    	kv.id = seqid->GetSeqIdString(true);
+    	kv.oid = oid;
+    	kv.saveToOidList = true;
+    	m_list.push_back(kv);
+    	return;
     }
 
     if(seqid->GetTextseq_Id() != NULL) {

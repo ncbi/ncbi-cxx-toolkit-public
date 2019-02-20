@@ -632,6 +632,13 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     // "102l| "
     // "pdb|102l| "
 
+    if(pdb.CanGetChain_id() && pdb.IsSetChain_id()){
+    	string chain_id= pdb.GetChain_id();
+    	if(chain_id.size() > 1){
+    		NCBI_THROW(CWriteDBException, eArgErr,
+    				   "Multi-letters chain PDB id is not supported in v4 BLAST DB");
+    	}
+    }
     CTempString mol;
     if (pdb.CanGetMol()) {
         mol = pdb.GetMol().Get();

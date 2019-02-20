@@ -1607,74 +1607,7 @@ void CWriteDB_Impl::x_ComputeHash(const CBioseq & sequence)
 
 #define TAB_REPLACEMENT "   "
 
-static bool s_IsValidPdb(const string& s)
-{
-    size_t len = s.size();
-    // If bare ID, only valid lengths are 4 (no chain ID),
-    // 6 (chain ID is in [A-Z0-9]), or 7 (chain ID is double [A-Z]).
-    // Char before chain ID is '_'.
-    // If long ID, it's prefixed with 'pdb|' and chain ID is preceded by '|'.
-    bool long_seqid = false;
-    if (len == 4  ||  len == 6  ||  len == 7) {
-        if (s.find('|') != NPOS) {
-            return false;
-        }
-    } else if (len == 8  ||  len == 10  ||  len == 11) {
-        string lc("pdb|");
-        string uc("PDB|");
-        if (s.compare(0, lc.size(), lc) != 0
-            &&  s.compare(0, uc.size(), uc) != 0) {
-            return false;
-        }
-        long_seqid = true;
-    } else {
-        return false;
-    }
-    char sep = long_seqid ? '|' : '_';
-    auto it = s.begin();
-    if (long_seqid) {
-        it += 4;    // skip "pdb|"
-    }
-    // Is first character a digit, excluding '0'?
-    if (!isdigit(*it)  ||  *it == '0') {
-        return false;
-    }
-    ++it;
-    // Is each of the next 3 characters either upper-case alpha or digit?
-    for (int i = 0; i < 3; ++i) {
-        if (!isupper(*it)  &&  !isdigit(*it)) {
-            return false;
-        }
-        ++it;
-    }
-    // We're done if length was 4 characters.
-    // Otherwise...
-    if (len > 4) {
-        // Is next character the correct separator?
-        if (*it != sep) {
-            return false;
-        }
-        ++it;
-        if (len == 6) {
-            // Is single-character chain ID either upper-case alpha or digit?
-            if (!isupper(*it)  &&  !isdigit(*it)) {
-                return false;
-            }
-        } else /* len == 7 */ {
-            // Is first character of 2-character chain ID upper-case alpha?
-            if (!isupper(*it)) {
-                return false;
-            }
-            // If so, is second character the same?
-            // (Double upper-case alpha represents a single lower-case alpha.)
-            auto c = *it++;
-            if (c != *it) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
+
 
 void CWriteDB_Impl::
 x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
@@ -1809,28 +1742,25 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
 
             // Parse ids.  They may or may not be bar-separated.
             list< CRef<CSeq_id> > seqids;
-            if ((ids.find('|') == NPOS  &&  long_seqids)
-                    ||  (!isalpha(ids[0])  &&  !s_IsValidPdb(ids))) {
-                seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
-            } else {
-                CSeq_id::ParseFastaIds(seqids, ids);
-
-                if (!long_seqids) {
-                    // If accession's molecule type is different than
-                    // expected, change sequence id to local. CFastaReader
-                    // cannot distingush between bare pir protein ids genbank
-                    // nucleotide ids.
-                    for (auto& it: seqids) {
-                        CSeq_id::EAccessionInfo info = it->IdentifyAccession();
-                        if (!it->IsLocal() && !it->IsGi() &&
-                                (info & (CSeq_id::fAcc_prot | CSeq_id::fAcc_nuc)) &&
-                                bioseq.IsAa() == !!(info & CSeq_id::fAcc_nuc)) {
-
-                            string label = it->GetSeqIdString(true);
-                            it.Reset(new CSeq_id(CSeq_id::e_Local, label));
-                        }
-                    }
+            if (ids.find('|') != NPOS){
+            	CSeq_id::ParseFastaIds(seqids, ids);
+            }
+            else {
+            	CRef<CSeq_id> id(new CSeq_id(ids, CSeq_id::fParse_RawText | CSeq_id::fParse_ValidLocal));
+            	if ((id->Which() == CSeq_id::e_Prf) ||
+            	    (id->Which() == CSeq_id::e_Pir)){
+            		string label = id->GetSeqIdString(true);
+                    id.Reset(new CSeq_id(CSeq_id::e_Local, label));
                 }
+
+            	CSeq_id::EAccessionInfo info = id->IdentifyAccession();
+            	if ((info & (CSeq_id::fAcc_prot | CSeq_id::fAcc_nuc)) &&
+            	    (bioseq.IsAa() == !!(info & CSeq_id::fAcc_nuc))) {
+            	     string label = id->GetSeqIdString(true);
+            	     id.Reset(new CSeq_id(CSeq_id::e_Local, label));
+            	}
+
+            	seqids.push_back(id);
             }
 
             // Build the actual defline.
