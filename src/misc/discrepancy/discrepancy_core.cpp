@@ -284,7 +284,7 @@ CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string
     string s = msg;
     NStr::ReplaceInPlace(s, "[(]", "");
     NStr::ReplaceInPlace(s, "[)]", "");
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, s, msg, msg, kEmptyCStr, 0));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, msg, s, s, kEmptyCStr, 0));
     item->m_Autofix = autofix;
     return CRef<CReportItem>((CReportItem*)item);
 }
