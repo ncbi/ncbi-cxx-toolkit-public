@@ -145,7 +145,14 @@ string s_PreProcessAccessionsForDBv5(const string & id)
 			if(seqid->IsPir() || seqid->IsPrf()) {
 				return seqid->AsFastaString();
 			}
-			rv = seqid->GetSeqIdString(true);
+			else if (seqid->IsPdb()) {
+				string tmp = seqid->GetSeqIdString();
+				rv = tmp.substr(0,4);
+				NStr::ToUpper(rv);
+				rv += tmp.substr(4);
+				return (rv);
+			}
+			return seqid->GetSeqIdString(true);
 		}
 	}
 
