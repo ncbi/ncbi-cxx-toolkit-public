@@ -3133,7 +3133,7 @@ BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
 }
 
 
-BOOST_AUTO_TEST_CASE(ReadLongIDProtein)
+BOOST_AUTO_TEST_CASE(ReadMixIDsProtein)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
@@ -3141,19 +3141,19 @@ BOOST_AUTO_TEST_CASE(ReadLongIDProtein)
     string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
-        {"XP_642131.1", CSeq_id::e_Local},
+        {"XP_642131.1", CSeq_id::e_Other},
         {"ref|XP_642837.1", CSeq_id::e_Other},
-        {"BAA06266.1", CSeq_id::e_Local},
+        {"BAA06266.1", CSeq_id::e_Ddbj},
         {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
         {"320460102", CSeq_id::e_Local},
         {"gi|716054866", CSeq_id::e_Gi},
-        {"Q02VU1.1", CSeq_id::e_Local},
+        {"Q02VU1.1", CSeq_id::e_Swissprot},
         {"sp|Q6GIX1.1|CADA_STAAR", CSeq_id::e_Swissprot},
-        {"EQR80552.1", CSeq_id::e_Local},
+        {"EQR80552.1", CSeq_id::e_Genbank},
         {"gb|EQS08124.1", CSeq_id::e_Genbank},
         {"Somestring", CSeq_id::e_Local},
         {"lcl|anotherstring", CSeq_id::e_Local},
-        {"12AS_A", CSeq_id::e_Local},
+        {"12AS_A", CSeq_id::e_Pdb},
         {"pdb|1I4D|D", CSeq_id::e_Pdb},
         {"2209341B", CSeq_id::e_Local},
         {"prf||2209335A", CSeq_id::e_Prf},
@@ -3202,7 +3202,7 @@ BOOST_AUTO_TEST_CASE(ReadLongIDProtein)
 }
 
 
-BOOST_AUTO_TEST_CASE(ReadMultipleLongIDs)
+BOOST_AUTO_TEST_CASE(ReadMultipleMixLongIDs)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
@@ -3210,9 +3210,9 @@ BOOST_AUTO_TEST_CASE(ReadMultipleLongIDs)
     string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
-        {"XP_642131.1", CSeq_id::e_Local},
+        {"XP_642131.1", CSeq_id::e_Other},
         {"ref|XP_642837.1", CSeq_id::e_Other},
-        {"BAA06266.1", CSeq_id::e_Local},
+        {"BAA06266.1", CSeq_id::e_Ddbj},
         {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
         {"320460102", CSeq_id::e_Local},
         {"gi|716054866", CSeq_id::e_Gi}};
@@ -3264,7 +3264,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleLongIDs)
 }
 
 
-BOOST_AUTO_TEST_CASE(ReadLongIDNucleotide)
+BOOST_AUTO_TEST_CASE(ReadMixIDNucleotide)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
@@ -3272,11 +3272,11 @@ BOOST_AUTO_TEST_CASE(ReadLongIDNucleotide)
     string sequence = "AACTAGTATTAGAGGCACTGCCTGCCCAGTGACAATCGTTAAACGGCCG";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
-        {"U13103.1", CSeq_id::e_Local},
+        {"U13103.1", CSeq_id::e_Genbank},
         {"gb|U13080.1", CSeq_id::e_Genbank},
-        {"Z18633.1", CSeq_id::e_Local},
+        {"Z18633.1", CSeq_id::e_Embl},
         {"emb|Z18632.1", CSeq_id::e_Embl},
-        {"NM_176670.2", CSeq_id::e_Local},
+        {"NM_176670.2", CSeq_id::e_Other},
         {"ref|NM_175822.2", CSeq_id::e_Other}};
 
     for (auto it: fasta_ids) {
@@ -3389,6 +3389,175 @@ BOOST_AUTO_TEST_CASE(CreateV5Seqidlist)
 		BOOST_REQUIRE_EQUAL(read_idlist[11].si, "u00001.1");
 	}
 }
+
+BOOST_AUTO_TEST_CASE(ReadMultiSeqIdsDefline)
+{
+	static const int num_ids = 7;
+    pair <string, CSeq_id::E_Choice> fasta_ids[num_ids] = {
+        make_pair("497371450", CSeq_id::e_Gi),
+        make_pair("WP_009685663.1", CSeq_id::e_Other),
+        make_pair("955937162", CSeq_id::e_Gi),
+        make_pair("KSD99966.1", CSeq_id::e_Genbank),
+        make_pair("956677830", CSeq_id::e_Gi),
+        make_pair("KSL27839.1", CSeq_id::e_Genbank),
+        make_pair("6ES9_A", CSeq_id::e_Pdb)};
+
+    CNcbiIfstream istr("data/WP_009685663.fasta");
+    string dbname = "data/multiseqids";
+    string title = "Temporary unit test db";
+    ostringstream log;
+    CBuildDatabase db(dbname, title, true, false, true, false, &log, true);
+
+    db.StartBuild();
+    db.AddFasta(istr);
+    db.EndBuild();
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+    CFileDeleteAtExit::Add(dbname + ".pni");
+    CFileDeleteAtExit::Add(dbname + ".pnd");
+
+    CSeqDB seqdb(dbname, CSeqDB::eProtein);
+
+    list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(0);
+    BOOST_REQUIRE_EQUAL(ids.size(), num_ids);
+
+    auto seqdb_id = ids.begin();
+    for (auto it: fasta_ids) {
+        BOOST_REQUIRE_EQUAL((*seqdb_id)->Which(),it.second);
+        BOOST_REQUIRE_EQUAL((*seqdb_id)->GetSeqIdString(true),it.first);
+        ++seqdb_id;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ReadPDBFasta)
+{
+    CNcbiIfstream istr("data/pdbs.fasta");
+    string dbname = "data/pdbs_v5";
+    string title = "Temporary unit test db";
+    ostringstream log;
+    {
+    	CBuildDatabase db(dbname, title, true, false, true, false, &log, true, eBDB_Version5);
+    	db.StartBuild();
+    	db.AddFasta(istr);
+    	db.EndBuild();
+    }
+
+
+    vector<string>  db_ids;
+    vector<int>  db_oids;
+    CSeqDB seqdb(dbname, CSeqDB::eProtein);
+    int oid= 0;
+    while (seqdb.CheckOrFindOID(oid)) {
+    	list<CRef<CSeq_id> > seq_ids = seqdb.GetSeqIDs(oid);
+    	ITERATE(list<CRef<CSeq_id> >, itr, seq_ids) {
+    		BOOST_REQUIRE_EQUAL((*itr)->Which(), CSeq_id::e_Pdb);
+    	}
+    	oid++;
+    }
+    CNcbiIfstream ref_ids_file("data/pdbs_ids.ref");
+    vector<string> ref_ids;
+   	string line;
+    while (getline(ref_ids_file, line)) {
+    	ref_ids.push_back(line);
+    }
+    vector<blastdb::TOid> oids;
+    seqdb.AccessionsToOids(ref_ids, oids);
+
+    ITERATE(vector<blastdb::TOid>, itr, oids){
+    	BOOST_CHECK(*itr != kSeqDBEntryNotFound);
+    }
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+    CFileDeleteAtExit::Add(dbname + ".pos");
+    CFileDeleteAtExit::Add(dbname + ".pot");
+    CFileDeleteAtExit::Add(dbname + ".ptf");
+    CFileDeleteAtExit::Add(dbname + ".pto");
+    CFileDeleteAtExit::Add(dbname + ".pdb");
+
+}
+
+void s_TestReadPDBAsn1(CNcbiIfstream & istr, CNcbiIfstream & ref_ids_file, int num_oids)
+{
+    string dbname = "data/asn1_v5";
+    string title = "Temporary unit test db";
+    ostringstream log;
+    {
+    	CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    	istr >> MSerial_AsnText >> *seq_entry;
+    	CSeqEntryGetSource seq_src(seq_entry);
+    	CBuildDatabase db(dbname, title, true, false, true, false, &log, true, eBDB_Version5);
+    	db.StartBuild();
+    	db.AddSequences(seq_src);
+    	db.EndBuild();
+    }
+
+
+    vector<string>  db_ids;
+    vector<int>  db_oids;
+    CSeqDB seqdb(dbname, CSeqDB::eProtein);
+    int oid= 0;
+    while (seqdb.CheckOrFindOID(oid)) {
+    	list<CRef<CSeq_id> > seq_ids = seqdb.GetSeqIDs(oid);
+    	ITERATE(list<CRef<CSeq_id> >, itr, seq_ids) {
+    		BOOST_REQUIRE_EQUAL((*itr)->Which(), CSeq_id::e_Pdb);
+    	}
+    	oid++;
+    }
+
+	BOOST_REQUIRE_EQUAL(oid, num_oids);
+
+    vector<string> ref_ids;
+   	string line;
+    while (getline(ref_ids_file, line)) {
+    	ref_ids.push_back(line);
+    }
+    vector<blastdb::TOid> oids;
+    seqdb.AccessionsToOids(ref_ids, oids);
+
+    for(unsigned int i=0; i <oids.size(); i++){
+    	BOOST_REQUIRE_EQUAL(oids[i], i);
+    }
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+    CFileDeleteAtExit::Add(dbname + ".pos");
+    CFileDeleteAtExit::Add(dbname + ".pot");
+    CFileDeleteAtExit::Add(dbname + ".ptf");
+    CFileDeleteAtExit::Add(dbname + ".pto");
+    CFileDeleteAtExit::Add(dbname + ".pdb");
+}
+
+BOOST_AUTO_TEST_CASE(ReadPDBAsn1)
+{
+	{
+		CNcbiIfstream istr("data/a4WZJ.ASN1");
+		CNcbiIfstream ref_ids_file("data/a4WZJ.ids");
+    	s_TestReadPDBAsn1(istr, ref_ids_file, 84);
+	}
+	{
+		CNcbiIfstream istr("data/a5AJ4.ASN1");
+		CNcbiIfstream ref_ids_file("data/a5AJ4.ids");
+    	s_TestReadPDBAsn1(istr, ref_ids_file, 83);
+	}
+
+
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
