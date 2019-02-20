@@ -1031,7 +1031,6 @@ s_BuildTokenList(
     TLineInfoPtr line_list)
 {
     TLineInfoPtr first_token;
-    char *       tmp;
     char *       piece;
     char *       last;
     size_t       line_pos;
@@ -1691,10 +1690,6 @@ s_RemoveCommentFromLine (
 static bool s_IsOrganismComment(
     TCommentLocPtr clp)
 {
-    int    len;
-    char * cp;
-    char * cp_end;
-
     if (!clp  ||  !clp->start  ||  !clp->end) {
         return false;
     }
@@ -1870,7 +1865,6 @@ s_AddAlignRawSeqById(
     int     data_line_offset)
 {
     TAlignRawSeqPtr arsp;
-    TIntLinkPtr     ilp;
 
     arsp = s_FindAlignRawSeqById (list, id);
     if (!arsp) {
@@ -2533,7 +2527,6 @@ s_DoesBlockHaveIds(
 {
     TLineInfoPtr    lip;
     char *          linestring;
-    char *          this_id;
     TAlignRawSeqPtr arsp;
     size_t          len;
     int             block_offset;
