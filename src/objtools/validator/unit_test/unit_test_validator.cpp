@@ -2805,7 +2805,7 @@ void TestOneGeneralSeqId(const string& db, const string& tag, const string& errm
     STANDARD_SETUP
     
     if (!errmsg.empty()) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadSeqIdFormat",
+        expected_errors.push_back(new CExpectedError("gnl|"+ db + "|" + tag, eDiag_Warning, "BadSeqIdFormat",
             errmsg));
     }
     eval = validator.Validate(seh, options);
@@ -2970,6 +2970,7 @@ BOOST_FIXTURE_TEST_CASE(Test_MultipleAccessions, CGenBankFixture)
     seh = scope.AddTopLevelSeqEntry(*entry);
     delete expected_errors[0];
     expected_errors[0] = NULL;
+    expected_errors[1]->SetAccession("pir|AY123457.1|");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2977,6 +2978,7 @@ BOOST_FIXTURE_TEST_CASE(Test_MultipleAccessions, CGenBankFixture)
     scope.RemoveTopLevelSeqEntry(seh);
     other_acc->SetSwissprot().SetAccession("AY123457");
     other_acc->SetSwissprot().SetVersion(1);
+    expected_errors[1]->SetAccession("sp|AY123457.1|");
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2985,6 +2987,7 @@ BOOST_FIXTURE_TEST_CASE(Test_MultipleAccessions, CGenBankFixture)
     scope.RemoveTopLevelSeqEntry(seh);
     other_acc->SetPrf().SetAccession("AY123457");
     other_acc->SetPrf().SetVersion(1);
+    expected_errors[1]->SetAccession("gb|AY123456.1|");
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3030,8 +3033,8 @@ BOOST_FIXTURE_TEST_CASE(Test_MultipleAccessions, CGenBankFixture)
     other_acc->SetOther().SetAccession("NC_123457");
     other_acc->SetOther().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("gb|AY123456.1|", eDiag_Error, "INSDRefSeqPackaging", "INSD and RefSeq records should not be present in the same set"));
-    expected_errors.push_back(new CExpectedError("gb|AY123456.1|", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
+    expected_errors.push_back(new CExpectedError("ref|NC_123457.1|", eDiag_Error, "INSDRefSeqPackaging", "INSD and RefSeq records should not be present in the same set"));
+    expected_errors.push_back(new CExpectedError("ref|NC_123457.1|", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4721,6 +4724,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     id2->SetPatent().SetCit().SetId().SetNumber("1");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetId().push_back(id2);
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("pat|USA|1|1");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -21904,7 +21908,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_728)
     misc->SetLocation().SetInt().SetId().Assign(*bankit);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|x", eDiag_Critical,
+    expected_errors.push_back(new CExpectedError("gnl|NCBIFILE|x", eDiag_Critical,
         "BadSeqIdFormat",
         "Feature locations should not use Seq-ids that will be stripped during ID load"));
     eval = validator.Validate(seh, options);
