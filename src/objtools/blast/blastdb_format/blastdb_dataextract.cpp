@@ -798,22 +798,6 @@ void CBlastDBExtractor::SetConfig(TSeqRange range, objects::ENa_strand strand,
 	m_FiltAlgoId = filt_algo_id;
 }
 
-static bool s_MatchPDBId(const CSeq_id & target_id, const CSeq_id & defline_id)
-{
-	if(defline_id.IsPdb()) {
-		if(target_id.GetPdb().IsSetChain()) {
-			if(defline_id.GetPdb().IsSetChain()) {
-				return ((target_id.GetPdb().GetChain() == defline_id.GetPdb().GetChain())  &&
-				        PNocase().Equals(target_id.GetPdb().GetMol(), defline_id.GetPdb().GetMol()));
-			}
-		}
-		else {
-			return PNocase().Equals(target_id.GetPdb().GetMol(), defline_id.GetPdb().GetMol());
-		}
-	}
-	return false;
-}
-
 void CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(const CBlast_def_line_set & dl_set,
         											   vector<string> & results,
         											   BlastDeflineFields fields,
@@ -823,11 +807,9 @@ void CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(const CBlast_def_line_set
 	CSeq_id target_seq_id (target_id, CSeq_id::fParse_PartialOK | CSeq_id::fParse_Default);
 	Int8 num_id = NStr::StringToNumeric<Int8>(target_id, NStr::fConvErr_NoThrow);
 	bool can_be_gi = errno ? false: true;
-	bool isPDBId = target_seq_id.IsPdb();
 	ITERATE(CBlast_def_line_set::Tdata, itr, dl_set.Get()) {
 		 ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
-			 if ((*id)->Match(target_seq_id) || (can_be_gi && (*id)->IsGi() && ((*id)->GetGi() == num_id))
-				 || (isPDBId && s_MatchPDBId(target_seq_id, **id))) {
+			 if ((*id)->Match(target_seq_id) || (can_be_gi && (*id)->IsGi() && ((*id)->GetGi() == num_id))) {
 				 CBlastDeflineUtil::ExtractDataFromBlastDefline( **itr, results, fields, use_long_id);
 				 return;
 			 }
