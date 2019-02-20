@@ -1044,9 +1044,22 @@ void CWriteDB_Impl::x_Publish()
 
     if(m_DbVersion == eBDB_Version5 && m_Lmdbdb.Empty()) {
         const string lmdb_fname_w_path = BuildLMDBFileName(m_Dbname, m_Protein);
-        m_Lmdbdb.Reset(new CWriteDB_LMDB(lmdb_fname_w_path));
-        m_Taxdb.Reset(new CWriteDB_TaxID(
+        Uint8 map_size = 0;
+        char* map_sz_str = getenv("BLASTDB_LMDB_MAP_SIZE");
+        if (map_sz_str) {
+        	map_size = NStr::StringToUInt8(map_sz_str);
+        }
+        if(map_size > 0){
+        	m_Lmdbdb.Reset(new CWriteDB_LMDB(lmdb_fname_w_path, map_size));
+        	m_Taxdb.Reset(new CWriteDB_TaxID(
+        		          GetFileNameFromExistingLMDBFile(lmdb_fname_w_path, ELMDBFileType::eTaxId2Offsets),
+        		          map_size));
+        }
+        else {
+        	m_Lmdbdb.Reset(new CWriteDB_LMDB(lmdb_fname_w_path));
+        	m_Taxdb.Reset(new CWriteDB_TaxID(
         		          GetFileNameFromExistingLMDBFile(lmdb_fname_w_path, ELMDBFileType::eTaxId2Offsets)));
+        }
     }
 
     x_CookData();
