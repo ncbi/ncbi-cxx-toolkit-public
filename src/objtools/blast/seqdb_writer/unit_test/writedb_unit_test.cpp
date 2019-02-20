@@ -3435,6 +3435,7 @@ BOOST_AUTO_TEST_CASE(ReadPDBFasta)
     string title = "Temporary unit test db";
     ostringstream log;
     {
+    	setenv("BLASTDB_LMDB_MAP_SIZE", "100000",1);
     	CBuildDatabase db(dbname, title, true, false, true, false, &log, true, eBDB_Version5);
     	db.StartBuild();
     	db.AddFasta(istr);
@@ -3486,6 +3487,7 @@ void s_TestReadPDBAsn1(CNcbiIfstream & istr, CNcbiIfstream & ref_ids_file, int n
     string title = "Temporary unit test db";
     ostringstream log;
     {
+    	setenv("BLASTDB_LMDB_MAP_SIZE", "100000",1);
     	CRef<CSeq_entry> seq_entry(new CSeq_entry);
     	istr >> MSerial_AsnText >> *seq_entry;
     	CSeqEntryGetSource seq_src(seq_entry);
