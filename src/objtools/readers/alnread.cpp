@@ -963,7 +963,7 @@ s_AddLineInfo(
     if (!string) {
         return list;
     }
-    TLineInfoPtr lip = new SLineInfo(string, line_num, line_offset);
+    TLineInfoPtr lip = new SLineInfo(string, line_num-1, line_offset); //hack alert!
     if (!list) {
         list = lip;
     } else {
@@ -2669,16 +2669,16 @@ s_ProcessBlockLines(
     char *          linestring;
     char *          cp;
     int             len;
-    int             line_number;
+    int             blockLineCount;
     bool           this_block_has_ids;
     TAlignRawSeqPtr arsp;
 
     this_block_has_ids = s_DoesBlockHaveIds (afrp, lines, num_lines_in_block);
     s_BlockIsConsistent (afrp, lines, num_lines_in_block, this_block_has_ids,
                        first_block);
-    for (lip = lines, line_number = 0;
-            lip  &&  line_number < num_lines_in_block;
-            lip = lip->next, line_number ++) {
+    for (lip = lines, blockLineCount = 0;
+            lip  &&  blockLineCount < num_lines_in_block;
+            lip = lip->next, blockLineCount ++) {
         linestring = lip->data;
         if (linestring) {
             if (this_block_has_ids) {
@@ -2708,10 +2708,10 @@ s_ProcessBlockLines(
                     lip->line_offset + cp - linestring);
             } 
             else {
-                if (!s_AddAlignRawSeqByIndex (afrp->sequences, line_number,
+                if (!s_AddAlignRawSeqByIndex (afrp->sequences, blockLineCount,
                         linestring, lip->line_num, lip->line_offset)) {
                     s_ReportBlockLengthError (
-                        "", lip->line_num, afrp->block_size, line_number,
+                        "", lip->line_num, afrp->block_size, blockLineCount,
                         afrp->mpErrorListener);
                 }
             }

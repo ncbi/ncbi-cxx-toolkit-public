@@ -1,8 +1,8 @@
-Line No    : 10
+Line No    : 9
 Severity   : Error
 Message    : At ID 'SEQ4': Expected 0 lines in block, found 0
 
-Line No    : 11
+Line No    : 10
 Severity   : Error
 Message    : At ID 'ATGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G': Expected 0 lines in block, found 0
 

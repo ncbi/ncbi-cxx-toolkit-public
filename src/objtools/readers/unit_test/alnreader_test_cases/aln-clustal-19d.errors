@@ -8,7 +8,7 @@ Severity   : Warning
 Message    : Line 16 could not be assigned to an interleaved block
              Contents of unused line: And neither is this line.
 
-Line No    : 10
+Line No    : 9
 Severity   : Error
 Message    : At ID 'SEQ1': Expected line length 20, actual length 8
 
