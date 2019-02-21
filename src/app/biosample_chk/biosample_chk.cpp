@@ -1025,6 +1025,9 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
     CJson_Object top_obj = req.SetObject();
     CJson_Array biosample_array = top_obj.insert_array("update");
 
+    CJson_Object options_obj = top_obj.insert_object("options");
+    options_obj.insert("attribute_synonyms", "true");
+
     for (auto& id : ids) {
         CJson_Object obj1 = biosample_array.push_back_object();
         obj1.insert("samples", id);
