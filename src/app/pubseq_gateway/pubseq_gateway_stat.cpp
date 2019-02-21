@@ -88,6 +88,8 @@ void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
     dict.SetInteger("GetBlobBySeqIdRequestCount", m_GetBlobBySeqId);
     req_sum += m_GetBlobBySatSatKey;
     dict.SetInteger("GetBlobBySatSatKeyRequestCount", m_GetBlobBySatSatKey);
+    req_sum += m_GetNA;
+    dict.SetInteger("GetNamedAnnotationsCount", m_GetNA);
 
     dict.SetInteger("TotalRequestCount", req_sum);
 }

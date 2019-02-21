@@ -366,7 +366,7 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
     }
 
     // Parameters processing has finished
-    m_RequestCounters.IncResolve();
+    m_RequestCounters.IncGetNA();
     resp.Postpone(
             CPendingOperation(
                 SAnnotRequest(seq_id, seq_id_type, names, use_cache),
