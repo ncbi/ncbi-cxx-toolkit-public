@@ -111,6 +111,9 @@ endif()
 
 set(NCBI_ThirdParty_XALAN       ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.10.0-20080814)
 set(NCBI_ThirdParty_XERCES      ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/2.8.0)
+set(NCBI_ThirdParty_FTGL        ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5)
+set(NCBI_ThirdParty_GLEW        ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/1.5.8)
+set(NCBI_ThirdParty_FreeType    ${NCBI_ThirdPartyBasePath}/freetype/${NCBI_ThirdPartyCompiler}/2.4.10)
 
 #############################################################################
 macro(NCBI_define_component _name)
@@ -425,4 +428,31 @@ if(NCBI_COMPONENT_XERCES_FOUND)
     set(NCBI_COMPONENT_XERCES_DEFINES XML_LIBRARY)
   endif()
 endif()
+
+##############################################################################
+# FTGL
+NCBI_define_component(FTGL ftgl.lib)
+if(NCBI_COMPONENT_FTGL_FOUND)
+  set(NCBI_COMPONENT_FTGL_DEFINES FTGL_LIBRARY_STATIC)
+endif()
+
+##############################################################################
+# FreeType
+NCBI_define_component(FreeType freetype.lib)
+
+##############################################################################
+# GLEW
+NCBI_define_component(GLEW glew32mx.lib)
+if(NCBI_COMPONENT_GLEW_FOUND)
+  if(BUILD_SHARED_LIBS)
+    set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX)
+  else()
+    set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX GLEW_STATIC)
+  endif()
+endif()
+
+##############################################################################
+# OpenGL
+set(NCBI_COMPONENT_OpenGL_FOUND YES)
+set(NCBI_COMPONENT_OpenGL_LIBS opengl32.lib glu32.lib)
 

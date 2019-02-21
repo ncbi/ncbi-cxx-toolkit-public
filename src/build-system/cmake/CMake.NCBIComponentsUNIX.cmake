@@ -1276,3 +1276,42 @@ if (XERCES_FOUND)
   set(NCBI_COMPONENT_XERCES_LIBS    ${XERCES_LIBS})
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} XERCES")
 endif()
+
+##############################################################################
+# FTGL
+if (FTGL_FOUND)
+  set(NCBI_COMPONENT_FTGL_FOUND   YES)
+  set(NCBI_COMPONENT_FTGL_INCLUDE ${FTGL_INCLUDE_DIR})
+  set(NCBI_COMPONENT_FTGL_LIBS    ${FTGL_LIBRARIES})
+  list(APPEND NCBI_ALL_COMPONENTS FTGL)
+endif()
+
+##############################################################################
+# FreeType
+if (FREETYPE_FOUND)
+  set(NCBI_COMPONENT_FreeType_FOUND   YES)
+  set(NCBI_COMPONENT_FreeType_INCLUDE ${FREETYPE_INCLUDE_DIRS})
+  set(NCBI_COMPONENT_FreeType_LIBS    ${FREETYPE_LIBRARIES})
+  list(APPEND NCBI_ALL_COMPONENTS FreeType)
+endif()
+
+#############################################################################
+# GLEW
+set(NCBI_COMPONENT_GLEW_FOUND   YES)
+set(NCBI_COMPONENT_GLEW_INCLUDE ${GLEW_INCLUDE_DIRS})
+set(NCBI_COMPONENT_GLEW_LIBS    ${GLEW_LIBRARIES})
+list(APPEND NCBI_ALL_COMPONENTS GLEW)
+
+##############################################################################
+# OpenGL
+set(NCBI_COMPONENT_OpenGL_FOUND   YES)
+set(NCBI_COMPONENT_OpenGL_INCLUDE ${OPENGL_INCLUDE_DIRS})
+set(NCBI_COMPONENT_OpenGL_LIBS    ${OPENGL_LIBRARIES})
+list(APPEND NCBI_ALL_COMPONENTS OpenGL)
+
+##############################################################################
+# OSMesa
+set(NCBI_COMPONENT_OSMesa_FOUND   YES)
+set(NCBI_COMPONENT_OSMesa_INCLUDE ${OSMesa_INCLUDE_DIRS})
+set(NCBI_COMPONENT_OSMesa_LIBS    ${OSMesa_LIBRARIES})
+list(APPEND NCBI_ALL_COMPONENTS OSMesa)
