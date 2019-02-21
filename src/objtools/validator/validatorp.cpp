@@ -1146,7 +1146,10 @@ bool CValidError_imp::Validate
         }
     }
 
-    if (m_IsINSDInSep && IsRefSeq()) {
+    if (m_IsINSDInSep && m_IsRefSeq) {
+        // NOTE: We use m_IsRefSeq to indicate the actual presence of RefSeq IDs in
+        // the record, rather than IsRefSeq(), which indicates *either* RefSeq IDs are
+        // present *OR* the refseq flag has been used
         PostErr (eDiag_Error, eErr_SEQ_PKG_INSDRefSeqPackaging,
                  "INSD and RefSeq records should not be present in the same set", *m_TSE);
     }
