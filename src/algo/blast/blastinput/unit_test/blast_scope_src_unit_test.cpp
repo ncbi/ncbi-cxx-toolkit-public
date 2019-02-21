@@ -414,5 +414,27 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
                         scope_source.GetBlastDbLoaderName());
 }
 
+BOOST_AUTO_TEST_CASE(RetrieveSeqUsingPDBIds)
+{
+	const string dbname="data/pdb_test";
+    CAutoNcbiConfigFile afc;
+    afc.SetProteinBlastDbDataLoader(dbname);
+    SDataLoaderConfig dlconfig(dbname, true);
+    dlconfig.m_UseGenbank = false;
+    BOOST_CHECK_EQUAL(dlconfig.m_BlastDbName, dbname);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
+	CRef<CScope> scope = scope_source.NewScope();
+
+	CNcbiIfstream ids_file("data/test.pdb_ids");
+	string line;
+    while (getline(ids_file, line)) {
+    	vector<string>  d;
+    	NStr::Split(line, " ", d);
+	    const CSeq_id seqid(d[0]);
+	    TSeqPos length = sequence::GetLength(seqid, scope);
+	    BOOST_CHECK_EQUAL(NStr::StringToInt(d[1]), length);
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
