@@ -318,7 +318,7 @@ DISCREPANCY_CASE(MISMATCHED_COMMENTS, CSeqdesc, eDisc, "Mismatched Comments")
 {
     auto bs = context.GetCurrentBioseq();
     if (bs && bs->IsNa() && obj.IsComment() && !obj.GetComment().empty()) {
-        const string comment = obj.GetComment();
+        const string& comment = obj.GetComment();
         if (comment.find("Annotation was added by") == string::npos) {
             m_Objs[comment].Add(*context.SeqdescObj(obj, true));
         }
