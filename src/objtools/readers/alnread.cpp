@@ -177,75 +177,6 @@ struct SLineInfoReader {
 using TLineInfoReaderPtr = SLineInfoReader*;
 
 //  ============================================================================
-struct SIntLink {
-//  ============================================================================
-    SIntLink(
-        int val, SIntLink* next_=nullptr): ival(val), next(next_) {};
-
-    ~SIntLink() {
-        delete next;
-    };
-
-    static SIntLink* 
-    AppendNew(
-        int ival, 
-        SIntLink* list)
-    {
-        SIntLink* ilp, * last;
-
-        ilp = new SIntLink(ival, nullptr);
-        if (ilp == nullptr) {
-            return nullptr;
-        }
-        last = list;
-        while (last != nullptr && last->next != nullptr) {
-            last = last->next;
-        }
-        if (last != nullptr) {
-            last->next = ilp;
-        }
-        return ilp;
-    }
-
-    static void
-    CreateOrAppend(
-        int iVal,
-        SIntLink*& anchor)
-    {
-        SIntLink* ilp = SIntLink::AppendNew(iVal, anchor);
-        if (anchor == nullptr) {
-            anchor = ilp;
-        }
-    }
-
-    static void
-    ConvertToIntList(
-        const SIntLink* intLinkPtr,
-        list<int>& intList) 
-    {
-        intList.clear();
-        for (auto ptr = intLinkPtr; ptr; ptr = ptr->next) {
-            intList.push_back(ptr->ival);
-        }
-    }
-
-    static void
-    ConvertToIntLinkPtr(
-        const list<int> intList,
-        SIntLink*& intLinkPtr)
-    {
-        intLinkPtr = nullptr;
-        for (auto listElement: intList) {
-            CreateOrAppend(listElement, intLinkPtr);
-        }
-    }
-    
-    int               ival;
-    SIntLink * next;
-};
-using TIntLinkPtr = SIntLink*;
-
-//  ============================================================================
 struct SStringCount {
 //  ============================================================================
     SStringCount(
@@ -385,7 +316,7 @@ struct SAlignFileRaw {
         ILineErrorListener* pEl):
         marked_ids(false), line_list(nullptr),
         block_size(0), 
-        offset_list(nullptr), sequences(nullptr), mpErrorListener(pEl),
+        /*offset_list(nullptr),*/ sequences(nullptr), mpErrorListener(pEl),
         alphabet_(""), expected_num_sequence(0),
         expected_sequence_len(0), align_format_found(false)
     {};
@@ -393,7 +324,7 @@ struct SAlignFileRaw {
     ~SAlignFileRaw() {
         delete line_list;
         delete sequences;
-        delete offset_list;
+        //delete offset_list;
     };
 
     TLineInfoPtr         line_list;
@@ -401,7 +332,7 @@ struct SAlignFileRaw {
     list<SLineInfo> mDeflines;
     bool                 marked_ids;
     int                  block_size;
-    TIntLinkPtr          offset_list;
+    list<int>            mOffsetList;
     ILineErrorListener*  mpErrorListener;
     string               alphabet_;
     int                  expected_num_sequence;
@@ -1930,10 +1861,8 @@ s_AddAlignRawSeqByIndex(
     if (!arsp) {
         return false;
     }
-    arsp->sequence_data = s_AddLineInfo (arsp->sequence_data,
-                                        data,
-                                        data_line_num,
-                                        data_line_offset);
+    arsp->sequence_data = s_AddLineInfo (
+        arsp->sequence_data, data, data_line_num, data_line_offset);
     return true;
 }
 
@@ -1983,9 +1912,9 @@ s_GetBlockPattern (
  * beginning of the block, otherwise the function returns -1.
  */
 static int 
-s_ForecastBlockPattern(
+sForecastBlockPattern(
     TLengthListPtr pattern_list,
-    TIntLinkPtr    next_offset,
+    int lineOffset,
     int            line_start,
     int            block_size)
 {
@@ -1993,13 +1922,13 @@ s_ForecastBlockPattern(
     TLengthListPtr llp;
 
     line_counter = line_start;
-    if (next_offset  &&  next_offset->ival - line_counter < block_size) {
+    if (lineOffset - line_counter < block_size) {
         return -1;
     }
     
     for (llp = pattern_list;
             llp
-                &&  (!next_offset  ||  line_counter < next_offset->ival - 1)
+                &&  (line_counter < lineOffset - 1)
                 &&  line_counter - line_start < block_size;
             llp = llp->next) {
         if (!llp->lengthrepeats) {
@@ -2019,152 +1948,156 @@ s_ForecastBlockPattern(
     return -1;
 }
 
+static int 
+sForecastBlockPattern(
+    TLengthListPtr pattern_list,
+    int            line_start,
+    int            block_size)
+{
+    TLengthListPtr llp;
+    int line_counter = line_start;
+
+    for (llp = pattern_list;
+        llp  &&  line_counter - line_start < block_size;
+        llp = llp->next) {
+        if (!llp->lengthrepeats) {
+            return -1;
+        }
+        line_counter += llp->num_appearances;
+    }
+    if (line_counter - line_start == block_size) {
+        /* we've found a combination of groups of similarly sized lines
+        * that add up to the desired block size - is the next line blank,
+        * or are there additional non-blank lines?
+        */
+        if (!llp  || llp->lengthrepeats == nullptr) {
+            return line_start;
+        }
+    }
+    return -1;
+}
 
 /* This function looks for malformed blocks between the identified blocks
  * indicated by the offset_list.  It returns a pointer to the list with the
  * new locations inserted at the appropriate locations.
  */
 static void
-s_AugmentBlockPatternOffsetList(
+sAugmentBlockPatternOffsetList(
     TLengthListPtr pattern_list,
-    TIntLinkPtr&    offset_list,
+    list<int>&    offsetList,
     int            block_size)
 {
-    int            line_counter;
-    TLengthListPtr llp;
-    TIntLinkPtr    next_offset, prev_offset, new_offset;
-    int            forecast_pos;
+    int line_counter = 0;
+    TLengthListPtr llp = pattern_list;
+    int forecast_pos;
 
-    prev_offset = nullptr;
-    next_offset = offset_list;
-    line_counter = 0;
-    llp = pattern_list;
+    auto prevOffset = offsetList.end();
+    auto nextOffset = offsetList.begin();
+
     while (llp) {
-        if (next_offset  &&  line_counter == next_offset->ival) {
-            prev_offset = next_offset;
-            next_offset = next_offset->next;
+        if (nextOffset != offsetList.end()  &&  line_counter == *nextOffset) {
+            prevOffset = nextOffset;
+            nextOffset++;
             /* skip past the lines for this block */
-            while (line_counter - prev_offset->ival < block_size  &&  llp) {
+            while (llp  &&  line_counter - *prevOffset < block_size) {
+                line_counter += llp->num_appearances;
+                llp = llp->next;
+            }
+            continue;
+        } 
+
+        if (nextOffset != offsetList.end()) {
+            forecast_pos = sForecastBlockPattern(llp, *nextOffset, line_counter, block_size);
+        }
+        else {
+            forecast_pos = sForecastBlockPattern(llp, line_counter, block_size);
+        }
+        if (forecast_pos > 0) {
+            prevOffset = offsetList.insert(nextOffset, forecast_pos);
+            while (line_counter - *prevOffset < block_size  &&  llp) {
                 line_counter += llp->num_appearances;
                 llp = llp->next;
             }
         } else {
-            forecast_pos = s_ForecastBlockPattern (llp, next_offset,
-                                                 line_counter,
-                                                 block_size);
-            if (forecast_pos > 0) {
-                new_offset = new SIntLink(forecast_pos);
-                if (!prev_offset) {
-                    new_offset->next = offset_list;
-                    offset_list = new_offset;
-                } else {
-                    new_offset->next = next_offset;
-                    prev_offset->next = new_offset;
-                }
-                prev_offset = new_offset;
-                /* skip past the lines for this block */
-                while (line_counter - prev_offset->ival < block_size  &&  llp) {
-                    line_counter += llp->num_appearances;
-                    llp = llp->next;
-                }
-            } else {
-                line_counter += llp->num_appearances;
-                llp = llp->next;
-            }
+            line_counter += llp->num_appearances;
+            llp = llp->next;
         }
     }
     return;
 }
-
 
 /* This function looks for lines that could not be assigned to an interleaved
  * block.  It returns true if it finds any such lines after the first offset,
  * false otherwise, and reports all instances of unused lines as errors.
  */
 static bool
-s_FindUnusedLines(
-    TLengthListPtr pattern_list,
-    TAlignRawFilePtr afrp)
+sFindUnusedLines(
+    TLengthListPtr patternList,
+    TLineInfoPtr lineList,
+    const list<int> offsetList,
+    int blockSize,
+    ILineErrorListener* pEl)
 {
-    TLengthListPtr llp;
-    int            line_counter;
-    int            block_line_counter;
-    bool          rval = false;
-    TLineInfoPtr   line_val;
-    int            skip;
-
-    if (!pattern_list  ||  !afrp  ||  !afrp->offset_list  ||  afrp->block_size < 2) {
-        return false;
-    }
-
-    llp = pattern_list;
-    line_counter = 0;
-    line_val = afrp->line_list;
-
-    list<int> offsetList;
-    for (auto it = afrp->offset_list; it; it = it->next) {
-        offsetList.push_back(it->ival);
-    }
+    int lineCounter = 0;
+    auto llp = patternList;
     auto offsetIt = offsetList.begin();
+    bool rVal = false;
 
-    while (llp  &&  line_val) {  //while lines available
+    while (llp  &&  lineList) {  //while lines available
 
         // if past all sequence data then line definitely not used
         if (offsetIt == offsetList.end()) {  
             if (llp->lengthrepeats) {
-                s_ReportUnusedLine (line_counter,
-                                    line_counter + llp->num_appearances - 1,
-                                    line_val,
-                                    afrp->mpErrorListener);
-                line_val->data[0] = 0;
+                s_ReportUnusedLine (lineCounter,
+                    lineCounter + llp->num_appearances - 1,
+                    lineList,
+                    pEl);
+                lineList->data[0] = 0;
                 if (offsetIt != offsetList.begin()) {
-                    rval = true;
+                    rVal = true;
                 }
             }
-            line_counter += llp->num_appearances;
-            for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
-                line_val = line_val->next;
+            lineCounter += llp->num_appearances;
+            for (auto skip = 0; skip < llp->num_appearances  &&  lineList; skip++) {
+                lineList = lineList->next;
             }
             llp = llp->next;
             continue;
         }
 
         // otherwise, it must be sequence data or already used (i.e. zeroed out)
-        if (line_counter < *offsetIt) {
+        if (lineCounter < *offsetIt) {
             if (llp->lengthrepeats) {
-                s_ReportUnusedLine (line_counter,
-                    line_counter + llp->num_appearances - 1,
-                    line_val,
-                    afrp->mpErrorListener);
-                line_val->data[0] = 0;
+                s_ReportUnusedLine (lineCounter,
+                    lineCounter + llp->num_appearances - 1,
+                    lineList,
+                    pEl);
+                lineList->data[0] = 0;
                 if (offsetIt != offsetList.begin()) {
-                    rval = true;
+                    rVal = true;
                 }
             }
-            line_counter += llp->num_appearances;
-            for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
-                line_val = line_val->next;
+            lineCounter += llp->num_appearances;
+            for (auto skip = 0; skip < llp->num_appearances  &&  lineList; skip++) {
+                lineList = lineList->next;
             }
             llp = llp->next;
             continue;
         }
 
-        block_line_counter = 0;
-        while (block_line_counter < afrp->block_size  &&  llp) {
-            block_line_counter += llp->num_appearances;
-            line_counter += llp->num_appearances;
-            for (skip = 0;
-                skip < llp->num_appearances  &&  line_val;
-                skip++) {
-                line_val = line_val->next;
+        int blockLineCounter = 0;
+        while (blockLineCounter < blockSize  &&  llp) {
+            blockLineCounter += llp->num_appearances;
+            lineCounter += llp->num_appearances;
+            for (auto skip = 0; skip < llp->num_appearances  &&  lineList; skip++) {
+                lineList = lineList->next;
             }
             llp = llp->next;
         }
         offsetIt++;
     }
-    return rval;
+    return rVal;
 }
-
 
 /* This function examines a list of line lengths, looking for interleaved
  * blocks.  If it finds them, it will set the SAlignRawFileData offset_list
@@ -2181,7 +2114,7 @@ s_FindInterleavedBlocks(
 
     afrp->block_size = 0;
     size_list = nullptr;
-    afrp->offset_list = nullptr;
+    afrp->mOffsetList.clear();
     for (llp = pattern_list; llp; llp = llp->next) {
         llp_next = llp->next;
         if (llp->num_appearances > 1  &&  (!llp_next  ||  !llp_next->lengthrepeats)) {
@@ -2201,16 +2134,13 @@ s_FindInterleavedBlocks(
             llp_next = llp->next;
             if (llp->num_appearances == afrp->block_size  &&
                     (!llp_next  ||  !llp_next->lengthrepeats)) {
-                SIntLink::CreateOrAppend(line_counter, afrp->offset_list);
+                afrp->mOffsetList.push_back(line_counter);
             }
             line_counter += llp->num_appearances;
         }
-        s_AugmentBlockPatternOffsetList (
-            pattern_list, afrp->offset_list, afrp->block_size);
+        sAugmentBlockPatternOffsetList(pattern_list, afrp->mOffsetList, afrp->block_size);
     }
-    if (s_FindUnusedLines (pattern_list, afrp)) {
-        delete afrp->offset_list;
-        afrp->offset_list = nullptr;
+    if (sFindUnusedLines(pattern_list, afrp->line_list, afrp->mOffsetList, afrp->block_size, afrp->mpErrorListener)) {
         afrp->block_size = 0;
     } else {
         afrp->align_format_found = true;
@@ -2307,7 +2237,8 @@ s_AfrpProcessFastaGap(
             afrp->marked_ids = true;
 //            eFormat = ALNFMT_FASTAGAP;
         }
-        SIntLink::CreateOrAppend(overall_line_count + 1, afrp->offset_list);
+        //SIntLink::CreateOrAppend(overall_line_count + 1, afrp->offset_list);
+        afrp->mOffsetList.push_back(overall_line_count + 1);
         *last_line_was_marked_id = true;
         return;
     }
@@ -2489,7 +2420,7 @@ sReadAlignFileRaw(
                     overall_line_count);
                 continue;
             }
-            SIntLink::CreateOrAppend(overall_line_count + 1, afrp->offset_list);
+            afrp->mOffsetList.push_back(overall_line_count + 1);
             last_line_was_marked_id = true;
             continue;
         }
@@ -2770,10 +2701,7 @@ s_ProcessAlignRawFileByBlockOffsets(
     }
  
     line_counter = 0;
-    list<int> offsets;
-    for (auto it = afrp->offset_list; it; it = it->next) {
-        offsets.push_back(it->ival);
-    }
+    list<int>& offsets = afrp->mOffsetList;
     auto offsetIt = offsets.begin();
     lip = afrp->line_list;
     while (lip  &&  offsetIt != offsets.end()  &&  (in_taxa_comment  ||  !s_FoundStopLine (lip->data))) {
@@ -2872,22 +2800,6 @@ sCreateSequencesBasedOnTokenPatterns(
         }
     }
 }
-
-
-static void 
-s_CreateSequencesBasedOnTokenPatterns(
-    TLineInfoPtr     token_list,
-    TIntLinkPtr      offset_list,
-    TLengthListPtr anchorpattern,
-    TAlignRawFilePtr afrp,
-    bool gen_local_ids)
-{
-    list<int> offsets;
-    SIntLink::ConvertToIntList(offset_list, offsets);
-    return sCreateSequencesBasedOnTokenPatterns(
-        token_list, offsets, anchorpattern, afrp, gen_local_ids);
-}
-
 
 /* The following functions are used for analyzing contiguous data with
  * marked IDs.
@@ -2988,14 +2900,11 @@ s_RemoveBasePairCountCommentsFromData (
     int          line_count;
     char *       cp;
 
-    if (!afrp  ||  !afrp->offset_list) {
+    if (!afrp) {
         return;
     }
 
-    list<int> offsets;
-    for (auto it = afrp->offset_list; it; it = it->next) {
-        offsets.push_back(it->ival);
-    }
+    list<int> offsets = afrp->mOffsetList;
     auto thisOffset = offsets.begin();
     auto nextOffset = std::next(thisOffset);
 
@@ -3044,11 +2953,11 @@ static void s_ProcessAlignFileRawForMarkedIDs (
 
     s_RemoveBasePairCountCommentsFromData (afrp);
     anchorpattern = s_CreateAnchorPatternForMarkedIDs (afrp);
-    if (!anchorpattern  ||  !afrp->offset_list) {
+    if (!anchorpattern  ||  afrp->mOffsetList.empty()) {
         return;
     }
-    s_CreateSequencesBasedOnTokenPatterns (afrp->line_list, afrp->offset_list,
-                                         anchorpattern, afrp, gen_local_ids);
+    sCreateSequencesBasedOnTokenPatterns (
+        afrp->line_list, afrp->mOffsetList, anchorpattern, afrp, gen_local_ids);
     delete anchorpattern;
 }
 
@@ -3511,97 +3420,6 @@ sGetBestCharacterLength(
     return best_num_chars;
 }
 
-static int  
-s_CountCharactersBetweenOffsets(
-    TLineInfoPtr list,
-    int          distance,
-    int          desired_num_chars)
-{
-    int          line_diff;
-    size_t       num_chars, total_chars, pattern_length, num_starts;
-    TLineInfoPtr lip;
-    TIntLinkPtr  length_list, start_list, start_ptr, length;
-    int          start_of_unknown;
-    int          num_additional_offsets_needed;
-
-    if (!list  ||  distance == 0  ||  desired_num_chars == 0) {
-        return 0;
-    }
-
-    /* because the first offset is the start of a known pattern, we should
-     * skip to the end of that pattern and start looking for additional
-     * offsets
-     */
-    total_chars = 0;
-    for (lip = list, line_diff = 0; 
-            lip  &&  line_diff < distance  &&  total_chars < desired_num_chars;
-            lip = lip->next, line_diff++) {
-        num_chars = strlen (lip->data);
-        total_chars += num_chars;
-    }
-    while (lip  &&  lip->data  && line_diff < distance  &&  NStr::IsBlank(lip->data)) {
-        lip = lip->next;
-        line_diff++;
-    }
-    /* skip over line we would need for ID */
-    if (lip) {
-        lip = lip->next;
-        line_diff++;
-    }
-  
-    if (!lip  ||  line_diff == distance) {
-        return 0;
-    }
-
-    list = lip->next;
-    start_of_unknown = line_diff;
-
-    length_list = nullptr;
-    total_chars = 0;
-    for (lip = list; lip  &&  line_diff < distance; lip = lip->next, line_diff++) {
-        num_chars = strlen (lip->data);
-        SIntLink::CreateOrAppend(num_chars, length_list);
-        total_chars += num_chars;
-    }
-
-    /* how many offsets do we need? */
-    num_additional_offsets_needed = (total_chars / desired_num_chars);
-    if (num_additional_offsets_needed == 0) {
-        return 0;
-    }
-
-    /* Find all the places you could start and get the exact right number
-     * of characters
-     */
-    start_list = nullptr;
-    num_starts = 0;
-    pattern_length = 0;
-    for (start_ptr = length_list, line_diff = start_of_unknown;
-            start_ptr  &&  line_diff < distance &&  pattern_length < distance - line_diff ;
-            start_ptr = start_ptr->next, line_diff++) {
-        num_chars = start_ptr->ival;
-        pattern_length = 1;
-        length = start_ptr->next;
-        while (length  &&  num_chars < desired_num_chars  &&  
-                pattern_length + line_diff < distance) {
-            num_chars += length->ival;
-            pattern_length ++;
-            length = length->next;
-        }
-        if (num_chars == desired_num_chars) {
-            SIntLink::CreateOrAppend(line_diff, start_list);
-            num_starts ++;
-        }
-    }
-
-    /* now select best set of start points */
-    
-    delete length_list;
-    delete start_list;
-    return 0;
-}
-
-
 /* This function inserts new block locations into the offset_list
  * by looking for likely starts of abnormal patterns.
  */
@@ -3659,9 +3477,6 @@ static void sInsertNewOffsets(
             }
             /* insert new offset value */
             prevOffset = offsetList.insert(newOffset, line_start);
-            s_CountCharactersBetweenOffsets (lip,
-                *newOffset - *prevOffset,
-                best_num_chars);
         }
     }
 
