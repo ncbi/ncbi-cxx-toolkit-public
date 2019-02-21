@@ -663,6 +663,27 @@ const CSeq_entry *ctx)
         }
     }
 
+    if (IsIndexerVersion() && chromosome != NULL && (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_chromosome)) {
+        // exception for /map="unlocalized"
+        bool suppress = false;
+        for (auto it : bsrc.GetSubtype()) {
+            if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_map &&
+                it->IsSetName() && NStr::Equal(it->GetName(), "unlocalized")) {
+                suppress = true;
+                break;
+            }
+        }
+        if (!suppress) {
+            string msg = "INDEXER_ONLY - source contains chromosome value '";
+            if (chromosome->IsSetName()) {
+                msg += chromosome->GetName();
+            }
+            msg += "' but the BioSource location is not set to chromosome";
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_ChromosomeWithoutLocation,
+                msg, obj, ctx);
+        }
+    }
+
     ITERATE(TCount, it, count)
     {
         if (it->second <= 1) continue;

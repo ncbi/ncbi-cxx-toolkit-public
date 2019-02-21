@@ -58,6 +58,7 @@ public:
     void SetErrMsg (string err_msg) { m_ErrMsg = err_msg; }
 
     const string& GetErrMsg(void) { return m_ErrMsg; }
+    void Print(void) const;
     static void PrintSeenError(const CValidErrItem& err_item);
 
 private:
@@ -134,6 +135,7 @@ public:
         expected_errors.pop_back(); \
                                                             }
 #define STANDARD_SETUP \
+	CNcbiEnvironment env; \
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
     CScope scope(*objmgr); \
     scope.AddDefaults(); \

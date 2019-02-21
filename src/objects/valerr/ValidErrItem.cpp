@@ -956,6 +956,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_TaxonomyEmptyInput,
     { "TaxonomyEmptyInput",
       "No valid input to perform Taxonomy request" } } ,
+    { eErr_SEQ_DESCR_ChromosomeWithoutLocation,
+    {"ChromosomeWithoutLocation",
+     "Location should be chromosome if chromosome name is present" } },
 
 
     /* SEQ_GENERIC */
