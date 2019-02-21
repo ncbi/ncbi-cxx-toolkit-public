@@ -218,6 +218,28 @@ struct SIntLink {
         }
     }
 
+    static void
+    ConvertToIntList(
+        const SIntLink* intLinkPtr,
+        list<int>& intList) 
+    {
+        intList.clear();
+        for (auto ptr = intLinkPtr; ptr; ptr = ptr->next) {
+            intList.push_back(ptr->ival);
+        }
+    }
+
+    static void
+    ConvertToIntLinkPtr(
+        const list<int> intList,
+        SIntLink*& intLinkPtr)
+    {
+        intLinkPtr = nullptr;
+        for (auto listElement: intList) {
+            CreateOrAppend(listElement, intLinkPtr);
+        }
+    }
+    
     int               ival;
     SIntLink * next;
 };
@@ -2002,10 +2024,10 @@ s_ForecastBlockPattern(
  * indicated by the offset_list.  It returns a pointer to the list with the
  * new locations inserted at the appropriate locations.
  */
-static TIntLinkPtr
+static void
 s_AugmentBlockPatternOffsetList(
     TLengthListPtr pattern_list,
-    TIntLinkPtr    offset_list,
+    TIntLinkPtr&    offset_list,
     int            block_size)
 {
     int            line_counter;
@@ -2051,7 +2073,7 @@ s_AugmentBlockPatternOffsetList(
             }
         }
     }
-    return offset_list;
+    return;
 }
 
 
@@ -2183,9 +2205,8 @@ s_FindInterleavedBlocks(
             }
             line_counter += llp->num_appearances;
         }
-        afrp->offset_list = s_AugmentBlockPatternOffsetList (pattern_list,
-                                                           afrp->offset_list, 
-                                                           afrp->block_size);
+        s_AugmentBlockPatternOffsetList (
+            pattern_list, afrp->offset_list, afrp->block_size);
     }
     if (s_FindUnusedLines (pattern_list, afrp)) {
         delete afrp->offset_list;
@@ -2778,9 +2799,9 @@ s_ProcessAlignRawFileByBlockOffsets(
 /* The following functions are used to analyze contiguous data. */
 
 static void 
-s_CreateSequencesBasedOnTokenPatterns(
+sCreateSequencesBasedOnTokenPatterns(
     TLineInfoPtr     token_list,
-    TIntLinkPtr      offset_list,
+    const list<int>&      offsets,
     TLengthListPtr anchorpattern,
     TAlignRawFilePtr afrp,
     bool gen_local_ids)
@@ -2793,18 +2814,12 @@ s_CreateSequencesBasedOnTokenPatterns(
 
     static int next_local_id = 1;
 
-    if (!token_list  ||  !offset_list  ||  !anchorpattern  ||  !afrp) {
+    if (!token_list  ||  offsets.empty()  ||  !anchorpattern  ||  !afrp) {
         return;
     }
     if (!anchorpattern  ||  !anchorpattern->lengthrepeats) {
         return;
     }
-
-    list<int> offsets;
-    for (auto it = offset_list; it; it = it->next) {
-        offsets.push_back(it->ival);
-    }
-    
 
     line_counter = 0;
     lip = token_list;
@@ -2856,6 +2871,21 @@ s_CreateSequencesBasedOnTokenPatterns(
             }
         }
     }
+}
+
+
+static void 
+s_CreateSequencesBasedOnTokenPatterns(
+    TLineInfoPtr     token_list,
+    TIntLinkPtr      offset_list,
+    TLengthListPtr anchorpattern,
+    TAlignRawFilePtr afrp,
+    bool gen_local_ids)
+{
+    list<int> offsets;
+    SIntLink::ConvertToIntList(offset_list, offsets);
+    return sCreateSequencesBasedOnTokenPatterns(
+        token_list, offsets, anchorpattern, afrp, gen_local_ids);
 }
 
 
@@ -3229,30 +3259,27 @@ s_FindMostPopularPattern (
  * of occurrences of the anchorpattern in the SSizeInfo list.
  * The function returns a pointer to the SIntLink list.
  */
-static TIntLinkPtr 
-s_CreateOffsetList(
-    TSizeInfoPtr list,
-    TLengthListPtr anchorpattern)
+static void 
+sCreateOffsetList(
+    TSizeInfoPtr list_,
+    TLengthListPtr anchorpattern,
+    list<int>& offsetList)
 {
     int          line_counter;
-    TIntLinkPtr  offset_list;
     TSizeInfoPtr sip;
 
-    if (!list  ||  !anchorpattern) {
-        return nullptr;
+    if (!list_  ||  !anchorpattern) {
+        return;
     }
     line_counter = 0;
-    offset_list = nullptr;
-    for (sip = list;  sip;  sip = sip->next) {
+    for (sip = list_;  sip;  sip = sip->next) {
         if (*sip == *(anchorpattern->lengthrepeats)) {
-                SIntLink::CreateOrAppend(line_counter, offset_list);
+            offsetList.push_back(line_counter);
         }
- 
         line_counter += sip->num_appearances;
     }
-    return offset_list;
+    return;
 }
-
 
 /* This function determines whether or not the number of expected sequence
  * characters are available starting at a token after line_start and stopping
@@ -3261,43 +3288,7 @@ s_CreateOffsetList(
  * data begins.  Otherwise the function returns -1.
  */
 static int  
-s_ForecastPattern(
-    int          line_start,
-    int          pattern_length,
-    TIntLinkPtr  next_offset,
-    int          sip_offset,
-    TSizeInfoPtr list)
-{
-  
-    if (!list) {
-        return -1;
-    }
-
-    for (auto offset = sip_offset; offset < list->num_appearances; offset++) {
-        auto line_counter = line_start + offset;
-        auto num_chars = list->size_value * (list->num_appearances - offset); 
-        auto sip = list;
-        while (num_chars < pattern_length  &&
-                (!next_offset  ||  line_counter < next_offset->ival)  &&  sip->next) {
-            sip = sip->next;
-            for (auto end_offset = 0;
-                    end_offset < sip->num_appearances
-                         &&  num_chars < pattern_length
-                        &&  (!next_offset  ||  line_counter < next_offset->ival);
-                    end_offset++) {
-                num_chars += sip->size_value;
-                line_counter ++;
-            }
-        }
-        if (num_chars == pattern_length) {
-            return line_start + offset;
-        }
-    }
-    return -1;
-}
-
-static int  
-s_ForecastPattern(
+sForecastPattern(
     int          line_start,
     int          pattern_length,
     list<int>::const_iterator currentOffset,
@@ -3340,23 +3331,22 @@ s_ForecastPattern(
  * function adds the offsets of any new blocks to the list and returns a
  * pointer to the augmented offset list.
  */
-static TIntLinkPtr 
-s_AugmentOffsetList(
-    TIntLinkPtr    offset_list,
-    TSizeInfoPtr   list,
+static void 
+sAugmentOffsetList(
+    list<int>&    offsetList,
+    TSizeInfoPtr   listSizes,
     TLengthListPtr anchorpattern)
 {
     int           pattern_length;
     TSizeInfoPtr  sip;
-    TIntLinkPtr   prev_offset, next_offset, new_offset;
     int           line_counter, forecast_position, line_skip;
     bool         skipped_previous = false;
     int           num_chars;
     int           num_additional_offsets = 0;
     int           max_additional_offsets = 5000; /* if it's that bad, forget it */
 
-    if (!list  ||  !anchorpattern) {
-        return offset_list;
+    if (!listSizes  ||  !anchorpattern) {
+        return;
     }
 
     pattern_length = 0;
@@ -3364,21 +3354,21 @@ s_AugmentOffsetList(
         pattern_length += (sip->size_value * sip->num_appearances);
     }
     if (pattern_length == 0) {
-        return offset_list;
+        return;
     }
 
-    prev_offset = nullptr;
-    next_offset = offset_list;
+    auto prevOffset = offsetList.end();
+    auto nextOffset = offsetList.begin();
     line_counter = 0;
-    sip = list;
+    sip = listSizes;
     while (sip  &&  num_additional_offsets < max_additional_offsets) {
         /* if we are somehow out of synch, don't get caught in infinite loop */
-        if (next_offset  &&  line_counter > next_offset->ival) {
-            next_offset = next_offset->next;
-        } else if (next_offset  &&  line_counter == next_offset->ival) {
+        if (nextOffset  != offsetList.end()  &&  line_counter > *nextOffset) {
+            nextOffset++;
+        } else if (nextOffset  != offsetList.end()  &&  line_counter == *nextOffset) {
             skipped_previous = false;
-            prev_offset = next_offset;
-            next_offset = next_offset->next;
+            prevOffset = nextOffset;
+            nextOffset++;
             /* advance sip and line counter past the end of this pattern */
             num_chars = 0;
             while (num_chars < pattern_length  &&  sip) {
@@ -3392,25 +3382,22 @@ s_AugmentOffsetList(
                 sip  &&  
                 line_skip < sip->num_appearances  &&  
                 num_additional_offsets < max_additional_offsets  &&  
-                (!next_offset  ||  line_counter < next_offset->ival)) {
+                (nextOffset == offsetList.end()  ||  line_counter < *nextOffset)) {
                 /* see if we can build a pattern that matches the pattern 
                 * length we want
                 */
-                forecast_position = s_ForecastPattern (line_counter,
+                forecast_position = sForecastPattern (line_counter,
                     pattern_length,
-                    next_offset, line_skip,
+                    nextOffset, offsetList.end(), line_skip,
                     sip);
                 if (forecast_position > 0) {
-                    new_offset = SIntLink::AppendNew(forecast_position, NULL);
                     num_additional_offsets++;
-                    if (!prev_offset) {
-                        new_offset->next = offset_list;
-                        offset_list = new_offset;
+                    if (nextOffset  == offsetList.end()) {
+                        offsetList.push_back(forecast_position);
                     } else {
-                        new_offset->next = next_offset;
-                        prev_offset->next = new_offset;
+                        offsetList.insert(nextOffset, forecast_position);
                     }
-                    prev_offset = new_offset;
+                    //prevOffset = newOffset;
                     /* now advance sip and line counter past the end 
                     * of the pattern we have just created
                     */
@@ -3441,84 +3428,80 @@ s_AugmentOffsetList(
         }
     }
     if (num_additional_offsets >= max_additional_offsets) {
-        delete offset_list;
-        offset_list = nullptr;
+        offsetList.clear();
     }
-    return offset_list;
+    return;
 }
 
 /* This function finds the most frequently occurring distance between
  * two sequence data blocks and returns that value.
  */
-static int  
-s_GetMostPopularPatternLength(
-    TIntLinkPtr offset_list)
+static int
+sGetMostPopularPatternLength(
+    const list<int>& offsetList)
 {
-    int          line_counter, best_length;
-    TSizeInfoPtr pattern_length_list;
-
-    if (!offset_list) {
+    if (offsetList.empty()) {
         return -1;
     }
 
-    line_counter = -1;
-    pattern_length_list = nullptr;
-    for (auto offset = offset_list;  offset;  offset = offset->next) {
+    int line_counter = -1;
+    TSizeInfoPtr pattern_length_list = nullptr;
+    for (auto offset: offsetList) {
         if (line_counter != -1) {
             pattern_length_list = s_AddSizeInfo (pattern_length_list,
-                                               offset->ival - line_counter);
+                offset - line_counter);
         }
-        line_counter = offset->ival;
+        line_counter = offset;
     }
-    best_length = s_GetMostPopularSize (pattern_length_list);
+    int best_length = s_GetMostPopularSize (pattern_length_list);
     delete pattern_length_list;
     return best_length;
 }
-
 
 /* This function finds the most frequently appearing number of characters 
  * in a block of sequence data and returns that value.
  */
 static int 
-s_GetBestCharacterLength(
+sGetBestCharacterLength(
     TLineInfoPtr token_list,
-    TIntLinkPtr  offset_list,
+    const list<int>  offsetList,
     int          block_length)
 {
     int          line_diff, num_chars, best_num_chars;
     TSizeInfoPtr pattern_length_list = nullptr;
 
-    if (!token_list  ||  !offset_list  ||  block_length < 1) {
+    if (!token_list  ||  offsetList.empty()  ||  block_length < 1) {
         return -1;
     }
     /* get length of well-formatted block size */
     TLineInfoPtr lip = token_list;
-    TIntLinkPtr prev_offset = nullptr, new_offset = offset_list;
-    for ( ; new_offset  &&  lip; new_offset = new_offset->next) {
-        if (!prev_offset) {
+    auto prevOffset = offsetList.end();
+    auto newOffset = offsetList.begin();
+    for ( ; newOffset != offsetList.end()  &&  lip; newOffset++) {
+        if (prevOffset == offsetList.end()) {
             /* skip first tokens */
             for (line_diff = 0;
-                    line_diff < new_offset->ival  &&  lip;
+                    line_diff < *newOffset  &&  lip;
                     line_diff++) {
                 lip = lip->next;
             }
         }
-        if (prev_offset) {
+        else {
             num_chars = 0;
             for (line_diff = 0;
-                    line_diff < new_offset->ival - prev_offset->ival  &&  lip;
+                    line_diff < *newOffset - *prevOffset  &&  lip;
                     line_diff ++) {
-                if (line_diff < new_offset->ival - prev_offset->ival - 1) {
+                if (line_diff < *newOffset - *prevOffset - 1) {
                     num_chars += strlen(lip->data);
                 }
                 lip = lip->next;
             }
-            if (new_offset->ival - prev_offset->ival == block_length) {
+            if (*newOffset - *prevOffset == block_length) {
                 pattern_length_list = s_AddSizeInfo (pattern_length_list,
                                                    num_chars);
             }
         }
-        prev_offset = new_offset;
+        prevOffset = newOffset;
     }
     best_num_chars = s_GetMostPopularSize (pattern_length_list);
     if (best_num_chars == 0  &&  pattern_length_list) {
@@ -3527,7 +3510,6 @@ s_GetBestCharacterLength(
     delete pattern_length_list;
     return best_num_chars;
 }
-
 
 static int  
 s_CountCharactersBetweenOffsets(
@@ -3623,37 +3605,33 @@ s_CountCharactersBetweenOffsets(
 /* This function inserts new block locations into the offset_list
  * by looking for likely starts of abnormal patterns.
  */
-static void s_InsertNewOffsets(
+static void sInsertNewOffsets(
     TLineInfoPtr token_list,
-    TIntLinkPtr  offset_list,
-    int          block_length,
-    int          best_num_chars,
-    const char *       alphabet)
+    list<int>&  offsetList,
+    int block_length,
+    int best_num_chars,
+    const string& alphabet)
 {
-    TLineInfoPtr lip;
-    TIntLinkPtr  prev_offset, new_offset;
-    int          line_diff;
-
-    if (!token_list  ||  !offset_list  ||  block_length < 1  ||  best_num_chars < 1) {
+    if (!token_list  ||  offsetList.empty()  ||  block_length < 1  ||  best_num_chars < 1) {
         return;
     }
 
-    lip = token_list;
-    prev_offset = nullptr;
-    for (new_offset = offset_list; new_offset  &&  lip; 
-            prev_offset = new_offset, new_offset = new_offset->next) {
-        if (!prev_offset) {
+    int line_diff = 0;
+    TLineInfoPtr lip = token_list;
+    auto newOffset = offsetList.begin();
+    auto prevOffset = offsetList.end();
+    for ( ; newOffset != offsetList.end()  &&  lip; prevOffset = newOffset, newOffset++) {
+        if (prevOffset == offsetList.end()) {
             /* just advance through tokens */
-            for (line_diff = 0; lip  &&  line_diff < new_offset->ival; line_diff ++) {
+            for (line_diff = 0; lip  &&  line_diff < *newOffset; line_diff ++) {
                 lip = lip->next;
             }
             continue;
         }
-        if (new_offset->ival - prev_offset->ival == block_length) {
+        if (*newOffset - *prevOffset == block_length) {
             /* just advance through tokens */
             for (line_diff = 0;
-                    lip  &&  line_diff < new_offset->ival - prev_offset->ival;
-                    line_diff++) {
+                    lip  &&  line_diff < *newOffset - *prevOffset; line_diff++) {
                 lip = lip->next;
             }
             continue;
@@ -3661,8 +3639,7 @@ static void s_InsertNewOffsets(
         /* look for intermediate breaks */
         int num_chars = 0;
         for (line_diff = 0;
-                lip  &&  line_diff < new_offset->ival - prev_offset->ival
-                    &&  num_chars < best_num_chars;
+                lip  &&  line_diff < *newOffset - *prevOffset  &&  num_chars < best_num_chars;
                 line_diff ++) {
             num_chars += (lip->data ? strlen(lip->data) : 0);
             lip = lip->next;
@@ -3673,27 +3650,21 @@ static void s_InsertNewOffsets(
         /* set new offset at first line of next pattern */
         line_diff ++;
         lip = lip->next;
-        if (line_diff < new_offset->ival - prev_offset->ival) {
-            int line_start = line_diff + prev_offset->ival;
+        if (line_diff < *newOffset - *prevOffset) {
+            int line_start = line_diff + *prevOffset;
             /* advance token pointer to new piece */
-            while (lip  &&  line_diff < new_offset->ival - prev_offset->ival) {
+            while (lip  &&  line_diff < *newOffset - *prevOffset) {
                 lip = lip->next;
                 line_diff ++;
             }
             /* insert new offset value */
-            auto splice_offset = SIntLink::AppendNew(line_start, nullptr);
-            if (!splice_offset) {
-                return;
-            }
-            splice_offset->next = new_offset;
-            prev_offset->next = splice_offset;
-
+            prevOffset = offsetList.insert(newOffset, line_start);
             s_CountCharactersBetweenOffsets (lip,
-                                new_offset->ival - splice_offset->ival,
-                                best_num_chars);
+                *newOffset - *prevOffset,
+                best_num_chars);
         }
     }
-    
+
     /* iterate through the last block */
     for (line_diff = 0; lip  &&  line_diff < block_length ; line_diff ++) {
         lip = lip->next;
@@ -3701,10 +3672,9 @@ static void s_InsertNewOffsets(
 
     /* if we have room for one more sequence, or even most of one more sequence, add it */
     if (lip  &&  !s_SkippableString (lip->data)) {
-        SIntLink::AppendNew(line_diff + prev_offset->ival, prev_offset);
+        offsetList.push_back(line_diff + *prevOffset);
     }
 }
-
 
 /* This function returns true if the string contains digits, false otherwise */
 static bool 
@@ -3734,10 +3704,9 @@ s_ProcessAlignFileRawByLengthPattern (
     TAlignRawFilePtr afrp)
 {
     TLineInfoPtr   token_list;
-    TLengthListPtr list;
+    TLengthListPtr lengthList;
     TLineInfoPtr   lip;
     TLengthListPtr anchorpattern;
-    TIntLinkPtr    offset_list;
     int            best_length;
     int            best_num_chars;
 
@@ -3748,46 +3717,45 @@ s_ProcessAlignFileRawByLengthPattern (
     token_list = s_BuildTokenList (afrp->line_list);
     token_list = s_RemoveNexusCommentsFromTokens (token_list);
 
-    list = SLengthList::AppendNew(nullptr);
+    lengthList = SLengthList::AppendNew(nullptr);
     for (lip = token_list; lip  &&  !s_FoundStopLine (lip->data); lip = lip->next) {
         if (s_SkippableString (lip->data)  ||  s_ContainsDigits(lip->data)) {
-            s_AddLengthRepeat (list, 0);
+            s_AddLengthRepeat (lengthList, 0);
         } else {
-            s_AddLengthRepeat (list, strlen (lip->data));
+            s_AddLengthRepeat (lengthList, strlen (lip->data));
         }
     }
 
-    anchorpattern = s_FindMostPopularPattern (list->lengthrepeats);
+    anchorpattern = s_FindMostPopularPattern (lengthList->lengthrepeats);
     if (!anchorpattern  ||  !anchorpattern->lengthrepeats) {
-        delete list;
+        delete lengthList;
         return;
     }
 
     /* find anchor patterns in original list, 
      * find distances between anchor patterns 
      */
-    offset_list = s_CreateOffsetList (list->lengthrepeats, anchorpattern);
-    offset_list = s_AugmentOffsetList (offset_list,
-                                     list->lengthrepeats,
-                                     anchorpattern);
+    list<int> offsetList;
+    sCreateOffsetList(lengthList->lengthrepeats, anchorpattern, offsetList);
+    sAugmentOffsetList (offsetList, lengthList->lengthrepeats, anchorpattern);
 
     /* resolve unusual distances between anchor patterns */
-    best_length = s_GetMostPopularPatternLength (offset_list);
-    if (best_length < 1  &&  offset_list  &&  offset_list->next) {
-        best_length = offset_list->next->ival - offset_list->ival;
+    best_length = sGetMostPopularPatternLength (offsetList);
+    if (best_length < 1  &&  offsetList.size() > 1) {
+        best_length = *std::next(offsetList.begin()) - *offsetList.begin(); 
     }
-    best_num_chars = s_GetBestCharacterLength (token_list, offset_list, best_length);
-    s_InsertNewOffsets (token_list, offset_list, best_length, best_num_chars,
-                      afrp->alphabet_.c_str());
+    best_num_chars = sGetBestCharacterLength (token_list, offsetList, best_length);
+    sInsertNewOffsets (token_list, offsetList, best_length, best_num_chars,
+                      afrp->alphabet_);
 
     /* use token before each anchor pattern as ID, use tokens for distance
      * between anchor patterns for sequence data
      */
-    s_CreateSequencesBasedOnTokenPatterns (token_list, offset_list,
+    sCreateSequencesBasedOnTokenPatterns (token_list, offsetList,
                                        anchorpattern, afrp, false);
-  
+
     delete anchorpattern;
-    delete list;
+    delete lengthList;
     delete token_list;
 }
 
