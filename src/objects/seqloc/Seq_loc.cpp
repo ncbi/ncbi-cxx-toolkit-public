@@ -4417,8 +4417,9 @@ void x_PushRange(CSeq_loc& dst,
         }
     }
     else if ( rg.GetLength() == 1 &&
-        ( !rg.IsSetFuzzFrom() || !rg.IsSetFuzzTo() ||
-        rg.GetFuzzFrom().Equals(rg.GetFuzzTo()) ) )
+        rg.IsSetFuzzFrom() == rg.IsSetFuzzTo() &&
+        ( !rg.IsSetFuzzFrom() ||
+            rg.GetFuzzFrom().Equals(rg.GetFuzzTo()) ) )
     {
         // Preserve points
         CRef<CSeq_point> pnt(new CSeq_point);
