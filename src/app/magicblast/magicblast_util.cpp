@@ -1196,7 +1196,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     int status = s_GetQuerySequence(bioseq, r,
                            (sam_flags & SAM_FLAG_SEQ_REVCOMP) != 0, sequence);
 
-    if (!status) {
+    if (!status && sequence.length() > 0) {
         ostr << sequence << sep;
     }
     else {
@@ -1327,7 +1327,7 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
     string sequence;
     CRange<TSeqPos> range;
     int status = s_GetQuerySequence(bioseq, range, false, sequence);
-    if (status) {
+    if (status || sequence.empty()) {
         ostr << "*" << sep;
     }
     else {

@@ -864,6 +864,7 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
     CTempString line;
     string defline_id;
     CRef<CSeq_entry> retval;
+    bool empty_sequence = false;
 
     // first read defline
     ++(*line_reader);
@@ -911,20 +912,31 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
         }
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
         bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-        bioseq.SetInst().SetLength(line.length());
-        bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(line.data()));
+        // + read instead of a sequence means that the sequence is empty and
+        // we reached the second defline
+        if (line[0] == '+') {
+            bioseq.SetInst().SetLength(0);
+            bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(""));
+            empty_sequence = true;
+        }
+        else {
+            bioseq.SetInst().SetLength(line.length());
+            bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(line.data()));
+            m_BasesAdded += line.length();
+        }
 
-        m_BasesAdded += line.length();
         retval = seq_entry;
     }
     
-    // read and skip second defline
-    ++(*line_reader);
-    line = **line_reader;
-    // skip empty lines
-    while (!line_reader->AtEOF() && line.empty()) {
+    if (!empty_sequence) {
+        // read and skip second defline
         ++(*line_reader);
         line = **line_reader;
+        // skip empty lines
+        while (!line_reader->AtEOF() && line.empty()) {
+            ++(*line_reader);
+            line = **line_reader;
+        }
     }
 
     if (line[0] != '+') {
@@ -933,13 +945,15 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
                    NStr::IntToString(line_reader->GetLineNumber()));
     }
 
-    // read and skip quality scores
-    ++(*line_reader);
-    line = **line_reader;
-    // skip empty lines
-    while (!line_reader->AtEOF() && line.empty()) {
+    if (!empty_sequence) {
+        // read and skip quality scores
         ++(*line_reader);
         line = **line_reader;
+        // skip empty lines
+        while (!line_reader->AtEOF() && line.empty()) {
+            ++(*line_reader);
+            line = **line_reader;
+        }
     }
 
     return retval;
