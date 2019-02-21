@@ -2670,10 +2670,11 @@ int/*bool*/ LogQueuePeek() {
 						AppLog_SetClient(data.ctx, "");
 					break;				
 				case lkReqStart:
-				case lkSubReqStart:
-					if (msg)
-						log_parse_start_request(data.ctx, data.time.sec ? &data.time : NULL, msg, data.kind == lkSubReqStart);
+				case lkSubReqStart: {
+                    char empty[1] = {0};
+                    log_parse_start_request(data.ctx, data.time.sec ? &data.time : NULL, msg ? msg : empty, data.kind == lkSubReqStart);
 					break;
+                }
 				case lkReqExtra:
 					if (msg)
 						log_parse_extra_request(data.ctx, msg);
