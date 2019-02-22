@@ -187,9 +187,9 @@ else # elif test -n "$NCBI"; then
 fi
 
 if test -z "$datatool"; then # keep looking
-    if test "`echo $bindir/*`" = "$bindir/*"; then
-        # empty or non-existent (--without-execopy?)
-        bindir=$build_root/build/serial/datatool
+    alt_bindir=$build_root/build/serial/datatool
+    if test -x $alt_bindir/datatool -a \! -x $bindir/datatool; then    
+        bindir=$alt_bindir
     fi
 
     if test -x "$bindir/datatool"; then
