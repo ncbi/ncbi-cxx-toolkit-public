@@ -299,7 +299,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
 
-    auto fReportError = [&] (const string& msg, EDiagSev sev) 
+    auto fReportError = [&] (const string& msg, EDiagSev sev, int subcode) 
     {
         if (NStr::IsBlank(msg)) {
             return;
@@ -403,7 +403,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-    auto fReportError = [&] (const string& msg, EDiagSev sev) 
+    auto fReportError = [&] (const string& msg, EDiagSev sev, int subcode) 
     {
         if (NStr::IsBlank(msg)) {
             return;
