@@ -16,6 +16,7 @@
 # It is allowed to have more than one of each statements
 APP: igblastp igblastn makeblastdb
 
+COPY: $srcdir/src/app/igblast/edit_imgt_file.pl $installdir/bin
 COPY: $srcdir/src/app/igblast/internal_data  $installdir
 COPY: $srcdir/src/app/igblast/optional_file  $installdir
 
