@@ -244,8 +244,8 @@ using TLengthListData = SLengthList;
 struct SCommentLoc {
 //  ============================================================================
     SCommentLoc(
-        const char* start_,
-        const char* end_,
+        const char* start_ = nullptr,
+        const char* end_ = nullptr,
         SCommentLoc* next_=nullptr): start(start_), end(end_), next(next_)
     {};
 
@@ -1167,9 +1167,8 @@ s_FindNthDataChar(
  */
 void
 s_AddStringCount (
-    const char* str,
+    const string& str,
     int             line_num,
-    //TStringCountPtr list
     list<SStringCount>& stringCounts
 )
 {
@@ -1445,12 +1444,8 @@ s_UpdateNexusCharInfo(
  */
 static bool 
 s_IsConsensusLine (
-    const char * str_)
+    const string& str)
 {
-    if (!str_) {
-        return false;
-    }
-    string str(str_);
     if (str.find_first_not_of("*:. \t\r\n") != string::npos) {
         return false;
     }
@@ -1464,12 +1459,8 @@ s_IsConsensusLine (
  */
 static bool 
 s_SkippableNexusComment (
-    const char *str_)
+    const string& str_)
 {
-
-    if (!str_) {
-        return false;
-    }
     string str = NStr::TruncateSpaces(str_);
     NStr::ToLower(str);
     if (!NStr::EndsWith(str, ';')) {
@@ -1486,9 +1477,9 @@ s_SkippableNexusComment (
 
 static bool 
 s_IsOnlyNumbersAndSpaces (
-    const char *str)
+    const string& str)
 {
-    return (string(str).find_first_not_of(" \t0123456789") == string::npos);
+    return (str.find_first_not_of(" \t0123456789") == string::npos);
 }
 
 
@@ -1497,19 +1488,16 @@ s_IsOnlyNumbersAndSpaces (
 */
 static bool 
 s_IsAlnFormatString (
-    const char* str_)
+    const string& str_)
 {
-    if (!str_) {
-        return false;
-    }
     string str(str_);
     NStr::ToLower(str);
     return (NStr::StartsWith(str, "matrix")  ||
         NStr::StartsWith(str, "#nexus")  ||
         NStr::StartsWith(str, "clustal w")  ||
-        s_SkippableNexusComment (str_)  ||
-        s_IsTwoNumbersSeparatedBySpace (str_)  ||
-        s_IsConsensusLine (str_));
+        s_SkippableNexusComment (str)  ||
+        s_IsTwoNumbersSeparatedBySpace (str)  ||
+        s_IsConsensusLine(str));
 }
 
 
@@ -1517,15 +1505,16 @@ s_IsAlnFormatString (
  * in that they do not contain sequence data and therefore should not be
  * considered part of any block patterns or sequence data.
  */
-static bool s_SkippableString (char * str_)
+static bool 
+s_SkippableString(
+    const string& str)
 {
-    if (s_IsAlnFormatString(str_)) {
+    if (s_IsAlnFormatString(str)) {
         return true;
     }
-    string str(str_);
     return (NStr::StartsWith(str, "sequin")  ||
-        s_IsOnlyNumbersAndSpaces(str_)  ||
-        str_[0] == ';');
+        s_IsOnlyNumbersAndSpaces(str)  ||
+        str[0] == ';');
  }
 
 
@@ -1564,7 +1553,7 @@ s_IsASN1 (
  * comment is found or a NULL if the string does not contain a bracketed 
  * comment.
  */
-static TCommentLocPtr 
+static TCommentLocPtr
 s_FindComment(
     const char * string)
 {
