@@ -42,6 +42,7 @@ def main():
     VERBOSE = options.VERBOSE
     
     apps = [ "igblastn.exe", "igblastp.exe",
+            "edit_imgt_file.pl",
              "ncbi-vdb-md.dll"
             ]
     

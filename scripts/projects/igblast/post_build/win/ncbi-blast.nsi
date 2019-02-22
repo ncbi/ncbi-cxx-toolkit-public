@@ -62,6 +62,7 @@ Section "DefaultSection" SecDflt
   
   File "igblastn.exe"
   File "igblastp.exe"
+  File "edit_imgt_file.pl"
   File "ncbi-vdb-md.dll"
   
   SetOutPath "$INSTDIR\doc"

@@ -25,7 +25,7 @@ setup()
 
 prep_binary_component_package() 
 {
-    BLAST_BINS="igblastn igblastp"
+    BLAST_BINS="igblastn igblastp edit_imgt_file.pl"
     DATA_DIRS="optional_file internal_data"
     ALL_BINS="$BLAST_BINS"
 
