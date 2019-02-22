@@ -310,38 +310,37 @@ void SFixture::MtReading()
         CDeadline deadline(kReadingDeadline, 0);
 
         while (!deadline.IsExpired()) {
-            auto items_locked = reply->items.GetLock();
-            auto& items = *items_locked;
-            bool empty_items = false;
+            if (auto items_locked = reply->items.GetLock()) {
+                auto& items = *items_locked;
+                bool empty_items = false;
 
-            for (auto& item_ts : items) {
-                auto reader = readers.find(&item_ts);
+                for (auto& item_ts : items) {
+                    auto reader = readers.find(&item_ts);
 
-                if (reader == readers.end()) {
-                    auto item_locked = item_ts.GetLock();
-                    auto& chunks = item_locked->chunks;
+                    if (reader == readers.end()) {
+                        auto item_locked = item_ts.GetLock();
+                        auto& chunks = item_locked->chunks;
 
-                    if (chunks.empty()) {
-                        empty_items = true;
-                    } else {
-                        auto blob_id = chunks.front().args.GetValue("blob_id");
-                        auto src_blob = src_blobs.find(blob_id);
-                        thread t;
-
-                        if (src_blob == src_blobs.end()) {
-                            BOOST_ERROR("Unknown blob received");
+                        if (chunks.empty()) {
+                            empty_items = true;
                         } else {
-                            t = thread(reader_impl, src_blob->second, &item_ts);
-                        }
+                            auto blob_id = chunks.front().args.GetValue("blob_id");
+                            auto src_blob = src_blobs.find(blob_id);
+                            thread t;
 
-                        readers.emplace(&item_ts, move(t));
+                            if (src_blob == src_blobs.end()) {
+                                BOOST_ERROR("Unknown blob received");
+                            } else {
+                                t = thread(reader_impl, src_blob->second, &item_ts);
+                            }
+
+                            readers.emplace(&item_ts, move(t));
+                        }
                     }
                 }
+
+                if (empty_items) continue;
             }
-
-            if (empty_items) continue;
-
-            items_locked.Unlock();
 
             if (readers.size() == src_blobs.size()) break;
 
@@ -364,7 +363,7 @@ void SFixture::MtReading()
     // Sending
 
     array<char, kSizeMax> buf;
-    SPSG_Receiver receiver(reply, make_shared<SPSG_Future>());
+    SPSG_Receiver receiver({}, reply, make_shared<SPSG_Future>());
 
     for (auto& chunk_stream : src_chunks) {
         do {
@@ -400,7 +399,7 @@ BOOST_AUTO_TEST_CASE(Receiver)
     // Reading
 
     array<char, kSizeMax> buf;
-    SPSG_Receiver receiver(reply, make_shared<SPSG_Future>());
+    SPSG_Receiver receiver({}, reply, make_shared<SPSG_Future>());
 
     for (auto& chunk_stream : src_chunks) {
         do {
