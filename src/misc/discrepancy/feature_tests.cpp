@@ -362,79 +362,96 @@ const string kNonExtendable = "[n] feature[s] [has] partial ends that do not abu
 enum EExtensibe {
     eExtensibe_none = 0,
     eExtensibe_fixable = 1,
-    eExtensibe_nonfixable = 2
+    eExtensibe_abut = 2
 };
 
-EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& extend_len, ENa_strand strand)
 {
     bool circular = seq.IsSetInst() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular;
+    const CSeq_data* seq_data = 0;
     EExtensibe rval = eExtensibe_none;
     if (left < 3) {
-        rval = circular ? eExtensibe_nonfixable : eExtensibe_fixable;
         extend_len = left;
-    }
-    else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
+        rval = extend_len ? circular ? eExtensibe_none : eExtensibe_fixable : eExtensibe_abut;
+    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
         TSeqPos offset = 0;
         TSeqPos last_gap_stop = 0;
-        ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
-            if ((*it)->IsLiteral()) {
-                offset += (*it)->GetLiteral().GetLength();
-                if (!(*it)->GetLiteral().IsSetSeq_data()) {
+        const CSeq_data* seq_data = 0;
+        for (auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
+            if (it->IsLiteral()) {
+                offset += it->GetLiteral().GetLength();
+                if (!it->GetLiteral().IsSetSeq_data()) {
                     last_gap_stop = offset;
-                } else if ((*it)->GetLiteral().GetSeq_data().IsGap()) {
+                } else if (it->GetLiteral().GetSeq_data().IsGap()) {
                     last_gap_stop = offset;
                 }
-            } else if ((*it)->IsLoc()) {
-                offset += sequence::GetLength((*it)->GetLoc(), scope);
+            } else if (it->IsLoc()) {
+                offset += sequence::GetLength(it->GetLoc(), scope);
             }
             if (offset > left) {
                 break;
             }
         }
         if (left >= last_gap_stop && left - last_gap_stop <= 3) {
-            rval = eExtensibe_fixable;
             extend_len = left - last_gap_stop;
+            rval = extend_len ? eExtensibe_fixable : eExtensibe_abut;
+        }
+    }
+    if (rval == eExtensibe_fixable && strand == eNa_strand_minus) {
+        CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
+        string codon;
+        svec.GetSeqData(left - extend_len, left - extend_len + 3, codon);
+        if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
+            rval = eExtensibe_none;
         }
     }
     return rval;
 }
 
 
-EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos& extend_len, ENa_strand strand)
 {
     bool circular = seq.IsSetInst() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular;
     EExtensibe rval = eExtensibe_none;
     if (right > seq.GetLength() - 4) {
-        rval = circular ? eExtensibe_nonfixable : eExtensibe_fixable;
         extend_len = seq.GetLength() - right - 1;
+        rval = extend_len ? circular ? eExtensibe_none : eExtensibe_fixable : eExtensibe_abut;
     }
     else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
         TSeqPos offset = 0;
         TSeqPos next_gap_start = 0;
-        ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
-            if ((*it)->IsLiteral()) {
-                if (!(*it)->GetLiteral().IsSetSeq_data()) {
+        for (auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
+            if (it->IsLiteral()) {
+                if (!it->GetLiteral().IsSetSeq_data()) {
                     next_gap_start = offset;
-                } else if ((*it)->GetLiteral().GetSeq_data().IsGap()) {
+                } else if (it->GetLiteral().GetSeq_data().IsGap()) {
                     next_gap_start = offset;
                 }
-                offset += (*it)->GetLiteral().GetLength();
-            } else if ((*it)->IsLoc()) {
-                offset += sequence::GetLength((*it)->GetLoc(), scope);
+                offset += it->GetLiteral().GetLength();
+            } else if (it->IsLoc()) {
+                offset += sequence::GetLength(it->GetLoc(), scope);
             }
             if (offset > right + 3) {
                 break;
             }
         }
         if (next_gap_start > right && next_gap_start - right - 1 <= 3) {
-            rval = eExtensibe_fixable;
             extend_len = next_gap_start - right - 1;
+            rval = extend_len ? eExtensibe_fixable : eExtensibe_abut;
+        }
+    }
+    if (rval == eExtensibe_fixable && strand != eNa_strand_minus) {
+        CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
+        string codon;
+        svec.GetSeqData(right + extend_len - 3, right + extend_len, codon);
+        if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
+            rval = eExtensibe_none;
         }
     }
     return rval;
 }
 
-
+// Cannot be extended and not abut the end or the gap
 bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
 {
     bool rval = false;
@@ -442,7 +459,7 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
         TSeqPos start = loc.GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            if (IsExtendableLeft(start, seq, scope, extend_len) != eExtensibe_fixable) {
+            if (IsExtendableLeft(start, seq, scope, extend_len, loc.GetStrand()) == eExtensibe_none) {
                 rval = true;
             }
         }
@@ -451,7 +468,7 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
         TSeqPos stop = loc.GetStop(eExtreme_Positional);
         if (stop < seq.GetLength() - 1) {
             TSeqPos extend_len = 0;
-            if (IsExtendableRight(stop, seq, scope, extend_len) != eExtensibe_fixable) {
+            if (IsExtendableRight(stop, seq, scope, extend_len, loc.GetStrand()) == eExtensibe_none) {
                 rval = true;
             }
         }
@@ -576,7 +593,8 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         TSeqPos start = obj.GetLocation().GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len) == eExtensibe_fixable) {
+            if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len, obj.GetLocation().GetStrand()) == eExtensibe_fixable) {
+cout << "extend: " << extend_len << "\n";
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
@@ -585,7 +603,8 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         TSeqPos stop = obj.GetLocation().GetStop(eExtreme_Positional);
         if (stop < seq->GetLength() - 1) {
             TSeqPos extend_len = 0;
-            if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len) == eExtensibe_fixable) {
+            if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len, obj.GetLocation().GetStrand()) == eExtensibe_fixable) {
+cout << "extend: " << extend_len << "\n";
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
@@ -635,7 +654,7 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
         TSeqPos start = cds.GetLocation().GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            if (IsExtendableLeft(start, *seq, &scope, extend_len) && CCleanup::SeqLocExtend(new_feat->SetLocation(), start - extend_len, scope)) {
+            if (IsExtendableLeft(start, *seq, &scope, extend_len, cds.GetLocation().GetStrand()) && CCleanup::SeqLocExtend(new_feat->SetLocation(), start - extend_len, scope)) {
                 if (gene) {
                     CCleanup::SeqLocExtend(new_gene->SetLocation(), start - extend_len, scope);
                 }
@@ -661,7 +680,7 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
         TSeqPos stop = cds.GetLocation().GetStop(eExtreme_Positional);
         if (stop > 0) {
             TSeqPos extend_len = 0;
-            if (IsExtendableRight(stop, *seq, &scope, extend_len) && CCleanup::SeqLocExtend(new_feat->SetLocation(), stop + extend_len, scope)) {
+            if (IsExtendableRight(stop, *seq, &scope, extend_len, cds.GetLocation().GetStrand()) && CCleanup::SeqLocExtend(new_feat->SetLocation(), stop + extend_len, scope)) {
                 if (gene) {
                     CCleanup::SeqLocExtend(new_gene->SetLocation(), stop + extend_len, scope);
                 }
