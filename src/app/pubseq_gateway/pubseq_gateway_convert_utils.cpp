@@ -253,11 +253,13 @@ void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
 }
 
 
-CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record)
+CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record,
+                                int32_t  sat)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     json.SetInteger(kLastModified, annot_record.GetModified());
+    json.SetInteger(kSat, sat);
     json.SetInteger(kSatKey, annot_record.GetSatKey());
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());

@@ -562,7 +562,7 @@ void CPendingOperation::x_ProcessAnnotRequest(void)
     }
 
 
-    vector<string>  bioseq_na_keyspaces =
+    vector<pair<string, int32_t>>  bioseq_na_keyspaces =
                 CPubseqGatewayApp::GetInstance()->GetBioseqNAKeyspaces();
 
     for (const auto &  bioseq_na_keyspace : bioseq_na_keyspaces) {
@@ -571,7 +571,7 @@ void CPendingOperation::x_ProcessAnnotRequest(void)
 
         details->m_Loader.reset(
                 new CCassNAnnotTaskFetch(m_Timeout, m_MaxRetries, m_Conn,
-                                         bioseq_na_keyspace,
+                                         bioseq_na_keyspace.first,
                                          bioseq_resolution.m_BioseqInfo.m_Accession,
                                          bioseq_resolution.m_BioseqInfo.m_Version,
                                          bioseq_resolution.m_BioseqInfo.m_SeqIdType,
@@ -582,7 +582,8 @@ void CPendingOperation::x_ProcessAnnotRequest(void)
             static_cast<CCassNAnnotTaskFetch*>(details->m_Loader.get());
 
         fetch_task->SetConsumeCallback(
-            CNamedAnnotationCallback(this, m_Reply, details.get()));
+            CNamedAnnotationCallback(this, m_Reply, details.get(),
+                                     bioseq_na_keyspace.second));
         fetch_task->SetErrorCB(
             CNamedAnnotationErrorCallback(this, m_Reply, details.get()));
         fetch_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
@@ -2309,7 +2310,7 @@ bool CNamedAnnotationCallback::operator()(CNAnnotRecord &&  annot_record,
         m_FetchDetails->m_FinishedRead = true;
         m_PendingOp->x_SendReplyCompletion();
     } else {
-        CJsonNode   json = ConvertBioseqNAToJson(annot_record);
+        CJsonNode   json = ConvertBioseqNAToJson(annot_record, m_Sat);
         m_PendingOp->PrepareNamedAnnotationData(annot_record.GetAccession(),
                                                 annot_record.GetVersion(),
                                                 annot_record.GetSeqIdType(),

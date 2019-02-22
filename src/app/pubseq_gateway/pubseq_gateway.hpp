@@ -69,7 +69,7 @@ public:
         return m_BioseqKeyspace;
     }
 
-    vector<string> GetBioseqNAKeyspaces(void) const
+    vector<pair<string, int32_t>> GetBioseqNAKeyspaces(void) const
     {
         return m_BioseqNAKeyspaces;
     }
@@ -171,7 +171,7 @@ private:
     string                              m_BioseqInfoDbFile;
     string                              m_BlobPropDbFile;
     vector<string>                      m_SatNames;
-    vector<string>                      m_BioseqNAKeyspaces;
+    vector<pair<string, int32_t>>       m_BioseqNAKeyspaces;
 
     unsigned short                      m_HttpPort;
     unsigned short                      m_HttpWorkers;

@@ -113,7 +113,7 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                ECassSchemaType  mapping_schema,
                                string &  resolver_keyspace,
                                ECassSchemaType  resolver_schema,
-                               vector<string> &  bioseq_na_keyspaces,
+                               vector<pair<string, int32_t>> &  bioseq_na_keyspaces,
                                ECassSchemaType  bioseq_na_schema,
                                string &  err_msg)
 {
@@ -124,7 +124,8 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
             mapping.push_back(schema == mapping_schema ? get<0>(lmapping[sat_id]) : "");
 
             if (schema == bioseq_na_schema)
-                bioseq_na_keyspaces.push_back(get<0>(lmapping[sat_id]));
+                bioseq_na_keyspaces.push_back(
+                        pair<string, int32_t>(get<0>(lmapping[sat_id]), sat_id));
         }
         return true;
     }

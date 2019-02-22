@@ -67,6 +67,6 @@ void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
 CJsonNode ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
                                   TServIncludeData  include_data_flags);
 CJsonNode ConvertBlobPropToJson(const CBlobRecord &  blob);
-CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record);
+CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record, int32_t  sat);
 
 #endif

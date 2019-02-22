@@ -72,7 +72,7 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                ECassSchemaType  mapping_schema,
                                string &  resolver_keyspace,
                                ECassSchemaType  resolver_schema,
-                               vector<string> &  bioseq_na_keyspaces,
+                               vector<pair<string, int32_t>> &  bioseq_na_keyspaces,
                                ECassSchemaType  bioseq_na_schema,
                                string &  err_msg);
 

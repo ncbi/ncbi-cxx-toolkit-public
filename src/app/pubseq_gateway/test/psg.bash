@@ -53,10 +53,10 @@ obasename=$(basename $odirname)
 unset PORTCFG
 PORT=${PORTCFG:=2180}
 
-# full_url="http://nctest21:${PORT}/${url}"
+# full_url="http://nctest11:2181/${url}"
 full_url="http://localhost:${PORT}/${url}"
 if [[ $url == ADMIN* ]]; then
-    curl -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Content-Length: ' | ${cdir}/printable_string -z > $ofile
+    curl -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | ${cdir}/printable_string -z > $ofile
     exit 0
 fi
 
@@ -73,5 +73,5 @@ if [[ $obasename == "get_AFP68755__5" ]] || [[ $obasename == "get_AFP68755" ]] |
 fi
 
 # The most common case
-curl -s -i "${full_url}" | grep --text -v '^Date: ' | ${cdir}/printable_string -z > $ofile
+curl -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | ${cdir}/printable_string -z > $ofile
 exit 0

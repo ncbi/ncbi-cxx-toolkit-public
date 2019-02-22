@@ -446,9 +446,11 @@ class CNamedAnnotationCallback
         CNamedAnnotationCallback(
                 CPendingOperation *  pending_op,
                 HST::CHttpReply<CPendingOperation> *  reply,
-                CPendingOperation::SFetchDetails *  fetch_details) :
+                CPendingOperation::SFetchDetails *  fetch_details,
+                int32_t  sat) :
             m_PendingOp(pending_op), m_Reply(reply),
-            m_FetchDetails(fetch_details)
+            m_FetchDetails(fetch_details),
+            m_Sat(sat)
         {}
 
         bool operator()(CNAnnotRecord &&  annot_record, bool  last);
@@ -457,6 +459,7 @@ class CNamedAnnotationCallback
         CPendingOperation *                     m_PendingOp;
         HST::CHttpReply<CPendingOperation> *    m_Reply;
         CPendingOperation::SFetchDetails *      m_FetchDetails;
+        int32_t                                 m_Sat;
 };
 
 
