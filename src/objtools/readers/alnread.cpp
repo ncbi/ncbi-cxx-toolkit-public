@@ -375,12 +375,15 @@ sMakeErrorMessage(
     }
 }
 
+
 //  ============================================================================
 void
 sReportError(
     const string& id,
     int lineNumber,
     EDiagSev severity,
+    int code,
+    int subcode,
     const string& description,
     ILineErrorListener* pEl)
 //  ============================================================================
@@ -391,14 +394,30 @@ sReportError(
     if (lineNumber == -1) {
         lineNumber = 0;
     }
-    string message = sMakeErrorMessage(id, description);;
-    AutoPtr<CObjReaderLineException> pErr(
-        CObjReaderLineException::Create(
+    string message = sMakeErrorMessage(id, description);
+    AutoPtr<CLineErrorEx> pErr(
+        CLineErrorEx::Create(
+            ILineError::eProblem_GeneralParsingError,
             severity,
+            code,
+            subcode,
+            "",
             lineNumber,
-            message,
-            ILineError::eProblem_GeneralParsingError));
+            message));
     pEl->PutError(*pErr);
+}
+
+
+//  ============================================================================
+static void sReportError(
+    const string& id,
+    int lineNumber,
+    EDiagSev severity,
+    const string& description,
+    ILineErrorListener* pEl)
+//  ============================================================================
+{
+    sReportError(id, lineNumber, severity, 0, 0, description, pEl);
 }
 
 /* This function creates and sends an error message regarding a character

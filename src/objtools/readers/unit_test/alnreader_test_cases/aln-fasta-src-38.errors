@@ -1,20 +1,25 @@
 Line No    : 13
 Severity   : Error
+Code       : 1.2
 Message    : environmental-sample modifier has invalid value: "val1".
 
 Line No    : 13
 Severity   : Error
+Code       : 1.2
 Message    : germline modifier has invalid value: "val1".
 
 Line No    : 13
 Severity   : Error
+Code       : 1.2
 Message    : metagenomic modifier has invalid value: "val1".
 
 Line No    : 13
 Severity   : Error
+Code       : 1.2
 Message    : rearranged modifier has invalid value: "val1".
 
 Line No    : 13
 Severity   : Error
+Code       : 1.2
 Message    : transgenic modifier has invalid value: "val1".
 

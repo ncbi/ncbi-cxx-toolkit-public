@@ -1,16 +1,20 @@
 Line No    : 1
 Severity   : Error
+Code       : 1.2
 Message    : transgenic modifier has invalid value: "val1".
 
 Line No    : 5
 Severity   : Error
+Code       : 1.2
 Message    : environmental-sample modifier has invalid value: "val1".
 
 Line No    : 9
 Severity   : Error
+Code       : 1.2
 Message    : environmental_sample modifier has invalid value: "val1".
 
 Line No    : 13
 Severity   : Error
+Code       : 1.2
 Message    : environmental sample modifier has invalid value: "val1".
 

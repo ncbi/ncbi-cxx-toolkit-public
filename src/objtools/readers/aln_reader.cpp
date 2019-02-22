@@ -50,6 +50,7 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include <objtools/logging/listener.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
 #include <cassert>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Align
@@ -201,10 +202,12 @@ bool CAlnReader::x_IsReplicatedSequence(const char* seq_data,
 }
 
 
-void
+static void
 sReportError(
     ILineErrorListener* pEC,
     EDiagSev severity,
+    int code,
+    int subcode,
     int lineNumber,
     const string& message,
     ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
@@ -212,14 +215,30 @@ sReportError(
     if (!pEC) {
         NCBI_THROW2(CObjReaderParseException, eFormat, message, 0);
     }
-    AutoPtr<CObjReaderLineException> pErr(
-        CObjReaderLineException::Create(
+    AutoPtr<CLineErrorEx> pErr(
+        CLineErrorEx::Create(
+        problemType,
         severity,
+        code,
+        subcode,
+        "",
         lineNumber,
-        message,
-        problemType));
+        message));
     pEC->PutError(*pErr);
 }
+
+
+static void 
+sReportError(
+    ILineErrorListener* pEC,
+    EDiagSev severity,
+    int lineNumber,
+    const string& message,
+    ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
+{
+    sReportError(pEC, severity, 0, 0, lineNumber, message, problemType);
+}
+
 
 void CAlnReader::Read(
     bool guess, 
@@ -766,10 +785,13 @@ void CAlnReader::x_AddMods(const TDeflineInfo& defline_info,
         return;
     }
 
+
     auto fReportError = 
-        [&](const string& msg, EDiagSev sev) {
+        [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
             return sReportError(pErrorListener, 
                     sev, 
+                    EReaderCode::eReader_Mods,
+                    subcode,
                     defline_info.line_num,
                     msg);
         };

@@ -66,6 +66,14 @@ public:
         }
         mStream << "Severity   : " << err.SeverityStr() << endl;
 
+        if (err.GetCode()) {
+            mStream << "Code       : " << err.GetCode();
+            if (err.GetSubCode()) {
+               mStream << "." << err.GetSubCode();
+            }
+            mStream << endl;
+        }
+
         vector<string> messageLines;
         NStr::Split(err.Message(), "\n", messageLines);
         if (!messageLines.empty()) {

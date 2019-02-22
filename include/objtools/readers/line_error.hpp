@@ -346,9 +346,6 @@ public:
     virtual std::string Compose(void) const
     {
         return Message();
-  //      CNcbiOstrstream out;
-  //      Write(out);
-  //      return CNcbiOstrstreamToString(out);
     }
 
     // This is required to disambiguate IMessage::GetSeverity() and
@@ -462,6 +459,130 @@ protected:
     /// this exception and try to avoid using the copy constructor at all.
     CLineError(const CLineError & rhs );
 };
+
+
+//  ============================================================================
+class NCBI_XOBJUTIL_EXPORT CLineErrorEx:
+//  ============================================================================
+    public ILineError
+{
+public:
+
+    /// Use this because the constructor is protected.
+    ///
+    /// @returns
+    ///   Caller is responsible for the return value.
+    static CLineErrorEx* Create(
+        EProblem eProblem,
+        EDiagSev eSeverity,
+        int code, 
+        int subcode,
+        const std::string& strSeqId,
+        unsigned int uLine,
+        const std::string & strErrorMessage = string(""),
+        const std::string & strFeatureName = string(""),
+        const std::string & strQualifierName = string(""),
+        const std::string & strQualifierValue = string(""),
+        const TVecOfLines & vecOfOtherLines = TVecOfLines() );
+
+    /// Use this because copy ctor is protected.
+    virtual ILineError *Clone(void) const;
+
+    virtual ~CLineErrorEx(void) {}
+
+    /// copy constructor is protected so please use this function to
+    /// throw the object.
+    NCBI_NORETURN void Throw(void) const;
+       
+    void PatchLineNumber(
+        unsigned int uLine) { m_uLine = uLine; };
+
+    // "OtherLines" not set in ctor because it's
+    // use should be somewhat rare
+    void AddOtherLine(unsigned int uOtherLine) {
+        m_vecOfOtherLines.push_back(uOtherLine);
+    }
+ 
+    EProblem
+    Problem(void) const { return m_eProblem; }
+
+    virtual EDiagSev
+    Severity(void) const { return m_eSeverity; }
+    
+    const std::string &
+    SeqId(void) const { return m_strSeqId; }
+
+    unsigned int
+    Line(void) const { return m_uLine; }
+
+    const TVecOfLines &
+    OtherLines(void) const { return m_vecOfOtherLines; }
+
+    const std::string &
+    FeatureName(void) const { return m_strFeatureName; }
+    
+    const std::string &
+    QualifierName(void) const { return m_strQualifierName; }
+
+    const std::string &
+    QualifierValue(void) const { return m_strQualifierValue; }
+        
+    virtual std::string
+    ProblemStr(void) const
+    {
+        if (m_eProblem == ILineError::eProblem_GeneralParsingError  &&
+                !ErrorMessage().empty()) {
+            return ErrorMessage();
+        }
+        return ILineError::ProblemStr(Problem());
+    }
+
+    const std::string &ErrorMessage(void) const { return m_strErrorMessage; }
+
+    virtual string Message(void) const override 
+    {
+        return (m_strErrorMessage.empty() ? 
+                ILineError::Message() :
+                m_strErrorMessage);
+    }
+
+    virtual int GetCode(void) const override { return m_Code; };
+    virtual int GetSubCode(void) const override { return m_Subcode; }
+
+protected:
+
+    EProblem m_eProblem;
+    EDiagSev m_eSeverity;
+    int m_Code;
+    int m_Subcode;
+    std::string m_strSeqId;
+    unsigned int m_uLine;
+    std::string m_strFeatureName;
+    std::string m_strQualifierName;
+    std::string m_strQualifierValue;
+    std::string m_strErrorMessage;
+    TVecOfLines m_vecOfOtherLines;
+
+    /// protected instead of public.  Please use the Create function instead.
+    CLineErrorEx(
+        EProblem eProblem,
+        EDiagSev eSeverity,
+        int code,
+        int subcode,
+        const std::string& strSeqId,
+        unsigned int uLine,
+        const std::string & strErrorMessage,
+        const std::string & strFeatureName,
+        const std::string & strQualifierName,
+        const std::string & strQualifierValue,
+        const TVecOfLines & m_vecOfOtherLine);
+
+    /// protected instead of public.  Please use the Throw function to throw
+    /// this exception and try to avoid using the copy constructor at all.
+    CLineErrorEx(const CLineErrorEx & rhs );
+};
+
+
 
 //  ============================================================================
 class NCBI_XOBJUTIL_EXPORT CObjReaderLineException

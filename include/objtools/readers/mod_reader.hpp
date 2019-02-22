@@ -32,6 +32,7 @@
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
+#include <objtools/readers/reader_error_codes.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -75,7 +76,7 @@ public:
 
     using TMods = map<string, list<CModData>>;
     using TModEntry = TMods::value_type;
-    using FReportError = function<void(const string& message, EDiagSev severity)>;
+    using FReportError = function<void(const string& message, EDiagSev severity, EModSubcode subcode)>;
 
     CModHandler(FReportError fReportError=nullptr);
 

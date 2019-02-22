@@ -99,6 +99,97 @@ ILineError *CLineError::Clone(void) const
     return new CLineError(*this);
 }
 
+
+CLineErrorEx* CLineErrorEx::Create(
+        EProblem eProblem,
+        EDiagSev eSeverity,
+        int code,
+        int subcode,
+        const std::string& strSeqId,
+        unsigned int uLine,
+        const std::string & strErrorMessage,
+        const std::string & strFeatureName,
+        const std::string & strQualifierName,
+        const std::string & strQualifierValue,
+        const TVecOfLines & vecOfOtherLines)
+{
+    // this triggers a deprecated-call warning, which should disappear
+    // once the constructors become protected instead of deprecated.
+    return new CLineErrorEx(
+            eProblem,
+            eSeverity,
+            code,
+            subcode,
+            strSeqId,
+            uLine,
+            strErrorMessage,
+            strFeatureName,
+            strQualifierName,
+            strQualifierValue,
+            vecOfOtherLines);
+}
+
+
+void 
+CLineErrorEx::Throw(void) const {
+    // this triggers a deprecated-call warning, which should disappear
+    // once the constructors become protected instead of deprecated.
+    throw *this;
+}
+
+
+CLineErrorEx::CLineErrorEx(
+    EProblem eProblem,
+    EDiagSev eSeverity,
+    int code,
+    int subcode,
+    const std::string& strSeqId,
+    unsigned int uLine,
+    const std::string & strErrorMessage,
+    const std::string & strFeatureName,
+    const std::string & strQualifierName,
+    const std::string & strQualifierValue,
+    const TVecOfLines & vecOfOtherLines )
+    : m_eProblem(eProblem), m_eSeverity( eSeverity ), 
+      m_Code(code), m_Subcode(subcode),
+    m_strSeqId(strSeqId), m_uLine( uLine ), 
+    m_strErrorMessage(strErrorMessage),
+    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
+    m_strQualifierValue(strQualifierValue), 
+    m_vecOfOtherLines(vecOfOtherLines)
+{ }
+
+
+CLineErrorEx::CLineErrorEx(const CLineErrorEx & rhs ) :
+    CLineErrorEx(rhs.m_eProblem, 
+                 rhs.m_eSeverity, 
+                 rhs.m_Code, 
+                 rhs.m_Subcode, 
+                 rhs.m_strSeqId,
+                 rhs.m_uLine,
+                 rhs.m_strErrorMessage,
+                 rhs.m_strFeatureName,
+                 rhs.m_strQualifierName,
+                 rhs.m_strQualifierValue,
+                 rhs.m_vecOfOtherLines)
+{}
+
+/*
+m_eProblem(rhs.m_eProblem), m_eSeverity(rhs.m_eSeverity ), m_strSeqId(rhs.m_strSeqId), m_uLine(rhs.m_uLine ), 
+    m_strFeatureName(rhs.m_strFeatureName), m_strQualifierName(rhs.m_strQualifierName), 
+    m_strQualifierValue(rhs.m_strQualifierValue), m_strErrorMessage(rhs.m_strErrorMessage),
+    m_vecOfOtherLines(rhs.m_vecOfOtherLines)
+{ }
+
+*/
+
+ILineError *CLineErrorEx::Clone(void) const
+{
+    return new CLineErrorEx(*this);
+}
+
+
+
 CObjReaderLineException *
     CObjReaderLineException::Create(
     EDiagSev eSeverity,

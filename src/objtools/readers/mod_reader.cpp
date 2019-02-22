@@ -204,7 +204,7 @@ void CModHandler::AddMods(const TModList& mods,
             rejected_mods.push_back(mod);
             string message = mod.GetName() + " is deprecated - ignoring";
             if (m_fReportError) {
-                m_fReportError(message, eDiag_Warning);
+                m_fReportError(message, eDiag_Warning, eModSubcode_Deprecated);
             }
             continue;
         }
@@ -218,20 +218,23 @@ void CModHandler::AddMods(const TModList& mods,
 
             string msg;
             EDiagSev sev;
+            EModSubcode subcode;
             if (NStr::EqualNocase(accepted_mods[canonical_name].front().GetValue(),
                                   mod.GetValue())) {
                 msg = mod.GetName() + "=" 
                     + mod.GetValue() + " duplicates previously encountered modifier.";
                 sev = eDiag_Warning;
+                subcode = eModSubcode_Duplicate;
             }
             else {
                 msg = mod.GetName() + "=" 
                     + mod.GetValue() + " conflicts with previously encountered modifier.";
                 sev = eDiag_Error;
+                subcode = eModSubcode_ConflictingValues;
             }
 
             if (m_fReportError) {
-                m_fReportError(msg, sev);
+                m_fReportError(msg, sev, subcode);
                 continue;
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
@@ -404,7 +407,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                 skipped_mods.insert(skipped_mods.end(),
                     mod_entry.second.begin(),
                     mod_entry.second.end());
-                fReportError(msg, eDiag_Warning);
+                fReportError(msg, eDiag_Warning, eModSubcode_Unrecognized);
                 continue;
             }
             NCBI_THROW(CModReaderException, eUnknownModifier, msg);
@@ -414,7 +417,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     mod_entry.second.begin(),
                     mod_entry.second.end());
             if (fReportError) {
-                fReportError(e.GetMsg(), eDiag_Error);
+                fReportError(e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
             } 
             else { 
                 throw; // rethrow e

@@ -1,8 +1,10 @@
 Line No    : 5
 Severity   : Error
+Code       : 1.2
 Message    : germline modifier has invalid value: "val1".
 
 Line No    : 9
 Severity   : Error
+Code       : 1.2
 Message    : rearranged modifier has invalid value: "val1".
 
