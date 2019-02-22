@@ -355,7 +355,8 @@ void CAlnReader::Read(
             m_DeflineInfo.resize(numDeflines);
             for (int i=0;  i< numDeflines;  ++i) {
                 m_DeflineInfo[i] = {alignmentInfo.mDeflines[i].line_num, 
-                                    alignmentInfo.mDeflines[i].data};
+                                    NStr::TruncateSpaces(
+                                            alignmentInfo.mDeflines[i].data)};
             }
         }
         else {
@@ -753,7 +754,8 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         }
         else {
             for (auto& pSeqEntry : seq_set) {
-                x_AddTitle(m_DeflineInfo[i++].data, pSeqEntry->SetSeq());
+                x_AddTitle(m_DeflineInfo[i++].data, 
+                        pSeqEntry->SetSeq());
             }
         }
     }
