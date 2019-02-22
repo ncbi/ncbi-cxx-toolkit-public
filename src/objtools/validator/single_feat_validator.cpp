@@ -123,6 +123,8 @@ void CSingleFeatValidator::Validate()
     x_ValidateNonImpFeat();
 
     x_ValidateNonGene();
+
+    x_CheckForNonAsciiCharacters();
 }
 
 void CSingleFeatValidator::PostErr(EDiagSev sv, EErrType et, const string& msg)
@@ -2485,6 +2487,24 @@ void CSingleFeatValidator::x_ValidateLocusTagGeneralMatch(CConstRef <CSeq_feat> 
     }
 }
 
+
+void CSingleFeatValidator::x_CheckForNonAsciiCharacters()
+{
+    CStdTypeConstIterator<string> it(m_Feat);
+
+    for (; it; ++it) {
+        const string& str = *it;
+        FOR_EACH_CHAR_IN_STRING(c_it, str) {
+            const char& ch = *c_it;
+            unsigned char chu = ch;
+            if (ch > 127 || (ch < 32 && ch != '\t' && ch != '\r' && ch != '\n')) {
+                PostErr(eDiag_Fatal, eErr_GENERIC_NonAsciiAsn,
+                    "Non-ASCII character '" + NStr::NumericToString(chu) + "' found in feature (" + str + ")");
+                break;
+            }
+        }
+    }
+}
 
 void CProtValidator::Validate()
 {

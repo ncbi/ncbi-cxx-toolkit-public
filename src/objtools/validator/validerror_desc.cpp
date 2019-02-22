@@ -82,6 +82,23 @@ void CValidError_desc::ValidateSeqDesc
 {
     m_Ctx.Reset(&ctx);
 
+    // check for non-ascii characters
+    CStdTypeConstIterator<string> it(desc);
+
+    for (; it; ++it) {
+        const string& str = *it;
+        FOR_EACH_CHAR_IN_STRING(c_it, str) {
+            const char& ch = *c_it;
+            unsigned char chu = ch;
+            if (ch > 127 || (ch < 32 && ch != '\t' && ch != '\r' && ch != '\n')) {
+                PostErr(eDiag_Fatal, eErr_GENERIC_NonAsciiAsn,
+                    "Non-ASCII character '" + NStr::NumericToString(chu) + "' found (" + str + ")", ctx, desc);
+                break;
+            }
+        }
+    }
+
+
     // switch on type, e.g., call ValidateBioSource, ValidatePubdesc, ...
     switch ( desc.Which() ) {
         case CSeqdesc::e_Modif:
