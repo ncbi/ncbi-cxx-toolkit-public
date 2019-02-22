@@ -112,6 +112,15 @@ struct SLineInfo {
         }
     };
 
+    static SLineInfo*
+    AppendNew(
+        SLineInfo* list, const char* data_, int line_num_, int line_offset_ = 0) 
+    { 
+        auto pNew = new SLineInfo(data_, line_num_, line_offset_);
+        return tAppendNew<SLineInfo>(list, pNew); 
+    };
+
+
     char* data;
     int line_num;
     int line_offset;
@@ -1468,6 +1477,7 @@ s_SkippableNexusComment (
     }
     return (NStr::StartsWith(str, "format ")  ||
         NStr::StartsWith(str, "dimensions ")  ||
+        NStr::StartsWith(str, "charstatelabels ")  ||
         NStr::StartsWith(str, "options ")  ||
         NStr::StartsWith(str, "begin characters")  ||
         NStr::StartsWith(str, "begin data") ||
@@ -2139,12 +2149,36 @@ s_FindInterleavedBlocks(
 
 
 static bool
+sStartsNexusCommentOfType(
+    const string& str_,
+    const string& type_)
+{
+    string str(str_);
+    NStr::TruncateSpaces(str);
+    NStr::ToLower(str);
+    return (NStr::StartsWith(str, "begin")  &&  NStr::EndsWith(str,  type_ + ";"));
+}
+
+
+static bool
+sEndsNexusComment(
+    const string& str_)
+{
+    string str(str_);
+    NStr::TruncateSpaces(str);
+    NStr::ToLower(str);
+    return NStr::StartsWith(str, "end;");
+}
+
+static bool
 s_AfrpInitLineData(
     TAlignRawFilePtr afrp,
     istream& istr)
 {
     int overall_line_count = 0;
-    bool in_taxa_comment = false;
+    bool in_ignored_comment = false;
+    bool in_data_comment = false;
+    bool in_matrix_command = false;
     string linestring;
     bool dataAvailable = sReadLine(istr, linestring);
     TLineInfoPtr last_line = nullptr, next_line = nullptr;
@@ -2156,27 +2190,66 @@ s_AfrpInitLineData(
 
     while (dataAvailable) {
         NStr::TruncateSpacesInPlace(linestring);
-        if (!in_taxa_comment  &&  s_FoundStopLine(linestring.c_str())) {
+        if (linestring.empty()) {
+            // default processing
+        }
+        else if (!in_ignored_comment  &&  !in_data_comment  &&  s_FoundStopLine(linestring.c_str())) {
             linestring [0] = 0;
         }
-        if (in_taxa_comment) {
-            if (strncmp (linestring.c_str(), "end;", 4) == 0) {
-                in_taxa_comment = false;
+        else if (in_ignored_comment) {
+            if (sEndsNexusComment(linestring)) {
+                in_ignored_comment = false;
             } 
             linestring [0] = 0;
-        } else if (strncmp (linestring.c_str(), "begin taxa;", 11) == 0) {
+        } 
+        else if (in_data_comment) {
+            if (sEndsNexusComment(linestring)) {
+                in_data_comment = false;
+                linestring [0] = 0;
+            } 
+            else if (NStr::EndsWith(linestring, ";")) {
+                in_matrix_command = false;
+            }
+            else if (!in_matrix_command) {
+                string tempstr(linestring);
+                NStr::ToLower(tempstr);
+                if (NStr::StartsWith(tempstr, "matrix")) {
+                    in_matrix_command = true;
+                }
+                else {
+                    while (!NStr::EndsWith(linestring, ";")) {
+                        sReadLine(istr, tempstr);
+                        linestring += " " + tempstr;
+                        overall_line_count++;
+                    }
+                }
+            }
+        } 
+        else if (sStartsNexusCommentOfType(linestring, "data")) {
             linestring [0] = 0;
-            in_taxa_comment = true;
+            in_data_comment = true;
             afrp->align_format_found = true;
         }
-        next_line = new SLineInfo(linestring.c_str(), overall_line_count, 0);
-        if (!last_line) {
-            afrp->line_list = next_line;
-        } else {
-            last_line->next = next_line;
+        else if (sStartsNexusCommentOfType(linestring, "characters")) {
+            linestring [0] = 0;
+            in_data_comment = true;
+            afrp->align_format_found = true;
         }
-        last_line = next_line;
+        else if (sStartsNexusCommentOfType(linestring, "ncbi")) {
+            // default processing
+        }
+        else if (sStartsNexusCommentOfType(linestring, "")) {
+            linestring [0] = 0;
+            in_ignored_comment = true;
+            afrp->align_format_found = true;
+        }
 
+        // default processing starts here:
+        auto pNew = SLineInfo::AppendNew(afrp->line_list, linestring.c_str(), overall_line_count);
+        if (!afrp->line_list) {
+            afrp->line_list = pNew;
+        }
+        
         dataAvailable = sReadLine(istr, linestring);
         if (dataAvailable) {
             overall_line_count ++;
@@ -2301,8 +2374,7 @@ sReadAlignFileRaw(
         linestring = next_line->data;
         overall_line_count = next_line->line_num-1;
 
-        if (!found_defline && !is_nexus_type) 
-        {
+        if (!found_defline && !is_nexus_type) {
             is_nexus_type = NStr::StartsWith(linestring, "sequin");
         }
 
@@ -3076,7 +3148,7 @@ static TLengthListPtr
 s_FindMostPopularPattern (
     TSizeInfoPtr list)
 {
-    TLengthListPtr patternlist = nullptr, newpattern;
+    TLengthListPtr patternlist = nullptr, newpattern = nullptr;
     TSizeInfoPtr   popular_line_length;
     int           not_this_length;
 
