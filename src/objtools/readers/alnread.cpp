@@ -1729,6 +1729,18 @@ s_RemoveOrganismCommentFromLine (
     }
 }
 
+
+static const char* s_GetFirstNonSpace(const char* line)
+{
+    const char* curr_pos = line;
+    while(curr_pos) {
+        if (!isspace(*curr_pos)) {
+            return curr_pos;
+        }
+        ++curr_pos;
+    }
+    return nullptr;
+}
  
 static bool s_ReadDefline(
     const char* line, 
@@ -1741,12 +1753,16 @@ static bool s_ReadDefline(
     }
 
     if (line[0] == '>') {
-        const char* defline_offset = is_nexus_type ?
-            line + 1 :
+        const char* next_nonspace = s_GetFirstNonSpace(line+1);
+        const char* defline_offset = (next_nonspace && 
+                                      ((*next_nonspace)=='[')) ?
+            next_nonspace :
             strpbrk(line, " \t");
         if (!defline_offset) {
             defline_offset = "";
         }
+
+      
         afrp->mDeflines.push_back(SLineInfo(defline_offset, line_num, 0));
         return true;
     }
