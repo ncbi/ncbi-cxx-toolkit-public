@@ -153,24 +153,27 @@ void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
 void CCassConnectionFactory::ReloadConfig(void)
 {
 //    ERR_POST(Trace << "CCassDataConnectionFactory::ReloadConfig");
-    CFastMutexGuard _(m_RunTimeParams);
 
     if (m_CfgName.empty())
         NCBI_THROW(CCassandraException, eGeneric,
                    "Configuration file is not specified");
 
     filebuf fb;
-    fb.open(m_CfgName.c_str(), ios::in | ios::binary);
+    if (!fb.open(m_CfgName.c_str(), ios::in | ios::binary))
+        NCBI_THROW(CCassandraException, eGeneric,
+                   " Cannot open file: " + m_CfgName);
     CNcbiIstream is(&fb);
-    CNcbiRegistry Registry(is, 0);
+    CNcbiRegistry registry(is, 0);
     fb.close();
 
-    ReloadConfig(Registry);
+    ReloadConfig(registry);
 }
 
 
 void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry &  registry)
 {
+    CFastMutexGuard _(m_RunTimeParams);
+
     if (m_Section.empty())
         m_Section = kCassConfigSection;
 
