@@ -46,11 +46,16 @@ class CCassConnectionFactory:
     public enable_shared_from_this<CCassConnectionFactory>
 {
 protected:
-    CCassConnectionFactory();
     void ProcessParams(void);
     void GetHostPort(string &  cass_hosts, short &  cass_port);
 
 public:
+    CCassConnectionFactory(const CCassConnectionFactory&) = delete;
+    CCassConnectionFactory& operator=(const CCassConnectionFactory&) = delete;
+    CCassConnectionFactory(CCassConnectionFactory&&) = delete;
+    CCassConnectionFactory& operator=(CCassConnectionFactory&&) = delete;
+    
+    CCassConnectionFactory();
     ~CCassConnectionFactory();
     void AppParseArgs(const CArgs &  args);
     void LoadConfig(const string &  cfg_name, const string &  section);
@@ -61,7 +66,7 @@ public:
 
     static shared_ptr<CCassConnectionFactory> s_Create(void)
     {
-        return shared_ptr<CCassConnectionFactory>(new CCassConnectionFactory());
+        return make_shared<CCassConnectionFactory>();
     }
 
     void SetLogging(EDiagSev  severity)
@@ -72,8 +77,6 @@ public:
 private:
     void x_ValidateArgs(void);
 
-    CCassConnectionFactory(const CCassConnectionFactory&) = delete;
-    CCassConnectionFactory& operator=(const CCassConnectionFactory&) = delete;
 
     CFastMutex              m_RunTimeParams;
     string                  m_CfgName;
