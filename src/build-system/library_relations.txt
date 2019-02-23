@@ -727,7 +727,7 @@ jsd_sample_lib needs xser
 k5crypto needs3party $(ORIG_LIBS)
 kmer_metadata needs $(GPIPE_COMMON_LIBS)
 kmer_metadata needs biotree
-kmer_metadata needs gpipe_kmer
+kmer_metadata needs gpipe_kmer_metadata_cache
 kmer_metadata needs pathogen_connection
 krb5 needs3party $(NETWORK_LIBS)
 krb5 needs3party $(ORIG_LIBS)
