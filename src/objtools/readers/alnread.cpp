@@ -1758,14 +1758,13 @@ static const char* s_GetFirstNonSpace(const char* line)
     return nullptr;
 }
  
-static bool s_ReadDefline(
+static void s_ReadDefline(
     const char* line, 
     int line_num, 
-    const bool is_nexus_type,
     TAlignRawFilePtr afrp)
 {
     if (!line  ||  !afrp) {
-        return false;
+        return;
     }
 
     if (line[0] == '>') {
@@ -1777,12 +1776,8 @@ static bool s_ReadDefline(
         if (!defline_offset) {
             defline_offset = "";
         }
-
-      
         afrp->mDeflines.push_back(SLineInfo(defline_offset, line_num, 0));
-        return true;
     }
-    return false;
 }
 
 
@@ -2419,19 +2414,13 @@ sReadAlignFileRaw(
     }
 
 
-    bool found_defline = false;
-    bool is_nexus_type = false;
     for (next_line = afrp->line_list; next_line; next_line = next_line->next) {
         linestring = next_line->data;
         overall_line_count = next_line->line_num-1;
 
-        if (!found_defline && !is_nexus_type) {
-            is_nexus_type = NStr::StartsWith(linestring, "sequin");
-        }
 
-        found_defline = s_ReadDefline(linestring, 
+        s_ReadDefline(linestring, 
             overall_line_count, 
-            is_nexus_type,
             afrp);
 
 
