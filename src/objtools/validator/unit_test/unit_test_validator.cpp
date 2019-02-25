@@ -407,7 +407,7 @@ void AddChromosomeNoLocation(vector< CExpectedError *>& expected_errors, const s
 void AddChromosomeNoLocation(vector< CExpectedError *>& expected_errors, CRef<CSeq_entry> entry)
 {
     if (entry->IsSeq()) {
-        CConstRef<CSeq_id> seqid = sequence::GetId(entry->GetSeq(), sequence::eGetId_Seq_id_WorstRank).GetSeqId();
+        CConstRef<CSeq_id> seqid = sequence::GetId(entry->GetSeq(), sequence::eGetId_Best).GetSeqId();
         AddChromosomeNoLocation(expected_errors, seqid->AsFastaString());
     } else if (entry->IsSet()) {
         if (entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
@@ -2936,7 +2936,7 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
     nuc_entry->SetSeq().SetId().push_back(ncbifile);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
-    AddChromosomeNoLocation(expected_errors, "gnl|NCBIFILE|ABCDEFGHIJKLMNOPQRSTUVWXYZ012345678901234");
+    AddChromosomeNoLocation(expected_errors, entry);
     CheckErrors (*eval, expected_errors);
     nuc_entry->SetSeq().SetId().pop_back();
     CLEAR_ERRORS
@@ -2982,12 +2982,12 @@ void TestOneGeneralSeqId(const string& db, const string& tag, const string& errm
 
     STANDARD_SETUP
     
-    string acc_str = "gnl|" + db + "|" + tag;
+    string acc_str = "lcl|good";
     if (!errmsg.empty()) {
         expected_errors.push_back(new CExpectedError(acc_str, eDiag_Warning, "BadSeqIdFormat",
             errmsg));
     }
-    AddChromosomeNoLocation(expected_errors, acc_str);
+    AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -3114,12 +3114,7 @@ void TestOneOtherAcc(CRef<CSeq_id> other_acc, bool id_change, bool conflict, boo
     gi_id->SetGi(GI_CONST(21914627));
     entry->SetSeq().SetId().push_back(gi_id);
     entry->SetSeq().SetId().push_back(other_acc);
-    string acc_str;
-    if (other_acc->IsPir() || other_acc->IsSwissprot()) {
-        acc_str = other_acc->AsFastaString();
-    } else {
-        acc_str = "gb|AY123456.1|";
-    }
+    string acc_str = "gb|AY123456.1|";
 
     STANDARD_SETUP
 
@@ -3206,7 +3201,7 @@ BOOST_FIXTURE_TEST_CASE(Test_MultipleAccessions, CGenBankFixture)
     
     STANDARD_SETUP
 
-    string acc_str = "ref|NC_123457.1|";
+    string acc_str = "gb|AY123456.1|";
     expected_errors.push_back(new CExpectedError(acc_str, eDiag_Error, "INSDRefSeqPackaging", "INSD and RefSeq records should not be present in the same set"));
     expected_errors.push_back(new CExpectedError(acc_str, eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
     AddChromosomeNoLocation(expected_errors, acc_str);
@@ -4151,7 +4146,7 @@ BOOST_AUTO_TEST_CASE(Test_ProteinsHaveGeneralID)
     STANDARD_SETUP
 
     // no error unless part of nuc-prot set
-    AddChromosomeNoLocation(expected_errors, "gnl|a|b");
+    AddChromosomeNoLocation(expected_errors,entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
@@ -4957,7 +4952,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     id2->SetPatent().SetCit().SetId().SetNumber("1");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetId().push_back(id2);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("pat|USA|1|1");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -7096,7 +7090,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_FastaBracketTitle)
     other->SetGeneral().SetTag().SetStr("good");
     entry->SetSeq().SetId().push_back(other);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    AddChromosomeNoLocation(expected_errors, "gnl|TMSMART|good");
+    AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
@@ -7104,7 +7098,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_FastaBracketTitle)
     scope.RemoveTopLevelSeqEntry(seh);
     other->SetGeneral().SetDb("BankIt");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    AddChromosomeNoLocation(expected_errors, "gnl|BankIt|good");
+    AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -22790,7 +22784,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_728)
     misc->SetLocation().SetInt().SetId().Assign(*bankit);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("gnl|NCBIFILE|x", eDiag_Critical,
+    expected_errors.push_back(new CExpectedError("lcl|x", eDiag_Critical,
         "BadSeqIdFormat",
         "Feature locations should not use Seq-ids that will be stripped during ID load"));
     AddChromosomeNoLocation(expected_errors, entry);
