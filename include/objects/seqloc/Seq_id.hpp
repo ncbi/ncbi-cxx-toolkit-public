@@ -669,18 +669,19 @@ public:
     };
 
     int AdjustScore       (int base_score) const;
-    int BaseTextScore     (void)           const { return BaseScore(); }
-    int BaseBestRankScore (void)           const { return BaseScore(); }
+    int BaseTextScore     (void)           const;
+    int BaseBestRankScore (void)           const;
     int BaseWorstRankScore(void)           const { return BaseTextScore(); }
-    int BaseFastaAAScore  (void)           const { return BaseScore(); }
-    int BaseFastaNAScore  (void)           const { return BaseScore(); }
-    int BaseScore         (void)           const;
+    int BaseFastaAAScore  (void)           const;
+    int BaseFastaNAScore  (void)           const;
+    int BaseBlastScore    (void)           const;
 
     int TextScore     (void) const { return AdjustScore(BaseTextScore()); }
     int BestRankScore (void) const { return AdjustScore(BaseBestRankScore()); }
     int WorstRankScore(void) const { return TextScore(); }
     int FastaAAScore  (void) const { return AdjustScore(BaseFastaAAScore()); }
     int FastaNAScore  (void) const { return AdjustScore(BaseFastaNAScore()); }
+    int BlastScore    (void) const { return AdjustScore(BaseBlastScore()); }
 
     /// Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id)
@@ -693,6 +694,8 @@ public:
         { return id ? id->FastaAAScore() : kMax_Int; }
     static int FastaNARank(const CRef<CSeq_id>& id)
         { return id ? id->FastaNAScore() : kMax_Int; }
+    static int BlastRank(const CRef<CSeq_id>& id)
+        { return id ? id->BlastScore() : kMax_Int; }
 
     /// Optimized implementation of CSerialObject::Assign, which is
     /// not so efficient.
