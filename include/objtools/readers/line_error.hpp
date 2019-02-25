@@ -273,8 +273,16 @@ public:
     virtual void Write( 
         CNcbiOstream& out ) const
     {
+
         out << "                " << SeverityStr() << ":" << endl;
         out << "Problem:        " << ProblemStr() << endl;
+        if (GetCode()) {
+            out << "Code:           " << GetCode();
+            if (GetSubCode()) {
+                out << "." << GetSubCode();
+            }
+            out << endl;
+        }
         const string & seqid = SeqId();
         if (!seqid.empty()) {
             out << "SeqId:          " << seqid << endl;
@@ -309,6 +317,13 @@ public:
     {
         out << "<message severity=\"" << NStr::XmlEncode(SeverityStr()) << "\" "
             << "problem=\"" << NStr::XmlEncode(ProblemStr()) << "\" ";
+        if (GetCode()) {
+            string code = NStr::IntToString(GetCode());
+            if (GetSubCode()) {
+                code += "." + NStr::IntToString(GetSubCode());
+            }
+            out << "code=\"" << NStr::XmlEncode(code) << "\" ";
+        }
         const string & seqid = SeqId();
         if (!seqid.empty()) {
             out << "seqid=\"" << NStr::XmlEncode(seqid) << "\" ";
