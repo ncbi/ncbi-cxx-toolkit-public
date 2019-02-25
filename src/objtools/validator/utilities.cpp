@@ -246,7 +246,7 @@ static string s_GetBioseqAcc(const CSeq_id& id, int* version)
 static string s_GetBioseqAcc(const CBioseq_Handle& handle, int* version)
 {
     if (handle) {
-        CConstRef<CSeq_id> seqid = sequence::GetId(handle, sequence::eGetId_Best).GetSeqId();
+        CConstRef<CSeq_id> seqid = sequence::GetId(handle, sequence::eGetId_Seq_id_WorstRank).GetSeqId();
         if (seqid) {
             return s_GetBioseqAcc(*seqid, version);
         }

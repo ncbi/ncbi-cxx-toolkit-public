@@ -407,7 +407,7 @@ void AddChromosomeNoLocation(vector< CExpectedError *>& expected_errors, const s
 void AddChromosomeNoLocation(vector< CExpectedError *>& expected_errors, CRef<CSeq_entry> entry)
 {
     if (entry->IsSeq()) {
-        CConstRef<CSeq_id> seqid = sequence::GetId(entry->GetSeq(), sequence::eGetId_Best).GetSeqId();
+        CConstRef<CSeq_id> seqid = sequence::GetId(entry->GetSeq(), sequence::eGetId_Seq_id_WorstRank).GetSeqId();
         AddChromosomeNoLocation(expected_errors, seqid->AsFastaString());
     } else if (entry->IsSet()) {
         if (entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
