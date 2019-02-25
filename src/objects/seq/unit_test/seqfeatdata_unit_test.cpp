@@ -2185,3 +2185,11 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
     BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
+{
+    auto all_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_any);
+    BOOST_CHECK_EQUAL(all_quals.size(), 133);
+
+}

@@ -3031,8 +3031,13 @@ START_SUBTYPE(propeptide_aa)
     ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
-END_SUBTYPE
+    END_SUBTYPE
 
+START_SUBTYPE(any)
+    for (size_t it = eQual_allele; it <= eQual_whole_replicon; ++it) {
+         quals.push_back((EQualifier)it);
+    }
+END_SUBTYPE
 #undef START_SUBTYPE
 #undef ADD_QUAL
 #undef END_SUBTYPE
