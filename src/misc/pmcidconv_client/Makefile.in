@@ -6,6 +6,8 @@
 LIB_PROJ = pmcidconv_client
 SUB_PROJ = unit_test
 
+REQUIRES = LIBXSLT
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
