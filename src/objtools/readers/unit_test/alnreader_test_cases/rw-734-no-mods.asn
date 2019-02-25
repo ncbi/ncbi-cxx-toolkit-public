@@ -6,7 +6,7 @@ Seq-entry ::= set {
         local str "03_TAJ"
       },
       descr {
-        title " HIV-1 isolate 03_TAJ from Tajikistan integrase (pol) gene,
+        title "HIV-1 isolate 03_TAJ from Tajikistan integrase (pol) gene,
  partial cds."
       },
       inst {
@@ -21,7 +21,7 @@ Seq-entry ::= set {
         local str "04_TAJ"
       },
       descr {
-        title " [organism=ia io] [topology=circular] HIV-1 isolate 04_TAJ from
+        title "[organism=ia io] [topology=circular] HIV-1 isolate 04_TAJ from
  Tajikistan integrase (pol) gene, partial cds."
       },
       inst {
@@ -36,7 +36,7 @@ Seq-entry ::= set {
         local str "08_TAJ"
       },
       descr {
-        title " HIV-1 isolate 08_TAJ from Tajikistan integrase (pol) gene,
+        title "HIV-1 isolate 08_TAJ from Tajikistan integrase (pol) gene,
  partial cds."
       },
       inst {

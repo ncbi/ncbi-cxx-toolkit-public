@@ -67,6 +67,10 @@ Severity   : Error
 Message    : At ID 'TTGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--': Inconsistent block line formatting
 
 Line No    : None (Encountered during pre or post processing)
+Severity   : Error
+Message    : At ID 'AT--ATGGAT': Expected sequence length 144, actual length 38
+
+Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
-Message    : At ID 'GT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC': No data found
+Message    : Error reading alignment: Invalid input or alphabet
 

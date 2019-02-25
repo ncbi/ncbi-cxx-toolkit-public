@@ -75,6 +75,7 @@ static T* tAppendNew(
 //  ===========================================================================
 struct SLineInfo {
 //  ===========================================================================
+
     SLineInfo(
         const char* data_,
         int line_num_,
@@ -93,10 +94,25 @@ struct SLineInfo {
     };
 
     
-    ~SLineInfo() { 
-        delete[] data; 
-        delete next;
-        next = nullptr;
+    ~SLineInfo() {
+        //best for a file with 1,000,000 lines, limts recursion depth to 2,000.
+        const int BLOCKSIZE(1000); 
+        SLineInfo* farNext = this;
+        for (auto i=0; i < BLOCKSIZE  &&  farNext; ++i) {
+            if (farNext) { 
+                farNext = farNext->next;
+            }
+        }
+        if (!farNext) {
+            delete[] data; 
+            delete next;
+        }
+        else {
+            auto beyondFarNext = farNext->next;
+            farNext->next = nullptr;
+            delete next;
+            delete beyondFarNext;
+        }
     };
     
     void SetData(
@@ -3812,10 +3828,10 @@ s_FindBadDataCharsInSequence(
     }
 
     auto firstMatchB = sequenceInfo.BeginningGap().find_first_of(sequenceInfo.Match());
-    match_not_in_beginning_gap = (firstMatchB == sequenceInfo.BeginningGap().size());
+    match_not_in_beginning_gap = (firstMatchB == string::npos);
 
     auto firstMatchE = sequenceInfo.EndGap().find_first_of(sequenceInfo.Match());
-    match_not_in_end_gap = (firstMatchE == sequenceInfo.EndGap().size());
+    match_not_in_end_gap = (firstMatchE == string::npos);
 
     /* First, find middle start and end positions and report characters
      * that are not beginning gap before the middle
@@ -3863,8 +3879,9 @@ s_FindBadDataCharsInSequence(
 
     if (! found_middle_start) {
         delete lirp;
-        s_ReportMissingSequenceData (arsp->mId, pEl);
-        return true;
+        //s_ReportMissingSequenceData (arsp->mId, pEl);
+        //return true;
+        return false;
     }
 
     /* Now complain about bad middle characters */
