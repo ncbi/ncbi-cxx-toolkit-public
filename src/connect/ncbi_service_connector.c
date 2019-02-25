@@ -150,6 +150,7 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
             return eHTTP_HeaderSuccess;
         header_parse = eHTTP_HeaderError;
     }
+    uuu->retry = 0;
 
     while (header  &&  *header) {
         if (strncasecmp(header, HTTP_CONNECTION_INFO,
