@@ -17716,6 +17716,7 @@ FE7A033F5ECCC07DFD0DC430C0A7E2B01E7C'H
                     loc int {
                       from 653,
                       to 655,
+                      strand plus,
                       id gi 148277093
                     },
                     aa ncbieaa 85
