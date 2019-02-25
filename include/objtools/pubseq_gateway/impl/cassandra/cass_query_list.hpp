@@ -21,11 +21,11 @@ using TCassQueryListTickCB = function<void()>;
 class ICassQueryListConsumer {
 public:
     virtual ~ICassQueryListConsumer() = default;
-    virtual bool Start(CCassQuery& query, CCassQueryList& list) = 0;
-    virtual bool Finish(CCassQuery& query, CCassQueryList& list) = 0;
-    virtual bool ProcessRow(const CCassQuery& query, CCassQueryList& list) = 0;
-    virtual void Reset(CCassQuery& query, CCassQueryList& list) = 0;
-    virtual void Failed(CCassQuery& query, CCassQueryList& list, const exception* e) = 0;
+    virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
+    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
+    virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
+    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
+    virtual void Failed(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx, const exception* e) = 0;
 };
 
 class CCassQueryList {
@@ -68,7 +68,11 @@ public:
     }
     void Wait();
     void Cancel(const exception* e = nullptr);
+    void Cancel(ICassQueryListConsumer* consumer, const exception* e = nullptr);
     void Execute(ICassQueryListConsumer* consumer, int retry_count, bool post_async = false);
+    bool HasEmptySlot();
+    void Yield();
+    shared_ptr<CCassQuery> Extract(size_t slot_index);
 private:
     enum SQrySlotState {
         ssAvailable,
@@ -80,9 +84,9 @@ private:
     struct SQrySlot {
         unique_ptr<ICassQueryListConsumer> m_consumer;
         shared_ptr<CCassQuery> m_qry;
+        size_t m_index;
         int m_retry_count;
         SQrySlotState m_state;
-        size_t m_index;
     };
     struct SQryNotification {
         CCassQueryList* m_query_list;
@@ -103,7 +107,7 @@ private:
             m_tick_cb();
     }
 
-    SQrySlot* WaitAny(bool discard);
+    SQrySlot* WaitAny(bool discard, bool wait = true);
     SQrySlot* WaitOne(size_t index, bool discard);
     void CheckPending(SQrySlot* slot);
     void AttachSlot(SQrySlot* slot, SPendingSlot&& pending_slot);
@@ -127,19 +131,19 @@ public:
     CCassOneExecConsumer(function<bool(CCassQuery& query, CCassQueryList& list)> cb) :
         m_cb(cb)
     {}
-    virtual bool Start(CCassQuery& query, CCassQueryList& list) override {
-        return m_cb(query, list);
+    virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) override {
+        return m_cb(*query, list);
     }
-    virtual bool Finish(CCassQuery& query, CCassQueryList& list) {
+    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
         return true;
     }
-    virtual bool ProcessRow(const CCassQuery& query, CCassQueryList& list) {
+    virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
         assert(false);
         return true;
     }
-    virtual void Reset(CCassQuery& query, CCassQueryList& list) {
+    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
     }
-    virtual void Failed(CCassQuery& query, CCassQueryList& list, const exception* e) {
+    virtual void Failed(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index, const exception* e) {
     }
 private:
     function<bool(CCassQuery& query, CCassQueryList& list)> m_cb;
