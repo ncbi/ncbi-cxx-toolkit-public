@@ -274,6 +274,38 @@ private:
 
 
 
+/// Request meta-information for the named annotations which are defined on the
+/// bioseq
+///
+
+class CPSG_Request_NamedAnnotInfo : public CPSG_Request
+{
+public:
+    /// Names of the named annotations 
+    typedef vector<string> TAnnotNames;
+
+    /// @param bio_id
+    ///  ID of the bioseq
+    /// @param annot_names
+    ///  List of NAs for which to request the metainfo
+    CPSG_Request_NamedAnnotInfo(CPSG_BioId      bio_id,
+                                TAnnotNames     annot_names,
+                                weak_ptr<void>  user_context = {})
+        : CPSG_Request(user_context),
+          m_BioId(bio_id),
+          m_AnnotNames(annot_names)
+    {}
+
+    const CPSG_BioId&  GetBioId()      const { return m_BioId;      }
+    const TAnnotNames& GetAnnotNames() const { return m_AnnotNames; }
+
+private:
+    CPSG_BioId   m_BioId;
+    TAnnotNames  m_AnnotNames,
+};
+
+
+
 /// Retrieval result
 /// @sa GetStatus
 enum class EPSG_Status {
@@ -491,6 +523,81 @@ private:
     CPSG_BioseqInfo();
 
     CJsonNode m_Data;
+
+    friend class CPSG_Reply;
+};
+
+
+
+/// Named Annotations (NAs) metainfo -- reply to CPSG_Request_NamedAnnotInfo.
+///
+/// It can be used to identify where various types of requested NAs are located
+/// on the bioseq. It also provides information how to retrieve the
+/// corresponding NA data blobs (as needed).
+
+class CPSG_NamedAnnotInfo : public CPSG_ReplyItem
+{
+public:
+    /// Name of the annotation
+    const string& GetName() const { return m_Name; }
+
+    /// Range where the feature(s) from this NA appear on the bio-sequence
+    CRange<TSeqPos> GetRange() const { return m_Range; }
+
+    /// Coordinates of the blob that contains the NA data
+    CPSG_BlobId GetBlobId() const;
+
+    /// Date when the NA data blob was last changed
+    CTime GetDateChanged() const;
+
+    /// Available zoom levels
+    typedef unsigned int       TZoomLevel;
+    typedef vector<TZoomLevel> TZoomLevels;
+    const TZoomLevels& GetZoomLevels() const { return m_ZoomLevels; }
+
+    /// 
+    class CAnnotInfo
+    {
+    public:
+        ///
+        typedef CSeq_annot::C_Data::E_Choice TAnnotType;
+        TAnnotType GetAnnotType() const { return m_AnnotType; }
+
+        ///
+        typedef CSeqFeatData::E_Choice TFeatType;
+        TFeatType GetFeatType() const { return m_FeatType; }
+
+        ///
+        typedef CSeqFeatData::ESubtype TFeatSubtype;
+        TFeatSubtype GetFeatSubtype() const { return m_FeatSubtype; }
+
+        ///
+        CAnnotInfo(TAnnotType   annot_type,
+                   TFeatType    feat_type    = CSeqFeatData::e_not_set,
+                   TFeatSubtype feat_subtype = CSeqFeatData::eSubtype_any)
+            m_AnnotType   (annot_type  ),
+            m_FeatType    (feat_type   ),
+            m_FeatSubtype (feat_subtype)
+        {}
+
+    private:
+        TAnnotType    m_AnnotType;
+        TFeatType     m_FeatType;
+        TFeatSubtype  m_FeatSubtype;
+    };
+
+    typedef list<CAnnotInfo> TAnnotInfoList;
+    const TAnnotInfoList& GetAnnotInfoList() const { return m_AnnotInfoList; }
+
+
+private:
+    CPSG_NamedAnnotInfo();
+
+    string           m_Name;
+    CRange<TSeqPos>  m_Range;
+    CTime            m_DateChanged;
+    TZoomLevels      m_ZoomLevels;
+    TAnnotInfo       m_AnnotInfoList;
 
     friend class CPSG_Reply;
 };
