@@ -229,14 +229,14 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                             int/*bool*/ lazy)
 {
     int/*bool*/ algo, coef, mime, locl, priv, rate, sful, secu, time, cros, vh;
-    const char* vhost;
+    const char*       vhost;
     const SSERV_Attr* attr;
-    TNCBI_IPv6Addr addr;
-    ESERV_Type     type;
-    unsigned int   host;                /* network byte order       */
-    unsigned short port;                /* host (native) byte order */
-    SSERV_Info*    info;
-    size_t         len;
+    unsigned int      host;  /* network byte order       */
+    unsigned short    port;  /* host (native) byte order */
+    TNCBI_IPv6Addr    addr;
+    SSERV_Info*       info;
+    ESERV_Type        type;
+    size_t            len;
 
     /* detect server type */
     str = SERV_ReadType(str, &type);
@@ -633,6 +633,7 @@ extern int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1,
 {
     const SSERV_Attr* attr;
     assert(i1  &&  i2);
+    /* NB: IPv6 address causes the "host" field to be INADDR_NONE(-1) */
     if (i1->type != i2->type  ||
         i1->host != i2->host  ||
         i1->port != i2->port) {
@@ -714,10 +715,17 @@ SSERV_Info* SERV_CreateNcbidInfoEx(unsigned int   host,
                                    const char*    args,
                                    size_t         add)
 {
+    size_t args_len;
     SSERV_Info* info;
 
-    add += args ? strlen(args) : 0;
-    if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add + 1)) != 0) {
+    if (!args)
+        args_len = 1;
+    else if (strcmp(args, "''"/*special case*/) == 0)
+        args_len = 1, args = 0;
+    else
+        args_len = strlen(args) + 1;
+    add += args_len;
+    if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add)) != 0) {
         info->type   = fSERV_Ncbid;
         info->host   = host;
         info->port   = port;
@@ -734,9 +742,7 @@ SSERV_Info* SERV_CreateNcbidInfoEx(unsigned int   host,
         info->extra  = 0;
         memset(&info->addr, 0, sizeof(info->addr));
         info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
-        if (args  &&  strcmp(args, "''"/*special case*/) == 0)
-            args = 0;
-        strcpy(SERV_NCBID_ARGS(&info->u.ncbid), args ? args : "");
+        memcpy(SERV_NCBID_ARGS(&info->u.ncbid), args ? args : "", args_len);
     }
     return info;
 }
@@ -898,12 +904,15 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
                                   const char*    args,
                                   size_t         add)
 {
+    size_t path_len, args_len;
     SSERV_Info* info;
 
     if (type & (unsigned int)(~fSERV_Http))
         return 0;
-    add += (path ? strlen(path) : 0) + 1 + (args ? strlen(args) : 0);
-    if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add + 1)) != 0) {
+    path_len = path  &&  *path ? strlen(path) + 1 : 1;
+    args_len = args  &&  *args ? strlen(args) + 1 : 1;
+    add += path_len + args_len;
+    if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add)) != 0) {
         info->type   = type;
         info->host   = host;
         info->port   = port;
@@ -920,10 +929,9 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
         info->extra  = 0;
         memset(&info->addr, 0, sizeof(info->addr));
         info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
-        info->u.http.args = (TNCBI_Size) (info->u.http.path
-                                          + (path ? strlen(path) : 0) + 1);
-        strcpy(SERV_HTTP_PATH(&info->u.http), path ? path : "");
-        strcpy(SERV_HTTP_ARGS(&info->u.http), args ? args : "");
+        info->u.http.args = (TNCBI_Size)(info->u.http.path + path_len);
+        memcpy(SERV_HTTP_PATH(&info->u.http), path ? path : "", path_len);
+        memcpy(SERV_HTTP_ARGS(&info->u.http), args ? args : "", args_len);
     }
     return info;
 }
