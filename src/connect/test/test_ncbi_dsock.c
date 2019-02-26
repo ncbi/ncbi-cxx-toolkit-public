@@ -332,6 +332,7 @@ static int s_Client(int x_port, unsigned int max_try)
     }
     if (m > max_try) {
         SOCK_Close(client);
+        free(buf);
         return 1;
     }
 
@@ -343,6 +344,7 @@ static int s_Client(int x_port, unsigned int max_try)
         CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupt, offset=%lu",
                                (unsigned long) n));
         SOCK_Close(client);
+        free(buf);
         return 1;
     }
 
@@ -350,6 +352,7 @@ static int s_Client(int x_port, unsigned int max_try)
         CORE_LOGF(eLOG_Error, ("[Client]  No signature in the message: %.9s",
                                buf + msglen*2 - 10));
         SOCK_Close(client);
+        free(buf);
         return 1;
     }
 
