@@ -242,6 +242,14 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         auto blob_id = args.GetValue("blob_id");
         rv.reset(CreateImpl(new CPSG_BlobInfo(blob_id), chunks));
 
+    } else if (item_type == "bioseq_na") {
+        auto accession = args.GetValue("seq_acc");
+        auto type = static_cast<CPSG_BioId::TType>(stoul(args.GetValue("seq_type")));
+        auto version = static_cast<int>(stoul(args.GetValue("seq_ver")));
+        auto bio_id = objects::CSeq_id(type, accession, kEmptyStr, version).AsFastaString();
+        auto name = args.GetValue("na");
+        rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(bio_id, name), chunks));
+
     } else {
         NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
     }
@@ -382,6 +390,27 @@ string CPSG_Request_Blob::x_GetAbsPathRef() const
     if (!m_LastModified.empty()) os << "&last_modified=" << m_LastModified;
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
+
+    return s_AddUseCache(os);
+}
+
+string CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef() const
+{
+    ostringstream os;
+
+    os << "/ID/get_na?seq_id=" << m_BioId.Get();
+
+    if (const auto type = m_BioId.GetType()) os << "&seq_id_type=" << type;
+
+    os << "&names=";
+
+    for (const auto& name : m_AnnotNames) {
+        os << name << ",";
+    }
+
+    // Remove last comma (there must be some output after seekp to succeed)
+    os.seekp(-1, ios_base::cur);
+    os << "&fmt=json&psg_protocol=yes";
 
     return s_AddUseCache(os);
 }
@@ -780,6 +809,171 @@ CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
     if (m_Data.HasKey("date_changed"))                                    rv |= CPSG_Request_Resolve::fDateChanged;
 
     return rv;
+}
+
+
+CPSG_NamedAnnotInfo::CPSG_NamedAnnotInfo(CPSG_BioId bio_id, string name) :
+    CPSG_ReplyItem(eNamedAnnotInfo),
+    m_BioId(move(bio_id)),
+    m_Name(move(name))
+{
+}
+
+CRange<TSeqPos> CPSG_NamedAnnotInfo::GetRange() const
+{
+    auto start = static_cast<TSeqPos>(m_Data.GetInteger("start"));
+    auto stop = static_cast<TSeqPos>(m_Data.GetInteger("stop"));
+    return { start, stop };
+}
+
+CPSG_BlobId CPSG_NamedAnnotInfo::GetBlobId() const
+{
+    auto sat = static_cast<int>(m_Data.GetInteger("sat"));
+    auto sat_key = static_cast<int>(m_Data.GetInteger("sat_key"));
+    return { sat, sat_key };
+}
+
+Uint8 CPSG_NamedAnnotInfo::GetDateChanged() const
+{
+    return static_cast<Uint8>(m_Data.GetInteger("last_modified"));
+}
+
+template <class TResult>
+struct SAnnotInfoProcessor
+{
+    using TAction = function<bool(const CJsonNode&, TResult& result)>;
+    using TActions = map<int, TAction>;
+
+    SAnnotInfoProcessor(TActions actions) : m_Actions(move(actions)) {}
+
+    TResult operator()(const CPSG_ReplyItem* item, const CJsonNode& data) const;
+
+private:
+    void ThrowError(const CPSG_ReplyItem* item, const CJsonNode& annot_info) const;
+
+    TActions m_Actions;
+};
+
+template <class TResult>
+TResult SAnnotInfoProcessor<TResult>::operator()(const CPSG_ReplyItem* item, const CJsonNode& data) const
+{
+    auto annot_info_str(NStr::Unescape(data.GetString("annot_info")));
+    auto annot_info(CJsonNode::ParseJSON(annot_info_str));
+
+    if (!annot_info.IsObject()) ThrowError(item, annot_info);
+
+    TResult result;
+
+    for (CJsonIterator it = annot_info.Iterate(); it.IsValid(); it.Next()) {
+        auto key = stoi(it.GetKey());
+        auto found = m_Actions.find(key);
+
+        if (found != m_Actions.end()) {
+            auto node = it.GetNode();
+
+            if (!found->second(node, result)) {
+                ThrowError(item, annot_info);
+            }
+        }
+    }
+
+    return result;
+}
+
+template <class TResult>
+void SAnnotInfoProcessor<TResult>::ThrowError(const CPSG_ReplyItem* item, const CJsonNode& annot_info) const
+{
+    _ASSERT(item);
+
+    auto reply = item->GetReply();
+    _ASSERT(reply);
+
+    auto request = reply->GetRequest().get();
+    _ASSERT(request);
+
+    NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong annot_info format: '" << annot_info.Repr() <<
+            "' for " << request->GetType() << " request '" << request->GetId() << '\'');
+}
+
+bool s_GetZoomLevels(const CJsonNode& annot_data, CPSG_NamedAnnotInfo::TZoomLevels& result)
+{
+    if (!annot_data.IsArray()) return false;
+
+    for (CJsonIterator it = annot_data.Iterate(); it.IsValid(); it.Next()) {
+        auto zoom_level = it.GetNode();
+
+        if (!zoom_level.IsInteger()) return false;
+
+        result.push_back(zoom_level.AsInteger());
+    }
+
+    return true;
+}
+
+template <objects::CSeq_annot::C_Data::E_Choice kAnnot>
+bool s_GetTypeAndSubtype(const CJsonNode& annot_data, CPSG_NamedAnnotInfo::TAnnotInfoList& result)
+{
+    if (!annot_data.IsObject()) return false;
+
+    for (CJsonIterator it = annot_data.Iterate(); it.IsValid(); it.Next()) {
+        auto type = stoi(it.GetKey());
+        auto subtypes = it.GetNode();
+
+        if (!subtypes.IsArray()) return false;
+
+        for (CJsonIterator sub_it = subtypes.Iterate(); sub_it.IsValid(); sub_it.Next()) {
+            auto subtype_node = sub_it.GetNode();
+
+            if (!subtype_node.IsInteger()) return false;
+
+            auto subtype = static_cast<int>(subtype_node.AsInteger());
+            result.push_back({ kAnnot, type, subtype });
+        }
+    }
+
+    return true;
+}
+
+template <objects::CSeq_annot::C_Data::E_Choice kAnnot>
+bool s_GetType(const CJsonNode& annot_data, CPSG_NamedAnnotInfo::TAnnotInfoList& result)
+{
+    if (!annot_data.IsArray()) return false;
+
+    for (CJsonIterator it = annot_data.Iterate(); it.IsValid(); it.Next()) {
+        auto type_node = it.GetNode();
+
+        if (!type_node.IsInteger()) return false;
+
+        auto type = static_cast<int>(type_node.AsInteger());
+        result.push_back({ kAnnot, type, 0 });
+    }
+
+    return true;
+}
+
+CPSG_NamedAnnotInfo::TZoomLevels CPSG_NamedAnnotInfo::GetZoomLevels() const
+{
+    static SAnnotInfoProcessor<TZoomLevels> processor
+    ({
+        { 2048, &s_GetZoomLevels } // Special value for DensityGraph
+    });
+
+    return processor(this, m_Data);
+}
+
+CPSG_NamedAnnotInfo::TAnnotInfoList CPSG_NamedAnnotInfo::GetAnnotInfoList() const
+{
+    using TAnnot = SAnnotInfo::TAnnot;
+
+    static SAnnotInfoProcessor<TAnnotInfoList> processor
+    ({
+        { TAnnot::e_Ftable,    &s_GetTypeAndSubtype<TAnnot::e_Ftable>    },
+        { TAnnot::e_Align,     &s_GetType          <TAnnot::e_Align>     },
+        { TAnnot::e_Graph,     &s_GetType          <TAnnot::e_Graph>     },
+        { TAnnot::e_Seq_table, &s_GetTypeAndSubtype<TAnnot::e_Seq_table> },
+    });
+
+    return processor(this, m_Data);
 }
 
 
