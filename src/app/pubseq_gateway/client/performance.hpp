@@ -132,8 +132,20 @@ struct SMessage
 
         if (!is) return is;
 
-        if ((type >= SMetricType::eStart) && (type < SMetricType::eLastType)) {
-            message.type = static_cast<SMetricType::EType>(type);
+        switch (type) {
+            case SMetricType::eStart:
+            case SMetricType::eSubmit:
+            case SMetricType::eReply:
+            case SMetricType::eDone:
+            case SMetricType::eSize:
+            case SMetricType::eSend:
+            case SMetricType::eReceive:
+            case SMetricType::ePush:
+            case SMetricType::ePop:
+                message.type = static_cast<SMetricType::EType>(type);
+
+            default:
+                _TROUBLE;
         }
 
         // Read the rest of the line if the converion above has failed
