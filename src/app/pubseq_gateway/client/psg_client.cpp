@@ -111,11 +111,12 @@ SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags 
 
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
-            s_GetCommand<CPSG_Request_Biodata>("biodata",     "Request biodata info and data by bio ID"),
-            s_GetCommand<CPSG_Request_Blob>   ("blob",        "Request blob by blob ID"),
-            s_GetCommand<CPSG_Request_Resolve>("resolve",     "Request biodata info by bio ID"),
-            s_GetCommand<SInteractive>        ("interactive", "Interactive JSON-RPC mode"),
-            s_GetCommand<SPerformance>        ("performance", "Performance testing mode", SCommand::TFlags::eHidden),
+            s_GetCommand<CPSG_Request_Biodata>       ("biodata",     "Request biodata info and data by bio ID"),
+            s_GetCommand<CPSG_Request_Blob>          ("blob",        "Request blob by blob ID"),
+            s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID"),
+            s_GetCommand<CPSG_Request_NamedAnnotInfo>("annot",       "Request named annotations info by bio ID"),
+            s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode"),
+            s_GetCommand<SPerformance>               ("performance", "Performance testing mode", SCommand::TFlags::eHidden),
         })
 {
 }
@@ -174,6 +175,11 @@ void CPsgClientApp::s_InitFlags<CPSG_Request_Resolve>(CArgDescriptions& arg_desc
     }
 }
 
+template <>
+void CPsgClientApp::s_InitFlags<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&)
+{
+}
+
 template <class TRequest>
 void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
 {
@@ -194,6 +200,14 @@ void CPsgClientApp::s_InitPositional<CPSG_Request_Blob>(CArgDescriptions& arg_de
 {
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
     arg_desc.AddDefaultKey("last_modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString, "");
+}
+
+template <>
+void CPsgClientApp::s_InitPositional<CPSG_Request_NamedAnnotInfo>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddKey("na", "NAMED_ANNOT", "Named annotation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
+    arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
+    arg_desc.AddDefaultKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString, "gi");
 }
 
 template<>

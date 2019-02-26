@@ -146,10 +146,11 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
     if (reply_item_status == EPSG_Status::eError) {
         switch (reply_item_type) {
-            case CPSG_ReplyItem::eBlobData:   return Fill(reply_item, "BlobData");
-            case CPSG_ReplyItem::eBlobInfo:   return Fill(reply_item, "BlobInfo");
-            case CPSG_ReplyItem::eBioseqInfo: return Fill(reply_item, "BioseqInfo");
-            case CPSG_ReplyItem::eEndOfReply: _TROUBLE; return;
+            case CPSG_ReplyItem::eBlobData:       return Fill(reply_item, "BlobData");
+            case CPSG_ReplyItem::eBlobInfo:       return Fill(reply_item, "BlobInfo");
+            case CPSG_ReplyItem::eBioseqInfo:     return Fill(reply_item, "BioseqInfo");
+            case CPSG_ReplyItem::eNamedAnnotInfo: return Fill(reply_item, "NamedAnnotInfo");
+            case CPSG_ReplyItem::eEndOfReply:     _TROUBLE; return;
         }
     }
 
@@ -162,6 +163,9 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
         case CPSG_ReplyItem::eBioseqInfo:
             return Fill(static_pointer_cast<CPSG_BioseqInfo>(reply_item));
+
+        case CPSG_ReplyItem::eNamedAnnotInfo:
+            return Fill(static_pointer_cast<CPSG_NamedAnnotInfo>(reply_item));
 
         case CPSG_ReplyItem::eEndOfReply:
             _TROUBLE;
@@ -229,6 +233,34 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     if (included_info & CPSG_Request_Resolve::fTaxId)        m_JsonObj["tax_id"].SetValue().SetInt8(bioseq_info->GetTaxId());
     if (included_info & CPSG_Request_Resolve::fHash)         m_JsonObj["hash"].SetValue().SetInt8(bioseq_info->GetHash());
     if (included_info & CPSG_Request_Resolve::fDateChanged)  m_JsonObj["date_changed"].SetValue().SetString(bioseq_info->GetDateChanged().AsString());
+}
+
+void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
+{
+    m_JsonObj["reply"].SetValue().SetString("NamedAnnotInfo");
+    m_JsonObj["canonical_id"].SetValue().SetString(named_annot_info->GetCanonicalId().Get());
+    m_JsonObj["name"].SetValue().SetString(named_annot_info->GetName());
+
+    const auto range = named_annot_info->GetRange();
+    CJson_Object range_obj = m_JsonObj.insert_object("range");
+    range_obj["from"].SetValue().SetInt8(range.GetFrom());
+    range_obj["to"].SetValue().SetInt8(range.GetTo());
+
+    m_JsonObj["blob_id"].SetValue().SetString(named_annot_info->GetBlobId().Get());
+    m_JsonObj["date_changed"].SetValue().SetUint8(named_annot_info->GetDateChanged());
+
+    CJson_Array zoom_level_array = m_JsonObj.insert_array("zoom_levels");
+    for (const auto zoom_level : named_annot_info->GetZoomLevels()) {
+        zoom_level_array.push_back(zoom_level);
+    }
+
+    CJson_Array annot_info_array = m_JsonObj.insert_array("annot_info_list");
+    for (const auto annot_info : named_annot_info->GetAnnotInfoList()) {
+        CJson_Object annot_info_obj = annot_info_array.push_back_object();
+        annot_info_obj["annot"].SetValue().SetInt8(annot_info.annot);
+        annot_info_obj["type"].SetValue().SetInt8(annot_info.type);
+        annot_info_obj["subtype"].SetValue().SetInt8(annot_info.subtype);
+    }
 }
 
 template <class TItem>
@@ -637,6 +669,8 @@ shared_ptr<CPSG_Request> CProcessing::CreateRequest(const string& method, shared
         return CreateRequest<CPSG_Request_Blob>(move(user_context), params_obj);
     } else if (method == "resolve") {
         return CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
+    } else if (method == "annot") {
+        return CreateRequest<CPSG_Request_NamedAnnotInfo>(move(user_context), params_obj);
     } else {
         return {};
     }

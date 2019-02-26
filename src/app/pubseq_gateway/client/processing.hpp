@@ -91,6 +91,7 @@ private:
     void Fill(shared_ptr<CPSG_BlobData> blob_data);
     void Fill(shared_ptr<CPSG_BlobInfo> blob_info);
     void Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info);
+    void Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
 
     template <class TItem>
     void Fill(TItem item, string type);
@@ -272,6 +273,15 @@ inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request
     return make_shared<CPSG_Request_Blob>(id, last_modified, move(user_context));
 }
 
+template <>
+inline shared_ptr<CPSG_Request_NamedAnnotInfo> CProcessing::CreateRequestImpl<CPSG_Request_NamedAnnotInfo>(shared_ptr<void> user_context, const CArgs& input)
+{
+    const auto& id = input["ID"].AsString();
+    const auto type = CProcessing::GetBioIdType(input["type"].AsString());
+    const auto& named_annots = input["na"].GetStringList();
+    return make_shared<CPSG_Request_NamedAnnotInfo>(CPSG_BioId(id, type), named_annots, move(user_context));
+}
+
 template <class TRequest>
 inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const CJson_ConstObject& input)
 {
@@ -291,6 +301,26 @@ inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request
     auto blob_id = input["blob_id"].GetValue().GetString();
     auto last_modified = input.has("last_modified") ? input["last_modified"].GetValue().GetString() : "";
     return make_shared<CPSG_Request_Blob>(blob_id, last_modified, move(user_context));
+}
+
+template <>
+inline shared_ptr<CPSG_Request_NamedAnnotInfo> CProcessing::CreateRequestImpl<CPSG_Request_NamedAnnotInfo>(shared_ptr<void> user_context, const CJson_ConstObject& input)
+{
+    auto na_array = input["named_annots"].GetArray();
+    CPSG_Request_NamedAnnotInfo::TAnnotNames names;
+
+    for (const auto& na : na_array) {
+        names.push_back(na.GetValue().GetString());
+    }
+
+    auto array = input["bio_id"].GetArray();
+    auto id = array[0].GetValue().GetString();
+
+    if (array.size() == 1) return make_shared<CPSG_Request_NamedAnnotInfo>(CPSG_BioId(id), move(names), move(user_context));
+
+    auto value = array[1].GetValue();
+    auto type = value.IsString() ? CProcessing::GetBioIdType(value.GetString()) : static_cast<CPSG_BioId::TType>(value.GetInt4());
+    return make_shared<CPSG_Request_NamedAnnotInfo>(CPSG_BioId(id, type), move(names), move(user_context));
 }
 
 template <class TRequest>
@@ -352,6 +382,11 @@ inline void CProcessing::SetInclude<CPSG_Request_Resolve>(shared_ptr<CPSG_Reques
     }
 
     request->IncludeInfo(include_info);
+}
+
+template <>
+inline void CProcessing::SetInclude<CPSG_Request_NamedAnnotInfo>(shared_ptr<CPSG_Request_NamedAnnotInfo>, TSpecified)
+{
 }
 
 template <class TRequest, class TInput>
