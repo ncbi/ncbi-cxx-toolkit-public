@@ -214,6 +214,9 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     CAlnReader reader(ifstr);
+    if (!NStr::EndsWith(sTestName, "prot")) {
+        reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
+    }
     if (NStr::EndsWith(sTestName, "-cni")) {
         reader.SetUseNexusInfo(false);
     }
