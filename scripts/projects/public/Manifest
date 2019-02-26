@@ -35,7 +35,7 @@ Linux64-Centos  : GCC510    : GCC.sh 5.1.0 --without-debug --with-mt --with-flat
 Linux64-Centos  : GCC530    : GCC.sh 5.3.0 --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 Linux64-Centos  : ICC170    : ICC.sh 17.0  --without-debug --with-mt --with-dll --with-runpath --without-ncbi-c
 Linux64-Centos  : ICC170d   : ICC.sh 17.0  --with-debug --with-mt --with-3psw=system --with-runpath --without-ncbi-c
-Linux64-Centos7 : Clang     : Clang.sh 3.8.0 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : Clang     : Clang.sh 3.8.0 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
 
 Linux64-Ubuntu  : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 Linux32-Ubuntu  : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
