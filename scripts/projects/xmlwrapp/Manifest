@@ -35,6 +35,8 @@ Linux64-Centos    : ICC-17         : ICC.sh 17.0      --without-debug --with-mt 
 Linux64-Centos    : ICC-15         : ICC.sh 15.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux64-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
+Linux64-Centos    : Release        : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+
 Linux64-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux32-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
@@ -48,5 +50,4 @@ IntelMAC          : plain          : GCC.sh           --without-debug --with-mt 
 IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 XCode             : plain          : Xcode.sh 30
 
-Linux64-Centos7    : Release       : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
