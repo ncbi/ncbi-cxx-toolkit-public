@@ -3965,7 +3965,7 @@ string NStr::CParse(const CTempString str, EQuoted quoted)
 }
 
 
-string NStr::XmlEncode(const CTempString str, EXmlEncode flags)
+string NStr::XmlEncode(const CTempString str, TXmlEncode flags)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-predefined-ent
 {
     string result;
@@ -3993,9 +3993,9 @@ string NStr::XmlEncode(const CTempString str, EXmlEncode flags)
             result.append("&quot;");
             break;
         case '-':
-            if (flags == eXmlEnc_CommentSafe) {
-// translate double hyphen and ending hyphen
-// http://www.w3.org/TR/xml11/#sec-comments
+            // translate double hyphen and ending hyphen
+            // http://www.w3.org/TR/xml11/#sec-comments
+            if (flags & eXmlEnc_CommentSafe) {
                 if (i+1 == str.size()) {
                     result.append("&#x2d;");
                     break;
@@ -4007,8 +4007,31 @@ string NStr::XmlEncode(const CTempString str, EXmlEncode flags)
             }
             result.append(1, c);
             break;
+
         default:
-            if ((unsigned int)(c) < 0x20) {
+            unsigned int uc = (unsigned int)(c);
+
+            if (flags & (eXmlEnc_Unsafe_Skip | eXmlEnc_Unsafe_Throw)) {
+                // Optional check on non-safe characters:
+                // [#x1-#x8], [#xB-#xC], [#xE-#x1F], [#x7F-#x84], [#x86-#x9F]
+                // https://www.w3.org/TR/xml11/#NT-Char
+
+                if ((uc < 0x8) || (uc == 0xB) || (uc == 0xC) || 
+                    (uc >= 0x0E  &&  uc <=0x1F) ||
+                    (uc >= 0x7F  &&  uc <=0x84) ||
+                    (uc >= 0x86  &&  uc <=0x9F) ) 
+                {
+                    // Skip unsafe characters
+                    if (flags & eXmlEnc_Unsafe_Skip) {
+                        continue;
+                    }
+                    // else, throw
+                    NCBI_THROW2(CStringException, eConvert,  
+                                "NStr::XmlEncode -- Unsafe character '0x" + NStr::NumericToString(c, 0, 16) + "'", i);
+                }
+            }
+            // Default behavior
+            if (uc < 0x20) {
                 const char* charmap = "0123456789abcdef";
                 result.append("&#x");
                 Uint1 ch = c;

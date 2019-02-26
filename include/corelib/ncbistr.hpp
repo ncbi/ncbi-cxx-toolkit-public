@@ -2959,16 +2959,22 @@ public:
     enum EXmlEncode {
         /// Encode predefined entities only
         eXmlEnc_Contents = 0,
-        /// Also encode double hyphen and ending hyphen,
+        /// Encode double hyphen and ending hyphen,
         /// making the result safe to put into XML comments.
-        eXmlEnc_CommentSafe = 1 << 0
+        eXmlEnc_CommentSafe   = 1 << 0,
+        /// Check each character to conform XML 1.1 standards,
+        /// skip any not allowed character or throw an CStringException.
+        /// https://www.w3.org/TR/xml11/#NT-Char
+        eXmlEnc_Unsafe_Skip   = 1 << 1,
+        eXmlEnc_Unsafe_Throw  = 1 << 2
     };
+    typedef int TXmlEncode;   //<  bitwise OR of "EXmlEncode"
 
     /// Encode a string for XML.
     ///
     /// Replace relevant characters by predefined entities.
     static string XmlEncode(const CTempString str,
-                            EXmlEncode flags = eXmlEnc_Contents);
+                            TXmlEncode flags = eXmlEnc_Contents);
 
 
     /// HTML-decode flags
@@ -2977,7 +2983,7 @@ public:
         fHtmlEnc_SkipLiteralEntities = 1 << 1,  ///< Skip "&entity;"
         fHtmlEnc_SkipNumericEntities = 1 << 2,  ///< Skip "&#NNNN;"
         fHtmlEnc_SkipEntities        = fHtmlEnc_SkipLiteralEntities | fHtmlEnc_SkipNumericEntities,
-        fHtmlEnc_CheckPreencoded     = 1 << 3   ///< Print warning if some preencoded
+        fHtmlEnc_CheckPreencoded     = 1 << 3   ///< Print warning if some pre-encoded
                                                 ///< entity found in the string
     };
     typedef int THtmlEncode;   //<  bitwise OR of "EHtmlEncode"
