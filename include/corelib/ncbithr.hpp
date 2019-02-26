@@ -145,8 +145,7 @@ public:
     template<class TValue>
     static void DefaultCleanup(TValue *value, void*) {
         if (value) {
-            TValue* ptr = static_cast<TValue*>(value);
-            delete ptr;
+            delete value;
         }
 
     }

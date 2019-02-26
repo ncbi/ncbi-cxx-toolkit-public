@@ -123,20 +123,12 @@ Int8 CLDS2_UrlHandler_File::GetFileTime(const SLDS2_File& file_info)
 }
 
 
-void s_StreamCacheCleanup(CLDS2_UrlHandler_File::TStreamCache *value, void*)
-{
-    if (value) {
-        delete value;
-    }
-}
-
-
 CLDS2_UrlHandler_File::TStreamCache& CLDS2_UrlHandler_File::x_GetStreamCache(void)
 {
     TStreamCache* cache = m_StreamCache->GetValue();
     if (!cache) {
         cache = new TStreamCache;
-        m_StreamCache->SetValue(cache, s_StreamCacheCleanup);
+        m_StreamCache->SetValue(cache, CTlsBase::DefaultCleanup<TStreamCache>);
     }
     return *cache;
 }
