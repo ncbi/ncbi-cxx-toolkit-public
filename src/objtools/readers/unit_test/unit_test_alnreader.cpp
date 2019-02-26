@@ -136,6 +136,27 @@ private:
     string mExtErrors;
 };
 
+CAlnReader*
+sGetReader(
+    const string& testName,
+    ifstream& ifstr)
+{
+    auto pReader = new CAlnReader(ifstr);
+    if (!NStr::EndsWith(testName, "prot")) {
+        pReader->SetAlphabet(CAlnReader::eAlpha_Nucleotide);
+    }
+    if (NStr::EndsWith(testName, "-cni")) {
+        pReader->SetUseNexusInfo(false);
+    }
+    return pReader;
+}
+
+CAlnReader::TFastaFlags
+sGetFastaFlags(
+    const string& testName)
+{
+    return (NStr::FindNoCase(testName, "no-mods") == NPOS) ? CFastaReader::fAddMods : 0;
+}
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name) 
 {
@@ -148,26 +169,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CAlnReader::TFastaFlags fasta_flags = 
-        (NStr::FindNoCase(test_name, "no-mods") == NPOS) ?
-        CFastaReader::fAddMods :
-        0;
-
     CErrorLogger logger(errors);
     CNcbiIfstream ifstr(input.c_str());
-
-    CAlnReader reader(ifstr);
-    if (!NStr::EndsWith(test_name, "prot")) {
-        reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
-    }
-    if (NStr::EndsWith(test_name, "-cni")) {
-        reader.SetUseNexusInfo(false);
-    }
+    unique_ptr<CAlnReader> pReader(sGetReader(test_name, ifstr));
 
     CRef<CSeq_entry> pEntry;
     try {
-        reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry(fasta_flags, &logger);
+        pReader->Read(false, false, &logger);
+        pEntry = pReader->GetSeqEntry(sGetFastaFlags(test_name), &logger);
     } 
     catch (...) {
     }
@@ -204,8 +213,6 @@ void sUpdateAll(CDir& test_cases_dir) {
 }
 
 
-
-
 void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 {
     cerr << "Testing " << testInfo.mInFile.GetName() << " against " << 
@@ -213,29 +220,17 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
         testInfo.mErrorFile.GetName() << endl;
 
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
-    CAlnReader reader(ifstr);
-    if (!NStr::EndsWith(sTestName, "prot")) {
-        reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
-    }
-    if (NStr::EndsWith(sTestName, "-cni")) {
-        reader.SetUseNexusInfo(false);
-    }
-
-    CAlnReader::TFastaFlags fasta_flags = 
-        (NStr::FindNoCase(testInfo.mOutFile.GetName(), "no-mods") == NPOS) ?
-        CFastaReader::fAddMods :
-        0;
-
-
     string newOutput = CDirEntry::GetTmpName();
     string newErrors = CDirEntry::GetTmpName();
     CErrorLogger logger(newErrors.c_str());
 
+    unique_ptr<CAlnReader> pReader(sGetReader(sTestName, ifstr));
+
     CRef<CSeq_entry> pEntry;
     try {
-        reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry(fasta_flags, &logger);
-    }
+        pReader->Read(false, false, &logger);
+        pEntry = pReader->GetSeqEntry(sGetFastaFlags(sTestName), &logger);
+    } 
     catch (...) {
     }
     ifstr.close();
