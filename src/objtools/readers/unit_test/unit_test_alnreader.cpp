@@ -157,6 +157,9 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CNcbiIfstream ifstr(input.c_str());
 
     CAlnReader reader(ifstr);
+    if (!NStr::EndsWith(test_name, "prot")) {
+        reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
+    }
     if (NStr::EndsWith(test_name, "-cni")) {
         reader.SetUseNexusInfo(false);
     }

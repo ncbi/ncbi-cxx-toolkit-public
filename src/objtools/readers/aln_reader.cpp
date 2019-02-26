@@ -40,7 +40,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Seq_inst.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/IUPACna.hpp>
@@ -664,6 +663,27 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
 }
 
 
+CSeq_inst::EMol
+CAlnReader::GetSequenceMolType(
+    const string& alphabet,
+    const string& seqData
+    )
+{
+    //if alphabet contains full complement (26) of protein chars then
+    // it's definitely protein:
+    if (alphabet.size() == 2*26) {
+        return CSeq_inst::eMol_aa;
+    }
+    
+    auto posFirstT = seqData.find_first_of("Tt");
+    auto posFirstU = seqData.find_first_of("Uu");
+    if (posFirstT != string::npos  &&  posFirstU != string::npos) {
+        //imposible NA- can't contain both
+        return CSeq_inst::eMol_aa;
+    }
+    return (posFirstU == string::npos  ?  CSeq_inst::eMol_dna : CSeq_inst::eMol_rna);
+}
+
 CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         ILineErrorListener* pErrorListener)
 {
@@ -713,13 +733,8 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         } else if (ai & CSeq_id::fAcc_prot) {
             mol = CSeq_inst::eMol_aa;
         } else {
-            switch (CFormatGuess::SequenceType(seq_str.data(), seq_str_len)) {
-            case CFormatGuess::eNucleotide:  mol = CSeq_inst::eMol_na;  break;
-            case CFormatGuess::eProtein:     mol = CSeq_inst::eMol_aa;  break;
-            default:                         break;
-            }
+            mol = GetSequenceMolType(m_Alphabet, seq_str);
         }
-
         // seq-inst
         CRef<CSeq_inst> seq_inst (new CSeq_inst);
         seq_entry->SetSeq().SetInst(*seq_inst);

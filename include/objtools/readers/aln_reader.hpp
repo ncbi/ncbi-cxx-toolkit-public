@@ -36,6 +36,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/message_listener.hpp>
@@ -232,6 +233,10 @@ public:
     CRef<objects::CSeq_entry> GetSeqEntry(TFastaFlags fasta_flags=objects::CFastaReader::fAddMods,
             objects::ILineErrorListener* pErrorListener=nullptr);
 
+    /// Get a sequence's moltype, also considering the alphabet used to read it
+    objects::CSeq_inst::EMol GetSequenceMolType(
+        const string& alphabet,
+        const string& seqData);
 
 private:
     /// Prohibit copy constructor and assignment operator

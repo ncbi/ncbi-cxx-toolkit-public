@@ -14,7 +14,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 44,
         seq-data ncbi2na '909393900FF9A54E4E3939'H
       }
@@ -32,7 +32,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 44,
         seq-data ncbi2na '33A393900FFA954E4E5939'H
       }
@@ -50,7 +50,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 44,
         seq-data ncbi2na '399093900FFAA64E4E5339'H
       }
@@ -68,7 +68,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 44,
         seq-data ncbi2na '3933A3900FFAA57E4E5399'H
       }
@@ -86,7 +86,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 44,
         seq-data ncbi2na '393990900FFAA54D4E5393'H
       }

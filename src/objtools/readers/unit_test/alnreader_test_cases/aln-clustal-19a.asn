@@ -7,7 +7,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 88,
         seq-data ncbi2na '90939390033A393900FF9A54E4EFFA954E4E53939939'H
       }
@@ -18,7 +18,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 88,
         seq-data ncbi2na '3990939003933A3900FFAA64E4E5FFAA57E4E5339399'H
       }

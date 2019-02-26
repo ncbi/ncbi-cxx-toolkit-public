@@ -11,7 +11,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 12,
         seq-data ncbi2na '02AFD5'H
       }
@@ -31,7 +31,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 15,
         topology circular,
         seq-data ncbi2na '02A57F00'H
@@ -47,7 +47,7 @@ Seq-entry ::= set {
       },
       inst {
         repr raw,
-        mol na,
+        mol dna,
         length 18,
         seq-data ncbi2na '1B1B1B1BF0'H
       }
