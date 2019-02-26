@@ -3081,12 +3081,6 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
 }
 
 
-void RequestStopWatchTlsCleanup(CStopWatch* value, void* /*cleanup_data*/)
-{
-    delete value;
-}
-
-
 void CDiagContext::x_StartRequest(void)
 {
     // Reset properties
@@ -6290,7 +6284,7 @@ CDiagFileHandleHolder::CDiagFileHandleHolder(const string& fname,
     : m_Handle(-1)
 {
 #if defined(NCBI_OS_MSWIN)
-    int mode = O_WRONLY | O_APPEND | O_CREAT | O_BINARY;
+    int mode = O_WRONLY | O_APPEND | O_CREAT | O_BINARY | O_NOINHERIT;
 #else
     int mode = O_WRONLY | O_APPEND | O_CREAT;
 #endif
@@ -7644,6 +7638,11 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         *this << "(" << main_pex->GetType() << "::"
                      << main_pex->GetErrCodeString() << ") "
               << s_GetExceptionText(main_pex);
+    }
+    else {
+        *this << main_pex->GetType() << "::"
+            << main_pex->GetErrCodeString() << " "
+            << s_GetExceptionText(main_pex);
     }
     for (; !pile.empty(); pile.pop()) {
         pex = pile.top();
