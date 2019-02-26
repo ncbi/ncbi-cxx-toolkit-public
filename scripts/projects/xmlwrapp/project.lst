@@ -26,6 +26,7 @@ util/regexp$
 util/regexp/testdata$
 util/xregexp$
 util/bitset$
+util/checksum
 serial$
 serial/datatool$
 connect$
