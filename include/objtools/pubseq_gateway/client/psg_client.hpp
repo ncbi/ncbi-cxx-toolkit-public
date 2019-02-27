@@ -84,6 +84,8 @@ protected:
 
     virtual ~CPSG_Request() = default;
 
+    struct x_GetBioIdParams;
+
 private:
     virtual string x_GetType() const = 0;
     virtual string x_GetId() const = 0;
@@ -108,11 +110,12 @@ public:
     CPSG_BioId(string id, TType type = {}) : m_Id(move(id)), m_Type(type) {}
 
     const string& Get()     const { return m_Id; }
-    TType         GetType() const { return m_Type; }
 
 private:
     string m_Id;
     TType  m_Type;
+
+    friend class CPSG_Request;
 };
 
 
@@ -556,8 +559,8 @@ public:
     /// Coordinates of the blob that contains the NA data
     CPSG_BlobId GetBlobId() const;
 
-    /// Date when the NA data blob was last changed
-    Uint8 GetDateChanged() const;
+    /// Get NA version (the larger the version the fresher the NA data)
+    Uint8 GetVersion() const;
 
     /// Available zoom levels
     using TZoomLevel  = unsigned int;
@@ -567,11 +570,11 @@ public:
     /// 
     struct SAnnotInfo
     {
-        using TAnnot = objects::CSeq_annot::C_Data::E_Choice;
+        using TAnnotType = objects::CSeq_annot::C_Data::E_Choice;
 
-        TAnnot annot;
-        int    type;
-        int    subtype;
+        TAnnotType annot_type;
+        int        feat_type;
+        int        feat_subtype;
     };
 
     using TAnnotInfoList = list<SAnnotInfo>;

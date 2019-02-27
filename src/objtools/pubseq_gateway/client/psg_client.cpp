@@ -208,6 +208,22 @@ TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, list<SPSG_Reply::SCh
     return rv.release();
 }
 
+
+template <typename TType, typename TVersion>
+CPSG_BioId s_CreateBioId(TType t, string accession, TVersion v)
+{
+    auto type = static_cast<CPSG_BioId::TType>(t);
+    auto version = static_cast<int>(v);
+    return objects::CSeq_id(type, accession, kEmptyStr, version).AsFastaString();
+};
+
+template <typename TType>
+CPSG_BioId s_CreateBioId(TType t, string accession)
+{
+    auto type = static_cast<CPSG_BioId::TType>(t);
+    return objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent, type, accession).AsFastaString();
+};
+
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
 {
     auto user_reply_locked = user_reply.lock();
@@ -243,10 +259,10 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         rv.reset(CreateImpl(new CPSG_BlobInfo(blob_id), chunks));
 
     } else if (item_type == "bioseq_na") {
+        auto type = stoul(args.GetValue("seq_type"));
         auto accession = args.GetValue("seq_acc");
-        auto type = static_cast<CPSG_BioId::TType>(stoul(args.GetValue("seq_type")));
-        auto version = static_cast<int>(stoul(args.GetValue("seq_ver")));
-        auto bio_id = objects::CSeq_id(type, accession, kEmptyStr, version).AsFastaString();
+        auto version = stoul(args.GetValue("seq_ver"));
+        auto bio_id = s_CreateBioId(type, accession, version);
         auto name = args.GetValue("na");
         rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(bio_id, name), chunks));
 
@@ -337,13 +353,27 @@ string s_AddUseCache(ostringstream& os)
     return os.str();
 }
 
+
+struct CPSG_Request::x_GetBioIdParams
+{
+    const string& id;
+    const CPSG_BioId::TType& type;
+
+    x_GetBioIdParams(const CPSG_BioId& bio_id) : id(bio_id.m_Id), type(bio_id.m_Type) {}
+
+    friend ostream& operator<<(ostream& os, const x_GetBioIdParams& bio_id)
+    {
+        if (bio_id.type) os << "seq_id_type=" << bio_id.type << '&';
+        return os << "seq_id=" << bio_id.id;
+    }
+};
+
+
 string CPSG_Request_Biodata::x_GetAbsPathRef() const
 {
     ostringstream os;
 
-    os << "/ID/get?seq_id=" << m_BioId.Get();
-
-    if (const auto type = m_BioId.GetType()) os << "&seq_id_type=" << type;
+    os << "/ID/get?" << x_GetBioIdParams(m_BioId);
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
@@ -354,9 +384,7 @@ string CPSG_Request_Resolve::x_GetAbsPathRef() const
 {
     ostringstream os;
 
-    os << "/ID/resolve?seq_id=" << m_BioId.Get() << "&fmt=json&psg_protocol=yes";
-
-    if (const auto type = m_BioId.GetType()) os << "&seq_id_type=" << type;
+    os << "/ID/resolve?" << x_GetBioIdParams(m_BioId) << "&fmt=json&psg_protocol=yes";
 
     auto value = "yes";
     auto include_info = m_IncludeInfo;
@@ -398,11 +426,7 @@ string CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef() const
 {
     ostringstream os;
 
-    os << "/ID/get_na?seq_id=" << m_BioId.Get();
-
-    if (const auto type = m_BioId.GetType()) os << "&seq_id_type=" << type;
-
-    os << "&names=";
+    os << "/ID/get_na?" << x_GetBioIdParams(m_BioId) << "&names=";
 
     for (const auto& name : m_AnnotNames) {
         os << name << ",";
@@ -719,10 +743,10 @@ CPSG_BioseqInfo::CPSG_BioseqInfo()
 
 CPSG_BioId CPSG_BioseqInfo::GetCanonicalId() const
 {
+    auto type = m_Data.GetInteger("seq_id_type");
     auto accession = m_Data.GetString("accession");
-    auto type = static_cast<CPSG_BioId::TType>(m_Data.GetInteger("seq_id_type"));
-    auto version = static_cast<int>(m_Data.GetInteger("version"));
-    return objects::CSeq_id(type, accession, kEmptyStr, version).AsFastaString();
+    auto version = m_Data.GetInteger("version");
+    return s_CreateBioId(type, accession, version);
 }
 
 vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
@@ -736,10 +760,9 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
         error = !seq_id.IsArray() || (seq_id.GetSize() != 2);
 
         if (!error) {
-            auto type = static_cast<CPSG_BioId::TType>(seq_id.GetAt(0).AsInteger());
+            auto type = seq_id.GetAt(0).AsInteger();
             auto accession = seq_id.GetAt(1).AsString();
-            rv.emplace_back(objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent,
-                type, accession).AsFastaString());
+            rv.emplace_back(s_CreateBioId(type, accession));
         }
     }
 
@@ -833,7 +856,7 @@ CPSG_BlobId CPSG_NamedAnnotInfo::GetBlobId() const
     return { sat, sat_key };
 }
 
-Uint8 CPSG_NamedAnnotInfo::GetDateChanged() const
+Uint8 CPSG_NamedAnnotInfo::GetVersion() const
 {
     return static_cast<Uint8>(m_Data.GetInteger("last_modified"));
 }
@@ -963,14 +986,14 @@ CPSG_NamedAnnotInfo::TZoomLevels CPSG_NamedAnnotInfo::GetZoomLevels() const
 
 CPSG_NamedAnnotInfo::TAnnotInfoList CPSG_NamedAnnotInfo::GetAnnotInfoList() const
 {
-    using TAnnot = SAnnotInfo::TAnnot;
+    using TAnnotType = SAnnotInfo::TAnnotType;
 
     static SAnnotInfoProcessor<TAnnotInfoList> processor
     ({
-        { TAnnot::e_Ftable,    &s_GetTypeAndSubtype<TAnnot::e_Ftable>    },
-        { TAnnot::e_Align,     &s_GetType          <TAnnot::e_Align>     },
-        { TAnnot::e_Graph,     &s_GetType          <TAnnot::e_Graph>     },
-        { TAnnot::e_Seq_table, &s_GetTypeAndSubtype<TAnnot::e_Seq_table> },
+        { TAnnotType::e_Ftable,    &s_GetTypeAndSubtype<TAnnotType::e_Ftable>    },
+        { TAnnotType::e_Align,     &s_GetType          <TAnnotType::e_Align>     },
+        { TAnnotType::e_Graph,     &s_GetType          <TAnnotType::e_Graph>     },
+        { TAnnotType::e_Seq_table, &s_GetTypeAndSubtype<TAnnotType::e_Seq_table> },
     });
 
     return processor(this, m_Data);

@@ -247,7 +247,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
     range_obj["to"].SetValue().SetInt8(range.GetTo());
 
     m_JsonObj["blob_id"].SetValue().SetString(named_annot_info->GetBlobId().Get());
-    m_JsonObj["date_changed"].SetValue().SetUint8(named_annot_info->GetDateChanged());
+    m_JsonObj["version"].SetValue().SetUint8(named_annot_info->GetVersion());
 
     CJson_Array zoom_level_array = m_JsonObj.insert_array("zoom_levels");
     for (const auto zoom_level : named_annot_info->GetZoomLevels()) {
@@ -257,9 +257,9 @@ void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
     CJson_Array annot_info_array = m_JsonObj.insert_array("annot_info_list");
     for (const auto annot_info : named_annot_info->GetAnnotInfoList()) {
         CJson_Object annot_info_obj = annot_info_array.push_back_object();
-        annot_info_obj["annot"].SetValue().SetInt8(annot_info.annot);
-        annot_info_obj["type"].SetValue().SetInt8(annot_info.type);
-        annot_info_obj["subtype"].SetValue().SetInt8(annot_info.subtype);
+        annot_info_obj["annot_type"].SetValue().SetInt8(annot_info.annot_type);
+        annot_info_obj["feat_type"].SetValue().SetInt8(annot_info.feat_type);
+        annot_info_obj["feat_subtype"].SetValue().SetInt8(annot_info.feat_subtype);
     }
 }
 
