@@ -33,6 +33,7 @@
 #include <corelib/ncbistr.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -456,6 +457,8 @@ s_ReportBadCharError(
         id,
         line_number,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_BadCharacters,
         errMessage,
         pEl);
 }
@@ -474,6 +477,8 @@ s_ReportInconsistentID(
         id,
         line_number,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_UnexpectedID,
         "Found unexpected ID",
         pEl);
 }
@@ -492,6 +497,8 @@ s_ReportInconsistentBlockLine(
         id,
         line_number,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_InconsistentBlockLines,
         "Inconsistent block line formatting",
         pEl);
 }
@@ -519,6 +526,8 @@ s_ReportLineLengthError(
         id,
         lip->line_num,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_UnexpectedLineLength,
         errMessage,
         pEl);
 }
@@ -542,6 +551,8 @@ s_ReportBlockLengthError(
         id,
         line_num,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_UnexpectedBlockLength,
         errMessage,
         pEl);
 }
@@ -560,6 +571,8 @@ s_ReportDuplicateIDError(
         id,
         line_num,
         EDiagSev::eDiag_Warning,
+        eReader_Alignment,
+        eAlnSubcode_DuplicateID,
         "Duplicate ID!  Sequences will be concatenated!",
         pEl);
 }
@@ -577,6 +590,8 @@ s_ReportMissingSequenceData(
         id,
         -1,
         EDiagSev::eDiag_Fatal,
+        eReader_Alignment,
+        eAlnSubcode_MissingSeqData,
         "No data found",
         pEl);
 }
@@ -600,6 +615,8 @@ s_ReportBadSequenceLength(
         id,
         -1,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_UnexpectedSeqLength,
         errMessage,
         pEl);
 }
@@ -621,6 +638,8 @@ s_ReportIncorrectNumberOfSequences(
         "",
         -1,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_UnexpectedNumSeqs,
         errMessage,
         pEl);
 }
@@ -639,6 +658,8 @@ s_ReportIncorrectSequenceLength(
         "",
         -1,
         EDiagSev::eDiag_Error,
+        eReader_Alignment,
+        eAlnSubcode_UnexpectedSeqLength,
         errMessage,
         pEl);
 }
@@ -655,6 +676,8 @@ s_ReportASN1Error(
         "",
         -1,
         EDiagSev::eDiag_Fatal,
+        eReader_Alignment,
+        eAlnSubcode_Asn1File,
         "This is an ASN.1 file which cannot be read by this function",
         pEl);
 }

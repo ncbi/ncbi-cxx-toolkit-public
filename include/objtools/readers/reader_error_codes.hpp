@@ -56,7 +56,19 @@ enum EModSubcode
 
 enum EAlnSubcode
 {
-    eAlnSubcode_Undefined
+    eAlnSubcode_Undefined,
+    eAlnSubcode_InvalidInput,
+    eAlnSubcode_SingleSeq,
+    eAlnSubcode_MissingSeqData,
+    eAlnSubcode_BadCharacters,
+    eAlnSubcode_UnexpectedSeqLength,
+    eAlnSubcode_UnexpectedNumSeqs,
+    eAlnSubcode_UnexpectedLineLength,
+    eAlnSubcode_InconsistentBlockLines,
+    eAlnSubcode_UnexpectedBlockLength,
+    eAlnSubcode_UnexpectedID,
+    eAlnSubcode_DuplicateID,
+    eAlnSubcode_Asn1File
 };
 
 

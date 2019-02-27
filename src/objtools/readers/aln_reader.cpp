@@ -264,6 +264,8 @@ void CAlnReader::Read(
         sReportError(
             pErrorListener,
             eDiag_Fatal,
+            eReader_Alignment,
+            eAlnSubcode_InvalidInput,
             0,
             "Error reading alignment: Invalid input or alphabet");
         return;
@@ -273,6 +275,8 @@ void CAlnReader::Read(
         sReportError(
             pErrorListener,
             eDiag_Fatal,
+            eReader_Alignment,
+            eAlnSubcode_SingleSeq,
             0,
             "Error reading alignment: Need more than one sequence");
         return;
@@ -290,6 +294,8 @@ void CAlnReader::Read(
         sReportError(
             pErrorListener,
             eDiag_Fatal,
+            eReader_Alignment,
+            eAlnSubcode_MissingSeqData,
             0,
             "Error reading alignment: Missing sequence data");
         return;

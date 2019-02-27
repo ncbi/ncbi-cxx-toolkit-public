@@ -1,12 +1,15 @@
 Line No    : 18
 Severity   : Error
+Code       : 2.8
 Message    : At ID 'seq3': Inconsistent block line formatting
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
+Code       : 2.5
 Message    : At ID 'seq3': Expected sequence length 48, actual length 47
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
+Code       : 2.1
 Message    : Error reading alignment: Invalid input or alphabet
 

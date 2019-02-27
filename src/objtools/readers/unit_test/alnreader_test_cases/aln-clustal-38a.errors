@@ -1,32 +1,40 @@
 Line No    : 5
 Severity   : Warning
+Code       : 2.11
 Message    : At ID 'seq1': Duplicate ID!  Sequences will be concatenated!
 
 Line No    : 12
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'seq1': Found unexpected ID
 
 Line No    : 13
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'seq5': Found unexpected ID
 
 Line No    : 19
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'seq1': Found unexpected ID
 
 Line No    : 20
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'seq5': Found unexpected ID
 
 Line No    : 18
 Severity   : Error
+Code       : 2.8
 Message    : At ID 'seq3': Inconsistent block line formatting
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
+Code       : 2.5
 Message    : At ID 'seq1': Expected sequence length 48, actual length 96
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
+Code       : 2.1
 Message    : Error reading alignment: Invalid input or alphabet
 

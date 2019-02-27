@@ -1,8 +1,10 @@
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
+Code       : 2.5
 Message    : Expected sequences of length 50, found 48
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
+Code       : 2.1
 Message    : Error reading alignment: Invalid input or alphabet
 

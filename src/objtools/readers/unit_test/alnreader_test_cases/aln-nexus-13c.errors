@@ -1,76 +1,95 @@
 Line No    : 6
 Severity   : Error
+Code       : 2.8
 Message    : At ID 'seq1': Inconsistent block line formatting
 
 Line No    : 13
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'GT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC': Found unexpected ID
 
 Line No    : 14
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'GTGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC': Found unexpected ID
 
 Line No    : 15
 Severity   : Error
+Code       : 2.10
 Message    : At ID '-TGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-': Found unexpected ID
 
 Line No    : 16
 Severity   : Error
+Code       : 2.10
 Message    : At ID '-TGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--': Found unexpected ID
 
 Line No    : 13
 Severity   : Error
+Code       : 2.8
 Message    : At ID 'GT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC': Inconsistent block line formatting
 
 Line No    : 14
 Severity   : Error
+Code       : 2.8
 Message    : At ID 'GTGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC': Inconsistent block line formatting
 
 Line No    : 15
 Severity   : Error
+Code       : 2.8
 Message    : At ID '-TGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-': Inconsistent block line formatting
 
 Line No    : 16
 Severity   : Error
+Code       : 2.8
 Message    : At ID '-TGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--': Inconsistent block line formatting
 
 Line No    : 19
 Severity   : Error
+Code       : 2.10
 Message    : At ID '-T--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC': Found unexpected ID
 
 Line No    : 20
 Severity   : Error
+Code       : 2.10
 Message    : At ID '-TGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC': Found unexpected ID
 
 Line No    : 21
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'TTGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-': Found unexpected ID
 
 Line No    : 22
 Severity   : Error
+Code       : 2.10
 Message    : At ID 'TTGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--': Found unexpected ID
 
 Line No    : 19
 Severity   : Error
+Code       : 2.8
 Message    : At ID '-T--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC': Inconsistent block line formatting
 
 Line No    : 20
 Severity   : Error
+Code       : 2.8
 Message    : At ID '-TGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC': Inconsistent block line formatting
 
 Line No    : 21
 Severity   : Error
+Code       : 2.8
 Message    : At ID 'TTGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-': Inconsistent block line formatting
 
 Line No    : 22
 Severity   : Error
+Code       : 2.8
 Message    : At ID 'TTGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--': Inconsistent block line formatting
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
+Code       : 2.5
 Message    : At ID 'AT--ATGGAT': Expected sequence length 144, actual length 38
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
+Code       : 2.1
 Message    : Error reading alignment: Invalid input or alphabet
 
