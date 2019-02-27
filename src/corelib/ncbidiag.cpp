@@ -6301,6 +6301,9 @@ CDiagFileHandleHolder::CDiagFileHandleHolder(const string& fname,
     m_Handle = NcbiSys_open(
         _T_XCSTRING(CFile::ConvertToOSPath(fname)),
         mode, perm);
+#if defined(NCBI_OS_UNIX)
+    fcntl(m_Handle, F_SETFD, fcntl(m_Handle, F_GETFD, 0) | FD_CLOEXEC);
+#endif
 }
 
 CDiagFileHandleHolder::~CDiagFileHandleHolder(void)
