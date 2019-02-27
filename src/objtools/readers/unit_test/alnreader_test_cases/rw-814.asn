@@ -1,0 +1,140 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "ABC-1"
+      },
+      descr {
+        source {
+          org {
+            taxname "Saccharomyces cerevisiae",
+            orgname {
+              mod {
+                {
+                  subtype strain,
+                  subname "ABC"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype clone,
+              name "1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 97,
+        seq-data ncbi2na '3E6F3A03D807940C73B4534F8E45E84488FD34204E347AC7C0'H
+      }
+    },
+    seq {
+      id {
+        local str "ABC-2"
+      },
+      descr {
+        source {
+          org {
+            taxname "Saccharomyces cerevisiae",
+            orgname {
+              mod {
+                {
+                  subtype strain,
+                  subname "ABC"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype clone,
+              name "2"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 100,
+        seq-data ncbi2na '8CF9FCE80F601E5031CED14D3E3917A11203F4D08138D1EB1F'H
+      }
+    },
+    seq {
+      id {
+        local str "ABC-3"
+      },
+      descr {
+        source {
+          org {
+            taxname "Saccharomyces cerevisiae",
+            orgname {
+              mod {
+                {
+                  subtype strain,
+                  subname "ABC"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype clone,
+              name "3"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 90,
+        seq-data ncbi2na '3E7F3A03D807940C73BCE3917A11223F4D00138D1EB1F0'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 3,
+          segs denseg {
+            dim 3,
+            numseg 4,
+            ids {
+              local str "ABC-1",
+              local str "ABC-2",
+              local str "ABC-3"
+            },
+            starts {
+              -1,
+              0,
+              -1,
+              0,
+              3,
+              0,
+              40,
+              43,
+              -1,
+              47,
+              50,
+              40
+            },
+            lens {
+              3,
+              40,
+              7,
+              50
+            }
+          }
+        }
+      }
+    }
+  }
+}
