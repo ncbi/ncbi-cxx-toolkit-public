@@ -65,6 +65,23 @@
 ##
 ##    NCBI_end_lib(result) or NCBI_end_app(result) - argument 'result' is optional
 ##
+##---------------------------------------------------------------------------
+##  custom targets
+##  in CMakeLists.txt:
+##    NCBI_add_target( list of targets)
+##
+##  in CMakeLists.xxx.txt - add function which defines target, then add target:
+##    function(xxx_definition)      - the function name must be unique
+##      ...
+##      add_custom_target(name ...) - the same name as in NCBI_begin_custom_target
+##    endfunction()
+##
+##    NCBI_begin_custom_target(name)
+##      NCBI_requires( list of components)
+##      NCBI_custom_target_dependencies(list of toolkit libraries or apps)
+##      NCBI_custom_target_definition( xxx_definition) - function name defined above
+##    NCBI_end_custom_target(result) - argument 'result' is optional
+##  
 #############################################################################
 function(NCBI_add_root_subdirectory)
 
@@ -119,7 +136,8 @@ function(NCBI_add_root_subdirectory)
                     NCBI_internal_print_project_info(${_prj})
                 endif()
             endforeach()
-        elseif("${_allprojects}" STREQUAL "")
+#        elseif("${_allprojects}" STREQUAL "")
+        else()
             message(FATAL_ERROR "List of projects is empty")
             return()
         endif()
@@ -129,6 +147,7 @@ function(NCBI_add_root_subdirectory)
     set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_STATIC 0)
     set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_SHARED 0)
     set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_CONSOLEAPP 0)
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_CUSTOM 0)
 
     NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
     if (NCBI_PTBCFG_DOINSTALL)
@@ -138,10 +157,11 @@ function(NCBI_add_root_subdirectory)
     get_property(_app GLOBAL PROPERTY NCBI_PTBPROP_COUNT_CONSOLEAPP)
     get_property(_lib GLOBAL PROPERTY NCBI_PTBPROP_COUNT_STATIC)
     get_property(_dll GLOBAL PROPERTY NCBI_PTBPROP_COUNT_SHARED)
+    get_property(_cust GLOBAL PROPERTY NCBI_PTBPROP_COUNT_CUSTOM)
     if(BUILD_SHARED_LIBS)
-        message("Added successfully: ${_app} console apps, ${_dll} shared libs, ${_lib} static libs")
+        message("Added successfully: ${_app} console apps, ${_dll} shared libs, ${_lib} static libs, ${_cust} custom targets")
     else()
-        message("Added successfully: ${_app} console apps, ${_lib} static libs")
+        message("Added successfully: ${_app} console apps, ${_lib} static libs, ${_cust} custom targets")
     endif()
 endfunction()
 
@@ -286,6 +306,25 @@ endif()
 endfunction()
 
 #############################################################################
+function(NCBI_add_target)
+    if(NCBI_PTBMODE_PARTS)
+        return()
+    endif()
+    if(NOT NCBI_EXPERIMENTAL_CFG)
+        set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
+    foreach(_prj IN LISTS ARGV)
+        if (EXISTS ${NCBI_CURRENT_SOURCE_DIR}/CMakeLists.${_prj}.txt)
+            NCBI_internal_include(${NCBI_CURRENT_SOURCE_DIR}/CMakeLists.${_prj}.txt)
+        elseif (EXISTS ${NCBI_CURRENT_SOURCE_DIR}/${_prj} AND NOT IS_DIRECTORY ${NCBI_CURRENT_SOURCE_DIR}/${_prj})
+            NCBI_internal_include(${NCBI_CURRENT_SOURCE_DIR}/${_prj})
+        else()
+            message("WARNING: Target not found: ${_prj} (${NCBI_CURRENT_SOURCE_DIR})")
+        endif()
+    endforeach()
+endfunction()
+
+#############################################################################
 macro(NCBI_begin_lib _name)
     if(NOT NCBI_EXPERIMENTAL_CFG)
         set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -389,6 +428,40 @@ macro(NCBI_end_app)
     endif()
     NCBI_internal_add_project(${ARGV})
     unset(NCBI_PROJECT)
+endmacro()
+
+#############################################################################
+macro(NCBI_begin_custom_target _name)
+    if(NOT NCBI_EXPERIMENTAL_CFG)
+        set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
+    set(NCBI_PROJECT_custom ${_name})
+    set(NCBI_PROJECT ${_name})
+    set(NCBI_${NCBI_PROJECT}_TYPE CUSTOM)
+    set(NCBI_PROJECT_ID ${_name}.${NCBI_${NCBI_PROJECT}_TYPE})
+endmacro()
+
+#############################################################################
+macro(NCBI_end_custom_target)
+    if(NOT DEFINED NCBI_PROJECT_custom)
+        message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Unexpected NCBI_end_custom_target call")
+    endif()
+    if(NOT DEFINED NCBI_${NCBI_PROJECT}_DEFINITION)
+        message(FATAL_ERROR "${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Custom project definition not provided")
+    endif()
+    NCBI_internal_add_project(${ARGV})
+    unset(NCBI_PROJECT)
+endmacro()
+
+#############################################################################
+macro(NCBI_custom_target_definition _def)
+    set(NCBI_${NCBI_PROJECT}_DEFINITION ${_def})
+    set(NCBI_${NCBI_PROJECT}_CALLBACK 0)
+endmacro()
+
+#############################################################################
+macro(NCBI_custom_target_dependencies)
+    set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} "${ARGV}")
 endmacro()
 
 #############################################################################
@@ -1893,6 +1966,7 @@ endif()
     NCBI_internal_add_dataspec()
     NCBI_internal_verify_libs()
 
+#----------------------------------------------------------------------------
     if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
 
         if (WIN32)
@@ -1906,6 +1980,7 @@ endif()
             target_compile_options(${NCBI_PROJECT} PRIVATE -fPIC)
         endif()
 
+#----------------------------------------------------------------------------
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
 
         if (WIN32)
@@ -1916,6 +1991,7 @@ endif()
         add_library(${NCBI_PROJECT} SHARED ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})
         set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
 
+#----------------------------------------------------------------------------
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP")
 
         if(NCBI_EXPERIMENTAL_CFG)
@@ -1931,6 +2007,13 @@ endif()
             add_executable(${NCBI_PROJECT} ${NCBITMP_PROJECT_SOURCES})
         endif()
 
+#----------------------------------------------------------------------------
+    elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CUSTOM")
+
+        variable_watch(NCBI_${NCBI_PROJECT}_CALLBACK ${NCBI_${NCBI_PROJECT}_DEFINITION})
+        set(NCBI_${NCBI_PROJECT}_CALLBACK 1)
+
+#----------------------------------------------------------------------------
     else()
 
         message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}) unsupported project type ${NCBI_${NCBI_PROJECT}_TYPE}")
@@ -1962,24 +2045,34 @@ message("  NCBITMP_PROJECT_SOURCES ${NCBITMP_PROJECT_SOURCES}")
 message("  NCBITMP_PROJECT_HEADERS ${NCBITMP_PROJECT_HEADERS}")
 message("  NCBITMP_PROJECT_RESOURCES ${NCBITMP_PROJECT_RESOURCES}")
 endif()
-    target_include_directories(${NCBI_PROJECT} PRIVATE ${NCBITMP_INCLUDES})
-    target_compile_definitions(${NCBI_PROJECT} PRIVATE ${NCBITMP_DEFINES})
+
+    if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CUSTOM")
+
+        get_property(_prjdeps GLOBAL PROPERTY NCBI_PTBPROP_DIRECT_DEPS_${NCBI_PROJECT})
+        if (NOT "${_prjdeps}" STREQUAL "")
+            add_dependencies(${NCBI_PROJECT} ${_prjdeps})
+        endif()
+
+    else()
+        target_include_directories(${NCBI_PROJECT} PRIVATE ${NCBITMP_INCLUDES})
+        target_compile_definitions(${NCBI_PROJECT} PRIVATE ${NCBITMP_DEFINES})
 
 if(OFF)
 # this does not seem to have any effect
-    if (XCODE AND NOT BUILD_SHARED_LIBS)
-        set_target_properties(${NCBI_PROJECT} PROPERTIES XCODE_ATTRIBUTE_STANDARD_C_PLUS_PLUS_LIBRARY_TYPE "static")
-        set_target_properties(${NCBI_PROJECT} PROPERTIES XCODE_ATTRIBUTE_GCC_SYMBOLS_PRIVATE_EXTERN "YES")
-    endif()
+        if (XCODE AND NOT BUILD_SHARED_LIBS)
+            set_target_properties(${NCBI_PROJECT} PROPERTIES XCODE_ATTRIBUTE_STANDARD_C_PLUS_PLUS_LIBRARY_TYPE "static")
+            set_target_properties(${NCBI_PROJECT} PROPERTIES XCODE_ATTRIBUTE_GCC_SYMBOLS_PRIVATE_EXTERN "YES")
+        endif()
 endif()
 
 #message("target_link_libraries: ${NCBI_PROJECT}     ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB}")
-    target_link_libraries(     ${NCBI_PROJECT}         ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB})
+        target_link_libraries(     ${NCBI_PROJECT}         ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB})
 
-    if (DEFINED _suffix)
-        set_target_properties( ${NCBI_PROJECT} PROPERTIES PROJECT_LABEL ${NCBI_PROJECT}${_suffix})
+        if (DEFINED _suffix)
+            set_target_properties( ${NCBI_PROJECT} PROPERTIES PROJECT_LABEL ${NCBI_PROJECT}${_suffix})
+        endif()
+        NCBI_internal_define_precompiled_header_usage()
     endif()
-    NCBI_internal_define_precompiled_header_usage()
 
     if (DEFINED NCBI_ALLTESTS)
         foreach(_test IN LISTS NCBI_ALLTESTS)
