@@ -349,6 +349,7 @@ public:
 
     CConstRef<CSeqdesc> GetDesc(size_t num) const { return m_SrcDescs[num]; };
     CConstRef<CSeq_feat> GetFeat(size_t num) const { return m_SrcFeats[num]; };
+    CConstRef<CSeq_entry> GetSeqContext(size_t num) const;
 
     bool DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host);
 

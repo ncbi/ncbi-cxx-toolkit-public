@@ -1201,6 +1201,11 @@ void CTaxValidationAndCleanup::ReportStrainErrors(CValidError_imp& imp)
     m_StrainMap.PostErrors(imp);
 }
 
+CConstRef<CSeq_entry> CTaxValidationAndCleanup::GetSeqContext(size_t num) const
+{
+    return (num < m_DescCtxs.size()) ? m_DescCtxs[num] : CConstRef<CSeq_entry>();
+}
+
 
 //LCOV_EXCL_START
 //used by Genome Workbench, asn_cleanup, and table2asn but not asnvalidate
