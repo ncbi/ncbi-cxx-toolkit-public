@@ -8631,11 +8631,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
             }
             CheckUnbalancedParenthesesSubSource(subtype, "no left (abc");
             CheckUnbalancedParenthesesSubSource(subtype, "no right )abc");
+            CheckUnbalancedParenthesesSubSource(subtype, "no left ( parentheses");
+            CheckUnbalancedParenthesesSubSource(subtype, "no right ) parentheses");
         }
     }
     // also check other
     CheckUnbalancedParenthesesSubSource(CSubSource::eSubtype_other, "no left (abc");
     CheckUnbalancedParenthesesSubSource(CSubSource::eSubtype_other, "no right )abc");
+    CheckUnbalancedParenthesesSubSource(CSubSource::eSubtype_other, "no left ( parentheses");
+    CheckUnbalancedParenthesesSubSource(CSubSource::eSubtype_other, "no right ) parentheses");
 
     for (COrgMod::TSubtype subtype = COrgMod::eSubtype_strain;
          subtype <= COrgMod::eSubtype_metagenome_source;
