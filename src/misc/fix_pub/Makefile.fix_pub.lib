@@ -1,0 +1,14 @@
+# $Id$
+
+# Build library "fix_pub"
+###############################
+
+WATCHERS = dobronad
+
+ASN_DEP = xcleanup mlacli
+SRC = fix_pub
+
+LIB = fix_pub
+
+USES_LIBRARIES =  \
+    xmlwrapp

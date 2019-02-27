@@ -1,0 +1,11 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(fix_pub)
+  NCBI_sources(
+    fix_pub
+  )
+#  NCBI_uses_toolkit_libraries(mlacli)
+  NCBI_project_watchers(dobronad)
+NCBI_end_lib()
