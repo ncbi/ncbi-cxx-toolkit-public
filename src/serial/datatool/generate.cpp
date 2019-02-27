@@ -972,8 +972,9 @@ void CCodeGenerator::GenerateClientCode(const string& name, bool mandatory)
         return; // not configured
     }
     CFileCode code(this,Path(m_FileNamePrefix, name));
+    CClientPseudoDataType type(*this, name, class_name);
     code.UseQuotedForm(m_UseQuotedForm);
-    code.AddType(new CClientPseudoDataType(*this, name, class_name));
+    code.AddType(&type);
     code.GenerateCode();
     string filename;
     code.GenerateHPP(m_HPPDir, filename);
