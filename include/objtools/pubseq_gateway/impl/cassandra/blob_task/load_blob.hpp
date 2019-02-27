@@ -111,6 +111,7 @@ class CCassBlobTaskLoadBlob
     void SetChunkCallback(TBlobChunkCallbackEx callback);
     void SetPropsCallback(TBlobPropsCallback callback);
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
+    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
 
     void Cancel(void);
 
