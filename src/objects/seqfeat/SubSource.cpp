@@ -1268,7 +1268,7 @@ static string s_InsertSpacesBetweenTokens(const string &old_str)
 	if (sym < 0x80)
 	{
 	    char c = static_cast<char>(sym);
-	    if (!isalpha(c) && !isdigit(c) && c != '.')
+	    if (!isalpha(c) && !isdigit(c) && c != '.' && c != '-' && c != '+')
 	    {
 		new_str += ' ';
 	    }
@@ -1295,6 +1295,7 @@ static string s_InsertSpacesBetweenTokens(const string &old_str)
 static string s_RemoveSpacesWithinNumbers(const string &old_str)
 {
     string new_str;
+    bool is_number = true;
     for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i) 
     {
 	TUnicodeSymbol sym = CUtf8::Decode(i);
@@ -1310,11 +1311,19 @@ static string s_RemoveSpacesWithinNumbers(const string &old_str)
                 new_str += '.';
 	    }
             new_str += c;
+            if (!isdigit(c) && c != '+' && c != '-' && c != '.' && !isspace(c))
+                is_number = false;
         }
 	else
 	{
 	    new_str += ' ';
+            is_number = false;
 	}	
+    }
+    if (is_number)
+    {
+        NStr::ReplaceInPlace(new_str, "+", " +");
+        NStr::ReplaceInPlace(new_str, "-", " -");
     }
     return new_str;
 }
@@ -1419,7 +1428,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	    pattern.push_back("N");
 	    nsew.push_back("E");
 	}
-	else if (token == "W"  || NStr::EqualNocase(token, "west"))
+	else if (token == "W"  || NStr::EqualNocase(token, "west") || token == "Wdeg")
 	{
 	    pattern.push_back("N");
 	    nsew.push_back("W");
@@ -1609,7 +1618,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	       pattern == "1 degrees 1 N 1 degrees 1 ' N" ||
                pattern == "1 degrees 1 ' N 1 degrees 1 N" ||
                pattern == "N 1 degrees 1 ' N 1 degrees 1" ||
-               pattern == "N 1 degrees 1 ' N 1 degrees 1 '")
+               pattern == "N 1 degrees 1 ' N 1 degrees 1 '" ||
+               pattern == "N 1 degrees 1 ' N 1 1 '")
 	     && numbers[1] < 60  && numbers[3] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60;
@@ -1617,7 +1627,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	prec[0] = max(precision[0], precision[1] + 2);
 	prec[1] = max(precision[2], precision[3] + 2);
     }
-    else if (pattern == "1 N 1 1 N"
+    else if ((pattern == "1 N 1 1 N" ||
+              pattern == "1 degrees N 1 degrees 1 ' N")
 	     &&  numbers[2] < 60)
     {
 	degrees[0] = numbers[0];
