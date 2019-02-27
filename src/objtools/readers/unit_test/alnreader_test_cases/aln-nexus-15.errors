@@ -1,4 +1,5 @@
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
+Code       : 2.15
 Message    : Error reading deflines. Unable to associate deflines with sequences
 

@@ -313,6 +313,8 @@ void CAlnReader::Read(
             sReportError(
                 pErrorListener,
                 eDiag_Fatal,
+                eReader_Alignment,
+                eAlnSubcode_ReplicatedSeq,
                 0,
                 "Error reading alignment: Possible sequence replication");
             return;
@@ -321,6 +323,8 @@ void CAlnReader::Read(
             sReportError(
                 pErrorListener,
                 eDiag_Fatal,
+                eReader_Alignment,
+                eAlnSubcode_DifferingSeqLengths,
                 0,
                 "Error reading alignment: Not all sequences have same length");
             return;
@@ -368,6 +372,8 @@ void CAlnReader::Read(
             sReportError(
                 pErrorListener,
                 eDiag_Error,
+                eReader_Alignment,
+                eAlnSubcode_UnmatchedDeflines,
                 0,
                 "Error reading deflines. Unable to associate deflines with sequences");
         }

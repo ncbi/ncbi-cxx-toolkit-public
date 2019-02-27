@@ -68,7 +68,10 @@ enum EAlnSubcode
     eAlnSubcode_UnexpectedBlockLength,
     eAlnSubcode_UnexpectedID,
     eAlnSubcode_DuplicateID,
-    eAlnSubcode_Asn1File
+    eAlnSubcode_Asn1File,
+    eAlnSubcode_ReplicatedSeq,
+    eAlnSubcode_DifferingSeqLengths,
+    eAlnSubcode_UnmatchedDeflines
 };
 
 
