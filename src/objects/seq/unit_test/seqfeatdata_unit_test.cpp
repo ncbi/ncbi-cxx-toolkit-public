@@ -303,6 +303,19 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("02 deg 28' 29# S, 56 deg 6' 31# W", true), "2.4747 S 56.1086 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("86 deg. 30'S, 147 deg. W", true), "86.50 S 147 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("E148deg44.8',N19deg24.1", true), "19.402 N 148.747 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("-0.000 N 2.415 W", true),  "0.000 N 2.415 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N 22.122 E 106.733", true),  "22.122 N 106.733 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("45#42'N 13#42'E", true),  "45.70 N 13.70 E");
+
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("lat 48 deg 32'N, long 58 deg 33'W", true),   "48.53 N 58.55 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N 42deg 23.31'; W 111deg 35.12'", true),   "42.3885 N 111.5853 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("37.9 N lat, 85.8 W long", true),   "37.9 N 85.8 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("37.918 degrees N latitude, 119.258 degrees W longitude", true),   "37.918 N 119.258 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("02 37'S, 38 09'E", true),   "2.62 S 38.15 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("53 deg 23'N 167 deg 50W", true),   "53.38 N 167.83 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("E148deg44.8',N19deg24.1'", true),   "19.402 N 148.747 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N 22 14; W 60 29 28", true),   "22.23 N 60.4911 W");
+
 }
 
 

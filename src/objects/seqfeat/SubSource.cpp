@@ -1385,15 +1385,15 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	    token  = "\'";
 	    pattern.push_back("\'");
 	}
-	else if (token == "\"" || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "sec.") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds") || token == "#")
+	else if (token == "\"" || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "sec.") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds"))
 	{
 	    token = "\"";
 	    pattern.push_back("\"");
 	}
-	else if (token == "," || token == ":" || token == "_" || token == "&" || token == "." || token == ";" || NStr::EqualNocase(token, "and"))
+	else if (token == "," || token == ":" || token == "_" || token == "&" || token == "." || token == ";" || token == "#" || NStr::EqualNocase(token, "and"))
 	{
 	}
-	else if (NStr::EqualNocase(token, "lattitude") || NStr::EqualNocase(token, "lat") || NStr::EqualNocase(token, "lat."))
+	else if (NStr::EqualNocase(token, "lattitude") || NStr::EqualNocase(token, "latitude") || NStr::EqualNocase(token, "lat") || NStr::EqualNocase(token, "lat."))
 	{
 	    pattern.push_back("lat");
 	    lat_long.push_back("lat");
@@ -1539,8 +1539,11 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     vector<int> prec(2, 0);
     if ( pattern == "1 1" ||
 	 pattern == "1 N 1 N" ||
+         pattern == "N 1 N 1" ||
 	 pattern == "1 degrees N 1 degrees N" ||
-	 pattern == "lat 1 lat 1")
+	 pattern == "lat 1 lat 1" ||
+         pattern == "1 N lat 1 N lat" ||
+         pattern == "1 degrees N lat 1 degrees N lat")
     {
 	degrees[0] = numbers[0];
 	degrees[1] = numbers[1];
@@ -1599,10 +1602,14 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     }
     else if (( pattern == "1 1 ' 1 1 '" ||
 	       pattern == "1 1 N 1 1 N" ||
+               pattern == "1 1 ' N 1 1 ' N" ||
 	       pattern == "1 degrees 1 ' N 1 degrees 1 ' N" ||
+               pattern == "lat 1 degrees 1 ' N lat 1 degrees 1 ' N" ||
 	       pattern == "1 degrees 1 N 1 degrees 1 N" ||
 	       pattern == "1 degrees 1 N 1 degrees 1 ' N" ||
-               pattern == "N 1 degrees 1 ' N 1 degrees 1")
+               pattern == "1 degrees 1 ' N 1 degrees 1 N" ||
+               pattern == "N 1 degrees 1 ' N 1 degrees 1" ||
+               pattern == "N 1 degrees 1 ' N 1 degrees 1 '")
 	     && numbers[1] < 60  && numbers[3] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60;
@@ -1618,7 +1625,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	prec[0] = precision[0];
 	prec[1] = max(precision[1], precision[2] + 2);
     }
-    else if (pattern == "1 degrees 1 ' 1 degrees 1 ' 1 \"" 
+    else if ((pattern == "1 degrees 1 ' 1 degrees 1 ' 1 \"" ||
+              pattern == "N 1 1 N 1 1 1")
 	     && numbers[1] < 60 && numbers[3] < 60 && numbers[4] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60;
@@ -1682,6 +1690,10 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
 string CSubSource::MakeLatLon(double lat_value, double lon_value, int lat_precision, int lon_precision )
 {
+    if (lat_value == -0.0)
+        lat_value = 0.0;
+    if (lon_value == -0.0)
+        lon_value = 0.0;
     char ns = 'N';
     if (lat_value < 0) {
         ns = 'S';
