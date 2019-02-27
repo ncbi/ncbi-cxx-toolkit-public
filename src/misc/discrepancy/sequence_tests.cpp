@@ -2409,6 +2409,10 @@ DISCREPANCY_CASE(ALL_SEQS_CIRCULAR, CSeq_inst, eDisc | eSubmitter | eSmart, "All
             return;
         }
         if (obj.CanGetTopology() && obj.GetTopology() == CSeq_inst::eTopology_circular) {
+            const CBioSource* src = context.GetCurrentBiosource();
+            if (src && src->IsSetGenome() && (src->GetGenome() == CBioSource::eGenome_plasmid || src->GetGenome() == CBioSource::eGenome_chromosome)) {
+                return;
+            }
             m_Objs["C"].Incr();
             if (!m_Objs["F"].GetCount()) {
                 auto seq = context.GetCurrentBioseq();
@@ -2424,7 +2428,6 @@ DISCREPANCY_CASE(ALL_SEQS_CIRCULAR, CSeq_inst, eDisc | eSubmitter | eSmart, "All
                         }
                     }
                 }
-
                 if (seq->IsSetDescr() && seq->GetDescr().IsSet()) {
                     for (auto descr: seq->GetDescr().Get()) {
                         if (descr->IsMolinfo() && descr->GetMolinfo().CanGetTech()) {
@@ -2435,9 +2438,6 @@ DISCREPANCY_CASE(ALL_SEQS_CIRCULAR, CSeq_inst, eDisc | eSubmitter | eSmart, "All
                         }
                     }
                 }
-
-
-                //obj.
             }
         }
         else {
