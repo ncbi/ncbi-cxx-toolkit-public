@@ -42,12 +42,14 @@
 #include <h2o.h>
 
 #include <connect/ncbi_ipv6.h>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
 #include "pubseq_gateway_exception.hpp"
 #include "tcp_daemon.hpp"
 #include "pubseq_gateway_logging.hpp"
 
 USING_NCBI_SCOPE;
+USING_IDBLOB_SCOPE;
 
 namespace HST {
 
@@ -98,12 +100,13 @@ public:
         m_Cancelled(false),
         m_State(eReplyInitialized),
         m_HttpProto(proto),
-        m_HttpConn(http_conn)
+        m_HttpConn(http_conn),
+        m_DataReady(make_shared<CDataTrigger>(proto))
     {}
 
-    CHttpReply(const CHttpReply&) = default;
+    CHttpReply(const CHttpReply&) = delete;
     CHttpReply(CHttpReply&&) = default;
-    CHttpReply& operator=(const CHttpReply&) = default;
+    CHttpReply& operator=(const CHttpReply&) = delete;
     CHttpReply& operator=(CHttpReply&&) = default;
 
     ~CHttpReply()
@@ -114,7 +117,7 @@ public:
         m_HttpConn = nullptr;
     }
 
-    void Reset(CHttpReply<P> &  from)
+    void Reset(CHttpReply<P> &&  from)
     {
         if (from.m_State != eReplyInitialized)
             NCBI_THROW(CPubseqGatewayException, eRequestAlreadyStarted,
@@ -127,7 +130,7 @@ public:
             NCBI_THROW(CPubseqGatewayException,
                        eRequestGeneratorAlreadyAssigned,
                        "Original request generator is already assigned");
-        *this = from;
+        *this = move(from);
     }
 
     void Clear(void)
@@ -348,7 +351,7 @@ public:
                        "Connection is not assigned");
 
         m_Postponed = true;
-        m_HttpConn->RegisterPending(std::move(pending_rec), *this);
+        m_HttpConn->RegisterPending(std::move(pending_rec), move(*this));
     }
 
     void PostponedStart(void)
@@ -417,17 +420,6 @@ public:
         return m_Req;
     }
 
-    static void s_DataReady(void *  data)
-    {
-        CHttpReply<P> *     repl = static_cast<CHttpReply<P>*>(data);
-
-        if (repl && repl->m_HttpProto) {
-            if (repl->m_DataReady.Trigger()) {
-                repl->m_HttpProto->WakeWorker();
-            }
-        }
-    }
-
     h2o_iovec_t PrepareChunk(const unsigned char *  data, unsigned int  size)
     {
         if (m_Req)
@@ -440,7 +432,7 @@ public:
 
     bool CheckResetDataTriggered(void)
     {
-        return m_DataReady.CheckResetTriggered();
+        return m_DataReady->CheckResetTriggered();
     }
 
     void Error(const char *  what)
@@ -457,31 +449,29 @@ public:
         CancelPending();
     }
 
+    shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB() {
+        return static_pointer_cast<CCassDataCallbackReceiver>(m_DataReady);
+    }
+
 private:
-    struct CDataTrigger
+    struct CDataTrigger : public CCassDataCallbackReceiver
     {
     public:
-        CDataTrigger(const CDataTrigger &  from) :
-            m_Triggered(false)
-        {
-            assert(!from.m_Triggered.load());
-        }
+        CDataTrigger(const CDataTrigger &  from) = delete;
+        CDataTrigger &  operator=(const CDataTrigger &  from) = delete;
+        CDataTrigger(CDataTrigger &&  from) = default;
+        CDataTrigger &  operator=(CDataTrigger &&  from) = default;
 
-        CDataTrigger &  operator=(const CDataTrigger &  from)
-        {
-            assert(!from.m_Triggered.load());
-            m_Triggered = false;
-            return *this;
-        }
-
-        CDataTrigger() :
-            m_Triggered(false)
+        CDataTrigger(CHttpProto<P> *  proto) :
+            m_Triggered(false),
+            m_Proto(proto)
         {}
 
-        bool Trigger(void)
+        virtual void OnData() override
         {
             bool        b = false;
-            return m_Triggered.compare_exchange_weak(b, true);
+            if (m_Triggered.compare_exchange_weak(b, true) && m_Proto)
+                m_Proto->WakeWorker();
         }
 
         bool CheckResetTriggered(void)
@@ -490,7 +480,9 @@ private:
             return m_Triggered.compare_exchange_weak(b, false);
         }
 
+    private:
         std::atomic<bool>       m_Triggered;
+        CHttpProto<P> *         m_Proto;
     };
 
     void AssignGenerator(void)
@@ -637,7 +629,7 @@ private:
     CHttpProto<P> *         m_HttpProto;
     CHttpConnection<P> *    m_HttpConn;
     std::shared_ptr<P>      m_PendingRec;
-    CDataTrigger            m_DataReady;
+    std::shared_ptr<CDataTrigger> m_DataReady;
 };
 
 
@@ -696,10 +688,10 @@ public:
         MaintainBacklog();
     }
 
-    void RegisterPending(P &&  pending_rec, CHttpReply<P> &  hresp)
+    void RegisterPending(P &&  pending_rec, CHttpReply<P> &&  hresp)
     {
         if (m_Pending.size() < m_HttpMaxPending) {
-            auto req_it = RegisterPending(hresp, m_Pending);
+            auto req_it = RegisterPending(move(hresp), m_Pending);
             CHttpReply<P>& req = *req_it;
             req.AssignPendingRec(std::move(pending_rec));
             req.PostponedStart();
@@ -708,7 +700,7 @@ public:
                 UnregisterPending(req_it);
             }
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
-            auto req_it = RegisterPending(hresp, m_Backlog);
+            auto req_it = RegisterPending(move(hresp), m_Backlog);
             CHttpReply<P>& req = *req_it;
             req.AssignPendingRec(std::move(pending_rec));
         } else {
@@ -763,14 +755,14 @@ private:
         m_Finished.splice(m_Finished.cend(), m_Pending, it);
     }
 
-    reply_list_iterator_t RegisterPending(CHttpReply<P> &  hresp,
+    reply_list_iterator_t RegisterPending(CHttpReply<P> &&  hresp,
                                      std::list<CHttpReply<P>> &  list)
     {
         if (m_Finished.size() > 0) {
             list.splice(list.cend(), m_Finished, m_Finished.begin());
-            list.back().Reset(hresp);
+            list.back().Reset(move(hresp));
         } else {
-            list.emplace_back(hresp);
+            list.push_back(move(hresp));
         }
         auto it = list.end();
         --it;
