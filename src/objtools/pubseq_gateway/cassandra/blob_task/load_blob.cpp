@@ -147,6 +147,16 @@ void CCassBlobTaskLoadBlob::SetDataReadyCB(TDataReadyCallback callback, void * d
     CCassBlobWaiter::SetDataReadyCB(callback, data);
 }
 
+void CCassBlobTaskLoadBlob::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
+{
+    if (callback && m_State != eInit) {
+        NCBI_THROW(CCassandraException, eSeqFailed,
+           "CCassBlobTaskLoadBlob: DataReadyCB can't be assigned "
+           "after the loading process has started");
+    }
+    CCassBlobWaiter::SetDataReadyCB3(callback);
+}
+
 void CCassBlobTaskLoadBlob::Wait1()
 {
     bool b_need_repeat;
