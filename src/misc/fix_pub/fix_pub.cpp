@@ -38,6 +38,7 @@
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_book.hpp>
+#include <objects/biblio/Cit_proc.hpp>
 #include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Title.hpp>
@@ -70,29 +71,40 @@ BEGIN_SCOPE(objects)
     } \
 };
 
-#define ERR_REFERENCE  1
-#define ERR_REFERENCE_MuidNotFound  1
-#define ERR_REFERENCE_SuccessfulMuidLookup  2
-#define ERR_REFERENCE_OldInPress  3
-#define ERR_REFERENCE_No_reference  4
-#define ERR_REFERENCE_Multiple_ref  5
-#define ERR_REFERENCE_Multiple_muid  6
-#define ERR_REFERENCE_MedlineMatchIgnored  7
-#define ERR_REFERENCE_MuidMissmatch  8
-#define ERR_REFERENCE_NoConsortAuthors  9
-#define ERR_REFERENCE_DiffConsortAuthors  10
-#define ERR_REFERENCE_PmidMissmatch  11
-#define ERR_REFERENCE_Multiple_pmid  12
-#define ERR_REFERENCE_FailedToGetPub  13
-#define ERR_REFERENCE_MedArchMatchIgnored  14
-#define ERR_REFERENCE_SuccessfulPmidLookup  15
-#define ERR_REFERENCE_PmidNotFound  16
-#define ERR_REFERENCE_NoPmidJournalNotInPubMed  17
-#define ERR_REFERENCE_PmidNotFoundInPress  18
-#define ERR_REFERENCE_NoPmidJournalNotInPubMedInPress  19
+enum EFixPubErrorCategory
+{
+    err_Reference,
+    err_Print
+};
 
-#define ERR_PRINT  2
-#define ERR_PRINT_Failed  1
+enum EFixPubReferenceError
+{
+    err_Reference_MuidNotFound = 1,
+    err_Reference_SuccessfulMuidLookup,
+    err_Reference_OldInPress,
+    err_Reference_No_reference,
+    err_Reference_Multiple_ref,
+    err_Reference_Multiple_muid,
+    err_Reference_MedlineMatchIgnored,
+    err_Reference_MuidMissmatch,
+    err_Reference_NoConsortAuthors,
+    err_Reference_DiffConsortAuthors,
+    err_Reference_PmidMissmatch,
+    err_Reference_Multiple_pmid,
+    err_Reference_FailedToGetPub,
+    err_Reference_MedArchMatchIgnored,
+    err_Reference_SuccessfulPmidLookup,
+    err_Reference_PmidNotFound,
+    err_Reference_NoPmidJournalNotInPubMed,
+    err_Reference_PmidNotFoundInPress,
+    err_Reference_NoPmidJournalNotInPubMedInPress
+};
+
+
+enum EFixPubPrintError
+{
+    err_Print_Failed = 1
+};
 
 struct SErrorSubcodes
 {
@@ -102,32 +114,32 @@ struct SErrorSubcodes
 
 static map<int, SErrorSubcodes> ERROR_CODE_STR =
 {
-    { ERR_REFERENCE,{ "REFERENCE",
+    { err_Reference,{ "REFERENCE",
     {
-        { ERR_REFERENCE_MuidNotFound, "MuidNotFound" },
-        { ERR_REFERENCE_SuccessfulMuidLookup, "SuccessfulMuidLookup" },
-        { ERR_REFERENCE_OldInPress, "OldInPress" },
-        { ERR_REFERENCE_No_reference, "No_reference" },
-        { ERR_REFERENCE_Multiple_ref, "Multiple_ref" },
-        { ERR_REFERENCE_Multiple_muid, "Multiple_muid" },
-        { ERR_REFERENCE_MedlineMatchIgnored, "MedlineMatchIgnored" },
-        { ERR_REFERENCE_MuidMissmatch, "MuidMissmatch" },
-        { ERR_REFERENCE_NoConsortAuthors, "NoConsortAuthors" },
-        { ERR_REFERENCE_DiffConsortAuthors, "DiffConsortAuthors" },
-        { ERR_REFERENCE_PmidMissmatch, "PmidMissmatch" },
-        { ERR_REFERENCE_Multiple_pmid, "Multiple_pmid" },
-        { ERR_REFERENCE_FailedToGetPub, "FailedToGetPub" },
-        { ERR_REFERENCE_MedArchMatchIgnored, "MedArchMatchIgnored" },
-        { ERR_REFERENCE_SuccessfulPmidLookup, "SuccessfulPmidLookup" },
-        { ERR_REFERENCE_PmidNotFound, "PmidNotFound" },
-        { ERR_REFERENCE_NoPmidJournalNotInPubMed, "NoPmidJournalNotInPubMed" },
-        { ERR_REFERENCE_PmidNotFoundInPress, "PmidNotFoundInPress" },
-        { ERR_REFERENCE_NoPmidJournalNotInPubMedInPress, "NoPmidJournalNotInPubMedInPress" }
+        { err_Reference_MuidNotFound, "MuidNotFound" },
+        { err_Reference_SuccessfulMuidLookup, "SuccessfulMuidLookup" },
+        { err_Reference_OldInPress, "OldInPress" },
+        { err_Reference_No_reference, "No_reference" },
+        { err_Reference_Multiple_ref, "Multiple_ref" },
+        { err_Reference_Multiple_muid, "Multiple_muid" },
+        { err_Reference_MedlineMatchIgnored, "MedlineMatchIgnored" },
+        { err_Reference_MuidMissmatch, "MuidMissmatch" },
+        { err_Reference_NoConsortAuthors, "NoConsortAuthors" },
+        { err_Reference_DiffConsortAuthors, "DiffConsortAuthors" },
+        { err_Reference_PmidMissmatch, "PmidMissmatch" },
+        { err_Reference_Multiple_pmid, "Multiple_pmid" },
+        { err_Reference_FailedToGetPub, "FailedToGetPub" },
+        { err_Reference_MedArchMatchIgnored, "MedArchMatchIgnored" },
+        { err_Reference_SuccessfulPmidLookup, "SuccessfulPmidLookup" },
+        { err_Reference_PmidNotFound, "PmidNotFound" },
+        { err_Reference_NoPmidJournalNotInPubMed, "NoPmidJournalNotInPubMed" },
+        { err_Reference_PmidNotFoundInPress, "PmidNotFoundInPress" },
+        { err_Reference_NoPmidJournalNotInPubMedInPress, "NoPmidJournalNotInPubMedInPress" }
     }
     } },
-    { ERR_PRINT,{ "PRINT",
+    { err_Print,{ "PRINT",
     {
-        { ERR_PRINT_Failed, "Failed" }
+        { err_Print_Failed, "Failed" }
     }
     } }
 };
@@ -150,6 +162,9 @@ string CPubFixing::GetErrorId(int err_code, int err_sub_code)
     return ret;
 }
 
+
+namespace fix_pub
+{
 //   MedlineToISO(tmp)
 //       converts a MEDLINE citation to ISO/GenBank style
 
@@ -163,7 +178,7 @@ void MedlineToISO(CCit_art& cit_art)
                 ConvertAuthorContainerMlToStd(auths);
             }
             else if (auths.GetNames().IsStd()) {
-                for(auto& auth : auths.SetNames().SetStd()) {
+                for (auto& auth : auths.SetNames().SetStd()) {
                     if (auth->IsSetName() && auth->GetName().IsMl()) {
                         auth->SetName().Assign(*ConvertMltoSTD(auth->GetName().GetMl()));
                     }
@@ -186,7 +201,7 @@ void MedlineToISO(CCit_art& cit_art)
 
         if (find_if(titles.begin(), titles.end(), IsIso_jta) == titles.end()) {
             // no iso_jta
-            
+
             CTitle::C_E& first_title = *titles.front();
             const string& title_str = journal.SetTitle().GetTitle(first_title);
 
@@ -211,8 +226,7 @@ void MedlineToISO(CCit_art& cit_art)
             if (msg_list_new.NotEmpty() && msg_list_new->IsSetTitles()) {
 
                 bool gotit = false;
-                for (auto& item : msg_list_new->GetTitles())
-                {
+                for (auto& item : msg_list_new->GetTitles()) {
                     const CTitle &cur_title = item->GetTitle();
 
                     if (cur_title.IsSet()) {
@@ -297,6 +311,7 @@ bool IsInpress(const CCit_art& cit_art)
 
 bool MULooksLikeISSN(const string& str)
 {
+    // ISSN: nnnn-nnnn or nnnn-nnnX, where n -> '0'-'9', i.e. 0123-5566
     static const size_t ISSN_SIZE = 9;
     static const size_t ISSN_DASH_POS = 4;
     static const size_t ISSN_X_POS = 8;
@@ -317,17 +332,16 @@ bool MULooksLikeISSN(const string& str)
 }
 
 
-bool MUIsJournalIndexed(const string* journal)
+bool MUIsJournalIndexed(const string& journal)
 {
-    if (journal == nullptr || journal->empty()) {
+    if (journal.empty()) {
         return false;
     }
 
-    string title;
-    transform(journal->begin(), journal->end(), title.end(),
-        [](char c) {
-        return (c == '(' || c == ')' || c == '.') ? ' ' : c;
-    });
+    string title(journal);
+    NStr::ReplaceInPlace(title, "(", " ");
+    NStr::ReplaceInPlace(title, ")", " ");
+    NStr::ReplaceInPlace(title, ".", " ");
 
     title = NStr::Sanitize(title);
 
@@ -382,8 +396,8 @@ bool MUIsJournalIndexed(const string* journal)
 
 void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessageListener* err_log)
 {
-    const string* first_name = nullptr,
-                * last_name = nullptr;
+    string first_name,
+        last_name;
 
     if (cit_art.IsSetAuthors() && cit_art.GetAuthors().IsSetNames()) {
 
@@ -395,23 +409,23 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
                 if (first_author.GetName().IsName()) {
                     const CName_std& namestd = first_author.GetName().GetName();
                     if (namestd.IsSetLast()) {
-                        last_name = &namestd.GetLast();
+                        last_name = namestd.GetLast();
                     }
                     if (namestd.IsSetInitials()) {
-                        first_name = &namestd.GetInitials();
+                        first_name = namestd.GetInitials();
                     }
                 }
                 else if (first_author.GetName().IsConsortium()) {
-                    last_name = &first_author.GetName().GetConsortium();
+                    last_name = first_author.GetName().GetConsortium();
                 }
             }
         }
         else {
-            last_name = &cit_art.GetAuthors().GetNames().GetStr().front();
+            last_name = cit_art.GetAuthors().GetNames().GetStr().front();
         }
     }
     else {
-        ERR_POST_TO_LISTENER(err_log, eDiag_Warning, ERR_PRINT, ERR_PRINT_Failed, "Authors NULL");
+        ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Print, err_Print_Failed, "Authors NULL");
     }
 
     const CImprint* imprint = nullptr;
@@ -443,7 +457,7 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
     }
 
     static const string UNKNOWN_JOURNAL("journal unknown");
-    const string* title_str = &UNKNOWN_JOURNAL;
+    string title_str(UNKNOWN_JOURNAL);
 
     if (title && title->IsSet() && !title->Get().empty()) {
 
@@ -451,26 +465,27 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
         const string& str = title->GetTitle(first_title);
 
         if (!str.empty())
-            title_str = &str;
+            title_str = str;
     }
 
 
     static const string NO_PAGE("no page number");
     static const string NO_VOL("no volume number");
 
-    const string* vol = &NO_VOL,
-                * page = &NO_PAGE;
+    string vol(NO_VOL),
+        page(NO_PAGE);
+
     int year = 0;
     bool in_press = false;
 
     if (imprint) {
 
         if (imprint->IsSetVolume()) {
-            vol = &imprint->GetVolume();
+            vol = imprint->GetVolume();
         }
 
         if (imprint->IsSetPages()) {
-            page = &imprint->GetPages();
+            page = imprint->GetPages();
         }
 
         if (imprint->IsSetDate() && imprint->GetDate().IsStd() && imprint->GetDate().GetStd().IsSetYear()) {
@@ -481,7 +496,7 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
     }
 
     if (auth) {
-        ERR_POST_TO_LISTENER(err_log, eDiag_Error, ERR_REFERENCE, ERR_REFERENCE_MedArchMatchIgnored,
+        ERR_POST_TO_LISTENER(err_log, eDiag_Error, err_Reference, err_Reference_MedArchMatchIgnored,
             "Too many author name differences: " << muid << "|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         return;
     }
@@ -492,32 +507,32 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
         static const int YEAR_MAX_DIFF = 2;
 
         if (year && cur_year - year > YEAR_MAX_DIFF) {
-            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_OldInPress,
+            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, err_Reference_OldInPress,
                 "encountered in-press article more than 2 years old: " << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         }
     }
 
     if (found) {
-        ERR_POST_TO_LISTENER(err_log, eDiag_Info, ERR_REFERENCE, ERR_REFERENCE_SuccessfulPmidLookup,
+        ERR_POST_TO_LISTENER(err_log, eDiag_Info, err_Reference, err_Reference_SuccessfulPmidLookup,
             muid << "|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
     }
     else if (MUIsJournalIndexed(title_str)) {
         if (muid) {
-            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, ERR_REFERENCE, in_press ? ERR_REFERENCE_PmidNotFoundInPress : ERR_REFERENCE_PmidNotFound,
+            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, in_press ? err_Reference_PmidNotFoundInPress : err_Reference_PmidNotFound,
                 ">>" << muid << "<<|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         }
         else {
-            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, ERR_REFERENCE, in_press ? ERR_REFERENCE_PmidNotFoundInPress : ERR_REFERENCE_PmidNotFound,
+            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, in_press ? err_Reference_PmidNotFoundInPress : err_Reference_PmidNotFound,
                 last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         }
     }
     else {
         if (muid) {
-            ERR_POST_TO_LISTENER(err_log, eDiag_Info, ERR_REFERENCE, in_press ? ERR_REFERENCE_NoPmidJournalNotInPubMedInPress : ERR_REFERENCE_NoPmidJournalNotInPubMed,
+            ERR_POST_TO_LISTENER(err_log, eDiag_Info, err_Reference, in_press ? err_Reference_NoPmidJournalNotInPubMedInPress : err_Reference_NoPmidJournalNotInPubMed,
                 ">>" << muid << "<<|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         }
         else {
-            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, ERR_REFERENCE, in_press ? ERR_REFERENCE_NoPmidJournalNotInPubMedInPress : ERR_REFERENCE_NoPmidJournalNotInPubMed,
+            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, in_press ? err_Reference_NoPmidJournalNotInPubMedInPress : err_Reference_NoPmidJournalNotInPubMed,
                 last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         }
     }
@@ -529,30 +544,6 @@ bool IsFromBook(const CCit_art& art)
     return art.IsSetFrom() && art.GetFrom().IsBook();
 }
 
-
-CRef<CCit_art> CPubFixing::FetchPubPmId(int pmid)
-{
-    CRef<CCit_art> cit_art;
-    if (pmid < 0)
-        return cit_art;
-
-    CRef<CPub> pub;
-    try {
-        CMLAClient mla;
-        pub = mla.AskGetpubpmid(CPubMedId(pmid));
-    }
-    catch (exception &) {
-        pub.Reset();
-    }
-
-    if (pub.NotEmpty() && pub->IsArticle()) {
-        cit_art.Reset(new CCit_art);
-        cit_art->Assign(pub->GetArticle());
-        MedlineToISO(*cit_art);
-    }
-
-    return cit_art;
-}
 
 static const size_t MAX_MATCH_COEFF = 3;
 
@@ -664,7 +655,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
         string old_cons_list = NStr::Join(old_consortiums, ";");
         if (new_consortiums.empty()) {
 
-            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_NoConsortAuthors,
+            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, err_Reference_NoConsortAuthors,
                 "Publication as returned by MedArch lacks consortium authors of the original publication : \"" << old_cons_list << "\".");
 
             for_each(old_consortiums.begin(), old_consortiums.end(),
@@ -680,7 +671,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
 
             string new_cons_list = NStr::Join(new_consortiums, ";");
             if (NStr::CompareNocase(old_cons_list, new_cons_list)) {
-                ERR_POST_TO_LISTENER(err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_DiffConsortAuthors,
+                ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, err_Reference_DiffConsortAuthors,
                     "Consortium author names differ. Original is \"" << old_cons_list << "\". MedArch's is \"" << new_cons_list << "\".");
             }
         }
@@ -799,13 +790,32 @@ void PropagateInPress(bool inpress, CCit_art& cit_art)
         return;
     }
 
-    if (cit_art.GetFrom().IsJournal()) {
-        if (cit_art.GetFrom().GetJournal().IsSetImp())
-            cit_art.SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    CImprint* imprint = nullptr;
+
+    switch (cit_art.GetFrom().Which()) {
+        
+    case CCit_art::C_From::e_Journal:
+        if (cit_art.GetFrom().GetJournal().IsSetImp()) {
+            imprint = &cit_art.SetFrom().SetJournal().SetImp();
+        }
+        break;
+
+    case CCit_art::C_From::e_Book:
+        if (cit_art.GetFrom().GetBook().IsSetImp()) {
+            imprint = &cit_art.SetFrom().SetBook().SetImp();
+        }
+
+    case CCit_art::C_From::e_Proc:
+        if (cit_art.GetFrom().GetProc().IsSetBook() && cit_art.GetFrom().GetProc().GetBook().IsSetImp()) {
+            imprint = &cit_art.SetFrom().SetProc().SetBook().SetImp();
+        }
+        break;
+
+    default:; // do nothing
     }
-    else if (cit_art.GetFrom().IsBook() || cit_art.GetFrom().IsProc()) {
-        if (cit_art.GetFrom().GetBook().IsSetImp())
-            cit_art.SetFrom().SetBook().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+
+    if (imprint) {
+        imprint->SetPrepub(CImprint::ePrepub_in_press);
     }
 }
 
@@ -828,7 +838,7 @@ void FixPubEquivAppendPmid(long muid, CPub_equiv::Tdata& pmids, IMessageListener
     }
 
     if (oldpmid > 0 && newpmid > 0 && oldpmid != newpmid) {
-        ERR_POST_TO_LISTENER(err_log, eDiag_Error, ERR_REFERENCE, ERR_REFERENCE_PmidMissmatch,
+        ERR_POST_TO_LISTENER(err_log, eDiag_Error, err_Reference, err_Reference_PmidMissmatch,
             "OldPMID=" << oldpmid << " doesn't match lookup (" << newpmid << "). Keeping lookup.");
     }
 
@@ -840,6 +850,9 @@ void FixPubEquivAppendPmid(long muid, CPub_equiv::Tdata& pmids, IMessageListener
     pmids.front()->SetPmid().Set((newpmid > 0) ? newpmid : oldpmid);
 }
 
+}
+
+using namespace fix_pub;
 
 void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
 {
@@ -893,7 +906,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
     if (!medlines.empty())
     {
         if (medlines.size() > 1) {
-            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_Multiple_ref, "More than one Medline entry in Pub-equiv");
+            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_ref, "More than one Medline entry in Pub-equiv");
             medlines.resize(1);
         }
 
@@ -908,7 +921,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
         oldpmid = pmids.front()->GetPmid();
         for (auto& pub: pmids) {
             if (pub->GetPmid() != oldpmid) {
-                ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_Multiple_pmid,
+                ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_pmid,
                     "Two different pmids in Pub-equiv [" << oldpmid << "] [" << pub->GetPmid() << "]");
             }
         }
@@ -921,7 +934,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
         oldmuid = muids.front()->GetMuid();
         for (auto& pub : muids) {
             if (pub->GetMuid() != oldmuid) {
-                ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_Multiple_pmid,
+                ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_pmid,
                     "Two different muids in Pub-equiv  [" << oldmuid << "] [" << pub->GetMuid() << "]");
             }
         }
@@ -931,7 +944,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
     if (!cit_arts.empty()) {
         if (cit_arts.size() > 1) {
             // ditch extras
-            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_Multiple_ref, "More than one Cit-art in Pub-equiv");
+            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_ref, "More than one Cit-art in Pub-equiv");
             cit_arts.resize(1);
         }
 
@@ -956,7 +969,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
 
             if (oldpmid > 0 && oldpmid != pmid) {
                 // already had a pmid
-                ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, ERR_REFERENCE, ERR_REFERENCE_PmidMissmatch,
+                ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, err_Reference, err_Reference_PmidMissmatch,
                     "OldPMID=" << oldpmid << " doesn't match lookup (" << pmid << "). Keeping lookup.");
             }
 
@@ -998,7 +1011,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
                     set_pmid = false;
                 }
                 else {
-                    ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, ERR_REFERENCE, ERR_REFERENCE_FailedToGetPub,
+                    ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, err_Reference, err_Reference_FailedToGetPub,
                         "Failed to get pub from MedArch server for pmid = " << pmid << ". Input one is preserved.");
                 }
             }
@@ -1017,7 +1030,6 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
                 pub_list.splice(pub_list.end(), cit_arts);
             }
 
-            muids.clear();
             PropagateInPress(inpress, *cit_art);
             return;
         }
@@ -1045,7 +1057,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
             pub_list.splice(pub_list.end(), pmids);
             return;
         }
-        ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, ERR_REFERENCE, ERR_REFERENCE_No_reference,
+        ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_No_reference,
             "Cant find article for pmid [" << oldpmid << "]");
     }
 
@@ -1132,6 +1144,30 @@ void CPubFixing::FixPub(CPub& pub)
 
     default:; // do nothing
     }
+}
+
+CRef<CCit_art> CPubFixing::FetchPubPmId(int pmid)
+{
+    CRef<CCit_art> cit_art;
+    if (pmid < 0)
+        return cit_art;
+
+    CRef<CPub> pub;
+    try {
+        CMLAClient mla;
+        pub = mla.AskGetpubpmid(CPubMedId(pmid));
+    }
+    catch (exception &) {
+        pub.Reset();
+    }
+
+    if (pub.NotEmpty() && pub->IsArticle()) {
+        cit_art.Reset(new CCit_art);
+        cit_art->Assign(pub->GetArticle());
+        MedlineToISO(*cit_art);
+    }
+
+    return cit_art;
 }
 
 END_SCOPE(objects)

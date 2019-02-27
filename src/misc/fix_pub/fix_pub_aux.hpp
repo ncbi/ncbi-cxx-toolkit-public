@@ -48,11 +48,13 @@ BEGIN_SCOPE(objects)
 class CPub;
 class CCit_art;
 
+namespace fix_pub
+{
 void MedlineToISO(CCit_art& cit_art);
 void SplitMedlineEntry(CPub_equiv::Tdata& medlines);
 bool IsInpress(const CCit_art& cit_art);
 bool MULooksLikeISSN(const string& str);
-bool MUIsJournalIndexed(const string* journal);
+bool MUIsJournalIndexed(const string& journal);
 void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessageListener* err_log);
 bool IsFromBook(const CCit_art& art);
 bool TenAuthorsCompare(CCit_art& cit_old, CCit_art& cit_new);
@@ -63,7 +65,7 @@ void MergeNonPubmedPubIds(const CCit_art& cit_old, CCit_art& cit_new);
 bool IsInPress(const CCit_art& cit_art);
 void PropagateInPress(bool inpress, CCit_art& cit_art);
 void FixPubEquivAppendPmid(long muid, CPub_equiv::Tdata& pmids, IMessageListener* err_log);
-
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
