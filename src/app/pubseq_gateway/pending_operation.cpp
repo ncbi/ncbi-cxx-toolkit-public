@@ -586,8 +586,7 @@ void CPendingOperation::x_ProcessAnnotRequest(void)
                                      bioseq_na_keyspace.second));
         fetch_task->SetErrorCB(
             CNamedAnnotationErrorCallback(this, m_Reply, details.get()));
-        fetch_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
-                                   m_Reply);
+        fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
 
         m_FetchDetails.push_back(std::move(details));
     }
@@ -653,8 +652,7 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                 static_cast<CCassBlobTaskLoadBlob*>(
                         m_MainObjectFetchDetails->m_Loader.get());
 
-    load_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
-                              m_Reply);
+    load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
 
     load_task->SetErrorCB(
                 CGetBlobErrorCallback(this, m_Reply,
@@ -1942,8 +1940,7 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
                     m_PendingOp->m_OriginalBlobChunkFetch->m_Loader.get());
 
 
-    load_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
-                              m_Reply);
+    load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply,
                                   m_PendingOp->m_OriginalBlobChunkFetch.get()));
@@ -2036,8 +2033,7 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob,
             static_cast<CCassBlobTaskLoadBlob*>(
                     m_PendingOp->m_Id2InfoFetchDetails->m_Loader.get());
 
-    load_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
-                              m_Reply);
+    load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply,
                                   m_PendingOp->m_Id2InfoFetchDetails.get()));
@@ -2121,8 +2117,7 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
         CCassBlobTaskLoadBlob *     load_task =
             static_cast<CCassBlobTaskLoadBlob*>(details->m_Loader.get());
 
-        load_task->SetDataReadyCB(
-            HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
+        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply, details.get()));
         load_task->SetPropsCallback(
