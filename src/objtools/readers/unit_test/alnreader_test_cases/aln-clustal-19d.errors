@@ -1,10 +1,12 @@
 Line No    : 15
 Severity   : Warning
+Code       : 2
 Message    : Line 15 could not be assigned to an interleaved block
              Contents of unused line: This line isn't used.
 
 Line No    : 16
 Severity   : Warning
+Code       : 2
 Message    : Line 16 could not be assigned to an interleaved block
              Contents of unused line: And neither is this line.
 

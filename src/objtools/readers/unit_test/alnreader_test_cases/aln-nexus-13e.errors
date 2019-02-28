@@ -1,7 +1,7 @@
-Line No    : None (Encountered during pre or post processing)
+Line No    : 7
 Severity   : Error
-Code       : 2.6
-Message    : Expected 5 sequences, found 1
+Code       : 2.104
+Message    : In data line, expected seqID followed by sequence data
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal

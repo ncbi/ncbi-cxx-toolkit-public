@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
@@ -424,6 +425,22 @@ sReportError(
     pEl->PutError(*pErr);
 }
 
+//  ============================================================================
+void
+sReportNexusError(
+    int lineNumber,
+    EDiagSev severity,
+    int subcode,
+    const string& description,
+    ILineErrorListener* pEl)
+//  =============================================================================
+{
+    sReportError(
+        "", lineNumber, severity, 
+        EReaderCode::eReader_Alignment, subcode,
+        description,
+        pEl);
+}
 
 //  ============================================================================
 static void sReportError(
@@ -434,7 +451,11 @@ static void sReportError(
     ILineErrorListener* pEl)
 //  ============================================================================
 {
-    sReportError(id, lineNumber, severity, 0, 0, description, pEl);
+    sReportError(
+        id, lineNumber, severity, 
+        EReaderCode::eReader_Alignment,
+        EAlnSubcode::eAlnSubcode_Undefined, 
+        description, pEl);
 }
 
 /* This function creates and sends an error message regarding a character
@@ -1558,10 +1579,14 @@ s_IsOnlyNumbersAndSpaces (
 */
 static bool 
 s_IsAlnFormatString (
-    const string& str_)
+    const string& str_,
+    EAlignFormat format)
 {
     string str(str_);
     NStr::ToLower(str);
+    if (format == EAlignFormat::ALNFMT_NEXUS  &&  NStr::StartsWith(str, "matrix")) {
+        return false;
+    }
     return (NStr::StartsWith(str, "matrix")  ||
         NStr::StartsWith(str, "#nexus")  ||
         NStr::StartsWith(str, "clustal w")  ||
@@ -1578,9 +1603,10 @@ s_IsAlnFormatString (
  */
 static bool 
 s_SkippableString(
-    const string& str)
+    const string& str,
+    EAlignFormat format = EAlignFormat::ALNFMT_UNKNOWN)
 {
-    if (s_IsAlnFormatString(str)) {
+    if (s_IsAlnFormatString(str, format)) {
         return true;
     }
     return (NStr::StartsWith(str, "sequin")  ||
@@ -1588,6 +1614,18 @@ s_SkippableString(
         str[0] == ';');
  }
 
+static void
+sIdentifyFormat(
+    const string& line_,
+    EAlignFormat* pFormat)
+{
+    string line(line_);
+    NStr::ToLower(line);
+    if (NStr::StartsWith(line, "#nexus")) {
+        *pFormat = EAlignFormat::ALNFMT_NEXUS;
+        return;
+    }
+}
 
 /* This function determines whether or not linestring contains a line
  * indicating the end of sequence data (organism information and definition
@@ -2254,6 +2292,7 @@ s_AfrpInitLineData(
     string linestring;
     bool dataAvailable = sReadLine(istr, linestring);
     TLineInfoPtr last_line = nullptr, next_line = nullptr;
+    bool isNexusFile = false;
 
     if (s_IsASN1 (linestring)) {
         s_ReportASN1Error (afrp->mpErrorListener);
@@ -2262,60 +2301,66 @@ s_AfrpInitLineData(
 
     while (dataAvailable) {
         NStr::TruncateSpacesInPlace(linestring);
-        if (linestring.empty()) {
-            // default processing
+        string lineStrLower(linestring);
+        NStr::ToLower(lineStrLower);
+        if (lineStrLower == "#nexus"  &&  overall_line_count == 0) {
+            isNexusFile = true;
         }
-        else if (!in_ignored_comment  &&  !in_data_comment  &&  s_FoundStopLine(linestring.c_str())) {
-            linestring [0] = 0;
-        }
-        else if (in_ignored_comment) {
-            if (sEndsNexusComment(linestring)) {
-                in_ignored_comment = false;
-            } 
-            linestring [0] = 0;
-        } 
-        else if (in_data_comment) {
-            if (sEndsNexusComment(linestring)) {
-                in_data_comment = false;
+        if (!isNexusFile) {
+            if (linestring.empty()) {
+                // default processing
+            }
+            else if (!in_ignored_comment  &&  !in_data_comment  &&  s_FoundStopLine(linestring.c_str())) {
+                linestring [0] = 0;
+            }
+            else if (in_ignored_comment) {
+                if (sEndsNexusComment(linestring)) {
+                    in_ignored_comment = false;
+                } 
                 linestring [0] = 0;
             } 
-            else if (NStr::EndsWith(linestring, ";")) {
-                in_matrix_command = false;
-            }
-            else if (!in_matrix_command) {
-                string tempstr(linestring);
-                NStr::ToLower(tempstr);
-                if (NStr::StartsWith(tempstr, "matrix")) {
-                    in_matrix_command = true;
+            else if (in_data_comment) {
+                if (sEndsNexusComment(linestring)) {
+                    in_data_comment = false;
+                    linestring [0] = 0;
+                } 
+                else if (NStr::EndsWith(linestring, ";")) {
+                    in_matrix_command = false;
                 }
-                else {
-                    while (!NStr::EndsWith(linestring, ";")) {
-                        sReadLine(istr, tempstr);
-                        linestring += " " + tempstr;
-                        overall_line_count++;
+                else if (!in_matrix_command) {
+                    string tempstr(linestring);
+                    NStr::ToLower(tempstr);
+                    if (NStr::StartsWith(tempstr, "matrix")) {
+                        in_matrix_command = true;
+                    }
+                    else {
+                        while (!NStr::EndsWith(linestring, ";")) {
+                            sReadLine(istr, tempstr);
+                            linestring += " " + tempstr;
+                            overall_line_count++;
+                        }
                     }
                 }
+            } 
+            else if (sStartsNexusCommentOfType(linestring, "data")) {
+                linestring [0] = 0;
+                in_data_comment = true;
+                afrp->align_format_found = true;
             }
-        } 
-        else if (sStartsNexusCommentOfType(linestring, "data")) {
-            linestring [0] = 0;
-            in_data_comment = true;
-            afrp->align_format_found = true;
+            else if (sStartsNexusCommentOfType(linestring, "characters")) {
+                linestring [0] = 0;
+                in_data_comment = true;
+                afrp->align_format_found = true;
+            }
+            else if (sStartsNexusCommentOfType(linestring, "ncbi")) {
+                // default processing
+            }
+            else if (sStartsNexusCommentOfType(linestring, "")) {
+                linestring [0] = 0;
+                in_ignored_comment = true;
+                afrp->align_format_found = true;
+            }
         }
-        else if (sStartsNexusCommentOfType(linestring, "characters")) {
-            linestring [0] = 0;
-            in_data_comment = true;
-            afrp->align_format_found = true;
-        }
-        else if (sStartsNexusCommentOfType(linestring, "ncbi")) {
-            // default processing
-        }
-        else if (sStartsNexusCommentOfType(linestring, "")) {
-            linestring [0] = 0;
-            in_ignored_comment = true;
-            afrp->align_format_found = true;
-        }
-
         // default processing starts here:
         auto pNew = SLineInfo::AppendNew(afrp->line_list, linestring.c_str(), overall_line_count);
         if (!afrp->line_list) {
@@ -2442,6 +2487,15 @@ sReadAlignFileRaw(
 
     for (next_line = afrp->line_list; next_line; next_line = next_line->next) {
         linestring = next_line->data;
+        if (next_line->line_num == 1) {
+            string lineStrLower(linestring);
+            NStr::ToLower(lineStrLower);
+            if (lineStrLower == "#nexus") {
+                *pformat = EAlignFormat::ALNFMT_NEXUS;
+                break;
+            }
+        }
+
         overall_line_count = next_line->line_num-1;
 
 
@@ -2508,9 +2562,10 @@ sReadAlignFileRaw(
         }
 
         if (!afrp->align_format_found) {
-            afrp->align_format_found = s_IsAlnFormatString (linestring);
-        }                  
-        if (s_SkippableString (linestring)) {
+            afrp->align_format_found = s_IsAlnFormatString (linestring, *pformat);
+        }     
+        sIdentifyFormat(linestring, pformat);          
+        if (s_SkippableString (linestring, *pformat)) {
             linestring[0] = 0;
         }
 
@@ -2583,6 +2638,48 @@ sReadAlignFileRaw(
             last_pattern = this_pattern;
         }
     }
+    if (*pformat == EAlignFormat::ALNFMT_NEXUS) {
+        bool inNexusSequinBlock = false;
+        for (next_line = afrp->line_list->next; next_line; next_line = next_line->next) {
+            string lineStrLower(next_line->data);
+            NStr::ToLower(lineStrLower);
+            if (lineStrLower.empty()  ||  NStr::StartsWith(lineStrLower, "begin")) {
+                continue;
+            }
+            //todo:
+            // extract formatting information
+            // extract deflines
+            if (! found_expected_ntax  ||  ! found_expected_nchar) {
+                s_GetNexusSizeComments(next_line->data, &found_expected_ntax, &found_expected_nchar, afrp);
+                if (found_expected_ntax  &&  found_expected_nchar) {
+                    continue;
+                }
+            }
+            if (!found_char_comment) {
+                if (use_nexus_file_info) {
+                    found_char_comment = s_UpdateNexusCharInfo(next_line->data, sequence_info);
+                } else {
+                    found_char_comment = s_IgnoreNexusCharInfo(next_line->data, sequence_info);
+                }
+                if (found_char_comment) {
+                    continue;
+                }
+            }
+
+            if (lineStrLower == "sequin") {
+                inNexusSequinBlock = true;
+                continue;
+            }
+            if (NStr::EndsWith(lineStrLower, ";")) {//either "END;" or ";" on its own
+                inNexusSequinBlock = false;
+                continue;
+            }
+            if (inNexusSequinBlock) {
+                s_ReadDefline(next_line->data, next_line->line_num - 1, afrp);
+            }
+        }
+    }
+
     if (! afrp->marked_ids) {
         s_FindInterleavedBlocks (pattern_list, afrp);
     }
@@ -3701,6 +3798,222 @@ s_ProcessAlignFileRawByLengthPattern (
     delete token_list;
 }
 
+static void 
+sProcessAlignmentFileAsNexus(
+    TAlignRawFilePtr afrp)
+{
+    const int NUM_SEQUENCES(afrp->expected_num_sequence);
+    const int SIZE_SEQUENCE(afrp->expected_sequence_len);
+
+    enum  EState {
+        SKIPPING,
+        READING
+    } state = SKIPPING;
+    vector<string> seqIds;
+    //vector<string> sequences;
+    vector<vector<TLineInfoPtr>> sequences;
+    int dataLineCount(0);
+    int blockLineLength(0);
+    int sequenceCharCount(0);
+
+    bool inComment(false);
+
+    //at this point we already know the number of sequences to expect, and the
+    // number of symbols each sequence is supposed to have.
+    // we have also already extracted any defines that were in this file.
+
+    //what remains is extraction of the actual sequence data:
+    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
+        if (!linePtr->data  ||  linePtr->data[0] == 0) {
+            continue;
+        }
+        string line(linePtr->data);
+        if (state == EState::SKIPPING) {
+            NStr::ToLower(line);
+        }
+
+        if (state == EState::SKIPPING) {
+            if (NStr::StartsWith(line, "matrix")) {
+                state = READING;
+            }
+            continue;
+        }
+
+        if (state == EState::READING) {
+
+            auto lineStrLower(line);
+            NStr::ToLower(lineStrLower);
+
+            if (NStr::StartsWith(lineStrLower, "[")) {
+                if (!NStr::EndsWith(lineStrLower, "]")) {
+                    inComment = true;
+                }
+                continue;
+            }
+            if (inComment  &&  NStr::EndsWith(lineStrLower, "]")) {
+                inComment = false;
+                continue;
+            }
+
+            if (NStr::StartsWith(lineStrLower, "end;")) {
+                string description = StrPrintf(
+                    "Unexpected \"end;\". Appending \';\' to prior command");
+                sReportNexusError(
+                    linePtr->line_num, EDiagSev::eDiag_Warning,
+                    EAlnSubcode::eAlnSubcode_Nexus_IllegalDataLine,
+                    description,
+                    afrp->mpErrorListener); 
+                state = EState::SKIPPING;
+                continue;
+            }
+
+            bool isLastLineOfData = NStr::EndsWith(line, ";");
+            if (isLastLineOfData) {
+                line = line.substr(0, line.size() -1 );
+                linePtr->data[line.size()] = 0;
+                NStr::TruncateSpacesInPlace(line);
+                if (line.empty()) {
+                    state = EState::SKIPPING;
+                    continue;
+                }
+            }
+            
+            vector<string> tokens;
+            NStr::Split(line, " \t", tokens, 0);
+            if (tokens.size() < 2) {
+                string description = StrPrintf(
+                    "In data line, expected seqID followed by sequence data");
+                sReportNexusError(
+                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_Nexus_IllegalDataLine,
+                    description,
+                    afrp->mpErrorListener); 
+                return;
+            }
+
+            string seqId = tokens[0];
+            if (dataLineCount < NUM_SEQUENCES) {
+                if (std::find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
+                    return; //ERROR: duplicate ID
+                }
+                seqIds.push_back(seqId);
+                sequences.push_back(vector<TLineInfoPtr>());
+            }
+            else {
+                if (seqIds[dataLineCount % NUM_SEQUENCES] != seqId) {
+                    string description;
+                    if (std::find(seqIds.begin(), seqIds.end(), seqId) == seqIds.end()) {
+                        description = StrPrintf(
+                            "Expected %d sequences, but finding data for for another.",
+                            NUM_SEQUENCES);
+                    }
+                    else {
+                        description = StrPrintf(
+                            "Finding data for sequence \"%s\" out of order.",
+                            seqId.c_str());
+                    }
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_Nexus_BadSequenceCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return; //ERROR: Sequence data out of order
+                }
+            }
+
+            string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
+            auto dataSize = seqData.size();
+            auto dataIndex = dataLineCount % NUM_SEQUENCES;
+            if (dataIndex == 0) {
+                sequenceCharCount += dataSize;
+                if (sequenceCharCount > SIZE_SEQUENCE) {
+                    string description = StrPrintf(
+                        "Expected %d symbols per sequence but finding already %d",
+                        SIZE_SEQUENCE,
+                        sequenceCharCount);
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_Nexus_BadDataCount,
+                        description,
+                        afrp->mpErrorListener); 
+                }
+                blockLineLength = dataSize;
+            }
+            else {
+                if (dataSize != blockLineLength) {
+                    string description = StrPrintf(
+                        "In data line, expected %d symbols but finding %d",
+                        blockLineLength,
+                        dataSize);
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_Nexus_BadDataCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                }
+            }
+
+            sequences[dataIndex].push_back(linePtr);
+
+            dataLineCount += 1;
+            if (isLastLineOfData) {
+                state = EState::SKIPPING;
+            }
+            continue;
+        }
+    }
+
+    //warn if we are short in deflines:
+    auto numDeflines = afrp->mDeflines.size();
+    if (numDeflines != 0  &&  numDeflines != NUM_SEQUENCES) {
+        string description = StrPrintf(
+            "Expected 0 or %d deflines but finding %d",
+            NUM_SEQUENCES,
+            numDeflines);
+        sReportNexusError(
+            -1, EDiagSev::eDiag_Error,
+            EAlnSubcode::eAlnSubcode_Nexus_InsufficientDefineInfo,
+            description,
+            afrp->mpErrorListener); 
+    }
+
+    //submit collected data to a final sanity check:
+    bool finalPass(true);
+    if (sequenceCharCount != SIZE_SEQUENCE) {
+        string description = StrPrintf(
+            "Expected %d symbols per sequence but finding only %d",
+            SIZE_SEQUENCE,
+            sequenceCharCount);
+        sReportNexusError(
+            -1, EDiagSev::eDiag_Error,
+            EAlnSubcode::eAlnSubcode_Nexus_BadDataCount,
+            description,
+            afrp->mpErrorListener); 
+        finalPass = false;
+    }
+    if (!finalPass) {
+        return;
+    }
+
+    //looks good- populate approprate afrp data structures:
+    for (auto idIndex = 0; idIndex < seqIds.size(); ++idIndex) {
+        for (auto seqPart = 0; seqPart < sequences[idIndex].size(); ++seqPart) {
+            auto liPtr = sequences[idIndex][seqPart];
+            string liData = string(liPtr->data);
+            auto endOfId = liData.find_first_of(" \t");
+            auto startOfData = liData.find_first_not_of(" \t", endOfId);
+            afrp->sequences = s_AddAlignRawSeqById(
+                afrp->sequences,
+                seqIds[idIndex],
+                liPtr->data + startOfData,
+                liPtr->line_num,
+                liPtr->line_num,
+                startOfData);
+        }
+    }
+}
+
 
 /* This function parses the identifier string used by the alignment file
  * to identify a sequence to find the portion of the string that is actually
@@ -4114,7 +4427,10 @@ ReadAlignmentFile(
         return false;
     }
 
-    if (afrp->block_size > 1) {
+    if (format == EAlignFormat::ALNFMT_NEXUS) {
+        sProcessAlignmentFileAsNexus(afrp);
+    }
+    else if (afrp->block_size > 1) {
         s_ProcessAlignRawFileByBlockOffsets (afrp);
     } else if (afrp->marked_ids) {
         s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
@@ -4122,7 +4438,7 @@ ReadAlignmentFile(
         s_ProcessAlignFileRawByLengthPattern (afrp);
     }
 
-    s_ReprocessIds (afrp);
+    s_ReprocessIds (afrp); 
 
     if (s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
         delete afrp;

@@ -72,7 +72,14 @@ enum EAlnSubcode
     eAlnSubcode_ReplicatedSeq,
     eAlnSubcode_DifferingSeqLengths,
     eAlnSubcode_UnmatchedDeflines,
-    eAlnSubcode_UnusedLine
+    eAlnSubcode_UnusedLine,
+
+    eAlnSubcode_Nexus_UnterminatedCommand = 100,
+    eAlnSubcode_Nexus_UnterminatedBlock,
+    eAlnSubcode_Nexus_BadDataCount,
+    eAlnSubcode_Nexus_BadSequenceCount,
+    eAlnSubcode_Nexus_IllegalDataLine,
+    eAlnSubcode_Nexus_InsufficientDefineInfo,
 };
 
 

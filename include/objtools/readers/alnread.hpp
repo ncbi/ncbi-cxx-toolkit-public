@@ -125,10 +125,10 @@ protected:
 class SAlignmentFile {
 //  ============================================================================
 public:
-    int 
+    size_t 
     NumDeflines() const { return mDeflines.size(); };
 
-    int
+    size_t
     NumSequences() const { return mSequences.size(); };
 
 

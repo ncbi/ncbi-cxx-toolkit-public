@@ -1,7 +1,12 @@
+Line No    : 24
+Severity   : Warning
+Code       : 2.104
+Message    : Unexpected "end;". Appending ';' to prior command
+
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Code       : 2.5
-Message    : Expected sequences of length 50, found 48
+Code       : 2.102
+Message    : Expected 50 symbols per sequence but finding only 48
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal

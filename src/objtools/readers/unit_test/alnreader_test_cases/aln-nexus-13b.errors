@@ -1,17 +1,7 @@
 Line No    : 9
 Severity   : Error
-Code       : 2.9
-Message    : At ID 'SEQ4': Expected 0 lines in block, found 0
-
-Line No    : 10
-Severity   : Error
-Code       : 2.9
-Message    : At ID 'ATGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G': Expected 0 lines in block, found 0
-
-Line No    : None (Encountered during pre or post processing)
-Severity   : Error
-Code       : 2.6
-Message    : Expected 5 sequences, found 4
+Code       : 2.102
+Message    : In data line, expected 48 symbols but finding 47
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
