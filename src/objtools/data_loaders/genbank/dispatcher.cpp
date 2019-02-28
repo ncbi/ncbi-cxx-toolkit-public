@@ -38,6 +38,7 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objects/general/Dbtag.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Disp
@@ -239,6 +240,14 @@ void CReadDispatcher::ResetCaches(void)
     NON_CONST_ITERATE(TWriters, wr, m_Writers) {
         wr->second->ResetCache();
     }
+}
+
+
+bool CReadDispatcher::CannotProcess(const CSeq_id_Handle& sih)
+{
+    return !sih || sih.Which() == CSeq_id::e_Local ||
+        (sih.Which() == CSeq_id::e_General &&
+         NStr::EqualNocase(sih.GetSeqId()->GetGeneral().GetDb(), "SRA"));
 }
 
 

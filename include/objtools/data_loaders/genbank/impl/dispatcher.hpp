@@ -79,9 +79,7 @@ public:
                        CWriter::EType type) const;
     const CProcessor& GetProcessor(CProcessor::EType type) const;
 
-    static bool CannotProcess(const CSeq_id_Handle& sih) {
-        return !sih || sih.Which() == CSeq_id::e_Local;
-    }
+    static bool CannotProcess(const CSeq_id_Handle& sih);
 
     void LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
