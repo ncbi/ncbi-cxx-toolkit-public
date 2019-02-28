@@ -26,82 +26,12 @@ suppression = {
 	}
 }
 suppression = {
-	name = "Unhandled exception - VS2010"
-	type = {prob_app_exception}
-	stacks = {
-		{
-			!!!;
-			mod=MSVCR110.dll,func=call_reportfault;
-		}
-	}
-}
-suppression = {
-	name = "Unhandled exception - VS2013"
-	type = {prob_app_exception}
-	stacks = {
-		{
-			!!!;
-			mod=MSVCR120.dll,func=call_reportfault;
-		}
-	}
-}
-suppression = {
 	name = "::putenv() - 1"
 	type = {invalid_deallocation}
 	stacks = {
 		{
 			!!!;
 			mod=ntdll.dll,func=RtlExpandEnvironmentStrings;
-		}
-	}
-}
-suppression = {
-	name = "::putenv() - 2"
-	type = {invalid_deallocation}
-	stacks = {
-		{
-			!!!;
-			mod=MSVCR110.dll,func=_crtsetenv;
-		}
-	}
-}
-suppression = {
-	name = "::getenv() - 1"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			!!!;
-			mod=MSVCR110.dll,func=getenv_helper_nolock;
-		}
-	}
-}
-suppression = {
-	name = "::strchr()"
-	type = {uninitialized_memory_access}
-	stacks = {
-		{
-			...;
-			mod=MSVCR120.dll,func=strchr;
-		}
-	}
-}
-suppression = {
-	name = "::sysytem()"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			...;
-			mod=MSVCR120.dll,func=system;
-		}
-	}
-}
-suppression = {
-	name = "istream::operator>> - memory leak"
-	type = {reachable_memory_leak}
-	stacks = {
-		allocation={
-			...;
-			mod=MSVCP110.dll,func=operator>>,src=istream;
 		}
 	}
 }
@@ -122,16 +52,6 @@ suppression = {
 		allocation={
 			...;
 			func=overflow,src=strstream;
-		}
-	}
-}
-suppression = {
-	name = "dospawn() - kerner resource leak"
-	type = {kernel_handle_leak}
-	stacks = {
-		allocation={
-			!!!;
-			mod=MSVCR110.dll,func=dospawn;
 		}
 	}
 }
@@ -161,7 +81,7 @@ suppression = {
 	stacks = {
 		allocation={
 			!!!;
-			func=push_back,src=deque,line=1154,func_line=2;
+			func=push_back,src=deque;
 		}
 	}
 }
@@ -239,20 +159,6 @@ suppression = {
 	}
 }
 suppression = {
-	name = "__copy_path_to_wide_string"
-	type = {invalid_memory_access_partial}
-	stacks = {
-		allocation={
-			!!!;
-			mod=MSVCR110.dll,func=__copy_path_to_wide_string;
-		}
-		{
-			!!!;
-			mod=MSVCR110.dll,func=wcsrchr;
-		}
-	}
-}
-suppression = {
 	name = "GetUserName"
 	type = {invalid_memory_access}
 	stacks = {
@@ -271,20 +177,6 @@ suppression = {
 			mod=ntdll.dll,func=RtlCompareUnicodeStrings;
 			...;
 			mod=libsybct64.dll,func=ct_dynsqlda;
-		}
-	}
-}
-suppression = {
-	name = "Unreachable MSVCR120.dll memory error in stat64()"
-	type = {invalid_memory_access}
-	stacks = {
-		allocation={
-			...;
-			mod=MSVCR120.dll,func=stat64;
-		}
-		{
-			...;
-			mod=MSVCR120.dll,func=stat64;
 		}
 	}
 }
@@ -328,29 +220,6 @@ suppression = {
 	}
 }
 suppression = {
-	name = "False positive in operator<<()"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			...;
-			mod=MSVCR120.dll,func=flsbuf;
-		}
-	}
-}
-suppression = {
-	name = "False positive in fclose()"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			...;
-			mod=MSVCR120.dll,func=write;
-			...;
-			mod=MSVCR120.dll,func=fclose;
-			func=close,src=fstream;
-		}
-	}
-}
-suppression = {
 	name = "False positive in gethostname()"
 	type = {invalid_memory_access_partial}
 	stacks = {
@@ -377,6 +246,16 @@ suppression = {
 		{
 			...;
 			mod=ucrtbase.DLL,func=get_initial_wide_environment;
+		}
+	}
+}
+suppression = {
+	name = "False positive in sscanf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=stdio.h,func=sscanf;
 		}
 	}
 }

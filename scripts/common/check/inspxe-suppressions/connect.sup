@@ -79,7 +79,7 @@ suppression = {
 		{
 			...;
 			func=gethostname;
-			func=s_gethostname,src=ncbi_socket.c,func_line=6;
+			func=s_gethostname,src=ncbi_socket.c;
 		}
 	}
 }
