@@ -1,39 +1,39 @@
-Line No    : 3
+Line No    : 4
 Severity   : Warning
 Code       : 2.11
 Message    : At ID 'seq1': Duplicate ID!  Sequences will be concatenated!
 
-Line No    : 5
+Line No    : 6
 Severity   : Warning
 Code       : 2.11
 Message    : At ID 'seq3': Duplicate ID!  Sequences will be concatenated!
 
-Line No    : 9
-Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq1': Found unexpected ID
-
 Line No    : 10
 Severity   : Error
 Code       : 2.10
-Message    : At ID 'seq3': Found unexpected ID
+Message    : At ID 'seq1': Found unexpected ID
 
 Line No    : 11
 Severity   : Error
 Code       : 2.10
 Message    : At ID 'seq3': Found unexpected ID
 
-Line No    : 15
-Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq1': Found unexpected ID
-
-Line No    : 16
+Line No    : 12
 Severity   : Error
 Code       : 2.10
 Message    : At ID 'seq3': Found unexpected ID
 
+Line No    : 16
+Severity   : Error
+Code       : 2.10
+Message    : At ID 'seq1': Found unexpected ID
+
 Line No    : 17
+Severity   : Error
+Code       : 2.10
+Message    : At ID 'seq3': Found unexpected ID
+
+Line No    : 18
 Severity   : Error
 Code       : 2.10
 Message    : At ID 'seq3': Found unexpected ID
