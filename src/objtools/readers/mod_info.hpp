@@ -201,23 +201,24 @@ static const auto s_SubSourceStringToEnum = s_InitModNameSubSrcSubtypeMap();
 
 static const 
 unordered_map<string, CMolInfo::TBiomol> s_BiomolStringToEnum
-= { {"cRNA",                    CMolInfo::eBiomol_cRNA },   
-    {"DNA",                     CMolInfo::eBiomol_genomic},   
-    {"Genomic",                 CMolInfo::eBiomol_genomic},   
-    {"Genomic DNA",             CMolInfo::eBiomol_genomic},   
-    {"Genomic RNA",             CMolInfo::eBiomol_genomic},   
-    {"mRNA",                    CMolInfo::eBiomol_mRNA},   
-    {"ncRNA",                   CMolInfo::eBiomol_ncRNA},
-    {"non-coding RNA",          CMolInfo::eBiomol_ncRNA},   
-    {"Other-Genetic",           CMolInfo::eBiomol_other_genetic}, 
-    {"Precursor RNA",           CMolInfo::eBiomol_pre_RNA},   
-    {"Ribosomal RNA",           CMolInfo::eBiomol_rRNA},   
-    {"rRNA",                    CMolInfo::eBiomol_rRNA},   
-    {"Transcribed RNA",         CMolInfo::eBiomol_transcribed_RNA},   
-    {"Transfer-messenger RNA",  CMolInfo::eBiomol_tmRNA},   
-    {"tmRNA",                   CMolInfo::eBiomol_tmRNA},   
-    {"Transfer RNA",            CMolInfo::eBiomol_tRNA},   
-    {"tRNA",                    CMolInfo::eBiomol_tRNA},   
+= { {"crna",                    CMolInfo::eBiomol_cRNA },   
+    {"dna",                     CMolInfo::eBiomol_genomic},   
+    {"genomic",                 CMolInfo::eBiomol_genomic},   
+    {"genomic dna",             CMolInfo::eBiomol_genomic},   
+    {"genomic rna",             CMolInfo::eBiomol_genomic},   
+    {"mrna",                    CMolInfo::eBiomol_mRNA},   
+    {"ncrna",                   CMolInfo::eBiomol_ncRNA},
+    {"non-coding rna",          CMolInfo::eBiomol_ncRNA},   
+    {"noncoding rna",           CMolInfo::eBiomol_ncRNA},   
+    {"other-genetic",           CMolInfo::eBiomol_other_genetic}, 
+    {"precursor rna",           CMolInfo::eBiomol_pre_RNA},   
+    {"ribosomal rna",           CMolInfo::eBiomol_rRNA},   
+    {"rrna",                    CMolInfo::eBiomol_rRNA},   
+    {"transcribed rna",         CMolInfo::eBiomol_transcribed_RNA},   
+    {"transfer-messenger rna",  CMolInfo::eBiomol_tmRNA},   
+    {"tmrna",                   CMolInfo::eBiomol_tmRNA},   
+    {"transfer rna",            CMolInfo::eBiomol_tRNA},   
+    {"trna",                    CMolInfo::eBiomol_tRNA},   
 };
 
 
@@ -237,26 +238,9 @@ unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> s_BiomolEnumToMolEnum
     { CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna},
     { CMolInfo::eBiomol_ncRNA, CSeq_inst::eMol_rna},
     { CMolInfo::eBiomol_tmRNA, CSeq_inst::eMol_rna},
-
     { CMolInfo::eBiomol_peptide, CSeq_inst::eMol_aa},
-
     { CMolInfo::eBiomol_other_genetic, CSeq_inst::eMol_other},
     { CMolInfo::eBiomol_other, CSeq_inst::eMol_other}
-};
-
-
-static const
-unordered_map<CMolInfo::TBiomol, string> s_BiomolEnumToString =
-{{CMolInfo::eBiomol_cRNA, "cRNA"},
- {CMolInfo::eBiomol_genomic, "Genomic"},
- {CMolInfo::eBiomol_mRNA, "mRNA"},
- {CMolInfo::eBiomol_ncRNA, "ncRNA"},
- {CMolInfo::eBiomol_other_genetic, "Other-Genetic"},
- {CMolInfo::eBiomol_pre_RNA, "Precursor RNA"},
- {CMolInfo::eBiomol_rRNA, "rRNA"},
- {CMolInfo::eBiomol_transcribed_RNA, "Transcribed RNA"},
- {CMolInfo::eBiomol_tmRNA, "tmRNA"},
- {CMolInfo::eBiomol_tRNA, "tRNA"}
 };
 
 
@@ -270,8 +254,8 @@ s_TechStringToEnum = {
     { "concept-trans",      CMolInfo::eTech_concept_trans },
     { "concept-trans-a",    CMolInfo::eTech_concept_trans_a },
     { "derived",            CMolInfo::eTech_derived },
-    { "EST",                CMolInfo::eTech_est },
-    { "fli cDNA",           CMolInfo::eTech_fli_cdna },
+    { "est",                CMolInfo::eTech_est },
+    { "fli cdna",           CMolInfo::eTech_fli_cdna },
     { "genetic map",        CMolInfo::eTech_genemap },
     { "htc",                CMolInfo::eTech_htc },
     { "htgs 0",             CMolInfo::eTech_htgs_0 },
@@ -283,7 +267,7 @@ s_TechStringToEnum = {
     { "seq-pept-homol",     CMolInfo::eTech_seq_pept_homol },
     { "seq-pept-overlap",   CMolInfo::eTech_seq_pept_overlap },
     { "standard",           CMolInfo::eTech_standard },
-    { "STS",                CMolInfo::eTech_sts },
+    { "sts",                CMolInfo::eTech_sts },
     { "survey",             CMolInfo::eTech_survey },
     { "targeted",           CMolInfo::eTech_targeted },
     { "tsa",                CMolInfo::eTech_tsa },

@@ -486,8 +486,8 @@ bool CModAdder::x_TrySeqInstMod(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 
 void CModAdder::x_SetStrand(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
-    const auto& value = x_GetModValue(mod_entry);
-    const auto it = s_StrandStringToEnum.find(value);
+    string value = x_GetModValue(mod_entry);
+    const auto it = s_StrandStringToEnum.find(NStr::ToLower(value));
     if (it == s_StrandStringToEnum.end()) {
         x_ThrowInvalidValue(mod_entry.second.front());
     }
@@ -497,8 +497,8 @@ void CModAdder::x_SetStrand(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 
 void CModAdder::x_SetMolecule(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
-    const auto& value = x_GetModValue(mod_entry);
-    const auto it = s_MolStringToEnum.find(value);
+    string value = x_GetModValue(mod_entry);
+    const auto it = s_MolStringToEnum.find(NStr::ToLower(value));
     if (it == s_MolStringToEnum.end()) {
         x_ThrowInvalidValue(mod_entry.second.front());
     }
@@ -508,8 +508,8 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 
 void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
-    const auto& value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(value);
+    string value = x_GetModValue(mod_entry);
+    auto it = s_BiomolStringToEnum.find(NStr::ToLower(value));
     if (it == s_BiomolStringToEnum.end()) {
         // No need to report an error here.
         // The error is reported in x_SetMolInfoType
@@ -522,8 +522,8 @@ void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& 
 
 void CModAdder::x_SetTopology(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
-    const auto& value = x_GetModValue(mod_entry);
-    const auto it = s_TopologyStringToEnum.find(value);
+    string value = x_GetModValue(mod_entry);
+    const auto it = s_TopologyStringToEnum.find(NStr::ToLower(value));
     if (it == s_TopologyStringToEnum.end()) {
         x_ThrowInvalidValue(mod_entry.second.front());
     }
