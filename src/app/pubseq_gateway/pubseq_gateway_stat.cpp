@@ -65,6 +65,8 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     dict.SetInteger("BioseqInfoErrorCount", m_BioseqInfoError);
     err_sum += m_BlobPropsNotFoundError;
     dict.SetInteger("BlobPropsNotFoundErrorCount", m_BlobPropsNotFoundError);
+    err_sum += m_LMDBError;
+    dict.SetInteger("LMDBErrorCount", m_LMDBError);
 
     dict.SetInteger("TotalErrorCount", err_sum);
 }

@@ -107,6 +107,25 @@ struct SBioseqResolution
 
 
 
+// Used to report errors like bad request or LMDB cache error from a lower
+// level code to an upper one.
+struct SResolveInputSeqIdError
+{
+    SResolveInputSeqIdError() :
+        m_ErrorCode(CRequestStatus::e200_Ok)
+    {}
+
+    bool  HasError(void) const
+    {
+        return !m_ErrorMessage.empty();
+    }
+
+    string                  m_ErrorMessage;
+    CRequestStatus::ECode   m_ErrorCode;
+};
+
+
+
 // Bioseq messages
 string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
                             EOutputFormat  output_format);

@@ -282,15 +282,15 @@ private:
     void x_InitUrlIndentification(void);
 
 private:
-    SBioseqResolution x_ResolveInputSeqId(string &  err_msg);
-    bool x_ResolvePrimaryOSLT(const string &  primary_id,
-                              int16_t  effective_version,
-                              int16_t  effective_seq_id_type,
-                              bool  need_to_try_bioseq_info,
-                              SBioseqResolution &  bioseq_resolution);
-    bool x_ResolveSecondaryOSLT(const string &  secondary_id,
-                                int16_t  effective_seq_id_type,
-                                SBioseqResolution &  bioseq_resolution);
+    SBioseqResolution x_ResolveInputSeqId(SResolveInputSeqIdError &  err);
+    ECacheLookupResult x_ResolvePrimaryOSLT(const string &  primary_id,
+                                            int16_t  effective_version,
+                                            int16_t  effective_seq_id_type,
+                                            bool  need_to_try_bioseq_info,
+                                            SBioseqResolution &  bioseq_resolution);
+    ECacheLookupResult x_ResolveSecondaryOSLT(const string &  secondary_id,
+                                              int16_t  effective_seq_id_type,
+                                              SBioseqResolution &  bioseq_resolution);
     bool x_ResolvePrimaryOSLTviaDB(const string &  primary_id,
                                    int16_t  effective_seq_id_type,
                                    int16_t  effective_version,
@@ -300,24 +300,26 @@ private:
                                      int16_t  effective_seq_id_type,
                                      SBioseqResolution &  bioseq_resolution);
     bool x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
-                                 string &  err_msg,
+                                 SResolveInputSeqIdError &  err_msg,
                                  SBioseqResolution &  bioseq_resolution);
-    bool x_ResolveAsIs(SBioseqResolution &  bioseq_resolution);
+    ECacheLookupResult x_ResolveAsIs(SBioseqResolution &  bioseq_resolution);
     bool x_ResolveAsIsInDB(SBioseqResolution &  bioseq_resolution);
     bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
                                  int16_t &  eff_seq_id_type);
     int16_t x_GetEffectiveVersion(const CTextseq_id *  text_seq_id);
-    bool x_LookupCachedBioseqInfo(const string &  accession,
-                                  int16_t &  version,
-                                  int16_t &  seq_id_type,
-                                  string &  bioseq_info_cache_data);
-    bool x_LookupCachedCsi(const string &  seq_id,
-                           int16_t &  seq_id_type,
-                           string &  csi_cache_data);
-    bool x_LookupBlobPropCache(int  sat, int  sat_key,
-                               int64_t &  last_modified,
-                               CBlobRecord &  blob_record);
+    ECacheLookupResult x_LookupBioseqInfoCache(const string &  accession,
+                                               int16_t &  version,
+                                               int16_t &  seq_id_type,
+                                               string &  bioseq_info_cache_data);
+    ECacheLookupResult x_LookupSi2csiCache(const string &  seq_id,
+                                         int16_t &  seq_id_type,
+                                         string &  csi_cache_data);
+    ECacheLookupResult x_LookupBlobPropCache(int  sat, int  sat_key,
+                                             int64_t &  last_modified,
+                                             CBlobRecord &  blob_record);
     ESeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id, string &  err_msg);
+    void x_OnBioseqError(CRequestStatus::ECode  status, const string &  err_msg);
+    void x_OnReplyError(CRequestStatus::ECode  status, int  err_code, const string &  err_msg);
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;

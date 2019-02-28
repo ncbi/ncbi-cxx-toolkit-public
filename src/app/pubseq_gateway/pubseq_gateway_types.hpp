@@ -134,4 +134,11 @@ enum EPendingRequestType {
     eUnknownRequest
 };
 
+
+enum ECacheLookupResult {
+    eFound,
+    eNotFound,
+    eFailure                // LMDB may throw an exception
+};
+
 #endif
