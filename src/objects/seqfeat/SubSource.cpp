@@ -1340,7 +1340,7 @@ static bool s_IsNumber(const string &token, double *result = NULL)
     return true;
 }
 
-static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers, vector<int> &precision, vector<string> &lat_long,  vector<string> &nsew)
+static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers, vector<string> &anum, vector<int> &precision, vector<string> &lat_long,  vector<string> &nsew)
 {
     vector<string> pattern;
     for (size_t i = 0; i < tokens.size(); i++)
@@ -1351,6 +1351,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	if (s_IsNumber(token, &num))
 	{
 	    numbers.push_back(num);
+            anum.push_back(token);
 	    pattern.push_back("1");
 	    precision.push_back(0);
 	    if (NStr::Find(token, ".") != NPOS && !NStr::EndsWith(token, "."))
@@ -1367,12 +1368,15 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	    if (tmp.size() == 3 && s_IsNumber(tmp[0], &num0) && s_IsNumber(tmp[1], &num1) && s_IsNumber(tmp[2], &num2))
 	    {
 		numbers.push_back(num0);
+                anum.push_back(tmp[0]);
 		pattern.push_back("1");
 		precision.push_back(0);
 		numbers.push_back(num1);
+                anum.push_back(tmp[1]);
 		pattern.push_back("1");
 		precision.push_back(0);
 		numbers.push_back(num2);
+                anum.push_back(tmp[2]);
 		pattern.push_back("1");
 		precision.push_back(0);
 		continue;
@@ -1538,7 +1542,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     NStr::Split(new_str, " ", tokens, NStr::fSplit_Tokenize);
     vector<string> lat_long;
     vector<string> nsew;
-    string pattern = s_NormalizeTokens(tokens, numbers, precision, lat_long, nsew);
+    vector<string> anum;
+    string pattern = s_NormalizeTokens(tokens, numbers, anum, precision, lat_long, nsew);
     if (pattern.empty())
     {
 	numbers.clear();
@@ -1546,6 +1551,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     }
     vector<double> degrees(2, 0);
     vector<int> prec(2, 0);
+    int sign1 = 1;
+    int sign2 = 1;
     if ( pattern == "1 1" ||
 	 pattern == "1 N 1 N" ||
          pattern == "N 1 N 1" ||
@@ -1561,26 +1568,33 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     }
     else if ((pattern == "1 1 \" 1 1 '" ||
 	      pattern == "1 degrees 1 \" N 1 degrees 1 ' N")
-	     && numbers[1] < 60 && numbers[3] < 60)
+	     && numbers[1] < 60 && numbers[3] < 60 
+             && numbers[1] >= 0 && numbers[3] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 3600;
-	degrees[1] = numbers[2] + numbers[3] / 60;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+        sign2 = anum[2][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 3600);
+	degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60);
 	prec[0] = max(precision[0], precision[1] + 4);
 	prec[1] = max(precision[2], precision[3] + 2);
     }
     else if ( (pattern == "1 1 ' 1" ||
                pattern == "1 degrees 1 ' N 1 degrees N")
-	     && numbers[1] < 60)
+              && numbers[1] < 60
+              && numbers[1] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 60;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
 	degrees[1] = numbers[2];
 	prec[0] = max(precision[0], precision[1] + 2);
 	prec[1] = precision[2];
     }
     else if (pattern == "1 1 ' 1 \" 1" 
-	     && numbers[1] < 60 && numbers[2] < 60)
+	     && numbers[1] < 60 && numbers[2] < 60
+             && numbers[1] >= 0 && numbers[2] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
 	degrees[1] = numbers[3];
 	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
 	prec[1] = precision[3];
@@ -1588,10 +1602,13 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     else if ((pattern == "1 1 ' 1 \" 1 1 '" ||
 	      pattern == "1 1 1 N 1 1 N" ||
 	      pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' N")
-	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60)
+	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60
+             && numbers[1] >= 0 && numbers[2] >= 0 && numbers[4] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
-	degrees[1] = numbers[3] + numbers[4] / 60;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+        sign2 = anum[3][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
+	degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 60);
 	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
 	prec[1] = max(precision[3], precision[4] + 2);
     }
@@ -1602,10 +1619,13 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	       pattern == "1 degrees 1 ' 1 N 1 degrees 1 ' 1 N" ||
 	       pattern == "1 degrees 1 1 N 1 degrees 1 1 N" ||
 	       pattern == "1 1 1 N 1 1 1 N")
-	      && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60 && numbers[5] < 60)
+             && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60 && numbers[5] < 60
+             && numbers[1] >= 0 && numbers[2] >= 0 && numbers[4] >= 0 && numbers[5] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
-	degrees[1] = numbers[3] + numbers[4] / 60 + numbers[5] / 3600;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+        sign2 = anum[3][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
+	degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 60 + numbers[5] / 3600);
 	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
 	prec[1] = max(max(precision[3], precision[4] + 2), precision[5] + 4);
     }
@@ -1620,44 +1640,57 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
                pattern == "N 1 degrees 1 ' N 1 degrees 1" ||
                pattern == "N 1 degrees 1 ' N 1 degrees 1 '" ||
                pattern == "N 1 degrees 1 ' N 1 1 '")
-	     && numbers[1] < 60  && numbers[3] < 60)
+	     && numbers[1] < 60  && numbers[3] < 60
+             && numbers[1] >= 0  && numbers[3] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 60;
-	degrees[1] = numbers[2] + numbers[3] / 60;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+        sign2 = anum[2][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
+	degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60);
 	prec[0] = max(precision[0], precision[1] + 2);
 	prec[1] = max(precision[2], precision[3] + 2);
     }
     else if ((pattern == "1 N 1 1 N" ||
               pattern == "1 degrees N 1 degrees 1 ' N")
-	     &&  numbers[2] < 60)
+	     &&  numbers[2] < 60
+             &&  numbers[2] >= 0)
     {
+        sign2 = anum[1][0] == '-' ? -1 : 1;
 	degrees[0] = numbers[0];
-	degrees[1] = numbers[1] + numbers[2] / 60;
+	degrees[1] = sign2*(fabs(numbers[1]) + numbers[2] / 60);
 	prec[0] = precision[0];
 	prec[1] = max(precision[1], precision[2] + 2);
     }
     else if ((pattern == "1 degrees 1 ' 1 degrees 1 ' 1 \"" ||
               pattern == "N 1 1 N 1 1 1")
-	     && numbers[1] < 60 && numbers[3] < 60 && numbers[4] < 60)
+	     && numbers[1] < 60 && numbers[3] < 60 && numbers[4] < 60
+             && numbers[1] >= 0 && numbers[3] >= 0 && numbers[4] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 60;
-	degrees[1] = numbers[2] + numbers[3] / 60 + numbers[4] / 3600;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+        sign2 = anum[2][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
+	degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60 + numbers[4] / 3600);
 	prec[0] = max(precision[0], precision[1] + 2);
 	prec[1] = max(max(precision[2], precision[3] + 2), precision[4] + 4);
     }
     else if (pattern == "1 degrees 1 degrees 1 ' 1 \""
-	     && numbers[2] < 60 && numbers[3] < 60)
+	     && numbers[2] < 60 && numbers[3] < 60
+             && numbers[2] >= 0 && numbers[3] >= 0)
     {
+        sign2 = anum[1][0] == '-' ? -1 : 1;
 	degrees[0] = numbers[0];
-	degrees[1] = numbers[1] + numbers[2] / 60 + numbers[3] / 3600;
+	degrees[1] = sign2*(fabs(numbers[1]) + numbers[2] / 60 + numbers[3] / 3600);
 	prec[0] = precision[0];
 	prec[1] = max(max(precision[1], precision[2] + 2), precision[3] + 4);
     }  
     else if (pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 \" N"  
-	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60)
+	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60
+             && numbers[1] >= 0 && numbers[2] >= 0 && numbers[4] >= 0)
     {
-	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
-	degrees[1] = numbers[3] + numbers[4] / 3600;
+        sign1 = anum[0][0] == '-' ? -1 : 1;
+        sign2 = anum[3][0] == '-' ? -1 : 1;
+	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
+	degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 3600);
 	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
 	prec[1] = max(precision[3], precision[4] + 4);
     }   
