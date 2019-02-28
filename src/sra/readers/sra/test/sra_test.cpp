@@ -41,6 +41,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <common/test_data_path.h>
 
 #include <klib/rc.h>
 #include <klib/writer.h>
@@ -195,6 +196,17 @@ int CSRATestApp::Run(void)
                 NcbiCout << "Correctly detected missing SRA acc: " << sra
                          << NcbiEndl;
                 return 0;
+            }
+            if ( !bh ) {
+                string file_name = string(NCBI_GetTestDataPath())+"/sra/"+sra+".asn";
+                NcbiCout << "Loading GenBank version of "<<sra<<" from "<<file_name << NcbiEndl;
+                CNcbiIfstream in(file_name.c_str());
+                if ( in ) {
+                    CRef<CSeq_entry> entry(new CSeq_entry);
+                    in >> MSerial_AsnText >> *entry;
+                    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+                    bh = seh.GetTSE_Handle().GetBioseqHandle(idh);
+                }
             }
             if ( !bh ) {
                 ERR_POST(Fatal <<
