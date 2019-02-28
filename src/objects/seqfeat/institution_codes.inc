@@ -266,6 +266,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ANUG\ts\tAnhui Normal University, Geography Department\t\t\t",
 "ANWC\ts\tAustralian National Wildlife Collection\t\t\t",
 "AO\ts\tMuseo Regionale di Scienze Naturali della Valle d'Aosta\t\t\t",
+"AORI\ts\tAtmosphere and Ocean Research Institute\t\t\t",
 "APCC\tc\tAntarctic Protistan Culture Collection (Woods Hole Oceanographic Institution)\t\t\t",
 "APCR\ts\tArkansas Tech University, Biological Sciences Department\t\t\t",
 "APEI\ts\tAgriculture Canada Research Station\t\t\t",
