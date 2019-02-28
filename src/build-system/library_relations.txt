@@ -366,11 +366,17 @@ fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
 filter_snps needs xalnmgr
+freetype needs $(BZ2_LIB)
+freetype needs3party $(BZ2_LIBS)
 freetype needs3party $(ORIG_LIBS)
+freetype needs3party $(PNG_LIBS)
 fscr1 needs agp_lookup
+ftgl needs $(BZ2_LIB)
+ftgl needs3party $(BZ2_LIBS)
 ftgl needs3party $(FREETYPE_LIBS)
 ftgl needs3party $(OPENGL_LIBS)
 ftgl needs3party $(ORIG_LIBS)
+ftgl needs3party $(PNG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
