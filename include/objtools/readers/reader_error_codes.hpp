@@ -71,7 +71,8 @@ enum EAlnSubcode
     eAlnSubcode_Asn1File,
     eAlnSubcode_ReplicatedSeq,
     eAlnSubcode_DifferingSeqLengths,
-    eAlnSubcode_UnmatchedDeflines
+    eAlnSubcode_UnmatchedDeflines,
+    eAlnSubcode_UnusedLine
 };
 
 

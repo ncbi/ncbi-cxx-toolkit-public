@@ -1,5 +1,6 @@
 Line No    : 1
 Severity   : Warning
+Code       : 2.16
 Message    : Lines 1 through 4 could not be assigned to an interleaved block
              Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
              Contents of unused line: seq1 --GCAAGCATGCATGCAAAA

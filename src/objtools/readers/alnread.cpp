@@ -724,6 +724,8 @@ s_ReportUnusedLine(
         "",
         line_num_start,
         EDiagSev::eDiag_Warning,
+        eReader_Alignment,
+        eAlnSubcode_UnusedLine,
         errMessage,
         pEl);
 }
