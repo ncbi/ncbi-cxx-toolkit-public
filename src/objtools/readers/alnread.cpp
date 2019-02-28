@@ -1563,6 +1563,7 @@ s_IsAlnFormatString (
     return (NStr::StartsWith(str, "matrix")  ||
         NStr::StartsWith(str, "#nexus")  ||
         NStr::StartsWith(str, "clustal w")  ||
+        NStr::StartsWith(str, "clustalw") ||
         s_SkippableNexusComment (str)  ||
         s_IsTwoNumbersSeparatedBySpace (str)  ||
         s_IsConsensusLine(str));
