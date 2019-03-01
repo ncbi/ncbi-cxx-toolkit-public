@@ -44,11 +44,14 @@
 #include <objects/biblio/Title.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/medline/Medline_entry.hpp>
 
 #include <objects/pub/Pub.hpp>
 
-#include <../src/objtools/cleanup/cleanup_utils.hpp>
+#include <objtools/cleanup/cleanup_pub.hpp>
 
 #include "fix_pub.hpp"
 #include "fix_pub_aux.hpp"
@@ -713,8 +716,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
         return false;
     }
 
-    // TODO: figure out what is the sense of all magic numbers below
-    if (new_num_names == 0 || (num_names > 10 && new_num_names < 12) || (num_names > 25 && new_num_names < 27)) {
+    if (new_num_names == 0) {
         new_cit.SetAuthors(cit.SetAuthors());
         cit.ResetAuthors();
     }
