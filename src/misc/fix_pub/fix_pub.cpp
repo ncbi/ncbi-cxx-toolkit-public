@@ -606,7 +606,7 @@ size_t ExtractConsortiums(const CAuth_list::C_Names::TStd& names, CAuth_list::C_
         }
     }
 
-    extracted.sort([](const string& a, const string& b) { return NStr::CompareNocase(a, b);  });
+    extracted.sort([](const string& a, const string& b) { return NStr::CompareNocase(a, b) == -1;  });
 
     return num_of_names;
 }
@@ -675,7 +675,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
         else {
 
             string new_cons_list = NStr::Join(new_consortiums, ";");
-            if (NStr::CompareNocase(old_cons_list, new_cons_list)) {
+            if (!NStr::EqualNocase(old_cons_list, new_cons_list)) {
                 ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, err_Reference_DiffConsortAuthors,
                     "Consortium author names differ. Original is \"" << old_cons_list << "\". MedArch's is \"" << new_cons_list << "\".");
             }
@@ -700,7 +700,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
             if (find_if(new_author_names.begin(), new_author_names.end(), 
                 [&last_name](const CTempString& cur_name)
                 {
-                    return NStr::CompareNocase(last_name, cur_name) == 0;
+                    return NStr::EqualNocase(last_name, cur_name);
                 }) != new_author_names.end()) {
 
                 match++;
