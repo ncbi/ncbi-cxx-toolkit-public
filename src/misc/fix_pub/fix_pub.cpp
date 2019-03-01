@@ -291,6 +291,7 @@ void SplitMedlineEntry(CPub_equiv::Tdata& medlines)
         medlines.push_back(cit_art);
 }
 
+
 bool IsInpress(const CCit_art& cit_art)
 {
     if (!cit_art.IsSetFrom())
@@ -301,8 +302,12 @@ bool IsInpress(const CCit_art& cit_art)
         const CCit_jour& journal = cit_art.GetFrom().GetJournal();
         ret = journal.IsSetImp() && journal.GetImp().IsSetPrepub() && journal.GetImp().GetPrepub() == CImprint::ePrepub_in_press;
     }
-    else if (cit_art.GetFrom().IsBook() || cit_art.GetFrom().IsProc()) {
+    else if (cit_art.GetFrom().IsBook()) {
         const CCit_book& book = cit_art.GetFrom().GetBook();
+        ret = book.IsSetImp() && book.GetImp().IsSetPrepub() && book.GetImp().GetPrepub() == CImprint::ePrepub_in_press;
+    }
+    else if (cit_art.GetFrom().IsProc() && cit_art.GetFrom().GetProc().IsSetBook()) {
+        const CCit_book& book = cit_art.GetFrom().GetProc().GetBook();
         ret = book.IsSetImp() && book.GetImp().IsSetPrepub() && book.GetImp().GetPrepub() == CImprint::ePrepub_in_press;
     }
     return ret;
@@ -762,9 +767,11 @@ void MergeNonPubmedPubIds(const CCit_art& cit_old, CCit_art& cit_new)
 }
 
 
-bool IsInPress(const CCit_art& cit_art)
+bool NeedToPropagateInJournal(const CCit_art& cit_art)
 {
-    if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal() || !cit_art.GetFrom().GetJournal().IsSetTitle()) {
+    if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal() ||
+        !cit_art.GetFrom().GetJournal().IsSetTitle() || !cit_art.GetFrom().GetJournal().GetTitle().IsSet() ||
+        cit_art.GetFrom().GetJournal().GetTitle().Get().empty()) {
         return true;
     }
 
@@ -786,7 +793,7 @@ void PropagateInPress(bool inpress, CCit_art& cit_art)
     if (!inpress)
         return;
 
-    if (!IsInPress(cit_art) || !cit_art.IsSetFrom()) {
+    if (!cit_art.IsSetFrom() || !NeedToPropagateInJournal(cit_art)) {
         return;
     }
 

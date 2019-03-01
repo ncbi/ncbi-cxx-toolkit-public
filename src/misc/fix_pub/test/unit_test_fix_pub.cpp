@@ -43,10 +43,13 @@
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_book.hpp>
 #include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_proc.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Title.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
 #include <objects/medline/Medline_entry.hpp>
 
 #include <objects/pub/Pub.hpp>
@@ -71,4 +74,66 @@ BOOST_AUTO_TEST_CASE(Test_IsFromBook)
 
     art.SetFrom().SetBook();
     BOOST_CHECK_EQUAL(fix_pub::IsFromBook(art), true);
+}
+
+BOOST_AUTO_TEST_CASE(Test_IsInpress)
+{
+    CCit_art art;
+
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), false);
+
+    art.SetFrom();
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), false);
+
+    art.SetFrom().SetBook();
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), false);
+
+    art.SetFrom().SetBook().SetImp();
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), false);
+
+    art.SetFrom().SetBook().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), true);
+
+    art.SetFrom().SetProc();
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), false);
+
+    art.SetFrom().SetProc().SetBook().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), true);
+
+    art.SetFrom().SetJournal();
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), false);
+
+    art.SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    BOOST_CHECK_EQUAL(fix_pub::IsInpress(art), true);
+}
+
+BOOST_AUTO_TEST_CASE(Test_NeedToPropagateInJournal)
+{
+    CCit_art art;
+
+    BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), true);
+
+    art.SetFrom();
+    BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), true);
+
+    art.SetFrom().SetBook();
+    BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), true);
+
+    art.SetFrom().SetJournal();
+    BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), true);
+
+    CRef<CTitle::C_E> title(new CTitle::C_E);
+    title->SetName("journal");
+    art.SetFrom().SetJournal().SetTitle().Set().push_back(title);
+    BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), true);
+
+    art.SetFrom().SetJournal().SetImp().SetVolume("1");
+    art.SetFrom().SetJournal().SetImp().SetPages("2");
+
+    art.SetFrom().SetJournal().SetImp().SetDate().SetStd();
+
+    BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), false);
+
+    art.SetFrom().SetJournal().ResetTitle();
+    BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), true);
 }

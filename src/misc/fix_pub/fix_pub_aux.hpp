@@ -53,6 +53,7 @@ namespace fix_pub
 void MedlineToISO(CCit_art& cit_art);
 void SplitMedlineEntry(CPub_equiv::Tdata& medlines);
 bool IsInpress(const CCit_art& cit_art);
+bool NeedToPropagateInJournal(const CCit_art& cit_art);
 bool MULooksLikeISSN(const string& str);
 bool MUIsJournalIndexed(const string& journal);
 void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessageListener* err_log);
@@ -62,7 +63,6 @@ size_t ExtractConsortiums(const CAuth_list::C_Names::TStd& names, CAuth_list::C_
 void GetFirstTenNames(const CAuth_list::C_Names::TStd& names, list<CTempString>& res);
 bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_log);
 void MergeNonPubmedPubIds(const CCit_art& cit_old, CCit_art& cit_new);
-bool IsInPress(const CCit_art& cit_art);
 void PropagateInPress(bool inpress, CCit_art& cit_art);
 void FixPubEquivAppendPmid(long muid, CPub_equiv::Tdata& pmids, IMessageListener* err_log);
 }
