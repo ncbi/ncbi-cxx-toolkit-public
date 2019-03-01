@@ -231,6 +231,14 @@ private:
 };
 
 
+// convert a container of authors, medline names to standard names
+NCBI_CLEANUP_EXPORT bool ConvertAuthorContainerMlToStd(CAuth_list& authors);
+/// convert medline names to standard names
+NCBI_CLEANUP_EXPORT CRef<CAuthor> ConvertMltoSTD(const string& token);
+
+
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

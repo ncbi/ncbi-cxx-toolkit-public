@@ -95,9 +95,6 @@ bool CleanDoubleQuote(string& str);
 /// remove all spaces from a string
 bool RemoveSpaces(string& str);
 
-/// convert medline names to standard names
-CRef<CAuthor> ConvertMltoSTD(const string& token);
-
 template<typename C>
 bool CleanVisStringContainer(C& str_cont)
 {
@@ -135,9 +132,6 @@ bool CleanVisStringContainerJunk(C& str_cont)
     }
     return changed;
 }
-
-// convert a container of authors, medline names to standard names
-bool ConvertAuthorContainerMlToStd( CAuth_list& authors );
 
 struct SCaseInsensitiveStrComp {
     SCaseInsensitiveStrComp(const string& str) : m_Target(str) { }

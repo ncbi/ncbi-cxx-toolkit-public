@@ -40,6 +40,7 @@
 #include <objects/general/Person_id.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/cleanup/cleanup_pub.hpp>
 #include "cleanup_utils.hpp"
 
 
