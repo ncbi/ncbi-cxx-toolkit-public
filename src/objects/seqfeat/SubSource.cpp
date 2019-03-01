@@ -1500,18 +1500,28 @@ static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &pr
             swap(nsew[0], nsew[1]);
         }
 	if (nsew[0] == "N")
+        {
 	    numbers[0] = fabs(numbers[0]);
+        }
 	else if (nsew[0] == "S")
-	    numbers[0] = -fabs(numbers[0]);
+        {
+            if (numbers[0] != 0)
+                numbers[0] = -fabs(numbers[0]);
+        }
 	else
 	{
 	    numbers.clear();
 	    return;
 	}
 	if (nsew[1] == "E")
+        {
 	    numbers[1] = fabs(numbers[1]);
+        }
 	else if (nsew[1] == "W")
-	    numbers[1] = -fabs(numbers[1]);
+        {
+            if (numbers[1] != 0)
+                numbers[1] = -fabs(numbers[1]);
+        }
 	else
 	{
 	    numbers.clear();
@@ -1733,11 +1743,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
 
 string CSubSource::MakeLatLon(double lat_value, double lon_value, int lat_precision, int lon_precision )
-{
-    if (lat_value == -0.0)
-        lat_value = 0.0;
-    if (lon_value == -0.0)
-        lon_value = 0.0;
+{   
     char ns = 'N';
     if (lat_value < 0) {
         ns = 'S';
