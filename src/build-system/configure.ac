@@ -7814,7 +7814,9 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb3, MONGODB3, mongocxx,
 if test -n "$MONGODB3_LIBS"; then
    MONGODB3_INCLUDE=$MONGODB3_FULL_INCLUDE
    MONGODB3_LIBS=$MONGODB3_FULL_LIBS
-   if test -f $MONGODB3_LIBDIR/libmongocxx-static.a; then
+   if $m3pc-static --exists >/dev/null 2>&1; then
+      MONGODB3_STATIC_LIBS=`$m3pc-static --libs --static`
+   elif test -f $MONGODB3_LIBDIR/libmongocxx-static.a; then
       MONGODB3_STATIC_LIBS=`echo "$MONGODB3_LIBS" | \
         [sed -e 's/-lmongo[^ ]*/&-static/g; s/-lbson[^ ]*/&-static/g' \
              -e 's/\(-l[^ ]*-static[^ ]*\)-static/\1/g']`
