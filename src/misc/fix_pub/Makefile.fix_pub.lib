@@ -5,7 +5,7 @@
 
 WATCHERS = dobronad
 
-ASN_DEP = xcleanup mlacli
+ASN_DEP = genome_collection mla
 SRC = fix_pub
 
 LIB = fix_pub
