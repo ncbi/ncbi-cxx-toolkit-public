@@ -137,3 +137,52 @@ BOOST_AUTO_TEST_CASE(Test_NeedToPropagateInJournal)
     art.SetFrom().SetJournal().ResetTitle();
     BOOST_CHECK_EQUAL(fix_pub::NeedToPropagateInJournal(art), true);
 }
+
+BOOST_AUTO_TEST_CASE(Test_PropagateInPress)
+{
+    CCit_art art,
+             orig_art;
+
+    fix_pub::PropagateInPress(true, art);
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), true);
+
+    art.SetFrom().SetBook();
+    orig_art.Assign(art);
+    fix_pub::PropagateInPress(true, art);
+
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), false);
+
+    orig_art.SetFrom().SetBook().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), true);
+
+    art.SetFrom().SetJournal();
+    orig_art.Assign(art);
+    fix_pub::PropagateInPress(true, art);
+
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), false);
+
+    orig_art.SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), true);
+
+    art.SetFrom().SetProc().SetBook();
+    orig_art.Assign(art);
+    fix_pub::PropagateInPress(true, art);
+
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), false);
+
+    orig_art.SetFrom().SetProc().SetBook().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), true);
+
+
+    art.SetFrom().SetProc().SetMeet();
+    orig_art.Assign(art);
+    fix_pub::PropagateInPress(true, art);
+
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), true);
+
+    art.SetFrom().SetJournal();
+    orig_art.Assign(art);
+    fix_pub::PropagateInPress(false, art);
+
+    BOOST_CHECK_EQUAL(orig_art.Equals(art), true);
+}

@@ -813,6 +813,7 @@ void PropagateInPress(bool inpress, CCit_art& cit_art)
         if (cit_art.GetFrom().GetBook().IsSetImp()) {
             imprint = &cit_art.SetFrom().SetBook().SetImp();
         }
+        break;
 
     case CCit_art::C_From::e_Proc:
         if (cit_art.GetFrom().GetProc().IsSetBook() && cit_art.GetFrom().GetProc().GetBook().IsSetImp()) {
