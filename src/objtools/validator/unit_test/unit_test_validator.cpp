@@ -1198,6 +1198,8 @@ BOOST_AUTO_TEST_CASE(Test_BadProteinMoltype)
     entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ss);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
@@ -10331,6 +10333,15 @@ BOOST_AUTO_TEST_CASE(Test_Generic_PublicationInconsistency)
     CLEAR_ERRORS
 }
 
+
+void AddSgmlError
+(vector< CExpectedError *>& expected_errors,
+ const string& valtype,
+ const string& val)
+{
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "SgmlPresentInText", valtype + " " + val + " has SGML"));
+}
+
 BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -10437,20 +10448,23 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     CheckErrors (*eval, expected_errors);
     unit_test_util::RemoveDbxref (entry, sgml_tags[tag_num], 1234);
 
+    CLEAR_ERRORS
+
     tag_num++;
-    delete expected_errors[1];
-    expected_errors[1] = NULL;
+    AddSgmlError(expected_errors, "dbxref value", sgml_tags[tag_num]);
+    AddChromosomeNoLocation(expected_errors, entry);
     unit_test_util::SetDbxref (entry, "AFTOL", sgml_tags[tag_num]);
-    expected_errors[0]->SetErrMsg("dbxref value " + sgml_tags[tag_num] + " has SGML");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::RemoveDbxref (entry, "AFTOL", 0);
 
+    CLEAR_ERRORS
     ++tag_num;
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature (entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("dbxref database " + sgml_tags[tag_num] + " has SGML");
+    AddSgmlError(expected_errors, "dbxref database", sgml_tags[tag_num]);
+    AddChromosomeNoLocation(expected_errors, entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "IllegalDbXref",
                               "Illegal db_xref type " + sgml_tags[tag_num] + " (1234)"));
     unit_test_util::SetDbxref(feat, sgml_tags[tag_num], 1234);
@@ -10458,42 +10472,53 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     CheckErrors (*eval, expected_errors);
     unit_test_util::RemoveDbxref (feat, sgml_tags[tag_num], 1234);
 
+    CLEAR_ERRORS
+
     tag_num++;
-    delete expected_errors[1];
-    expected_errors.pop_back();
     unit_test_util::SetDbxref (feat, "AFTOL", sgml_tags[tag_num]);
-    expected_errors[0]->SetErrMsg("dbxref value " + sgml_tags[tag_num] + " has SGML");
+    AddSgmlError(expected_errors, "dbxref value", sgml_tags[tag_num]);
+    AddChromosomeNoLocation(expected_errors, entry);
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::RemoveDbxref (feat, "AFTOL", 0);
+
+    CLEAR_ERRORS
 
     tag_num++;
     scope.RemoveTopLevelSeqEntry(seh);
     string foo = sgml_tags[tag_num] + "foo";
     feat->SetData().SetGene().SetLocus(foo);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("gene locus " + foo + " has SGML");
+    AddSgmlError(expected_errors, "gene locus", foo);
+    AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     feat->SetData().SetGene().SetLocus("good locus");
 
+    CLEAR_ERRORS
     tag_num++;
     feat->SetData().SetGene().SetLocus_tag(sgml_tags[tag_num]);
-    expected_errors[0]->SetErrMsg("gene locus_tag " + sgml_tags[tag_num] + " has SGML");
+    AddSgmlError(expected_errors, "gene locus_tag", sgml_tags[tag_num]);
+    AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     feat->SetData().SetGene().ResetLocus_tag();
 
+    CLEAR_ERRORS
     tag_num++;
     feat->SetData().SetGene().SetDesc(sgml_tags[tag_num]);
-    expected_errors[0]->SetErrMsg("gene description " + sgml_tags[tag_num] + " has SGML");
+    AddSgmlError(expected_errors, "gene description", sgml_tags[tag_num]);
+    AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     feat->SetData().SetGene().ResetDesc();
 
+    CLEAR_ERRORS
     tag_num++;
     feat->SetData().SetGene().SetSyn().push_back(sgml_tags[tag_num]);
-    expected_errors[0]->SetErrMsg("gene synonym " + sgml_tags[tag_num] + " has SGML");
+    AddSgmlError(expected_errors, "gene synonym", sgml_tags[tag_num]);
+    AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     feat->SetData().SetGene().ResetDesc();
@@ -17932,6 +17957,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAuthorSuffix)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
 }
 
 
@@ -21021,6 +21047,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadCDScomment)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
 }
 
 
