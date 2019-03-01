@@ -730,6 +730,7 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
 
+    resp.SetContentType(ePSGMime);
     resp.Send(chunks, true);
 }
 

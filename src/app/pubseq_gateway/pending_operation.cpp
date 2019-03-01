@@ -1533,9 +1533,9 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
     } else {
         // Send it as the HTTP data
         if (effective_output_format == eJsonFormat)
-            m_Reply->SetJsonContentType();
+            m_Reply->SetContentType(eJsonMime);
         else
-            m_Reply->SetProtobufContentType();
+            m_Reply->SetContentType(eBinaryMime);
         m_Reply->SetContentLength(data_ptr->length());
         m_Reply->SendOk(data_ptr->data(), data_ptr->length(), false);
     }

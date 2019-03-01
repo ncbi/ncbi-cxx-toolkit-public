@@ -141,4 +141,12 @@ enum ECacheLookupResult {
     eFailure                // LMDB may throw an exception
 };
 
+
+enum EReplyMimeType {
+    eJsonMime,
+    eBinaryMime,
+    ePlainTextMime,
+    ePSGMime
+};
+
 #endif

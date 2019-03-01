@@ -47,6 +47,7 @@
 #include "pubseq_gateway_exception.hpp"
 #include "tcp_daemon.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "pubseq_gateway_types.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -165,29 +166,41 @@ public:
         }
     }
 
-    void SetJsonContentType(void)
+    void SetContentType(EReplyMimeType  mime_type)
     {
-        if (m_State == eReplyInitialized) {
-            h2o_add_header(&m_Req->pool,
-                           &m_Req->res.headers,
-                           H2O_TOKEN_CONTENT_TYPE, NULL,
-                           H2O_STRLIT("application/json"));
-        } else {
+        if (m_State != eReplyInitialized)
             NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
                        "Reply has already started");
-        }
-    }
 
-    void SetProtobufContentType(void)
-    {
-        if (m_State == eReplyInitialized) {
-            h2o_add_header(&m_Req->pool,
-                           &m_Req->res.headers,
-                           H2O_TOKEN_CONTENT_TYPE, NULL,
-                           H2O_STRLIT("application/octet-stream"));
-        } else {
-            NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
-                       "Reply has already started");
+        switch (mime_type) {
+            case eJsonMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("application/json"));
+                break;
+            case eBinaryMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("application/octet-stream"));
+                break;
+            case ePlainTextMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("text/plain"));
+                break;
+            case ePSGMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("application/x-ncbi-psg"));
+                break;
+            default:
+                // Well, it is not good but without the content type everything
+                // will still work.
+                PSG_WARNING("Unknown content type ");
         }
     }
 
