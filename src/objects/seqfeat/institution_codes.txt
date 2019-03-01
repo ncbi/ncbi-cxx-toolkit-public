@@ -205,6 +205,7 @@ ANDA	s	Andalas University
 ANDES	s	Universidad de Los Andes			
 ANDES:A	s	Universidad de Los Andes, Amphibian Collection		
 ANDES:O	s	Universidad de Los Andes, Ornithology Collection		
+ANDES:T	sb	Universidad de Los Andes, Tissue Collection	
 ANES	s	Anadolu University, Biology Department			
 ANFC	s	Australian National Fish Collection			
 ANFM	s	Associazione Naturalisti Forlivesi Pro Museo			
@@ -2725,7 +2726,9 @@ IAUH	s	Islamic Azad University (Avicenna Herbarium)
 IAUM	s	Islamic Azad University of Mashhad			
 IAUNT	s	Islamica Azad University, North Tehran Branch			
 IAV	sb	Institut Agronomique et Veterinaire Hassan II, Departement d'Ecologie Vegetale			
-IAVH	s	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt			
+IAVH	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt			
+IAVH:A	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt, Ornithological Collection	
+IAVH:CT	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt, Tissue Collection	
 IB	s	Universitat Innsbruck			
 IBA<ESP>	s	Instituto Asturiano de Taxonomia y Ecologia Vegetal			
 IBA<POL>	c	Collection of Microorganisms Producing Antibiotics			
@@ -2798,7 +2801,8 @@ ICIS	s	Idaho Museum of Natural History
 ICM	s	Instituto de Ciencias del Mar	ICMD		
 ICMP	c	International Collection of Microorganisms from Plants	PDDCC 	http://scd.landcareresearch.co.nz/Specimen/ICMP_&spec;	
 ICN<BRA>	s	Universidade Federal do Rio Grande do Sul, Departamento de Botanica			
-ICN<COL>	s	Instituto de Ciencias Naturales, Museo de Historia Natural			
+ICN<COL>	sb	Instituto de Ciencias Naturales, Museo de Historia Natural			
+ICN<COL>:Aves	sb	Instituto de Ciencias Naturales, Museo de Historia Natural, Ornithological collection	
 ICP	s	Islamia College, University of Peshawar, Botany Department			
 ICPB	c	International Collection of Phytopathogenic Bacteria			
 ICPPB	s	International Collection of Plant Pathogenic Bacteria			
