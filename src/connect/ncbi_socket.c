@@ -470,8 +470,8 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                     const void* data,  size_t     size, const void* ptr)
 {
     const struct sockaddr_in* sin;
+    const char* what, *strerr;
     char _id[MAXIDLEN];
-    const char* what;
     char head[128];
     char tail[128];
     int n;
@@ -485,9 +485,10 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
         if (sock->type != eDatagram) {
             unsigned short port;
             if (sock->side == eSOCK_Client) {
-                strcpy(head, ptr ? "Connected" : "Connecting");
+                what = ptr ? (const char*) ptr : "Connecting";
+                strcpy(head, *what ? what : "Re-using");
                 port = sock->myport;
-            } else if (ptr) {
+            } else if (!ptr) {
                 strcpy(head, "Accepted");
                 port = 0;
             } else {
@@ -504,7 +505,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                 sprintf(tail, " @:%hu", port);
                 if (!sock->myport) {
                     /* here: not LSOCK_Accept()'d network sockets only */
-                    assert(sock->side == eSOCK_Client  ||  !ptr);
+                    assert(sock->side == eSOCK_Client  ||  ptr);
                     sock->myport = port;  /*cache it*/
                 }
             } else
@@ -516,7 +517,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
             strcpy(head, "Bound @");
             sprintf(tail, "(:%hu)", ntohs(sin->sin_port));
         } else if (sin->sin_family == AF_INET) {
-            strcpy(head, "Associated with ");
+            strcpy(head, "Associated ");
             SOCK_HostPortToString(sin->sin_addr.s_addr,
                                   ntohs(sin->sin_port),
                                   tail, sizeof(tail));
@@ -530,52 +531,50 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
 
     case eIO_Read:
     case eIO_Write:
-        {{
-            const char* strerr = 0;
-            what = (event == eIO_Read
-                    ? (sock->type == eDatagram  ||  size  ||
-                       (data  &&  !(strerr = s_StrError(sock, *((int*) data))))
-                       ? "Read"
-                       : data ? strerr : "EOF hit")
-                    : (sock->type == eDatagram  ||  size  ||
-                       !(strerr = s_StrError(sock, *((int*) data)))
-                       ? "Written"
-                       :        strerr));
+        strerr = 0;
+        what = (event == eIO_Read
+                ? (sock->type == eDatagram  ||  size  ||
+                   (data  &&  !(strerr = s_StrError(sock, *((int*) data))))
+                   ? "Read"
+                   : data ? strerr : "EOF hit")
+                : (sock->type == eDatagram  ||  size  ||
+                   !(strerr = s_StrError(sock, *((int*) data)))
+                   ? "Written"
+                   :        strerr));
 
-            n = (int) strlen(what);
-            while (n  &&  isspace((unsigned char) what[n - 1]))
-                --n;
-            if (n > 1  &&  what[n - 1] == '.')
-                --n;
-            if (sock->type == eDatagram) {
-                sin = (const struct sockaddr_in*) ptr;
-                assert(sin  &&  sin->sin_family == AF_INET);
-                SOCK_HostPortToString(sin->sin_addr.s_addr,
-                                      ntohs(sin->sin_port),
-                                      head, sizeof(head));
-                sprintf(tail, ", msg# %" NCBI_BIGCOUNT_FORMAT_SPEC,
-                        event == eIO_Read ? sock->n_in : sock->n_out);
-            } else if (!ptr  ||  !*((char*) ptr)) {
-                sprintf(head, " at offset %" NCBI_BIGCOUNT_FORMAT_SPEC,
-                        event == eIO_Read ? sock->n_read : sock->n_written);
-                strcpy(tail, ptr ? " [OOB]" : "");
-            } else {
-                strncpy0(head, (const char*) ptr, sizeof(head));
-                *tail = '\0';
-            }
+        n = (int) strlen(what);
+        while (n  &&  isspace((unsigned char) what[n - 1]))
+            --n;
+        if (n > 1  &&  what[n - 1] == '.')
+            --n;
+        if (sock->type == eDatagram) {
+            sin = (const struct sockaddr_in*) ptr;
+            assert(sin  &&  sin->sin_family == AF_INET);
+            SOCK_HostPortToString(sin->sin_addr.s_addr,
+                                  ntohs(sin->sin_port),
+                                  head, sizeof(head));
+            sprintf(tail, ", msg# %" NCBI_BIGCOUNT_FORMAT_SPEC,
+                    event == eIO_Read ? sock->n_in : sock->n_out);
+        } else if (!ptr  ||  !*((char*) ptr)) {
+            sprintf(head, " at offset %" NCBI_BIGCOUNT_FORMAT_SPEC,
+                    event == eIO_Read ? sock->n_read : sock->n_written);
+            strcpy(tail, ptr ? " [OOB]" : "");
+        } else {
+            strncpy0(head, (const char*) ptr, sizeof(head));
+            *tail = '\0';
+        }
 
-            CORE_DATAF_X(109, level, data, size,
-                         ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
-                          sock->type == eDatagram
-                          ? (event == eIO_Read ? " from " : " to ")
-                          : size  ||  !data ? "" : strerr
-                          ? (event == eIO_Read
-                             ? " while reading" : " while writing")
-                          : " 0 bytes",
-                          head, tail));
+        CORE_DATAF_X(109, level, data, size,
+                     ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
+                      sock->type == eDatagram
+                      ? (event == eIO_Read ? " from " : " to ")
+                      : size  ||  !data ? "" : strerr
+                      ? (event == eIO_Read
+                         ? " while reading" : " while writing")
+                      : " 0 bytes",
+                      head, tail));
 
-            UTIL_ReleaseBuffer(strerr);
-        }}
+        UTIL_ReleaseBuffer(strerr);
         break;
 
     case eIO_Close:
@@ -4342,7 +4341,7 @@ static EIO_Status s_Connect_(SOCK            sock,
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Note, sock, eIO_Open, 0, 0, error ? 0 : "");
+        s_DoLog(eLOG_Note, sock, eIO_Open, 0, 0, error ? 0 : "Connected");
 
     if (error) {
         if (((n == 0  &&  error != SOCK_EINPROGRESS)  ||
@@ -4931,7 +4930,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
 
     /* statistics & logging */
     if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Note, x_sock, eIO_Open, 0, 0, 0);
+        s_DoLog(eLOG_Note, x_sock, eIO_Open, 0, 0, "");
 
     /* success */
     *sock = x_sock;
@@ -5560,7 +5559,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 
     /* statistics & logging */
     if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Note, x_sock, eIO_Open, 0, 0, "");
+        s_DoLog(eLOG_Note, x_sock, eIO_Open, 0, 0, 0);
 
     *sock = x_sock;
     return eIO_Success;
