@@ -95,9 +95,10 @@ enum class EPSG_UseCache { eDefault, eNo, eYes };
 NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
 typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
 
-// Performance reporting for psg_client performance mode
-NCBI_PARAM_DECL(bool, PSG, internal_psg_client_performance_mode);
-typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_performance_mode) TPSG_PerformanceMode;
+// Performance reporting/request IDs for psg_client app
+enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance };
+NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
+typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
 
 struct SPSG_Future
 {

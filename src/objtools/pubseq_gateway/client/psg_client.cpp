@@ -444,7 +444,9 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
     static HCT::io_coordinator ioc(m_Service);
 
     chrono::milliseconds wait_ms{};
-    const auto request_id = ioc.get_new_request_id();
+    auto user_context = TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eOff ?
+        nullptr : user_request->GetUserContext<string>();
+    const auto request_id = user_context ? *user_context : ioc.get_new_request_id();
     auto reply = make_shared<SPSG_Reply>();
     auto abs_path_ref = user_request->x_GetAbsPathRef();
     auto http_request = make_shared<HCT::http2_request>(request_id, reply, m_Requests, move(abs_path_ref));

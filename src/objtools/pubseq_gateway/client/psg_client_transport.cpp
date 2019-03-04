@@ -76,14 +76,23 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_UseCache, PSG, use_cache)
 };
 NCBI_PARAM_ENUM_DEF(EPSG_UseCache, PSG, use_cache, EPSG_UseCache::eDefault);
 
-// Performance reporting for psg_client performance mode
-NCBI_PARAM_DEF(bool, PSG, internal_psg_client_performance_mode, false);
+// Performance reporting/request IDs for psg_client app
+NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
+{
+    { "off",         EPSG_PsgClientMode::eOff         },
+    { "interactive", EPSG_PsgClientMode::eInteractive },
+    { "performance", EPSG_PsgClientMode::ePerformance }
+};
+NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
 
 struct SDebugPrintout
 {
     enum EType { eSend = 1000, eReceive, ePush, ePop };
 
-    SDebugPrintout() : m_Level(GetLevel()), m_Perf(TPSG_PerformanceMode::GetDefault()) {}
+    SDebugPrintout() :
+        m_Level(GetLevel()),
+        m_Perf(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::ePerformance)
+    {}
 
     explicit operator bool() { return m_Level != eNone; }
     void Print(string id, const string& authority, const string& path);
@@ -154,7 +163,7 @@ void SDebugPrintout::Print(string id, EType type)
 
 SDebugPrintout::ELevel SDebugPrintout::GetLevel()
 {
-    if (TPSG_PerformanceMode::GetDefault()) return eSome;
+    if (TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::ePerformance) return eSome;
 
     const auto& value = TPSG_DebugPrintout::GetDefault();
 

@@ -143,6 +143,7 @@ struct SMessage
             case SMetricType::ePush:
             case SMetricType::ePop:
                 message.type = static_cast<SMetricType::EType>(type);
+                break;
 
             default:
                 _TROUBLE;
@@ -240,8 +241,9 @@ enum class EPSG_UseCache { eDefault, eNo, eYes };
 NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
 typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
 
-NCBI_PARAM_DECL(bool, PSG, internal_psg_client_performance_mode);
-typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_performance_mode) TPSG_PerformanceMode;
+enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance };
+NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
+typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
 
 NCBI_PARAM_DECL(unsigned, PSG, requests_per_io);
 typedef NCBI_PARAM_TYPE(PSG, requests_per_io) TPSG_RequestsPerIo;

@@ -221,6 +221,9 @@ template<>
 int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 {
     CProcessing processing(args["service"].AsString(), true);
+
+    TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
+
     return processing.Interactive(args["echo"].HasValue());
 }
 
@@ -270,7 +273,7 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
     TPSG_MaxConcurrentStreams::SetDefault(max_streams);
     TPSG_UseCache::SetDefault(use_cache_value);
     TPSG_DelayedCompletion::SetDefault(delayed_completion);
-    TPSG_PerformanceMode::SetDefault(true);
+    TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
 
     return processing.Performance(user_threads, raw_metrics, service);
 }

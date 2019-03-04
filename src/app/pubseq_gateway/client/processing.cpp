@@ -348,6 +348,7 @@ void CSender::Run()
 
         auto request = m_Requests.front();
         auto id = request->GetUserContext<string>();
+        _ASSERT(id);
         m_Requests.pop();
         lock.unlock();
 
