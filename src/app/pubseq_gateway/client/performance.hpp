@@ -249,6 +249,9 @@ typedef NCBI_PARAM_TYPE(PSG, requests_per_io) TPSG_RequestsPerIo;
 NCBI_PARAM_DECL(bool, PSG, delayed_completion);
 typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
 
+NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
+typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
+
 END_NCBI_SCOPE
 
 #endif

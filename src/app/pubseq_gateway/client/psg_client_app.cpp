@@ -231,6 +231,7 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("user-threads", "THREADS_NUM", "Number of user threads", CArgDescriptions::eInteger, "1");
     arg_desc.AddDefaultKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, "1");
     arg_desc.AddDefaultKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, "1");
+    arg_desc.AddDefaultKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, "1");
     arg_desc.AddDefaultKey("use-cache", "USE_CACHE", "Whether to use LMDB cache", CArgDescriptions::eString, "default");
     arg_desc.AddFlag("delayed-completion", "Whether to use delayed completion");
     arg_desc.AddFlag("raw-metrics", "Whether to output raw metrics");
@@ -255,6 +256,7 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
     auto user_threads = static_cast<size_t>(args["user-threads"].AsInteger());
     auto io_threads = static_cast<size_t>(args["io-threads"].AsInteger());
     auto requests_per_io = static_cast<size_t>(args["requests-per-io"].AsInteger());
+    auto max_streams = static_cast<size_t>(args["max-streams"].AsInteger());
     auto use_cache = args["use-cache"].AsString();
     auto delayed_completion = args["delayed-completion"].AsBoolean();
     auto raw_metrics = args["raw-metrics"].AsBoolean();
@@ -265,6 +267,7 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 
     TPSG_NumIo::SetDefault(io_threads);
     TPSG_RequestsPerIo::SetDefault(requests_per_io);
+    TPSG_MaxConcurrentStreams::SetDefault(max_streams);
     TPSG_UseCache::SetDefault(use_cache_value);
     TPSG_DelayedCompletion::SetDefault(delayed_completion);
     TPSG_PerformanceMode::SetDefault(true);
