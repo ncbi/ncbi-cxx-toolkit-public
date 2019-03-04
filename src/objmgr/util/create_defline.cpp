@@ -2663,10 +2663,6 @@ void CDeflineGenerator::x_SetPrefix (
         if (m_MainTitle.find ("UNVERIFIED") == NPOS) {
             prefix = m_UnverifiedPrefix;
         }
-    } else if (m_IsTSA) {
-        prefix = "TSA: ";
-    } else if (m_IsTLS) {
-        prefix = "TLS: ";
     } else if (m_ThirdParty) {
         if (m_TPAExp) {
             prefix = "TPA_exp: ";
@@ -2677,6 +2673,10 @@ void CDeflineGenerator::x_SetPrefix (
         } else {
             prefix = "TPA: ";
         }
+    } else if (m_IsTSA) {
+        prefix = "TSA: ";
+    } else if (m_IsTLS) {
+        prefix = "TLS: ";
     } else if (m_Multispecies && m_IsWP) {
         prefix = "MULTISPECIES: ";
     } else if (m_IsPseudogene) {
