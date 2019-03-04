@@ -1,3 +1,11 @@
+Mar 29, 2019
+Release 1.13.0
+*Determining the V gene reading frame from the end of FWR3 region instead of end of V gene.  This is to allow the insertion/deletion near the end of V gene and to properly determine whether the rearrangement is in-frame or out-of-frame.
+
+*Increase allowed distance between V gene end and J gene start to 225 bp to allow detection of ultra long D/N region.
+
+*Package the edit_imgt_file.pl script, the internal_data and optional_files folders into the IgBlast release such that it is easy for user to install.
+	
 Nov 26, 2018
 *Release 1.12.0
 *Increase allowed distance between V gene end and J gene start positions (from 90 bp to 150 bp) as well as between V gene end and D gene start positions (from 55 to 120 bp) to accommodate extremely long VDJ junctions found in some antibodies. 
