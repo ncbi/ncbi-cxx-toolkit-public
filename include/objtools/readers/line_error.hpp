@@ -501,7 +501,7 @@ public:
         const TVecOfLines & vecOfOtherLines = TVecOfLines() );
 
     /// Use this because copy ctor is protected.
-    virtual ILineError *Clone(void) const;
+    virtual ILineError *Clone(void) const override;
 
     virtual ~CLineErrorEx(void) {}
 
