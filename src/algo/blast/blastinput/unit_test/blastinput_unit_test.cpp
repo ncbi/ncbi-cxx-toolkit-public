@@ -2518,7 +2518,7 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb)
 {
     string pdb_mol("1QCF");
     string pdb_chain("A");
-    string pdb(pdb_mol + pdb_chain);
+    string pdb(pdb_mol + '_' + pdb_chain);
     istringstream instream(pdb);
     
     const bool is_protein(true);
@@ -2655,7 +2655,7 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
 
         string pdb;
         if (i == 0) {
-            pdb.assign(pdb_mol + pdb_chain);
+            pdb.assign(pdb_mol + '|' + pdb_chain);
         } else {
             pdb.assign(pdb_mol + "_" + pdb_chain);
         }

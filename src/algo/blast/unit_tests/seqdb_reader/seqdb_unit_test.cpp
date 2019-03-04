@@ -956,7 +956,7 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     const char * s1[] =
         { "gi|129295", "sp|P01013|OVAX_CHICK", 0 };
     const char * s2[] =
-        { "gi|433552084", "pdb|1NPQ|A", "1NPQ", "1npqA",
+        { "gi|433552084", "pdb|1NPQ|A", "1NPQ", "1npq_A",
           "gi|433552085",  "pdb|1NPQ|B", "1npq", 0 };
     const char * s3[] =
         { "1NPQ", 0 };
