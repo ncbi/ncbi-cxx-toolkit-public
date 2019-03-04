@@ -36,6 +36,9 @@
 #include <objmgr/scope.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/pub/Pub.hpp>
+
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Author.hpp>
 #include <objects/biblio/Cit_gen.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Cit_book.hpp>
@@ -50,7 +53,6 @@ BEGIN_SCOPE(objects)
 
 class CSeq_submit;
 class CSubmit_block;
-class CAuthor;
 class CName_std;
 
 
