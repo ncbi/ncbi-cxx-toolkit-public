@@ -2795,6 +2795,11 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
               score_params->gap_open, score_params->gap_extend,
               &q_ext_r, &s_ext_r, gap_align->greedy_align_mem,
               fwd_prelim_tback, rem, fence_hit, &fwd_start_point);
+
+       if(fence_hit && *fence_hit) {
+    	   return -1;
+       }
+
        if (score >=0) break;
 
        /* double the max distance */

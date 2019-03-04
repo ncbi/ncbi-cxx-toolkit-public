@@ -877,6 +877,11 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     index = s_FindFirstMismatch(seq1, seq2, len1, len2, 0, 0,
                                 fence_hit, reverse, rem);
 
+    if (fence_hit && *fence_hit) {
+        return -1;
+    }
+
+
     /* update the extents of the alignment, and bail out
        early if no further work is needed */
 
@@ -1066,6 +1071,11 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
             index = s_FindFirstMismatch(seq1, seq2, len1, len2, 
                                         seq1_index, seq2_index,
                                         fence_hit, reverse, rem);
+
+            if (fence_hit && *fence_hit) {
+                return -1;
+            }
+
 
             if (index > longest_match_run) {
                 seed->start_q = seq1_index;
