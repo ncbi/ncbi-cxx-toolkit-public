@@ -57,6 +57,9 @@
 
 #include <objmgr/seqdesc_ci.hpp>
 
+#include <objtools/cleanup/cleanup_pub.hpp>
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
