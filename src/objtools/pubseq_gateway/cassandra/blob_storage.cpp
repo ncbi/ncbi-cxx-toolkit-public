@@ -121,7 +121,8 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
     if (FetchSatToKeyspaceMapping(mapping_keyspace, conn, lmapping, resolver_keyspace, resolver_schema, err_msg)) {
         for (size_t sat_id = 0; sat_id < lmapping.size(); ++sat_id) {
             ECassSchemaType  schema = get<1>(lmapping[sat_id]);
-            mapping.push_back(schema == mapping_schema ? get<0>(lmapping[sat_id]) : "");
+            mapping.push_back((schema == mapping_schema ||
+                               schema == bioseq_na_schema)? get<0>(lmapping[sat_id]) : "");
 
             if (schema == bioseq_na_schema)
                 bioseq_na_keyspaces.push_back(
