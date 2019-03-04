@@ -68,7 +68,7 @@
 
 #include <math.h>
 #include <algorithm>
-
+#include <iostream>
 
 BEGIN_NCBI_SCOPE
 
@@ -682,7 +682,43 @@ void CSplign::x_LoadSequence(vector<char>* seq,
     catch(CAlgoAlignException& e) {
         NCBI_RETHROW_SAME(e, "CSplign::x_LoadSequence(): Sequence data problem");
     }
+
+    if(!is_genomic) {
+        if(seq == &m_mrna) {
+            m_mrna_polya.clear();
+            m_mrna_polya.resize(seq->size());
+            copy(seq->begin(), seq->end(), m_mrna_polya.begin());
+        }
+        CSeq_id_Handle idh_key = CSeq_id_Handle::GetHandle(seqid);
+        if(m_MaskMap.find(idh_key) != m_MaskMap.end()) {
+            const TSeqRangeColl& mask_ranges = m_MaskMap.find(idh_key)->second;
+            x_MaskSequence(seq, mask_ranges, start, finish);
+        }
+    }
 }
+
+
+void  CSplign::x_MaskSequence(vector<char>* seq, 
+                          const TSeqRangeColl& mask_ranges, 
+                          THit::TCoord start, 
+                          THit::TCoord finish)
+{
+    //cerr<<start<<"\t"<<finish<<endl;
+    TSeqRange loop_range;
+    for(TSeqPos loop = start; loop <= finish; loop++) {
+        loop_range.SetFrom(loop);
+        loop_range.SetLength(1);
+        if(mask_ranges.IntersectingWith(loop_range)) {
+            //cerr<<loop<<"\t"<<loop_range<<endl;
+            (*seq)[loop] = 'N';        
+        }
+    }
+    //ITERATE(vector<char>, ci, (*seq)) {
+    //    cerr << *ci;
+    //}
+    //cerr<<endl;
+}
+
 
 
 void CSplign::ClearMem(void)
@@ -692,6 +728,7 @@ void CSplign::ClearMem(void)
     m_alnmap.clear();
     m_genomic.clear();
     m_mrna.clear();
+    m_mrna_polya.clear();
 }
 
 
@@ -1191,6 +1228,9 @@ void CSplign::Run(THitRefs* phitrefs)
             // make a reverse complimentary
             reverse (m_mrna.begin(), m_mrna.end());
             transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
+            
+            reverse (m_mrna_polya.begin(), m_mrna_polya.end());
+            transform(m_mrna_polya.begin(), m_mrna_polya.end(), m_mrna_polya.begin(), SCompliment());
         }
 
         // compartments share the space between them
@@ -1296,6 +1336,9 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     if(!m_strand) {
         reverse (m_mrna.begin(), m_mrna.end());
         transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
+    
+        reverse (m_mrna_polya.begin(), m_mrna_polya.end());
+        transform(m_mrna_polya.begin(), m_mrna_polya.end(), m_mrna_polya.begin(), SCompliment());
     }
 
     bool rv (true);
@@ -1415,7 +1458,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         
         m_polya_start = m_nopolya?
             kMax_UInt:
-            s_TestPolyA(&m_mrna.front(), m_mrna.size(), m_cds_stop);
+            s_TestPolyA(&m_mrna_polya.front(), m_mrna_polya.size(), m_cds_stop);
     
         // cleave off hits beyond polya
         if(m_polya_start < kMax_UInt) {
@@ -1752,7 +1795,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         THit::TCoord coord = s.m_box[1] + 1;
         m_polya_start = kMax_UInt;
         if(coord < mrna_size ) {//there is unaligned flanking part of mRNA 
-            if(!m_nopolya && IsPolyA(&m_mrna.front(), coord, m_mrna.size())) {//polya
+            if(!m_nopolya && IsPolyA(&m_mrna_polya.front(), coord, m_mrna_polya.size())) {//polya
                 m_polya_start = coord;
             } else {//gap
                 if( GetTestType() == kTestType_20_28 || GetTestType() == kTestType_20_28_plus ) {

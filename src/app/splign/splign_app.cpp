@@ -167,6 +167,11 @@ void CSplignApp::Init()
          CArgDescriptions::eInteger,
          "28");
   
+    argdescr->AddOptionalKey
+        ("mask_ranges", "mask_ranges", "[Pairwise mode] regions to mask out, query only, formatted as '1-2,5-8,33-44', 1-based",
+         CArgDescriptions::eString);
+  
+
     CSplignArgUtil::SetupArgDescriptions(argdescr.get());
 
     argdescr->AddDefaultKey
@@ -1001,6 +1006,31 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     if(hitrefs.front()->GetScore() < 0) {
         return;
     }
+
+    // MASK TEST
+    {{
+        CSeq_id_Handle qidh = CSeq_id_Handle::GetHandle(*(hitrefs.front()->GetQueryId()));
+        CSplign::TSeqRangeColl MaskRanges;
+        if(args["mask_ranges"].HasValue()) {
+            try {
+                string mask_ranges_arg = args["mask_ranges"].AsString();
+                list<string> range_strs;
+                NStr::Split(mask_ranges_arg, ",", range_strs);
+                ITERATE(list<string>, range_iter, range_strs) {
+                    list<string> bound_strs;
+                    NStr::Split(*range_iter, "-", bound_strs);
+                    TSeqRange Curr(NStr::StringToNumeric<TSeqPos>(bound_strs.front())-1, 
+                                   NStr::StringToNumeric<TSeqPos>(bound_strs.back())-1);
+                    MaskRanges += Curr;
+                }
+            } catch(CException& e) {
+                ERR_POST("Masking Ranges parse error: " + e.ReportAll());
+            }
+        }
+        if(qidh && !MaskRanges.empty()) {
+            m_Splign->SetHardMaskRanges(qidh, MaskRanges);
+        }
+    }}
 
     THit::TId query (hitrefs.front()->GetQueryId());
     THit::TId subj  (hitrefs.front()->GetSubjId());

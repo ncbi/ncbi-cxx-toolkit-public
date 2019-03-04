@@ -41,6 +41,9 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 
+#include <objects/seq/seq_id_handle.hpp>
+#include <util/range_coll.hpp>
+
 #include <algo/align/nw/nw_formatter.hpp>
 #include <algo/align/util/blast_tabular.hpp>
 
@@ -59,6 +62,7 @@ BEGIN_SCOPE(objects)
     class CScore_set;
     class CSeq_align_set;
     class CSeqMap;
+    class CSeq_id_Handle;
 END_SCOPE(objects)
 
 
@@ -223,7 +227,13 @@ public:
 
     void   SetMaxCompsPerQuery(size_t m);
     size_t GetMaxCompsPerQuery(void) const;
-    
+   
+
+    typedef CRangeCollection<TSeqPos> TSeqRangeColl;
+    void SetHardMaskRanges(objects::CSeq_id_Handle idh, const TSeqRangeColl& mask_ranges) {
+        m_MaskMap[idh] = mask_ranges; 
+    }
+
     typedef CNWFormatter::SSegment   TSegment;
     typedef vector<TSegment>         TSegments;
 
@@ -426,6 +436,10 @@ protected:
 
     string m_TestType;
 
+    // external hard-mask data
+    typedef map<objects::CSeq_id_Handle, TSeqRangeColl> TSIHToMaskRanges;
+    TSIHToMaskRanges m_MaskMap;
+
 
     // mandatory end gap detection flag
     bool                  m_endgaps;
@@ -446,6 +460,7 @@ protected:
     bool                  m_strand;
     size_t                m_polya_start;
     bool                  m_nopolya;
+    vector<char>          m_mrna_polya; // unmasked version used only for polya calcs
 
     // in antisense, these are computed based on a reverse-
     // complimentary sequence, so start still less than stop
@@ -499,6 +514,10 @@ protected:
                           THit::TCoord start,
                           THit::TCoord finish,
                           bool retain, bool is_genomic = false, bool genomic_strand = true);
+    void   x_MaskSequence(vector<char>* seq, 
+                          const TSeqRangeColl& mask_ranges, 
+                          THit::TCoord start, 
+                          THit::TCoord finish);
 
     //checks if position belongs to the genomic gap
     //gap information comes from ASN (CSeqMap).
