@@ -423,6 +423,16 @@ void CPrimeCacheApplication::x_UpsertDescriptor(list<CRef<CSeqdesc> >& descs, CR
         switch ( orig_desc->Which() ) {
             case CSeqdesc::e_Source:
             case CSeqdesc::e_Molinfo:
+            case CSeqdesc::e_Name:
+            case CSeqdesc::e_Title:
+            case CSeqdesc::e_Pir:
+            case CSeqdesc::e_Genbank:
+            case CSeqdesc::e_Sp:
+            case CSeqdesc::e_Embl:
+            case CSeqdesc::e_Create_date:
+            case CSeqdesc::e_Update_date:
+            case CSeqdesc::e_Prf:
+            case CSeqdesc::e_Pdb:
                 updated = true;
                 orig_desc->Assign(*new_desc);
                 break;
