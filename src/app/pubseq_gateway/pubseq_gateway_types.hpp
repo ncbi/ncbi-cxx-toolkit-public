@@ -146,7 +146,9 @@ enum EReplyMimeType {
     eJsonMime,
     eBinaryMime,
     ePlainTextMime,
-    ePSGMime
+    ePSGMime,
+
+    eNotSet
 };
 
 #endif

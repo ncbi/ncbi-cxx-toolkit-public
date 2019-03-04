@@ -429,26 +429,32 @@ void CPendingOperation::x_ProcessResolveRequest(void)
         } else {
             switch (err.m_ErrorCode) {
                 case CRequestStatus::e400_BadRequest:
+                    m_Reply->SetContentType(ePlainTextMime);
                     m_Reply->Send400("Bad Request",
                                      err.m_ErrorMessage.c_str());
                     break;
                 case CRequestStatus::e404_NotFound:
+                    m_Reply->SetContentType(ePlainTextMime);
                     m_Reply->Send404("Not Found",
                                      err.m_ErrorMessage.c_str());
                     break;
                 case CRequestStatus::e500_InternalServerError:
+                    m_Reply->SetContentType(ePlainTextMime);
                     m_Reply->Send500("Internal Server Error",
                                      err.m_ErrorMessage.c_str());
                     break;
                 case CRequestStatus::e502_BadGateway:
+                    m_Reply->SetContentType(ePlainTextMime);
                     m_Reply->Send502("Bad Gateway",
                                      err.m_ErrorMessage.c_str());
                     break;
                 case CRequestStatus::e503_ServiceUnavailable:
+                    m_Reply->SetContentType(ePlainTextMime);
                     m_Reply->Send503("Service Unavailable",
                                      err.m_ErrorMessage.c_str());
                     break;
                 default:
+                    m_Reply->SetContentType(ePlainTextMime);
                     m_Reply->Send400("Bad Request",
                                      err.m_ErrorMessage.c_str());
             }
@@ -464,6 +470,7 @@ void CPendingOperation::x_ProcessResolveRequest(void)
         if (x_UsePsgProtocol()) {
             x_OnBioseqError(CRequestStatus::e404_NotFound, err_msg);
         } else {
+            m_Reply->SetContentType(ePlainTextMime);
             m_Reply->Send404("Not Found", err_msg.c_str());
             x_PrintRequestStop(m_OverallStatus);
         }
@@ -516,6 +523,7 @@ void CPendingOperation::x_ProcessResolveRequest(void)
                                     err_msg);
                 } else {
                     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+                    m_Reply->SetContentType(ePlainTextMime);
                     m_Reply->Send500("Internal Server Error", err_msg.c_str());
                     x_PrintRequestStop(m_OverallStatus);
                 }
@@ -709,7 +717,7 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
 
     bool    all_finished_read = x_AllFinishedRead();
 
-    // For resolve and named annotations the packets need to e sent only when
+    // For resolve and named annotations the packets need to be sent only when
     // all the data are in chunks
     if (resp.IsOutputReady()) {
        if (m_RequestType == eBlobRequest) {
@@ -1624,6 +1632,7 @@ bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
     app->GetErrorCounters().IncServerSatToSatName();
     return false;
 }
+
 
 void CPendingOperation::PrepareBioseqMessage(
                                 size_t  item_id, const string &  msg,

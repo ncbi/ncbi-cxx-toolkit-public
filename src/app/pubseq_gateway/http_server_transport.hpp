@@ -102,7 +102,8 @@ public:
         m_State(eReplyInitialized),
         m_HttpProto(proto),
         m_HttpConn(http_conn),
-        m_DataReady(make_shared<CDataTrigger>(proto))
+        m_DataReady(make_shared<CDataTrigger>(proto)),
+        m_ReplyContentType(eNotSet)
     {}
 
     CHttpReply(const CHttpReply&) = delete;
@@ -149,6 +150,7 @@ public:
         m_State = eReplyInitialized;
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
+        m_ReplyContentType = eNotSet;
     }
 
     void AssignPendingRec(P &&  pending_rec)
@@ -168,40 +170,7 @@ public:
 
     void SetContentType(EReplyMimeType  mime_type)
     {
-        if (m_State != eReplyInitialized)
-            NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
-                       "Reply has already started");
-
-        switch (mime_type) {
-            case eJsonMime:
-                h2o_add_header(&m_Req->pool,
-                               &m_Req->res.headers,
-                               H2O_TOKEN_CONTENT_TYPE, NULL,
-                               H2O_STRLIT("application/json"));
-                break;
-            case eBinaryMime:
-                h2o_add_header(&m_Req->pool,
-                               &m_Req->res.headers,
-                               H2O_TOKEN_CONTENT_TYPE, NULL,
-                               H2O_STRLIT("application/octet-stream"));
-                break;
-            case ePlainTextMime:
-                h2o_add_header(&m_Req->pool,
-                               &m_Req->res.headers,
-                               H2O_TOKEN_CONTENT_TYPE, NULL,
-                               H2O_STRLIT("text/plain"));
-                break;
-            case ePSGMime:
-                h2o_add_header(&m_Req->pool,
-                               &m_Req->res.headers,
-                               H2O_TOKEN_CONTENT_TYPE, NULL,
-                               H2O_STRLIT("application/x-ncbi-psg"));
-                break;
-            default:
-                // Well, it is not good but without the content type everything
-                // will still work.
-                PSG_WARNING("Unknown content type ");
-        }
+        m_ReplyContentType = mime_type;
     }
 
     void Send(const char *  payload, size_t  payload_len,
@@ -239,6 +208,7 @@ public:
                 m_OutputFinished = true;
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
+                    x_SetContentType();
                     h2o_send_error_400(m_Req, head ?
                         head : "Bad Request", payload, 0);
                 } else {
@@ -261,6 +231,7 @@ public:
                 m_OutputFinished = true;
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
+                    x_SetContentType();
                     h2o_send_error_404(m_Req, head ?
                         head : "Not Found", payload, 0);
                 } else {
@@ -283,6 +254,7 @@ public:
                 m_OutputFinished = true;
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
+                    x_SetContentType();
                     h2o_send_error_500(m_Req, head ?
                         head : "Internal Server Error", payload, 0);
                 } else {
@@ -305,6 +277,7 @@ public:
                 m_OutputFinished = true;
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
+                    x_SetContentType();
                     h2o_send_error_502(m_Req, head ?
                         head : "Bad Gateway", payload, 0);
                 } else {
@@ -327,6 +300,7 @@ public:
                 m_OutputFinished = true;
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
+                    x_SetContentType();
                     h2o_send_error_503(m_Req, head ?
                         head : "Service Unavailable", payload, 0);
                 } else {
@@ -583,6 +557,7 @@ private:
         switch (m_State) {
             case eReplyInitialized:
                 if (!m_Cancelled) {
+                    x_SetContentType();
                     m_State = eReplyStarted;
                     m_Req->res.status = 200;
                     m_Req->res.reason = "OK";
@@ -632,17 +607,59 @@ private:
             m_PendingRec->Cancel();
     }
 
-    h2o_req_t *             m_Req;
-    h2o_generator_t         m_RespGenerator;
-    bool                    m_OutputIsReady;
-    bool                    m_OutputFinished;
-    bool                    m_Postponed;
-    bool                    m_Cancelled;
-    EReplyState             m_State;
-    CHttpProto<P> *         m_HttpProto;
-    CHttpConnection<P> *    m_HttpConn;
-    std::shared_ptr<P>      m_PendingRec;
-    std::shared_ptr<CDataTrigger> m_DataReady;
+    void x_SetContentType(void)
+    {
+        if (m_ReplyContentType == eNotSet)
+            return;
+
+        if (m_State != eReplyInitialized)
+            NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
+                       "Reply has already started");
+
+        switch (m_ReplyContentType) {
+            case eJsonMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("application/json"));
+                break;
+            case eBinaryMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("application/octet-stream"));
+                break;
+            case ePlainTextMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("text/plain"));
+                break;
+            case ePSGMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("application/x-ncbi-psg"));
+                break;
+            default:
+                // Well, it is not good but without the content type everything
+                // will still work.
+                PSG_WARNING("Unknown content type " << m_ReplyContentType);
+        }
+    }
+
+    h2o_req_t *                     m_Req;
+    h2o_generator_t                 m_RespGenerator;
+    bool                            m_OutputIsReady;
+    bool                            m_OutputFinished;
+    bool                            m_Postponed;
+    bool                            m_Cancelled;
+    EReplyState                     m_State;
+    CHttpProto<P> *                 m_HttpProto;
+    CHttpConnection<P> *            m_HttpConn;
+    std::shared_ptr<P>              m_PendingRec;
+    std::shared_ptr<CDataTrigger>   m_DataReady;
+    EReplyMimeType                  m_ReplyContentType;
 };
 
 
