@@ -202,6 +202,7 @@ private:
 
     void x_ExtractDelta(CBioseq_Handle         bsh,
                      set<CSeq_id_Handle>& delta_ids);
+    void x_UpsertDescriptor(list<CRef<CSeqdesc> >& descs, CRef<CSeqdesc> new_desc);
 
     class CCacheBioseq
     {
@@ -216,7 +217,8 @@ private:
         void operator () (CBioseq& bseq);
     };
     friend class CCacheBioseq;
- 
+    
+private: // data 
     CChunkFile m_MainChunk;
     CSeqIdChunkFile m_SeqIdChunk;
     CAsnIndex  m_MainIndex;
@@ -412,6 +414,26 @@ void CPrimeCacheApplication::x_ExtractAndIndex(const CSeq_entry&      entry,
     }
 }
 
+void CPrimeCacheApplication::x_UpsertDescriptor(list<CRef<CSeqdesc> >& descs, CRef<CSeqdesc> new_desc)
+{
+    bool updated = false;
+    // some descriptors must be singletons some not
+    for(auto& orig_desc: descs) {
+        if(new_desc->Which() != orig_desc->Which()  ) continue;
+        switch ( orig_desc->Which() ) {
+            case CSeqdesc::e_Source:
+            case CSeqdesc::e_Molinfo:
+                updated = true;
+                orig_desc->Assign(*new_desc);
+                break;
+            default:
+                break;
+        }
+    }
+    if(!updated) {
+        descs.push_back(new_desc);
+    }
+}
 
 void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
                                              CNcbiOstream& ostr_seqids)
@@ -448,16 +470,15 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
 
         CRef<CSeq_entry> entry = reader.ReadOneSeq();
         entry->SetSeq().SetInst().SetMol(m_InstMol);
-
         if (m_MolInfo) {
-            entry->SetSeq().SetDescr().Set().push_back(m_MolInfo);
+            x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), m_MolInfo);
         }
         if (m_Biosource) {
-            entry->SetSeq().SetDescr().Set().push_back(m_Biosource);
+            x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), m_Biosource);
         }
         if (m_other_descs.size()>0) {
             NON_CONST_ITERATE(list<CRef<CSeqdesc> >, desc, m_other_descs) {
-                entry->SetSeq().SetDescr().Set().push_back(*desc); 
+                x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), m_MolInfo);
             }
         }
 
@@ -923,14 +944,12 @@ int CPrimeCacheApplication::Run(void)
         }
         m_Biosource->SetSource().SetGenome(
             sm_GenomeTypes.find(args["biosource"].AsString().c_str())->second);
-            
     }
 
     if (args["molinfo"]) {
         m_MolInfo.Reset(new CSeqdesc);
         m_MolInfo->SetMolinfo().SetBiomol(
             sm_BiomolTypes.find(args["molinfo"].AsString().c_str())->second);
-            
     }
     if (args["submit-block-template"]) {
         CRef<CSubmit_block> submit_block;
@@ -953,8 +972,8 @@ int CPrimeCacheApplication::Run(void)
                     break;
 
                 case CSeqdesc::e_Molinfo:
-			    m_MolInfo = desc;
-			    break;
+                    m_MolInfo = desc;
+                    break;
 
                 default:
                     m_other_descs.push_back(desc);
