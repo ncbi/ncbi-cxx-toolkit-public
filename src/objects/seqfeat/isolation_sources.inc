@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  NCBI developers
+ * Author:  NCBI developers  
  *
  * File Description:
  *   Built-in copy of isolation_sources.txt.
