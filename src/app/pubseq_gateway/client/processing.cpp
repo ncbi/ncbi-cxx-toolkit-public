@@ -509,9 +509,11 @@ int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string
             auto method = json_obj["method"].GetValue().GetString();
             auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
             auto user_context = make_shared<SMetrics>();
-            auto request = CreateRequest(method, user_context, params.GetObject());
-            requests.emplace_back(move(request));
-            if (requests.size() % 2000 == 0) cerr << '.';
+
+            if (auto request = CreateRequest(method, move(user_context), params.GetObject())) {
+                requests.emplace_back(move(request));
+                if (requests.size() % 2000 == 0) cerr << '.';
+            }
         }
     }
 
@@ -654,8 +656,10 @@ void CProcessing::ReadCommands(bool echo)
             }
 
             auto user_context = make_shared<SUserContext>(id, m_RequestsCounter);
-            auto request = CreateRequest(method, move(user_context), params.GetObject());
-            m_Sender.Add(move(request));
+
+            if (auto request = CreateRequest(method, move(user_context), params.GetObject())) {
+                m_Sender.Add(move(request));
+            }
         }
     }
 }
