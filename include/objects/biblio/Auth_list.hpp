@@ -58,7 +58,7 @@ class NCBI_BIBLIO_EXPORT CAuth_list
     typedef CAuth_list_Base Tparent;
 public:
     // constructor
-    CAuth_list(void);
+	CAuth_list(void) {};
     // destructor
     ~CAuth_list(void);
 
@@ -76,17 +76,6 @@ private:
     CAuth_list(const CAuth_list& value);
     CAuth_list& operator=(const CAuth_list& value);
 };
-
-/////////////////// CAuth_list inline methods
-
-// constructor
-inline
-CAuth_list::CAuth_list(void)
-{
-}
-
-
-/////////////////// end of CAuth_list inline methods
 
 
 END_objects_SCOPE // namespace ncbi::objects::

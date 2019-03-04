@@ -42,6 +42,7 @@
 
 // generated includes
 #include <objects/biblio/Author_.hpp>
+#include <objects/biblio/Auth_list.hpp>
 
 #include <objects/biblio/citation_base.hpp>
 
@@ -51,7 +52,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CAuth_list;
 class CPerson_id;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ class NCBI_BIBLIO_EXPORT CAuthor : public CAuthor_Base, public ICitationBase
     typedef CAuthor_Base Tparent;
 public:
     // constructor
-    CAuthor(void);
+	CAuthor(void) {};
     // destructor
     ~CAuthor(void);
 
@@ -95,17 +95,6 @@ private:
 
     friend class CAuth_list;
 };
-
-/////////////////// CAuthor inline methods
-
-// constructor
-inline
-CAuthor::CAuthor(void)
-{
-}
-
-
-/////////////////// end of CAuthor inline methods
 
 
 END_objects_SCOPE // namespace ncbi::objects::
