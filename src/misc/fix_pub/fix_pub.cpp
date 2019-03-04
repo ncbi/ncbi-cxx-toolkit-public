@@ -53,7 +53,8 @@
 
 #include <objtools/cleanup/cleanup_pub.hpp>
 
-#include "fix_pub.hpp"
+#include <misc/fix_pub/fix_pub.hpp>
+
 #include "fix_pub_aux.hpp"
 
 #include <objects/mla/Title_msg.hpp>
@@ -183,7 +184,7 @@ void MedlineToISO(CCit_art& cit_art)
             else if (auths.GetNames().IsStd()) {
                 for (auto& auth : auths.SetNames().SetStd()) {
                     if (auth->IsSetName() && auth->GetName().IsMl()) {
-                        auth->SetName().Assign(*ConvertMltoSTD(auth->GetName().GetMl()));
+                        auth = ConvertMltoSTD(auth->GetName().GetMl());
                     }
                 }
             }

@@ -1,5 +1,5 @@
-#ifndef OBJECTS_GENERAL___CLEANUP_FIX_PUB__HPP
-#define OBJECTS_GENERAL___CLEANUP_FIX_PUB__HPP
+#ifndef MISC_FIX_PUB__HPP
+#define MISC_FIX_PUB__HPP
 
 /* $Id$
  * ===========================================================================
@@ -74,4 +74,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  // OBJECTS_GENERAL___CLEANUP_FIX_PUB__HPP
+#endif  // MISC_FIX_PUB__HPP

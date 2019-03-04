@@ -46,11 +46,15 @@
 #include <objects/biblio/Cit_proc.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Title.hpp>
+#include <objects/biblio/ArticleIdSet.hpp>
+#include <objects/biblio/ArticleId.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/medline/Medline_entry.hpp>
+#include <objects/general/Dbtag.hpp>
+
 
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -185,4 +189,111 @@ BOOST_AUTO_TEST_CASE(Test_PropagateInPress)
     fix_pub::PropagateInPress(false, art);
 
     BOOST_CHECK_EQUAL(orig_art.Equals(art), true);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MergeNonPubmedPubIds)
+{
+    CCit_art orig_art,
+             modified_art,
+             old_art;
+
+    fix_pub::MergeNonPubmedPubIds(old_art, modified_art);
+    BOOST_CHECK_EQUAL(orig_art.Equals(modified_art), true);
+
+    CRef<CArticleId> art_id(new CArticleId);
+
+    // PMID will not be merged
+    static const int PMID = 2626;
+    art_id->SetPubmed().Set(PMID);
+    old_art.SetIds().Set().push_back(art_id);
+
+    fix_pub::MergeNonPubmedPubIds(old_art, modified_art);
+    BOOST_CHECK_EQUAL(orig_art.Equals(modified_art), true);
+
+    // Doi ID should be merged
+    static const string DOI_ID = "2727";
+    art_id.Reset(new CArticleId);
+    art_id->SetDoi().Set(DOI_ID);
+    old_art.SetIds().Set().push_back(art_id);
+
+    fix_pub::MergeNonPubmedPubIds(old_art, modified_art);
+    BOOST_CHECK_EQUAL(orig_art.Equals(modified_art), false);
+
+    orig_art.SetIds().Set().push_front(art_id);
+    BOOST_CHECK_EQUAL(orig_art.Equals(modified_art), true);
+
+    // Other ID should be merged
+    static const string TEST_DB = "Test DB";
+    art_id.Reset(new CArticleId);
+    art_id->SetOther().SetDb(TEST_DB);
+    old_art.SetIds().Set().push_back(art_id);
+
+    fix_pub::MergeNonPubmedPubIds(old_art, modified_art);
+    BOOST_CHECK_EQUAL(orig_art.Equals(modified_art), false);
+
+    orig_art.SetIds().Set().push_front(art_id);
+    BOOST_CHECK_EQUAL(orig_art.Equals(modified_art), true);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MedlineToISO)
+{
+    CCit_art art,
+             expected_art;
+
+    fix_pub::MedlineToISO(art);
+    BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
+
+    // ML list of authors
+    art.SetAuthors().SetNames().SetMl().push_back("Doe J");
+    art.SetAuthors().SetNames().SetMl().push_back("Author S");
+
+    fix_pub::MedlineToISO(art);
+
+    CRef<CAuthor> author(new CAuthor);
+    author->SetName().SetName().SetLast("Doe");
+    author->SetName().SetName().SetInitials("J.");
+    expected_art.SetAuthors().SetNames().SetStd().push_back(author);
+
+    author.Reset(new CAuthor);
+    author->SetName().SetName().SetLast("Author");
+    author->SetName().SetName().SetInitials("S.");
+    expected_art.SetAuthors().SetNames().SetStd().push_back(author);
+
+    BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
+
+
+    // Std list of authors with ML format of authors' names
+    art.ResetAuthors();
+
+    author.Reset(new CAuthor);
+    author->SetName().SetMl("Doe J");
+    art.SetAuthors().SetNames().SetStd().push_back(author);
+
+    author.Reset(new CAuthor);
+    author->SetName().SetMl("Author S");
+    art.SetAuthors().SetNames().SetStd().push_back(author);
+
+    fix_pub::MedlineToISO(art);
+    BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
+
+    // Cit_art is from a journal
+    CRef<CTitle::C_E> title(new CTitle::C_E);
+    title->SetName("Nature");
+    art.SetFrom().SetJournal().SetTitle().Set().push_back(title);
+
+    title.Reset(new CTitle::C_E);
+    title->SetIso_jta("Nature");
+    expected_art.SetFrom().SetJournal().SetTitle().Set().push_back(title);
+
+    fix_pub::MedlineToISO(art);
+    BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
+
+
+    // MedlineToISO also removes the language if it is "Eng"
+    art.SetFrom().SetJournal().SetImp().SetLanguage("Eng");
+    fix_pub::MedlineToISO(art);
+
+    BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
 }
