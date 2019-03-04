@@ -1,3 +1,13 @@
+Release 1.1.10
+
+    * UV-1.25.0, DATASTAX-2.11.0, H2O-2.2.5
+    * PSG -- also send the data blob's SAT with the NA metainfo (JIRA:
+      CXX-10491)
+    * PSG: incorrect request counter in get_na requests (JIRA: CXX-10494)
+    * PSG core dump in LMDB cache lookup (JIRA: CXX-10510)
+    * PSG -- make sure to catch all exceptions (JIRA: CXX-10517)
+    * PSG - always provide "Content-Type" HTTP header (JIRA: CXX-10518)
+
 Release 1.1.2 (2019-02-12)
 
     * PSG -- to accumulate smaller responses (RESOLVE, GET_NA) data, send it in
