@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-static int max_allowed_VJ_distance_with_D = 150;
+static int max_allowed_VJ_distance_with_D = 225;
 static int max_allowed_VJ_distance_without_D = 50;
 static int max_allowed_VD_distance = 120;
 static int extend_length = 30;
