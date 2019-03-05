@@ -3798,6 +3798,233 @@ s_ProcessAlignFileRawByLengthPattern (
     delete token_list;
 }
 
+
+static 
+bool s_IsClustalConservationLine(const string& line, 
+                                 const int seqStartOffset,
+                                 const int seqStopOffset)
+{
+    const auto first_match_pos = line.find_first_of(":.*");
+    if (first_match_pos < seqStartOffset ||
+        first_match_pos > seqStopOffset) {
+        return false;
+    }
+
+    const auto last_match_pos = line.find_last_of(":.*");
+    if (last_match_pos < seqStartOffset ||
+        last_match_pos > seqStopOffset) {
+        return false;
+    }
+   
+
+    return false;
+}
+
+static void 
+sProcessAlignmentFileAsClustal(
+        TAlignRawFilePtr afrp)
+{
+
+
+    int cumulative_length = 0;
+    int num_sequences = 0;
+    bool firstBlock = false;
+    bool inBlock = false;
+
+    int  blockCount = 0;
+    int  numSeqs = 0;
+    int  seqCount = 0;
+    vector<string> seqIds;
+    vector<vector<TLineInfoPtr>> sequences;
+
+
+
+    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
+        if (!linePtr->data || linePtr->data[0] == 0) {
+            continue;
+        }
+
+        string line(linePtr->data);
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            if (inBlock) {
+                if (blockCount == 1) {
+                    numSeqs = seqCount;
+                }
+                seqCount = 0;
+                inBlock = false;
+            }
+            continue;
+        }
+
+        int seqStartOffset = 61;
+        int seqStopOffset = -1;
+        // Search for end of block
+        vector<string> tokens;
+        NStr::Split(line, " \t", tokens, 0);
+        const auto num_tokens = tokens.size();
+        
+        if (s_IsClustalConservationLine(line, seqStartOffset, seqStopOffset)) {
+            if (!inBlock) {
+                // Report an error.
+                // Conservation line
+                return;
+            }
+            if (blockCount == 1) {
+                numSeqs = seqCount;
+            }
+            seqCount = 0;
+            inBlock = false;
+            continue;
+        }
+
+        if (num_tokens == 3) {
+            const auto length = NStr::StringToInt(tokens[2], NStr::fConvErr_NoThrow);
+            if (!length) { 
+                // Report an error
+                return;
+            }
+            if (!inBlock) {
+                ++blockCount;
+                inBlock = true;
+            }
+            ++seqCount;
+            auto seqId = tokens[0];
+            if (blockCount == 1) {
+                if (find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
+                    string description = StrPrintf(
+                            "sequence \"%s\" has already appeared in this block.",
+                            seqId.c_str());
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                }
+                seqIds.push_back(seqId);
+                sequences.push_back(vector<TLineInfoPtr>());
+            }
+            else {
+                if (seqCount > numSeqs) {
+                    string description = StrPrintf(
+                        "Expected %d sequences, but finding data for for another.",
+                        numSeqs);
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                }
+
+                if (seqId != seqIds[seqCount-1]) {
+                    string description;
+                    const auto it = find(seqIds.begin(), seqIds.end(), seqId);
+                    if (it == seqIds.end()) {
+                        description = StrPrintf(
+                            "Expected %d sequences, but finding data for for another.",
+                            numSeqs);
+                    }
+                    else 
+                    if (distance(seqIds.begin(), it) < seqCount-1)
+                    {
+                        description = StrPrintf(
+                            "sequence \"%s\" has already appeared in this block.",
+                            seqId.c_str());
+                    }
+                    else
+                    {
+                        description = StrPrintf(
+                            "Finding data for sequence \"%s\" out of order.",
+                            seqId.c_str());
+                    }
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                }
+            }
+            sequences[seqCount-1].push_back(linePtr);
+            continue;
+        }
+
+        if (num_tokens == 2) {
+            if (!inBlock) {
+                ++blockCount;
+                inBlock = true;
+            }
+            ++seqCount;
+            auto seqId = tokens[0];
+            if (blockCount == 1) {
+                if (find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
+                    string description = StrPrintf(
+                            "sequence \"%s\" has already appeared in this block.",
+                            seqId.c_str());
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                } 
+                seqIds.push_back(seqId);
+                sequences.push_back(vector<TLineInfoPtr>());
+            }
+            else {
+                if (seqCount > numSeqs) {
+                    string description = StrPrintf(
+                        "Expected %d sequences, but finding data for for another.",
+                        numSeqs);
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                }
+
+                if (seqId != seqIds[seqCount-1]) {
+                    string description;
+                    const auto it = find(seqIds.begin(), seqIds.end(), seqId);
+                    if (it == seqIds.end()) {
+                        description = StrPrintf(
+                            "Expected %d sequences, but finding data for for another.",
+                            numSeqs);
+                    }
+                    else
+                    if (distance(seqIds.begin(), it) < seqCount-1)
+                    {
+                        description = StrPrintf(
+                            "sequence \"%s\" has already appeared in this block.",
+                            seqId.c_str());
+                    }
+                    else {
+                        description = StrPrintf(
+                            "Finding data for sequence \"%s\" out of order.",
+                            seqId.c_str());
+                    }
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                }
+            }
+            sequences[seqCount-1].push_back(linePtr);
+            continue;
+        }
+
+        // Invalid
+        
+        return;
+    }
+}
+
+
 static void 
 sProcessAlignmentFileAsNexus(
     TAlignRawFilePtr afrp)
@@ -3860,7 +4087,7 @@ sProcessAlignmentFileAsNexus(
                     "Unexpected \"end;\". Appending \';\' to prior command");
                 sReportNexusError(
                     linePtr->line_num, EDiagSev::eDiag_Warning,
-                    EAlnSubcode::eAlnSubcode_Nexus_IllegalDataLine,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
                     description,
                     afrp->mpErrorListener); 
                 state = EState::SKIPPING;
@@ -3885,7 +4112,7 @@ sProcessAlignmentFileAsNexus(
                     "In data line, expected seqID followed by sequence data");
                 sReportNexusError(
                     linePtr->line_num, EDiagSev::eDiag_Error,
-                    EAlnSubcode::eAlnSubcode_Nexus_IllegalDataLine,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
                     description,
                     afrp->mpErrorListener); 
                 return;
@@ -3914,7 +4141,7 @@ sProcessAlignmentFileAsNexus(
                     }
                     sReportNexusError(
                         linePtr->line_num, EDiagSev::eDiag_Error,
-                        EAlnSubcode::eAlnSubcode_Nexus_BadSequenceCount,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
                         description,
                         afrp->mpErrorListener); 
                     return; //ERROR: Sequence data out of order
@@ -3933,7 +4160,7 @@ sProcessAlignmentFileAsNexus(
                         sequenceCharCount);
                     sReportNexusError(
                         linePtr->line_num, EDiagSev::eDiag_Error,
-                        EAlnSubcode::eAlnSubcode_Nexus_BadDataCount,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
                         description,
                         afrp->mpErrorListener); 
                 }
@@ -3947,7 +4174,7 @@ sProcessAlignmentFileAsNexus(
                         dataSize);
                     sReportNexusError(
                         linePtr->line_num, EDiagSev::eDiag_Error,
-                        EAlnSubcode::eAlnSubcode_Nexus_BadDataCount,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
                         description,
                         afrp->mpErrorListener); 
                     return;
@@ -3973,7 +4200,7 @@ sProcessAlignmentFileAsNexus(
             numDeflines);
         sReportNexusError(
             -1, EDiagSev::eDiag_Error,
-            EAlnSubcode::eAlnSubcode_Nexus_InsufficientDefineInfo,
+            EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
             description,
             afrp->mpErrorListener); 
     }
@@ -3987,7 +4214,7 @@ sProcessAlignmentFileAsNexus(
             sequenceCharCount);
         sReportNexusError(
             -1, EDiagSev::eDiag_Error,
-            EAlnSubcode::eAlnSubcode_Nexus_BadDataCount,
+            EAlnSubcode::eAlnSubcode_BadDataCount,
             description,
             afrp->mpErrorListener); 
         finalPass = false;

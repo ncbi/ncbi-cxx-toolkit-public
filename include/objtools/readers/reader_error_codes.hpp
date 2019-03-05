@@ -74,12 +74,12 @@ enum EAlnSubcode
     eAlnSubcode_UnmatchedDeflines,
     eAlnSubcode_UnusedLine,
 
-    eAlnSubcode_Nexus_UnterminatedCommand = 100,
-    eAlnSubcode_Nexus_UnterminatedBlock,
-    eAlnSubcode_Nexus_BadDataCount,
-    eAlnSubcode_Nexus_BadSequenceCount,
-    eAlnSubcode_Nexus_IllegalDataLine,
-    eAlnSubcode_Nexus_InsufficientDefineInfo,
+    eAlnSubcode_UnterminatedCommand = 100,
+    eAlnSubcode_UnterminatedBlock,
+    eAlnSubcode_BadDataCount,
+    eAlnSubcode_BadSequenceCount,
+    eAlnSubcode_IllegalDataLine,
+    eAlnSubcode_InsufficientDeflineInfo,
 };
 
 
