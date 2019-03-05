@@ -823,5 +823,5 @@ int main(int argc, const char* argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif // NCBI_OS_UNIX
     // Execute main application function
-    return CTarTest().AppMain(argc, argv);
+    return CTarTest().AppMain(argc, argv, 0, eDS_User, 0);
 }
