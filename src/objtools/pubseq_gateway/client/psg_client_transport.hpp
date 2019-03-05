@@ -593,7 +593,7 @@ class io_thread
 {
 private:
     std::atomic<io_thread_state_t> m_state;
-    std::atomic_bool m_shutdown_req;
+    std::atomic_int m_shutdown_req;
     list<http2_session> m_Sessions;
     CUvLoop *m_loop;
     uv_async_t m_wake;
@@ -626,7 +626,7 @@ public:
 
     io_thread(uv_sem_t &sem, CNetService service) :
         m_state(io_thread_state_t::initialized),
-        m_shutdown_req(false),
+        m_shutdown_req(0),
         m_loop(nullptr),
         m_wake({0}),
         m_timer({0}),

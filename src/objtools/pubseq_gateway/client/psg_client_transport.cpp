@@ -1356,8 +1356,9 @@ void http2_session::purge_pending_requests(const string& error)
 io_thread::~io_thread()
 {
     if (m_thrd.joinable() && m_state > io_thread_state_t::initialized) {
-        m_shutdown_req = true;
+        m_shutdown_req++;
         uv_async_send(&m_wake);
+        m_shutdown_req++;
         m_thrd.join();
     }
 }
@@ -1469,6 +1470,9 @@ void io_thread::run()
     while (!m_shutdown_req) {
         uv_run(m_loop->Handle(), UV_RUN_DEFAULT);
     }
+
+    // Wait for the destructor to complete uv_async_send
+    while (m_shutdown_req < 2);
 
     uv_timer_stop(&m_timer);
 }
