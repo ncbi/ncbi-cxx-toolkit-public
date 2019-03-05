@@ -120,18 +120,7 @@ NCBITEST_AUTO_INIT()
 
 void CheckPropagatedLocation(const CSeq_loc& expected, const CSeq_loc& propagated)
 {
-    BOOST_CHECK_EQUAL(expected.GetInt().GetFrom(), propagated.GetInt().GetFrom());
-    BOOST_CHECK_EQUAL(expected.GetInt().GetTo(), propagated.GetInt().GetTo());
-    BOOST_CHECK_EQUAL(expected.GetInt().GetId().GetLocal().GetStr(), propagated.GetInt().GetId().GetLocal().GetStr());
-    if (expected.IsSetStrand()) {
-        BOOST_CHECK_EQUAL(expected.GetStrand(), propagated.GetStrand());
-    } else {
-        BOOST_CHECK_EQUAL(propagated.IsSetStrand(), false);
-    }
-
-    BOOST_CHECK_EQUAL(expected.IsPartialStart(eExtreme_Biological), propagated.IsPartialStart(eExtreme_Biological));
-    BOOST_CHECK_EQUAL(expected.IsPartialStop(eExtreme_Biological), propagated.IsPartialStop(eExtreme_Biological));
-
+    BOOST_CHECK_EQUAL(expected.Equals(propagated), true);
 }
 
 

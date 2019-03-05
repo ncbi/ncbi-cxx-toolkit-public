@@ -78,15 +78,14 @@ private:
     CFeaturePropagator(const CFeaturePropagator& value);
     CFeaturePropagator& operator=(const CFeaturePropagator& value);
 
-    void x_PropagateCds(CSeq_feat& feat, const CSeq_id& targetId, bool origIsPartialStart);
-    void x_CdsMapCodeBreaks(CSeq_feat& feat, const CSeq_id& targetId);
+    void x_PropagateCds(CSeq_feat& feat, bool origIsPartialStart);
+    void x_CdsMapCodeBreaks(CSeq_feat& feat);
     void x_CdsStopAtStopCodon(CSeq_feat& cds);
     void x_CdsCleanupPartials(CSeq_feat& cds, bool origIsPartialStart);
 
-    void x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetId);
+    void x_PropagatetRNA(CSeq_feat& feat);
 
-    CRef<CSeq_interval> x_MapInterval(const CSeq_interval& sourceInt, const CSeq_id& targetId);
-    CRef<CSeq_loc> x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId);
+    CRef<CSeq_loc> x_MapLocation(const CSeq_loc& sourceLoc);
     CRef<CSeq_loc> x_TruncateToStopCodon(const CSeq_loc& loc, unsigned int truncLen);
     CRef<CSeq_loc> x_ExtendToStopCodon(CSeq_feat& feat);
 

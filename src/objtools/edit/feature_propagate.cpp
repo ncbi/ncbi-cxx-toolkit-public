@@ -54,7 +54,7 @@ BEGIN_SCOPE(edit)
 CFeaturePropagator::CFeaturePropagator
 (CBioseq_Handle src, CBioseq_Handle target,
  const CSeq_align& align, 
- bool stop_at_stop, bool cleanup_partials, bool merge_abutting,
+ bool stop_at_stop, bool cleanup_partials, bool merge_abutting /* UNUSED */,
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
   :     m_Src(src), m_Target(target),
         m_Scope(m_Target.GetScope()),
@@ -64,9 +64,8 @@ CFeaturePropagator::CFeaturePropagator
         m_MaxFeatId(feat_id)
 {
     m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
-    if (merge_abutting) {
-        m_Mapper->SetMergeAll();
-    }
+    m_Mapper->SetGapRemove();
+    m_Mapper->SetMergeAll();
 }
 
 CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
@@ -80,8 +79,7 @@ CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
     }
 
     // propagate feature location
-    CConstRef<CSeq_id> pTargetId = m_Target.GetSeqId();
-    CRef<CSeq_loc> new_loc = x_MapLocation(orig_feat.GetLocation(), *pTargetId);
+    CRef<CSeq_loc> new_loc = x_MapLocation(orig_feat.GetLocation());
     if (!new_loc) {
         if (m_MessageListener) {
             string loc_label;
@@ -108,10 +106,10 @@ CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
     // depending on feature type, propagate locations in data
     switch(orig_feat.GetData().GetSubtype()) {
     case CSeqFeatData::eSubtype_cdregion:
-        x_PropagateCds(*rval, *pTargetId, origIsPartialStart);
+        x_PropagateCds(*rval, origIsPartialStart);
         break;
     case CSeqFeatData::eSubtype_tRNA:
-        x_PropagatetRNA(*rval, *pTargetId);
+        x_PropagatetRNA(*rval);
         break;      
     default:
         break;
@@ -186,106 +184,12 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
 }
 
 
-CRef<CSeq_interval> CFeaturePropagator::x_MapInterval(const CSeq_interval& sourceInt, const CSeq_id& targetId)
+CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc)
 {
-    CSeq_loc sourceLoc;
-    CSeq_interval& interval = sourceLoc.SetInt();
-    interval.SetFrom(sourceInt.GetFrom());
-    interval.SetTo(sourceInt.GetTo());
-    sourceLoc.SetId(sourceInt.GetId());
-    if (sourceInt.IsPartialStart(eExtreme_Biological)) {
-        sourceLoc.SetPartialStart(true, eExtreme_Biological);
-    }
-    if (sourceInt.IsPartialStop(eExtreme_Biological)) {
-        sourceLoc.SetPartialStop(true, eExtreme_Biological);
-    }
-    if (sourceInt.IsSetStrand()) {
-        ENa_strand strand = sourceInt.GetStrand();
-        interval.SetStrand(strand);
-    }
-    _TRACE("Source Loc: ");
-    _TRACE(MSerial_AsnText << sourceLoc);
-
-    CRef<CSeq_loc> pTargetLoc = m_Mapper->Map(sourceLoc);
-    _TRACE("Mapped loc: ");
-    _TRACE(MSerial_AsnText << *pTargetLoc);
-
-    if (!pTargetLoc->IsNull()) {
-        CRef<CSeq_interval> pTargetInt(new CSeq_interval());
-        pTargetInt->SetId().Assign(targetId);
-        CBioseq_Handle bsh = m_Scope.GetBioseqHandle(targetId);
-        pTargetInt->SetFrom(pTargetLoc->GetStart(eExtreme_Positional));
-        pTargetInt->SetTo(pTargetLoc->GetStop(eExtreme_Positional));
-
-        bool is_circular = bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular;
-        if (is_circular && pTargetInt->GetFrom() > pTargetInt->GetTo()) {
-            pTargetInt->SetFrom(pTargetLoc->GetStop(eExtreme_Biological));
-            pTargetInt->SetTo(pTargetLoc->GetStart(eExtreme_Biological));	
-        }
-
-        if (pTargetLoc->IsPartialStart(eExtreme_Biological)) {
-            pTargetInt->SetPartialStart(true,eExtreme_Biological);
-        }
-        if (pTargetLoc->IsPartialStop(eExtreme_Biological)) {
-            pTargetInt->SetPartialStop(true,eExtreme_Biological);
-        }
-        if (pTargetLoc->IsSetStrand()) {
-            pTargetInt->SetStrand(pTargetLoc->GetStrand());
-        }
-        return pTargetInt;
-    }
-
-    return CRef<CSeq_interval>();
-}
-
-CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
-{
-    CRef<CSeq_loc> pTargetLoc(new CSeq_loc);
-    switch(sourceLoc.Which()) {
-        default: {
-            pTargetLoc = m_Mapper->Map(sourceLoc);
-            return pTargetLoc;
-        }
-        case CSeq_loc::e_Int: {
-            CRef<CSeq_interval> pTargetInt = x_MapInterval(sourceLoc.GetInt(), targetId);
-            if (pTargetInt) {
-                pTargetLoc->SetInt(*pTargetInt);
-                return pTargetLoc;
-            }
-            break;
-        }
-        case CSeq_loc::e_Packed_int: {
-            CPacked_seqint& targetInts = pTargetLoc->SetPacked_int();
-            const CPacked_seqint::Tdata& intervals = sourceLoc.GetPacked_int().Get();
-            CPacked_seqint::Tdata::const_iterator cit = intervals.begin();
-            bool subloc_added = false;
-            for ( ; cit != intervals.end(); ++cit ) {
-                CRef<CSeq_interval> sub_interval = x_MapInterval(**cit, targetId);
-                if (sub_interval) {
-                    targetInts.AddInterval(*sub_interval);
-                    subloc_added = true;
-                }
-            }
-            if (subloc_added) return pTargetLoc;
-            break;
-        }
-        case CSeq_loc::e_Mix: {
-            CSeq_loc_mix& targetMix = pTargetLoc->SetMix(); 
-            const CSeq_loc_mix::Tdata& parts = sourceLoc.GetMix().Get();
-            CSeq_loc_mix::Tdata::const_iterator cit = parts.begin();
-            bool subloc_added = false;
-            for ( ; cit != parts.end(); ++cit) {
-                CRef<CSeq_loc> target_loc = x_MapLocation(**cit, targetId);
-                if (target_loc) {
-                    targetMix.AddSeqLoc(*target_loc);
-                    subloc_added = true;
-                }
-            }
-            if (subloc_added) return pTargetLoc;
-            break;
-        }
-    }
-    return CRef<CSeq_loc>();
+    CRef<CSeq_loc> loc =  m_Mapper->Map(sourceLoc);	
+    if (loc && loc->IsNull())
+        loc.Reset();
+    return loc;
 }
 
 CRef<CSeq_loc> CFeaturePropagator::x_TruncateToStopCodon(const CSeq_loc& loc, unsigned int truncLen)
@@ -444,12 +348,12 @@ CRef<CSeq_loc> CFeaturePropagator::x_ExtendToStopCodon (CSeq_feat& feat)
 }
 
 
-void CFeaturePropagator::x_PropagateCds(CSeq_feat& feat, const CSeq_id& targetId, bool origIsPartialStart)
+void CFeaturePropagator::x_PropagateCds(CSeq_feat& feat, bool origIsPartialStart)
 {
     bool ambiguous = false;
     feat.SetData().SetCdregion().SetFrame(CSeqTranslator::FindBestFrame(feat, m_Scope, ambiguous));
 
-    x_CdsMapCodeBreaks(feat, targetId);
+    x_CdsMapCodeBreaks(feat);
     if (m_CdsStopAtStopCodon) {
         x_CdsStopAtStopCodon(feat);
     }
@@ -459,7 +363,7 @@ void CFeaturePropagator::x_PropagateCds(CSeq_feat& feat, const CSeq_id& targetId
 }
 
 
-void CFeaturePropagator::x_CdsMapCodeBreaks(CSeq_feat& feat, const CSeq_id& targetId)
+void CFeaturePropagator::x_CdsMapCodeBreaks(CSeq_feat& feat)
 {
     CCdregion& cds = feat.SetData().SetCdregion();
     if (cds.IsSetCode_break()) {
@@ -468,7 +372,7 @@ void CFeaturePropagator::x_CdsMapCodeBreaks(CSeq_feat& feat, const CSeq_id& targ
             bool remove = false;
             if ((*it)->IsSetLoc()) {
                 const CSeq_loc& codebreak = (*it)->GetLoc(); 
-                CRef<CSeq_loc> new_codebreak = x_MapLocation(codebreak, targetId);
+                CRef<CSeq_loc> new_codebreak = x_MapLocation(codebreak);
                 if (new_codebreak) {
                     (*it)->SetLoc(*new_codebreak);
                 } else {
@@ -589,7 +493,7 @@ void CFeaturePropagator::x_CdsStopAtStopCodon(CSeq_feat& cds)
 }
 
 
-void CFeaturePropagator::x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetId)
+void CFeaturePropagator::x_PropagatetRNA(CSeq_feat& feat)
 {
     if (feat.GetData().GetRna().IsSetExt()) {
         const CRNA_ref::C_Ext& ext = feat.GetData().GetRna().GetExt();
@@ -597,7 +501,7 @@ void CFeaturePropagator::x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetI
             const CTrna_ext& trna_ext = ext.GetTRNA();
             if (trna_ext.IsSetAnticodon()) {
                 const CSeq_loc& anticodon = trna_ext.GetAnticodon();
-                CRef<CSeq_loc> new_anticodon = x_MapLocation(anticodon, targetId);
+                CRef<CSeq_loc> new_anticodon = x_MapLocation(anticodon);
                 if (new_anticodon) {
                     feat.SetData().SetRna().SetExt().SetTRNA().SetAnticodon(*new_anticodon);
                 } else {
