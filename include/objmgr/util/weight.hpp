@@ -57,8 +57,9 @@ enum FGetProteinWeight {
 };
 typedef int TGetProteinWeight;
 
-/// Handles the standard 20 amino acids and Sec; treats Asx as Asp and
-/// Glx as Glu; throws CObjmgrUtilException on anything else.
+/// Handles the standard 20 amino acids and Sec and Pyl; treats Asx as Asp,
+/// Glx as Glu, and Xle as Leu; ignores Xxx, dash (gap), and asterisk (stop);
+/// throws CObjmgrUtilException on anything else.
 ///
 /// NOTE: The molecular weight excludes a leading 'M' on proteins with a known
 /// valid start, provided that the location is omitted or the location begins
@@ -75,7 +76,7 @@ double GetProteinWeight(const CSeq_feat& prot_feat,
                         TGetProteinWeight opts = 0 );
 
 NCBI_XOBJUTIL_EXPORT
-double GetProteinWeight(const string& iupac_aa_sequence);
+double GetProteinWeight(const string& ncbieaa_sequence);
 
 typedef map<CConstRef<CSeq_loc>, double> TWeights;
 

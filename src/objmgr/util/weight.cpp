@@ -57,21 +57,21 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-// By NCBIstdaa:
-// A B C D E F G H  I  K  L M N P Q  R S T V  W X Y Z U *  O  J
-static const int kNumC[] =
-{0,3,4,3,4,5,9,2,6, 6, 6, 6,5,4,5,5, 6,3,4,5,11,0,9,5,3,0,12, 6};
-static const int kNumH[] =
-{0,5,5,5,5,7,9,3,7,11,12,11,9,6,7,8,12,5,7,9,10,0,9,7,5,0,19,11};
-static const int kNumN[] =
-{0,1,1,1,1,1,1,1,3, 1, 2, 1,1,2,1,2, 4,1,1,1, 2,0,1,1,1,0, 3, 1};
-static const int kNumO[] =
-{0,1,3,1,3,3,1,1,1, 1, 1, 1,1,2,1,2, 1,2,2,1, 1,0,2,3,1,0, 2, 1};
-static const int kNumS[] =
-{0,0,0,1,0,0,0,0,0, 0, 0, 0,1,0,0,0, 0,0,0,0, 0,0,0,0,0,0, 0, 0};
-static const int kNumSe[] =
-{0,0,0,0,0,0,0,0,0, 0, 0, 0,0,0,0,0, 0,0,0,0, 0,0,0,0,1,0, 0, 0};
-static const size_t kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
+
+// By NCBIeaa:
+// A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z
+static const int kNumC[26] =
+{  3,  4,  3,  4,  5,  9,  2,  6,  6,  6,  6,  6,  5,  4, 12,  5,  5,  6,  3,  4,  3,  5, 11,  0,  9,  5};
+static const int kNumH[26] =
+{  5,  5,  5,  5,  7,  9,  3,  7, 11, 11, 12, 11,  9,  6, 19,  7,  8, 12,  5,  7,  5,  9, 10,  0,  9,  7};
+static const int kNumN[26] =
+{  1,  1,  1,  1,  1,  1,  1,  3,  1,  1,  2,  1,  1,  2,  3,  1,  2,  4,  1,  1,  1,  1,  2,  0,  1,  1};
+static const int kNumO[26] =
+{  1,  3,  1,  3,  3,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  1,  2,  1,  2,  2,  1,  1,  1,  0,  2,  3};
+static const int kNumS[26] =
+{  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0};
+static const int kNumSe[26] =
+{  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0};
 
 
 template <class Iterator>
@@ -80,10 +80,14 @@ double s_GetProteinWeight(Iterator start, Iterator end)
     // Start with water (H2O)
     size_t c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
-    Iterator p(start);
     for ( ;  start != end;  ++start) {
-        unsigned char res = *start;
-        if ( res > kMaxRes  ||  !kNumC[res] ) {
+        unsigned char ch = *start;
+        int res = 0;
+        if ( ch >= 'a' && ch <= 'z' ) {
+            res = ch - 'a';
+        } else if ( ch >= 'A' && ch <= 'Z' ) {
+            res = ch - 'A';
+        } else if ( ch != '-' && ch != '*' ) {
             NCBI_THROW(CObjmgrUtilException, eBadResidue,
                 "GetProteinWeight: bad residue");
         }
@@ -94,8 +98,13 @@ double s_GetProteinWeight(Iterator start, Iterator end)
         s  += kNumS [res];
         se += kNumSe[res];
     }
-    return 12.01115 * c + 1.0079 * h + 14.0067 * n + 15.9994 * o + 32.064 * s
-        + 78.96 * se;
+
+    return 12.01115 * c +
+            1.0079  * h +
+           14.0067  * n +
+           15.9994  * o +
+           32.064   * s +
+           78.96    * se;
 }
 
 
@@ -111,7 +120,7 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
     const CSeq_loc& loc =
         (location ? *location : feat.GetLocation());
     CSeqVector v(loc, scope);
-    v.SetCoding(CSeq_data::e_Ncbistdaa);
+    v.SetCoding(CSeq_data::e_Ncbieaa);
 
     CSeqVector_CI vit(v);
 
@@ -174,7 +183,7 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
     }
 
     if( (opts & fGetProteinWeight_ForceInitialMetTrim) != 0 ) {
-        if ( vit.GetBufferSize() > 1 && *vit == ('M' - 'A')) {
+        if ( vit.GetBufferSize() > 1 && *vit == 'M') {
             ++vit;
         }
     } else {
@@ -189,7 +198,7 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
         default:
             /// for complete molecules, we skip the leading 'M' since this is
             /// cleaved as a post-transcriptional modification
-            if ( vit.GetBufferSize() > 1 && *vit == ('M' - 'A')) {
+            if ( vit.GetBufferSize() > 1 && *vit == 'M') {
                 ++vit;
             }
             break;
@@ -206,7 +215,7 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location,
     CSeqVector v = (location
                     ? CSeqVector(*location, handle.GetScope())
                     : handle.GetSeqVector());
-    v.SetCoding(CSeq_data::e_Ncbistdaa);
+    v.SetCoding(CSeq_data::e_Ncbieaa);
 
     CSeqVector_CI vit(v);
 
@@ -231,7 +240,7 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location,
     }
 
     if( (opts & fGetProteinWeight_ForceInitialMetTrim) != 0 ) {
-        if (*vit == ('M' - 'A')) {
+        if (*vit == 'M') {
             ++vit;
         }
     } else {
@@ -246,7 +255,7 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location,
         default:
             /// for complete molecules, we skip the leading 'M' since this is
             /// cleaved as a post-transcriptional modification
-            if (*vit == ('M' - 'A')) {
+            if (*vit == 'M') {
                 ++vit;
             }
             break;
@@ -257,19 +266,10 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location,
 }
 
 
-double GetProteinWeight(const string& iupac_aa_sequence)
+double GetProteinWeight(const string& ncbieaa_sequence)
 {
-    string ncbistdaa;
-    SIZE_TYPE len =
-        CSeqConvert::Convert(iupac_aa_sequence, CSeqUtil::e_Iupacaa,
-                             0, TSeqPos(iupac_aa_sequence.size()),
-                             ncbistdaa, CSeqUtil::e_Ncbistdaa);
-    if (len < iupac_aa_sequence.size()) {
-        NCBI_THROW(CException, eUnknown,
-                   "failed to convert IUPACaa sequence to NCBIstdaa");
-    }
-    return s_GetProteinWeight(ncbistdaa.begin(),
-                              ncbistdaa.end());
+    return s_GetProteinWeight(ncbieaa_sequence.begin(),
+                              ncbieaa_sequence.end());
 }
 
 
@@ -334,6 +334,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
 
     if (locations.empty()) {
         CSeqVector v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        v.SetCoding(CSeq_data::e_Ncbieaa);
         CRef<CSeq_loc> whole(new CSeq_loc);
         if ( signal.NotEmpty() ) {
             // Expects to see at beginning; is this assumption safe?
