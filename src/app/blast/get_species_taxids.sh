@@ -56,6 +56,14 @@ error_exit() {
     exit $exit_code;
 }
 
+check_deps() {
+    for app in esearch efetch esummary; do 
+        command -v $app >/dev/null 2>&1 || error_exit "Cannot find Entrez EDirect $app tool, please see installation in https://www.ncbi.nlm.nih.gov/books/NBK179288/"
+    done
+}
+
+check_deps
+
 TAXID=""
 NAME=""
 while getopts  "ht::n::o::" OPT; do
