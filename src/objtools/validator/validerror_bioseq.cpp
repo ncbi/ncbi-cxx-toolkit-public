@@ -2210,6 +2210,23 @@ bool CValidError_bioseq::IsWGS(CBioseq_Handle bsh)
 }
 
 
+bool CValidError_bioseq::IsWGS(const CSeq_entry& entry)
+{
+    bool rval = false;
+    if (entry.IsSeq()) {
+        rval = IsWGS(entry.GetSeq());
+    } else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        for (auto it : entry.GetSet().GetSeq_set()) {
+            if (IsWGS(*it)) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
 bool CValidError_bioseq::IsWGSAccession(const CSeq_id& id)
 {
     const CTextseq_id* txt = id.GetTextseq_Id();

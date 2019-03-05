@@ -135,6 +135,7 @@ public:
     static bool IsWGSMaster(const CSeq_entry& entry);
     static bool IsWGS(const CBioseq& seq);
     static bool IsWGS(CBioseq_Handle bsh);
+    static bool IsWGS(const CSeq_entry& entry);
     static bool IsWGSAccession(const CSeq_id& id);
     static bool IsWGSAccession(const CBioseq& seq);
     static bool IsTSAAccession(const CSeq_id& id);

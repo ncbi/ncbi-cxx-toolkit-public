@@ -38,6 +38,7 @@
 
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
+#include <objtools/validator/validerror_bioseq.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
@@ -663,7 +664,8 @@ const CSeq_entry *ctx)
         }
     }
 
-    if (IsIndexerVersion() && chromosome != NULL && (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_chromosome)) {
+    if (IsIndexerVersion() && ctx != NULL && CValidError_bioseq::IsWGS(*ctx) &&
+        chromosome != NULL && (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_chromosome)) {
         // exception for /map="unlocalized"
         bool suppress = false;
         for (auto it : bsrc.GetSubtype()) {
