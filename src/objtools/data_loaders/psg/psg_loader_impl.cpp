@@ -43,6 +43,7 @@
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/split_parser.hpp>
 #include <objmgr/data_loader_factory.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <objtools/data_loaders/psg/impl/psg_loader_impl.hpp>
 #include <util/compress/compress.hpp>
 #include <util/compress/stream.hpp>
@@ -499,6 +500,53 @@ void CPSGDataLoader_Impl::LoadChunk(const CPsgBlobId& blob_id, CTSE_Chunk_Info& 
     *in >> *chunk;
     CSplitParser::Load(chunk_info, *chunk);
     chunk_info.SetLoaded();
+}
+
+
+CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
+    CDataSource* data_source,
+    const CSeq_id_Handle& idh,
+    const SAnnotSelector* sel,
+    CDataLoader::TProcessedNAs* processed_nas)
+{
+    CDataLoader::TTSE_LockSet locks;
+    if (!data_source || !sel || !sel->IsIncludedAnyNamedAnnotAccession()) {
+        return move(locks);
+    }
+    const SAnnotSelector::TNamedAnnotAccessions& accs = sel->GetNamedAnnotAccessions();
+    CPSG_BioId bio_id = x_GetBioId(idh);
+    CPSG_Request_NamedAnnotInfo::TAnnotNames annot_names;
+    ITERATE(SAnnotSelector::TNamedAnnotAccessions, it, accs) {
+        annot_names.push_back(it->first);
+    }
+    auto context = make_shared<CPsgClientContext>();
+    auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), annot_names, context);
+    auto reply = x_ProcessRequest(request);
+
+    if (!x_CheckStatus(reply)) {
+        return move(locks);
+    }
+
+    for (;;) {
+        auto reply_item = reply->GetNextItem(ZERO_DEADLINE);
+        if (!reply_item) continue;
+        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
+            break;
+        }
+        if (!x_CheckStatus(reply_item)) {
+            return move(locks);
+        }
+
+        if (reply_item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
+            shared_ptr<CPSG_NamedAnnotInfo> info = static_pointer_cast<CPSG_NamedAnnotInfo>(reply_item);
+            CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
+            auto blob_id = info->GetBlobId();
+            auto tse_lock = GetBlobById(data_source, CPsgBlobId(blob_id.Get()));
+            if (tse_lock.IsLoaded()) locks.insert(tse_lock);
+        }
+    }
+
+    return move(locks);
 }
 
 

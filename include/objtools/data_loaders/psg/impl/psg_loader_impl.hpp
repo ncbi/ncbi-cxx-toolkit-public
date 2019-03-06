@@ -127,6 +127,11 @@ public:
                               const CPsgBlobId& blob_id);
     void LoadChunk(const CPsgBlobId& blob_id, CTSE_Chunk_Info& chunk_info);
 
+    CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source, 
+                                                const CSeq_id_Handle& idh,
+                                                const SAnnotSelector* sel,
+                                                CDataLoader::TProcessedNAs* processed_nas);
+
     void DropTSE(const CPsgBlobId& blob_id);
 
 private:

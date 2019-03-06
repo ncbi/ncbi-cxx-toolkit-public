@@ -206,38 +206,35 @@ CPSGDataLoader::GetRecords(const CSeq_id_Handle& idh,
 }
 
 
-CDataLoader::TTSE_LockSet
-CPSGDataLoader::GetExternalRecords(const CBioseq_Info& /*seq*/)
+CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+    const SAnnotSelector* sel,
+    TProcessedNAs* processed_nas)
 {
-    // PSG loader doesn't provide external annotations ???
-    return TTSE_LockSet();
+    return m_Impl->GetAnnotRecordsNA(GetDataSource(), idh, sel, processed_nas);
 }
 
 
-CDataLoader::TTSE_LockSet
-CPSGDataLoader::GetExternalAnnotRecords(const CSeq_id_Handle& /*idh*/,
-                                        const SAnnotSelector* /*sel*/)
+CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
+    const SAnnotSelector* sel,
+    TProcessedNAs* processed_nas)
 {
-    // PSG loader doesn't provide external annotations ???
-    return TTSE_LockSet();
+    return m_Impl->GetAnnotRecordsNA(GetDataSource(), idh, sel, processed_nas);
 }
 
 
-CDataLoader::TTSE_LockSet
-CPSGDataLoader::GetExternalAnnotRecords(const CBioseq_Info& /*bioseq*/,
-                                        const SAnnotSelector* /*sel*/)
+CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
+    const SAnnotSelector* sel,
+    TProcessedNAs* processed_nas)
 {
-    // PSG loader doesn't provide external annotations ???
-    return TTSE_LockSet();
-}
-
-
-CDataLoader::TTSE_LockSet
-CPSGDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& /*idh*/,
-                                      const SAnnotSelector* /*sel*/)
-{
-    // PSG loader doesn't provide orphan annotations ???
-    return TTSE_LockSet();
+    TTSE_LockSet ret;
+    ITERATE(CBioseq_Info::TId, it, bioseq.GetId()) {
+        TTSE_LockSet ret2 = m_Impl->GetAnnotRecordsNA(GetDataSource(), *it, sel, processed_nas);
+        if (!ret2.empty()) {
+            ret.swap(ret2);
+            break;
+        }
+    }
+    return ret;
 }
 
 

@@ -79,13 +79,16 @@ public:
     TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
 
     TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
-    TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq) override;
-    TTSE_LockSet GetExternalAnnotRecords(const CSeq_id_Handle& idh,
-                                         const SAnnotSelector* sel) override;
-    TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
-                                         const SAnnotSelector* sel) override;
-    TTSE_LockSet GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
-                                       const SAnnotSelector* sel) override;
+
+    TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+        const SAnnotSelector* sel,
+        TProcessedNAs* processed_nas) override;
+    TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
+        const SAnnotSelector* sel,
+        TProcessedNAs* processed_nas) override;
+    TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
+        const SAnnotSelector* sel,
+        TProcessedNAs* processed_nas) override;
 
     void GetChunk(TChunk chunk) override;
     void GetChunks(const TChunkSet& chunks) override;
