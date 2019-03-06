@@ -35,7 +35,14 @@ USING_NCBI_SCOPE;
 
 CCassandraSegscanPlan::CCassandraSegscanPlan() :
     m_Segment({0, 1})
-{}
+{
+}
+
+CCassandraSegscanPlan& CCassandraSegscanPlan::SetSegment(pair<size_t, size_t> segment)
+{
+    m_Segment = segment;
+    return *this;
+}
 
 void CCassandraSegscanPlan::Generate()
 {
