@@ -198,6 +198,348 @@ void CheckPropagatedLocations(CSeq_entry_Handle seh, vector<CRef<CSeq_loc> > exp
     }
 }
 
+/*
+Seq-entry ::= set {
+  class eco-set,
+  descr {
+    title "popset title"
+  },
+  seq-set {
+    seq {
+      id {
+        local str "good1"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        source {
+          org {
+            taxname "Sebaea microphylla",
+            db {
+              {
+                db "taxon",
+                tag id 592768
+              }
+            },
+            orgname {
+              lineage "some lineage"
+            }
+          },
+          subtype {
+            {
+              subtype chromosome,
+              name "1"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 1
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Last",
+                      first "First",
+                      middle "M"
+                    }
+                  }
+                },
+                affil std {
+                  affil "A Major University",
+                  sub "Maryland",
+                  country "USA"
+                }
+              },
+              date std {
+                year 2009
+              }
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 60,
+        seq-data iupacna "AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAA
+TTGGCCAA"
+      }
+    },
+    seq {
+      id {
+        local str "good2"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        source {
+          org {
+            taxname "Sebaea microphylla",
+            db {
+              {
+                db "taxon",
+                tag id 592768
+              }
+            },
+            orgname {
+              lineage "some lineage"
+            }
+          },
+          subtype {
+            {
+              subtype chromosome,
+              name "1"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 1
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Last",
+                      first "First",
+                      middle "M"
+                    }
+                  }
+                },
+                affil std {
+                  affil "A Major University",
+                  sub "Maryland",
+                  country "USA"
+                }
+              },
+              date std {
+                year 2009
+              }
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 65,
+        seq-data iupacna "AAAAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGC
+CAAAATTGGCCAA"
+      }
+    },
+    seq {
+      id {
+        local str "good3"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        source {
+          org {
+            taxname "Sebaea microphylla",
+            db {
+              {
+                db "taxon",
+                tag id 592768
+              }
+            },
+            orgname {
+              lineage "some lineage"
+            }
+          },
+          subtype {
+            {
+              subtype chromosome,
+              name "1"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 1
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Last",
+                      first "First",
+                      middle "M"
+                    }
+                  }
+                },
+                affil std {
+                  affil "A Major University",
+                  sub "Maryland",
+                  country "USA"
+                }
+              },
+              date std {
+                year 2009
+              }
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 70,
+        seq-data iupacna "AAAAAAAAAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAA
+TTGGCCAAAATTGGCCAA"
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type global,
+          dim 3,
+          segs denseg {
+            dim 3,
+            numseg 1,
+            ids {
+              local str "good1",
+              local str "good2",
+              local str "good3"
+            },
+            starts {
+              0,
+              5,
+              10
+            },
+            lens {
+              60
+            }
+          }
+        }
+      }
+    }
+  }
+}
+*/
+
+tuple<CRef<CSeq_entry>, CRef<CSeq_align>, CRef<CSeq_entry>, CRef<CSeq_entry>, CRef<CSeq_entry> >  CreateBioseqsAndAlign(size_t front_insert)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+    auto it = entry->SetSet().SetSeq_set().begin();
+    CRef<CSeq_entry> seq1 = *it;
+    ++it;
+    CRef<CSeq_entry> seq2 = *it;
+    ++it;
+    CRef<CSeq_entry> seq3 = *it;
+    return make_tuple(entry, align, seq1, seq2, seq3);
+}
+
+tuple<CBioseq_Handle, CBioseq_Handle, CBioseq_Handle, CRef<CScope> > AddBioseqsToScope(CRef<CSeq_entry> entry)
+{
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+    CBioseq_CI bi(seh);
+    CBioseq_Handle bsh1 = *bi;
+    ++bi;
+    CBioseq_Handle bsh2 = *bi;
+    ++bi;
+    CBioseq_Handle bsh3 = *bi;
+
+    return make_tuple(bsh1,bsh2,bsh3, scope);
+}
+
+CRef<CSeq_loc> CreateLoc(TSeqPos from, TSeqPos to, const CSeq_id &id, bool loc_partial5, bool loc_partial3)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    loc->SetInt().SetId().Assign(id);
+    loc->SetPartialStart(loc_partial5, eExtreme_Biological);
+    loc->SetPartialStop(loc_partial3, eExtreme_Biological);
+    return loc;
+}
+
+CRef<CSeq_feat> CreateMiscFeat(CRef<CSeq_loc> main_loc, CRef<CSeq_entry> seq)
+{
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(seq, 15);
+    misc->SetLocation().Assign(*main_loc);    
+    return misc;
+}
+
+CRef<CSeq_feat> CreateCds(CRef<CSeq_loc> main_loc, CRef<CSeq_entry> seq)
+{
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(seq, 15);
+    cds->SetData().SetCdregion();
+    cds->SetLocation().Assign(*main_loc);   
+
+    return cds;
+}
+
+void AddCodeBreak(CRef<CSeq_feat> cds, CRef<CSeq_loc> subloc)
+{
+    CRef<CCode_break> cbr(new CCode_break());
+    cbr->SetLoc().Assign(*subloc);
+    cds->SetData().SetCdregion().SetCode_break().push_back(cbr);
+}
+
+// propagate cds without code-break from seq 1 to seq 2 and 3
+void TestCds_1(bool loc_partial5, bool loc_partial3)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id1, loc_partial5, loc_partial3);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_loc1 = CreateLoc(front_insert, 15+front_insert, id2, loc_partial5, loc_partial3);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
+    CheckPropagatedLocation(*expected_loc1, new_feat1->GetLocation());
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    listener.Clear();
+
+    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_loc2 = CreateLoc(front_insert*2, 15+front_insert*2, id3, loc_partial5, loc_partial3);
+    CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetSubtype(), cds->GetData().GetSubtype());
+    CheckPropagatedLocation(*expected_loc2, new_feat2->GetLocation());
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+}
+
 
 void TestFeaturePropagation(bool loc_partial5, bool loc_partial3, bool subloc_partial5, bool subloc_partial3, bool from_first)
 {
@@ -322,46 +664,16 @@ void TestFeaturePropagation(bool loc_partial5, bool loc_partial3, bool subloc_pa
 
     CheckPropagatedLocations(seh, expected_loc, expected_subloc, from_first);
 
-#if 0
-    // temporarily commented out - there seems to be a problem with SeqLocMapper
-    // and mixed strand alignments, which we do not expect to see in BankIt 
-    // applications
-
-    // flip strands
-    align->SetSegs().SetDenseg().SetStrands().push_back(eNa_strand_plus);
-    align->SetSegs().SetDenseg().SetStrands().push_back(eNa_strand_minus);
-    align->SetSegs().SetDenseg().SetStrands().push_back(eNa_strand_minus);
-
-    if (from_first) {
-        for (size_t offset = 0; offset < 2; offset++) {
-            expected_loc[offset]->SetStrand(eNa_strand_minus);
-            expected_loc[offset]->SetInt().SetFrom(first->GetSeq().GetInst().GetLength() + ((offset + 1)  * front_insert) - 16);
-            expected_loc[offset]->SetInt().SetTo(first->GetSeq().GetInst().GetLength() + ((offset + 1)  * front_insert) - 1);
-            expected_subloc[offset]->SetStrand(eNa_strand_minus);
-            expected_subloc[offset]->SetInt().SetFrom(first->GetSeq().GetInst().GetLength() + ((offset + 1)  * front_insert) - 6);
-            expected_subloc[offset]->SetInt().SetTo(first->GetSeq().GetInst().GetLength() + ((offset + 1)  * front_insert) - 4);
-        }
-    } else {
-        expected_loc[0]->SetStrand(eNa_strand_minus);
-        expected_loc[0]->SetInt().SetFrom(54);
-        expected_loc[0]->SetInt().SetTo(59);
-        expected_loc[0]->SetPartialStart(loc_partial5, eExtreme_Biological);
-        expected_loc[0]->SetPartialStop(loc_partial3, eExtreme_Biological);
-        expected_loc[1]->SetStrand(eNa_strand_minus);
-        expected_loc[1]->SetInt().SetFrom(5);
-        expected_loc[1]->SetInt().SetTo(10);
-        expected_loc[1]->SetPartialStart(loc_partial5, eExtreme_Biological);
-        expected_loc[1]->SetPartialStop(loc_partial3, eExtreme_Biological);
-
-    }
-
-    CheckPropagatedLocations(seh, expected_loc, expected_subloc, from_first);
-#endif
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
 {
+    TestCds_1(false, false);
+    TestCds_1(false, true);
+    TestCds_1(true, false);
+    TestCds_1(true, true);
+
     bool from_first = true;
 
     TestFeaturePropagation(false, false, false, false, from_first);
