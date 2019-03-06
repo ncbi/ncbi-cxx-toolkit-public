@@ -544,8 +544,11 @@ bool s_CitArtMatch(const CCit_art& art1, const CCit_art& art2)
         if (!s_MatchBook(art1.GetFrom().GetBook(), art2.GetFrom().GetBook())) {
             return false;
         }
-    } else {
-        return false;
+    } else if (art1.GetFrom().IsProc()) {
+        // make sure proceedings match
+        if (!s_ProcMatch(art1.GetFrom().GetProc(), art2.GetFrom().GetProc())) {
+            return false;
+        }
     }
 
     if (!S_MATCH_A(art1, art2, Authors)) {
