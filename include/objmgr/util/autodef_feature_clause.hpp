@@ -311,8 +311,8 @@ public:
     virtual bool IsNoncodingProductFeat() { return false; };
     virtual bool IsSatelliteClause() { return false; };
 
-    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) { return false; }
-    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause) { return false; }
+    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base* /*parent_clause*/, bool /*gene_cluster_opp_strand*/) { return false; }
+    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base* /*parent_clause*/) { return false; }
     static bool IsPromoterAnd5UTR(const CSeq_feat& feat);
 };
 
