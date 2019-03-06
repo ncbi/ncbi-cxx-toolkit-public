@@ -178,4 +178,9 @@ void CCassandraFullscanPlan::Generate()
     }
 }
 
+CCassConnection::TTokenRanges& CCassandraFullscanPlan::GetTokenRanges()
+{
+    return m_TokenRanges;
+}
+
 END_IDBLOB_SCOPE
