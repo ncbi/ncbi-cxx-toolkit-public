@@ -32,10 +32,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
 #include <sys/time.h>
+#include <corelib/ncbitime.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
 
 BEGIN_IDBLOB_SCOPE
+USING_NCBI_SCOPE;
 
 int64_t gettime(void)
 {
@@ -44,6 +46,32 @@ int64_t gettime(void)
 
     while (gettimeofday(&tv, NULL) != 0 && cnt-- > 0) {}
     return (int64_t)tv.tv_usec + ((int64_t)tv.tv_sec) * 1000000L;
+}
+
+const string kDtFormat = "Y-M-D h:m:s.lZ";
+
+string TimeTmsToString(int64_t time) {
+    CTime t;
+    time_t time_sec = time / 1000L;
+    time_t time_msec = time % 1000L;
+    if (time_msec < 0) {
+        time_msec += 1000L;
+        --time_sec;
+    }
+    t.SetTimeT(time_sec);
+    t.SetMilliSecond(time_msec);
+    return t.AsString(kDtFormat);
+}
+
+int64_t StringToTimeTms(const string& time) {
+    try {
+        CTime t(time, kDtFormat);
+        return t.GetTimeT() * 1000L + t.MilliSecond();
+    }
+    catch (CTimeException& e) {
+    }
+    CTime t(time, "Y/M/D h:m:g o");
+    return t.GetTimeT() * 1000L + t.MilliSecond();
 }
 
 END_IDBLOB_SCOPE
