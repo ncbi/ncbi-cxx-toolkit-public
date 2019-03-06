@@ -3,7 +3,7 @@
 SRC = cass_util cass_blob_op cass_conv cass_driver cass_factory lbsm_resolver SyncObj cass_query_list blob_record \
     blob_task/insert_extended blob_task/insert blob_task/delete blob_task/load \
     blob_task/load_blob blob_task/delete_expired blob_storage bioseq_info \
-    fullscan/plan fullscan/runner fullscan/worker changelog/record changelog/writer \
+    fullscan/plan fullscan/seg_plan fullscan/runner fullscan/worker changelog/record changelog/writer \
     nannot/record nannot_task/insert nannot_task/delete nannot_task/fetch
 LIB = psg_cassandra
 
