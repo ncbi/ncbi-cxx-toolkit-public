@@ -1625,6 +1625,12 @@ sIdentifyFormat(
         *pFormat = EAlignFormat::ALNFMT_NEXUS;
         return;
     }
+
+    if (NStr::StartsWith(line, "clustalw") ||
+        NStr::StartsWith(line, "clustal w")) {
+        *pFormat = EAlignFormat::ALNFMT_CLUSTAL;
+        return;
+    }
 }
 
 /* This function determines whether or not linestring contains a line
@@ -2494,6 +2500,12 @@ sReadAlignFileRaw(
                 *pformat = EAlignFormat::ALNFMT_NEXUS;
                 break;
             }
+            if (NStr::StartsWith(lineStrLower,"clustalw") ||
+                NStr::StartsWith(lineStrLower,"clustal w")) {
+                *pformat = EAlignFormat::ALNFMT_CLUSTAL;
+                next_line->data[0] = 0;
+                break;
+            }
         }
 
         overall_line_count = next_line->line_num-1;
@@ -2610,8 +2622,8 @@ sReadAlignFileRaw(
         /* default case: some real data at last ...
         */
         last_line_was_marked_id = false;
-        /* add to length list for interleaved block search */
-        len = strcspn (linestring, " \t\r");
+            /* add to length list for interleaved block search */
+            len = strcspn (linestring, " \t\r");
         if (len > 0) {
             cp = linestring + len;
             len = strspn (cp, " \t\r");
@@ -2677,6 +2689,18 @@ sReadAlignFileRaw(
             if (inNexusSequinBlock) {
                 s_ReadDefline(next_line->data, next_line->line_num - 1, afrp);
             }
+        }
+    }
+
+    if (*pformat == EAlignFormat::ALNFMT_CLUSTAL) {
+        for (next_line = afrp->line_list->next; next_line; next_line = next_line->next) {
+            string  lineStrLower(next_line->data);
+            NStr::ToLower(lineStrLower);
+            if (lineStrLower.empty()) {
+                continue;
+            }
+
+            s_ReadDefline(next_line->data, next_line->line_num-1, afrp);
         }
     }
 
@@ -3800,24 +3824,18 @@ s_ProcessAlignFileRawByLengthPattern (
 
 
 static 
-bool s_IsClustalConservationLine(const string& line, 
-                                 const int seqStartOffset,
-                                 const int seqStopOffset)
+bool s_IsClustalConservationLine(const string& line)
 {
-    const auto first_match_pos = line.find_first_of(":.*");
-    if (first_match_pos < seqStartOffset ||
-        first_match_pos > seqStopOffset) {
-        return false;
-    }
 
-    const auto last_match_pos = line.find_last_of(":.*");
-    if (last_match_pos < seqStartOffset ||
-        last_match_pos > seqStopOffset) {
-        return false;
+    for (const auto& c : line) {
+        if (!isspace(c) &&
+            c != ':' &&
+            c != '.' &&
+            c != '*') {
+            return false;
+        }
     }
-   
-
-    return false;
+    return true;
 }
 
 static void 
@@ -3831,6 +3849,7 @@ sProcessAlignmentFileAsClustal(
     bool firstBlock = false;
     bool inBlock = false;
 
+    int  blockLineLength = 0;
     int  blockCount = 0;
     int  numSeqs = 0;
     int  seqCount = 0;
@@ -3840,6 +3859,7 @@ sProcessAlignmentFileAsClustal(
 
 
     for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
+
         if (!linePtr->data || linePtr->data[0] == 0) {
             continue;
         }
@@ -3852,19 +3872,13 @@ sProcessAlignmentFileAsClustal(
                     numSeqs = seqCount;
                 }
                 seqCount = 0;
+                blockLineLength = 0;
                 inBlock = false;
             }
             continue;
         }
 
-        int seqStartOffset = 61;
-        int seqStopOffset = -1;
-        // Search for end of block
-        vector<string> tokens;
-        NStr::Split(line, " \t", tokens, 0);
-        const auto num_tokens = tokens.size();
-        
-        if (s_IsClustalConservationLine(line, seqStartOffset, seqStopOffset)) {
+        if (s_IsClustalConservationLine(line)) {
             if (!inBlock) {
                 // Report an error.
                 // Conservation line
@@ -3874,9 +3888,15 @@ sProcessAlignmentFileAsClustal(
                 numSeqs = seqCount;
             }
             seqCount = 0;
+            blockLineLength = 0;
             inBlock = false;
             continue;
         }
+
+        // Search for end of block
+        vector<string> tokens;
+        NStr::Split(line, " \t", tokens, 0);
+        const auto num_tokens = tokens.size();
 
         if (num_tokens == 3) {
             const auto length = NStr::StringToInt(tokens[2], NStr::fConvErr_NoThrow);
@@ -3893,7 +3913,7 @@ sProcessAlignmentFileAsClustal(
             if (blockCount == 1) {
                 if (find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
                     string description = StrPrintf(
-                            "sequence \"%s\" has already appeared in this block.",
+                            "Duplicate ID: \"%s\" has already appeared in this block.",
                             seqId.c_str());
                     sReportNexusError(
                         linePtr->line_num, EDiagSev::eDiag_Error,
@@ -3930,7 +3950,7 @@ sProcessAlignmentFileAsClustal(
                     if (distance(seqIds.begin(), it) < seqCount-1)
                     {
                         description = StrPrintf(
-                            "sequence \"%s\" has already appeared in this block.",
+                            "Duplicate ID: \"%s\" has already appeared in this block.",
                             seqId.c_str());
                     }
                     else
@@ -3947,6 +3967,26 @@ sProcessAlignmentFileAsClustal(
                     return;
                 }
             }
+
+            if (seqCount==1) {
+                blockLineLength = tokens[1].size();
+            }
+            else {
+                auto currentLineLength = tokens[1].size();
+                if (currentLineLength != blockLineLength) {
+                    string description = StrPrintf(
+                        "In data line, expected %d symbols but finding %d",
+                        blockLineLength,
+                        currentLineLength);
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        description,
+                        afrp->mpErrorListener);
+                    return;
+                }
+            }
+
             sequences[seqCount-1].push_back(linePtr);
             continue;
         }
@@ -3961,7 +4001,7 @@ sProcessAlignmentFileAsClustal(
             if (blockCount == 1) {
                 if (find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
                     string description = StrPrintf(
-                            "sequence \"%s\" has already appeared in this block.",
+                            "Duplicate ID: \"%s\" has already appeared in this block.",
                             seqId.c_str());
                     sReportNexusError(
                         linePtr->line_num, EDiagSev::eDiag_Error,
@@ -3998,7 +4038,7 @@ sProcessAlignmentFileAsClustal(
                     if (distance(seqIds.begin(), it) < seqCount-1)
                     {
                         description = StrPrintf(
-                            "sequence \"%s\" has already appeared in this block.",
+                            "Duplicate ID: \"%s\" has already appeared in this block.",
                             seqId.c_str());
                     }
                     else {
@@ -4014,13 +4054,57 @@ sProcessAlignmentFileAsClustal(
                     return;
                 }
             }
+
+
+            if (seqCount==1) {
+                blockLineLength = tokens[1].size();
+            }
+            else {
+                auto currentLineLength = tokens[1].size();
+                if (currentLineLength != blockLineLength) {
+                    string description = StrPrintf(
+                        "In data line, expected %d symbols but finding %d",
+                        blockLineLength,
+                        currentLineLength);
+                    sReportNexusError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        description,
+                        afrp->mpErrorListener);
+                    return;
+                }
+            }
+
             sequences[seqCount-1].push_back(linePtr);
             continue;
         }
 
+
         // Invalid
         
         return;
+    }
+
+    for (auto idIndex=0; idIndex<numSeqs; ++idIndex) {
+        for (auto linePtr : sequences[idIndex]) {
+            string data = linePtr->data;
+            auto endOfId = data.find_first_of(" \t");
+            auto startOfData = data.find_first_not_of(" \t", endOfId);
+            auto endOfData = data.find_first_of(" \t", startOfData);
+            if (endOfData != NPOS) {
+                linePtr->data[endOfData] = '\0';
+            } 
+            afrp->sequences = s_AddAlignRawSeqById(
+                afrp->sequences,
+                seqIds[idIndex],
+                linePtr->data + startOfData,
+                linePtr->line_num,
+                linePtr->line_num,
+                startOfData);
+            // Need to remove the character count
+            // Should do this above where we check the character count
+
+        }
     }
 }
 
@@ -4656,6 +4740,10 @@ ReadAlignmentFile(
 
     if (format == EAlignFormat::ALNFMT_NEXUS) {
         sProcessAlignmentFileAsNexus(afrp);
+    }
+    else 
+    if (format == EAlignFormat::ALNFMT_CLUSTAL) {
+        sProcessAlignmentFileAsClustal(afrp);
     }
     else if (afrp->block_size > 1) {
         s_ProcessAlignRawFileByBlockOffsets (afrp);

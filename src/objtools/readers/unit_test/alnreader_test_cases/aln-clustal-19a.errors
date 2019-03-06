@@ -1,40 +1,10 @@
 Line No    : 4
-Severity   : Warning
-Code       : 2.11
-Message    : At ID 'seq1': Duplicate ID!  Sequences will be concatenated!
-
-Line No    : 6
-Severity   : Warning
-Code       : 2.11
-Message    : At ID 'seq3': Duplicate ID!  Sequences will be concatenated!
-
-Line No    : 10
 Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq1': Found unexpected ID
+Code       : 2.103
+Message    : Duplicate ID: "seq1" has already appeared in this block.
 
-Line No    : 11
-Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq3': Found unexpected ID
-
-Line No    : 12
-Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq3': Found unexpected ID
-
-Line No    : 16
-Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq1': Found unexpected ID
-
-Line No    : 17
-Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq3': Found unexpected ID
-
-Line No    : 18
-Severity   : Error
-Code       : 2.10
-Message    : At ID 'seq3': Found unexpected ID
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Code       : 2.1
+Message    : Error reading alignment: Invalid input or alphabet
 

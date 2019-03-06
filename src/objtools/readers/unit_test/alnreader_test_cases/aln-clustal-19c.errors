@@ -1,9 +1,10 @@
-Line No    : 1
-Severity   : Warning
-Code       : 2.16
-Message    : Lines 1 through 4 could not be assigned to an interleaved block
-             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
-             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
-             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
-             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
+Line No    : 3
+Severity   : Error
+Code       : 2.103
+Message    : Duplicate ID: "seq1" has already appeared in this block.
+
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Code       : 2.1
+Message    : Error reading alignment: Invalid input or alphabet
 
