@@ -2153,6 +2153,44 @@ bool CAutoDefFakePromoterClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base
     return ok_to_group;
 }
 
+
+CAutoDefPromoterAnd5UTRClause::CAutoDefPromoterAnd5UTRClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc)
+    : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+{
+    m_Description = "promoter region and 5' UTR";
+    m_DescriptionChosen = true;
+    m_Typeword = "";
+    m_TypewordChosen = true;
+    m_ShowTypewordFirst = false;
+    m_Interval = "genomic sequence";
+
+
+    m_ClauseLocation = new CSeq_loc();
+    const CSeq_id* id = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::BestRank);
+    CRef <CSeq_id> new_id(new CSeq_id);
+    new_id->Assign(*id);
+    m_ClauseLocation->SetInt().SetId(*new_id);
+    m_ClauseLocation->SetInt().SetFrom(0);
+    m_ClauseLocation->SetInt().SetTo(bh.GetInst_Length() - 1);
+
+}
+
+
+bool CAutoDefPromoterAnd5UTRClause::IsPromoterAnd5UTR(const CSeq_feat& feat)
+{
+    return (feat.IsSetData() &&
+        feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature &&
+        feat.IsSetComment() &&
+        NStr::Equal(feat.GetComment(), "contains promoter and 5' UTR"));
+}
+
+
+void CAutoDefPromoterAnd5UTRClause::Label(bool suppress_allele)
+{
+
+}
+
+
 CAutoDefFeatureClause::EClauseType CAutoDefFeatureClause::GetClauseType()
 {
     CSeqFeatData::ESubtype subtype = GetMainFeatureSubtype();
@@ -2318,7 +2356,8 @@ vector<CRef<CAutoDefFeatureClause > > FeatureClauseFactory(CBioseq_Handle bh, co
         rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefGeneClusterClause(bh, cf, mapped_loc)));
     } else if (CAutoDefFeatureClause::IsControlRegion(cf)) {
         rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc)));
-    } else if (subtype == CSeqFeatData::eSubtype_otherRNA) {
+    }
+    else if (subtype == CSeqFeatData::eSubtype_otherRNA) {
         auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc);
         if (misc_rna.empty()) {
             // try to make trna clauses
@@ -2326,12 +2365,15 @@ vector<CRef<CAutoDefFeatureClause > > FeatureClauseFactory(CBioseq_Handle bh, co
         }
         if (misc_rna.empty()) {
             rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc)));
-        } else {
+        }
+        else {
             for (auto it : misc_rna) {
                 rval.push_back(it);
             }
         }
-
+    } else if (subtype == CSeqFeatData::eSubtype_misc_feature &&
+        is_single_misc_feat && CAutoDefPromoterAnd5UTRClause::IsPromoterAnd5UTR(cf)) {
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefPromoterAnd5UTRClause(bh, cf, mapped_loc)));
     } else if (subtype == CSeqFeatData::eSubtype_misc_feature) {
         auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc);
         if (misc_rna.empty()) {

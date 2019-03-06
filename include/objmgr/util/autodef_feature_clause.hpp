@@ -291,6 +291,32 @@ public:
 };
 
 
+class NCBI_XOBJEDIT_EXPORT CAutoDefPromoterAnd5UTRClause : public CAutoDefFeatureClause
+{
+public:
+    CAutoDefPromoterAnd5UTRClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
+    ~CAutoDefPromoterAnd5UTRClause() {};
+
+    virtual void Label(bool suppress_allele);
+    virtual bool IsPromoter() { return true; }
+    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const { return CSeqFeatData::eSubtype_promoter; };
+
+    virtual bool IsRecognizedFeature() { return true; };
+
+    virtual bool IsMobileElement() { return false; };
+    virtual bool IsInsertionSequence() { return false; };
+    virtual bool IsControlRegion() { return false; };
+    virtual bool IsEndogenousVirusSourceFeature() { return false; };
+    virtual bool IsGeneCluster() { return false; };
+    virtual bool IsNoncodingProductFeat() { return false; };
+    virtual bool IsSatelliteClause() { return false; };
+
+    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) { return false; }
+    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause) { return false; }
+    static bool IsPromoterAnd5UTR(const CSeq_feat& feat);
+};
+
+
 CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last);
 
 

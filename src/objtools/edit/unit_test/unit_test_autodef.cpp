@@ -2463,5 +2463,18 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4593)
     TestMatPeptideListing(false);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4607)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> feat1 = unit_test_util::AddMiscFeature(entry);
+    feat1->SetComment("contains promoter and 5' UTR");
+
+    AddTitle(entry, "Sebaea microphylla promoter region and 5' UTR, genomic sequence.");
+
+    CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
