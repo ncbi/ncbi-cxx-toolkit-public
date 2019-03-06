@@ -37,6 +37,7 @@
 #include <corelib/test_boost.hpp>
 
 #include <corelib/ncbi_message.hpp>
+#include <corelib/ncbimisc.hpp>
 
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Auth_list.hpp>
@@ -48,6 +49,7 @@
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/ArticleIdSet.hpp>
 #include <objects/biblio/ArticleId.hpp>
+#include <objects/biblio/PubMedId.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Date.hpp>
@@ -296,4 +298,70 @@ BOOST_AUTO_TEST_CASE(Test_MedlineToISO)
     fix_pub::MedlineToISO(art);
 
     BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SplitMedlineEntry)
+{
+    CPub_equiv::Tdata medlines;
+    CRef<CPub> pub(new CPub);
+
+    // Set medline
+    static const int TEST_PMID = 1;
+    pub->SetMedline().SetCit().SetAuthors().SetNames().SetMl().push_back("Doe J");
+
+    CRef<CTitle::C_E> title(new CTitle::C_E);
+    title->SetName("Nature");
+    pub->SetMedline().SetCit().SetFrom().SetJournal().SetTitle().Set().push_back(title);
+    pub->SetMedline().SetPmid().Set(TEST_PMID);
+
+    medlines.push_back(pub);
+
+    fix_pub::SplitMedlineEntry(medlines);
+
+    // medlines should contain two items now
+    BOOST_CHECK_EQUAL(medlines.size(), 2);
+
+    if (medlines.size() == 2) {
+        // first one is CPub->pmid
+        auto it = medlines.begin();
+
+        pub.Reset(new CPub);
+        pub->SetPmid().Set(1);
+        BOOST_CHECK_EQUAL((*it)->Equals(*pub), true);
+
+        // second one is CPub->cit-art
+        ++it;
+        pub.Reset(new CPub);
+        title.Reset(new CTitle::C_E);
+        title->SetIso_jta("Nature");
+        pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(title);
+
+        CRef<CAuthor> author(new CAuthor);
+        author->SetName().SetName().SetLast("Doe");
+        author->SetName().SetName().SetInitials("J.");
+        pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+        BOOST_CHECK_EQUAL((*it)->Equals(*pub), true);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_MULooksLikeISSN)
+{
+    BOOST_CHECK_EQUAL(fix_pub::MULooksLikeISSN("1234-1234"), true);
+    BOOST_CHECK_EQUAL(fix_pub::MULooksLikeISSN("1234-123X"), true);
+
+    BOOST_CHECK_EQUAL(fix_pub::MULooksLikeISSN("X234-1234"), false);
+    BOOST_CHECK_EQUAL(fix_pub::MULooksLikeISSN("123-41234"), false);
+    BOOST_CHECK_EQUAL(fix_pub::MULooksLikeISSN("123341234"), false);
+}
+
+BOOST_AUTO_TEST_CASE(Test_MUIsJournalIndexed)
+{
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Nature (Reviews Molecular Cell Biology)"), true);
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Molecular Cell"), true);
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Genome Biology."), true);
+
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Nature"), false); // Too many entries found
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Fake journal"), false);
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Journal (which does not exist)"), false);
 }

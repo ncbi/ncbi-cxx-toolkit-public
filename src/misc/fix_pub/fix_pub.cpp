@@ -399,7 +399,7 @@ bool MUIsJournalIndexed(const string& journal)
         status = nodes.begin()->get_content();
     }
 
-    return string(status) == "Y";
+    return status == "Y";
 }
 
 
