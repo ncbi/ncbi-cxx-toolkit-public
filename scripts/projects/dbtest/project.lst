@@ -1,8 +1,9 @@
 corelib$
 corelib/impl$
 util$
-util/cache$
 util/bitset$
+util/cache$
+util/checksum
 util/compress$
 util/compress/api$
 util/compress/api/miniz$
