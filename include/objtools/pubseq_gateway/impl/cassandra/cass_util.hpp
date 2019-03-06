@@ -41,6 +41,10 @@ BEGIN_IDBLOB_SCOPE
 
 int64_t gettime(void);
 
+std::string TimeTmsToString(int64_t time);
+int64_t StringToTimeTms(const std::string& time);
+
+
 END_IDBLOB_SCOPE
 
 #endif
