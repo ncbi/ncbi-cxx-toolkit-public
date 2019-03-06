@@ -77,6 +77,9 @@ class CCassandraFullscanPlan
     virtual void Generate();
     virtual TQueryPtr GetNextQuery();
     virtual size_t    GetQueryCount() const;
+    
+ protected:
+    CCassConnection::TTokenRanges& GetTokenRanges();
 
  private:
     size_t GetPartitionCountEstimate();
