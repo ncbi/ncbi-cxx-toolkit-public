@@ -120,293 +120,13 @@ NCBITEST_AUTO_INIT()
 
 void CheckPropagatedLocation(const CSeq_loc& expected, const CSeq_loc& propagated)
 {
-    BOOST_CHECK_EQUAL(expected.Equals(propagated), true);
-}
-
-
-void CheckPropagatedLocations(CSeq_entry_Handle seh, vector<CRef<CSeq_loc> > expected_loc, vector<CRef<CSeq_loc> > expected_subloc, bool from_first)
-{
-    CConstRef<CSeq_align> align = seh.GetSet().GetCompleteBioseq_set()->GetAnnot().front()->GetData().GetAlign().front();
-
-    CBioseq_CI b1(seh);
-    CBioseq_Handle src;
-    if (from_first) {
-        src = *b1;
-    } else {
-        ++b1;
-        ++b1;
-        src = *b1;
-    }
-
-    CBioseq_CI b(seh);
-    size_t offset = 0;
-    while (b) {
-        if (*b == src) {
-            ++b;
-            continue;
-        }
-        CMessageListener_Basic listener;
-        edit::CFeaturePropagator propagator(src, *b, *align, false, false, false, &listener);
-
-        CFeat_CI f(src);
-        while (f) {
-            CRef<CSeq_feat> new_feat = propagator.Propagate(*(f->GetOriginalSeq_feat()));
-            BOOST_CHECK_EQUAL(new_feat->GetData().GetSubtype(), f->GetData().GetSubtype());
-            CheckPropagatedLocation(*(expected_loc[offset]), new_feat->GetLocation());
-            if (f->GetData().IsCdregion()) {
-                if (f->GetData().GetCdregion().IsSetCode_break()) {
-                    if (from_first) {
-                        CheckPropagatedLocation(*(expected_subloc[offset]), new_feat->GetData().GetCdregion().GetCode_break().front()->GetLoc());
-                        BOOST_CHECK_EQUAL(listener.Count(), 0);
-                    } else {
-                        BOOST_CHECK_EQUAL(new_feat->GetData().GetCdregion().IsSetCode_break(), false);
-                        BOOST_CHECK_EQUAL(listener.Count(), 1);
-                        BOOST_CHECK_EQUAL(NStr::StartsWith(listener.GetMessage(0).GetText(),
-                            "Unable to propagate location of translation exception:"), true);
-                        BOOST_CHECK_EQUAL(listener.GetMessage(0).GetCode(), 
-                             edit::CFeaturePropagator::eFeaturePropagationProblem_CodeBreakLocation);
-                    }
-                } else {
-                    BOOST_CHECK_EQUAL(new_feat->GetData().GetCdregion().IsSetCode_break(), false);
-                    BOOST_CHECK_EQUAL(listener.Count(), 0);
-                }
-            } else if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
-                if (f->GetData().GetRna().IsSetExt()) {
-                    if (from_first) {
-                        CheckPropagatedLocation(*(expected_subloc[offset]), new_feat->GetData().GetRna().GetExt().GetTRNA().GetAnticodon());
-                        BOOST_CHECK_EQUAL(listener.Count(), 0);
-                    } else {
-                        BOOST_CHECK_EQUAL(new_feat->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), false);
-                        BOOST_CHECK_EQUAL(listener.Count(), 1);
-                        BOOST_CHECK_EQUAL(NStr::StartsWith(listener.GetMessage(0).GetText(),
-                            "Unable to propagate location of anticodon:"), true);
-                        BOOST_CHECK_EQUAL(listener.GetMessage(0).GetCode(), 
-                             edit::CFeaturePropagator::eFeaturePropagationProblem_AnticodonLocation);
-                    }
-                } else {
-                    BOOST_CHECK_EQUAL(new_feat->GetData().GetRna().IsSetExt(), false);
-                    BOOST_CHECK_EQUAL(listener.Count(), 0);
-                }
-            } else {
-                BOOST_CHECK_EQUAL(listener.Count(), 0);
-            }
-            listener.Clear();
-            ++f;
-        }
-        offset++;
-        ++b;
-    }
+    BOOST_CHECK(expected.Equals(propagated));
 }
 
 /*
-Seq-entry ::= set {
-  class eco-set,
-  descr {
-    title "popset title"
-  },
-  seq-set {
-    seq {
-      id {
-        local str "good1"
-      },
-      descr {
-        molinfo {
-          biomol genomic
-        },
-        source {
-          org {
-            taxname "Sebaea microphylla",
-            db {
-              {
-                db "taxon",
-                tag id 592768
-              }
-            },
-            orgname {
-              lineage "some lineage"
-            }
-          },
-          subtype {
-            {
-              subtype chromosome,
-              name "1"
-            }
-          }
-        },
-        pub {
-          pub {
-            pmid 1
-          }
-        },
-        pub {
-          pub {
-            sub {
-              authors {
-                names std {
-                  {
-                    name name {
-                      last "Last",
-                      first "First",
-                      middle "M"
-                    }
-                  }
-                },
-                affil std {
-                  affil "A Major University",
-                  sub "Maryland",
-                  country "USA"
-                }
-              },
-              date std {
-                year 2009
-              }
-            }
-          }
-        }
-      },
-      inst {
-        repr raw,
-        mol dna,
-        length 60,
-        seq-data iupacna "AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAA
-TTGGCCAA"
-      }
-    },
-    seq {
-      id {
-        local str "good2"
-      },
-      descr {
-        molinfo {
-          biomol genomic
-        },
-        source {
-          org {
-            taxname "Sebaea microphylla",
-            db {
-              {
-                db "taxon",
-                tag id 592768
-              }
-            },
-            orgname {
-              lineage "some lineage"
-            }
-          },
-          subtype {
-            {
-              subtype chromosome,
-              name "1"
-            }
-          }
-        },
-        pub {
-          pub {
-            pmid 1
-          }
-        },
-        pub {
-          pub {
-            sub {
-              authors {
-                names std {
-                  {
-                    name name {
-                      last "Last",
-                      first "First",
-                      middle "M"
-                    }
-                  }
-                },
-                affil std {
-                  affil "A Major University",
-                  sub "Maryland",
-                  country "USA"
-                }
-              },
-              date std {
-                year 2009
-              }
-            }
-          }
-        }
-      },
-      inst {
-        repr raw,
-        mol dna,
-        length 65,
-        seq-data iupacna "AAAAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGC
-CAAAATTGGCCAA"
-      }
-    },
-    seq {
-      id {
-        local str "good3"
-      },
-      descr {
-        molinfo {
-          biomol genomic
-        },
-        source {
-          org {
-            taxname "Sebaea microphylla",
-            db {
-              {
-                db "taxon",
-                tag id 592768
-              }
-            },
-            orgname {
-              lineage "some lineage"
-            }
-          },
-          subtype {
-            {
-              subtype chromosome,
-              name "1"
-            }
-          }
-        },
-        pub {
-          pub {
-            pmid 1
-          }
-        },
-        pub {
-          pub {
-            sub {
-              authors {
-                names std {
-                  {
-                    name name {
-                      last "Last",
-                      first "First",
-                      middle "M"
-                    }
-                  }
-                },
-                affil std {
-                  affil "A Major University",
-                  sub "Maryland",
-                  country "USA"
-                }
-              },
-              date std {
-                year 2009
-              }
-            }
-          }
-        }
-      },
-      inst {
-        repr raw,
-        mol dna,
-        length 70,
-        seq-data iupacna "AAAAAAAAAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAA
-TTGGCCAAAATTGGCCAA"
-      }
-    }
-  },
+good1: 60
+good2: 65
+good3: 70
   annot {
     {
       data align {
@@ -477,19 +197,11 @@ CRef<CSeq_loc> CreateLoc(TSeqPos from, TSeqPos to, const CSeq_id &id, bool loc_p
     return loc;
 }
 
-CRef<CSeq_feat> CreateMiscFeat(CRef<CSeq_loc> main_loc, CRef<CSeq_entry> seq)
-{
-    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(seq, 15);
-    misc->SetLocation().Assign(*main_loc);    
-    return misc;
-}
-
 CRef<CSeq_feat> CreateCds(CRef<CSeq_loc> main_loc, CRef<CSeq_entry> seq)
 {
     CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(seq, 15);
     cds->SetData().SetCdregion();
     cds->SetLocation().Assign(*main_loc);   
-
     return cds;
 }
 
@@ -500,8 +212,21 @@ void AddCodeBreak(CRef<CSeq_feat> cds, CRef<CSeq_loc> subloc)
     cds->SetData().SetCdregion().SetCode_break().push_back(cbr);
 }
 
+CRef<CSeq_feat> CreateTrna(CRef<CSeq_loc> main_loc, CRef<CSeq_entry> seq)
+{
+    CRef<CSeq_feat> trna = unit_test_util::AddMiscFeature(seq, 15);
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetLocation().Assign(*main_loc);
+    return trna;
+}
+
+void AddAnticodon(CRef<CSeq_feat> trna, CRef<CSeq_loc> subloc)
+{
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*subloc);
+}
+
 // propagate cds without code-break from seq 1 to seq 2 and 3
-void TestCds_1(bool loc_partial5, bool loc_partial3)
+void TestCds(bool loc_partial5, bool loc_partial3)
 {
     size_t front_insert = 5;
     CRef<CSeq_align> align;
@@ -538,179 +263,245 @@ void TestCds_1(bool loc_partial5, bool loc_partial3)
     CheckPropagatedLocation(*expected_loc2, new_feat2->GetLocation());
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    listener.Clear();
 }
 
-
-void TestFeaturePropagation(bool loc_partial5, bool loc_partial3, bool subloc_partial5, bool subloc_partial3, bool from_first)
+// propagate cds with code-break from seq 1 to seq 2 and 3
+void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
 {
     size_t front_insert = 5;
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
-    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
 
-    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
-    CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id1, false, false);
+    CRef<CSeq_loc> subloc = CreateLoc(3, 5, id1, subloc_partial5, subloc_partial3);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+    AddCodeBreak(cds, subloc);
 
-    CRef<CSeq_entry> use_seq = from_first ? first : last;
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
 
-    CRef<CSeq_loc> main_loc(new CSeq_loc());
-    main_loc->SetInt().SetFrom(0);
-    main_loc->SetInt().SetTo(15);
-    main_loc->SetInt().SetId().Assign(*(use_seq->GetSeq().GetId().front()));
-    main_loc->SetPartialStart(loc_partial5, eExtreme_Biological);
-    main_loc->SetPartialStop(loc_partial3, eExtreme_Biological);
+    CMessageListener_Basic listener;
 
-    CRef<CSeq_loc> subloc(new CSeq_loc());
-    subloc->SetInt().SetFrom(3);
-    subloc->SetInt().SetTo(5);
-    subloc->SetInt().SetId().Assign(*(use_seq->GetSeq().GetId().front()));
-    subloc->SetPartialStart(subloc_partial5, eExtreme_Biological);
-    subloc->SetPartialStop(subloc_partial3, eExtreme_Biological);
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_subloc1 = CreateLoc(3+front_insert, 5+front_insert, id2, subloc_partial5, subloc_partial3);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), true);
+    CheckPropagatedLocation(*expected_subloc1, new_feat1->GetData().GetCdregion().GetCode_break().front()->GetLoc());
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(use_seq, 15);
-    misc->SetLocation().Assign(*main_loc);
+    listener.Clear();
 
-    CRef<CSeq_feat> cds1 = unit_test_util::AddMiscFeature(use_seq, 15);
-    cds1->SetData().SetCdregion();
-    cds1->SetLocation().Assign(*main_loc);
+    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_subloc2 = CreateLoc(3+front_insert*2, 5+front_insert*2, id3, subloc_partial5, subloc_partial3);
+    CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), true);
+    CheckPropagatedLocation(*expected_subloc2, new_feat2->GetData().GetCdregion().GetCode_break().front()->GetLoc());
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    CRef<CSeq_feat> cds2 = unit_test_util::AddMiscFeature(use_seq, 15);
-    CRef<CCode_break> cbr(new CCode_break());
-    cbr->SetLoc().Assign(*subloc);
-    cds2->SetData().SetCdregion().SetCode_break().push_back(cbr);
-    cds2->SetLocation().Assign(*main_loc);
-
-    CRef<CSeq_feat> trna1 = unit_test_util::AddMiscFeature(use_seq, 15);
-    trna1->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
-    trna1->SetLocation().Assign(*main_loc);
-
-    CRef<CSeq_feat> trna2 = unit_test_util::AddMiscFeature(use_seq, 15);
-    trna2->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
-    trna2->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*subloc);
-    trna2->SetLocation().Assign(*main_loc);
-
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
-
-    vector<CRef<CSeq_loc> > expected_loc;
-    vector<CRef<CSeq_loc> > expected_subloc;
-    if (from_first) {
-        CRef<CSeq_loc> loc1(new CSeq_loc());
-        loc1->SetInt().SetFrom(front_insert);
-        loc1->SetInt().SetTo(15 + front_insert);
-        loc1->SetInt().SetId().SetLocal().SetStr("good2");
-        loc1->SetPartialStart(loc_partial5, eExtreme_Biological);
-        loc1->SetPartialStop(loc_partial3, eExtreme_Biological);
-        expected_loc.push_back(loc1);
-
-        CRef<CSeq_loc> loc2(new CSeq_loc());
-        loc2->SetInt().SetFrom(front_insert * 2);
-        loc2->SetInt().SetTo(15 + front_insert * 2);
-        loc2->SetInt().SetId().SetLocal().SetStr("good3");
-        loc2->SetPartialStart(loc_partial5, eExtreme_Biological);
-        loc2->SetPartialStop(loc_partial3, eExtreme_Biological);
-        expected_loc.push_back(loc2);
-
-        CRef<CSeq_loc> sloc1(new CSeq_loc());
-        sloc1->SetInt().SetFrom(3 + front_insert);
-        sloc1->SetInt().SetTo(5 + front_insert);
-        sloc1->SetInt().SetId().SetLocal().SetStr("good2");
-        sloc1->SetPartialStart(subloc_partial5, eExtreme_Biological);
-        sloc1->SetPartialStop(subloc_partial3, eExtreme_Biological);
-        expected_subloc.push_back(sloc1);
-
-        CRef<CSeq_loc> sloc2(new CSeq_loc());
-        sloc2->SetInt().SetFrom(3 + front_insert * 2);
-        sloc2->SetInt().SetTo(5 + front_insert * 2);
-        sloc2->SetInt().SetId().SetLocal().SetStr("good3");
-        sloc2->SetPartialStart(subloc_partial5, eExtreme_Biological);
-        sloc2->SetPartialStop(subloc_partial3, eExtreme_Biological);
-        expected_subloc.push_back(sloc2);
-    } else {
-        CRef<CSeq_loc> loc1(new CSeq_loc());
-        loc1->SetInt().SetFrom(0);
-        loc1->SetInt().SetTo(5);
-        loc1->SetInt().SetId().SetLocal().SetStr("good1");
-        loc1->SetPartialStart(true, eExtreme_Biological);
-        loc1->SetPartialStop(loc_partial3, eExtreme_Biological);
-        expected_loc.push_back(loc1);
-
-        CRef<CSeq_loc> loc2(new CSeq_loc());
-        loc2->SetInt().SetFrom(5);
-        loc2->SetInt().SetTo(10);
-        loc2->SetInt().SetId().SetLocal().SetStr("good2");
-        loc2->SetPartialStart(true, eExtreme_Biological);
-        loc2->SetPartialStop(loc_partial3, eExtreme_Biological);
-        expected_loc.push_back(loc2);
-
-        CRef<CSeq_loc> sloc1(new CSeq_loc());
-        sloc1->SetInt().SetFrom(3 + front_insert);
-        sloc1->SetInt().SetTo(5 + front_insert);
-        sloc1->SetInt().SetId().SetLocal().SetStr("good1");
-        sloc1->SetPartialStart(subloc_partial5, eExtreme_Biological);
-        sloc1->SetPartialStop(subloc_partial3, eExtreme_Biological);
-        expected_subloc.push_back(sloc1);
-
-        CRef<CSeq_loc> sloc2(new CSeq_loc());
-        sloc2->SetInt().SetFrom(3 + front_insert * 2);
-        sloc2->SetInt().SetTo(5 + front_insert * 2);
-        sloc2->SetInt().SetId().SetLocal().SetStr("good2");
-        sloc2->SetPartialStart(subloc_partial5, eExtreme_Biological);
-        sloc2->SetPartialStop(subloc_partial3, eExtreme_Biological);
-        expected_subloc.push_back(sloc2);
-
-    }
-
-    CheckPropagatedLocations(seh, expected_loc, expected_subloc, from_first);
-
+    listener.Clear();
 }
 
+// propagate cds without code-break from seq 3 to seq 1 and 2
+void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id3, loc_partial5, loc_partial3);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
+
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_loc1 = CreateLoc(0, 5, id1, true, loc_partial3);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
+    CheckPropagatedLocation(*expected_loc1, new_feat1->GetLocation());
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    listener.Clear();
+
+    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_loc2 = CreateLoc(5, 10, id2, true, loc_partial3);
+    CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetSubtype(), cds->GetData().GetSubtype());
+    CheckPropagatedLocation(*expected_loc2, new_feat2->GetLocation());
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    listener.Clear();
+}
+
+// propagate cds with code-break from seq 3 to seq 1 and 2
+void TestCdsFromLastBioseqWithCodeBreak()
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id3, false, false);
+    CRef<CSeq_loc> subloc = CreateLoc(3, 5, id3, false, false);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
+    AddCodeBreak(cds, subloc);
+
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, false, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 1);
+    BOOST_CHECK_EQUAL(NStr::StartsWith(listener.GetMessage(0).GetText(), "Unable to propagate location of translation exception:"), true);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetCode(), edit::CFeaturePropagator::eFeaturePropagationProblem_CodeBreakLocation);
+
+    listener.Clear();
+
+    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, false, &listener);
+    CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 1);
+    BOOST_CHECK_EQUAL(NStr::StartsWith(listener.GetMessage(0).GetText(), "Unable to propagate location of translation exception:"), true);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetCode(), edit::CFeaturePropagator::eFeaturePropagationProblem_CodeBreakLocation);
+
+    listener.Clear();
+}
+
+// propagate trna with anticodon from seq 1 to seq 2 and 3
+void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id1, false, false);
+    CRef<CSeq_loc> subloc = CreateLoc(3, 5, id1, subloc_partial5, subloc_partial3);
+    CRef<CSeq_feat> trna = CreateTrna(main_loc, seq1);
+    AddAnticodon(trna, subloc);
+
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_subloc1 = CreateLoc(3+front_insert, 5+front_insert, id2, subloc_partial5, subloc_partial3);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*trna);
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
+    CheckPropagatedLocation(*expected_subloc1, new_feat1->GetData().GetRna().GetExt().GetTRNA().GetAnticodon());
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    listener.Clear();
+
+    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, false, &listener);
+    CRef<CSeq_loc> expected_subloc2 = CreateLoc(3+front_insert*2, 5+front_insert*2, id3, subloc_partial5, subloc_partial3);
+    CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*trna);
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
+    CheckPropagatedLocation(*expected_subloc2, new_feat2->GetData().GetRna().GetExt().GetTRNA().GetAnticodon());
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    
+    listener.Clear();
+}
+
+// propagate trna with anticodon from seq 3 to seq 1 and 2
+void TestTrnaAnticodonFromLastBioseq()
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id3, false, false);
+    CRef<CSeq_loc> subloc = CreateLoc(3, 5, id3, false, false);
+    CRef<CSeq_feat> trna = CreateTrna(main_loc, seq1);
+    AddAnticodon(trna, subloc);
+
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, false, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*trna);
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 1);
+    BOOST_CHECK_EQUAL(NStr::StartsWith(listener.GetMessage(0).GetText(), "Unable to propagate location of anticodon:"), true);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetCode(), edit::CFeaturePropagator::eFeaturePropagationProblem_AnticodonLocation);
+
+    listener.Clear();
+
+    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, false, &listener);
+    CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*trna);
+    BOOST_CHECK_EQUAL(new_feat2->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 1);
+    BOOST_CHECK_EQUAL(NStr::StartsWith(listener.GetMessage(0).GetText(), "Unable to propagate location of anticodon:"), true);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetCode(), edit::CFeaturePropagator::eFeaturePropagationProblem_AnticodonLocation);
+
+    listener.Clear();
+}
 
 BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
 {
-    TestCds_1(false, false);
-    TestCds_1(false, true);
-    TestCds_1(true, false);
-    TestCds_1(true, true);
+    TestCds(false, false);
+    TestCds(false, true);
+    TestCds(true, false);
+    TestCds(true, true);
 
-    bool from_first = true;
+    TestCdsWithCodeBreak(false, false);
+    TestCdsWithCodeBreak(false, true);
+    TestCdsWithCodeBreak(true, false);
+    TestCdsWithCodeBreak(true, true);
 
-    TestFeaturePropagation(false, false, false, false, from_first);
-    TestFeaturePropagation(false, false, false, true, from_first);
-    TestFeaturePropagation(false, false, true, false, from_first);
-    TestFeaturePropagation(false, false, true, true, from_first);
-    TestFeaturePropagation(false, true, false, false, from_first);
-    TestFeaturePropagation(false, true, false, true, from_first);
-    TestFeaturePropagation(false, true, true, false, from_first);
-    TestFeaturePropagation(false, true, true, true, from_first);
-    TestFeaturePropagation(true, false, false, false, from_first);
-    TestFeaturePropagation(true, false, false, true, from_first);
-    TestFeaturePropagation(true, false, true, false, from_first);
-    TestFeaturePropagation(true, false, true, true, from_first);
-    TestFeaturePropagation(true, true, false, false, from_first);
-    TestFeaturePropagation(true, true, false, true, from_first);
-    TestFeaturePropagation(true, true, true, false, from_first);
-    TestFeaturePropagation(true, true, true, true, from_first);
+    TestCdsFromLastBioseq(false, false);
+    TestCdsFromLastBioseq(false, true);
+    TestCdsFromLastBioseq(true, false);
+    TestCdsFromLastBioseq(true, true);
 
-    from_first = false;
+    TestCdsFromLastBioseqWithCodeBreak();
 
-    TestFeaturePropagation(false, false, false, false, from_first);
-    TestFeaturePropagation(false, false, false, true, from_first);
-    TestFeaturePropagation(false, false, true, false, from_first);
-    TestFeaturePropagation(false, false, true, true, from_first);
-    TestFeaturePropagation(false, true, false, false, from_first);
-    TestFeaturePropagation(false, true, false, true, from_first);
-    TestFeaturePropagation(false, true, true, false, from_first);
-    TestFeaturePropagation(false, true, true, true, from_first);
-    TestFeaturePropagation(true, false, false, false, from_first);
-    TestFeaturePropagation(true, false, false, true, from_first);
-    TestFeaturePropagation(true, false, true, false, from_first);
-    TestFeaturePropagation(true, false, true, true, from_first);
-    TestFeaturePropagation(true, true, false, false, from_first);
-    TestFeaturePropagation(true, true, false, true, from_first);
-    TestFeaturePropagation(true, true, true, false, from_first);
-    TestFeaturePropagation(true, true, true, true, from_first);
+    TestTrnaAnticodon(false, false);
+    TestTrnaAnticodon(false, true);
+    TestTrnaAnticodon(true, false);
+    TestTrnaAnticodon(true, true);   
+
+    TestTrnaAnticodonFromLastBioseq();
 }
 
 

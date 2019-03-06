@@ -50,11 +50,28 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-
+// DEPRECATED
 CFeaturePropagator::CFeaturePropagator
 (CBioseq_Handle src, CBioseq_Handle target,
  const CSeq_align& align, 
  bool stop_at_stop, bool cleanup_partials, bool merge_abutting /* UNUSED */,
+ CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
+  :     m_Src(src), m_Target(target),
+        m_Scope(m_Target.GetScope()),
+        m_CdsStopAtStopCodon(stop_at_stop),
+        m_CdsCleanupPartials(cleanup_partials),
+        m_MessageListener(pMessageListener),
+        m_MaxFeatId(feat_id)
+{
+    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
+    m_Mapper->SetGapRemove();
+    m_Mapper->SetMergeAll();
+}
+
+CFeaturePropagator::CFeaturePropagator
+(CBioseq_Handle src, CBioseq_Handle target,
+ const CSeq_align& align, 
+ bool stop_at_stop, bool cleanup_partials, 
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
   :     m_Src(src), m_Target(target),
         m_Scope(m_Target.GetScope()),
