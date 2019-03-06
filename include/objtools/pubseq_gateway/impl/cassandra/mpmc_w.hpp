@@ -36,19 +36,21 @@
 #ifndef _MPMC_W_HPP_
 #define _MPMC_W_HPP_
 
+#include <atomic>
+#include <cstddef>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define CPU_CACHE_LINE_SZ 64L
+#define MPMC_CPU_CACHE_LINE_SZ 64L
 
 template<typename T, size_t SZ>
 class mpmc_bounded_queue_w {
 private:
-	typedef char cacheline_pad_t[CPU_CACHE_LINE_SZ - sizeof(std::atomic<size_t>)];
-	typedef char cacheline_pad_data_t[CPU_CACHE_LINE_SZ - sizeof(T) - sizeof(std::atomic<size_t>)];
+	typedef char cacheline_pad_t[MPMC_CPU_CACHE_LINE_SZ - sizeof(std::atomic<size_t>)];
+	typedef char cacheline_pad_data_t[MPMC_CPU_CACHE_LINE_SZ - sizeof(T) - sizeof(std::atomic<size_t>)];
 
 	typedef struct cell_tag {
 		std::atomic<size_t> m_sequence;
@@ -73,7 +75,7 @@ public:
 			RAISE_ERROR(eGeneric, "SZ template parameter value must be power of two");
 		if (sizeof(intptr_t) != sizeof(size_t))
 			RAISE_ERROR(eGeneric, "All of sudden size_t is of different size than intptr_t, you've to update sources");
-		if (sizeof(T) + sizeof(std::atomic<size_t>) > CPU_CACHE_LINE_SZ)
+		if (sizeof(T) + sizeof(std::atomic<size_t>) > MPMC_CPU_CACHE_LINE_SZ)
 			RAISE_ERROR(eGeneric, "This template can't hold this T type, consider using smart pointers");
 		clear();
 	}
