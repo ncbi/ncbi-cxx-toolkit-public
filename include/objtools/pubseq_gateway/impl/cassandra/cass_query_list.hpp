@@ -39,8 +39,8 @@ public:
     {}
 
     CCassQueryList& SetMaxQueries(size_t max_queries) {
-        assert(max_queries < k_max_queries); // can't have more than k_max_queries because m_ready is a static array of this size
-        assert(m_query_arr.empty()); // can't resize m_notification_arr if there are potentially pending query callbacks
+        assert(max_queries <= k_max_queries); // can't have more than k_max_queries because m_ready is a static array of this size * 2
+        assert(m_query_arr.empty());          // can't resize m_notification_arr if there are potentially pending query callbacks
         if (m_query_arr.empty()) {
             m_max_queries = min(max_queries, k_max_queries);
             if (m_notification_arr.size() < m_max_queries) {
