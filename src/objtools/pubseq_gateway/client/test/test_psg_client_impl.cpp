@@ -102,7 +102,7 @@ struct SFixture
 {
     using TData = vector<char>;
 
-    SRandom r;
+    static thread_local SRandom r;
     unordered_map<string, TData> src_blobs;
     vector<SStream> src_chunks;
 
@@ -112,6 +112,8 @@ struct SFixture
     template <class TReadImpl>
     void MtReading();
 };
+
+thread_local SRandom SFixture::r;
 
 void s_OutputArgs(ostream& os, SRandom& r, vector<string> args)
 {
@@ -269,7 +271,6 @@ void SFixture::MtReading()
     // Reading
 
     auto reader_impl = [&](const vector<char>& src, SPSG_Reply::SItem::TTS* dst) {
-        SRandom ts_r;
         TReadImpl read_impl(dst);
         array<char, kSizeMax> received;
         auto expected = src.data();
@@ -278,7 +279,7 @@ void SFixture::MtReading()
 
         while (!deadline.IsExpired()) {
             size_t read = 0;
-            auto reading_result = read_impl(ts_r, received.data(), received.size(), expected_to_read, &read);
+            auto reading_result = read_impl(r, received.data(), received.size(), expected_to_read, &read);
 
             if (reading_result < 0) return;
 
@@ -297,7 +298,7 @@ void SFixture::MtReading()
 
             if (reading_result == 0) break;
 
-            auto ms = chrono::milliseconds(ts_r.Get(kSleepMin, kSleepMax));
+            auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
             this_thread::sleep_for(ms);
         }
 
