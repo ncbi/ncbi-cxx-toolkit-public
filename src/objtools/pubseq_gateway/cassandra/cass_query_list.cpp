@@ -47,8 +47,7 @@ static string AllParams(shared_ptr<CCassQuery> qry) {
     return rv;
 }
 
-void CCassQueryList::Execute(ICassQueryListConsumer* consumer, int retry_count, bool post_async) {
-    unique_ptr<ICassQueryListConsumer> lconsumer(consumer);
+void CCassQueryList::Execute(unique_ptr<ICassQueryListConsumer> consumer, int retry_count, bool post_async) {
     SQrySlot* slot;
     do {
         if (m_query_arr.size() < m_max_queries) {
@@ -64,14 +63,14 @@ void CCassQueryList::Execute(ICassQueryListConsumer* consumer, int retry_count, 
             slot = WaitAny(false);
         }
         if (post_async && !slot) {
-            m_pending_arr.push_back({move(lconsumer), retry_count});
+            m_pending_arr.push_back({move(consumer), retry_count});
             Tick();
             return;
         }
     }
     while (!slot);
 
-    AttachSlot(slot, {move(lconsumer), retry_count});
+    AttachSlot(slot, {move(consumer), retry_count});
 }
 
 bool CCassQueryList::HasEmptySlot() {
