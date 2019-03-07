@@ -165,6 +165,37 @@ public:
 #  define DBL_EPSILON EPSILON(DBL_DIG)
 #endif
 
+
+// find distance in ULPs, see if it is low enough
+template<typename TFloat, typename TInt>
+bool
+x_Practically_Equal(const TFloat v1, const TFloat v2)
+{
+    static_assert( sizeof(TFloat) == sizeof(TInt), "sizeof(TFloat) != sizeof(TInt)");
+    static_assert( !is_signed<TInt>::value, "Use unsigned integer storage type");
+    static_assert( numeric_limits<TFloat>::is_iec559, "Non-standard floating type");
+
+    size_t total_bits = 8*sizeof(TFloat);
+    TInt sign_mask = TInt(1) << (total_bits - 1);
+    TInt digit_mask = ~sign_mask;
+
+    union {
+        TFloat  dbl;
+        TInt    bits;
+    } x1, x2;
+
+    x1.dbl = v1;
+    x2.dbl = v2;
+
+    if ((x1.bits & sign_mask) != (x2.bits & sign_mask)) {
+        return false;
+    }
+    TInt y1 = x1.bits & digit_mask;
+    TInt y2 = x2.bits & digit_mask;
+    TInt d = (y1 > y2) ? (y1 - y2) : (y2 - y1);
+    return d <= 4;
+}
+
 EMPTY_TEMPLATE
 bool CPrimitiveTypeFunctions<double>::Equals(TConstObjectPtr obj1,
                                              TConstObjectPtr obj2,
@@ -172,7 +203,10 @@ bool CPrimitiveTypeFunctions<double>::Equals(TConstObjectPtr obj1,
 {
     const double& x = Get(obj1);
     const double& y = Get(obj2);
-    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON);
+    if (isnan(x) || isnan(y)) {
+        return false;
+    }
+    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON || x_Practically_Equal<double, Uint8>(x,y));
 }
 
 #ifndef FLT_EPSILON
@@ -186,7 +220,10 @@ bool CPrimitiveTypeFunctions<float>::Equals(TConstObjectPtr obj1,
 {
     const float& x = Get(obj1);
     const float& y = Get(obj2);
-    return (x == y  ||  fabs(x - y) < fabs(x + y) * FLT_EPSILON);
+    if (isnan(x) || isnan(y)) {
+        return false;
+    }
+    return (x == y  ||  fabs(x - y) < fabs(x + y) * FLT_EPSILON || x_Practically_Equal<float, Uint4>(x,y));
 }
 
 #if SIZEOF_LONG_DOUBLE != 0
@@ -198,8 +235,11 @@ bool CPrimitiveTypeFunctions<long double>::Equals(TConstObjectPtr obj1,
 {
     const long double& x = Get(obj1);
     const long double& y = Get(obj2);
+    if (isnan(x) || isnan(y)) {
+        return false;
+    }
     // We use DBL_EPSILON because I/O is double-based anyway.
-    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON);
+    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON || x_Practically_Equal<double, Uint8>(x,y));
 }
 #endif
 
