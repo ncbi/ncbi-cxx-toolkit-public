@@ -519,31 +519,31 @@ public:
     }
  
     EProblem
-    Problem(void) const { return m_eProblem; }
+    Problem(void) const override { return m_eProblem; }
 
     virtual EDiagSev
-    Severity(void) const { return m_eSeverity; }
+    Severity(void) const override { return m_eSeverity; }
     
     const std::string &
-    SeqId(void) const { return m_strSeqId; }
+    SeqId(void) const override { return m_strSeqId; }
 
     unsigned int
-    Line(void) const { return m_uLine; }
+    Line(void) const override { return m_uLine; }
 
     const TVecOfLines &
-    OtherLines(void) const { return m_vecOfOtherLines; }
+    OtherLines(void) const override { return m_vecOfOtherLines; }
 
     const std::string &
-    FeatureName(void) const { return m_strFeatureName; }
+    FeatureName(void) const override { return m_strFeatureName; }
     
     const std::string &
-    QualifierName(void) const { return m_strQualifierName; }
+    QualifierName(void) const override { return m_strQualifierName; }
 
     const std::string &
-    QualifierValue(void) const { return m_strQualifierValue; }
+    QualifierValue(void) const override { return m_strQualifierValue; }
         
     virtual std::string
-    ProblemStr(void) const
+    ProblemStr(void) const override
     {
         if (m_eProblem == ILineError::eProblem_GeneralParsingError  &&
                 !ErrorMessage().empty()) {
@@ -552,7 +552,7 @@ public:
         return ILineError::ProblemStr(Problem());
     }
 
-    const std::string &ErrorMessage(void) const { return m_strErrorMessage; }
+    const std::string &ErrorMessage(void) const override { return m_strErrorMessage; }
 
     virtual string Message(void) const override 
     {
@@ -594,7 +594,7 @@ protected:
 
     /// protected instead of public.  Please use the Throw function to throw
     /// this exception and try to avoid using the copy constructor at all.
-    CLineErrorEx(const CLineErrorEx & rhs );
+    CLineErrorEx(const CLineErrorEx & rhs);
 };
 
 
