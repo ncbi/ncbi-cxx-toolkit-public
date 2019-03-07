@@ -69,47 +69,15 @@ BEGIN_SCOPE(objects)
 { \
     if (listener) { \
         CNcbiOstrstream ostr; \
-        ostr << message; \
-        CMessage_Basic msg(ostr.str(), severity, code, subcode); \
+        ostr << message << '\0'; \
+        string text = ostr.str(); \
+        CMessage_Basic msg(text, severity, code, subcode); \
         listener->PostMessage(msg); \
     } \
 };
 
-enum EFixPubErrorCategory
+namespace fix_pub
 {
-    err_Reference,
-    err_Print
-};
-
-enum EFixPubReferenceError
-{
-    err_Reference_MuidNotFound = 1,
-    err_Reference_SuccessfulMuidLookup,
-    err_Reference_OldInPress,
-    err_Reference_No_reference,
-    err_Reference_Multiple_ref,
-    err_Reference_Multiple_muid,
-    err_Reference_MedlineMatchIgnored,
-    err_Reference_MuidMissmatch,
-    err_Reference_NoConsortAuthors,
-    err_Reference_DiffConsortAuthors,
-    err_Reference_PmidMissmatch,
-    err_Reference_Multiple_pmid,
-    err_Reference_FailedToGetPub,
-    err_Reference_MedArchMatchIgnored,
-    err_Reference_SuccessfulPmidLookup,
-    err_Reference_PmidNotFound,
-    err_Reference_NoPmidJournalNotInPubMed,
-    err_Reference_PmidNotFoundInPress,
-    err_Reference_NoPmidJournalNotInPubMedInPress
-};
-
-
-enum EFixPubPrintError
-{
-    err_Print_Failed = 1
-};
-
 struct SErrorSubcodes
 {
     string m_error_str;
@@ -147,13 +115,14 @@ static map<int, SErrorSubcodes> ERROR_CODE_STR =
     }
     } }
 };
+}
 
 string CPubFixing::GetErrorId(int err_code, int err_sub_code)
 {
     string ret;
 
-    const auto& err_category = ERROR_CODE_STR.find(err_code);
-    if (err_category != ERROR_CODE_STR.end()) {
+    const auto& err_category = fix_pub::ERROR_CODE_STR.find(err_code);
+    if (err_category != fix_pub::ERROR_CODE_STR.end()) {
 
         const auto& error_sub_code_str = err_category->second.m_sub_errors.find(err_sub_code);
         if (error_sub_code_str != err_category->second.m_sub_errors.end()) {

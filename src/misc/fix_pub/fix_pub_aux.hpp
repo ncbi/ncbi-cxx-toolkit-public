@@ -50,6 +50,43 @@ class CCit_art;
 
 namespace fix_pub
 {
+
+enum EFixPubErrorCategory
+{
+    err_Reference = 1,
+    err_Print
+};
+
+enum EFixPubReferenceError
+{
+    err_Reference_MuidNotFound = 1,
+    err_Reference_SuccessfulMuidLookup,
+    err_Reference_OldInPress,
+    err_Reference_No_reference,
+    err_Reference_Multiple_ref,
+    err_Reference_Multiple_muid,
+    err_Reference_MedlineMatchIgnored,
+    err_Reference_MuidMissmatch,
+    err_Reference_NoConsortAuthors,
+    err_Reference_DiffConsortAuthors,
+    err_Reference_PmidMissmatch,
+    err_Reference_Multiple_pmid,
+    err_Reference_FailedToGetPub,
+    err_Reference_MedArchMatchIgnored,
+    err_Reference_SuccessfulPmidLookup,
+    err_Reference_PmidNotFound,
+    err_Reference_NoPmidJournalNotInPubMed,
+    err_Reference_PmidNotFoundInPress,
+    err_Reference_NoPmidJournalNotInPubMedInPress
+};
+
+
+enum EFixPubPrintError
+{
+    err_Print_Failed = 1
+};
+
+
 void MedlineToISO(CCit_art& cit_art);
 void SplitMedlineEntry(CPub_equiv::Tdata& medlines);
 bool IsInpress(const CCit_art& cit_art);

@@ -365,3 +365,99 @@ BOOST_AUTO_TEST_CASE(Test_MUIsJournalIndexed)
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Fake journal"), false);
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Journal (which does not exist)"), false);
 }
+
+struct STestErrorText
+{
+    fix_pub::EFixPubErrorCategory m_err_code;
+    int m_err_subcode;
+    EDiagSev m_severity;
+
+    string m_text;
+};
+
+void CheckPrintPubProblems(const IMessageListener& log, const STestErrorText* expected)
+{
+    size_t num_of_errors = log.Count();
+    for (size_t i = 0; i < num_of_errors; ++i) {
+        const IMessage& msg = log.GetMessage(i);
+
+        BOOST_CHECK_EQUAL(msg.GetCode(), expected[i].m_err_code);
+        BOOST_CHECK_EQUAL(msg.GetSubCode(), expected[i].m_err_subcode);
+        BOOST_CHECK_EQUAL(msg.GetSeverity(), expected[i].m_severity);
+        BOOST_CHECK_EQUAL(msg.GetText(), expected[i].m_text);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_PrintPub)
+{
+    CCit_art art;
+
+    CMessageListener_Basic log;
+    fix_pub::PrintPub(art, false, false, 0, &log);
+
+    static const STestErrorText expected_1[] =
+    {
+        { fix_pub::err_Print, fix_pub::err_Print_Failed, eDiag_Warning, "Authors NULL" },
+        { fix_pub::err_Reference, fix_pub::err_Reference_NoPmidJournalNotInPubMed, eDiag_Warning, " |journal unknown|(0)|no volume number|no page number" }
+    };
+
+    CheckPrintPubProblems(log, expected_1);
+
+    log.Clear();
+    CRef<CAuthor> author(new CAuthor);
+    author->SetName().SetName().SetLast("Doe");
+    author->SetName().SetName().SetInitials("J.");
+    art.SetAuthors().SetNames().SetStd().push_back(author);
+
+    fix_pub::PrintPub(art, false, false, 0, &log);
+
+    static const STestErrorText expected_2[] =
+    {
+        { fix_pub::err_Reference, fix_pub::err_Reference_NoPmidJournalNotInPubMed, eDiag_Warning, "Doe J.|journal unknown|(0)|no volume number|no page number" }
+    };
+
+    CheckPrintPubProblems(log, expected_2);
+
+    log.Clear();
+    art.SetAuthors().SetNames().SetStr().push_back("Doe J");
+    CRef<CTitle::C_E> title(new CTitle::C_E);
+    title->SetName("Molecular Cell");
+    art.SetFrom().SetJournal().SetTitle().Set().push_back(title);
+
+    fix_pub::PrintPub(art, false, false, 0, &log);
+
+    static const STestErrorText expected_3[] =
+    {
+        { fix_pub::err_Reference, fix_pub::err_Reference_PmidNotFound, eDiag_Warning, "Doe J |Molecular Cell|(0)|no volume number|no page number" }
+    };
+
+    CheckPrintPubProblems(log, expected_3);
+
+    log.Clear();
+    art.SetFrom().SetJournal().SetImp().SetDate().SetStd().SetYear(2010);
+    art.SetFrom().SetJournal().SetImp().SetVolume("1");
+    art.SetFrom().SetJournal().SetImp().SetPages("15");
+
+    fix_pub::PrintPub(art, false, false, 0, &log);
+
+    static const STestErrorText expected_4[] =
+    {
+        { fix_pub::err_Reference, fix_pub::err_Reference_PmidNotFound, eDiag_Warning, "Doe J |Molecular Cell|(2010)|1|15" }
+    };
+
+    CheckPrintPubProblems(log, expected_4);
+
+    log.Clear();
+    art.SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    fix_pub::PrintPub(art, false, false, 0, &log);
+
+    static const STestErrorText expected_5[] =
+    {
+        { fix_pub::err_Reference, fix_pub::err_Reference_OldInPress, eDiag_Warning, "encountered in-press article more than 2 years old: Doe J |Molecular Cell|(2010)|1|15" },
+        { fix_pub::err_Reference, fix_pub::err_Reference_PmidNotFoundInPress, eDiag_Warning, "Doe J |Molecular Cell|(2010)|1|15" }
+    };
+
+    CheckPrintPubProblems(log, expected_5);
+
+    log.Clear();
+}
