@@ -24,7 +24,8 @@ public:
     virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
     virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
     virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
-    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
+    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) {
+    }
     virtual void Failed(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx, const exception* e) = 0;
 };
 
