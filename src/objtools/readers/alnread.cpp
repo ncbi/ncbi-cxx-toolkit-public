@@ -1935,6 +1935,7 @@ s_AddAlignRawSeqById(
     TAlignRawSeqPtr arsp;
 
     arsp = s_FindAlignRawSeqById (list, id);
+
     if (!arsp) {
         arsp = SAlignRawSeq::AppendNew(list);
         if (!arsp) {
@@ -3842,8 +3843,6 @@ static void
 sProcessAlignmentFileAsClustal(
         TAlignRawFilePtr afrp)
 {
-
-
     int cumulative_length = 0;
     int num_sequences = 0;
     bool firstBlock = false;
@@ -3865,6 +3864,7 @@ sProcessAlignmentFileAsClustal(
         }
 
         string line(linePtr->data);
+
         NStr::TruncateSpacesInPlace(line);
         if (line.empty()) {
             if (inBlock) {
@@ -3895,7 +3895,7 @@ sProcessAlignmentFileAsClustal(
 
         // Search for end of block
         vector<string> tokens;
-        NStr::Split(line, " \t", tokens, 0);
+        NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
         const auto num_tokens = tokens.size();
 
         if (num_tokens == 3) {
@@ -4016,7 +4016,7 @@ sProcessAlignmentFileAsClustal(
             else {
                 if (seqCount > numSeqs) {
                     string description = StrPrintf(
-                        "Expected %d sequences, but finding data for for another.",
+                        "Expected %d sequences, but finding data for another.",
                         numSeqs);
                     sReportNexusError(
                         linePtr->line_num, EDiagSev::eDiag_Error,
@@ -4031,7 +4031,7 @@ sProcessAlignmentFileAsClustal(
                     const auto it = find(seqIds.begin(), seqIds.end(), seqId);
                     if (it == seqIds.end()) {
                         description = StrPrintf(
-                            "Expected %d sequences, but finding data for for another.",
+                            "Expected %d sequences, but finding data for another.",
                             numSeqs);
                     }
                     else
@@ -4080,9 +4080,21 @@ sProcessAlignmentFileAsClustal(
         }
 
 
-        // Invalid
-        
         return;
+    }
+
+    // warn if we are short in deflines
+    auto numDeflines = afrp->mDeflines.size();
+    if (numDeflines != 0  &&  numDeflines != numSeqs) {
+        string description = StrPrintf(
+            "Expected 0 or %d deflines but finding %d",
+            numSeqs,
+            numDeflines);
+        sReportNexusError(
+            -1, EDiagSev::eDiag_Error,
+            EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
+            description,
+            afrp->mpErrorListener); 
     }
 
     for (auto idIndex=0; idIndex<numSeqs; ++idIndex) {
@@ -4215,7 +4227,7 @@ sProcessAlignmentFileAsNexus(
                     string description;
                     if (std::find(seqIds.begin(), seqIds.end(), seqId) == seqIds.end()) {
                         description = StrPrintf(
-                            "Expected %d sequences, but finding data for for another.",
+                            "Expected %d sequences, but finding data for another.",
                             NUM_SEQUENCES);
                     }
                     else {
@@ -4314,16 +4326,16 @@ sProcessAlignmentFileAsNexus(
             string liData = string(liPtr->data);
             auto endOfId = liData.find_first_of(" \t");
             auto startOfData = liData.find_first_not_of(" \t", endOfId);
-            afrp->sequences = s_AddAlignRawSeqById(
-                afrp->sequences,
-                seqIds[idIndex],
-                liPtr->data + startOfData,
-                liPtr->line_num,
-                liPtr->line_num,
-                startOfData);
+                afrp->sequences = s_AddAlignRawSeqById(
+                    afrp->sequences,
+                    seqIds[idIndex],
+                    liPtr->data + startOfData,
+                    liPtr->line_num,
+                    liPtr->line_num,
+                    startOfData);
+            }
         }
     }
-}
 
 
 /* This function parses the identifier string used by the alignment file
@@ -4392,6 +4404,7 @@ s_ReportRepeatedBadCharsInSequence(
     const string& reason,
     ILineErrorListener* pEl)
 {
+
     int bad_line_num = s_LineInfoReaderGetCurrentLineNumber (lirp);
     int bad_line_offset = s_LineInfoReaderGetCurrentLineOffset (lirp);
     char bad_char = *lirp->curr_line_pos;
@@ -4437,6 +4450,7 @@ s_FindBadDataCharsInSequence(
     char               beginning_gap = '-';
     char               middle_gap = '-';
     char               end_gap = '-';
+
 
     if (sequenceInfo.BeginningGap().find('-') != string::npos) {
         beginning_gap = sequenceInfo.BeginningGap()[0];
@@ -4752,6 +4766,7 @@ ReadAlignmentFile(
     } else {
         s_ProcessAlignFileRawByLengthPattern (afrp);
     }
+
 
     s_ReprocessIds (afrp); 
 
