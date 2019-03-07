@@ -22,7 +22,9 @@ class ICassQueryListConsumer {
 public:
     virtual ~ICassQueryListConsumer() = default;
     virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
-    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
+    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) {
+        return true;
+    }
     virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
     virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) {
     }
