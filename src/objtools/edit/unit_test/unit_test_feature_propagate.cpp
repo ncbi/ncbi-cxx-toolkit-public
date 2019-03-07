@@ -70,6 +70,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/align_ci.hpp>
 
 #include <objects/seqalign/Dense_seg.hpp>
@@ -197,6 +198,28 @@ CRef<CSeq_loc> CreateLoc(TSeqPos from, TSeqPos to, const CSeq_id &id, bool loc_p
     return loc;
 }
 
+CRef<CSeq_loc> CreateTwoIntLoc(TSeqPos from1, TSeqPos to1, TSeqPos from2, TSeqPos to2, ENa_strand strand, const CSeq_id &id, bool loc_partial5, bool loc_partial3)
+{
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetFrom(from1);
+    loc1->SetInt().SetTo(to1);
+    loc1->SetInt().SetId().Assign(id);
+    loc1->SetInt().SetStrand(strand);
+
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetFrom(from2);
+    loc2->SetInt().SetTo(to2);
+    loc2->SetInt().SetId().Assign(id);
+    loc2->SetInt().SetStrand(strand);
+
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetMix().AddSeqLoc(*loc1);
+    loc->SetMix().AddSeqLoc(*loc2);
+    loc->SetPartialStart(loc_partial5, eExtreme_Biological);
+    loc->SetPartialStop(loc_partial3, eExtreme_Biological);
+    return loc;
+}
+
 CRef<CSeq_feat> CreateCds(CRef<CSeq_loc> main_loc, CRef<CSeq_entry> seq)
 {
     CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(seq, 15);
@@ -250,7 +273,7 @@ void TestCds(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_loc> expected_loc1 = CreateLoc(front_insert, 15+front_insert, id2, loc_partial5, loc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
-    CheckPropagatedLocation(*expected_loc1, new_feat1->GetLocation());
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -260,7 +283,7 @@ void TestCds(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_loc> expected_loc2 = CreateLoc(front_insert*2, 15+front_insert*2, id3, loc_partial5, loc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetSubtype(), cds->GetData().GetSubtype());
-    CheckPropagatedLocation(*expected_loc2, new_feat2->GetLocation());
+    BOOST_CHECK(expected_loc2->Equals(new_feat2->GetLocation()));
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -294,7 +317,7 @@ void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_loc> expected_subloc1 = CreateLoc(3+front_insert, 5+front_insert, id2, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), true);
-    CheckPropagatedLocation(*expected_subloc1, new_feat1->GetData().GetCdregion().GetCode_break().front()->GetLoc());
+    BOOST_CHECK(expected_subloc1->Equals(new_feat1->GetData().GetCdregion().GetCode_break().front()->GetLoc()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
     listener.Clear();
@@ -303,7 +326,7 @@ void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_loc> expected_subloc2 = CreateLoc(3+front_insert*2, 5+front_insert*2, id3, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), true);
-    CheckPropagatedLocation(*expected_subloc2, new_feat2->GetData().GetCdregion().GetCode_break().front()->GetLoc());
+    BOOST_CHECK(expected_subloc2->Equals(new_feat2->GetData().GetCdregion().GetCode_break().front()->GetLoc()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
     listener.Clear();
@@ -334,7 +357,7 @@ void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_loc> expected_loc1 = CreateLoc(0, 5, id1, true, loc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
-    CheckPropagatedLocation(*expected_loc1, new_feat1->GetLocation());
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -344,7 +367,7 @@ void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_loc> expected_loc2 = CreateLoc(5, 10, id2, true, loc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetSubtype(), cds->GetData().GetSubtype());
-    CheckPropagatedLocation(*expected_loc2, new_feat2->GetLocation());
+    BOOST_CHECK(expected_loc2->Equals(new_feat2->GetLocation()));
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -420,7 +443,7 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_loc> expected_subloc1 = CreateLoc(3+front_insert, 5+front_insert, id2, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*trna);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
-    CheckPropagatedLocation(*expected_subloc1, new_feat1->GetData().GetRna().GetExt().GetTRNA().GetAnticodon());
+    BOOST_CHECK(expected_subloc1->Equals(new_feat1->GetData().GetRna().GetExt().GetTRNA().GetAnticodon()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
     listener.Clear();
@@ -429,7 +452,7 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_loc> expected_subloc2 = CreateLoc(3+front_insert*2, 5+front_insert*2, id3, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*trna);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
-    CheckPropagatedLocation(*expected_subloc2, new_feat2->GetData().GetRna().GetExt().GetTRNA().GetAnticodon());
+    BOOST_CHECK(expected_subloc2->Equals(new_feat2->GetData().GetRna().GetExt().GetTRNA().GetAnticodon()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
     
     listener.Clear();
@@ -477,6 +500,98 @@ void TestTrnaAnticodonFromLastBioseq()
     listener.Clear();
 }
 
+// propagate cds outside of the alignment from seq 3 to seq 1
+void TestCdsFromLastBioseqOutsideAlign()
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateLoc(0, 5, id3, false, false);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
+
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    BOOST_CHECK(new_feat1.IsNull());
+
+    listener.Clear();    
+}
+
+// propagate 2 exon cds with 1 exon outside of the alignment from seq 3 to seq 1
+void TestTwoIntCdsFromLastBioseqOutsideAlign()
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(0, 5, 20, 30, eNa_strand_plus, id3, false, false);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
+
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    CRef<CSeq_loc> expected_loc1 = CreateLoc(20-front_insert*2, 30-front_insert*2, id1, false, false);
+    expected_loc1->SetInt().SetStrand(eNa_strand_plus);
+    expected_loc1->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tl); // TODO ?
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+    BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    listener.Clear();    
+}
+
+// propagate 2 exon cds on minus strand from seq 3 to seq 1
+void TestTwoIntCdsOnMinusStrand()
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(20, 30, 5, 15, eNa_strand_minus, id3, true, true);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+//    cout << "Bad order: " << sequence::BadSeqLocSortOrder(bsh3, *main_loc) << endl;
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(10, 20, 0, 5, eNa_strand_minus, id1, true, true);
+    new_feat1->SetLocation().ChangeToMix();
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    listener.Clear();    
+}
+
 BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
 {
     TestCds(false, false);
@@ -502,6 +617,12 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestTrnaAnticodon(true, true);   
 
     TestTrnaAnticodonFromLastBioseq();
+
+    TestCdsFromLastBioseqOutsideAlign();
+
+    TestTwoIntCdsFromLastBioseqOutsideAlign();
+
+    TestTwoIntCdsOnMinusStrand();
 }
 
 
