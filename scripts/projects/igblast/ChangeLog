@@ -1,6 +1,6 @@
-Mar 29, 2019
+Mar 7, 2019
 Release 1.13.0
-*Determining the V gene reading frame from the end of FWR3 region instead of end of V gene.  This is to allow the insertion/deletion near the end of V gene and to properly determine whether the rearrangement is in-frame or out-of-frame.
+*Determine the V gene reading frame from the end of FWR3 region instead of end of V gene.  This is to allow proper determination of the frames for rearrangements that have insertions or deletions near the V gene end.
 
 *Increase allowed distance between V gene end and J gene start to 225 bp to allow detection of ultra long D/N region.
 
