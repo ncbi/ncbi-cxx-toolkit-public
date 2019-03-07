@@ -69,7 +69,7 @@ public:
     void Wait();
     void Cancel(const exception* e = nullptr);
     void Cancel(ICassQueryListConsumer* consumer, const exception* e = nullptr);
-    void Execute(ICassQueryListConsumer* consumer, int retry_count, bool post_async = false);
+    void Execute(unique_ptr<ICassQueryListConsumer> consumer, int retry_count, bool post_async = false);
     bool HasEmptySlot();
     void Yield();
     shared_ptr<CCassQuery> Extract(size_t slot_index);
