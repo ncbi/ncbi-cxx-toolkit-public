@@ -63,9 +63,11 @@ CFeaturePropagator::CFeaturePropagator
         m_MessageListener(pMessageListener),
         m_MaxFeatId(feat_id)
 {
-    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
+    CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange | CSeq_loc_Mapper::fTrimMappedLocation);
+    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);    
     m_Mapper->SetGapRemove();
     m_Mapper->SetMergeAll();
+    m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
 }
 
 CFeaturePropagator::CFeaturePropagator
@@ -80,9 +82,11 @@ CFeaturePropagator::CFeaturePropagator
         m_MessageListener(pMessageListener),
         m_MaxFeatId(feat_id)
 {
-    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
+    CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange | CSeq_loc_Mapper::fTrimMappedLocation);
+    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);    
     m_Mapper->SetGapRemove();
     m_Mapper->SetMergeAll();
+    m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
 }
 
 CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
@@ -203,7 +207,15 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
 
 CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc)
 {
-    CRef<CSeq_loc> loc =  m_Mapper->Map(sourceLoc);	
+    CRef<CSeq_loc> loc;
+    try 
+    {
+        loc = m_Mapper->Map(sourceLoc);	
+    }
+    catch (CException&)
+    {
+        loc.Reset();
+    }
     if (loc && loc->IsNull())
         loc.Reset();
     return loc;
