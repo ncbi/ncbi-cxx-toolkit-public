@@ -384,6 +384,10 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
+#ifdef NCBI_STRICT_GI
+EMPTY_TEMPLATE
+class NCBI_XSERIAL_EXPORT CStdTypeInfo<CStrictId64> : public CStdTypeInfo<TIntId> {};
+#endif
 
 /* @} */
 
