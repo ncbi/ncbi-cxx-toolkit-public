@@ -461,3 +461,51 @@ BOOST_AUTO_TEST_CASE(Test_PrintPub)
 
     log.Clear();
 }
+
+BOOST_AUTO_TEST_CASE(Test_TenAuthorsCompare)
+{
+    CCit_art art_new,
+             art_old;
+
+    art_new.SetAuthors().SetNames().SetStr().push_back("Doe John");
+    art_old.Assign(art_new);
+
+    BOOST_CHECK_EQUAL(fix_pub::TenAuthorsCompare(art_old, art_new), true);
+
+    art_new.SetAuthors().SetNames().SetStr().push_back("First Author");
+    BOOST_CHECK_EQUAL(fix_pub::TenAuthorsCompare(art_old, art_new), true);
+
+    art_new.SetAuthors().SetNames().SetStr().push_back("Second Author");
+    art_new.SetAuthors().SetNames().SetStr().push_back("Forth Author");
+    art_new.SetAuthors().SetNames().SetStr().push_back("Fifth Author");
+
+    art_old.SetAuthors().SetNames().SetStr().push_back("Sixth Author");
+    art_old.SetAuthors().SetNames().SetStr().push_back("Seventh Author");
+    art_old.SetAuthors().SetNames().SetStr().push_back("Eighth Author");
+    art_old.SetAuthors().SetNames().SetStr().push_back("Ninth Author");
+    BOOST_CHECK_EQUAL(fix_pub::TenAuthorsCompare(art_old, art_new), false);
+
+
+    // make the list of authors > 10
+    art_new.SetAuthors().SetNames().SetStr().push_back("a b");
+    art_new.SetAuthors().SetNames().SetStr().push_back("c d");
+    art_new.SetAuthors().SetNames().SetStr().push_back("e f");
+    art_new.SetAuthors().SetNames().SetStr().push_back("g h");
+    art_new.SetAuthors().SetNames().SetStr().push_back("i j");
+    art_new.SetAuthors().SetNames().SetStr().push_back("ii jj");
+
+    art_old.SetAuthors().SetNames().SetStr().push_back("First Author");
+    art_old.SetAuthors().SetNames().SetStr().push_back("a b");
+    art_old.SetAuthors().SetNames().SetStr().push_back("c d");
+    art_old.SetAuthors().SetNames().SetStr().push_back("e f");
+    art_old.SetAuthors().SetNames().SetStr().push_back("g h");
+    art_old.SetAuthors().SetNames().SetStr().push_back("i j");
+    art_old.SetAuthors().SetNames().SetStr().push_back("ii jj");
+
+    CCit_art expected;
+    expected.Assign(art_old);
+
+    BOOST_CHECK_EQUAL(fix_pub::TenAuthorsCompare(art_old, art_new), true);
+    BOOST_CHECK_EQUAL(art_old.IsSetAuthors(), false);
+    BOOST_CHECK_EQUAL(art_new.GetAuthors().Equals(expected.GetAuthors()), true);
+}
