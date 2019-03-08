@@ -1289,6 +1289,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                     // Conventionally delimited
                     return eAcc_pdb; 
                 } else switch (main_size) {
+ /*
                 case 7:
                     if ((main_acc[5] != main_acc[6]
                          &&  (main_acc[5] != 'V' || main_acc[6] != 'B'))
@@ -1307,6 +1308,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                     if ((flags & fParse_ValidLocal) == 0) {
                         break;
                     } // else fall through
+ */
                 case 4:
                     return eAcc_pdb;
                 }
