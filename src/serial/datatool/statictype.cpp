@@ -305,6 +305,11 @@ AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
     if (!storage.empty()) {
         a->SetStorageType(storage);
     }
+    if (!type.empty()) {
+        if (NStr::EndsWith(type, "CStrictId64")) {
+            (dynamic_cast<CStdTypeStrings*>(a.get()))->SetBigInt();
+        }
+    }
     return a;
 }
 

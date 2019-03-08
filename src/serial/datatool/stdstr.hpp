@@ -53,10 +53,12 @@ public:
 
     virtual void SetStorageType(const string& storage) override;
     virtual string GetStorageType(const CNamespace& ns) const override;
+    void SetBigInt(bool is_big = true);
 private:
     string m_CType;
     string m_Storage;
     CNamespace m_Namespace;
+    bool m_BigInt;
 };
 
 class CNullTypeStrings : public CTypeStrings

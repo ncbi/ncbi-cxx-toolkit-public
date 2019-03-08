@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 CStdTypeStrings::CStdTypeStrings(const string& type, const CComments& comments, bool full_ns_name)
-    : CTypeStrings(comments), m_CType(type)
+    : CTypeStrings(comments), m_CType(type), m_BigInt(false)
 {
     SIZE_TYPE colon = type.rfind("::");
     if ( colon != NPOS ) {
@@ -73,6 +73,11 @@ string CStdTypeStrings::GetStorageType(const CNamespace& ns) const
     return m_Storage;
 }
 
+void CStdTypeStrings::SetBigInt(bool is_big)
+{
+    m_BigInt = is_big;
+}
+
 string CStdTypeStrings::GetPrefixedCType(const CNamespace& ns,
                                          const string& /*methodPrefix*/) const
 {
@@ -89,7 +94,7 @@ string CStdTypeStrings::GetRef(const CNamespace& ns) const
 
 string CStdTypeStrings::GetInitializer(void) const
 {
-    return "0";
+    return m_BigInt ? "0LL" : "0";
 }
 
 CNullTypeStrings::CNullTypeStrings(const CComments& comments)
