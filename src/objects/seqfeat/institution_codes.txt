@@ -1279,7 +1279,7 @@ COR	s	Universidade Federal de Mato Grosso do Sul, Departamento de Ciencias do Am
 CORB	s	Corchester School			
 CORBIDI	s	Centro de Ornitologia y Biodiversidad			
 CORD	s	IMBIV-Museo Botanico			
-Coriell	cb	Coriell Institute for Medical Research		http://ccr.coriell.org/Sections/Search/Search.aspx?q=&spec;	
+CORIELL	cb	Coriell Institute for Medical Research		http://ccr.coriell.org/Sections/Search/Search.aspx?q=&spec;	
 CORO	s	IUTAG, Departamento de Investigacion			
 CORT	s	State University of New York College at Cortland, Biological Sciences Department			
 CORU	s	Universidad Veracruzana, Campus Cordoba			
@@ -2693,7 +2693,7 @@ HXC	s	Hendrix College, Biology Department
 HY	s	Osmania University, Botany Department			
 HYD	s	Heywood and District Botanical Society			
 HYO	s	Museum of Nature and Human Activities			
-Hyogo	s	Museum of Nature and Human Activities			
+HYOGO	s	Museum of Nature and Human Activities			
 HZI<DEU>	c	Helmholtz Zentrum fur Infektionsforschung (Helmholtz Centre for Infection Research)			
 HZM	s	Museum of Natural History (Hrvatski Zooloski Muzej)			
 HZMZ	s	Hrvatski Narodni Zooloski Muzej			
@@ -2945,7 +2945,7 @@ InaCC	c	Indonesian Culture Collection, Research Center for Biology, Indonesian I
 INALI	s	Instituto Limnologia			
 INB	s	Instituto Nacional de Biodiversidad, Departamento de Botanica			
 INBC	s	Instituto Nacional de Biodiversidad (INBio)			
-INBio	s	National Biodiversity Institute, Costa Rica			
+INBIO	s	National Biodiversity Institute, Costa Rica			
 INBP	s	Inventorio Biologico Nacional [Museo Nacional de Historia Natural del Paraguay]			
 INC	s	Instituto Nacional de Cultura, Museo de Ciencias Naturales (Panama)			
 INCQS	c	Fundacao Oswaldo Cruz-FIOCRUZ			
@@ -3571,7 +3571,7 @@ LEDLIE	s	Patricia Ledlie Herbarium
 LEF	s	Economic Forestry Institute of Liaoning Province			
 LEH	s	Lehigh University			
 LEI	s	Leicester Literary and Philosophical Society			
-LeishCryoBank	c	International Cryobank of Leishmania			
+LEISHCRYOBANK	c	International Cryobank of Leishmania			
 LEIUG	s	Department of Geology Leicester University			
 LEMA	s	Universite du Maine			
 LEMQ	s	Lyman Entomological Museum, McGill University,	LEM		
@@ -3889,7 +3889,7 @@ MBC	sb	Montgomery Botanical Center	MBC<USA>
 MBCG	s	Museo di Scienze Naturali "Enrico Caffi"			
 MBCSC	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences			
 MBCSC:Fish	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences, Fish Collection		
-Mbg	s	Fachberich Geowissenschaften			
+MBG	s	Fachberich Geowissenschaften			
 MBIC	c	Marine Biotechnology Institute Culture Collection			
 MBK	s	Kochi Prefectural Makino Botanical Garden, Botany Department			
 MBL	s	Museu Nacional de Historia Natural			
@@ -3932,7 +3932,7 @@ MCFB	s	Museo de la Cienica Fundacion
 MCFM	s	Museo Civico "Francesco Mina Palumbo"			
 MCFS	s	Museo Civico di Storia Naturale, Ferrara			
 MCG	s	Museo Civico DI Storia Naturale 'Giacomo Doria'			
-McGMK	s	McGregor Memorial Museum			
+MCGMK	s	McGregor Memorial Museum			
 MCGS	s	Museo Civico "Giuseppe Scarabelli"			
 MCIZ	s	Museo Cambria, Istituto di Zoologia dell'Universita			
 MCJ	s	Missouri Southern State College, Biology Department			
@@ -3942,7 +3942,7 @@ MCM<FRA>	s	Institut de Paleontologie, Museum d'Histoire naturelle
 MCM<IND>	c	MACS Collection of Microorganisms			
 MCM<PRT>	s	Museu Carlos Machado			
 MCMC	s	Museo de Historia Natural de la Ciudad de Mexico			
-McMJ	s	Mc Master University			
+MCMJ	s	Mc Master University			
 MCMS	s	Museo Civico di Storia Naturale, Morgegno			
 MCN	s	McNeese State University, Biology Department			
 MCNA	s	Museo de Ciencias naturals de Alava			
@@ -5645,7 +5645,7 @@ RFNS	s	Rochdale Field Naturalists' Society
 RGM	s	Nationaal Natuurhistorisch Museum Leiden			
 RGPG	s	Raghunath Girls' Post-Graduate College			
 RGY	s	Rugby School Natural History Society Museum			
-Rh-EF	s	Museum of Grannat			
+RH-EF	s	Museum of Grannat			
 RHK	s	St. Berchmans College			
 RHLCY	s	Reservoir of Heilongtan			
 RHM	s	Public Reference Library			
@@ -6081,7 +6081,7 @@ SL	s	University of Sierra Leone, Njala University College, Biological Sciences D
 SLBI	s	South London Botanical Institute			
 SLC	s	East High School, Science Department			
 SLFC	s	Slapton Ley Field Centre			
-SlgInnsb	s	Paleontological Collection			
+SLGINNSB	s	Paleontological Collection			
 SLJG	s	Steiermarkisches Landesmuseum Joanneum			
 SLL	s	Societe Linneenne de Lyon			
 SLO	s	Komenskeho University, Katedra botaniky			
@@ -6691,11 +6691,11 @@ TRV	s	Transvaal Museum
 TS	s	National University of Shandong, Biology Department			
 TSB	s	Universita degli Studi di Trieste, Dipartimento di Biologia			
 TSC	s	Tarleton State University, Tarleton State Collection			
-TsGM	s	Central Geological Museum			
+TSGM	s	Central Geological Museum			
 TSH	s	Mycological Herbarium University of Tsukuba			
 TSM	s	Erbario, Museo Civico di Storia Naturale, Trieste			
 TSMHN	s	Teylers Strichtina Museum			
-TsNIGRI	s	Tsentralny Nauchno-Issledovatelskii Geolgo-Razvedochni Muzei (Chernyshev's Central Museum of Geological Exploration)			
+TSNIGRI	s	Tsentralny Nauchno-Issledovatelskii Geolgo-Razvedochni Muzei(Chernyshev?s Central Museum of Geological Exploration)			
 TSSMC	s	Teton Science School			
 TSTN	s	Troston Hall			
 TSU	s	Miye University			
@@ -6934,7 +6934,7 @@ UFRN:Fungos	s	Universidade Federal do Rio Grande do Norte, Fungal collection
 UFRR	s	Universidade Federal de Roraima			
 UFS	s	Nyabyeya Forestry College, Department of Environmental Forestry			
 UFSC	s	Universidade Federal de Santa Catarina			
-UFScarCC	c	Freshwater Microalgae Collection Cultures			
+UFSCARCC	c	Freshwater Microalgae Collection Cultures			
 UFU	s	Ural Federal University			
 UFVB	s	Vicosa, Universidade Federal de Vicosa, Museum of Entomology			
 UG<ESP>	s	Museo del Departamento de Estratigrafia y Paleontologia			
