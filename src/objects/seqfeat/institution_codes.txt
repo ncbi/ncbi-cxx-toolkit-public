@@ -4173,7 +4173,7 @@ MM<FRA>	s	University of Montpellier
 MMBC	s	Moravske Muzeum [Moravian Museum]	MMB		
 MMBS	s	Mukaishima Marine Biological Station			
 MMCC	c	Malaysian Agricultural Research and Development, MARDI Microbial Culture Collection			
-MMChPV	s	Museo Municipal El Chocon			
+MMCHPV	s	Museo Municipal El Chocon			
 MMCM	s	Museum of Malawi			
 MMF	s	Museu Municipal do Funchal			
 MMG	s	Museo Marino de la Isla de Gorgona			
@@ -4467,7 +4467,7 @@ MUBI		Museo de Biodiversidad del Peru, Cusco
 MUCC	c	Murdoch University Culture Collection			
 MUCC<JPN>	c	Mie University Culture Collection (Culture Collection, Laboratory of Plant Pathology)			
 MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	BCCM/MUCL		
-MUCPv	s	Museo de la Universidad Nacional del Comahue	MPCA		
+MUCPV	s	Museo de la Universidad Nacional del Comahue	MPCA		
 MUCR	s	Museo de Insectos			
 MUCV	s	Monash University, Biological Sciences Department			
 MUDH	s	The Hague, Museon			
@@ -5420,8 +5420,8 @@ PNZ	s	Penlee House Museum
 PO<PRT>	s	Universidade do Porto, Departamento de Botanica			
 PO<RUS>	s	Collection of the Zoological Institute of the Russian Academy of Sciences			
 POFS	s	Forest Service, USDA			
-POKM<RUS-Penza>	s	Penza Regional Local History Museum			
-POKM<RUS-Perm>	s	Perm Regional Lore Museum			
+POKM<RUS-PENZA>	s	Penza Regional Local History Museum			
+POKM<RUS-PERM>	s	Perm Regional Lore Museum			
 POL-F	s	Pollichia, Pfalzmuseum fur Naturkunde Thallichtenberg			
 POLL	s	Pfalzmuseum fuer Naturkunde			
 POM	s	Pomona College			
