@@ -103,7 +103,7 @@ CSeqFeatData::ESubtype CAutoDefFeatureClause::GetMainFeatureSubtype() const
 }
 
 
-bool CAutoDefFeatureClause::IsMobileElement()
+bool CAutoDefFeatureClause::IsMobileElement() const
 {
     if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_mobile_element) {
         return false;
@@ -113,7 +113,7 @@ bool CAutoDefFeatureClause::IsMobileElement()
 }
 
 
-bool CAutoDefFeatureClause::IsInsertionSequence()
+bool CAutoDefFeatureClause::IsInsertionSequence() const
 {
     if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region
         || NStr::IsBlank(m_MainFeat.GetNamedQual("insertion_seq"))) {
@@ -136,13 +136,13 @@ bool CAutoDefFeatureClause::IsControlRegion (const CSeq_feat& feat)
 }
 
 
-bool CAutoDefFeatureClause::IsControlRegion()
+bool CAutoDefFeatureClause::IsControlRegion() const
 {
     return IsControlRegion(m_MainFeat);
 }
 
 
-bool CAutoDefFeatureClause::IsEndogenousVirusSourceFeature ()
+bool CAutoDefFeatureClause::IsEndogenousVirusSourceFeature () const
 {
     if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_biosrc
         || !m_MainFeat.GetData().GetBiosrc().CanGetSubtype()) {
@@ -157,7 +157,7 @@ bool CAutoDefFeatureClause::IsEndogenousVirusSourceFeature ()
 }
 
 
-bool CAutoDefFeatureClause::IsGeneCluster ()
+bool CAutoDefFeatureClause::IsGeneCluster () const
 {
     return IsGeneCluster (m_MainFeat);
 }
@@ -180,7 +180,7 @@ bool CAutoDefFeatureClause::IsGeneCluster (const CSeq_feat& feat)
 }
 
 
-bool CAutoDefFeatureClause::IsRecognizedFeature()
+bool CAutoDefFeatureClause::IsRecognizedFeature() const
 {
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     if (subtype == CSeqFeatData::eSubtype_3UTR
@@ -247,7 +247,7 @@ bool CAutoDefFeatureClause::IsPseudo(const CSeq_feat& f)
 }
 
 
-bool CAutoDefFeatureClause::x_IsPseudo()
+bool CAutoDefFeatureClause::x_IsPseudo() 
 {
     return (m_GeneIsPseudo || IsPseudo(m_MainFeat));
 }
@@ -415,7 +415,7 @@ bool CAutoDefFeatureClause::x_ShowTypewordFirst(string typeword)
 }
 
 
-bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment, string keyword, string &product_name)
+bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment, string keyword, string &product_name) const
 {
     if (NStr::IsBlank(comment) || NStr::IsBlank(keyword)) {
         return false;
@@ -452,7 +452,7 @@ bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment
 }
 
 
-bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_name)
+bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_name) const
 {
     if (GetMainFeatureSubtype() != CSeqFeatData::eSubtype_misc_feature
         || !m_MainFeat.CanGetComment()) {
@@ -476,7 +476,7 @@ bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_na
     }
 }
 
-bool CAutoDefFeatureClause::IsNoncodingProductFeat() 
+bool CAutoDefFeatureClause::IsNoncodingProductFeat() const
 {
     string product_name;
     return x_GetNoncodingProductFeatProduct(product_name);
@@ -862,7 +862,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
 }
 
 
-bool CAutoDefFeatureClause::IsSatelliteClause() 
+bool CAutoDefFeatureClause::IsSatelliteClause() const
 {
     return IsSatellite(m_MainFeat);
 }
@@ -878,13 +878,13 @@ bool CAutoDefFeatureClause::IsSatellite(const CSeq_feat& feat)
 }
 
 
-bool CAutoDefFeatureClause::IsPromoter()
+bool CAutoDefFeatureClause::IsPromoter() const
 {
     return IsPromoter(m_MainFeat);
 }
 
 
-bool CAutoDefFeatureClause::IsLTR()
+bool CAutoDefFeatureClause::IsLTR() const
 {
     return IsLTR(m_MainFeat);
 }
@@ -1072,14 +1072,14 @@ void CAutoDefFeatureClause::Label(bool suppress_allele)
 }
 
 
-sequence::ECompare CAutoDefFeatureClause::CompareLocation(const CSeq_loc& loc)
+sequence::ECompare CAutoDefFeatureClause::CompareLocation(const CSeq_loc& loc) const
 {
     return sequence::Compare(loc, *m_ClauseLocation, &(m_BH.GetScope()),
         sequence::fCompareOverlapping);
 }
 
 
-bool CAutoDefFeatureClause::SameStrand(const CSeq_loc& loc)
+bool CAutoDefFeatureClause::SameStrand(const CSeq_loc& loc) const
 {
     ENa_strand loc_strand = loc.GetStrand();
     ENa_strand this_strand = m_ClauseLocation->GetStrand();
@@ -1104,7 +1104,7 @@ bool CAutoDefFeatureClause::IsPartial() const
 }
 
 
-CRef<CSeq_loc> CAutoDefFeatureClause::GetLocation()
+CRef<CSeq_loc> CAutoDefFeatureClause::GetLocation() const
 {
     return m_ClauseLocation;
 }
@@ -1252,7 +1252,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
 }
 
 
-bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause)
+bool CAutoDefFeatureClause::OkToGroupUnderByType(const CAutoDefFeatureClause_Base *parent_clause) const
 {
     bool ok_to_group = false;
     
@@ -1337,7 +1337,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
 // All other feature matches must be that the feature to
 // go into the clause must fit inside the location of the
 // other clause.
-bool CAutoDefFeatureClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand)
+bool CAutoDefFeatureClause::OkToGroupUnderByLocation(const CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) const
 {
     if (parent_clause == NULL) {
         return false;
@@ -1450,7 +1450,7 @@ void CAutoDefFeatureClause::ReverseCDSClauseLists()
 
 
 
-bool CAutoDefFeatureClause::ShouldRemoveExons()
+bool CAutoDefFeatureClause::ShouldRemoveExons() const
 {
     unsigned int subtype = GetMainFeatureSubtype();
     
@@ -1473,7 +1473,7 @@ bool CAutoDefFeatureClause::ShouldRemoveExons()
     }
 }
 
-bool CAutoDefFeatureClause::IsExonWithNumber()
+bool CAutoDefFeatureClause::IsExonWithNumber() const
 {
     bool rval = false;
 
@@ -1494,7 +1494,7 @@ bool CAutoDefFeatureClause::IsExonWithNumber()
 }
 
 
-bool CAutoDefFeatureClause::IsBioseqPrecursorRNA()
+bool CAutoDefFeatureClause::IsBioseqPrecursorRNA() const
 {
     if (m_Biomol == CMolInfo::eBiomol_pre_RNA && GetMainFeatureSubtype() == CSeqFeatData::eSubtype_preRNA) {
         return true;
@@ -2122,7 +2122,7 @@ void CAutoDefFakePromoterClause::Label(bool suppress_allele)
 }
 
 
-bool CAutoDefFakePromoterClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand)
+bool CAutoDefFakePromoterClause::OkToGroupUnderByLocation(const CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) const
 {
     if (parent_clause == NULL) {
         return false;
@@ -2132,7 +2132,7 @@ bool CAutoDefFakePromoterClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_
 }
 
 
-bool CAutoDefFakePromoterClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause)
+bool CAutoDefFakePromoterClause::OkToGroupUnderByType(const CAutoDefFeatureClause_Base *parent_clause) const
 {
     bool ok_to_group = false;
     
@@ -2191,7 +2191,7 @@ void CAutoDefPromoterAnd5UTRClause::Label(bool suppress_allele)
 }
 
 
-CAutoDefFeatureClause::EClauseType CAutoDefFeatureClause::GetClauseType()
+CAutoDefFeatureClause::EClauseType CAutoDefFeatureClause::GetClauseType() const
 {
     CSeqFeatData::ESubtype subtype = GetMainFeatureSubtype();
     if (subtype == CSeqFeatData::eSubtype_repeat_region) {

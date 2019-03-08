@@ -203,7 +203,7 @@ bool CAutoDefFeatureClause_Base::DisplayAlleleName () const
 }
 
 
-bool CAutoDefFeatureClause_Base::IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause)
+bool CAutoDefFeatureClause_Base::IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause) const
 {
     if (gene_clause == NULL || gene_clause->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_gene) {
         return false;
@@ -622,19 +622,19 @@ size_t CAutoDefFeatureClause_Base::x_LastIntervalChangeBeforeEnd () const
 }
 
 
-sequence::ECompare CAutoDefFeatureClause_Base::CompareLocation(const CSeq_loc& loc)
+sequence::ECompare CAutoDefFeatureClause_Base::CompareLocation(const CSeq_loc& loc) const
 {
     return sequence::eNoOverlap;
 }
 
 
-bool CAutoDefFeatureClause_Base::SameStrand(const CSeq_loc& loc)
+bool CAutoDefFeatureClause_Base::SameStrand(const CSeq_loc& loc) const
 {
     return false;
 }
 
 
-CRef<CSeq_loc> CAutoDefFeatureClause_Base::GetLocation()
+CRef<CSeq_loc> CAutoDefFeatureClause_Base::GetLocation() const
 {
     CRef<CSeq_loc> tmp;
     tmp.Reset(NULL);
@@ -734,7 +734,7 @@ bool CAutoDefFeatureClause_Base::x_OkToConsolidate(const CAutoDefFeatureClause_B
 }
 
 
-bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsigned int clause2)
+bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsigned int clause2) const
 {
     if (clause1 == clause2 || 
         clause1 >= m_ClauseList.size() || 
@@ -858,7 +858,7 @@ bool ShareInterval(const CSeq_loc& loc1, const CSeq_loc& loc2)
  * must have the same gene, must share a complete interval, and must have
  * similarly named products.
  */
-bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (size_t clause1, size_t clause2, string &splice_name)
+bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (size_t clause1, size_t clause2, string &splice_name) const
 {
     if (clause1 >= m_ClauseList.size() || clause2 >= m_ClauseList.size()
         || m_ClauseList[clause1]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion
@@ -1441,7 +1441,7 @@ void CAutoDefFeatureClause_Base::RemoveFeaturesInLocation(const CSeq_loc& loc)
 }
 
 
-bool CAutoDefFeatureClause_Base::IsFeatureTypeLonely(unsigned int feature_type)
+bool CAutoDefFeatureClause_Base::IsFeatureTypeLonely(unsigned int feature_type) const
 {
     unsigned int k, subtype;
     bool         is_lonely = true;
@@ -1486,7 +1486,7 @@ void CAutoDefFeatureClause_Base::RemoveUnwantedExons()
 }
 
 
-bool CAutoDefFeatureClause_Base::IsBioseqPrecursorRNA()
+bool CAutoDefFeatureClause_Base::IsBioseqPrecursorRNA() const
 {
     if (m_ClauseList.size() != 1) {
         return false;
@@ -1655,7 +1655,7 @@ void CAutoDefExonListClause::Label(bool suppress_allele)
 // All other feature matches must be that the feature to
 // go into the clause must fit inside the location of the
 // other clause.
-bool CAutoDefExonListClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand)
+bool CAutoDefExonListClause::OkToGroupUnderByLocation(const CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) const
 {
     if (parent_clause == NULL) {
         return false;
@@ -1672,7 +1672,7 @@ bool CAutoDefExonListClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base
 }
 
 
-bool CAutoDefExonListClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause)
+bool CAutoDefExonListClause::OkToGroupUnderByType(const CAutoDefFeatureClause_Base *parent_clause) const
 {
     bool ok_to_group = false;
     

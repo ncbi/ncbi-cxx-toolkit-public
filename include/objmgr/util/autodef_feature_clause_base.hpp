@@ -62,19 +62,19 @@ public:
     virtual bool AddmRNA (CAutoDefFeatureClause_Base *mRNAClause);
     virtual bool AddGene (CAutoDefFeatureClause_Base *gene_clause, bool suppress_allele);
     
-    virtual sequence::ECompare CompareLocation(const CSeq_loc& loc);
+    virtual sequence::ECompare CompareLocation(const CSeq_loc& loc) const;
     virtual void AddToOtherLocation(CRef<CSeq_loc> loc);
     virtual void AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials = true);
-    virtual bool SameStrand(const CSeq_loc& loc);
+    virtual bool SameStrand(const CSeq_loc& loc) const;
     virtual bool IsPartial() const { return false; }
-    virtual bool IsMobileElement() { return false; }
-    virtual bool IsInsertionSequence() { return false; }
-    virtual bool IsControlRegion() { return false; }
-    virtual bool IsEndogenousVirusSourceFeature() { return false; }
-    virtual bool IsGeneCluster() { return false; }
-    virtual bool IsNoncodingProductFeat() { return false; }
-    virtual bool IsSatelliteClause() { return false; }    
-    virtual bool IsExonList() { return false; }
+    virtual bool IsMobileElement() const { return false; }
+    virtual bool IsInsertionSequence() const { return false; }
+    virtual bool IsControlRegion() const { return false; }
+    virtual bool IsEndogenousVirusSourceFeature() const { return false; }
+    virtual bool IsGeneCluster() const { return false; }
+    virtual bool IsNoncodingProductFeat() const { return false; }
+    virtual bool IsSatelliteClause() const { return false; }
+    virtual bool IsExonList() const { return false; }
 
     static bool IsuORF(const string& product);
 
@@ -83,11 +83,11 @@ public:
     void GroupClauses(bool gene_cluster_opp_strand);
     void GroupAltSplicedExons(CBioseq_Handle bh);
 
-    virtual CRef<CSeq_loc> GetLocation();
+    virtual CRef<CSeq_loc> GetLocation() const;
     
     string ListClauses(bool allow_semicolons, bool suppress_final_and, bool suppress_allele);
 
-    bool IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause);
+    bool IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause) const;
     bool IsUnattachedGene() const;
     bool IsTypewordFirst() const { return m_ShowTypewordFirst; }
     bool DisplayAlleleName () const;
@@ -95,9 +95,9 @@ public:
     const string& GetInterval() const { return m_Interval; }
     const string& GetTypeword() const { return m_Typeword; }
     const string& GetDescription() const { return m_Description; }
-    const string& GetProductName() { return m_ProductName; }
-    const string& GetGeneName() { return m_GeneName; }
-    const string& GetAlleleName() { return m_AlleleName; }
+    const string& GetProductName() const { return m_ProductName; }
+    const string& GetGeneName() const { return m_GeneName; }
+    const string& GetAlleleName() const { return m_AlleleName; }
     virtual void SetProductName(string product_name);
     bool   GetGeneIsPseudo() const { return m_GeneIsPseudo; }
     bool   NeedPlural() const { return m_MakePlural; }
@@ -130,8 +130,8 @@ public:
     void ExpandExonLists();
     virtual void ReverseCDSClauseLists();
    
-    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base * /*parent_clause*/) { return false; }
-    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base * /*parent_clause*/, bool /*gene_cluster_opp_strand*/) { return false; }
+    virtual bool OkToGroupUnderByType(const CAutoDefFeatureClause_Base * /*parent_clause*/) const { return false; }
+    virtual bool OkToGroupUnderByLocation(const CAutoDefFeatureClause_Base * /*parent_clause*/, bool /*gene_cluster_opp_strand*/) const { return false; }
     
     virtual void SuppressMobileElementAndInsertionSequenceSubfeatures();
     
@@ -141,20 +141,20 @@ public:
     void AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause, bool suppress_allele);
     
     void RemoveFeaturesByType(unsigned int feature_type, bool except_promoter = false);
-    bool IsFeatureTypeLonely(unsigned int feature_type);
+    bool IsFeatureTypeLonely(unsigned int feature_type) const;
     void RemoveFeaturesInmRNAsByType(unsigned int feature_type, bool except_promoter = false);
     void RemoveFeaturesUnderType(unsigned int feature_type);
     void RemoveFeaturesInLocation(const CSeq_loc& loc);
     
-    virtual bool ShouldRemoveExons() { return false; }
-    virtual bool IsExonWithNumber() { return false; }
+    virtual bool ShouldRemoveExons() const { return false; }
+    virtual bool IsExonWithNumber() const { return false; }
 
     void RemoveUnwantedExons();
     
-    virtual bool IsBioseqPrecursorRNA();
+    virtual bool IsBioseqPrecursorRNA() const;
     void RemoveBioseqPrecursorRNAs();
 
-    virtual bool IsPromoter() { return false; }
+    virtual bool IsPromoter() const { return false; }
 
     void Consolidate(CAutoDefFeatureClause_Base& other, bool suppress_allele);
     void TakeSubclauses(CAutoDefFeatureClause_Base& other);
@@ -193,9 +193,9 @@ protected:
     bool   m_DeleteMe;
 
     size_t x_LastIntervalChangeBeforeEnd () const;
-    bool x_OkToConsolidate (unsigned int clause1, unsigned int clause2);
+    bool x_OkToConsolidate (unsigned int clause1, unsigned int clause2) const;
     bool x_OkToConsolidate(const CAutoDefFeatureClause_Base& other) const;
-    bool x_MeetAltSpliceRules (size_t clause1, size_t clause2, string &splice_name);
+    bool x_MeetAltSpliceRules (size_t clause1, size_t clause2, string &splice_name) const;
 
     void x_RemoveNullClauses();
 
@@ -232,7 +232,7 @@ public:
     ~CAutoDefUnknownGeneList();
   
     virtual void Label(bool suppress_allele);
-    virtual bool IsRecognizedFeature() { return true; }
+    virtual bool IsRecognizedFeature() const { return true; }
 };
 
 
@@ -243,10 +243,10 @@ public:
     
     virtual void AddSubclause (CRef<CAutoDefFeatureClause_Base> subclause);
     virtual void Label(bool suppress_allele);
-    virtual bool IsRecognizedFeature() { return true; }
-    virtual bool IsExonList() { return true; }
-    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);    
-    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause);
+    virtual bool IsRecognizedFeature() const { return true; }
+    virtual bool IsExonList() const { return true; }
+    virtual bool OkToGroupUnderByLocation(const CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) const;
+    virtual bool OkToGroupUnderByType(const CAutoDefFeatureClause_Base *parent_clause) const;
     virtual CSeqFeatData::ESubtype GetMainFeatureSubtype() const;
     void SetSuppressFinalAnd(bool suppress) { m_SuppressFinalAnd = suppress; }
 private:
