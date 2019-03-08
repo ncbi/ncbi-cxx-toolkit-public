@@ -218,8 +218,8 @@ void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariot
 void CTable2AsnValidator::ReportDiscrepancies()
 {
     if (m_context->m_discrepancy) {
-        m_discrepancy->Summarize();
-        bool print_fatal = true;
+        m_discrepancy->Summarize();        
+        bool print_fatal = !m_context->m_master_genome_flag.empty();
         m_discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_base_name), print_fatal, false, true);
     }
 }
