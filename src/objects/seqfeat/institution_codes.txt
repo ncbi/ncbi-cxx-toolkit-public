@@ -1234,7 +1234,7 @@ CNMS	s	Colombo National Museum
 CNMT	s	Herbario Centro-Norte-Mato-Grossense			
 CNPO	s	Embrapa Pecuaria Sul			
 CNPS	s	Centro Nacional de Pesquisas da Soja			
-CNPSo	c	Culture Collection of Diazotrophic and Plant Growth Promoting Bacteria of Embrapa Soja			
+CNPSO	c	Culture Collection of Diazotrophic and Plant Growth Promoting Bacteria of Embrapa Soja			
 CNR	sc	Plant Protection of the National Research Council of Italy			
 CNR<UKR>	s	Crimean Natural Reserve			
 CNRO	s	Centre National de Recherches Oceanographiques			
@@ -5114,6 +5114,7 @@ OCHA	s	Ochanomizu University
 OCLA	s	University of Science and Arts of Oklahoma			
 OCM	c	Oregon Collection of Methanogens			
 OCNF	s	Ochoco National Forest			
+OCRI	scb	Oil Crops Research Institute			
 OCSA	s	Veterinary Research Institute			
 OCU	s	Oklahoma City University			
 ODAC	s	Oregon Department of Agriculture			
