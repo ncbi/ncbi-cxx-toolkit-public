@@ -509,3 +509,31 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsCompare)
     BOOST_CHECK_EQUAL(art_old.IsSetAuthors(), false);
     BOOST_CHECK_EQUAL(art_new.GetAuthors().Equals(expected.GetAuthors()), true);
 }
+
+BOOST_AUTO_TEST_CASE(Test_ExtractConsortiums)
+{
+    CAuth_list_Base::C_Names::TStd list_of_authors;
+
+    CRef<CAuthor> author(new CAuthor);
+    author->SetName().SetName().SetLast("Doe");
+    author->SetName().SetName().SetInitials("J.");
+    list_of_authors.push_back(author);
+
+    list<string> extracted;
+    size_t num_of_authors = fix_pub::ExtractConsortiums(list_of_authors, extracted);
+    BOOST_CHECK_EQUAL(num_of_authors, 1);
+    BOOST_CHECK_EQUAL(extracted.size(), 0);
+
+    author.Reset(new CAuthor);
+    author->SetName().SetConsortium("First consortium");
+    list_of_authors.push_back(author);
+
+    num_of_authors = fix_pub::ExtractConsortiums(list_of_authors, extracted);
+
+    BOOST_CHECK_EQUAL(num_of_authors, 1);
+    BOOST_CHECK_EQUAL(extracted.size(), 1);
+
+    if (!extracted.empty()) {
+        BOOST_CHECK_EQUAL(extracted.front(), "First consortium");
+    }
+}
