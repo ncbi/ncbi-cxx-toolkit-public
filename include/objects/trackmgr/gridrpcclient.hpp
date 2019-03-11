@@ -302,6 +302,10 @@ public:
         x_Init(nc_reg);
     }
 
+    /// Sets the request timeout (default is 20s)
+    ///
+    /// @param timeout
+    ///   Timeout in seconds
     void SetTimeout(const size_t timeout)
     {
         m_Timeout = timeout;
@@ -314,6 +318,19 @@ public:
 
     virtual ~CGridRPCBaseClient() = default;
 
+    /// Sends an ASN.1 request, waiting specified time
+    ///
+    /// @param request
+    ///   ASN.1 request, serialized from string
+    /// @param reply
+    ///   ASN.1 reply, serialized to stream
+    /// @return
+    ///   pair of CNetScheduleJob and boolean, indicating if the request timed out (always false)
+    /// @throws
+    ///   CGridRPCBaseClientException::eUnexpectedFailure on error
+    ///   CGridRPCBaseClientException::eWaitTimeout if the job didn't finish in the specified time
+    /// @note
+    ///   The timeout can be set by using \link SetTimeout
     pair<CNetScheduleJob, bool> AskStream(CNcbiIstream& request, CNcbiOstream& reply) const
     {
         CPerfLogGuard pl("CGridRPCBaseClient::AskStream");
@@ -330,51 +347,52 @@ public:
         grid_cli.CloseStream();
 
         CNetScheduleJob& job = grid_cli.GetJob();
-        bool timed_out = false;
         x_PrepareJob(job);
 
-        try {
-            const CNetScheduleAPI::EJobStatus evt = grid_cli.SubmitAndWait(m_Timeout);
-            switch (evt) {
-            case CNetScheduleAPI::eDone:
-            {
-                m_NS_api.GetJobDetails(job);
-                auto instr = TConnectTraits::GetRawIStream(job.output, m_NC_api);
-                NcbiStreamCopy(reply, *instr);
-                break;
-            }
-            case CNetScheduleAPI::eFailed:
-                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job failed");
-
-            case CNetScheduleAPI::eCanceled:
-                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
-
-            case CNetScheduleAPI::eRunning:
-                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job running");
-
-            default:
-                NCBI_THROW(CGridRPCBaseClientException,
-                           eWaitTimeout,
-                           "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
-                          );
-            }
+        const CNetScheduleAPI::EJobStatus evt = grid_cli.SubmitAndWait(m_Timeout);
+        switch (evt) {
+        case CNetScheduleAPI::eDone:
+        {
+            m_NS_api.GetJobDetails(job);
+            auto instr = TConnectTraits::GetRawIStream(job.output, m_NC_api);
+            NcbiStreamCopy(reply, *instr);
+            break;
         }
-        catch (const CGridRPCBaseClientException& e) {
-            switch (e.GetErrCode()) {
-            case CGridRPCBaseClientException::eUnexpectedFailure:
-                timed_out = true;
-                break;
+        case CNetScheduleAPI::eFailed:
+            NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job failed");
 
-            case CGridRPCBaseClientException::eWaitTimeout:
-            default:
-                break;
-            }
-            throw e;
+        case CNetScheduleAPI::eCanceled:
+            NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
+
+        case CNetScheduleAPI::ePending:
+        case CNetScheduleAPI::eRunning:
+        case CNetScheduleAPI::eReading:
+            NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, "The job timed out");
+
+        default:
+            NCBI_THROW(CGridRPCBaseClientException,
+                       eWaitTimeout,
+                       "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
+                       );
         }
+
         pl.Post(CRequestStatus::e200_Ok);
-        return make_pair(job, timed_out);
+        return make_pair(job, false);
     }
 
+    /// Sends an ASN.1 request, waiting specified time
+    ///
+    /// @param request
+    ///   ASN.1 request
+    /// @param reply
+    ///   ASN.1 reply
+    /// @return
+    ///   pair of CNetScheduleJob and boolean, indicating if the request timed out (always false)
+    /// @throws
+    ///   CGridRPCBaseClientException::eUnexpectedFailure on error
+    ///   CGridRPCBaseClientException::eWaitTimeout if the job didn't finish in the specified time
+    /// @note
+    ///   The timeout can be set by using \link SetTimeout
     template <class TRequest, class TReply>
     pair<CNetScheduleJob, bool> Ask(const TRequest& request, TReply& reply) const
     {
@@ -394,49 +412,37 @@ public:
         grid_cli.CloseStream();
 
         CNetScheduleJob& job = grid_cli.GetJob();
-        bool timed_out = false;
         x_PrepareJob(job);
 
-        try {
-            const CNetScheduleAPI::EJobStatus evt = grid_cli.SubmitAndWait(m_Timeout);
-            switch (evt) {
-            case CNetScheduleAPI::eDone:
-            {
-                m_NS_api.GetJobDetails(job);
-                auto instr = TConnectTraits::GetIStream(job.output, m_NC_api);
-                *instr >> reply;
-                break;
-            }
-            case CNetScheduleAPI::eFailed:
-                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job failed");
-
-            case CNetScheduleAPI::eCanceled:
-                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
-
-            case CNetScheduleAPI::eRunning:
-                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job running");
-
-            default:
-                NCBI_THROW(CGridRPCBaseClientException,
-                           eWaitTimeout,
-                           "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
-                          );
-            }
+        const CNetScheduleAPI::EJobStatus evt = grid_cli.SubmitAndWait(m_Timeout);
+        switch (evt) {
+        case CNetScheduleAPI::eDone:
+        {
+            m_NS_api.GetJobDetails(job);
+            auto instr = TConnectTraits::GetIStream(job.output, m_NC_api);
+            *instr >> reply;
+            break;
         }
-        catch (const CGridRPCBaseClientException& e) {
-            switch (e.GetErrCode()) {
-            case CGridRPCBaseClientException::eUnexpectedFailure:
-                timed_out = true;
-                break;
+        case CNetScheduleAPI::eFailed:
+            NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job failed");
 
-            case CGridRPCBaseClientException::eWaitTimeout:
-            default:
-                break;
-            }
-            throw e;
+        case CNetScheduleAPI::eCanceled:
+            NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
+
+        case CNetScheduleAPI::ePending:
+        case CNetScheduleAPI::eRunning:
+        case CNetScheduleAPI::eReading:
+            NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, "The job timed out");
+
+        default:
+            NCBI_THROW(CGridRPCBaseClientException,
+                       eUnexpectedFailure,
+                       "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
+                       );
         }
+
         pl.Post(CRequestStatus::e200_Ok);
-        return make_pair(job, timed_out);
+        return make_pair(job, false);
     }
 
 protected:
