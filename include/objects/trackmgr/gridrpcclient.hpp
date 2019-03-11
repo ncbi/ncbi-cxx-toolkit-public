@@ -371,7 +371,7 @@ public:
 
         default:
             NCBI_THROW(CGridRPCBaseClientException,
-                       eWaitTimeout,
+                       eUnexpectedFailure,
                        "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
                        );
         }
