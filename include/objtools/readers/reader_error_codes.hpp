@@ -73,6 +73,7 @@ enum EAlnSubcode
     eAlnSubcode_DifferingSeqLengths,
     eAlnSubcode_UnmatchedDeflines,
     eAlnSubcode_UnusedLine,
+    eAlnSubcode_InconsistentMolType,
 
     eAlnSubcode_UnterminatedCommand = 100,
     eAlnSubcode_UnterminatedBlock,

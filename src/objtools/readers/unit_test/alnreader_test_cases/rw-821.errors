@@ -1,0 +1,5 @@
+Line No    : None (Encountered during pre or post processing)
+Severity   : Warning
+Code       : 2.17
+Message    : Invalid Mol Type: U and T cannot appear in the same nucleotide sequence. Reinterpreting as protein.
+

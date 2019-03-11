@@ -214,7 +214,7 @@ public:
     void Read(
         bool guess=false, 
         bool generate_local_ids=false,
-        ncbi::objects::ILineErrorListener* pErrorListener=nullptr);
+        objects::ILineErrorListener* pErrorListener=nullptr);
 
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_Ids;};
@@ -236,7 +236,9 @@ public:
     /// Get a sequence's moltype, also considering the alphabet used to read it
     objects::CSeq_inst::EMol GetSequenceMolType(
         const string& alphabet,
-        const string& seqData);
+        const string& seqData,
+        objects::ILineErrorListener* pErrorListener=nullptr
+        );
 
 private:
     /// Prohibit copy constructor and assignment operator

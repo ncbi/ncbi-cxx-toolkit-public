@@ -678,7 +678,8 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
 CSeq_inst::EMol
 CAlnReader::GetSequenceMolType(
     const string& alphabet,
-    const string& seqData
+    const string& seqData,
+    ILineErrorListener* pErrorListener
     )
 {
     //if alphabet contains full complement (26) of protein chars then
@@ -690,6 +691,16 @@ CAlnReader::GetSequenceMolType(
     auto posFirstT = seqData.find_first_of("Tt");
     auto posFirstU = seqData.find_first_of("Uu");
     if (posFirstT != string::npos  &&  posFirstU != string::npos) {
+        string msg = "Invalid Mol Type: "
+                     "U and T cannot appear in the same nucleotide sequence. "
+                     "Reinterpreting as protein.";
+        sReportError(pErrorListener, 
+                     eDiag_Warning,
+                     eReader_Alignment,
+                     eAlnSubcode_InconsistentMolType,
+                     0, msg);
+
+
         //imposible NA- can't contain both
         return CSeq_inst::eMol_aa;
     }
@@ -745,7 +756,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         } else if (ai & CSeq_id::fAcc_prot) {
             mol = CSeq_inst::eMol_aa;
         } else {
-            mol = GetSequenceMolType(m_Alphabet, seq_str);
+            mol = GetSequenceMolType(m_Alphabet, seq_str, pErrorListener);
         }
         // seq-inst
         CRef<CSeq_inst> seq_inst (new CSeq_inst);
