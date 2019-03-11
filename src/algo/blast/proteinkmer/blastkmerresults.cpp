@@ -54,7 +54,9 @@ void CBlastKmerResults::x_InitScoreVec(TBlastKmerPrelimScoreVector& scores)
 		list< CRef<CSeq_id> > seqids = m_SeqDB->GetSeqIDs((*iter).first);
 		if (seqids.size() > 0) // Removed by GIList limit.
 		{
+		    // logic is similar to the one in GetSequenceLengthAndId  blast_seqinfosrc_aux.cpp 
 			CRef<CSeq_id> id = FindBestChoice(seqids, CSeq_id::BestRank);
+			if( !id->IsGi() ) id =  seqids.front(); // if GI-less, just grab first accession
 			pair<CRef<CSeq_id>, double> retval(id, (*iter).second);
 			m_Scores.push_back(retval);
 		}
