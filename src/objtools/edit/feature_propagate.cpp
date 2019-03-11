@@ -54,7 +54,7 @@ BEGIN_SCOPE(edit)
 CFeaturePropagator::CFeaturePropagator
 (CBioseq_Handle src, CBioseq_Handle target,
  const CSeq_align& align, 
- bool stop_at_stop, bool cleanup_partials, bool merge_abutting /* UNUSED */,
+ bool stop_at_stop, bool cleanup_partials, bool merge_abutting,
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
   :     m_Src(src), m_Target(target),
         m_Scope(m_Target.GetScope()),
@@ -66,14 +66,15 @@ CFeaturePropagator::CFeaturePropagator
     CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange | CSeq_loc_Mapper::fTrimMappedLocation);
     m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);    
     m_Mapper->SetGapRemove();
-    m_Mapper->SetMergeAll();
+    if (merge_abutting)
+        m_Mapper->SetMergeAll();
     m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
 }
 
 CFeaturePropagator::CFeaturePropagator
 (CBioseq_Handle src, CBioseq_Handle target,
  const CSeq_align& align, 
- bool stop_at_stop, bool cleanup_partials, 
+ bool stop_at_stop, bool cleanup_partials, bool merge_abutting, bool extend_over_gaps,
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
   :     m_Src(src), m_Target(target),
         m_Scope(m_Target.GetScope()),
@@ -82,10 +83,14 @@ CFeaturePropagator::CFeaturePropagator
         m_MessageListener(pMessageListener),
         m_MaxFeatId(feat_id)
 {
-    CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange | CSeq_loc_Mapper::fTrimMappedLocation);
+    CSeq_loc_Mapper::TMapOptions options = CSeq_loc_Mapper::fTrimMappedLocation;
+    if (extend_over_gaps)
+        options |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
+    CSeq_loc_Mapper_Options mapper_options(options);
     m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);    
     m_Mapper->SetGapRemove();
-    m_Mapper->SetMergeAll();
+    if (merge_abutting)
+        m_Mapper->SetMergeAll();
     m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
 }
 
@@ -212,7 +217,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc)
     {
         loc = m_Mapper->Map(sourceLoc);	
     }
-    catch (CException&)
+    catch (const CException&)
     {
         loc.Reset();
     }

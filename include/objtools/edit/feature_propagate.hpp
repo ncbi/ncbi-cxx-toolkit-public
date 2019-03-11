@@ -56,7 +56,7 @@ public:
                                        CMessageListener_Basic* pMessageListener = 0,
                                        CObject_id::TId* feat_id = nullptr);
     CFeaturePropagator(CBioseq_Handle src, CBioseq_Handle target, const CSeq_align& align,
-                       bool stop_at_stop = true, bool cleanup_partials = true, 
+                       bool stop_at_stop = true, bool cleanup_partials = true, bool merge_abutting = true, bool extend_over_gaps = true,
                        CMessageListener_Basic* pMessageListener = 0,
                        CObject_id::TId* feat_id = nullptr);
 

@@ -269,7 +269,7 @@ void TestCds(bool loc_partial5, bool loc_partial3)
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_loc1 = CreateLoc(front_insert, 15+front_insert, id2, loc_partial5, loc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
@@ -279,7 +279,7 @@ void TestCds(bool loc_partial5, bool loc_partial3)
 
     listener.Clear();
 
-    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_loc2 = CreateLoc(front_insert*2, 15+front_insert*2, id3, loc_partial5, loc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetSubtype(), cds->GetData().GetSubtype());
@@ -313,7 +313,7 @@ void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_subloc1 = CreateLoc(3+front_insert, 5+front_insert, id2, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), true);
@@ -322,7 +322,7 @@ void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
 
     listener.Clear();
 
-    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_subloc2 = CreateLoc(3+front_insert*2, 5+front_insert*2, id3, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), true);
@@ -353,7 +353,7 @@ void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_loc1 = CreateLoc(0, 5, id1, true, loc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
@@ -363,7 +363,7 @@ void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
 
     listener.Clear();
 
-    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_loc2 = CreateLoc(5, 10, id2, true, loc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetSubtype(), cds->GetData().GetSubtype());
@@ -397,7 +397,7 @@ void TestCdsFromLastBioseqWithCodeBreak()
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 1);
@@ -406,7 +406,7 @@ void TestCdsFromLastBioseqWithCodeBreak()
 
     listener.Clear();
 
-    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 1);
@@ -439,7 +439,7 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_subloc1 = CreateLoc(3+front_insert, 5+front_insert, id2, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*trna);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
@@ -448,7 +448,7 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
 
     listener.Clear();
 
-    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, true, true, &listener);
     CRef<CSeq_loc> expected_subloc2 = CreateLoc(3+front_insert*2, 5+front_insert*2, id3, subloc_partial5, subloc_partial3);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*trna);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
@@ -481,7 +481,7 @@ void TestTrnaAnticodonFromLastBioseq()
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*trna);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 1);
@@ -490,7 +490,7 @@ void TestTrnaAnticodonFromLastBioseq()
 
     listener.Clear();
 
-    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator2(bsh3, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*trna);
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 1);
@@ -521,7 +521,7 @@ void TestCdsFromLastBioseqOutsideAlign()
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK(new_feat1.IsNull());
 
@@ -549,7 +549,7 @@ void TestTwoIntCdsFromLastBioseqOutsideAlign()
 
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     CRef<CSeq_loc> expected_loc1 = CreateLoc(20-front_insert*2, 30-front_insert*2, id1, true, false);
     expected_loc1->SetInt().SetStrand(eNa_strand_plus);
@@ -582,7 +582,7 @@ void TestTwoIntCdsOnMinusStrand()
 //    cout << "Bad order: " << sequence::BadSeqLocSortOrder(bsh3, *main_loc) << endl;
     CMessageListener_Basic listener;
 
-    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(10, 20, 0, 5, eNa_strand_minus, id1, true, true);
     new_feat1->SetLocation().ChangeToMix();
@@ -642,7 +642,7 @@ void CheckPropagatedCDSLocation(CSeq_entry& entry, const CSeq_feat& cds,
     size_t offset = 0;
     while (b) {
         CMessageListener_Basic listener;
-        edit::CFeaturePropagator propagator(src, *b, *align, stop_at_stop, fix_partials, &listener);
+        edit::CFeaturePropagator propagator(src, *b, *align, stop_at_stop, fix_partials, true, true, &listener);
 
         CRef<CSeq_feat> new_feat = propagator.Propagate(cds);
         BOOST_CHECK_EQUAL(new_feat->GetData().GetSubtype(), CSeqFeatData::eSubtype_cdregion);
@@ -770,7 +770,7 @@ void ImproveAlignment(CSeq_align& align, size_t front_insert)
 }
 
 // TODO
-/*
+
 BOOST_AUTO_TEST_CASE(Test_PropagateAll)
 {
     size_t front_insert = 10;
@@ -803,22 +803,23 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAll)
     CBioseq_CI b(seh);
 
     CMessageListener_Basic listener;
-    edit::CFeaturePropagator propagator1(src, *b, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator1(src, *b, *align, false, false, true, false, &listener);
     vector<CRef<CSeq_feat> > first_feats = propagator1.PropagateAll();
     BOOST_CHECK_EQUAL(first_feats.size(), 1);
     BOOST_CHECK_EQUAL(listener.Count(), 2);
     BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature: lcl|good3:1-20");
     BOOST_CHECK_EQUAL(listener.GetMessage(1).GetText(), "Unable to propagate location of feature: lcl|good3:1-10");
     listener.Clear();
+
     ++b;
-    edit::CFeaturePropagator propagator2(src, *b, *align, false, false, &listener);
+    edit::CFeaturePropagator propagator2(src, *b, *align, false, false, true, false, &listener);
     vector<CRef<CSeq_feat> > second_feats = propagator2.PropagateAll();
     BOOST_CHECK_EQUAL(second_feats.size(), 2);
     BOOST_CHECK_EQUAL(listener.Count(), 1);
     BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature: lcl|good3:1-10");
     
 }
-*/
+
 CObject_id::TId s_FindHighestFeatId(const CSeq_entry_Handle entry)
 {
     CObject_id::TId id = 0;
@@ -975,7 +976,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateFeatsTo2Sequences_UsingFeatureIds)
 
     BOOST_TEST_MESSAGE("Propagating to the second sequence");
     CMessageListener_Basic listener;
-    edit::CFeaturePropagator propagator1(src_bseq, target_bseq1, *align, true, true, &listener, &maxFeatId);
+    edit::CFeaturePropagator propagator1(src_bseq, target_bseq1, *align, true, true, true, true, &listener, &maxFeatId);
     CRef<CSeq_feat> propagated_gene1 = propagator1.Propagate(*gene);
 
     BOOST_CHECK_EQUAL(listener.Count(), 0);
@@ -1005,7 +1006,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateFeatsTo2Sequences_UsingFeatureIds)
     listener.Clear();
 
     BOOST_TEST_MESSAGE("Propagating to the third sequence");
-    edit::CFeaturePropagator propagator2(src_bseq, target_bseq2, *align, true, true, &listener, &maxFeatId);
+    edit::CFeaturePropagator propagator2(src_bseq, target_bseq2, *align, true, true, true, true, &listener, &maxFeatId);
     CRef<CSeq_feat> propagated_gene2 = propagator2.Propagate(*gene);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
     BOOST_CHECK(propagated_gene2->IsSetId());
@@ -1082,7 +1083,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAllFeatures_UsingFeatureIds)
 
 
     CMessageListener_Basic listener;
-    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, &listener, &maxFeatId);
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, true, &listener, &maxFeatId);
     vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateAll();
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -1145,7 +1146,7 @@ BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs)
 
     BOOST_TEST_MESSAGE("When both mrna and gene are propagated");
     CMessageListener_Basic listener;
-    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, &listener, &maxFeatId);
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, true, &listener, &maxFeatId);
     vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList({ gene, mrna });
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -1209,7 +1210,7 @@ BOOST_AUTO_TEST_CASE(Test_Propagate1FeatureWithXrefs)
 
     BOOST_TEST_MESSAGE("When the mrna is propagated alone");
     CMessageListener_Basic listener;
-    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, &listener, &maxFeatId);
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, true, &listener, &maxFeatId);
     vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList({ mrna });
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -1264,7 +1265,7 @@ BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs_RevOrder)
     CBioseq_Handle target_bseq = *(++b_iter);
 
     CMessageListener_Basic listener;
-    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, &listener, &maxFeatId);
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, true, &listener, &maxFeatId);
     vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList({ gene, mrna });
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
@@ -1384,7 +1385,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateFeaturesWithXrefsWithCDS)
     CBioseq_Handle target_bseq = *(++b_iter);
 
     CMessageListener_Basic listener;
-	edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, &listener, &maxFeatId);
+	edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, true, &listener, &maxFeatId);
     vector<CConstRef<CSeq_feat>> feat_list{ gene, mrna, cds_withoutprot, cds_withprot };
     vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList(feat_list);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
@@ -1485,7 +1486,7 @@ BOOST_AUTO_TEST_CASE(Test_MergeIntervals)
     ++b;
     size_t offset = 0;
     while (b) {
-        edit::CFeaturePropagator propagator(src, *b, *align, false, false, &listener);
+        edit::CFeaturePropagator propagator(src, *b, *align, false, false, true, true, &listener);
 
         CRef<CSeq_feat> new_feat = propagator.Propagate(*misc);
         CheckPropagatedLocation(*(expected_loc[offset]), new_feat->GetLocation());
