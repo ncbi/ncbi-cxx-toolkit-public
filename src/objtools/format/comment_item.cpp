@@ -1559,7 +1559,7 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 // returns the data_str, but wrapped in appropriate <a href...>...</a> if applicable
 static
 string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_str, const string &data_str,
-                                       const char* provider, const char* status, bool has_name )
+                                       const char* provider, const char* status, bool has_name, const char* source )
 {
     if( ! is_html ) {
         return data_str;
@@ -1594,6 +1594,38 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << snd
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Source Identifier") && NStr::Equal (source, "EMBL-EBI") ) {
+        result << "<a href=\"http://pfam.xfam.org/family/"
+               << data_str
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Source Identifier") && NStr::Equal (source, "JCVI") ) {
+        result << "<a href=\"http://tigrfams.jcvi.org/cgi-bin/HmmReportPage.cgi?acc="
+               << data_str
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (source, "NCBI SPARCLE") ) {
+        string fst;
+        string snd;
+        NStr::Replace( data_str, "Domain architecture ID ", "", fst );
+        NStr::Replace( fst, " ", "_", snd );
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/sparcle/archview.html?archid="
+               << snd
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Evidence Category") &&
+                NStr::Equal (data_str, "Antimicrobial Resistance Allele") &&
+                NStr::Equal (source, "Bacterial Antimicrobial Resistance Reference Gene Database") ) {
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/bioproject/"
+               << "313047"
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Evidence Accession") &&
+                NStr::Equal (source, "Bacterial Antimicrobial Resistance Reference Gene Database") ) {
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/"
+               << data_str
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
     } else {
         // normalize case: nothing to do
         return data_str;
@@ -1618,6 +1650,7 @@ void s_GetStrForStructuredComment(
     const char* suffix = "##Metadata-END##";
     const char* provider = "";
     const char* status = "";
+    const char* source = "";
     bool has_name = false;
 
     bool fieldOverThreshold = false;
@@ -1641,6 +1674,8 @@ void s_GetStrForStructuredComment(
                     status = (*it_for_len)->GetData().GetStr().c_str();
                 } else if ( label == "Annotation Name" ) {
                     has_name = true;
+                } else if ( label == "Evidence Source" && NStr::EqualNocase(prefix, "##Evidence-For-Name-Assignment-START##") ) {
+                    source = (*it_for_len)->GetData().GetStr().c_str();
                 }
                 const string::size_type label_len = label.length();
                 if( (label_len > longest_label_len) && (label_len <= kFieldLenThreshold) ) {
@@ -1690,7 +1725,7 @@ void s_GetStrForStructuredComment(
             next_line.resize( max( next_line.size(), longest_label_len), ' ' );
         }
         next_line.append( " :: " );
-        next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(), provider, status, has_name ) );
+        next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(), provider, status, has_name, source ) );
         next_line.append( "\n" );
 
         ExpandTildes(next_line, eTilde_comment);
