@@ -233,7 +233,50 @@ struct SSizeInfo {
         return (size_value == rhs.size_value  &&  
             num_appearances == rhs.num_appearances); };
 
-    ~SSizeInfo() { delete next; };
+    ~SSizeInfo() {
+        const int BLOCKSIZE(100); 
+        auto size = Size();
+        if (size > BLOCKSIZE) {
+            LongDelete();
+        }
+        else {
+            delete next;
+        }
+    };
+    
+    void LongDelete() {
+        const int BLOCKSIZE(100);
+        SSizeInfo* farNext = this;
+        list<SSizeInfo*> shortDeleteBlocks;
+        shortDeleteBlocks.push_back(farNext);
+        while (farNext) {
+            for (auto i = 0; i < BLOCKSIZE && farNext; ++i) {
+                if (farNext) {
+                    farNext = farNext->next;
+                }
+            }
+            if (farNext) {
+                auto beyondFarNext = farNext->next;
+                farNext->next = nullptr;
+                shortDeleteBlocks.push_back(farNext);
+                farNext = beyondFarNext;
+            }
+        }
+        for (auto shortDeletePtr : shortDeleteBlocks) {
+            delete shortDeletePtr;
+        }
+    };
+
+
+    int Size() const {
+        int size = 0;
+        auto siPtr = next;
+        while (siPtr) {
+            size++;
+            siPtr = siPtr->next;
+        }
+        return size;
+    }
 
     static SSizeInfo*
     AppendNew(
@@ -251,10 +294,50 @@ struct SLengthList {
     SLengthList(): lengthrepeats(nullptr), num_appearances(0), next(nullptr)
     {};
     
+
     ~SLengthList() {
-        delete lengthrepeats;
-        delete next;
+        const int BLOCKSIZE(100);
+        auto size = Size();
+        if (size > BLOCKSIZE) {
+            LongDelete();
+        }
+        else {
+            //delete next;
+        }
     };
+
+    void LongDelete() {
+        const int BLOCKSIZE(100);
+        SLengthList* farNext = next;
+        list<SLengthList*> shortDeleteBlocks;
+         while (farNext) {
+             shortDeleteBlocks.push_back(farNext);
+             for (auto i = 0; i < BLOCKSIZE && farNext; ++i) {
+                if (farNext) {
+                    farNext = farNext->next;
+                }
+            }
+            if (farNext) {
+                auto beyondFarNext = farNext->next;
+                farNext->next = nullptr;
+                farNext = beyondFarNext;
+            }
+        }
+        for (auto shortDeletePtr: shortDeleteBlocks) {
+            delete shortDeletePtr;
+        }
+    };
+
+
+    int Size() const {
+        int size = 0;
+        auto siPtr = next;
+        while (siPtr) {
+            size++;
+            siPtr = siPtr->next;
+        }
+        return size;
+    }
 
     static SLengthList*
     AppendNew(
@@ -1079,18 +1162,16 @@ s_BuildTokenList(
     size_t       line_pos;
 
     first_token = nullptr;
-
     for (auto lip = line_list;  lip;  lip = lip->next) {
-        if (lip->data) {
+        if (lip->data  &&  lip->data[0] != 0) {
             char* tmp = new char[strlen(lip->data) + 1];
             strcpy(tmp, lip->data);
             piece = s_TokenizeString(tmp, " \t\r", &last);
             while (piece) {
                 line_pos = piece - tmp;
                 line_pos += lip->line_offset;
-                first_token = s_AddLineInfo (first_token, piece, 
-                                             lip->line_num,
-                                             line_pos);
+                first_token = s_AddLineInfo (
+                    first_token, piece, lip->line_num, line_pos);
                 piece = s_TokenizeString (nullptr, " \t\r", &last);
             }
             delete[] tmp;
