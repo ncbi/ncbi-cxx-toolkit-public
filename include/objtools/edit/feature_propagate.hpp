@@ -85,8 +85,6 @@ private:
 
     void x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetId);
 
-    CRef<CSeq_interval> x_MapInterval(const CSeq_interval& sourceInt, const CSeq_id& targetId);
-    CRef<CSeq_loc> x_MapSubLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId);
     CRef<CSeq_loc> x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId);
     CRef<CSeq_loc> x_TruncateToStopCodon(const CSeq_loc& loc, unsigned int truncLen);
     CRef<CSeq_loc> x_ExtendToStopCodon(CSeq_feat& feat);
@@ -101,6 +99,7 @@ private:
     CObject_id::TId* m_MaxFeatId = nullptr;
     map<CObject_id::TId, CObject_id::TId> m_FeatIdMap; // map old feat-id to propagated feat-id
     bool m_MergeAbutting;
+    bool m_ExpandOverGaps;
 };
 
 END_SCOPE(edit)

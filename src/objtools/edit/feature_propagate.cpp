@@ -62,7 +62,8 @@ CFeaturePropagator::CFeaturePropagator
     m_CdsCleanupPartials(cleanup_partials),
     m_MessageListener(pMessageListener),
     m_MaxFeatId(feat_id),
-    m_MergeAbutting(merge_abutting)
+    m_MergeAbutting(merge_abutting),
+      m_ExpandOverGaps(true)
 {
     m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
     if (merge_abutting) {
@@ -186,136 +187,61 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
     return propagated_feats;
 }
 
-
-CRef<CSeq_interval> CFeaturePropagator::x_MapInterval(const CSeq_interval& sourceInt, const CSeq_id& targetId)
-{
-    CSeq_loc sourceLoc;
-    CSeq_interval& interval = sourceLoc.SetInt();
-    if (sourceInt.IsSetStrand()) {
-        ENa_strand strand = sourceInt.GetStrand();
-        interval.SetStrand(strand);
-    }
-    interval.SetFrom(sourceInt.GetFrom());
-    interval.SetTo(sourceInt.GetTo());
-    sourceLoc.SetId(sourceInt.GetId());
-   
-    if (sourceInt.IsPartialStart(eExtreme_Biological)) {
-        sourceLoc.SetPartialStart(true, eExtreme_Biological);
-    }
-    if (sourceInt.IsPartialStop(eExtreme_Biological)) {
-        sourceLoc.SetPartialStop(true, eExtreme_Biological);
-    }
-   
-    _TRACE("Source Loc: ");
-    _TRACE(MSerial_AsnText << sourceLoc);
-
-    CRef<CSeq_loc> pTargetLoc = m_Mapper->Map(sourceLoc);
-    _TRACE("Mapped loc: ");
-    _TRACE(MSerial_AsnText << *pTargetLoc);
-
-    if (pTargetLoc->IsNull()) 
-        return CRef<CSeq_interval>();
-
-    CRef<CSeq_interval> pTargetInt(new CSeq_interval());
-    pTargetInt->SetId().Assign(targetId);
-    if (pTargetLoc->IsSetStrand()) {
-        pTargetInt->SetStrand(pTargetLoc->GetStrand());
-    }
-
-    pTargetInt->SetFrom(pTargetLoc->GetStart(eExtreme_Positional));
-    pTargetInt->SetTo(pTargetLoc->GetStop(eExtreme_Positional));
-
-    CBioseq_Handle bsh = m_Scope.GetBioseqHandle(targetId);
-    bool is_circular = bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular;
-    if (is_circular && pTargetInt->GetFrom() > pTargetInt->GetTo()) {
-        pTargetInt->SetFrom(pTargetLoc->GetStop(eExtreme_Positional));
-        pTargetInt->SetTo(pTargetLoc->GetStart(eExtreme_Positional));	
-    }
-    
-    if (pTargetLoc->IsPartialStart(eExtreme_Biological)) {
-        pTargetInt->SetPartialStart(true,eExtreme_Biological);
-    }
-    if (pTargetLoc->IsPartialStop(eExtreme_Biological)) {
-        pTargetInt->SetPartialStop(true,eExtreme_Biological);
-    }
-
-    return pTargetInt;
-}
-
-CRef<CSeq_loc> CFeaturePropagator::x_MapSubLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
-{
-    CRef<CSeq_loc> pTargetLoc(new CSeq_loc);
-    CRef<CSeq_interval> pTargetInt(new CSeq_interval);
-    bool subloc_added = false;
-
-    switch(sourceLoc.Which()) {    
-        case CSeq_loc::e_Int: {
-            pTargetInt = x_MapInterval(sourceLoc.GetInt(), targetId);
-            if (pTargetInt) {
-                pTargetLoc->SetInt(*pTargetInt);
-                subloc_added = true;
-            }
-            break;
-        }
-        case CSeq_loc::e_Packed_int: {
-            CPacked_seqint& targetInts = pTargetLoc->SetPacked_int();
-            const CPacked_seqint::Tdata& intervals = sourceLoc.GetPacked_int().Get();
-            CPacked_seqint::Tdata::const_iterator cit = intervals.begin();
-            for ( ; cit != intervals.end(); ++cit ) {
-                CRef<CSeq_interval> sub_interval = x_MapInterval(**cit, targetId);
-                if (sub_interval) {
-                    targetInts.AddInterval(*sub_interval);
-                    subloc_added = true;
-                }
-            }
-             if (pTargetLoc->GetPacked_int().Get().size() == 1) {
-                pTargetInt = pTargetLoc->GetPacked_int().Get().front();
-                pTargetLoc->SetInt(*pTargetInt);
-             }
-            break;
-        }
-        case CSeq_loc::e_Mix: {
-            CSeq_loc_mix& targetMix = pTargetLoc->SetMix(); 
-            const CSeq_loc_mix::Tdata& parts = sourceLoc.GetMix().Get();
-            CSeq_loc_mix::Tdata::const_iterator cit = parts.begin();
-            for ( ; cit != parts.end(); ++cit) {
-                CRef<CSeq_loc> target_loc = x_MapSubLocation(**cit, targetId);
-                if (target_loc) {
-                    targetMix.AddSeqLoc(*target_loc);
-                    subloc_added = true;
-                }
-            }
-            if (pTargetLoc->GetMix().Get().size() == 1) {
-                pTargetInt->Assign(pTargetLoc->GetMix().Get().front()->GetInt());
-                pTargetLoc->SetInt(*pTargetInt);
-             }
-            break;
-        }
-        default: {
-           pTargetLoc = m_Mapper->Map(sourceLoc);
-           subloc_added = true;
-           break;
-        }
-    }
-    if (!subloc_added)
-        pTargetLoc.Reset();
-    return pTargetLoc;
-}
-
 CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
 {
-    CRef<CSeq_loc> target = x_MapSubLocation(sourceLoc, targetId);
-    if (target) {
-        if (sourceLoc.IsPartialStart(eExtreme_Biological)) {
-            target->SetPartialStart(true, eExtreme_Biological);
+    CSeq_loc_I loc_i;
+    for (CSeq_loc_CI loc_iter(sourceLoc, CSeq_loc_CI::eEmpty_Skip);  loc_iter;  ++loc_iter)
+    {
+        CConstRef<CSeq_loc> loc = loc_iter.GetRangeAsSeq_loc();
+        CRef<CSeq_loc> pTargetLoc = m_Mapper->Map(*loc);
+        if (!pTargetLoc || pTargetLoc->IsNull()) 
+        {
+            continue;
         }
-        if (sourceLoc.IsPartialStop(eExtreme_Biological)) {
-            target->SetPartialStop(true, eExtreme_Biological);
+        if (m_ExpandOverGaps) 
+        {
+            pTargetLoc = pTargetLoc->Merge(CSeq_loc::fMerge_SingleRange, nullptr);
         }
-        if (m_MergeAbutting) {
-            return target->Merge(CSeq_loc::fMerge_All, nullptr);
+        for (CSeq_loc_CI loc_iter2(*pTargetLoc, CSeq_loc_CI::eEmpty_Skip);  loc_iter2;  ++loc_iter2)
+        {
+            CSeq_loc_I loc_i2 = loc_i.InsertInterval(targetId, loc_iter2.GetRange(), loc_iter2.GetStrand());
+            if (loc_iter2.GetFuzzFrom())
+            {
+                CRef<CInt_fuzz> fuzz(new CInt_fuzz);
+                fuzz->Assign(*loc_iter2.GetFuzzFrom());
+                loc_i2.SetFuzzFrom(*fuzz);
+            }
+            if (loc_iter2.GetFuzzTo())
+            {
+                CRef<CInt_fuzz> fuzz(new CInt_fuzz);
+                fuzz->Assign(*loc_iter2.GetFuzzTo());
+                loc_i2.SetFuzzTo(*fuzz);
+            }
         }
     }
+    CRef<objects::CSeq_loc> target;
+    if (loc_i.HasChanges())
+    {
+        target = loc_i.MakeSeq_loc();
+    }
+    if (m_MergeAbutting && target) 
+    {
+        target = target->Merge(CSeq_loc::fMerge_All, nullptr);
+    }
+    CRef<CSeq_loc> all = m_Mapper->Map(sourceLoc);
+    if (((all && all->IsPartialStart(eExtreme_Biological)) || sourceLoc.IsPartialStart(eExtreme_Biological)) && target)
+    {
+        target->SetPartialStart(true, eExtreme_Biological);
+    }
+    if (((all && all->IsPartialStop(eExtreme_Biological)) || sourceLoc.IsPartialStop(eExtreme_Biological)) && target)
+    {
+        target->SetPartialStop(true, eExtreme_Biological);
+    }
+    if (sourceLoc.IsMix() && target && target->IsPacked_int())
+    {
+        target->ChangeToMix();
+    }
+    
     return target;
 }
 
