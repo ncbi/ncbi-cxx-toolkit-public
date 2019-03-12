@@ -48,6 +48,7 @@ typedef enum {
     ALNFMT_PHYLIP,
     ALNFMT_CLUSTAL,
     ALNFMT_FASTAGAP,
+    ALNFMT_SEQUIN,
 } EAlignFormat;
 
 /*  ---------------------------------------------------------------------- */
@@ -786,6 +787,25 @@ s_ReportASN1Error(
         pEl);
 }
 
+
+static void
+s_ReportUnsupportedFileFormat(
+    const char* format,
+    ILineErrorListener* pEl)
+{
+    const char* errFormat =
+        "This file uses the %s format which is not supported by this application.";
+    string errMessage = StrPrintf(errFormat, format);
+
+    sReportError(
+        "",
+        -1,
+        EDiagSev::eDiag_Fatal,
+        eReader_Alignment,
+        eAlnSubcode_UnsupportedFileFormat,
+        errMessage,
+        pEl);
+}
 
  
 /* This function creates and sends an error message regarding an unused line.
@@ -2578,6 +2598,7 @@ sReadAlignFileRaw(
         if (next_line->line_num == 1) {
             string lineStrLower(linestring);
             NStr::ToLower(lineStrLower);
+            NStr::TruncateSpacesInPlace(lineStrLower);
             if (lineStrLower == "#nexus") {
                 *pformat = EAlignFormat::ALNFMT_NEXUS;
                 break;
@@ -2588,10 +2609,35 @@ sReadAlignFileRaw(
                 next_line->data[0] = 0;
                 break;
             }
+            if (lineStrLower.empty()) {
+                *pformat = EAlignFormat::ALNFMT_SEQUIN;
+                //no break- need to look at second line as well
+                continue;
+            }
+        }
+        if (next_line->line_num == 2  &&  *pformat == EAlignFormat::ALNFMT_SEQUIN) {
+            vector<string> tokens;
+            NStr::Split(linestring, " ", tokens, NStr::fSplit_MergeDelimiters);
+            bool isSequin = (tokens.size() == 5);
+            if (isSequin) {
+                vector<string> expectedTokens{ "10", "20", "30", "40", "50" };
+                for (int i=0; i < 5; ++i) {
+                    if (tokens[i] != expectedTokens[i]) {
+                        isSequin = false;
+                        break;
+                    }
+                }
+            }
+            if (isSequin) {
+                s_ReportUnsupportedFileFormat("sequin-out", afrp->mpErrorListener);
+                return nullptr;
+            }
+            else {
+                *pformat = EAlignFormat::ALNFMT_UNKNOWN;
+            }
         }
 
         overall_line_count = next_line->line_num-1;
-
 
         s_ReadDefline(linestring, 
             overall_line_count, 

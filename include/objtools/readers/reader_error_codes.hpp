@@ -81,6 +81,7 @@ enum EAlnSubcode
     eAlnSubcode_BadSequenceCount,
     eAlnSubcode_IllegalDataLine,
     eAlnSubcode_InsufficientDeflineInfo,
+    eAlnSubcode_UnsupportedFileFormat,
 };
 
 
