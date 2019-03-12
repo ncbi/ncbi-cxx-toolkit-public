@@ -24,7 +24,6 @@ CallingConvention=0
 CompileAs=0
 IgnoreStandardIncludePath=false
 StringPooling=false
-MinimalRebuild=
 ExceptionHandling=1
 BufferSecurityCheck=true
 RuntimeTypeInfo=true
@@ -47,7 +46,6 @@ PreprocessorDefinitions=_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)
 [Compiler.debug]
 DebugInformationFormat=3
 Optimization=0
-MinimalRebuild=true
 GlobalOptimizations=false
 InlineFunctionExpansion=0
 FavorSizeOrSpeed=0
@@ -68,7 +66,6 @@ RuntimeLibrary=1
 DebugInformationFormat=0
 OptimizeForProcessor=3
 Optimization=2
-MinimalRebuild=false
 GlobalOptimizations=true
 InlineFunctionExpansion=2
 FavorSizeOrSpeed=1
