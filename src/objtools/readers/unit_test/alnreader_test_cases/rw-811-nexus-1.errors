@@ -1,0 +1,10 @@
+Line No    : 19
+Severity   : Error
+Code       : 2.103
+Message    : Finding data for sequence "seq3" out of order.
+
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Code       : 2.1
+Message    : Error reading alignment: Invalid input or alphabet
+
