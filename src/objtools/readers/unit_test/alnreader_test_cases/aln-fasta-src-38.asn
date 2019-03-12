@@ -239,6 +239,134 @@ Seq-entry ::= set {
           },
           subtype {
             {
+              subtype altitude,
+              name "val1"
+            },
+            {
+              subtype cell-line,
+              name "val1"
+            },
+            {
+              subtype cell-type,
+              name "val1"
+            },
+            {
+              subtype chromosome,
+              name "val1"
+            },
+            {
+              subtype clone,
+              name "val1"
+            },
+            {
+              subtype clone-lib,
+              name "val1"
+            },
+            {
+              subtype collected-by,
+              name "val1"
+            },
+            {
+              subtype collection-date,
+              name "val1"
+            },
+            {
+              subtype country,
+              name "val1"
+            },
+            {
+              subtype dev-stage,
+              name "val1"
+            },
+            {
+              subtype endogenous-virus-name,
+              name "val1"
+            },
+            {
+              subtype frequency,
+              name "val1"
+            },
+            {
+              subtype genotype,
+              name "val1"
+            },
+            {
+              subtype haplogroup,
+              name "val1"
+            },
+            {
+              subtype haplotype,
+              name "val1"
+            },
+            {
+              subtype identified-by,
+              name "val1"
+            },
+            {
+              subtype isolation-source,
+              name "val1"
+            },
+            {
+              subtype lab-host,
+              name "val1"
+            },
+            {
+              subtype lat-lon,
+              name "val1"
+            },
+            {
+              subtype linkage-group,
+              name "val1"
+            },
+            {
+              subtype map,
+              name "val1"
+            },
+            {
+              subtype mating-type,
+              name "val1"
+            },
+            {
+              subtype other,
+              name "val1"
+            },
+            {
+              subtype other,
+              name "val1"
+            },
+            {
+              subtype phenotype,
+              name "val1"
+            },
+            {
+              subtype plasmid-name,
+              name "val1"
+            },
+            {
+              subtype pop-variant,
+              name "val1"
+            },
+            {
+              subtype segment,
+              name "val1"
+            },
+            {
+              subtype sex,
+              name "val1"
+            },
+            {
+              subtype subclone,
+              name "val1"
+            },
+            {
+              subtype tissue-lib,
+              name "val1"
+            },
+            {
+              subtype tissue-type,
+              name "val1"
+            },
+            {
               subtype whole-replicon,
               name "val1"
             }

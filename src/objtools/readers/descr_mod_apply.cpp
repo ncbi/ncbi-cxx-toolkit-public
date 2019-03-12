@@ -248,9 +248,9 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
 
 void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry)
 {
+
     const auto subtype = s_SubSourceStringToEnum.at(x_GetModName(mod_entry));
     const auto needs_no_text = CSubSource::NeedsNoText(subtype);
-
     CBioSource::TSubtype subsources;
     for (const auto& mod : mod_entry.second) {
         const auto& value = mod.GetValue();
@@ -263,13 +263,8 @@ void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry)
         if (mod.IsSetAttrib()) {
             pSubSource->SetAttrib(mod.GetAttrib());
         }
-        subsources.push_back(move(pSubSource));
+        m_pDescrCache->SetSubtype().push_back(move(pSubSource));
     }
-
-    if (subsources.empty()) {
-        return;
-    }
-    m_pDescrCache->SetSubtype() = move(subsources);
 }
 
 
