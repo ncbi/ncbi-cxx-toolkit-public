@@ -31,6 +31,7 @@
  */
 
 #include <connect/ncbi_blowfish.h>
+#include <connect/ncbi_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +44,7 @@
 
 static void selftest(void)
 {
-    /* Standard test vectors */
+	/* Standard test vectors */
     static const struct {
         char key [17];
         char text[17];
@@ -108,12 +109,14 @@ static void selftest(void)
             data <<= 8;
             data  |= (Uint1) d;
         }
-        printf("test vector %zu:\t0x%016lX\t0x%016lX\n", n + 1, text, data);
+        printf("test vector %zu:\t"
+			   "0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\t"
+			   "0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\n", n + 1, text, data);
         bf = NcbiBlowfishInit(key, sizeof(key));
         assert(bf);
         temp = text;
         NcbiBlowfishEncrypt(bf, &temp);
-        printf("\t\t\t\t\t0x%016lX\n", temp);
+        printf("\t\t\t\t\t0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\n", temp);
         assert(temp == data);
         NcbiBlowfishDecrypt(bf, &temp);
         assert(temp == text);
@@ -173,7 +176,7 @@ int main(int argc, char* argv[])
     }
     assert(i == klen);
     for (i = 0;  i < klen;  ++i)
-        printf("\t0x%016lX\n", data[i]);
+        printf("\t0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\n", data[i]);
     putchar('\n');
     
     for (k = i = 0;  i < klen;  ++i) {

@@ -152,16 +152,19 @@ typedef unsigned int TNCBI_Time;
 
 #if defined(__MINGW32__)  ||  defined(__MINGW64__)
 typedef unsigned long long  TNCBI_BigCount;
-#  define NCBI_BIGCOUNT_FORMAT_SPEC      "I64u"
-#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX  "I64x"
+#  define NCBI_BIGCOUNT_FORMAT_SPEC        "I64u"
+#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX    "I64x"
+#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X  "I64X"
 #elif defined(_WIN32)
 typedef unsigned __int64    TNCBI_BigCount;
-#  define NCBI_BIGCOUNT_FORMAT_SPEC      "I64u"
-#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX  "I64x"
+#  define NCBI_BIGCOUNT_FORMAT_SPEC        "I64u"
+#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX    "I64x"
+#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X  "I64X"
 #else
 typedef uint64_t            TNCBI_BigCount;
-#  define NCBI_BIGCOUNT_FORMAT_SPEC      PRIu64
-#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX  PRIx64
+#  define NCBI_BIGCOUNT_FORMAT_SPEC        PRIu64
+#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX    PRIx64
+#  define NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X  PRIX64
 #endif
 
 
