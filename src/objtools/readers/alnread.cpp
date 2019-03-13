@@ -4282,7 +4282,7 @@ sProcessAlignmentFileAsSequin(
                 if (lineInBlock != seqIds.size()) {
                     string description = StrPrintf(
                         "Missing data line. Expected sequence data for seqID \"%s\"",
-                        seqIds[lineInBlock]);
+                        seqIds[lineInBlock].c_str());
                     sReportAlnError(
                         linePtr->line_num, EDiagSev::eDiag_Error,
                         EAlnSubcode::eAlnSubcode_MissingDataLine,
@@ -4356,7 +4356,7 @@ sProcessAlignmentFileAsSequin(
                 // error: duplicate sequence ID
                 string description = StrPrintf(
                     "Duplicate sequence ID \"%s\"",
-                    seqId);
+                    seqId.c_str());
                 sReportAlnError(
                     linePtr->line_num, EDiagSev::eDiag_Error,
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
@@ -4380,7 +4380,7 @@ sProcessAlignmentFileAsSequin(
             if (seqId != seqIds[lineInBlock]) {
                 string description = StrPrintf(
                     "Unexpected sequence ID \"%s\"",
-                    seqId);
+                    seqId.c_str());
                 sReportAlnError(
                     linePtr->line_num, EDiagSev::eDiag_Error,
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
