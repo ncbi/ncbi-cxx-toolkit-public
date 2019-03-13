@@ -229,7 +229,7 @@ extern
 void NcbiBlowfishEncrypt(NCBI_BLOWFISH bf, Uint8* X)
 {
     Uint4 L = *X >> 32;
-    Uint4 R = *X;
+    Uint4 R = (Uint4) *X;
 #if 0
     size_t n;
     Uint4 t;
@@ -270,7 +270,7 @@ extern
 void NcbiBlowfishDecrypt(NCBI_BLOWFISH bf, Uint8* Y)
 {
     Uint4 L = *Y >> 32;
-    Uint4 R = *Y;
+    Uint4 R = (Uint4) *Y;
 #if 0
     size_t n;
     Uint4 t;
@@ -349,7 +349,7 @@ NCBI_BLOWFISH NcbiBlowfishInit(const void* key, size_t keylen)
     do {
         NcbiBlowfishEncrypt(bf, &V);
         bf->P[n++] = V >> 32;
-        bf->P[n++] = V;
+        bf->P[n++] = (Uint4) V;
     } while (n < SizeOf(bf->P));
 
     for (i = 0;  i < SizeOf(bf->S);  ++i) {
@@ -357,7 +357,7 @@ NCBI_BLOWFISH NcbiBlowfishInit(const void* key, size_t keylen)
         do {
             NcbiBlowfishEncrypt(bf, &V);
             bf->S[i][n++] = V >> 32;
-            bf->S[i][n++] = V;
+            bf->S[i][n++] = (Uint4) V;
         } while (n < SizeOf(bf->S[i]));
         //printf("S%zun = %zu\n", i, n);
     }
