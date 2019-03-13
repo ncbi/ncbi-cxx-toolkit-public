@@ -77,9 +77,11 @@ enum EAlnSubcode
 
     eAlnSubcode_UnterminatedCommand = 100,
     eAlnSubcode_UnterminatedBlock,
+    eAlnSubcode_UnexpectedSeqId,
     eAlnSubcode_BadDataCount,
     eAlnSubcode_BadSequenceCount,
     eAlnSubcode_IllegalDataLine,
+    eAlnSubcode_MissingDataLine,
     eAlnSubcode_InsufficientDeflineInfo,
     eAlnSubcode_UnsupportedFileFormat,
 };
