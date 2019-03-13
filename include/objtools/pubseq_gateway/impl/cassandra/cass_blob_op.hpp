@@ -156,6 +156,13 @@ class CCassBlobWaiter
         return m_Keyspace;
     }
 
+    void SetKeySpace(string const & keyspace) {
+        if (m_State != eInit) {
+            NCBI_THROW(CCassandraException, eSeqFailed, "CCassBlobWaiter: Cannot change keyspace for started task");
+        }
+        m_Keyspace = keyspace;
+    }
+
     int32_t key(void) const
     {
         return m_Key;
