@@ -243,11 +243,15 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         target = target->Merge(CSeq_loc::fMerge_All, nullptr);
     }
     CRef<CSeq_loc> all = m_Mapper->Map(sourceLoc); // Need to do a separate mapping in case one of the starting or finishing intervals falls off - this affects the partials
-    if (all && all->IsPartialStart(eExtreme_Biological) && target)
+    if (((all && all->IsPartialStart(eExtreme_Biological)) ||
+         sourceLoc.IsPartialStart(eExtreme_Biological))    && 
+        target)
     {
         target->SetPartialStart(true, eExtreme_Biological);
     }
-    if (all && all->IsPartialStop(eExtreme_Biological) && target)
+    if (((all && all->IsPartialStop(eExtreme_Biological)) ||
+         sourceLoc.IsPartialStop(eExtreme_Biological))    && 
+        target)
     {
         target->SetPartialStop(true, eExtreme_Biological);
     }
