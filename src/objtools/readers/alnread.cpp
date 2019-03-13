@@ -3348,10 +3348,10 @@ s_RemoveNexusCommentsFromTokens (
     TLineInfoPtr lip = list, start_lip = nullptr, end_lip = nullptr;
 
     while (lip) {
-        if (lip->data  &&  NStr::ToUpper(lip->data)  == "#NEXUS") {
+        if (lip->data  &&  strcmp(NStr::ToUpper(lip->data),"#NEXUS")==0) {
             start_lip = lip;
             end_lip = lip;
-            while (end_lip  &&  end_lip->data  && NStr::ToLower(end_lip->data)  !=  "matrix") {
+            while (end_lip  &&  end_lip->data  && strcmp(NStr::ToLower(end_lip->data),"matrix") != 0) {
                 end_lip = end_lip->next;
             }
             if (end_lip) {
