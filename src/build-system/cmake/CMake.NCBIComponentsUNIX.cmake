@@ -253,10 +253,10 @@ set(FTDS100_LIBS        ${FTDS100_CTLIB_LIBS})
 set(FTDS100_LIB        ${FTDS100_CTLIB_LIB})
 set(FTDS100_INCLUDE    ${FTDS100_CTLIB_INCLUDE})
 
-set(ftds          ftds95)
-set(FTDS_LIBS     ${FTDS95_LIBS})
-set(FTDS_LIB      ${FTDS95_LIB})
-set(FTDS_INCLUDE  ${FTDS95_INCLUDE})
+set(ftds          ftds100)
+set(FTDS_LIBS     ${FTDS100_LIBS})
+set(FTDS_LIB      ${FTDS100_LIB})
+set(FTDS_INCLUDE  ${FTDS100_INCLUDE})
 
 #OpenSSL
 find_package(OpenSSL)
