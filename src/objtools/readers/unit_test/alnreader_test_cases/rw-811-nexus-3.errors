@@ -1,11 +1,11 @@
 Line No    : 18
 Severity   : Error
-Code       : 2.102
+Code       : 2.103
 Message    : Expected 46 symbols per sequence but finding already 48
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Code       : 2.102
+Code       : 2.103
 Message    : Expected 46 symbols per sequence but finding only 48
 
 Line No    : None (Encountered during pre or post processing)

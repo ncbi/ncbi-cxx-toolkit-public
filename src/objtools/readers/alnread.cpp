@@ -2629,8 +2629,7 @@ sReadAlignFileRaw(
                 }
             }
             if (isSequin) {
-                s_ReportUnsupportedFileFormat("sequin-out", afrp->mpErrorListener);
-                return nullptr;
+                break;
             }
             else {
                 *pformat = EAlignFormat::ALNFMT_UNKNOWN;
@@ -4201,10 +4200,245 @@ sProcessAlignmentFileAsClustal(
     }
 }
 
+//  ----------------------------------------------------------------------------
+static bool
+sIsSequinOffsetsLine(
+    const string& line)
+//  ----------------------------------------------------------------------------
+{
+    vector<string> tokens;
+    NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
+    if (tokens.size() > 5) {
+        return false;
+    }
+    for (auto token: tokens) {
+        if (!NStr::EndsWith(token, '0')) {
+            return false;
+        }
+    }
+    return true;
+}
 
+//  ----------------------------------------------------------------------------
+static bool
+sIsSequinTerminationLine(
+    const string& line)
+//  ----------------------------------------------------------------------------
+{
+    return (line == "//");
+}
+
+//  ----------------------------------------------------------------------------
+static bool
+sExtractSequinSequenceData(
+    const string& line,
+    string& seqId,
+    string& seqData)
+    //  ----------------------------------------------------------------------------
+{
+    vector<string> tokens;
+    NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
+    if (tokens.size() < 2) {
+        // error: need at least ID and one block of sequence data
+        return false;
+    }
+
+    seqId = tokens[0];
+
+    if (tokens[1] == ">") {
+        if (tokens.size() < 5) {
+            // error: need at least ID and one block of sequence data and bounds
+            return false;
+        }
+        for (auto curBlock = 3; curBlock < tokens.size() - 1; ++curBlock) {
+            seqData += tokens[curBlock];
+        }
+    }
+    else {
+        for (auto curBlock = 1; curBlock < tokens.size(); ++curBlock) {
+            seqData += tokens[curBlock];
+        }
+    }        
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+static void 
+sProcessAlignmentFileAsSequin(
+    TAlignRawFilePtr afrp)
+//  ----------------------------------------------------------------------------
+{
+    bool processingData = false;
+    bool inFirstBlock = false;
+    int lineInBlock = 0;
+    string refSeqData;
+    vector<string> seqIds;
+    vector<vector<TLineInfoPtr>> sequences;
+
+    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
+
+        if (!linePtr->data  ||  linePtr->data[0] == 0) {
+            if (processingData) {
+                if (lineInBlock != seqIds.size()) {
+                    string description = StrPrintf(
+                        "Missing data line. Expected sequence data for seqID \"%s\"",
+                        seqIds[lineInBlock]);
+                    sReportAlnError(
+                        linePtr->line_num, EDiagSev::eDiag_Error,
+                        EAlnSubcode::eAlnSubcode_MissingDataLine,
+                        description,
+                        afrp->mpErrorListener); 
+                    return;
+                }
+                processingData = false;
+                if (seqIds.size() != 0) {
+                    inFirstBlock = false;
+                }
+            }
+            continue;
+        }
+
+        string line(linePtr->data);
+        NStr::TruncateSpacesInPlace(line);
+
+        if (sIsSequinOffsetsLine(line)) {
+            if (processingData) {
+                string description = StrPrintf(
+                    "Missing data line. Expected sequence data, not sequence offsets");
+                sReportAlnError(
+                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_MissingDataLine,
+                    description,
+                    afrp->mpErrorListener); 
+                return;
+            }
+            continue;
+        }
+
+        if (sIsSequinTerminationLine(line)) {
+            if (processingData) {
+                string description = StrPrintf(
+                    "Missing data line. Expected sequence data, not termination line");
+                sReportAlnError(
+                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_MissingDataLine,
+                    description,
+                    afrp->mpErrorListener); 
+                return;
+            }
+            break;
+        }
+
+        //process sequence data
+        if (!processingData) {
+            processingData = true;
+            lineInBlock = 0;
+            refSeqData.clear();
+            if (seqIds.empty()) {
+                inFirstBlock = true;
+            }
+        }
+        string seqId, seqData;
+        if (!sExtractSequinSequenceData(line, seqId, seqData)) {
+            string description = StrPrintf(
+                "Malformatted data line");
+            sReportAlnError(
+                linePtr->line_num, EDiagSev::eDiag_Error,
+                EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                description,
+                afrp->mpErrorListener); 
+            return;
+        }
+
+        // verify and process sequence ID:
+        if (inFirstBlock) {
+            if (std::find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
+                // error: duplicate sequence ID
+                string description = StrPrintf(
+                    "Duplicate sequence ID \"%s\"",
+                    seqId);
+                sReportAlnError(
+                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
+                    description,
+                    afrp->mpErrorListener); 
+                return;
+            }
+            seqIds.push_back(seqId);
+            sequences.push_back(vector<TLineInfoPtr>());
+        }
+        else {
+            if (lineInBlock >= seqIds.size()) {
+                string description = StrPrintf(
+                    "Extraneous data line in interleaved data block");
+                sReportAlnError(
+                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                    description,
+                    afrp->mpErrorListener); 
+            }
+            if (seqId != seqIds[lineInBlock]) {
+                string description = StrPrintf(
+                    "Unexpected sequence ID \"%s\"",
+                    seqId);
+                sReportAlnError(
+                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
+                    description,
+                    afrp->mpErrorListener); 
+                return;
+            }
+        }
+
+        // verify and process sequence data:
+        if (refSeqData.empty()) {
+            refSeqData = seqData;
+        }
+        else {
+            if (seqData.size() != refSeqData.size()) {
+                string description = StrPrintf(
+                    "Unexpected number of sequence symbols (expected %d but found %d)",
+                    refSeqData.size(),
+                    seqData.size());
+                sReportAlnError(
+                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_BadDataCount,
+                    description,
+                    afrp->mpErrorListener); 
+                return;
+            }
+            for (auto i = 0; i < seqData.size(); ++i) {
+                if (seqData[i] == '.') {
+                    seqData[i] = refSeqData[i];
+                }
+            }
+        }
+
+        strcpy(linePtr->data, seqData.c_str());
+        sequences[lineInBlock].push_back(linePtr);
+        ++lineInBlock;
+    }
+    for (auto idIndex = 0; idIndex < seqIds.size(); ++idIndex) {
+        auto& curSeq = sequences[idIndex];
+        for (auto seqPart = 0; seqPart < curSeq.size(); ++seqPart) {
+            auto liPtr = curSeq[seqPart];
+            afrp->sequences = s_AddAlignRawSeqById(
+                afrp->sequences,
+                seqIds[idIndex],
+                liPtr->data,
+                liPtr->line_num,
+                liPtr->line_num,
+                0);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
 static void 
 sProcessAlignmentFileAsNexus(
     TAlignRawFilePtr afrp)
+//  ----------------------------------------------------------------------------
 {
     const int NUM_SEQUENCES(afrp->expected_num_sequence);
     const int SIZE_SEQUENCE(afrp->expected_sequence_len);
@@ -4588,7 +4822,8 @@ s_FindBadDataCharsInSequence(
                 found_middle_start = true;
                 middle_end = data_position + 1;
                 data_position ++;
-            } else if (sequenceInfo.BeginningGap().find(curr_char) == string::npos) {
+            } else if (sequenceInfo.BeginningGap().find(curr_char) == string::npos  &&
+                    sequenceInfo.Missing().find(curr_char) == string::npos) {
             /* Report error - found character that is not beginning gap
                    in beginning gap */
                 data_position = s_ReportRepeatedBadCharsInSequence (
@@ -4833,21 +5068,29 @@ ReadAlignmentFile(
         return false;
     }
 
-    if (format == EAlignFormat::ALNFMT_NEXUS) {
-        sProcessAlignmentFileAsNexus(afrp);
-    }
-    else 
-    if (format == EAlignFormat::ALNFMT_CLUSTAL) {
-        sProcessAlignmentFileAsClustal(afrp);
-    }
-    else if (afrp->block_size > 1) {
-        s_ProcessAlignRawFileByBlockOffsets (afrp);
-    } else if (afrp->marked_ids) {
-        s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
-    } else {
-        s_ProcessAlignFileRawByLengthPattern (afrp);
-    }
+    switch(format) {
+        default:
+            if (afrp->block_size > 1) {
+                s_ProcessAlignRawFileByBlockOffsets (afrp);
+            } else if (afrp->marked_ids) {
+                s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
+            } else {
+                s_ProcessAlignFileRawByLengthPattern (afrp);
+            }
+            break;
+    
+        case EAlignFormat::ALNFMT_NEXUS:
+            sProcessAlignmentFileAsNexus(afrp);
+            break;
 
+        case EAlignFormat::ALNFMT_CLUSTAL:
+            sProcessAlignmentFileAsClustal(afrp);
+            break;
+
+        case EAlignFormat::ALNFMT_SEQUIN:
+            sProcessAlignmentFileAsSequin(afrp);
+            break;
+    }
 
     s_ReprocessIds (afrp); 
 

@@ -1,6 +1,6 @@
 Line No    : 16
 Severity   : Error
-Code       : 2.104
+Code       : 2.105
 Message    : In data line, expected seqID followed by sequence data and (optionally) data count
 
 Line No    : None (Encountered during pre or post processing)

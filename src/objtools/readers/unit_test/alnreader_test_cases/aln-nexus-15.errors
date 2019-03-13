@@ -1,11 +1,11 @@
 Line No    : 24
 Severity   : Warning
-Code       : 2.104
+Code       : 2.105
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Code       : 2.105
+Code       : 2.107
 Message    : Expected 0 or 5 deflines but finding 4
 
 Line No    : None (Encountered during pre or post processing)

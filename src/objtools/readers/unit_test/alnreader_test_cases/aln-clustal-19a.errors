@@ -1,6 +1,6 @@
 Line No    : 4
 Severity   : Error
-Code       : 2.103
+Code       : 2.104
 Message    : Duplicate ID: "seq1" has already appeared in this block.
 
 Line No    : None (Encountered during pre or post processing)

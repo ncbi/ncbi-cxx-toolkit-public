@@ -1,6 +1,6 @@
 Line No    : 18
 Severity   : Error
-Code       : 2.102
+Code       : 2.103
 Message    : In data line, expected 8 symbols but finding 7
 
 Line No    : None (Encountered during pre or post processing)
