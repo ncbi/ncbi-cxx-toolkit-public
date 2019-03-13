@@ -2,7 +2,7 @@
 
 APP = test_ncbi_blowfish
 SRC = test_ncbi_blowfish
-LIB = connect
+LIB = xconnect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
