@@ -551,7 +551,7 @@ void TestTwoIntCdsFromLastBioseqOutsideAlign()
 
     edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
-    CRef<CSeq_loc> expected_loc1 = CreateLoc(20-front_insert*2, 30-front_insert*2, id1, false, false);
+    CRef<CSeq_loc> expected_loc1 = CreateLoc(20-front_insert*2, 30-front_insert*2, id1, true, false);
     expected_loc1->SetInt().SetStrand(eNa_strand_plus);
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));

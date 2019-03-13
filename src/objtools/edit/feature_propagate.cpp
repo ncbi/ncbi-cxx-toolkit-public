@@ -65,10 +65,36 @@ CFeaturePropagator::CFeaturePropagator
     m_MergeAbutting(merge_abutting),
       m_ExpandOverGaps(true)
 {
-    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
+    CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fTrimMappedLocation);
+    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);
     if (merge_abutting) {
         m_Mapper->SetMergeAll();
     }
+    m_Mapper->SetGapRemove();
+    m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
+}
+
+CFeaturePropagator::CFeaturePropagator
+(CBioseq_Handle src, CBioseq_Handle target,
+ const CSeq_align& align, 
+ bool stop_at_stop, bool cleanup_partials, bool merge_abutting, bool expand_over_gaps,
+ CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
+:     m_Src(src), m_Target(target),
+    m_Scope(m_Target.GetScope()),
+    m_CdsStopAtStopCodon(stop_at_stop),
+    m_CdsCleanupPartials(cleanup_partials),
+    m_MessageListener(pMessageListener),
+    m_MaxFeatId(feat_id),
+    m_MergeAbutting(merge_abutting),
+      m_ExpandOverGaps(expand_over_gaps)
+{
+    CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fTrimMappedLocation);
+    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);
+    if (merge_abutting) {
+        m_Mapper->SetMergeAll();
+    }
+    m_Mapper->SetGapRemove();
+    m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
 }
 
 CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
@@ -204,19 +230,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         }
         for (CSeq_loc_CI loc_iter2(*pTargetLoc, CSeq_loc_CI::eEmpty_Skip);  loc_iter2;  ++loc_iter2)
         {
-            CSeq_loc_I loc_i2 = loc_i.InsertInterval(targetId, loc_iter2.GetRange(), loc_iter2.GetStrand());
-            if (loc_iter2.GetFuzzFrom())
-            {
-                CRef<CInt_fuzz> fuzz(new CInt_fuzz);
-                fuzz->Assign(*loc_iter2.GetFuzzFrom());
-                loc_i2.SetFuzzFrom(*fuzz);
-            }
-            if (loc_iter2.GetFuzzTo())
-            {
-                CRef<CInt_fuzz> fuzz(new CInt_fuzz);
-                fuzz->Assign(*loc_iter2.GetFuzzTo());
-                loc_i2.SetFuzzTo(*fuzz);
-            }
+            CSeq_loc_I loc_i2 = loc_i.InsertInterval(targetId, loc_iter2.GetRange(), loc_iter2.GetStrand());           
         }
     }
     CRef<objects::CSeq_loc> target;
@@ -228,12 +242,12 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
     {
         target = target->Merge(CSeq_loc::fMerge_All, nullptr);
     }
-    CRef<CSeq_loc> all = m_Mapper->Map(sourceLoc);
-    if (((all && all->IsPartialStart(eExtreme_Biological)) || sourceLoc.IsPartialStart(eExtreme_Biological)) && target)
+    CRef<CSeq_loc> all = m_Mapper->Map(sourceLoc); // Need to do a separate mapping in case one of the starting or finishing intervals falls off - this affects the partials
+    if (all && all->IsPartialStart(eExtreme_Biological) && target)
     {
         target->SetPartialStart(true, eExtreme_Biological);
     }
-    if (((all && all->IsPartialStop(eExtreme_Biological)) || sourceLoc.IsPartialStop(eExtreme_Biological)) && target)
+    if (all && all->IsPartialStop(eExtreme_Biological) && target)
     {
         target->SetPartialStop(true, eExtreme_Biological);
     }
