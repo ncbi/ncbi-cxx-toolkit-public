@@ -7,7 +7,7 @@ SRC_C    = ncbi_ansi_ext ncbi_buffer ncbi_types ncbi_priv ncbi_core ncbi_util \
            ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail     \
            ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version     \
            ncbi_lbos ncbi_linkerd ncbi_namerd parson ncbi_ipv6                \
-           ncbi_iprange ncbi_localip
+           ncbi_iprange ncbi_localip ncbi_blowfish
 
 SRC      = $(SRC_C)
 UNIX_SRC = $(LOCAL_LBSM)
