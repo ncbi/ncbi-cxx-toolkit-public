@@ -393,7 +393,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                 continue;
             }
 
-            if (x_TrySeqInstMod(mod_entry, bioseq.SetInst())) {
+            if (x_TrySeqInstMod(mod_entry, bioseq.SetInst(), skipped_mods, fReportError)) {
                 continue;
             }
 
@@ -427,17 +427,20 @@ void CModAdder::Apply(const CModHandler& mod_handler,
 }
 
 
-
-
-void CModAdder::x_ThrowInvalidValue(const CModData& mod_data,
-                                    const string& add_msg)
+void CModAdder::x_ReportInvalidValue(const CModData& mod_data,
+                                    TSkippedMods& skipped_mods,
+                                    FReportError fReportError)
 {
     const auto& mod_name = mod_data.GetName();
     const auto& mod_value = mod_data.GetValue();
     string msg = mod_name + " modifier has invalid value: \"" +   mod_value + "\".";
-    if (!NStr::IsBlank(add_msg)) {
-        msg += " " + add_msg;
+
+    if (fReportError) {
+        fReportError(msg, eDiag_Error, eModSubcode_InvalidValue);
+        skipped_mods.push_back(mod_data);
+        return;
     }
+
     NCBI_THROW(CModReaderException, eInvalidValue, msg);
 }
 
@@ -455,22 +458,27 @@ const string& CModAdder::x_GetModValue(const TModEntry& mod_entry)
 }
 
 
-bool CModAdder::x_TrySeqInstMod(const TModEntry& mod_entry, CSeq_inst& seq_inst)
+bool CModAdder::x_TrySeqInstMod(
+        const TModEntry& mod_entry, 
+        CSeq_inst& seq_inst, 
+        TSkippedMods& skipped_mods,
+        FReportError fReportError)
 {
     const auto& mod_name = x_GetModName(mod_entry);
 
     if (mod_name == "strand") {
-        x_SetStrand(mod_entry, seq_inst);
+        cout << "Calling x_SetStrand()" << endl;
+        x_SetStrand(mod_entry, seq_inst, skipped_mods, fReportError);
         return true;
     }
 
     if (mod_name == "molecule") {
-        x_SetMolecule(mod_entry, seq_inst);
+        x_SetMolecule(mod_entry, seq_inst, skipped_mods, fReportError);
         return true;
     }
 
     if (mod_name == "topology") {
-        x_SetTopology(mod_entry, seq_inst);
+        x_SetTopology(mod_entry, seq_inst, skipped_mods, fReportError);
         return true;
     }
 
@@ -484,23 +492,32 @@ bool CModAdder::x_TrySeqInstMod(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 }
 
 
-void CModAdder::x_SetStrand(const TModEntry& mod_entry, CSeq_inst& seq_inst)
+
+void CModAdder::x_SetStrand(const TModEntry& mod_entry, 
+                            CSeq_inst& seq_inst, 
+                            TSkippedMods& skipped_mods,
+                            FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
     const auto it = s_StrandStringToEnum.find(NStr::ToLower(value));
     if (it == s_StrandStringToEnum.end()) {
-        x_ThrowInvalidValue(mod_entry.second.front());
+        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
+        return;
     }
     seq_inst.SetStrand(it->second);
 }
 
 
-void CModAdder::x_SetMolecule(const TModEntry& mod_entry, CSeq_inst& seq_inst)
+void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
+                              CSeq_inst& seq_inst,
+                              TSkippedMods& skipped_mods,
+                              FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
     const auto it = s_MolStringToEnum.find(NStr::ToLower(value));
     if (it == s_MolStringToEnum.end()) {
-        x_ThrowInvalidValue(mod_entry.second.front());
+        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
+        return;
     }
     seq_inst.SetMol(it->second);
 }
@@ -520,12 +537,16 @@ void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& 
 }
 
 
-void CModAdder::x_SetTopology(const TModEntry& mod_entry, CSeq_inst& seq_inst)
+void CModAdder::x_SetTopology(const TModEntry& mod_entry, 
+                              CSeq_inst& seq_inst,
+                              TSkippedMods& skipped_mods,
+                              FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
     const auto it = s_TopologyStringToEnum.find(NStr::ToLower(value));
     if (it == s_TopologyStringToEnum.end()) {
-        x_ThrowInvalidValue(mod_entry.second.front());
+        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
+        return;
     }
     seq_inst.SetTopology(it->second);
 }

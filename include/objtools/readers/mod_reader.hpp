@@ -135,16 +135,35 @@ private:
     static const string& x_GetModName(const TModEntry& mod_entry);
     static const string& x_GetModValue(const TModEntry& mod_entry);
 
-    static bool x_TrySeqInstMod(const TModEntry& mod_entry, CSeq_inst& seq_inst);
-    static void x_SetStrand(const TModEntry& mod_entry, CSeq_inst& seq_inst);
-    static void x_SetMolecule(const TModEntry& mod_entry, CSeq_inst& seq_inst);
-    static void x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst);
-    static void x_SetTopology(const TModEntry& mod_entry, CSeq_inst& seq_inst);
-    static void x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst);
+    static bool x_TrySeqInstMod(const TModEntry& mod_entry, 
+            CSeq_inst& seq_inst,
+            TSkippedMods& skipped_mods,
+            FReportError fReportError);
 
-    static void x_ThrowInvalidValue(const CModData& mod_data,
-                                    const string& add_msg="");
+    static void x_SetStrand(const TModEntry& mod_entry, 
+            CSeq_inst& seq_inst,
+            TSkippedMods& skipped_mods,
+            FReportError fReportError);
 
+    static void x_SetMolecule(const TModEntry& mod_entry, 
+            CSeq_inst& seq_inst,
+            TSkippedMods& skipped_mods,
+            FReportError fReportError);
+
+    static void x_SetMoleculeFromMolType(const TModEntry& mod_entry, 
+            CSeq_inst& seq_inst);
+
+    static void x_SetTopology(const TModEntry& mod_entry, 
+            CSeq_inst& seq_inst,
+            TSkippedMods& skipped_mods,
+            FReportError fReportError);
+
+    static void x_SetHist(const TModEntry& mod_entry, 
+            CSeq_inst& seq_inst);
+
+    static void x_ReportInvalidValue(const CModData& mod_data,
+                                     TSkippedMods& skipped_mods,
+                                     FReportError fReportError);
 };
 
 
