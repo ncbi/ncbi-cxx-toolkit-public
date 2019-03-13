@@ -185,9 +185,10 @@ int main(int argc, char* argv[])
         NcbiBlowfishDecrypt(bf, &X);
         while (k < sizeof(X)) {
             char c = (char) X;
-            if (!(s[k++] = c))
+            if (!(s[k] = c))
                 break;
             X >>= 8;
+            ++k;
         }
         while (k > 0)
             putchar(s[--k]);
