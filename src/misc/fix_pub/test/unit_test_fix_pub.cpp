@@ -537,3 +537,50 @@ BOOST_AUTO_TEST_CASE(Test_ExtractConsortiums)
         BOOST_CHECK_EQUAL(extracted.front(), "First consortium");
     }
 }
+
+BOOST_AUTO_TEST_CASE(Test_GetFirstTenNames)
+{
+    CAuth_list_Base::C_Names::TStd list_of_authors;
+
+    CRef<CAuthor> author(new CAuthor);
+
+    string lastname("Alsatname"),
+           initials("A.");
+
+    author->SetName().SetName().SetLast(lastname);
+    author->SetName().SetName().SetInitials(initials);
+    list_of_authors.push_back(author);
+
+    list<CTempString> result;
+    fix_pub::GetFirstTenNames(list_of_authors, result);
+
+    BOOST_CHECK_EQUAL(result.size(), 1);
+    if (!result.empty()) {
+        BOOST_CHECK_EQUAL(result.front(), list_of_authors.front()->GetName().GetName().GetLast());
+    }
+    result.clear();
+
+    static const size_t MAX_NUM_OF_AUTHORS = 10;
+    for (char first_letter = 'B'; first_letter <= 'B' + MAX_NUM_OF_AUTHORS; ++first_letter) {
+
+        author.Reset(new CAuthor);
+        lastname[0] = first_letter;
+        initials[0] = first_letter;
+
+        author->SetName().SetName().SetLast(lastname);
+        author->SetName().SetName().SetInitials(initials);
+        list_of_authors.push_back(author);
+    }
+
+    fix_pub::GetFirstTenNames(list_of_authors, result);
+    BOOST_CHECK_EQUAL(result.size(), MAX_NUM_OF_AUTHORS);
+    if (result.size() == MAX_NUM_OF_AUTHORS) {
+
+        auto orig_it = list_of_authors.begin();
+        for (auto& cur_last_name: result) {
+
+            BOOST_CHECK_EQUAL(cur_last_name, (*orig_it)->GetName().GetName().GetLast());
+            ++orig_it;
+        }
+    }
+}
