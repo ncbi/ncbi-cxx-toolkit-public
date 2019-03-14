@@ -3986,7 +3986,7 @@ sProcessClustalDataLine(
                 seqId.c_str());
                 sReportAlnError(
                     lineNum, EDiagSev::eDiag_Error,
-                    EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
                     description,
                     pEl); 
                 return false;
@@ -4014,8 +4014,14 @@ sProcessClustalDataLine(
                 description = StrPrintf(
                     "Expected %d sequences, but finding data for for another.",
                     numSeqs);
+                sReportAlnError(
+                    lineNum, EDiagSev::eDiag_Error,
+                    EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                    description,
+                    pEl); 
+                return false;
             }
-            else 
+
             if (distance(seqIds.begin(), it) < seqCount-1) {
                 description = StrPrintf(
                     "Duplicate ID: \"%s\" has already appeared in this block.",
@@ -4028,7 +4034,7 @@ sProcessClustalDataLine(
             }
             sReportAlnError(
                 lineNum, EDiagSev::eDiag_Error,
-                EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
                 description,
                 pEl); 
             return false;
