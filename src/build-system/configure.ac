@@ -124,7 +124,9 @@ AC_ARG_WITH(_,
 AC_ARG_WITH(debug,
    [ --without-debug         build non-debug versions of libs and apps])
 AC_ARG_WITH(max-debug,
-   [ --with-max-debug(=TYPE) enable extra runtime checks (esp. of STL usage)])
+   [ --with-max-debug        enable extra runtime checks (esp. of STL usage)])
+AC_ARG_WITH(max-debug,
+   [ --with-max-debug=thread ... including via GCC's thread sanitizer])
 AC_ARG_WITH(symbols,
    [ --with-symbols          retain debugging symbols in non-debug mode])
 AC_ARG_WITH(optimization,

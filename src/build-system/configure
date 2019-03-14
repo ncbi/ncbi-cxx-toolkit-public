@@ -1894,7 +1894,8 @@ Optional Packages:
 ===============================================================================
 =============== NCBI C++ Toolkit specific configuration flags =================
  --without-debug         build non-debug versions of libs and apps
- --with-max-debug(=TYPE) enable extra runtime checks (esp. of STL usage)
+ --with-max-debug        enable extra runtime checks (esp. of STL usage)
+ --with-max-debug=thread ... including via GCC's thread sanitizer
  --with-symbols          retain debugging symbols in non-debug mode
  --without-optimization  turn off optimization flags in non-debug mode
  --without-sse42         don't enable SSE 4.2 when optimizing
@@ -3129,6 +3130,12 @@ fi
 # Check whether --with-debug was given.
 if test "${with_debug+set}" = set; then
   withval=$with_debug;
+fi
+
+
+# Check whether --with-max-debug was given.
+if test "${with_max_debug+set}" = set; then
+  withval=$with_max_debug;
 fi
 
 
