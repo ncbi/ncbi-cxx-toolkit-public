@@ -330,8 +330,11 @@ if (valgrind --ncbi --help) >/dev/null 2>&1; then
     VALGRIND_CMD="--ncbi \$VALGRIND_CMD" # --ncbi must be the first option!
 fi
 
+# Leak- and Thread- Sanitizers (GCC 7.3, -fsanitize= flags)
 LSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/lsan.supp"
 export LSAN_OPTIONS
+TSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/tsan.supp"
+export TSAN_OPTIONS
 
 # Export some global vars
 top_srcdir="\$root_dir"

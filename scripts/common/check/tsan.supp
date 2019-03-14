@@ -1,0 +1,3 @@
+# False positive: CXX-10523
+race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
+race:^ncbi::CSafeStatic<ncbi::CParam
