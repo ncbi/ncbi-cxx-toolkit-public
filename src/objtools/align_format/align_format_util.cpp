@@ -2111,30 +2111,18 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);
     }
-    if ((linkout & eStructure) && linkoutInfo.cdd_rid != "" && linkoutInfo.cdd_rid != "0" && first_gi != ZERO_GI){
+    if (linkout & eStructure){
         string struct_link = CAlignFormatUtil::GetURLFromRegistry(
                                                              "STRUCTURE_URL");
 
         url_link = struct_link.empty() ? kStructureUrl : struct_link;
         lnk_displ = textLink ? "Structure" : kStructureImg;  
         
-        string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";
-            
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",
-                NStr::NumericToString(first_gi));                    
-        string  mapCDDParams;
-        if(NStr::Find(linkoutInfo.cdd_rid,"data_cache") != NPOS) {
-                mapCDDParams = "query_gi=" + linkoutInfo.preComputedResID;
-        }
-        else if (linkoutInfo.cdd_rid != "cdd_no_hits") {
-                mapCDDParams = "blast_CD_RID=" + linkoutInfo.cdd_rid;
-        }
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"cdd_params",mapCDDParams);            
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_view",linkoutInfo.structure_linkout_as_group ? "onegroup" : "onepair");
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"taxname",(linkoutInfo.entrez_term == NcbiEmptyString) ? "none":linkoutInfo.entrez_term);            
-        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",linkTitle);
-        
-        
+        string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";        
+        string molID,chainID;
+        NStr::SplitInTwo(firstAcc,"_",molID,chainID);
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"molid",molID);
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",linkTitle);        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kStructureDispl,"lnk",url_link);
         }        
