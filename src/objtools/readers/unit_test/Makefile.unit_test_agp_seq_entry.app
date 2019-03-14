@@ -17,5 +17,5 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD =
 CHECK_COPY = agp_seq_entry_test_cases
 
-WATCHERS = ucko kachalos
+WATCHERS = ucko kachalos drozdov
 
