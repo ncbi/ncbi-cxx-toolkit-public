@@ -302,8 +302,14 @@ size_t sx_GetSize(const CID2_Reply_Data& data)
 }
 
 
+static const bool kAlwaysLoadExternal = true;
+
+
 bool sx_RequestedNA(const CID2_Request_Get_Blob_Id& request)
 {
+    if ( kAlwaysLoadExternal && request.IsSetExternal() ) {
+        return true;
+    }
     if ( request.IsSetSources() ) {
         for ( auto& s : request.GetSources() ) {
             if ( NStr::StartsWith(s, "NA") ) {
@@ -323,6 +329,9 @@ bool sx_IsNABlobId(const CID2_Reply& main_reply)
     const CID2_Reply_Get_Blob_Id& reply = main_reply.GetReply().GetGet_blob_id();
     if ( !reply.IsSetAnnot_info() ) {
         return false;
+    }
+    if ( kAlwaysLoadExternal ) {
+        return true;
     }
     bool has_na_accession = false;
     ITERATE ( CID2_Reply_Get_Blob_Id::TAnnot_info, it, reply.GetAnnot_info() ) {
