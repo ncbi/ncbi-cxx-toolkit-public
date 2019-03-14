@@ -101,9 +101,8 @@ static const char kUnigeneImg[] = "<img border=0 height=16 width=16 src=\"images
 static const string kUnigeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">clustered expressed sequence tags</span></div>";
 
 ///structure
-// .ncbirc alias: STRUCTURE_URL
-static const char kStructureUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=<@rid@>&blast_rep_gi=<@blast_rep_gi@>&hit=<@gi@>&<@cdd_params@>\
-&blast_view=<@blast_view@>&hsp=0&taxname=<@taxname@>&client=blast&log$=structure<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+// .ncbirc alias: STRUCTURE_URLhttps://www.ncbi.nlm.nih.gov/Structure/pdb/1AJ9 
+static const char kStructureUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/Structure/pdb/<@molid@>?log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kStructureImg[] = "<img border=0 height=16 width=16 src=\"<@protocol@>//www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
