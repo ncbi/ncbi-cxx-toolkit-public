@@ -124,7 +124,7 @@ AC_ARG_WITH(_,
 AC_ARG_WITH(debug,
    [ --without-debug         build non-debug versions of libs and apps])
 AC_ARG_WITH(max-debug,
-   [ --with-max-debug        enable extra runtime checks (esp. of STL usage)])
+   [ --with-max-debug(=TYPE) enable extra runtime checks (esp. of STL usage)])
 AC_ARG_WITH(symbols,
    [ --with-symbols          retain debugging symbols in non-debug mode])
 AC_ARG_WITH(optimization,
@@ -609,8 +609,8 @@ dnl to which AC_MSG_ERROR normally copies its output, to be available.
 m4_rename([AS_MESSAGE_LOG_FD], [NCBI_ORIG_ASMLFD])
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug max-debug symbols optimization sse42 profiling code-coverage \
-tcheck dll static static-exe \
+debug max-debug max-debug=thread symbols optimization sse42 \
+profiling code-coverage tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
 lfs limited-linker skew-guard openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
@@ -780,7 +780,7 @@ fi
 if test "$with_debug" = no; then
     : ${with_symbols=no}
     : ${with_optimization=yes}
-    if test "$with_max_debug" = yes; then
+    if test "${with_max_debug-no}" != no; then
        AC_MSG_ERROR([incompatible options: --without-debug but --with-max-debug])
     fi
 else
@@ -3227,13 +3227,21 @@ if test "$compiler" != "MSVC" ; then
       CPPFLAGS="-D_DEBUG $CPPFLAGS"
    fi
 
-   if test "$with_max_debug" = "yes"; then
+   if test "${with_max_debug-no}" != "no"; then
+      case "$compiler:$with_max_debug" in
+         GCC:thread ) sanitize=-fsanitize=thread ;;
+         GCC:yes    ) sanitize=-fsanitize=address ;;
+         *:yes      ) ;;
+         *          )
+            AC_MSG_ERROR([--with-max-debug=$with_max_debug unimplemented for compiler $compiler])
+            ;;
+      esac
       case "$compiler" in
          GCC )
             CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
-            CFLAGS="-fstack-check -fsanitize=address $CFLAGS"
-            CXXFLAGS="-fstack-check -fsanitize=address $CXXFLAGS"
-            LDFLAGS="-fsanitize=address $LDFLAGS"
+            CFLAGS="-fstack-check $sanitize $CFLAGS"
+            CXXFLAGS="-fstack-check $sanitize $CXXFLAGS"
+            LDFLAGS="$sanitize $LDFLAGS"
             ;;
          ICC ) 
             CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
