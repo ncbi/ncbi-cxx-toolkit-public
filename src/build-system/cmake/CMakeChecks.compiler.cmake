@@ -159,6 +159,7 @@ endif (CMAKE_USE_PTHREADS_INIT)
 
 #
 # OpenMP
+if (NOT XCODE)
 find_package(OpenMP REQUIRED)
 ## message("OPENMP_FOUND: ${OPENMP_FOUND}")
 ## message("OpenMP_CXX_SPEC_DATE: ${OpenMP_CXX_SPEC_DATE}")
@@ -167,6 +168,7 @@ if (OPENMP_FOUND)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif (OPENMP_FOUND)
+endif()
 
 #
 # See:
