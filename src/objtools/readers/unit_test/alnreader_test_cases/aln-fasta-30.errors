@@ -1,10 +1,5 @@
 Line No    : 12
-Severity   : Error
+Severity   : Fatal
 Code       : 2.7
 Message    : At ID '>seq3 gene COX': Expected line length 8, actual length 7
-
-Line No    : None (Encountered during pre or post processing)
-Severity   : Fatal
-Code       : 2.1
-Message    : Error reading alignment: Invalid input or alphabet
 

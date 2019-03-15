@@ -74,8 +74,8 @@ public:
     ~CAlnErrorReporter() {};
 
     void
-        Error(
-            const SShowStopper& showStopper)
+    Error(
+        const SShowStopper& showStopper)
     {
         Report(
             showStopper.mLineNumber,
@@ -87,8 +87,8 @@ public:
     };
 
     void
-        Fatal(
-            const SShowStopper& showStopper)
+    Fatal(
+        const SShowStopper& showStopper)
     {
         Report(
             showStopper.mLineNumber,
@@ -100,11 +100,26 @@ public:
     };
 
     void
-        Error(
-            int lineNumber,
-            EAlnSubcode errorCode,
-            const string& descr,
-            const string& seqId = "")
+    Fatal(
+        int lineNumber,
+        EAlnSubcode errorCode,
+        const string& descr,
+        const string& seqId = "")
+    {
+        Report(
+            lineNumber,
+            EDiagSev::eDiag_Fatal,
+            EReaderCode::eReader_Alignment,
+            errorCode,
+            descr,
+            seqId);
+    };
+    void
+    Error(
+        int lineNumber,
+        EAlnSubcode errorCode,
+        const string& descr,
+        const string& seqId = "")
     {
         Report(
             lineNumber,
@@ -116,11 +131,11 @@ public:
     };
 
     void
-        Warn(
-            int lineNumber,
-            EAlnSubcode errorCode,
-            const string& descr,
-            const string& seqId = "")
+    Warn(
+        int lineNumber,
+        EAlnSubcode errorCode,
+        const string& descr,
+        const string& seqId = "")
     {
         Report(
             lineNumber,
@@ -132,13 +147,13 @@ public:
     };
 
     void
-        Report(
-            int lineNumber,
-            EDiagSev severity,
-            EReaderCode subsystem,
-            EAlnSubcode errorCode,
-            const string& descr,
-            const string& seqId = "")
+    Report(
+        int lineNumber,
+        EDiagSev severity,
+        EReaderCode subsystem,
+        EAlnSubcode errorCode,
+        const string& descr,
+        const string& seqId = "")
     {
         string message(descr);
         if (!seqId.empty()) {
@@ -166,6 +181,7 @@ protected:
     ILineErrorListener* mpEl;
 };
 
+extern thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

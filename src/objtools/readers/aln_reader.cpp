@@ -50,6 +50,8 @@
 #include <objtools/readers/mod_reader.hpp>
 #include <objtools/logging/listener.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
+#include "aln_errors.hpp"
+
 #include <cassert>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Align
@@ -57,6 +59,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+thread_local unique_ptr<CAlnErrorReporter> ncbi::objects::theErrorReporter;
 
 string sAlnErrorToString(const CAlnError & error)
 {
@@ -244,6 +247,8 @@ void CAlnReader::Read(
     bool generate_local_ids,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
+    theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
+
     if (m_ReadDone) {
         return;
     }
@@ -255,128 +260,109 @@ void CAlnReader::Read(
     // read the alignment stream
     m_Errors.clear();
     SAlignmentFile alignmentInfo;
-    bool allClear = ReadAlignmentFile(
-        m_IS, generate_local_ids, m_UseNexusInfo, 
-        sequenceInfo, alignmentInfo,
-        pErrorListener);
-
-    if (!allClear) {
-        sReportError(
-            pErrorListener,
-            eDiag_Fatal,
-            eReader_Alignment,
-            eAlnSubcode_InvalidInput,
-            0,
-            "Error reading alignment: Invalid input or alphabet");
+    try {
+        ReadAlignmentFile(
+            m_IS, generate_local_ids, m_UseNexusInfo, sequenceInfo, alignmentInfo);
+    }
+    catch (const SShowStopper& showStopper) {
+        theErrorReporter->Fatal(showStopper);
         return;
     }
 
-    if (1 == alignmentInfo.NumSequences()) {
-        sReportError(
-            pErrorListener,
-            eDiag_Fatal,
-            eReader_Alignment,
-            eAlnSubcode_SingleSeq,
-            0,
-            "Error reading alignment: Need more than one sequence");
-        return;
-    }
- 
-    // Check sequence lengths
-    size_t max_len, min_len;
-    int max_index;
-    s_GetSequenceLengthInfo(alignmentInfo, 
-        min_len,
-        max_len,
-        max_index);
-
-    if (min_len == 0) {
-        sReportError(
-            pErrorListener,
-            eDiag_Fatal,
-            eReader_Alignment,
-            eAlnSubcode_MissingSeqData,
-            0,
-            "Error reading alignment: Missing sequence data");
-        return;
-    }
-
-    if (max_len != min_len) { 
-        // Check for replicated intervals in the longest sequence
-        const int repeat_interval = x_GetGCD(max_len, min_len);
-        const bool is_repeated = 
-            x_IsReplicatedSequence(
-                alignmentInfo.mSequences[max_index].c_str(), max_len, repeat_interval);
-        //AlignmentFileFree(afp);
-
-        if (is_repeated) {
-            sReportError(
-                pErrorListener,
-                eDiag_Fatal,
-                eReader_Alignment,
-                eAlnSubcode_ReplicatedSeq,
-                0,
-                "Error reading alignment: Possible sequence replication");
-            return;
-        }   
-        else {
-            sReportError(
-                pErrorListener,
-                eDiag_Fatal,
-                eReader_Alignment,
-                eAlnSubcode_DifferingSeqLengths,
-                0,
-                "Error reading alignment: Not all sequences have same length");
-            return;
+    //sanity check and post process what the raw reader presents us with:
+    try {
+        if (1 == alignmentInfo.NumSequences()) {
+            throw SShowStopper(
+                -1,
+                eAlnSubcode_SingleSeq,
+                "Error reading alignment: Need more than one sequence");
         }
-    }
+ 
+        // Check sequence lengths
+        size_t max_len, min_len;
+        int max_index;
+        s_GetSequenceLengthInfo(alignmentInfo, 
+            min_len,
+            max_len,
+            max_index);
+
+        if (min_len == 0) {
+            throw SShowStopper(
+                -1,
+                eAlnSubcode_MissingSeqData,
+                "Error reading alignment: Missing sequence data");
+        }
+
+        if (max_len != min_len) { 
+            // Check for replicated intervals in the longest sequence
+            const int repeat_interval = x_GetGCD(max_len, min_len);
+            const bool is_repeated = 
+                x_IsReplicatedSequence(
+                    alignmentInfo.mSequences[max_index].c_str(), max_len, repeat_interval);
+            //AlignmentFileFree(afp);
+
+            if (is_repeated) {
+                throw SShowStopper(
+                    -1,
+                    eAlnSubcode_ReplicatedSeq,
+                    "Error reading alignment: Possible sequence replication");
+            }   
+            else {
+                throw SShowStopper(
+                    -1,
+                    eAlnSubcode_DifferingSeqLengths,
+                    "Error reading alignment: Not all sequences have same length");
+            }
+        }
 
     
-    // if we're trying to guess whether this is an alignment file,
-    // and no tell-tale alignment format lines were found,
-    // check to see if any of the lines contain gaps.
-    // no gaps plus no alignment indicators -> don't guess alignment
-    const auto numSequences = alignmentInfo.NumSequences();
-    if (guess && !alignmentInfo.align_format_found) {
-        bool found_gap = false;
-        for (int i = 0; i < numSequences && !found_gap; i++) {
-            if (alignmentInfo.mSequences[i].find('-') != string::npos) {
-                found_gap = true;
+        // if we're trying to guess whether this is an alignment file,
+        // and no tell-tale alignment format lines were found,
+        // check to see if any of the lines contain gaps.
+        // no gaps plus no alignment indicators -> don't guess alignment
+        const auto numSequences = alignmentInfo.NumSequences();
+        if (guess && !alignmentInfo.align_format_found) {
+            bool found_gap = false;
+            for (int i = 0; i < numSequences && !found_gap; i++) {
+                if (alignmentInfo.mSequences[i].find('-') != string::npos) {
+                    found_gap = true;
+                }
+            }
+            if (!found_gap) {
+                throw SShowStopper(
+                    -1,
+                    EAlnSubcode::eAlnSubcode_UnsupportedFileFormat,
+                    "Error reading alignment: File content not recognized");
             }
         }
-        if (!found_gap) {
-            //AlignmentFileFree (afp);
-            sReportError(
-                pErrorListener,
-                eDiag_Fatal,
-                0,
-                "Error reading alignment");
-            return;
+
+        m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
+        m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
+
+        auto numDeflines = alignmentInfo.NumDeflines();
+        if (numDeflines) {
+            if (numDeflines == m_Ids.size()) {
+                m_DeflineInfo.resize(numDeflines);
+                for (int i=0;  i< numDeflines;  ++i) {
+                    m_DeflineInfo[i] = {
+                        alignmentInfo.mDeflines[i].line_num, 
+                        NStr::TruncateSpaces(
+                        alignmentInfo.mDeflines[i].data)};
+                }
+            }
+            else {
+                theErrorReporter->Error(
+                    -1,
+                    EAlnSubcode::eAlnSubcode_UnsupportedFileFormat,
+                    "Error reading deflines. Unable to associate deflines with sequences");
+            }
         }
     }
-
-    m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
-    m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
-
-    auto numDeflines = alignmentInfo.NumDeflines();
-    if (numDeflines) {
-        if (numDeflines == m_Ids.size()) {
-            m_DeflineInfo.resize(numDeflines);
-            for (int i=0;  i< numDeflines;  ++i) {
-                m_DeflineInfo[i] = {alignmentInfo.mDeflines[i].line_num, 
-                                    NStr::TruncateSpaces(
-                                            alignmentInfo.mDeflines[i].data)};
-            }
-        }
-        else {
-            sReportError(
-                pErrorListener,
-                eDiag_Error,
-                eReader_Alignment,
-                eAlnSubcode_UnmatchedDeflines,
-                0,
-                "Error reading deflines. Unable to associate deflines with sequences");
-        }
+    catch (const SShowStopper& showStopper) {
+        theErrorReporter->Fatal(showStopper);
+        m_Dim = 0;
+        m_ReadDone = true;
+        return;
     }
     m_Dim = m_Ids.size();
     m_ReadDone = true;

@@ -42,8 +42,6 @@ BEGIN_SCOPE(objects);
 
 static const size_t kMaxPrintedIntLen = 10;
 
-thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
-
 /*  ---------------------------------------------------------------------- */
 typedef enum {
     ALNFMT_UNKNOWN,
@@ -4710,61 +4708,57 @@ ReadAlignmentFile(
     SAlignmentFile& alignmentInfo,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
-    theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
-
-    try {
-        TAlignRawFilePtr afrp;
-        EAlignFormat format = ALNFMT_UNKNOWN;
-
-        if (sequence_info.Alphabet().empty()) {
-            return false;
-        }
-
-        afrp = sReadAlignFileRaw ( 
-            istr, use_nexus_info, sequence_info, &format);
-        if (!afrp) {
-            return false;
-        }
-
-        switch(format) {
-            default:
-                if (afrp->block_size > 1) {
-                    s_ProcessAlignRawFileByBlockOffsets (afrp);
-                } else if (afrp->marked_ids) {
-                    s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
-                } else {
-                    s_ProcessAlignFileRawByLengthPattern (afrp);
-                }
-                break;
-    
-            case EAlignFormat::ALNFMT_NEXUS:
-                sProcessAlignmentFileAsNexus(afrp);
-                break;
-
-            case EAlignFormat::ALNFMT_CLUSTAL:
-                sProcessAlignmentFileAsClustal(afrp);
-                break;
-
-            case EAlignFormat::ALNFMT_SEQUIN:
-                sProcessAlignmentFileAsSequin(afrp);
-                break;
-        }
-
-        s_ReprocessIds (afrp); 
-
-        if (s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
-            delete afrp;
-            return false;
-        } 
-
-        bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
-        delete afrp;
-        return result;
+    if (pErrorListener) {
+        theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
     }
-    catch (const SShowStopper& showStopper) {
-        theErrorReporter->Error(showStopper);
+
+    TAlignRawFilePtr afrp;
+    EAlignFormat format = ALNFMT_UNKNOWN;
+
+    if (sequence_info.Alphabet().empty()) {
         return false;
     }
+
+    afrp = sReadAlignFileRaw ( 
+        istr, use_nexus_info, sequence_info, &format);
+    if (!afrp) {
+        return false;
+    }
+
+    switch(format) {
+        default:
+            if (afrp->block_size > 1) {
+                s_ProcessAlignRawFileByBlockOffsets (afrp);
+            } else if (afrp->marked_ids) {
+                s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
+            } else {
+                s_ProcessAlignFileRawByLengthPattern (afrp);
+            }
+            break;
+    
+        case EAlignFormat::ALNFMT_NEXUS:
+            sProcessAlignmentFileAsNexus(afrp);
+            break;
+
+        case EAlignFormat::ALNFMT_CLUSTAL:
+            sProcessAlignmentFileAsClustal(afrp);
+            break;
+
+        case EAlignFormat::ALNFMT_SEQUIN:
+            sProcessAlignmentFileAsSequin(afrp);
+            break;
+    }
+
+    s_ReprocessIds (afrp); 
+
+    if (s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
+        delete afrp;
+        return false;
+    } 
+
+    bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
+    delete afrp;
+    return result;
 };
 
 
