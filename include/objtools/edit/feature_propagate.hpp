@@ -36,6 +36,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -90,12 +91,16 @@ private:
     void x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetId);
 
     CRef<CSeq_loc> x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId);
+    TSignedSeqPos SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3);
+    TSignedSeqPos AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3);
+    CDense_seg::TDim  FindRow(const CSeq_align& align, CBioseq_Handle bsh);
+
     CRef<CSeq_loc> x_TruncateToStopCodon(const CSeq_loc& loc, unsigned int truncLen);
     CRef<CSeq_loc> x_ExtendToStopCodon(CSeq_feat& feat);
 
     CBioseq_Handle m_Src;
     CBioseq_Handle m_Target;
-    CRef<CSeq_loc_Mapper> m_Mapper;
+    const CSeq_align& m_Alignment;
     CScope& m_Scope;
     bool m_CdsStopAtStopCodon;
     bool m_CdsCleanupPartials;

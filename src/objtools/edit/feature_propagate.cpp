@@ -56,7 +56,7 @@ CFeaturePropagator::CFeaturePropagator
  const CSeq_align& align, 
  bool stop_at_stop, bool cleanup_partials, bool merge_abutting,
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
-:     m_Src(src), m_Target(target),
+:     m_Src(src), m_Target(target), m_Alignment(align),
     m_Scope(m_Target.GetScope()),
     m_CdsStopAtStopCodon(stop_at_stop),
     m_CdsCleanupPartials(cleanup_partials),
@@ -64,14 +64,7 @@ CFeaturePropagator::CFeaturePropagator
     m_MaxFeatId(feat_id),
     m_MergeAbutting(merge_abutting),
       m_ExpandOverGaps(true)
-{
-    CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fTrimMappedLocation);
-    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);
-    if (merge_abutting) {
-        m_Mapper->SetMergeAll();
-    }
-    m_Mapper->SetGapRemove();
-    m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
+{   
 }
 
 CFeaturePropagator::CFeaturePropagator
@@ -79,7 +72,7 @@ CFeaturePropagator::CFeaturePropagator
  const CSeq_align& align, 
  bool stop_at_stop, bool cleanup_partials, bool merge_abutting, bool expand_over_gaps,
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
-:     m_Src(src), m_Target(target),
+    :     m_Src(src), m_Target(target), m_Alignment(align),
     m_Scope(m_Target.GetScope()),
     m_CdsStopAtStopCodon(stop_at_stop),
     m_CdsCleanupPartials(cleanup_partials),
@@ -87,14 +80,7 @@ CFeaturePropagator::CFeaturePropagator
     m_MaxFeatId(feat_id),
     m_MergeAbutting(merge_abutting),
       m_ExpandOverGaps(expand_over_gaps)
-{
-    CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fTrimMappedLocation);
-    m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope(), mapper_options);
-    if (merge_abutting) {
-        m_Mapper->SetMergeAll();
-    }
-    m_Mapper->SetGapRemove();
-    m_Mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
+{   
 }
 
 CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
@@ -108,7 +94,8 @@ CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
     }
 
     // propagate feature location
-    CConstRef<CSeq_id> pTargetId = m_Target.GetSeqId();
+    CSeq_id_Handle best_idh = sequence::GetId(m_Target, sequence::eGetId_Best);
+    CConstRef<CSeq_id> pTargetId = best_idh.GetSeqId();
     CRef<CSeq_loc> new_loc = x_MapLocation(orig_feat.GetLocation(), *pTargetId);
     if (!new_loc) {
         if (m_MessageListener) {
@@ -213,53 +200,282 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
     return propagated_feats;
 }
 
-CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
+TSignedSeqPos CFeaturePropagator::SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3)
 {
-    CSeq_loc_I loc_i;
-    for (CSeq_loc_CI loc_iter(sourceLoc, CSeq_loc_CI::eEmpty_Skip);  loc_iter;  ++loc_iter)
+    int res = -1;
+    const CDense_seg& denseg = m_Alignment.GetSegs().GetDenseg();
+    const CSeq_id& id = denseg.GetSeq_id(row);
+    CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
+    if (!bsh)
+        return -1;
+    int length = bsh.GetBioseqLength();
+    CDense_seg::TNumseg num_segs = denseg.GetNumseg();
+    CDense_seg::TDim num_rows = denseg.GetDim();
+    CDense_seg::TNumseg seg = 0;
+    TSignedSeqPos total_len = 0;
+    int found_len = -1;
+    bool found = false;
+    while ( seg < num_segs ) 
     {
-        CConstRef<CSeq_loc> loc = loc_iter.GetRangeAsSeq_loc();
-        CRef<CSeq_loc> pTargetLoc = m_Mapper->Map(*loc);
-        if (!pTargetLoc || pTargetLoc->IsNull()) 
+        TSignedSeqPos start = denseg.GetStarts()[seg * num_rows + row];
+        TSignedSeqPos len   = denseg.GetLens()[seg];
+        ENa_strand strand = eNa_strand_plus;
+        int pos2 = pos;
+        if (denseg.IsSetStrands())
+            strand = denseg.GetStrands()[seg * num_rows + row];
+        if (strand == eNa_strand_minus && start >= 0)
         {
-            continue;
+            start = length - start - len;
+            pos2 = length - pos - 1;
         }
-        if (m_ExpandOverGaps) 
+        if (start >= 0 && pos2 >= start && pos2 < start + len)
         {
-            pTargetLoc = pTargetLoc->Merge(CSeq_loc::fMerge_SingleRange, nullptr);
+            res = total_len + pos2 - start;
+            found = true;
+            break;
         }
-        for (CSeq_loc_CI loc_iter2(*pTargetLoc, CSeq_loc_CI::eEmpty_Skip);  loc_iter2;  ++loc_iter2)
+        if (start >= 0 && start > pos2 && left)
         {
-            CSeq_loc_I loc_i2 = loc_i.InsertInterval(targetId, loc_iter2.GetRange(), loc_iter2.GetStrand());           
+            res = total_len;
+            partial5 = true;
+            found = true;
+            break;
+        }
+        if (start >= 0 && start + len - 1 < pos2 && !left)
+        {
+            found_len = total_len + len - 1;
+        }
+        total_len += len;
+        ++seg;
+    }
+    if (!found)
+    {
+        res = found_len;
+        if (!left)
+            partial3 = true;
+    }
+
+    return res;
+}
+
+TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3) 
+{
+    int res = -1;
+    const CDense_seg& denseg = m_Alignment.GetSegs().GetDenseg();
+    const CSeq_id& id = denseg.GetSeq_id(row);
+    CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
+    if (!bsh)
+        return -1;
+    CDense_seg::TNumseg num_segs = denseg.GetNumseg();
+    CDense_seg::TDim num_rows = denseg.GetDim();
+    CDense_seg::TNumseg seg = 0;
+    TSignedSeqPos total_len = 0;
+    int found_seg = -1;
+    while ( seg < num_segs ) 
+    {
+        TSignedSeqPos start = denseg.GetStarts()[seg * num_rows + row];
+        TSignedSeqPos len   = denseg.GetLens()[seg];
+        ENa_strand strand = eNa_strand_plus;
+        if (denseg.IsSetStrands())
+            strand = denseg.GetStrands()[seg * num_rows + row];
+           
+        total_len += len;
+        if ((total_len > pos && total_len - len <= pos && strand != eNa_strand_minus) ||
+            (total_len - 1>= pos && total_len -1 - len < pos && strand == eNa_strand_minus))
+        {
+            if (start >= 0)
+            {
+                res = start + (pos - (total_len - len));
+                if (strand == eNa_strand_minus)
+                {
+                    res = start + total_len - 1 - pos;
+                }
+                break;
+            }
+            else
+            {
+                found_seg = seg;
+                break;
+            }
+        }
+        ++seg;
+    }
+    if (found_seg >= 0)
+    {
+        seg = found_seg;
+        if (left)
+        {
+            ++seg;
+            while ( seg < num_segs ) 
+            {
+                TSignedSeqPos start = denseg.GetStarts()[seg * num_rows + row];
+                TSignedSeqPos len   = denseg.GetLens()[seg];
+                ENa_strand strand = eNa_strand_plus;
+                if (denseg.IsSetStrands())
+                    strand = denseg.GetStrands()[seg * num_rows + row];
+                if (start >= 0)
+                {
+                    res = start;
+                    if (strand == eNa_strand_minus)
+                        res = start + len - 1;
+                    break;
+                }
+                ++seg;
+            }
+            partial5 = true;
+        }
+        else
+        {
+            while (seg > 0)
+            {
+                --seg;
+                TSignedSeqPos start = denseg.GetStarts()[seg * num_rows + row];
+                TSignedSeqPos len   = denseg.GetLens()[seg];
+                ENa_strand strand = eNa_strand_plus;
+                if (denseg.IsSetStrands())
+                    strand = denseg.GetStrands()[seg * num_rows + row];
+                if (start >= 0)
+                {
+                    res = start + len - 1;
+                    if (strand == eNa_strand_minus)
+                        res = start;
+                    break;
+                }
+            }
+            partial3 = true;
         }
     }
-    CRef<objects::CSeq_loc> target;
-    if (loc_i.HasChanges())
+    return res;
+}
+
+CDense_seg::TDim  CFeaturePropagator::FindRow(const CSeq_align& align, CBioseq_Handle bsh)
+{
+    const CDense_seg& denseg = align.GetSegs().GetDenseg();
+    CDense_seg::TDim num_rows = denseg.GetDim();
+    for (CDense_seg::TDim  i = 0; i < num_rows; i++)
     {
-        target = loc_i.MakeSeq_loc();
+        const CSeq_id& id = denseg.GetSeq_id(i);
+        CBioseq_Handle bsh2 = m_Scope.GetBioseqHandle(id);
+        if (bsh == bsh2)
+        {
+            return i;
+        }
+    }
+    return num_rows;
+}
+
+CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
+{
+    bool partial5 = sourceLoc.IsPartialStart(eExtreme_Positional);
+    bool partial3 = sourceLoc.IsPartialStop(eExtreme_Positional);
+
+    CDense_seg::TDim  source_row = FindRow(m_Alignment, m_Src);
+    CDense_seg::TDim  target_row = FindRow(m_Alignment, m_Target);
+    CRef<CSeq_loc> new_loc(new CSeq_loc);
+    new_loc->Assign(sourceLoc);
+    TSignedSeqPos seq_start = m_Src.GetRangeSeq_loc(0,0)->GetStart(objects::eExtreme_Positional);
+    new_loc->SetId(targetId);
+    ENa_strand source_row_strand = m_Alignment.GetSeqStrand(source_row);
+    ENa_strand target_row_strand = m_Alignment.GetSeqStrand(target_row);
+    CSeq_loc_I loc_it(*new_loc); 
+    while(loc_it)      
+    {
+        if (loc_it.IsEmpty())
+        {
+            loc_it.Delete();
+            continue;
+        }
+        CSeq_loc_CI::TRange range = loc_it.GetRange();
+        TSignedSeqPos start = range.GetFrom() - seq_start;
+        TSignedSeqPos stop = range.GetTo() - seq_start;
+        bool sub_partial5(false), sub_partial3(false);
+        TSignedSeqPos align_start = SeqPosToAlignPos(start, source_row, true, sub_partial5, sub_partial3);
+        TSignedSeqPos align_stop = SeqPosToAlignPos(stop, source_row, false, sub_partial5, sub_partial3);
+        if (align_start < 0 || align_stop < 0)
+        {
+            if (loc_it.GetPos() == 0)
+                partial5 = true;
+            if (loc_it.GetPos() == loc_it.GetSize() - 1)
+                partial3 = true;
+            loc_it.Delete();
+            continue;
+        }
+        TSignedSeqPos new_start = AlignPosToSeqPos(align_start, target_row, true, sub_partial5, sub_partial3);
+        TSignedSeqPos new_stop = AlignPosToSeqPos(align_stop, target_row, false, sub_partial5, sub_partial3);
+        if (new_start < 0 || new_stop < 0)
+        {
+            if (loc_it.GetPos() == 0)
+                partial5 = true;
+            if (loc_it.GetPos() == loc_it.GetSize() - 1)
+                partial3 = true;
+            loc_it.Delete();
+            continue;
+        }
+        if (sub_partial5 && loc_it.GetPos() == 0)
+            partial5 = true;
+        if (sub_partial3 && loc_it.GetPos() == loc_it.GetSize() - 1)
+            partial3 = true;
+
+        if (new_stop < new_start)
+        {
+            swap(new_start, new_stop);
+        }
+        ENa_strand strand = loc_it.GetStrand();
+        if (IsReverse(target_row_strand) != IsReverse(source_row_strand))
+        {
+            loc_it.SetStrand(Reverse(strand));
+            CRef<CInt_fuzz> fuzz_from;
+            if (loc_it.GetFuzzFrom())
+            {
+                fuzz_from.Reset(new CInt_fuzz);
+                fuzz_from->Assign(*loc_it.GetFuzzFrom());
+                loc_it.ResetFuzzFrom();
+            }
+            CRef<CInt_fuzz> fuzz_to;
+            if (loc_it.GetFuzzTo())
+            {
+                fuzz_to.Reset(new CInt_fuzz);
+                fuzz_to->Assign(*loc_it.GetFuzzTo());
+                loc_it.ResetFuzzTo();
+            }
+            if (fuzz_from)
+            {
+                loc_it.SetFuzzTo(*fuzz_from->Negative(0));
+            }
+            if (fuzz_to)
+            {
+                loc_it.SetFuzzFrom(*fuzz_to->Negative(0));
+            }
+        }
+        loc_it.SetFrom(new_start);
+        loc_it.SetTo(new_stop);
+        ++loc_it;
+    }
+    CRef<CSeq_loc> target;
+    if (loc_it.HasChanges())
+    {
+        target = loc_it.MakeSeq_loc();
+    }
+    if (target && (target->IsNull() || target->IsEmpty() || target->GetStart(objects::eExtreme_Positional) == target->GetStop(objects::eExtreme_Positional)))
+    {
+        target.Reset();
     }
     if (m_MergeAbutting && target) 
     {
         target = target->Merge(CSeq_loc::fMerge_All, nullptr);
     }
-    CRef<CSeq_loc> all = m_Mapper->Map(sourceLoc); // Need to do a separate mapping in case one of the starting or finishing intervals falls off - this affects the partials
-    if (((all && all->IsPartialStart(eExtreme_Biological)) ||
-         sourceLoc.IsPartialStart(eExtreme_Biological))    && 
-        target)
+    if (partial5 && target)
     {
-        target->SetPartialStart(true, eExtreme_Biological);
+        target->SetPartialStart(true, eExtreme_Positional);
     }
-    if (((all && all->IsPartialStop(eExtreme_Biological)) ||
-         sourceLoc.IsPartialStop(eExtreme_Biological))    && 
-        target)
+    if (partial3 && target)
     {
-        target->SetPartialStop(true, eExtreme_Biological);
+        target->SetPartialStop(true, eExtreme_Positional);
     }
     if (sourceLoc.IsMix() && target && target->IsPacked_int())
     {
         target->ChangeToMix();
     }
-    
     return target;
 }
 

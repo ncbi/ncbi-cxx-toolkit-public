@@ -584,12 +584,129 @@ void TestTwoIntCdsOnMinusStrand()
     edit::CFeaturePropagator propagator1(bsh3, bsh1, *align, false, false, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(10, 20, 0, 5, eNa_strand_minus, id1, true, true);
-    new_feat1->SetLocation().ChangeToMix();
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
     listener.Clear();    
 }
+
+// test partial when the stop is cut off
+void TestPartialWhenCutStop(bool partial3)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 20, 40, eNa_strand_plus, id1, false, partial3);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CDense_seg& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(1);
+    denseg.ResetLens();
+    denseg.SetLens().push_back(30);
+    denseg.ResetStarts();
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(5, 15, 20, 29, eNa_strand_plus, id2, false, true);
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    listener.Clear();    
+}
+
+// test partial when the last interval is cut off
+void TestPartialWhenCutLastInterval(bool partial3)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 40, 50, eNa_strand_plus, id1, false, partial3);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CDense_seg& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(1);
+    denseg.ResetLens();
+    denseg.SetLens().push_back(30);
+    denseg.ResetStarts();
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    CRef<CSeq_loc> expected_loc1 = CreateLoc(5, 15, id2, false, true);
+    expected_loc1->SetInt().SetStrand(eNa_strand_plus);
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    listener.Clear();    
+}
+
+// test partial when the start is cut off
+void TestPartialWhenCutStart(bool partial5)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 20, 25, eNa_strand_plus, id1, partial5, false);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CDense_seg& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(1);
+    denseg.ResetLens();
+    denseg.SetLens().push_back(30);
+    denseg.ResetStarts();
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(10);
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(10, 15, 20, 25, eNa_strand_plus, id2, true, false);
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    listener.Clear();    
+}
+
+// test circular topology
+// test extend over gaps
+// test fuse abutting intervals
+// test ordered vs. joined locations
+
 
 BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
 {
@@ -622,6 +739,13 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestTwoIntCdsFromLastBioseqOutsideAlign();
 
     TestTwoIntCdsOnMinusStrand();
+
+    TestPartialWhenCutStop(false);
+    TestPartialWhenCutStop(true);
+    TestPartialWhenCutLastInterval(false);
+    TestPartialWhenCutLastInterval(true);
+    TestPartialWhenCutStart(false);
+    TestPartialWhenCutStart(true);
 }
 
 
@@ -768,7 +892,7 @@ void ImproveAlignment(CSeq_align& align, size_t front_insert)
     denseg.SetStarts().push_back(front_insert * 2);
 }
 
-// TODO
+// TODO? Bad alignment!
 
 BOOST_AUTO_TEST_CASE(Test_PropagateAll)
 {
