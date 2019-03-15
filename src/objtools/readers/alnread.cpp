@@ -423,11 +423,10 @@ using TAlignRawSeqPtr = SAlignRawSeq*;
 //  ============================================================================
 struct SAlignFileRaw {
 //  ============================================================================
-    SAlignFileRaw(
-        ILineErrorListener* pEl):
+    SAlignFileRaw():
         marked_ids(false), line_list(nullptr),
         block_size(0), 
-        /*offset_list(nullptr),*/ sequences(nullptr), mpErrorListener(pEl),
+        sequences(nullptr),
         alphabet_(""), expected_num_sequence(0),
         expected_sequence_len(0), align_format_found(false)
     {};
@@ -444,7 +443,6 @@ struct SAlignFileRaw {
     bool                 marked_ids;
     int                  block_size;
     list<int>            mOffsetList;
-    ILineErrorListener*  mpErrorListener;
     string               alphabet_;
     int                  expected_num_sequence;
     int                  expected_sequence_len;
@@ -479,362 +477,159 @@ sMakeErrorMessage(
 
 
 //  ============================================================================
-void
-sReportError(
-    const string& id,
-    int lineNumber,
-    EDiagSev severity,
-    int code,
-    int subcode,
-    const string& description,
-    ILineErrorListener* pEl)
+struct SShowStopper: std::exception
 //  ============================================================================
 {
-    if (!pEl) {
-        NCBI_THROW2(CObjReaderParseException, eFormat, description, 0);
+public:
+    SShowStopper(
+        int lineNumber,
+        EAlnSubcode errCode,
+        const string& descr,
+        const string& seqId = ""):
+        mLineNumber(lineNumber),
+        mErrCode(errCode),
+        mDescr(descr),
+        mSeqId(seqId) {};
+
+    const char* what() const noexcept {
+        return mDescr.c_str();
     }
-    if (lineNumber == -1) {
-        lineNumber = 0;
-    }
-    string message = sMakeErrorMessage(id, description);
-    AutoPtr<CLineErrorEx> pErr(
-        CLineErrorEx::Create(
-            ILineError::eProblem_GeneralParsingError,
-            severity,
-            code,
-            subcode,
-            "",
+
+    int mLineNumber;
+    EAlnSubcode mErrCode;
+    string mDescr;
+    string mSeqId;
+};
+
+//  ============================================================================
+class CAlnErrorReporter
+//  ============================================================================
+{
+public:
+    CAlnErrorReporter(
+        ILineErrorListener* pEl = nullptr): mpEl(pEl) {};
+
+    ~CAlnErrorReporter() {};
+
+    void 
+    Error(
+        const SShowStopper& showStopper)
+    {
+        Report(
+            showStopper.mLineNumber, 
+            EDiagSev::eDiag_Error, 
+            EReaderCode::eReader_Alignment, 
+            showStopper.mErrCode, 
+            showStopper.mDescr,
+            showStopper.mSeqId);
+    };
+
+    void
+    Fatal(
+        const SShowStopper& showStopper)
+    {
+        Report(
+            showStopper.mLineNumber,
+            EDiagSev::eDiag_Fatal,
+            EReaderCode::eReader_Alignment,
+            showStopper.mErrCode,
+            showStopper.mDescr,
+            showStopper.mSeqId);
+    };
+
+    void
+    Error(
+        int lineNumber,
+        EAlnSubcode errorCode,
+        const string& descr,
+        const string& seqId = "")
+    {
+        Report(
             lineNumber,
-            message));
-    pEl->PutError(*pErr);
-}
+            EDiagSev::eDiag_Error,
+            EReaderCode::eReader_Alignment,
+            errorCode,
+            descr,
+            seqId);
+    };
 
-//  ============================================================================
-void
-sReportAlnError(
-    int lineNumber,
-    EDiagSev severity,
-    int subcode,
-    const string& description,
-    ILineErrorListener* pEl)
-//  =============================================================================
-{
-    sReportError(
-        "", lineNumber, severity, 
-        EReaderCode::eReader_Alignment, subcode,
-        description,
-        pEl);
-}
+    void
+    Warn(
+        int lineNumber,
+        EAlnSubcode errorCode,
+        const string& descr,
+        const string& seqId = "")
+    {
+        Report(
+            lineNumber, 
+            EDiagSev::eDiag_Warning, 
+            EReaderCode::eReader_Alignment,
+            errorCode,
+            descr,
+            seqId);
+    };
 
-//  ============================================================================
-static void sReportError(
-    const string& id,
-    int lineNumber,
-    EDiagSev severity,
-    const string& description,
-    ILineErrorListener* pEl)
-//  ============================================================================
-{
-    sReportError(
-        id, lineNumber, severity, 
-        EReaderCode::eReader_Alignment,
-        EAlnSubcode::eAlnSubcode_Undefined, 
-        description, pEl);
-}
-
-/* This function creates and sends an error message regarding a character
- * that is unexpected in sequence data.
- */
-static void 
-s_ReportBadCharError(
-    const string& id,
-    char bad_char,
-    int num_bad,
-    int offset,
-    int line_number,
-    const string& reason,
-    ILineErrorListener* pEl)
-{
-    const char * errFormat = "%d bad characters (%c) found at position %d (%s).";
-    string errMessage = StrPrintf(errFormat, num_bad, bad_char, offset, reason.c_str());
-    
-    sReportError(
-        id,
-        line_number,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_BadCharacters,
-        errMessage,
-        pEl);
-}
- 
-
-/* This function creates and sends an error message regarding an ID that
- * was found in the wrong location.
- */
-static void 
-s_ReportInconsistentID(
-    const string& id,
-    int line_number,
-    ILineErrorListener* pEl)
-{
-    sReportError(
-        id,
-        line_number,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_UnexpectedID,
-        "Found unexpected ID",
-        pEl);
-}
-
-
-/* This function creates and sends an error message regarding a line
- * of sequence data that was expected to have a different length.
- */
-static void 
-s_ReportInconsistentBlockLine(
-    const string& id,
-    int line_number,
-    ILineErrorListener* pEl)
-{
-    sReportError(
-        id,
-        line_number,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_InconsistentBlockLines,
-        "Inconsistent block line formatting",
-        pEl);
-}
-
-
-/* This function creates and sends an error message regarding a line of
- * sequence data that was expected to be a different length.
- */
-static void 
-s_ReportLineLengthError(
-    char* id,
-    TLineInfoPtr lip,
-    int expected_length,
-    ILineErrorListener* pEl)
-{
-    if (!lip) {
-        return;
+    void
+    Report(
+        int lineNumber,
+        EDiagSev severity,
+        EReaderCode subsystem,
+        EAlnSubcode errorCode,
+        const string& descr,
+        const string& seqId = "")
+    {
+        string message(descr);
+        if (!seqId.empty()) {
+            message = "At ID \'" + seqId + "\': " + descr;
+        } 
+        if (!mpEl) {
+            NCBI_THROW2(CObjReaderParseException, eFormat, message, 0);
+        }
+        if (lineNumber == -1) {
+            lineNumber = 0;
+        }
+        AutoPtr<CLineErrorEx> pErr(
+            CLineErrorEx::Create(
+                ILineError::eProblem_GeneralParsingError,
+                severity,
+                subsystem,
+                errorCode,
+                "",
+                lineNumber,
+                message));
+        mpEl->PutError(*pErr);
     }
 
-    const char * errFormat = "Expected line length %d, actual length %d";
-    size_t dataLength = (lip->data ? strlen(lip->data) : 0);
-    string errMessage = StrPrintf(errFormat, expected_length, dataLength);
-
-    sReportError(
-        id,
-        lip->line_num,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_UnexpectedLineLength,
-        errMessage,
-        pEl);
-}
+protected:
+    ILineErrorListener* mpEl;
+};
+thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
 
-/* This function creates and sends an error message regarding a block of
- * sequence data that was expected to contain more lines.
- */
-static void 
-s_ReportBlockLengthError(
-    char* id,
-    int line_num,
-    int expected_num,
-    int actual_num,
-    ILineErrorListener* pEl)
-{
-    const char* errFormat = "Expected %d lines in block, found %d";
-    string errMessage = StrPrintf(errFormat, expected_num, actual_num);
-
-    sReportError(
-        id,
-        line_num,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_UnexpectedBlockLength,
-        errMessage,
-        pEl);
-}
-
-
-/* This function creates and sends an error message regarding a block of
- * sequence data that contains duplicate IDs.
- */
-static void 
-s_ReportDuplicateIDError(
-    const string& id,
-    int line_num,
-    ILineErrorListener* pEl)
-{
-    sReportError(
-        id,
-        line_num,
-        EDiagSev::eDiag_Warning,
-        eReader_Alignment,
-        eAlnSubcode_DuplicateID,
-        "Duplicate ID!  Sequences will be concatenated!",
-        pEl);
-}
-
-
-/* This function creates and sends an error message regarding missing
- * sequence data.
- */
-static void
-s_ReportMissingSequenceData(
-    const string& id,
-    ILineErrorListener* pEl)
-{
-    sReportError(
-        id,
-        -1,
-        EDiagSev::eDiag_Fatal,
-        eReader_Alignment,
-        eAlnSubcode_MissingSeqData,
-        "No data found",
-        pEl);
-}
-
-
-/* This function creates and sends an error message indicating that the
- * most common length of the sequences in the file do not match a comment
- * found in the file.
- */
-static void 
-s_ReportBadSequenceLength(
-    const char* id,
-    int expected_length,
-    int actual_length,
-    ILineErrorListener* pEl)
-{
-    const char*  errFormat = "Expected sequence length %d, actual length %d";
-    string errMessage = StrPrintf(errFormat, expected_length, actual_length);
-
-    sReportError(
-        id,
-        -1,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_UnexpectedSeqLength,
-        errMessage,
-        pEl);
-}
-
-
-/* This function creates and sends an error message indicating that the
- * number of sequences read does not match a comment in the alignment file.
- */
-static void
-s_ReportIncorrectNumberOfSequences(
-    int num_expected,
-    int num_found,
-    ILineErrorListener* pEl)
-{
-    const char*  errFormat = "Expected %d sequences, found %d";
-    string errMessage = StrPrintf(errFormat, num_expected, num_found);
-
-    sReportError(
-        "",
-        -1,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_UnexpectedNumSeqs,
-        errMessage,
-        pEl);
-}
-
-
-static void
-s_ReportIncorrectSequenceLength(
-    int len_expected,
-    int len_found,
-    ILineErrorListener* pEl)
-{
-    const char*  errFormat = "Expected sequences of length %d, found %d";
-    string errMessage = StrPrintf(errFormat, len_expected, len_found);
-
-    sReportError(
-        "",
-        -1,
-        EDiagSev::eDiag_Error,
-        eReader_Alignment,
-        eAlnSubcode_UnexpectedSeqLength,
-        errMessage,
-        pEl);
-}
-
-
-/* This function creates and sends an error message indicating that the file
- * being read is an ASN.1 file.
- */
-static void 
-s_ReportASN1Error(
-    ILineErrorListener* pEl)
-{
-    sReportError(
-        "",
-        -1,
-        EDiagSev::eDiag_Fatal,
-        eReader_Alignment,
-        eAlnSubcode_Asn1File,
-        "This is an ASN.1 file which cannot be read by this function",
-        pEl);
-}
-
-
-static void
-s_ReportUnsupportedFileFormat(
-    const char* format,
-    ILineErrorListener* pEl)
-{
-    const char* errFormat =
-        "This file uses the %s format which is not supported by this application.";
-    string errMessage = StrPrintf(errFormat, format);
-
-    sReportError(
-        "",
-        -1,
-        EDiagSev::eDiag_Fatal,
-        eReader_Alignment,
-        eAlnSubcode_UnsupportedFileFormat,
-        errMessage,
-        pEl);
-}
-
- 
 /* This function creates and sends an error message regarding an unused line.
  */
 static void 
-s_ReportUnusedLine(
+sWarnUnusedLine(
     int line_num_start,
     int line_num_stop,
-    TLineInfoPtr line_val,
-    ILineErrorListener* pEl)
+    TLineInfoPtr line_val)
 {
     const char * errFormat1 = "Line %d could not be assigned to an interleaved block";
     const char * errFormat2 = "Lines %d through %d could not be assigned to an interleaved block";
     const char * errFormat3 = "Contents of unused line: %s";
     int skip;
 
-    if (!pEl  ||  !line_val) {
+    if (!line_val) {
         return;
     }
 
     if (line_num_start == line_num_stop) {
         string errMessage = StrPrintf(errFormat1, line_num_start);
         errMessage += "\n" + StrPrintf(errFormat3, line_val->data);
-        sReportError(
-            "",
+        theErrorReporter->Warn(
             line_num_start,
-            EDiagSev::eDiag_Warning,
-            errMessage,
-            pEl);
+            eAlnSubcode_UnusedLine,
+            errMessage);
         return;
     }
     string errMessage = StrPrintf(errFormat2, line_num_start, line_num_stop);
@@ -844,14 +639,10 @@ s_ReportUnusedLine(
         }
         errMessage += "\n" + StrPrintf(errFormat3, line_val->data);
     }
-    sReportError(
-        "",
+    theErrorReporter->Warn(
         line_num_start,
-        EDiagSev::eDiag_Warning,
-        eReader_Alignment,
         eAlnSubcode_UnusedLine,
-        errMessage,
-        pEl);
+        errMessage);
 }
 
 //  Extract a single line from the given stream.
@@ -2252,8 +2043,7 @@ sFindUnusedLines(
     TLengthListPtr patternList,
     TLineInfoPtr lineList,
     const list<int> offsetList,
-    int blockSize,
-    ILineErrorListener* pEl)
+    int blockSize)
 {
     int lineCounter = 0;
     auto llp = patternList;
@@ -2265,10 +2055,10 @@ sFindUnusedLines(
         // if past all sequence data then line definitely not used
         if (offsetIt == offsetList.end()) {  
             if (llp->lengthrepeats) {
-                s_ReportUnusedLine (lineCounter,
+                sWarnUnusedLine(
+                    lineCounter,
                     lineCounter + llp->num_appearances - 1,
-                    lineList,
-                    pEl);
+                    lineList);
                 lineList->data[0] = 0;
                 if (offsetIt != offsetList.begin()) {
                     rVal = true;
@@ -2285,10 +2075,10 @@ sFindUnusedLines(
         // otherwise, it must be sequence data or already used (i.e. zeroed out)
         if (lineCounter < *offsetIt) {
             if (llp->lengthrepeats) {
-                s_ReportUnusedLine (lineCounter,
+                sWarnUnusedLine(
+                    lineCounter,
                     lineCounter + llp->num_appearances - 1,
-                    lineList,
-                    pEl);
+                    lineList);
                 lineList->data[0] = 0;
                 if (offsetIt != offsetList.begin()) {
                     rVal = true;
@@ -2357,7 +2147,7 @@ s_FindInterleavedBlocks(
         }
         sAugmentBlockPatternOffsetList(pattern_list, afrp->mOffsetList, afrp->block_size);
     }
-    if (sFindUnusedLines(pattern_list, afrp->line_list, afrp->mOffsetList, afrp->block_size, afrp->mpErrorListener)) {
+    if (sFindUnusedLines(pattern_list, afrp->line_list, afrp->mOffsetList, afrp->block_size)) {
         afrp->block_size = 0;
     } else {
         afrp->align_format_found = true;
@@ -2403,10 +2193,11 @@ s_AfrpInitLineData(
     bool isNexusFile = false;
 
     if (s_IsASN1 (linestring)) {
-        s_ReportASN1Error (afrp->mpErrorListener);
-        return false;
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_Asn1File,
+            "This is an ASN.1 file which cannot be read by this function");
     }
-
     while (dataAvailable) {
         NStr::TruncateSpacesInPlace(linestring);
         string lineStrLower(linestring);
@@ -2565,8 +2356,7 @@ sReadAlignFileRaw(
     istream& istr,
     bool use_nexus_file_info,
     CSequenceInfo& sequence_info,
-    EAlignFormat* pformat,
-    ILineErrorListener* pErrorListener)
+    EAlignFormat* pformat)
 {
     char *                   linestring;
     TAlignRawFilePtr         afrp;
@@ -2583,7 +2373,7 @@ sReadAlignFileRaw(
     bool                     last_line_was_marked_id = false;
     TLineInfoPtr             next_line;
 
-    afrp = new SAlignFileRaw(pErrorListener);
+    afrp = new SAlignFileRaw();
 
     afrp->alphabet_ = sequence_info.Alphabet();
 
@@ -2920,9 +2710,7 @@ s_BlockIsConsistent(
             string tmpId(cp, len);
             id_offset = s_FindAlignRawSeqOffsetById (afrp->sequences, tmpId);
             if (id_offset != block_offset  &&  ! first_block) {
-                rval = false;
-                s_ReportInconsistentID (
-                    tmpId, lip->line_num, afrp->mpErrorListener);
+                throw SShowStopper(lip->line_num, eAlnSubcode_UnexpectedSeqId, "Found duplicate ID");
             }
             cp += len;
             cp += strspn (cp, " \t\r");
@@ -2964,9 +2752,11 @@ s_BlockIsConsistent(
         }
         this_pattern = s_GetBlockPattern (cp);
         if ( ! s_DoLengthPatternsMatch (this_pattern, best)) {
-            rval = false;
-            s_ReportInconsistentBlockLine (
-                tmpId, lip->line_num, afrp->mpErrorListener);
+            throw SShowStopper(
+                lip->line_num,
+                eAlnSubcode_InconsistentBlockLines,
+                "Inconsistent block line formatting",
+                tmpId);
         }
         delete this_pattern;
     }
@@ -3018,9 +2808,11 @@ s_ProcessBlockLines(
                 /* Check for duplicate IDs in the first block */
                 if (first_block) {
                     arsp = s_FindAlignRawSeqById (afrp->sequences, this_id);
-                    if (arsp != NULL) {
-                        s_ReportDuplicateIDError (
-                            this_id, lip->line_num, afrp->mpErrorListener);
+                    if (arsp) {
+                        theErrorReporter->Warn(
+                            lip->line_num,
+                            eAlnSubcode_DuplicateID,
+                            "Duplicate ID!  Sequences will be concatenated!");
                     }
                 }
                 afrp->sequences = s_AddAlignRawSeqById (
@@ -3030,9 +2822,13 @@ s_ProcessBlockLines(
             else {
                 if (!s_AddAlignRawSeqByIndex (afrp->sequences, blockLineCount,
                         linestring, lip->line_num, lip->line_offset)) {
-                    s_ReportBlockLengthError (
-                        "", lip->line_num, afrp->block_size, blockLineCount,
-                        afrp->mpErrorListener);
+                    string description = StrPrintf(
+                        "Expected %d lines in block, found %d", 
+                        afrp->block_size, blockLineCount);
+                    throw SShowStopper(
+                        lip->line_num,
+                        eAlnSubcode_UnexpectedBlockLength,
+                        description);
                 }
             }
         }
@@ -3153,8 +2949,14 @@ sCreateSequencesBasedOnTokenPatterns(
                         pattern_line_counter ++) {
                     if (lip->data[0]  !=  ']'  &&  lip->data[0]  != '[') {
                         if (strlen (lip->data) != sip->size_value) {
-                            s_ReportLineLengthError (
-                                curr_id, lip, sip->size_value, afrp->mpErrorListener);
+                            string description = StrPrintf(
+                                "Expected line length %d, actual length %d", 
+                                sip->size_value, strlen (lip->data));
+                            throw SShowStopper(
+                                lip->line_num,
+                                eAlnSubcode_UnexpectedLineLength,
+                                description,
+                                curr_id);
                         }
                         afrp->sequences = s_AddAlignRawSeqById (afrp->sequences, 
                                                                 curr_id, 
@@ -3168,13 +2970,18 @@ sCreateSequencesBasedOnTokenPatterns(
                 }
             }
             if (sip  &&  lip ) {
-                s_ReportBlockLengthError (
-                    curr_id, lip->line_num, afrp->block_size,
-                    line_counter - *offsetIt, afrp->mpErrorListener);
+                string description = StrPrintf(
+                    "Expected %d lines in block, found %d", 
+                    afrp->block_size, line_counter - *offsetIt);
+                throw SShowStopper(
+                    lip->line_num,
+                    eAlnSubcode_UnexpectedBlockLength,
+                    description);
             }
         }
     }
 }
+
 
 /* The following functions are used for analyzing contiguous data with
  * marked IDs.
@@ -3975,21 +3782,17 @@ sProcessClustalDataLine(
     const int blockCount,
     int& blockLineLength,
     vector<string>& seqIds,
-    vector<vector<TLineInfoPtr>>& sequences,
-    ILineErrorListener* pEl)
+    vector<vector<TLineInfoPtr>>& sequences)
 {
     auto seqId = tokens[0];
     if (blockCount == 1) {
     if (find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
         string description = StrPrintf(
-                "Duplicate ID: \"%s\" has already appeared in this block.",
-                seqId.c_str());
-                sReportAlnError(
-                    lineNum, EDiagSev::eDiag_Error,
-                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                    description,
-                    pEl); 
-                return false;
+            "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+        throw SShowStopper(
+            lineNum,
+            EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            description);
         }
         seqIds.push_back(seqId);
         sequences.push_back(vector<TLineInfoPtr>());
@@ -3999,12 +3802,10 @@ sProcessClustalDataLine(
             string description = StrPrintf(
                 "Expected %d sequences, but finding data for for another.",
                 numSeqs);
-            sReportAlnError(
-                lineNum, EDiagSev::eDiag_Error,
+            throw SShowStopper(
+                lineNum,
                 EAlnSubcode::eAlnSubcode_BadSequenceCount,
-                description,
-                pEl); 
-                return false;
+                description);
         }
 
         if (seqId != seqIds[seqCount-1]) {
@@ -4014,14 +3815,8 @@ sProcessClustalDataLine(
                 description = StrPrintf(
                     "Expected %d sequences, but finding data for for another.",
                     numSeqs);
-                sReportAlnError(
-                    lineNum, EDiagSev::eDiag_Error,
-                    EAlnSubcode::eAlnSubcode_BadSequenceCount,
-                    description,
-                    pEl); 
-                return false;
             }
-
+            else 
             if (distance(seqIds.begin(), it) < seqCount-1) {
                 description = StrPrintf(
                     "Duplicate ID: \"%s\" has already appeared in this block.",
@@ -4032,12 +3827,10 @@ sProcessClustalDataLine(
                     "Finding data for sequence \"%s\" out of order.",
                     seqId.c_str());
             }
-            sReportAlnError(
-                lineNum, EDiagSev::eDiag_Error,
-                EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                description,
-                pEl); 
-            return false;
+            throw SShowStopper(
+                lineNum,
+                EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                description);
         }
     }
     
@@ -4052,12 +3845,10 @@ sProcessClustalDataLine(
             "In data line, expected %d symbols but finding %d",
             blockLineLength,
             currentLineLength);
-        sReportAlnError(
-            lineNum, EDiagSev::eDiag_Error,
+        throw SShowStopper(
+            lineNum,
             EAlnSubcode::eAlnSubcode_BadDataCount,
-            description,
-            pEl);
-            return false;
+            description);
     }
     return true;
 }
@@ -4108,13 +3899,10 @@ sProcessAlignmentFileAsClustal(
 
         if (s_IsClustalConservationLine(line)) {
             if (!inBlock) {
-                string description = "Expected conservation data at end of block";
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    "Expected conservation data at end of block"); 
             }
             if (blockCount == 1) {
                 numSeqs = seqCount;
@@ -4128,26 +3916,20 @@ sProcessAlignmentFileAsClustal(
         NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
         const auto num_tokens = tokens.size();
         if (num_tokens < 2 || num_tokens > 3) {
-            string description = "In data line, expected seqID followed by sequence data and (optionally) data count";
-            sReportAlnError(
-                linePtr->line_num, EDiagSev::eDiag_Error,
+            throw SShowStopper(
+                linePtr->line_num,
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                description,
-                afrp->mpErrorListener); 
-            return;
+                "In data line, expected seqID followed by sequence data and (optionally) data count"); 
         }
 
         int seqLength = 0;
         if (num_tokens == 3) {
             seqLength = NStr::StringToInt(tokens[2], NStr::fConvErr_NoThrow);
             if (!seqLength) { 
-                string description = "In data line, expected seqID followed by sequence data and (optionally) data count";
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    "In data line, expected seqID followed by sequence data and (optionally) data count"); 
             }
         }
 
@@ -4165,8 +3947,7 @@ sProcessAlignmentFileAsClustal(
              seqLength,
              blockCount, 
              blockLineLength,
-             seqIds, sequences, 
-             afrp->mpErrorListener)) {
+             seqIds, sequences)) {
             return;
         }
         sequences[seqCount-1].push_back(linePtr);
@@ -4177,13 +3958,11 @@ sProcessAlignmentFileAsClustal(
     if (numDeflines != 0  &&  numDeflines != numSeqs) {
         string description = StrPrintf(
             "Expected 0 or %d deflines but finding %d",
-            numSeqs,
-            numDeflines);
-        sReportAlnError(
-            -1, EDiagSev::eDiag_Error,
+            numSeqs, numDeflines);
+        theErrorReporter->Error(
+            -1,
             EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
-            description,
-            afrp->mpErrorListener); 
+            description); 
     }
 
     for (auto idIndex=0; idIndex<numSeqs; ++idIndex) {
@@ -4289,12 +4068,10 @@ sProcessAlignmentFileAsSequin(
                     string description = StrPrintf(
                         "Missing data line. Expected sequence data for seqID \"%s\"",
                         seqIds[lineInBlock].c_str());
-                    sReportAlnError(
-                        linePtr->line_num, EDiagSev::eDiag_Error,
+                    throw SShowStopper(
+                        linePtr->line_num, 
                         EAlnSubcode::eAlnSubcode_MissingDataLine,
-                        description,
-                        afrp->mpErrorListener); 
-                    return;
+                        description);
                 }
                 processingData = false;
                 if (seqIds.size() != 0) {
@@ -4309,28 +4086,20 @@ sProcessAlignmentFileAsSequin(
 
         if (sIsSequinOffsetsLine(line)) {
             if (processingData) {
-                string description = StrPrintf(
-                    "Missing data line. Expected sequence data, not sequence offsets");
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_MissingDataLine,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    "Missing data line. Expected sequence data, not sequence offsets"); 
             }
             continue;
         }
 
         if (sIsSequinTerminationLine(line)) {
             if (processingData) {
-                string description = StrPrintf(
-                    "Missing data line. Expected sequence data, not termination line");
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_MissingDataLine,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    "Missing data line. Expected sequence data, not termination line"); 
             }
             break;
         }
@@ -4346,14 +4115,10 @@ sProcessAlignmentFileAsSequin(
         }
         string seqId, seqData;
         if (!sExtractSequinSequenceData(line, seqId, seqData)) {
-            string description = StrPrintf(
-                "Malformatted data line");
-            sReportAlnError(
-                linePtr->line_num, EDiagSev::eDiag_Error,
+            throw SShowStopper(
+                linePtr->line_num,
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                description,
-                afrp->mpErrorListener); 
-            return;
+                "Malformatted data line"); 
         }
 
         // verify and process sequence ID:
@@ -4361,38 +4126,29 @@ sProcessAlignmentFileAsSequin(
             if (std::find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
                 // error: duplicate sequence ID
                 string description = StrPrintf(
-                    "Duplicate sequence ID \"%s\"",
-                    seqId.c_str());
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    "Duplicate sequence ID \"%s\"", seqId.c_str());
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    description); 
             }
             seqIds.push_back(seqId);
             sequences.push_back(vector<TLineInfoPtr>());
         }
         else {
             if (lineInBlock >= seqIds.size()) {
-                string description = StrPrintf(
-                    "Extraneous data line in interleaved data block");
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    description,
-                    afrp->mpErrorListener); 
+                    "Extraneous data line in interleaved data block"); 
             }
             if (seqId != seqIds[lineInBlock]) {
                 string description = StrPrintf(
-                    "Unexpected sequence ID \"%s\"",
-                    seqId.c_str());
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    "Unexpected sequence ID \"%s\"", seqId.c_str());
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    description); 
             }
         }
 
@@ -4404,14 +4160,11 @@ sProcessAlignmentFileAsSequin(
             if (seqData.size() != refSeqData.size()) {
                 string description = StrPrintf(
                     "Unexpected number of sequence symbols (expected %d but found %d)",
-                    refSeqData.size(),
-                    seqData.size());
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                    refSeqData.size(), seqData.size());
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_BadDataCount,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    description); 
             }
             for (auto i = 0; i < seqData.size(); ++i) {
                 if (seqData[i] == '.') {
@@ -4500,13 +4253,10 @@ sProcessAlignmentFileAsNexus(
             }
 
             if (NStr::StartsWith(lineStrLower, "end;")) {
-                string description = StrPrintf(
-                    "Unexpected \"end;\". Appending \';\' to prior command");
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Warning,
+                theErrorReporter->Warn(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    description,
-                    afrp->mpErrorListener); 
+                    "Unexpected \"end;\". Appending \';\' to prior command");
                 state = EState::SKIPPING;
                 continue;
             }
@@ -4525,14 +4275,10 @@ sProcessAlignmentFileAsNexus(
             vector<string> tokens;
             NStr::Split(line, " \t", tokens, 0);
             if (tokens.size() < 2) {
-                string description = StrPrintf(
-                    "In data line, expected seqID followed by sequence data");
-                sReportAlnError(
-                    linePtr->line_num, EDiagSev::eDiag_Error,
+                throw SShowStopper(
+                    linePtr->line_num,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    description,
-                    afrp->mpErrorListener); 
-                return;
+                    "In data line, expected seqID followed by sequence data"); 
             }
 
             string seqId = tokens[0];
@@ -4556,12 +4302,10 @@ sProcessAlignmentFileAsNexus(
                             "Finding data for sequence \"%s\" out of order.",
                             seqId.c_str());
                     }
-                    sReportAlnError(
-                        linePtr->line_num, EDiagSev::eDiag_Error,
+                    throw SShowStopper(
+                        linePtr->line_num,
                         EAlnSubcode::eAlnSubcode_BadSequenceCount,
-                        description,
-                        afrp->mpErrorListener); 
-                    return; //ERROR: Sequence data out of order
+                        description);
                 }
             }
 
@@ -4575,11 +4319,10 @@ sProcessAlignmentFileAsNexus(
                         "Expected %d symbols per sequence but finding already %d",
                         SIZE_SEQUENCE,
                         sequenceCharCount);
-                    sReportAlnError(
-                        linePtr->line_num, EDiagSev::eDiag_Error,
+                    throw SShowStopper(
+                        linePtr->line_num,
                         EAlnSubcode::eAlnSubcode_BadDataCount,
-                        description,
-                        afrp->mpErrorListener); 
+                        description); 
                 }
                 blockLineLength = dataSize;
             }
@@ -4589,12 +4332,10 @@ sProcessAlignmentFileAsNexus(
                         "In data line, expected %d symbols but finding %d",
                         blockLineLength,
                         dataSize);
-                    sReportAlnError(
-                        linePtr->line_num, EDiagSev::eDiag_Error,
+                    throw SShowStopper(
+                        linePtr->line_num,
                         EAlnSubcode::eAlnSubcode_BadDataCount,
-                        description,
-                        afrp->mpErrorListener); 
-                    return;
+                        description); 
                 }
             }
 
@@ -4615,29 +4356,22 @@ sProcessAlignmentFileAsNexus(
             "Expected 0 or %d deflines but finding %d",
             NUM_SEQUENCES,
             numDeflines);
-        sReportAlnError(
-            -1, EDiagSev::eDiag_Error,
+        theErrorReporter->Error(
+            -1,
             EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
-            description,
-            afrp->mpErrorListener); 
+            description); 
     }
 
     //submit collected data to a final sanity check:
-    bool finalPass(true);
     if (sequenceCharCount != SIZE_SEQUENCE) {
         string description = StrPrintf(
             "Expected %d symbols per sequence but finding only %d",
             SIZE_SEQUENCE,
             sequenceCharCount);
-        sReportAlnError(
-            -1, EDiagSev::eDiag_Error,
+        throw SShowStopper(
+            -1,
             EAlnSubcode::eAlnSubcode_BadDataCount,
-            description,
-            afrp->mpErrorListener); 
-        finalPass = false;
-    }
-    if (!finalPass) {
-        return;
+            description); 
     }
 
     //looks good- populate approprate afrp data structures:
@@ -4654,9 +4388,9 @@ sProcessAlignmentFileAsNexus(
                     liPtr->line_num,
                     liPtr->line_num,
                     startOfData);
-            }
         }
     }
+}
 
 
 /* This function parses the identifier string used by the alignment file
@@ -4718,12 +4452,11 @@ s_ReprocessIds (
  * position in the SLineInfoReader structure lirp, and returns the
  * current data position for lirp.
  */
-static int 
-s_ReportRepeatedBadCharsInSequence(
+static void
+sFailOnRepeatedBadCharsInSequence(
     TLineInfoReaderPtr lirp,
     const string& id,
-    const string& reason,
-    ILineErrorListener* pEl)
+    const string& reason)
 {
 
     int bad_line_num = s_LineInfoReaderGetCurrentLineNumber (lirp);
@@ -4735,9 +4468,14 @@ s_ReportRepeatedBadCharsInSequence(
         num_bad_chars ++;
         data_position ++;
     }
-    s_ReportBadCharError (
-        id, bad_char, num_bad_chars, bad_line_offset, bad_line_num, reason, pEl);
-    return data_position;
+    string description = StrPrintf(
+        "%d bad characters (%c) found at position %d (%s).",
+        num_bad_chars, bad_char, bad_line_offset, reason.c_str());
+    throw SShowStopper(
+        bad_line_num,
+        eAlnSubcode_BadCharacters,
+        description,
+        id);
 }
 
 
@@ -4755,8 +4493,7 @@ static bool
 s_FindBadDataCharsInSequence(
     TAlignRawSeqPtr      arsp,
     TAlignRawSeqPtr      master_arsp,
-    const CSequenceInfo& sequenceInfo,
-    ILineErrorListener* pEl)
+    const CSequenceInfo& sequenceInfo)
 {
     TLineInfoReaderPtr lirp, master_lirp;
     int                data_position;
@@ -4832,10 +4569,9 @@ s_FindBadDataCharsInSequence(
                     sequenceInfo.Missing().find(curr_char) == string::npos) {
             /* Report error - found character that is not beginning gap
                    in beginning gap */
-                data_position = s_ReportRepeatedBadCharsInSequence (
+                sFailOnRepeatedBadCharsInSequence (
                     lirp, arsp->mId,
-                    "expect only beginning gap characters here",
-                    pEl);
+                    "expect only beginning gap characters here");
                 rval = true;
             } else {
                 *lirp->curr_line_pos = beginning_gap;
@@ -4854,8 +4590,6 @@ s_FindBadDataCharsInSequence(
 
     if (! found_middle_start) {
         delete lirp;
-        //s_ReportMissingSequenceData (arsp->mId, pEl);
-        //return true;
         return false;
     }
 
@@ -4878,15 +4612,13 @@ s_FindBadDataCharsInSequence(
             if (master_char == 0) {
                 /* report error - unable to get master char */
                 if (master_arsp == arsp) {
-                    data_position = s_ReportRepeatedBadCharsInSequence (
+                    sFailOnRepeatedBadCharsInSequence (
                         lirp, arsp->mId,
-                        "can't specify match chars in first sequence",
-                        pEl);
+                        "can't specify match chars in first sequence");
                 } else {
-                    data_position = s_ReportRepeatedBadCharsInSequence (
+                    sFailOnRepeatedBadCharsInSequence (
                         lirp, arsp->mId,
-                        "can't find source for match chars",
-                        pEl);
+                        "can't find source for match chars");
                 }
                 rval = true;
             } else {
@@ -4898,11 +4630,9 @@ s_FindBadDataCharsInSequence(
             data_position ++;
         } else {
             /* Report error - found bad character in middle */
-            data_position = s_ReportRepeatedBadCharsInSequence (
+            sFailOnRepeatedBadCharsInSequence (
                 lirp, arsp->mId,
-                "expect only sequence, missing, match, and middle gap characters here",
-                pEl);
-            rval = true;
+                "expect only sequence, missing, match, and middle gap characters here");
         }
     }
 
@@ -4912,10 +4642,9 @@ s_FindBadDataCharsInSequence(
     while (curr_char != 0) {
         if (sequenceInfo.EndGap().find(curr_char) == string::npos) {
         /* Report error - found bad character in middle */
-            data_position = s_ReportRepeatedBadCharsInSequence (
+            sFailOnRepeatedBadCharsInSequence (
                 lirp, arsp->mId,
-                "expect only end gap characters here",
-                pEl);
+                "expect only end gap characters here");
             rval = true;
         } else {
             *lirp->curr_line_pos = end_gap;
@@ -4946,8 +4675,7 @@ s_FindBadDataCharsInSequenceList(
         return true;
     }
     for (arsp = afrp->sequences; arsp; arsp = arsp->next) {
-        if (s_FindBadDataCharsInSequence(
-                arsp, afrp->sequences, sequenceInfo, afrp->mpErrorListener)) {
+        if (s_FindBadDataCharsInSequence(arsp, afrp->sequences, sequenceInfo)) {
             is_bad = true;
             break;
         }
@@ -4959,7 +4687,7 @@ s_FindBadDataCharsInSequenceList(
 /* This function uses the contents of an SAlignRawFileData structure to
  * create an SAlignmentFile structure with the appropriate information.
  */
-bool
+static bool
 s_ConvertDataToOutput(
     TAlignRawFilePtr afrp,
     SAlignmentFile& alignInfo)
@@ -5012,34 +4740,45 @@ s_ConvertDataToOutput(
     curr_seg = 0;
     for (index = 0;  index < alignInfo.NumSequences();  index++) {
         if (alignInfo.mSequences [index].empty()) {
-            s_ReportMissingSequenceData (
-                alignInfo.mIds [index].c_str(), afrp->mpErrorListener);
-            return false;
+            throw SShowStopper(
+                -1,
+                eAlnSubcode_MissingSeqData,
+                "No data found");
         } else if (alignInfo.mSequences[index].size() != best_length) {
-            s_ReportBadSequenceLength (
-                alignInfo.mIds [index].c_str(), best_length, 
-                alignInfo.mSequences[index].size(), afrp->mpErrorListener);
-            return false;
+            string description = StrPrintf(
+                "Expected sequence length %d, actual length %d",
+                best_length, alignInfo.mSequences[index].size());
+            throw SShowStopper(
+                -1,
+                eAlnSubcode_UnexpectedSeqLength,
+                description);
         }
     }
-
     if (afrp->expected_num_sequence > 0  &&  
             afrp->expected_num_sequence != alignInfo.NumSequences()) {
-        s_ReportIncorrectNumberOfSequences (
-            afrp->expected_num_sequence, alignInfo.NumSequences(),
-            afrp->mpErrorListener);
-        return false;
+        string description = StrPrintf(
+            "Expected %d sequences, found %d",
+            afrp->expected_num_sequence, alignInfo.NumSequences());
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_UnexpectedNumSeqs,
+            description);
     }
     if (afrp->expected_sequence_len > 0  &&  
             afrp->expected_sequence_len != best_length) {
-        s_ReportIncorrectSequenceLength (
-            afrp->expected_sequence_len, best_length, afrp->mpErrorListener);
-        return false;
+        string description = StrPrintf(
+            "Expected sequences of length %d, found %d",
+            afrp->expected_sequence_len, best_length);
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_UnexpectedSeqLength,
+            description);
     }
     
     delete lengths;
     return true;
 }
+
 
 /* This is the function called by the calling program to read an alignment
  * file.  The readfunc argument is a function pointer supplied by the 
@@ -5061,53 +4800,61 @@ ReadAlignmentFile(
     SAlignmentFile& alignmentInfo,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
-    TAlignRawFilePtr afrp;
-    EAlignFormat format = ALNFMT_UNKNOWN;
+    theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
 
-    if (sequence_info.Alphabet().empty()) {
-        return false;
-    }
+    try {
+        TAlignRawFilePtr afrp;
+        EAlignFormat format = ALNFMT_UNKNOWN;
 
-    afrp = sReadAlignFileRaw ( 
-        istr, use_nexus_info, sequence_info, &format, pErrorListener);
-    if (!afrp) {
-        return false;
-    }
+        if (sequence_info.Alphabet().empty()) {
+            return false;
+        }
 
-    switch(format) {
-        default:
-            if (afrp->block_size > 1) {
-                s_ProcessAlignRawFileByBlockOffsets (afrp);
-            } else if (afrp->marked_ids) {
-                s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
-            } else {
-                s_ProcessAlignFileRawByLengthPattern (afrp);
-            }
-            break;
+        afrp = sReadAlignFileRaw ( 
+            istr, use_nexus_info, sequence_info, &format);
+        if (!afrp) {
+            return false;
+        }
+
+        switch(format) {
+            default:
+                if (afrp->block_size > 1) {
+                    s_ProcessAlignRawFileByBlockOffsets (afrp);
+                } else if (afrp->marked_ids) {
+                    s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
+                } else {
+                    s_ProcessAlignFileRawByLengthPattern (afrp);
+                }
+                break;
     
-        case EAlignFormat::ALNFMT_NEXUS:
-            sProcessAlignmentFileAsNexus(afrp);
-            break;
+            case EAlignFormat::ALNFMT_NEXUS:
+                sProcessAlignmentFileAsNexus(afrp);
+                break;
 
-        case EAlignFormat::ALNFMT_CLUSTAL:
-            sProcessAlignmentFileAsClustal(afrp);
-            break;
+            case EAlignFormat::ALNFMT_CLUSTAL:
+                sProcessAlignmentFileAsClustal(afrp);
+                break;
 
-        case EAlignFormat::ALNFMT_SEQUIN:
-            sProcessAlignmentFileAsSequin(afrp);
-            break;
-    }
+            case EAlignFormat::ALNFMT_SEQUIN:
+                sProcessAlignmentFileAsSequin(afrp);
+                break;
+        }
 
-    s_ReprocessIds (afrp); 
+        s_ReprocessIds (afrp); 
 
-    if (s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
+        if (s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
+            delete afrp;
+            return false;
+        } 
+
+        bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
         delete afrp;
+        return result;
+    }
+    catch (const SShowStopper& showStopper) {
+        theErrorReporter->Error(showStopper);
         return false;
-    } 
-
-    bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
-    delete afrp;
-    return result;
+    }
 };
 
 
