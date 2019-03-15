@@ -4055,6 +4055,47 @@ sProcessAlignmentFileAsSequin(
 
 
 //  ----------------------------------------------------------------------------
+static void sStripNexusComments(string& line) 
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::IsBlank(line)) {
+        return;
+    }
+
+    int numUnmatchedLeftBrackets=0;
+    int index = 0;
+    list<pair<int, int>> commentLimits;
+
+    int start;
+    int stop;
+    while (index < line.size()) {
+        const auto& c = line[index];
+        if (c == '[') {
+            ++numUnmatchedLeftBrackets;
+            if (numUnmatchedLeftBrackets==1) {
+                start = index;
+            }
+        }
+        else 
+        if (c == ']') {
+            if (numUnmatchedLeftBrackets==1) {
+                stop = index;
+                commentLimits.push_back(make_pair(start, stop));
+            }
+            --numUnmatchedLeftBrackets;
+        }
+        ++index;
+    }
+
+    for (auto it = commentLimits.crbegin();
+         it != commentLimits.crend();
+         ++it) {
+        line.erase(it->first, (it->second-it->first)+1);
+    }
+    NStr::TruncateSpacesInPlace(line);
+}
+
+//  ----------------------------------------------------------------------------
 static void 
 sProcessAlignmentFileAsNexus(
     TAlignRawFilePtr afrp)
@@ -4100,6 +4141,14 @@ sProcessAlignmentFileAsNexus(
         if (state == EState::READING) {
 
             auto lineStrLower(line);
+            sStripNexusComments(line);
+            strncpy(linePtr->data, line.c_str(), line.size()+1);
+
+            if (line.empty()) {
+                continue;
+            }
+
+
             NStr::ToLower(lineStrLower);
 
             if (NStr::StartsWith(lineStrLower, "[")) {
