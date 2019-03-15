@@ -35,11 +35,14 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
+#include "aln_errors.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 static const size_t kMaxPrintedIntLen = 10;
+
+thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
 /*  ---------------------------------------------------------------------- */
 typedef enum {
@@ -458,152 +461,6 @@ string StrPrintf(const char *format, ...)
     va_start(args, format);
     return NStr::FormatVarargs(format, args);
 }
-
-//  ============================================================================
-string
-sMakeErrorMessage(
-    const string& id,
-    const string& description)
-//  ============================================================================
-{
-    if (id.empty()) {
-        return description;
-    }
-    else {
-        const char* format = "At ID \'%s\': %s";
-        return StrPrintf(format, id.c_str(), description.c_str());
-    }
-}
-
-
-//  ============================================================================
-struct SShowStopper: std::exception
-//  ============================================================================
-{
-public:
-    SShowStopper(
-        int lineNumber,
-        EAlnSubcode errCode,
-        const string& descr,
-        const string& seqId = ""):
-        mLineNumber(lineNumber),
-        mErrCode(errCode),
-        mDescr(descr),
-        mSeqId(seqId) {};
-
-    const char* what() const noexcept {
-        return mDescr.c_str();
-    }
-
-    int mLineNumber;
-    EAlnSubcode mErrCode;
-    string mDescr;
-    string mSeqId;
-};
-
-//  ============================================================================
-class CAlnErrorReporter
-//  ============================================================================
-{
-public:
-    CAlnErrorReporter(
-        ILineErrorListener* pEl = nullptr): mpEl(pEl) {};
-
-    ~CAlnErrorReporter() {};
-
-    void 
-    Error(
-        const SShowStopper& showStopper)
-    {
-        Report(
-            showStopper.mLineNumber, 
-            EDiagSev::eDiag_Error, 
-            EReaderCode::eReader_Alignment, 
-            showStopper.mErrCode, 
-            showStopper.mDescr,
-            showStopper.mSeqId);
-    };
-
-    void
-    Fatal(
-        const SShowStopper& showStopper)
-    {
-        Report(
-            showStopper.mLineNumber,
-            EDiagSev::eDiag_Fatal,
-            EReaderCode::eReader_Alignment,
-            showStopper.mErrCode,
-            showStopper.mDescr,
-            showStopper.mSeqId);
-    };
-
-    void
-    Error(
-        int lineNumber,
-        EAlnSubcode errorCode,
-        const string& descr,
-        const string& seqId = "")
-    {
-        Report(
-            lineNumber,
-            EDiagSev::eDiag_Error,
-            EReaderCode::eReader_Alignment,
-            errorCode,
-            descr,
-            seqId);
-    };
-
-    void
-    Warn(
-        int lineNumber,
-        EAlnSubcode errorCode,
-        const string& descr,
-        const string& seqId = "")
-    {
-        Report(
-            lineNumber, 
-            EDiagSev::eDiag_Warning, 
-            EReaderCode::eReader_Alignment,
-            errorCode,
-            descr,
-            seqId);
-    };
-
-    void
-    Report(
-        int lineNumber,
-        EDiagSev severity,
-        EReaderCode subsystem,
-        EAlnSubcode errorCode,
-        const string& descr,
-        const string& seqId = "")
-    {
-        string message(descr);
-        if (!seqId.empty()) {
-            message = "At ID \'" + seqId + "\': " + descr;
-        } 
-        if (!mpEl) {
-            NCBI_THROW2(CObjReaderParseException, eFormat, message, 0);
-        }
-        if (lineNumber == -1) {
-            lineNumber = 0;
-        }
-        AutoPtr<CLineErrorEx> pErr(
-            CLineErrorEx::Create(
-                ILineError::eProblem_GeneralParsingError,
-                severity,
-                subsystem,
-                errorCode,
-                "",
-                lineNumber,
-                message));
-        mpEl->PutError(*pErr);
-    }
-
-protected:
-    ILineErrorListener* mpEl;
-};
-thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
 
 /* This function creates and sends an error message regarding an unused line.
