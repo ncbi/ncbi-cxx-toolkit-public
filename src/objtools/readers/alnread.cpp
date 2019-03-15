@@ -3648,7 +3648,7 @@ sProcessClustalDataLine(
             "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
         throw SShowStopper(
             lineNum,
-            EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
             description);
         }
         seqIds.push_back(seqId);
@@ -3672,8 +3672,12 @@ sProcessClustalDataLine(
                 description = StrPrintf(
                     "Expected %d sequences, but finding data for for another.",
                     numSeqs);
+                throw SShowStopper(
+                    lineNum,
+                    EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                    description);
             }
-            else 
+            
             if (distance(seqIds.begin(), it) < seqCount-1) {
                 description = StrPrintf(
                     "Duplicate ID: \"%s\" has already appeared in this block.",
@@ -3686,7 +3690,7 @@ sProcessClustalDataLine(
             }
             throw SShowStopper(
                 lineNum,
-                EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
                 description);
         }
     }
