@@ -4053,18 +4053,16 @@ sProcessAlignmentFileAsSequin(
 
 
 //  ----------------------------------------------------------------------------
-static void sStripNexusComments(string& line) 
+static void sStripNexusComments(string& line, int &numUnmatchedLeftBrackets)
 //  ----------------------------------------------------------------------------
 {
     if (NStr::IsBlank(line)) {
         return;
     }
 
-    int numUnmatchedLeftBrackets=0;
-    int index = 0;
     list<pair<int, int>> commentLimits;
-
-    int start;
+    int index=0;
+    int start=0;
     int stop;
     while (index < line.size()) {
         const auto& c = line[index];
@@ -4079,10 +4077,14 @@ static void sStripNexusComments(string& line)
             if (numUnmatchedLeftBrackets==1) {
                 stop = index;
                 commentLimits.push_back(make_pair(start, stop));
+                --numUnmatchedLeftBrackets;
             }
-            --numUnmatchedLeftBrackets;
         }
         ++index;
+    }
+
+    if (numUnmatchedLeftBrackets) {
+        commentLimits.push_back(make_pair(start, index-1));
     }
 
     for (auto it = commentLimits.crbegin();
@@ -4092,6 +4094,8 @@ static void sStripNexusComments(string& line)
     }
     NStr::TruncateSpacesInPlace(line);
 }
+
+
 
 //  ----------------------------------------------------------------------------
 static void 
@@ -4112,8 +4116,7 @@ sProcessAlignmentFileAsNexus(
     int dataLineCount(0);
     int blockLineLength(0);
     int sequenceCharCount(0);
-
-    bool inComment(false);
+    int unmatchedLeftBracketCount(0);
 
     //at this point we already know the number of sequences to expect, and the
     // number of symbols each sequence is supposed to have.
@@ -4139,26 +4142,12 @@ sProcessAlignmentFileAsNexus(
         if (state == EState::READING) {
 
             auto lineStrLower(line);
-            sStripNexusComments(line);
+            sStripNexusComments(line, unmatchedLeftBracketCount);
             strncpy(linePtr->data, line.c_str(), line.size()+1);
-
             if (line.empty()) {
                 continue;
             }
-
-
             NStr::ToLower(lineStrLower);
-
-            if (NStr::StartsWith(lineStrLower, "[")) {
-                if (!NStr::EndsWith(lineStrLower, "]")) {
-                    inComment = true;
-                }
-                continue;
-            }
-            if (inComment  &&  NStr::EndsWith(lineStrLower, "]")) {
-                inComment = false;
-                continue;
-            }
 
             if (NStr::StartsWith(lineStrLower, "end;")) {
                 theErrorReporter->Warn(
