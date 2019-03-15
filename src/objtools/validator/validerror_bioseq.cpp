@@ -5776,7 +5776,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         genome != CBioSource::eGenome_chromatophore) {
                         PostErr(eDiag_Error, eErr_SEQ_DESCR_WrongOrganismFor16SrRNA,
                             "Improper 16S ribosomal RNA",
-                            seq);
+                            *(seq.GetParentEntry()), *src_desc);
                     }
                 }
             }
