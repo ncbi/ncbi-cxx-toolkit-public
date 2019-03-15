@@ -16,6 +16,34 @@ elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(wxWidgets_USE_DEBUG OFF)
 endif()
 
+if (NCBI_EXPERIMENTAL_CFG)
+  find_package(GTK2)
+  if (GTK2_FOUND)
+    set(WXWIDGETS_INCLUDE
+      ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2/${CMAKE_BUILD_TYPE}MT64/lib/wx/include/gtk2-ansi-3.1
+      ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2/include/wx-3.1
+      ${GTK2_INCLUDE_DIRS}
+    )
+    set(_wxp ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2/${CMAKE_BUILD_TYPE}MT64/lib/lib)
+    set(_wxs -3.1.so)
+    set(WXWIDGETS_LIBS
+      ${_wxp}wx_gtk2_gl${_wxs}
+      ${_wxp}wx_gtk2_richtext${_wxs}
+      ${_wxp}wx_gtk2_aui${_wxs}
+      ${_wxp}wx_gtk2_propgrid${_wxs}
+      ${_wxp}wx_gtk2_xrc${_wxs}
+      ${_wxp}wx_gtk2_html${_wxs}
+      ${_wxp}wx_gtk2_qa${_wxs}
+      ${_wxp}wx_gtk2_adv${_wxs}
+      ${_wxp}wx_gtk2_core${_wxs}
+      ${_wxp}wx_base_xml${_wxs}
+      ${_wxp}wx_base_net${_wxs}
+      ${_wxp}wx_base${_wxs}
+      ${GTK2_LIBRARIES}
+    )
+    set(WXWIDGETS_FOUND YES)
+  endif()
+else()
 if (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
 
   set(WXWIDGETS_INCLUDE ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/include)
@@ -35,6 +63,7 @@ else (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
 
 endif (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
 
+endif()
 set(CMAKE_PREFIX_PATH "${_foo_CMAKE_PREFIX_PATH}")
 
 
