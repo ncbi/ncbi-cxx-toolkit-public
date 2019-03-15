@@ -1927,6 +1927,7 @@ FCT	c	FCT (Forestry Commission Tasmania)
 FCTH	s	Forestry Commission of Tasmania			
 FCU	s	Fukien Christian University			
 FCUG	c	Fungal Cultures University of Goteborg			
+FCUL	s	Faculty of Sciences, University of Lisbon			
 FDA	sc	US Food and Drug Administration			
 FDC	c	Forsyth Dental Center			
 FDG	s	Guyana Forestry Commission			
@@ -4095,6 +4096,7 @@ MHNL	s	Musee Guimet d'Histoire Naturelle de Lyon
 MHNLR	s	Museum d'Histoire Naturelle	MHNR		
 MHNLS	s	Coleccion de Mastozoologia, Museo de Historia Natural de La Salle			
 MHNM	s	Museo Nacional de Historia Natural y Antropologia			
+MHNM<MOZ>	s	Museum of Natiral History, Maputo			
 MHNN<CHE>	s	Neuchatel Musee d'Histoire Naturel			
 MHNN<FRA>	s	Musee d'Histoire Naturalle			
 MHNNICE	s	Mueusm d'Histoire Naturelle de Nice			
@@ -6903,7 +6905,7 @@ UF	sb	University of Florida Museum of Natural History	FLMNH
 UF/FGS	s	Florida Geological Survey			
 UF:Herpetology	s	University of Florida Museum of Natural History, Herpetology Collection	
 UF:Ichthyology	s	University of Florida Museum of Natural History, Fish Collection	
-UF:Invertebrate	s	University of Florida Museum of Natural History, Invertebrate Zoology and Malacology Collection		
+UF:Invertebrate Zoology	s	University of Florida Museum of Natural History, Invertebrate Zoology and Malacology Collection	
 UF:Mammalogy	s	University of Florida Museum of Natural History, Mammalogy Collection	
 UF:Ornithology	s	University of Florida Museum of Natural History, Ornithology Skins and Skeletons Collection	
 UF:Porifera	s	University of Florida Museum of Natural History, 		
