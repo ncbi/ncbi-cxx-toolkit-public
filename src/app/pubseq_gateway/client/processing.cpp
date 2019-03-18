@@ -450,20 +450,6 @@ void CReporter::Run()
     }
 }
 
-int CProcessing::Interactive(bool echo)
-{
-    m_Reporter.Start();
-    m_Retriever.Start();
-    m_Sender.Start();
-
-    ReadCommands(echo);
-
-    m_Sender.Stop();
-    m_Retriever.Stop();
-    m_Reporter.Stop();
-    return 0;
-}
-
 string s_GetId(const CJson_Document& req_doc)
 {
     string id;
@@ -487,13 +473,11 @@ string s_GetId(const CJson_Document& req_doc)
     return id;
 }
 
-int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string& service)
+template <class TCreateContext>
+vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create_context) const
 {
-    SPostProcessing post_processing(raw_metrics);
-
     string request;
     vector<shared_ptr<CPSG_Request>> requests;
-    cerr << "Preparing requests: ";
 
     // Read requests from cin
     while (ReadRequest(request)) {
@@ -501,15 +485,17 @@ int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string
 
         if (!json_doc.ParseString(request)) {
             cerr << "Error in request '" << s_GetId(json_doc) << "': " << json_doc.GetReadError() << endl;
-            return -1;
+            return {};
         } else if (!RequestSchema().Validate(json_doc)) {
             cerr << "Error in request '" << s_GetId(json_doc) << "': " << RequestSchema().GetValidationError() << endl;
-            return -1;
+            return {};
         } else {
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
             auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
-            auto user_context = make_shared<SMetrics>();
+            auto user_context = create_context(json_doc, params);
+
+            if (!user_context) return {};
 
             if (auto request = CreateRequest(method, move(user_context), params.GetObject())) {
                 requests.emplace_back(move(request));
@@ -517,6 +503,18 @@ int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string
             }
         }
     }
+
+    return requests;
+}
+
+int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string& service)
+{
+    SPostProcessing post_processing(raw_metrics);
+
+    cerr << "Preparing requests: ";
+    auto requests = ReadCommands([](CJson_Document&, CJson_ConstNode&){ return make_shared<SMetrics>(); });
+
+    if (requests.empty()) return -1;
 
     atomic_int start(user_threads);
     atomic_int to_submit(requests.size());
@@ -617,6 +615,148 @@ int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string
     return 0;
 }
 
+struct STestingContext : string
+{
+    enum EExpected { eSuccess, eReplyError, eReplyItemError };
+
+    EExpected expected;
+
+    STestingContext(string id, EExpected e) : string(id), expected(e) {}
+
+    static shared_ptr<STestingContext> CreateContext(CJson_Document& json_doc, CJson_ConstNode& params);
+};
+
+shared_ptr<STestingContext> STestingContext::CreateContext(CJson_Document& json_doc, CJson_ConstNode& params)
+{
+    _ASSERT(params.IsObject());
+    const auto id = s_GetId(json_doc);
+    string error;
+
+    try {
+        auto params_obj = params.GetObject();
+
+        if (params_obj.has("expected_result")) {
+            auto expected = params_obj["expected_result"];
+
+            if (expected.IsObject()) {
+                auto expected_obj = expected.GetObject();
+                auto result = eSuccess;
+
+                if (expected_obj.has("fail")) {
+                    result = expected_obj["fail"].GetValue().GetString() == "reply" ? eReplyError : eReplyItemError;
+                }
+
+                return make_shared<STestingContext>(id, result);
+            } else {
+                error = "'expected_result' is not of object type";
+            }
+        } else {
+            error = "no 'expected_result' found";
+        }
+    }
+    catch (exception& e) {
+        error = e.what();
+    }
+
+    cerr << "Error in request '" << id << "': " << error << endl;
+    return {};
+}
+
+NCBI_PARAM_DECL(string, PSG, service_name);
+typedef NCBI_PARAM_TYPE(PSG, service_name) TPSG_ServiceName;
+NCBI_PARAM_DEF(string, PSG, service_name, "nctest11:2180");
+
+void s_ReportErrors(const string& request_id, shared_ptr<CPSG_Reply> reply)
+{
+    cerr << "Fail for request '" << request_id << "' expected to succeed";
+
+    auto delimiter = ": ";
+
+    for (;;) {
+        auto message = reply->GetNextMessage();
+
+        if (message.empty()) break;
+
+        cerr << delimiter << message;
+        delimiter = ", ";
+    }
+
+    cerr << endl;
+}
+
+void s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_Reply> reply)
+{
+    bool no_errors = true;
+
+    for (;;) {
+        auto reply_item = reply->GetNextItem(CDeadline::eInfinite);
+        _ASSERT(reply_item);
+
+        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
+
+        const auto status = reply_item->GetStatus(CDeadline::eInfinite);
+
+        if (status == EPSG_Status::eSuccess) {
+            try {
+                CJsonResponse check(status, reply_item);
+            }
+            catch (exception& e) {
+                cerr << "Error on reading reply item for request '" << request_id << "': " << e.what() << endl;
+            }
+
+        } else if (!expect_errors) {
+            cerr << "Fail on getting item for request '" << request_id << "' expected to succeed";
+            return;
+
+        } else {
+            no_errors = false;
+        }
+    }
+
+    if (expect_errors && no_errors) {
+        cerr << "Success on getting all items for request '" << request_id << "' expected to fail" << endl;
+    }
+}
+
+int CProcessing::Testing()
+{
+    m_Queue = CPSG_Queue(TPSG_ServiceName::GetDefault());
+
+    auto requests = ReadCommands(&STestingContext::CreateContext);
+
+    if (requests.empty()) return -1;
+
+    for (const auto& request : requests) {
+        auto expected_result = request->GetUserContext<STestingContext>();
+        const auto& request_id = *expected_result;
+
+        _VERIFY(m_Queue.SendRequest(request, CDeadline::eInfinite));
+
+        auto reply = m_Queue.GetNextReply(CDeadline::eInfinite);
+
+        _ASSERT(reply);
+
+        auto received_request = reply->GetRequest();
+
+        _ASSERT(request.get() == received_request.get());
+
+        const bool expect_reply_errors = expected_result->expected == STestingContext::eReplyError;
+
+        if (reply->GetStatus(CDeadline::eInfinite) != EPSG_Status::eSuccess) {
+            if (!expect_reply_errors) s_ReportErrors(request_id, move(reply));
+
+        } else if (expect_reply_errors) {
+            cerr << "Success for request '" << request_id << "' expected to fail" << endl;
+
+        } else {
+            const bool expect_item_errors = expected_result->expected == STestingContext::eReplyItemError;
+            s_CheckItems(expect_item_errors, request_id, reply);
+        }
+    }
+
+    return 0;
+}
+
 bool CProcessing::ReadRequest(string& request)
 {
     for (;;) {
@@ -628,8 +768,12 @@ bool CProcessing::ReadRequest(string& request)
     }
 }
 
-void CProcessing::ReadCommands(bool echo)
+int CProcessing::Interactive(bool echo)
 {
+    m_Reporter.Start();
+    m_Retriever.Start();
+    m_Sender.Start();
+
     string request;
 
     while (ReadRequest(request)) {
@@ -663,6 +807,11 @@ void CProcessing::ReadCommands(bool echo)
             }
         }
     }
+
+    m_Sender.Stop();
+    m_Retriever.Stop();
+    m_Reporter.Stop();
+    return 0;
 }
 
 shared_ptr<CPSG_Request> CProcessing::CreateRequest(const string& method, shared_ptr<void> user_context,

@@ -96,12 +96,15 @@ int CPsgClientApp::RunRequest(const CArgs& args)
 
 struct SInteractive {};
 struct SPerformance {};
+struct STesting {};
 
 template <> void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc);
 template <> void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc);
+template <> void CPsgClientApp::s_InitRequest<STesting>(CArgDescriptions& arg_desc);
 
 template<> int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args);
 template<> int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args);
+template<> int CPsgClientApp::RunRequest<STesting>(const CArgs& args);
 
 template <class TRequest>
 SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags flags)
@@ -117,6 +120,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_NamedAnnotInfo>("annot",       "Request named annotations info by bio ID"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode"),
             s_GetCommand<SPerformance>               ("performance", "Performance testing mode", SCommand::TFlags::eHidden),
+            s_GetCommand<STesting>                   ("testing",     "Testing mode", SCommand::TFlags::eHidden),
         })
 {
 }
@@ -241,6 +245,11 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
     arg_desc.AddFlag("local-queue", "Whether user threads to use separate queues");
 }
 
+template <>
+void CPsgClientApp::s_InitRequest<STesting>(CArgDescriptions&)
+{
+}
+
 
 // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
 // This templated function circumvents that shortcoming.
@@ -285,6 +294,15 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
 
     return processing.Performance(user_threads, raw_metrics, service);
+}
+
+template <>
+int CPsgClientApp::RunRequest<STesting>(const CArgs& args)
+{
+    TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
+
+    CProcessing processing;
+    return processing.Testing();
 }
 
 int main(int argc, const char* argv[])

@@ -204,6 +204,14 @@ private:
 class CProcessing
 {
 public:
+    CProcessing() :
+        m_RequestsCounter(0),
+        m_JsonOut(false),
+        m_Reporter(m_JsonOut),
+        m_Retriever(m_Queue, m_Reporter),
+        m_Sender(m_Queue, m_JsonOut)
+    {}
+
     CProcessing(string service, bool interactive = false) :
         m_Queue(service),
         m_RequestsCounter(0),
@@ -216,6 +224,7 @@ public:
     int OneRequest(shared_ptr<CPSG_Request> request);
     int Interactive(bool echo);
     int Performance(size_t user_threads, bool raw_metrics, const string& service);
+    int Testing();
 
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
@@ -224,7 +233,9 @@ public:
     static shared_ptr<CPSG_Request> CreateRequest(shared_ptr<void> user_context, const TInput& input);
 
 private:
-    void ReadCommands(bool echo);
+    template <class TCreateContext>
+    vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context) const;
+
     void PerformanceReply();
 
     static bool ReadRequest(string& request);
