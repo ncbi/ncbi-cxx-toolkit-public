@@ -84,7 +84,7 @@ typedef unsigned short TFTP_Features; /* bitwise OR of EFtpFeature */
 /* All internal data necessary to perform I/O
  */
 typedef struct {
-    SConnNetInfo*         info;    /* connection parameters                  */
+    const SConnNetInfo*   info;    /* connection parameters                  */
     unsigned              sync:1;  /* true when last cmd acked (cntl synced) */
     unsigned              send:1;  /* true when in send mode (STOR/APPE)     */
     unsigned              open:1;  /* true when data open ok in send mode    */
@@ -120,7 +120,7 @@ typedef EIO_Status (*FFTPReplyCB)(SFTPConnector* xxx,  int   code,
  * how == eIO_Open                        -- unexpected closure, log error
  * how == eIO_Read or eIO_Write (or both) -- normal close in the direction
  *                                           no size check with eIO_ReadWrite
- * how == eIO_Close                       -- pre-approved close, w/o log errs
+ * how == eIO_Close                       -- pre-approved close, w/o err logs
  * Notes:
  * 1. eIO_Open and eIO_Close suppress log message if xxx->cntl is closed;
  * 2. timeout is ignored for both eIO_Open and eIO_Close;
@@ -217,7 +217,7 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
         char buf[1024];
         int c, m;
 
-        /* all FTP replies are at least '\n'-terminated, no ending with EOF */
+        /* all FTP replies are at least '\n'-terminated, not ending with EOF */
         rdstat = SOCK_ReadLine(xxx->cntl, buf, sizeof(buf), &len);
         if (rdstat != eIO_Success) {
             status  = rdstat;
@@ -894,7 +894,7 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
         if (!*c)
             return eIO_Unknown;
         len = 0;
-        for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  i++) {
+        for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  ++i) {
             if (sscanf(c + len, &",%d%n"[!i], &o[i], &code) < 1)
                 break;
             len += (size_t) code;
@@ -907,7 +907,7 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
         }
         memmove(buf, c + len, strlen(c + len) + 1);
     }
-    for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  i++) {
+    for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  ++i) {
         if (o[i] < 0  ||  o[i] > 255)
             return eIO_Unknown;
     }
@@ -1018,7 +1018,7 @@ static EIO_Status x_FTPPort(SFTPConnector* xxx,
     port = SOCK_HostToNetShort(port);
     memcpy(octet,                &host, sizeof(host));
     memcpy(octet + sizeof(host), &port, sizeof(port));
-    for (n = 0;  n < sizeof(octet);  n++)
+    for (n = 0;  n < sizeof(octet);  ++n)
         s += sprintf(s, &",%u"[!n], octet[n]);
     assert(s < buf + sizeof(buf));
     status = s_FTPCommand(xxx, "PORT", buf);
@@ -2260,13 +2260,14 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
                                    const SFTP_Callback* cmcb)
 {
     static const SFTP_Callback kNoCmcb = { 0 };
+    SConnNetInfo*  xinfo;
     CONNECTOR      ccc;
     SFTPConnector* xxx;
 
-    if ((host  &&  strlen(host) >= sizeof(xxx->info->host))  ||
-        (user  &&  strlen(user) >= sizeof(xxx->info->user))  ||
-        (pass  &&  strlen(pass) >= sizeof(xxx->info->pass))  ||
-        (path  &&  strlen(path) >= sizeof(xxx->info->path))  ||
+    if ((host  &&  strlen(host) >= sizeof(xinfo->host))  ||
+        (user  &&  strlen(user) >= sizeof(xinfo->user))  ||
+        (pass  &&  strlen(pass) >= sizeof(xinfo->pass))  ||
+        (path  &&  strlen(path) >= sizeof(xinfo->path))  ||
         (info  &&  info->scheme != eURL_Unspec  &&  info->scheme != eURL_Ftp)){
         return 0;
     }
@@ -2276,25 +2277,25 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
         free(ccc);
         return 0;
     }
-    xxx->info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create("_FTP");
-    if (!xxx->info) {
+    xinfo = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create("_FTP");
+    if (!(xxx->info = xinfo)) {
         free(ccc);
         free(xxx);
         return 0;
     }
-    if (xxx->info->scheme == eURL_Unspec)
-        xxx->info->scheme  = eURL_Ftp;
-    ConnNetInfo_SetArgs(xxx->info, 0);
+    if (xinfo->scheme == eURL_Unspec)
+        xinfo->scheme  = eURL_Ftp;
+    ConnNetInfo_SetArgs(xinfo, 0);
     if (!info) {
         if (host  &&  *host)
-            strcpy(xxx->info->host,               host);
-        xxx->info->port =                         port;
-        strcpy(xxx->info->user, user  &&  *user ? user : "ftp");
-        strcpy(xxx->info->pass, pass            ? pass : "-none@");
-        strcpy(xxx->info->path, path            ? path : "");
+            strcpy(xinfo->host,               host);
+        xinfo->port =                         port;
+        strcpy(xinfo->user, user  &&  *user ? user : "ftp");
+        strcpy(xinfo->pass, pass            ? pass : "-none@");
+        strcpy(xinfo->path, path            ? path : "");
         flag &= (TFTP_Flags)(~fFTP_IgnorePath);
     } else if (!(flag & fFTP_LogAll)) {
-        switch (info->debug_printout) {
+        switch (xinfo->debug_printout) {
         case eDebugPrintout_Some:
             flag |= fFTP_LogControl;
             break;
@@ -2303,23 +2304,23 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
             break;
         }
     }
-    if (!xxx->info->port)
-        xxx->info->port = CONN_PORT_FTP;
-    xxx->info->req_method = eReqMethod_Any;
-    xxx->info->stateless = 0;
-    xxx->info->lb_disable = 0;
-    xxx->info->http_proxy_leak = 0;
+    if (!xinfo->port)
+        xinfo->port = CONN_PORT_FTP;
+    xinfo->req_method = eReqMethod_Any;
+    xinfo->stateless = 0;
+    xinfo->lb_disable = 0;
+    xinfo->http_proxy_leak = 0;
     if (!(flag & fFTP_UseProxy)) {
-        xxx->info->http_proxy_host[0] = '\0';
-        xxx->info->http_proxy_port    =   0;
-        xxx->info->http_proxy_user[0] = '\0';
-        xxx->info->http_proxy_pass[0] = '\0';
+        xinfo->http_proxy_host[0] = '\0';
+        xinfo->http_proxy_port    =   0;
+        xinfo->http_proxy_user[0] = '\0';
+        xinfo->http_proxy_pass[0] = '\0';
     } else
         CORE_LOG(eLOG_Critical, "fFTP_UseProxy not yet implemented");
-    ConnNetInfo_SetUserHeader(xxx->info, 0);
-    if (xxx->info->http_referer) {
-        free((void*) xxx->info->http_referer);
-        xxx->info->http_referer = 0;
+    ConnNetInfo_SetUserHeader(xinfo, 0);
+    if (xinfo->http_referer) {
+        free((void*) xinfo->http_referer);
+        xinfo->http_referer = 0;
     }
 
     /* some uninited fields are taken care of in s_VT_Open */
