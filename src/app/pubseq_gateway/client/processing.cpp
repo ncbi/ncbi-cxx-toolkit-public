@@ -705,7 +705,7 @@ void s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_
             }
 
         } else if (!expect_errors) {
-            cerr << "Fail on getting item for request '" << request_id << "' expected to succeed";
+            cerr << "Fail on getting item for request '" << request_id << "' expected to succeed" << endl;
             return;
 
         } else {
