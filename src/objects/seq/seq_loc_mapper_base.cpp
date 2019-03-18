@@ -2642,6 +2642,7 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
             }
         }
     }
+    if (length == 0) return;
     CRef<CMappingRange> rg = m_Mappings->AddConversion(
         main_id, src_start, length, src_strand,
         dst_idh, dst_start, dst_strand,
