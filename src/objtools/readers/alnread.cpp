@@ -4348,7 +4348,6 @@ ReadAlignmentFile(
 
     switch(format) {
         default:
-            cerr << ">>> default path <<<" << endl;
             if (afrp->block_size > 1) {
                 s_ProcessAlignRawFileByBlockOffsets (afrp);
             } else if (afrp->marked_ids) {
