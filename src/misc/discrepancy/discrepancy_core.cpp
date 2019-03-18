@@ -694,7 +694,6 @@ DISCREPANCY_LINK_MODULE(feature_per_bioseq);
 DISCREPANCY_LINK_MODULE(seqdesc_per_bioseq);
 DISCREPANCY_LINK_MODULE(gene_names);
 DISCREPANCY_LINK_MODULE(rna_names);
-DISCREPANCY_LINK_MODULE(spell_check);
 DISCREPANCY_LINK_MODULE(transl_too_long);
 DISCREPANCY_LINK_MODULE(overlapping_features);
 DISCREPANCY_LINK_MODULE(sesame_street);
