@@ -452,10 +452,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         ++loc_it;
     }
     CRef<CSeq_loc> target;
-    if (loc_it.HasChanges())
-    {
-        target = loc_it.MakeSeq_loc();
-    }
+    target = loc_it.MakeSeq_loc();
     if (target && (target->IsNull() || target->IsEmpty() || target->GetStart(objects::eExtreme_Positional) == target->GetStop(objects::eExtreme_Positional)))
     {
         target.Reset();

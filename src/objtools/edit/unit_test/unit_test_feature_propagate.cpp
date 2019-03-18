@@ -702,9 +702,100 @@ void TestPartialWhenCutStart(bool partial5)
     listener.Clear();    
 }
 
+// test fuse abutting intervals
+void TestFuseAbuttingIntervals()
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 12, 17, 25, eNa_strand_plus, id1, false, false);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CDense_seg& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(3);
+    denseg.ResetLens();
+    denseg.SetLens().push_back(10);
+    denseg.SetLens().push_back(10);
+    denseg.SetLens().push_back(10);
+    denseg.ResetStarts();
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(-1);
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(20);
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(20);;
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    CRef<CSeq_loc> expected_loc1 = CreateLoc(5, 15, id2, false, false);
+    expected_loc1->SetInt().SetStrand(eNa_strand_plus);
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    listener.Clear();    
+}
+
+// test do not fuse abutting intervals
+void TestDoNotFuseAbuttingIntervals()
+{
+    size_t front_insert = 5;
+    CRef<CSeq_align> align;
+    CRef<CSeq_entry> entry, seq1, seq2, seq3;
+    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
+   
+    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+
+    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 12, 17, 25, eNa_strand_plus, id1, false, false);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+    CBioseq_Handle bsh1, bsh2, bsh3;
+    CRef<CScope> scope;
+    tie(bsh1,bsh2,bsh3,scope) = AddBioseqsToScope(entry);
+
+    CDense_seg& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(3);
+    denseg.ResetLens();
+    denseg.SetLens().push_back(10);
+    denseg.SetLens().push_back(10);
+    denseg.SetLens().push_back(10);
+    denseg.ResetStarts();
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(-1);
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(20);
+    denseg.SetStarts().push_back(10);
+    denseg.SetStarts().push_back(20);;
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, false, &listener);
+    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(5, 10, 10, 15, eNa_strand_plus, id2, false, false);
+    expected_loc1->SetInt().SetStrand(eNa_strand_plus);
+    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    listener.Clear();    
+}
+
 // test circular topology
 // test extend over gaps
-// test fuse abutting intervals
 // test ordered vs. joined locations
 
 
@@ -746,6 +837,8 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestPartialWhenCutLastInterval(true);
     TestPartialWhenCutStart(false);
     TestPartialWhenCutStart(true);
+
+    TestFuseAbuttingIntervals();
 }
 
 
