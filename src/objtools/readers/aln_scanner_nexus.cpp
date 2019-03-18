@@ -91,15 +91,13 @@ CAlnScannerNexus::sStripNexusComments(
 
 //  ----------------------------------------------------------------------------
 void 
-CAlnScannerNexus::sProcessAlignmentFile(
+CAlnScannerNexus::ProcessAlignmentFile(
     TAlignRawFilePtr afrp)
 //  ----------------------------------------------------------------------------
 {
     const int NUM_SEQUENCES(afrp->expected_num_sequence);
     const int SIZE_SEQUENCE(afrp->expected_sequence_len);
 
-    vector<string> seqIds;
-    vector<vector<TLineInfoPtr>> sequences;
     int dataLineCount(0);
     int blockLineLength(0);
     int sequenceCharCount(0);
@@ -175,16 +173,16 @@ CAlnScannerNexus::sProcessAlignmentFile(
 
             string seqId = tokens[0];
             if (dataLineCount < NUM_SEQUENCES) {
-                if (std::find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
+                if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
                     return; //ERROR: duplicate ID
                 }
-                seqIds.push_back(seqId);
-                sequences.push_back(vector<TLineInfoPtr>());
+                mSeqIds.push_back(seqId);
+                mSequences.push_back(vector<TLineInfoPtr>());
             }
             else {
-                if (seqIds[dataLineCount % NUM_SEQUENCES] != seqId) {
+                if (mSeqIds[dataLineCount % NUM_SEQUENCES] != seqId) {
                     string description;
-                    if (std::find(seqIds.begin(), seqIds.end(), seqId) == seqIds.end()) {
+                    if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) == mSeqIds.end()) {
                         description = StrPrintf(
                             "Expected %d sequences, but finding data for another.",
                             NUM_SEQUENCES);
@@ -231,7 +229,7 @@ CAlnScannerNexus::sProcessAlignmentFile(
                 }
             }
 
-            sequences[dataIndex].push_back(linePtr);
+            mSequences[dataIndex].push_back(linePtr);
 
             dataLineCount += 1;
             if (isLastLineOfData) {
@@ -277,14 +275,14 @@ CAlnScannerNexus::sProcessAlignmentFile(
     }
 
     //looks good- populate approprate afrp data structures:
-    for (auto idIndex = 0; idIndex < seqIds.size(); ++idIndex) {
-        for (auto seqPart = 0; seqPart < sequences[idIndex].size(); ++seqPart) {
-            auto liPtr = sequences[idIndex][seqPart];
+    for (auto idIndex = 0; idIndex < mSeqIds.size(); ++idIndex) {
+        for (auto seqPart = 0; seqPart < mSequences[idIndex].size(); ++seqPart) {
+            auto liPtr = mSequences[idIndex][seqPart];
             string liData = string(liPtr->data);
             auto endOfId = liData.find_first_of(" \t");
             auto startOfData = liData.find_first_not_of(" \t", endOfId);
                 afrp->sequences = SAlignRawSeq::sAddSeqById(
-                    afrp->sequences, seqIds[idIndex],
+                    afrp->sequences, mSeqIds[idIndex],
                     liPtr->data + startOfData, liPtr->line_num, liPtr->line_num,
                     startOfData);
         }

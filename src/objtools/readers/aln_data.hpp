@@ -290,9 +290,35 @@ struct SSizeInfo {
     }
 
     static SSizeInfo*
-        AppendNew(
-            SSizeInfo* list) {
+    AppendNew(
+        SSizeInfo* list) {
         return tAppendNew<SSizeInfo>(list, new SSizeInfo);
+    };
+
+    static SSizeInfo* 
+    AddSizeInfo(
+        SSizeInfo* pList,
+        int  sizeValue,
+        int numAppearances = 1) 
+    {
+        SSizeInfo* p, *pLast = nullptr;
+
+        for (p = pList;  p  &&  p->size_value != sizeValue;  p = p->next) {
+            pLast = p;
+        }
+        if (p == nullptr) {
+            p = new SSizeInfo(sizeValue, numAppearances);
+            if (!pLast) {
+                pList = p;
+            } 
+            else {
+                pLast->next = p;
+            }
+        } 
+        else {
+            p->num_appearances += numAppearances;
+        }
+        return pList;
     };
 
     int size_value;

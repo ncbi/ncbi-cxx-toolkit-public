@@ -107,7 +107,7 @@ CAlnScannerSequin::xExtractSequinSequenceData(
 
 //  ----------------------------------------------------------------------------
 void
-CAlnScannerSequin::sProcessAlignmentFile(
+CAlnScannerSequin::ProcessAlignmentFile(
     TAlignRawFilePtr afrp)
     //  ----------------------------------------------------------------------------
 {

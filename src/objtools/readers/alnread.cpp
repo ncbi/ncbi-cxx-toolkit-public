@@ -120,59 +120,6 @@ sReadLine(
 }
 
 
-/* These functions are used to accumulate and retrieve information on 
- * how often a size of data (number of lines or number of characters) occurs.
- */
-
-/* This function searches list for a SSizeInfo structure with the
- * same size_value as size_value.  If it finds such a structure, it
- * adds the value of num_appearances to the num_appearances for that
- * structure, otherwise the function creates a new structure at the end
- * of the list with the specified values of size_value and num_appearances.
- * The function returns a pointer to the list of SSizeInfo structures.
- */
-static TSizeInfoPtr 
-s_AddSizeInfoAppearances (
-    TSizeInfoPtr list,
-    int  size_value,
-    int  num_appearances)
-{
-    TSizeInfoPtr p, last;
-
-    last = nullptr;
-    for (p = list;  p != nullptr  &&  p->size_value != size_value;  p = p->next) {
-        last = p;
-    }
-    if (p == nullptr) {
-        p = new SSizeInfo(size_value, num_appearances);
-        if (last == nullptr) {
-            list = p;
-        } else {
-            last->next = p;
-        }
-    } else {
-        p->num_appearances += num_appearances;
-    }
-    return list;
-}
-
-
-/* This function searches list for a SSizeInfo structure with the
- * same size_value as size_value.  If it finds such a structure, it
- * adds one to the num_appearances for that structure, otherwise the 
- * function creates a new structure at the end of the list with the 
- * specified values of size_value and num_appearances.
- * The function returns a pointer to the list of SSizeInfo structures.
- */
-static TSizeInfoPtr 
-s_AddSizeInfo(
-    TSizeInfoPtr list,
-    int  size_value)
-{
-    return s_AddSizeInfoAppearances (list, size_value, 1);
-}
-
-
 /* This function searches list for the SSizeInfo structure with the
  * highest value for num_appearances.  If more than one structure exists
  * with the highest value for num_appearances, the function chooses the
@@ -1498,7 +1445,7 @@ s_FindInterleavedBlocks(
     for (llp = pattern_list; llp; llp = llp->next) {
         llp_next = llp->next;
         if (llp->num_appearances > 1  &&  (!llp_next  ||  !llp_next->lengthrepeats)) {
-            size_list = s_AddSizeInfo(size_list, llp->num_appearances);
+            size_list = SSizeInfo::AddSizeInfo(size_list, llp->num_appearances);
         }
     }
     if (!size_list) {
@@ -2563,9 +2510,8 @@ s_FindMostFrequentlyOccurringTokenLength(
 
     for (auto list_ptr = list;  list_ptr;  list_ptr = list_ptr->next) {
         if (not_this_size != list_ptr->size_value) {
-            new_list = s_AddSizeInfoAppearances (new_list,
-                                               list_ptr->size_value,
-                                               list_ptr->num_appearances);
+            new_list = SSizeInfo::AddSizeInfo(
+                new_list, list_ptr->size_value, list_ptr->num_appearances);
         }
     }
     TSizeInfoPtr best_ptr = s_GetMostPopularSizeInfo (new_list);
@@ -2615,8 +2561,8 @@ s_ExtendAnchorPattern(
             if (sip_next  &&  sip_next->size_value > 0  &&
                     sip_next->size_value != anchor_line_length  &&
                     (!sip_next->next  ||  sip_next->next->size_value != anchor_line_length)) {
-                last_line_lengths = s_AddSizeInfo (last_line_lengths,
-                                                 sip_next->size_value);
+                last_line_lengths = SSizeInfo::AddSizeInfo(
+                    last_line_lengths, sip_next->size_value);
             }
         }
     }
@@ -2909,8 +2855,8 @@ sGetMostPopularPatternLength(
     TSizeInfoPtr pattern_length_list = nullptr;
     for (auto offset: offsetList) {
         if (line_counter != -1) {
-            pattern_length_list = s_AddSizeInfo (pattern_length_list,
-                offset - line_counter);
+            pattern_length_list = SSizeInfo::AddSizeInfo(
+                pattern_length_list, offset - line_counter);
         }
         line_counter = offset;
     }
@@ -2958,8 +2904,8 @@ sGetBestCharacterLength(
                 lip = lip->next;
             }
             if (*newOffset - *prevOffset == block_length) {
-                pattern_length_list = s_AddSizeInfo (pattern_length_list,
-                                                   num_chars);
+                pattern_length_list = SSizeInfo::AddSizeInfo(
+                    pattern_length_list, num_chars);
             }
         }
         prevOffset = newOffset;
@@ -3462,7 +3408,7 @@ s_ConvertDataToOutput(
             arsp = arsp->next, index++) {
         auto sequenceLi = s_LineInfoMergeAndStripSpaces (arsp->sequence_data);
         alignInfo.mSequences [index] = string( sequenceLi ? sequenceLi : "");
-        lengths = s_AddSizeInfo(lengths, alignInfo.mSequences[index].size());
+        lengths = SSizeInfo::AddSizeInfo(lengths, alignInfo.mSequences[index].size());
 
         alignInfo.mIds[index] = string(arsp->mId);
     }
@@ -3524,7 +3470,6 @@ s_ConvertDataToOutput(
  * match, and gap characters to use in interpreting the sequence data.
  */
 
-
 bool 
 ReadAlignmentFile(
     istream& istr,
@@ -3564,17 +3509,17 @@ ReadAlignmentFile(
     
         case EAlignFormat::ALNFMT_NEXUS: {
             CAlnScannerNexus scanner;
-            scanner.sProcessAlignmentFile(afrp);
+            scanner.ProcessAlignmentFile(afrp);
             break;
         }
         case EAlignFormat::ALNFMT_CLUSTAL: {
             CAlnScannerClustal scanner;
-            scanner.sProcessAlignmentFile(afrp);
+            scanner.ProcessAlignmentFile(afrp);
             break;
         }
         case EAlignFormat::ALNFMT_SEQUIN: {
             CAlnScannerSequin scanner;
-            scanner.sProcessAlignmentFile(afrp);
+            scanner.ProcessAlignmentFile(afrp);
             break;
         }
     }

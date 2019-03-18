@@ -51,7 +51,7 @@ public:
     ~CAlnScannerNexus() {};
 
     void 
-    sProcessAlignmentFile(
+    ProcessAlignmentFile(
         SAlignFileRaw* afrp);
 
 protected:

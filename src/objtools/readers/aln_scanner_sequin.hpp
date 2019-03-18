@@ -47,7 +47,7 @@ public:
     ~CAlnScannerSequin() {};
 
     void
-    sProcessAlignmentFile(
+    ProcessAlignmentFile(
         SAlignFileRaw *);
 
 protected:

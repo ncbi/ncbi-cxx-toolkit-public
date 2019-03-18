@@ -47,7 +47,7 @@ public:
     ~CAlnScannerClustal() {};
 
     void 
-    sProcessAlignmentFile(
+    ProcessAlignmentFile(
             SAlignFileRaw* afrp);
 
 protected:

@@ -146,7 +146,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
 
 //  ----------------------------------------------------------------------------
 void 
-CAlnScannerClustal::sProcessAlignmentFile(
+CAlnScannerClustal::ProcessAlignmentFile(
         TAlignRawFilePtr afrp)
 //  ----------------------------------------------------------------------------
 {
