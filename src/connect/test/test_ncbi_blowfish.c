@@ -93,9 +93,12 @@ static void selftest(void)
         NCBI_BLOWFISH bf;
         char key[8];
         int d;
+        temp = 0;
         for (i = 0;  i < 8;  ++i) {
             sscanf(tests[n].key + (i << 1), "%2x", &d);
             key[i] = d;
+            temp <<= 8;
+            temp  |= (Uint1) d;
         }
         text = 0;
         for (i = 0;  i < 8;  ++i) {
@@ -109,19 +112,27 @@ static void selftest(void)
             data <<= 8;
             data  |= (Uint1) d;
         }
+#if 0
+        for (i = 0;  i < 132;  ++i)
+            putchar('0' + i % 10);
+        putchar('\n');
+#endif
         printf("test vector %zu:\t"
 			   "0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\t"
-			   "0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\n", n + 1, text, data);
+			   "0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\t"
+			   "0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\n", n + 1,
+               temp, text, data);
         bf = NcbiBlowfishInit(key, sizeof(key));
         assert(bf);
         temp = text;
         NcbiBlowfishEncrypt(bf, &temp);
-        printf("\t\t\t\t\t0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\n", temp);
+        printf("\t\t\t\t\t\t\t\t"
+               "0x%016" NCBI_BIGCOUNT_FORMAT_SPEC_HEX_X "\n", temp);
         assert(temp == data);
         NcbiBlowfishDecrypt(bf, &temp);
         assert(temp == text);
         NcbiBlowfishFini(bf);
-        printf("\t\t\t\t\tPASSED\n\n");
+        printf("\t\t\t\t\t\t\t\tPASSED\n\n");
     }
 }
 

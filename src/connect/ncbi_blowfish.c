@@ -43,14 +43,19 @@
 #define BLOWFISHN  16  /* Number of substitution rounds                  */
 
 
-static const Uint4 P[BLOWFISHN + 2] = {
-0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
-0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C, 0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917,
-0x9216D5D9, 0x8979FB1B
+struct SNcbiBlowfish {
+    Uint4 P[BLOWFISHN + 2];
+    Uint4 S[4][256];
 };
 
 
-static const Uint4 S0[256] = {
+static const struct SNcbiBlowfish kBfInit = {
+/* PI's fractional part base-16 (stored sequentially in P, S[0..3]) */
+{
+0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
+0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C, 0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917,
+0x9216D5D9, 0x8979FB1B
+},{{
 0xD1310BA6, 0x98DFB5AC, 0x2FFD72DB, 0xD01ADFB7, 0xB8E1AFED, 0x6A267E96, 0xBA7C9045, 0xF12C7F99,
 0x24A19947, 0xB3916CF7, 0x0801F2E2, 0x858EFC16, 0x636920D8, 0x71574E69, 0xA458FEA3, 0xF4933D7E,
 0x0D95748F, 0x728EB658, 0x718BCD58, 0x82154AEE, 0x7B54A41D, 0xC25A59B5, 0x9C30D539, 0x2AF26013,
@@ -83,10 +88,7 @@ static const Uint4 S0[256] = {
 0x83260376, 0x6295CFA9, 0x11C81968, 0x4E734A41, 0xB3472DCA, 0x7B14A94A, 0x1B510052, 0x9A532915,
 0xD60F573F, 0xBC9BC6E4, 0x2B60A476, 0x81E67400, 0x08BA6FB5, 0x571BE91F, 0xF296EC6B, 0x2A0DD915,
 0xB6636521, 0xE7B9F9B6, 0xFF34052E, 0xC5855664, 0x53B02D5D, 0xA99F8FA1, 0x08BA4799, 0x6E85076A
-};
- 
-
-static const Uint4 S1[256] = {
+},{
 0x4B7A70E9, 0xB5B32944, 0xDB75092E, 0xC4192623, 0xAD6EA6B0, 0x49A7DF7D, 0x9CEE60B8, 0x8FEDB266,
 0xECAA8C71, 0x699A17FF, 0x5664526C, 0xC2B19EE1, 0x193602A5, 0x75094C29, 0xA0591340, 0xE4183A3E,
 0x3F54989A, 0x5B429D65, 0x6B8FE4D6, 0x99F73FD6, 0xA1D29C07, 0xEFE830F5, 0x4D2D38E6, 0xF0255DC1,
@@ -119,10 +121,7 @@ static const Uint4 S1[256] = {
 0xA6078084, 0x19F8509E, 0xE8EFD855, 0x61D99735, 0xA969A7AA, 0xC50C06C2, 0x5A04ABFC, 0x800BCADC,
 0x9E447A2E, 0xC3453484, 0xFDD56705, 0x0E1E9EC9, 0xDB73DBD3, 0x105588CD, 0x675FDA79, 0xE3674340,
 0xC5C43465, 0x713E38D8, 0x3D28F89E, 0xF16DFF20, 0x153E21E7, 0x8FB03D4A, 0xE6E39F2B, 0xDB83ADF7
-};
-
- 
-static const Uint4 S2[256] = {
+},{
 0xE93D5A68, 0x948140F7, 0xF64C261C, 0x94692934, 0x411520F7, 0x7602D4F7, 0xBCF46B2E, 0xD4A20068,
 0xD4082471, 0x3320F46A, 0x43B7D4B7, 0x500061AF, 0x1E39F62E, 0x97244546, 0x14214F74, 0xBF8B8840,
 0x4D95FC1D, 0x96B591AF, 0x70F4DDD3, 0x66A02F45, 0xBFBC09EC, 0x03BD9785, 0x7FAC6DD0, 0x31CB8504,
@@ -155,10 +154,7 @@ static const Uint4 S2[256] = {
 0x6F05E409, 0x4B7C0188, 0x39720A3D, 0x7C927C24, 0x86E3725F, 0x724D9DB9, 0x1AC15BB4, 0xD39EB8FC,
 0xED545578, 0x08FCA5B5, 0xD83D7CD3, 0x4DAD0FC4, 0x1E50EF5E, 0xB161E6F8, 0xA28514D9, 0x6C51133C,
 0x6FD5C7E7, 0x56E14EC4, 0x362ABFCE, 0xDDC6C837, 0xD79A3234, 0x92638212, 0x670EFA8E, 0x406000E0
-};
- 
-
-static const Uint4 S3[256] = {
+},{
 0x3A39CE37, 0xD3FAF5CF, 0xABC27737, 0x5AC52D1B, 0x5CB0679E, 0x4FA33742, 0xD3822740, 0x99BC9BBE,
 0xD5118E9D, 0xBF0F7315, 0xD62D1C7E, 0xC700C47B, 0xB78C1B6B, 0x21A19045, 0xB26EB1BE, 0x6A366EB4,
 0x5748AB2F, 0xBC946E79, 0xC6A376D2, 0x6549C2C8, 0x530FF8EE, 0x468DDE7D, 0xD5730A1D, 0x4CD04DC6,
@@ -191,12 +187,7 @@ static const Uint4 S3[256] = {
 0x53113EC0, 0x1640E3D3, 0x38ABBD60, 0x2547ADF0, 0xBA38209C, 0xF746CE76, 0x77AFA1C5, 0x20756060,
 0x85CBFE4E, 0x8AE88DD8, 0x7AAAF9B0, 0x4CF9AA7E, 0x1948C25C, 0x02FB8A8C, 0x01C36AE4, 0xD6EBE1F9,
 0x90D4F869, 0xA65CDEA0, 0x3F09252D, 0xC208E69F, 0xB74E6132, 0xCE77E25B, 0x578FDFE3, 0x3AC372E6
-};
-
-
-struct SNcbiBlowfish {
-    Uint4 P[BLOWFISHN + 2];
-    Uint4 S[4][256];
+}}
 };
 
 
@@ -206,13 +197,13 @@ inline
 static Uint4 F(NCBI_BLOWFISH bf, Uint4 x)
 {
     Uint1 a, b, c, d;
-    d = x;
+    d = (Uint1) x;
     x >>= 8;
-    c = x;
+    c = (Uint1) x;
     x >>= 8;
-    b = x;
+    b = (Uint1) x;
     x >>= 8;
-    a = x;
+    a = (Uint1) x;
     //printf("a, b, c, d = %u, %u, %u, %u\n", a, b, c, d);
     x  = bf->S[0][a];
     x += bf->S[1][b];
@@ -232,8 +223,8 @@ void NcbiBlowfishEncrypt(NCBI_BLOWFISH bf, Uint8* X)
     Uint4 R = (Uint4) *X;
 #if 0
     size_t n;
-    Uint4 t;
     for (n = 0;  n < SizeOf(bf->P) - 2;  ++n) {
+        Uint4 t;
         L ^= bf->P[n];
         R ^= F(bf, L);
         t  = L;
@@ -273,8 +264,8 @@ void NcbiBlowfishDecrypt(NCBI_BLOWFISH bf, Uint8* Y)
     Uint4 R = (Uint4) *Y;
 #if 0
     size_t n;
-    Uint4 t;
     for (n = SizeOf(bf->P) - 1;  n > 1;  --n) {
+        Uint4 t;
         L ^= bf->P[n];
         R ^= F(bf, L);
         t  = L;
@@ -320,14 +311,7 @@ NCBI_BLOWFISH NcbiBlowfishInit(const void* key, size_t keylen)
 
     if (!(bf = (struct SNcbiBlowfish*) malloc(sizeof(*bf))))
         return 0;
-
-    assert(sizeof(bf->P)    == sizeof(P));
-    assert(sizeof(bf->S[0]) == sizeof(S0));
-    memcpy(bf->P,    P,  sizeof(bf->P));
-    memcpy(bf->S[0], S0, sizeof(bf->S[0]));
-    memcpy(bf->S[1], S1, sizeof(bf->S[1]));
-    memcpy(bf->S[2], S2, sizeof(bf->S[2]));
-    memcpy(bf->S[3], S3, sizeof(bf->S[3]));
+    memcpy(bf, &kBfInit, sizeof(*bf));
 
     if (keylen > MAXKEYLEN)
         keylen = MAXKEYLEN;

@@ -30,7 +30,7 @@
  *
  * File Description:
  * @file ncbi_blowfish.h
- *   Implementation of the blowfish encryption algorithm
+ *   Implementation of the Blowfish encryption algorithm
  *
  */
 
@@ -49,14 +49,16 @@
 extern "C" {
 #endif
 
+
 /* fwdecl */
 struct SNcbiBlowfish;
+/** Opaque encryption / decryption context type */
 typedef const struct SNcbiBlowfish* NCBI_BLOWFISH;
 
 
-/** Init the chiper context with a key of the specified length.
- *  Note that blowfish limits the key to be 448 bits long, so the reminder of a
- *  longer key (if there's any) is ignored.  A shorter key gets repeated as
+/** Init the cipher context with a key of the specified length.
+ *  Note that Blowfish limits the key to be 448 bits long, so the remainder of
+ *  a longer key (if so provided) is ignored.  A shorter key gets repeated as
  *  necessary.  To specify a short key explicitly pad with zero bits up to 448.
  *  Return 0 on memory allocation error.
  */
@@ -67,22 +69,22 @@ NCBI_BLOWFISH NcbiBlowfishInit
 
 
 /** Encrypt a 64-bit block of data pointed to by "text" with an encrypted
- *  chiper data stored back at the same location.
+ *  scrambled cipher data stored back at the same location.
  */
 extern NCBI_XCONNECT_EXPORT
 void NcbiBlowfishEncrypt
 (NCBI_BLOWFISH ctx,           /**< Context from NcbiBlowfishInit()      */
- Uint8*        text           /**< Clear text replaced with chiper data */
+ Uint8*        text           /**< Clear text replaced with cipher data */
  );
 
 
-/** Decrypt a 64-bit of chiper data pointed to by "data" into a clear text
- *  data stored back at the same location.
+/** Decrypt a 64-bit of cipher data pointed to by "data" back into the clear
+ *  text stored at the same location.
  */
 extern NCBI_XCONNECT_EXPORT
 void NcbiBlowfishDecrypt
 (NCBI_BLOWFISH ctx,           /**< Context from NcbiBlowfishInit()      */   
- Uint8*        data           /**< Chiper data replaced with clear text */
+ Uint8*        data           /**< Cipher data replaced with clear text */
  );
 
 
