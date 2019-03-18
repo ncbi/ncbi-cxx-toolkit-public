@@ -30,6 +30,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
 
@@ -368,11 +369,11 @@ string CBlobRecord::ToString() const
 {
     stringstream s;
     s << "SatKey: " << m_SatKey << endl
-      << "\tm_Modified: " << m_Modified << endl
+      << "\tm_Modified: " << TimeTmsToString(m_Modified) << " (" << m_Modified << ")" << endl
       << "\tm_Size: " << m_Size << endl
       << "\tm_SizeUnpacked: " << m_SizeUnpacked << endl
-      << "\tm_DateAsn1: " << m_DateAsn1 << endl
-      << "\tm_HupDate: " << m_HupDate << endl
+      << "\tm_DateAsn1: " << TimeTmsToString(m_DateAsn1) << " (" << m_DateAsn1 << ")" << endl
+      << "\tm_HupDate: " << TimeTmsToString(m_HupDate) << " (" << m_HupDate << ")" << endl
       << "\tm_NChunks: " << m_NChunks << endl
       << "\tm_Owner: " << m_Owner << endl
       << "\tm_Class: " << m_Class << endl
