@@ -234,10 +234,11 @@ private:
     static shared_ptr<CPSG_Request> CreateRequest(const string& method, shared_ptr<void> user_context,
             const CJson_ConstObject& params_obj);
 
-    template <class TRequest>
-    static shared_ptr<TRequest> CreateRequestImpl(shared_ptr<void> user_context, const CArgs& input);
-    template <class TRequest>
-    static shared_ptr<TRequest> CreateRequestImpl(shared_ptr<void> user_context, const CJson_ConstObject& input);
+    static CPSG_BioId CreateBioId(const CArgs& input);
+    static CPSG_BioId CreateBioId(const CJson_ConstObject& input);
+
+    template <class TRequest, class TInput>
+    static shared_ptr<TRequest> CreateRequestImpl(shared_ptr<void> user_context, const TInput& input);
 
     using TSpecified = function<bool(const string&)>;
 
@@ -257,12 +258,10 @@ private:
     CSender m_Sender;
 };
 
-template <class TRequest>
-inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const CArgs& input)
+template <class TRequest, class TInput>
+inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const TInput& input)
 {
-    const auto& id = input["ID"].AsString();
-    const auto type = CProcessing::GetBioIdType(input["type"].AsString());
-    return make_shared<TRequest>(CPSG_BioId(id, type), move(user_context));
+    return make_shared<TRequest>(CreateBioId(input), move(user_context));
 }
 
 template <>
@@ -276,23 +275,8 @@ inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request
 template <>
 inline shared_ptr<CPSG_Request_NamedAnnotInfo> CProcessing::CreateRequestImpl<CPSG_Request_NamedAnnotInfo>(shared_ptr<void> user_context, const CArgs& input)
 {
-    const auto& id = input["ID"].AsString();
-    const auto type = CProcessing::GetBioIdType(input["type"].AsString());
     const auto& named_annots = input["na"].GetStringList();
-    return make_shared<CPSG_Request_NamedAnnotInfo>(CPSG_BioId(id, type), named_annots, move(user_context));
-}
-
-template <class TRequest>
-inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const CJson_ConstObject& input)
-{
-    auto array = input["bio_id"].GetArray();
-    auto id = array[0].GetValue().GetString();
-
-    if (array.size() == 1) return make_shared<TRequest>(CPSG_BioId(id), move(user_context));
-
-    auto value = array[1].GetValue();
-    auto type = value.IsString() ? CProcessing::GetBioIdType(value.GetString()) : static_cast<CPSG_BioId::TType>(value.GetInt4());
-    return make_shared<TRequest>(CPSG_BioId(id, type), move(user_context));
+    return make_shared<CPSG_Request_NamedAnnotInfo>(CreateBioId(input), named_annots, move(user_context));
 }
 
 template <>
@@ -313,14 +297,7 @@ inline shared_ptr<CPSG_Request_NamedAnnotInfo> CProcessing::CreateRequestImpl<CP
         names.push_back(na.GetValue().GetString());
     }
 
-    auto array = input["bio_id"].GetArray();
-    auto id = array[0].GetValue().GetString();
-
-    if (array.size() == 1) return make_shared<CPSG_Request_NamedAnnotInfo>(CPSG_BioId(id), move(names), move(user_context));
-
-    auto value = array[1].GetValue();
-    auto type = value.IsString() ? CProcessing::GetBioIdType(value.GetString()) : static_cast<CPSG_BioId::TType>(value.GetInt4());
-    return make_shared<CPSG_Request_NamedAnnotInfo>(CPSG_BioId(id, type), move(names), move(user_context));
+    return make_shared<CPSG_Request_NamedAnnotInfo>(CreateBioId(input), move(names), move(user_context));
 }
 
 template <class TRequest>

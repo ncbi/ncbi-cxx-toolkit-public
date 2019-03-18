@@ -691,6 +691,28 @@ CPSG_BioId::TType CProcessing::GetBioIdType(string type)
     return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
 }
 
+CPSG_BioId CProcessing::CreateBioId(const CArgs& input)
+{
+    const auto& id = input["ID"].AsString();
+
+    if (!input["type"].HasValue()) return CPSG_BioId(id);
+
+    const auto type = GetBioIdType(input["type"].AsString());
+    return CPSG_BioId(id, type);
+}
+
+CPSG_BioId CProcessing::CreateBioId(const CJson_ConstObject& input)
+{
+    auto array = input["bio_id"].GetArray();
+    auto id = array[0].GetValue().GetString();
+
+    if (array.size() == 1) return CPSG_BioId(id);
+
+    auto value = array[1].GetValue();
+    auto type = value.IsString() ? GetBioIdType(value.GetString()) : static_cast<CPSG_BioId::TType>(value.GetInt4());
+    return CPSG_BioId(id, type);
+}
+
 const initializer_list<SDataFlag> kDataFlags =
 {
     { "no-tse",    "Return only the info",                                  CPSG_Request_Biodata::eNoTSE    },

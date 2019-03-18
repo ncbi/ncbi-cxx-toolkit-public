@@ -192,7 +192,7 @@ template <class TRequest>
 void CPsgClientApp::s_InitPositional(CArgDescriptions& arg_desc)
 {
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
-    arg_desc.AddDefaultKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString, "gi");
+    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
 }
 
 template <>
@@ -207,7 +207,7 @@ void CPsgClientApp::s_InitPositional<CPSG_Request_NamedAnnotInfo>(CArgDescriptio
 {
     arg_desc.AddKey("na", "NAMED_ANNOT", "Named annotation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
-    arg_desc.AddDefaultKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString, "gi");
+    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
 }
 
 template<>
