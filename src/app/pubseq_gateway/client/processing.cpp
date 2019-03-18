@@ -777,6 +777,13 @@ CJson_Schema& CProcessing::RequestSchema()
                 ]
             },
             "uniqueItems": true
+        },
+        "named_annots": {
+            "$id": "#named_annots",
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
         }
     },
     "oneOf": [
@@ -824,6 +831,22 @@ CJson_Schema& CProcessing::RequestSchema()
                         "include_info": { "$ref": "#include_info" }
                     },
                     "required": [ "bio_id" ]
+                },
+                "id": { "$ref": "#id" }
+            },
+            "required": [ "jsonrpc", "method", "params", "id" ]
+        },
+        {
+            "properties": {
+                "jsonrpc": { "$rev": "#jsonrpc" },
+                "method": { "enum": [ "annot" ] },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "bio_id" : { "$ref": "#bio_id" },
+                        "named_annots": { "$ref": "#named_annots" }
+                    },
+                    "required": [ "bio_id","named_annots" ]
                 },
                 "id": { "$ref": "#id" }
             },
