@@ -37,6 +37,7 @@
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_data.hpp"
 #include "aln_errors.hpp"
+#include "aln_scanner_clustal.hpp"
 #include "aln_scanner_sequin.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -3125,238 +3126,6 @@ s_ProcessAlignFileRawByLengthPattern (
 }
 
 
-static 
-bool s_IsClustalConservationLine(const string& line)
-{
-
-    for (const auto& c : line) {
-        if (!isspace(c) &&
-            c != ':' &&
-            c != '.' &&
-            c != '*') {
-            return false;
-        }
-    }
-    return true;
-}
-
-static bool
-sProcessClustalDataLine(
-    const vector<string>& tokens,
-    const int lineNum,
-    const int seqCount,
-    const int numSeqs,
-    const int seqLength,
-    const int blockCount,
-    int& blockLineLength,
-    vector<string>& seqIds,
-    vector<vector<TLineInfoPtr>>& sequences)
-{
-    auto seqId = tokens[0];
-    if (blockCount == 1) {
-    if (find(seqIds.begin(), seqIds.end(), seqId) != seqIds.end()) {
-        string description = StrPrintf(
-            "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
-        throw SShowStopper(
-            lineNum,
-            EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-            description);
-        }
-        seqIds.push_back(seqId);
-        sequences.push_back(vector<TLineInfoPtr>());
-    }
-    else {
-        if (seqCount > numSeqs) {
-            string description = StrPrintf(
-                "Expected %d sequences, but finding data for for another.",
-                numSeqs);
-            throw SShowStopper(
-                lineNum,
-                EAlnSubcode::eAlnSubcode_BadSequenceCount,
-                description);
-        }
-
-        if (seqId != seqIds[seqCount-1]) {
-            string description;
-            const auto it = find(seqIds.begin(), seqIds.end(), seqId);
-            if (it == seqIds.end()) {
-                description = StrPrintf(
-                    "Expected %d sequences, but finding data for for another.",
-                    numSeqs);
-                throw SShowStopper(
-                    lineNum,
-                    EAlnSubcode::eAlnSubcode_BadSequenceCount,
-                    description);
-            }
-            
-            if (distance(seqIds.begin(), it) < seqCount-1) {
-                description = StrPrintf(
-                    "Duplicate ID: \"%s\" has already appeared in this block.",
-                    seqId.c_str());
-            }
-            else {
-                description = StrPrintf(
-                    "Finding data for sequence \"%s\" out of order.",
-                    seqId.c_str());
-            }
-            throw SShowStopper(
-                lineNum,
-                EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                description);
-        }
-    }
-    
-    if (seqCount==1) {
-        blockLineLength = tokens[1].size();
-        return true;
-    }
-
-    auto currentLineLength = tokens[1].size();
-    if (currentLineLength != blockLineLength) {
-        string description = StrPrintf(
-            "In data line, expected %d symbols but finding %d",
-            blockLineLength,
-            currentLineLength);
-        throw SShowStopper(
-            lineNum,
-            EAlnSubcode::eAlnSubcode_BadDataCount,
-            description);
-    }
-    return true;
-}
-
-
-static void 
-sResetBlockInfo(int& seqCount,
-        int& blockLineLength,
-        bool& inBlock) {
-        seqCount = 0;
-        blockLineLength = 0;
-        inBlock = false;
-}
-
-static void 
-sProcessAlignmentFileAsClustal(
-        TAlignRawFilePtr afrp)
-{
-    int cumulative_length = 0;
-    int num_sequences = 0;
-    bool firstBlock = false;
-    bool inBlock = false;
-
-    int  blockLineLength = 0;
-    int  blockCount = 0;
-    int  numSeqs = 0;
-    int  seqCount = 0;
-    vector<string> seqIds;
-    vector<vector<TLineInfoPtr>> sequences;
-
-    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
-
-        if (!linePtr->data || linePtr->data[0] == 0) {
-            continue;
-        }
-        string line(linePtr->data);
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()) {
-            if (inBlock) {
-                if (blockCount == 1) {
-                    numSeqs = seqCount;
-                }
-                sResetBlockInfo(
-                    seqCount, blockLineLength, inBlock);
-            }
-            continue;
-        }
-
-        if (s_IsClustalConservationLine(line)) {
-            if (!inBlock) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "Expected conservation data at end of block"); 
-            }
-            if (blockCount == 1) {
-                numSeqs = seqCount;
-            }
-            sResetBlockInfo(seqCount, blockLineLength, inBlock);
-            continue;
-        }
-
-        // Search for end of block
-        vector<string> tokens;
-        NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
-        const auto num_tokens = tokens.size();
-        if (num_tokens < 2 || num_tokens > 3) {
-            throw SShowStopper(
-                linePtr->line_num,
-                EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                "In data line, expected seqID followed by sequence data and (optionally) data count"); 
-        }
-
-        int seqLength = 0;
-        if (num_tokens == 3) {
-            seqLength = NStr::StringToInt(tokens[2], NStr::fConvErr_NoThrow);
-            if (!seqLength) { 
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "In data line, expected seqID followed by sequence data and (optionally) data count"); 
-            }
-        }
-
-        if (!inBlock) {
-            inBlock = true;
-            ++blockCount;
-        }
-        ++seqCount;
-
-
-        if (!sProcessClustalDataLine(
-             tokens, linePtr->line_num,
-             seqCount,
-             numSeqs, 
-             seqLength,
-             blockCount, 
-             blockLineLength,
-             seqIds, sequences)) {
-            return;
-        }
-        sequences[seqCount-1].push_back(linePtr);
-    }
-
-    // warn if we are short in deflines
-    auto numDeflines = afrp->mDeflines.size();
-    if (numDeflines != 0  &&  numDeflines != numSeqs) {
-        string description = StrPrintf(
-            "Expected 0 or %d deflines but finding %d",
-            numSeqs, numDeflines);
-        theErrorReporter->Error(
-            -1,
-            EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
-            description); 
-    }
-
-    for (auto idIndex=0; idIndex<numSeqs; ++idIndex) {
-        for (auto linePtr : sequences[idIndex]) {
-            string data = linePtr->data;
-            auto endOfId = data.find_first_of(" \t");
-            auto startOfData = data.find_first_not_of(" \t", endOfId);
-            auto endOfData = data.find_first_of(" \t", startOfData);
-            if (endOfData != NPOS) {
-                linePtr->data[endOfData] = '\0';
-            } 
-            afrp->sequences = SAlignRawSeq::sAddSeqById(
-                afrp->sequences,
-                seqIds[idIndex],
-                linePtr->data + startOfData,
-                linePtr->line_num,
-                linePtr->line_num,
-                startOfData);
-        }
-    }
-}
-
 //  ----------------------------------------------------------------------------
 static void sStripNexusComments(string& line, int &numUnmatchedLeftBrackets)
 //  ----------------------------------------------------------------------------
@@ -4051,10 +3820,11 @@ ReadAlignmentFile(
             sProcessAlignmentFileAsNexus(afrp);
             break;
 
-        case EAlignFormat::ALNFMT_CLUSTAL:
-            sProcessAlignmentFileAsClustal(afrp);
+        case EAlignFormat::ALNFMT_CLUSTAL: {
+            CAlnScannerClustal scanner;
+            scanner.sProcessAlignmentFile(afrp);
             break;
-
+        }
         case EAlignFormat::ALNFMT_SEQUIN: {
             CAlnScannerSequin scanner;
             scanner.sProcessAlignmentFile(afrp);
