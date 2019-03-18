@@ -68,7 +68,8 @@ public:
         eSeqFailed,
         eFatal,
         eGeneric,
-        eMemory
+        eMemory,
+        eUserCancelled
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -92,6 +93,7 @@ public:
             case eFatal:                  return "eFatal";
             case eGeneric:                return "eGeneric";
             case eMemory:                 return "eMemory";
+            case eUserCancelled:          return "eUserCancelled";
             default:                      return CException::GetErrCodeString();
         }
     }
