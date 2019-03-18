@@ -238,7 +238,7 @@ sReportError(
     const string& message,
     ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
 {
-    sReportError(pEC, severity, 0, 0, lineNumber, message, problemType);
+    sReportError(pEC, severity, eReader_Alignment, 0, lineNumber, message, problemType);
 }
 
 
