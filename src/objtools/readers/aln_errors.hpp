@@ -183,6 +183,8 @@ protected:
 
 extern thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
+string StrPrintf(const char *format, ...);
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

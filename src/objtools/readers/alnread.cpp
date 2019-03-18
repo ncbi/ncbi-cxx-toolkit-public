@@ -37,6 +37,7 @@
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_data.hpp"
 #include "aln_errors.hpp"
+#include "aln_scanner_sequin.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -62,38 +63,6 @@ string StrPrintf(const char *format, ...)
     va_start(args, format);
     return NStr::FormatVarargs(format, args);
 }
-
-//  ============================================================================
-class CAlnScannerSequin
-//  ============================================================================
-{
-public:
-    CAlnScannerSequin() {};
-    ~CAlnScannerSequin() {};
-
-    void
-    sProcessAlignmentFileAsSequin(
-        TAlignRawFilePtr);
-
-protected:
-    static bool
-    xIsSequinOffsetsLine(
-        const string& line);
-
-    static bool
-    xIsSequinTerminationLine(
-        const string& line);
-
-    static bool
-    xExtractSequinSequenceData(
-        const string& line,
-        string& seqId,
-        string& seqData);
-
-    vector<string> mSeqIds;
-    vector<vector<TLineInfoPtr>> mSequences;
-
-};
 
 /* This function creates and sends an error message regarding an unused line.
  */
@@ -372,36 +341,6 @@ s_DeleteLineInfos(
     return list;
 }
      
- 
-/* This function creates a new SLineInfo structure, populates it with
- * a copy of string and the specified line_num and line_offset values,
- * and appends it to the end of "list" if list is not NULL.
- * The function will return a pointer to the newly created structure
- * if list is NULL, otherwise the function will return list.
- */
-static TLineInfoPtr 
-s_AddLineInfo(
-    TLineInfoPtr list,
-    const char* string,
-    int line_num,
-    int line_offset)
-{
-    if (!string) {
-        return list;
-    }
-    TLineInfoPtr lip = new SLineInfo(string, line_num-1, line_offset); //hack alert!
-    if (!list) {
-        list = lip;
-    } else {
-        TLineInfoPtr p = list;
-        while (p  &&  p->next) {
-            p = p->next;
-        }
-        p->next = lip;
-    }
-    return list;
-}
-
 /* This function adds a line to a bracketed comment. */
 static void 
 s_BracketedCommentListAddLine(
@@ -413,7 +352,7 @@ s_BracketedCommentListAddLine(
     if (!comment) {
         return;
     }
-    comment->comment_lines = s_AddLineInfo(
+    comment->comment_lines = SLineInfo::sAddLineInfo(
         comment->comment_lines, string, line_num, line_offset);
 }
 
@@ -470,7 +409,7 @@ s_BuildTokenList(
             while (piece) {
                 line_pos = piece - tmp;
                 line_pos += lip->line_offset;
-                first_token = s_AddLineInfo (
+                first_token = SLineInfo::sAddLineInfo (
                     first_token, piece, lip->line_num, line_pos);
                 piece = s_TokenizeString (nullptr, " \t\r", &last);
             }
@@ -1232,26 +1171,6 @@ static void s_ReadDefline(
 }
 
 
-/* This function returns a pointer to the sequence in list with the specified
- * ID, unless there is no such sequence, in which case the function returns
- * NULL.
- */
-static TAlignRawSeqPtr 
-s_FindAlignRawSeqById(
-    TAlignRawSeqPtr list,
-    const string& id)
-{
-    TAlignRawSeqPtr arsp;
-
-    for (arsp = list; arsp; arsp = arsp->next) {
-        if (id == arsp->mId) {
-            return arsp;
-        }
-    }
-    return nullptr;
-}
-
-
 /* This function finds the position of a given ID in the sequence list,
  * unless the ID is not found in the list, in which case the function returns
  * -1.
@@ -1299,43 +1218,6 @@ s_GetAlignRawSeqIDByOffset(
 }
 
 
-/* This function adds data to a sequence by looking for the specified ID in
- * the list.  If the id is not found, a new sequence with that ID is added to
- * the end of the list.
- * The function returns a pointer to the first item in the list.
- */
-static TAlignRawSeqPtr
-s_AddAlignRawSeqById(
-    TAlignRawSeqPtr list,
-    const string&  id,
-    char *  data,
-    int     id_line_num,
-    int     data_line_num,
-    int     data_line_offset)
-{
-    TAlignRawSeqPtr arsp;
-
-    arsp = s_FindAlignRawSeqById (list, id);
-
-    if (!arsp) {
-        arsp = SAlignRawSeq::AppendNew(list);
-        if (!arsp) {
-            return nullptr;
-        }
-        if (!list) {
-            list = arsp;
-        }
-        arsp->mId = id;
-    }
-    arsp->sequence_data = s_AddLineInfo (arsp->sequence_data,
-                                       data,
-                                       data_line_num,
-                                       data_line_offset);
-    arsp->mIdLines.push_back(id_line_num);
-    return list;
-}
-
-
 /* This function adds data to the Nth sequence in the sequence list and
  * returns true, unless there aren't that many sequences in the list, in
  * which case the function returns false.
@@ -1358,7 +1240,7 @@ s_AddAlignRawSeqByIndex(
     if (!arsp) {
         return false;
     }
-    arsp->sequence_data = s_AddLineInfo (
+    arsp->sequence_data = SLineInfo::sAddLineInfo (
         arsp->sequence_data, data, data_line_num, data_line_offset);
     return true;
 }
@@ -2149,7 +2031,7 @@ s_DoesBlockHaveIds(
             len = strcspn (linestring, " \t\r");
             if (len > 0  &&  len < strlen (linestring)) {
                 string this_id(linestring, len);
-                arsp = s_FindAlignRawSeqById (afrp->sequences, this_id);
+                arsp = SAlignRawSeq::sFindSeqById(afrp->sequences, this_id);
                 if (arsp) {
                     return true;
                 }
@@ -2296,7 +2178,7 @@ s_ProcessBlockLines(
                 
                 /* Check for duplicate IDs in the first block */
                 if (first_block) {
-                    arsp = s_FindAlignRawSeqById (afrp->sequences, this_id);
+                    arsp = SAlignRawSeq::sFindSeqById(afrp->sequences, this_id);
                     if (arsp) {
                         theErrorReporter->Warn(
                             lip->line_num,
@@ -2304,7 +2186,7 @@ s_ProcessBlockLines(
                             "Duplicate ID!  Sequences will be concatenated!");
                     }
                 }
-                afrp->sequences = s_AddAlignRawSeqById (
+                afrp->sequences = SAlignRawSeq::sAddSeqById(
                     afrp->sequences, this_id, cp, lip->line_num, lip->line_num,
                     lip->line_offset + cp - linestring);
             } 
@@ -2447,12 +2329,9 @@ sCreateSequencesBasedOnTokenPatterns(
                                 description,
                                 curr_id);
                         }
-                        afrp->sequences = s_AddAlignRawSeqById (afrp->sequences, 
-                                                                curr_id, 
-                                                                lip->data,
-                                                                lip->line_num,
-                                                                lip->line_num,
-                                                                lip->line_offset);
+                        afrp->sequences = SAlignRawSeq::sAddSeqById(
+                            afrp->sequences, curr_id, lip->data,
+                            lip->line_num, lip->line_num, lip->line_offset);
                     }
                     lip = lip->next;
                     line_counter ++;
@@ -3467,7 +3346,7 @@ sProcessAlignmentFileAsClustal(
             if (endOfData != NPOS) {
                 linePtr->data[endOfData] = '\0';
             } 
-            afrp->sequences = s_AddAlignRawSeqById(
+            afrp->sequences = SAlignRawSeq::sAddSeqById(
                 afrp->sequences,
                 seqIds[idIndex],
                 linePtr->data + startOfData,
@@ -3477,212 +3356,6 @@ sProcessAlignmentFileAsClustal(
         }
     }
 }
-
-//  ----------------------------------------------------------------------------
-bool
-CAlnScannerSequin::xIsSequinOffsetsLine(
-    const string& line)
-//  ----------------------------------------------------------------------------
-{
-    vector<string> tokens;
-    NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
-    if (tokens.size() > 5) {
-        return false;
-    }
-    for (auto token: tokens) {
-        if (!NStr::EndsWith(token, '0')) {
-            return false;
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool
-CAlnScannerSequin::xIsSequinTerminationLine(
-    const string& line)
-//  ----------------------------------------------------------------------------
-{
-    return (line == "//");
-}
-
-//  ----------------------------------------------------------------------------
-bool
-CAlnScannerSequin::xExtractSequinSequenceData(
-    const string& line,
-    string& seqId,
-    string& seqData)
-//  ----------------------------------------------------------------------------
-{
-    vector<string> tokens;
-    NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
-    if (tokens.size() < 2) {
-        // error: need at least ID and one block of sequence data
-        return false;
-    }
-
-    seqId = tokens[0];
-
-    if (tokens[1] == ">") {
-        if (tokens.size() < 5) {
-            // error: need at least ID and one block of sequence data and bounds
-            return false;
-        }
-        for (auto curBlock = 3; curBlock < tokens.size() - 1; ++curBlock) {
-            seqData += tokens[curBlock];
-        }
-    }
-    else {
-        for (auto curBlock = 1; curBlock < tokens.size(); ++curBlock) {
-            seqData += tokens[curBlock];
-        }
-    }        
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-void 
-CAlnScannerSequin::sProcessAlignmentFileAsSequin(
-    TAlignRawFilePtr afrp)
-//  ----------------------------------------------------------------------------
-{
-    bool processingData = false;
-    bool inFirstBlock = false;
-    int lineInBlock = 0;
-    string refSeqData;
-
-    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
-
-        if (!linePtr->data  ||  linePtr->data[0] == 0) {
-            if (processingData) {
-                if (lineInBlock != mSeqIds.size()) {
-                    string description = StrPrintf(
-                        "Missing data line. Expected sequence data for seqID \"%s\"",
-                        mSeqIds[lineInBlock].c_str());
-                    throw SShowStopper(
-                        linePtr->line_num, 
-                        EAlnSubcode::eAlnSubcode_MissingDataLine,
-                        description);
-                }
-                processingData = false;
-                if (mSeqIds.size() != 0) {
-                    inFirstBlock = false;
-                }
-            }
-            continue;
-        }
-
-        string line(linePtr->data);
-        NStr::TruncateSpacesInPlace(line);
-
-        if (xIsSequinOffsetsLine(line)) {
-            if (processingData) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_MissingDataLine,
-                    "Missing data line. Expected sequence data, not sequence offsets"); 
-            }
-            continue;
-        }
-
-        if (xIsSequinTerminationLine(line)) {
-            if (processingData) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_MissingDataLine,
-                    "Missing data line. Expected sequence data, not termination line"); 
-            }
-            break;
-        }
-
-        //process sequence data
-        if (!processingData) {
-            processingData = true;
-            lineInBlock = 0;
-            refSeqData.clear();
-            if (mSeqIds.empty()) {
-                inFirstBlock = true;
-            }
-        }
-        string seqId, seqData;
-        if (!xExtractSequinSequenceData(line, seqId, seqData)) {
-            throw SShowStopper(
-                linePtr->line_num,
-                EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                "Malformatted data line"); 
-        }
-
-        // verify and process sequence ID:
-        if (inFirstBlock) {
-            if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
-                // error: duplicate sequence ID
-                string description = StrPrintf(
-                    "Duplicate sequence ID \"%s\"", seqId.c_str());
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                    description); 
-            }
-            mSeqIds.push_back(seqId);
-            mSequences.push_back(vector<TLineInfoPtr>());
-        }
-        else {
-            if (lineInBlock >= mSeqIds.size()) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "Extraneous data line in interleaved data block"); 
-            }
-            if (seqId != mSeqIds[lineInBlock]) {
-                string description = StrPrintf(
-                    "Unexpected sequence ID \"%s\"", seqId.c_str());
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                    description); 
-            }
-        }
-
-        // verify and process sequence data:
-        if (refSeqData.empty()) {
-            refSeqData = seqData;
-        }
-        else {
-            if (seqData.size() != refSeqData.size()) {
-                string description = StrPrintf(
-                    "Unexpected number of sequence symbols (expected %d but found %d)",
-                    refSeqData.size(), seqData.size());
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_BadDataCount,
-                    description); 
-            }
-            for (auto i = 0; i < seqData.size(); ++i) {
-                if (seqData[i] == '.') {
-                    seqData[i] = refSeqData[i];
-                }
-            }
-        }
-
-        strcpy(linePtr->data, seqData.c_str());
-        mSequences[lineInBlock].push_back(linePtr);
-        ++lineInBlock;
-    }
-    for (auto idIndex = 0; idIndex < mSeqIds.size(); ++idIndex) {
-        auto& curSeq = mSequences[idIndex];
-        for (auto seqPart = 0; seqPart < curSeq.size(); ++seqPart) {
-            auto liPtr = curSeq[seqPart];
-            afrp->sequences = s_AddAlignRawSeqById(
-                afrp->sequences,
-                mSeqIds[idIndex],
-                liPtr->data,
-                liPtr->line_num,
-                liPtr->line_num,
-                0);
-        }
-    }
-}
-
 
 //  ----------------------------------------------------------------------------
 static void sStripNexusComments(string& line, int &numUnmatchedLeftBrackets)
@@ -3930,12 +3603,9 @@ sProcessAlignmentFileAsNexus(
             string liData = string(liPtr->data);
             auto endOfId = liData.find_first_of(" \t");
             auto startOfData = liData.find_first_not_of(" \t", endOfId);
-                afrp->sequences = s_AddAlignRawSeqById(
-                    afrp->sequences,
-                    seqIds[idIndex],
-                    liPtr->data + startOfData,
-                    liPtr->line_num,
-                    liPtr->line_num,
+                afrp->sequences = SAlignRawSeq::sAddSeqById(
+                    afrp->sequences, seqIds[idIndex],
+                    liPtr->data + startOfData, liPtr->line_num, liPtr->line_num,
                     startOfData);
         }
     }
@@ -4387,7 +4057,7 @@ ReadAlignmentFile(
 
         case EAlignFormat::ALNFMT_SEQUIN: {
             CAlnScannerSequin scanner;
-            scanner.sProcessAlignmentFileAsSequin(afrp);
+            scanner.sProcessAlignmentFile(afrp);
             break;
         }
     }

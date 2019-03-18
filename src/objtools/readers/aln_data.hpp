@@ -101,6 +101,30 @@ struct SLineInfo {
         }
     };
 
+    static SLineInfo*
+    sAddLineInfo(
+        SLineInfo* lineInfoPtr,
+        const char* pch,
+        int lineNum,
+        int lineOffset)
+    {
+        if (!pch) {
+            return lineInfoPtr;
+        }
+        SLineInfo* liPtr = new SLineInfo(pch, lineNum - 1, lineOffset); //hack alert!
+        if (!lineInfoPtr) {
+            lineInfoPtr = liPtr;
+        }
+        else {
+            SLineInfo* p = lineInfoPtr;
+            while (p  &&  p->next) {
+                p = p->next;
+            }
+            p->next = liPtr;
+        }
+        return lineInfoPtr;
+    };
+
     void SetData(
         const char* data_)
     {
@@ -115,13 +139,12 @@ struct SLineInfo {
     };
 
     static SLineInfo*
-        AppendNew(
-            SLineInfo* list, const char* data_, int line_num_, int line_offset_ = 0)
+    AppendNew(
+        SLineInfo* list, const char* data_, int line_num_, int line_offset_ = 0)
     {
         auto pNew = new SLineInfo(data_, line_num_, line_offset_);
         return tAppendNew<SLineInfo>(list, pNew);
     };
-
 
     char* data;
     int line_num;
@@ -371,8 +394,8 @@ struct SBracketedCommentList {
     {};
 
     static SBracketedCommentList*
-        ApendNew(
-            SBracketedCommentList* list, const char* str, int lineNum, int lineOffset)
+    ApendNew(
+        SBracketedCommentList* list, const char* str, int lineNum, int lineOffset)
     {
         auto pNewItem = new SBracketedCommentList(str, lineNum, lineOffset);
         return tAppendNew<SBracketedCommentList>(list, pNewItem);
@@ -400,11 +423,51 @@ struct SAlignRawSeq {
     };
 
     static SAlignRawSeq*
-        AppendNew(
-            SAlignRawSeq* list)
+    AppendNew(
+        SAlignRawSeq* list)
     {
         return tAppendNew<SAlignRawSeq>(list, new SAlignRawSeq);
     };
+
+    static SAlignRawSeq* sFindSeqById(
+        SAlignRawSeq* pList,
+        const string& id)
+    {
+        for (auto pSeq = pList; pSeq; pSeq = pSeq->next) {
+            if (id == pSeq->mId) {
+                return pSeq;
+            }
+        }
+        return nullptr;
+    };
+
+    static SAlignRawSeq*
+    sAddSeqById(
+        SAlignRawSeq* pList,
+        const string&  id,
+        char* pData,
+        int idLineNum,
+        int dataLineNum,
+        int dataLineOffset)
+    {
+        auto arsp = SAlignRawSeq::sFindSeqById(pList, id);
+
+        if (!arsp) {
+            arsp = SAlignRawSeq::AppendNew(pList);
+            if (!arsp) {
+                return nullptr;
+            }
+            if (!pList) {
+                pList = arsp;
+            }
+            arsp->mId = id;
+        }
+        arsp->sequence_data = SLineInfo::sAddLineInfo(
+            arsp->sequence_data, pData, dataLineNum, dataLineOffset);
+        arsp->mIdLines.push_back(idLineNum);
+        return pList;
+    }
+
 
     string mId;
     TLineInfoPtr          sequence_data;
@@ -442,7 +505,6 @@ struct SAlignFileRaw {
     char                 align_format_found;
 };
 using TAlignRawFilePtr = SAlignFileRaw * ;
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
