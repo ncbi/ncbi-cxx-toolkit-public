@@ -3749,6 +3749,7 @@ sProcessAlignmentFileAsNexus(
     int blockLineLength(0);
     int sequenceCharCount(0);
     int unmatchedLeftBracketCount(0);
+    int commentStartLine(-1);
 
     //at this point we already know the number of sequences to expect, and the
     // number of symbols each sequence is supposed to have.
@@ -3774,7 +3775,14 @@ sProcessAlignmentFileAsNexus(
         if (state == EState::READING) {
 
             auto lineStrLower(line);
+            auto previousBracketCount = unmatchedLeftBracketCount;
             sStripNexusComments(line, unmatchedLeftBracketCount);
+            if (previousBracketCount == 0 &&
+                unmatchedLeftBracketCount == 1) {
+                commentStartLine = linePtr->line_num;
+            }
+
+
             strncpy(linePtr->data, line.c_str(), line.size()+1);
             if (line.empty()) {
                 continue;
@@ -3877,6 +3885,18 @@ sProcessAlignmentFileAsNexus(
             continue;
         }
     }
+
+
+    if (unmatchedLeftBracketCount>0) {
+        string description = StrPrintf(
+                "Unterminated comment beginning on line %d",
+                commentStartLine);
+        throw SShowStopper(
+                commentStartLine,
+                EAlnSubcode::eAlnSubcode_UnterminatedComment,
+                description);
+    }
+
 
     //warn if we are short in deflines:
     auto numDeflines = afrp->mDeflines.size();

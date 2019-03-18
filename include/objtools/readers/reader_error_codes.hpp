@@ -84,6 +84,7 @@ enum EAlnSubcode
     eAlnSubcode_MissingDataLine,
     eAlnSubcode_InsufficientDeflineInfo,
     eAlnSubcode_UnsupportedFileFormat,
+    eAlnSubcode_UnterminatedComment
 };
 
 
