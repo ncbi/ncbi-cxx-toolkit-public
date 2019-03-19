@@ -39,6 +39,7 @@
 #include <atomic>
 #include <cstddef>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
