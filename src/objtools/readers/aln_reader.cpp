@@ -274,7 +274,7 @@ void CAlnReader::Read(
         if (1 == alignmentInfo.NumSequences()) {
             throw SShowStopper(
                 -1,
-                eAlnSubcode_SingleSeq,
+                eAlnSubcode_BadSequenceCount,
                 "Error reading alignment: Need more than one sequence");
         }
  
@@ -292,7 +292,7 @@ void CAlnReader::Read(
                 eAlnSubcode_MissingSeqData,
                 "Error reading alignment: Missing sequence data");
         }
-
+/*
         if (max_len != min_len) { 
             // Check for replicated intervals in the longest sequence
             const int repeat_interval = x_GetGCD(max_len, min_len);
@@ -310,11 +310,11 @@ void CAlnReader::Read(
             else {
                 throw SShowStopper(
                     -1,
-                    eAlnSubcode_DifferingSeqLengths,
+                    eAlnSubcode_BadDataCount,
                     "Error reading alignment: Not all sequences have same length");
             }
         }
-
+*/
     
         // if we're trying to guess whether this is an alignment file,
         // and no tell-tale alignment format lines were found,

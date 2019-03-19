@@ -1,5 +1,5 @@
 Line No    : 6
 Severity   : Fatal
-Code       : 2.4
+Code       : 2.1
 Message    : At ID 'seq2': 1 bad characters (4) found at position 8 (expect only sequence, missing, match, and middle gap characters here).
 

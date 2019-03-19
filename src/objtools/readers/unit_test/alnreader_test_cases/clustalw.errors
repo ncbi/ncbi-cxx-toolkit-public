@@ -1,5 +1,5 @@
 Line No    : 4
 Severity   : Fatal
-Code       : 2.4
+Code       : 2.1
 Message    : At ID 'FOSB_MOUSE': 1 bad characters (F) found at position 17 (expect only sequence, missing, match, and middle gap characters here).
 

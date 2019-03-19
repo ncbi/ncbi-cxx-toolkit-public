@@ -1,10 +1,10 @@
 Line No    : 24
 Severity   : Warning
-Code       : 2.105
+Code       : 2.7
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : 7
 Severity   : Fatal
-Code       : 2.4
+Code       : 2.1
 Message    : At ID 'seq2': 1 bad characters (4) found at position 13 (expect only sequence, missing, match, and middle gap characters here).
 

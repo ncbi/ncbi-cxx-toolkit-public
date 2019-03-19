@@ -57,25 +57,8 @@ enum EModSubcode
 enum EAlnSubcode
 {
     eAlnSubcode_Undefined,
-    eAlnSubcode_InvalidInput,
-    eAlnSubcode_SingleSeq,
-    eAlnSubcode_MissingSeqData,
-    eAlnSubcode_BadCharacters,
-    eAlnSubcode_UnexpectedSeqLength,
-    eAlnSubcode_UnexpectedNumSeqs,
-    eAlnSubcode_UnexpectedLineLength,
-    eAlnSubcode_InconsistentBlockLines,
-    eAlnSubcode_UnexpectedBlockLength,
-    eAlnSubcode_UnexpectedID,
-    eAlnSubcode_DuplicateID,
-    eAlnSubcode_Asn1File,
-    eAlnSubcode_ReplicatedSeq,
-    eAlnSubcode_DifferingSeqLengths,
-    eAlnSubcode_UnmatchedDeflines,
-    eAlnSubcode_UnusedLine,
-    eAlnSubcode_InconsistentMolType,
-
-    eAlnSubcode_UnterminatedCommand = 100,
+    eAlnSubcode_BadDataChars,
+    eAlnSubcode_UnterminatedCommand,
     eAlnSubcode_UnterminatedBlock,
     eAlnSubcode_UnexpectedSeqId,
     eAlnSubcode_BadDataCount,
@@ -84,7 +67,11 @@ enum EAlnSubcode
     eAlnSubcode_MissingDataLine,
     eAlnSubcode_InsufficientDeflineInfo,
     eAlnSubcode_UnsupportedFileFormat,
-    eAlnSubcode_UnterminatedComment
+    eAlnSubcode_UnterminatedComment,
+    eAlnSubcode_UnusedLine,
+    eAlnSubcode_InconsistentMolType,
+    eAlnSubcode_InvalidFileType,
+    eAlnSubcode_MissingSeqData,
 };
 
 

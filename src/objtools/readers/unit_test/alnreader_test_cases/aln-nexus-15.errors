@@ -1,15 +1,15 @@
 Line No    : 24
 Severity   : Warning
-Code       : 2.105
+Code       : 2.7
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Code       : 2.107
+Code       : 2.9
 Message    : Expected 0 or 5 deflines but finding 4
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Code       : 2.108
+Code       : 2.10
 Message    : Error reading deflines. Unable to associate deflines with sequences
 

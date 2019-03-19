@@ -1,5 +1,5 @@
 Line No    : 12
 Severity   : Warning
-Code       : 2.105
+Code       : 2.7
 Message    : Unexpected "end;". Appending ';' to prior command
 

@@ -1515,7 +1515,7 @@ s_AfrpInitLineData(
     if (s_IsASN1 (linestring)) {
         throw SShowStopper(
             -1,
-            eAlnSubcode_Asn1File,
+            eAlnSubcode_InvalidFileType,
             "This is an ASN.1 file which cannot be read by this function");
     }
     while (dataAvailable) {
@@ -2059,7 +2059,7 @@ s_BlockIsConsistent(
         if ( ! s_DoLengthPatternsMatch (this_pattern, best)) {
             throw SShowStopper(
                 lip->line_num,
-                eAlnSubcode_InconsistentBlockLines,
+                eAlnSubcode_BadDataCount,
                 "Inconsistent block line formatting",
                 tmpId);
         }
@@ -2116,7 +2116,7 @@ s_ProcessBlockLines(
                     if (arsp) {
                         theErrorReporter->Warn(
                             lip->line_num,
-                            eAlnSubcode_DuplicateID,
+                            eAlnSubcode_UnexpectedSeqId,
                             "Duplicate ID!  Sequences will be concatenated!");
                     }
                 }
@@ -2132,7 +2132,7 @@ s_ProcessBlockLines(
                         afrp->block_size, blockLineCount);
                     throw SShowStopper(
                         lip->line_num,
-                        eAlnSubcode_UnexpectedBlockLength,
+                        eAlnSubcode_BadSequenceCount,
                         description);
                 }
             }
@@ -2259,7 +2259,7 @@ sCreateSequencesBasedOnTokenPatterns(
                                 sip->size_value, strlen (lip->data));
                             throw SShowStopper(
                                 lip->line_num,
-                                eAlnSubcode_UnexpectedLineLength,
+                                eAlnSubcode_BadDataCount,
                                 description,
                                 curr_id);
                         }
@@ -2277,7 +2277,7 @@ sCreateSequencesBasedOnTokenPatterns(
                     afrp->block_size, line_counter - *offsetIt);
                 throw SShowStopper(
                     lip->line_num,
-                    eAlnSubcode_UnexpectedBlockLength,
+                    eAlnSubcode_BadSequenceCount,
                     description);
             }
         }
@@ -3138,7 +3138,7 @@ sFailOnRepeatedBadCharsInSequence(
         num_bad_chars, bad_char, bad_line_offset, reason.c_str());
     throw SShowStopper(
         bad_line_num,
-        eAlnSubcode_BadCharacters,
+        eAlnSubcode_BadDataChars,
         description,
         id);
 }
@@ -3415,7 +3415,7 @@ s_ConvertDataToOutput(
                 best_length, alignInfo.mSequences[index].size());
             throw SShowStopper(
                 -1,
-                eAlnSubcode_UnexpectedSeqLength,
+                eAlnSubcode_BadDataCount,
                 description);
         }
     }
@@ -3426,7 +3426,7 @@ s_ConvertDataToOutput(
             afrp->expected_num_sequence, alignInfo.NumSequences());
         throw SShowStopper(
             -1,
-            eAlnSubcode_UnexpectedNumSeqs,
+            eAlnSubcode_BadSequenceCount,
             description);
     }
     if (afrp->expected_sequence_len > 0  &&  
@@ -3436,7 +3436,7 @@ s_ConvertDataToOutput(
             afrp->expected_sequence_len, best_length);
         throw SShowStopper(
             -1,
-            eAlnSubcode_UnexpectedSeqLength,
+            eAlnSubcode_BadDataCount,
             description);
     }
     
