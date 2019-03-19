@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 
     printf("STR=\"%.*s\"\tKEY=\"%.*s\"\n\n", (int) slen, str, (int) klen, key);
     if (!(bf = NcbiBlowfishInit(key, klen))) {
-        perror("Cannot init chipher");
+        perror("Cannot init cipher");
         return 1;
     }
 

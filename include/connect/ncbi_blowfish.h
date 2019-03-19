@@ -57,9 +57,10 @@ typedef const struct SNcbiBlowfish* NCBI_BLOWFISH;
 
 
 /** Init the cipher context with a key of the specified length.
- *  Note that Blowfish limits the key to be 448 bits long, so the remainder of
- *  a longer key (if so provided) is ignored.  A shorter key gets repeated as
- *  necessary.  To specify a short key explicitly pad with zero bits up to 448.
+ *  Note that Blowfish limits the key to be 448 bits (56 bytes) long, so the
+ *  remainder of a longer key (if so provided) is ignored.  A shorter key gets
+ *  cyclically repeated as necessary to fill up the 56 bytes.  To specify a
+ *  shorter key explicitly pad with zero bits up to 448.
  *  Return 0 on memory allocation error.
  */
 extern NCBI_XCONNECT_EXPORT
