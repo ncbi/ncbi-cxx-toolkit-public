@@ -1515,7 +1515,7 @@ s_AfrpInitLineData(
     if (s_IsASN1 (linestring)) {
         throw SShowStopper(
             -1,
-            eAlnSubcode_InvalidFileType,
+            eAlnSubcode_UnsupportedFileFormat,
             "This is an ASN.1 file which cannot be read by this function");
     }
     while (dataAvailable) {
