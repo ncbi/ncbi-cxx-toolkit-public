@@ -851,8 +851,12 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
         }
     }
 
+    SIZE_TYPE len = wgsname.find_first_of("0123456789");
+    string version = wgsname.substr(len, 2);
+    /*
     string version = (wgsname.length() == 15 || NStr::StartsWith(wgsname, "NZ_")) ?
         wgsname.substr(7, 2) : wgsname.substr(4, 2);
+    */
 
     CNcbiOstrstream text;
     text << "The " << *taxname 
