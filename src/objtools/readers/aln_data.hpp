@@ -79,51 +79,14 @@ struct SLineInfo {
         SetData(rhs.data);
     };
 
-
-    ~SLineInfo() {
-        //best for a file with 1,000,000 lines, limts recursion depth to 2,000.
-        const int BLOCKSIZE(1000);
-        SLineInfo* farNext = this;
-        for (auto i = 0; i < BLOCKSIZE && farNext; ++i) {
-            if (farNext) {
-                farNext = farNext->next;
-            }
-        }
-        if (!farNext) {
-            delete[] data;
-            delete next;
-        }
-        else {
-            auto beyondFarNext = farNext->next;
-            farNext->next = nullptr;
-            delete next;
-            delete beyondFarNext;
-        }
-    };
+    ~SLineInfo();
 
     static SLineInfo*
     sAddLineInfo(
         SLineInfo* lineInfoPtr,
         const char* pch,
         int lineNum,
-        int lineOffset)
-    {
-        if (!pch) {
-            return lineInfoPtr;
-        }
-        SLineInfo* liPtr = new SLineInfo(pch, lineNum - 1, lineOffset); //hack alert!
-        if (!lineInfoPtr) {
-            lineInfoPtr = liPtr;
-        }
-        else {
-            SLineInfo* p = lineInfoPtr;
-            while (p  &&  p->next) {
-                p = p->next;
-            }
-            p->next = liPtr;
-        }
-        return lineInfoPtr;
-    };
+        int lineOffset);
 
     void SetData(
         const char* data_)
@@ -165,45 +128,10 @@ struct SLineInfoReader {
     };
 
     void
-        Reset() {
-        curr_line = first_line;
+    Reset();
 
-        while (curr_line && !curr_line->data) {
-            curr_line = curr_line->next;
-        }
-        if (!curr_line) {
-            curr_line_pos = nullptr;
-            data_pos = -1;
-        }
-        else {
-            curr_line_pos = curr_line->data;
-            AdvancePastSpace();
-            data_pos = (curr_line_pos ? 0 : -1);
-        }
-    };
-
-    void AdvancePastSpace() {
-        if (!curr_line_pos) {
-            return;
-        }
-        while (isspace((unsigned char)*curr_line_pos) || *curr_line_pos == 0) {
-            while (isspace((unsigned char)*curr_line_pos)) {
-                curr_line_pos++;
-            }
-            if (*curr_line_pos == 0) {
-                curr_line = curr_line->next;
-                while (curr_line  &&  curr_line->data) {
-                    curr_line = curr_line->next;
-                }
-                if (!curr_line) {
-                    curr_line_pos = nullptr;
-                    return;
-                }
-                curr_line_pos = curr_line->data;
-            }
-        }
-    }
-
+    void AdvancePastSpace();
+ 
     TLineInfoPtr first_line;
     TLineInfoPtr curr_line;
     char* curr_line_pos;
@@ -244,41 +172,10 @@ struct SSizeInfo {
             num_appearances == rhs.num_appearances);
     };
 
-    ~SSizeInfo() {
-        const int BLOCKSIZE(100);
-        auto size = Size();
-        if (size > BLOCKSIZE) {
-            LongDelete();
-        }
-        else {
-            delete next;
-        }
-    };
-
-    void LongDelete() {
-        const int BLOCKSIZE(100);
-        SSizeInfo* farNext = this;
-        list<SSizeInfo*> shortDeleteBlocks;
-        shortDeleteBlocks.push_back(farNext);
-        while (farNext) {
-            for (auto i = 0; i < BLOCKSIZE && farNext; ++i) {
-                if (farNext) {
-                    farNext = farNext->next;
-                }
-            }
-            if (farNext) {
-                auto beyondFarNext = farNext->next;
-                farNext->next = nullptr;
-                shortDeleteBlocks.push_back(farNext);
-                farNext = beyondFarNext;
-            }
-        }
-        for (auto shortDeletePtr : shortDeleteBlocks) {
-            delete shortDeletePtr;
-        }
-    };
-
-
+    ~SSizeInfo();
+ 
+    void LongDelete();
+ 
     int Size() const {
         int size = 0;
         auto siPtr = next;
@@ -299,27 +196,7 @@ struct SSizeInfo {
     AddSizeInfo(
         SSizeInfo* pList,
         int  sizeValue,
-        int numAppearances = 1) 
-    {
-        SSizeInfo* p, *pLast = nullptr;
-
-        for (p = pList;  p  &&  p->size_value != sizeValue;  p = p->next) {
-            pLast = p;
-        }
-        if (p == nullptr) {
-            p = new SSizeInfo(sizeValue, numAppearances);
-            if (!pLast) {
-                pList = p;
-            } 
-            else {
-                pLast->next = p;
-            }
-        } 
-        else {
-            p->num_appearances += numAppearances;
-        }
-        return pList;
-    };
+        int numAppearances = 1);
 
     int size_value;
     int num_appearances;
@@ -329,45 +206,14 @@ using TSizeInfoPtr = SSizeInfo * ;
 
 //  =============================================================================
 struct SLengthList {
-    //  =============================================================================
-    SLengthList() : lengthrepeats(nullptr), num_appearances(0), next(nullptr)
-    {};
+//  =============================================================================
 
+    SLengthList() : lengthrepeats(nullptr), num_appearances(0), next(nullptr) {};
 
-    ~SLengthList() {
-        const int BLOCKSIZE(100);
-        auto size = Size();
-        if (size > BLOCKSIZE) {
-            LongDelete();
-        }
-        else {
-            //delete next;
-        }
-    };
-
-    void LongDelete() {
-        const int BLOCKSIZE(100);
-        SLengthList* farNext = next;
-        list<SLengthList*> shortDeleteBlocks;
-        while (farNext) {
-            shortDeleteBlocks.push_back(farNext);
-            for (auto i = 0; i < BLOCKSIZE && farNext; ++i) {
-                if (farNext) {
-                    farNext = farNext->next;
-                }
-            }
-            if (farNext) {
-                auto beyondFarNext = farNext->next;
-                farNext->next = nullptr;
-                farNext = beyondFarNext;
-            }
-        }
-        for (auto shortDeletePtr : shortDeleteBlocks) {
-            delete shortDeletePtr;
-        }
-    };
-
-
+    ~SLengthList();
+ 
+    void LongDelete();
+ 
     int Size() const {
         int size = 0;
         auto siPtr = next;
@@ -457,15 +303,7 @@ struct SAlignRawSeq {
 
     static SAlignRawSeq* sFindSeqById(
         SAlignRawSeq* pList,
-        const string& id)
-    {
-        for (auto pSeq = pList; pSeq; pSeq = pSeq->next) {
-            if (id == pSeq->mId) {
-                return pSeq;
-            }
-        }
-        return nullptr;
-    };
+        const string& id);
 
     static SAlignRawSeq*
     sAddSeqById(
@@ -474,26 +312,7 @@ struct SAlignRawSeq {
         char* pData,
         int idLineNum,
         int dataLineNum,
-        int dataLineOffset)
-    {
-        auto arsp = SAlignRawSeq::sFindSeqById(pList, id);
-
-        if (!arsp) {
-            arsp = SAlignRawSeq::AppendNew(pList);
-            if (!arsp) {
-                return nullptr;
-            }
-            if (!pList) {
-                pList = arsp;
-            }
-            arsp->mId = id;
-        }
-        arsp->sequence_data = SLineInfo::sAddLineInfo(
-            arsp->sequence_data, pData, dataLineNum, dataLineOffset);
-        arsp->mIdLines.push_back(idLineNum);
-        return pList;
-    }
-
+        int dataLineOffset);
 
     string mId;
     TLineInfoPtr          sequence_data;

@@ -112,7 +112,7 @@ sReadLine(
     istream& istr,
     string& line)
 {
-    if (!istr  || istr.eof()) {
+    if (!istr  ||  istr.eof()) {
         return false;
     }
     NcbiGetline(istr, line, "\r\n");
@@ -1561,23 +1561,8 @@ s_AfrpInitLineData(
                     }
                 }
             } 
-            else if (sStartsNexusCommentOfType(linestring, "data")) {
-                linestring [0] = 0;
-                in_data_comment = true;
-                afrp->align_format_found = true;
-            }
-            else if (sStartsNexusCommentOfType(linestring, "characters")) {
-                linestring [0] = 0;
-                in_data_comment = true;
-                afrp->align_format_found = true;
-            }
             else if (sStartsNexusCommentOfType(linestring, "ncbi")) {
                 // default processing
-            }
-            else if (sStartsNexusCommentOfType(linestring, "")) {
-                linestring [0] = 0;
-                in_ignored_comment = true;
-                afrp->align_format_found = true;
             }
         }
         // default processing starts here:
@@ -3190,15 +3175,15 @@ s_FindBadDataCharsInSequence(
     char               end_gap = '-';
 
 
-    if (sequenceInfo.BeginningGap().find('-') != string::npos) {
+    if (sequenceInfo.BeginningGap().find('-') == string::npos) {
         beginning_gap = sequenceInfo.BeginningGap()[0];
     }
 
-    if (sequenceInfo.MiddleGap().find('-') != string::npos){
+    if (sequenceInfo.MiddleGap().find('-') == string::npos){
         middle_gap = sequenceInfo.MiddleGap()[0];
     }
 
-    if (sequenceInfo.EndGap().find('-') != string::npos){
+    if (sequenceInfo.EndGap().find('-') == string::npos){
         end_gap = sequenceInfo.EndGap()[0];
     }
 
