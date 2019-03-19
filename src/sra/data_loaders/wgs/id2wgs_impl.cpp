@@ -128,17 +128,21 @@ NCBI_PARAM_DECL(bool, ID2WGS, KEEP_REPLACED);
 NCBI_PARAM_DEF(bool, ID2WGS, KEEP_REPLACED, false);
 
 
+NCBI_PARAM_DECL(bool, ID2WGS, KEEP_EXTERNAL);
+NCBI_PARAM_DEF(bool, ID2WGS, KEEP_EXTERNAL, true);
+
+
 static inline bool s_Enabled(void)
 {
-    static CSafeStatic<NCBI_PARAM_TYPE(ID2WGS, ENABLE)> s_Value;
-    return s_Value->Get();
+    static bool value = NCBI_PARAM_TYPE(ID2WGS, ENABLE)::GetDefault();
+    return value;
 }
 
 
 static inline int s_DebugLevel(void)
 {
-    static CSafeStatic<NCBI_PARAM_TYPE(ID2WGS, DEBUG)> s_Value;
-    return s_Value->Get();
+    static int value = NCBI_PARAM_TYPE(ID2WGS, DEBUG)::GetDefault();
+    return value;
 }
 
 
@@ -150,8 +154,8 @@ static inline bool s_DebugEnabled(EDebugLevel level)
 
 static inline bool s_FilterAll(void)
 {
-    static CSafeStatic<NCBI_PARAM_TYPE(ID2WGS, FILTER_ALL)> s_Value;
-    return s_Value->Get();
+    static bool value = NCBI_PARAM_TYPE(ID2WGS, FILTER_ALL)::GetDefault();
+    return value;
 }
 
 
@@ -165,6 +169,13 @@ static bool s_SplitFeatures(void)
 static bool s_KeepReplaced(void)
 {
     static bool value = NCBI_PARAM_TYPE(ID2WGS, KEEP_REPLACED)::GetDefault();
+    return value;
+}
+
+
+static bool s_KeepExternal(void)
+{
+    static bool value = NCBI_PARAM_TYPE(ID2WGS, KEEP_EXTERNAL)::GetDefault();
     return value;
 }
 
@@ -302,15 +313,17 @@ size_t sx_GetSize(const CID2_Reply_Data& data)
 }
 
 
-static const bool kAlwaysLoadExternal = true;
-
-
 bool sx_RequestedNA(const CID2_Request_Get_Blob_Id& request)
 {
-    if ( kAlwaysLoadExternal && request.IsSetExternal() ) {
-        return true;
+    if ( s_KeepExternal() ) {
+        // ask for all external annotations
+        if ( request.IsSetExternal() ||
+             (request.IsSetSources() && !request.GetSources().empty()) ) {
+            return true;
+        }
     }
     if ( request.IsSetSources() ) {
+        // ask for NA annotations
         for ( auto& s : request.GetSources() ) {
             if ( NStr::StartsWith(s, "NA") ) {
                 return true;
@@ -324,16 +337,20 @@ bool sx_RequestedNA(const CID2_Request_Get_Blob_Id& request)
 bool sx_IsNABlobId(const CID2_Reply& main_reply)
 {
     if ( !main_reply.GetReply().IsGet_blob_id() ) {
+        // no-data reply -- filter out
         return false;
     }
     const CID2_Reply_Get_Blob_Id& reply = main_reply.GetReply().GetGet_blob_id();
     if ( !reply.IsSetAnnot_info() ) {
+        // blob is not external annotations -- filter out
         return false;
     }
-    if ( kAlwaysLoadExternal ) {
+    if ( s_KeepExternal() ) {
+        // keep all external annotations reply
         return true;
     }
     bool has_na_accession = false;
+    // keep NA accession reply if explicitly asked for
     ITERATE ( CID2_Reply_Get_Blob_Id::TAnnot_info, it, reply.GetAnnot_info() ) {
         const CID2S_Seq_annot_Info& annot_info = **it;
         if ( annot_info.IsSetName() && NStr::StartsWith(annot_info.GetName(), "NA") ) {
@@ -2017,7 +2034,8 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(CID2WGSContext& context,
                                                CID2_Request_Get_Blob_Info& request,
                                                CID2WGSProcessorPacketContext* packet_context)
 {
-    START_TRACE();
+    size_t old_size = replies.size();
+     START_TRACE();
     TRACE_X(9, eDebug_request, "GetBlobInfo: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq;
     CID2_Request_Get_Blob_Info::TBlob_id& req_id = request.SetBlob_id();
@@ -2070,6 +2088,17 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(CID2WGSContext& context,
                     " data size: "<<sx_GetSize(data));
         }
         replies.push_back(main_reply);
+    }
+    if ( packet_context && main_request.IsSetSerial_number() &&
+         req_id.IsResolve() && sx_RequestedNA(req_id.SetResolve().SetRequest()) ) {
+        TRACE_X(14, eDebug_resolve,"GetBlobInfo: forwarding GetBlobId to ID");
+        // need to add external annot blobs from ID
+        // save current replies to be sent after replies from ID will be received
+        packet_context->m_NARequests[main_request.GetSerial_number()].assign(replies.begin()+old_size, replies.end());
+        replies.resize(old_size);
+        // change request to get-blob-ids
+        CRef<CID2_Request_Get_Blob_Id> tmp_req(&req_id.SetResolve().SetRequest());
+        main_request.SetRequest().SetGet_blob_id(*tmp_req);
     }
     TRACE_X(14, eDebug_resolve,"GetBlobInfo: done");
     return true;
@@ -2321,10 +2350,35 @@ void CID2WGSProcessor_Impl::ProcessReply(CID2WGSProcessorContext* context,
     }
     if ( reply.IsSetEnd_of_reply() ) {
         // end of request processing
-        replies = move(it->second);
-        packet_context->m_NARequests.erase(it);
-        replies.back()->SetEnd_of_reply();
+        // pass get-seq-id replies
+        for ( auto& r : it->second ) {
+            if ( r->GetReply().IsGet_seq_id() ) {
+                r->ResetEnd_of_reply();
+                replies.push_back(r);
+            }
+        }
+        // pass get-blob-id replies
+        for ( auto& r : it->second ) {
+            if ( r->GetReply().IsGet_blob_id() ) {
+                r->ResetEnd_of_reply();
+                r->SetReply().SetGet_blob_id().ResetEnd_of_reply();
+                replies.push_back(r);
+            }
+        }
+        // mark end of blob-id replies
+        _ASSERT(replies.back()->GetReply().IsGet_blob_id());
         replies.back()->SetReply().SetGet_blob_id().SetEnd_of_reply();
+        // pass other replies
+        for ( auto& r : it->second ) {
+            if ( !r->GetReply().IsGet_seq_id() && !r->GetReply().IsGet_blob_id() ) {
+                r->ResetEnd_of_reply();
+                replies.push_back(r);
+            }
+        }
+        // remove processed request info
+        packet_context->m_NARequests.erase(it);
+        // end of all replies
+        replies.back()->SetEnd_of_reply();
     }
 }
 
