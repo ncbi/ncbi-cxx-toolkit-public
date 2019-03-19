@@ -37,9 +37,10 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <util/range_coll.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
 
 #include <objmgr/util/seq_loc_util.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
 
@@ -56,15 +57,30 @@ CFeaturePropagator::CFeaturePropagator
  const CSeq_align& align, 
  bool stop_at_stop, bool cleanup_partials, bool merge_abutting,
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
-:     m_Src(src), m_Target(target), m_Alignment(align),
+:     m_Src(src), m_Target(target), 
     m_Scope(m_Target.GetScope()),
     m_CdsStopAtStopCodon(stop_at_stop),
     m_CdsCleanupPartials(cleanup_partials),
     m_MessageListener(pMessageListener),
     m_MaxFeatId(feat_id),
     m_MergeAbutting(merge_abutting),
-      m_ExpandOverGaps(true)
+      m_ExpandOverGaps(true),
+      m_synonym_mapper(this)
 {   
+    if (align.GetSegs().IsDenseg()) {
+        m_Alignment.Reset(&align);
+    } else if (align.GetSegs().IsDisc()) {
+        m_Alignment.Reset(&*align.CreateDensegFromDisc());
+    } else if (align.GetSegs().IsStd()) {
+        m_Alignment.Reset(&*align.CreateDensegFromStdseg());
+    } else if (align.GetSegs().IsSpliced()) {
+        CRef<CSeq_align> disc_seg = align.GetSegs().GetSpliced().AsDiscSeg();
+        m_Alignment.Reset(&*disc_seg->CreateDensegFromDisc());
+//    } else if (align.GetSegs().IsDendiag()) {
+//        m_Alignment.Reset(&*align_format::CAlignFormatUtil::CreateDensegFromDendiag(align));
+    } else {
+        NCBI_THROW(CException, eUnknown, "Unsupported alignment type");
+    }
 }
 
 CFeaturePropagator::CFeaturePropagator
@@ -72,15 +88,30 @@ CFeaturePropagator::CFeaturePropagator
  const CSeq_align& align, 
  bool stop_at_stop, bool cleanup_partials, bool merge_abutting, bool expand_over_gaps,
  CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
-    :     m_Src(src), m_Target(target), m_Alignment(align),
-    m_Scope(m_Target.GetScope()),
-    m_CdsStopAtStopCodon(stop_at_stop),
-    m_CdsCleanupPartials(cleanup_partials),
-    m_MessageListener(pMessageListener),
-    m_MaxFeatId(feat_id),
-    m_MergeAbutting(merge_abutting),
-      m_ExpandOverGaps(expand_over_gaps)
+    :     m_Src(src), m_Target(target), 
+          m_Scope(m_Target.GetScope()),
+          m_CdsStopAtStopCodon(stop_at_stop),
+          m_CdsCleanupPartials(cleanup_partials),
+          m_MessageListener(pMessageListener),
+          m_MaxFeatId(feat_id),
+          m_MergeAbutting(merge_abutting),
+    m_ExpandOverGaps(expand_over_gaps),
+    m_synonym_mapper(this)
 {   
+    if (align.GetSegs().IsDenseg()) {
+        m_Alignment.Reset(&align);
+    } else if (align.GetSegs().IsDisc()) {
+        m_Alignment.Reset(&*align.CreateDensegFromDisc());
+    } else if (align.GetSegs().IsStd()) {
+        m_Alignment.Reset(&*align.CreateDensegFromStdseg());
+    } else if (align.GetSegs().IsSpliced()) {
+        CRef<CSeq_align> disc_seg = align.GetSegs().GetSpliced().AsDiscSeg();
+        m_Alignment.Reset(&*disc_seg->CreateDensegFromDisc());
+//    } else if (align.GetSegs().IsDendiag()) {
+//        m_Alignment.Reset(&*align_format::CAlignFormatUtil::CreateDensegFromDendiag(align));
+    } else {
+        NCBI_THROW(CException, eUnknown, "Unsupported alignment type");
+    }
 }
 
 CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
@@ -101,8 +132,10 @@ CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
         if (m_MessageListener) {
             string loc_label;
             orig_feat.GetLocation().GetLabel(&loc_label);
+            string target_label;
+            pTargetId->GetLabel(&target_label);
             m_MessageListener->PostMessage(
-                CMessage_Basic("Unable to propagate location of feature: " + loc_label, 
+                CMessage_Basic("Unable to propagate location of feature " + loc_label + " to " + target_label, 
                                eDiag_Error,
                                eFeaturePropagationProblem_FeatureLocation));
         }
@@ -203,7 +236,7 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
 TSignedSeqPos CFeaturePropagator::SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3)
 {
     int res = -1;
-    const CDense_seg& denseg = m_Alignment.GetSegs().GetDenseg();
+    const CDense_seg& denseg = m_Alignment->GetSegs().GetDenseg();
     const CSeq_id& id = denseg.GetSeq_id(row);
     CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
     if (!bsh)
@@ -261,7 +294,7 @@ TSignedSeqPos CFeaturePropagator::SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg
 TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3) 
 {
     int res = -1;
-    const CDense_seg& denseg = m_Alignment.GetSegs().GetDenseg();
+    const CDense_seg& denseg = m_Alignment->GetSegs().GetDenseg();
     const CSeq_id& id = denseg.GetSeq_id(row);
     CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
     if (!bsh)
@@ -361,28 +394,83 @@ CDense_seg::TDim  CFeaturePropagator::FindRow(const CSeq_align& align, CBioseq_H
             return i;
         }
     }
-    return num_rows;
+    return -1;
+}
+
+// For reasons unknown CSeq_align::CreateRowSeq_loc is returning only a single interval for Dense-seg alignments
+// Therefore we need to roll out our own version which creates a real multi-interval location.
+CRef<CSeq_loc>  CFeaturePropagator::CreateRowSeq_loc(const CSeq_align& align, CDense_seg::TDim  row)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    const CDense_seg& denseg = align.GetSegs().GetDenseg();
+    const CSeq_id& id = denseg.GetSeq_id(row);
+    CDense_seg::TNumseg num_segs = denseg.GetNumseg();
+    CDense_seg::TDim num_rows = denseg.GetDim();
+    for (int seg = 0; seg < num_segs; seg++) 
+    {
+        TSignedSeqPos start = denseg.GetStarts()[seg*num_rows + row];
+        if (start < 0) 
+            continue;   
+
+        TSignedSeqPos len = denseg.GetLens()[seg];
+        CRef<CSeq_interval> ret(new CSeq_interval);
+        ret->SetId().Assign(id);
+        ret->SetFrom(start);
+        ret->SetTo(start + len - 1);
+        if ( denseg.IsSetStrands() ) 
+        {
+           ENa_strand  strand = denseg.GetStrands()[seg * num_rows + row];
+           ret->SetStrand(strand);
+        }
+       
+        loc->SetPacked_int().Set().push_back(ret);
+    }
+    if (!loc->IsPacked_int())
+        loc.Reset();
+    return loc;
 }
 
 CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
 {
+    CRef<CSeq_loc> target;
     bool partial5 = sourceLoc.IsPartialStart(eExtreme_Positional);
     bool partial3 = sourceLoc.IsPartialStop(eExtreme_Positional);
 
-    CDense_seg::TDim  source_row = FindRow(m_Alignment, m_Src);
-    CDense_seg::TDim  target_row = FindRow(m_Alignment, m_Target);
+    CDense_seg::TDim  source_row = FindRow(*m_Alignment, m_Src);
+    CDense_seg::TDim  target_row = FindRow(*m_Alignment, m_Target);
+    if (source_row == -1 || target_row == -1)
+    {
+        return target;
+    }
     CRef<CSeq_loc> new_loc(new CSeq_loc);
     new_loc->Assign(sourceLoc);
+    if (!m_ExpandOverGaps)
+    {
+        CRef<CSeq_loc> mapped_loc = CreateRowSeq_loc(*m_Alignment, source_row);
+        if (!mapped_loc)
+            return target;
+        const TSeqPos start_before = new_loc->GetStart(eExtreme_Biological);
+        const TSeqPos stop_before = new_loc->GetStop(eExtreme_Biological);
+        new_loc = mapped_loc->Intersect(*new_loc, 0, &m_synonym_mapper);
+        const TSeqPos start_after = new_loc->GetStart(eExtreme_Biological);
+        const TSeqPos stop_after = new_loc->GetStop(eExtreme_Biological);
+        if (start_before != start_after)
+            partial5 = true;
+        if (stop_before != stop_after)
+            partial3 = true;        
+        if (sourceLoc.IsSetStrand()) // Intersect eats up the strand information for some reason
+            new_loc->SetStrand(sourceLoc.GetStrand());
+    }
     TSignedSeqPos seq_start = m_Src.GetRangeSeq_loc(0,0)->GetStart(objects::eExtreme_Positional);
     new_loc->SetId(targetId);
-    ENa_strand source_row_strand = m_Alignment.GetSeqStrand(source_row);
-    ENa_strand target_row_strand = m_Alignment.GetSeqStrand(target_row);
+    ENa_strand source_row_strand = m_Alignment->GetSeqStrand(source_row);
+    ENa_strand target_row_strand = m_Alignment->GetSeqStrand(target_row);
     CSeq_loc_I loc_it(*new_loc); 
     while(loc_it)      
     {
         if (loc_it.IsEmpty())
         {
-            loc_it.Delete();
+            ++loc_it;
             continue;
         }
         CSeq_loc_CI::TRange range = loc_it.GetRange();
@@ -451,9 +539,24 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         loc_it.SetTo(new_stop);
         ++loc_it;
     }
-    CRef<CSeq_loc> target;
-    target = loc_it.MakeSeq_loc();
-    if (target && (target->IsNull() || target->IsEmpty() || target->GetStart(objects::eExtreme_Positional) == target->GetStop(objects::eExtreme_Positional)))
+
+    target = loc_it.MakeSeq_loc();   
+    if (!m_ExpandOverGaps && target)
+    {
+        CRef<CSeq_loc> mapped_loc = CreateRowSeq_loc(*m_Alignment, target_row);
+        if (!mapped_loc)
+        {
+            target.Reset();
+            return target;
+        }
+        target = mapped_loc->Intersect(*target, 0, &m_synonym_mapper);
+        if (sourceLoc.IsSetStrand()) // Intersect eats up the strand information for some reason
+            target->SetStrand(sourceLoc.GetStrand());
+    }
+    if (target && (target->IsNull() || target->IsEmpty() 
+                   || (target->IsMix() && (!target->GetMix().IsSet() || target->GetMix().Get().empty()))
+                   || (target->IsPacked_int() && (!target->GetPacked_int().IsSet() || target->GetPacked_int().Get().empty()))
+                   || (target->IsPacked_pnt() && (!target->GetPacked_pnt().IsSetPoints() || target->GetPacked_pnt().GetPoints().empty())) ))
     {
         target.Reset();
     }
@@ -663,8 +766,10 @@ void CFeaturePropagator::x_CdsMapCodeBreaks(CSeq_feat& feat, const CSeq_id& targ
                     if (m_MessageListener) {
                         string loc_label;
                         (*it)->GetLoc().GetLabel(&loc_label);
+                        string target_label;
+                        targetId.GetLabel(&target_label);
                         m_MessageListener->PostMessage(
-                            CMessage_Basic("Unable to propagate location of translation exception: " + loc_label,
+                            CMessage_Basic("Unable to propagate location of translation exception " + loc_label + " to " + target_label,
                                            eDiag_Error,
                                            eFeaturePropagationProblem_CodeBreakLocation));
                     }
@@ -792,8 +897,10 @@ void CFeaturePropagator::x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetI
                     if (m_MessageListener) {
                         string loc_label;
                         anticodon.GetLabel(&loc_label);
+                        string target_label;
+                        targetId.GetLabel(&target_label);
                         m_MessageListener->PostMessage(
-                            CMessage_Basic("Unable to propagate location of anticodon: " + loc_label,
+                            CMessage_Basic("Unable to propagate location of anticodon " + loc_label + " to " + target_label,
                                            eDiag_Error,
                                            eFeaturePropagationProblem_AnticodonLocation));
                     }

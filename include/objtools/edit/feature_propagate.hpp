@@ -40,9 +40,8 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_ci.hpp>
-#include <objects/seq/seq_loc_mapper_base.hpp>
-#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/sequence.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -94,13 +93,14 @@ private:
     TSignedSeqPos SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3);
     TSignedSeqPos AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3);
     CDense_seg::TDim  FindRow(const CSeq_align& align, CBioseq_Handle bsh);
+    CRef<CSeq_loc>  CreateRowSeq_loc(const CSeq_align& align, CDense_seg::TDim  row);
 
     CRef<CSeq_loc> x_TruncateToStopCodon(const CSeq_loc& loc, unsigned int truncLen);
     CRef<CSeq_loc> x_ExtendToStopCodon(CSeq_feat& feat);
 
     CBioseq_Handle m_Src;
     CBioseq_Handle m_Target;
-    const CSeq_align& m_Alignment;
+    CConstRef<CSeq_align> m_Alignment;
     CScope& m_Scope;
     bool m_CdsStopAtStopCodon;
     bool m_CdsCleanupPartials;
@@ -109,6 +109,18 @@ private:
     map<CObject_id::TId, CObject_id::TId> m_FeatIdMap; // map old feat-id to propagated feat-id
     bool m_MergeAbutting;
     bool m_ExpandOverGaps;
+
+    class CSynonymMapper : public ISynonymMapper
+    {
+    public:
+        CSynonymMapper(CFeaturePropagator *e) : m_e(e) {}
+        virtual ~CSynonymMapper(void) {}
+        
+        virtual CSeq_id_Handle GetBestSynonym(const CSeq_id& id) {return sequence::GetId(m_e->m_Scope.GetBioseqHandle(id), sequence::eGetId_Best);}
+    private:
+        CFeaturePropagator* m_e;
+    };
+    CSynonymMapper m_synonym_mapper;
 };
 
 END_SCOPE(edit)
