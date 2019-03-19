@@ -3407,7 +3407,7 @@ s_ConvertDataToOutput(
         if (alignInfo.mSequences [index].empty()) {
             throw SShowStopper(
                 -1,
-                eAlnSubcode_MissingSeqData,
+                eAlnSubcode_BadDataCount,
                 "No data found");
         } else if (alignInfo.mSequences[index].size() != best_length) {
             string description = StrPrintf(

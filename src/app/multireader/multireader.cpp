@@ -1130,7 +1130,9 @@ void CMultiReaderApp::xProcessAlignment(
     try {
         reader.Read(false, args["force-local-ids"], m_pErrors.get());
         CRef<CSeq_entry> pEntry = reader.GetSeqEntry(fFlags, m_pErrors.get());
-        xWriteObject(args, *pEntry, ostr);
+        if (pEntry) { 
+            xWriteObject(args, *pEntry, ostr);
+        }
     }
     catch (...) {
     }

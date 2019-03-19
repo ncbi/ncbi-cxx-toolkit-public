@@ -271,12 +271,23 @@ void CAlnReader::Read(
 
     //sanity check and post process what the raw reader presents us with:
     try {
-        if (1 == alignmentInfo.NumSequences()) {
+        const auto num_sequences = alignmentInfo.NumSequences();
+
+        if (num_sequences == 0) {
+            throw SShowStopper(
+                -1,
+                eAlnSubcode_BadSequenceCount,
+                "Error reading alignment: No sequence data");
+        }
+
+
+        if (num_sequences == 1) {
             throw SShowStopper(
                 -1,
                 eAlnSubcode_BadSequenceCount,
                 "Error reading alignment: Need more than one sequence");
         }
+
  
         // Check sequence lengths
         size_t max_len, min_len;
@@ -286,35 +297,12 @@ void CAlnReader::Read(
             max_len,
             max_index);
 
-        if (min_len == 0) {
+        if (min_len == 0) { // I don't think that this can ever occur
             throw SShowStopper(
                 -1,
-                eAlnSubcode_MissingSeqData,
+                eAlnSubcode_BadDataCount,
                 "Error reading alignment: Missing sequence data");
         }
-/*
-        if (max_len != min_len) { 
-            // Check for replicated intervals in the longest sequence
-            const int repeat_interval = x_GetGCD(max_len, min_len);
-            const bool is_repeated = 
-                x_IsReplicatedSequence(
-                    alignmentInfo.mSequences[max_index].c_str(), max_len, repeat_interval);
-            //AlignmentFileFree(afp);
-
-            if (is_repeated) {
-                throw SShowStopper(
-                    -1,
-                    eAlnSubcode_ReplicatedSeq,
-                    "Error reading alignment: Possible sequence replication");
-            }   
-            else {
-                throw SShowStopper(
-                    -1,
-                    eAlnSubcode_BadDataCount,
-                    "Error reading alignment: Not all sequences have same length");
-            }
-        }
-*/
     
         // if we're trying to guess whether this is an alignment file,
         // and no tell-tale alignment format lines were found,
@@ -362,10 +350,12 @@ void CAlnReader::Read(
         theErrorReporter->Fatal(showStopper);
         m_Dim = 0;
         m_ReadDone = true;
+        m_ReadSucceeded = false;
         return;
     }
     m_Dim = m_Ids.size();
     m_ReadDone = true;
+    m_ReadSucceeded = true;
 
     return;
 }
@@ -550,6 +540,11 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
                    "Seq_align is not available until after Read()", 0);
     }
 
+    if (!m_ReadSucceeded) {
+        return CRef<CSeq_align>();
+    }
+
+
     typedef CDense_seg::TNumseg TNumseg;
 
     m_Aln = new CSeq_align();
@@ -703,9 +698,14 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
                    "CAlnReader::GetSeqEntry(): "
                    "Seq_entry is not available until after Read()", 0);
     }
-    m_Entry = new CSeq_entry();
 
+    if (!m_ReadSucceeded) {
+        return CRef<CSeq_entry>();
+    }
+
+    m_Entry = new CSeq_entry();
     CRef<CSeq_align> seq_align = GetSeqAlign(fasta_flags, pErrorListener);
+
     const CDense_seg& denseg = seq_align->GetSegs().GetDenseg();
     _ASSERT(denseg.GetIds().size() == m_Dim);
 

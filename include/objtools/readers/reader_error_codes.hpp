@@ -69,8 +69,7 @@ enum EAlnSubcode
     eAlnSubcode_UnsupportedFileFormat,
     eAlnSubcode_UnterminatedComment,
     eAlnSubcode_UnusedLine,
-    eAlnSubcode_InconsistentMolType,
-    eAlnSubcode_MissingSeqData,
+    eAlnSubcode_InconsistentMolType
 };
 
 

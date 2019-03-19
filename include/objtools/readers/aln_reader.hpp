@@ -153,6 +153,7 @@ public:
     CAlnReader(CNcbiIstream& is) : 
         m_IS(is), 
         m_ReadDone(false),
+        m_ReadSucceeded(false),
         m_UseNexusInfo(true) 
     { 
         m_Errors.clear();
@@ -276,6 +277,7 @@ private:
     /// Other internal data
     CNcbiIstream&             m_IS;
     bool                      m_ReadDone;
+    bool                      m_ReadSucceeded;
     int                       m_Dim;
     CRef<objects::CSeq_align> m_Aln;
     CRef<objects::CSeq_entry> m_Entry;
