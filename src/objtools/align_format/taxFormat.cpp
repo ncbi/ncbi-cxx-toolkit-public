@@ -396,7 +396,8 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
         string oneOrgInfo = orgHeader + orgReportSeqInfo;
         orgReportData += oneOrgInfo; 
 
-        string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.giList);
+        //string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.giList);
+        string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.accList);
         taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(taxIdToSeqsRow,"taxid",taxid);
         taxIdToSeqsMap += taxIdToSeqsRow;
     }   
@@ -805,6 +806,7 @@ CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CBioseq_Handle& bsp_
     CAlignFormatUtil::GetScoreString(evalue, bits, 0, 0, seqInfo->evalue, seqInfo->bit_score, total_bit_score_buf,raw_score_buf);           
 
     seqInfo->displGi = seqInfo->gi;
+    seqInfo->dispSeqID = seqInfo->label;
     seqInfo->taxid = 0;	
 	seqInfo->title = CDeflineGenerator().GenerateDefline(bsp_handle);			    
     if(m_DisplayOption == eText) x_InitTextFormatInfo(seqInfo); 
@@ -885,13 +887,19 @@ void CTaxFormat::x_InitTaxInfoMap(void)
             if(!bdl.empty()){ //no blast defline struct, should be no such case now
                                 
                 TGi dispGI = ZERO_GI;
+                string dispSeqID;
                 for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin(); iter != bdl.end(); iter++){                                                        
                     SSeqInfo *seqInfo = x_FillTaxDispParams(*iter,handle,bits,evalue,use_this_seqid);
                     if(seqInfo) {
-                        if(dispGI == ZERO_GI){
-                            CAlignFormatUtil::GetDisplayIds(handle,*seqInfo->seqID,use_this_seqid,&dispGI);                            
+                        if(dispGI == ZERO_GI && dispSeqID.empty()){
+                            int taxid;                                
+                            CAlignFormatUtil::GetDisplayIds(handle,*seqInfo->seqID,use_this_seqid,&dispGI,&taxid,&dispSeqID);                            
+                            if(dispGI == ZERO_GI && !dispSeqID.empty()) {
+                                dispSeqID = seqInfo->label; //accesion without version
+                            }                                
                         }                                        
                         seqInfo->displGi = dispGI;
+                        seqInfo->dispSeqID = dispSeqID;
                         x_InitBlastDBTaxInfo(seqInfo);
                     }
                     
@@ -957,8 +965,15 @@ string CTaxFormat::x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo)
         
 string CTaxFormat::x_MapSeqTemplate(string seqTemplate, SSeqInfo *seqInfo)
 {
-    string reportTableRow = CAlignFormatUtil::MapTemplate(seqTemplate,"gi",NStr::NumericToString(seqInfo->gi));
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"disp_gi",NStr::NumericToString(seqInfo->displGi));        
+    string reportTableRow = CAlignFormatUtil::MapTemplate(seqTemplate,"gi",NStr::NumericToString(seqInfo->gi));    
+
+    if(seqInfo->displGi == ZERO_GI) {    
+        reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"disp_gi",seqInfo->dispSeqID);
+    }        
+    else {
+        reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"disp_gi",NStr::NumericToString(seqInfo->displGi));
+    }   
+                
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr_abbr",seqInfo->title.substr(0,60));//for standalone output        
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"rid",m_Rid);
 

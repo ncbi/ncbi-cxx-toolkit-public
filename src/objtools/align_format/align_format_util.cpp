@@ -2118,7 +2118,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = struct_link.empty() ? kStructureUrl : struct_link;
         lnk_displ = textLink ? "Structure" : kStructureImg;  
         
-        string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";        
+        string linkTitle = " title=\"View 3D structure <@label@>\"";        
         string molID,chainID;
         NStr::SplitInTwo(firstAcc,"_",molID,chainID);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"molid",molID);
