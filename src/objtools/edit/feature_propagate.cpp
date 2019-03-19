@@ -539,6 +539,29 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         loc_it.SetTo(new_stop);
         ++loc_it;
     }
+    loc_it.Rewind();
+    while(loc_it && loc_it.IsEmpty())      
+    {
+        loc_it.Delete();
+    }
+    size_t last = 0;
+    while(loc_it)      
+    {
+        if (!loc_it.IsEmpty())
+        {
+            last = loc_it.GetPos();
+        }
+        ++loc_it;
+    }
+    if (loc_it.GetSize() > 0 && last != loc_it.GetSize() - 1)
+    {
+        loc_it.SetPos(last);
+        ++loc_it;
+        while(loc_it && loc_it.IsEmpty())      
+        {
+            loc_it.Delete();
+        }
+    }
 
     target = loc_it.MakeSeq_loc();   
     if (!m_ExpandOverGaps && target)
