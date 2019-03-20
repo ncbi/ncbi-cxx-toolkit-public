@@ -40,6 +40,7 @@
 #include "aln_scanner_clustal.hpp"
 #include "aln_scanner_nexus.hpp"
 #include "aln_scanner_sequin.hpp"
+#include "aln_scanner_fastagap.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -66,6 +67,47 @@ string StrPrintf(const char *format, ...)
     return NStr::FormatVarargs(format, args);
 }
 
+//  ============================================================================
+class CPeekAheadStream
+//  ============================================================================
+{
+public:
+    CPeekAheadStream(
+        std::istream& istr): mIstr(istr) {};
+
+    ~CPeekAheadStream() {};
+
+    bool
+    PeekLine(
+        std::string& str)
+    {
+        std::getline(mIstr, str);
+        if (mIstr.good()) {
+            mPeeked.push_back(str);
+            return true;
+        }
+        return false;
+    };
+
+    bool
+    ReadLine(
+        std::string& str)
+    {
+        if (!mPeeked.empty()) {
+            str = mPeeked.front();
+            mPeeked.pop_front();
+            return true;
+        }
+        std::getline(mIstr, str);
+        return mIstr.good();
+    };
+
+protected:
+    std::istream& mIstr;
+    list<string> mPeeked;
+};
+
+        
 /* This function creates and sends an error message regarding an unused line.
  */
 static void 
@@ -105,18 +147,83 @@ sWarnUnusedLine(
         errMessage);
 }
 
+//  ----------------------------------------------------------------------------
+static EAlignFormat
+sGetFileFormat(
+    CPeekAheadStream& iStr)
+//  ----------------------------------------------------------------------------
+{
+    string line;
+    int lineCount = 0;
+    int leadingBlankCount = 0;
+    bool inLeadingFastaComment = true;
+    while (iStr.PeekLine(line)) {
+        lineCount++;
+        NStr::TruncateSpacesInPlace(line);
+        NStr::ToLower(line); 
+
+        if (NStr::StartsWith(line, ";")) {
+            continue;
+        }
+        if (NStr::StartsWith(line, ">")) {
+            return ALNFMT_FASTAGAP;
+        }
+        inLeadingFastaComment = false;
+
+        if (line.empty()) {
+            leadingBlankCount++;
+            continue;
+        }
+
+        if (lineCount == 1) {
+            if (NStr::StartsWith(line, "#nexus")) {
+                return ALNFMT_NEXUS;
+            }
+            if (NStr::StartsWith(line, "clustalw")) {
+                return ALNFMT_CLUSTAL;
+            }
+            if (NStr::StartsWith(line, "clustal w")) {
+                return ALNFMT_CLUSTAL;
+            }
+            vector<string> tokens;
+            NStr::Split(line, " \t", tokens, NStr::fSplit_MergeDelimiters);
+            if (tokens.size() != 2) {
+                return ALNFMT_UNKNOWN;
+            }
+            if (tokens.front().find_first_not_of("0123456789") != string::npos) {
+                return ALNFMT_UNKNOWN;
+            }
+            if (tokens.back().find_first_not_of("0123456789") != string::npos) {
+                return ALNFMT_UNKNOWN;
+            }
+            return ALNFMT_PHYLIP;
+        }
+        if (lineCount == 2) {
+            if (leadingBlankCount == 1) {
+                vector<string> tokens;
+                NStr::Split(line, " \t", tokens, NStr::fSplit_MergeDelimiters);
+                for (int index=0; index < tokens.size(); ++index) {
+                    auto offset = NStr::StringToInt(tokens[index], NStr::fConvErr_NoThrow);
+                    if (offset != 10 + 10*index) {
+                        return ALNFMT_UNKNOWN;
+                    }
+                }
+                return ALNFMT_SEQUIN;
+            }
+        }
+        return ALNFMT_UNKNOWN;
+    }
+    return ALNFMT_UNKNOWN;
+}
+
 //  Extract a single line from the given stream.
 //  Returns false if it is not possible to extract anything.
 bool
 sReadLine(
-    istream& istr,
+    CPeekAheadStream& iStr,
     string& line)
 {
-    if (!istr  ||  istr.eof()) {
-        return false;
-    }
-    NcbiGetline(istr, line, "\r\n");
-    return true;
+    return iStr.ReadLine(line);
 }
 
 
@@ -1085,38 +1192,33 @@ s_RemoveOrganismCommentFromLine (
 }
 
 
-static const char* s_GetFirstNonSpace(const char* line)
-{
-    const char* curr_pos = line;
-    while(curr_pos) {
-        if (!isspace(*curr_pos)) {
-            return curr_pos;
-        }
-        ++curr_pos;
-    }
-    return nullptr;
-}
- 
-static void s_ReadDefline(
-    const char* line, 
+static bool s_ReadDefline(
+    const char* linePtr, 
     int line_num, 
     TAlignRawFilePtr afrp)
 {
-    if (!line  ||  !afrp) {
-        return;
+    if (!linePtr  ||  !afrp) {
+        return false;
     }
 
-    if (line[0] == '>') {
-        const char* next_nonspace = s_GetFirstNonSpace(line+1);
-        const char* defline_offset = (next_nonspace && 
-                                      ((*next_nonspace)=='[')) ?
-            next_nonspace :
-            strpbrk(line, " \t");
-        if (!defline_offset) {
-            defline_offset = "";
-        }
-        afrp->mDeflines.push_back(SLineInfo(defline_offset, line_num, 0));
+    if (linePtr[0] != '>') {
+        return false;
     }
+    string line(linePtr);
+    const char* defLine = "";
+    auto firstInId = line.find_first_not_of(" \t", 1);
+    if (line[firstInId] == '[') {
+        defLine = linePtr + 1;
+    }
+    else {
+        auto firstPastId = line.find_first_of(" \t[", firstInId);
+        auto firstInDefline = line.find_first_not_of(" \t", firstPastId);
+        if (firstInDefline != string::npos) {
+            defLine = linePtr + firstInDefline;
+        }
+    }
+    afrp->mDeflines.push_back(SLineInfo(defLine, line_num, 0));
+    return true;
 }
 
 
@@ -1501,14 +1603,14 @@ sEndsNexusComment(
 static bool
 s_AfrpInitLineData(
     TAlignRawFilePtr afrp,
-    istream& istr)
+    CPeekAheadStream& iStr)
 {
     int overall_line_count = 0;
     bool in_ignored_comment = false;
     bool in_data_comment = false;
     bool in_matrix_command = false;
     string linestring;
-    bool dataAvailable = sReadLine(istr, linestring);
+    bool dataAvailable = sReadLine(iStr, linestring);
     TLineInfoPtr last_line = nullptr, next_line = nullptr;
     bool isNexusFile = false;
 
@@ -1554,7 +1656,7 @@ s_AfrpInitLineData(
                     }
                     else {
                         while (!NStr::EndsWith(linestring, ";")) {
-                            sReadLine(istr, tempstr);
+                            sReadLine(iStr, tempstr);
                             linestring += " " + tempstr;
                             overall_line_count++;
                         }
@@ -1571,7 +1673,7 @@ s_AfrpInitLineData(
             afrp->line_list = pNew;
         }
         
-        dataAvailable = sReadLine(istr, linestring);
+        dataAvailable = sReadLine(iStr, linestring);
         if (dataAvailable) {
             overall_line_count ++;
         }
@@ -1608,19 +1710,12 @@ s_AfrpProcessFastaGap(
     /*  ID line
      */
     if (linestr [0] == '>') {
-        /* this could be a block of organism lines in a
-            * NEXUS file.  If there is no sequence data between
-            * the lines, don't process this file for marked IDs.
-            */
         if (*last_line_was_marked_id) {
             afrp->marked_ids = false;
-//            eFormat = ALNFMT_UNKNOWN;
         }
         else {
             afrp->marked_ids = true;
-//            eFormat = ALNFMT_FASTAGAP;
         }
-        //SIntLink::CreateOrAppend(overall_line_count + 1, afrp->offset_list);
         afrp->mOffsetList.push_back(overall_line_count + 1);
         *last_line_was_marked_id = true;
         return;
@@ -1658,7 +1753,7 @@ s_AfrpProcessFastaGap(
 
 static TAlignRawFilePtr
 sReadAlignFileRaw(
-    istream& istr,
+    CPeekAheadStream& iStr,
     bool use_nexus_file_info,
     CSequenceInfo& sequence_info,
     EAlignFormat* pformat)
@@ -1682,7 +1777,7 @@ sReadAlignFileRaw(
 
     afrp->alphabet_ = sequence_info.Alphabet();
 
-    if (!s_AfrpInitLineData(afrp, istr)) {
+    if (!s_AfrpInitLineData(afrp, iStr)) {
         delete afrp;
         return nullptr;
     }
@@ -1737,13 +1832,14 @@ sReadAlignFileRaw(
             overall_line_count, 
             afrp);
 
-
         if (*pformat == ALNFMT_FASTAGAP) {
             s_AfrpProcessFastaGap(
                 afrp, & pattern_list, & last_line_was_marked_id, linestring, 
                 overall_line_count);
             continue;
         }
+
+
         /* we want to remove the comment from the line for the purpose 
         * of looking for blank lines and skipping,
         * but save comments for storing in array if line is not skippable or
@@ -1828,13 +1924,6 @@ sReadAlignFileRaw(
             if (last_line_was_marked_id) {
                 afrp->marked_ids = false;
                 *pformat = ALNFMT_UNKNOWN;
-            }
-            else {
-                *pformat = ALNFMT_FASTAGAP;
-                s_AfrpProcessFastaGap(
-                    afrp, & pattern_list, & last_line_was_marked_id, linestring, 
-                    overall_line_count);
-                continue;
             }
             afrp->mOffsetList.push_back(overall_line_count + 1);
             last_line_was_marked_id = true;
@@ -3475,8 +3564,10 @@ ReadAlignmentFile(
         return false;
     }
 
-    afrp = sReadAlignFileRaw ( 
-        istr, use_nexus_info, sequence_info, &format);
+    CPeekAheadStream iStr(istr);
+    format = sGetFileFormat(iStr);
+
+    afrp = sReadAlignFileRaw(iStr, use_nexus_info, sequence_info, &format);
     if (!afrp) {
         return false;
     }
@@ -3507,10 +3598,14 @@ ReadAlignmentFile(
             scanner.ProcessAlignmentFile(afrp);
             break;
         }
+        case EAlignFormat::ALNFMT_FASTAGAP: {
+            CAlnScannerFastaGap scanner;
+            scanner.ProcessAlignmentFile(afrp);
+            break;
+        }
     }
 
-    s_ReprocessIds (afrp); 
-
+    s_ReprocessIds (afrp);
     if (s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
         delete afrp;
         return false;

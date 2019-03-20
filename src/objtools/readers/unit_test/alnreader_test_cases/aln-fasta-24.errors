@@ -1,5 +1,5 @@
 Line No    : 12
 Severity   : Fatal
 Code       : 2.5
-Message    : At ID '>seq3 [org=animal 3]': Expected line length 8, actual length 7
+Message    : At ID 'seq3': Expected line length 8, actual length 7
 
