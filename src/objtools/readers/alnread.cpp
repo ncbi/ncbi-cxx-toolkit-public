@@ -891,18 +891,50 @@ s_UpdateNexusCharInfo(
 
     auto formatInfo = normalized.substr(formatPos + 7);
     c = GetNexusTypechar (formatInfo, "missing");
-    sequence_info.SetMissing(c);
+    if (c) {
+        sequence_info.SetMissing(c);
+    }
     
     c = GetNexusTypechar (formatInfo, "gap");
-    sequence_info.SetBeginningGap(c);
-    sequence_info.SetMiddleGap(c);
-    sequence_info.SetEndGap(c);
+    if (c) {
+        sequence_info.SetBeginningGap(c);
+        sequence_info.SetMiddleGap(c);
+        sequence_info.SetEndGap(c);
+    }
  
     c = GetNexusTypechar (formatInfo, "match");
-    sequence_info.SetMatch(c);
+    if (c) {
+        sequence_info.SetMatch(c);
+    }
     return true;
 } 
 
+static void
+s_GetNexusCharInfo(
+    const string& str,
+    CSequenceInfo& sequence_info)
+{
+    string normalized(str);
+    NStr::ToLower(normalized);
+
+    char c = GetNexusTypechar (normalized, "missing");
+
+    if (c) {
+        sequence_info.SetMissing(c);
+    }
+    
+    c = GetNexusTypechar (normalized, "gap");
+    if (c) {
+        sequence_info.SetBeginningGap(c);
+        sequence_info.SetMiddleGap(c);
+        sequence_info.SetEndGap(c);
+    }
+ 
+    c = GetNexusTypechar (normalized, "match");
+    if (c) {
+        sequence_info.SetMatch(c);
+    }
+}
 
 /* This function examines the string str to see if it consists entirely of
  * asterisks, colons, periods, and whitespace.  If so, this line is assumed
@@ -1975,6 +2007,7 @@ sReadAlignFileRaw(
     }
     if (*pformat == EAlignFormat::ALNFMT_NEXUS) {
         bool inNexusSequinBlock = false;
+        bool inNexusCharInfoComment = false;
         for (next_line = afrp->line_list->next; next_line; next_line = next_line->next) {
             string lineStrLower(next_line->data);
             NStr::ToLower(lineStrLower);
@@ -1990,7 +2023,25 @@ sReadAlignFileRaw(
                     continue;
                 }
             }
-            if (!found_char_comment) {
+
+            if (NStr::StartsWith(lineStrLower, "format")) {
+                s_GetNexusCharInfo(next_line->data, sequence_info);
+                if (!NStr::EndsWith(lineStrLower, ";")) {
+                    inNexusCharInfoComment = true;
+                }
+                continue;
+            }
+
+
+            if (inNexusCharInfoComment) {
+                s_GetNexusCharInfo(next_line->data, sequence_info);
+                if (NStr::EndsWith(lineStrLower, ";")) {
+                    inNexusCharInfoComment = false;
+                }
+                continue;
+            }
+
+            if (!found_char_comment || inNexusCharInfoComment) {
                 if (use_nexus_file_info) {
                     found_char_comment = s_UpdateNexusCharInfo(next_line->data, sequence_info);
                 } else {
@@ -2003,6 +2054,9 @@ sReadAlignFileRaw(
 
             if (lineStrLower == "sequin") {
                 inNexusSequinBlock = true;
+                if (inNexusCharInfoComment) {
+                    inNexusCharInfoComment;
+                }
                 continue;
             }
             if (NStr::EndsWith(lineStrLower, ";")) {//either "END;" or ";" on its own
