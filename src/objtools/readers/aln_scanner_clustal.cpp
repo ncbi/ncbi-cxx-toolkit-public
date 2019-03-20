@@ -73,13 +73,13 @@ CAlnScannerClustal::sProcessClustalDataLine(
 {
     auto seqId = tokens[0];
     if (blockCount == 1) {
-    if (find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
-        string description = StrPrintf(
-            "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
-        throw SShowStopper(
-            lineNum,
-            EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-            description);
+        if (find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
+            string description = StrPrintf(
+                    "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+            throw SShowStopper(
+                lineNum,
+                EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
+                description);
         }
         mSeqIds.push_back(seqId);
         mSequences.push_back(vector<TLineInfoPtr>());

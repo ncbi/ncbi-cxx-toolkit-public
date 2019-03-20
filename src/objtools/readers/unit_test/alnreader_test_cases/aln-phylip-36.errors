@@ -1,5 +1,5 @@
 Line No    : 16
 Severity   : Fatal
 Code       : 2.5
-Message    : At ID 'seq3': Inconsistent block line formatting
+Message    : In data line, expected 8 symbols but finding 7
 

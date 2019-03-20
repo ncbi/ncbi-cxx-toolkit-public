@@ -39,6 +39,7 @@
 #include "aln_errors.hpp"
 #include "aln_scanner_clustal.hpp"
 #include "aln_scanner_nexus.hpp"
+#include "aln_scanner_phylip.hpp"
 #include "aln_scanner_sequin.hpp"
 #include "aln_scanner_fastagap.hpp"
 
@@ -1065,89 +1066,89 @@ s_FindComment(
 
 /* This function removes a comment from a line. */
 static void 
-s_RemoveCommentFromLine (
-    char * linestring)
-{
-    TCommentLocPtr clp;
-    size_t offset, len;
+    s_RemoveCommentFromLine (
+        char * linestring)
+    {
+        TCommentLocPtr clp;
+        size_t offset, len;
 
-    if (!linestring) {
-        return;
-    }
+        if (!linestring) {
+            return;
+        }
 
-    clp = s_FindComment (linestring);
-    while (clp) {
-        memmove((char*)clp->start, clp->end+1, strlen(clp->end));
-        // Note that strlen(clp->end) = strlen(clp->end+1)+1;
-        // This is needed to ensure that the null terminator is copied.
-        delete clp;
         clp = s_FindComment (linestring);
-    }
-
-    /* if we have read an organism comment and that's all there was on the
-    * line, get rid of the arrow character as well so it doesn't end up 
-    * in the sequence data
-    */
-    if ( linestring [0] == '>') {
-        offset = 1;
-        while (isspace(linestring[offset])) {
-            offset++;
+        while (clp) {
+            memmove((char*)clp->start, clp->end+1, strlen(clp->end));
+            // Note that strlen(clp->end) = strlen(clp->end+1)+1;
+            // This is needed to ensure that the null terminator is copied.
+            delete clp;
+            clp = s_FindComment (linestring);
         }
-        if (linestring[offset] == 0) {
-            linestring[0] = 0;
+
+        /* if we have read an organism comment and that's all there was on the
+        * line, get rid of the arrow character as well so it doesn't end up 
+        * in the sequence data
+        */
+        if ( linestring [0] == '>') {
+            offset = 1;
+            while (isspace(linestring[offset])) {
+                offset++;
+            }
+            if (linestring[offset] == 0) {
+                linestring[0] = 0;
+            }
         }
+        /* if the line ends with a number preceded by a space, 
+        * and is not the PHYLIP header, truncate it at the space */
+        offset = len = strlen(linestring);
+        while (offset > 0 && isdigit(linestring[offset - 1])) {
+            offset--;
+        }
+        if (offset != 0 && offset != len && isspace(linestring[offset - 1]) &&
+            !s_IsTwoNumbersSeparatedBySpace(linestring)) {
+            linestring[offset - 1] = 0;
+        }
+
+
+        /* if the line now contains only space, truncate it */
+        if (strspn (linestring, " \t\r") == strlen (linestring)) {
+            linestring [0] = 0;
+        }
+
     }
-    /* if the line ends with a number preceded by a space, 
-    * and is not the PHYLIP header, truncate it at the space */
-    offset = len = strlen(linestring);
-    while (offset > 0 && isdigit(linestring[offset - 1])) {
-        offset--;
+
+
+    /* This function determines whether or not a comment describes an organism
+     * by looking for org= or organism= inside the brackets.
+     */
+    static bool s_IsOrganismComment(
+        TCommentLocPtr clp)
+    {
+        if (!clp  ||  !clp->start  ||  !clp->end) {
+            return false;
+        }
+        string comment(clp->start, clp->end - clp->start + 1);
+        if (!NStr::StartsWith(comment, '[')  ||  !NStr::EndsWith(comment, ']')) {
+            return false;
+        }
+        string interior = comment.substr(1, comment.size() -2);
+        string key, value;
+        NStr::SplitInTwo(interior, "=", key, value);
+        NStr::TruncateSpacesInPlace(key);
+        NStr::ToLower(key);
+        NStr::TruncateSpacesInPlace(value);
+        return (!value.empty()  &&  (key == "org"  ||  key == "organism"));
     }
-    if (offset != 0 && offset != len && isspace(linestring[offset - 1]) &&
-        !s_IsTwoNumbersSeparatedBySpace(linestring)) {
-        linestring[offset - 1] = 0;
-    }
 
 
-    /* if the line now contains only space, truncate it */
-    if (strspn (linestring, " \t\r") == strlen (linestring)) {
-        linestring [0] = 0;
-    }
-
-}
-
-
-/* This function determines whether or not a comment describes an organism
- * by looking for org= or organism= inside the brackets.
- */
-static bool s_IsOrganismComment(
-    TCommentLocPtr clp)
-{
-    if (!clp  ||  !clp->start  ||  !clp->end) {
-        return false;
-    }
-    string comment(clp->start, clp->end - clp->start + 1);
-    if (!NStr::StartsWith(comment, '[')  ||  !NStr::EndsWith(comment, ']')) {
-        return false;
-    }
-    string interior = comment.substr(1, comment.size() -2);
-    string key, value;
-    NStr::SplitInTwo(interior, "=", key, value);
-    NStr::TruncateSpacesInPlace(key);
-    NStr::ToLower(key);
-    NStr::TruncateSpacesInPlace(value);
-    return (!value.empty()  &&  (key == "org"  ||  key == "organism"));
-}
-
-
-/* This function finds an organism comment, which includes the first bracketed
- * comment with org= or organism=, plus any additional bracketed comments.
- * The function returns a pointer to a SCommentLoc structure describing
- * the location of the organism comment.
- */
-static TCommentLocPtr 
-s_FindOrganismComment (
-    const string& line)
+    /* This function finds an organism comment, which includes the first bracketed
+     * comment with org= or organism=, plus any additional bracketed comments.
+     * The function returns a pointer to a SCommentLoc structure describing
+     * the location of the organism comment.
+     */
+    static TCommentLocPtr 
+    s_FindOrganismComment (
+        const string& line)
 {
     TCommentLocPtr clp, next_clp;
 
@@ -1799,7 +1800,18 @@ sReadAlignFileRaw(
                 next_line->data[0] = 0;
                 break;
             }
-            if (lineStrLower.empty()) {
+            if (!lineStrLower.empty()) {
+                vector<string> tokens;
+                NStr::Split(linestring, " \t", tokens, NStr::fSplit_MergeDelimiters);
+                if (tokens.size() == 2) {
+                    if (NStr::StringToInt(tokens[0], NStr::fConvErr_NoThrow)>0 &&
+                        NStr::StringToInt(tokens[1], NStr::fConvErr_NoThrow)>0) {
+                        *pformat = EAlignFormat::ALNFMT_PHYLIP;
+                        break;
+                    }
+                }
+            }
+            else { // lineStrLower is empty
                 *pformat = EAlignFormat::ALNFMT_SEQUIN;
                 //no break- need to look at second line as well
                 continue;
@@ -2002,7 +2014,23 @@ sReadAlignFileRaw(
             }
         }
     }
+    else 
+    if (*pformat == EAlignFormat::ALNFMT_PHYLIP) {
+        for (next_line = afrp->line_list->next; next_line; next_line = next_line->next) {
+            string  lineStrLower(next_line->data);
+            NStr::ToLower(lineStrLower);
+            NStr::TruncateSpacesInPlace(lineStrLower);
 
+            if (lineStrLower.empty() ||
+                lineStrLower == "begin ncbi;" ||
+                lineStrLower == "sequin" ||
+                lineStrLower == "end;" ) {
+                continue;
+            }
+            s_ReadDefline(next_line->data, next_line->line_num-1, afrp);
+        }
+    } 
+    else
     if (*pformat == EAlignFormat::ALNFMT_CLUSTAL) {
         for (next_line = afrp->line_list->next; next_line; next_line = next_line->next) {
             string  lineStrLower(next_line->data);
@@ -3593,6 +3621,11 @@ ReadAlignmentFile(
             scanner.ProcessAlignmentFile(afrp);
             break;
         }
+        case EAlignFormat::ALNFMT_PHYLIP: {
+            CAlnScannerPhylip scanner;
+            scanner.ProcessAlignmentFile(afrp);
+            break;
+        }                                  
         case EAlignFormat::ALNFMT_SEQUIN: {
             CAlnScannerSequin scanner;
             scanner.ProcessAlignmentFile(afrp);
