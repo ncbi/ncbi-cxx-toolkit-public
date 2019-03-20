@@ -3631,10 +3631,11 @@ void CArgDescriptions::CPrintUsage::AddDetails(list<string>& arr) const
     }
 
     // # of extra arguments
-    if (m_desc.m_nExtra  ||  (m_desc.m_nExtraOpt != 0  && m_desc.m_nExtraOpt != kMax_UInt)) {
+    if (m_desc.m_nExtra  ||  (m_desc.m_nExtraOpt  &&  m_desc.m_nExtraOpt != kMax_UInt)) {
         string str_extra = "NOTE:  Specify ";
         if ( m_desc.m_nExtra ) {
-            str_extra += "at least ";
+            if (m_desc.m_nExtraOpt)
+                str_extra += "at least ";
             str_extra += NStr::UIntToString(m_desc.m_nExtra);
             if (m_desc.m_nExtraOpt != kMax_UInt) {
                 str_extra += ", and ";
@@ -3645,7 +3646,9 @@ void CArgDescriptions::CPrintUsage::AddDetails(list<string>& arr) const
             str_extra += NStr::UIntToString(m_desc.m_nExtra + m_desc.m_nExtraOpt);
         }
         str_extra +=
-            " argument" + string(&"s"[m_desc.m_nExtra + m_desc.m_nExtraOpt == 1]) +
+            " argument" + string(&"s"[m_desc.m_nExtra
+                                      + (m_desc.m_nExtraOpt != kMax_UInt
+                                         ? m_desc.m_nExtraOpt : 0) == 1]) +
             " in \"....\"";
         s_PrintCommentBody(arr, str_extra, m_desc.m_UsageWidth);
     }
