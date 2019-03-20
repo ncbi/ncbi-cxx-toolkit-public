@@ -44,18 +44,18 @@
  */
 typedef struct SBufChunkTag {
     struct SBufChunkTag* next;
-    size_t extent;      /* total allocated size of "data" (0 if none/RO)     */
+    void*  base;        /* base pointer of the chunk data if to be free()'d  */
+    char*  data;        /* data stored in this chunk                         */
     size_t skip;        /* # of bytes already discarded(read) from the chunk */
     size_t size;        /* of data (including the discarded "skip" bytes)    */
-    void*  base;        /* base ptr of the data chunk if to be free()'d      */
-    char*  data;        /* data stored in this chunk                         */
+    size_t extent;      /* total allocated size of "data" (0 if none/RO)     */
 } SBufChunk;
 
 
 /* Buffer
  */
 struct SNcbiBuf {
-    SBufChunk* list;    /* the linked list of chunks                         */
+    SBufChunk* list;    /* the singly-linked list of chunks                  */
     SBufChunk* last;    /* shortcut to the last chunk in the list            */
     size_t     unit;    /* chunk size unit                                   */
     size_t     size;    /* total buffer size; must be consistent at all times*/
@@ -67,7 +67,7 @@ extern size_t BUF_SetChunkSize(BUF* buf, size_t chunk_size)
     assert(!(sizeof(double) & (sizeof(double) - 1)));
     assert(!(BUF_ALIGN(BUF_DEF_CHUNK_SIZE) ^ BUF_DEF_CHUNK_SIZE));
 
-    /* create buffer internals, if not created yet */
+    /* create the buffer internals, if not done yet */
     if (!*buf) {
         if (!(*buf = (struct SNcbiBuf*) malloc(sizeof(**buf))))
             return 0;
@@ -125,12 +125,12 @@ static SBufChunk* s_BUF_AllocChunk(size_t data_size, size_t unit_size)
     if (!(chunk = (SBufChunk*) malloc(chunk_size + alloc_size)))
         return 0/*failure*/;
 
-    /* NB: leave chunk->next uninited! */
-    chunk->extent = alloc_size;
-    chunk->skip   = 0;
-    chunk->size   = 0;
+    /* NB: chunk->next is left uninited! */
     chunk->base   = 0;
     chunk->data   = alloc_size ? (char*) chunk + chunk_size : 0;
+    chunk->skip   = 0;
+    chunk->size   = 0;
+    chunk->extent = alloc_size;
     return chunk/*success*/;
 }
 
@@ -156,11 +156,11 @@ extern int/*bool*/ BUF_AppendEx(BUF* buf, void* base, size_t alloc_size,
         return 0/*failure*/;
 
     assert(!chunk->data);
+    chunk->next   = 0;
     chunk->base   = base;
-    chunk->extent = alloc_size;
     chunk->data   = (char*) data;
     chunk->size   = size;
-    chunk->next   = 0;
+    chunk->extent = alloc_size;
 
     if ((*buf)->last)
         (*buf)->last->next = chunk;
@@ -199,11 +199,11 @@ extern int/*bool*/ BUF_PrependEx(BUF* buf, void* base, size_t alloc_size,
         return 0/*failure*/;
 
     assert(!chunk->data);
+    chunk->next   = (*buf)->list;
     chunk->base   = base;
-    chunk->extent = alloc_size;
     chunk->data   = (char*) data;
     chunk->size   = size;
-    chunk->next   = (*buf)->list;
+    chunk->extent = alloc_size;
 
     if (!(*buf)->last) {
         assert(!chunk->next);
