@@ -149,7 +149,7 @@ esac
 
 : ${BOOST_PATH=$NCBI/boost-1.62.0-ncbi1}
 
-: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.7.1}
+: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.11.0-ncbi1}
 
 : ${CEREAL_PATH=$NCBI/cereal-1.1.0}
 
@@ -194,7 +194,7 @@ case "$ncbi_platform" in
     Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;
 esac
 
-: ${H2O_PATH=$NCBI/h2o-2.2.4}
+: ${H2O_PATH=$NCBI/h2o-2.2.5}
 
 : ${HDF5_PATH=$NCBI/hdf5-1.8.3}
 
@@ -208,7 +208,7 @@ esac
 
 : ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
 
-: ${LIBUV_PATH=$NCBI/libuv-1.14.1}
+: ${LIBUV_PATH=$NCBI/libuv-1.25.0}
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.8}
 
