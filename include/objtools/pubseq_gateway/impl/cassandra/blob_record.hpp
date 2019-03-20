@@ -102,6 +102,7 @@ class CBlobRecord {
     TTimestamp GetModified() const;
 
     TBlobFlagBase GetFlags() const;
+    bool GetFlag(EBlobFlags flag_value) const;
     TSize GetSize() const;
     TSize GetSizeUnpacked() const;
 
@@ -130,7 +131,6 @@ class CBlobRecord {
 
  private:
     CBlobRecord& SetFlag(bool set_flag, EBlobFlags flag_value);
-    bool GetFlag(EBlobFlags flag_value) const;
 
     TTimestamp  m_Modified;
     int64_t     m_Flags;
