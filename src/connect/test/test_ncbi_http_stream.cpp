@@ -119,7 +119,6 @@ void CNCBITestHttpStreamApp::Init(void)
 
     // Usage setup
     unique_ptr<CArgDescriptions> args(new CArgDescriptions);
-    args->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
     if (args->Exist ("h"))
         args->Delete("h");
     if (args->Exist ("xmlhelp"))
@@ -144,13 +143,16 @@ int CNCBITestHttpStreamApp::Run(void)
 
     size_t i = 1;
     for (;;) {
-        NcbiStreamCopy(NcbiCout, http);
+        if (!NcbiStreamCopy(NcbiCout, http))
+            return 2;
         NcbiCout << NcbiEndl;
-        http.clear();
+        if (http.Status() == eIO_Interrupt)
+            return 3;
+        if (http.Status() != eIO_Closed)
+            return 2;
+        http.clear();  //  just in case
         if (i >= n)
             break;
-        if (http.Status() == eIO_Interrupt)
-            return 2;
         http.SetURL(args[++i].AsString());
     }
 
@@ -176,5 +178,5 @@ int main(int argc, const char* argv[])
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
 
-    return CNCBITestHttpStreamApp().AppMain(argc, argv);
+    return CNCBITestHttpStreamApp().AppMain(argc, argv, 0, eDS_User);
 }
