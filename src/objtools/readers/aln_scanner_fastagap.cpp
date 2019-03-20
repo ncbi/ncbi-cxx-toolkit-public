@@ -57,9 +57,8 @@ CAlnScannerFastaGap::sSplitFastaDef(
 
 //  ----------------------------------------------------------------------------
 void
-CAlnScannerFastaGap::ProcessAlignmentFile(
-    const CSequenceInfo& sequenceInfo,
-    TAlignRawFilePtr afrp)
+CAlnScannerFastaGap::xImportAlignmentData(
+    const TLineInfoPtr lineList)
 //  ----------------------------------------------------------------------------
 {
     bool waitingForSeqData = false;
@@ -67,7 +66,7 @@ CAlnScannerFastaGap::ProcessAlignmentFile(
     int currentDataLineIndex = 0;
     bool processingFirstSequence = true;
 
-    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
+    for (auto linePtr = lineList; linePtr; linePtr = linePtr->next) {
 
         string seqId;
         string defLine;
@@ -108,6 +107,7 @@ CAlnScannerFastaGap::ProcessAlignmentFile(
         if (line.empty()) {
             continue;
         }
+
         if (!NStr::StartsWith(line, ">")) {
             string description = StrPrintf(
                 "Unexpected data line. Expected FASTA defline.");
@@ -118,28 +118,29 @@ CAlnScannerFastaGap::ProcessAlignmentFile(
         }
         sSplitFastaDef(line, seqId, defLine);
         mSeqIds.push_back(seqId);
+        mDeflines.push_back({defLine, linePtr->line_num});
         mSequences.push_back(vector<TLineInfoPtr>());
         waitingForSeqData = true;
         currentDataLineIndex = 0;
-
-    }
-
-    xVerifySequenceData(sequenceInfo);
-
-    for (auto idIndex = 0; idIndex < mSeqIds.size(); ++idIndex) {
-        auto& curSeq = mSequences[idIndex];
-        for (auto seqPart = 0; seqPart < curSeq.size(); ++seqPart) {
-            auto liPtr = curSeq[seqPart];
-            afrp->sequences = SAlignRawSeq::sAddSeqById(
-                afrp->sequences, mSeqIds[idIndex],
-                liPtr->data, liPtr->line_num, liPtr->line_num, 0);
-        }
     }
 }
 
 //  ----------------------------------------------------------------------------
 void
-CAlnScannerFastaGap::xVerifySequenceData(
+CAlnScannerFastaGap::ProcessAlignmentFile(
+    const CSequenceInfo& sequenceInfo,
+    const TLineInfoPtr lineList,
+    SAlignmentFile& alignInfo)
+//  ----------------------------------------------------------------------------
+{
+    xImportAlignmentData(lineList);
+    xVerifyAlignmentData(sequenceInfo);
+    xExportAlignmentData(alignInfo);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerFastaGap::xVerifyAlignmentData(
     const CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
@@ -223,7 +224,30 @@ CAlnScannerFastaGap::xVerifySingleSequenceData(
     }
 }
 
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerFastaGap::xExportAlignmentData(
+    SAlignmentFile& alignInfo)
+//  ----------------------------------------------------------------------------
+{
+    alignInfo.mIds.assign(mSeqIds.begin(), mSeqIds.end());
 
+    auto numDeflines = mDeflines.size();
+    alignInfo.mDeflines.resize(numDeflines);
+    for (auto i=0; i < numDeflines; ++i) {
+        alignInfo.mDeflines[i] = {mDeflines[i].mNumLine, mDeflines[i].mData};
+    }
+
+    auto numSequences = mSequences.size();
+    alignInfo.mSequences.resize(numSequences);
+    auto index = 0;
+    for (auto sequence: mSequences) {
+        for (auto seqPart: sequence) {
+            alignInfo.mSequences[index] += string(seqPart->data);
+        }
+        ++index;
+    }  
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

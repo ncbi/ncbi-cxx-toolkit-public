@@ -126,7 +126,6 @@ public:
         int line_num;
         string data;
     };
-
     using TDeflineInfo = SDeflineInfo;
 
     vector<string> mIds;

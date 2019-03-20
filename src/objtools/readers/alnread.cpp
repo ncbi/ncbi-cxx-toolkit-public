@@ -3634,19 +3634,22 @@ ReadAlignmentFile(
         case EAlignFormat::ALNFMT_FASTAGAP: {
             CAlnScannerFastaGap scanner;
             scanner.ProcessAlignmentFile(
-                sequenceInfo, afrp);
+                sequenceInfo, 
+                afrp->line_list, 
+                alignmentInfo);
             break;
         }
     }
-
-    if (format != EAlignFormat::ALNFMT_FASTAGAP) {
-        s_ReprocessIds(afrp);
-        if (s_FindBadDataCharsInSequenceList (afrp, sequenceInfo)) {
-            delete afrp;
-            return false;
-        } 
+    if (format == EAlignFormat::ALNFMT_FASTAGAP) {
+        delete afrp;
+        return true;
     }
 
+    s_ReprocessIds(afrp);
+    if (s_FindBadDataCharsInSequenceList (afrp, sequenceInfo)) {
+        delete afrp;
+        return false;
+    }
     bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
     delete afrp;
     return result;

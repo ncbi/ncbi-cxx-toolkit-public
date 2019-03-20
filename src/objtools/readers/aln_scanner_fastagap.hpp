@@ -50,12 +50,21 @@ public:
     void
     ProcessAlignmentFile(
         const CSequenceInfo&,
-        SAlignFileRaw *);
+        const TLineInfoPtr,
+        SAlignmentFile&);
 
 protected:
     void
-    xVerifySequenceData(
+    xImportAlignmentData(
+        const TLineInfoPtr);
+
+    void
+    xVerifyAlignmentData(
         const CSequenceInfo&);
+
+    void
+    xExportAlignmentData(
+        SAlignmentFile& alignmentInfo);
 
     void
     xVerifySingleSequenceData(
@@ -69,9 +78,13 @@ protected:
         string& seqId,
         string& defLine);
 
+    struct SDeflineInfo {
+        string mData;
+        int mNumLine;
+    };
     vector<string> mSeqIds;
     vector<vector<TLineInfoPtr>> mSequences;
-    vector<string> mDeflines;
+    vector<SDeflineInfo> mDeflines;
 
 };
 
