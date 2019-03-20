@@ -1073,8 +1073,7 @@ static size_t x_WriteBuf(void* data, const void* buf, size_t size)
     size_t written;
 
     assert(buf  &&  size);
-    if (ctx->status != eIO_Success)
-        return 0;
+    assert(ctx->status == eIO_Success);
     ctx->status = SOCK_Write(ctx->sock, buf, size,
                              &written, eIO_WritePlain);
     return written;
@@ -1240,8 +1239,8 @@ static size_t x_PushbackBuf(void* data, const void* buf, size_t size)
     XBUF_PeekCBCtx* ctx = (XBUF_PeekCBCtx*) data;
 
     assert(buf  &&  size);
-    if (ctx->status == eIO_Success)
-        ctx->status  = SOCK_Pushback(ctx->sock, buf, size);
+    assert(ctx->status == eIO_Success);
+    ctx->status = SOCK_Pushback(ctx->sock, buf, size);
     return ctx->status != eIO_Success ? 0 : size;
 }
 
@@ -1252,9 +1251,7 @@ static int/*bool*/ x_Pushback(SOCK sock, BUF buf)
     XBUF_PeekCBCtx ctx;
     ctx.sock   = sock;
     ctx.status = eIO_Success;
-    size ^= BUF_PeekAtCB(buf, 0, x_PushbackBuf, &ctx, size);
-    BUF_Destroy(buf);
-    return size ? 0 : 1;
+    return !(size ^ BUF_PeekAtCB(buf, 0, x_PushbackBuf, &ctx, size));
 }
 
 
@@ -1303,18 +1300,18 @@ static EIO_Status x_ReadChunkHead(SHttpConnector* uuu, int/*bool*/ first)
                      str ?       str  + (first ? 0 : 2)  : ""));
         if (url)
             free(url);
-        if (str) {
+        if (str)
             free(str);
-            BUF_Destroy(buf);
-            return eIO_Closed;
-        }
-        return x_Pushback(uuu->sock, buf) ? eIO_Unknown : eIO_Closed;
+        if (status == eIO_Closed  ||  !x_Pushback(uuu->sock, buf))
+            status  = eIO_Unknown;
+        BUF_Destroy(buf);
+        return status ? status : eIO_Unknown;
     }
-    free(str);
 
-    uuu->expected = chunk;
-    uuu->received = 0;
+    free(str);
     BUF_Destroy(buf);
+    uuu->received = 0;
+    uuu->expected = chunk;
     return eIO_Success;
 }
 
@@ -1333,7 +1330,10 @@ static EIO_Status x_ReadChunkTail(SHttpConnector* uuu)
             return eIO_Closed;
         }
     } while (status == eIO_Success);
-    return x_Pushback(uuu->sock, buf) ? status : eIO_Closed;
+    if (status == eIO_Closed  ||  !x_Pushback(uuu->sock, buf))
+        status  = eIO_Unknown;
+    BUF_Destroy(buf);
+    return status;
 }
 
 
