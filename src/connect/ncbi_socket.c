@@ -6989,7 +6989,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 }
 
 
-#define s_Pushback(s, b, l)  BUF_Pushback(&(s)->r_buf, b, l)
+#define s_Pushback(s, b, n)  BUF_Pushback(&(s)->r_buf, b, n)
 
 
 extern EIO_Status SOCK_ReadLine(SOCK    sock,
