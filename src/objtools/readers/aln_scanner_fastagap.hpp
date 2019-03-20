@@ -36,6 +36,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+class CSequenceInfo;
 struct SAlignFileRaw;
 
 //  ============================================================================
@@ -48,9 +49,20 @@ public:
 
     void
     ProcessAlignmentFile(
+        const CSequenceInfo&,
         SAlignFileRaw *);
 
 protected:
+    void
+    xVerifySequenceData(
+        const CSequenceInfo&);
+
+    void
+    xVerifySingleSequenceData(
+        const CSequenceInfo&,
+        const string& seqId,
+        const vector<TLineInfoPtr> seqData);
+
     static void
     sSplitFastaDef(
         const string& rawDefStr,

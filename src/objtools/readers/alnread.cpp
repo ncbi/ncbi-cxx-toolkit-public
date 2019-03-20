@@ -3549,7 +3549,7 @@ ReadAlignmentFile(
     istream& istr,
     bool gen_local_ids,
     bool use_nexus_info,
-    CSequenceInfo& sequence_info,
+    CSequenceInfo& sequenceInfo,
     SAlignmentFile& alignmentInfo,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
@@ -3560,14 +3560,14 @@ ReadAlignmentFile(
     TAlignRawFilePtr afrp;
     EAlignFormat format = ALNFMT_UNKNOWN;
 
-    if (sequence_info.Alphabet().empty()) {
+    if (sequenceInfo.Alphabet().empty()) {
         return false;
     }
 
     CPeekAheadStream iStr(istr);
     format = sGetFileFormat(iStr);
 
-    afrp = sReadAlignFileRaw(iStr, use_nexus_info, sequence_info, &format);
+    afrp = sReadAlignFileRaw(iStr, use_nexus_info, sequenceInfo, &format);
     if (!afrp) {
         return false;
     }
@@ -3600,16 +3600,19 @@ ReadAlignmentFile(
         }
         case EAlignFormat::ALNFMT_FASTAGAP: {
             CAlnScannerFastaGap scanner;
-            scanner.ProcessAlignmentFile(afrp);
+            scanner.ProcessAlignmentFile(
+                sequenceInfo, afrp);
             break;
         }
     }
 
-    s_ReprocessIds (afrp);
-    if (s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
-        delete afrp;
-        return false;
-    } 
+    if (format != EAlignFormat::ALNFMT_FASTAGAP) {
+        s_ReprocessIds(afrp);
+        if (s_FindBadDataCharsInSequenceList (afrp, sequenceInfo)) {
+            delete afrp;
+            return false;
+        } 
+    }
 
     bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
     delete afrp;

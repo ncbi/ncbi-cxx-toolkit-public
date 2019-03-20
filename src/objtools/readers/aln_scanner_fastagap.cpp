@@ -58,6 +58,7 @@ CAlnScannerFastaGap::sSplitFastaDef(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerFastaGap::ProcessAlignmentFile(
+    const CSequenceInfo& sequenceInfo,
     TAlignRawFilePtr afrp)
 //  ----------------------------------------------------------------------------
 {
@@ -123,6 +124,8 @@ CAlnScannerFastaGap::ProcessAlignmentFile(
 
     }
 
+    xVerifySequenceData(sequenceInfo);
+
     for (auto idIndex = 0; idIndex < mSeqIds.size(); ++idIndex) {
         auto& curSeq = mSequences[idIndex];
         for (auto seqPart = 0; seqPart < curSeq.size(); ++seqPart) {
@@ -133,6 +136,93 @@ CAlnScannerFastaGap::ProcessAlignmentFile(
         }
     }
 }
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerFastaGap::xVerifySequenceData(
+    const CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    // make sure all sequence are of the same length(once we no longer enforce
+    //  harmonized data sizes):
+
+    // make sure all sequence characters are legal, and legal in the places where
+    //  they show up:
+    for (auto i=0; i < mSequences.size(); ++i) {
+        const auto& seqData = mSequences[i];
+        const auto& seqId = mSeqIds[i];
+         xVerifySingleSequenceData(sequenceInfo, seqId, seqData);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerFastaGap::xVerifySingleSequenceData(
+    const CSequenceInfo& sequenceInfo,
+    const string& seqId,
+    const vector<TLineInfoPtr> seqDataPtrs)
+//  -----------------------------------------------------------------------------
+{
+    const char* errTempl("Bad character [%c] found at character position %d.");
+
+    enum ESeqPart {
+        HEAD, BODY, TAIL
+    };
+    const string& alphabet = sequenceInfo.Alphabet();
+    const string legalInHead = sequenceInfo.BeginningGap();
+    const string legalInBody = alphabet + sequenceInfo.MiddleGap();
+    const string legalInTail = sequenceInfo.EndGap();
+
+    ESeqPart seqPart = ESeqPart::HEAD;
+
+    for (auto linePtr: seqDataPtrs) {
+        if (!linePtr->data) {
+            continue;
+        }
+        string seqData(linePtr->data);
+
+        if (seqPart == ESeqPart::HEAD) {
+            auto startBody = seqData.find_first_not_of(legalInHead);
+            if (startBody == string::npos) {
+                continue;
+            }
+            seqPart = ESeqPart::BODY;
+            seqData = seqData.substr(startBody);
+            if (alphabet.find(seqData[0]) == string::npos) {
+                int linePos = strlen(linePtr->data) - seqData.size();
+                string description = StrPrintf(errTempl, seqData[0], linePos);
+                throw SShowStopper(
+                    linePtr->line_num,
+                    EAlnSubcode::eAlnSubcode_BadDataChars,
+                    description,
+                    seqId);
+            }
+        }
+        if (seqPart == ESeqPart::BODY) {
+            auto startTail = seqData.find_first_not_of(legalInBody);
+            if (startTail == string::npos) {
+                continue;
+            }
+            seqPart = ESeqPart::TAIL;
+            seqData = seqData.substr(startTail);
+        }
+        if (seqPart == ESeqPart::TAIL) {
+            auto startBad = seqData.find_first_not_of(legalInTail);
+            if (startBad == string::npos) {
+                continue;
+            }
+            int linePos = strlen(linePtr->data) - seqData.size() + startBad;
+            string description = StrPrintf(
+                errTempl, seqData[startBad], linePos);
+            throw SShowStopper(
+                linePtr->line_num,
+                EAlnSubcode::eAlnSubcode_BadDataChars,
+                description,
+                seqId);
+        }
+    }
+}
+
 
 
 END_SCOPE(objects)
