@@ -2238,7 +2238,7 @@ static void s_Destroy
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
     connector->handle = 0;
 
-    ConnNetInfo_Destroy(xxx->info);
+    ConnNetInfo_Destroy((SConnNetInfo*) xxx->info);
     assert(!xxx->what  &&  !xxx->cntl  &&  !xxx->data);
     assert(!BUF_Size(xxx->wbuf)  &&  !BUF_Size(xxx->rbuf));
     BUF_Destroy(xxx->wbuf);
