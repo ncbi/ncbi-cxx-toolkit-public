@@ -862,7 +862,7 @@ bool s_SeqDB_IsBinaryNumericList(const char* fbeginp, const char* fendp,
     has_long_ids = false;
     if (has_tis)
         *has_tis = false;
-    Int8 file_size = fendp - fbeginp;
+    Uint8 file_size = fendp - fbeginp;
 
     if (file_size == 0) {
         NCBI_THROW(CSeqDBException,
@@ -932,18 +932,18 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                             bool * in_order)
 {
     bool long_ids = false;
-    Int8 file_size = fendp - fbeginp;
+    Uint8 file_size = fendp - fbeginp;
 
     if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
         _ASSERT(long_ids == false);
         Uint4* bbeginp = (Uint4*) fbeginp;
         Uint4* bendp = (Uint4*) fendp;
 
-        Int4 num_gis = (Int4) (bendp - bbeginp) - 2;
+        Uint8 num_gis = bendp - bbeginp - 2;
 
         gis.clear();
 
-        if (((bendp - bbeginp) < 2U)
+        if (((num_gis) < 0)
                 ||  (bbeginp[0] != 0xFFFFFFFFU)
                 ||  (SeqDB_GetStdOrd(bbeginp + 1) != (Uint4) num_gis)) {
             NCBI_THROW(CSeqDBException,

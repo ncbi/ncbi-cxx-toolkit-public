@@ -96,7 +96,7 @@ public:
         
         const char * fbeginp = memlease.GetFileDataPtr(0);
         
-        const char * fendp   = fbeginp + (int)file_size;
+        const char * fendp   = fbeginp + file_size;
 
         try {
             bool in_order = false;
