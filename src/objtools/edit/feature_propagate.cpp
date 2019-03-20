@@ -430,6 +430,40 @@ CRef<CSeq_loc>  CFeaturePropagator::CreateRowSeq_loc(const CSeq_align& align, CD
     return loc;
 }
 
+// An ordered Seq-loc should altername between non-NULL and NULL locations
+bool CFeaturePropagator::IsOrdered(const CSeq_loc &loc)
+{
+    if (loc.IsMix() && loc.GetMix().Get().size() > 1) 
+    {
+        bool should_be_null = false;
+        for (const auto it : loc.GetMix().Get())
+        {
+            if (it->IsNull() != should_be_null) 
+                return false;
+            should_be_null = !should_be_null;
+        }
+        return should_be_null;
+    }
+    return false;
+}
+
+CRef<CSeq_loc> CFeaturePropagator::MakeOrdered(const CSeq_loc &loc)
+{
+    CRef<CSeq_loc> mix(new CSeq_loc());
+    for (const auto it : loc.GetMix().Get())
+    {
+        mix->SetMix().Set().push_back(it);
+        CRef<CSeq_loc> null_loc(new CSeq_loc());
+        null_loc->CSeq_loc_Base::SetNull();
+        mix->SetMix().Set().push_back(null_loc);
+    }
+    if (mix->IsMix() && mix->GetMix().IsSet() && !mix->GetMix().Get().empty() && mix->GetMix().Get().back()->IsNull()) 
+    {
+        mix->SetMix().Set().pop_back();
+    }
+    return mix;
+}
+
 CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
 {
     CRef<CSeq_loc> target;
@@ -470,7 +504,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
     {
         if (loc_it.IsEmpty())
         {
-            ++loc_it;
+            loc_it.Delete();
             continue;
         }
         CSeq_loc_CI::TRange range = loc_it.GetRange();
@@ -539,30 +573,6 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         loc_it.SetTo(new_stop);
         ++loc_it;
     }
-    loc_it.Rewind();
-    while(loc_it && loc_it.IsEmpty())      
-    {
-        loc_it.Delete();
-    }
-    size_t last = 0;
-    while(loc_it)      
-    {
-        if (!loc_it.IsEmpty())
-        {
-            last = loc_it.GetPos();
-        }
-        ++loc_it;
-    }
-    if (loc_it.GetSize() > 0 && last != loc_it.GetSize() - 1)
-    {
-        loc_it.SetPos(last);
-        ++loc_it;
-        while(loc_it && loc_it.IsEmpty())      
-        {
-            loc_it.Delete();
-        }
-    }
-
     target = loc_it.MakeSeq_loc();   
     if (!m_ExpandOverGaps && target)
     {
@@ -598,6 +608,11 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
     if (sourceLoc.IsMix() && target && target->IsPacked_int())
     {
         target->ChangeToMix();
+    }
+    if (target && target->IsMix() && target->GetMix().IsSet() && target->GetMix().Get().size() > 1 
+        && sourceLoc.IsMix() && IsOrdered(sourceLoc))
+    {
+        target = MakeOrdered(*target);
     }
     return target;
 }

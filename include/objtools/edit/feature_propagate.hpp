@@ -94,6 +94,8 @@ private:
     TSignedSeqPos AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3);
     CDense_seg::TDim  FindRow(const CSeq_align& align, CBioseq_Handle bsh);
     CRef<CSeq_loc>  CreateRowSeq_loc(const CSeq_align& align, CDense_seg::TDim  row);
+    bool IsOrdered(const CSeq_loc &loc);
+    CRef<CSeq_loc> MakeOrdered(const CSeq_loc &loc);
 
     CRef<CSeq_loc> x_TruncateToStopCodon(const CSeq_loc& loc, unsigned int truncLen);
     CRef<CSeq_loc> x_ExtendToStopCodon(CSeq_feat& feat);
