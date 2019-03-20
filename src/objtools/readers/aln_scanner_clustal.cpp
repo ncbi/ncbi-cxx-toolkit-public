@@ -233,17 +233,6 @@ CAlnScannerClustal::ProcessAlignmentFile(
         mSequences[seqCount-1].push_back(linePtr);
     }
 
-    // warn if we are short in deflines
-    auto numDeflines = afrp->mDeflines.size();
-    if (numDeflines != 0  &&  numDeflines != numSeqs) {
-        string description = StrPrintf(
-            "Expected 0 or %d deflines but finding %d",
-            numSeqs, numDeflines);
-        theErrorReporter->Error(
-            -1,
-            EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
-            description); 
-    }
 
     for (auto idIndex=0; idIndex<numSeqs; ++idIndex) {
         for (auto linePtr : mSequences[idIndex]) {

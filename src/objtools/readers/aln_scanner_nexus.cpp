@@ -249,19 +249,6 @@ CAlnScannerNexus::ProcessAlignmentFile(
                 description);
     }
 
-    //warn if we are short in deflines:
-    auto numDeflines = afrp->mDeflines.size();
-    if (numDeflines != 0  &&  numDeflines != NUM_SEQUENCES) {
-        string description = StrPrintf(
-            "Expected 0 or %d deflines but finding %d",
-            NUM_SEQUENCES,
-            numDeflines);
-        theErrorReporter->Error(
-            -1,
-            EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
-            description); 
-    }
-
     //submit collected data to a final sanity check:
     if (sequenceCharCount != SIZE_SEQUENCE) {
         string description = StrPrintf(

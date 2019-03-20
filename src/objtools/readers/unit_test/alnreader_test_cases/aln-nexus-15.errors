@@ -8,8 +8,3 @@ Severity   : Error
 Code       : 2.9
 Message    : Expected 0 or 5 deflines but finding 4
 
-Line No    : None (Encountered during pre or post processing)
-Severity   : Error
-Code       : 2.10
-Message    : Error reading deflines. Unable to associate deflines with sequences
-

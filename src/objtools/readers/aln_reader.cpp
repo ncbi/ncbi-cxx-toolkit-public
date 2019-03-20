@@ -339,10 +339,14 @@ void CAlnReader::Read(
                 }
             }
             else {
+                string description = StrPrintf(
+                    "Expected 0 or %d deflines but finding %d",
+                     m_Ids.size(),
+                     numDeflines);
                 theErrorReporter->Error(
                     -1,
-                    EAlnSubcode::eAlnSubcode_UnsupportedFileFormat,
-                    "Error reading deflines. Unable to associate deflines with sequences");
+                    EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
+                    description);
             }
         }
     }
