@@ -377,11 +377,11 @@ static void s_Close(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     assert(!data->n_cand); /*s_Reset() had to be called before*/
+    iter->data = 0;
     if (data->cand)
         free(data->cand);
     ConnNetInfo_Destroy(data->net_info);
     free(data);
-    iter->data = 0;
 }
 
 
@@ -400,7 +400,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         return 0;
     iter->data = data;
 
-    assert(net_info); /*must be called with non-NULL*/
+    assert(net_info); /*must be non-NULL*/
     data->net_info = ConnNetInfo_Clone(net_info);
     if (!ConnNetInfo_SetupStandardArgs(data->net_info, iter->name)) {
         s_Close(iter);
