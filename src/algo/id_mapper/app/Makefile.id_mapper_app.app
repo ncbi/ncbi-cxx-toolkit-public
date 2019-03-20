@@ -32,8 +32,8 @@ LIB  = gencoll_client generic_db_core dbassist dbloadb tea_crypt asnmuxdblb mux 
 	   xobjwrite variation_utils xobjsimple ncbi_xloader_blastdb xobjreadex objcoords \
 	   entrez2cli entrez2 $(SDBAPI_LIB) xmlwrapp $(XFORMAT_LIBS) $(BLAST_LIBS) \
 	   taxon3 taxon1 xcgi xthrserv xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
-LIBS = $(CMPRS_LIBS) $(LIBXSLT_LIBS) $(FTDS_LIBS) $(FTDS64_LIBS) $(PCRE_LIBS) \
-       $(LIBXML_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(ORIG_LIBS)
+
+LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(SDBAPI_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(ORIG_LIBS)
 
 
 ## Use these two lines for FastCGI.  (No other changes needed!)
