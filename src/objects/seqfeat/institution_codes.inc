@@ -5017,6 +5017,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NPA\ts\tNanjing Institute of Geology and Paleontology, Academia Sinica\t\t\t",
 "NPB\ts\tNatal Parks, Game, and Fish Preservation Board, Research Section\t\t\t",
 "NPC\ts\tNational Pusa Collection\t\t\t",
+"NPCCAA\tc\tNational Pathogen Collection Center for Aquatic Animals\t\t\t",
 "NPIB\ts\tNorthwest Plateau Institute of Biology\t\t\t",
 "NPP\tc\tN.P.P\t\t\t",
 "NPRI\ts\tSeoul National University\t\t\t",

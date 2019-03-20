@@ -4984,6 +4984,7 @@ NOU	s	Institut de Recherche pour le Developpement, Botany and Applied Ecology De
 NPA	s	Nanjing Institute of Geology and Paleontology, Academia Sinica			
 NPB	s	Natal Parks, Game, and Fish Preservation Board, Research Section			
 NPC	s	National Pusa Collection			
+NPCCAA	c	National Pathogen Collection Center for Aquatic Animals			
 NPIB	s	Northwest Plateau Institute of Biology			
 NPP	c	N.P.P			
 NPRI	s	Seoul National University			
