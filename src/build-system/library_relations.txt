@@ -1057,6 +1057,7 @@ pn_ctl needs bacterial_pipeline_proc
 pn_ctl needs gpipe_clean_prot_names
 pn_ctl needs gpipe_jira
 pn_ctl needs idload_utils
+pn_ctl needs xcleanup
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
