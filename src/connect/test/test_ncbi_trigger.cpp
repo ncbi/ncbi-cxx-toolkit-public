@@ -105,7 +105,6 @@ void CTest::Init(void)
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    arg_desc->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
     if (arg_desc->Exist("h")) {
         arg_desc->Delete("h");
     }
@@ -361,5 +360,5 @@ int main(int argc, const char* argv[])
 {
     CDiagContext::SetOldPostFormat(true);
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CTest().AppMain(argc, argv, 0, eDS_User);
 }
