@@ -331,7 +331,7 @@ if (valgrind --ncbi --help) >/dev/null 2>&1; then
 fi
 
 # Leak- and Thread- Sanitizers (GCC 7.3, -fsanitize= flags)
-LSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/lsan.supp"
+LSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/lsan.supp:exitcode=0"
 export LSAN_OPTIONS
 TSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/tsan.supp"
 export TSAN_OPTIONS
