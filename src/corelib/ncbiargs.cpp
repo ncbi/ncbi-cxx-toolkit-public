@@ -3637,11 +3637,11 @@ void CArgDescriptions::CPrintUsage::AddDetails(list<string>& arr) const
             if (m_desc.m_nExtraOpt)
                 str_extra += "at least ";
             str_extra += NStr::UIntToString(m_desc.m_nExtra);
-            if (m_desc.m_nExtraOpt != kMax_UInt) {
+            if (m_desc.m_nExtraOpt  &&  m_desc.m_nExtraOpt != kMax_UInt) {
                 str_extra += ", and ";
             }
         }
-        if (m_desc.m_nExtraOpt != kMax_UInt) {
+        if (m_desc.m_nExtraOpt  &&  m_desc.m_nExtraOpt != kMax_UInt) {
             str_extra += "no more than ";
             str_extra += NStr::UIntToString(m_desc.m_nExtra + m_desc.m_nExtraOpt);
         }
