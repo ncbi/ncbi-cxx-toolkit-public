@@ -2476,5 +2476,54 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4607)
 
 }
 
+
+void CheckRegulatoryFeatures(const string& expected_title, bool keep_promoters, bool keep_regulatory)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> promoter = unit_test_util::AddMiscFeature(entry);
+    promoter->SetData().SetImp().SetKey("regulatory");
+    promoter->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("regulatory_class", "promoter")));
+    promoter->ResetComment();
+    CRef<CSeq_feat> rbs = unit_test_util::AddMiscFeature(entry);
+    rbs->SetData().SetImp().SetKey("regulatory");
+    rbs->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("regulatory_class", "ribosome_binding_site")));
+    rbs->ResetComment();
+
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("msa");
+    gene->SetData().SetGene().SetDesc("mannose-specific adhesin");
+    gene->ResetComment();
+
+    AddTitle(entry, expected_title);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    objects::CAutoDefWithTaxonomy autodef;
+
+    // add to autodef 
+    autodef.AddSources(seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
+
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetKeepRegulatoryFeatures(keep_regulatory);
+    autodef.SetUseFakePromoters(keep_promoters);
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4612)
+{
+    CheckRegulatoryFeatures("Sebaea microphylla mannose-specific adhesin (msa) gene, promoter region.", false, false);
+    CheckRegulatoryFeatures("Sebaea microphylla mannose-specific adhesin (msa) gene, promoter region.", true, false);
+    CheckRegulatoryFeatures("Sebaea microphylla mannose-specific adhesin (msa) gene, promoter region and ribosome_binding_site.", true, true);
+
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

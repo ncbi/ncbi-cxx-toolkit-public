@@ -329,10 +329,20 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause,
            
     // keep promoters only if requested or lonely and not in mRNA
     if (!m_Options.GetKeepRegulatoryFeatures()) {
-        if (!main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_regulatory)) {
-            main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_regulatory, m_Options.GetUseFakePromoters());
+        if (m_Options.GetUseFakePromoters()) {
+            // promoters are requested, remove all regulatory features except promoters
+            main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_regulatory, true);
         } else {
-            main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_regulatory, m_Options.GetUseFakePromoters());
+            bool lonely = main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_regulatory);
+            if (lonely) {
+                // remove regulatory features, including promoters, only in mRNA sequences
+                main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_regulatory, false);
+                // remove regulatory features other than promoters everywhere else
+                main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_regulatory, true);
+            } else {
+                // remove all regulatory features
+                main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_regulatory, false);
+            }
         }
     }
     
