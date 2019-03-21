@@ -384,7 +384,7 @@ class CCassPrm
         m_assigned = true;
     }
 
-    bool IsAssigned(void)
+    bool IsAssigned(void) const
     {
         return m_assigned;
     }
@@ -792,8 +792,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
     int32_t ParamAsInt32(int iprm);
     int64_t ParamAsInt64(int iprm);
-    string ParamAsStr(int iprm);
-    void ParamAsStr(int iprm, string& value);
+    string ParamAsStr(int iprm) const;
+    void ParamAsStr(int iprm, string& value) const;
 
     async_rslt_t NextRow();
 
