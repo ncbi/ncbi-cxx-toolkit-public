@@ -253,7 +253,7 @@ void CNewCleanup_imp::BasicCleanupSeqSubmit (
 void CNewCleanup_imp::BasicCleanupSubmitblock(CSubmit_block& block)
 
 {
-	SubmitblockBC(block);
+    SubmitblockBC(block);
 }
 
 
@@ -3763,8 +3763,8 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "Asp or Asn",     'B'  },
     {  "Asparagine",     'N'  },
     {  "Aspartate",      'D'  },
-    { "Aspartic",        'D' },
-    { "Aspartic Acid", 'D' },
+    { "Aspartic",        'D'  },
+    { "Aspartic Acid",   'D'  },
     {  "Asx",            'B'  },
     {  "Cys",            'C'  },
     {  "Cysteine",       'C'  },
@@ -3782,6 +3782,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "His",            'H'  },
     {  "Histidine",      'H'  },
     {  "Ile",            'I'  },
+    {  "Ile2",           'I'  },
     {  "iMet",           'M'  },
     {  "Isoleucine",     'I'  },
     {  "Leu",            'L'  },
@@ -4074,6 +4075,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
         if (aa != '\0') {
             const bool is_fMet = (NStr::Find(name, "fMet") != NPOS);
             const bool is_iMet = (NStr::Find(name, "iMet") != NPOS);
+            const bool is_Ile2 = (NStr::Find(name, "Ile2") != NPOS);
             CRNA_ref_Base::C_Ext::TTRNA &trp = rna.SetExt().SetTRNA();
             trp.SetAa().SetNcbieaa(aa);
             if (aa == 'M') {
@@ -4081,6 +4083,10 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
                     x_AddToComment(feat, "fMet");
                 } else if (is_iMet) {
                     x_AddToComment(feat, "iMet");
+                }
+            } else if (aa == 'I') {
+                if (is_Ile2) {
+                    x_AddToComment(feat, "Ile2");
                 }
             }
             x_SeqFeatTRNABC(feat, trp);
@@ -4113,6 +4119,13 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
                     ChangeMade(CCleanupChange::eChangeRNAref);
                     return eAction_Nothing;
                 }
+            } else if (aa == 'I') {
+                if (NStr::Find(product, "Ile2") != NPOS &&
+                    (!feat.IsSetComment() || NStr::Find(feat.GetComment(), "Ile2") == NPOS)) {
+                    // x_AddToComment(feat, "Ile2");
+                    ChangeMade(CCleanupChange::eChangeRNAref);
+                    return eAction_Nothing;
+                }
             }
 
             ChangeMade(CCleanupChange::eChangeRNAref);
@@ -4138,6 +4151,9 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             if (NStr::CompareNocase (product, "tRNA-iMet") == 0 || NStr::CompareNocase (product, "iRNA-iMet") == 0) {
                 return eAction_Nothing;
             }
+            if (NStr::CompareNocase (product, "tRNA-Ile2") == 0 || NStr::CompareNocase (product, "iRNA-Ile2") == 0) {
+                return eAction_Nothing;
+            }
             return eAction_Erase;
         } else if (!trp.IsSetAa()) {
             string ignored = kEmptyStr; 
@@ -4151,7 +4167,9 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
                 if (NStr::CompareNocase(product, "tRNA-fMet") == 0 ||
                     NStr::CompareNocase(product, "iRNA-fMet") == 0 ||
                     NStr::CompareNocase(product, "tRNA-iMet") == 0 ||
-                    NStr::CompareNocase(product, "iRNA-iMet") == 0) {
+                    NStr::CompareNocase(product, "iRNA-iMet") == 0 ||
+                    NStr::CompareNocase(product, "tRNA-Ile2") == 0 ||
+                    NStr::CompareNocase(product, "iRNA-Ile2") == 0) {
                     return eAction_Nothing;
                 }
                 return eAction_Erase;
@@ -7865,7 +7883,19 @@ void CNewCleanup_imp::RnaFeatBC (
             for( ; aa_iter != aa_end ; ++aa_iter ) {
                 const string &a_name = aa_iter->second;
                 if (comment != a_name) continue;
-                if ( aa != 'M' || (! NStr::EqualNocase(a_name, "fMet") && ! NStr::EqualNocase(a_name, "iMet") ) ) {
+                if ( aa == 'M' ) {
+                    if ( ! NStr::EqualNocase(a_name, "fMet") && ! NStr::EqualNocase(a_name, "iMet") ) {
+                        RESET_FIELD(seq_feat, Comment);
+                        ChangeMade(CCleanupChange::eChangeComment);
+                        break;
+                    }
+                } else if ( aa == 'I' ) {
+                    if ( ! NStr::EqualNocase(a_name, "Ile2") ) {
+                        RESET_FIELD(seq_feat, Comment);
+                        ChangeMade(CCleanupChange::eChangeComment);
+                        break;
+                    }
+                } else {
                     RESET_FIELD(seq_feat, Comment);
                     ChangeMade(CCleanupChange::eChangeComment);
                     break;
@@ -11804,16 +11834,16 @@ void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
     if (pdata.IsSetProcessed() &&
         pdata.GetProcessed() != CProt_ref::eProcessed_not_set) {
         // not a "real" protein feature, just set feature partial 
-		// to match location partial
-		const unsigned int partial_loc =
-			sequence::SeqLocPartialCheck(feat.GetLocation(), m_Scope);
-		if (partial_loc == sequence::eSeqlocPartial_Complete &&
-			feat.IsSetPartial() && feat.GetPartial()) {
-			feat.ResetPartial();
-			ChangeMade(CCleanupChange::eChangePartial);
-		}
+        // to match location partial
+        const unsigned int partial_loc =
+            sequence::SeqLocPartialCheck(feat.GetLocation(), m_Scope);
+        if (partial_loc == sequence::eSeqlocPartial_Complete &&
+            feat.IsSetPartial() && feat.GetPartial()) {
+            feat.ResetPartial();
+            ChangeMade(CCleanupChange::eChangePartial);
+        }
         return;
-	}
+    }
 
     CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetLocation());
     if (!prot) {
@@ -12357,9 +12387,9 @@ void CNewCleanup_imp::SetGlobalFlags(const CBioseq& bs, bool reset)
 
 void CNewCleanup_imp::SubmitblockBC(CSubmit_block& sb)
 {
-	if (sb.IsSetCit() && sb.GetCit().IsSetAuthors()) {
-		x_AuthListBCWithFixInitials(sb.SetCit().SetAuthors());
-	}
+    if (sb.IsSetCit() && sb.GetCit().IsSetAuthors()) {
+        x_AuthListBCWithFixInitials(sb.SetCit().SetAuthors());
+    }
 }
 
 END_SCOPE(objects)
