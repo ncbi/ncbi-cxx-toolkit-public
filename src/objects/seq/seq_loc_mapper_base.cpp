@@ -3115,8 +3115,13 @@ void CSeq_loc_Mapper_Base::x_SetLastTruncated(void)
     // If the mapped location does not have any fuzz set, set it to
     // indicate the truncated part.
     if ( m_Dst_loc  &&  !m_Dst_loc->IsPartialStop(eExtreme_Biological) ) {
-        if( (m_FuzzOption & fFuzzOption_RemoveLimTlOrTr) == 0 ) {
+        if ((m_FuzzOption & fFuzzOption_RemoveLimTlOrTr) == 0) {
             m_Dst_loc->SetTruncatedStop(true, eExtreme_Biological);
+        }
+        else {
+            // HACK: Using SetPartialStop() instead of SetTruncatedStop() to set fuzz to lim-gt
+            // rather than lim-tr.
+            m_Dst_loc->SetPartialStop(true, eExtreme_Biological);
         }
     }
 }
