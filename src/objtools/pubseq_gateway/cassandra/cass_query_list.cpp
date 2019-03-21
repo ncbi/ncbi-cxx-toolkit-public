@@ -210,6 +210,7 @@ void CCassQueryList::Yield(bool wait) {
 void CCassQueryList::DetachSlot(SQrySlot* slot) {
     assert(slot->m_state != ssAvailable);
     if (slot->m_state != ssAvailable) {
+        slot->m_consumer = nullptr;
         if (slot->m_qry)
             slot->m_qry->Close();
         --m_attached_slots;
@@ -222,6 +223,7 @@ void CCassQueryList::AttachSlot(SQrySlot* slot, SPendingSlot&& pending_slot) {
     slot->m_state = ssAttached;
     ++m_attached_slots;
     slot->m_retry_count = pending_slot.m_retry_count;
+    assert(slot->m_consumer == nullptr);
     slot->m_consumer = move(pending_slot.m_consumer);
 
     if (!slot->m_qry)
@@ -291,9 +293,19 @@ void CCassQueryList::ReadRows(SQrySlot* slot) {
                 if (slot->m_state != ssReadingRow) {
                     slot->m_state = ssReadingRow;
                     try {
-                        do_continue = !slot->m_consumer || slot->m_consumer->ProcessRow(slot->m_qry, *this, slot->m_index);
-                        if (do_continue && slot->m_state == ssReadingRow)
+                        if (slot->m_consumer) {
+                            do_continue = slot->m_consumer->ProcessRow(slot->m_qry, *this, slot->m_index);
+                        }
+                        else {
+                            do_continue = true;
+                        }
+                        if (slot->m_state == ssReadingRow) {
                             slot->m_state = ssAttached;
+                        }
+                        else { // slot re-populated with different consumer
+                            do_continue = false;
+                            break;
+                        }
                     }
                     catch (...) {
                         if (slot->m_state == ssReadingRow)
@@ -302,6 +314,8 @@ void CCassQueryList::ReadRows(SQrySlot* slot) {
                     }
                     assert(!do_continue || slot->m_state == ssAttached);
                 }
+                else
+                    NCBI_THROW(CCassandraException, eSeqFailed, "Recusive ReadRows call detected");
 
                 if (!do_continue && slot->m_state != ssReleasing && slot->m_state != ssAvailable) {
                     Release(slot);
@@ -317,8 +331,7 @@ shared_ptr<CCassQuery> CCassQueryList::Extract(size_t slot_index) {
         auto& slot = m_query_arr[slot_index];
         shared_ptr<CCassQuery> rv = slot.m_qry;
         slot.m_qry = nullptr;
-        DetachSlot(&slot);
-        CheckPending(&slot);
+        Release(&slot);
         return rv;
     }
     return nullptr;
@@ -456,7 +469,7 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard) 
                     slot->m_state = ssAttached;
                 }
                     
-                ERR_POST(Error << "CCassQueryList::CheckSlots: exception (IGNORING & RESTARTING) [" << index << "]: " << e.what() <<  "\nparams: " << AllParams(slot->m_qry).c_str());
+                ERR_POST(Warning << "CCassQueryList::CheckSlots: exception (IGNORING & RESTARTING) [" << index << "]: " << e.what() <<  "\nparams: " << AllParams(slot->m_qry).c_str());
             }
             else {
                 m_has_error = true;
