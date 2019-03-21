@@ -997,7 +997,7 @@ int64_t CCassQuery::ParamAsInt64(int  iprm)
 }
 
 
-string CCassQuery::ParamAsStr(int  iprm)
+string CCassQuery::ParamAsStr(int  iprm) const
 {
     string      rv;
     if (iprm < 0 || (unsigned int)iprm >= m_params.size())
@@ -1011,7 +1011,7 @@ string CCassQuery::ParamAsStr(int  iprm)
 }
 
 
-void CCassQuery::ParamAsStr(int  iprm, string &  value)
+void CCassQuery::ParamAsStr(int  iprm, string &  value) const
 {
     if (iprm < 0 || (unsigned int)iprm >= m_params.size())
         RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
@@ -1602,7 +1602,14 @@ const CassValue * CCassQuery::GetColumn(const char * name) const
 
 string CCassQuery::ToString() const
 {
-    return m_sql.empty() ? "<>" : m_sql;
+    string params;
+    for (size_t i = 0; i < ParamCount(); ++i) {
+        if (i > 0)
+            params.append(", ");
+        params.append(ParamAsStr(i));
+    }
+
+    return m_sql.empty() ? "<>" : m_sql + "\nparams: " + params;
 }
 
 bool CCassQuery::IsEOF(void) const
