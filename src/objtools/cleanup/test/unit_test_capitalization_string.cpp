@@ -243,6 +243,12 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFunctions)
     FixCountryCapitalization(str_test);
     BOOST_CHECK_EQUAL(str_test, string("Guinea-Bissau"));
 
+    str_test.assign("palestine");
+    FixCountryCapitalization(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("palestine"));
+
+    BOOST_CHECK(GetValidCountryCode(0) == "Afghanistan");
+    BOOST_CHECK(GetValidCountryCode(10000).empty());
 }
 
 

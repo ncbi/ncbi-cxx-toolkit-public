@@ -76,6 +76,7 @@ NCBI_CLEANUP_EXPORT void FixKnownAbbreviationsInElement(string& result);
 NCBI_CLEANUP_EXPORT void CapitalizeSAfterNumber(string& result);
 NCBI_CLEANUP_EXPORT void ResetCapitalization(string& result, bool first_is_upper);
 NCBI_CLEANUP_EXPORT void FixCountryCapitalization(string& result);
+NCBI_CLEANUP_EXPORT const string& GetValidCountryCode(unsigned int i);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
