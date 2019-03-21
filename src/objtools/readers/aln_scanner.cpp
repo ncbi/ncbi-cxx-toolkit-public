@@ -46,6 +46,31 @@ BEGIN_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 void
+CAlnScanner::ProcessAlignmentFile(
+    const CSequenceInfo& sequenceInfo,
+    CLineInput& iStr,
+    SAlignmentFile& alignInfo)
+//  ----------------------------------------------------------------------------
+{
+    xImportAlignmentData(iStr);
+    xVerifyAlignmentData(sequenceInfo);
+    xExportAlignmentData(alignInfo);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScanner::xImportAlignmentData(
+    CLineInput& iStr)
+//  ----------------------------------------------------------------------------
+{
+    throw SShowStopper(
+        -1,
+        eAlnSubcode_UnsupportedFileFormat,
+        "Input file format not recognized.");
+}
+
+//  ----------------------------------------------------------------------------
+void
 CAlnScanner::xVerifyAlignmentData(
     const CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------

@@ -60,7 +60,7 @@ public:
 protected:
     void
     xImportAlignmentData(
-        CLineInput&);
+        CLineInput&) override;
 
     static void
     sSplitFastaDef(

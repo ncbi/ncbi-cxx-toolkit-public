@@ -32,6 +32,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -39,18 +40,25 @@ BEGIN_SCOPE(objects);
 struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerClustal
+class CAlnScannerClustal:
+    public CAlnScanner
 //  ============================================================================
 {
 public:
     CAlnScannerClustal() {};
     ~CAlnScannerClustal() {};
 
-    void 
+    void
     ProcessAlignmentFile(
-            SAlignFileRaw* afrp);
+        const CSequenceInfo&,
+        CLineInput&,
+        SAlignmentFile&) override;
 
 protected:
+    void
+    xImportAlignmentData(
+        CLineInput&) override;
+
     static bool 
     sIsConservationLine(
         const string& line);
@@ -73,9 +81,6 @@ protected:
         const int seqLength,
         const int blockCount,
         int& blockLineLength);
-
-    vector<string> mSeqIds;
-    vector<vector<TLineInfoPtr>> mSequences;
 };
 
 END_SCOPE(objects)

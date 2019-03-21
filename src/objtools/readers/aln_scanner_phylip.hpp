@@ -37,8 +37,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
-
 //  ============================================================================
 class CAlnScannerPhylip:
     public CAlnScanner
@@ -57,7 +55,7 @@ public:
 protected:
     void
     xImportAlignmentData(
-        CLineInput&);
+        CLineInput&) override;
 
     static void
     sExtractDefLine(

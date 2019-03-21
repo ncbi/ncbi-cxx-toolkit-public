@@ -36,11 +36,125 @@
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_data.hpp"
+#include "aln_peek_ahead.hpp"
 #include "aln_errors.hpp"
 #include "aln_scanner_clustal.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerClustal::ProcessAlignmentFile(
+    const CSequenceInfo& sequenceInfo,
+    CLineInput& iStr,
+    SAlignmentFile& alignInfo)
+//  ----------------------------------------------------------------------------
+{
+    xImportAlignmentData(iStr);
+    xVerifyAlignmentData(sequenceInfo);
+    xExportAlignmentData(alignInfo);
+}
+
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerClustal::xImportAlignmentData(
+    CLineInput& iStr)
+//  ----------------------------------------------------------------------------
+{
+    int cumulative_length = 0;
+    int num_sequences = 0;
+    bool firstBlock = false;
+    bool inBlock = false;
+
+    int  blockLineLength = 0;
+    int  blockCount = 0;
+    int  numSeqs = 0;
+    int  seqCount = 0;
+
+    string line;
+    int lineCount(0);
+
+    if (!iStr.ReadLine(line)) {
+        // error
+    }
+    // might want to verify file header
+    ++lineCount;
+
+    while (iStr.ReadLine(line)) {
+        ++lineCount;
+
+        if (line.empty()) {
+            continue;
+        }
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            if (inBlock) {
+                if (blockCount == 1) {
+                    numSeqs = seqCount;
+                }
+                sResetBlockInfo(
+                    seqCount, blockLineLength, inBlock);
+            }
+            continue;
+        }
+
+        if (sIsConservationLine(line)) {
+            if (!inBlock) {
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                    "Expected conservation data at end of block"); 
+            }
+            if (blockCount == 1) {
+                numSeqs = seqCount;
+            }
+            sResetBlockInfo(seqCount, blockLineLength, inBlock);
+            continue;
+        }
+
+        // Search for end of block
+        vector<string> tokens;
+        NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
+        const auto num_tokens = tokens.size();
+        if (num_tokens < 2 || num_tokens > 3) {
+            throw SShowStopper(
+                lineCount,
+                EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                "In data line, expected seqID followed by sequence data and (optionally) data count"); 
+        }
+
+        int seqLength = 0;
+        if (num_tokens == 3) {
+            seqLength = NStr::StringToInt(tokens[2], NStr::fConvErr_NoThrow);
+            if (!seqLength) { 
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                    "In data line, expected seqID followed by sequence data and (optionally) data count"); 
+            }
+        }
+
+        if (!inBlock) {
+            inBlock = true;
+            ++blockCount;
+        }
+        ++seqCount;
+
+
+        if (!sProcessClustalDataLine(
+             tokens, lineCount,
+             seqCount,
+             numSeqs, 
+             seqLength,
+             blockCount, 
+             blockLineLength)) {
+            return;
+        }
+        mSequences[seqCount-1].push_back({tokens[1], lineCount});
+    }
+}
 
 //  ----------------------------------------------------------------------------
 bool 
@@ -82,7 +196,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
                 description);
         }
         mSeqIds.push_back(seqId);
-        mSequences.push_back(vector<TLineInfoPtr>());
+        mSequences.push_back(vector<TLineInfo>());
     }
     else {
         if (seqCount > numSeqs) {
@@ -143,117 +257,6 @@ CAlnScannerClustal::sProcessClustalDataLine(
     }
     return true;
 };
-
-//  ----------------------------------------------------------------------------
-void 
-CAlnScannerClustal::ProcessAlignmentFile(
-        TAlignRawFilePtr afrp)
-//  ----------------------------------------------------------------------------
-{
-    int cumulative_length = 0;
-    int num_sequences = 0;
-    bool firstBlock = false;
-    bool inBlock = false;
-
-    int  blockLineLength = 0;
-    int  blockCount = 0;
-    int  numSeqs = 0;
-    int  seqCount = 0;
-
-    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
-
-        if (!linePtr->data || linePtr->data[0] == 0) {
-            continue;
-        }
-        string line(linePtr->data);
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()) {
-            if (inBlock) {
-                if (blockCount == 1) {
-                    numSeqs = seqCount;
-                }
-                sResetBlockInfo(
-                    seqCount, blockLineLength, inBlock);
-            }
-            continue;
-        }
-
-        if (sIsConservationLine(line)) {
-            if (!inBlock) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "Expected conservation data at end of block"); 
-            }
-            if (blockCount == 1) {
-                numSeqs = seqCount;
-            }
-            sResetBlockInfo(seqCount, blockLineLength, inBlock);
-            continue;
-        }
-
-        // Search for end of block
-        vector<string> tokens;
-        NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
-        const auto num_tokens = tokens.size();
-        if (num_tokens < 2 || num_tokens > 3) {
-            throw SShowStopper(
-                linePtr->line_num,
-                EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                "In data line, expected seqID followed by sequence data and (optionally) data count"); 
-        }
-
-        int seqLength = 0;
-        if (num_tokens == 3) {
-            seqLength = NStr::StringToInt(tokens[2], NStr::fConvErr_NoThrow);
-            if (!seqLength) { 
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "In data line, expected seqID followed by sequence data and (optionally) data count"); 
-            }
-        }
-
-        if (!inBlock) {
-            inBlock = true;
-            ++blockCount;
-        }
-        ++seqCount;
-
-
-        if (!sProcessClustalDataLine(
-             tokens, linePtr->line_num,
-             seqCount,
-             numSeqs, 
-             seqLength,
-             blockCount, 
-             blockLineLength)) {
-            return;
-        }
-        mSequences[seqCount-1].push_back(linePtr);
-    }
-
-
-    for (auto idIndex=0; idIndex<numSeqs; ++idIndex) {
-        for (auto linePtr : mSequences[idIndex]) {
-            string data = linePtr->data;
-            auto endOfId = data.find_first_of(" \t");
-            auto startOfData = data.find_first_not_of(" \t", endOfId);
-            auto endOfData = data.find_first_of(" \t", startOfData);
-            if (endOfData != NPOS) {
-                linePtr->data[endOfData] = '\0';
-            } 
-            afrp->sequences = SAlignRawSeq::sAddSeqById(
-                afrp->sequences,
-                mSeqIds[idIndex],
-                linePtr->data + startOfData,
-                linePtr->line_num,
-                linePtr->line_num,
-                startOfData);
-        }
-    }
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

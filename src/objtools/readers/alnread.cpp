@@ -2310,6 +2310,8 @@ GetAlignmentScannerForFormat(
         return new CAlnScannerPhylip();
     case EAlignFormat::ALNFMT_FASTAGAP:
         return new CAlnScannerFastaGap();
+    case EAlignFormat::ALNFMT_CLUSTAL:
+        return new CAlnScannerClustal();
     }
 }
 
@@ -2366,11 +2368,6 @@ ReadAlignmentFile(
     
         case EAlignFormat::ALNFMT_NEXUS: {
             CAlnScannerNexus scanner;
-            scanner.ProcessAlignmentFile(afrp);
-            break;
-        }
-        case EAlignFormat::ALNFMT_CLUSTAL: {
-            CAlnScannerClustal scanner;
             scanner.ProcessAlignmentFile(afrp);
             break;
         }

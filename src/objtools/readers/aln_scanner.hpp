@@ -58,9 +58,13 @@ public:
     ProcessAlignmentFile(
         const CSequenceInfo&,
         CLineInput&,
-        SAlignmentFile&) =0;
+        SAlignmentFile&);
 
 protected:
+    virtual void
+    xImportAlignmentData(
+        CLineInput&);
+
     virtual void
     xVerifyAlignmentData(
         const CSequenceInfo&);
