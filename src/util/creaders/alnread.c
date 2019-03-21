@@ -1226,7 +1226,7 @@ s_AddLengthList
  */
 static TLineInfoPtr
 s_LineInfoNew
-(char * string,
+(const char * string,
  int    line_num,
  int    line_offset)
 {
@@ -1302,7 +1302,7 @@ static TLineInfoPtr s_DeleteLineInfos (TLineInfoPtr list)
 static TLineInfoPtr 
 s_AddLineInfo
 (TLineInfoPtr list,
- char * string,
+ const char * string,
  int    line_num,
  int    line_offset)
 {
@@ -1330,7 +1330,7 @@ s_AddLineInfo
 /* This function creates a new bracketed comment */
 static TBracketedCommentListPtr s_BracketedCommentListNew 
 (TBracketedCommentListPtr list,
- char * string,
+ const char * string,
  int    line_num,
  int    line_offset)
 {
@@ -1367,7 +1367,7 @@ static void s_BracketedCommentListFree (TBracketedCommentListPtr list)
 /* This function adds a line to a bracketed comment. */
 static void s_BracketedCommentListAddLine 
 (TBracketedCommentListPtr comment,
- char                   * string,
+ const char               * string,
  int                      line_num,
  int                      line_offset)
 {
@@ -1916,10 +1916,10 @@ static TStringCountPtr s_AddStringCount (
  * characters (using case-insensitive comparisons), 0 if they are equal,
  * and 1 if str1 is greater than str2.
  */
-static int s_StringNICmp (char * str1, char *str2, int cmp_count)
+static int s_StringNICmp (const char * str1, const char *str2, int cmp_count)
 {
-    char * cp1;
-    char * cp2;
+    const char * cp1;
+    const char * cp2;
     int    char_count, diff;
 
     if (str1 == NULL && str2 == NULL) {
@@ -1958,10 +1958,10 @@ static int s_StringNICmp (char * str1, char *str2, int cmp_count)
 /* This function returns -1 if str1 is less than str2 using case-insensitive
  * comparisons), 0 if they are equal, and 1 if str1 is greater than str2.
  */
-static int s_StringICmp (char * str1, char *str2)
+static int s_StringICmp (const char * str1, const char *str2)
 {
-    char * cp1;
-    char * cp2;
+    const char * cp1;
+    const char * cp2;
     int    diff;
 
     if (str1 == NULL && str2 == NULL) {
@@ -2062,9 +2062,9 @@ s_GetFASTAExpectedNumbers
  * numbers separated by whitespace.  The function returns eTrue if so,
  * otherwise it returns eFalse.
  */
-static EBool s_IsTwoNumbersSeparatedBySpace (char * str)
+static EBool s_IsTwoNumbersSeparatedBySpace (const char * str)
 {
-    char * cp;
+    const char * cp;
     EBool  found_first_number = eFalse;
     EBool  found_dividing_space = eFalse;
     EBool  found_second_number = eFalse;
@@ -2121,7 +2121,7 @@ static EBool s_IsTwoNumbersSeparatedBySpace (char * str)
  */
 static EBool 
 s_GetOneNexusSizeComment 
-(char       * str,
+(const char * str,
  const char * valname, 
  int        * val)
 {
@@ -2175,7 +2175,7 @@ s_GetOneNexusSizeComment
  */
 static void 
 s_GetNexusSizeComments 
-(char *           str,
+(const char *     str,
  EBool *          found_ntax,
  EBool *          found_nchar,
  SAlignRawFilePtr afrp)
@@ -2210,10 +2210,10 @@ s_GetNexusSizeComments
  * will return the first non-whitespace character following the equals sign,
  * otherwise the function will return a 0.
  */
-static char GetNexusTypechar (char * str, const char * val_name)
+static char s_GetNexusTypechar (const char * str, const char * val_name)
 {
-    char * cp;
-    char * cpend;
+    const char * cp;
+    const char * cpend;
 
     if (str == NULL  ||  val_name == NULL) {
         return 0;
@@ -2248,12 +2248,12 @@ static char GetNexusTypechar (char * str, const char * val_name)
  * otherwise the function returns eTrue.
  */ 
 static EBool s_CheckNexusCharInfo 
-(char *               str,
+(const char *         str,
  TSequenceInfoPtr     sequence_info,
  FReportErrorFunction errfunc,
  void *              errdata)
 {
-    char * cp;
+    const char * cp;
     char   c;
 
     if (str == NULL  ||  sequence_info == NULL) {
@@ -2272,9 +2272,9 @@ static EBool s_CheckNexusCharInfo
         return eTrue;
     }
 
-    c = GetNexusTypechar (cp + 7, "missing");
+    c = s_GetNexusTypechar (cp + 7, "missing");
     if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MISSING");
+        c = s_GetNexusTypechar (cp + 7, "MISSING");
     }
     if (c != 0  &&  sequence_info->missing != NULL
         &&  strchr (sequence_info->missing, c) == NULL)
@@ -2283,9 +2283,9 @@ static EBool s_CheckNexusCharInfo
                                 errfunc, errdata);
     }
  
-    c = GetNexusTypechar (cp + 7, "gap");
+    c = s_GetNexusTypechar (cp + 7, "gap");
     if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "GAP");
+        c = s_GetNexusTypechar (cp + 7, "GAP");
     }
     if (c != 0  &&  sequence_info->middle_gap != NULL
         &&  strchr (sequence_info->middle_gap, c) == NULL)
@@ -2294,9 +2294,9 @@ static EBool s_CheckNexusCharInfo
                                 errfunc, errdata);
     }
  
-    c = GetNexusTypechar (cp + 7, "match");
+    c = s_GetNexusTypechar (cp + 7, "match");
     if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MATCH");
+        c = s_GetNexusTypechar (cp + 7, "MATCH");
     }
     if (c != 0  &&  sequence_info->match != NULL
         &&  strchr (sequence_info->match, c) == NULL)
@@ -2333,7 +2333,7 @@ static char * s_ReplaceNexusTypeChar (char *str, char c)
  * The function returns eTrue if a Nexus comment was found, eFalse otherwise.
  */ 
 static EBool s_UpdateNexusCharInfo 
-(char *               str,
+(const char *         str,
  TSequenceInfoPtr     sequence_info)
 {
     char * cp;
@@ -2351,23 +2351,23 @@ static EBool s_UpdateNexusCharInfo
         return eFalse;
     }
 
-    c = GetNexusTypechar (cp + 7, "missing");
+    c = s_GetNexusTypechar (cp + 7, "missing");
     if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MISSING");
+        c = s_GetNexusTypechar (cp + 7, "MISSING");
     }
     sequence_info->missing = s_ReplaceNexusTypeChar (sequence_info->missing, c);
     
-    c = GetNexusTypechar (cp + 7, "gap");
+    c = s_GetNexusTypechar (cp + 7, "gap");
     if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "GAP");
+        c = s_GetNexusTypechar (cp + 7, "GAP");
     }
     sequence_info->beginning_gap = s_ReplaceNexusTypeChar (sequence_info->beginning_gap, c);
     sequence_info->middle_gap = s_ReplaceNexusTypeChar (sequence_info->middle_gap, c);
     sequence_info->end_gap = s_ReplaceNexusTypeChar (sequence_info->end_gap, c);
  
-    c = GetNexusTypechar (cp + 7, "match");
+    c = s_GetNexusTypechar (cp + 7, "match");
     if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MATCH");
+        c = s_GetNexusTypechar (cp + 7, "MATCH");
     }
     sequence_info->match = s_ReplaceNexusTypeChar (sequence_info->match, c);
 
