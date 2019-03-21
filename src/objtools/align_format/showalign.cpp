@@ -3715,9 +3715,10 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             //actually not so fast...as we now fetch from entrez even when it's not in blast db
             //there is no blast defline in such case.
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
-			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
-		    m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
-                NStr::NumericToString(alnDispParams->gi) : alnDispParams->label;
+			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);                            
+            m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
+                NStr::NumericToString(alnDispParams->gi) : CAlignFormatUtil::GetLabel(alnDispParams->seqID);
+            
             if (m_UseLongSeqIds || alnDispParams->seqID->IsLocal()) {
                 m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
             }
