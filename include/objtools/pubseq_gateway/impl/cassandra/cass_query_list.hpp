@@ -17,6 +17,11 @@ using TCassQueryListTickCB = function<void()>;
 
 class ICassQueryListConsumer {
 public:
+    ICassQueryListConsumer() = default;
+    ICassQueryListConsumer(const ICassQueryListConsumer&) = delete;
+    ICassQueryListConsumer(ICassQueryListConsumer&&) = delete;
+    ICassQueryListConsumer& operator=(const ICassQueryListConsumer&) = delete;
+    ICassQueryListConsumer& operator=(ICassQueryListConsumer&&) = delete;
     virtual ~ICassQueryListConsumer() = default;
     virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
     virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) {
@@ -121,6 +126,10 @@ public:
     CCassOneExecConsumer(function<bool(CCassQuery& query, CCassQueryList& list)> cb) :
         m_cb(cb)
     {}
+    CCassOneExecConsumer(const CCassOneExecConsumer&) = delete;
+    CCassOneExecConsumer(CCassOneExecConsumer&&) = delete;
+    CCassOneExecConsumer& operator=(const CCassOneExecConsumer&) = delete;
+    CCassOneExecConsumer& operator=(CCassOneExecConsumer&&) = delete;
     virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) override {
         return m_cb(*query, list);
     }
