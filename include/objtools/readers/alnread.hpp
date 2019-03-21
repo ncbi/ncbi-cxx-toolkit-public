@@ -66,6 +66,10 @@ public:
     const string&
     Alphabet() const { return mAlphabet; };
 
+    void
+    SetAlphabet(
+        const string& alphabet) { mAlphabet = alphabet; }
+
     const string&
     Match() const { return mMatch; };
 

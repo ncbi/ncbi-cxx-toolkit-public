@@ -873,7 +873,8 @@ s_UpdateNexusCharInfo(
 static void
 s_GetNexusCharInfo(
     const string& str,
-    CSequenceInfo& sequence_info)
+    CSequenceInfo& sequence_info,
+    TAlignRawFilePtr afrp)
 {
     string normalized(str);
     NStr::ToLower(normalized);
@@ -895,6 +896,20 @@ s_GetNexusCharInfo(
     if (c) {
         sequence_info.SetMatch(c);
     }
+
+    auto namePos =  normalized.find("symbols");
+    if (namePos != string::npos) {
+        auto valStart = normalized.find_first_not_of(" =\t", namePos+7);
+        auto valEnd   = normalized.find_first_of(" \t\r\n", valStart);
+        string alphabet = str.substr(valStart, valEnd-valStart+1);
+        alphabet.erase(
+                remove_if(alphabet.begin(), alphabet.end(), [](char c) { return !isalpha(c); }),
+                alphabet.end());
+        sequence_info.SetAlphabet(alphabet);
+        afrp->alphabet_ = alphabet; // Not sure if this is necessary
+    }
+
+   
 }
 
 /* This function examines the string str to see if it consists entirely of
@@ -1834,7 +1849,7 @@ sReadAlignFileRaw(
             }
 
             if (NStr::StartsWith(lineStrLower, "format")) {
-                s_GetNexusCharInfo(next_line->data, sequence_info);
+                s_GetNexusCharInfo(next_line->data, sequence_info, afrp);
                 if (!NStr::EndsWith(lineStrLower, ";")) {
                     inNexusCharInfoComment = true;
                 }
@@ -1842,7 +1857,7 @@ sReadAlignFileRaw(
             }
 
             if (inNexusCharInfoComment) {
-                s_GetNexusCharInfo(next_line->data, sequence_info);
+                s_GetNexusCharInfo(next_line->data, sequence_info, afrp);
                 if (NStr::EndsWith(lineStrLower, ";")) {
                     inNexusCharInfoComment = false;
                 }
