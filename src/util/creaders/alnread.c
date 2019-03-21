@@ -2923,7 +2923,7 @@ static void s_ReadOrgNamesFromText
         char dummy = 0;
         const int linelen = strlen(string);
         afrp->organisms = s_AddLineInfo(
-            afrp->organisms, &dummy, line_num, string + linelen);
+            afrp->organisms, &dummy, line_num, linelen);
         afrp->num_organisms ++;
         s_AddDeflineFromOrganismLine(&dummy, line_num, linelen, afrp);
         return;
