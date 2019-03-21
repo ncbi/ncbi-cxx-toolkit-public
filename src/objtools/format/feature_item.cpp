@@ -2176,6 +2176,15 @@ void CFeatureItem::x_AddQualsRna(
                                 amino_acid_str = "tRNA-iMet";
                             }
                         }
+                    } else if (NStr::CompareNocase (ac_str, "tRNA-Ile") == 0) {
+                        const CSeq_feat_Base::TQual & qual = m_Feat.GetQual();
+                        ITERATE( CSeq_feat::TQual, it, qual ) {
+                            if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) continue;
+                            if (NStr::CompareNocase( (*it)->GetQual(), "product") != 0) continue;
+                            if (NStr::CompareNocase ((*it)->GetVal (), "tRNA-Ile2") == 0) {
+                                amino_acid_str = "tRNA-Ile2";
+                            }
+                        }
                     }
                     x_AddQual(eFQ_product, new CFlatStringQVal(amino_acid_str));
                     if ( trna.IsSetAnticodon()  &&  !ac_str.empty() ) {
