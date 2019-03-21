@@ -161,7 +161,8 @@ public:
     enum EErrCode {
         eHelp,          ///< Error code for short help message
         eHelpFull,      ///< Error code for detailed help message
-        eHelpXml        ///< Error code for XML formatted help message
+        eHelpXml,       ///< Error code for XML formatted help message
+        eHelpErr        ///< Show short help message and return error
     };
 
     /// Translate from the error code value to its string representation.

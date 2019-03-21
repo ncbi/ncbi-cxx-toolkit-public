@@ -3036,7 +3036,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
     // If explicitly specified, printout usage and exit in case there
     // was no args passed to the application
     if (IsSetMiscFlag(fUsageIfNoArgs)  &&  args.IsEmpty()) {
-        NCBI_THROW(CArgHelpException, eHelp, kEmptyStr);
+        NCBI_THROW(CArgHelpException, eHelpErr, kEmptyStr);
     }
 
     // Check dependencies, create set of exclusions
@@ -4964,6 +4964,7 @@ const char* CArgHelpException::GetErrCodeString(void) const
     case eHelp:     return "eHelp";
     case eHelpFull: return "eHelpFull";
     case eHelpXml:  return "eHelpXml";
+    case eHelpErr:  return "eHelpErr";
     default:    return CException::GetErrCodeString();
     }
 }

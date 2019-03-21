@@ -568,7 +568,7 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
                 (str, e.GetErrCode() == CArgHelpException::eHelpFull);
             cout << str;
         }
-        *exit_code = 0;
+        *exit_code = e.GetErrCode() == CArgHelpException::eHelpErr ? 2 : 0;
     }
     x_ReadLogOptions();
     x_LogOptions(eStartEvent);
