@@ -1,5 +1,5 @@
-#ifndef _ALN_SCANNER_PHYLIP_HPP_
-#define _ALN_SCANNER_PHYLIP_HPP_
+#ifndef _ALN_PEEK_AHEAD_HPP_
+#define _ALN_PEEK_AHEAD_HPP_
 
 /*
  * $Id$
@@ -32,40 +32,65 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
-
-//  ============================================================================
-class CAlnScannerPhylip:
-    public CAlnScanner
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+class CLineInput
+//  ----------------------------------------------------------------------------
 {
 public:
-    CAlnScannerPhylip() {};
-    ~CAlnScannerPhylip() {};
+    CLineInput() {};
+    virtual ~CLineInput() {};
 
-    void
-    ProcessAlignmentFile(
-        const CSequenceInfo&,
-        CLineInput&,
-        SAlignmentFile&) override;
+    virtual bool
+    ReadLine(
+        string& line) = 0;
+};
+
+//  ----------------------------------------------------------------------------
+class CPeekAheadStream:
+    public CLineInput
+//  ----------------------------------------------------------------------------
+{
+public:
+    CPeekAheadStream(
+        istream& istr): mIstr(istr) {};
+
+    ~CPeekAheadStream() {};
+
+    bool
+    PeekLine(
+        string& str)
+    {
+        std::getline(mIstr, str);
+        if (mIstr.good()) {
+            mPeeked.push_back(str);
+            return true;
+        }
+        return false;
+    };
+
+    bool
+    ReadLine(
+        string& str)
+    {
+        if (!mPeeked.empty()) {
+            str = mPeeked.front();
+            mPeeked.pop_front();
+            return true;
+        }
+        std::getline(mIstr, str);
+        return mIstr.good();
+    };
 
 protected:
-    void
-    xImportAlignmentData(
-        CLineInput&);
-
-    static void
-    sExtractDefLine(
-        const string& rawDefStr,
-        string& defLine);
+    std::istream& mIstr;
+    list<string> mPeeked;
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // ALN_SCANNER_PHYLIP
+#endif // _ALN_PEEK_AHEAD_HPP_

@@ -32,15 +32,19 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include "aln_scanner.hpp"
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+class CPeekAheadStream;
 class CSequenceInfo;
 struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerFastaGap
+class CAlnScannerFastaGap:
+    public CAlnScanner
     //  ============================================================================
 {
 public:
@@ -50,42 +54,19 @@ public:
     void
     ProcessAlignmentFile(
         const CSequenceInfo&,
-        const TLineInfoPtr,
-        SAlignmentFile&);
+        CLineInput&,
+        SAlignmentFile&) override;
 
 protected:
     void
     xImportAlignmentData(
-        const TLineInfoPtr);
-
-    void
-    xVerifyAlignmentData(
-        const CSequenceInfo&);
-
-    void
-    xExportAlignmentData(
-        SAlignmentFile& alignmentInfo);
-
-    void
-    xVerifySingleSequenceData(
-        const CSequenceInfo&,
-        const string& seqId,
-        const vector<TLineInfoPtr> seqData);
+        CLineInput&);
 
     static void
     sSplitFastaDef(
         const string& rawDefStr,
         string& seqId,
         string& defLine);
-
-    struct SDeflineInfo {
-        string mData;
-        int mNumLine;
-    };
-    vector<string> mSeqIds;
-    vector<vector<TLineInfoPtr>> mSequences;
-    vector<SDeflineInfo> mDeflines;
-
 };
 
 END_SCOPE(objects)

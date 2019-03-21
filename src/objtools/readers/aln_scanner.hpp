@@ -1,5 +1,5 @@
-#ifndef _ALN_SCANNER_PHYLIP_HPP_
-#define _ALN_SCANNER_PHYLIP_HPP_
+#ifndef _ALN_SCANNER_HPP_
+#define _ALN_SCANNER_HPP_
 
 /*
  * $Id$
@@ -32,40 +32,55 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+class CLineInput;
+class CSequenceInfo;
 struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerPhylip:
-    public CAlnScanner
-//  ============================================================================
+class CAlnScanner
+    //  ============================================================================
 {
-public:
-    CAlnScannerPhylip() {};
-    ~CAlnScannerPhylip() {};
+protected:
+    struct TLineInfo {
+        string mData;
+        int mNumLine;
+    };
 
-    void
+public:
+    CAlnScanner() {};
+    virtual ~CAlnScanner() {};
+
+    virtual void
     ProcessAlignmentFile(
         const CSequenceInfo&,
         CLineInput&,
-        SAlignmentFile&) override;
+        SAlignmentFile&) =0;
 
 protected:
-    void
-    xImportAlignmentData(
-        CLineInput&);
+    virtual void
+    xVerifyAlignmentData(
+        const CSequenceInfo&);
 
-    static void
-    sExtractDefLine(
-        const string& rawDefStr,
-        string& defLine);
+    virtual void
+    xExportAlignmentData(
+        SAlignmentFile& alignmentInfo);
+
+    virtual void
+    xVerifySingleSequenceData(
+        const CSequenceInfo&,
+        const string& seqId,
+        const vector<TLineInfo> seqData);
+
+    vector<string> mSeqIds;
+    vector<vector<TLineInfo>> mSequences;
+    vector<TLineInfo> mDeflines;
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // ALN_SCANNER_PHYLIP
+#endif // _ALN_SCANNER_HPP_

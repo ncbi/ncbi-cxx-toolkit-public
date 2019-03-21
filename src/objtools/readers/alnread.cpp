@@ -37,6 +37,7 @@
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_data.hpp"
 #include "aln_errors.hpp"
+#include "aln_peek_ahead.hpp"
 #include "aln_scanner_clustal.hpp"
 #include "aln_scanner_nexus.hpp"
 #include "aln_scanner_phylip.hpp"
@@ -67,46 +68,6 @@ string StrPrintf(const char *format, ...)
     va_start(args, format);
     return NStr::FormatVarargs(format, args);
 }
-
-//  ============================================================================
-class CPeekAheadStream
-//  ============================================================================
-{
-public:
-    CPeekAheadStream(
-        std::istream& istr): mIstr(istr) {};
-
-    ~CPeekAheadStream() {};
-
-    bool
-    PeekLine(
-        std::string& str)
-    {
-        std::getline(mIstr, str);
-        if (mIstr.good()) {
-            mPeeked.push_back(str);
-            return true;
-        }
-        return false;
-    };
-
-    bool
-    ReadLine(
-        std::string& str)
-    {
-        if (!mPeeked.empty()) {
-            str = mPeeked.front();
-            mPeeked.pop_front();
-            return true;
-        }
-        std::getline(mIstr, str);
-        return mIstr.good();
-    };
-
-protected:
-    std::istream& mIstr;
-    list<string> mPeeked;
-};
 
         
 /* This function creates and sends an error message regarding an unused line.
@@ -2492,6 +2453,19 @@ s_ConvertDataToOutput(
     return true;
 }
 
+CAlnScanner*
+GetAlignmentScannerForFormat(
+    EAlignFormat format)
+{
+    switch(format) {
+    default:
+        return nullptr;
+    case EAlignFormat::ALNFMT_PHYLIP:
+        return new CAlnScannerPhylip();
+    case EAlignFormat::ALNFMT_FASTAGAP:
+        return new CAlnScannerFastaGap();
+    }
+}
 
 /* This is the function called by the calling program to read an alignment
  * file.  The readfunc argument is a function pointer supplied by the 
@@ -2516,17 +2490,23 @@ ReadAlignmentFile(
         theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
     }
 
-    TAlignRawFilePtr afrp;
-    EAlignFormat format = ALNFMT_UNKNOWN;
-
     if (sequenceInfo.Alphabet().empty()) {
         return false;
     }
 
     CPeekAheadStream iStr(istr);
-    format = sGetFileFormat(iStr);
+    EAlignFormat format = sGetFileFormat(iStr);
 
-    afrp = sReadAlignFileRaw(iStr, use_nexus_info, sequenceInfo, &format);
+    unique_ptr<CAlnScanner> pScanner(GetAlignmentScannerForFormat(format));
+    if (pScanner) {
+        pScanner->ProcessAlignmentFile(
+            sequenceInfo, 
+            iStr, 
+            alignmentInfo);
+        return true;
+    }
+
+    TAlignRawFilePtr afrp = sReadAlignFileRaw(iStr, use_nexus_info, sequenceInfo, &format);
     if (!afrp) {
         return false;
     }
@@ -2548,28 +2528,11 @@ ReadAlignmentFile(
             scanner.ProcessAlignmentFile(afrp);
             break;
         }
-        case EAlignFormat::ALNFMT_PHYLIP: {
-            CAlnScannerPhylip scanner;
-            scanner.ProcessAlignmentFile(afrp);
-            break;
-        }                                  
         case EAlignFormat::ALNFMT_SEQUIN: {
             CAlnScannerSequin scanner;
             scanner.ProcessAlignmentFile(afrp);
             break;
         }
-        case EAlignFormat::ALNFMT_FASTAGAP: {
-            CAlnScannerFastaGap scanner;
-            scanner.ProcessAlignmentFile(
-                sequenceInfo, 
-                afrp->line_list, 
-                alignmentInfo);
-            break;
-        }
-    }
-    if (format == EAlignFormat::ALNFMT_FASTAGAP) {
-        delete afrp;
-        return true;
     }
 
     s_ReprocessIds(afrp);

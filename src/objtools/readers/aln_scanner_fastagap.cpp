@@ -37,7 +37,9 @@
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_data.hpp"
 #include "aln_errors.hpp"
+#include "aln_peek_ahead.hpp"
 #include "aln_scanner_fastagap.hpp"
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -58,7 +60,7 @@ CAlnScannerFastaGap::sSplitFastaDef(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerFastaGap::xImportAlignmentData(
-    const TLineInfoPtr lineList)
+    CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
     bool waitingForSeqData = false;
@@ -66,14 +68,15 @@ CAlnScannerFastaGap::xImportAlignmentData(
     int currentDataLineIndex = 0;
     bool processingFirstSequence = true;
 
-    for (auto linePtr = lineList; linePtr; linePtr = linePtr->next) {
+    string line;
+    int lineNumber = 0;
+    while(iStr.ReadLine(line)) {
+        ++lineNumber;
+        NStr::TruncateSpacesInPlace(line);
 
         string seqId;
         string defLine;
         string seqData;
-
-        string line(linePtr->data);
-        NStr::TruncateSpacesInPlace(line);
 
         if (waitingForSeqData) {
             if (line.empty()  ||  NStr::StartsWith(line, ">")) {
@@ -82,23 +85,23 @@ CAlnScannerFastaGap::xImportAlignmentData(
             }
             else {
                 if (processingFirstSequence) {
-                    expectedDataSizes.push_back(strlen(linePtr->data));
+                    expectedDataSizes.push_back(line.size());
                 }
                 else {
-                    auto currentDataSize = strlen(linePtr->data);
+                    auto currentDataSize = line.size();
                     auto expectedDataSize = expectedDataSizes[currentDataLineIndex];
                     if (currentDataSize != expectedDataSize) {
                         string description = StrPrintf(
                             "Expected line length %d, actual length %d", 
                             expectedDataSize, currentDataSize);
                         throw SShowStopper(
-                            linePtr->line_num,
+                            lineNumber,
                             eAlnSubcode_BadDataCount,
                             description,
                             mSeqIds.back());
                     }
                 }
-                mSequences.back().push_back(linePtr);
+                mSequences.back().push_back({line, lineNumber});
                 currentDataLineIndex++;
                 continue;
             }
@@ -112,14 +115,14 @@ CAlnScannerFastaGap::xImportAlignmentData(
             string description = StrPrintf(
                 "Unexpected data line. Expected FASTA defline.");
             throw SShowStopper(
-                linePtr->line_num,
+                lineNumber,
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
                 description);
         }
         sSplitFastaDef(line, seqId, defLine);
         mSeqIds.push_back(seqId);
-        mDeflines.push_back({defLine, linePtr->line_num});
-        mSequences.push_back(vector<TLineInfoPtr>());
+        mDeflines.push_back({defLine, lineNumber});
+        mSequences.push_back(vector<TLineInfo>());
         waitingForSeqData = true;
         currentDataLineIndex = 0;
     }
@@ -129,125 +132,15 @@ CAlnScannerFastaGap::xImportAlignmentData(
 void
 CAlnScannerFastaGap::ProcessAlignmentFile(
     const CSequenceInfo& sequenceInfo,
-    const TLineInfoPtr lineList,
+    CLineInput& iStr,
     SAlignmentFile& alignInfo)
 //  ----------------------------------------------------------------------------
 {
-    xImportAlignmentData(lineList);
+    xImportAlignmentData(iStr);
     xVerifyAlignmentData(sequenceInfo);
     xExportAlignmentData(alignInfo);
 }
 
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerFastaGap::xVerifyAlignmentData(
-    const CSequenceInfo& sequenceInfo)
-//  ----------------------------------------------------------------------------
-{
-    // make sure all sequence are of the same length(once we no longer enforce
-    //  harmonized data sizes):
-
-    // make sure all sequence characters are legal, and legal in the places where
-    //  they show up:
-    for (auto i=0; i < mSequences.size(); ++i) {
-        const auto& seqData = mSequences[i];
-        const auto& seqId = mSeqIds[i];
-         xVerifySingleSequenceData(sequenceInfo, seqId, seqData);
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerFastaGap::xVerifySingleSequenceData(
-    const CSequenceInfo& sequenceInfo,
-    const string& seqId,
-    const vector<TLineInfoPtr> seqDataPtrs)
-//  -----------------------------------------------------------------------------
-{
-    const char* errTempl("Bad character [%c] found at character position %d.");
-
-    enum ESeqPart {
-        HEAD, BODY, TAIL
-    };
-    const string& alphabet = sequenceInfo.Alphabet();
-    const string legalInHead = sequenceInfo.BeginningGap();
-    const string legalInBody = alphabet + sequenceInfo.MiddleGap();
-    const string legalInTail = sequenceInfo.EndGap();
-
-    ESeqPart seqPart = ESeqPart::HEAD;
-
-    for (auto linePtr: seqDataPtrs) {
-        if (!linePtr->data) {
-            continue;
-        }
-        string seqData(linePtr->data);
-
-        if (seqPart == ESeqPart::HEAD) {
-            auto startBody = seqData.find_first_not_of(legalInHead);
-            if (startBody == string::npos) {
-                continue;
-            }
-            seqPart = ESeqPart::BODY;
-            seqData = seqData.substr(startBody);
-            if (alphabet.find(seqData[0]) == string::npos) {
-                int linePos = strlen(linePtr->data) - seqData.size();
-                string description = StrPrintf(errTempl, seqData[0], linePos);
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_BadDataChars,
-                    description,
-                    seqId);
-            }
-        }
-        if (seqPart == ESeqPart::BODY) {
-            auto startTail = seqData.find_first_not_of(legalInBody);
-            if (startTail == string::npos) {
-                continue;
-            }
-            seqPart = ESeqPart::TAIL;
-            seqData = seqData.substr(startTail);
-        }
-        if (seqPart == ESeqPart::TAIL) {
-            auto startBad = seqData.find_first_not_of(legalInTail);
-            if (startBad == string::npos) {
-                continue;
-            }
-            int linePos = strlen(linePtr->data) - seqData.size() + startBad;
-            string description = StrPrintf(
-                errTempl, seqData[startBad], linePos);
-            throw SShowStopper(
-                linePtr->line_num,
-                EAlnSubcode::eAlnSubcode_BadDataChars,
-                description,
-                seqId);
-        }
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerFastaGap::xExportAlignmentData(
-    SAlignmentFile& alignInfo)
-//  ----------------------------------------------------------------------------
-{
-    alignInfo.mIds.assign(mSeqIds.begin(), mSeqIds.end());
-
-    auto numDeflines = mDeflines.size();
-    alignInfo.mDeflines.resize(numDeflines);
-    for (auto i=0; i < numDeflines; ++i) {
-        alignInfo.mDeflines[i] = {mDeflines[i].mNumLine, mDeflines[i].mData};
-    }
-
-    auto numSequences = mSequences.size();
-    alignInfo.mSequences.resize(numSequences);
-    auto index = 0;
-    for (auto sequence: mSequences) {
-        for (auto seqPart: sequence) {
-            alignInfo.mSequences[index] += string(seqPart->data);
-        }
-        ++index;
-    }  
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

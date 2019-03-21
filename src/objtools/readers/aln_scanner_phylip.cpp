@@ -36,6 +36,7 @@
 #include <objtools/readers/alnread.hpp>
 #include "aln_data.hpp"
 #include "aln_errors.hpp"
+#include "aln_peek_ahead.hpp"
 #include "aln_scanner_phylip.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -43,34 +44,70 @@ BEGIN_SCOPE(objects);
 
 
 //  ----------------------------------------------------------------------------
-void 
-CAlnScannerPhylip::ProcessAlignmentFile(
-        TAlignRawFilePtr afrp)
+void
+CAlnScannerPhylip::sExtractDefLine(
+    const string& rawDefStr,
+    string& defLine)
 //  ----------------------------------------------------------------------------
 {
-    auto linePtr = afrp->line_list;
+    defLine = rawDefStr.substr(1);
+}
+
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerPhylip::ProcessAlignmentFile(
+    const CSequenceInfo& sequenceInfo,
+    CLineInput& iStr,
+    SAlignmentFile& alignInfo)
+//  ----------------------------------------------------------------------------
+{
+    xImportAlignmentData(iStr);
+    xVerifyAlignmentData(sequenceInfo);
+    xExportAlignmentData(alignInfo);
+}
+
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerPhylip::xImportAlignmentData(
+    CLineInput& iStr)
+//  ----------------------------------------------------------------------------
+{
+    string line;
+    int lineCount(0);
+    if (!iStr.ReadLine(line)) {
+        //error
+    }
+    ++lineCount;
+
     vector<string> tokens;
-    NStr::Split(linePtr->data,  " \t", tokens, NStr::fSplit_MergeDelimiters);
-
-    //assert(tokens.size() == 2);
-
+    NStr::TruncateSpacesInPlace(line);
+    NStr::Split(line,  " \t", tokens, NStr::fSplit_MergeDelimiters);
     auto numSeqs =  NStr::StringToInt(tokens[0]);
     auto dataCount = NStr::StringToInt(tokens[1]); 
 
     int dataLineCount(0);
     int blockLineLength(0);
     // move onto the next line
-    linePtr = linePtr->next;
-    for (; linePtr; linePtr = linePtr->next) {
-        if (!linePtr->data || linePtr->data[0] == 0) {
+
+    while (iStr.ReadLine(line)) {
+        ++lineCount;
+        if (line.empty()) {
             continue;
         }
-        // skip defline
-        if (linePtr->data[0] == '>') {
+        // record potential defline
+        if (line[0] == '>') {
+            string defLine;
+            sExtractDefLine(line, defLine);
+            mDeflines.push_back({defLine, lineCount});
+            continue;
+        }
+        if (line[0] == '[') {
+            mDeflines.push_back({line, lineCount});
             continue;
         }
 
-        string line(linePtr->data);
         NStr::TruncateSpacesInPlace(line);
         
         string lowerLine(line);
@@ -85,15 +122,14 @@ CAlnScannerPhylip::ProcessAlignmentFile(
         }
 
         bool newBlock = ((dataLineCount % numSeqs) == 0);
-        const auto lineNum = linePtr->line_num;
 
         string seqData;
         if (dataLineCount < numSeqs) { // in first block
             string seqId;
-            NStr::SplitInTwo(linePtr->data, " \t", seqId, seqData, NStr::fSplit_MergeDelimiters);
+            NStr::SplitInTwo(line, " \t", seqId, seqData, NStr::fSplit_MergeDelimiters);
             if (seqData.empty()) {
                 throw SShowStopper(
-                    lineNum,
+                    lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
                     "In data line, expected seqID followed by sequence data");
             }
@@ -104,18 +140,21 @@ CAlnScannerPhylip::ProcessAlignmentFile(
                         "Duplicate ID: \"%s\" has already appeared in this block    .",
                          seqId.c_str());
                 throw SShowStopper(
-                    lineNum,
+                    lineCount,
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
                     description);
             }
             mSeqIds.push_back(seqId);
-            mSequences.push_back(vector<TLineInfoPtr>());
-            seqData = tokens[1];
+            mSequences.push_back(vector<TLineInfo>());
+            //seqData = tokens[1];
         } 
         else {
             seqData = line;
         }
         NStr::TruncateSpacesInPlace(seqData);
+        vector<string> dataChunks;
+        NStr::Split(seqData, " \t", dataChunks, NStr::fSplit_MergeDelimiters);
+        seqData = NStr::Join(dataChunks, "");
 
         auto currentLineLength = seqData.size();
         if (newBlock) {
@@ -128,41 +167,15 @@ CAlnScannerPhylip::ProcessAlignmentFile(
                 blockLineLength,
                 currentLineLength);
             throw SShowStopper(
-                lineNum,
+                lineCount,
                 EAlnSubcode::eAlnSubcode_BadDataCount,
                 description);
         }
 
-        mSequences[dataLineCount % numSeqs].push_back(linePtr);
+        mSequences[dataLineCount % numSeqs].push_back({seqData, lineCount});
         ++dataLineCount;
     }
-
-    for (auto idIndex=0; idIndex<numSeqs; ++idIndex) {
-        bool firstBlock = true;
-        for (auto linePtr : mSequences[idIndex]) {
-            string data = linePtr->data;
-            int startOfData;
-            if (firstBlock) {
-                auto endOfId = data.find_first_of(" \t");
-                startOfData = data.find_first_not_of(" \t", endOfId);
-            }
-            else {
-                startOfData = data.find_first_not_of(" \t");
-            }
-            afrp->sequences = SAlignRawSeq::sAddSeqById(
-                afrp->sequences,
-                mSeqIds[idIndex],
-                linePtr->data + startOfData,
-                linePtr->line_num,
-                linePtr->line_num,
-                startOfData);
-
-            firstBlock = false;
-        }
-
-    }
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
