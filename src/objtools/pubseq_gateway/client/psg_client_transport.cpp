@@ -726,11 +726,9 @@ const char* s_GetStateName(connection_state_t state)
 void http2_session::close_tcp()
 {
     ERR_POST(Trace << this << ": close_tcp, state: " << s_GetStateName(m_connection_state));
-    if ((m_connection_state == connection_state_t::cs_connecting) ||
-            (m_connection_state == connection_state_t::cs_connected))
-        m_connection_state = connection_state_t::cs_closing;
     close_session();
-    m_tcp.Close(s_on_close_cb);
+    m_tcp.StopRead();
+    m_connection_state = connection_state_t::cs_initial;
     m_wr.clear();
 }
 
@@ -770,17 +768,11 @@ void http2_session::start_close()
 {
     ERR_POST(Trace << this << ": start_close");
     if (m_session_state < session_state_t::ss_closing) {
-        if (m_connection_state == connection_state_t::cs_connected && m_session) {
-            ERR_POST(Trace << this << ": nghttp2_session_terminate_session");
-            nghttp2_session_terminate_session(m_session, NGHTTP2_NO_ERROR);
-            m_session_state = session_state_t::ss_closing;
-            check_next_request();
-        }
-        else  {
-            m_session_state = session_state_t::ss_closing;
-            close_tcp();
-            process_completion_list();
-        }
+        close_tcp();
+        m_session_state = session_state_t::ss_closing;
+        m_connection_state = connection_state_t::cs_closing;
+        m_tcp.Close(s_on_close_cb);
+        process_completion_list();
     }
 }
 
@@ -1102,19 +1094,9 @@ bool http2_session::try_connect(const struct sockaddr *addr)
 /* Start resolving the remote peer |host| */
 bool http2_session::initiate_connection()
 {
-    if (m_connection_state == connection_state_t::cs_connected)
-        close_tcp();
-    else if (m_connection_state != connection_state_t::cs_initial) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "connection is in unexpected state"));
-        return false;
-    }
-    if (m_connection_state == connection_state_t::cs_connected || m_connection_state == connection_state_t::cs_initial) {
-        m_connection_state = connection_state_t::cs_connecting;
-    }
-    else {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
-        return false;
-    }
+    assert(m_connection_state == connection_state_t::cs_initial && m_session_state == session_state_t::ss_work);
+
+    m_connection_state = connection_state_t::cs_connecting;
 
     if (!m_session) {
         m_wr.clear();
