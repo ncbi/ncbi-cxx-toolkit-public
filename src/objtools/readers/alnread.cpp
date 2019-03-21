@@ -1216,81 +1216,6 @@ static bool s_ReadDefline(
 }
 
 
-/* This function finds the position of a given ID in the sequence list,
- * unless the ID is not found in the list, in which case the function returns
- * -1.
- */
-static int  
-s_FindAlignRawSeqOffsetById(
-    TAlignRawSeqPtr list, 
-    const string& id)
-{
-    TAlignRawSeqPtr arsp;
-    int             offset;
-
-    for (arsp = list, offset = 0; arsp; arsp = arsp->next, offset++) {
-        if (id == arsp->mId) {
-            return offset;
-        }
-    }
-    return -1;
-}
-
-
-/* This function returns a pointer to the memory in which the ID for the
- * Nth sequence is stored, unless there aren't that many sequences, in which
- * case NULL is returned.
- */
-string 
-s_GetAlignRawSeqIDByOffset(
-    TAlignRawSeqPtr list,
-    int  offset)
-{
-    TAlignRawSeqPtr arsp;
-    int            index;
-
-    arsp = list;
-    index = 0;
-    while ( arsp  &&  index != offset ) {
-        arsp = arsp->next;
-        index++;
-    }
-    if (index == offset  &&  arsp) {
-        return arsp->mId;
-    } else {
-        return "";
-    }
-}
-
-
-/* This function adds data to the Nth sequence in the sequence list and
- * returns true, unless there aren't that many sequences in the list, in
- * which case the function returns false.
- */
-static bool 
-s_AddAlignRawSeqByIndex(
-    TAlignRawSeqPtr list,
-    int     index,
-    char *  data,
-    int     data_line_num,
-    int     data_line_offset)
-{
-    TAlignRawSeqPtr arsp;
-    int            curr;
-
-    curr = 0;
-    for (arsp = list; arsp  &&  curr < index; arsp = arsp->next) {
-        curr++;
-    }
-    if (!arsp) {
-        return false;
-    }
-    arsp->sequence_data = SLineInfo::sAddLineInfo (
-        arsp->sequence_data, data, data_line_num, data_line_offset);
-    return true;
-}
-
-
 /* The following functions are used to analyze the structure of a file and
  * assemble the sequences listed in the file.
  * Sequence data in a file is organized in one of two general formats - 
@@ -1675,75 +1600,6 @@ s_AfrpInitLineData(
     return true;
 }
 
-static void
-s_AfrpProcessFastaGap(
-    TAlignRawFilePtr afrp,
-    TLengthListPtr * patterns,
-    bool * last_line_was_marked_id,
-    char* linestr_,
-    int overall_line_count)
-{
-    const char* linestr = (const char*)linestr_;
-    TLengthListPtr this_pattern = nullptr;
-    int len = 0;
-    const char* cp;
-    TLengthListPtr last_pattern;
-
-    if (!patterns  || !last_line_was_marked_id) {
-        return;
-    }
-    last_pattern = *patterns;
-
-    /* find last pattern in list */
-    if (last_pattern) {
-        while (last_pattern->next) {
-            last_pattern = last_pattern->next;
-        }
-    }
-
-    /*  ID line
-     */
-    if (linestr [0] == '>') {
-        if (*last_line_was_marked_id) {
-            afrp->marked_ids = false;
-        }
-        else {
-            afrp->marked_ids = true;
-        }
-        afrp->mOffsetList.push_back(overall_line_count + 1);
-        *last_line_was_marked_id = true;
-        return;
-    }
-
-    /*  Data line
-     */
-    *last_line_was_marked_id = false;
-    /* add to length list for interleaved block search */
-    len = strcspn (linestr, " \t\r");
-    if (len > 0) {
-        cp = linestr + len;
-        len = strspn (cp, " \t\r");
-        if (len > 0) {
-            cp = cp + len;
-        }
-        if (*cp == 0) {
-            this_pattern = s_GetBlockPattern (linestr);
-        } else {
-            this_pattern = s_GetBlockPattern (cp);
-        }                    
-    } else {
-        this_pattern = s_GetBlockPattern (linestr);
-    }
-            
-    if (!last_pattern) {
-        *patterns = this_pattern;
-    } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
-        last_pattern->num_appearances ++;
-        delete this_pattern;
-    } else {
-        last_pattern->next = this_pattern;
-    }
-}
 
 static TAlignRawFilePtr
 sReadAlignFileRaw(
@@ -1836,14 +1692,6 @@ sReadAlignFileRaw(
         s_ReadDefline(linestring, 
             overall_line_count, 
             afrp);
-
-        if (*pformat == ALNFMT_FASTAGAP) {
-            s_AfrpProcessFastaGap(
-                afrp, & pattern_list, & last_line_was_marked_id, linestring, 
-                overall_line_count);
-            continue;
-        }
-
 
         /* we want to remove the comment from the line for the purpose 
         * of looking for blank lines and skipping,
@@ -1993,7 +1841,6 @@ sReadAlignFileRaw(
                 continue;
             }
 
-
             if (inNexusCharInfoComment) {
                 s_GetNexusCharInfo(next_line->data, sequence_info);
                 if (NStr::EndsWith(lineStrLower, ";")) {
@@ -2029,22 +1876,6 @@ sReadAlignFileRaw(
             }
         }
     }
-    else 
-    if (*pformat == EAlignFormat::ALNFMT_PHYLIP) {
-        for (next_line = afrp->line_list->next; next_line; next_line = next_line->next) {
-            string  lineStrLower(next_line->data);
-            NStr::ToLower(lineStrLower);
-            NStr::TruncateSpacesInPlace(lineStrLower);
-
-            if (lineStrLower.empty() ||
-                lineStrLower == "begin ncbi;" ||
-                lineStrLower == "sequin" ||
-                lineStrLower == "end;" ) {
-                continue;
-            }
-            s_ReadDefline(next_line->data, next_line->line_num-1, afrp);
-        }
-    } 
     else
     if (*pformat == EAlignFormat::ALNFMT_CLUSTAL) {
         for (next_line = afrp->line_list->next; next_line; next_line = next_line->next) {
