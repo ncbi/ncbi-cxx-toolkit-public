@@ -3814,7 +3814,7 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
     if (size >= nread) {
         size -= nread;
     } else {
-        size = 0;
+        size  = 0;
     }
 
     string num(x_ReadLine(size, data, nread));  // "numblocks"
@@ -3909,8 +3909,9 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
                 m_StreamPos += ALIGN_SIZE(nread);
             }
             size_t xread = nread;
-            if (xread >          bmap[i].second - done)
+            if (xread >          bmap[i].second - done) {
                 xread = (size_t)(bmap[i].second - done);
+            }
             if (::fwrite(data, 1, xread, fp.get()) != xread) {
                 if (!(x_error = errno)) {
                     x_error = -1;  // Make sure non-zero
