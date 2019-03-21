@@ -3179,7 +3179,8 @@ void CRNAValidator::x_ValidateTrnaType()
                 "Unparsed anticodon qualifier in tRNA");
         } else if (NStr::CompareNocase ((*gbqual).GetQual (), "product") == 0 ) {
             if (NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-fMet") != 0 &&
-                NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-iMet") != 0) {
+                NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-iMet") != 0 &&
+                NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-Ile2") != 0) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAProduct,
                     "Unparsed product qualifier in tRNA");
             }
