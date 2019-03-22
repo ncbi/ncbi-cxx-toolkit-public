@@ -2314,6 +2314,8 @@ GetAlignmentScannerForFormat(
         return new CAlnScannerClustal();
     case EAlignFormat::ALNFMT_SEQUIN:
         return new CAlnScannerSequin();
+    case EAlignFormat::ALNFMT_NEXUS:
+        return new CAlnScannerNexus();
     }
 }
 
@@ -2368,11 +2370,11 @@ ReadAlignmentFile(
                 eAlnSubcode_UnsupportedFileFormat,
                 "Unsupported file format.");
     
-        case EAlignFormat::ALNFMT_NEXUS: {
-            CAlnScannerNexus scanner;
-            scanner.ProcessAlignmentFile(afrp);
-            break;
-        }
+        //case EAlignFormat::ALNFMT_NEXUS: {
+        //    CAlnScannerNexus scanner;
+        //    scanner.ProcessAlignmentFile(afrp);
+        //    break;
+        //}
     }
 
     s_ReprocessIds(afrp);

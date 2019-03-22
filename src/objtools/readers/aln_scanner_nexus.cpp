@@ -37,10 +37,346 @@
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_data.hpp"
 #include "aln_errors.hpp"
+#include "aln_peek_ahead.hpp"
 #include "aln_scanner_nexus.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xImportAlignmentData(
+    CLineInput& iStr)
+//  ----------------------------------------------------------------------------
+{
+    string line;
+    int lineCount(0);
+
+    int dataLineCount(0);
+    int blockLineLength(0);
+    int sequenceCharCount(0);
+    int unmatchedLeftBracketCount(0);
+    int commentStartLine(-1);
+
+    while (iStr.ReadLine(line)) {
+        ++lineCount;
+
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
+
+        if (mState == EState::SKIPPING) {
+            NStr::ToLower(line);
+            if (NStr::StartsWith(line, "matrix")) {
+                mState = EState::DATA;
+                continue;
+            }
+            if (NStr::StartsWith(line, "dimensions")) {
+                xProcessDimensionLine(line);
+                continue;
+            }
+            if (NStr::StartsWith(line, "format")) {
+                xProcessFormatLine(line);
+                continue;
+            }
+            if (NStr::StartsWith(line, "sequin")) {
+                mState = EState::DEFLINES;
+                continue;
+            }
+            continue;
+        }
+        if (mState == EState::DEFLINES) {
+            xProcessDefinitionLine(line, lineCount);
+            continue;
+        }
+        if (mState == EState::DATA) {
+            if (mNumSequences == 0  ||  mSequenceSize == 0) {
+                //error: data before info necessary to interpret it
+            }
+            auto lineStrLower(line);
+            auto previousBracketCount = unmatchedLeftBracketCount;
+            sStripNexusComments(line, unmatchedLeftBracketCount);
+            if (previousBracketCount == 0 &&
+                unmatchedLeftBracketCount == 1) {
+                commentStartLine = lineCount;
+            }
+
+            if (line.empty()) {
+                continue;
+            }
+            NStr::ToLower(lineStrLower);
+
+            if (NStr::StartsWith(lineStrLower, "end;")) {
+                theErrorReporter->Warn(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                    "Unexpected \"end;\". Appending \';\' to prior command");
+                mState = EState::SKIPPING;
+                continue;
+            }
+
+            bool isLastLineOfData = NStr::EndsWith(line, ";");
+            if (isLastLineOfData) {
+                line = line.substr(0, line.size() -1 );
+                NStr::TruncateSpacesInPlace(line);
+                if (line.empty()) {
+                    mState = EState::SKIPPING;
+                    continue;
+                }
+            }
+            
+            vector<string> tokens;
+            NStr::Split(line, " \t", tokens, 0);
+            if (tokens.size() < 2) {
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                    "In data line, expected seqID followed by sequence data"); 
+            }
+
+            string seqId = tokens[0];
+            if (dataLineCount < mNumSequences) {
+                if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
+                    return; //ERROR: duplicate ID
+                }
+                mSeqIds.push_back(seqId);
+                mSequences.push_back(vector<TLineInfo>());
+            }
+            else {
+                if (mSeqIds[dataLineCount % mNumSequences] != seqId) {
+                    string description;
+                    if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) == mSeqIds.end()) {
+                        description = StrPrintf(
+                            "Expected %d sequences, but finding data for another.",
+                            mNumSequences);
+                    }
+                    else {
+                        description = StrPrintf(
+                            "Finding data for sequence \"%s\" out of order.",
+                            seqId.c_str());
+                    }
+                    throw SShowStopper(
+                        lineCount,
+                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
+                        description);
+                }
+            }
+
+            string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
+            auto dataSize = seqData.size();
+            auto dataIndex = dataLineCount % mNumSequences;
+            if (dataIndex == 0) {
+                sequenceCharCount += dataSize;
+                if (sequenceCharCount > mSequenceSize) {
+                    string description = StrPrintf(
+                        "Expected %d symbols per sequence but finding already %d",
+                        mSequenceSize,
+                        sequenceCharCount);
+                    throw SShowStopper(
+                        lineCount,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        description); 
+                }
+                blockLineLength = dataSize;
+            }
+            else {
+                if (dataSize != blockLineLength) {
+                    string description = StrPrintf(
+                        "In data line, expected %d symbols but finding %d",
+                        blockLineLength,
+                        dataSize);
+                    throw SShowStopper(
+                        lineCount,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        description); 
+                }
+            }
+
+            mSequences[dataIndex].push_back({seqData, lineCount});
+
+            dataLineCount += 1;
+            if (isLastLineOfData) {
+                mState = EState::SKIPPING;
+            }
+            continue;
+        }
+    }
+
+    if (unmatchedLeftBracketCount>0) {
+        string description = StrPrintf(
+                "Unterminated comment beginning on line %d",
+                commentStartLine);
+        throw SShowStopper(
+                commentStartLine,
+                EAlnSubcode::eAlnSubcode_UnterminatedComment,
+                description);
+    }
+
+    //submit collected data to a final sanity check:
+    if (sequenceCharCount != mSequenceSize) {
+        string description = StrPrintf(
+            "Expected %d symbols per sequence but finding only %d",
+            mSequenceSize,
+            sequenceCharCount);
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_BadDataCount,
+            description); 
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xVerifySingleSequenceData(
+    const CSequenceInfo& sequenceInfo,
+    const string& seqId,
+    const vector<TLineInfo> lineInfos)
+//  -----------------------------------------------------------------------------
+{
+    const char* errTempl("Bad character [%c] found at data position %d.");
+
+    const string& alphabet = sequenceInfo.Alphabet();
+    string legalAnywhere = alphabet;
+    if (!mGapChar.empty()) {
+        legalAnywhere += mGapChar;
+    }
+    else {
+        legalAnywhere += sequenceInfo.MiddleGap();
+    }
+    if (!mMatchChar.empty()) {
+        legalAnywhere += mMatchChar;
+    }
+    else {
+        legalAnywhere += sequenceInfo.Match();
+    }
+    if (!mMissingChar.empty()) {
+        legalAnywhere += mMissingChar;
+    }
+    else {
+        legalAnywhere += sequenceInfo.Missing();
+    }
+
+    for (auto lineInfo: lineInfos) {
+        if (lineInfo.mData.empty()) {
+            continue;
+        }
+        string seqData(lineInfo.mData);
+        auto illegalChar = seqData.find_first_not_of(legalAnywhere);
+        if (illegalChar != string::npos) {
+            string description = StrPrintf(
+                errTempl, seqData[illegalChar], illegalChar);
+            throw SShowStopper(
+                lineInfo.mNumLine,
+                EAlnSubcode::eAlnSubcode_BadDataChars,
+                description,
+                seqId);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xProcessDimensionLine(
+    const string& line)
+//  ----------------------------------------------------------------------------
+{
+    const string prefixNtax("ntax=");
+    const string prefixNchar("nchar=");
+    list<string> tokens;
+    NStr::Split(line, " \t;", tokens, NStr::fSplit_MergeDelimiters);
+    tokens.pop_front();
+    for (auto token: tokens) {
+        if (NStr::StartsWith(token, prefixNtax)) {
+            try {
+                mNumSequences = NStr::StringToInt(token.substr(prefixNtax.size()));
+            }
+            catch(...) {
+                //error: invalid nTax setting
+            }
+            continue;
+        }
+        if (NStr::StartsWith(token, prefixNchar)) {
+            try {
+                mSequenceSize = NStr::StringToInt(token.substr(prefixNchar.size()));
+            }
+            catch(...) {
+                //error: invalid nTax setting
+            }
+            continue;
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xProcessFormatLine(
+    const string& line)
+//  ----------------------------------------------------------------------------
+{
+    const string prefixMissing("missing=");
+    const string prefixGap("gap=");
+    const string prefixMatch("matchchar=");
+    list<string> tokens;
+    NStr::Split(line, " \t;", tokens, NStr::fSplit_MergeDelimiters);
+    tokens.pop_front();
+    for (auto token: tokens) {
+        if (NStr::StartsWith(token, prefixMissing)) {
+            try {
+                mMissingChar = token.substr(prefixMissing.size());
+            }
+            catch(...) {
+                //error: invalid nTax setting
+            }
+            continue;
+        }
+        if (NStr::StartsWith(token, prefixGap)) {
+            try {
+                mGapChar = token.substr(prefixGap.size());
+            }
+            catch(...) {
+                //error: invalid nTax setting
+            }
+            continue;
+        }
+        if (NStr::StartsWith(token, prefixMatch)) {
+            try {
+                mMatchChar = token.substr(prefixMatch.size());
+            }
+            catch(...) {
+                //error: invalid nTax setting
+            }
+            continue;
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xProcessDefinitionLine(
+    const string& line,
+    int lineCount)
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::StartsWith(line, ">")) {
+        string defLine = line.substr(1);
+        NStr::TruncateSpacesInPlace(defLine);
+        mDeflines.push_back({defLine, lineCount});
+        return;
+    }
+    string lineLowerCase(line);
+    NStr::ToLower(lineLowerCase);
+    if (NStr::StartsWith(lineLowerCase, "end")) {
+        mState = EState::SKIPPING;
+        return;
+    }
+    string description(
+        "Illegal definition line in NEXUS sequin command");
+    throw SShowStopper(
+        lineCount,
+        eAlnSubcode_IllegalDefinitionLine,
+        description);
+}
 
 //  ----------------------------------------------------------------------------
 void 
@@ -88,193 +424,6 @@ CAlnScannerNexus::sStripNexusComments(
     NStr::TruncateSpacesInPlace(line);
 }
 
-
-//  ----------------------------------------------------------------------------
-void 
-CAlnScannerNexus::ProcessAlignmentFile(
-    TAlignRawFilePtr afrp)
-//  ----------------------------------------------------------------------------
-{
-    const int NUM_SEQUENCES(afrp->expected_num_sequence);
-    const int SIZE_SEQUENCE(afrp->expected_sequence_len);
-
-    int dataLineCount(0);
-    int blockLineLength(0);
-    int sequenceCharCount(0);
-    int unmatchedLeftBracketCount(0);
-    int commentStartLine(-1);
-
-    //at this point we already know the number of sequences to expect, and the
-    // number of symbols each sequence is supposed to have.
-    // we have also already extracted any defines that were in this file.
-
-    //what remains is extraction of the actual sequence data:
-    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
-        if (!linePtr->data  ||  linePtr->data[0] == 0) {
-            continue;
-        }
-        string line(linePtr->data);
-        if (mState == EState::SKIPPING) {
-            NStr::ToLower(line);
-        }
-
-        if (mState == EState::SKIPPING) {
-            if (NStr::StartsWith(line, "matrix")) {
-                mState = READING;
-            }
-            continue;
-        }
-
-        if (mState == EState::READING) {
-
-            auto lineStrLower(line);
-            auto previousBracketCount = unmatchedLeftBracketCount;
-            sStripNexusComments(line, unmatchedLeftBracketCount);
-            if (previousBracketCount == 0 &&
-                unmatchedLeftBracketCount == 1) {
-                commentStartLine = linePtr->line_num;
-            }
-
-
-            strncpy(linePtr->data, line.c_str(), line.size()+1);
-            if (line.empty()) {
-                continue;
-            }
-            NStr::ToLower(lineStrLower);
-
-            if (NStr::StartsWith(lineStrLower, "end;")) {
-                theErrorReporter->Warn(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "Unexpected \"end;\". Appending \';\' to prior command");
-                mState = EState::SKIPPING;
-                continue;
-            }
-
-            bool isLastLineOfData = NStr::EndsWith(line, ";");
-            if (isLastLineOfData) {
-                line = line.substr(0, line.size() -1 );
-                linePtr->data[line.size()] = 0;
-                NStr::TruncateSpacesInPlace(line);
-                if (line.empty()) {
-                    mState = EState::SKIPPING;
-                    continue;
-                }
-            }
-            
-            vector<string> tokens;
-            NStr::Split(line, " \t", tokens, 0);
-            if (tokens.size() < 2) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "In data line, expected seqID followed by sequence data"); 
-            }
-
-            string seqId = tokens[0];
-            if (dataLineCount < NUM_SEQUENCES) {
-                if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
-                    return; //ERROR: duplicate ID
-                }
-                mSeqIds.push_back(seqId);
-                mSequences.push_back(vector<TLineInfoPtr>());
-            }
-            else {
-                if (mSeqIds[dataLineCount % NUM_SEQUENCES] != seqId) {
-                    string description;
-                    if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) == mSeqIds.end()) {
-                        description = StrPrintf(
-                            "Expected %d sequences, but finding data for another.",
-                            NUM_SEQUENCES);
-                    }
-                    else {
-                        description = StrPrintf(
-                            "Finding data for sequence \"%s\" out of order.",
-                            seqId.c_str());
-                    }
-                    throw SShowStopper(
-                        linePtr->line_num,
-                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
-                        description);
-                }
-            }
-
-            string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
-            auto dataSize = seqData.size();
-            auto dataIndex = dataLineCount % NUM_SEQUENCES;
-            if (dataIndex == 0) {
-                sequenceCharCount += dataSize;
-                if (sequenceCharCount > SIZE_SEQUENCE) {
-                    string description = StrPrintf(
-                        "Expected %d symbols per sequence but finding already %d",
-                        SIZE_SEQUENCE,
-                        sequenceCharCount);
-                    throw SShowStopper(
-                        linePtr->line_num,
-                        EAlnSubcode::eAlnSubcode_BadDataCount,
-                        description); 
-                }
-                blockLineLength = dataSize;
-            }
-            else {
-                if (dataSize != blockLineLength) {
-                    string description = StrPrintf(
-                        "In data line, expected %d symbols but finding %d",
-                        blockLineLength,
-                        dataSize);
-                    throw SShowStopper(
-                        linePtr->line_num,
-                        EAlnSubcode::eAlnSubcode_BadDataCount,
-                        description); 
-                }
-            }
-
-            mSequences[dataIndex].push_back(linePtr);
-
-            dataLineCount += 1;
-            if (isLastLineOfData) {
-                mState = EState::SKIPPING;
-            }
-            continue;
-        }
-    }
-
-    if (unmatchedLeftBracketCount>0) {
-        string description = StrPrintf(
-                "Unterminated comment beginning on line %d",
-                commentStartLine);
-        throw SShowStopper(
-                commentStartLine,
-                EAlnSubcode::eAlnSubcode_UnterminatedComment,
-                description);
-    }
-
-    //submit collected data to a final sanity check:
-    if (sequenceCharCount != SIZE_SEQUENCE) {
-        string description = StrPrintf(
-            "Expected %d symbols per sequence but finding only %d",
-            SIZE_SEQUENCE,
-            sequenceCharCount);
-        throw SShowStopper(
-            -1,
-            EAlnSubcode::eAlnSubcode_BadDataCount,
-            description); 
-    }
-
-    //looks good- populate approprate afrp data structures:
-    for (auto idIndex = 0; idIndex < mSeqIds.size(); ++idIndex) {
-        for (auto seqPart = 0; seqPart < mSequences[idIndex].size(); ++seqPart) {
-            auto liPtr = mSequences[idIndex][seqPart];
-            string liData = string(liPtr->data);
-            auto endOfId = liData.find_first_of(" \t");
-            auto startOfData = liData.find_first_not_of(" \t", endOfId);
-                afrp->sequences = SAlignRawSeq::sAddSeqById(
-                    afrp->sequences, mSeqIds[idIndex],
-                    liPtr->data + startOfData, liPtr->line_num, liPtr->line_num,
-                    startOfData);
-        }
-    }
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -32,6 +32,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -39,29 +40,53 @@ BEGIN_SCOPE(objects);
 struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerNexus
+class CAlnScannerNexus:
+    public CAlnScanner
 //  ============================================================================
 {
     enum  EState {
         SKIPPING,
-        READING
+        DATA,
+        DEFLINES
     };
 public:
     CAlnScannerNexus(): mState(SKIPPING) {};
     ~CAlnScannerNexus() {};
 
-    void 
-    ProcessAlignmentFile(
-        SAlignFileRaw* afrp);
-
 protected:
+    void
+    xImportAlignmentData(
+        CLineInput&) override;
+
+    virtual void
+    xVerifySingleSequenceData(
+        const CSequenceInfo&,
+        const string& seqId,
+        const vector<TLineInfo> seqData);
+
+    void
+    xProcessDimensionLine(
+        const string&);
+
+    void
+    xProcessFormatLine(
+        const string&);
+
+    void
+    xProcessDefinitionLine(
+        const string&,
+        int lineCount);
+
     static void sStripNexusComments(
         string& line, 
         int &numUnmatchedLeftBrackets);
 
     EState mState;
-    vector<string> mSeqIds;
-    vector<vector<TLineInfoPtr>> mSequences;
+    int mNumSequences = 0;
+    int mSequenceSize = 0;
+    string mMatchChar;
+    string mMissingChar;
+    string mGapChar;
 };
 
 END_SCOPE(objects)
