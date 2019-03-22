@@ -101,7 +101,6 @@ void GetFirstTenNames(const CAuth_list::C_Names::TStd& names, list<CTempString>&
 bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_log);
 void MergeNonPubmedPubIds(const CCit_art& cit_old, CCit_art& cit_new);
 void PropagateInPress(bool inpress, CCit_art& cit_art);
-void FixPubEquivAppendPmid(long muid, CPub_equiv::Tdata& pmids, IMessageListener* err_log);
 }
 
 END_SCOPE(objects)

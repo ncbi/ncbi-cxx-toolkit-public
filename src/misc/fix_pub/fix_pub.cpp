@@ -799,37 +799,6 @@ void PropagateInPress(bool inpress, CCit_art& cit_art)
     }
 }
 
-
-void FixPubEquivAppendPmid(long muid, CPub_equiv::Tdata& pmids, IMessageListener* err_log)
-{
-    long oldpmid = pmids.empty() ? 0 : pmids.front()->GetPmid();
-
-    long newpmid = -1;
-    try {
-        CMLAClient mla;
-        newpmid = mla.AskUidtopmid(muid);
-    }
-    catch (exception &) {
-        // newpmid == -1;
-    }
-
-    if (oldpmid < 1 && newpmid < 1) {
-        return;
-    }
-
-    if (oldpmid > 0 && newpmid > 0 && oldpmid != newpmid) {
-        ERR_POST_TO_LISTENER(err_log, eDiag_Error, err_Reference, err_Reference_PmidMissmatch,
-            "OldPMID=" << oldpmid << " doesn't match lookup (" << newpmid << "). Keeping lookup.");
-    }
-
-    if (pmids.empty()) {
-        CRef<CPub> pmid_pub(new CPub);
-        pmids.push_back(pmid_pub);
-    }
-
-    pmids.front()->SetPmid().Set((newpmid > 0) ? newpmid : oldpmid);
-}
-
 }
 
 using namespace fix_pub;
@@ -1046,8 +1015,6 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
     }
     else if (oldmuid > 0) {
         pub_list.splice(pub_list.end(), muids);
-        FixPubEquivAppendPmid(oldmuid, pmids, m_err_log);
-        pub_list.splice(pub_list.end(), pmids);
     }
 }
 
