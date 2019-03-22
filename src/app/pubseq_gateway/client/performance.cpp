@@ -185,7 +185,7 @@ SPostProcessing::~SPostProcessing()
 
         if ((*this >> request >> message) && (message.type != SMetricType::eError)) {
             auto old_size = raw_data.size();
-            raw_data[request].emplace_back(move(message));
+            raw_data[request].emplace_back(std::move(message));
             auto new_size = raw_data.size();
             if ((old_size < new_size) && (new_size % 2000 == 0)) cerr << '.';
         }
