@@ -132,6 +132,7 @@ auxnet_g needs generic_db_utils
 bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_alnutil
 bacterial_pipeline_proc needs local_taxon
+bacterial_pipeline_proc needs pgap_yaml_input_reader
 bag_access needs gpipe_common
 bamread needs $(COMPRESS_LIBS)
 bamread needs seqset
