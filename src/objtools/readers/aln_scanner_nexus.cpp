@@ -35,7 +35,6 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
-#include "aln_data.hpp"
 #include "aln_errors.hpp"
 #include "aln_peek_ahead.hpp"
 #include "aln_scanner_nexus.hpp"
