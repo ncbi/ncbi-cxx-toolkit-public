@@ -405,7 +405,8 @@ class Collector(object):
                     elif words[1] == 'NCBI_PACKAGE_VERSION_PATCH':
                         version[2] = words[2]
             if package_name is not None and version[0] is not None \
-               and version[1] is not None and version[2] is not None:
+               and version[1] is not None and version[2] is not None \
+               and (package_name != 'unknown' or version != ['0', '0', '0']):
                 base    = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit/release'
                 version = '.'.join(version)
                 url     = '/'.join((base, package_name, version, 'c++') + rest)
