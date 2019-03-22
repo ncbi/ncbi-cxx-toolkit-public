@@ -165,26 +165,25 @@ ostream& operator<<(ostream& os, SPercentiles& percentiles)
 }
 
 SPostProcessing::SPostProcessing(bool raw_metrics) :
-    m_RawMetrics(raw_metrics),
-    m_StreamBuf(cout.rdbuf())
+    SIoRedirector<stringstream>(cout),
+    m_RawMetrics(raw_metrics)
 {
-    cout.rdbuf(m_Stream.rdbuf());
 }
 
 SPostProcessing::~SPostProcessing()
 {
     cerr << "Reading raw metrics: ";
 
-    cout.rdbuf(m_StreamBuf);
-    m_Stream.seekg(0);
+    Reset();
+    seekg(0);
 
     map<size_t, vector<SMessage>> raw_data;
 
-    while (m_Stream) {
+    while (*this) {
         size_t request;
         SMessage message;
 
-        if ((m_Stream >> request >> message) && (message.type != SMetricType::eError)) {
+        if ((*this >> request >> message) && (message.type != SMetricType::eError)) {
             auto old_size = raw_data.size();
             raw_data[request].emplace_back(move(message));
             auto new_size = raw_data.size();

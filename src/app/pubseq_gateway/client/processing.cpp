@@ -722,6 +722,13 @@ int CProcessing::Testing()
 {
     m_Queue = CPSG_Queue(TPSG_ServiceName::GetDefault());
 
+    SIoRedirector<ifstream> ior(cin, "testing.json");
+
+    if (!ior) {
+        cerr << "Failed to read 'testing.json'" << endl;
+        return -1;
+    }
+
     auto requests = ReadCommands(&STestingContext::CreateContext);
 
     if (requests.empty()) return -1;

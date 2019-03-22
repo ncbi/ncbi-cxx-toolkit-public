@@ -219,15 +219,32 @@ private:
     friend ostream& operator<<(ostream& os, SPercentiles& percentiles);
 };
 
-struct SPostProcessing
+template <class TStream>
+struct SIoRedirector : TStream
+{
+    template <class... TArgs>
+    SIoRedirector(ios& io, TArgs&&... args) :
+        TStream(forward<TArgs>(args)...),
+        m_Io(io),
+        m_Buf(m_Io.rdbuf())
+    {
+        m_Io.rdbuf(TStream::rdbuf());
+    }
+
+    void Reset() { m_Io.rdbuf(m_Buf); }
+
+private:
+    ios& m_Io;
+    streambuf* m_Buf;
+};
+
+struct SPostProcessing : SIoRedirector<stringstream>
 {
     SPostProcessing(bool raw_metrics);
     ~SPostProcessing();
 
 private:
     const bool m_RawMetrics;
-    streambuf* m_StreamBuf;
-    stringstream m_Stream;
 };
 
 
