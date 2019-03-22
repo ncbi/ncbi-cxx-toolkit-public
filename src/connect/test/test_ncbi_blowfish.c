@@ -44,7 +44,7 @@
 
 static void selftest(void)
 {
-	/* Standard test vectors */
+    /* Standard test vectors */
     static const struct {
         char key [17];
         char text[17];
@@ -96,9 +96,9 @@ static void selftest(void)
         temp = 0;
         for (i = 0;  i < 8;  ++i) {
             sscanf(tests[n].key + (i << 1), "%2x", &d);
-            key[i] = d;
             temp <<= 8;
             temp  |= (Uint1) d;
+            key[i] = d;
         }
         text = 0;
         for (i = 0;  i < 8;  ++i) {

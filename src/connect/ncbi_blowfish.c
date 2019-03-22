@@ -49,7 +49,7 @@ struct SNcbiBlowfish {
 };
 
 
-static const struct SNcbiBlowfish kBfInit = {
+static const struct SNcbiBlowfish kBFInit = {
 /* PI's fractional part base-16 (stored sequentially in P, S[0..3]) */
 {
 0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
@@ -232,7 +232,7 @@ void NcbiBlowfishEncrypt(NCBI_BLOWFISH bf, Uint8* X)
         R  = t;
     }
     L ^= bf->P[SizeOf(bf->P) - 2];
-    R ^= bf->P[Sizeof(bf->P) - 1];
+    R ^= bf->P[SizeOf(bf->P) - 1];
 #else
     L ^= bf->P[0];
     BF(R, L, 1);
@@ -311,7 +311,7 @@ NCBI_BLOWFISH NcbiBlowfishInit(const void* key, size_t keylen)
 
     if (!(bf = (struct SNcbiBlowfish*) malloc(sizeof(*bf))))
         return 0;
-    memcpy(bf, &kBfInit, sizeof(*bf));
+    memcpy(bf, &kBFInit, sizeof(*bf));
 
     if (keylen > MAXKEYLEN)
         keylen = MAXKEYLEN;
