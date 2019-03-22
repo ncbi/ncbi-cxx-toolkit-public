@@ -2312,6 +2312,8 @@ GetAlignmentScannerForFormat(
         return new CAlnScannerFastaGap();
     case EAlignFormat::ALNFMT_CLUSTAL:
         return new CAlnScannerClustal();
+    case EAlignFormat::ALNFMT_SEQUIN:
+        return new CAlnScannerSequin();
     }
 }
 
@@ -2368,11 +2370,6 @@ ReadAlignmentFile(
     
         case EAlignFormat::ALNFMT_NEXUS: {
             CAlnScannerNexus scanner;
-            scanner.ProcessAlignmentFile(afrp);
-            break;
-        }
-        case EAlignFormat::ALNFMT_SEQUIN: {
-            CAlnScannerSequin scanner;
             scanner.ProcessAlignmentFile(afrp);
             break;
         }

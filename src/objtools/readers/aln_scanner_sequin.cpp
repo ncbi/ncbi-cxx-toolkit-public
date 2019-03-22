@@ -37,11 +37,143 @@
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_data.hpp"
 #include "aln_errors.hpp"
+#include "aln_peek_ahead.hpp"
 #include "aln_scanner_sequin.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerSequin::xImportAlignmentData(
+    CLineInput& iStr)
+//  ----------------------------------------------------------------------------
+{
+    string line;
+    int lineCount(0);
+
+    bool processingData = true;
+    bool inFirstBlock = false;
+    int lineInBlock = 0;
+    string refSeqData;
+
+    while (iStr.ReadLine(line)) {
+        ++lineCount;
+
+        if (line.empty()) {
+            if (processingData) {
+                if (lineInBlock != mSeqIds.size()) {
+                    string description = StrPrintf(
+                        "Missing data line. Expected sequence data for seqID \"%s\"",
+                        mSeqIds[lineInBlock].c_str());
+                    throw SShowStopper(
+                        lineCount,
+                        EAlnSubcode::eAlnSubcode_MissingDataLine,
+                        description);
+                }
+                processingData = false;
+                if (mSeqIds.size() != 0) {
+                    inFirstBlock = false;
+                }
+            }
+            continue;
+        }
+
+        NStr::TruncateSpacesInPlace(line);
+
+        if (xIsSequinOffsetsLine(line)) {
+            if (processingData) {
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_MissingDataLine,
+                    "Missing data line. Expected sequence data, not sequence offsets");
+            }
+            continue;
+        }
+
+        if (xIsSequinTerminationLine(line)) {
+            if (processingData) {
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_MissingDataLine,
+                    "Missing data line. Expected sequence data, not termination line");
+            }
+            break;
+        }
+
+        //process sequence data
+        if (!processingData) {
+            processingData = true;
+            lineInBlock = 0;
+            refSeqData.clear();
+            if (mSeqIds.empty()) {
+                inFirstBlock = true;
+            }
+        }
+        string seqId, seqData;
+        if (!xExtractSequinSequenceData(line, seqId, seqData)) {
+            throw SShowStopper(
+                lineCount,
+                EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                "Malformatted data line");
+        }
+
+        // verify and process sequence ID:
+        if (inFirstBlock) {
+            if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
+                // error: duplicate sequence ID
+                string description = StrPrintf(
+                    "Duplicate sequence ID \"%s\"", seqId.c_str());
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
+                    description);
+            }
+            mSeqIds.push_back(seqId);
+            mSequences.push_back(vector<TLineInfo>());
+        }
+        else {
+            if (lineInBlock >= mSeqIds.size()) {
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                    "Extraneous data line in interleaved data block");
+            }
+            if (seqId != mSeqIds[lineInBlock]) {
+                string description = StrPrintf(
+                    "Unexpected sequence ID \"%s\"", seqId.c_str());
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
+                    description);
+            }
+        }
+
+        // verify and process sequence data:
+        if (refSeqData.empty()) {
+            refSeqData = seqData;
+        }
+        else {
+            if (seqData.size() != refSeqData.size()) {
+                string description = StrPrintf(
+                    "Unexpected number of sequence symbols (expected %d but found %d)",
+                    refSeqData.size(), seqData.size());
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_BadDataCount,
+                    description);
+            }
+            for (auto i = 0; i < seqData.size(); ++i) {
+                if (seqData[i] == '.') {
+                    seqData[i] = refSeqData[i];
+                }
+            }
+        }
+
+        mSequences[lineInBlock].push_back({seqData, lineCount});
+        ++lineInBlock;
+    }
+}
 
 //  ----------------------------------------------------------------------------
 bool
@@ -103,145 +235,6 @@ CAlnScannerSequin::xExtractSequinSequenceData(
         }
     }
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerSequin::ProcessAlignmentFile(
-    TAlignRawFilePtr afrp)
-    //  ----------------------------------------------------------------------------
-{
-    bool processingData = false;
-    bool inFirstBlock = false;
-    int lineInBlock = 0;
-    string refSeqData;
-
-    for (auto linePtr = afrp->line_list; linePtr; linePtr = linePtr->next) {
-
-        if (!linePtr->data || linePtr->data[0] == 0) {
-            if (processingData) {
-                if (lineInBlock != mSeqIds.size()) {
-                    string description = StrPrintf(
-                        "Missing data line. Expected sequence data for seqID \"%s\"",
-                        mSeqIds[lineInBlock].c_str());
-                    throw SShowStopper(
-                        linePtr->line_num,
-                        EAlnSubcode::eAlnSubcode_MissingDataLine,
-                        description);
-                }
-                processingData = false;
-                if (mSeqIds.size() != 0) {
-                    inFirstBlock = false;
-                }
-            }
-            continue;
-        }
-
-        string line(linePtr->data);
-        NStr::TruncateSpacesInPlace(line);
-
-        if (xIsSequinOffsetsLine(line)) {
-            if (processingData) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_MissingDataLine,
-                    "Missing data line. Expected sequence data, not sequence offsets");
-            }
-            continue;
-        }
-
-        if (xIsSequinTerminationLine(line)) {
-            if (processingData) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_MissingDataLine,
-                    "Missing data line. Expected sequence data, not termination line");
-            }
-            break;
-        }
-
-        //process sequence data
-        if (!processingData) {
-            processingData = true;
-            lineInBlock = 0;
-            refSeqData.clear();
-            if (mSeqIds.empty()) {
-                inFirstBlock = true;
-            }
-        }
-        string seqId, seqData;
-        if (!xExtractSequinSequenceData(line, seqId, seqData)) {
-            throw SShowStopper(
-                linePtr->line_num,
-                EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                "Malformatted data line");
-        }
-
-        // verify and process sequence ID:
-        if (inFirstBlock) {
-            if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
-                // error: duplicate sequence ID
-                string description = StrPrintf(
-                    "Duplicate sequence ID \"%s\"", seqId.c_str());
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                    description);
-            }
-            mSeqIds.push_back(seqId);
-            mSequences.push_back(vector<TLineInfoPtr>());
-        }
-        else {
-            if (lineInBlock >= mSeqIds.size()) {
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "Extraneous data line in interleaved data block");
-            }
-            if (seqId != mSeqIds[lineInBlock]) {
-                string description = StrPrintf(
-                    "Unexpected sequence ID \"%s\"", seqId.c_str());
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
-                    description);
-            }
-        }
-
-        // verify and process sequence data:
-        if (refSeqData.empty()) {
-            refSeqData = seqData;
-        }
-        else {
-            if (seqData.size() != refSeqData.size()) {
-                string description = StrPrintf(
-                    "Unexpected number of sequence symbols (expected %d but found %d)",
-                    refSeqData.size(), seqData.size());
-                throw SShowStopper(
-                    linePtr->line_num,
-                    EAlnSubcode::eAlnSubcode_BadDataCount,
-                    description);
-            }
-            for (auto i = 0; i < seqData.size(); ++i) {
-                if (seqData[i] == '.') {
-                    seqData[i] = refSeqData[i];
-                }
-            }
-        }
-
-        strcpy(linePtr->data, seqData.c_str());
-        mSequences[lineInBlock].push_back(linePtr);
-        ++lineInBlock;
-    }
-    for (auto idIndex = 0; idIndex < mSeqIds.size(); ++idIndex) {
-        auto& curSeq = mSequences[idIndex];
-        for (auto seqPart = 0; seqPart < curSeq.size(); ++seqPart) {
-            auto liPtr = curSeq[seqPart];
-            afrp->sequences = SAlignRawSeq::sAddSeqById(
-                afrp->sequences, mSeqIds[idIndex],
-                liPtr->data, liPtr->line_num, liPtr->line_num, 0);
-        }
-    }
 }
 
 

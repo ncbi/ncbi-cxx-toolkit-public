@@ -46,12 +46,6 @@ public:
     CAlnScannerPhylip() {};
     ~CAlnScannerPhylip() {};
 
-    void
-    ProcessAlignmentFile(
-        const CSequenceInfo&,
-        CLineInput&,
-        SAlignmentFile&) override;
-
 protected:
     void
     xImportAlignmentData(

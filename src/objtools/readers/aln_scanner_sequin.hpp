@@ -32,6 +32,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -39,18 +40,19 @@ BEGIN_SCOPE(objects);
 struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerSequin
+class CAlnScannerSequin:
+    public CAlnScanner
     //  ============================================================================
 {
 public:
     CAlnScannerSequin() {};
     ~CAlnScannerSequin() {};
 
-    void
-    ProcessAlignmentFile(
-        SAlignFileRaw *);
-
 protected:
+    void
+    xImportAlignmentData(
+        CLineInput&) override;
+
     static bool
     xIsSequinOffsetsLine(
         const string& line);
@@ -64,10 +66,6 @@ protected:
         const string& line,
         string& seqId,
         string& seqData);
-
-    vector<string> mSeqIds;
-    vector<vector<TLineInfoPtr>> mSequences;
-
 };
 
 END_SCOPE(objects)
