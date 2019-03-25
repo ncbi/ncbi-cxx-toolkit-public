@@ -187,7 +187,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
     auto seqId = tokens[0];
     if (blockCount == 1) {
         if (find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
-            string description = StrPrintf(
+            string description = ErrorPrintf(
                     "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
             throw SShowStopper(
                 lineNum,
@@ -199,7 +199,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
     }
     else {
         if (seqCount > numSeqs) {
-            string description = StrPrintf(
+            string description = ErrorPrintf(
                 "Expected %d sequences, but finding data for for another.",
                 numSeqs);
             throw SShowStopper(
@@ -212,7 +212,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
             string description;
             const auto it = find(mSeqIds.begin(), mSeqIds.end(), seqId);
             if (it == mSeqIds.end()) {
-                description = StrPrintf(
+                description = ErrorPrintf(
                     "Expected %d sequences, but finding data for for another.",
                     numSeqs);
                 throw SShowStopper(
@@ -222,12 +222,12 @@ CAlnScannerClustal::sProcessClustalDataLine(
             }
             
             if (distance(mSeqIds.begin(), it) < seqCount-1) {
-                description = StrPrintf(
+                description = ErrorPrintf(
                     "Duplicate ID: \"%s\" has already appeared in this block.",
                     seqId.c_str());
             }
             else {
-                description = StrPrintf(
+                description = ErrorPrintf(
                     "Finding data for sequence \"%s\" out of order.",
                     seqId.c_str());
             }
@@ -245,7 +245,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
 
     auto currentLineLength = tokens[1].size();
     if (currentLineLength != blockLineLength) {
-        string description = StrPrintf(
+        string description = ErrorPrintf(
             "In data line, expected %d symbols but finding %d",
             blockLineLength,
             currentLineLength);

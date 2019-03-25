@@ -121,7 +121,7 @@ CAlnScanner::xVerifySingleSequenceData(
             seqData = seqData.substr(startBody);
             if (alphabet.find(seqData[0]) == string::npos) {
                 int linePos = lineInfo.mData.size() - seqData.size();
-                string description = StrPrintf(errTempl, seqData[0], linePos);
+                string description = ErrorPrintf(errTempl, seqData[0], linePos);
                 throw SShowStopper(
                     lineInfo.mNumLine,
                     EAlnSubcode::eAlnSubcode_BadDataChars,
@@ -143,7 +143,7 @@ CAlnScanner::xVerifySingleSequenceData(
                 continue;
             }
             int linePos = lineInfo.mData.size() - seqData.size() + startBad;
-            string description = StrPrintf(
+            string description = ErrorPrintf(
                 errTempl, seqData[startBad], linePos);
             throw SShowStopper(
                 lineInfo.mNumLine,

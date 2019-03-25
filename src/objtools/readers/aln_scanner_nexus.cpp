@@ -72,11 +72,11 @@ CAlnScannerNexus::xImportAlignmentData(
                 continue;
             }
             if (NStr::StartsWith(line, "dimensions")) {
-                xProcessDimensionLine(line);
+                xProcessDimensionLine(line, lineCount);
                 continue;
             }
             if (NStr::StartsWith(line, "format")) {
-                xProcessFormatLine(line);
+                xProcessFormatLine(line, lineCount);
                 continue;
             }
             if (NStr::StartsWith(line, "sequin")) {
@@ -146,12 +146,12 @@ CAlnScannerNexus::xImportAlignmentData(
                 if (mSeqIds[dataLineCount % mNumSequences] != seqId) {
                     string description;
                     if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) == mSeqIds.end()) {
-                        description = StrPrintf(
+                        description = ErrorPrintf(
                             "Expected %d sequences, but finding data for another.",
                             mNumSequences);
                     }
                     else {
-                        description = StrPrintf(
+                        description = ErrorPrintf(
                             "Finding data for sequence \"%s\" out of order.",
                             seqId.c_str());
                     }
@@ -168,7 +168,7 @@ CAlnScannerNexus::xImportAlignmentData(
             if (dataIndex == 0) {
                 sequenceCharCount += dataSize;
                 if (sequenceCharCount > mSequenceSize) {
-                    string description = StrPrintf(
+                    string description = ErrorPrintf(
                         "Expected %d symbols per sequence but finding already %d",
                         mSequenceSize,
                         sequenceCharCount);
@@ -181,7 +181,7 @@ CAlnScannerNexus::xImportAlignmentData(
             }
             else {
                 if (dataSize != blockLineLength) {
-                    string description = StrPrintf(
+                    string description = ErrorPrintf(
                         "In data line, expected %d symbols but finding %d",
                         blockLineLength,
                         dataSize);
@@ -203,7 +203,7 @@ CAlnScannerNexus::xImportAlignmentData(
     }
 
     if (unmatchedLeftBracketCount>0) {
-        string description = StrPrintf(
+        string description = ErrorPrintf(
                 "Unterminated comment beginning on line %d",
                 commentStartLine);
         throw SShowStopper(
@@ -214,7 +214,7 @@ CAlnScannerNexus::xImportAlignmentData(
 
     //submit collected data to a final sanity check:
     if (sequenceCharCount != mSequenceSize) {
-        string description = StrPrintf(
+        string description = ErrorPrintf(
             "Expected %d symbols per sequence but finding only %d",
             mSequenceSize,
             sequenceCharCount);
@@ -263,7 +263,7 @@ CAlnScannerNexus::xVerifySingleSequenceData(
         string seqData(lineInfo.mData);
         auto illegalChar = seqData.find_first_not_of(legalAnywhere);
         if (illegalChar != string::npos) {
-            string description = StrPrintf(
+            string description = ErrorPrintf(
                 errTempl, seqData[illegalChar], illegalChar);
             throw SShowStopper(
                 lineInfo.mNumLine,
@@ -277,7 +277,8 @@ CAlnScannerNexus::xVerifySingleSequenceData(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xProcessDimensionLine(
-    const string& line)
+    const string& line,
+    int lineCount)
 //  ----------------------------------------------------------------------------
 {
     const string prefixNtax("ntax=");
@@ -291,7 +292,12 @@ CAlnScannerNexus::xProcessDimensionLine(
                 mNumSequences = NStr::StringToInt(token.substr(prefixNtax.size()));
             }
             catch(...) {
-                //error: invalid nTax setting
+                string description = ErrorPrintf("Invalid nTax setting \"%s\"", 
+                    token.substr(prefixNtax.size()).c_str());
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+                    description);
             }
             continue;
         }
@@ -300,7 +306,12 @@ CAlnScannerNexus::xProcessDimensionLine(
                 mSequenceSize = NStr::StringToInt(token.substr(prefixNchar.size()));
             }
             catch(...) {
-                //error: invalid nTax setting
+                string description = ErrorPrintf("Invalid nChar setting \"%s\"", 
+                    token.substr(prefixNchar.size()).c_str());
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+                    description);
             }
             continue;
         }
@@ -310,7 +321,8 @@ CAlnScannerNexus::xProcessDimensionLine(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xProcessFormatLine(
-    const string& line)
+    const string& line,
+    int lineCount)
 //  ----------------------------------------------------------------------------
 {
     const string prefixMissing("missing=");
@@ -321,30 +333,15 @@ CAlnScannerNexus::xProcessFormatLine(
     tokens.pop_front();
     for (auto token: tokens) {
         if (NStr::StartsWith(token, prefixMissing)) {
-            try {
-                mMissingChar = token.substr(prefixMissing.size());
-            }
-            catch(...) {
-                //error: invalid nTax setting
-            }
+            mMissingChar = token.substr(prefixMissing.size());
             continue;
         }
         if (NStr::StartsWith(token, prefixGap)) {
-            try {
-                mGapChar = token.substr(prefixGap.size());
-            }
-            catch(...) {
-                //error: invalid nTax setting
-            }
+            mGapChar = token.substr(prefixGap.size());
             continue;
         }
         if (NStr::StartsWith(token, prefixMatch)) {
-            try {
-                mMatchChar = token.substr(prefixMatch.size());
-            }
-            catch(...) {
-                //error: invalid nTax setting
-            }
+            mMatchChar = token.substr(prefixMatch.size());
             continue;
         }
     }

@@ -1,5 +1,5 @@
-#ifndef _ALN_SCANNER_NEXUS_HPP_
-#define _ALN_SCANNER_NEXUS_HPP_
+#ifndef _ALN_FORMATS_HPP_
+#define _ALN_FORMATS_HPP_
 
 /*
  * $Id$
@@ -32,66 +32,22 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
-
-//  ============================================================================
-class CAlnScannerNexus:
-    public CAlnScanner
-//  ============================================================================
-{
-    enum  EState {
-        SKIPPING,
-        DATA,
-        DEFLINES
-    };
-public:
-    CAlnScannerNexus(): mState(SKIPPING) {};
-    ~CAlnScannerNexus() {};
-
-protected:
-    void
-    xImportAlignmentData(
-        CLineInput&) override;
-
-    virtual void
-    xVerifySingleSequenceData(
-        const CSequenceInfo&,
-        const string& seqId,
-        const vector<TLineInfo> seqData);
-
-    void
-    xProcessDimensionLine(
-        const string&,
-        int lineCount);
-
-    void
-    xProcessFormatLine(
-        const string&,
-        int lineCount);
-
-    void
-    xProcessDefinitionLine(
-        const string&,
-        int lineCount);
-
-    static void sStripNexusComments(
-        string& line, 
-        int &numUnmatchedLeftBrackets);
-
-    EState mState;
-    int mNumSequences = 0;
-    int mSequenceSize = 0;
-    string mMatchChar;
-    string mMissingChar;
-    string mGapChar;
+//  ----------------------------------------------------------------------------
+enum EAlignFormat {
+//  ----------------------------------------------------------------------------
+    UNKNOWN,
+    NEXUS,
+    PHYLIP,
+    CLUSTAL,
+    FASTAGAP,
+    SEQUIN,
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // _ALN_SCANNER_NEXUS_HPP_
+#endif // _ALN_FORMATS_HPP_

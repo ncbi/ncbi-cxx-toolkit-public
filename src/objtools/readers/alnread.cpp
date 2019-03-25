@@ -36,6 +36,7 @@
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_errors.hpp"
+#include "aln_formats.hpp"
 #include "aln_peek_ahead.hpp"
 #include "aln_scanner_clustal.hpp"
 #include "aln_scanner_nexus.hpp"
@@ -47,27 +48,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 static const size_t kMaxPrintedIntLen = 10;
-
-//  ----------------------------------------------------------------------------
-enum EAlignFormat {
-//  ----------------------------------------------------------------------------
-    ALNFMT_UNKNOWN,
-    ALNFMT_NEXUS,
-    ALNFMT_PHYLIP,
-    ALNFMT_CLUSTAL,
-    ALNFMT_FASTAGAP,
-    ALNFMT_SEQUIN,
-};
-
-//  ----------------------------------------------------------------------------
-string StrPrintf(const char *format, ...)
-//  ----------------------------------------------------------------------------
-{
-    va_list args;
-    va_start(args, format);
-    return NStr::FormatVarargs(format, args);
-}
-
 
 //  ----------------------------------------------------------------------------
 static EAlignFormat
@@ -88,7 +68,7 @@ sGetFileFormat(
             continue;
         }
         if (NStr::StartsWith(line, ">")) {
-            return ALNFMT_FASTAGAP;
+            return EAlignFormat::FASTAGAP;
         }
         inLeadingFastaComment = false;
 
@@ -99,26 +79,26 @@ sGetFileFormat(
 
         if (lineCount == 1) {
             if (NStr::StartsWith(line, "#nexus")) {
-                return ALNFMT_NEXUS;
+                return EAlignFormat::NEXUS;
             }
             if (NStr::StartsWith(line, "clustalw")) {
-                return ALNFMT_CLUSTAL;
+                return EAlignFormat::CLUSTAL;
             }
             if (NStr::StartsWith(line, "clustal w")) {
-                return ALNFMT_CLUSTAL;
+                return EAlignFormat::CLUSTAL;
             }
             vector<string> tokens;
             NStr::Split(line, " \t", tokens, NStr::fSplit_MergeDelimiters);
             if (tokens.size() != 2) {
-                return ALNFMT_UNKNOWN;
+                return EAlignFormat::UNKNOWN;
             }
             if (tokens.front().find_first_not_of("0123456789") != string::npos) {
-                return ALNFMT_UNKNOWN;
+                return EAlignFormat::UNKNOWN;
             }
             if (tokens.back().find_first_not_of("0123456789") != string::npos) {
-                return ALNFMT_UNKNOWN;
+                return EAlignFormat::UNKNOWN;
             }
-            return ALNFMT_PHYLIP;
+            return EAlignFormat::PHYLIP;
         }
         if (lineCount == 2) {
             if (leadingBlankCount == 1) {
@@ -127,15 +107,15 @@ sGetFileFormat(
                 for (int index=0; index < tokens.size(); ++index) {
                     auto offset = NStr::StringToInt(tokens[index], NStr::fConvErr_NoThrow);
                     if (offset != 10 + 10*index) {
-                        return ALNFMT_UNKNOWN;
+                        return EAlignFormat::UNKNOWN;
                     }
                 }
-                return ALNFMT_SEQUIN;
+                return EAlignFormat::SEQUIN;
             }
         }
-        return ALNFMT_UNKNOWN;
+        return EAlignFormat::UNKNOWN;
     }
-    return ALNFMT_UNKNOWN;
+    return EAlignFormat::UNKNOWN;
 }
 
 
@@ -148,15 +128,15 @@ GetScannerForFormat(
     switch(format) {
     default:
         return new CAlnScanner();
-    case EAlignFormat::ALNFMT_PHYLIP:
+    case EAlignFormat::PHYLIP:
         return new CAlnScannerPhylip();
-    case EAlignFormat::ALNFMT_FASTAGAP:
+    case EAlignFormat::FASTAGAP:
         return new CAlnScannerFastaGap();
-    case EAlignFormat::ALNFMT_CLUSTAL:
+    case EAlignFormat::CLUSTAL:
         return new CAlnScannerClustal();
-    case EAlignFormat::ALNFMT_SEQUIN:
+    case EAlignFormat::SEQUIN:
         return new CAlnScannerSequin();
-    case EAlignFormat::ALNFMT_NEXUS:
+    case EAlignFormat::NEXUS:
         return new CAlnScannerNexus();
     }
 }

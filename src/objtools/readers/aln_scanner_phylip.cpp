@@ -121,7 +121,7 @@ CAlnScannerPhylip::xImportAlignmentData(
 
             const auto it = find(mSeqIds.begin(), mSeqIds.end(), seqId);
             if (it !=  mSeqIds.end()) {
-                auto description = StrPrintf(
+                auto description = ErrorPrintf(
                         "Duplicate ID: \"%s\" has already appeared in this block    .",
                          seqId.c_str());
                 throw SShowStopper(
@@ -147,7 +147,7 @@ CAlnScannerPhylip::xImportAlignmentData(
         }
         else 
         if (currentLineLength != blockLineLength) {
-            string description = StrPrintf(
+            string description = ErrorPrintf(
                 "In data line, expected %d symbols but finding %d",
                 blockLineLength,
                 currentLineLength);

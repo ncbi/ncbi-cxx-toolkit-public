@@ -59,8 +59,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-thread_local unique_ptr<CAlnErrorReporter> ncbi::objects::theErrorReporter;
-
 string sAlnErrorToString(const CAlnError & error)
 {
     auto lineNumber = error.GetLineNum();
@@ -339,7 +337,7 @@ void CAlnReader::Read(
                 }
             }
             else {
-                string description = StrPrintf(
+                string description = ErrorPrintf(
                     "Expected 0 or %d deflines but finding %d",
                      m_Ids.size(),
                      numDeflines);

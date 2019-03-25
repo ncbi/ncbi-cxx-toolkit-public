@@ -90,7 +90,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
                     auto currentDataSize = line.size();
                     auto expectedDataSize = expectedDataSizes[currentDataLineIndex];
                     if (currentDataSize != expectedDataSize) {
-                        string description = StrPrintf(
+                        string description = ErrorPrintf(
                             "Expected line length %d, actual length %d", 
                             expectedDataSize, currentDataSize);
                         throw SShowStopper(
@@ -111,7 +111,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
         }
 
         if (!NStr::StartsWith(line, ">")) {
-            string description = StrPrintf(
+            string description = ErrorPrintf(
                 "Unexpected data line. Expected FASTA defline.");
             throw SShowStopper(
                 lineNumber,

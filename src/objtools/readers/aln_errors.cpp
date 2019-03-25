@@ -1,6 +1,3 @@
-#ifndef _ALN_SCANNER_NEXUS_HPP_
-#define _ALN_SCANNER_NEXUS_HPP_
-
 /*
  * $Id$
  *
@@ -31,67 +28,27 @@
  * Authors:  Colleen Bollin
  *
  */
-#include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
+#include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
+#include "aln_errors.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
+thread_local unique_ptr<CAlnErrorReporter> ncbi::objects::theErrorReporter;
 
-//  ============================================================================
-class CAlnScannerNexus:
-    public CAlnScanner
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+string ErrorPrintf(const char *format, ...)
+//  ----------------------------------------------------------------------------
 {
-    enum  EState {
-        SKIPPING,
-        DATA,
-        DEFLINES
-    };
-public:
-    CAlnScannerNexus(): mState(SKIPPING) {};
-    ~CAlnScannerNexus() {};
-
-protected:
-    void
-    xImportAlignmentData(
-        CLineInput&) override;
-
-    virtual void
-    xVerifySingleSequenceData(
-        const CSequenceInfo&,
-        const string& seqId,
-        const vector<TLineInfo> seqData);
-
-    void
-    xProcessDimensionLine(
-        const string&,
-        int lineCount);
-
-    void
-    xProcessFormatLine(
-        const string&,
-        int lineCount);
-
-    void
-    xProcessDefinitionLine(
-        const string&,
-        int lineCount);
-
-    static void sStripNexusComments(
-        string& line, 
-        int &numUnmatchedLeftBrackets);
-
-    EState mState;
-    int mNumSequences = 0;
-    int mSequenceSize = 0;
-    string mMatchChar;
-    string mMissingChar;
-    string mGapChar;
-};
+    va_list args;
+    va_start(args, format);
+    return NStr::FormatVarargs(format, args);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-#endif // _ALN_SCANNER_NEXUS_HPP_
