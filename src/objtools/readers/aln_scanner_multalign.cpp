@@ -51,31 +51,131 @@ CAlnScannerMultAlign::xImportAlignmentData(
     string line;
     int lineCount(0);
 
-    bool processingData = true;
-    bool inFirstBlock = false;
-    int lineInBlock = 0;
-    string refSeqData;
+    bool gotLine = iStr.ReadLine(line);
+    if (!gotLine) {
+        // error: short file
+    }
+    ++lineCount;
 
-    while (iStr.ReadLine(line)) {
+    if (NStr::StartsWith(line, "//")) {
+        gotLine = iStr.ReadLine(line);
+        if (!gotLine) {
+            // error: short file
+        }
         ++lineCount;
     }
+    if (!line.empty()) {
+        // error: unexpected
+    }
+
+    enum EExpecting {
+        OFFSETS,
+        DATA
+    };
+    EExpecting expecting = EExpecting::OFFSETS;
+    bool inFirstBlock = true;
+    int expectedDataSize = 0;
+    int expectedNumSequences = 0;
+    int lineInBlock = 0;
+    while (iStr.ReadLine(line)) {
+        ++lineCount;
+        NStr::TruncateSpacesInPlace(line);
+
+        if (expecting == EExpecting::OFFSETS) {
+            if (line.empty()) {
+                continue;
+            }
+            xGetExpectedDataSize(line, expectedDataSize);
+            expecting = EExpecting::DATA;
+            lineInBlock = 0;
+            continue;
+        }
+
+        if (expecting == EExpecting::DATA) {
+            if (line.empty()  ||  NStr::StartsWith(line, "Consensus")) {
+                // integrity check
+                if (inFirstBlock) {
+                    expectedNumSequences = mSeqIds.size();
+                    inFirstBlock = false;
+                }
+                else {
+                    if (lineInBlock != expectedNumSequences) {
+                        // error: not enough sequence data
+                    }
+                }
+                expecting = EExpecting::OFFSETS;
+                continue;
+            }    
+            if (!inFirstBlock  &&  lineInBlock == expectedNumSequences) {
+                // error: too much sequence data
+            }
+            string seqId, seqData;
+            xGetSeqIdAndData(line, seqId, seqData);
+            if (expectedDataSize == 0) {
+                expectedDataSize = seqData.size();
+            }
+            else {
+                if (seqData.size() != expectedDataSize) {
+                    // error: data size off
+                }
+            }
+            if (inFirstBlock) {
+                mSeqIds.push_back(seqId);
+                mSequences.push_back(vector<TLineInfo>({{seqData, lineCount}}));
+            }
+            else {
+                if (seqId != mSeqIds[lineInBlock]) {
+                    // error: unexpected ID
+                }
+                mSequences[lineInBlock].push_back({seqData, lineCount});
+            }
+            ++lineInBlock;
+            continue;
+        }
+    }
+    
 }
 
 //  ----------------------------------------------------------------------------
-bool
-CAlnScannerMultAlign::xIsOffsetsLine(
-    const string& line)
+void
+CAlnScannerMultAlign::xGetExpectedDataSize(
+    const string& line,
+    int& dataSize)
 //  ----------------------------------------------------------------------------
 {
-    list<string> tokens;
+    vector<string> tokens;
     NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
-    if (tokens.front().empty()) {
-        tokens.pop_front();
+    if (tokens.size() != 1  &&  tokens.size() != 2) {
+        // error: bad offset line
     }
-    if (tokens.back().empty()) {
-        tokens.pop_back();
+    int startOffset(0), endOffset(-1);
+    try {
+        startOffset = NStr::StringToInt(tokens[0]);
+        if (tokens.size() == 2) {
+            endOffset = NStr::StringToInt(tokens[1]);
+        }
     }
-    return false;
+    catch (std::exception&) {
+        // error: bad offset values
+    }
+    dataSize = (endOffset - startOffset + 1);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerMultAlign::xGetSeqIdAndData(
+    const string& line,
+    string& seqId,
+    string& seqData)
+//  ----------------------------------------------------------------------------
+{
+    vector<string> tokens;
+    NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
+    if (tokens.size() < 2) {
+        // error: bad offset line
+    }
+    seqId = tokens[0];
+    seqData = NStr::Join(tokens.begin() + 1, tokens.end(), "");
 }
 
 END_SCOPE(objects)

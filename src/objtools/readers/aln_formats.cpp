@@ -68,6 +68,9 @@ CAlnFormatGuesser::GetFormat(
     if (xSampleIsSequin(testSample)) {
         return EAlignFormat::SEQUIN;
     }
+    if (xSampleIsMultAlign(testSample)) {
+        return EAlignFormat::MULTALIGN;
+    }
     return EAlignFormat::UNKNOWN;
 };
 
@@ -258,7 +261,7 @@ CAlnFormatGuesser::xSampleIsMultAlign(
     dataColumns.pop_front();
     string seqData = NStr::Join(dataColumns.begin(), dataColumns.end(), "");
     auto dataSize = seqData.size();
-    return (dataSize == endOffset);
+    return (dataSize == (endOffset - startOffset + 1));
 }
 
 
