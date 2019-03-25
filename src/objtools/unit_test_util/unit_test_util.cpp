@@ -1824,6 +1824,35 @@ CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert)
 }
 
 
+// assumes that sequence has been reverse-complemented
+void ReverseAlignmentStrand(CDense_seg& denseg, size_t pos, size_t seq_len)
+{
+    // prepopulate the strand array if not already present
+    auto num_pieces = denseg.GetDim() * denseg.GetNumseg();
+    if (!denseg.IsSetStrands()) {
+        for (auto i = 0; i < num_pieces; i++) {
+            denseg.SetStrands().push_back(eNa_strand_plus);
+        }
+    } else if (denseg.GetStrands().size() < num_pieces) {
+        for (auto i = denseg.GetStrands().size(); i < num_pieces; i++) {
+            denseg.SetStrands().push_back(eNa_strand_plus);
+        }
+    }
+    for (auto i = 0; i < denseg.GetNumseg(); i++) {
+        auto offset = i * denseg.GetDim() + pos;
+        auto orig = denseg.GetStarts()[offset];
+        if (orig > -1) {
+            denseg.SetStarts()[offset] = seq_len - orig - denseg.GetLens()[i];
+        }
+        if (denseg.GetStrands()[offset] == eNa_strand_minus) {
+            denseg.SetStrands()[offset] = eNa_strand_plus;
+        } else {
+            denseg.SetStrands()[offset] = eNa_strand_minus;
+        }
+    }
+}
+
+
 CRef<objects::CSeq_align> BuildGoodAlign()
 {
     CRef<objects::CSeq_align> align(new objects::CSeq_align());

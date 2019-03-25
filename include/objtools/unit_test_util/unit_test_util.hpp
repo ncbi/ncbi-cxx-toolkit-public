@@ -43,6 +43,7 @@
 #include <serial/objectinfo.hpp>
 #include <serial/serialbase.hpp>
 #include <objmgr/scope.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -191,6 +192,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSegSet(void);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSet();
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert = 5);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_align> BuildGoodAlign();
+NCBI_UNIT_TEST_UTIL_EXPORT void ReverseAlignmentStrand(objects::CDense_seg& denseg, size_t pos, size_t seq_len);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_annot> BuildGoodGraphAnnot(string id);
 NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDescriptorType (CRef<objects::CSeq_entry> entry, objects::CSeqdesc::E_Choice desc_choice);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> BuildtRNA(CRef<objects::CSeq_id> id);
