@@ -5304,6 +5304,33 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
 }
 
 
+static bool x_SplicingNotExpected(CBioseq_Handle bsh) {
+
+    CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
+    while (d)
+    {
+        const CSeqdesc::TSource& source = d->GetSource();
+
+        if (source.IsSetLineage()) {
+            string lineage = source.GetLineage();
+            if (NStr::StartsWith(lineage, "Bacteria; ")
+                || NStr::StartsWith(lineage, "Archaea; ")) {
+                return true;
+            }
+        }
+        if (source.IsSetDivision()) {
+            string div = source.GetDivision();
+            if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
+                return true;
+            }
+        }
+
+        ++d;
+    }
+
+    return false;
+}
+
 void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, const CSeq_feat& feat)
 {
     EDiagSev sev = eDiag_Warning;
@@ -5318,6 +5345,7 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool 
 
     bool mrna = false;
     bool organelle = false;
+    bool not_expected = false;
     if (at_splice_or_gap) {
         if (feat.GetData().IsCdregion() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
             if (m_CurrentHandle && IsMrna(m_CurrentHandle)) {
@@ -5329,6 +5357,10 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool 
                 organelle = true;
                 sev = eDiag_Info;
             }
+            else if (x_SplicingNotExpected(m_CurrentHandle)) {
+                not_expected = true;
+                sev = eDiag_Info;
+            }
             else {
                 // do not report
                 return;
@@ -5338,6 +5370,9 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool 
     msg += "sequence";
     if (organelle) {
         msg += " (organelle does not use standard splice site convention)";
+    }
+    if (not_expected) {
+        msg += " (but is at consensus splice site)";
     }
 
     EErrType err_type;
