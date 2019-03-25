@@ -11867,8 +11867,11 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
     seh = scope.AddTopLevelSeqEntry(*entry);
     //AddChromosomeNoLocation(expected_errors, entry);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "PartialProblem3Prime",
+        "Stop does not include first/last residue of sequence (but is at consensus splice site)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 
     // splicing expected but on mRNA
     unit_test_util::SetDiv (entry, "PRI");
