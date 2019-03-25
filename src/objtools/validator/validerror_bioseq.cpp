@@ -259,7 +259,7 @@ void CValidError_bioseq::ValidateBioseq (
     const CBioseq& seq)
 {
     m_splicing_not_expected = false;
-    m_report_missing_chromosome = false;
+    m_report_missing_chromosome = true;
 
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
