@@ -965,7 +965,7 @@ function(NCBI_internal_add_dataspec)
 
         if ("${_ext}" STREQUAL ".proto")
             if ("PROTOBUF" IN_LIST NCBITMP_REQUIRE)
-                set(_cmd ${NCBI_PROTOC_APP} --cpp_out=${_path} --proto_path=${_path} ${_filepath})
+                set(_cmd ${NCBI_PROTOC_APP} --cpp_out=${NCBI_SRC_ROOT} --proto_path=${NCBI_SRC_ROOT} ${_filepath})
                 add_custom_command(
                     OUTPUT ${_path}/${_basename}.pb.cc
                     COMMAND ${_cmd} VERBATIM
@@ -978,7 +978,7 @@ function(NCBI_internal_add_dataspec)
                 )
             endif()
             if ("GRPC" IN_LIST NCBITMP_REQUIRE)
-                set(_cmd ${NCBI_PROTOC_APP} --grpc_out=${_path} --proto_path=${_path} --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN}  ${_filepath})
+                set(_cmd ${NCBI_PROTOC_APP} --grpc_out=${NCBI_SRC_ROOT} --proto_path=${NCBI_SRC_ROOT} --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN}  ${_filepath})
                 add_custom_command(
                     OUTPUT ${_path}/${_basename}.grpc.pb.cc
                     COMMAND ${_cmd} VERBATIM
