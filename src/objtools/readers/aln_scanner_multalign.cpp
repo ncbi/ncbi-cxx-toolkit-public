@@ -51,18 +51,16 @@ CAlnScannerMultAlign::xImportAlignmentData(
     string line;
     int lineCount(0);
 
-    bool gotLine = iStr.ReadLine(line);
+    bool gotLine = iStr.ReadLine(line, lineCount);
     if (!gotLine) {
         // error: short file
     }
-    ++lineCount;
 
     if (NStr::StartsWith(line, "//")) {
-        gotLine = iStr.ReadLine(line);
+        gotLine = iStr.ReadLine(line, lineCount);
         if (!gotLine) {
             // error: short file
         }
-        ++lineCount;
     }
     if (!line.empty()) {
         // error: unexpected
@@ -77,8 +75,7 @@ CAlnScannerMultAlign::xImportAlignmentData(
     int expectedDataSize = 0;
     int expectedNumSequences = 0;
     int lineInBlock = 0;
-    while (iStr.ReadLine(line)) {
-        ++lineCount;
+    while (iStr.ReadLine(line, lineCount)) {
         NStr::TruncateSpacesInPlace(line);
 
         if (expecting == EExpecting::OFFSETS) {

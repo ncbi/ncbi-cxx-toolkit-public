@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-thread_local unique_ptr<CAlnErrorReporter> ncbi::objects::theErrorReporter;
+thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
 //  ----------------------------------------------------------------------------
 string ErrorPrintf(const char *format, ...)

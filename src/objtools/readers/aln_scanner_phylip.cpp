@@ -61,10 +61,9 @@ CAlnScannerPhylip::xImportAlignmentData(
 {
     string line;
     int lineCount(0);
-    if (!iStr.ReadLine(line)) {
+    if (!iStr.ReadLine(line, lineCount)) {
         //error
     }
-    ++lineCount;
 
     vector<string> tokens;
     NStr::TruncateSpacesInPlace(line);
@@ -76,8 +75,7 @@ CAlnScannerPhylip::xImportAlignmentData(
     int blockLineLength(0);
     // move onto the next line
 
-    while (iStr.ReadLine(line)) {
-        ++lineCount;
+    while (iStr.ReadLine(line, lineCount)) {
         if (line.empty()) {
             continue;
         }

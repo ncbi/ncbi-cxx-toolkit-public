@@ -69,8 +69,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
 
     string line;
     int lineNumber = 0;
-    while(iStr.ReadLine(line)) {
-        ++lineNumber;
+    while(iStr.ReadLine(line, lineNumber)) {
         NStr::TruncateSpacesInPlace(line);
 
         string seqId;

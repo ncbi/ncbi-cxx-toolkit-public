@@ -56,8 +56,7 @@ CAlnScannerSequin::xImportAlignmentData(
     int lineInBlock = 0;
     string refSeqData;
 
-    while (iStr.ReadLine(line)) {
-        ++lineCount;
+    while (iStr.ReadLine(line, lineCount)) {
 
         if (line.empty()) {
             if (processingData) {

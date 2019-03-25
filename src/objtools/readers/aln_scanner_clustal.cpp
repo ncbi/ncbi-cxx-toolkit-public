@@ -75,14 +75,14 @@ CAlnScannerClustal::xImportAlignmentData(
     string line;
     int lineCount(0);
 
-    if (!iStr.ReadLine(line)) {
+    if (!iStr.ReadLine(line, lineCount)) {
         // error
     }
     // might want to verify file header
-    ++lineCount;
+    //++lineCount;
 
-    while (iStr.ReadLine(line)) {
-        ++lineCount;
+    while (iStr.ReadLine(line, lineCount)) {
+      //  ++lineCount;
 
         if (line.empty()) {
             continue;

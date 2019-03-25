@@ -57,8 +57,7 @@ CAlnScannerNexus::xImportAlignmentData(
     int unmatchedLeftBracketCount(0);
     int commentStartLine(-1);
 
-    while (iStr.ReadLine(line)) {
-        ++lineCount;
+    while (iStr.ReadLine(line, lineCount)) {
 
         NStr::TruncateSpacesInPlace(line);
         if (line.empty()) {

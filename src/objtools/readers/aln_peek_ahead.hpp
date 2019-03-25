@@ -32,6 +32,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include "aln_line_info.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -46,7 +47,8 @@ public:
 
     virtual bool
     ReadLine(
-        string& line) = 0;
+        string& line,
+        int& lineNum) = 0;
 };
 
 //  ----------------------------------------------------------------------------
@@ -66,7 +68,7 @@ public:
     {
         std::getline(mIstr, str);
         if (mIstr.good()) {
-            mPeeked.push_back(str);
+            mPeeked.push_back({str,mLineNum++});
             return true;
         }
         return false;
@@ -74,20 +76,27 @@ public:
 
     bool
     ReadLine(
-        string& str)
+        string& str,
+        int& lineNum)
     {
         if (!mPeeked.empty()) {
-            str = mPeeked.front();
+            str = mPeeked.front().mData;
+            lineNum = mPeeked.front().mNumLine;
             mPeeked.pop_front();
             return true;
         }
         std::getline(mIstr, str);
-        return mIstr.good();
+        bool success = mIstr.good();
+        if (success) {
+            lineNum = mLineNum++;
+        }
+        return success;
     };
 
 protected:
+    int mLineNum = 1;
     std::istream& mIstr;
-    list<string> mPeeked;
+    list<SLineInfo> mPeeked;
 };
 
 END_SCOPE(objects)
