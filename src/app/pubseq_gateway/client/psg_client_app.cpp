@@ -117,10 +117,10 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Biodata>       ("biodata",     "Request biodata info and data by bio ID"),
             s_GetCommand<CPSG_Request_Blob>          ("blob",        "Request blob by blob ID"),
             s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID"),
-            s_GetCommand<CPSG_Request_NamedAnnotInfo>("annot",       "Request named annotations info by bio ID"),
+            s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode"),
             s_GetCommand<SPerformance>               ("performance", "Performance testing mode", SCommand::TFlags::eHidden),
-            s_GetCommand<STesting>                   ("testing",     "Testing mode", SCommand::TFlags::eHidden),
+            s_GetCommand<STesting>                   ("test",        "Testing mode", SCommand::TFlags::eHidden),
         })
 {
 }

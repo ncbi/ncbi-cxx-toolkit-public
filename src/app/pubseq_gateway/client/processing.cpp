@@ -722,10 +722,10 @@ int CProcessing::Testing()
 {
     m_Queue = CPSG_Queue(TPSG_ServiceName::GetDefault());
 
-    SIoRedirector<ifstream> ior(cin, "testing.json");
+    SIoRedirector<ifstream> ior(cin, "psg_client_test.json");
 
     if (!ior) {
-        cerr << "Failed to read 'testing.json'" << endl;
+        cerr << "Failed to read 'psg_client_test.json'" << endl;
         return -1;
     }
 

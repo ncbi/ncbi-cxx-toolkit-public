@@ -7,5 +7,5 @@ LIB = psg_client seqset $(SEQ_LIBS) pub medline biblio general xser xconnserv xc
 LIBS = $(PSG_CLIENT_LIBS) $(ORIG_LIBS)
 
 WATCHERS = sadyrovr
-CHECK_CMD = psg_client testing /CHECK_NAME=test_psg_client
-CHECK_COPY = testing.json
+CHECK_CMD = psg_client test
+CHECK_COPY = psg_client_test.json
