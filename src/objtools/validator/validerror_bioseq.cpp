@@ -208,12 +208,63 @@ CValidError_bioseq::~CValidError_bioseq()
 {
 }
 
+void CValidError_bioseq::x_SetupSourceFlags (CBioseq_Handle bsh)
+{
+
+    CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
+    while (d)
+    {
+        const CSeqdesc::TSource& source = d->GetSource();
+
+        // look for chromosome, prokaryote, linkage group
+        FOR_EACH_SUBSOURCE_ON_BIOSOURCE(it, source) {
+            if ((*it)->IsSetSubtype() && (*it)->IsSetName() && !NStr::IsBlank((*it)->GetName())) {
+                if ((*it)->GetSubtype() == CSubSource::eSubtype_chromosome) {
+                    m_report_missing_chromosome = false;
+                } else if ((*it)->GetSubtype() == CSubSource::eSubtype_linkage_group) {
+                    m_report_missing_chromosome = false;
+                }
+            }
+        }
+        if (source.IsSetLineage()) {
+            string lineage = source.GetLineage();
+            if (NStr::StartsWith(lineage, "Bacteria; ") ||
+                NStr::StartsWith(lineage, "Archaea; ")) {
+                m_splicing_not_expected = true;
+                m_report_missing_chromosome = false;
+            }
+            if (NStr::StartsWith(lineage, "Viruses; ")) {
+                m_report_missing_chromosome = false;
+            }
+        }
+        if (source.IsSetDivision()) {
+            string div = source.GetDivision();
+            if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
+                m_splicing_not_expected = true;
+                m_report_missing_chromosome = false;
+            }
+        }
+        // check for organelle
+        if (source.IsSetGenome() && IsOrganelle(source.GetGenome())) {
+            m_report_missing_chromosome = false;
+        }
+
+        ++d;
+    }
+
+}
+
 
 void CValidError_bioseq::ValidateBioseq (
     const CBioseq& seq)
 {
+    m_splicing_not_expected = false;
+    m_report_missing_chromosome = false;
+
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
+
+        x_SetupSourceFlags(m_CurrentHandle);
 
         CSeq_entry_Handle appropriate_parent;
         if (m_Imp.ShouldSubdivide()) {
@@ -5304,33 +5355,6 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
 }
 
 
-static bool x_SplicingNotExpected(CBioseq_Handle bsh) {
-
-    CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
-    while (d)
-    {
-        const CSeqdesc::TSource& source = d->GetSource();
-
-        if (source.IsSetLineage()) {
-            string lineage = source.GetLineage();
-            if (NStr::StartsWith(lineage, "Bacteria; ")
-                || NStr::StartsWith(lineage, "Archaea; ")) {
-                return true;
-            }
-        }
-        if (source.IsSetDivision()) {
-            string div = source.GetDivision();
-            if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
-                return true;
-            }
-        }
-
-        ++d;
-    }
-
-    return false;
-}
-
 void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, const CSeq_feat& feat)
 {
     EDiagSev sev = eDiag_Warning;
@@ -5357,7 +5381,7 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool 
                 organelle = true;
                 sev = eDiag_Info;
             }
-            else if (x_SplicingNotExpected(m_CurrentHandle)) {
+            else if (m_splicing_not_expected) {
                 not_expected = true;
                 sev = eDiag_Info;
             }
@@ -7889,46 +7913,7 @@ void CValidError_bioseq::CheckForMissingChromosome(CBioseq_Handle bsh)
         return;
     }
 
-    bool report_missing_chromosome = true;
-
-    CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
-    while (d && report_missing_chromosome)
-    {
-        const CSeqdesc::TSource& source = d->GetSource();
-
-        // look for chromosome, prokaryote, linkage group
-        FOR_EACH_SUBSOURCE_ON_BIOSOURCE(it, source) {
-            if ((*it)->IsSetSubtype() && (*it)->IsSetName() && !NStr::IsBlank((*it)->GetName())) {
-                if ((*it)->GetSubtype() == CSubSource::eSubtype_chromosome) {
-                    report_missing_chromosome = false;
-                } else if ((*it)->GetSubtype() == CSubSource::eSubtype_linkage_group) {
-                    report_missing_chromosome = false;
-                }
-            }
-        }
-        if (source.IsSetLineage()) {
-            string lineage = source.GetLineage();
-            if (NStr::StartsWith(lineage, "Viruses; ")
-                || NStr::StartsWith(lineage, "Bacteria; ")
-                || NStr::StartsWith(lineage, "Archaea; ")) {
-                report_missing_chromosome = false;
-            }
-        }
-        if (source.IsSetDivision()) {
-            string div = source.GetDivision();
-            if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
-                report_missing_chromosome = false;
-            }
-        }
-
-        // check for organelle
-        if (source.IsSetGenome() && IsOrganelle(source.GetGenome())) {
-            report_missing_chromosome = false;
-        }
-        ++d;
-    }
-
-    if (report_missing_chromosome) {
+    if (m_report_missing_chromosome) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MissingChromosome, "Missing chromosome qualifier on NC or AC RefSeq record",
             *b);
     }
