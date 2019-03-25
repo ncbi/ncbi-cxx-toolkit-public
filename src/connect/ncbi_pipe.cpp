@@ -523,8 +523,8 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             }
             status = eIO_Closed;
         } else {
-            status = s_Close(CProcess(m_ProcHandle, CProcess::eHandle),
-                             m_Flags, timeout, exitcode);
+            CProcess process(m_ProcHandle, CProcess::eHandle);
+            status = s_Close(process, m_Flags, timeout, exitcode);
         }
     } else {
         if ( exitcode ) {
