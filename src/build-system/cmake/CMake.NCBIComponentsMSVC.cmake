@@ -415,6 +415,21 @@ else()
   set(NCBI_COMPONENT_PROTOBUF_FOUND NO)
 endif()
 
+if(NCBI_COMPONENT_PROTOBUF_FOUND)
+  set(NCBI_COMPONENT_GRPC_FOUND YES)
+  set(NCBI_COMPONENT_GRPC_INCLUDE ${NCBI_ThirdParty_GRPC}/include)
+  set(NCBI_COMPONENT_GRPC_LIBS
+    ${NCBI_ThirdParty_GRPC}/lib/grpc++.lib
+    ${NCBI_ThirdParty_GRPC}/lib/grpc.lib
+    ${NCBI_ThirdParty_GRPC}/lib/gpr.lib
+    ${NCBI_ThirdParty_GRPC}/lib/cares.lib
+    ${NCBI_ThirdParty_GRPC}/lib/libprotobuf.lib
+    ${NCBI_ThirdParty_GRPC}/lib/ssl.lib
+    ${NCBI_ThirdParty_GRPC}/lib/crypto.lib
+  )
+  set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600 _ITERATOR_DEBUG_LEVEL=0)
+endif()
+
 ##############################################################################
 # XALAN
 NCBI_define_component(XALAN xalan-c.lib XalanMessages.lib)
