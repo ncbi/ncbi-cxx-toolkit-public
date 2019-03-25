@@ -36,6 +36,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+class CPeekAheadStream;
+
 //  ----------------------------------------------------------------------------
 enum EAlignFormat {
 //  ----------------------------------------------------------------------------
@@ -45,7 +47,56 @@ enum EAlignFormat {
     CLUSTAL,
     FASTAGAP,
     SEQUIN,
+    MULTALIGN
 };
+
+//  ============================================================================
+class CAlnFormatGuesser
+//  ============================================================================
+{
+    using TSample = vector<string>;
+
+public:
+    CAlnFormatGuesser() {};
+    ~CAlnFormatGuesser() {};
+
+    EAlignFormat
+    GetFormat(
+        CPeekAheadStream& iStr);
+
+protected:
+    void
+    xInitSample(
+        CPeekAheadStream& iStr,
+        TSample& sample);
+
+    bool
+    xSampleIsNexus(
+        const TSample&);
+
+    bool
+    xSampleIsClustal(
+        const TSample&);
+
+    bool
+    xSampleIsFastaGap(
+        const TSample&);
+
+    bool
+    xSampleIsPhylip(
+        const TSample&);
+
+    bool
+    xSampleIsSequin(
+        const TSample&);
+
+    bool
+    xSampleIsMultAlign(
+        const TSample&);
+
+    static const int SAMPLE_SIZE = 10;
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

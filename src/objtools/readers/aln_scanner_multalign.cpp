@@ -36,72 +36,47 @@
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_errors.hpp"
-#include "aln_formats.hpp"
 #include "aln_peek_ahead.hpp"
-#include "aln_scanner_clustal.hpp"
-#include "aln_scanner_nexus.hpp"
-#include "aln_scanner_phylip.hpp"
-#include "aln_scanner_sequin.hpp"
-#include "aln_scanner_fastagap.hpp"
 #include "aln_scanner_multalign.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
-CAlnScanner*
-GetScannerForFormat(
-    EAlignFormat format)
+void
+CAlnScannerMultAlign::xImportAlignmentData(
+    CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
-    switch(format) {
-    default:
-        return new CAlnScanner();
-    case EAlignFormat::PHYLIP:
-        return new CAlnScannerPhylip();
-    case EAlignFormat::FASTAGAP:
-        return new CAlnScannerFastaGap();
-    case EAlignFormat::CLUSTAL:
-        return new CAlnScannerClustal();
-    case EAlignFormat::SEQUIN:
-        return new CAlnScannerSequin();
-    case EAlignFormat::NEXUS:
-        return new CAlnScannerNexus();
-    case EAlignFormat::MULTALIGN:
-        return new CAlnScannerMultAlign();
+    string line;
+    int lineCount(0);
+
+    bool processingData = true;
+    bool inFirstBlock = false;
+    int lineInBlock = 0;
+    string refSeqData;
+
+    while (iStr.ReadLine(line)) {
+        ++lineCount;
     }
 }
 
-
 //  ----------------------------------------------------------------------------
-bool 
-ReadAlignmentFile(
-    istream& istr,
-    bool gen_local_ids,
-    bool use_nexus_info,
-    CSequenceInfo& sequenceInfo,
-    SAlignmentFile& alignmentInfo,
-    ILineErrorListener* pErrorListener)
+bool
+CAlnScannerMultAlign::xIsOffsetsLine(
+    const string& line)
 //  ----------------------------------------------------------------------------
 {
-    if (pErrorListener) {
-        theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
+    list<string> tokens;
+    NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
+    if (tokens.front().empty()) {
+        tokens.pop_front();
     }
-    if (sequenceInfo.Alphabet().empty()) {
-        return false;
+    if (tokens.back().empty()) {
+        tokens.pop_back();
     }
-
-    CPeekAheadStream iStr(istr);
-    EAlignFormat format = CAlnFormatGuesser().GetFormat(iStr);
-
-    unique_ptr<CAlnScanner> pScanner(GetScannerForFormat(format));
-    if (!pScanner) {
-        return false;
-    }
-    pScanner->ProcessAlignmentFile(sequenceInfo, iStr, alignmentInfo);
-    return true;
-};
-
+    return false;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
