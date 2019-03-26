@@ -79,7 +79,13 @@ CFeaturePropagator::CFeaturePropagator
 //    } else if (align.GetSegs().IsDendiag()) {
 //        m_Alignment.Reset(&*align_format::CAlignFormatUtil::CreateDensegFromDendiag(align));
     } else {
-        NCBI_THROW(CException, eUnknown, "Unsupported alignment type");
+        if (m_MessageListener) {
+            m_MessageListener->PostMessage(
+                CMessage_Basic("Unsupported alignment type", 
+                               eDiag_Error,
+                               eFeaturePropagationProblem_FeatureLocation));
+        }
+        m_Alignment.Reset();
     }
 }
 
@@ -110,7 +116,13 @@ CFeaturePropagator::CFeaturePropagator
 //    } else if (align.GetSegs().IsDendiag()) {
 //        m_Alignment.Reset(&*align_format::CAlignFormatUtil::CreateDensegFromDendiag(align));
     } else {
-        NCBI_THROW(CException, eUnknown, "Unsupported alignment type");
+        if (m_MessageListener) {
+            m_MessageListener->PostMessage(
+                CMessage_Basic("Unsupported alignment type", 
+                               eDiag_Error,
+                               eFeaturePropagationProblem_FeatureLocation));
+        }
+        m_Alignment.Reset();
     }
 }
 
@@ -467,10 +479,12 @@ CRef<CSeq_loc> CFeaturePropagator::MakeOrdered(const CSeq_loc &loc)
 }
 
 CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
-{
+{    
 //    string label;
 //    targetId.GetLabel(&label);
     CRef<CSeq_loc> target;
+    if (!m_Alignment)
+        return target;
     bool partial5 = sourceLoc.IsPartialStart(eExtreme_Positional);
     bool partial3 = sourceLoc.IsPartialStop(eExtreme_Positional);
 
@@ -514,8 +528,21 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         TSignedSeqPos stop = range.GetTo() - seq_start;
         ENa_strand strand = loc_it.GetStrand();
         bool sub_partial5(false), sub_partial3(false);
-        TSignedSeqPos align_start = SeqPosToAlignPos(start, source_row, true, sub_partial5, sub_partial3);
-        TSignedSeqPos align_stop = SeqPosToAlignPos(stop, source_row, false, sub_partial5, sub_partial3);
+        TSignedSeqPos align_start = -1,  align_stop = -1;
+        try
+        {
+            align_start = SeqPosToAlignPos(start, source_row, true, sub_partial5, sub_partial3);
+            align_stop = SeqPosToAlignPos(stop, source_row, false, sub_partial5, sub_partial3);
+        } catch (const CException &e)
+        {
+            if (m_MessageListener) {
+                m_MessageListener->PostMessage(
+                    CMessage_Basic(e.what(), 
+                                   eDiag_Error,
+                                   eFeaturePropagationProblem_FeatureLocation));
+            }
+            return target;
+        }
         if (align_start < 0 || align_stop < 0)
         {
             if (loc_it.GetPos() == 0)
@@ -535,8 +562,22 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
             loc_it.Delete();
             continue;
         }
-        TSignedSeqPos new_start = AlignPosToSeqPos(align_start, target_row, true, sub_partial5, sub_partial3);
-        TSignedSeqPos new_stop = AlignPosToSeqPos(align_stop, target_row, false, sub_partial5, sub_partial3);
+        TSignedSeqPos new_start = -1, new_stop = -1;
+        try
+        {
+            new_start = AlignPosToSeqPos(align_start, target_row, true, sub_partial5, sub_partial3);
+            new_stop = AlignPosToSeqPos(align_stop, target_row, false, sub_partial5, sub_partial3);
+        }
+        catch(const CException &e)
+        {
+            if (m_MessageListener) {
+                m_MessageListener->PostMessage(
+                    CMessage_Basic(e.what(), 
+                                   eDiag_Error,
+                                   eFeaturePropagationProblem_FeatureLocation));
+            }
+            return target;
+        }
         if (new_start < 0 || new_stop < 0)
         {
             if (loc_it.GetPos() == 0)
