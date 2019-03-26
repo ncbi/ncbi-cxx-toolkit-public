@@ -1,3 +1,19 @@
 # False positive: CXX-10523
 race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
 race:^ncbi::CSafeStatic<ncbi::CParam
+
+
+# False positive (grichenk) CXX-10544
+
+race:^ncbi::CDiagContextThreadData::GetThreadData()
+race:^ncbi::DoThrowTraceAbort()
+race:^ncbi::CSafeStatic<ncbi::CTls
+
+
+# False positive (ivanov)
+
+# It is unsafe to use CTime::AsString() in exit print handler,
+# because it allocates memory, that is not signal-safe.
+# NOTE: ThreadSanotizer doesn't work with test_ncbi_system,
+#       that have limits tests that incompatible with sanitizer. 
+signal:corelib/test/test_ncbi_system.cpp
