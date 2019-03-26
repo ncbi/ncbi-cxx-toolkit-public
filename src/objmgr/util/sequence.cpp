@@ -4168,19 +4168,19 @@ CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& sc
         }
     }
 
+    if (is_5complete) {
+        // find a frame that has a start codon (could only be first frame)
+        if (frame_map[CCdregion::eFrame_one].has_start_m && !frame_map[CCdregion::eFrame_one].has_internal_stop) {
+            return CCdregion::eFrame_one;
+        }
+    }
+
     if (is_3complete) {
         // find a frame that has a stop codon
         for (auto it = frame_map.begin(); it != frame_map.end(); it++) {
             if (it->second.has_final_stop) {
                 return it->first;
             }
-        }
-    }
-
-    if (is_5complete) {
-        // find a frame that has a start codon (could only be first frame)
-        if (frame_map[CCdregion::eFrame_one].has_start_m && !frame_map[CCdregion::eFrame_one].has_internal_stop) {
-            return CCdregion::eFrame_one;
         }
     }
 
