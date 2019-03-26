@@ -107,7 +107,8 @@ enum EResolutionResult {
     eFromSi2csiDB,
     eFromBioseqCache,
     eFromBioseqDB,
-    eNotResolved
+    eNotResolved,
+    ePostponedForDB
 };
 
 
@@ -130,6 +131,9 @@ enum EPendingRequestType {
     eBlobRequest,
     eResolveRequest,
     eAnnotationRequest,
+
+    eBioseqInfoRequest,         // Internally generated pending request type
+    eSi2csiRequest,             // Internally generated pending request type
 
     eUnknownRequest
 };

@@ -50,15 +50,24 @@ USING_SCOPE(objects);
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
 #include "pending_requests.hpp"
+#include "cass_fetch.hpp"
+#include "protocol_utils.hpp"
+#include "async_seq_id_resolver.hpp"
+#include "async_bioseq_query.hpp"
 
-
-class CBlobChunkCallback;
-class CBlobPropCallback;
-class CGetBlobErrorCallback;
 
 
 class CPendingOperation
 {
+private:
+    enum EAsyncInterruptPoint {
+        eAnnotSeqIdResolution,
+        eResolveSeqIdResolution,
+        eResolveBioseqDetails,
+        eGetSeqIdResolution,
+        eGetBioseqDetails
+    };
+
 public:
     CPendingOperation(const SBlobRequest &  blob_request,
                       size_t  initial_reply_chunks,
@@ -90,11 +99,6 @@ public:
         m_Cancelled = true;
     }
 
-    size_t  GetItemId(void)
-    {
-        return ++m_NextItemId;
-    }
-
     void UpdateOverallStatus(CRequestStatus::ECode  status)
     {
         m_OverallStatus = max(status, m_OverallStatus);
@@ -107,162 +111,35 @@ public:
     CPendingOperation& operator=(CPendingOperation&&) = default;
 
 private:
-    // Internal structure to keep track of the retrieving:
-    // - a blob
-    // - a named annotation
-    struct SFetchDetails
-    {
-        SFetchDetails(const SBlobRequest &  blob_request) :
-            m_RequestType(eBlobRequest),
-            m_BlobId(blob_request.m_BlobId),
-            m_TSEOption(blob_request.m_TSEOption),
-            m_BlobPropSent(false),
-            m_BlobIdType(blob_request.GetBlobIdentificationType()),
-            m_TotalSentBlobChunks(0), m_FinishedRead(false),
-            m_BlobPropItemId(0),
-            m_BlobChunkItemId(0)
-        {}
-
-        SFetchDetails(const SAnnotRequest &  annot_request) :
-            m_RequestType(eAnnotationRequest),
-            m_TSEOption(eUnknownTSE),
-            m_BlobPropSent(false),
-            m_BlobIdType(eBySatAndSatKey),
-            m_TotalSentBlobChunks(0),
-            m_FinishedRead(false),
-            m_BlobPropItemId(0),
-            m_BlobChunkItemId(0)
-        {}
-
-        SFetchDetails() :
-            m_RequestType(eUnknownRequest),
-            m_TSEOption(eUnknownTSE),
-            m_BlobPropSent(false),
-            m_BlobIdType(eBySatAndSatKey),
-            m_TotalSentBlobChunks(0),
-            m_FinishedRead(false),
-            m_BlobPropItemId(0),
-            m_BlobChunkItemId(0)
-        {}
-
-        // Applicable only for the blob requests
-        bool IsBlobPropStage(void) const
-        {
-            // At the time of an error report it needs to be known to what the
-            // error message is associated - to blob properties or to blob
-            // chunks
-            return !m_BlobPropSent;
-        }
-
-        // Applicable only for the blob requests
-        size_t GetBlobPropItemId(CPendingOperation *  pending_op)
-        {
-            if (m_BlobPropItemId == 0)
-                m_BlobPropItemId = pending_op->GetItemId();
-            return m_BlobPropItemId;
-        }
-
-        // Applicable only for the blob requests
-        size_t GetBlobChunkItemId(CPendingOperation *  pending_op)
-        {
-            if (m_BlobChunkItemId == 0)
-                m_BlobChunkItemId = pending_op->GetItemId();
-            return m_BlobChunkItemId;
-        }
-
-        void ResetCallbacks(void)
-        {
-            if (m_Loader) {
-                if (m_RequestType == eBlobRequest) {
-                    CCassBlobTaskLoadBlob *     load_task =
-                            static_cast<CCassBlobTaskLoadBlob*>(m_Loader.get());
-                    load_task->SetDataReadyCB(nullptr, nullptr);
-                    load_task->SetErrorCB(nullptr);
-                    load_task->SetChunkCallback(nullptr);
-                } else if (m_RequestType == eAnnotationRequest) {
-                    CCassNAnnotTaskFetch *      fetch_task =
-                            static_cast<CCassNAnnotTaskFetch*>(m_Loader.get());
-                    fetch_task->SetConsumeCallback(nullptr);
-                    fetch_task->SetErrorCB(nullptr);
-                }
-            }
-        }
-
-        EPendingRequestType                 m_RequestType;
-
-        SBlobId                             m_BlobId;
-        ETSEOption                          m_TSEOption;
-
-        bool                                m_BlobPropSent;
-
-        EBlobIdentificationType             m_BlobIdType;
-        int32_t                             m_TotalSentBlobChunks;
-        bool                                m_FinishedRead;
-
-        // This is a base class. There are multiple types of the loaders stored
-        // here:
-        // - CCassBlobTaskLoadBlob to load a blob
-        // - CCassNAnnotTaskFetch to load an annotation
-        unique_ptr<CCassBlobWaiter>         m_Loader;
-
-        private:
-            size_t                          m_BlobPropItemId;
-            size_t                          m_BlobChunkItemId;
-    };
+    // Serving the 'resolve' request
+    void x_ProcessResolveRequest(void);
+    void x_ProcessResolveRequest(SResolveInputSeqIdError &  err,
+                                 SBioseqResolution &  bioseq_resolution);
+    void x_CompleteResolveRequest(SBioseqResolution &  bioseq_resolution);
+    void x_OnResolveResolutionError(SResolveInputSeqIdError &  err);
+    void x_OnResolveResolutionError(CRequestStatus::ECode  status,
+                                    const string &  message);
+    void x_ResolveRequestBioseqInconsistency(void);
+    void x_ResolveRequestBioseqInconsistency(const string &  err_msg);
 
 public:
-    void PrepareBioseqMessage(size_t  item_id, const string &  msg,
-                              CRequestStatus::ECode  status,
-                              int  err_code, EDiagSev  severity);
-    void PrepareBioseqData(size_t  item_id, const string &  content,
-                           EOutputFormat  output_format);
-    void PrepareBioseqCompletion(size_t  item_id, size_t  chunk_count);
-    void PrepareBlobPropMessage(size_t  item_id, const string &  msg,
-                                CRequestStatus::ECode  status,
-                                int  err_code, EDiagSev  severity);
-    void PrepareBlobPropMessage(
-                            SFetchDetails *  fetch_details,
-                            const string &  msg,
-                            CRequestStatus::ECode  status, int  err_code,
-                            EDiagSev  severity);
-    void PrepareBlobPropData(SFetchDetails *  fetch_details,
-                             const string &  content);
-    void PrepareBlobData(SFetchDetails *  fetch_details,
-                         const unsigned char *  chunk_data,
-                         unsigned int  data_size, int  chunk_no);
-    void PrepareBlobPropCompletion(size_t  item_id, size_t  chunk_count);
-    void PrepareBlobPropCompletion(
-                            SFetchDetails *  fetch_details);
-    void PrepareBlobMessage(size_t  item_id, const SBlobId &  blob_id,
-                            const string &  msg,
-                            CRequestStatus::ECode  status, int  err_code,
-                            EDiagSev  severity);
-    void PrepareBlobMessage(SFetchDetails *  fetch_details,
-                            const string &  msg,
-                            CRequestStatus::ECode  status, int  err_code,
-                            EDiagSev  severity);
-    void PrepareBlobCompletion(size_t  item_id, const SBlobId &  blob_id,
-                               size_t  chunk_count);
-    void PrepareBlobCompletion(SFetchDetails *  fetch_details);
-    void PrepareReplyMessage(const string &  msg,
-                             CRequestStatus::ECode  status, int  err_code,
-                             EDiagSev  severity);
-    void PrepareNamedAnnotationData(const string &  accession,
-                                    int16_t  version, int16_t  seq_id_type,
-                                    const string &  annot_name,
-                                    const string &  content);
-    void PrepareReplyCompletion(size_t  chunk_count);
-
-    ECacheAndCassandraUse GetUrlUseCache(void) const
-    {
-        return m_UrlUseCache;
-    }
+    void OnBioseqDetailsRecord(void);
+    void OnBioseqDetailsError(CRequestStatus::ECode  status, int  code,
+                              EDiagSev  severity, const string &  message);
 
 private:
-    void x_ProcessResolveRequest(void);
     void x_ProcessGetRequest(void);
-    void x_ProcessAnnotRequest(void);
+    void x_ProcessGetRequest(SResolveInputSeqIdError &  err,
+                             SBioseqResolution &  bioseq_resolution);
+    void x_GetRequestBioseqInconsistency(void);
+    void x_GetRequestBioseqInconsistency(const string &  err_msg);
+    void x_CompleteGetRequest(SBioseqResolution &  bioseq_resolution);
     void x_StartMainBlobRequest(void);
+
+private:
+    void x_ProcessAnnotRequest(void);
+    void x_ProcessAnnotRequest(SResolveInputSeqIdError &  err,
+                               SBioseqResolution &  bioseq_resolution);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
@@ -273,56 +150,94 @@ private:
                                            const string &  message,
                                            int  error_code);
     void x_SendBioseqInfo(const string &  protobuf_bioseq_info,
-                          SBioseqInfo &  bioseq_info,
+                          CBioseqInfoRecord &  bioseq_info,
                           EOutputFormat  output_format);
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
-                unique_ptr<SFetchDetails> &  fetch_details);
+                unique_ptr<CCassFetch> &  fetch_details);
+    void x_PeekIfNeeded(void);
 
     bool x_UsePsgProtocol(void) const;
     void x_InitUrlIndentification(void);
 
 private:
+    bool x_ComposeOSLT(CSeq_id &  parsed_seq_id, int16_t &  effective_seq_id_type,
+                       list<string> &  secondary_id_list, string &  primary_id);
+    ECacheLookupResult x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution,
+                                            SResolveInputSeqIdError &  err);
+    void x_ResolveViaComposeOSLTInCache(CSeq_id &  parsed_seq_id,
+                                        int16_t  effective_seq_id_type,
+                                        const list<string> &  secondary_id_list,
+                                        const string &  primary_id,
+                                        SResolveInputSeqIdError &  err,
+                                        SBioseqResolution &  bioseq_resolution);
+    ECacheLookupResult x_ResolvePrimaryOSLTInCache(const string &  primary_id,
+                                                   int16_t  effective_version,
+                                                   int16_t  effective_seq_id_type,
+                                                   bool  need_to_try_bioseq_info,
+                                                   SBioseqResolution &  bioseq_resolution);
+    ECacheLookupResult x_ResolveSecondaryOSLTInCache(const string &  secondary_id,
+                                                     int16_t  effective_seq_id_type,
+                                                     SBioseqResolution &  bioseq_resolution);
+
+private:
     SBioseqResolution x_ResolveInputSeqId(SResolveInputSeqIdError &  err);
-    ECacheLookupResult x_ResolvePrimaryOSLT(const string &  primary_id,
-                                            int16_t  effective_version,
-                                            int16_t  effective_seq_id_type,
-                                            bool  need_to_try_bioseq_info,
-                                            SBioseqResolution &  bioseq_resolution);
-    ECacheLookupResult x_ResolveSecondaryOSLT(const string &  secondary_id,
-                                              int16_t  effective_seq_id_type,
-                                              SBioseqResolution &  bioseq_resolution);
-    bool x_ResolvePrimaryOSLTviaDB(const string &  primary_id,
-                                   int16_t  effective_seq_id_type,
-                                   int16_t  effective_version,
-                                   bool  need_to_try_bioseq_info,
-                                   SBioseqResolution &  bioseq_resolution);
-    bool x_ResolveSecondaryOSLTviaDB(const string &  secondary_id,
-                                     int16_t  effective_seq_id_type,
-                                     SBioseqResolution &  bioseq_resolution);
-    bool x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
-                                 SResolveInputSeqIdError &  err_msg,
-                                 SBioseqResolution &  bioseq_resolution);
-    ECacheLookupResult x_ResolveAsIs(SBioseqResolution &  bioseq_resolution);
-    bool x_ResolveAsIsInDB(SBioseqResolution &  bioseq_resolution);
     bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
                                  int16_t &  eff_seq_id_type);
-    int16_t x_GetEffectiveVersion(const CTextseq_id *  text_seq_id);
-    ECacheLookupResult x_LookupBioseqInfoCache(const string &  accession,
-                                               int16_t &  version,
-                                               int16_t &  seq_id_type,
-                                               string &  bioseq_info_cache_data);
-    ECacheLookupResult x_LookupSi2csiCache(const string &  seq_id,
-                                         int16_t &  seq_id_type,
-                                         string &  csi_cache_data);
-    ECacheLookupResult x_LookupBlobPropCache(int  sat, int  sat_key,
-                                             int64_t &  last_modified,
-                                             CBlobRecord &  blob_record);
     ESeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id, string &  err_msg);
     void x_OnBioseqError(CRequestStatus::ECode  status, const string &  err_msg);
     void x_OnReplyError(CRequestStatus::ECode  status, int  err_code, const string &  err_msg);
 
+public:
+    int16_t GetEffectiveVersion(const CTextseq_id *  text_seq_id);
+    void OnSeqIdAsyncResolutionFinished(void);
+    void OnSeqIdAsyncError(CRequestStatus::ECode  status, int  code,
+                           EDiagSev  severity, const string &  message);
+
+public:
+    // Named annotations callbacks
+    bool OnNamedAnnotData(CNAnnotRecord &&  annot_record, bool  last,
+                          CCassNamedAnnotFetch *  fetch_details, int32_t  sat);
+    void OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
+                           CRequestStatus::ECode  status, int  code,
+                           EDiagSev  severity, const string &  message);
+
+public:
+    // Get blob callbacks
+    void OnGetBlobProp(CCassBlobFetch *  fetch_details,
+                       CBlobRecord const &  blob, bool is_found);
+    void OnGetBlobChunk(CCassBlobFetch *  fetch_details,
+                        CBlobRecord const &  blob, const unsigned char *  chunk_data,
+                        unsigned int  data_size, int  chunk_no);
+    void OnGetBlobError(CCassBlobFetch *  fetch_details,
+                        CRequestStatus::ECode  status, int  code,
+                        EDiagSev  severity, const string &  message);
+
 private:
-    HST::CHttpReply<CPendingOperation> *    m_Reply;
+    void x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
+                                     CBlobRecord const &  blob);
+    void x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
+                                CBlobRecord const &  blob, bool  info_blob_only);
+    void x_RequestId2SplitBlobs(const string &  sat_name);
+    bool x_ParseId2Info(CCassBlobFetch *  fetch_details, CBlobRecord const &  blob);
+    void x_OnBadId2Info(CCassBlobFetch *  fetch_details, const string &  msg);
+
+    int                                     m_Id2InfoSat;
+    int                                     m_Id2InfoInfo;
+    int                                     m_Id2InfoChunks;
+
+public:
+    unsigned int GetTimeout(void) const                   { return m_Timeout; }
+    unsigned int GetMaxRetries(void) const                { return m_MaxRetries; }
+    shared_ptr<CCassConnection> GetConnection(void) const { return m_Conn; }
+    CTempString GetUrlSeqId(void)                         { return m_UrlSeqId; }
+    int16_t GetUrlSeqIdType(void) const                   { return m_UrlSeqIdType; }
+    shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
+    { return m_ProtocolSupport.GetReply()->GetDataReadyCB(); }
+
+    void RegisterFetch(CCassFetch *  fetch)
+    { m_FetchDetails.push_back(unique_ptr<CCassFetch>(fetch)); }
+
+private:
     shared_ptr<CCassConnection>             m_Conn;
     unsigned int                            m_Timeout;
     unsigned int                            m_MaxRetries;
@@ -337,154 +252,21 @@ private:
     int16_t                                 m_UrlSeqIdType;
     ECacheAndCassandraUse                   m_UrlUseCache;
 
-    int32_t                                 m_TotalSentReplyChunks;
     bool                                    m_Cancelled;
-    vector<h2o_iovec_t>                     m_Chunks;
     CRef<CRequestContext>                   m_RequestContext;
 
-    unique_ptr<SFetchDetails>               m_MainObjectFetchDetails;
-    unique_ptr<SFetchDetails>               m_Id2InfoFetchDetails;
-    unique_ptr<SFetchDetails>               m_OriginalBlobChunkFetch;
+    // Cassandra data loaders; there could be many of them
+    list<unique_ptr<CCassFetch>>            m_FetchDetails;
 
-    // Multiple requests like ID2 chanks or named annotations in
-    // many keyspaces
-    vector<unique_ptr<SFetchDetails>>       m_FetchDetails;
+    CProtocolUtils                          m_ProtocolSupport;
 
-    size_t                                  m_NextItemId;
-
-    friend class CBlobChunkCallback;
-    friend class CBlobPropCallback;
-    friend class CGetBlobErrorCallback;
-    friend class CNamedAnnotationCallback;
-    friend class CNamedAnnotationErrorCallback;
+    // Async DB access support
+    unique_ptr<CAsyncSeqIdResolver>         m_AsyncSeqIdResolver;
+    unique_ptr<CAsyncBioseqQuery>           m_AsyncBioseqDetailsQuery;
+    EAsyncInterruptPoint                    m_AsyncInterruptPoint;
+    SResolveInputSeqIdError                 m_PostponedSeqIdResolveError;
+    SBioseqResolution                       m_PostponedSeqIdResolution;
 };
 
-
-
-class CBlobChunkCallback
-{
-    public:
-        CBlobChunkCallback(
-                CPendingOperation *  pending_op,
-                HST::CHttpReply<CPendingOperation> *  reply,
-                CPendingOperation::SFetchDetails *  fetch_details) :
-            m_PendingOp(pending_op), m_Reply(reply),
-            m_FetchDetails(fetch_details)
-        {}
-
-        void operator()(CBlobRecord const & blob, const unsigned char *  data,
-                        unsigned int  size, int  chunk_no);
-
-    private:
-        CPendingOperation *                     m_PendingOp;
-        HST::CHttpReply<CPendingOperation> *    m_Reply;
-        CPendingOperation::SFetchDetails *      m_FetchDetails;
-};
-
-
-class CBlobPropCallback
-{
-    public:
-        CBlobPropCallback(
-                CPendingOperation *  pending_op,
-                HST::CHttpReply<CPendingOperation> *  reply,
-                CPendingOperation::SFetchDetails *  fetch_details) :
-            m_PendingOp(pending_op), m_Reply(reply),
-            m_FetchDetails(fetch_details),
-            m_Id2InfoParsed(false), m_Id2InfoValid(false),
-            m_Id2InfoSat(-1),
-            m_Id2InfoInfo(-1), m_Id2InfoChunks(-1)
-        {}
-
-         void operator()(CBlobRecord const &  blob, bool is_found);
-
-    private:
-        void x_RequestOriginalBlobChunks(CBlobRecord const &  blob);
-        void x_RequestID2BlobChunks(CBlobRecord const &  blob,
-                                    bool  info_blob_only);
-        void x_ParseId2Info(CBlobRecord const &  blob);
-        void x_RequestId2SplitBlobs(const string &  sat_name);
-
-    private:
-        CPendingOperation *                     m_PendingOp;
-        HST::CHttpReply<CPendingOperation> *    m_Reply;
-        CPendingOperation::SFetchDetails *      m_FetchDetails;
-
-        // id2_info parsing support
-        bool            m_Id2InfoParsed;
-        bool            m_Id2InfoValid;
-        int             m_Id2InfoSat;
-        int             m_Id2InfoInfo;
-        int             m_Id2InfoChunks;
-};
-
-
-class CGetBlobErrorCallback
-{
-    public:
-        CGetBlobErrorCallback(
-                CPendingOperation *  pending_op,
-                HST::CHttpReply<CPendingOperation> *  reply,
-                CPendingOperation::SFetchDetails *  fetch_details) :
-            m_PendingOp(pending_op), m_Reply(reply),
-            m_FetchDetails(fetch_details)
-        {}
-
-        void operator()(CRequestStatus::ECode  status,
-                        int  code,
-                        EDiagSev  severity,
-                        const string &  message);
-
-    private:
-        CPendingOperation *                     m_PendingOp;
-        HST::CHttpReply<CPendingOperation> *    m_Reply;
-        CPendingOperation::SFetchDetails *      m_FetchDetails;
-};
-
-
-class CNamedAnnotationCallback
-{
-    public:
-        CNamedAnnotationCallback(
-                CPendingOperation *  pending_op,
-                HST::CHttpReply<CPendingOperation> *  reply,
-                CPendingOperation::SFetchDetails *  fetch_details,
-                int32_t  sat) :
-            m_PendingOp(pending_op), m_Reply(reply),
-            m_FetchDetails(fetch_details),
-            m_Sat(sat)
-        {}
-
-        bool operator()(CNAnnotRecord &&  annot_record, bool  last);
-
-    private:
-        CPendingOperation *                     m_PendingOp;
-        HST::CHttpReply<CPendingOperation> *    m_Reply;
-        CPendingOperation::SFetchDetails *      m_FetchDetails;
-        int32_t                                 m_Sat;
-};
-
-
-class CNamedAnnotationErrorCallback
-{
-    public:
-        CNamedAnnotationErrorCallback(
-                CPendingOperation *  pending_op,
-                HST::CHttpReply<CPendingOperation> *  reply,
-                CPendingOperation::SFetchDetails *  fetch_details) :
-            m_PendingOp(pending_op), m_Reply(reply),
-            m_FetchDetails(fetch_details)
-        {}
-
-        void operator()(CRequestStatus::ECode  status,
-                        int  code,
-                        EDiagSev  severity,
-                        const string &  message);
-
-    private:
-        CPendingOperation *                     m_PendingOp;
-        HST::CHttpReply<CPendingOperation> *    m_Reply;
-        CPendingOperation::SFetchDetails *      m_FetchDetails;
-};
 
 #endif

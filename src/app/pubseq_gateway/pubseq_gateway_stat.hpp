@@ -43,10 +43,10 @@ class CPubseqGatewayErrorCounters
 public:
     CPubseqGatewayErrorCounters() :
         m_BadUrlPath(0), m_InsufficientArguments(0), m_MalformedArguments(0),
-        m_ResolveError(0), m_GetBlobNotFound(0),
-        m_GetBlobError(0), m_UnknownError(0), m_ClientSatToSatNameError(0),
-        m_ServerSatToSatNameError(0), m_CanonicalSeqIdError(0),
-        m_BioseqID2InfoError(0), m_BioseqInfoError(0),
+        m_GetBlobNotFound(0),
+        m_UnknownError(0), m_ClientSatToSatNameError(0),
+        m_ServerSatToSatNameError(0),
+        m_BioseqID2InfoError(0),
         m_BlobPropsNotFoundError(0), m_LMDBError(0)
     {}
 
@@ -59,14 +59,8 @@ public:
     void IncMalformedArguments(void)
     { ++m_MalformedArguments; }
 
-    void IncResolveError(void)
-    { ++m_ResolveError; }
-
     void IncGetBlobNotFound(void)
     { ++m_GetBlobNotFound; }
-
-    void IncGetBlobError(void)
-    { ++m_GetBlobError; }
 
     void IncUnknownError(void)
     { ++m_UnknownError; }
@@ -76,12 +70,6 @@ public:
 
     void IncServerSatToSatName(void)
     { ++m_ServerSatToSatNameError; }
-
-    void IncCanonicalSeqIdError(void)
-    { ++m_CanonicalSeqIdError; }
-
-    void IncBioseqInfoError(void)
-    { ++m_BioseqInfoError; }
 
     void IncBioseqID2Info(void)
     { ++m_BioseqID2InfoError; }
@@ -98,15 +86,11 @@ private:
     atomic_uint_fast64_t        m_BadUrlPath;
     atomic_uint_fast64_t        m_InsufficientArguments;
     atomic_uint_fast64_t        m_MalformedArguments;
-    atomic_uint_fast64_t        m_ResolveError;         // 502
     atomic_uint_fast64_t        m_GetBlobNotFound;      // 404
-    atomic_uint_fast64_t        m_GetBlobError;         // 502
     atomic_uint_fast64_t        m_UnknownError;         // 503
     atomic_uint_fast64_t        m_ClientSatToSatNameError;
     atomic_uint_fast64_t        m_ServerSatToSatNameError;
-    atomic_uint_fast64_t        m_CanonicalSeqIdError;
     atomic_uint_fast64_t        m_BioseqID2InfoError;
-    atomic_uint_fast64_t        m_BioseqInfoError;
     atomic_uint_fast64_t        m_BlobPropsNotFoundError;
     atomic_uint_fast64_t        m_LMDBError;
 };
@@ -119,8 +103,6 @@ public:
     CPubseqGatewayRequestCounters() :
         m_Admin(0), m_Resolve(0),
         m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0), m_GetNA(0),
-        m_ResolvedAsPrimaryOSLT(0), m_ResolvedAsSecondaryOSLT(0),
-        m_ResolvedAsPrimaryOSLTinDB(0), m_ResolvedAsSecondaryOSLTinDB(0),
         m_NotResolved(0)
     {}
 
@@ -139,18 +121,6 @@ public:
     void IncGetNA(void)
     { ++m_GetNA; }
 
-    void IncResolvedAsPrimaryOSLT(void)
-    { ++m_ResolvedAsPrimaryOSLT; }
-
-    void IncResolvedAsSecondaryOSLT(void)
-    { ++m_ResolvedAsSecondaryOSLT; }
-
-    void IncResolvedAsPrimaryOSLTinDB(void)
-    { ++m_ResolvedAsPrimaryOSLTinDB; }
-
-    void IncResolvedAsSecondaryOSLTinDB(void)
-    { ++m_ResolvedAsSecondaryOSLTinDB; }
-
     void IncNotResolved(void)
     { ++m_NotResolved; }
 
@@ -163,10 +133,6 @@ private:
     atomic_uint_fast64_t        m_GetBlobBySatSatKey;
     atomic_uint_fast64_t        m_GetNA;
 
-    atomic_uint_fast64_t        m_ResolvedAsPrimaryOSLT;
-    atomic_uint_fast64_t        m_ResolvedAsSecondaryOSLT;
-    atomic_uint_fast64_t        m_ResolvedAsPrimaryOSLTinDB;
-    atomic_uint_fast64_t        m_ResolvedAsSecondaryOSLTinDB;
     atomic_uint_fast64_t        m_NotResolved;
 };
 
@@ -209,5 +175,53 @@ private:
     atomic_uint_fast64_t        m_BlobPropCacheMiss;
 };
 
+
+class CPubseqGatewayDBCounters
+{
+public:
+    CPubseqGatewayDBCounters() :
+        m_Si2csiNotFound(0), m_Si2csiFoundOne(0),
+        m_Si2csiFoundMany(0), m_BioseqInfoNotFound(0),
+        m_BioseqInfoFoundOne(0), m_BioseqInfoFoundMany(0),
+        m_Si2csiError(0), m_BioseqInfoError(0)
+    {}
+
+    void IncSi2csiNotFound(void)
+    { ++m_Si2csiNotFound; }
+
+    void IncSi2csiFoundOne(void)
+    { ++m_Si2csiFoundOne; }
+
+    void IncSi2csiFoundMany(void)
+    { ++m_Si2csiFoundMany; }
+
+    void IncBioseqInfoNotFound(void)
+    { ++m_BioseqInfoNotFound; }
+
+    void IncBioseqInfoFoundOne(void)
+    { ++m_BioseqInfoFoundOne; }
+
+    void IncBioseqInfoFoundMany(void)
+    { ++m_BioseqInfoFoundMany; }
+
+    void IncSi2csiError(void)
+    { ++m_Si2csiError; }
+
+    void IncBioseqInfoError(void)
+    { ++m_BioseqInfoError; }
+
+    void PopulateDictionary(CJsonNode &  dict) const;
+
+private:
+    atomic_uint_fast64_t        m_Si2csiNotFound;
+    atomic_uint_fast64_t        m_Si2csiFoundOne;
+    atomic_uint_fast64_t        m_Si2csiFoundMany;
+    atomic_uint_fast64_t        m_BioseqInfoNotFound;
+    atomic_uint_fast64_t        m_BioseqInfoFoundOne;
+    atomic_uint_fast64_t        m_BioseqInfoFoundMany;
+
+    atomic_uint_fast64_t        m_Si2csiError;
+    atomic_uint_fast64_t        m_BioseqInfoError;
+};
 
 #endif

@@ -38,35 +38,38 @@ USING_NCBI_SCOPE;
 void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
 {
     uint64_t    err_sum(0);
+    uint64_t    value(0);
 
-    err_sum += m_BadUrlPath;
-    dict.SetInteger("BadUrlPathCount", m_BadUrlPath);
-    err_sum += m_InsufficientArguments;
-    dict.SetInteger("InsufficientArgumentsCount", m_InsufficientArguments);
-    err_sum += m_MalformedArguments;
-    dict.SetInteger("MalformedArgumentsCount", m_MalformedArguments);
-    err_sum += m_ResolveError;
-    dict.SetInteger("ResolveErrorCount", m_ResolveError);
-    err_sum += m_GetBlobNotFound;
-    dict.SetInteger("GetBlobNotFoundCount", m_GetBlobNotFound);
-    err_sum += m_GetBlobError;
-    dict.SetInteger("GetBlobErrorCount", m_GetBlobError);
-    err_sum += m_UnknownError;
-    dict.SetInteger("UnknownErrorCount", m_UnknownError);
-    err_sum += m_ClientSatToSatNameError;
-    dict.SetInteger("ClientSatToSatNameErrorCount", m_ClientSatToSatNameError);
-    err_sum += m_ServerSatToSatNameError;
-    dict.SetInteger("ServerSatToSatNameErrorCount", m_ServerSatToSatNameError);
-    err_sum += m_CanonicalSeqIdError;
-    dict.SetInteger("CanonicalSeqIdErrorCount", m_CanonicalSeqIdError);
-    err_sum += m_BioseqID2InfoError;
-    dict.SetInteger("BioseqID2InfoErrorCount", m_BioseqID2InfoError);
-    err_sum += m_BioseqInfoError;
-    dict.SetInteger("BioseqInfoErrorCount", m_BioseqInfoError);
-    err_sum += m_BlobPropsNotFoundError;
-    dict.SetInteger("BlobPropsNotFoundErrorCount", m_BlobPropsNotFoundError);
-    err_sum += m_LMDBError;
-    dict.SetInteger("LMDBErrorCount", m_LMDBError);
+    value = m_BadUrlPath;
+    err_sum += value;
+    dict.SetInteger("BadUrlPathCount", value);
+    value = m_InsufficientArguments;
+    err_sum += value;
+    dict.SetInteger("InsufficientArgumentsCount", value);
+    value = m_MalformedArguments;
+    err_sum += value;
+    dict.SetInteger("MalformedArgumentsCount", value);
+    value = m_GetBlobNotFound;
+    err_sum += value;
+    dict.SetInteger("GetBlobNotFoundCount", value);
+    value = m_UnknownError;
+    err_sum += value;
+    dict.SetInteger("UnknownErrorCount", value);
+    value = m_ClientSatToSatNameError;
+    err_sum += value;
+    dict.SetInteger("ClientSatToSatNameErrorCount", value);
+    value = m_ServerSatToSatNameError;
+    err_sum += value;
+    dict.SetInteger("ServerSatToSatNameErrorCount", value);
+    value = m_BioseqID2InfoError;
+    err_sum += value;
+    dict.SetInteger("BioseqID2InfoErrorCount", value);
+    value = m_BlobPropsNotFoundError;
+    err_sum += value;
+    dict.SetInteger("BlobPropsNotFoundErrorCount", value);
+    value = m_LMDBError;
+    err_sum += value;
+    dict.SetInteger("LMDBErrorCount", value);
 
     dict.SetInteger("TotalErrorCount", err_sum);
 }
@@ -74,24 +77,26 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
 
 void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
 {
-    dict.SetInteger("ResolvedAsPrimaryOSLT", m_ResolvedAsPrimaryOSLT);
-    dict.SetInteger("ResolvedAsSecondaryOSLT", m_ResolvedAsSecondaryOSLT);
-    dict.SetInteger("ResolvedAsPrimaryOSLTinDB", m_ResolvedAsPrimaryOSLTinDB);
-    dict.SetInteger("ResolvedAsSecondaryOSLTinDB", m_ResolvedAsSecondaryOSLTinDB);
-    dict.SetInteger("NotResolved", m_NotResolved);
+    dict.SetInteger("InputSeqIdNotResolved", m_NotResolved);
 
     uint64_t    req_sum(0);
+    uint64_t    value(0);
 
-    req_sum += m_Admin;
-    dict.SetInteger("AdminRequestCount", m_Admin);
-    req_sum += m_Resolve;
-    dict.SetInteger("ResolveRequestCount", m_Resolve);
-    req_sum += m_GetBlobBySeqId;
-    dict.SetInteger("GetBlobBySeqIdRequestCount", m_GetBlobBySeqId);
-    req_sum += m_GetBlobBySatSatKey;
-    dict.SetInteger("GetBlobBySatSatKeyRequestCount", m_GetBlobBySatSatKey);
-    req_sum += m_GetNA;
-    dict.SetInteger("GetNamedAnnotationsCount", m_GetNA);
+    value = m_Admin;
+    req_sum += value;
+    dict.SetInteger("AdminRequestCount", value);
+    value = m_Resolve;
+    req_sum += value;
+    dict.SetInteger("ResolveRequestCount", value);
+    value = m_GetBlobBySeqId;
+    req_sum += value;
+    dict.SetInteger("GetBlobBySeqIdRequestCount", value);
+    value = m_GetBlobBySatSatKey;
+    req_sum += value;
+    dict.SetInteger("GetBlobBySatSatKeyRequestCount", value);
+    value = m_GetNA;
+    req_sum += value;
+    dict.SetInteger("GetNamedAnnotationsCount", value);
 
     dict.SetInteger("TotalRequestCount", req_sum);
 }
@@ -105,5 +110,18 @@ void CPubseqGatewayCacheCounters::PopulateDictionary(CJsonNode &  dict) const
     dict.SetInteger("BioseqInfoCacheMiss", m_BioseqInfoCacheMiss);
     dict.SetInteger("BlobPropCacheHit", m_BlobPropCacheHit);
     dict.SetInteger("BlobPropCacheMiss", m_BlobPropCacheMiss);
+}
+
+
+void CPubseqGatewayDBCounters::PopulateDictionary(CJsonNode &  dict) const
+{
+    dict.SetInteger("Si2csiNotFound", m_Si2csiNotFound);
+    dict.SetInteger("Si2csiFoundOne", m_Si2csiFoundOne);
+    dict.SetInteger("Si2csiFoundMany", m_Si2csiFoundMany);
+    dict.SetInteger("BioseqInfoNotFound", m_BioseqInfoNotFound);
+    dict.SetInteger("BioseqInfoFoundOne", m_BioseqInfoFoundOne);
+    dict.SetInteger("BioseqInfoFoundMany", m_BioseqInfoFoundMany);
+    dict.SetInteger("Si2csiError", m_Si2csiError);
+    dict.SetInteger("BioseqInfoError", m_BioseqInfoError);
 }
 

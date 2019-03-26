@@ -351,6 +351,12 @@ CPubseqGatewayCacheCounters &  CPubseqGatewayApp::GetCacheCounters(void)
 }
 
 
+CPubseqGatewayDBCounters &  CPubseqGatewayApp::GetDBCounters(void)
+{
+    return m_DBCounters;
+}
+
+
 void CPubseqGatewayApp::x_ValidateArgs(void)
 {
     if (m_HttpPort < kHttpPortMin || m_HttpPort > kHttpPortMax) {

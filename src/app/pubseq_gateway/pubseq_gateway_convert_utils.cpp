@@ -70,26 +70,26 @@ static const string     kStop = "stop";
 static const string     kAnnotInfo = "annot_info";
 
 
-void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
+void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
                                        string &  bioseq_protobuf)
 {
     psg::retrieval::BioseqInfoValue     protobuf_bioseq_info_value;
 
     psg::retrieval::BlobPropKey *       protobuf_blob_prop_key =
         protobuf_bioseq_info_value.mutable_blob_key();
-    protobuf_blob_prop_key->set_sat(bioseq_info.m_Sat);
-    protobuf_blob_prop_key->set_sat_key(bioseq_info.m_SatKey);
+    protobuf_blob_prop_key->set_sat(bioseq_info.GetSat());
+    protobuf_blob_prop_key->set_sat_key(bioseq_info.GetSatKey());
 
     protobuf_bioseq_info_value.set_state(
-            static_cast<psg::retrieval::EnumSeqState>(bioseq_info.m_State));
+            static_cast<psg::retrieval::EnumSeqState>(bioseq_info.GetState()));
     protobuf_bioseq_info_value.set_mol(
-            static_cast<psg::retrieval::EnumSeqMolType>(bioseq_info.m_Mol));
-    protobuf_bioseq_info_value.set_hash(bioseq_info.m_Hash);
-    protobuf_bioseq_info_value.set_length(bioseq_info.m_Length);
-    protobuf_bioseq_info_value.set_date_changed(bioseq_info.m_DateChanged);
-    protobuf_bioseq_info_value.set_tax_id(bioseq_info.m_TaxId);
+            static_cast<psg::retrieval::EnumSeqMolType>(bioseq_info.GetMol()));
+    protobuf_bioseq_info_value.set_hash(bioseq_info.GetHash());
+    protobuf_bioseq_info_value.set_length(bioseq_info.GetLength());
+    protobuf_bioseq_info_value.set_date_changed(bioseq_info.GetDateChanged());
+    protobuf_bioseq_info_value.set_tax_id(bioseq_info.GetTaxId());
 
-    for (const auto &  item : bioseq_info.m_SeqIds) {
+    for (const auto &  item : bioseq_info.GetSeqIds()) {
         psg::retrieval::BioseqInfoValue_SecondaryId *   protobuf_secondary_id =
             protobuf_bioseq_info_value.add_seq_ids();
         protobuf_secondary_id->set_sec_seq_id_type(
@@ -102,7 +102,7 @@ void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
 
 
 void ConvertBioseqProtobufToBioseqInfo(const string &  bioseq_protobuf,
-                                       SBioseqInfo &  bioseq_info)
+                                       CBioseqInfoRecord &  bioseq_info)
 {
     // These fields must be already populated in bioseq_info
     //    bioseq_info.m_Accession
@@ -112,34 +112,34 @@ void ConvertBioseqProtobufToBioseqInfo(const string &  bioseq_protobuf,
     psg::retrieval::BioseqInfoValue     protobuf_bioseq_info_value;
     protobuf_bioseq_info_value.ParseFromString(bioseq_protobuf);
 
-    bioseq_info.m_DateChanged = protobuf_bioseq_info_value.date_changed();
-    bioseq_info.m_Hash = protobuf_bioseq_info_value.hash();
+    bioseq_info.SetDateChanged(protobuf_bioseq_info_value.date_changed());
+    bioseq_info.SetHash(protobuf_bioseq_info_value.hash());
 
     // id_sync is skipped
 
-    bioseq_info.m_Length = protobuf_bioseq_info_value.length();
-    bioseq_info.m_Mol = protobuf_bioseq_info_value.mol();
+    bioseq_info.SetLength(protobuf_bioseq_info_value.length());
+    bioseq_info.SetMol(protobuf_bioseq_info_value.mol());
 
     const psg::retrieval::BlobPropKey &  blob_key =
         protobuf_bioseq_info_value.blob_key();
 
-    bioseq_info.m_Sat = blob_key.sat();
-    bioseq_info.m_SatKey = blob_key.sat_key();
+    bioseq_info.SetSat(blob_key.sat());
+    bioseq_info.SetSatKey(blob_key.sat_key());
 
     int     seq_id_size = protobuf_bioseq_info_value.seq_ids_size();
     for (int  index = 0; index < seq_id_size; ++index) {
         const psg::retrieval::BioseqInfoValue_SecondaryId &   seq_id =
             protobuf_bioseq_info_value.seq_ids(index);
-        bioseq_info.m_SeqIds.insert(make_tuple(seq_id.sec_seq_id_type(),
-                                               seq_id.sec_seq_id()));
+        bioseq_info.GetSeqIds().insert(make_tuple(seq_id.sec_seq_id_type(),
+                                                  seq_id.sec_seq_id()));
     }
 
-    bioseq_info.m_State = protobuf_bioseq_info_value.state();
-    bioseq_info.m_TaxId = protobuf_bioseq_info_value.tax_id();
+    bioseq_info.SetState(protobuf_bioseq_info_value.state());
+    bioseq_info.SetTaxId(protobuf_bioseq_info_value.tax_id());
 }
 
 
-void ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
+void ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
                              TServIncludeData  include_data_flags,
                              string &  bioseq_json)
 {
@@ -148,34 +148,34 @@ void ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
 }
 
 
-CJsonNode  ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
+CJsonNode  ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
                                    TServIncludeData  include_data_flags)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     if (include_data_flags & fServCanonicalId) {
-        json.SetString(kAccession, bioseq_info.m_Accession);
-        json.SetInteger(kVersion, bioseq_info.m_Version);
-        json.SetInteger(kSeqIdType, bioseq_info.m_SeqIdType);
+        json.SetString(kAccession, bioseq_info.GetAccession());
+        json.SetInteger(kVersion, bioseq_info.GetVersion());
+        json.SetInteger(kSeqIdType, bioseq_info.GetSeqIdType());
     }
     if (include_data_flags & fServDateChanged)
-        json.SetInteger(kDateChanged, bioseq_info.m_DateChanged);
+        json.SetInteger(kDateChanged, bioseq_info.GetDateChanged());
     if (include_data_flags & fServHash)
-        json.SetInteger(kHash, bioseq_info.m_Hash);
+        json.SetInteger(kHash, bioseq_info.GetHash());
 
     // id_sync field is skipped; it is specific for the DB and is not in cache
 
     if (include_data_flags & fServLength)
-        json.SetInteger(kLength, bioseq_info.m_Length);
+        json.SetInteger(kLength, bioseq_info.GetLength());
     if (include_data_flags & fServMoleculeType)
-        json.SetInteger(kMol, bioseq_info.m_Mol);
+        json.SetInteger(kMol, bioseq_info.GetMol());
     if (include_data_flags & fServBlobId) {
-        json.SetInteger(kSat, bioseq_info.m_Sat);
-        json.SetInteger(kSatKey, bioseq_info.m_SatKey);
+        json.SetInteger(kSat, bioseq_info.GetSat());
+        json.SetInteger(kSatKey, bioseq_info.GetSatKey());
     }
     if (include_data_flags & fServSeqIds) {
         CJsonNode       seq_ids(CJsonNode::NewArrayNode());
-        for (const auto &  item : bioseq_info.m_SeqIds) {
+        for (const auto &  item : bioseq_info.GetSeqIds()) {
             CJsonNode       item_tuple(CJsonNode::NewArrayNode());
             item_tuple.AppendInteger(get<0>(item));
             item_tuple.AppendString(get<1>(item));
@@ -187,9 +187,9 @@ CJsonNode  ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
     // seq_state is skipped; it is specific for the DB and is not in cache
 
     if (include_data_flags & fServState)
-        json.SetInteger(kState, bioseq_info.m_State);
+        json.SetInteger(kState, bioseq_info.GetState());
     if (include_data_flags & fServTaxId)
-        json.SetInteger(kTaxId, bioseq_info.m_TaxId);
+        json.SetInteger(kTaxId, bioseq_info.GetTaxId());
 
     return json;
 }
@@ -223,9 +223,9 @@ void ConvertSi2csiToBioseqResolution(const string &  si2csi_protobuf,
     psg::retrieval::BioseqInfoKey       protobuf_si2csi_value;
     protobuf_si2csi_value.ParseFromString(si2csi_protobuf);
 
-    bioseq_resolution.m_BioseqInfo.m_Accession = protobuf_si2csi_value.accession();
-    bioseq_resolution.m_BioseqInfo.m_Version = protobuf_si2csi_value.version();
-    bioseq_resolution.m_BioseqInfo.m_SeqIdType = protobuf_si2csi_value.seq_id_type();
+    bioseq_resolution.m_BioseqInfo.SetAccession(protobuf_si2csi_value.accession());
+    bioseq_resolution.m_BioseqInfo.SetVersion(protobuf_si2csi_value.version());
+    bioseq_resolution.m_BioseqInfo.SetSeqIdType(protobuf_si2csi_value.seq_id_type());
 }
 
 

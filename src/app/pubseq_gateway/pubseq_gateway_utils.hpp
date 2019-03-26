@@ -36,7 +36,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <connect/services/json_over_uttp.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
 #include "pubseq_gateway_types.hpp"
 
@@ -81,13 +81,10 @@ struct SBioseqResolution
 {
     SBioseqResolution() :
         m_ResolutionResult(eNotResolved)
-    {
-        m_BioseqInfo.m_Version = -1;
-        m_BioseqInfo.m_SeqIdType = -1;
-    }
+    {}
 
     EResolutionResult   m_ResolutionResult;
-    SBioseqInfo         m_BioseqInfo;
+    CBioseqInfoRecord   m_BioseqInfo;
     string              m_CacheInfo;    // Bioseq or si2csi cache
 
     bool IsValid(void) const
@@ -99,9 +96,7 @@ struct SBioseqResolution
     {
         m_ResolutionResult = eNotResolved;
         m_CacheInfo.clear();
-        m_BioseqInfo.m_Accession.clear();
-        m_BioseqInfo.m_Version = -1;
-        m_BioseqInfo.m_SeqIdType = -1;
+        m_BioseqInfo.Reset();
     }
 };
 
@@ -115,9 +110,15 @@ struct SResolveInputSeqIdError
         m_ErrorCode(CRequestStatus::e200_Ok)
     {}
 
-    bool  HasError(void) const
+    bool HasError(void) const
     {
         return !m_ErrorMessage.empty();
+    }
+
+    void Reset(void)
+    {
+        m_ErrorMessage.clear();
+        m_ErrorCode = CRequestStatus::e200_Ok;
     }
 
     string                  m_ErrorMessage;

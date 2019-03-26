@@ -35,10 +35,12 @@
 
 #include <connect/services/json_over_uttp.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot/record.hpp>
 
 #include "pubseq_gateway_types.hpp"
+#include "pubseq_gateway_utils.hpp"
+
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -46,15 +48,12 @@ USING_IDBLOB_SCOPE;
 #include <string>
 using namespace std;
 
-// Forward declaration
-struct SBioseqResolution;
 
-
-void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
+void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
                                        string &  bioseq_protobuf);
 void ConvertBioseqProtobufToBioseqInfo(const string &  bioseq_protobuf,
-                                       SBioseqInfo &  bioseq_info);
-void ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
+                                       CBioseqInfoRecord &  bioseq_info);
+void ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
                              TServIncludeData  include_data_flags,
                              string &  bioseq_json);
 void ConvertSi2csiToBioseqResolution(const string &  si2csi_protobuf,
@@ -64,7 +63,7 @@ void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
                                          const string &  blob_prop_protobuf,
                                          CBlobRecord &  blob_record);
 
-CJsonNode ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
+CJsonNode ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
                                   TServIncludeData  include_data_flags);
 CJsonNode ConvertBlobPropToJson(const CBlobRecord &  blob);
 CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record, int32_t  sat);

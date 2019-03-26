@@ -109,6 +109,7 @@ public:
     CPubseqGatewayErrorCounters &  GetErrorCounters(void);
     CPubseqGatewayRequestCounters &  GetRequestCounters(void);
     CPubseqGatewayCacheCounters &  GetCacheCounters(void);
+    CPubseqGatewayDBCounters &  GetDBCounters(void);
 
 private:
     struct SRequestParameter
@@ -195,6 +196,7 @@ private:
     CPubseqGatewayErrorCounters         m_ErrorCounters;
     CPubseqGatewayRequestCounters       m_RequestCounters;
     CPubseqGatewayCacheCounters         m_CacheCounters;
+    CPubseqGatewayDBCounters            m_DBCounters;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

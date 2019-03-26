@@ -642,6 +642,7 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
         m_ErrorCounters.PopulateDictionary(reply);
         m_RequestCounters.PopulateDictionary(reply);
         m_CacheCounters.PopulateDictionary(reply);
+        m_DBCounters.PopulateDictionary(reply);
 
         string      content = reply.Repr();
 
