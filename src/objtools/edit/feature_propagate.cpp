@@ -235,46 +235,44 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
 
 TSignedSeqPos CFeaturePropagator::SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3)
 {
-    int res = -1;
+    TSignedSeqPos res = -1;
     const CDense_seg& denseg = m_Alignment->GetSegs().GetDenseg();
     const CSeq_id& id = denseg.GetSeq_id(row);
     CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
     if (!bsh)
         return -1;
-    int length = bsh.GetBioseqLength();
+    TSignedSeqPos length = bsh.GetBioseqLength();
     CDense_seg::TNumseg num_segs = denseg.GetNumseg();
     CDense_seg::TDim num_rows = denseg.GetDim();
     CDense_seg::TNumseg seg = 0;
     TSignedSeqPos total_len = 0;
-    int found_len = -1;
+    TSignedSeqPos found_len = -1;
     bool found = false;
     while ( seg < num_segs ) 
     {
         TSignedSeqPos start = denseg.GetStarts()[seg * num_rows + row];
         TSignedSeqPos len   = denseg.GetLens()[seg];
         ENa_strand strand = eNa_strand_plus;
-        int pos2 = pos;
         if (denseg.IsSetStrands())
             strand = denseg.GetStrands()[seg * num_rows + row];
-        if (strand == eNa_strand_minus && start >= 0)
+        if (strand == eNa_strand_minus)
         {
-            start = length - start - len;
-            pos2 = length - pos - 1;
+            NCBI_THROW(CException, eUnknown, "Cannot propagate through alignment on negative strand");
         }
-        if (start >= 0 && pos2 >= start && pos2 < start + len)
+        if (start >= 0 && pos >= start && pos < start + len)
         {
-            res = total_len + pos2 - start;
+            res = total_len + pos - start;
             found = true;
             break;
         }
-        if (start >= 0 && start > pos2 && left)
+        if (start >= 0 && start > pos && left)
         {
             res = total_len;
             partial5 = true;
             found = true;
             break;
         }
-        if (start >= 0 && start + len - 1 < pos2 && !left)
+        if (start >= 0 && start + len - 1 < pos && !left)
         {
             found_len = total_len + len - 1;
         }
@@ -293,17 +291,18 @@ TSignedSeqPos CFeaturePropagator::SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg
 
 TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg::TDim row, bool left, bool &partial5, bool &partial3) 
 {
-    int res = -1;
+    TSignedSeqPos res = -1;
     const CDense_seg& denseg = m_Alignment->GetSegs().GetDenseg();
     const CSeq_id& id = denseg.GetSeq_id(row);
     CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
     if (!bsh)
         return -1;
+    TSignedSeqPos length = bsh.GetBioseqLength();
     CDense_seg::TNumseg num_segs = denseg.GetNumseg();
     CDense_seg::TDim num_rows = denseg.GetDim();
     CDense_seg::TNumseg seg = 0;
     TSignedSeqPos total_len = 0;
-    int found_seg = -1;
+    TSignedSeqPos found_seg = -1;
     while ( seg < num_segs ) 
     {
         TSignedSeqPos start = denseg.GetStarts()[seg * num_rows + row];
@@ -311,18 +310,16 @@ TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg
         ENa_strand strand = eNa_strand_plus;
         if (denseg.IsSetStrands())
             strand = denseg.GetStrands()[seg * num_rows + row];
-           
-        total_len += len;
-        if ((total_len > pos && total_len - len <= pos && strand != eNa_strand_minus) ||
-            (total_len - 1>= pos && total_len -1 - len < pos && strand == eNa_strand_minus))
+        if (strand == eNa_strand_minus)
+        {
+            NCBI_THROW(CException, eUnknown, "Cannot propagate through alignment on negative strand");
+        }
+        if (total_len <= pos && total_len + len > pos)
         {
             if (start >= 0)
             {
-                res = start + (pos - (total_len - len));
-                if (strand == eNa_strand_minus)
-                {
-                    res = start + total_len - 1 - pos;
-                }
+               
+                res = start + pos - total_len;               
                 break;
             }
             else
@@ -331,6 +328,7 @@ TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg
                 break;
             }
         }
+        total_len += len;
         ++seg;
     }
     if (found_seg >= 0)
@@ -346,11 +344,13 @@ TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg
                 ENa_strand strand = eNa_strand_plus;
                 if (denseg.IsSetStrands())
                     strand = denseg.GetStrands()[seg * num_rows + row];
+                if (strand == eNa_strand_minus)
+                {
+                    NCBI_THROW(CException, eUnknown, "Cannot propagate through alignment on negative strand");
+                }
                 if (start >= 0)
                 {
                     res = start;
-                    if (strand == eNa_strand_minus)
-                        res = start + len - 1;
                     break;
                 }
                 ++seg;
@@ -367,11 +367,13 @@ TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg
                 ENa_strand strand = eNa_strand_plus;
                 if (denseg.IsSetStrands())
                     strand = denseg.GetStrands()[seg * num_rows + row];
+                if (strand == eNa_strand_minus)
+                {
+                    NCBI_THROW(CException, eUnknown, "Cannot propagate through alignment on negative strand");
+                }
                 if (start >= 0)
                 {
                     res = start + len - 1;
-                    if (strand == eNa_strand_minus)
-                        res = start;
                     break;
                 }
             }
@@ -466,6 +468,8 @@ CRef<CSeq_loc> CFeaturePropagator::MakeOrdered(const CSeq_loc &loc)
 
 CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId)
 {
+//    string label;
+//    targetId.GetLabel(&label);
     CRef<CSeq_loc> target;
     bool partial5 = sourceLoc.IsPartialStart(eExtreme_Positional);
     bool partial3 = sourceLoc.IsPartialStop(eExtreme_Positional);
@@ -497,8 +501,6 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
     }
     TSignedSeqPos seq_start = m_Src.GetRangeSeq_loc(0,0)->GetStart(objects::eExtreme_Positional);
     new_loc->SetId(targetId);
-    ENa_strand source_row_strand = m_Alignment->GetSeqStrand(source_row);
-    ENa_strand target_row_strand = m_Alignment->GetSeqStrand(target_row);
     CSeq_loc_I loc_it(*new_loc); 
     while(loc_it)      
     {
@@ -510,15 +512,26 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         CSeq_loc_CI::TRange range = loc_it.GetRange();
         TSignedSeqPos start = range.GetFrom() - seq_start;
         TSignedSeqPos stop = range.GetTo() - seq_start;
+        ENa_strand strand = loc_it.GetStrand();
         bool sub_partial5(false), sub_partial3(false);
         TSignedSeqPos align_start = SeqPosToAlignPos(start, source_row, true, sub_partial5, sub_partial3);
         TSignedSeqPos align_stop = SeqPosToAlignPos(stop, source_row, false, sub_partial5, sub_partial3);
         if (align_start < 0 || align_stop < 0)
         {
             if (loc_it.GetPos() == 0)
-                partial5 = true;
+            {
+                if (IsReverse(strand))
+                    partial3 = true;
+                else
+                    partial5 = true;
+            }
             if (loc_it.GetPos() == loc_it.GetSize() - 1)
-                partial3 = true;
+            {
+                 if (IsReverse(strand))
+                     partial5 = true;
+                 else
+                     partial3 = true;
+            }
             loc_it.Delete();
             continue;
         }
@@ -527,48 +540,34 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         if (new_start < 0 || new_stop < 0)
         {
             if (loc_it.GetPos() == 0)
-                partial5 = true;
+            {
+                if (IsReverse(strand))
+                    partial3 = true;
+                else
+                    partial5 = true;
+            }
             if (loc_it.GetPos() == loc_it.GetSize() - 1)
-                partial3 = true;
+            {
+                if (IsReverse(strand))
+                    partial5 = true;
+                else
+                    partial3 = true;
+            }
             loc_it.Delete();
             continue;
         }
-        if (sub_partial5 && loc_it.GetPos() == 0)
+        if (sub_partial5 && loc_it.GetPos() == 0 && !IsReverse(strand))
             partial5 = true;
-        if (sub_partial3 && loc_it.GetPos() == loc_it.GetSize() - 1)
+        if (sub_partial5 && loc_it.GetPos() == loc_it.GetSize() - 1 && IsReverse(strand))
+            partial5 = true;
+        if (sub_partial3 && loc_it.GetPos() == loc_it.GetSize() - 1 && !IsReverse(strand))
             partial3 = true;
-
+        if (sub_partial3 && loc_it.GetPos() == 0 && IsReverse(strand))
+            partial3 = true;
         if (new_stop < new_start)
         {
             swap(new_start, new_stop);
-        }
-        ENa_strand strand = loc_it.GetStrand();
-        if (IsReverse(target_row_strand) != IsReverse(source_row_strand))
-        {
-            loc_it.SetStrand(Reverse(strand));
-            CRef<CInt_fuzz> fuzz_from;
-            if (loc_it.GetFuzzFrom())
-            {
-                fuzz_from.Reset(new CInt_fuzz);
-                fuzz_from->Assign(*loc_it.GetFuzzFrom());
-                loc_it.ResetFuzzFrom();
-            }
-            CRef<CInt_fuzz> fuzz_to;
-            if (loc_it.GetFuzzTo())
-            {
-                fuzz_to.Reset(new CInt_fuzz);
-                fuzz_to->Assign(*loc_it.GetFuzzTo());
-                loc_it.ResetFuzzTo();
-            }
-            if (fuzz_from)
-            {
-                loc_it.SetFuzzTo(*fuzz_from->Negative(0));
-            }
-            if (fuzz_to)
-            {
-                loc_it.SetFuzzFrom(*fuzz_to->Negative(0));
-            }
-        }
+        }       
         loc_it.SetFrom(new_start);
         loc_it.SetTo(new_stop);
         ++loc_it;

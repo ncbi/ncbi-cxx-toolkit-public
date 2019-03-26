@@ -285,6 +285,7 @@ void AddAnticodon(CRef<CSeq_feat> trna, CRef<CSeq_loc> subloc)
     trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*subloc);
 }
 
+
 // propagate cds without code-break from seq 1 to seq 2 and 3
 void TestCds(bool loc_partial5, bool loc_partial3)
 {
@@ -327,51 +328,6 @@ void TestCds(bool loc_partial5, bool loc_partial3)
     listener.Clear();
 }
 
-
-void TestCdsMixStrand(bool loc_partial5, bool loc_partial3)
-{
-    size_t front_insert = 5;
-    CRef<CSeq_align> align;
-    CRef<CSeq_entry> entry, seq1, seq2, seq3;
-    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
-
-    CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id1, loc_partial5, loc_partial3);
-    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
-
-    CBioseq_Handle bsh1, bsh2, bsh3;
-    CRef<CScope> scope;
-    tie(bsh1, bsh2, bsh3, scope) = AddBioseqsToScope(entry);
-
-    auto len2 = bsh2.GetInst_Length();
-    unit_test_util::ReverseAlignmentStrand(align->SetSegs().SetDenseg(), 1, len2);
-
-    CMessageListener_Basic listener;
-
-    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, true, &listener);
-    // invert points, flip start and stop
-    CRef<CSeq_loc> expected_loc1 = CreateLoc(len2 - 15 - front_insert - 1, len2 - front_insert - 1, id2, loc_partial5, loc_partial3, true);
-    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
-    BOOST_CHECK_EQUAL(new_feat1->GetData().GetSubtype(), cds->GetData().GetSubtype());
-    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
-    BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
-    BOOST_CHECK_EQUAL(listener.Count(), 0);
-
-    listener.Clear();
-
-    edit::CFeaturePropagator propagator2(bsh1, bsh3, *align, false, false, true, true, &listener);
-    CRef<CSeq_loc> expected_loc2 = CreateLoc(front_insert * 2, 15 + front_insert * 2, id3, loc_partial5, loc_partial3);
-    CRef<CSeq_feat> new_feat2 = propagator2.Propagate(*cds);
-    BOOST_CHECK_EQUAL(new_feat2->GetData().GetSubtype(), cds->GetData().GetSubtype());
-    BOOST_CHECK(expected_loc2->Equals(new_feat2->GetLocation()));
-    BOOST_CHECK_EQUAL(new_feat2->GetData().GetCdregion().IsSetCode_break(), false);
-    BOOST_CHECK_EQUAL(listener.Count(), 0);
-
-    listener.Clear();
-}
 
 
 // propagate cds with code-break from seq 1 to seq 2 and 3
@@ -705,8 +661,19 @@ void TestPartialWhenCutStop(bool partial3)
 
     edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    /*CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fTrimMappedLocation);
+    CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(*bsh1.GetSeqId(), *bsh2.GetSeqId(), *align, &bsh2.GetScope(), mapper_options));
+    mapper->SetMergeAll();
+    mapper->SetGapRemove();
+    mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
+    CRef<CSeq_loc> new_loc = mapper->Map(cds->GetLocation());
+    new_loc->ChangeToMix();
+    cout << MSerial_AsnText << cds->GetLocation();
+    cout << MSerial_AsnText << *new_loc;
+    */
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(5, 15, 20, 29, eNa_strand_plus, id2, false, true);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+//    BOOST_CHECK(expected_loc1->Equals(*new_loc));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
     listener.Clear();    
 }
@@ -742,9 +709,19 @@ void TestPartialWhenCutLastInterval(bool partial3)
 
     edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, true, &listener);
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
+    /*CSeq_loc_Mapper_Options mapper_options(CSeq_loc_Mapper::fTrimMappedLocation);
+    CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(*bsh1.GetSeqId(), *bsh2.GetSeqId(), *align, &bsh2.GetScope(), mapper_options));
+    mapper->SetMergeAll();
+    mapper->SetGapRemove();
+    mapper->SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr);
+    CRef<CSeq_loc> new_loc = mapper->Map(cds->GetLocation());
+    cout << MSerial_AsnText << cds->GetLocation();
+    cout << MSerial_AsnText << *new_loc;
+    */
     CRef<CSeq_loc> expected_loc1 = CreateLoc(5, 15, id2, false, true);
     expected_loc1->SetInt().SetStrand(eNa_strand_plus);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
+// BOOST_CHECK(expected_loc1->Equals(*new_loc));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
     listener.Clear();    
 }
@@ -1047,57 +1024,6 @@ void TestCircularTopology()
 }
 
 
-void TestCircularTopologyMixStrand()
-{
-    size_t front_insert = 5;
-    CRef<CSeq_align> align;
-    CRef<CSeq_entry> entry, seq1, seq2, seq3;
-    tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-
-    seq1->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    seq2->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    seq3->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
-
-    CRef<CSeq_loc> main_loc = CreateTwoIntLoc(50, 59, 0, 5, eNa_strand_plus, id1, false, false);
-    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
-    CBioseq_Handle bsh1, bsh2, bsh3;
-    CRef<CScope> scope;
-    tie(bsh1, bsh2, bsh3, scope) = AddBioseqsToScope(entry);
-
-    CDense_seg& denseg = align->SetSegs().SetDenseg();
-    denseg.SetNumseg(3);
-    denseg.ResetLens();
-    denseg.SetLens().push_back(20);
-    denseg.SetLens().push_back(20);
-    denseg.SetLens().push_back(20);
-    denseg.ResetStarts();
-    denseg.SetStarts().push_back(0);
-    denseg.SetStarts().push_back(0);
-    denseg.SetStarts().push_back(0);
-    denseg.SetStarts().push_back(20);
-    denseg.SetStarts().push_back(-1);
-    denseg.SetStarts().push_back(-1);
-    denseg.SetStarts().push_back(40);
-    denseg.SetStarts().push_back(45);
-    denseg.SetStarts().push_back(50);
-
-    auto len2 = bsh2.GetInst_Length();
-    unit_test_util::ReverseAlignmentStrand(align->SetSegs().SetDenseg(), 1, len2);
-
-    CMessageListener_Basic listener;
-
-    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, false, true, &listener);
-    CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
-    CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(len2 - 65, len2 - 56, len2 - 6, len2 - 1, eNa_strand_minus, id2, false, false);
-    BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
-    BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();
-}
-
 
 // test point location inside alignment
 void TestPointLocInside()
@@ -1276,11 +1202,6 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestCds(true, false);
     TestCds(true, true);
 
-    TestCdsMixStrand(false, false);
-    TestCdsMixStrand(false, true);
-    TestCdsMixStrand(true, false);
-    TestCdsMixStrand(true, true);
-
     TestCdsWithCodeBreak(false, false);
     TestCdsWithCodeBreak(false, true);
     TestCdsWithCodeBreak(true, false);
@@ -1319,7 +1240,6 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestDoNotExtendOverGap();
     TestOrderedLoc();
     TestCircularTopology();
-    TestCircularTopologyMixStrand();
     TestPointLocInside();
     TestPointLocOutside();
 
@@ -1328,7 +1248,7 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestPartialWhenCutLastIntervalDoNotExtend(false);
     TestPartialWhenCutLastIntervalDoNotExtend(true);
     TestPartialWhenCutStartDoNotExtend(false);
-    TestPartialWhenCutStartDoNotExtend(true);    
+    TestPartialWhenCutStartDoNotExtend(true);
 }
 
 
