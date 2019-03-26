@@ -34,6 +34,8 @@
 
 #include <corelib/ncbistr.hpp>
 
+#include <misc/fix_pub/fix_pub.hpp>
+
 #include "wgs_errors.hpp"
 #include "wgs_utils.hpp"
 
@@ -331,9 +333,20 @@ void CWgsParseDiagHandler::Post(const SDiagMessage& mess)
     string sev = CNcbiDiag::SeverityName(mess.m_Severity);
     NStr::ToUpper(sev);
 
+    string module_str(mess.m_Module);
+    string error_id;
+
+    if (module_str == "medarch") {
+        error_id = CPubFixing::GetErrorId(mess.m_ErrCode, mess.m_ErrSubCode);
+    }
+    else {
+        module_str = "wgsparse";
+        error_id = GetCodeStr(mess.m_ErrCode, mess.m_ErrSubCode);
+    }
+
     CNcbiOstrstream str_os;
 
-    str_os << "[wgsparse] " << sev << ": wgsparse [" << GetCodeStr(mess.m_ErrCode, mess.m_ErrSubCode) << "] " << mess.m_Buffer << '\n';
+    str_os << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << '\n';
 
     string str = CNcbiOstrstreamToString(str_os);
     cerr.write(str.data(), str.size());

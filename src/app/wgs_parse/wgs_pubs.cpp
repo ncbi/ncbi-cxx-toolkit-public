@@ -61,8 +61,13 @@ static int GetPmid(const CPubdesc& pubdesc)
 
 string CPubCollection::AddPub(CPubdesc& pubdesc, bool medline_lookup)
 {
-    string pubdesc_str = GetPubdescKey(pubdesc, medline_lookup);
+    string pubdesc_str = GetPubdescKey(pubdesc, false);
     auto it = m_pubs.find(pubdesc_str);
+
+    if (it == m_pubs.end()) {
+        pubdesc_str = GetPubdescKey(pubdesc, medline_lookup);
+        it = m_pubs.find(pubdesc_str);
+    }
 
     if (it == m_pubs.end()) {
         

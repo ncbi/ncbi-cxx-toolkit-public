@@ -124,7 +124,7 @@ static void RemovePubs(CSeq_entry& entry, const list<string>& common_pubs, CPubC
             bool removed = false;
             if ((*cur_descr)->IsPub()) {
 
-                string pubdesc_key = CPubCollection::GetPubdescKey((*cur_descr)->SetPub(), GetParams().IsMedlineLookup());
+                string pubdesc_key = CPubCollection::GetPubdescKey((*cur_descr)->SetPub(), false);
 
                 /*if (date || GetParams().GetSource() != eNCBI) {
                     pubdesc_key = CPubCollection::GetPubdescKeyForCitSub((*cur_descr)->SetPub(), date);

@@ -165,13 +165,44 @@ static void StripErRemarks(CPubdesc& pubdescr)
     }
 }
 
+static void LogMessages(const CMessageListener_Basic& listener)
+{
+    static const MDiagModule this_module("medarch");
+
+    size_t num_of_msgs = listener.Count();
+    for (size_t i = 0; i < num_of_msgs; ++i) {
+        const IMessage& msg = listener.GetMessage(i);
+
+        switch (msg.GetSeverity())
+        {
+        case eDiag_Info:
+            ERR_POST_EX(msg.GetCode(), msg.GetSubCode(), this_module << Info << msg.GetText());
+            break;
+        case eDiag_Warning:
+            ERR_POST_EX(msg.GetCode(), msg.GetSubCode(), this_module << Warning << msg.GetText());
+            break;
+        case eDiag_Error:
+            ERR_POST_EX(msg.GetCode(), msg.GetSubCode(), this_module << Error << msg.GetText());
+            break;
+        case eDiag_Critical:
+            ERR_POST_EX(msg.GetCode(), msg.GetSubCode(), this_module << Critical << msg.GetText());
+            break;
+        case eDiag_Fatal:
+            ERR_POST_EX(msg.GetCode(), msg.GetSubCode(), this_module << Fatal << msg.GetText());
+            break;
+        default:
+            ERR_POST_EX(msg.GetCode(), msg.GetSubCode(), this_module << Trace << msg.GetText());
+        }
+    }
+}
+
 void SinglePubLookup(CPubdesc& pubdescr)
 {
     CMessageListener_Basic listener;
     CPubFixing fixing(true, true, false, &listener);
     fixing.FixPubEquiv(pubdescr.SetPub());
 
-    // TODO: do logging all messages from listener
+    LogMessages(listener);
 
     StripErRemarks(pubdescr);
 }
@@ -262,7 +293,7 @@ static void FixPub(CPub_set& pub_set)
         FixPubs(pub_set, fixing);
     }
 
-    // TODO log all messages from listener
+    LogMessages(listener);
 }
 
 static void FindPubsInFeatures(CSeq_annot::C_Data::TFtable& ftable, CPubCollection& pubs)
