@@ -40,8 +40,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/alnread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-
 
 BEGIN_NCBI_SCOPE
 // class CAlnError holds error information
@@ -140,13 +140,7 @@ public:
     typedef CAlnErrorContainer TErrorList;
 
 
-    struct SDeflineInfo {
-        int line_num;
-        string data;
-    };
-
-    using TDeflineInfo = SDeflineInfo;
-
+    using TDeflineInfo = objects::SLineInfo;
 
     // constructor
     // defaults to protein alphabet and A2M gap characters

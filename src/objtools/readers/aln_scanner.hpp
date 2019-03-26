@@ -32,7 +32,6 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include "aln_line_info.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);

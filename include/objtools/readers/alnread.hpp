@@ -45,6 +45,14 @@ BEGIN_SCOPE(objects);
 class ILineErrorListener;
 
 //  =============================================================================
+struct SLineInfo {
+//  =============================================================================
+    string mData;
+    int mNumLine;
+};
+
+
+//  =============================================================================
 class CSequenceInfo {
 //  =============================================================================
 public:
@@ -126,15 +134,11 @@ public:
     NumSequences() const { return mSequences.size(); };
 
 
-    struct SDeflineInfo {
-        int line_num;
-        string data;
-    };
-    using TDeflineInfo = SDeflineInfo;
+    using TLineInfo = SLineInfo;
 
     vector<string> mIds;
     vector<string> mSequences;
-    vector<TDeflineInfo> mDeflines;
+    vector<TLineInfo> mDeflines;
     char align_format_found;
 };
 

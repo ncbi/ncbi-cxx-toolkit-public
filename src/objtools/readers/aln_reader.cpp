@@ -31,7 +31,6 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/aln_reader.hpp>
-#include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/error_codes.hpp>
 #include <util/format_guess.hpp>
@@ -331,9 +330,9 @@ void CAlnReader::Read(
                 m_DeflineInfo.resize(numDeflines);
                 for (int i=0;  i< numDeflines;  ++i) {
                     m_DeflineInfo[i] = {
-                        alignmentInfo.mDeflines[i].line_num, 
                         NStr::TruncateSpaces(
-                        alignmentInfo.mDeflines[i].data)};
+                        alignmentInfo.mDeflines[i].mData),
+                        alignmentInfo.mDeflines[i].mNumLine};
                 }
             }
             else {
@@ -522,8 +521,8 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
         // Reconstruct original defline string from results 
         // returned by C code.
         string fasta_defline = ">" + m_Ids[i];
-        if (i < m_DeflineInfo.size() && !m_DeflineInfo[i].data.empty()) {
-            fasta_defline += " " + m_DeflineInfo[i].data;
+        if (i < m_DeflineInfo.size() && !m_DeflineInfo[i].mData.empty()) {
+            fasta_defline += " " + m_DeflineInfo[i].mData;
         }
         ids[i] = GenerateID(fasta_defline, i, fasta_flags);
     }
@@ -780,7 +779,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         }
         else {
             for (auto& pSeqEntry : seq_set) {
-                x_AddTitle(m_DeflineInfo[i++].data, 
+                x_AddTitle(m_DeflineInfo[i++].mData, 
                         pSeqEntry->SetSeq());
             }
         }
@@ -804,11 +803,11 @@ static void s_AppendMods(
     }
 }
 
-void CAlnReader::x_AddMods(const TDeflineInfo& defline_info, 
+void CAlnReader::x_AddMods(const SLineInfo& defline_info, 
         CBioseq& bioseq,
         ILineErrorListener* pErrorListener)
 {
-    auto defline = defline_info.data;
+    auto defline = defline_info.mData;
     if (NStr::IsBlank(defline)) {
         return;
     }
@@ -820,7 +819,7 @@ void CAlnReader::x_AddMods(const TDeflineInfo& defline_info,
                     sev, 
                     EReaderCode::eReader_Mods,
                     subcode,
-                    defline_info.line_num,
+                    defline_info.mNumLine,
                     msg);
         };
         

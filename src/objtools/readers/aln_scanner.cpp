@@ -173,10 +173,7 @@ CAlnScanner::xExportAlignmentData(
     alignInfo.mIds.assign(mSeqIds.begin(), mSeqIds.end());
 
     auto numDeflines = mDeflines.size();
-    alignInfo.mDeflines.resize(numDeflines);
-    for (auto i=0; i < numDeflines; ++i) {
-        alignInfo.mDeflines[i] = {mDeflines[i].mNumLine, mDeflines[i].mData};
-    }
+    alignInfo.mDeflines.assign(mDeflines.begin(), mDeflines.end());
 
     auto numSequences = mSequences.size();
     alignInfo.mSequences.resize(numSequences);
