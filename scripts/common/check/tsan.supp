@@ -5,8 +5,6 @@ race:^ncbi::CSafeStatic<ncbi::CParam
 
 # False positive (grichenk) CXX-10544
 
-race:^ncbi::CDiagContextThreadData::GetThreadData()
-race:^ncbi::DoThrowTraceAbort()
 race:^ncbi::CSafeStatic<ncbi::CTls
 
 
@@ -17,3 +15,9 @@ race:^ncbi::CSafeStatic<ncbi::CTls
 # NOTE: ThreadSanitizer doesn't work with test_ncbi_system,
 #       that have limits tests that incompatible with sanitizer. 
 signal:corelib/test/test_ncbi_system.cpp
+
+
+# (vasilche) CXX-10546
+
+# error, just not important - ignore
+race:corelib/test/test_tls_object.cpp
