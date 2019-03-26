@@ -51,7 +51,14 @@ public:
 protected:
     void
     xImportAlignmentData(
+        CSequenceInfo&,
         CLineInput&) override;
+
+    virtual void
+    xVerifySingleSequenceData(
+        const CSequenceInfo&,
+        const string& seqId,
+        const vector<TLineInfo> seqData);
 
     void
     xGetExpectedDataSize(

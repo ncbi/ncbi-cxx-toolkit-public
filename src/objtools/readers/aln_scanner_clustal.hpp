@@ -48,15 +48,10 @@ public:
     CAlnScannerClustal() {};
     ~CAlnScannerClustal() {};
 
-    void
-    ProcessAlignmentFile(
-        const CSequenceInfo&,
-        CLineInput&,
-        SAlignmentFile&) override;
-
 protected:
     void
     xImportAlignmentData(
+        CSequenceInfo&,
         CLineInput&) override;
 
     static bool 

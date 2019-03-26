@@ -51,15 +51,10 @@ public:
     CAlnScannerFastaGap() {};
     ~CAlnScannerFastaGap() {};
 
-    void
-    ProcessAlignmentFile(
-        const CSequenceInfo&,
-        CLineInput&,
-        SAlignmentFile&) override;
-
 protected:
     void
     xImportAlignmentData(
+        CSequenceInfo&,
         CLineInput&) override;
 
     static void

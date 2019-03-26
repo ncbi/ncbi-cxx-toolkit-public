@@ -49,12 +49,12 @@ class CSequenceInfo {
 //  =============================================================================
 public:
     CSequenceInfo(
-        const string& alphabet,
-        const string& match,
-        const string& missing,
-        const string& beginningGap,
-        const string& middleGap,
-        const string& endGap):
+        string& alphabet,
+        string& match,
+        string& missing,
+        string& beginningGap,
+        string& middleGap,
+        string& endGap):
         mAlphabet(alphabet),
         mMatch(match),
         mMissing(missing),
@@ -66,52 +66,52 @@ public:
     const string&
     Alphabet() const { return mAlphabet; };
 
-    void
+    CSequenceInfo&
     SetAlphabet(
-        const string& alphabet) { mAlphabet = alphabet; }
+        const string& alphabet) { mAlphabet = alphabet; return *this; }
 
     const string&
     Match() const { return mMatch; };
 
-    void
+    CSequenceInfo&
     SetMatch(
-        char c) { mMatch = string(1, c); };
+        char c) { mMatch = string(1, c); return *this; };
 
     const string&
     Missing() const { return mMissing; };
 
-    void
+    CSequenceInfo&
     SetMissing(
-        char c) { mMissing = string(1, c); };
+        char c) { mMissing = string(1, c); return *this; };
 
     const string&
     BeginningGap() const { return mBeginningGap; };
 
-    void
+    CSequenceInfo&
     SetBeginningGap(
-        char c) { mBeginningGap = string(1, c); };
+        char c) { mBeginningGap = string(1, c); return *this; };
 
     const string&
     MiddleGap() const { return mMiddleGap; };
 
-    void
+    CSequenceInfo&
     SetMiddleGap(
-        char c) { mMiddleGap = string(1, c); };
+        char c) { mMiddleGap = string(1, c); return *this; };
 
     const string&
     EndGap() const { return mEndGap; };
 
-    void
+    CSequenceInfo&
     SetEndGap(
-        char c) { mEndGap = string(1, c); };
+        char c) { mEndGap = string(1, c); return *this; };
 
 protected:
-    string mMatch;
-    string mAlphabet;
-    string mMissing;
-    string mBeginningGap;
-    string mMiddleGap;
-    string mEndGap;
+    string& mMatch;
+    string& mAlphabet;
+    string& mMissing;
+    string& mBeginningGap;
+    string& mMiddleGap;
+    string& mEndGap;
 }; 
 
 

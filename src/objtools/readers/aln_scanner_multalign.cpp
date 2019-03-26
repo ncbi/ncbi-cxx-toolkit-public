@@ -45,9 +45,14 @@ BEGIN_SCOPE(objects);
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerMultAlign::xImportAlignmentData(
+    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
+    // set sequence info to multi-align conventions:
+    sequenceInfo.SetMiddleGap('.').SetBeginningGap('.').SetEndGap('.');
+    sequenceInfo.SetMatch(0).SetMissing(0);
+
     string line;
     int lineCount(0);
 
@@ -135,6 +140,37 @@ CAlnScannerMultAlign::xImportAlignmentData(
 
 //  ----------------------------------------------------------------------------
 void
+CAlnScannerMultAlign::xVerifySingleSequenceData(
+    const CSequenceInfo& sequenceInfo,
+    const string& seqId,
+    const vector<TLineInfo> lineInfos)
+//  -----------------------------------------------------------------------------
+{
+    const char* errTempl("Bad character [%c] found at data position %d.");
+
+    const string& alphabet = sequenceInfo.Alphabet();
+    string legalAnywhere = alphabet + ".";
+
+    for (auto lineInfo: lineInfos) {
+        if (lineInfo.mData.empty()) {
+            continue;
+        }
+        string seqData(lineInfo.mData);
+        auto illegalChar = seqData.find_first_not_of(legalAnywhere);
+        if (illegalChar != string::npos) {
+            string description = ErrorPrintf(
+                errTempl, seqData[illegalChar], illegalChar);
+            throw SShowStopper(
+                lineInfo.mNumLine,
+                EAlnSubcode::eAlnSubcode_BadDataChars,
+                description,
+                seqId);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
 CAlnScannerMultAlign::xGetExpectedDataSize(
     const string& line,
     int& dataSize)
@@ -155,7 +191,7 @@ CAlnScannerMultAlign::xGetExpectedDataSize(
     catch (std::exception&) {
         // error: bad offset values
     }
-    dataSize = (endOffset - startOffset + 1);
+    dataSize = (tokens.size() == 2 ? (endOffset - startOffset + 1) : 0);
 }
 
 //  ----------------------------------------------------------------------------

@@ -56,6 +56,7 @@ public:
 protected:
     void
     xImportAlignmentData(
+        CSequenceInfo&,
         CLineInput&) override;
 
     virtual void

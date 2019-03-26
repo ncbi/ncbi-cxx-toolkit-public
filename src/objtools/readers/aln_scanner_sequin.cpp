@@ -45,6 +45,7 @@ BEGIN_SCOPE(objects);
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerSequin::xImportAlignmentData(
+    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {

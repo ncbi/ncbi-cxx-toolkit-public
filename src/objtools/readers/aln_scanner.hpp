@@ -54,13 +54,14 @@ public:
 
     virtual void
     ProcessAlignmentFile(
-        const CSequenceInfo&,
+        CSequenceInfo&,
         CLineInput&,
         SAlignmentFile&);
 
 protected:
     virtual void
     xImportAlignmentData(
+        CSequenceInfo&,
         CLineInput&);
 
     virtual void

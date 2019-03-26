@@ -44,21 +44,8 @@ BEGIN_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 void
-CAlnScannerClustal::ProcessAlignmentFile(
-    const CSequenceInfo& sequenceInfo,
-    CLineInput& iStr,
-    SAlignmentFile& alignInfo)
-//  ----------------------------------------------------------------------------
-{
-    xImportAlignmentData(iStr);
-    xVerifyAlignmentData(sequenceInfo);
-    xExportAlignmentData(alignInfo);
-}
-
-
-//  ----------------------------------------------------------------------------
-void
 CAlnScannerClustal::xImportAlignmentData(
+    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {

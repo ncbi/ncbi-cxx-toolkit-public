@@ -59,6 +59,7 @@ CAlnScannerFastaGap::sSplitFastaDef(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerFastaGap::xImportAlignmentData(
+    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
@@ -124,19 +125,6 @@ CAlnScannerFastaGap::xImportAlignmentData(
         waitingForSeqData = true;
         currentDataLineIndex = 0;
     }
-}
-
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerFastaGap::ProcessAlignmentFile(
-    const CSequenceInfo& sequenceInfo,
-    CLineInput& iStr,
-    SAlignmentFile& alignInfo)
-//  ----------------------------------------------------------------------------
-{
-    xImportAlignmentData(iStr);
-    xVerifyAlignmentData(sequenceInfo);
-    xExportAlignmentData(alignInfo);
 }
 
 

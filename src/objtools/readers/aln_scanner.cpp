@@ -46,12 +46,12 @@ BEGIN_SCOPE(objects);
 //  ----------------------------------------------------------------------------
 void
 CAlnScanner::ProcessAlignmentFile(
-    const CSequenceInfo& sequenceInfo,
+    CSequenceInfo& sequenceInfo,
     CLineInput& iStr,
     SAlignmentFile& alignInfo)
 //  ----------------------------------------------------------------------------
 {
-    xImportAlignmentData(iStr);
+    xImportAlignmentData(sequenceInfo, iStr);
     xVerifyAlignmentData(sequenceInfo);
     xExportAlignmentData(alignInfo);
 }
@@ -59,6 +59,7 @@ CAlnScanner::ProcessAlignmentFile(
 //  ----------------------------------------------------------------------------
 void
 CAlnScanner::xImportAlignmentData(
+    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {

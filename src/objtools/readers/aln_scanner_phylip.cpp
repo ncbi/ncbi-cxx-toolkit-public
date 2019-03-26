@@ -56,6 +56,7 @@ CAlnScannerPhylip::sExtractDefLine(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerPhylip::xImportAlignmentData(
+    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
@@ -76,6 +77,7 @@ CAlnScannerPhylip::xImportAlignmentData(
     // move onto the next line
 
     while (iStr.ReadLine(line, lineCount)) {
+        NStr::TruncateSpacesInPlace(line);
         if (line.empty()) {
             continue;
         }
@@ -91,8 +93,6 @@ CAlnScannerPhylip::xImportAlignmentData(
             continue;
         }
 
-        NStr::TruncateSpacesInPlace(line);
-        
         string lowerLine(line);
         NStr::ToLower(lowerLine);
         
