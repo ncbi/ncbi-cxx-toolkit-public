@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 
@@ -49,10 +49,6 @@ CAlnScannerMultAlign::xImportAlignmentData(
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
-    // set sequence info to multi-align conventions:
-    sequenceInfo.SetMiddleGap('.').SetBeginningGap('.').SetEndGap('.');
-    sequenceInfo.SetMatch(0).SetMissing(0);
-
     string line;
     int lineCount(0);
 
@@ -136,6 +132,17 @@ CAlnScannerMultAlign::xImportAlignmentData(
         }
     }
     
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerMultAlign::xAdjustSequenceInfo(
+    CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    // set sequence info to multi-align conventions:
+    sequenceInfo.SetMiddleGap('.').SetBeginningGap('.').SetEndGap('.');
+    sequenceInfo.SetMatch(0).SetMissing(0);
 }
 
 //  ----------------------------------------------------------------------------

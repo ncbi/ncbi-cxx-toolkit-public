@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors:  Frank Ludwig
  *
  */
 
@@ -237,19 +237,19 @@ CAlnScannerNexus::xVerifySingleSequenceData(
 
     const string& alphabet = sequenceInfo.Alphabet();
     string legalAnywhere = alphabet;
-    if (!mGapChar.empty()) {
+    if (mGapChar != 0) {
         legalAnywhere += mGapChar;
     }
     else {
         legalAnywhere += sequenceInfo.MiddleGap();
     }
-    if (!mMatchChar.empty()) {
+    if (mMatchChar != 0) {
         legalAnywhere += mMatchChar;
     }
     else {
         legalAnywhere += sequenceInfo.Match();
     }
-    if (!mMissingChar.empty()) {
+    if (mMissingChar != 0) {
         legalAnywhere += mMissingChar;
     }
     else {
@@ -333,18 +333,37 @@ CAlnScannerNexus::xProcessFormatLine(
     tokens.pop_front();
     for (auto token: tokens) {
         if (NStr::StartsWith(token, prefixMissing)) {
-            mMissingChar = token.substr(prefixMissing.size());
+            mMissingChar = token[prefixMissing.size()];
             continue;
         }
         if (NStr::StartsWith(token, prefixGap)) {
-            mGapChar = token.substr(prefixGap.size());
+            mGapChar = token[prefixGap.size()];
             continue;
         }
         if (NStr::StartsWith(token, prefixMatch)) {
-            mMatchChar = token.substr(prefixMatch.size());
+            mMatchChar = token[prefixMatch.size()];
             continue;
         }
     }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xAdjustSequenceInfo(
+    CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    if (mGapChar != 0) {
+        sequenceInfo
+            .SetBeginningGap(mGapChar).SetMiddleGap(mGapChar).SetEndGap(mGapChar);
+    }
+    if (mMatchChar != 0) {
+        sequenceInfo.SetMatch(mMatchChar);
+    }
+    if (mMissingChar != 0) {
+        sequenceInfo.SetMissing(mMissingChar);
+    }
+    
 }
 
 //  ----------------------------------------------------------------------------

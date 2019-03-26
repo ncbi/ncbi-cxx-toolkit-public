@@ -28,7 +28,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 #include <corelib/ncbistd.hpp>
@@ -63,6 +63,10 @@ protected:
     xImportAlignmentData(
         CSequenceInfo&,
         CLineInput&);
+
+    virtual void
+    xAdjustSequenceInfo(
+        CSequenceInfo&);
 
     virtual void
     xVerifyAlignmentData(

@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 
@@ -52,6 +52,7 @@ CAlnScanner::ProcessAlignmentFile(
 //  ----------------------------------------------------------------------------
 {
     xImportAlignmentData(sequenceInfo, iStr);
+    xAdjustSequenceInfo(sequenceInfo);
     xVerifyAlignmentData(sequenceInfo);
     xExportAlignmentData(alignInfo);
 }
@@ -67,6 +68,14 @@ CAlnScanner::xImportAlignmentData(
         -1,
         eAlnSubcode_UnsupportedFileFormat,
         "Input file format not recognized.");
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScanner::xAdjustSequenceInfo(
+    CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
 }
 
 //  ----------------------------------------------------------------------------

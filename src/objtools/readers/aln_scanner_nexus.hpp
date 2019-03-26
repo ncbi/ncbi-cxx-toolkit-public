@@ -28,7 +28,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors:  Frank Ludwig
  *
  */
 #include <corelib/ncbistd.hpp>
@@ -50,7 +50,8 @@ class CAlnScannerNexus:
         DEFLINES
     };
 public:
-    CAlnScannerNexus(): mState(SKIPPING) {};
+    CAlnScannerNexus(): 
+        mState(SKIPPING), mGapChar(0), mMissingChar(0), mMatchChar(0) {};
     ~CAlnScannerNexus() {};
 
 protected:
@@ -58,6 +59,10 @@ protected:
     xImportAlignmentData(
         CSequenceInfo&,
         CLineInput&) override;
+
+    virtual void
+    xAdjustSequenceInfo(
+        CSequenceInfo&) override;
 
     virtual void
     xVerifySingleSequenceData(
@@ -87,9 +92,9 @@ protected:
     EState mState;
     int mNumSequences = 0;
     int mSequenceSize = 0;
-    string mMatchChar;
-    string mMissingChar;
-    string mGapChar;
+    char mMatchChar;
+    char mMissingChar;
+    char mGapChar;
 };
 
 END_SCOPE(objects)

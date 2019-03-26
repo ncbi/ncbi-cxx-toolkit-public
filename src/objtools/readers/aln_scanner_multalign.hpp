@@ -28,7 +28,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 #include <corelib/ncbistd.hpp>
@@ -55,10 +55,14 @@ protected:
         CLineInput&) override;
 
     virtual void
+    xAdjustSequenceInfo(
+        CSequenceInfo&) override;
+
+    virtual void
     xVerifySingleSequenceData(
         const CSequenceInfo&,
         const string& seqId,
-        const vector<TLineInfo> seqData);
+        const vector<TLineInfo> seqData) override;
 
     void
     xGetExpectedDataSize(
