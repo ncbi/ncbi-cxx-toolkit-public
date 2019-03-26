@@ -73,6 +73,7 @@ void    CAsnCacheStats::DumpSeqIds( CNcbiOstream & stream ) const
         if (m_IncludeFlags & eIncludeTimestamp) {
             stream << " | " << timestamp;
         }
+        stream << '\n';
 
         seqid_count++;
     });
