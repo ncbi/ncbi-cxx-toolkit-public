@@ -14,6 +14,6 @@ race:^ncbi::CSafeStatic<ncbi::CTls
 
 # It is unsafe to use CTime::AsString() in exit print handler,
 # because it allocates memory, that is not signal-safe.
-# NOTE: ThreadSanotizer doesn't work with test_ncbi_system,
+# NOTE: ThreadSanitizer doesn't work with test_ncbi_system,
 #       that have limits tests that incompatible with sanitizer. 
 signal:corelib/test/test_ncbi_system.cpp
