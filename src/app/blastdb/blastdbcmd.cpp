@@ -53,6 +53,8 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 #endif
 
+static const string NA = "N/A";
+
 /// The application class
 class CBlastDBCmdApp : public CNcbiApplication
 {
@@ -541,8 +543,9 @@ private:
 	CNcbiOstream & m_Out;
 	vector<int> m_Fields;
 	vector<string> m_Seperators;
+	bool m_NeedTaxInfoLookup;
 public:
-	CPrintTaxFields(CNcbiOstream & out, const string & fmt): m_Out(out) {
+	CPrintTaxFields(CNcbiOstream & out, const string & fmt): m_Out(out), m_NeedTaxInfoLookup(true) {
 		vector<string> fields;
         string sp = kEmptyStr;
 		if(fmt == "%f") {
@@ -596,6 +599,9 @@ public:
 			NCBI_THROW(CInputException, eInvalidInput,
 				       "Invalid format options for tax_info.");
 		}
+		if((m_Fields.size() == 1) && (m_Fields[0] == eTaxID)){
+			m_NeedTaxInfoLookup = false;
+		}
 	}
 
 	void PrintEntry(const SSeqDBTaxInfo & t){
@@ -626,7 +632,7 @@ public:
 		m_Out << m_Seperators.back();
 		m_Out << "\n";
 	}
-
+	bool NeedTaxNames(){return m_NeedTaxInfoLookup;}
 };
 
 
@@ -646,7 +652,19 @@ CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
 	SSeqDBTaxInfo info;
     ITERATE(set<Int4>, itr, tax_ids) {
     	SSeqDBTaxInfo info;
-   		CSeqDBTaxInfo::GetTaxNames(*itr, info);
+    	if(tf.NeedTaxNames()){
+    		CSeqDBTaxInfo::GetTaxNames(*itr, info);
+    		if(info.taxid == 0){
+    			info.taxid = *itr;
+   				info.scientific_name = NA;
+   				info.common_name = NA;
+   				info.blast_name = NA;
+   				info.s_kingdom = NA;
+   			}
+    	}
+    	else {
+   			info.taxid = *itr;
+    	}
    		tf.PrintEntry(info);
     }
 }
