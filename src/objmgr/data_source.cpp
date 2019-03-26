@@ -103,7 +103,8 @@ unsigned CDataSource::GetDefaultBlobCacheSizeLimit(void)
 CDataSource::CDataSource(void)
     : m_DefaultPriority(CObjectManager::kPriority_Entry),
       m_Blob_Cache_Size(0),
-      m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit())
+      m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit()),
+      m_StaticBlobCounter(0)
 {
 }
 
@@ -113,7 +114,8 @@ CDataSource::CDataSource(CDataLoader& loader)
       m_DefaultPriority(loader.GetDefaultPriority()),
       m_Blob_Cache_Size(0),
       m_Blob_Cache_Size_Limit(min(GetDefaultBlobCacheSizeLimit(),
-                                  loader.GetDefaultBlobCacheSizeLimit()))
+                                  loader.GetDefaultBlobCacheSizeLimit())),
+      m_StaticBlobCounter(0)
 {
     m_Loader->SetTargetDataSource(*this);
 }
@@ -123,7 +125,8 @@ CDataSource::CDataSource(const CObject& shared_object, const CSeq_entry& entry)
     : m_SharedObject(&shared_object),
       m_DefaultPriority(CObjectManager::kPriority_Entry),
       m_Blob_Cache_Size(0),
-      m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit())
+      m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit()),
+      m_StaticBlobCounter(0)
 {
     CTSE_Lock tse_lock = AddTSE(const_cast<CSeq_entry&>(entry));
     m_StaticBlobs.PutLock(tse_lock);
@@ -186,6 +189,7 @@ void CDataSource::DropAllTSEs(void)
         m_Blob_Map.clear();
         m_Blob_Cache.clear();
         m_Blob_Cache_Size = 0;
+        m_StaticBlobCounter = 0;
     }}
 }
 
@@ -217,6 +221,10 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
 CDataSource::TTSE_Lock CDataSource::AddStaticTSE(CRef<CTSE_Info> info)
 {
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    if ( info->m_BlobVersion == -1 ) {
+        // assign fake version for conflict resolution
+        info->m_BlobVersion = -1-(++m_StaticBlobCounter);
+    }
     TTSE_Lock lock = AddTSE(info);
     m_StaticBlobs.AddLock(lock);
     return lock;
@@ -1184,6 +1192,21 @@ SSeqMatch_DS CDataSource::x_GetSeqMatch(const CSeq_id_Handle& idh,
 }
 
 
+SSeqMatch_DS CDataSource::x_GetSeqMatch(const CSeq_id_Handle& idh)
+{
+    TTSE_LockSet locks;
+    try {
+        return x_GetSeqMatch(idh, locks);
+    }
+    catch ( CObjMgrException& exc ) {
+        if ( !m_Loader || exc.GetErrCode() != exc.eFindConflict ) {
+            throw;
+        }
+    }
+    return SSeqMatch_DS();
+}
+
+
 SSeqMatch_DS CDataSource::BestResolve(const CSeq_id_Handle& idh)
 {
     return x_GetSeqMatch(idh, x_GetRecords(idh, CDataLoader::eBioseqCore));
@@ -1217,8 +1240,7 @@ CDataSource::TSeqMatches CDataSource::GetMatches(const CSeq_id_Handle& idh,
 
 void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ids = match.m_Bioseq->GetId();
         return;
@@ -1233,13 +1255,12 @@ void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 CDataSource::SAccVerFound CDataSource::GetAccVer(const CSeq_id_Handle& idh)
 {
     SAccVerFound ret;
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ret.acc_ver = CScope::x_GetAccVer(match.m_Bioseq->GetId());
         ret.sequence_found = true;
     }
-    else if ( m_Loader ) {
+    else {
         ret = m_Loader->GetAccVerFound(idh);
     }
     return ret;
@@ -1249,13 +1270,12 @@ CDataSource::SAccVerFound CDataSource::GetAccVer(const CSeq_id_Handle& idh)
 CDataSource::SGiFound CDataSource::GetGi(const CSeq_id_Handle& idh)
 {
     SGiFound ret;
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ret.gi = CScope::x_GetGi(match.m_Bioseq->GetId());
         ret.sequence_found = true;
     }
-    else if ( m_Loader ) {
+    else {
         ret = m_Loader->GetGiFound(idh);
     }
     return ret;
@@ -1265,12 +1285,18 @@ CDataSource::SGiFound CDataSource::GetGi(const CSeq_id_Handle& idh)
 string CDataSource::GetLabel(const CSeq_id_Handle& idh)
 {
     string ret;
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
-    if ( match ) {
-        ret = objects::GetLabel(match.m_Bioseq->GetId());
+    try {
+        TTSE_LockSet locks;
+        if ( SSeqMatch_DS match = x_GetSeqMatch(idh, locks) ) {
+            ret = objects::GetLabel(match.m_Bioseq->GetId());
+        }
     }
-    else if ( m_Loader ) {
+    catch ( CObjMgrException& exc ) {
+        if ( !m_Loader ) {
+            throw;
+        }
+    }
+    if ( m_Loader ) {
         ret = m_Loader->GetLabel(idh);
     }
     return ret;
@@ -1280,12 +1306,11 @@ string CDataSource::GetLabel(const CSeq_id_Handle& idh)
 int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
 {
     int ret = -1;
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ret = match.m_Bioseq->GetTaxId();
     }
-    else if ( m_Loader ) {
+    else {
         ret = m_Loader->GetTaxId(idh);
     }
     return ret;
@@ -1295,8 +1320,7 @@ int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
 TSeqPos CDataSource::GetSequenceLength(const CSeq_id_Handle& idh)
 {
     TSeqPos ret = kInvalidSeqPos;
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ret = match.m_Bioseq->GetBioseqLength();
     }
@@ -1311,8 +1335,7 @@ CDataSource::STypeFound
 CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
 {
     STypeFound ret;
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ret.type = match.m_Bioseq->GetInst_Mol();
         ret.sequence_found = true;
@@ -1327,8 +1350,7 @@ CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
 int CDataSource::GetSequenceState(const CSeq_id_Handle& idh)
 {
     int ret = CBioseq_Handle::fState_not_found|CBioseq_Handle::fState_no_data;
-    TTSE_LockSet locks;
-    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ret = match.m_Bioseq->GetTSE_Info().GetBlobState();
     }
@@ -1344,12 +1366,11 @@ void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
     size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TTSE_LockSet locks;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
         if ( match ) {
             ret[i] = CScope::x_GetAccVer(match.m_Bioseq->GetId());
             loaded[i] = true;
@@ -1369,12 +1390,11 @@ void CDataSource::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
     size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TTSE_LockSet locks;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
         if ( match ) {
             ret[i] = CScope::x_GetGi(match.m_Bioseq->GetId());
             loaded[i] = true;
@@ -1394,12 +1414,11 @@ void CDataSource::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
     size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TTSE_LockSet locks;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
         if ( match ) {
             ret[i] = objects::GetLabel(match.m_Bioseq->GetId());
             loaded[i] = true;
@@ -1419,12 +1438,11 @@ void CDataSource::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
     size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TTSE_LockSet locks;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
         if ( match ) {
             ret[i] = match.m_Bioseq->GetTaxId();
             loaded[i] = true;
@@ -1445,12 +1463,11 @@ void CDataSource::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
     size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TTSE_LockSet locks;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
         if ( match ) {
             ret[i] = match.m_Bioseq->GetBioseqLength();
             loaded[i] = true;
@@ -1471,12 +1488,11 @@ void CDataSource::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
     size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TTSE_LockSet locks;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
         if ( match ) {
             ret[i] = match.m_Bioseq->GetInst_Mol();
             loaded[i] = true;
@@ -1497,12 +1513,11 @@ void CDataSource::GetSequenceStates(const TIds& ids, TLoaded& loaded,
     size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TTSE_LockSet locks;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
         if ( match ) {
             ret[i] = match.m_Bioseq->GetTSE_Info().GetBlobState();
             loaded[i] = true;

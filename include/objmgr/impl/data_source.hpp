@@ -420,7 +420,8 @@ private:
                             const TTSE_LockSet& locks);
     SSeqMatch_DS x_GetSeqMatch(const CSeq_id_Handle& idh,
                                const TTSE_LockSet& locks);
-
+    SSeqMatch_DS x_GetSeqMatch(const CSeq_id_Handle& idh);
+    
     void x_SetDirtyAnnotIndex(CTSE_Info& tse);
     void x_ResetDirtyAnnotIndex(CTSE_Info& tse);
 
@@ -494,6 +495,7 @@ private:
     // Prefetching thread and lock, used when initializing the thread
     CRef<CPrefetchThreadOld> m_PrefetchThread;
     CFastMutex            m_PrefetchLock;
+    unsigned              m_StaticBlobCounter;
 
     // hide copy constructor
     CDataSource(const CDataSource&);
