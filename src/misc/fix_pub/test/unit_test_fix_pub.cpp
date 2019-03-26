@@ -398,7 +398,7 @@ BOOST_AUTO_TEST_CASE(Test_PrintPub)
     static const STestErrorText expected_1[] =
     {
         { fix_pub::err_Print, fix_pub::err_Print_Failed, eDiag_Warning, "Authors NULL" },
-        { fix_pub::err_Reference, fix_pub::err_Reference_NoPmidJournalNotInPubMed, eDiag_Warning, " |journal unknown|(0)|no volume number|no page number" }
+        { fix_pub::err_Reference, fix_pub::err_Reference_NoPmidJournalNotInPubMed, eDiag_Info, " |journal unknown|(0)|no volume number|no page number" }
     };
 
     CheckPrintPubProblems(log, expected_1);
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(Test_PrintPub)
 
     static const STestErrorText expected_2[] =
     {
-        { fix_pub::err_Reference, fix_pub::err_Reference_NoPmidJournalNotInPubMed, eDiag_Warning, "Doe J.|journal unknown|(0)|no volume number|no page number" }
+        { fix_pub::err_Reference, fix_pub::err_Reference_NoPmidJournalNotInPubMed, eDiag_Info, "Doe J.|journal unknown|(0)|no volume number|no page number" }
     };
 
     CheckPrintPubProblems(log, expected_2);
