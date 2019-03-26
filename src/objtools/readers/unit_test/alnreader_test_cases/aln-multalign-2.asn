@@ -1,0 +1,135 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "KX761380"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 102,
+        seq-data ncbi2na '9381B0E74C1F577217279CC8E7537303A30C35ADF3EC7CFA6620
+'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "KX761381"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 87,
+        seq-data ncbi2na 'CE4E06C39D307D5DC85C9E73239D4E8C30D6B7CFB264'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "KX761382"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 91,
+        seq-data ncbi2na 'CE4A06C39D307D5DC8555E73239D4DCC0E8C30D6B7CFB0'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "KX761383"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 98,
+        seq-data ncbi2na 'BCE4E06C39D307D5DC85C9E73239D4DCC0E8C30D6B7CFB2660'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 4,
+          segs denseg {
+            dim 4,
+            numseg 9,
+            ids {
+              genbank {
+                accession "KX761380"
+              },
+              genbank {
+                accession "KX761381"
+              },
+              genbank {
+                accession "KX761382"
+              },
+              genbank {
+                accession "KX761383"
+              }
+            },
+            starts {
+              -1,
+              -1,
+              -1,
+              0,
+              -1,
+              0,
+              0,
+              2,
+              0,
+              3,
+              3,
+              5,
+              56,
+              -1,
+              59,
+              61,
+              64,
+              59,
+              67,
+              69,
+              88,
+              -1,
+              -1,
+              -1,
+              95,
+              83,
+              -1,
+              93,
+              99,
+              -1,
+              -1,
+              97,
+              100,
+              -1,
+              -1,
+              -1
+            },
+            lens {
+              2,
+              3,
+              56,
+              8,
+              24,
+              7,
+              4,
+              1,
+              2
+            }
+          }
+        }
+      }
+    }
+  }
+}
