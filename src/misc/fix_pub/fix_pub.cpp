@@ -510,7 +510,7 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
                 ">>" << muid << "<<|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         }
         else {
-            ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, in_press ? err_Reference_NoPmidJournalNotInPubMedInPress : err_Reference_NoPmidJournalNotInPubMed,
+            ERR_POST_TO_LISTENER(err_log, eDiag_Info, err_Reference, in_press ? err_Reference_NoPmidJournalNotInPubMedInPress : err_Reference_NoPmidJournalNotInPubMed,
                 last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
         }
     }
