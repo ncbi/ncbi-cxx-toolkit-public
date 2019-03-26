@@ -135,7 +135,8 @@ typedef enum {
     eCONN_Closed   =  0,         /* "Open" can be attempted                  */
     eCONN_Open     =  1,         /* operational state (I/O allowed)          */
     eCONN_Bad      =  2,         /* non-operational (I/O not allowed)        */
-    eCONN_Cancel   =  3          /* NB: |= eCONN_Open (user-canceled)        */
+    eCONN_Cancel   =  3,         /* NB: |= eCONN_Open, user-canceled         */
+    eCONN_Corrupt  =  5          /* NB: |= eCONN_Open, non-operational       */
 } ECONN_State;
 
 
@@ -197,6 +198,7 @@ static size_t x_CB2IDX(ECONN_Callback type)
         idx = 5;
         break;
     default:
+        /* to flag an API error */
         idx = CONN_N_CALLBACKS;
         break;
     }
@@ -352,6 +354,8 @@ static EIO_Status s_Open(CONN conn)
         return eIO_Closed;
     case eCONN_Cancel:
         return eIO_Interrupt;
+    case eCONN_Corrupt:
+        return eIO_Unknown;
     default:
         break;
     }
@@ -886,8 +890,8 @@ static EIO_Status s_CONN_Read
             if (peek  &&  !BUF_Write(&conn->buf, buf, x_read)) {
                 CONN_LOG_EX(32, Read, eLOG_Critical,
                             "Cannot save peek data", 0);
-                conn->state = eCONN_Bad;
-                status = eIO_Closed;
+                conn->state = eCONN_Corrupt;
+                status = eIO_Unknown;
             }
             break;
         }
@@ -1060,7 +1064,7 @@ extern EIO_Status CONN_ReadLine
                 static const STimeout* timeout = 0/*dummy*/;
                 CONN_LOG_EX(35, ReadLine, eLOG_Critical,
                             "Cannot pushback extra data", 0);
-                conn->state = eCONN_Bad;
+                conn->state = eCONN_Corrupt;
                 status = eIO_Unknown;
             } else
                 status = eIO_Success;
@@ -1084,6 +1088,9 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
 
     if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
+
+    if (conn->state == eCONN_Corrupt)
+        return eIO_Unknown;
 
     if (conn->state == eCONN_Cancel)
         return eIO_Interrupt;
