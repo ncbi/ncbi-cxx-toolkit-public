@@ -37,6 +37,7 @@ ABSL	s	University of Minnesota, American Bryological and Lichenological Society
 ABSM	s	Duke University, Botany Department			
 ABT	s	Laboratoire de Biologie Vegetale et d'Ecologie Forestiere			
 ABTC	s	Australian Biological Tissue Collection, South Australian Museum	SAMA:ABTC		
+ABTRI	c	Apex Biotechnology Training and Research Institute			
 ABU<NGA>	s	Ahmadu Bello University Herbarium			
 AC	s	Amherst College			
 ACA	s	Agricultural University of Athens			
@@ -856,6 +857,7 @@ CBFS	s	University of South Bohemia, Department of Botany
 CBG	s	Australian National Botanic Gardens			
 CBM	s	Natural History Museum and Institute			
 CBM:ZC	s	Natural History Museum and Institute, Zoological Collection		
+CBM:ZF	s	Natural History Museum and Institute, Zoology Fish	
 CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry (Colecao Brasileira de Microrganismos de Ambiente e Industria)			
 CBNM	s	Cedar Breaks National Monument			
 CBNSA	s	Conservatoire botanique national Sud-Atlantique			
