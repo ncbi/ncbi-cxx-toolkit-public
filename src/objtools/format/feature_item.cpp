@@ -2165,23 +2165,21 @@ void CFeatureItem::x_AddQualsRna(
                 if ( !aa_str.empty() ) {
                     const string& ac_str = aa_str;
                     if (NStr::CompareNocase (ac_str, "tRNA-Met") == 0) {
-                        const CSeq_feat_Base::TQual & qual = m_Feat.GetQual();
-                        ITERATE( CSeq_feat::TQual, it, qual ) {
-                            if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) continue;
-                            if (NStr::CompareNocase( (*it)->GetQual(), "product") != 0) continue;
-                            if (NStr::CompareNocase ((*it)->GetVal (), "tRNA-fMet") == 0) {
+                        for (auto gbqual : m_Feat.GetQual()) {
+                            if (!(*gbqual).IsSetQual()  ||  !(*gbqual).IsSetVal()) continue;
+                            if (NStr::CompareNocase( (*gbqual).GetQual(), "product") != 0) continue;
+                            if (NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-fMet") == 0) {
                                 amino_acid_str = "tRNA-fMet";
                             }
-                            if (NStr::CompareNocase ((*it)->GetVal (), "tRNA-iMet") == 0) {
+                            if (NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-iMet") == 0) {
                                 amino_acid_str = "tRNA-iMet";
                             }
                         }
                     } else if (NStr::CompareNocase (ac_str, "tRNA-Ile") == 0) {
-                        const CSeq_feat_Base::TQual & qual = m_Feat.GetQual();
-                        ITERATE( CSeq_feat::TQual, it, qual ) {
-                            if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) continue;
-                            if (NStr::CompareNocase( (*it)->GetQual(), "product") != 0) continue;
-                            if (NStr::CompareNocase ((*it)->GetVal (), "tRNA-Ile2") == 0) {
+                        for (auto gbqual : m_Feat.GetQual()) {
+                            if (!(*gbqual).IsSetQual()  ||  !(*gbqual).IsSetVal()) continue;
+                            if (NStr::CompareNocase( (*gbqual).GetQual(), "product") != 0) continue;
+                            if (NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-Ile2") == 0) {
                                 amino_acid_str = "tRNA-Ile2";
                             }
                         }
