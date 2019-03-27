@@ -676,6 +676,39 @@ const CSeq_entry *ctx)
             }
         }
         if (!suppress) {
+            if (chromosome->IsSetName() && NStr::EqualNocase(chromosome->GetName(), "Unknown")) {
+                const CSeq_entry& entry = *ctx;
+                if (entry.IsSeq()) {
+                    const CBioseq& bsp = entry.GetSeq();
+                    FOR_EACH_SEQID_ON_BIOSEQ(itr, bsp) {
+                        const CSeq_id& sid = **itr;
+                        switch (sid.Which()) {
+                        case CSeq_id::e_Genbank:
+                        case CSeq_id::e_Embl:
+                        case CSeq_id::e_Ddbj:
+                        case CSeq_id::e_Tpg:
+                        case CSeq_id::e_Tpe:
+                        case CSeq_id::e_Tpd:
+                        {
+                            const CTextseq_id* tsid = sid.GetTextseq_Id();
+                            // need to check accession format
+                            if (tsid && tsid->IsSetAccession()) {
+                                const string& acc = tsid->GetAccession();
+                                if (acc.length() == 8) {
+                                    suppress = true;
+                                }
+                            }
+                        }
+                        break;
+
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!suppress) {
             string msg = "INDEXER_ONLY - source contains chromosome value '";
             if (chromosome->IsSetName()) {
                 msg += chromosome->GetName();
@@ -765,16 +798,16 @@ const CSeq_entry *ctx)
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
             "PCR primer does not have both sequences", obj, ctx);
     }
-	
-	bool has_duplicate_primers = false;
-	if (!pcr_set_list.AreSetsUnique()) {
-		has_duplicate_primers = true;
-	}
-	if (bsrc.IsSetPcr_primers() && !CPCRSetList::AreSetsUnique(bsrc.GetPcr_primers())) {
-		has_duplicate_primers = true;
-	}
+    
+    bool has_duplicate_primers = false;
+    if (!pcr_set_list.AreSetsUnique()) {
+        has_duplicate_primers = true;
+    }
+    if (bsrc.IsSetPcr_primers() && !CPCRSetList::AreSetsUnique(bsrc.GetPcr_primers())) {
+        has_duplicate_primers = true;
+    }
 
-	if (has_duplicate_primers) {
+    if (has_duplicate_primers) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_DuplicatePCRPrimerSequence,
             "PCR primer sequence has duplicates", obj, ctx);
     }
@@ -982,19 +1015,19 @@ const CSeq_entry *ctx)
 
     // get taxname from object
     string taxname = kEmptyStr;
-	if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
-		const CSeqdesc* desc = dynamic_cast <const CSeqdesc*> (&obj);
-		if (desc && desc->IsSource() && desc->GetSource().IsSetTaxname()) {
-			taxname = desc->GetSource().GetOrg().GetTaxname();
-		}
-	} else if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+    if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
+        const CSeqdesc* desc = dynamic_cast <const CSeqdesc*> (&obj);
+        if (desc && desc->IsSource() && desc->GetSource().IsSetTaxname()) {
+            taxname = desc->GetSource().GetOrg().GetTaxname();
+        }
+    } else if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
         const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
-		if (feat && feat->IsSetData()) {
+        if (feat && feat->IsSetData()) {
             const auto& fdata = feat->GetData();
             if (fdata.IsBiosrc() && fdata.GetBiosrc().IsSetTaxname()) {
                 taxname = feat->GetData().GetBiosrc().GetOrg().GetTaxname();
             }
-		}
+        }
     }
     string sname = kEmptyStr;
     if (subsrc.IsSetName()) {
@@ -2788,7 +2821,7 @@ static bool s_PCRPrimerLess(const CPCRPrimer& p1, const CPCRPrimer& p2)
         return false;
     } else if (p1.IsSetName() && p2.IsSetName()) {
         return (NStr::CompareNocase(p1.GetName().Get(), p2.GetName().Get()) < 0);
-	} else {
+    } else {
         return false;
     }
 }
@@ -2826,15 +2859,15 @@ static bool s_PCRPrimerSetLess(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
 
 
 static bool s_PCRReactionLess(
-	CConstRef<CPCRReaction> pp1,
+    CConstRef<CPCRReaction> pp1,
     CConstRef<CPCRReaction> pp2
 )
 
 {
     const CPCRReaction& p1 = *pp1;
     const CPCRReaction& p2 = *pp2;
-	if (!p1.IsSetForward() && p2.IsSetForward()) {
-		return true;
+    if (!p1.IsSetForward() && p2.IsSetForward()) {
+        return true;
     } else if (p1.IsSetForward() && !p2.IsSetForward()) {
         return false;
     } else if (p2.IsSetForward() && p1.IsSetForward()) {
@@ -2875,7 +2908,7 @@ using TPCRReactionSet = set<CConstRef<CPCRReaction>, SPCRReactionLess>;
 bool CPCRSetList::AreSetsUnique(const CPCRReactionSet& primers)
 {
     if (!primers.IsSet() || primers.Get().size() < 2) {
-       	return true;
+           return true;
     }
     TPCRReactionSet already_seen;
     for (auto it : primers.Get()) {
