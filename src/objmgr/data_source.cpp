@@ -1260,7 +1260,7 @@ CDataSource::SAccVerFound CDataSource::GetAccVer(const CSeq_id_Handle& idh)
         ret.acc_ver = CScope::x_GetAccVer(match.m_Bioseq->GetId());
         ret.sequence_found = true;
     }
-    else {
+    else if ( m_Loader ) {
         ret = m_Loader->GetAccVerFound(idh);
     }
     return ret;
@@ -1275,7 +1275,7 @@ CDataSource::SGiFound CDataSource::GetGi(const CSeq_id_Handle& idh)
         ret.gi = CScope::x_GetGi(match.m_Bioseq->GetId());
         ret.sequence_found = true;
     }
-    else {
+    else if ( m_Loader ) {
         ret = m_Loader->GetGiFound(idh);
     }
     return ret;
@@ -1310,7 +1310,7 @@ int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
     if ( match ) {
         ret = match.m_Bioseq->GetTaxId();
     }
-    else {
+    else if ( m_Loader ) {
         ret = m_Loader->GetTaxId(idh);
     }
     return ret;
