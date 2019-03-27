@@ -179,3 +179,8 @@ Fixed bugs in handling JSON schema.
 October 19, 2018
 version 2.19.0, CXX-10288
 Added support of named bit list in ASN.1 BIT STRING.
+
+March 27, 2019
+version 2.20.0, CXX-10563
+Corrected code generation for elements and attributes with various XML form defaults.
+Added code generation for CStringId64 data type.
