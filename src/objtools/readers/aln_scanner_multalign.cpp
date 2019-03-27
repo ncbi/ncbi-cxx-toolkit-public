@@ -42,6 +42,21 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+//  ============================================================================
+//  Multi-align info:
+//  It basically comes in two variants, scooted and unscooted.
+//  Main differences are:
+//    Unscooted has initial line containing only "//".
+//    Unscooted is thereafter uniformly indented by 24 characters.
+//    Unscooted contains a consensus line after every interleaved block.
+//
+//  Nucleotide alphabet includes all ambiguity characters as well as 'U'.
+//  There is no match character.
+//  Gap character is '.'.
+//
+//  Reference: Colleen Bollin
+//  ============================================================================
+
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerMultAlign::xImportAlignmentData(

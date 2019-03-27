@@ -28,7 +28,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 #include <corelib/ncbistd.hpp>
@@ -51,11 +51,6 @@ protected:
     xImportAlignmentData(
         CSequenceInfo&,
         CLineInput&) override;
-
-    static void
-    sExtractDefLine(
-        const string& rawDefStr,
-        string& defLine);
 };
 
 END_SCOPE(objects)

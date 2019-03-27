@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 
@@ -41,6 +41,15 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
+
+//  ============================================================================
+//  Sequin info:
+//  Nucleotide alphabet includes all ambiguity characters as well as 'U'.
+//  Makes use of the match character and it is '.'.
+//  Gap character is '-'.
+//
+//  Reference: Colleen Bollin
+//  ============================================================================
 
 //  ----------------------------------------------------------------------------
 void
@@ -172,6 +181,17 @@ CAlnScannerSequin::xImportAlignmentData(
         mSequences[lineInBlock].push_back({seqData, lineCount});
         ++lineInBlock;
     }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerSequin::xAdjustSequenceInfo(
+    CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    sequenceInfo
+        .SetBeginningGap('-').SetMiddleGap('-').SetEndGap('-')
+        .SetMatch('.');
 }
 
 //  ----------------------------------------------------------------------------

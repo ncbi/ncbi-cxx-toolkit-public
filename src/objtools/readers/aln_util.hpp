@@ -1,5 +1,5 @@
-#ifndef _ALN_SCANNER_SEQUIN_HPP_
-#define _ALN_SCANNER_SEQUIN_HPP_
+#ifndef _ALN_UTIL_HPP_
+#define _ALN_UTIL_HPP_
 
 /*
  * $Id$
@@ -32,48 +32,26 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+class CLineInput;
+class CSequenceInfo;
 struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerSequin:
-    public CAlnScanner
-    //  ============================================================================
+namespace AlnUtil
+//  ============================================================================
 {
-public:
-    CAlnScannerSequin() {};
-    ~CAlnScannerSequin() {};
-
-protected:
     void
-    xImportAlignmentData(
-        CSequenceInfo&,
-        CLineInput&) override;
-
-    virtual void
-    xAdjustSequenceInfo(
-        CSequenceInfo&);
-
-    static bool
-    xIsSequinOffsetsLine(
-        const string& line);
-
-    static bool
-    xIsSequinTerminationLine(
-        const string& line);
-
-    static bool
-    xExtractSequinSequenceData(
-        const string& line,
+    ProcessDefline(
+        const string& defLine,
         string& seqId,
-        string& seqData);
+        string& defLineInfo);
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // _ALN_SCANNER_SEQUIN_HPP_
+#endif // _ALN_UTIL_HPP_

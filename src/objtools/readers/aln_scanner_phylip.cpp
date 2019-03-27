@@ -29,29 +29,32 @@
  *
  */
 
+//  ============================================================================
+//  Phylip info:
+//  Gap characters are '-' and 'O', but '.' should be tolerated for historical 
+//    reasons.
+//  There is no match character.
+//  Nucleotide alphabet includes all ambiguity characters as well as 'U'.
+//  Missing characters are 'X', '?', 'N'.
+//
+//  "Strict" phylip allocates exactly 10 characters for the seqId (padded with
+//    spaces if necessary). 
+//
+//  Reference: evolution.genetics.washington.edu/phylip/doc/sequence.html
+//  ============================================================================
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
 #include "aln_errors.hpp"
+#include "aln_util.hpp"
 #include "aln_peek_ahead.hpp"
 #include "aln_scanner_phylip.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
-
-
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerPhylip::sExtractDefLine(
-    const string& rawDefStr,
-    string& defLine)
-//  ----------------------------------------------------------------------------
-{
-    defLine = rawDefStr.substr(1);
-}
-
 
 //  ----------------------------------------------------------------------------
 void
@@ -83,8 +86,14 @@ CAlnScannerPhylip::xImportAlignmentData(
         }
         // record potential defline
         if (line[0] == '>') {
-            string defLine;
-            sExtractDefLine(line, defLine);
+            string dummy, defLine;
+            AlnUtil::ProcessDefline(line, dummy, defLine);
+            if (!dummy.empty()) {
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDefinitionLine,
+                    "Invalid PHYLIP definition line, expected \">\" followed by mods.");
+            }
             mDeflines.push_back({defLine, lineCount});
             continue;
         }

@@ -1,6 +1,3 @@
-#ifndef _ALN_SCANNER_SEQUIN_HPP_
-#define _ALN_SCANNER_SEQUIN_HPP_
-
 /*
  * $Id$
  *
@@ -28,52 +25,47 @@
  *
  * ===========================================================================
  *
- * Authors: Frank Ludwig
+ * Authors:  Frank Ludwig
  *
  */
-#include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
+#include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/alnread.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
+#include "aln_util.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
-
-//  ============================================================================
-class CAlnScannerSequin:
-    public CAlnScanner
-    //  ============================================================================
+//  --------------------------------------------------------------------------
+void
+AlnUtil::ProcessDefline(
+    const string& line,
+    string& seqId,
+    string& defLineInfo)
+//  --------------------------------------------------------------------------
 {
-public:
-    CAlnScannerSequin() {};
-    ~CAlnScannerSequin() {};
+    if (!NStr::StartsWith(line, ">")) {
+        // error: not a defline
+    }
+    auto dataStart = line.find_first_not_of(" \t", 1);
+    if (dataStart == string::npos) {
+        // error nothing on it
+    }
+    string defLine = line.substr(dataStart);
+    if (NStr::StartsWith(defLine, "[")) {
+        seqId.clear();
+        defLineInfo = defLine;
+    }
+    else {
+        NStr::SplitInTwo(defLine.substr(dataStart), " \t", seqId, defLineInfo,
+            NStr::fSplit_MergeDelimiters);
+    }
+}
 
-protected:
-    void
-    xImportAlignmentData(
-        CSequenceInfo&,
-        CLineInput&) override;
-
-    virtual void
-    xAdjustSequenceInfo(
-        CSequenceInfo&);
-
-    static bool
-    xIsSequinOffsetsLine(
-        const string& line);
-
-    static bool
-    xIsSequinTerminationLine(
-        const string& line);
-
-    static bool
-    xExtractSequinSequenceData(
-        const string& line,
-        string& seqId,
-        string& seqData);
-};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-#endif // _ALN_SCANNER_SEQUIN_HPP_

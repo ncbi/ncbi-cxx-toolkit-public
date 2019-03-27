@@ -25,9 +25,28 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
+
+//  ===========================================================================
+//  Fasta+Gap info:
+//  Specs vary across the web. All specs agree that sequence characters plus
+//    characters must add up to the same sequence length for each sequence
+//    incuded in the input.
+//  NCBI accepts all ambiguity characters as part of the nucleotide alphabet.
+//  NCBI does not use match or missing characters (use ambiguity character 'N'
+//    for missing).
+//  NCBI uses '-' as its gap character but I can't find that mandated anywhere.
+//  Other sources will allow for anything that's not alphanumeric as a gap 
+//    character. The gap character may even change depending on whether it's
+//    in the beginning, the middle, or the send of a sequence.
+//
+//  Reference: 
+//  www.cgl.ucsf.edu/chimera/docs/ContributedSoftware/multalignviewer/afasta.html
+//  blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp
+//  ============================================================================
+
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>

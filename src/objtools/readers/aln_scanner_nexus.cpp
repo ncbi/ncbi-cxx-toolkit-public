@@ -42,6 +42,22 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+//  ============================================================================
+//  Nexus Info:
+//  Nexus files consist of blocks which contain commands. Every command is in
+//    a block, and there are no nested blocks.
+//  The alphabet is determined by the "datatype" parameter of the "format"
+//    command. For DNA, the safest route is to expect ACGT and all ambiguity
+//    characters.
+//  The gap character is defined by the "gap" parameter of the format command.
+//  The missing character is defined by the "missing" parameter of the format
+//    command.
+//  There are bunch of other settings in the format command that can affect the
+//    form and meaning of the data.
+//
+//  Reference: informatics.nescent.org/w/images/8/8b/NEXUS_Final.pdf
+//  ============================================================================
+
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xImportAlignmentData(
