@@ -3173,14 +3173,14 @@ void CRNAValidator::x_ValidateTrnaType()
     const CRNA_ref& rna = m_Feat.GetData().GetRna();
 
     // check for unparsed qualifiers
-    for (auto gbqual : m_Feat.GetQual()) {
-        if ( NStr::CompareNocase((*gbqual).GetQual (), "anticodon") == 0 ) {
+    for (auto& gbqual : m_Feat.GetQual()) {
+        if ( NStr::CompareNocase(gbqual->GetQual (), "anticodon") == 0 ) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAAnticodon,
                 "Unparsed anticodon qualifier in tRNA");
-        } else if (NStr::CompareNocase ((*gbqual).GetQual (), "product") == 0 ) {
-            if (NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-fMet") != 0 &&
-                NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-iMet") != 0 &&
-                NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-Ile2") != 0) {
+        } else if (NStr::CompareNocase (gbqual->GetQual (), "product") == 0 ) {
+            if (NStr::CompareNocase (gbqual->GetVal (), "tRNA-fMet") != 0 &&
+                NStr::CompareNocase (gbqual->GetVal (), "tRNA-iMet") != 0 &&
+                NStr::CompareNocase (gbqual->GetVal (), "tRNA-Ile2") != 0) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAProduct,
                     "Unparsed product qualifier in tRNA");
             }
@@ -3408,9 +3408,9 @@ void CRNAValidator::x_ValidateTrnaCodons()
         m_Feat.GetData().GetRna().GetType() == CRNA_ref::eType_tRNA) {
         bool mustbemethionine = false;
         for (auto gbqual : m_Feat.GetQual()) {
-            if (NStr::CompareNocase((*gbqual).GetQual(), "product") == 0 &&
-                (NStr::CompareNocase((*gbqual).GetVal(), "tRNA-fMet") == 0 ||
-                    NStr::CompareNocase((*gbqual).GetVal(), "tRNA-iMet") == 0)) {
+            if (NStr::CompareNocase(gbqual->GetQual(), "product") == 0 &&
+                (NStr::CompareNocase(gbqual->GetVal(), "tRNA-fMet") == 0 ||
+                    NStr::CompareNocase(gbqual->GetVal(), "tRNA-iMet") == 0)) {
                 mustbemethionine = true;
                 break;
             }
