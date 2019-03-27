@@ -2,13 +2,24 @@
 race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
 race:^ncbi::CSafeStatic<ncbi::CParam
 
+################################################################
+# grichenk CXX-10544
 
-# False positive (grichenk) CXX-10544
-
+# false positive
 race:^ncbi::CSafeStatic<ncbi::CTls
 
+# error, just not important - ignore (whole test)
+race:corelib/test/test_ncbidiag_mt_new_fmt.cpp
 
-# False positive (ivanov)
+# This one is actually a race, the only possible consequence is 
+# an additional message about temporary suspending log output. 
+# So suppress this and leave the code as-is.
+
+race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
+
+
+################################################################
+# ivanov
 
 # It is unsafe to use CTime::AsString() in exit print handler,
 # because it allocates memory, that is not signal-safe.
@@ -17,7 +28,8 @@ race:^ncbi::CSafeStatic<ncbi::CTls
 signal:corelib/test/test_ncbi_system.cpp
 
 
-# (vasilche) CXX-10546
+################################################################
+# vasilche CXX-10546
 
-# error, just not important - ignore
+# error, just not important - ignore (whole test)
 race:corelib/test/test_tls_object.cpp
