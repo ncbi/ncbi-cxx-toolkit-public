@@ -750,6 +750,7 @@ void CFastaOstreamEx::x_AddProteinNameAttribute(const CSeq_feat& feat,
                 auto product_handle = scope.GetBioseqHandle(*pId);
                 if (product_handle) {
                     SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
+                    sel.SetExcludeExternal(true);
                     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
                     CFeat_CI it(product_handle, sel);
                     if (it && 
