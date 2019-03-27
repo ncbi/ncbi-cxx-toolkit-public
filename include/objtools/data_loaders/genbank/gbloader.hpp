@@ -405,10 +405,16 @@ public:
     };
     typedef CGBReaderCacheManager::TCacheType TCacheType;
     bool HaveCache(TCacheType cache_type = fCache_Any);
+
+    // This overload with EKeepVersions parameter (which is no-op)
+    // is deprecated and to be removed, please switch to use the other.
+    NCBI_DEPRECATED
     void PurgeCache(TCacheType            cache_type,
-                    time_t                access_timeout = 0,
-                    ICache::EKeepVersions keep_last_ver =
-                    ICache::eDropAll);
+                    time_t                access_timeout,
+                    ICache::EKeepVersions)
+        { PurgeCache(cache_type, access_timeout); }
+    void PurgeCache(TCacheType            cache_type,
+                    time_t                access_timeout = 0);
     void CloseCache(void);
 
     // expiration timout in seconds, must be positive

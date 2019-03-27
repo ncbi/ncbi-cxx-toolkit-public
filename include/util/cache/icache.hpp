@@ -446,7 +446,7 @@ public:
     ///
     /// @param access_timeout
     ///    Time in seconds. All objects older than this are deleted.
-    virtual void Purge(time_t         access_timeout) { Purge(access_timeout, eDropAll); }
+    virtual void Purge(time_t         access_timeout) = 0;
 
     /// Delete BLOBs with access time older than specified
     ///
@@ -460,15 +460,17 @@ public:
     ///    Time in seconds. All objects older than this are deleted.
     virtual void Purge(const string&  key,
                        const string&  subkey,
-                       time_t         access_timeout) { Purge(key, subkey, access_timeout, eDropAll); }
+                       time_t         access_timeout) = 0;
 
+private:
     /// @deprecated EKeepVersions arguments have been no-op in Purge() for long time and are now deprecated.
     /// If you are using one of these methods, switch to use one the overloads above instead.
     /// If you have implemented these, remove EKeepVersions (making them overrides for the overloads above).
     /// The deprecated will be eventually purged (after all implementations have switched to the overloads above).
-    virtual void Purge(time_t access_timeout, EKeepVersions) { Purge(access_timeout); }
-    virtual void Purge(const string& key, const string& subkey, time_t access_timeout, EKeepVersions) { Purge(key, subkey, access_timeout); }
+    virtual void Purge(time_t, EKeepVersions) final {}
+    virtual void Purge(const string&, const string&, time_t, EKeepVersions) final {}
 
+public:
 
     virtual ~ICache() {}
 
