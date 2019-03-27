@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Justin Foley
  *
  */
 
@@ -41,6 +41,27 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
+
+//  ============================================================================
+//  Clustal/Clustalw info:
+//  Clustal is loosely defined with pieces that may be there or not. Clustalw
+//    gets rid of the ambiguities and sets firm rules as what the data should 
+//    look like.
+//  The following pertains to Clustalw:
+//  It starts with a header line stating it's clustalw, followed by one or more
+//    empties.
+//  It contains one or more blocks, each holding the same number of data lines,
+//    a conservation line, and at least one empty line.
+//  Each data line consists of a seqId, sequence data in one continuous run up
+//    to 60 characters long, and an -optional- trailing offset count.
+//  
+//  The gap character is '-'.
+//  The alphabet can be anything, so for nucleotide sequences, we must accept
+//    ambiguity characters as well.
+//
+//  Reference: tools.genouest.org/tools/meme/doc/clustalw-format.html
+//  ============================================================================
+
 
 //  ----------------------------------------------------------------------------
 void
@@ -127,7 +148,6 @@ CAlnScannerClustal::xImportAlignmentData(
             ++blockCount;
         }
         ++seqCount;
-
 
         if (!sProcessClustalDataLine(
              tokens, lineCount,

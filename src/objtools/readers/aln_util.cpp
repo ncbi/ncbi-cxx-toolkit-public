@@ -35,6 +35,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
+#include "aln_errors.hpp"
 #include "aln_util.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -49,11 +50,17 @@ AlnUtil::ProcessDefline(
 //  --------------------------------------------------------------------------
 {
     if (!NStr::StartsWith(line, ">")) {
-        // error: not a defline
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_IllegalDataLine,
+            "Bad defline line: Expected initial \">\"");
     }
     auto dataStart = line.find_first_not_of(" \t", 1);
     if (dataStart == string::npos) {
-        // error nothing on it
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_IllegalDataLine,
+            "Bad defline line: Should not be empty");
     }
     string defLine = line.substr(dataStart);
     if (NStr::StartsWith(defLine, "[")) {
@@ -66,6 +73,56 @@ AlnUtil::ProcessDefline(
     }
 }
 
+//  ----------------------------------------------------------------------------
+void
+AlnUtil::ProcessDataLine(
+    const string& dataLine,
+    string& seqId,
+    string& seqData,
+    int& offset)
+//  ----------------------------------------------------------------------------
+{
+    list<string> tokens;
+    NStr::Split(dataLine, " \t", tokens, NStr::fSplit_MergeDelimiters);
+    if (tokens.size() < 2) {
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_IllegalDataLine,
+            "Bad data line: Expected \"<seqId> <data> <offset>\"");
+    }
+    seqId = tokens.front();
+    tokens.pop_front();
+    if (tokens.back().find_first_not_of("0123456789") == string::npos) {
+        // trailing token is offset
+        offset = NStr::StringToInt(tokens.back());
+        tokens.pop_back();
+    }
+    else {
+        // trailing token is part of the data
+    }
+    seqData = NStr::Join(tokens, "");
+}
+
+//  ----------------------------------------------------------------------------
+void
+AlnUtil::ProcessDataLine(
+    const string& dataLine,
+    string& seqId,
+    string& seqData)
+//  ----------------------------------------------------------------------------
+{
+    list<string> tokens;
+    NStr::Split(dataLine, " \t", tokens, NStr::fSplit_MergeDelimiters);
+    if (tokens.size() < 2) {
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_IllegalDataLine,
+            "Bad data line: Expected \"<seqId> <data> <offset>\"");
+    }
+    seqId = tokens.front();
+    tokens.pop_front();
+    seqData = NStr::Join(tokens, "");
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -25,20 +25,28 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 
 //  ============================================================================
 //  Phylip info:
+//  The first line contains the number of sequences and the common sequence 
+//    length of the sequences in the file.
+//  The rest of the file is made up block containing lines of sequence data,
+//    which are separated by empty lines.
+//  The first block data lines starts with a seqId, followed by (optionally
+//    chunked) sequence data.
+//  Later blocks do not repeat the seqId and only contain (optionally chunked)
+//    sequence data.
+//  "Strict" phylip allocates exactly 10 characters for the seqId (padded with
+//    spaces if necessary). 
+//
 //  Gap characters are '-' and 'O', but '.' should be tolerated for historical 
 //    reasons.
 //  There is no match character.
 //  Nucleotide alphabet includes all ambiguity characters as well as 'U'.
 //  Missing characters are 'X', '?', 'N'.
-//
-//  "Strict" phylip allocates exactly 10 characters for the seqId (padded with
-//    spaces if necessary). 
 //
 //  Reference: evolution.genetics.washington.edu/phylip/doc/sequence.html
 //  ============================================================================
@@ -87,7 +95,13 @@ CAlnScannerPhylip::xImportAlignmentData(
         // record potential defline
         if (line[0] == '>') {
             string dummy, defLine;
-            AlnUtil::ProcessDefline(line, dummy, defLine);
+            try {
+                AlnUtil::ProcessDefline(line, dummy, defLine);
+            }
+            catch (SShowStopper& showStopper) {
+                showStopper.mLineNumber = lineCount;
+                throw;
+            }
             if (!dummy.empty()) {
                 throw SShowStopper(
                     lineCount,

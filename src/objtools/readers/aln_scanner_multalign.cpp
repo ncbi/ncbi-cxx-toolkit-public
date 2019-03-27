@@ -36,6 +36,7 @@
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_errors.hpp"
+#include "aln_util.hpp"
 #include "aln_peek_ahead.hpp"
 #include "aln_scanner_multalign.hpp"
 
@@ -113,23 +114,38 @@ CAlnScannerMultAlign::xImportAlignmentData(
                 }
                 else {
                     if (lineInBlock != expectedNumSequences) {
-                        // error: not enough sequence data
+                        throw SShowStopper(
+                            lineCount,
+                            EAlnSubcode::eAlnSubcode_MissingDataLine,
+                            "Premature end of data block");
                     }
                 }
                 expecting = EExpecting::OFFSETS;
                 continue;
             }    
             if (!inFirstBlock  &&  lineInBlock == expectedNumSequences) {
-                // error: too much sequence data
+                throw SShowStopper(
+                    lineCount,
+                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                    "Extra data line found");
             }
             string seqId, seqData;
-            xGetSeqIdAndData(line, seqId, seqData);
+            try {
+                AlnUtil::ProcessDataLine(line, seqId, seqData);
+            }
+            catch (SShowStopper& showStopper) {
+                showStopper.mLineNumber = lineCount;
+                throw;
+            }
             if (expectedDataSize == 0) {
                 expectedDataSize = seqData.size();
             }
             else {
                 if (seqData.size() != expectedDataSize) {
-                    // error: data size off
+                    throw SShowStopper(
+                        lineCount,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        "Too much or too little data in data line");
                 }
             }
             if (inFirstBlock) {
@@ -138,7 +154,10 @@ CAlnScannerMultAlign::xImportAlignmentData(
             }
             else {
                 if (seqId != mSeqIds[lineInBlock]) {
-                    // error: unexpected ID
+                    throw SShowStopper(
+                        lineCount,
+                        eAlnSubcode_UnexpectedSeqId,
+                        "Data for unexpected sequence ID");
                 }
                 mSequences[lineInBlock].push_back({seqData, lineCount});
             }
@@ -214,23 +233,6 @@ CAlnScannerMultAlign::xGetExpectedDataSize(
         // error: bad offset values
     }
     dataSize = (tokens.size() == 2 ? (endOffset - startOffset + 1) : 0);
-}
-
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerMultAlign::xGetSeqIdAndData(
-    const string& line,
-    string& seqId,
-    string& seqData)
-//  ----------------------------------------------------------------------------
-{
-    vector<string> tokens;
-    NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
-    if (tokens.size() < 2) {
-        // error: bad offset line
-    }
-    seqId = tokens[0];
-    seqData = NStr::Join(tokens.begin() + 1, tokens.end(), "");
 }
 
 END_SCOPE(objects)

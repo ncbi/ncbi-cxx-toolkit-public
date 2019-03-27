@@ -38,8 +38,9 @@ Seq-entry ::= set {
       inst {
         repr raw,
         mol na,
-        length 100,
-        seq-data ncbi2na '3AB9889B4B3C229A00F2303A8803CAF0A528A02019CCA70045'H
+        length 109,
+        seq-data ncbi2na '3AB9889B4B3C229A00F2303A8803CAF0A528A02019CCA70045CB
+3A80'H
       }
     },
     seq {
@@ -51,8 +52,8 @@ Seq-entry ::= set {
       inst {
         repr raw,
         mol na,
-        length 9,
-        seq-data ncbi2na 'CB3A80'H
+        length 1,
+        seq-data ncbi2na '00'H
       }
     },
     seq {
@@ -64,8 +65,9 @@ Seq-entry ::= set {
       inst {
         repr raw,
         mol na,
-        length 100,
-        seq-data ncbi2na '3AB9889B4B3C1EAA00F2393A8003DAF1A528A02000CCA7C04C'H
+        length 109,
+        seq-data ncbi2na '3AB9889B4B3C1EAA00F2393A8003DAF1A528A02000CCA7C04CCB
+3A80'H
       }
     }
   },
@@ -99,17 +101,17 @@ Seq-entry ::= set {
               0,
               0,
               0,
-              -1,
               0,
-              100,
-              100,
-              -1,
               0,
-              -1
+              1,
+              1,
+              1,
+              -1,
+              1
             },
             lens {
-              100,
-              9
+              1,
+              108
             }
           }
         }

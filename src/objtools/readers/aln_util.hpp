@@ -49,6 +49,19 @@ namespace AlnUtil
         const string& defLine,
         string& seqId,
         string& defLineInfo);
+
+    void
+    ProcessDataLine(
+        const string& dataLine,
+        string& seqId,
+        string& seqData,
+        int& offset);
+
+    void
+    ProcessDataLine(
+        const string& dataLine,
+        string& seqId,
+        string& seqData);
 };
 
 END_SCOPE(objects)

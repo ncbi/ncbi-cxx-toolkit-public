@@ -68,12 +68,6 @@ protected:
     xGetExpectedDataSize(
         const string& line,
         int& dataSize);
-
-    void
-    xGetSeqIdAndData(
-        const string& line,
-        string& seqId,
-        string& seqData);
 };
 
 END_SCOPE(objects)
