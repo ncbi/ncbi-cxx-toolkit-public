@@ -67,7 +67,8 @@ protected:
     void
     xGetExpectedDataSize(
         const string& line,
-        int& dataSize);
+        int lineNumber,
+        size_t& dataSize);
 };
 
 END_SCOPE(objects)

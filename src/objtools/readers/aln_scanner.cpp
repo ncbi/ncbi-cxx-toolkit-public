@@ -130,7 +130,7 @@ CAlnScanner::xVerifySingleSequenceData(
             seqPart = ESeqPart::BODY;
             seqData = seqData.substr(startBody);
             if (alphabet.find(seqData[0]) == string::npos) {
-                int linePos = lineInfo.mData.size() - seqData.size();
+                auto linePos = lineInfo.mData.size() - seqData.size();
                 string description = ErrorPrintf(errTempl, seqData[0], linePos);
                 throw SShowStopper(
                     lineInfo.mNumLine,
@@ -152,7 +152,7 @@ CAlnScanner::xVerifySingleSequenceData(
             if (startBad == string::npos) {
                 continue;
             }
-            int linePos = lineInfo.mData.size() - seqData.size() + startBad;
+            auto linePos = lineInfo.mData.size() - seqData.size() + startBad;
             string description = ErrorPrintf(
                 errTempl, seqData[startBad], linePos);
             throw SShowStopper(

@@ -70,17 +70,26 @@ CAlnScannerMultAlign::xImportAlignmentData(
 
     bool gotLine = iStr.ReadLine(line, lineCount);
     if (!gotLine) {
-        // error: short file
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_FileTooShort,
+            "Filedoes not contain data");
     }
 
     if (NStr::StartsWith(line, "//")) {
         gotLine = iStr.ReadLine(line, lineCount);
         if (!gotLine) {
-            // error: short file
+            throw SShowStopper(
+                lineCount,
+                EAlnSubcode::eAlnSubcode_FileTooShort,
+                "Filedoes not contain data");
         }
-    }
-    if (!line.empty()) {
-        // error: unexpected
+        if (!line.empty()) {
+            throw SShowStopper(
+                lineCount,
+                EAlnSubcode::eAlnSubcode_FileTooShort,
+                "Empty separator line expected");
+        }
     }
 
     enum EExpecting {
@@ -89,8 +98,8 @@ CAlnScannerMultAlign::xImportAlignmentData(
     };
     EExpecting expecting = EExpecting::OFFSETS;
     bool inFirstBlock = true;
-    int expectedDataSize = 0;
-    int expectedNumSequences = 0;
+    size_t expectedDataSize = 0;
+    size_t expectedNumSequences = 0;
     int lineInBlock = 0;
     while (iStr.ReadLine(line, lineCount)) {
         NStr::TruncateSpacesInPlace(line);
@@ -99,7 +108,7 @@ CAlnScannerMultAlign::xImportAlignmentData(
             if (line.empty()) {
                 continue;
             }
-            xGetExpectedDataSize(line, expectedDataSize);
+            xGetExpectedDataSize(line, lineCount, expectedDataSize);
             expecting = EExpecting::DATA;
             lineInBlock = 0;
             continue;
@@ -214,13 +223,17 @@ CAlnScannerMultAlign::xVerifySingleSequenceData(
 void
 CAlnScannerMultAlign::xGetExpectedDataSize(
     const string& line,
-    int& dataSize)
+    int lineNumber,
+    size_t& dataSize)
 //  ----------------------------------------------------------------------------
 {
     vector<string> tokens;
     NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters);
-    if (tokens.size() != 1  &&  tokens.size() != 2) {
-        // error: bad offset line
+    if (tokens.size() > 2) {
+        throw SShowStopper(
+            lineNumber,
+            EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+            "Expected offsets line (at most two numbers separated by space");
     }
     int startOffset(0), endOffset(-1);
     try {
@@ -230,8 +243,11 @@ CAlnScannerMultAlign::xGetExpectedDataSize(
         }
     }
     catch (std::exception&) {
-        // error: bad offset values
-    }
+        throw SShowStopper(
+            lineNumber,
+            EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+            "Expected offsets line (at most two numbers separated by space");
+   }
     dataSize = (tokens.size() == 2 ? (endOffset - startOffset + 1) : 0);
 }
 
