@@ -1835,8 +1835,10 @@ void CBioseqIndex::x_InitFeats (void)
             // includes barrier between RefSeq and INSD accession types
             sel.SetAdaptiveDepth(true);
 
+            // calling AddUnnamedAnnots suppressed tRNA features in a ("tRNAscan-E") named annot
+            // sel.AddUnnamedAnnots();
+
             // allow external SNPs - testing for now, probably needs to be in external policy
-            sel.AddUnnamedAnnots();
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
                 sel.IncludeNamedAnnotAccession("SNP");
                 sel.AddNamedAnnots("SNP");
