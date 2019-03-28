@@ -73,9 +73,6 @@ public:
         const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
 
 protected:
-    virtual bool x_WriteBioseqHandle(
-        CBioseq_Handle ) override;
-
     virtual bool xAssignFeatureType(
         CGffFeatureRecord&,
         CGffFeatureContext&,
@@ -121,10 +118,6 @@ protected:
 
     virtual bool xWriteFeature(
         CFeat_CI) override;
-
-    virtual bool xWriteAllChildren(
-        CGffFeatureContext&,
-        const CMappedFeat&);
 
     virtual bool xWriteFeature(
         CGffFeatureContext&,

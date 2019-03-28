@@ -103,7 +103,8 @@ public:
 
         CFile file(dirEntry);
         string name = file.GetName();
-        if (NStr::EndsWith(name, ".txt")  ||  NStr::StartsWith(name, ".")) {
+        if (NStr::EndsWith(name, ".txt")  ||  NStr::StartsWith(name, ".")  ||  
+                NStr::EndsWith(name, ".sh")) {
             return;
         }
         if (NStr::EndsWith(name, extKeep)) {

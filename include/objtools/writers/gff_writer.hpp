@@ -374,6 +374,10 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat& );
 
+    virtual bool xWriteAllChildren(
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     virtual bool x_WriteAssemblyInfo(
         const string&,
         const string& );

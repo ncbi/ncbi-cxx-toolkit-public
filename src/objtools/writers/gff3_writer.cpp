@@ -1178,53 +1178,6 @@ bool CGff3Writer::xWriteSequenceHeader(
     return true;
 }
 
-//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-string GetStringId(
-    const CSeq_loc& loc)
-//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-{
-    if (loc.GetId()) {
-        return loc.GetId()->AsFastaString();
-    }
-    return "";
-}
-
-//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-bool CompareLocations(
-    const CMappedFeat& lhs,
-    const CMappedFeat& rhs)
-//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-{
-    const CSeq_loc& lhl = lhs.GetLocation();
-    const CSeq_loc& rhl = rhs.GetLocation();
-
-    //test1: id, alphabetical
-    if (!lhs  ||  !rhs) {
-        cout << "";
-    }
-    if (!lhl.GetId()  || !rhl.GetId()) {
-        const CSeq_feat& bad_feat = rhs.GetOriginalFeature();
-        cout << "";
-    }
-    string lhs_id = GetStringId(lhl);
-    string rhs_id = GetStringId(rhl);
-    if (lhs_id != rhs_id) {
-        return (lhs_id < rhs_id);
-    }
-
-    //test2: loc-start ascending
-    size_t lhs_start = lhl.GetStart(ESeqLocExtremes::eExtreme_Positional);
-    size_t rhs_start = rhl.GetStart(ESeqLocExtremes::eExtreme_Positional);
-    if (lhs_start != rhs_start) {
-        return (lhs_start < rhs_start);
-    }
-    //test3: loc-stop decending
-    size_t lhs_stop = lhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
-    size_t rhs_stop = rhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
-    return (lhs_stop > rhs_stop);
-}
-
-
 struct SCompareAlignments {
 
     CScope& m_Scope;
@@ -1325,27 +1278,16 @@ bool CGff3Writer::x_WriteBioseqHandle(
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
     }
-
-    SAnnotSelector sel = SetAnnotSelector();
-    const auto& display_range = GetRange();
-    CFeat_CI feat_iter(bsh, display_range, sel);
     if (!xWriteSource(bsh)) {
         return false;
     }
 
-    CGffFeatureContext fc(feat_iter, bsh);
-    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
-    std::sort(vRoots.begin(), vRoots.end(), CompareLocations);
-    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
-        CMappedFeat mRoot = *pit;
-        if (!xWriteFeature(fc, mRoot)) {
-            return false;
-        }
-        if (!xWriteAllChildren(fc, mRoot)) {
-            return false;
-        }
+    if (!CGff2Writer::x_WriteBioseqHandle(bsh)) {
+        return false;
     }
 
+    SAnnotSelector sel = SetAnnotSelector();
+    const auto& display_range = GetRange();
     if ( m_SortAlignments ) {
         TAlignCache alignCache;
 

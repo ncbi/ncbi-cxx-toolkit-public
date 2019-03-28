@@ -1232,4 +1232,51 @@ bool CWriteUtil::GetListOfGoIds(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::CompareLocations(
+    const CMappedFeat& lhs,
+    const CMappedFeat& rhs)
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_loc& lhl = lhs.GetLocation();
+    const CSeq_loc& rhl = rhs.GetLocation();
+
+    //test1: id, alphabetical
+    if (!lhs  ||  !rhs) {
+        cout << "";
+    }
+    if (!lhl.GetId()  || !rhl.GetId()) {
+        const CSeq_feat& bad_feat = rhs.GetOriginalFeature();
+        cout << "";
+    }
+    string lhs_id = CWriteUtil::GetStringId(lhl);
+    string rhs_id = CWriteUtil::GetStringId(rhl);
+    if (lhs_id != rhs_id) {
+        return (lhs_id < rhs_id);
+    }
+
+    //test2: loc-start ascending
+    size_t lhs_start = lhl.GetStart(ESeqLocExtremes::eExtreme_Positional);
+    size_t rhs_start = rhl.GetStart(ESeqLocExtremes::eExtreme_Positional);
+    if (lhs_start != rhs_start) {
+        return (lhs_start < rhs_start);
+    }
+    //test3: loc-stop decending
+    size_t lhs_stop = lhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
+    size_t rhs_stop = rhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
+    return (lhs_stop > rhs_stop);
+}
+
+
+//  ----------------------------------------------------------------------------
+string CWriteUtil::GetStringId(
+    const CSeq_loc& loc)
+//  ----------------------------------------------------------------------------
+{
+    if (loc.GetId()) {
+        return loc.GetId()->AsFastaString();
+    }
+    return "";
+}
+
 END_NCBI_SCOPE

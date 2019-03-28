@@ -183,6 +183,13 @@ public:
     static bool GetThreeFeatRgb(
         const CSeq_feat&,
         string&);
+
+    static bool CompareLocations(
+        const CMappedFeat& lhs,
+        const CMappedFeat& rhs);
+
+    static string GetStringId(
+        const CSeq_loc& loc);
 };
 
 END_objects_SCOPE

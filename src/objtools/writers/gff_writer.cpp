@@ -216,13 +216,39 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CFeat_CI feat_iter(bsh, display_range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
 
-    for (;  feat_iter; ++feat_iter) {
-        if (!xWriteFeature(fc, *feat_iter)) {
-            //return false;
+    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
+        CMappedFeat mRoot = *pit;
+        if (!xWriteFeature(fc, mRoot)) {
+            return false;
+        }
+        if (!xWriteAllChildren(fc, mRoot)) {
+            return false;
         }
     }
     return true;
+}
 
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xWriteAllChildren(
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    feature::CFeatTree& featTree = fc.FeatTree();
+    vector<CMappedFeat> vChildren;
+    featTree.GetChildrenTo(mf, vChildren);
+    for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
+        CMappedFeat mChild = *cit;
+        if (!xWriteFeature(fc, mChild)) {
+            return false;
+        }
+        if (!xWriteAllChildren(fc, mChild)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
