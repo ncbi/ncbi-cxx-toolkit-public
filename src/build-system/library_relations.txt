@@ -655,6 +655,7 @@ gui_glmesa needs3party $(OSMESA_LIBS)
 gui_graph needs gui_opengl
 gui_objects needs gui_objutils
 gui_objutils needs biotree
+gui_objutils needs dbsnp_tooltip_service
 gui_objutils needs entrezgene
 gui_objutils needs eutils_client
 gui_objutils needs gbproj
@@ -675,9 +676,8 @@ gui_opengl needs3party $(GLEW_LIBS)
 gui_opengl needs3party $(OPENGL_LIBS)
 gui_print needs gui_opengl
 gui_utils needs $(COMPRESS_LIBS)
+gui_utils needs ncbi_xcache_netcache
 gui_utils needs tables
-gui_utils needs xconnect
-gui_utils needs xutil
 guide_tree needs phytree_format
 guide_tree needs xconnserv
 gumbelparams needs tables
@@ -1305,7 +1305,6 @@ trackmgrgridcli needs xconnserv
 tv_objects needs biotree
 tvlib needs $(OBJMGR_LIBS)
 tvlib needs gui_glmesa
-tvlib needs ncbi_xcache_netcache
 tvlib needs tv_objects
 tvlib needs uudutil
 tvlib needs w_phylo_tree
@@ -1372,7 +1371,6 @@ w_aln_crossaln needs w_hit_matrix
 w_aln_multi needs w_seq_graphic
 w_aln_score needs w_wx
 w_aln_table needs w_wx
-w_data needs gui_objects
 w_data needs w_wx
 w_edit needs align_format
 w_edit needs hydra_client
@@ -1405,7 +1403,6 @@ w_seq needs w_text_widget
 w_seq_desktop needs w_wx
 w_seq_graphic needs genesbyloc
 w_seq_graphic needs gui_graph
-w_seq_graphic needs ncbi_xcache_netcache
 w_seq_graphic needs ncbi_xloader_bam
 w_seq_graphic needs ncbi_xloader_csra
 w_seq_graphic needs w_aln_score
@@ -1744,8 +1741,7 @@ xsubmit2id needs idload_utils
 xsvcgi needs $(DBAPI_CTLIB)
 xsvcgi needs $(OBJMGR_LIBS)
 xsvcgi needs $(ncbi_xreader_pubseqos2)
-xsvcgi needs gui_objutils
-xsvcgi needs ncbi_xcache_netcache
+xsvcgi needs gui_objects
 xsvcgi needs ncbi_xloader_aligndb
 xsvcgi needs ncbi_xloader_bam
 xsvcgi needs ncbi_xloader_csra
@@ -1758,7 +1754,6 @@ xsvcgi needs xid_mapper
 xsvcgi needs3party $(SYBASE_DLLS)
 xsvcgi needs3party $(SYBASE_LIBS)
 xsvdata needs $(BLAST_INPUT_LIBS)
-xsvdata needs gui_objects
 xsvdata needs hgvs
 xsvdata needs sv_objects
 xsvdata needs xalgophytree
