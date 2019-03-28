@@ -1322,8 +1322,6 @@ bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh) 
 //  ----------------------------------------------------------------------------
 {
-
-
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
     }
@@ -1331,7 +1329,6 @@ bool CGff3Writer::x_WriteBioseqHandle(
     SAnnotSelector sel = SetAnnotSelector();
     const auto& display_range = GetRange();
     CFeat_CI feat_iter(bsh, display_range, sel);
-
     if (!xWriteSource(bsh)) {
         return false;
     }
@@ -1341,11 +1338,9 @@ bool CGff3Writer::x_WriteBioseqHandle(
     std::sort(vRoots.begin(), vRoots.end(), CompareLocations);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
-
         if (!xWriteFeature(fc, mRoot)) {
             return false;
         }
-
         if (!xWriteAllChildren(fc, mRoot)) {
             return false;
         }
@@ -1372,7 +1367,6 @@ bool CGff3Writer::x_WriteBioseqHandle(
 
     CAlign_CI align_it(bsh, display_range, sel);
     WriteAlignments(align_it);
-
     return true;
 }
 
