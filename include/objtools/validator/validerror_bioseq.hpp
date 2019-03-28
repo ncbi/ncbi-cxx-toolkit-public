@@ -161,7 +161,7 @@ private:
     typedef multimap<string, const CSeq_feat*, PNocase> TStrFeatMap;
     typedef vector<CMappedFeat>                         TMappedFeatVec;
  
-    void x_SetupSourceFlags (CBioseq_Handle bsh);
+    void x_SetupCommonFlags (CBioseq_Handle bsh);
    
     void ValidateSeqLen(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
@@ -323,6 +323,7 @@ private:
 
     bool m_splicing_not_expected;
     bool m_report_missing_chromosome;
+    bool m_short_seq_okay;
 };
 
 

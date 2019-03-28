@@ -208,8 +208,37 @@ CValidError_bioseq::~CValidError_bioseq()
 {
 }
 
-void CValidError_bioseq::x_SetupSourceFlags (CBioseq_Handle bsh)
+void CValidError_bioseq::x_SetupCommonFlags (CBioseq_Handle bsh)
 {
+
+    CMolInfo::TTech tech = CMolInfo::eTech_unknown;
+    CSeq_inst::TRepr repr = CSeq_inst::eRepr_not_set;
+
+    if (bsh.IsSetInst_Repr()) {
+        repr = bsh.GetInst_Repr();
+    }
+
+    CSeqdesc_CI m(bsh, CSeqdesc::e_Molinfo);
+    while (m)
+    {
+        const CSeqdesc::TMolinfo& mi = m->GetMolinfo();
+        if (mi.IsSetTech()) {
+             tech = mi.GetTech();
+        }
+
+        ++m;
+    }
+
+    for (auto id : bsh.GetId()) {
+        CSeq_id::EAccessionInfo acc_info = id.IdentifyAccession();
+        unsigned int acc_div =  acc_info & CSeq_id::eAcc_division_mask;
+        if (acc_div == CSeq_id::eAcc_wgs && tech == CMolInfo::eTech_wgs && repr == CSeq_inst::eRepr_virtual) {
+            bool is_wgs_master = (acc_info & CSeq_id::fAcc_master) != 0;
+            if (is_wgs_master) {
+                m_short_seq_okay = false;
+            }
+        }
+    }
 
     CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
     while (d)
@@ -260,11 +289,12 @@ void CValidError_bioseq::ValidateBioseq (
 {
     m_splicing_not_expected = false;
     m_report_missing_chromosome = true;
+    m_short_seq_okay = true;
 
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
 
-        x_SetupSourceFlags(m_CurrentHandle);
+        x_SetupCommonFlags(m_CurrentHandle);
 
         CSeq_entry_Handle appropriate_parent;
         if (m_Imp.ShouldSubdivide()) {
@@ -2378,7 +2408,7 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
                 NStr::IntToString(len) + " residues", seq);
         }
     } else {
-        if ( len <= 10) {
+        if ( len <= 10 && m_short_seq_okay) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_ShortSeq, "Sequence only " +
                 NStr::IntToString(len) + " residues", seq);
         }
