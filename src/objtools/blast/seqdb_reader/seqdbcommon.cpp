@@ -943,9 +943,8 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
 
         gis.clear();
 
-        if (((num_gis) < 0)
-                ||  (bbeginp[0] != 0xFFFFFFFFU)
-                ||  (SeqDB_GetStdOrd(bbeginp + 1) != (Uint4) num_gis)) {
+        if ((bbeginp[0] != 0xFFFFFFFFU)
+             ||  (SeqDB_GetStdOrd(bbeginp + 1) != (Uint4) num_gis)) {
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        "Specified file is not a valid binary GI file.");
@@ -1091,7 +1090,7 @@ void SeqDB_ReadMemoryTaxIdList(const char * fbeginp,
         Int4* bbeginp = (Int4*) fbeginp;
         Int4* bendp = (Int4*) fendp;
 
-        Int4 num_taxids = (Int4) (bendp - bbeginp) - 2;
+        Uint8 num_taxids = (bendp - bbeginp) - 2;
 
         taxids.tax_ids.clear();
         taxids.oids.clear();
