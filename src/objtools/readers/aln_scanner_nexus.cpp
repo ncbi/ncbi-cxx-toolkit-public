@@ -145,6 +145,7 @@ CAlnScannerNexus::xProcessCommand(
         // xEndBlock(command);
         return;
     }
+    
 }
 
 //  ----------------------------------------------------------------------------
@@ -375,7 +376,32 @@ CAlnScannerNexus::xGetKeyVal(
     return {"", -1};
 }
 
+static 
+int s_FindCharOutsideComment(
+        char c,
+        const string& line,
+        int &numUnmatchedLeftBrackets)
+{
+    int index=0;
+    while (index < line.size()) {
+        if (line[index] == '[') {
+            ++numUnmatchedLeftBrackets;
+        }
+        else 
+        if (line[index] == ']') {
+            --numUnmatchedLeftBrackets;
+        }
+        else 
+        if ((numUnmatchedLeftBrackets == 0) &&
+            line[index] == c) {
+            return index;
+        }
 
+        ++index;
+    }
+    return NPOS;
+}
+                        
 
 //  ----------------------------------------------------------------------------
 void 
@@ -387,7 +413,7 @@ CAlnScannerNexus::xImportAlignmentData(
     string line;
     int lineCount(0);
     TCommand currentCommand;
-    int commandEnd(0);
+    size_t commandEnd(0);
     int commandStart(0);
     int numOpenBrackets(0);
     int commentStartLine(-1);
@@ -397,31 +423,46 @@ CAlnScannerNexus::xImportAlignmentData(
     while (iStr.ReadLine(line, lineCount)) {
 
         NStr::TruncateSpacesInPlace(line);
+
+        if (line == "#NEXUS") {
+            continue;
+        }
+
         int previousOpenBrackets = numOpenBrackets;
         sStripNexusComments(line, numOpenBrackets, inCommand);
 
         if (previousOpenBrackets == 0 &&
-            numOpenBrackets == 1) {
+            numOpenBrackets > 0) {
             commentStartLine = lineCount;
         }
             
         if (line.empty()) {
             continue;
         }
+        previousOpenBrackets = numOpenBrackets;
+        commandEnd = s_FindCharOutsideComment(';', line, numOpenBrackets);
+        if (previousOpenBrackets == 0 &&
+            numOpenBrackets > 0) {
+            commentStartLine = lineCount;
+        }
 
-        // Need to account for comments when looking for commandEnd
-        commandEnd = line.find_first_of(";");
+
         while (commandEnd != NPOS) {
-
             string commandArgs = NStr::TruncateSpaces(line.substr(commandStart, commandEnd-commandStart));
             if (!commandArgs.empty()) {
                 currentCommand.push_back({commandArgs, lineCount});
             }
+
             xProcessCommand(currentCommand);
             currentCommand.clear();
 
             commandStart = commandEnd+1;
-            commandEnd = line.find_first_of(";", commandStart);
+            previousOpenBrackets = numOpenBrackets;
+            commandEnd = s_FindCharOutsideComment(';',line.substr(commandStart), numOpenBrackets);
+            if (previousOpenBrackets == 0 &&
+                numOpenBrackets > 0) {
+                commentStartLine = lineCount;
+            }
         }
 
         if (commandStart < line.size()) {
@@ -822,8 +863,8 @@ CAlnScannerNexus::sStripNexusComments(
             if (numUnmatchedLeftBrackets==1) {
                 stop = index;
                 commentLimits.push_back(make_pair(start, stop));
-                --numUnmatchedLeftBrackets;
             }
+            --numUnmatchedLeftBrackets;
         }
         ++index;
     }
@@ -858,6 +899,7 @@ CAlnScannerNexus::sStripNexusComments(
     int stop;
 
     if (!inCommand &&
+        (numUnmatchedLeftBrackets == 0) &&
         line[0] != '[') {
         inCommand = true;
     }
@@ -865,14 +907,14 @@ CAlnScannerNexus::sStripNexusComments(
 
     while (index < line.size()) {
         const auto& c = line[index];
-        if (c == '[') {
+        if (c == '[' && !inCommand) {
             ++numUnmatchedLeftBrackets;
             if (numUnmatchedLeftBrackets==1) {
                 start = index;
             }
         }
         else 
-        if (c == ']') {
+        if (c == ']' && !inCommand) {
             if (numUnmatchedLeftBrackets==1) {
                 stop = index;
                 if (!inCommand) {
@@ -885,6 +927,12 @@ CAlnScannerNexus::sStripNexusComments(
         if (c == ';' &&
             numUnmatchedLeftBrackets == 0) {
             inCommand = false;
+        }
+        else 
+        if (!inCommand && 
+            numUnmatchedLeftBrackets == 0 &&
+            !isspace(c)) {
+           inCommand = true; 
         }
         ++index;
     }
