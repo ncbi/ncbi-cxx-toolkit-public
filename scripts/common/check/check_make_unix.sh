@@ -323,11 +323,13 @@ if test -z "\$NCBI_TEST_DATA_PATH"; then
     export NCBI_TEST_DATA_PATH
 fi
 
-# Valgrind configuration
+# Valgrind/Helgrind configurations
 VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"
 VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"
+HELGRIND_CMD="--tool=helgrind --suppressions=\$VALGRIND_SUP"
 if (valgrind --ncbi --help) >/dev/null 2>&1; then
     VALGRIND_CMD="--ncbi \$VALGRIND_CMD" # --ncbi must be the first option!
+    HELGRIND_CMD="--ncbi \$HELGRIND_CMD" # --ncbi must be the first option!
 fi
 
 # Leak- and Thread- Sanitizers (GCC 7.3, -fsanitize= flags)
@@ -512,7 +514,7 @@ RunTest()
         tool_up=\`echo \$tool | tr '[a-z]' '[A-Z]'\`
         
         case "\$tool_lo" in
-            regular | valgrind ) ;;
+            regular | valgrind | helgrind ) ;;
                              * ) continue ;;
         esac
         
@@ -558,7 +560,12 @@ RunTest()
                 NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
                 case "\$tool_lo" in
                 regular  ) ;;
-                valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" 
+                valgrind | helgrind ) 
+                           if test "\$tool_lo" = "valgrind"; then
+                              NCBI_CHECK_TOOL="\$NCBI_CHECK_VALGRIND \$VALGRIND_CMD" 
+                           else
+                              NCBI_CHECK_TOOL="\$NCBI_CHECK_VALGRIND \$HELGRIND_CMD" 
+                           fi
                            NCBI_CHECK_TIMEOUT_MULT=15
                            NCBI_RUN_UNDER_VALGRIND="yes"
                            export NCBI_RUN_UNDER_VALGRIND
@@ -689,7 +696,8 @@ EOF_launch
 
                 # Analize check tool output
                 case "\$tool_lo" in
-                    valgrind ) summary_all=\`grep -c 'ERROR SUMMARY:' \$x_test_out\`
+                    valgrind | helgrind ) 
+                               summary_all=\`grep -c 'ERROR SUMMARY:' \$x_test_out\`
                                summary_ok=\`grep -c 'ERROR SUMMARY: 0 ' \$x_test_out\`
                                # The number of given lines can be zero.
                                # In some cases we can lost valgrind's summary.
