@@ -70,6 +70,27 @@ protected:
         const string& seqId,
         const vector<TLineInfo> seqData);
 
+    using TCommand = list<SLineInfo>;
+
+    void
+    xProcessCommand(TCommand command);
+
+    void 
+    xProcessDimensions(const TCommand& command);
+
+    void
+    xProcessFormat(const TCommand& command);
+
+    void 
+    xProcessSequin(const TCommand& command);
+    
+    void
+    xProcessMatrix(const TCommand& command);
+
+    pair<string, int>
+    xGetKeyVal(const TCommand& command, 
+        const string& key);
+
     void
     xProcessDimensionLine(
         const string&,
@@ -87,7 +108,15 @@ protected:
 
     static void sStripNexusComments(
         string& line, 
+        int &numUnmatchedLeftBrackets,
+        bool &inCommand);
+
+    static void sStripNexusComments(
+        string& line,
         int &numUnmatchedLeftBrackets);
+
+    static void sStripNexusComments(
+        TCommand& command);
 
     EState mState;
     int mNumSequences = 0;

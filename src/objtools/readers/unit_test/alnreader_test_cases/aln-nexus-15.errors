@@ -3,6 +3,11 @@ Severity   : Warning
 Code       : 2.7
 Message    : Unexpected "end;". Appending ';' to prior command
 
+Line No    : 31
+Severity   : Warning
+Code       : 2.7
+Message    : Unexpected "end;". Appending ';' to prior command
+
 Line No    : None (Encountered during pre or post processing)
 Severity   : Error
 Code       : 2.10

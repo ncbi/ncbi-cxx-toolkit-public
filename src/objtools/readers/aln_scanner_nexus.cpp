@@ -59,6 +59,390 @@ BEGIN_SCOPE(objects);
 //  ============================================================================
 
 //  ----------------------------------------------------------------------------
+
+void sPrintCommand(const list<SLineInfo>& command)
+{
+    for (auto lineInfo : command) {
+        cout << lineInfo.mData << endl;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xProcessCommand(
+    TCommand command) 
+//  ----------------------------------------------------------------------------
+{
+    if (command.empty()) {
+        return;
+    }
+
+    string firstLine = command.front().mData;
+    NStr::ToLower(firstLine);
+    string commandName;
+    string remainder;
+
+    NStr::SplitInTwo(firstLine, 
+            " \t", 
+            commandName, 
+            remainder);
+
+    if (commandName != "sequin") {
+        sStripNexusComments(command);
+    }
+
+
+    if (commandName != "end") {
+        string lastLine = command.back().mData;
+        NStr::ToLower(lastLine);
+        int lastWhiteSpacePos = lastLine.find_last_of(" \t");
+        string lastToken = (lastWhiteSpacePos == NPOS) ?
+                            lastLine :
+                            lastLine.substr(lastWhiteSpacePos);
+        if (lastToken == "end") {
+            theErrorReporter->Warn(
+                command.back().mNumLine,
+                EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                "Unexpected \"end;\". Appending \';\' to prior command");
+
+            if (lastWhiteSpacePos == NPOS) {
+                command.pop_back();
+            }
+            else {
+                command.back().mData = NStr::TruncateSpaces(
+                        command.back().mData.substr(0, lastWhiteSpacePos));
+            }
+        }
+    }
+
+    
+
+    if (commandName == "dimensions") {
+        xProcessDimensions(command);
+        return;
+    }
+    if (commandName == "format") {
+        xProcessFormat(command); 
+        return;
+    }
+
+    if (commandName == "matrix") {
+        xProcessMatrix(command);
+        return;
+    }
+
+    if (commandName == "sequin") {
+        xProcessSequin(command);
+        return;
+    }
+
+    if (commandName == "begin") {
+        // xBeginBlock(command);
+        return;
+    }
+
+    if (commandName == "end") {
+        // xEndBlock(command);
+        return;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xProcessMatrix(
+    const TCommand& command)
+//  ----------------------------------------------------------------------------
+{
+    int dataLineCount(0);
+    int seqCount(0);
+    int blockLineLength(0);
+    int sequenceCharCount(0);
+
+    auto cit = command.begin();
+
+    for(++cit; cit != command.end(); ++dataLineCount, ++cit) {
+
+        seqCount = dataLineCount % mNumSequences;
+        vector<string> tokens;
+        NStr::Split(cit->mData, " \t", tokens, NStr::fSplit_Tokenize);
+        if (tokens.size() < 2) {
+            throw SShowStopper(
+                cit->mNumLine,
+                eAlnSubcode_IllegalDataLine,
+                "In data line, expected seqID followed by sequence data");
+        }
+
+        string seqId = tokens[0];
+
+        if (dataLineCount < mNumSequences) {
+            if (find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
+                string description = ErrorPrintf(
+                    "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+                throw SShowStopper(
+                    cit->mNumLine,
+                    eAlnSubcode_UnexpectedSeqId,
+                    description);
+            }
+            mSeqIds.push_back(seqId);
+            mSequences.push_back(vector<TLineInfo>());
+        }
+        else if (seqId != mSeqIds[seqCount]) {
+            string description;
+            const auto it = find(mSeqIds.begin(), mSeqIds.end(), seqId);
+            if (it == mSeqIds.end()) {
+                description = ErrorPrintf(
+                    "Expected %d sequences, but finding data for another.",
+                    mNumSequences);
+                throw SShowStopper(
+                    cit->mNumLine,
+                    eAlnSubcode_BadSequenceCount,
+                    description);
+            }
+
+            if (distance(mSeqIds.begin(), it) < seqCount) {
+                description = ErrorPrintf(
+                    "Duplicate ID: \"%s \" has already appeared in this block.",
+                    seqId.c_str());
+            }
+            else {
+                description = ErrorPrintf(
+                    "Finding data for sequence \"%s\" out of order.",
+                    seqId.c_str());
+            }
+            throw SShowStopper(
+                cit->mNumLine,
+                eAlnSubcode_UnexpectedSeqId,
+                description);
+        }
+            
+        string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
+        auto dataSize = seqData.size();
+        auto dataIndex = dataLineCount % mNumSequences;
+        if (dataIndex == 0) {
+            sequenceCharCount += dataSize;
+            if (sequenceCharCount > mSequenceSize) {
+                string description = ErrorPrintf(
+                    "Expected %d symbols per sequence but finding already %d",
+                    mSequenceSize,
+                    sequenceCharCount);
+                throw SShowStopper(
+                    cit->mNumLine,
+                    EAlnSubcode::eAlnSubcode_BadDataCount,
+                    description); 
+            }
+            blockLineLength = dataSize;
+        }
+        else {
+            if (dataSize != blockLineLength) {
+                string description = ErrorPrintf(
+                    "In data line, expected %d symbols but finding %d",
+                    blockLineLength,
+                    dataSize);
+                throw SShowStopper(
+                        cit->mNumLine,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        description); 
+            }
+        }
+
+        mSequences[seqCount].push_back({tokens[1], cit->mNumLine});
+    }
+
+    if (sequenceCharCount != mSequenceSize) {
+        string description = ErrorPrintf(
+            "Expected %d symbols per sequence but finding only %d",
+            mSequenceSize,
+            sequenceCharCount);
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_BadDataCount,
+            description); 
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xProcessDimensions(
+    const TCommand& command)
+//  ----------------------------------------------------------------------------
+{
+    auto ntax = xGetKeyVal(command, "ntax");
+    if (!ntax.first.empty()) {
+        try {
+            mNumSequences = NStr::StringToInt(ntax.first);
+        }
+        catch(...) {
+            string description = ErrorPrintf("Invalid nTax setting \"%s\"", 
+                    ntax.first.c_str());
+                throw SShowStopper(
+                    ntax.second,
+                    EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+                    description);
+        }
+    }
+    
+    auto nchar = xGetKeyVal(command, "nchar"); 
+    try {
+        mSequenceSize = NStr::StringToInt(nchar.first);
+    }
+    catch(...) {
+        string description = ErrorPrintf("Invalid nChar setting \"%s\"", 
+                    nchar.first.c_str());
+                throw SShowStopper(
+                    nchar.second,
+                    EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+                    description);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xProcessFormat(
+    const TCommand& command)
+//  ----------------------------------------------------------------------------
+{
+    const auto missing = xGetKeyVal(command, "missing");
+    const auto gap = xGetKeyVal(command, "gap");
+    const auto matchchar = xGetKeyVal(command, "matchchar");
+
+    if (!missing.first.empty()) {
+        mMissingChar = missing.first[0];
+    }
+
+    if (!gap.first.empty()) {
+        mGapChar = gap.first[0];
+    }
+
+    if (!matchchar.first.empty()) {
+        mMatchChar = matchchar.first[0];
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xProcessSequin(
+    const TCommand& command)
+//  ----------------------------------------------------------------------------
+{
+    for (const auto& lineInfo : command) {
+        vector<string> deflineVec;
+        NStr::Split(lineInfo.mData, ">", deflineVec);
+        for (int i=1; i<deflineVec.size(); ++i) {
+            mDeflines.push_back({deflineVec[i], lineInfo.mNumLine});
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+pair<string, int>
+CAlnScannerNexus::xGetKeyVal(
+    const TCommand& command,
+    const string& key)
+//  ----------------------------------------------------------------------------
+{
+    int keyPos = NPOS;
+    int valPos = NPOS;
+    int keyLine = 0;
+    int endPos = 0;
+
+    for (auto lineInfo : command) {
+        if (keyPos == NPOS) {
+            keyPos = NStr::FindNoCase(lineInfo.mData, key);
+            if (keyPos != NPOS) {
+                keyLine = lineInfo.mNumLine;
+                endPos = lineInfo.mData.find_first_of(" \t=", keyPos);
+            }
+        }
+
+        if (keyPos != NPOS) {
+            int currentLine = lineInfo.mNumLine;
+            if (currentLine != keyLine) {
+                endPos = 0;
+            }
+            valPos = lineInfo.mData.find_first_not_of(" \t=", endPos);
+            if (valPos != NPOS) {
+                endPos = lineInfo.mData.find_first_of(" \t\n;", valPos);
+                if (endPos != NPOS) {
+                    return {lineInfo.mData.substr(valPos, endPos-valPos), lineInfo.mNumLine};
+                }
+                return {lineInfo.mData.substr(valPos), lineInfo.mNumLine};
+            }
+        } 
+    }
+    return {"", -1};
+}
+
+
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xImportAlignmentData(
+    CSequenceInfo& sequenceInfo,
+    CLineInput& iStr)
+//  ----------------------------------------------------------------------------
+{
+    string line;
+    int lineCount(0);
+    TCommand currentCommand;
+    int commandEnd(0);
+    int commandStart(0);
+    int numOpenBrackets(0);
+    int commentStartLine(-1);
+    bool inCommand(false);
+
+
+    while (iStr.ReadLine(line, lineCount)) {
+
+        NStr::TruncateSpacesInPlace(line);
+        int previousOpenBrackets = numOpenBrackets;
+        sStripNexusComments(line, numOpenBrackets, inCommand);
+
+        if (previousOpenBrackets == 0 &&
+            numOpenBrackets == 1) {
+            commentStartLine = lineCount;
+        }
+            
+        if (line.empty()) {
+            continue;
+        }
+
+        // Need to account for comments when looking for commandEnd
+        commandEnd = line.find_first_of(";");
+        while (commandEnd != NPOS) {
+
+            string commandArgs = NStr::TruncateSpaces(line.substr(commandStart, commandEnd-commandStart));
+            if (!commandArgs.empty()) {
+                currentCommand.push_back({commandArgs, lineCount});
+            }
+            xProcessCommand(currentCommand);
+            currentCommand.clear();
+
+            commandStart = commandEnd+1;
+            commandEnd = line.find_first_of(";", commandStart);
+        }
+
+        if (commandStart < line.size()) {
+            currentCommand.push_back({NStr::TruncateSpaces(line.substr(commandStart)), lineCount});
+        }
+        commandStart = 0;
+    }
+
+    if (numOpenBrackets > 0) {
+        string description = ErrorPrintf(
+                "Unterminated comment beginning on line %d",
+                commentStartLine);
+        throw SShowStopper(
+                commentStartLine,
+                EAlnSubcode::eAlnSubcode_UnterminatedComment,
+                description);
+    }
+}
+
+/*
+//  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xImportAlignmentData(
     CSequenceInfo& sequenceInfo,
@@ -240,6 +624,7 @@ CAlnScannerNexus::xImportAlignmentData(
             description); 
     }
 }
+*/
 
 //  ----------------------------------------------------------------------------
 void
@@ -403,7 +788,7 @@ CAlnScannerNexus::xProcessDefinitionLine(
     }
     string description(
         "Illegal definition line in NEXUS sequin command");
-    throw SShowStopper(
+    theErrorReporter->Error(
         lineCount,
         eAlnSubcode_IllegalDefinitionLine,
         description);
@@ -453,6 +838,86 @@ CAlnScannerNexus::sStripNexusComments(
         line.erase(it->first, (it->second-it->first)+1);
     }
     NStr::TruncateSpacesInPlace(line);
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::sStripNexusComments(
+    string& line, 
+    int &numUnmatchedLeftBrackets,
+    bool &inCommand)
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::IsBlank(line)) {
+        return;
+    }
+
+    list<pair<int, int>> commentLimits;
+    int index=0;
+    int start=0;
+    int stop;
+
+    if (!inCommand &&
+        line[0] != '[') {
+        inCommand = true;
+    }
+
+
+    while (index < line.size()) {
+        const auto& c = line[index];
+        if (c == '[') {
+            ++numUnmatchedLeftBrackets;
+            if (numUnmatchedLeftBrackets==1) {
+                start = index;
+            }
+        }
+        else 
+        if (c == ']') {
+            if (numUnmatchedLeftBrackets==1) {
+                stop = index;
+                if (!inCommand) {
+                    commentLimits.push_back(make_pair(start, stop));
+                }
+                --numUnmatchedLeftBrackets;
+            }
+        }
+        else 
+        if (c == ';' &&
+            numUnmatchedLeftBrackets == 0) {
+            inCommand = false;
+        }
+        ++index;
+    }
+
+    if (numUnmatchedLeftBrackets && !inCommand) {
+        commentLimits.push_back(make_pair(start, index-1));
+    }
+
+    for (auto it = commentLimits.crbegin();
+         it != commentLimits.crend();
+         ++it) {
+        line.erase(it->first, (it->second-it->first)+1);
+    }
+    NStr::TruncateSpacesInPlace(line);
+}
+
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::sStripNexusComments(
+    TCommand& command)
+//  ----------------------------------------------------------------------------
+{
+    int numUnmatchedLeftBrackets = 0;
+    auto it = command.begin();
+    while (it != command.end()) {
+        sStripNexusComments(it->mData, numUnmatchedLeftBrackets);
+        if (it->mData.empty()) {
+            it = command.erase(it);
+            continue;
+        }
+        ++it;
+    }
 }
 
 

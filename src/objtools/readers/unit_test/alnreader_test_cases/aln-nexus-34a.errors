@@ -1,3 +1,8 @@
+Line No    : 24
+Severity   : Warning
+Code       : 2.7
+Message    : Unexpected "end;". Appending ';' to prior command
+
 Line No    : 10
 Severity   : Fatal
 Code       : 2.6
