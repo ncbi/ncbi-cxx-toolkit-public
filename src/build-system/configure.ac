@@ -8558,6 +8558,7 @@ fi
 CHECK_TOOLS=$with_check_tools
 case "$CHECK_TOOLS" in
    [*[Vv][Aa][Ll][Gg][Rr][Ii][Nn][Dd]*] ) NCBI_FEATURE(Valgrind) ;;
+   [*[Hh][Ee][Ll][Gg][Rr][Ii][Nn][Dd]*] ) NCBI_FEATURE(Valgrind) ;;
 esac
 CHECK_OS_NAME=
 : ${CHECK_TIMEOUT_MULT=1}
