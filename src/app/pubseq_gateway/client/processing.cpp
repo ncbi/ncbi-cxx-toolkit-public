@@ -830,7 +830,7 @@ shared_ptr<CPSG_Request> CProcessing::CreateRequest(const string& method, shared
         return CreateRequest<CPSG_Request_Blob>(move(user_context), params_obj);
     } else if (method == "resolve") {
         return CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
-    } else if (method == "annot") {
+    } else if (method == "named_annot") {
         return CreateRequest<CPSG_Request_NamedAnnotInfo>(move(user_context), params_obj);
     } else {
         return {};
@@ -1017,7 +1017,7 @@ CJson_Schema& CProcessing::RequestSchema()
         {
             "properties": {
                 "jsonrpc": { "$rev": "#jsonrpc" },
-                "method": { "enum": [ "annot" ] },
+                "method": { "enum": [ "named_annot" ] },
                 "params": {
                     "type": "object",
                     "properties": {

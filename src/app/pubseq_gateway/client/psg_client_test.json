@@ -15,5 +15,7 @@
 { "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": "4.42760593", "include_data": "orig-tse", "expected_result": { "success": true } }, "id": "blob_5" }
 { "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": "9999.88888", "include_data": "no-tse", "expected_result": { "fail": "item" } }, "id": "blob_6" }
 { "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": "blah.boo.10", "include_data": "no-tse", "expected_result": { "fail": "reply" } }, "id": "blob_7" }
-{ "jsonrpc": "2.0", "method": "annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16" ], "expected_result": { "success": true } }, "id": "annot_1" }
-{ "jsonrpc": "2.0", "method": "annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "success": true } }, "id": "annot_2" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16" ], "expected_result": { "success": true } }, "id": "annot_1" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "success": true } }, "id": "annot_2" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 12 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "fail": "reply" } }, "id": "annot_3" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "boo-ga-ga" ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "fail": "reply" } }, "id": "annot_4" }
