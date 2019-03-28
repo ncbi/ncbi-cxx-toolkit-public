@@ -684,7 +684,20 @@ void s_ReportErrors(const string& request_id, shared_ptr<CPSG_Reply> reply)
     cerr << endl;
 }
 
-void s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_Reply> reply)
+struct SExitCode
+{
+    enum { eSuccess = 0, eRunError = -1, eTestFail = -2, };
+
+    // eRunError has the highest priority and eSuccess - the lowest
+    void operator =(int rv) { if ((m_RV != eRunError) && (rv != eSuccess)) m_RV = rv; }
+
+    operator int() const { return m_RV; }
+
+private:
+    int m_RV = eSuccess;
+};
+
+int s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_Reply> reply)
 {
     bool no_errors = true;
 
@@ -702,11 +715,12 @@ void s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_
             }
             catch (exception& e) {
                 cerr << "Error on reading reply item for request '" << request_id << "': " << e.what() << endl;
+                return SExitCode::eRunError;
             }
 
         } else if (!expect_errors) {
             cerr << "Fail on getting item for request '" << request_id << "' expected to succeed" << endl;
-            return;
+            return SExitCode::eTestFail;
 
         } else {
             no_errors = false;
@@ -715,7 +729,10 @@ void s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_
 
     if (expect_errors && no_errors) {
         cerr << "Success on getting all items for request '" << request_id << "' expected to fail" << endl;
+        return SExitCode::eTestFail;
     }
+
+    return SExitCode::eSuccess;
 }
 
 int CProcessing::Testing()
@@ -726,12 +743,14 @@ int CProcessing::Testing()
 
     if (!ior) {
         cerr << "Failed to read 'psg_client_test.json'" << endl;
-        return -1;
+        return SExitCode::eRunError;
     }
 
     auto requests = ReadCommands(&STestingContext::CreateContext);
 
-    if (requests.empty()) return -1;
+    if (requests.empty()) return SExitCode::eRunError;
+
+    SExitCode rv;
 
     for (const auto& request : requests) {
         auto expected_result = request->GetUserContext<STestingContext>();
@@ -750,18 +769,22 @@ int CProcessing::Testing()
         const bool expect_reply_errors = expected_result->expected == STestingContext::eReplyError;
 
         if (reply->GetStatus(CDeadline::eInfinite) != EPSG_Status::eSuccess) {
-            if (!expect_reply_errors) s_ReportErrors(request_id, move(reply));
+            if (!expect_reply_errors) {
+                rv = SExitCode::eTestFail;
+                s_ReportErrors(request_id, move(reply));
+            }
 
         } else if (expect_reply_errors) {
+            rv = SExitCode::eTestFail;
             cerr << "Success for request '" << request_id << "' expected to fail" << endl;
 
         } else {
             const bool expect_item_errors = expected_result->expected == STestingContext::eReplyItemError;
-            s_CheckItems(expect_item_errors, request_id, reply);
+            rv = s_CheckItems(expect_item_errors, request_id, reply);
         }
     }
 
-    return 0;
+    return rv;
 }
 
 bool CProcessing::ReadRequest(string& request)

@@ -8,6 +8,7 @@
 { "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506" ], "include_data": "whole-tse", "expected_result": { "success": true } }, "id": "biodata_4" }
 { "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506" ], "include_data": "orig-tse", "expected_result": { "success": true } }, "id": "biodata_5" }
 { "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506", 10 ], "include_data": "no-tse", "expected_result": { "fail": "reply" } }, "id": "biodata_6" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "boo-ga-ga" ], "include_data": "orig-tse", "expected_result": { "fail": "item" } }, "id": "biodata_7" }
 { "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": "4.42760593", "include_data": "no-tse", "expected_result": { "success": true } }, "id": "blob_1" }
 { "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": "4.42760593", "include_data": "slim-tse", "expected_result": { "success": true } }, "id": "blob_2" }
 { "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": "4.42760593", "include_data": "smart-tse", "expected_result": { "success": true } }, "id": "blob_3" }
@@ -18,4 +19,4 @@
 { "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16" ], "expected_result": { "success": true } }, "id": "annot_1" }
 { "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "success": true } }, "id": "annot_2" }
 { "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 12 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "fail": "reply" } }, "id": "annot_3" }
-{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "boo-ga-ga" ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "fail": "reply" } }, "id": "annot_4" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "boo-ga-ga", 12 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "fail": "reply" } }, "id": "annot_4" }
