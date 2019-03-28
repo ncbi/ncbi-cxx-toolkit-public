@@ -1,24 +1,46 @@
 <html xml:lang="en" lang="en">
     
-    <head>
+<head>
+	<!-- google site verification -->
+	<meta name="google-site-verification" content="1E2mGo_sqU60SInLwmk-gaLIovV5oVkjJntFEf4gxcg">
 	
-        <title>Release Notes (Version 18, January 2017) - NCBI C++ Toolkit Book</title>
+        <title>Release Notes (Version 21, April 2018) - NCBI C++ Toolkit Book</title>
 
+        <!-- external_resources begin -->
+        <script type="text/javascript" src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jig.js"></script><meta name="description" content="nop"><meta name="description" content="nop 6"><meta name="description" content="nop 5">
+        <link rel="stylesheet" type="text/css" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jig.css">
+        <script type="text/javascript" src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jquery.js"></script>
+        <link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jquery.css">
+
+        <!-- external_resources end -->
 
         <!-- Page headcontent begin -->
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-	<meta name="description" content="A comprehensive manual on the NCBI C++ toolkit, including its design and development framework, a C++ library reference, software examples and demos, FAQs and release notes."/>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="description" content="A comprehensive manual on the NCBI C++ toolkit, including its design and development framework, a C++ library reference, software examples and demos, FAQs and release notes.">
+	<meta name="ncbipopper" content="triggerPosition:'bottom left',destPosition:'top left',openEvent:'click',closeEvent:'click'">
+
+        <link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/3579733.css">
+        <link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/3529739.css" media="print">
 
         <!-- PageFixtures resources end -->
     
-<link type="text/css" rel="stylesheet" href="css/4005757.css"/>
-<link type="text/css" rel="stylesheet" href="css/3529739_002.css" media="print"/>
+<link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/4005757.css">
+<link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/3529739_002.css" media="print">
 
 </head>
 
     <body class=" CppTkbPage">
         <div class="grid">
             <div class="col twelve_col nomargin shadow">
+                <!-- System messages like service outage or JS required; this is handled by the TemplateResources portlet -->
+                <div class="sysmessages">
+                    <noscript>
+	<p class="nojs">
+	<strong>Warning:</strong>
+	This site requires JavaScript to function. 
+	</p>
+	</noscript>
+                </div>
                 <!--/.sysmessage-->
                 <div class="wrap">
                     <div class="page">
@@ -28,14 +50,242 @@
                         <!--/.header-->
                         
                     	<!-- header start  -->
+<div class="header" style="height: 80px">
 
+    	
+    	<div class="ncbi_logo">
+		<a href="https://www.ncbi.nlm.nih.gov/" target="_blank">
+			<img title="NCBI Home Page" alt="NCBI Home Page" src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/ncbi_logo1.png">
+		</a>
+	</div>
+    	
+	<div class="res_logo">
+		<h1 class="res_name">
+	        	<a href="https://ncbi.github.io/cxx-toolkit/" title="Table of Contents Page" id="toolkit_header">
+				<!--
+				<a class="img_link icnblk_img" title="Table of Contents Page" target="mainwindow" href="/book">
+				<img class="source-thumb" src="/cxx-toolkit/static/img/th-toolkit-lrg.png" alt="Cover of The NCBI C++ Toolkit Book" height="100px" width="80px"/>
+				-->
+				NCBI C++ Toolkit
+			</a>
+		</h1>
+	</div>
+    
+	<div style="position: absolute; height: 80px; right: 100px; top: -25px" class="search" align="top">
+        	<form name="frmSymbolSearch" onsubmit="return SymbolSearch('toolkit')" action="/" id="frmSymbolSearch">
+		<table style="width: 100%">
+      <tbody><tr>
+			<td colspan="5">
+				<input id="search_box" name="__symbol" placeholder="Search..." onkeypress="SymbolSearchKeyPress('toolkit',event)" type="text">
+				<label for="search_box" class="offscreen_noflow">Search term</label>
+				<div id="button-holder">
+					<img src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/search_icon.png" alt="Search button" onclick="javasrcipt:SymbolSearch('toolkit');">
+				</div>
+			
+		</td></tr>
+      
+		<tr class="option">
+			<td width="0%">
+				<nobr><input checked="checked" name="__symboloc" id="book_search" style="margin-left: 2em;" onclick="toggleInHouseCheckbox('hidden');" type="radio"> <label title="Search in this book" for="book_search"> Book </label></nobr>
+			</td>
+			<td width="0%">
+				<nobr><input name="__symboloc" id="toolkit" onclick="toggleInHouseCheckbox('visible');" type="radio"> <label title="Search in the C/C++ source code" for="toolkit">Code</label></nobr>
+			</td>
+			<td width="0%">
+				<nobr><input name="__symboloc" id="pLXR" onclick="toggleInHouseCheckbox('visible');" type="radio"> <label title="Search the symbol in the source code using LINUX Cross-Reference browser" for="pLXR">LXR</label></nobr>
+			</td>
+			<td width="0%">
+				<nobr><input name="__symboloc" id="pLib" onclick="toggleInHouseCheckbox('visible');" type="radio"> <label title="Locate the Toolkit library(es) where the symbol is defined" for="pLib">Library</label></nobr>
+			</td>
+			<td width="100%">
+				<nobr id="switch_nobr" style="visibility: hidden;"><input name="switch" id="switch" style="margin-left: 30%;" type="checkbox" align="right"> <label title="Test for switch" for="switch">In house</label></nobr>
+			</td>
+		</tr>
+
+		
+		</tbody></table>
+		</form>
+	</div>
+
+    
+	<div style="height: 1px; "> </div>
+	
+	
+                </div>
+                      
+                      <div class="nvgtn">
+		<a style="float:left; padding-left: 50px;" class="jig-ncbipopper" href="#__nav_cntnt" role="button" aria-expanded="false" aria-haspopup="true">Contents ▾</a>
+		<div id="__nav_cntnt" style="width: 700px; height: 500px; overflow: auto; top: -100px; left: -100px; display: none; max-height: 455px;" aria-live="assertive" aria-hidden="true" class="ui-helper-reset ui-ncbipopper-wrapper ui-ncbipopper-basic">
+			<a href="https://ncbi.github.io/cxx-toolkit/" class="right">Table of Contents Page</a>
+			<ul class="simple-list">
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/fm">Book Information</a>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/part1">Part 1. Overview</a>
+					<ul class="simple-list">
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_intro">Introduction to the C++ Toolkit</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_start">Getting Started</a>
+						</li>
+					</ul>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/part2">Part 2. Development Framework</a>
+					<ul class="simple-list">
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_getcode_svn">Retrieve the Source Code (FTP and Subversion)</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config">Configure, Build, and Use the Toolkit</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_build">Working with Makefiles</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_proj">Project Creation and Management</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_style">Programming Policies and Guidelines</a>
+						</li>
+					</ul>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/part3">Part 3. C++ Toolkit Library Reference</a>
+					<ul class="simple-list">
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_core">Portability, Core Functionality and Application Framework</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_log">Logging and Diagnostics</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_conn">Networking and IPC</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_dbapi">Database Access Support</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_cgi">CGI and Fast-CGI </a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_html">HTML</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_tabular">Row-based data processing (TSV, CSV, etc.)</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_compress">Data compression (ZIP, GZIP, BZip2, LZO)</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_ser">Data Serialization (ASN.1, XML)</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_datamod">Biological Sequence Data Model</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_objmgr">Biological Object Manager</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_blast">BLAST API</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_dataaccess">Access to NCBI data</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_algoalign">Biological Sequence Alignment</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_gui">GUI and Graphics</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_boost">Using the Boost Unit Test Framework</a>
+						</li>
+					</ul>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/part4">Part 4. Wrappers for 3rd-Party Packages</a>
+					<ul class="simple-list">
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_xmlwrapp">XmlWrapp (XML parsing and handling, XSLT, XPath)</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_jsonwrapp">JsonWrapp (JSON parsing and handling)</a>
+						</li>
+					</ul>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/part5">Part 5. Software</a>
+					<ul class="simple-list">
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_debug">Debugging, Exceptions, and Error Handling</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_grid">Distributed Computing</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_app">Applications</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_demo">Examples and Demos</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_res">C Toolkit Resources for C++ Toolkit Users</a>
+						</li>
+					</ul>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/part6">Part 6. Help and Support</a>
+					<ul class="simple-list">
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_browse">NCBI C++ Toolkit Source Browser</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_devtools">Software Development Tools</a>
+						</li>
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_faq">FAQs, Useful Documentation Links, and Mailing Lists</a>
+						</li>
+					</ul>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/part7">Part 7. Library and Applications Configuration</a>
+					<ul class="simple-list">
+						<li class="half_rhythm">
+							<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_libconfig">Library Configuration</a>
+						</li>
+					</ul>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/misc">Miscellaneous</a>
+				</li>
+				<li class="half_rhythm">
+					<a href="https://ncbi.github.io/cxx-toolkit/pages/appendix">Appendix - Books and Styles</a>
+				</li>
+			</ul>
+		</div>
+		<div>
+			<a style="float:right; padding-right: 50px;" href="https://github.com/ncbi/cxx-toolkit/edit/gh-pages/pages/retired.md"><img alt="Edit this page" src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/button_edit_grey.gif"></a>
+			<a style="float:right; padding-right: 50px;" target="_blank" href="https://ncbi.github.io/cxx-toolkit/help_page">How to edit the page</a></div>
+	</div>
+
+                    
+                        
+                        <div class="nav_and_browser">
+    
+</div>
+                        
                         <!-- was itemctrl -->
                         <div class="container">
                             <div id="maincontent" class="content">
                                 <div class="col1">
-                                    <div class="content"><div class="col nine_col"><h1 id="release-notes-version-18-january-2017">Release Notes (Version 18, January 2017)</h1>
+                                    <div class="content"><div class="col nine_col"><!-- Content start -->
 
-<!-- Content start -->
+<h1 id="release-notes-version-21-april-2018">Release Notes (Version 21, April 2018)</h1>
+
+<p>The previous Release Notes can be seen <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/public_releases/RN_index.html">here</a>.</p>
 
 <blockquote>
   <p>These notes give a somewhat superficial and incomplete (albeit 
@@ -79,7 +329,8 @@ of these notes. Feel free to write to the mailing group <a href="https://www.ncb
 
     <ul>
       <li>
-        <p><a href="#release_notes.Unix">Unix</a></p>
+        <p><a href="#release_notes.Unix">Unix</a>
+<!-- Content end --></p>
       </li>
       <li>
         <p><a href="#release_notes.MS_Windows">MS Windows</a></p>
@@ -101,21 +352,21 @@ of these notes. Feel free to write to the mailing group <a href="https://www.ncb
 
 <h2 id="download">Download</h2>
 
-<p>Download the source code archives at: <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2017/Jan_10_2017/">ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2017/Jan_10_2017/</a></p>
+<p>Download the source code archives at: <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2018/Apr_2_2018/">ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2018/Apr_2_2018/</a></p>
 
 <ul>
   <li>
-    <p><a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2017/Jan_10_2017/ncbi_cxx--18_0_0.tar.gz">ncbi_cxx–18_0_0.tar.gz</a> – for Unix’es (see the list of Unix flavors below) and MacOSX</p>
+    <p><a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2018/Apr_2_2018/ncbi_cxx--21_0_0.tar.gz">ncbi_cxx–21_0_0.tar.gz</a> – for Unix’es (see the list of Unix flavors below) and MacOSX</p>
   </li>
   <li>
-    <p><a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2017/Jan_10_2017/ncbi_cxx--18_0_0.zip">ncbi_cxx–18_0_0.zip</a> – for MS-Windows (32- and 64-bit) / MS Visual Studio C++ 13, 15</p>
+    <p><a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2018/Apr_2_2018//ncbi_cxx--21_0_0.zip">ncbi_cxx–21_0_0.zip</a> – for MS-Windows / MS Visual Studio C++ 2013 and 2015</p>
   </li>
 </ul>
 
 <p>The sources correspond to the NCBI production tree <a href="https://ncbi.github.io/cxx-toolkit/pages/ch_getcode_svn#ch_getcode_svn.chkout_production_tree">sources</a>,
  which are originally based on the development tree source snapshot from
- July, 2016 but also include many hundreds of important and safe code 
-updates made since then and through November, 2016 (and then some).</p>
+ December 11, 2017 but also include many hundreds of important and safe 
+code updates made since then and through March 13, 2018 (and then some).</p>
 
 <p><a name="release_notes.Third_Party_Packages"></a></p>
 
@@ -146,12 +397,12 @@ data storage) are available.</p>
     <tr>
       <td><a href="https://www.boost.org/">Boost Test</a></td>
       <td>1.35.0 or newer</td>
-      <td>1.45.0, 1.53.0, 1.54.0, 1.56.0, 1.57.0</td>
+      <td>1.53.0, 1.54.0, 1.62.0, 1.66.0</td>
     </tr>
     <tr>
       <td>FastCGI</td>
       <td>All versions</td>
-      <td>2.1, 2.4.0</td>
+      <td>2.1, 2.4.0, 2.4.1</td>
     </tr>
     <tr>
       <td><a href="http://www.bzip.org/">libbzip2</a></td>
@@ -161,12 +412,12 @@ data storage) are available.</p>
     <tr>
       <td><a href="http://freshmeat.net/projects/libjpeg">libjpeg</a></td>
       <td>All versions</td>
-      <td>6b, 8c, 8d</td>
+      <td>6b, 8c, 8d, 9c</td>
     </tr>
     <tr>
       <td><a href="http://www.libpng.org/pub/png/libpng.html">libpng</a></td>
       <td>All versions</td>
-      <td>1.2.7, 1.2.49, 1.2.50, 1.5.13, 1.6.20</td>
+      <td>1.2.7, 1.2.49, 1.2.50, 1.5.13, 1.6.20, 1.6.34</td>
     </tr>
     <tr>
       <td><a href="http://www.libtiff.org/">libtiff</a></td>
@@ -176,7 +427,7 @@ data storage) are available.</p>
     <tr>
       <td><a href="https://sourceforge.net/projects/giflib">libungif</a></td>
       <td>All versions</td>
-      <td>4.1.3 (libungif),<br/> 4.1.6, 5.1.2 (giflib)</td>
+      <td>4.1.3 (libungif),<br> 4.1.6, 5.1.2 (giflib)</td>
     </tr>
     <tr>
       <td><a href="http://xmlsoft.org/">libxml2</a></td>
@@ -201,7 +452,7 @@ data storage) are available.</p>
     <tr>
       <td><a href="https://www.sqlite.org/">SQLite3</a></td>
       <td>3.6.6 or newer</td>
-      <td>3.6.14.2, 3.6.20, 3.7.13, 3.7.17, 3.8.2</td>
+      <td>3.6.14.2, 3.6.20, 3.7.13, 3.7.17, 3.8.2, 3.22.0</td>
     </tr>
     <tr>
       <td>Sybase</td>
@@ -211,7 +462,7 @@ data storage) are available.</p>
     <tr>
       <td><a href="http://www.zlib.org/">zlib</a></td>
       <td>All versions</td>
-      <td>1.2.3, 1.2.5, 1.2.7, 1.2.8</td>
+      <td>1.2.3, 1.2.5, 1.2.7, 1.2.8, 1.2.11</td>
     </tr>
   </tbody>
 </table>
@@ -235,25 +486,21 @@ download sites. However, the user still needs a list of the 3<sup>rd</sup> party
 <h3 id="highlights">HIGHLIGHTS</h3>
 
 <p>There have been significant additions and improvements in all parts 
-of the Toolkit in the last few years. Here, only very few are listed, 
-mostly related to major formal changes.</p>
+of the Toolkit since the last public release of the NCBI C++ Toolkit. 
+Here, only very few are listed, mostly related to major formal changes.</p>
 
 <p>We started using C++11 specific features, so you will now need a C++11 compliant compiler to build the Toolkit.</p>
 
-<p>We are in the process of dropping 32-bit support so while the Toolkit
- will still likely build (and even work) in 32-bit configurations… the 
-32-bit support is nominal, and will go away for good real soon now.</p>
+<p>We are in the process of dropping 32-bit support so while the Toolkit will still likely build (and even work) in <em>some</em> 32-bit configurations… the 32-bit support is nominal, and will go away for good real soon now.</p>
 
-<p>Because NCBI (as well as most other US Govt sites) require HTTPS 
-nowadays so you need to build the Toolkit with SSL support (GnuTLS and 
-related libraries) to be able to access NCBI services.</p>
+<p>For the SSL support the Toolkit now uses an embedded snapshot of <a href="https://tls.mbed.org/">mbedTLS</a>
+ library. This removes the need for linking in GnuTLS and its numerous 
+related libraries (which created a lot of configuration and distribution
+ problems).</p>
 
-<p>The embedded version of FreeTDS has been upgraded from 0.64 to 0.95.</p>
+<p>Added SSE support (not by default in the public release), used it to significantly improve some BAM reading operations.</p>
 
-<p>The NCBI VDB package is not embedded into the Toolkit source tree 
-anymore. Rather, it gets automatically retrieved from GitHub and built 
-during the configuration stage.
-<a name="release_notes.Documentation"></a></p>
+<p><a name="release_notes.Documentation"></a></p>
 
 <h2 id="documentation">Documentation</h2>
 
@@ -330,20 +577,20 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
     <tr>
       <td>CentOS 6.x (LIBC 2.12)</td>
       <td>x86-64</td>
-      <td><strong>GCC 4.9.3</strong>, 4.8.1; ICC 15</td>
+      <td><strong>GCC 4.9.3</strong>, 5.3; ICC 15</td>
     </tr>
     <tr>
       <td>CentOS 7.x (LIBC 2.17)</td>
       <td>x86-64</td>
-      <td><strong>GCC 4.9.3</strong>; ICC 15</td>
+      <td><strong>GCC 4.9.3</strong>, 5.3; ICC 15, 17</td>
     </tr>
     <tr>
       <td>Ubuntu 14.04 (“trusty”) (LIBC 2.19)</td>
-      <td>x86-32<br/>x86-64</td>
+      <td>x86-32<br>x86-64</td>
       <td>GCC 4.8.4</td>
     </tr>
     <tr>
-      <td>FreeBSD 10.2, 10.3</td>
+      <td>FreeBSD 10.3</td>
       <td>x86-64</td>
       <td>Clang 3.4.1</td>
     </tr>
@@ -366,34 +613,39 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
     <tr>
       <td>MS Windows</td>
       <td>x86-32</td>
-      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2013 (MSVC 12)<br/></td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2013 (MSVC 12)<br></td>
     </tr>
     <tr>
       <td>MS Windows</td>
       <td>x86-64</td>
-      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2013 (MSVC 12)<br/></td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2013 (MSVC 12)<br></td>
     </tr>
     <tr>
       <td>MS Windows</td>
       <td>x86-32</td>
-      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2015 (MSVC 14)<br/></td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2015 (MSVC 14)<br></td>
     </tr>
     <tr>
       <td>MS Windows</td>
       <td>x86-64</td>
-      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2015 (MSVC 14)<br/></td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2015 (MSVC 14)<br></td>
     </tr>
     <tr>
-      <td>Cygwin 1.7.34</td>
+      <td>MS Windows</td>
       <td>x86-64</td>
-      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.Cygwin_GCC">GCC 4.9.2</a>- nominal support only.</td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2017 (MSVC 14.1) experimental<br></td>
+    </tr>
+    <tr>
+      <td>Cygwin 2.9.0</td>
+      <td>x86-64</td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.Cygwin_GCC">GCC 6.4.0</a>- nominal support only.</td>
     </tr>
   </tbody>
 </table>
 
 <p><a name="release_notes.Mac_OS_X"></a></p>
 
-<h3 id="mac-os-x"><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.Mac_OS_X">Mac OS X</a></h3>
+<h3 id="macos"><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.Mac_OS_X">macOS</a></h3>
 
 <table>
   <thead>
@@ -405,19 +657,14 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
   </thead>
   <tbody>
     <tr>
-      <td>Mac OS X 10.9.x (Darwin 13.x)</td>
-      <td>x86-64</td>
-      <td><strong>Apple Clang 6.0</strong> (based on LLVM 3.5), <a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.Xcode_30__31">Xcode</a> 6.2</td>
-    </tr>
-    <tr>
-      <td>Mac OS X 10.10.x (Darwin 14.x)</td>
-      <td>x86-64</td>
-      <td><strong>Apple Clang 7.0.2</strong>, Xcode 7.2.1</td>
-    </tr>
-    <tr>
-      <td>Mac OS X 10.11.x (Darwin 15.x)</td>
+      <td>macOS 10.11.x (Darwin 15.x)</td>
       <td>x86-64</td>
       <td><strong>Apple Clang 8.0.0</strong>, Xcode 8.2.1</td>
+    </tr>
+    <tr>
+      <td>macOS 10.12.x (Darwin 16.x)</td>
+      <td>x86-64</td>
+      <td><strong>Apple Clang 9.0.0</strong>, Xcode 9.2</td>
     </tr>
   </tbody>
 </table>
@@ -426,7 +673,7 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
 
 <h3 id="added-platforms">Added Platforms</h3>
 
-<p>Official support for <strong>all</strong> of the above platforms is new in this release (though some may have worked unofficially).</p>
+<p>Official support for macOS 10.12.x, and for GCC 5.3 and ICC 17 on CentOS, is new in this release.</p>
 
 <p><a name="release_notes.Discontinued"></a></p>
 
@@ -467,7 +714,7 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
       <td>All</td>
     </tr>
     <tr>
-      <td>Mac OS X 10.8.x (Darwin 12.x) and below</td>
+      <td>Mac OS X 10.10.x (Darwin 14.x) and below</td>
       <td>All</td>
       <td>All</td>
     </tr>
@@ -493,14 +740,127 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
 
 <h2 id="last-updated">Last Updated</h2>
 
-<p>This document was last updated on January 18, 2017.</p>
+<p>This document was last updated on April 11, 2018.</p>
 
 <!-- Content end -->
 </div>
 
 
   
+	<div id="tkb_public" class="col three_col last">
 	
+	
+		<div class="portlet">
+			<div class="portlet_head">
+				<div class="portlet_title">Source Browsers</div>
+			</div>
+			<div class="portlet_content">
+				<ul>
+					<li class="external-only">
+						LXR: <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident">public</a> / <a href="https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/ident">in-house</a>
+					</li>
+					<li class="external-only">
+						Doxygen: <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/modules.html">public</a> / <a href="https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/modules.html">in-house</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<div class="portlet">
+			<div class="portlet_head">
+				<div class="portlet_title">SVN Source Repository</div>
+			</div>
+			<div class="portlet_content">
+				<ul>
+					<li class="external-only">
+						Web:  <a href="https://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/c++/">public</a> / <a href="https://svn.ncbi.nlm.nih.gov/viewvc/toolkit/trunk/c++">in-house</a>
+					</li>
+					<li class="external-only">
+						<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_getcode_svn#read-only-access-to-the-source-code-via-subversion">How to</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<div class="portlet">
+			<div class="portlet_head">
+				<div class="portlet_title">Resources</div>
+			</div>
+			<div class="portlet_content">
+				<ul>
+					<li class="external-only">
+						<a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lib_search/libsearch.cgi">Library Search Tool</a>
+					</li>
+					<li class="external-only">
+						<a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/depgraphs/dglistdeps.cgi">Library Dependencies Tool</a>
+					</li>
+					<li>
+						<a href="https://ncbi.github.io/cxx-toolkit/pages/release_notes">Release Notes</a>
+					</li>
+					<li>
+						<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_getcode_svn#public-access-to-the-source-code-via-ftp">Download</a>
+					</li>
+					<li>
+						<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_style">Coding Policy</a>
+					</li>
+					<li>
+						<a href="https://ncbi.github.io/cxx-toolkit/pages/ch_faq#mailing-lists">Mailing Lists</a>
+					</li>
+					<li>
+						<a href="mailto:cpp-doc@ncbi.nlm.nih.gov">
+							<span title="Contact C++ Toolkit group">Help and Support</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://ncbi.github.io/cxx-toolkit/cite">How to cite C++ Toolkit</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<div class="portlet">
+			<div class="portlet_head">
+				<div class="portlet_title">In House Only Resources</div>
+			</div>
+			<div class="portlet_content">
+			
+				<ul>
+					<li class="internal-only">
+						<a href="https://jira.ncbi.nlm.nih.gov/projects/CXX/summary/statistics">
+							JIRA
+						</a>
+					</li>
+					<li class="internal-only">
+						<a href="https://intranet.ncbi.nlm.nih.gov/Service/lbsmc/search.cgi">Load Balancer
+						</a>
+					</li>
+					<li>
+						<a href="https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/GRID/dashboard/dashboard.cgi">
+							GRID Dashboard
+						</a>
+					</li>
+					<li class="internal-only">
+						<a href="https://confluence.ncbi.nlm.nih.gov/display/CT/Testsuite">
+							<span title="View results of testsuite runs on the automatic C++ Toolkit builds">Test Results</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/SC/index.html">
+							Stable Components
+						</a>
+					</li>
+					<li class="internal-only">
+						<a href="https://confluence.ncbi.nlm.nih.gov/display/CT">Documentation
+						</a>
+					</li>
+				</ul>			
+			
+			
+			</div>
+	</div>
+	
+	<!------------------------------------------------------------------------------------------------------------ NEW SIDE BAR END --------------------------------------------------------------------------------------------------------------->
+
+
+
+</div>
 
                                 </div>
                                 <!--/.col1-->
@@ -535,7 +895,112 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
                         </div><!--/.container-->
 
 
-    
+    <div class="footer" id="footer">
+        <!-- move tables to scrollable div -->
+<script language="javascript">
+  var x = document.getElementsByClassName("table-scroll");
+  var i;
+  for (i = 0; i < x.length; i++) {
+    x[i].appendChild(x[i].previousElementSibling);
+  }
+</script>
+
+    <div class="subfooter">
+        <h2 class="offscreen_noflow">Simple NCBI Directory</h2>
+        <div class="footer_title">
+          <h1>Other NCBI resources</h1>
+        </div>
+        <ul class="foot_list" id="getting_started">
+            <li><h3>Getting Started</h3></li>
+            <!-- removed; hp-250           <li><a href="/guide/all/">Site Map</a></li>-->
+            <li><a href="https://www.ncbi.nlm.nih.gov/home/learn.shtml">NCBI Education</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/books/NBK3831/">NCBI Help Manual</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/books/NBK143764/">NCBI Handbook</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/home/learn.shtml">Training &amp; Tutorials</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/home/submit.shtml">Submit Data</a></li>
+        </ul>
+        <!-- this section is re-written by an XSLT before output -->
+        <ul class="foot_list" id="resources">
+            <li><h3>Resources</h3></li>
+            <!-- fill this in with categories -->
+        <li><a href="https://www.ncbi.nlm.nih.gov/guide/chemicals-bioassays/">Chemicals &amp; Bioassays</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/data-software/">Data &amp; Software</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/dna-rna/">DNA &amp; RNA</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/domains-structures/">Domains &amp; Structures</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/genes-expression/">Genes &amp; Expression</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/genetics-medicine/">Genetics &amp; Medicine</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/genomes-maps/">Genomes &amp; Maps</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/homology/">Homology</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/literature/">Literature</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/proteins/">Proteins</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/sequence-analysis/">Sequence Analysis</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/taxonomy/">Taxonomy</a></li><li><a href="https://www.ncbi.nlm.nih.gov/guide/variation/">Variation</a></li></ul>
+        
+        <ul class="foot_list" id="popular">
+            <li><h3>Popular</h3></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/">PubMed</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/books/">Bookshelf</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/pmc/">PubMed Central</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/pubmedhealth/">PubMed Health</a></li>
+            <li><a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi">BLAST</a></li>            
+            <li><a href="https://www.ncbi.nlm.nih.gov/nucleotide/">Nucleotide</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/genome/">Genome</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/snp/">SNP</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/gene/">Gene</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/protein/">Protein</a></li>
+            <li><a href="https://pubchem.ncbi.nlm.nih.gov/" class="newdomain">PubChem</a></li>
+        </ul>
+        <ul class="foot_list" id="featured">
+            <li><h3>Featured</h3></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/gtr/">Genetic Testing Registry</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/pubmedhealth/">PubMed Health</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/genbank/">GenBank</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/refseq/">Reference Sequences</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/geo/">Gene Expression Omnibus</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/mapview/">Map Viewer</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/genome/guide/human/">Human Genome</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/genome/guide/mouse/">Mouse Genome</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/genomes/FLU/">Influenza Virus</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/tools/primer-blast/">Primer-BLAST</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/Traces/sra/">Sequence Read Archive</a></li>
+        </ul>
+        <ul class="foot_list" id="info">
+            <li><h3>NCBI Information</h3></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/home/about/">About NCBI</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/research/">Research at NCBI</a></li>
+            <li><a href="https://www.ncbi.nlm.nih.gov/news/">NCBI News</a></li>
+            <li><a href="ftp://ftp.ncbi.nlm.nih.gov/">NCBI FTP Site</a></li>
+            <li><a target="_blank" aria-haspopup="true" aria-expanded="false" role="button" class="external" href="https://www.facebook.com/ncbi.nlm">NCBI on Facebook</a></li>
+            <li><a target="_blank" aria-haspopup="true" aria-expanded="false" role="button" class="external" href="https://twitter.com/ncbi">NCBI on Twitter</a></li>
+            <li><a target="_blank" aria-haspopup="true" aria-expanded="false" role="button" class="external" href="https://www.youtube.com/ncbinlm">NCBI on YouTube</a></li>
+        </ul>
+    </div>
+    <div style="top: -100px; left: -100px; display: none;" aria-hidden="true" aria-live="assertive" id="external-disclaimer" class="ui-helper-reset ui-ncbipopper-wrapper ui-ncbipopper-basic">
+        External link. Please review our <a href="https://www.nlm.nih.gov/privacy.html">privacy policy</a>.
+    </div>    
+    <div id="ncbifooter" class="contact_info">      
+        <div id="footer-contents-right">
+            <div id="nlm_thumb_logo">
+                <a href="https://www.nlm.nih.gov/" title="NLM">NLM</a>
+            </div>
+            <div id="nih_thumb_logo">
+                <a href="https://www.nih.gov/" title="NIH">NIH</a>
+            </div>
+            <div id="hhs_thumb_logo">
+                <a href="https://www.dhhs.gov/" title="DHHS">DHHS</a>
+            </div>
+            <div id="usagov_thumb_logo">
+                <a href="https://www.usa.gov/" title="USA.gov">USA.gov</a>
+            </div>         
+        </div>
+        
+        <div id="footer-contents-left">
+            <p class="address vcard">
+                <span class="url">
+                    <a class="fn url newdomain" href="https://www.ncbi.nlm.nih.gov/">National Center for
+                        Biotechnology Information</a>,
+                </span> <span class="org url"><a href="https://www.nlm.nih.gov/">U.S. National Library of Medicine</a></span>
+                <span class="adr">
+                    <span class="street-address">8600 Rockville Pike</span>, <span class="locality">Bethesda</span>
+                    <span class="region">MD</span>, <span class="postal-code">20894</span>
+                    <span class="country-name">USA</span>
+                </span>
+            </p>
+            
+            <a href="https://www.ncbi.nlm.nih.gov/home/about/policies.shtml">Policies and Guidelines</a> | <a href="https://www.ncbi.nlm.nih.gov/home/about/contact.shtml">Contact</a>
+        </div>
+    </div>
+
+    </div>
                         <!--/.footer-->
                         
                     </div>
@@ -546,20 +1011,28 @@ using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="n
                 
                 
             </div><!-- /.twelve_col -->
-
-              
-
-
-            </div>
+        <div style="display: none; top: 64.6px; left: 299.2px; width: 1116px; z-index: 1001;" class="ui-ncbiautocomplete-holder shadow ui-ncbiautocomplete-holder-clearfix" aria-live="assertive"><ul class="ui-ncbiautocomplete-options" role="listbox" aria-activedescendant="term"></ul><div style="display: block;" class="ui-ncbiautocomplete-actions shadow"><a style="display: none;" class="ui-ncbiautocomplete-link-pref">Preferences</a><a style="display: block;" href="#" class="ui-ncbiautocomplete-link-off ui-ncbiautocomplete-link-pref-right">Turn off</a></div></div><div class="ui-helper-reset ui-ncbipopper-wrapper ui-ncbipopper-basic" aria-hidden="true" aria-live="assertive" style="display: none; top: -100px; left: -100px;">External link. Please review our <a href="http://www.nlm.nih.gov/privacy.html">privacy policy</a>.</div></div>
         <!-- /.grid -->
 
         
-     
+        
+        <!-- usually for JS scripts at page bottom -->
+        <span class="pagefixtures"></span>
 
-        </div>
+
+<!-- script type="text/javascript" src="/cxx-toolkit/default_files/portal.js"></script -->
+<script type="text/javascript" src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/4025445.js" snapshot="toolkit"></script>
 
 
+<div aria-labelledby="ui-dialog-title-citation-window" role="dialog" tabindex="-1" class="ui-dialog ui-widget ui-widget-content ui-corner-all" style="display: none; z-index: 1000; outline: 0px none;"><div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-dialog-title-citation-window" class="ui-dialog-title">Cite this Page</span><a role="button" class="ui-dialog-titlebar-close ui-corner-all" href="#"><span class="ui-icon ui-icon-closethick">close</span></a></div><div class="jig-ncbidialog-box ui-dialog-content ui-widget-content" style="" id="citation-window"><div class="bk_tt">
+        Vakatov D, editor. The NCBI C++ Toolkit Book [Internet]. 
+Bethesda (MD): National Center for Biotechnology Information (US); 
+2004-2018.  24, Applications
+                    . 
+        [Updated: March 17, 2015]
+    .
 
-    </body>
+                            <div class="bk_tt"><span class="bk_cite_avail">Available from: http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_app</span></div></div><span class="bk_cite_avail"></span></div></div>
+<div style="display: none; top: -100px; left: -100px;" aria-live="assertive" aria-hidden="true" class="ui-helper-reset ui-ncbipopper-wrapper ui-ncbipopper-basic">External link. Please review our <a href="https://www.nlm.nih.gov/privacy.html">privacy policy</a>.</div></div></body></html>
 
-</html>
+
