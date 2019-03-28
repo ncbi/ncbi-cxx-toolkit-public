@@ -1050,6 +1050,23 @@ void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & an
         if (subject_end > j_cdr3end) {
             annot->m_JDomain[1] --;
         }
+        //allow missed alignment to the first bp and deduce the cdr3 by gapless extension backwards
+    } else if (j_cdr3end > 0 && subject_start - j_cdr3end <= 2) {
+        int subject_end = align->GetSeqStop(1);
+        CAlnMap j_map(align->GetSegs().GetDenseg());
+        
+        //+1 actaully is in fwr4 already...need to do this so that a insertion right in front
+        // of fwr4 can be handled.
+        annot->m_JDomain[1] = j_map.GetSeqPosFromSeqPos(0, 1, subject_start, IAlnExplorer::eRight);
+        
+        if (align->GetSeqStrand(0) == eNa_strand_minus) {
+            annot->m_JDomain[1] = m_Scope->GetBioseqHandle(align->GetSeq_id(0)).GetBioseqLength() - annot->m_JDomain[1] - 1;
+        } 
+           
+        //deduct diff back to be in CDR3
+        if (subject_end > j_cdr3end) {
+            annot->m_JDomain[1] = annot->m_JDomain[1] - (subject_start - j_cdr3end);
+        }
     }
 }
 
