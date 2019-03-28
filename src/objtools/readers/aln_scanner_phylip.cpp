@@ -29,6 +29,19 @@
  *
  */
 
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
+#include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/alnread.hpp>
+#include "aln_errors.hpp"
+#include "aln_util.hpp"
+#include "aln_peek_ahead.hpp"
+#include "aln_scanner_phylip.hpp"
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects);
+
 //  ============================================================================
 //  Phylip info:
 //  The first line contains the number of sequences and the common sequence 
@@ -51,19 +64,6 @@
 //  Reference: evolution.genetics.washington.edu/phylip/doc/sequence.html
 //  ============================================================================
 
-#include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
-#include <objtools/readers/reader_error_codes.hpp>
-#include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/alnread.hpp>
-#include "aln_errors.hpp"
-#include "aln_util.hpp"
-#include "aln_peek_ahead.hpp"
-#include "aln_scanner_phylip.hpp"
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
-
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerPhylip::xImportAlignmentData(
@@ -83,8 +83,8 @@ CAlnScannerPhylip::xImportAlignmentData(
     auto numSeqs =  NStr::StringToInt(tokens[0]);
     auto dataCount = NStr::StringToInt(tokens[1]); 
 
-    int dataLineCount(0);
-    int blockLineLength(0);
+    size_t dataLineCount(0);
+    size_t blockLineLength(0);
     // move onto the next line
 
     while (iStr.ReadLine(line, lineCount)) {

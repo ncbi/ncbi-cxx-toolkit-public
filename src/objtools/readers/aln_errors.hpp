@@ -28,7 +28,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors: Frank Ludwig
  *
  */
 #include <corelib/ncbistd.hpp>
@@ -74,26 +74,11 @@ public:
     ~CAlnErrorReporter() {};
 
     void
-    Error(
-        const SShowStopper& showStopper)
-    {
-        Report(
-            showStopper.mLineNumber,
-            EDiagSev::eDiag_Error,
-            EReaderCode::eReader_Alignment,
-            showStopper.mErrCode,
-            showStopper.mDescr,
-            showStopper.mSeqId);
-    };
-
-    void
     Fatal(
         const SShowStopper& showStopper)
     {
-        Report(
+        Fatal(
             showStopper.mLineNumber,
-            EDiagSev::eDiag_Fatal,
-            EReaderCode::eReader_Alignment,
             showStopper.mErrCode,
             showStopper.mDescr,
             showStopper.mSeqId);
@@ -114,6 +99,18 @@ public:
             descr,
             seqId);
     };
+
+    void
+    Error(
+        const SShowStopper& showStopper)
+    {
+        Error(
+            showStopper.mLineNumber,
+            showStopper.mErrCode,
+            showStopper.mDescr,
+            showStopper.mSeqId);
+    };
+
     void
     Error(
         int lineNumber,
