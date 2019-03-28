@@ -224,6 +224,12 @@ protected:
                         const CSeq_align& align,
                         const CMasterSeqSegments* master,
                         CTSEAnnotObjectMapper& mapper);
+    typedef map<CSeq_id_Handle, COpenRange<TSeqPos> > TTotalRangesMap;
+    void x_AddAlignIndex(CAnnotObject_Info& info,
+                         const CSeq_align& align,
+                         CTSEAnnotObjectMapper& mapper,
+                         vector<CHandleRangeMap>& hrmaps,
+                         const TTotalRangesMap* total_ranges_map = 0);
 
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);

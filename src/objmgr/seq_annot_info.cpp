@@ -843,45 +843,67 @@ void CSeq_annot_Info::x_AddAlignKeys(CAnnotObject_Info& info,
                                      CTSEAnnotObjectMapper& mapper)
 {
     if ( align.GetSegs().IsDisc() ) {
-        // discontinued alignments should be indexed separately
+        // discontinuous alignments should be indexed separately
         // add keys for each sub-alignment
         const CSeq_align_set::Tdata& sub_aligns = 
             align.GetSegs().GetDisc().Get();
+        list< vector<CHandleRangeMap> > all_hrmaps;
+        TTotalRangesMap total_ranges_map;
         for ( auto& align_ref : sub_aligns ) {
-            x_AddAlignKeys(info, *align_ref, master, mapper);
+            vector<CHandleRangeMap> hrmaps;
+            CAnnotObject_Info::x_ProcessAlign(hrmaps, *align_ref, master);
+            for ( auto& hrm : hrmaps ) {
+                ITERATE ( CHandleRangeMap, hrit, hrm ) {
+                    total_ranges_map[hrit->first] += hrit->second.GetOverlappingRange();
+                }
+            }
+            all_hrmaps.push_back(hrmaps);
+        }
+        auto hrmap_iter = all_hrmaps.begin();
+        for ( auto& align_ref : sub_aligns ) {
+            x_AddAlignIndex(info, *align_ref, mapper, *hrmap_iter++, &total_ranges_map);
         }
     }
     else {
         vector<CHandleRangeMap> hrmaps;
         CAnnotObject_Info::x_ProcessAlign(hrmaps, align, master);
+        x_AddAlignIndex(info, align, mapper, hrmaps);
+    }
+}
 
-        SAnnotObject_Index index;
-        index.m_AnnotObject_Info = &info;
-        index.m_AnnotLocationIndex = 0;
 
-        ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
-            ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-                const CHandleRange& hr = hrit->second;
-                SAnnotObject_Key key;
-                key.m_Range = hr.GetOverlappingRange();
-                if ( key.m_Range.Empty() ) {
-                    ERR_POST_X(3, "Empty region in "<<GetDescription()<<
-                               " "<<MSerial_AsnText<<info.GetAlign());
-                    continue;
-                }
-                key.m_Handle = hrit->first;
-                if ( hr.HasGaps() ) {
-                    index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
-                    index.m_HandleRange->GetData() = hr;
-                }
-                else {
-                    index.m_HandleRange.Reset();
-                }
+void CSeq_annot_Info::x_AddAlignIndex(CAnnotObject_Info& info,
+                                      const CSeq_align& align,
+                                      CTSEAnnotObjectMapper& mapper,
+                                      vector<CHandleRangeMap>& hrmaps,
+                                      const TTotalRangesMap* total_ranges_map)
+{
+    SAnnotObject_Index index;
+    index.m_AnnotObject_Info = &info;
+    index.m_AnnotLocationIndex = 0;
 
-                x_Map(mapper, key, index);
+    ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+        ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+            const CHandleRange& hr = hrit->second;
+            SAnnotObject_Key key;
+            key.m_Range = total_ranges_map? total_ranges_map->find(hrit->first)->second: hr.GetOverlappingRange();
+            if ( key.m_Range.Empty() ) {
+                ERR_POST_X(3, "Empty region in "<<GetDescription()<<
+                           " "<<MSerial_AsnText<<info.GetAlign());
+                continue;
             }
-            ++index.m_AnnotLocationIndex;
+            key.m_Handle = hrit->first;
+            if ( total_ranges_map || hr.HasGaps() ) {
+                index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
+                index.m_HandleRange->GetData() = hr;
+            }
+            else {
+                index.m_HandleRange.Reset();
+            }
+
+            x_Map(mapper, key, index);
         }
+        ++index.m_AnnotLocationIndex;
     }
 }
 
