@@ -58,6 +58,63 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+string sAlnErrorToString(const CAlnError & error)
+{
+    auto lineNumber = error.GetLineNum();
+    if (lineNumber == -1) {
+        return FORMAT(
+            "At ID '" << error.GetID() << "' "
+            "in category '" << static_cast<int>(error.GetCategory()) << "': "
+            << error.GetMsg() << "'");
+    }
+    return FORMAT(
+        "At ID '" << error.GetID() << "' "
+        "in category '" << static_cast<int>(error.GetCategory()) << "' "
+        "at line " << error.GetLineNum() << ": "
+        << error.GetMsg() << "'");
+}
+
+CAlnError::CAlnError(int category, int line_num, string id, string message)
+{
+    switch (category) 
+    {
+    case -1:
+        m_Category = eAlnErr_Unknown;
+        break;
+    case 0:
+        m_Category = eAlnErr_NoError;
+        break;
+    case 1:
+        m_Category = eAlnErr_Fatal;
+        break;
+    case 2:
+        m_Category = eAlnErr_BadData;
+        break;
+    case 3:
+        m_Category = eAlnErr_BadFormat;
+        break;
+    case 4:
+        m_Category = eAlnErr_BadChar;
+        break;
+    default:
+        m_Category = eAlnErr_Unknown;
+        break;
+    }
+
+    m_LineNum = line_num;
+    m_ID = id;
+    m_Message = message;
+}
+
+
+CAlnError::CAlnError(const CAlnError& e)
+{
+    m_Category = e.GetCategory();
+    m_LineNum = e.GetLineNum();
+    m_ID = e.GetID();
+    m_Message = e.GetMsg();
+}
+
 
 CAlnReader::~CAlnReader()
 {
@@ -719,5 +776,27 @@ void CAlnReader::x_AddTitle(const string& title, CBioseq& bioseq)
     bioseq.SetDescr().Set().push_back(move(pDesc));
 }
 
+
+void CAlnReader::ParseDefline(const string& defline, 
+    const SDeflineParseInfo& info,
+    const TIgnoredProblems& ignoredErrors, 
+    list<CRef<CSeq_id>>& ids, 
+    bool& hasRange, 
+    TSeqPos& rangeStart,
+    TSeqPos& rangeEnd,
+    TSeqTitles& seqTitles,
+    ILineErrorListener* pMessageListener)
+{
+    CFastaDeflineReader::ParseDefline(
+        defline, 
+        info,
+        ignoredErrors, 
+        ids, 
+        hasRange, 
+        rangeStart, 
+        rangeEnd,
+        seqTitles, 
+        pMessageListener);
+}
 
 END_NCBI_SCOPE

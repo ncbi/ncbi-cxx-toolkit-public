@@ -102,6 +102,48 @@ public:
         eAlpha_Dna_no_ambiguity,
         eAlpha_Rna_no_ambiguity,
     };
+ 
+    class CAlnErrorContainer 
+    {
+
+    private:
+        list<CAlnError> errors;
+        map<CAlnError::EAlnErr, size_t> error_count;
+
+    public:
+        size_t GetErrorCount(CAlnError::EAlnErr category) const
+        {
+            auto it = error_count.find(category);
+            if (it != error_count.end()) {
+                return it->second;
+            }
+            return 0;
+        }
+
+        void clear(void) {
+            errors.clear();
+            error_count.clear();
+        }
+
+        void push_back(const CAlnError& error) {
+            errors.push_back(error);
+            ++error_count[error.GetCategory()];
+        }
+
+        size_t size(void) const {
+            return errors.size();
+        }
+
+        typedef list<CAlnError> TErrors;
+        typedef TErrors::const_iterator const_iterator;
+        const_iterator begin(void) const { return errors.begin(); }
+        const_iterator end(void)   const { return errors.end();   }
+    };
+
+
+    // error messages
+    typedef CAlnErrorContainer TErrorList;
+
     static string
     GetAlphabetLetters(
         EAlphabet);
@@ -116,6 +158,7 @@ public:
         m_ReadSucceeded(false),
         m_UseNexusInfo(true) 
     { 
+        m_Errors.clear();
         SetAlphabet(eAlpha_Protein);
         SetAllGap(".-");
     };
@@ -182,6 +225,9 @@ public:
     const vector<TDeflineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
     int                   GetDim(void)       const {return m_Dim;};
 
+    NCBI_DEPRECATED
+    const TErrorList& GetErrorList(void)     const {return m_Errors;};
+    
     using TFastaFlags = objects::CFastaDeflineReader::TFastaFlags;
     /// Create ASN.1 classes from the parsed alignment
     CRef<objects::CSeq_align> GetSeqAlign(TFastaFlags fasta_flags=0,
@@ -238,6 +284,7 @@ private:
     CRef<objects::CSeq_entry> m_Entry;
     vector<string>            m_SeqVec; 
     vector<TSeqPos>           m_SeqLen; 
+    TErrorList                m_Errors;
     bool                      m_UseNexusInfo;
 
     /// characters have different contexts, depending on 
@@ -271,6 +318,7 @@ protected:
     using SDeflineParseInfo = objects::CFastaDeflineReader::SDeflineParseInfo;
     using TIgnoredProblems  = objects::CFastaDeflineReader::TIgnoredProblems;
 
+    NCBI_DEPRECATED
     void ParseDefline(const string& defline,
             const SDeflineParseInfo& info,
             const TIgnoredProblems& ignoredErrors,
