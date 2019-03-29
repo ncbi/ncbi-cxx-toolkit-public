@@ -93,6 +93,34 @@ string CAlnReader::GetAlphabetLetters(
 };
 
     
+void CAlnReader::SetFastaGap(EAlphabet alpha)
+{
+    SetAlphabet(alpha);
+    SetAllGap("-");
+}
+
+
+void CAlnReader::SetClustal(EAlphabet alpha)
+{
+    SetAlphabet(alpha);
+    SetAllGap("-");
+}
+
+
+void CAlnReader::SetPaup(EAlphabet alpha)
+{
+    SetAlphabet(alpha);
+    SetAllGap("-");
+}
+
+
+void CAlnReader::SetPhylip(EAlphabet alpha)
+{
+    SetAlphabet(alpha);
+    SetAllGap("-");
+}
+
+
 
 void s_GetSequenceLengthInfo(
         const SAlignmentFile& alignmentInfo, 
