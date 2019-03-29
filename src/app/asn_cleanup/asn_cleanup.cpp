@@ -661,6 +661,9 @@ int CCleanupApp::Run(void)
     if (args["batch"] && args["bigfile"]) {
         NCBI_THROW(CFlatException, eInternal, "\"batch\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
     }
+    if (args["X"] && args["bigfile"]) {
+        NCBI_THROW(CFlatException, eInternal, "\"X\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
+    }
 
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
