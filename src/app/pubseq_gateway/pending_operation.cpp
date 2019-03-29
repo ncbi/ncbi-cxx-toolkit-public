@@ -1477,8 +1477,12 @@ void CPendingOperation::OnNamedAnnotError(
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     PSG_ERROR(message);
 
-    if (is_error)
-        app->GetErrorCounters().IncUnknownError();
+    if (is_error) {
+        if (code == CCassandraException::eQueryTimeout)
+            app->GetErrorCounters().IncCassQueryTimeoutError();
+        else
+            app->GetErrorCounters().IncUnknownError();
+    }
 
     m_ProtocolSupport.PrepareReplyMessage(message,
                                           CRequestStatus::e500_InternalServerError,
@@ -1677,7 +1681,10 @@ void CPendingOperation::OnGetBlobError(
         app->GetErrorCounters().IncGetBlobNotFound();
     } else {
         if (is_error)
-            app->GetErrorCounters().IncUnknownError();
+            if (code == CCassandraException::eQueryTimeout)
+                app->GetErrorCounters().IncCassQueryTimeoutError();
+            else
+                app->GetErrorCounters().IncUnknownError();
     }
 
     if (is_error) {

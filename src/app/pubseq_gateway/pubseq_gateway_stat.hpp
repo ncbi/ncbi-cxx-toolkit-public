@@ -47,7 +47,8 @@ public:
         m_UnknownError(0), m_ClientSatToSatNameError(0),
         m_ServerSatToSatNameError(0),
         m_BioseqID2InfoError(0),
-        m_BlobPropsNotFoundError(0), m_LMDBError(0)
+        m_BlobPropsNotFoundError(0), m_LMDBError(0),
+        m_CassQueryTimeoutError(0)
     {}
 
     void IncBadUrlPath(void)
@@ -80,6 +81,9 @@ public:
     void IncLMDBError(void)
     { ++m_LMDBError; }
 
+    void IncCassQueryTimeoutError(void)
+    { ++m_CassQueryTimeoutError; }
+
     void PopulateDictionary(CJsonNode &  dict) const;
 
 private:
@@ -93,6 +97,7 @@ private:
     atomic_uint_fast64_t        m_BioseqID2InfoError;
     atomic_uint_fast64_t        m_BlobPropsNotFoundError;
     atomic_uint_fast64_t        m_LMDBError;
+    atomic_uint_fast64_t        m_CassQueryTimeoutError;
 };
 
 

@@ -70,6 +70,9 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     value = m_LMDBError;
     err_sum += value;
     dict.SetInteger("LMDBErrorCount", value);
+    value = m_CassQueryTimeoutError;
+    err_sum += value;
+    dict.SetInteger("CassQueryTimeoutErrorCount", value);
 
     dict.SetInteger("TotalErrorCount", err_sum);
 }
