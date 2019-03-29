@@ -49,6 +49,7 @@ struct CPubInfo
 {
     CRef<CPubdesc> m_desc;
     int m_pmid;
+    string m_real_key;
 
     CPubInfo() :
         m_pmid(0) {};
@@ -67,6 +68,7 @@ public:
 
 private:
 	unordered_map<string, CPubInfo> m_pubs;
+    unordered_map<string, string> m_map_lookup_to_origin;
 };
 
 }

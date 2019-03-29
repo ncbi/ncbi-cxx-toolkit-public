@@ -133,7 +133,7 @@ static void RemovePubs(CSeq_entry& entry, const list<string>& common_pubs, CPubC
                 const CPubInfo& pub_info = all_pubs.GetPubInfo(pubdesc_key);
                 if (pub_info.m_desc.NotEmpty()) {
 
-                    if (find(common_pubs.begin(), common_pubs.end(), pubdesc_key) != common_pubs.end()) {
+                    if (find(common_pubs.begin(), common_pubs.end(), pub_info.m_real_key) != common_pubs.end()) {
                         cur_descr = descrs->Set().erase(cur_descr);
                         removed = true;
                     }
@@ -1093,6 +1093,34 @@ static void CleanupProtGbblock(CSeq_entry& entry)
     }
 }
 
+static void CleanupSetGbblock(CSeq_entry& entry)
+{
+    if (!entry.IsSet()) {
+        return;
+    }
+
+    if (entry.GetSet().IsSetDescr()) {
+
+        CSeq_descr& descrs = entry.SetSet().SetDescr();
+        for (auto descr = descrs.Set().begin(); descr != descrs.Set().end();) {
+
+            if ((*descr)->IsGenbank()) {
+                descr = descrs.Set().erase(descr);
+            }
+            else {
+                ++descr;
+            }
+        }
+    }
+
+    if (entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            CleanupSetGbblock(*cur_entry);
+        }
+    }
+}
+
 static void RemoveDblinkGPID(CSeq_entry& entry, size_t& dblink_order_num)
 {
     CSeq_descr* descrs = nullptr;
@@ -1559,6 +1587,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         PropagateTPAKeyword(*entry);
                     }
 
+                    CleanupSetGbblock(*entry);
                     if (master_info.m_has_gb_block) {
                         CleanupProtGbblock(*entry);
                     }

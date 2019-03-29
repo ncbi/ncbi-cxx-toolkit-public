@@ -61,19 +61,22 @@ static int GetPmid(const CPubdesc& pubdesc)
 
 string CPubCollection::AddPub(CPubdesc& pubdesc, bool medline_lookup)
 {
-    string pubdesc_str = GetPubdescKey(pubdesc, false);
-    auto it = m_pubs.find(pubdesc_str);
+    string pubdesc_no_lookup_str = GetPubdescKey(pubdesc, false);
+    auto it = m_map_lookup_to_origin.find(pubdesc_no_lookup_str);
 
-    if (it == m_pubs.end()) {
+    string pubdesc_str(pubdesc_no_lookup_str);
+    if (it == m_map_lookup_to_origin.end()) {
         pubdesc_str = GetPubdescKey(pubdesc, medline_lookup);
-        it = m_pubs.find(pubdesc_str);
+        m_map_lookup_to_origin[pubdesc_no_lookup_str] = pubdesc_str;
     }
 
-    if (it == m_pubs.end()) {
+    auto lookup_it = m_pubs.find(pubdesc_str);
+    if (lookup_it == m_pubs.end()) {
         
-        it = m_pubs.insert({ pubdesc_str, CPubInfo()}).first;
-        it->second.m_desc.Reset(&pubdesc);
-        it->second.m_pmid = GetPmid(*it->second.m_desc);
+        lookup_it = m_pubs.insert({ pubdesc_str, CPubInfo()}).first;
+        lookup_it->second.m_desc.Reset(&pubdesc);
+        lookup_it->second.m_pmid = GetPmid(*lookup_it->second.m_desc);
+        lookup_it->second.m_real_key = pubdesc_str;
     }
 
     return pubdesc_str;
@@ -83,10 +86,16 @@ CPubInfo& CPubCollection::GetPubInfo(const string& pubdesc_key)
 {
     static CPubInfo empty_info;
 
-    auto it = m_pubs.find(pubdesc_key);
+    string real_key(pubdesc_key);
 
-    if (it != m_pubs.end()) {
-        return it->second;
+    auto it = m_map_lookup_to_origin.find(pubdesc_key);
+    if (it != m_map_lookup_to_origin.end()) {
+        real_key = it->second;
+    }
+
+    auto lookup_it = m_pubs.find(real_key);
+    if (lookup_it != m_pubs.end()) {
+        return lookup_it->second;
     }
 
     return empty_info;
