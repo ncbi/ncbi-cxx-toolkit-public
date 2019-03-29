@@ -63,6 +63,7 @@ public:
                         int16_t                 effective_seq_id_type,
                         list<string>            secondary_id_list,
                         string                  primary_seq_id,
+                        const CTempString &     url_seq_id,
                         bool                    composed_ok,
                         SBioseqResolution &     bioseq_resolution,
                         CPendingOperation *     pending_op);
@@ -94,6 +95,7 @@ private:
     int16_t                 m_EffectiveSeqIdType;
     list<string>            m_SecondaryIdList;
     string                  m_PrimarySeqId;
+    string                  m_UrlSeqId;
     bool                    m_ComposedOk;
     SBioseqResolution &     m_BioseqResolution;
     CPendingOperation *     m_PendingOp;

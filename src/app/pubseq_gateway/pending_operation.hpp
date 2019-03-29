@@ -229,7 +229,6 @@ public:
     unsigned int GetTimeout(void) const                   { return m_Timeout; }
     unsigned int GetMaxRetries(void) const                { return m_MaxRetries; }
     shared_ptr<CCassConnection> GetConnection(void) const { return m_Conn; }
-    CTempString GetUrlSeqId(void)                         { return m_UrlSeqId; }
     int16_t GetUrlSeqIdType(void) const                   { return m_UrlSeqIdType; }
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
     { return m_ProtocolSupport.GetReply()->GetDataReadyCB(); }

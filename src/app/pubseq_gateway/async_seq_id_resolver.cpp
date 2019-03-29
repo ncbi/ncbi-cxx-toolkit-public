@@ -43,11 +43,13 @@ CAsyncSeqIdResolver::CAsyncSeqIdResolver(CSeq_id &            oslt_seq_id,
                                          int16_t              effective_seq_id_type,
                                          list<string>         secondary_id_list,
                                          string               primary_seq_id,
+                                         const CTempString &  url_seq_id,
                                          bool                 composed_ok,
                                          SBioseqResolution &  bioseq_resolution,
                                          CPendingOperation *  pending_op) :
     m_OsltSeqId(oslt_seq_id), m_EffectiveSeqIdType(effective_seq_id_type),
     m_SecondaryIdList(secondary_id_list), m_PrimarySeqId(primary_seq_id),
+    m_UrlSeqId(url_seq_id.data(), url_seq_id.size()),
     m_ComposedOk(composed_ok),
     m_BioseqResolution(bioseq_resolution),
     m_PendingOp(pending_op),
@@ -223,16 +225,12 @@ void CAsyncSeqIdResolver::x_PrepareSecondarySi2csiQuery(void)
 
 void CAsyncSeqIdResolver::x_PrepareSecondaryAsIsSi2csiQuery(void)
 {
-    CTempString     url_seq_id = m_PendingOp->GetUrlSeqId();
-
     // Need to capitalize the seq_id before going to the tables.
     // Capitalizing in place suites because the other tries are done via copies
     // provided by OSLT
-    char *      current = (char *)(url_seq_id.data());
-    for (size_t  index = 0; index < url_seq_id.size(); ++index, ++current)
-        *current = (char)toupper((unsigned char)(*current));
+    NStr::ToUpper(m_UrlSeqId);
 
-    x_PrepareSi2csiQuery(url_seq_id, m_PendingOp->GetUrlSeqIdType());
+    x_PrepareSi2csiQuery(m_UrlSeqId, m_PendingOp->GetUrlSeqIdType());
 }
 
 
@@ -240,16 +238,15 @@ void CAsyncSeqIdResolver::x_PrepareSecondaryAsIsModifiedSi2csiQuery(void)
 {
     // if there are | at the end => strip all trailing bars
     // else => add one | at the end
-    CTempString     url_seq_id = m_PendingOp->GetUrlSeqId();
 
-    if (url_seq_id[url_seq_id.size() - 1] == '|') {
-        CTempString     strip_bar_seq_id(url_seq_id);
+    if (m_UrlSeqId[m_UrlSeqId.size() - 1] == '|') {
+        string      strip_bar_seq_id(m_UrlSeqId);
         while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
-            strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1);
+            strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1, 1);
 
         x_PrepareSi2csiQuery(strip_bar_seq_id, m_PendingOp->GetUrlSeqIdType());
     } else {
-        string      seq_id_added_bar(url_seq_id, url_seq_id.size());
+        string      seq_id_added_bar(m_UrlSeqId);
         seq_id_added_bar.append(1, '|');
 
         x_PrepareSi2csiQuery(seq_id_added_bar, m_PendingOp->GetUrlSeqIdType());

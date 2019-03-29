@@ -1049,8 +1049,8 @@ CPendingOperation::x_ResolveInputSeqId(SResolveInputSeqIdError &  err)
         m_AsyncSeqIdResolver.reset(new CAsyncSeqIdResolver(
                                             oslt_seq_id, effective_seq_id_type,
                                             secondary_id_list, primary_id,
-                                            composed_ok, m_PostponedSeqIdResolution,
-                                            this));
+                                            m_UrlSeqId, composed_ok,
+                                            m_PostponedSeqIdResolution, this));
         m_AsyncSeqIdResolver->Process();
         return bioseq_resolution;
     }
