@@ -124,10 +124,11 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
         "SELECT * FROM test_mlst_storage.allele_data WHERE TOKEN(taxid,version) > ? AND TOKEN(taxid,version) <= ?";
     size_t i = 0;
     while(query) {
-        ASSERT_EQ(expected_template, query->ToString());
         ASSERT_LE(++i, ranges.size());
-        EXPECT_EQ(ranges[ranges.size() - i].first, query->ParamAsInt64(0));
-        EXPECT_EQ(ranges[ranges.size() - i].second, query->ParamAsInt64(1));
+        string expected_query = expected_template + "\nparams: "
+            + NStr::NumericToString(ranges[ranges.size() - i].first)
+            + ", " + NStr::NumericToString(ranges[ranges.size() - i].second);
+        ASSERT_EQ(expected_query, query->ToString());
         query = plan.GetNextQuery();
     }
 
@@ -139,16 +140,17 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
             "WHERE TOKEN(taxid,version) > ? AND TOKEN(taxid,version) <= ?";
     i = 0;
     while(query) {
-        ASSERT_EQ(expected_template, query->ToString());
         ASSERT_LE(++i, ranges.size());
-        ASSERT_EQ(ranges[ranges.size() - i].first, query->ParamAsInt64(0));
-        ASSERT_EQ(ranges[ranges.size() - i].second, query->ParamAsInt64(1));
+        string expected_query = expected_template + "\nparams: "
+            + NStr::NumericToString(ranges[ranges.size() - i].first)
+            + ", " + NStr::NumericToString(ranges[ranges.size() - i].second);
+        ASSERT_EQ(expected_query, query->ToString());
         query = plan.GetNextQuery();
     }
 
     plan.SetMinPartitionsForSubrangeScan(numeric_limits<size_t>::max());
     plan.Generate();
-    expected_template = "SELECT id, modified_time() as m FROM test_mlst_storage.allele_data";
+    expected_template = "SELECT id, modified_time() as m FROM test_mlst_storage.allele_data\nparams: ";
     query = plan.GetNextQuery();
     ASSERT_EQ(expected_template, query->ToString())
             << "Short plan query template is wrong";

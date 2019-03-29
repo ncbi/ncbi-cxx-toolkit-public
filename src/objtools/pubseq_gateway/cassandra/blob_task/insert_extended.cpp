@@ -150,42 +150,16 @@ void CCassBlobTaskInsertExtended::Wait1()
                 qry->BindInt32(0, m_Blob->GetKey());
                 qry->BindInt64(1, m_Blob->GetModified());
                 qry->BindInt16(2, m_Blob->GetClass());
-
-                if (m_Blob->GetDateAsn1() == 0) {
-                    qry->BindNull(3);
-                } else {
-                    qry->BindInt64(3, m_Blob->GetDateAsn1());
-                }
-
-                if (m_Blob->GetDiv().empty()) {
-                    qry->BindNull(4);
-                } else {
-                    qry->BindStr(4, m_Blob->GetDiv());
-                }
-
+                qry->BindInt64(3, m_Blob->GetDateAsn1());
+                qry->BindStr(4, m_Blob->GetDiv());
                 qry->BindInt64(5, m_Blob->GetFlags());
-
-                if (m_Blob->GetHupDate() == 0) {
-                    qry->BindNull(6);
-                } else {
-                    qry->BindInt64(6, m_Blob->GetHupDate());
-                }
-
-                if (m_Blob->GetId2Info().empty()) {
-                    qry->BindNull(7);
-                } else {
-                    qry->BindStr(7, m_Blob->GetId2Info());
-                }
-
+                qry->BindInt64(6, m_Blob->GetHupDate());
+                qry->BindStr(7, m_Blob->GetId2Info());
                 qry->BindInt32(8, m_Blob->GetNChunks());
                 qry->BindInt32(9, m_Blob->GetOwner());
                 qry->BindInt64(10, m_Blob->GetSize());
                 qry->BindInt64(11, m_Blob->GetSizeUnpacked());
-                if (m_Blob->GetUserName().empty()) {
-                    qry->BindNull(12);
-                } else {
-                    qry->BindStr(12, m_Blob->GetUserName());
-                }
+                qry->BindStr(12, m_Blob->GetUserName());
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
