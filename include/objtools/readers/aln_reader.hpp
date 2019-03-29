@@ -94,51 +94,17 @@ class NCBI_XOBJREAD_EXPORT CAlnReader
 public:
     // alphabets to try
     enum EAlphabet {
+        eAlpha_Default,
         eAlpha_Nucleotide,
-        eAlpha_Protein
+        eAlpha_Protein,
+        eAlpha_Dna,
+        eAlpha_Rna,
+        eAlpha_Dna_no_ambiguity,
+        eAlpha_Rna_no_ambiguity,
     };
- 
-    class CAlnErrorContainer 
-    {
-
-    private:
-        list<CAlnError> errors;
-        map<CAlnError::EAlnErr, size_t> error_count;
-
-    public:
-        size_t GetErrorCount(CAlnError::EAlnErr category) const
-        {
-            auto it = error_count.find(category);
-            if (it != error_count.end()) {
-                return it->second;
-            }
-            return 0;
-        }
-
-        void clear(void) {
-            errors.clear();
-            error_count.clear();
-        }
-
-        void push_back(const CAlnError& error) {
-            errors.push_back(error);
-            ++error_count[error.GetCategory()];
-        }
-
-        size_t size(void) const {
-            return errors.size();
-        }
-
-        typedef list<CAlnError> TErrors;
-        typedef TErrors::const_iterator const_iterator;
-        const_iterator begin(void) const { return errors.begin(); }
-        const_iterator end(void)   const { return errors.end();   }
-    };
-
-
-    // error messages
-    typedef CAlnErrorContainer TErrorList;
-
+    static string
+    GetAlphabetLetters(
+        EAlphabet);
 
     using TDeflineInfo = objects::SLineInfo;
 
@@ -150,15 +116,12 @@ public:
         m_ReadSucceeded(false),
         m_UseNexusInfo(true) 
     { 
-        m_Errors.clear();
         SetAlphabet(eAlpha_Protein);
         SetAllGap(".-");
     };
 
     // destructor
     virtual ~CAlnReader(void);
-
-
 
     /// Sequence data accessors and modifiers:
 
@@ -219,8 +182,6 @@ public:
     const vector<TDeflineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
     int                   GetDim(void)       const {return m_Dim;};
 
-    const TErrorList& GetErrorList(void)     const {return m_Errors;};
-    
     using TFastaFlags = objects::CFastaDeflineReader::TFastaFlags;
     /// Create ASN.1 classes from the parsed alignment
     CRef<objects::CSeq_align> GetSeqAlign(TFastaFlags fasta_flags=0,
@@ -277,7 +238,6 @@ private:
     CRef<objects::CSeq_entry> m_Entry;
     vector<string>            m_SeqVec; 
     vector<TSeqPos>           m_SeqLen; 
-    TErrorList                m_Errors;
     bool                      m_UseNexusInfo;
 
     /// characters have different contexts, depending on 
@@ -418,37 +378,15 @@ void CAlnReader::SetEndGap(const string& value)
 inline
 void CAlnReader::SetAlphabet(EAlphabet alpha)
 {
-    switch (alpha) {
-    case eAlpha_Nucleotide:
-        // Nucleotide alphabet: IUPAC plus 'x'
-        SetAlphabet("ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy");
-        break;
-
-    case eAlpha_Protein:
-        SetAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-        break;
-    }
+    SetAlphabet(GetAlphabetLetters(alpha));
 }
 
 
 inline 
 bool CAlnReader::IsAlphabet(EAlphabet alpha) const
 {
-    switch (alpha) {
-    case eAlpha_Nucleotide:
-        return (m_Alphabet == "ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy");
-
-    case eAlpha_Protein:
-        return (m_Alphabet == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-
-    default:
-        return false;
-    }
-    return false;
+    return (m_Alphabet == GetAlphabetLetters(alpha));
 }
-
-
-
 
 
 inline

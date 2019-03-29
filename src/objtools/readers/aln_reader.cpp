@@ -58,101 +58,41 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-string sAlnErrorToString(const CAlnError & error)
-{
-    auto lineNumber = error.GetLineNum();
-    if (lineNumber == -1) {
-        return FORMAT(
-            "At ID '" << error.GetID() << "' "
-            "in category '" << static_cast<int>(error.GetCategory()) << "': "
-            << error.GetMsg() << "'");
-    }
-    return FORMAT(
-        "At ID '" << error.GetID() << "' "
-        "in category '" << static_cast<int>(error.GetCategory()) << "' "
-        "at line " << error.GetLineNum() << ": "
-        << error.GetMsg() << "'");
-}
-
-CAlnError::CAlnError(int category, int line_num, string id, string message)
-{
-    switch (category) 
-    {
-    case -1:
-        m_Category = eAlnErr_Unknown;
-        break;
-    case 0:
-        m_Category = eAlnErr_NoError;
-        break;
-    case 1:
-        m_Category = eAlnErr_Fatal;
-        break;
-    case 2:
-        m_Category = eAlnErr_BadData;
-        break;
-    case 3:
-        m_Category = eAlnErr_BadFormat;
-        break;
-    case 4:
-        m_Category = eAlnErr_BadChar;
-        break;
-    default:
-        m_Category = eAlnErr_Unknown;
-        break;
-    }
-
-    m_LineNum = line_num;
-    m_ID = id;
-    m_Message = message;
-}
-
-
-CAlnError::CAlnError(const CAlnError& e)
-{
-    m_Category = e.GetCategory();
-    m_LineNum = e.GetLineNum();
-    m_ID = e.GetID();
-    m_Message = e.GetMsg();
-}
-
-
-static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
-{
-    CNcbiIstream *is = static_cast<CNcbiIstream *>(user_data);
-    if (!*is) {
-        return 0;
-    }
-    string s;
-    NcbiGetline(*is, s, "\r\n");
-    return strdup(s.c_str());
-}
-
 
 CAlnReader::~CAlnReader()
 {
 }
 
-
-int CAlnReader::x_GetGCD(const int a, const int b) const
+string CAlnReader::GetAlphabetLetters(
+    EAlphabet alphaId)
 {
-    if (a == 0) {
-        return b;
-    }
+    static map<EAlphabet, string> alphaMap{
 
-    if (b == 0) {
-        return a;
-    }
+        {EAlphabet::eAlpha_Default,         // use file type default
+            ""},
 
+        {EAlphabet::eAlpha_Nucleotide,      // non negotiable due to existing code
+            "ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy"},
 
-    if (a > b) {
-        const int r = a%b;
-        return x_GetGCD(b,r);
-    }
-    // b > a
-    const int r = b%a;
-    return x_GetGCD(a, r);
-}
+        {EAlphabet::eAlpha_Protein,         // non negotiable due to existing code 
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"},
 
+        {EAlphabet::eAlpha_Dna,             // all ambiguity characters but not U
+            "ABCDGHKMNRSTVWXYabcdghkmnrstvwxy"},
+
+        {EAlphabet::eAlpha_Rna,             // all ambiguity characters but not T
+            "ABCDGHKMNRSTVWXYabcdghkmnrstvwxy"},
+
+        {EAlphabet::eAlpha_Dna_no_ambiguity, 
+            "ACGTNacgtn"},                  // DNA + N for unknown
+
+        {EAlphabet::eAlpha_Rna_no_ambiguity, 
+            "ACGUNacgun"},                  // RNA + N for unknown
+    };
+    return alphaMap[alphaId];
+};
+
+    
 
 void s_GetSequenceLengthInfo(
         const SAlignmentFile& alignmentInfo, 
@@ -180,24 +120,6 @@ void s_GetSequenceLengthInfo(
             min_len = curr_len;
         }
     }
-}
-
-
-bool CAlnReader::x_IsReplicatedSequence(const char* seq_data, 
-    const int length,
-    const int repeat_interval) const
-{
-    if (length%repeat_interval != 0) {
-        return false;
-    }
-
-    const int num_repeats = length/repeat_interval;
-    for (int i=1; i<num_repeats; ++i) {
-        if (strncmp(seq_data, seq_data + i*repeat_interval, repeat_interval) != 0){
-            return false;
-        }
-    }
-    return true;
 }
 
 
@@ -244,8 +166,9 @@ void CAlnReader::Read(
     bool generate_local_ids,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
-    theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
-
+    if (pErrorListener) {
+        theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
+    }
     if (m_ReadDone) {
         return;
     }
@@ -255,7 +178,6 @@ void CAlnReader::Read(
         m_Alphabet, m_Match, m_Missing, m_BeginningGap, m_MiddleGap, m_EndGap);
 
     // read the alignment stream
-    m_Errors.clear();
     SAlignmentFile alignmentInfo;
     try {
         ReadAlignmentFile(
@@ -362,34 +284,6 @@ void CAlnReader::Read(
 }
 
 
-void CAlnReader::SetFastaGap(EAlphabet alpha)
-{
-    SetAlphabet(alpha);
-    SetAllGap("-");
-}
-
-
-void CAlnReader::SetClustal(EAlphabet alpha)
-{
-    SetAlphabet(alpha);
-    SetAllGap("-");
-}
-
-
-void CAlnReader::SetPaup(EAlphabet alpha)
-{
-    SetAlphabet(alpha);
-    SetAllGap("-");
-}
-
-
-void CAlnReader::SetPhylip(EAlphabet alpha)
-{
-    SetAlphabet(alpha);
-    SetAllGap("-");
-}
-
-
 void CAlnReader::x_CalculateMiddleSections()
 {
     m_MiddleSections.clear();
@@ -441,61 +335,6 @@ bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
         }
     }
 }
-
-/*
-CRef<CSeq_id> CAlnReader::GetFastaId(const string& fasta_defline, 
-        const TSeqPos& defline_number, 
-        TFastaFlags fasta_flags) 
-{
-    TSeqPos range_start = 0, range_end = 0;
-    bool has_range = false;
-    SDeflineParseInfo parse_info;
-    parse_info.fBaseFlags = 0;
-    parse_info.fFastaFlags = fasta_flags;
-    parse_info.maxIdLength =  kMax_UI4;
-    parse_info.lineNumber = defline_number; 
-
-    TIgnoredProblems ignored_errors;
-    TSeqTitles seq_titles;
-    list<CRef<CSeq_id>> ids;
-    try {
-        ParseDefline(fasta_defline,
-            parse_info,
-            ignored_errors,
-            ids,
-            has_range,
-            range_start,
-            range_end,
-            seq_titles,
-            0);
-    }
-    catch (const exception&) {}
-
-    CRef<CSeq_id> result;
-    const bool unique_id = (fasta_flags & objects::CFastaReader::fUniqueIDs); 
-
-
-    if (ids.empty()) {
-        result = GenerateID(fasta_defline, unique_id);
-    } 
-    else {
-        result = FindBestChoice(ids, CSeq_id::BestRank);
-    } 
-
-    if (has_range) {
-        string seq_id_text = "lcl|" + result->GetSeqIdString(true);
-        seq_id_text += ":" + NStr::NumericToString(range_start+1) + "_" + NStr::NumericToString(range_end+1);
-        result = Ref(new CSeq_id(seq_id_text)); 
-    }
-
-    if (unique_id) {
-        x_CacheIdHandle(CSeq_id_Handle::GetHandle(*result));
-    }
-
-    return result;
-}
-*/
-
 
 CRef<CSeq_id> CAlnReader::GenerateID(const string& fasta_defline,
     const TSeqPos& defline_number,
@@ -728,13 +567,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         // seq-id(s)
         CBioseq::TId& ids = seq_entry->SetSeq().SetId();
         ids.push_back(denseg.GetIds()[row_i]);
-/*
-        CSeq_id::ParseFastaIds(ids, m_Ids[row_i], true);
-        if (ids.empty()) {
-            ids.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local,
-                                                    m_Ids[row_i])));
-        }
-*/
+
         // mol
         CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
         CSeq_id::EAccessionInfo ai = ids.front()->IdentifyAccession();
@@ -858,27 +691,5 @@ void CAlnReader::x_AddTitle(const string& title, CBioseq& bioseq)
     bioseq.SetDescr().Set().push_back(move(pDesc));
 }
 
-
-void CAlnReader::ParseDefline(const string& defline, 
-    const SDeflineParseInfo& info,
-    const TIgnoredProblems& ignoredErrors, 
-    list<CRef<CSeq_id>>& ids, 
-    bool& hasRange, 
-    TSeqPos& rangeStart,
-    TSeqPos& rangeEnd,
-    TSeqTitles& seqTitles,
-    ILineErrorListener* pMessageListener)
-{
-    CFastaDeflineReader::ParseDefline(
-        defline, 
-        info,
-        ignoredErrors, 
-        ids, 
-        hasRange, 
-        rangeStart, 
-        rangeEnd,
-        seqTitles, 
-        pMessageListener);
-}
 
 END_NCBI_SCOPE
