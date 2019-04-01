@@ -1,9 +1,0 @@
-# $Id$
-#
-# FreeTDS DBLIB library
-
-LIB_PROJ = odbc64
-
-srcdir = @srcdir@
-
-include @builddir@/Makefile.meta

@@ -746,12 +746,6 @@ KRB5_INCLUDE
 KRB5_LIBS
 CURL_INCLUDE
 CURL_LIBS
-FTDS64_INCLUDE
-FTDS64_LIBS
-FTDS64_LIB
-FTDS64_CTLIB_INCLUDE
-FTDS64_CTLIB_LIBS
-FTDS64_CTLIB_LIB
 FTDS95_INCLUDE
 FTDS95_LIBS
 FTDS95_LIB
@@ -956,7 +950,6 @@ SQLITE3_WRAPPER
 DBAPI_DRIVER
 DBAPI_CTLIB
 DBAPI_FTDS
-DBAPI_FTDS64
 DBAPI_FTDS95
 DBAPI_FTDS100
 DBAPI_MYSQL
@@ -33536,9 +33529,6 @@ if test "$with_ftds" != "no" ; then
    ftds_ver=100
    try_local=yes
    case "$with_ftds" in
-      64 | 0.64 )
-         ftds_ver=64
-         ;;
       95 | 0.95 )
          ftds_ver=95
          ;;
@@ -33581,22 +33571,6 @@ if test "$with_ftds" != "no" ; then
     FTDS_CTLIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $FTDS_CTLIBS"
  fi
    FTDS_INCLUDE="-I$FTDS_PATH/include"
-   d="dbapi/driver/ftds64/freetds"
-      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
-         test "$ftds_ver" = 64  &&  FTDS_PATH="<$d>"
-         FTDS64_CTLIB_LIB="ct_ftds64${STATIC} tds_ftds64${STATIC}"
-         FTDS64_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
-         FTDS64_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
-         freetds=freetds
-      elif test -d "$FTDS_PATH" ; then
-         FTDS64_CTLIB_LIB=
-         FTDS64_CTLIB_LIBS=$FTDS_CTLIBS
-         FTDS64_CTLIB_INCLUDE=$FTDS_INCLUDE
-      fi
-      FTDS64_LIB='$(FTDS64_CTLIB_LIB)'
-      FTDS64_LIBS='$(FTDS64_CTLIB_LIBS)'
-      FTDS64_INCLUDE='$(FTDS64_CTLIB_INCLUDE)'
-
    d="dbapi/driver/ftds95/freetds"
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$ftds_ver" = 95  &&  FTDS_PATH="<$d>"
@@ -33737,12 +33711,6 @@ if test "$with_ftds" = "no" ; then
    FTDS_INCLUDE=
    FTDS_LIBS=
    FTDS_LIB=
-   FTDS64_INCLUDE=
-   FTDS64_LIBS=
-   FTDS64_LIB=
-   FTDS64_CTLIB_INCLUDE=
-   FTDS64_CTLIB_LIBS=
-   FTDS64_CTLIB_LIB=
    FTDS95_INCLUDE=
    FTDS95_LIBS=
    FTDS95_LIB=
@@ -33764,12 +33732,6 @@ _ACEOF
 
              WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
 fi
-
-
-
-
-
-
 
 
 
@@ -51340,12 +51302,15 @@ _ACEOF
 
 
 
+set -x
 if test "$with_h2o" != no -a \
      -f "$H2O_PATH/lib/libh2o-static.a"; then
     H2O_STATIC_LIBS="-L$H2O_PATH/lib -lh2o-static $LIBUV_STATIC_LIBS $OPENSSL_LIBS $Z_LIBS"
 else
     H2O_STATIC_LIBS=$H2O_LIBS
 fi
+set +x
+sleep 3
 
 if test "$with_libxlsxwriter" != "no"; then
     case "$LIBXLSXWRITER_PATH:$with_libxlsxwriter" in
@@ -52542,7 +52507,6 @@ fi
 DBAPI_DRIVER=
 DBAPI_CTLIB=
 DBAPI_FTDS=
-DBAPI_FTDS64=
 DBAPI_FTDS95=
 DBAPI_FTDS100=
 DBAPI_MYSQL=
@@ -52554,7 +52518,6 @@ else
    dbapi="dbapi"
    DBAPI_DRIVER=dbapi_driver
    DBAPI_FTDS=ncbi_xdbapi_ftds
-   DBAPI_FTDS64=ncbi_xdbapi_ftds64
    DBAPI_FTDS95=ncbi_xdbapi_ftds95
    DBAPI_FTDS100=ncbi_xdbapi_ftds100
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
@@ -52890,7 +52853,6 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
-
 
 
 
@@ -54055,12 +54017,6 @@ KRB5_INCLUDE!$KRB5_INCLUDE$ac_delim
 KRB5_LIBS!$KRB5_LIBS$ac_delim
 CURL_INCLUDE!$CURL_INCLUDE$ac_delim
 CURL_LIBS!$CURL_LIBS$ac_delim
-FTDS64_INCLUDE!$FTDS64_INCLUDE$ac_delim
-FTDS64_LIBS!$FTDS64_LIBS$ac_delim
-FTDS64_LIB!$FTDS64_LIB$ac_delim
-FTDS64_CTLIB_INCLUDE!$FTDS64_CTLIB_INCLUDE$ac_delim
-FTDS64_CTLIB_LIBS!$FTDS64_CTLIB_LIBS$ac_delim
-FTDS64_CTLIB_LIB!$FTDS64_CTLIB_LIB$ac_delim
 FTDS95_INCLUDE!$FTDS95_INCLUDE$ac_delim
 FTDS95_LIBS!$FTDS95_LIBS$ac_delim
 FTDS95_LIB!$FTDS95_LIB$ac_delim
@@ -54111,6 +54067,12 @@ LIBXSLT_INCLUDE!$LIBXSLT_INCLUDE$ac_delim
 LIBXSLT_LIBS!$LIBXSLT_LIBS$ac_delim
 XSLTPROC!$XSLTPROC$ac_delim
 LIBEXSLT_INCLUDE!$LIBEXSLT_INCLUDE$ac_delim
+LIBEXSLT_LIBS!$LIBEXSLT_LIBS$ac_delim
+SQLITE3_INCLUDE!$SQLITE3_INCLUDE$ac_delim
+SQLITE3_LIBS!$SQLITE3_LIBS$ac_delim
+OECHEM_INCLUDE!$OECHEM_INCLUDE$ac_delim
+OECHEM_LIBS!$OECHEM_LIBS$ac_delim
+SGE_INCLUDE!$SGE_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54152,12 +54114,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-LIBEXSLT_LIBS!$LIBEXSLT_LIBS$ac_delim
-SQLITE3_INCLUDE!$SQLITE3_INCLUDE$ac_delim
-SQLITE3_LIBS!$SQLITE3_LIBS$ac_delim
-OECHEM_INCLUDE!$OECHEM_INCLUDE$ac_delim
-OECHEM_LIBS!$OECHEM_LIBS$ac_delim
-SGE_INCLUDE!$SGE_INCLUDE$ac_delim
 SGE_LIBS!$SGE_LIBS$ac_delim
 MUPARSER_INCLUDE!$MUPARSER_INCLUDE$ac_delim
 MUPARSER_LIBS!$MUPARSER_LIBS$ac_delim
@@ -54249,6 +54205,12 @@ GCCPCH!$GCCPCH$ac_delim
 RUNPATH_ORIGIN!$RUNPATH_ORIGIN$ac_delim
 NO_STRICT_ALIASING!$NO_STRICT_ALIASING$ac_delim
 D_SFX!$D_SFX$ac_delim
+DEBUG_SFX!$DEBUG_SFX$ac_delim
+LIB_OR_DLL!$LIB_OR_DLL$ac_delim
+FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
+APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
+APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
+LINK_DLL!$LINK_DLL$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54290,12 +54252,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-DEBUG_SFX!$DEBUG_SFX$ac_delim
-LIB_OR_DLL!$LIB_OR_DLL$ac_delim
-FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
-APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
-APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
-LINK_DLL!$LINK_DLL$ac_delim
 has_dll_loadable!$has_dll_loadable$ac_delim
 LINK_LOADABLE!$LINK_LOADABLE$ac_delim
 CFLAGS_DLL!$CFLAGS_DLL$ac_delim
@@ -54347,7 +54303,6 @@ SQLITE3_WRAPPER!$SQLITE3_WRAPPER$ac_delim
 DBAPI_DRIVER!$DBAPI_DRIVER$ac_delim
 DBAPI_CTLIB!$DBAPI_CTLIB$ac_delim
 DBAPI_FTDS!$DBAPI_FTDS$ac_delim
-DBAPI_FTDS64!$DBAPI_FTDS64$ac_delim
 DBAPI_FTDS95!$DBAPI_FTDS95$ac_delim
 DBAPI_FTDS100!$DBAPI_FTDS100$ac_delim
 DBAPI_MYSQL!$DBAPI_MYSQL$ac_delim
@@ -54387,6 +54342,13 @@ MYSQL_LIBS!$MYSQL_LIBS$ac_delim
 BERKELEYDB_INCLUDE!$BERKELEYDB_INCLUDE$ac_delim
 BERKELEYDB_LIBS!$BERKELEYDB_LIBS$ac_delim
 BERKELEYDB_STATIC_LIBS!$BERKELEYDB_STATIC_LIBS$ac_delim
+BERKELEYDB_CXX_LIBS!$BERKELEYDB_CXX_LIBS$ac_delim
+BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
+ODBC_INCLUDE!$ODBC_INCLUDE$ac_delim
+ODBC_LIBS!$ODBC_LIBS$ac_delim
+BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
+BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
+BOOST_TAG!$BOOST_TAG$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54428,13 +54390,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-BERKELEYDB_CXX_LIBS!$BERKELEYDB_CXX_LIBS$ac_delim
-BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
-ODBC_INCLUDE!$ODBC_INCLUDE$ac_delim
-ODBC_LIBS!$ODBC_LIBS$ac_delim
-BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
-BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
-BOOST_TAG!$BOOST_TAG$ac_delim
 BOOST_CHRONO_LIBS!$BOOST_CHRONO_LIBS$ac_delim
 BOOST_CHRONO_STATIC_LIBS!$BOOST_CHRONO_STATIC_LIBS$ac_delim
 BOOST_FILESYSTEM_LIBS!$BOOST_FILESYSTEM_LIBS$ac_delim
@@ -54525,6 +54480,13 @@ SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
+AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
+CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
+MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
+MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
+LMDB_LIB!$LMDB_LIB$ac_delim
+LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
+LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54566,13 +54528,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
-CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
-MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
-MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
-LMDB_LIB!$LMDB_LIB$ac_delim
-LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
-LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 NGHTTP2_STATIC_LIBS!$NGHTTP2_STATIC_LIBS$ac_delim
@@ -54629,7 +54584,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

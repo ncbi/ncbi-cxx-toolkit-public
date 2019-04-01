@@ -273,7 +273,6 @@ private:
 
 
 ///////////////////////////////////////////////////////////////////////////
-extern const char* ftds64_driver;
 extern const char* ftds95_driver;
 extern const char* ftds100_driver;
 extern const char* ftds_driver;

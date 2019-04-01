@@ -16,9 +16,6 @@ CHECK_TIMEOUT = 300
 
 CHECK_CMD = python_ncbi_dbapi_test -dr ctlib -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -dr ctlib -S DBAPI_DEV16_16K
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S DBAPI_DEV16_16K
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S MsSql
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_DEV16_16K
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S MsSql

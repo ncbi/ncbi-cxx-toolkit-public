@@ -5068,9 +5068,6 @@ if test "$with_ftds" != "no" ; then
    ftds_ver=100
    try_local=yes
    case "$with_ftds" in
-      64 | 0.64 )
-         ftds_ver=64
-         ;;
       95 | 0.95 )
          ftds_ver=95
          ;;
@@ -5084,7 +5081,6 @@ if test "$with_ftds" != "no" ; then
    : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
-   NCBI_LOCAL_FTDS(64)
    NCBI_LOCAL_FTDS(95)
    NCBI_LOCAL_FTDS(100)
    if test -n "$freetds" ; then
@@ -5126,12 +5122,6 @@ if test "$with_ftds" = "no" ; then
    FTDS_INCLUDE=
    FTDS_LIBS=
    FTDS_LIB=
-   FTDS64_INCLUDE=
-   FTDS64_LIBS=
-   FTDS64_LIB=
-   FTDS64_CTLIB_INCLUDE=
-   FTDS64_CTLIB_LIBS=
-   FTDS64_CTLIB_LIB=
    FTDS95_INCLUDE=
    FTDS95_LIBS=
    FTDS95_LIB=
@@ -5150,12 +5140,6 @@ else
              [Define to 1 if FreeTDS libraries are available.])
    NCBI_PACKAGE(FreeTDS)
 fi
-AC_SUBST(FTDS64_INCLUDE)
-AC_SUBST(FTDS64_LIBS)
-AC_SUBST(FTDS64_LIB)
-AC_SUBST(FTDS64_CTLIB_INCLUDE)
-AC_SUBST(FTDS64_CTLIB_LIBS)
-AC_SUBST(FTDS64_CTLIB_LIB)
 AC_SUBST(FTDS95_INCLUDE)
 AC_SUBST(FTDS95_LIBS)
 AC_SUBST(FTDS95_LIB)
@@ -8058,12 +8042,15 @@ NCBI_CHECK_THIRD_PARTY_LIB(h2o,
    [AC_LANG_PROGRAM([[#include <h2o.h>>]],
        [[h2o_init_request(NULL, NULL, NULL);]])],
    [$LIBUV_LIBS $OPENSSL_LIBS $Z_LIBS], [], [$LIBUV_INCLUDE])
+set -x
 if test "$with_h2o" != no -a \
      -f "$H2O_PATH/lib/libh2o-static.a"; then
     H2O_STATIC_LIBS="-L$H2O_PATH/lib -lh2o-static $LIBUV_STATIC_LIBS $OPENSSL_LIBS $Z_LIBS"
 else
     H2O_STATIC_LIBS=$H2O_LIBS
 fi
+set +x
+sleep 3
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
    [AC_LANG_PROGRAM([[#include <xlsxwriter.h>]],
@@ -8351,7 +8338,6 @@ fi
 DBAPI_DRIVER=
 DBAPI_CTLIB=
 DBAPI_FTDS=
-DBAPI_FTDS64=
 DBAPI_FTDS95=
 DBAPI_FTDS100=
 DBAPI_MYSQL=
@@ -8363,7 +8349,6 @@ else
    dbapi="dbapi"
    DBAPI_DRIVER=dbapi_driver
    DBAPI_FTDS=ncbi_xdbapi_ftds
-   DBAPI_FTDS64=ncbi_xdbapi_ftds64
    DBAPI_FTDS95=ncbi_xdbapi_ftds95
    DBAPI_FTDS100=ncbi_xdbapi_ftds100
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
@@ -8772,7 +8757,6 @@ AC_SUBST(SQLITE3_WRAPPER)
 AC_SUBST(DBAPI_DRIVER)
 AC_SUBST(DBAPI_CTLIB)
 AC_SUBST(DBAPI_FTDS)
-AC_SUBST(DBAPI_FTDS64)
 AC_SUBST(DBAPI_FTDS95)
 AC_SUBST(DBAPI_FTDS100)
 AC_SUBST(DBAPI_MYSQL)

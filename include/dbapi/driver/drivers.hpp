@@ -51,9 +51,6 @@ extern void DBAPI_RegisterDriver_MYSQL      (void);
 // Development ...
 // extern void DBAPI_RegisterDriver_GATEWAY (void);
 
-NCBI_DEPRECATED
-extern void DBAPI_RegisterDriver_FTDS64     (void);
-
 END_NCBI_SCOPE
 
 

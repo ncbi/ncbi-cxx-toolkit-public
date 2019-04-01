@@ -146,9 +146,8 @@ public:
         const int item_num = m_Value->CurrentItemNo();
         const EDB_Type db_type = m_Value->ItemDataType(item_num);
 
-        // *null* is reported as eDB_Int by several drivers.
+        // *null* is reported as eDB_Int by the ctlib driver.
         // That means that *null* can be checked using Int4 type only.
-        // List of *special* drivers: ftds64, ctlib.
         if (db_type == eDB_Int) {
             CDB_Int db_obj_int;
 
@@ -208,9 +207,8 @@ public:
         const int item_num = m_Value->CurrentItemNo();
         const EDB_Type db_type = m_Value->ItemDataType(item_num);
 
-        // *null* is reported as eDB_Int by several drivers.
+        // *null* is reported as eDB_Int by the ctlib driver.
         // That means that *null* can be checked using Int4 type only.
-        // List of *special* drivers: ftds64, ctlib.
         CDB_Int db_obj_int;
         if (db_type == eDB_Int) {
 
@@ -243,9 +241,8 @@ private:
         const int item_num = m_Value->CurrentItemNo();
         const EDB_Type db_type = m_Value->ItemDataType(item_num);
 
-        // *null* is reported as eDB_Int by several drivers.
+        // *null* is reported as eDB_Int by the ctlib driver.
         // That means that *null* can be checked using Int4 type only.
-        // List of *special* drivers: ftds64, ctlib.
         if (db_type == eDB_Int) {
             CDB_Int db_obj_int;
 

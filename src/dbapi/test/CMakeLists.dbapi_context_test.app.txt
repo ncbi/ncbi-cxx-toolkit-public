@@ -42,7 +42,7 @@ set_target_properties(dbapi_context_test-app PROPERTIES OUTPUT_NAME dbapi_contex
 
 
 target_link_libraries(dbapi_context_test-app
-    ncbi_xdbapi_ftds ncbi_xdbapi_ftds64 ncbi_xdbapi_ftds95 dbapi
+    ncbi_xdbapi_ftds ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100 dbapi
     test_boost xconnext
 )
 endif()

@@ -20,7 +20,6 @@ include(CMakeLists.dbapi_driver.lib.txt)
 add_subdirectory(util)
 add_subdirectory(ctlib)
 add_subdirectory(ftds-default)
-add_subdirectory(ftds64)
 add_subdirectory(ftds95)
 add_subdirectory(ftds100)
 

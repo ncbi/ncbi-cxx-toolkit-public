@@ -22,7 +22,7 @@ add_library(dbapi_sample_base
 include_directories(SYSTEM ${SYBASE_INCLUDE})
 
 target_link_libraries(dbapi_sample_base
-    ncbi_xdbapi_ftds ncbi_xdbapi_ftds64 ncbi_xdbapi_ftds95
+    ncbi_xdbapi_ftds ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100
     dbapi_driver xconnext xutil
 )
 endif()
