@@ -655,7 +655,7 @@ protected:
 
 
 // Unit test functions
-void UnitTest_FLATFILE_FIND();
+NCBI_DISCREPANCY_EXPORT void UnitTest_FLATFILE_FIND();
 
 
 END_SCOPE(NDiscrepancy)

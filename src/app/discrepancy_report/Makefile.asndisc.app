@@ -20,6 +20,6 @@ CPPFLAGS= $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE) $(ORIG_CPPFLAGS) -I$(import_root)
 
 LDFLAGS = -L$(import_root)/../lib $(ORIG_LDFLAGS)
 
-REQUIRES = objects
+REQUIRES = objects BerkeleyDB SQLITE3
 
 WATCHERS = kachalos

@@ -19,6 +19,6 @@ LIBS = $(DATA_LOADERS_UTIL_LIBS) $(VDB_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(PCRE_L
 
 POST_LINK = $(VDB_POST_LINK)
 
-REQUIRES = objects
+REQUIRES = objects BerkeleyDB SQLITE3
 
 WATCHERS = ludwigf gotvyans
