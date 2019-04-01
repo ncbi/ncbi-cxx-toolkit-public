@@ -10,7 +10,7 @@ SRC = pubseq_gateway  \
       pubseq_gateway_cache_utils cass_fetch protocol_utils \
       async_seq_id_resolver async_bioseq_query
 
-LIBS = $(H2O_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS)
+LIBS = $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
 LIB = $(SEQ_LIBS) pub medline biblio general xser psg_cassandra psg_protobuf psg_cache connext xconnserv xconnect xutil xncbi
 
