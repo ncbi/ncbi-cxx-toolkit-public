@@ -84,12 +84,13 @@ public:
             mPeeked.pop_front();
             return true;
         }
+        str.clear();
         std::getline(mIstr, str);
         bool success = mIstr.good();
         if (success) {
             lineNum = mLineNum++;
         }
-        return success;
+        return (success  || !str.empty());
     };
 
 protected:
