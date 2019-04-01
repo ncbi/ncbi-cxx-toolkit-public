@@ -151,6 +151,7 @@ CAlnScannerNexus::xProcessCommand(
     
 }
 
+
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xBeginBlock(
@@ -161,6 +162,7 @@ CAlnScannerNexus::xBeginBlock(
     // mCurrentBlock = ...
 }
 
+
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xEndBlock(
@@ -169,8 +171,6 @@ CAlnScannerNexus::xEndBlock(
 {
     mInBlock = false;
 }
-
-
 
 
 //  ----------------------------------------------------------------------------
@@ -565,6 +565,9 @@ CAlnScannerNexus::xImportAlignmentData(
         commandStart = 0;
     }
 
+    if (!currentCommand.empty()) {
+    }
+
     if (numOpenBrackets > 0) {
         string description = ErrorPrintf(
                 "Unterminated comment beginning on line %d",
@@ -573,6 +576,23 @@ CAlnScannerNexus::xImportAlignmentData(
                 commentStartLine,
                 EAlnSubcode::eAlnSubcode_UnterminatedComment,
                 description);
+    }
+
+    if (!currentCommand.empty()) {
+        auto commandStartLine =  currentCommand.front().mNumLine;
+        string description = 
+           (commandStartLine == lineCount) ?
+           ErrorPrintf(
+                "Unterminated command on line %d",
+                commandStartLine)
+           :
+            ErrorPrintf(
+                "Unterminated command beginning on line %d",
+                commandStartLine);
+        throw SShowStopper(
+            lineCount,
+            EAlnSubcode::eAlnSubcode_UnterminatedCommand,
+            description);
     }
 }
 
