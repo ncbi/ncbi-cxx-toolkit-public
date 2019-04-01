@@ -55,6 +55,7 @@
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_errors.hpp"
+#include "aln_util.hpp"
 #include "aln_peek_ahead.hpp"
 #include "aln_scanner_fastagap.hpp"
 
@@ -102,11 +103,13 @@ CAlnScannerFastaGap::xImportAlignmentData(
                 processingFirstSequence = false;
             }
             else {
+                string seqData;
+                AlnUtil::StripBlanks(line, seqData); 
                 if (processingFirstSequence) {
-                    expectedDataSizes.push_back(line.size());
+                    expectedDataSizes.push_back(seqData.size());
                 }
                 else {
-                    auto currentDataSize = line.size();
+                    auto currentDataSize = seqData.size();
                     auto expectedDataSize = expectedDataSizes[currentDataLineIndex];
                     if (currentDataSize != expectedDataSize) {
                         string description = ErrorPrintf(
@@ -119,7 +122,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
                             mSeqIds.back());
                     }
                 }
-                mSequences.back().push_back({line, lineNumber});
+                mSequences.back().push_back({seqData, lineNumber});
                 currentDataLineIndex++;
                 continue;
             }

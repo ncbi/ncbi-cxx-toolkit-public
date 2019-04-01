@@ -124,5 +124,18 @@ AlnUtil::ProcessDataLine(
     seqData = NStr::Join(tokens, "");
 }
 
+//  ----------------------------------------------------------------------------
+void
+AlnUtil::StripBlanks(
+    const string& line,
+    string& stripped)
+//  ----------------------------------------------------------------------------
+{
+    stripped = NStr::TruncateSpaces(line);
+    vector<string> splits;
+    NStr::Split(stripped, " \t", splits, NStr::fSplit_MergeDelimiters);
+    stripped = NStr::Join(splits, "");
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

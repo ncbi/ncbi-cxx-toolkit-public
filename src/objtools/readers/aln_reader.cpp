@@ -601,7 +601,7 @@ CAlnReader::GetSequenceMolType(
                      "U and T cannot appear in the same nucleotide sequence. "
                      "Reinterpreting as protein.";
         sReportError(pErrorListener, 
-                     eDiag_Warning,
+                     eDiag_Error,
                      eReader_Alignment,
                      eAlnSubcode_InconsistentMolType,
                      0, msg);

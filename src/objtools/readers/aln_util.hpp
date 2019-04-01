@@ -62,6 +62,11 @@ namespace AlnUtil
         const string& dataLine,
         string& seqId,
         string& seqData);
+
+    void
+    StripBlanks(
+        const string& line,
+        string& stipped);
 };
 
 END_SCOPE(objects)
