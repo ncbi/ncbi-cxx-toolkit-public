@@ -205,8 +205,8 @@ int CPubseqGatewayApp::Run(void)
     }
 
     if (GetArgs()[kDaemonizeArgName]) {
-        bool    is_good = CProcess::Daemonize(kEmptyCStr,
-                                              CProcess::fDontChroot);
+        bool    is_good = CCurrentProcess::Daemonize(kEmptyCStr,
+                                                     CCurrentProcess::fDF_KeepCWD);
         if (!is_good)
             NCBI_THROW(CPubseqGatewayException, eDaemonizationFailed,
                        "Error during daemonization");

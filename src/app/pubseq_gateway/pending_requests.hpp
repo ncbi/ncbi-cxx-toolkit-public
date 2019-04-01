@@ -63,7 +63,7 @@ struct SBlobRequest
         m_BlobIdType(eBySeqId),
         m_UseCache(use_cache),
         m_LastModified(INT64_MIN),
-        m_SeqId(seq_id),
+        m_SeqId(seq_id.data(), seq_id.size()),
         m_SeqIdType(seq_id_type)
     {}
 
@@ -82,7 +82,8 @@ public:
     int64_t                     m_LastModified;
 
     // Fields in case of request by seq_id/seq_id_type
-    CTempString                 m_SeqId;
+    // NB: need a copy because it could be an asynchronous request
+    string                      m_SeqId;
     int                         m_SeqIdType;
 };
 
@@ -96,7 +97,7 @@ public:
                     EOutputFormat  output_format,
                     ECacheAndCassandraUse  use_cache,
                     bool  use_psg_protocol) :
-        m_SeqId(seq_id), m_SeqIdType(seq_id_type),
+        m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
         m_UseCache(use_cache),
@@ -106,7 +107,7 @@ public:
     SResolveRequest() = default;
 
 public:
-    CTempString                 m_SeqId;
+    string                      m_SeqId;
     int                         m_SeqIdType;
     TServIncludeData            m_IncludeDataFlags;
     EOutputFormat               m_OutputFormat;
@@ -122,17 +123,19 @@ public:
                   int  seq_id_type,
                   vector<CTempString>  names,
                   ECacheAndCassandraUse  use_cache) :
-        m_SeqId(seq_id), m_SeqIdType(seq_id_type),
-        m_Names(names),
+        m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
         m_UseCache(use_cache)
-    {}
+    {
+        for (const auto &  name : names)
+            m_Names.push_back(string(name.data(), name.size()));
+    }
 
     SAnnotRequest() = default;
 
 public:
-    CTempString                 m_SeqId;
+    string                      m_SeqId;
     int                         m_SeqIdType;
-    vector<CTempString>         m_Names;
+    vector<string>              m_Names;
     ECacheAndCassandraUse       m_UseCache;
 };
 

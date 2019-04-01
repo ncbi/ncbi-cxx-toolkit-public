@@ -521,6 +521,8 @@ int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
                               HST::CHttpReply<CPendingOperation> &  resp)
 {
+    static string   kNA = "n/a";
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -536,66 +538,121 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
         reply.SetString("CommandLineArguments", x_GetCmdLineArguments());
 
 
+        double      real_time;
         double      user_time;
         double      system_time;
-        bool        process_time_result = GetCurrentProcessTimes(&user_time,
-                                                                 &system_time);
+        bool        process_time_result = CCurrentProcess::GetTimes(&real_time,
+                                                                    &user_time,
+                                                                    &system_time);
         if (process_time_result) {
+            reply.SetDouble("RealTime", real_time);
             reply.SetDouble("UserTime", user_time);
             reply.SetDouble("SystemTime", system_time);
         } else {
-            reply.SetString("UserTime", "n/a");
-            reply.SetString("SystemTime", "n/a");
+            reply.SetString("RealTime", kNA);
+            reply.SetString("UserTime", kNA);
+            reply.SetString("SystemTime", kNA);
         }
 
-        Uint8       physical_memory = GetPhysicalMemorySize();
+        Uint8       physical_memory = CSystemInfo::GetTotalPhysicalMemorySize();
         if (physical_memory > 0)
             reply.SetInteger("PhysicalMemory", physical_memory);
         else
-            reply.SetString("PhysicalMemory", "n/a");
+            reply.SetString("PhysicalMemory", kNA);
 
-        size_t      mem_used_total;
-        size_t      mem_used_resident;
-        size_t      mem_used_shared;
-        bool        mem_used_result = GetMemoryUsage(&mem_used_total,
-                                                     &mem_used_resident,
-                                                     &mem_used_shared);
+        CProcessBase::SMemoryUsage      mem_usage;
+        bool                            mem_used_result = CCurrentProcess::GetMemoryUsage(mem_usage);
         if (mem_used_result) {
-            reply.SetInteger("MemoryUsedTotal", mem_used_total);
-            reply.SetInteger("MemoryUsedResident", mem_used_resident);
-            reply.SetInteger("MemoryUsedShared", mem_used_shared);
+            if (mem_usage.total > 0)
+                reply.SetInteger("MemoryUsedTotal", mem_usage.total);
+            else
+                reply.SetString("MemoryUsedTotal", kNA);
+
+            if (mem_usage.total_peak > 0)
+                reply.SetInteger("MemoryUsedTotalPeak", mem_usage.total_peak);
+            else
+                reply.SetString("MemoryUsedTotalPeak", kNA);
+
+            if (mem_usage.resident > 0)
+                reply.SetInteger("MemoryUsedResident", mem_usage.resident);
+            else
+                reply.SetString("MemoryUsedResident", kNA);
+
+            if (mem_usage.resident_peak > 0)
+                reply.SetInteger("MemoryUsedResidentPeak", mem_usage.resident_peak);
+            else
+                reply.SetString("MemoryUsedResidentPeak", kNA);
+
+            if (mem_usage.shared > 0)
+                reply.SetInteger("MemoryUsedShared", mem_usage.shared);
+            else
+                reply.SetString("MemoryUsedShared", kNA);
+
+            if (mem_usage.data > 0)
+                reply.SetInteger("MemoryUsedData", mem_usage.data);
+            else
+                reply.SetString("MemoryUsedData", kNA);
+
+            if (mem_usage.stack > 0)
+                reply.SetInteger("MemoryUsedStack", mem_usage.stack);
+            else
+                reply.SetString("MemoryUsedStack", kNA);
+
+            if (mem_usage.text > 0)
+                reply.SetInteger("MemoryUsedText", mem_usage.text);
+            else
+                reply.SetString("MemoryUsedText", kNA);
+
+            if (mem_usage.lib > 0)
+                reply.SetInteger("MemoryUsedLib", mem_usage.lib);
+            else
+                reply.SetString("MemoryUsedLib", kNA);
+
+            if (mem_usage.swap > 0)
+                reply.SetInteger("MemoryUsedSwap", mem_usage.swap);
+            else
+                reply.SetString("MemoryUsedSwap", kNA);
         } else {
-            reply.SetString("MemoryUsedTotal", "n/a");
-            reply.SetString("MemoryUsedResident", "n/a");
-            reply.SetString("MemoryUsedShared", "n/a");
+            reply.SetString("MemoryUsedTotal", kNA);
+            reply.SetString("MemoryUsedTotalPeak", kNA);
+            reply.SetString("MemoryUsedResident", kNA);
+            reply.SetString("MemoryUsedResidentPeak", kNA);
+            reply.SetString("MemoryUsedShared", kNA);
+            reply.SetString("MemoryUsedData", kNA);
+            reply.SetString("MemoryUsedStack", kNA);
+            reply.SetString("MemoryUsedText", kNA);
+            reply.SetString("MemoryUsedLib", kNA);
+            reply.SetString("MemoryUsedSwap", kNA);
         }
 
         int         proc_fd_soft_limit;
         int         proc_fd_hard_limit;
-        int         proc_fd_used = GetProcessFDCount(&proc_fd_soft_limit,
-                                                     &proc_fd_hard_limit);
+        int         proc_fd_used =
+                CCurrentProcess::GetFileDescriptorsCount(&proc_fd_soft_limit,
+                                                         &proc_fd_hard_limit);
 
         if (proc_fd_soft_limit >= 0)
             reply.SetInteger("ProcFDSoftLimit", proc_fd_soft_limit);
         else
-            reply.SetString("ProcFDSoftLimit", "n/a");
+            reply.SetString("ProcFDSoftLimit", kNA);
 
         if (proc_fd_hard_limit >= 0)
             reply.SetInteger("ProcFDHardLimit", proc_fd_hard_limit);
         else
-            reply.SetString("ProcFDHardLimit", "n/a");
+            reply.SetString("ProcFDHardLimit", kNA);
 
         if (proc_fd_used >= 0)
             reply.SetInteger("ProcFDUsed", proc_fd_used);
         else
-            reply.SetString("ProcFDUsed", "n/a");
+            reply.SetString("ProcFDUsed", kNA);
 
-        int         proc_thread_count = GetProcessThreadCount();
-        reply.SetInteger("CPUCount", GetCpuCount());
+        reply.SetInteger("CPUCount", CSystemInfo::GetCpuCount());
+
+        int         proc_thread_count = CCurrentProcess::GetThreadCount();
         if (proc_thread_count >= 1)
             reply.SetInteger("ProcThreadCount", proc_thread_count);
         else
-            reply.SetString("ProcThreadCount", "n/a");
+            reply.SetString("ProcThreadCount", kNA);
 
 
         reply.SetString("Version", PUBSEQ_GATEWAY_VERSION);
