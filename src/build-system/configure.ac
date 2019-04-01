@@ -5072,9 +5072,9 @@ if test "$with_ftds" != "no" ; then
          ftds_ver=64
          ;;
       95 | 0.95 )
+         ftds_ver=95
          ;;
       100 | 1.00 | yes | '' )
-         ftds_ver=100
          ;;
       * )
          FTDS_PATH=$with_ftds
