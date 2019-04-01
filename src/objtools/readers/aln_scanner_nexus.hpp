@@ -73,7 +73,8 @@ protected:
     using TCommand = list<SLineInfo>;
 
     void
-    xProcessCommand(TCommand command);
+    xProcessCommand(TCommand command, 
+            CSequenceInfo& sequenceInfo);
 
     void 
     xProcessDimensions(const TCommand& command);
@@ -87,29 +88,31 @@ protected:
     void
     xProcessMatrix(const TCommand& command);
 
+    void 
+    xBeginBlock(const TCommand& command);
+
+    void 
+    xEndBlock(const TCommand& command);
+
     pair<string, int>
     xGetKeyVal(const TCommand& command, 
         const string& key);
-
-    void
-    xProcessDimensionLine(
-        const string&,
-        int lineCount);
-
-    void
-    xProcessFormatLine(
-        const string&,
-        int lineCount);
 
     void
     xProcessDefinitionLine(
         const string&,
         int lineCount);
 
-    static void sStripNexusComments(
+    static void sStripCommentsOutsideCommand(
         string& line, 
         int &numUnmatchedLeftBrackets,
         bool &inCommand);
+
+    static int sFindCharOutsideComment(
+        char c,
+        const string& line,
+        int &numUnmatchedLeftBrackets,
+        size_t startPos=0);
 
     static void sStripNexusComments(
         string& line,
@@ -124,6 +127,8 @@ protected:
     char mMatchChar;
     char mMissingChar;
     char mGapChar;
+    bool mInBlock=false;
+    string mCurrentBlock;
 };
 
 END_SCOPE(objects)

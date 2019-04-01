@@ -70,7 +70,8 @@ void sPrintCommand(const list<SLineInfo>& command)
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessCommand(
-    TCommand command) 
+    TCommand command,
+    CSequenceInfo& sequenceInfo) 
 //  ----------------------------------------------------------------------------
 {
     if (command.empty()) {
@@ -121,8 +122,10 @@ CAlnScannerNexus::xProcessCommand(
         xProcessDimensions(command);
         return;
     }
+
     if (commandName == "format") {
         xProcessFormat(command); 
+        xAdjustSequenceInfo(sequenceInfo);
         return;
     }
 
@@ -137,16 +140,38 @@ CAlnScannerNexus::xProcessCommand(
     }
 
     if (commandName == "begin") {
-        // xBeginBlock(command);
+        xBeginBlock(command);
         return;
     }
 
     if (commandName == "end") {
-        // xEndBlock(command);
+        xEndBlock(command);
         return;
     }
     
 }
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xBeginBlock(
+    const TCommand& command)
+//  ----------------------------------------------------------------------------
+{
+    mInBlock = true;
+    // mCurrentBlock = ...
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CAlnScannerNexus::xEndBlock(
+//  ----------------------------------------------------------------------------
+    const TCommand& command)
+{
+    mInBlock = false;
+}
+
+
+
 
 //  ----------------------------------------------------------------------------
 void 
@@ -376,14 +401,17 @@ CAlnScannerNexus::xGetKeyVal(
     return {"", -1};
 }
 
-static 
-int s_FindCharOutsideComment(
+ 
+//  ----------------------------------------------------------------------------
+int 
+CAlnScannerNexus::sFindCharOutsideComment(
         char c,
         const string& line,
-        int &numUnmatchedLeftBrackets)
+        int &numUnmatchedLeftBrackets,
+        size_t startPos)
+//  ----------------------------------------------------------------------------
 {
-    int index=0;
-    while (index < line.size()) {
+    for (int index=startPos; index<line.size(); ++index) {
         if (line[index] == '[') {
             ++numUnmatchedLeftBrackets;
         }
@@ -396,8 +424,6 @@ int s_FindCharOutsideComment(
             line[index] == c) {
             return index;
         }
-
-        ++index;
     }
     return NPOS;
 }
@@ -414,9 +440,9 @@ CAlnScannerNexus::xImportAlignmentData(
     int lineCount(0);
     TCommand currentCommand;
     size_t commandEnd(0);
-    int commandStart(0);
+    size_t commandStart(0);
     int numOpenBrackets(0);
-    int commentStartLine(-1);
+    size_t commentStartLine(-1);
     bool inCommand(false);
 
 
@@ -424,23 +450,25 @@ CAlnScannerNexus::xImportAlignmentData(
 
         NStr::TruncateSpacesInPlace(line);
 
-        if (line == "#NEXUS") {
+        string lineStrLower(line);
+        NStr::ToLower(lineStrLower);
+        if (lineStrLower == "#nexus") { // Should be an error if the first word isn't #NEXUS
             continue;
         }
 
         int previousOpenBrackets = numOpenBrackets;
-        sStripNexusComments(line, numOpenBrackets, inCommand);
-
+        sStripCommentsOutsideCommand(line, numOpenBrackets, inCommand);
         if (previousOpenBrackets == 0 &&
             numOpenBrackets > 0) {
             commentStartLine = lineCount;
         }
-            
+
         if (line.empty()) {
             continue;
         }
+
         previousOpenBrackets = numOpenBrackets;
-        commandEnd = s_FindCharOutsideComment(';', line, numOpenBrackets);
+        commandEnd = sFindCharOutsideComment(';', line, numOpenBrackets);
         if (previousOpenBrackets == 0 &&
             numOpenBrackets > 0) {
             commentStartLine = lineCount;
@@ -448,17 +476,19 @@ CAlnScannerNexus::xImportAlignmentData(
 
 
         while (commandEnd != NPOS) {
-            string commandArgs = NStr::TruncateSpaces(line.substr(commandStart, commandEnd-commandStart));
-            if (!commandArgs.empty()) {
-                currentCommand.push_back({commandArgs, lineCount});
+            string commandTokens = 
+                NStr::TruncateSpaces(line.substr(commandStart, commandEnd-commandStart));
+            if (!commandTokens.empty()) {
+                currentCommand.push_back({commandTokens, lineCount});
             }
 
-            xProcessCommand(currentCommand);
+            xProcessCommand(currentCommand, sequenceInfo);
             currentCommand.clear();
 
             commandStart = commandEnd+1;
             previousOpenBrackets = numOpenBrackets;
-            commandEnd = s_FindCharOutsideComment(';',line.substr(commandStart), numOpenBrackets);
+            commandEnd = 
+                sFindCharOutsideComment(';',line, numOpenBrackets, commandStart);
             if (previousOpenBrackets == 0 &&
                 numOpenBrackets > 0) {
                 commentStartLine = lineCount;
@@ -482,190 +512,6 @@ CAlnScannerNexus::xImportAlignmentData(
     }
 }
 
-/*
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerNexus::xImportAlignmentData(
-    CSequenceInfo& sequenceInfo,
-    CLineInput& iStr)
-//  ----------------------------------------------------------------------------
-{
-    string line;
-    int lineCount(0);
-
-    int dataLineCount(0);
-    int blockLineLength(0);
-    int sequenceCharCount(0);
-    int unmatchedLeftBracketCount(0);
-    int commentStartLine(-1);
-
-    while (iStr.ReadLine(line, lineCount)) {
-
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()) {
-            continue;
-        }
-
-        if (mState == EState::SKIPPING) {
-            NStr::ToLower(line);
-            if (NStr::StartsWith(line, "matrix")) {
-                mState = EState::DATA;
-                continue;
-            }
-            if (NStr::StartsWith(line, "dimensions")) {
-                xProcessDimensionLine(line, lineCount);
-                continue;
-            }
-            if (NStr::StartsWith(line, "format")) {
-                xProcessFormatLine(line, lineCount);
-                continue;
-            }
-            if (NStr::StartsWith(line, "sequin")) {
-                mState = EState::DEFLINES;
-                continue;
-            }
-            continue;
-        }
-        if (mState == EState::DEFLINES) {
-            xProcessDefinitionLine(line, lineCount);
-            continue;
-        }
-        if (mState == EState::DATA) {
-            if (mNumSequences == 0  ||  mSequenceSize == 0) {
-                //error: data before info necessary to interpret it
-            }
-            auto lineStrLower(line);
-            auto previousBracketCount = unmatchedLeftBracketCount;
-            sStripNexusComments(line, unmatchedLeftBracketCount);
-            if (previousBracketCount == 0 &&
-                unmatchedLeftBracketCount == 1) {
-                commentStartLine = lineCount;
-            }
-
-            if (line.empty()) {
-                continue;
-            }
-            NStr::ToLower(lineStrLower);
-
-            if (NStr::StartsWith(lineStrLower, "end;")) {
-                theErrorReporter->Warn(
-                    lineCount,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "Unexpected \"end;\". Appending \';\' to prior command");
-                mState = EState::SKIPPING;
-                continue;
-            }
-
-            bool isLastLineOfData = NStr::EndsWith(line, ";");
-            if (isLastLineOfData) {
-                line = line.substr(0, line.size() -1 );
-                NStr::TruncateSpacesInPlace(line);
-                if (line.empty()) {
-                    mState = EState::SKIPPING;
-                    continue;
-                }
-            }
-            
-            vector<string> tokens;
-            NStr::Split(line, " \t", tokens, 0);
-            if (tokens.size() < 2) {
-                throw SShowStopper(
-                    lineCount,
-                    EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "In data line, expected seqID followed by sequence data"); 
-            }
-
-            string seqId = tokens[0];
-            if (dataLineCount < mNumSequences) {
-                if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
-                    return; //ERROR: duplicate ID
-                }
-                mSeqIds.push_back(seqId);
-                mSequences.push_back(vector<TLineInfo>());
-            }
-            else {
-                if (mSeqIds[dataLineCount % mNumSequences] != seqId) {
-                    string description;
-                    if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) == mSeqIds.end()) {
-                        description = ErrorPrintf(
-                            "Expected %d sequences, but finding data for another.",
-                            mNumSequences);
-                    }
-                    else {
-                        description = ErrorPrintf(
-                            "Finding data for sequence \"%s\" out of order.",
-                            seqId.c_str());
-                    }
-                    throw SShowStopper(
-                        lineCount,
-                        EAlnSubcode::eAlnSubcode_BadSequenceCount,
-                        description);
-                }
-            }
-
-            string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
-            auto dataSize = seqData.size();
-            auto dataIndex = dataLineCount % mNumSequences;
-            if (dataIndex == 0) {
-                sequenceCharCount += dataSize;
-                if (sequenceCharCount > mSequenceSize) {
-                    string description = ErrorPrintf(
-                        "Expected %d symbols per sequence but finding already %d",
-                        mSequenceSize,
-                        sequenceCharCount);
-                    throw SShowStopper(
-                        lineCount,
-                        EAlnSubcode::eAlnSubcode_BadDataCount,
-                        description); 
-                }
-                blockLineLength = dataSize;
-            }
-            else {
-                if (dataSize != blockLineLength) {
-                    string description = ErrorPrintf(
-                        "In data line, expected %d symbols but finding %d",
-                        blockLineLength,
-                        dataSize);
-                    throw SShowStopper(
-                        lineCount,
-                        EAlnSubcode::eAlnSubcode_BadDataCount,
-                        description); 
-                }
-            }
-
-            mSequences[dataIndex].push_back({seqData, lineCount});
-
-            dataLineCount += 1;
-            if (isLastLineOfData) {
-                mState = EState::SKIPPING;
-            }
-            continue;
-        }
-    }
-
-    if (unmatchedLeftBracketCount>0) {
-        string description = ErrorPrintf(
-                "Unterminated comment beginning on line %d",
-                commentStartLine);
-        throw SShowStopper(
-                commentStartLine,
-                EAlnSubcode::eAlnSubcode_UnterminatedComment,
-                description);
-    }
-
-    //submit collected data to a final sanity check:
-    if (sequenceCharCount != mSequenceSize) {
-        string description = ErrorPrintf(
-            "Expected %d symbols per sequence but finding only %d",
-            mSequenceSize,
-            sequenceCharCount);
-        throw SShowStopper(
-            -1,
-            EAlnSubcode::eAlnSubcode_BadDataCount,
-            description); 
-    }
-}
-*/
 
 //  ----------------------------------------------------------------------------
 void
@@ -716,78 +562,6 @@ CAlnScannerNexus::xVerifySingleSequenceData(
     }
 }
 
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerNexus::xProcessDimensionLine(
-    const string& line,
-    int lineCount)
-//  ----------------------------------------------------------------------------
-{
-    const string prefixNtax("ntax=");
-    const string prefixNchar("nchar=");
-    list<string> tokens;
-    NStr::Split(line, " \t;", tokens, NStr::fSplit_MergeDelimiters);
-    tokens.pop_front();
-    for (auto token: tokens) {
-        if (NStr::StartsWith(token, prefixNtax)) {
-            try {
-                mNumSequences = NStr::StringToInt(token.substr(prefixNtax.size()));
-            }
-            catch(...) {
-                string description = ErrorPrintf("Invalid nTax setting \"%s\"", 
-                    token.substr(prefixNtax.size()).c_str());
-                throw SShowStopper(
-                    lineCount,
-                    EAlnSubcode::eAlnSubcode_IllegalDataDescription,
-                    description);
-            }
-            continue;
-        }
-        if (NStr::StartsWith(token, prefixNchar)) {
-            try {
-                mSequenceSize = NStr::StringToInt(token.substr(prefixNchar.size()));
-            }
-            catch(...) {
-                string description = ErrorPrintf("Invalid nChar setting \"%s\"", 
-                    token.substr(prefixNchar.size()).c_str());
-                throw SShowStopper(
-                    lineCount,
-                    EAlnSubcode::eAlnSubcode_IllegalDataDescription,
-                    description);
-            }
-            continue;
-        }
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerNexus::xProcessFormatLine(
-    const string& line,
-    int lineCount)
-//  ----------------------------------------------------------------------------
-{
-    const string prefixMissing("missing=");
-    const string prefixGap("gap=");
-    const string prefixMatch("matchchar=");
-    list<string> tokens;
-    NStr::Split(line, " \t;", tokens, NStr::fSplit_MergeDelimiters);
-    tokens.pop_front();
-    for (auto token: tokens) {
-        if (NStr::StartsWith(token, prefixMissing)) {
-            mMissingChar = token[prefixMissing.size()];
-            continue;
-        }
-        if (NStr::StartsWith(token, prefixGap)) {
-            mGapChar = token[prefixGap.size()];
-            continue;
-        }
-        if (NStr::StartsWith(token, prefixMatch)) {
-            mMatchChar = token[prefixMatch.size()];
-            continue;
-        }
-    }
-}
 
 //  ----------------------------------------------------------------------------
 void
@@ -805,7 +579,6 @@ CAlnScannerNexus::xAdjustSequenceInfo(
     if (mMissingChar != 0) {
         sequenceInfo.SetMissing(mMissingChar);
     }
-    
 }
 
 //  ----------------------------------------------------------------------------
@@ -883,7 +656,7 @@ CAlnScannerNexus::sStripNexusComments(
 
 //  ----------------------------------------------------------------------------
 void 
-CAlnScannerNexus::sStripNexusComments(
+CAlnScannerNexus::sStripCommentsOutsideCommand(
     string& line, 
     int &numUnmatchedLeftBrackets,
     bool &inCommand)
@@ -894,7 +667,6 @@ CAlnScannerNexus::sStripNexusComments(
     }
 
     list<pair<int, int>> commentLimits;
-    int index=0;
     int start=0;
     int stop;
 
@@ -904,41 +676,43 @@ CAlnScannerNexus::sStripNexusComments(
         inCommand = true;
     }
 
+    const auto len = line.size();
 
-    while (index < line.size()) {
+    for (int index=0; index<len; ++index) {
         const auto& c = line[index];
-        if (c == '[' && !inCommand) {
+
+        if (inCommand) {
+            if (c == ';' &&
+                numUnmatchedLeftBrackets==0) {
+                inCommand = false;        
+            }
+            continue;
+        }
+
+        // else inCommand = false;
+        if (c == '[') {
             ++numUnmatchedLeftBrackets;
             if (numUnmatchedLeftBrackets==1) {
                 start = index;
             }
         }
         else 
-        if (c == ']' && !inCommand) {
-            if (numUnmatchedLeftBrackets==1) {
+        if (c == ']') {
+            --numUnmatchedLeftBrackets;
+            if (numUnmatchedLeftBrackets==0) {
                 stop = index;
-                if (!inCommand) {
-                    commentLimits.push_back(make_pair(start, stop));
-                }
-                --numUnmatchedLeftBrackets;
+                commentLimits.push_back(make_pair(start, stop));
             }
         }
-        else 
-        if (c == ';' &&
-            numUnmatchedLeftBrackets == 0) {
-            inCommand = false;
-        }
-        else 
-        if (!inCommand && 
-            numUnmatchedLeftBrackets == 0 &&
+        else
+        if (numUnmatchedLeftBrackets == 0 &&
             !isspace(c)) {
            inCommand = true; 
         }
-        ++index;
     }
 
     if (numUnmatchedLeftBrackets && !inCommand) {
-        commentLimits.push_back(make_pair(start, index-1));
+        commentLimits.push_back(make_pair(start, len-1));
     }
 
     for (auto it = commentLimits.crbegin();
