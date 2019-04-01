@@ -185,10 +185,73 @@ CAlnScannerNexus::xProcessMatrix(
     int sequenceCharCount(0);
 
     auto cit = command.begin();
+    ++cit;
 
-    for(++cit; cit != command.end(); ++dataLineCount, ++cit) {
+    if (!mNumSequences) {
+        for (; cit != command.end(); ++dataLineCount, ++cit) {
+            vector<string> tokens;
+            NStr::Split(cit->mData, " \t", tokens, NStr::fSplit_Tokenize);
+            if (tokens.size() < 2) {
+                throw SShowStopper(
+                    cit->mNumLine,
+                    eAlnSubcode_IllegalDataLine,
+                    "In data line, expected seqID followed by sequence data");
+            }
 
-        seqCount = dataLineCount % mNumSequences;
+            string seqId = tokens[0];
+            if (!mSeqIds.empty() &&
+                    seqId == mSeqIds[0]) {
+                mNumSequences = mSeqIds.size();
+                break;
+            }
+
+            if (find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
+                string description = ErrorPrintf(
+                    "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+                throw SShowStopper(
+                    cit->mNumLine,
+                    eAlnSubcode_UnexpectedSeqId,
+                    description);
+            }
+            mSeqIds.push_back(seqId);
+            mSequences.push_back(vector<TLineInfo>());
+
+        
+            string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
+            auto dataSize = seqData.size();
+        
+            if (dataLineCount == 0) {
+                sequenceCharCount += dataSize;
+                if (sequenceCharCount > mSequenceSize) {
+                    string description = ErrorPrintf(
+                        "Expected %d symbols per sequence but finding already %d",
+                        mSequenceSize,
+                        sequenceCharCount);
+                    throw SShowStopper(
+                        cit->mNumLine,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        description); 
+                }
+                blockLineLength = dataSize;
+            }
+            else {
+                if (dataSize != blockLineLength) {
+                    string description = ErrorPrintf(
+                        "In data line, expected %d symbols but finding %d",
+                        blockLineLength,
+                        dataSize);
+                    throw SShowStopper(
+                        cit->mNumLine,
+                        EAlnSubcode::eAlnSubcode_BadDataCount,
+                        description); 
+                }
+            }
+            mSequences[dataLineCount].push_back({tokens[1], cit->mNumLine});
+        }
+    }
+
+    for(; cit != command.end(); ++dataLineCount, ++cit) {
+
         vector<string> tokens;
         NStr::Split(cit->mData, " \t", tokens, NStr::fSplit_Tokenize);
         if (tokens.size() < 2) {
@@ -199,6 +262,7 @@ CAlnScannerNexus::xProcessMatrix(
         }
 
         string seqId = tokens[0];
+        seqCount = dataLineCount % mNumSequences;
 
         if (dataLineCount < mNumSequences) {
             if (find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
