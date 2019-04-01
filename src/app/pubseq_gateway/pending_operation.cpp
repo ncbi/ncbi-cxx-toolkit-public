@@ -1680,11 +1680,12 @@ void CPendingOperation::OnGetBlobError(
     if (status == CRequestStatus::e404_NotFound) {
         app->GetErrorCounters().IncGetBlobNotFound();
     } else {
-        if (is_error)
+        if (is_error) {
             if (code == CCassandraException::eQueryTimeout)
                 app->GetErrorCounters().IncCassQueryTimeoutError();
             else
                 app->GetErrorCounters().IncUnknownError();
+        }
     }
 
     if (is_error) {
