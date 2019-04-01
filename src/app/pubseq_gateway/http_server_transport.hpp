@@ -188,8 +188,13 @@ public:
 
     void Send(std::vector<h2o_iovec_t> &  payload, bool  is_last)
     {
-        if (payload.size() > 0 || is_last)
-            DoSend(&payload.front(), payload.size(), is_last);
+        size_t      payload_size = payload.size();
+        if (payload_size > 0 || is_last) {
+            if (payload_size > 0)
+                DoSend(&payload.front(), payload_size, is_last);
+            else
+                DoSend(nullptr, payload_size, is_last);
+        }
     }
 
     void SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
