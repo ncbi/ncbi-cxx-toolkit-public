@@ -56,7 +56,7 @@ CAlnFormatGuesser::GetFormat(
     if (xSampleIsNexus(testSample)) {
         return EAlignFormat::NEXUS;
     }
-    if (xSampleIsClustal(testSample)) {
+    if (xSampleIsClustal(testSample, iStr)) {
         return EAlignFormat::CLUSTAL;
     }
     if (xSampleIsFastaGap(testSample)) {
@@ -112,13 +112,16 @@ CAlnFormatGuesser::xSampleIsNexus(
 //  -----------------------------------------------------------------------------
 bool
 CAlnFormatGuesser::xSampleIsClustal(
-    const TSample& sample)
+    TSample& sample,
+    CPeekAheadStream& iStr)
 //  -----------------------------------------------------------------------------
 {
     // reminder:
     //  all sample lines are space truncated
     //  there are at least one and most SAMPLE_SIZE sample lines
 
+    const string CONSENSUS_CHARS = " .:*";
+ 
     string testLine = sample[0];
     NStr::ToLower(testLine);
     if (NStr::StartsWith(testLine, "clustalw")) {
@@ -127,7 +130,34 @@ CAlnFormatGuesser::xSampleIsClustal(
     if (NStr::StartsWith(testLine, "clustal w")) {
         return true;
     }
-    return false;
+    int lineCount = 0;
+    int blockCount = 0;
+    while (blockCount < 3) {
+        string line;
+        if (lineCount < sample.size()) {
+            line = sample[lineCount];
+        }
+        else {
+            iStr.PeekLine(line);
+            sample.push_back(line);
+        }
+        if (lineCount > 0  &&  line.empty()) {
+            auto maybeConsensus = sample[lineCount-1];
+            auto firstConsensusChar = maybeConsensus.find_first_of(
+                CONSENSUS_CHARS.substr(1));
+            if (firstConsensusChar == string::npos) {
+                return false;
+            }
+            auto firstNonConsensusChar = maybeConsensus.find_first_not_of(
+                CONSENSUS_CHARS);
+            if (firstNonConsensusChar != string::npos) {
+                return false;
+            }
+            ++blockCount;
+        }
+        ++lineCount;
+    }
+    return true;
 }
 
 

@@ -76,7 +76,8 @@ protected:
 
     bool
     xSampleIsClustal(
-        const TSample&);
+        TSample&,
+        CPeekAheadStream& iStr);
 
     bool
     xSampleIsFastaGap(
