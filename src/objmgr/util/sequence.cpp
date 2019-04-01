@@ -3478,10 +3478,10 @@ void x_Translate(const Container& seq,
                  bool* alt_start)
 {
     // reserve our space
-    const size_t usable_size = seq.size() - frame;
+    const size_t usable_size = seq.size() > frame ? seq.size() - frame : 0;
     const size_t mod = usable_size % 3;
     prot.erase();
-    prot.reserve(usable_size / 3 + (mod ? 1 : 0));
+    prot.reserve((usable_size + 2) / 3);
 
     // get appropriate translation table
     const CTrans_table & tbl =
