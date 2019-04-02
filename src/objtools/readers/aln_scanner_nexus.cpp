@@ -38,6 +38,7 @@
 #include "aln_errors.hpp"
 #include "aln_peek_ahead.hpp"
 #include "aln_scanner_nexus.hpp"
+#include "aln_util.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -439,12 +440,31 @@ CAlnScannerNexus::xProcessSequin(
     const TCommand& command)
 //  ----------------------------------------------------------------------------
 {
-    for (const auto& lineInfo : command) {
-        vector<string> deflineVec;
-        NStr::Split(lineInfo.mData, ">", deflineVec);
-        for (int i=1; i<deflineVec.size(); ++i) {
-            mDeflines.push_back({deflineVec[i], lineInfo.mNumLine});
+    if (command.size() <= 1) {
+        return;
+    }   
+
+    string dummy;
+    string defline;
+    for (auto it = next(command.begin());
+            it != command.end(); 
+            ++it) {
+        const auto lineInfo = *it;
+        try {
+            AlnUtil::ProcessDefline(lineInfo.mData, dummy, defline);
         }
+        catch (SShowStopper& showStopper) {
+            showStopper.mLineNumber = lineInfo.mNumLine;
+            throw;
+        }
+
+        if (!dummy.empty()) {
+            throw SShowStopper(
+                lineInfo.mNumLine,
+                eAlnSubcode_IllegalDefinitionLine,
+                "Invalid NEXUS definition line, expected \">\" followed by mods.");
+        }
+        mDeflines.push_back({defline, lineInfo.mNumLine});
     }
 }
 
