@@ -86,9 +86,8 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
             }     
             name_string  += name;
         }
-        string msg = "Cannot apply " 
-                   + name_string 
-                   + " on nucleotide sequence.";
+        string msg = "Cannot apply protein modifier to nucleotide sequence: "
+                   + name_string + ".";
 
         if (m_fReportError) {
             m_fReportError(msg, eDiag_Error, eModSubcode_ProteinModOnNucseq);

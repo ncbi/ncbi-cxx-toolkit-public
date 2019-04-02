@@ -878,7 +878,7 @@ void CDescrModApply::x_ReportInvalidValue(const CModData& mod_data,
 {
     const auto& mod_name = mod_data.GetName();
     const auto& mod_value = mod_data.GetValue();
-    string msg = mod_name + " modifier has invalid value: \"" +   mod_value + "\".";
+    string msg = "Invalid value: " + mod_name + "=" + mod_value + ".";
     if (!NStr::IsBlank(add_msg)) {
         msg += " " + add_msg;
     }

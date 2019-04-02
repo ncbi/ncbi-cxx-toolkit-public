@@ -1,30 +1,30 @@
                 Warning:
-Problem:        gene is deprecated - ignoring
+Problem:        Deprecated modifier: gene.
 
                 Warning:
-Problem:        allele is deprecated - ignoring
+Problem:        Deprecated modifier: allele.
 
                 Warning:
-Problem:        Locus_Tag is deprecated - ignoring
+Problem:        Deprecated modifier: Locus_Tag.
 
                 Warning:
-Problem:        gene_syn is deprecated - ignoring
+Problem:        Deprecated modifier: gene_syn.
 
                 Warning:
-Problem:        gene-synonym is deprecated - ignoring
+Problem:        Deprecated modifier: gene-synonym.
 
                 Warning:
-Problem:        topology=cirCular duplicates previously encountered modifier.
+Problem:        Duplicated modifier value: topology=cirCular.
 
                 Error:
-Problem:        Cannot apply activity, function on nucleotide sequence.
+Problem:        Cannot apply protein modifier to nucleotide sequence: activity, function.
 
                 Error:
-Problem:        Cannot apply EC-number, Ec_Number on nucleotide sequence.
+Problem:        Cannot apply protein modifier to nucleotide sequence: EC-number, Ec_Number.
 
                 Error:
-Problem:        Cannot apply protein on nucleotide sequence.
+Problem:        Cannot apply protein modifier to nucleotide sequence: protein.
 
                 Error:
-Problem:        Cannot apply protein-desc on nucleotide sequence.
+Problem:        Cannot apply protein modifier to nucleotide sequence: protein-desc.
 

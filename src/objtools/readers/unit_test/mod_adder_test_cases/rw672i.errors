@@ -1,15 +1,15 @@
                 Warning:
-Problem:        gene is deprecated - ignoring
+Problem:        Deprecated modifier: gene.
 
                 Warning:
-Problem:        allele is deprecated - ignoring
+Problem:        Deprecated modifier: allele.
 
                 Warning:
-Problem:        Locus_Tag is deprecated - ignoring
+Problem:        Deprecated modifier: Locus_Tag.
 
                 Warning:
-Problem:        gene_syn is deprecated - ignoring
+Problem:        Deprecated modifier: gene_syn.
 
                 Warning:
-Problem:        gene-synonym is deprecated - ignoring
+Problem:        Deprecated modifier: gene-synonym.
 
