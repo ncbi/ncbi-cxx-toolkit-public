@@ -67,6 +67,7 @@ try_local() {
         test -f "$d/include/uv.h"          &&  : ${LIBUV_PATH=$d}
         test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
         test -f "$d/include/xlsxwriter.h"  &&  : ${LIBXLSXWRITER_PATH=$d}
+        test -d "$d/include/leveldb"       &&  : ${LEVELDB_PATH=$d}
         test -f "$d/include/lmdb.h"        &&  : ${LMDB_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
         test -d "$d/include/mbedtls"       &&  : ${MBEDTLS_PATH=$d}
@@ -203,6 +204,8 @@ case "$ncbi_platform" in
     Linux64    ) : ${ICU_PATH=$NCBI/icu-49.1.1} ;;
     *          ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
 esac
+
+: ${LEVELDB_PATH=$NCBI/leveldb-1.21}
 
 : ${LIBSSH2_PATH=$NCBI/libssh2-1.7.0}
 

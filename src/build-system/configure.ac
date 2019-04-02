@@ -73,7 +73,7 @@ case "$with_3psw" in
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2,
-                     mongodb, mongodb3, gmock, lapack,
+                     mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o,
                      libxlsxwriter, protobuf, grpc, msgsl, aws-sdk],
         [if test "${[with_]X-no}" != "no"; then
@@ -513,6 +513,10 @@ AC_ARG_WITH(mongodb3,
    [ --with-mongodb3=DIR     use MongoDB 3 installation in DIR])
 AC_ARG_WITH(mongodb3,
    [ --without-mongodb3      do not use MongoDB 3])
+AC_ARG_WITH(leveldb,
+   [ --with-leveldb=DIR      use LevelDB installation in DIR])
+AC_ARG_WITH(leveldb,
+   [ --without-leveldb       do not use LevelDB])
 AC_ARG_WITH(gmock,
    [ --with-gmock=DIR        use Google Mock installation in DIR])
 AC_ARG_WITH(gmock,
@@ -628,7 +632,8 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
+magic curl mimetic gsoap avro cereal sasl2 \
+mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o libxlsxwriter protobuf grpc msgsl aws-sdk \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -701,7 +706,7 @@ for x_arg in "$@" ; do
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
-      | --with-mongodb=* | --with-mongodb3=* \
+      | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-libxlsxwriter=* \
@@ -7818,6 +7823,36 @@ if test -n "$MONGODB3_LIBS"; then
       MONGODB3_STATIC_LIBS=$MONGODB3_LIBS
    fi
 fi
+
+
+# LevelDB
+if test "$with_leveldb" != no; then
+   case "$with_leveldb" in
+      yes | '' ) ;;
+      *        ) LEVELDB_PATH=$with_leveldb ;;
+   esac
+   for d in "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
+            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
+      if test -d "$d"; then
+         LEVELDB_PATH=$d
+         break
+      fi
+   done
+   if test -d "$LEVELDB_PATH"; then
+      NCBI_FIX_DIR(LEVELDB_PATH)
+   fi
+fi
+if test -d $LEVELDB_PATH/lib${bit64_sfx}; then
+   LEVELDB_LIBDIR=$LEVELDB_PATH/lib${bit64_sfx}
+else
+   LEVELDB_LIBDIR=$LEVELDB_PATH/lib
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(leveldb,
+  [AC_LANG_PROGRAM([[#include <leveldb/db.h>
+                     using namespace leveldb;]],
+     [[DB* db; Status status = DB::Open(Options(), "foo", &db);]])])
 
 
 # Google Mock

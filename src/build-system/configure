@@ -841,6 +841,8 @@ MONGODB_INCLUDE
 MONGODB_LIBS
 MONGODB3_INCLUDE
 MONGODB3_LIBS
+LEVELDB_INCLUDE
+LEVELDB_LIBS
 GMOCK_INCLUDE
 GMOCK_LIBS
 LAPACK_INCLUDE
@@ -1676,7 +1678,8 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
+magic curl mimetic gsoap avro cereal sasl2 \
+mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o libxlsxwriter protobuf grpc msgsl aws-sdk \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -1750,7 +1753,7 @@ for x_arg in "$@" ; do
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
-      | --with-mongodb=* | --with-mongodb3=* \
+      | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-libxlsxwriter=* \
@@ -2079,6 +2082,8 @@ Optional Packages:
  --without-mongodb       do not use legacy MongoDB
  --with-mongodb3=DIR     use MongoDB 3 installation in DIR
  --without-mongodb3      do not use MongoDB 3
+ --with-leveldb=DIR      use LevelDB installation in DIR
+ --without-leveldb       do not use LevelDB
  --with-gmock=DIR        use Google Mock installation in DIR
  --without-gmock         do not use Google Mock
  --with-lapack=DIR       use LAPACK installation in DIR
@@ -2659,6 +2664,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_mongodb3=no
+         fi
+        if test "${with_leveldb-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-leveldb but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_leveldb=no
          fi
         if test "${with_gmock-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-gmock but --without-3psw" >&2
@@ -4280,6 +4291,18 @@ fi
 # Check whether --with-mongodb3 was given.
 if test "${with_mongodb3+set}" = set; then
   withval=$with_mongodb3;
+fi
+
+
+# Check whether --with-leveldb was given.
+if test "${with_leveldb+set}" = set; then
+  withval=$with_leveldb;
+fi
+
+
+# Check whether --with-leveldb was given.
+if test "${with_leveldb+set}" = set; then
+  withval=$with_leveldb;
 fi
 
 
@@ -49168,6 +49191,220 @@ if test -n "$MONGODB3_LIBS"; then
 fi
 
 
+# LevelDB
+if test "$with_leveldb" != no; then
+   case "$with_leveldb" in
+      yes | '' ) ;;
+      *        ) LEVELDB_PATH=$with_leveldb ;;
+   esac
+   for d in "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
+            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
+      if test -d "$d"; then
+         LEVELDB_PATH=$d
+         break
+      fi
+   done
+   if test -d "$LEVELDB_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $LEVELDB_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $LEVELDB_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            LEVELDB_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$LEVELDB_PATH" in
+               /*) ;;
+               * ) LEVELDB_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) LEVELDB_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+fi
+if test -d $LEVELDB_PATH/lib${bit64_sfx}; then
+   LEVELDB_LIBDIR=$LEVELDB_PATH/lib${bit64_sfx}
+else
+   LEVELDB_LIBDIR=$LEVELDB_PATH/lib
+fi
+if test "$with_leveldb" != "no"; then
+    case "$LEVELDB_PATH:$with_leveldb" in
+       *:yes | *: | $with_leveldb* ) ;;
+       * ) LEVELDB_PATH=$with_leveldb ;;
+    esac
+    if test "$LEVELDB_PATH" != /usr -a -d "$LEVELDB_PATH"; then
+       in_path=" in $LEVELDB_PATH"
+       if test -z "$LEVELDB_INCLUDE" -a -d "$LEVELDB_PATH/include"; then
+          LEVELDB_INCLUDE="-I$LEVELDB_PATH/include"
+       fi
+       if test -n "$LEVELDB_LIBPATH"; then
+          :
+       elif test -d "$LEVELDB_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LEVELDB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LEVELDB_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LEVELDB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LEVELDB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$LEVELDB_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LEVELDB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LEVELDB_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LEVELDB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LEVELDB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       LEVELDB_LIBS="$LEVELDB_LIBPATH -lleveldb "
+    else
+       LEVELDB_INCLUDE=""
+       LEVELDB_LIBS="-lleveldb "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libleveldb$in_path" >&5
+echo $ECHO_N "checking for libleveldb$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_leveldb+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $LEVELDB_INCLUDE $orig_CPPFLAGS"
+       LIBS="$LEVELDB_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <leveldb/db.h>
+                     using namespace leveldb;
+int
+main ()
+{
+DB* db; Status status = DB::Open(Options(), "foo", &db);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_leveldb=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_leveldb=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_leveldb" >&5
+echo "${ECHO_T}$ncbi_cv_lib_leveldb" >&6; }
+    if test "$ncbi_cv_lib_leveldb" = "no"; then
+       if test "${with_leveldb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-leveldb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-leveldb explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_leveldb" = "no"; then
+    LEVELDB_PATH="No_LEVELDB"
+    LEVELDB_INCLUDE=
+    LEVELDB_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}LEVELDB"; WithPackagesSep=" "
+    LEVELDB_INCLUDE=" $LEVELDB_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBLEVELDB 1
+_ACEOF
+
+ fi
+
+
+
+
+
 # Google Mock
 case "$with_gmock" in
    yes | no | '' ) ;;
@@ -52760,7 +52997,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -54153,6 +54390,8 @@ MONGODB_INCLUDE!$MONGODB_INCLUDE$ac_delim
 MONGODB_LIBS!$MONGODB_LIBS$ac_delim
 MONGODB3_INCLUDE!$MONGODB3_INCLUDE$ac_delim
 MONGODB3_LIBS!$MONGODB3_LIBS$ac_delim
+LEVELDB_INCLUDE!$LEVELDB_INCLUDE$ac_delim
+LEVELDB_LIBS!$LEVELDB_LIBS$ac_delim
 GMOCK_INCLUDE!$GMOCK_INCLUDE$ac_delim
 GMOCK_LIBS!$GMOCK_LIBS$ac_delim
 LAPACK_INCLUDE!$LAPACK_INCLUDE$ac_delim
@@ -54209,8 +54448,6 @@ DEBUG_SFX!$DEBUG_SFX$ac_delim
 LIB_OR_DLL!$LIB_OR_DLL$ac_delim
 FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
 APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
-APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
-LINK_DLL!$LINK_DLL$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54252,6 +54489,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
+LINK_DLL!$LINK_DLL$ac_delim
 has_dll_loadable!$has_dll_loadable$ac_delim
 LINK_LOADABLE!$LINK_LOADABLE$ac_delim
 CFLAGS_DLL!$CFLAGS_DLL$ac_delim
@@ -54347,8 +54586,6 @@ BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
 ODBC_INCLUDE!$ODBC_INCLUDE$ac_delim
 ODBC_LIBS!$ODBC_LIBS$ac_delim
 BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
-BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
-BOOST_TAG!$BOOST_TAG$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54390,6 +54627,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
+BOOST_TAG!$BOOST_TAG$ac_delim
 BOOST_CHRONO_LIBS!$BOOST_CHRONO_LIBS$ac_delim
 BOOST_CHRONO_STATIC_LIBS!$BOOST_CHRONO_STATIC_LIBS$ac_delim
 BOOST_FILESYSTEM_LIBS!$BOOST_FILESYSTEM_LIBS$ac_delim
@@ -54485,8 +54724,6 @@ CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
-LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
-LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54528,6 +54765,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
+LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 NGHTTP2_STATIC_LIBS!$NGHTTP2_STATIC_LIBS$ac_delim
@@ -54584,7 +54823,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

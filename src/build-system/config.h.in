@@ -405,6 +405,9 @@
 /* Define to 1 if liblapack is available. */
 #undef HAVE_LIBLAPACK
 
+/* Define to 1 if libleveldb is available. */
+#undef HAVE_LIBLEVELDB
+
 /* Define to 1 if liblmdb is available. */
 #undef HAVE_LIBLMDB
 
