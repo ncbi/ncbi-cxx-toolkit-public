@@ -53,7 +53,9 @@ class NCBI_SRAREAD_EXPORT CWGSResolver_VDB : public CWGSResolver
 public:
     enum EIndexType {
         eMainIndex,
-        eSmallIndex
+        eSecondIndex,
+        eThirdIndex,
+        eSmallIndex = eSecondIndex
     };
     explicit CWGSResolver_VDB(const CVDBMgr& mgr,
                               EIndexType index_type = eMainIndex,

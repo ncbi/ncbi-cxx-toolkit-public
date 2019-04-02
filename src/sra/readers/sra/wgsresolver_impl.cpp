@@ -60,10 +60,13 @@ BEGIN_NAMESPACE(objects);
 
 #define DEFAULT_WGS_INDEX_ACC "ZZZZ99"
 #define DEFAULT_WGS_INDEX2_ACC "ZZZZ98"
+#define DEFAULT_WGS_INDEX3_ACC "ZZZZ97"
 #define DEFAULT_WGS_INDEX_PATH1 NCBI_TRACES04_PATH "/wgs03/WGS/ZZ/ZZ/ZZZZ99"
 #define DEFAULT_WGS_INDEX_PATH2 NCBI_TRACES04_PATH "/wgs03/WGS/WGS_INDEX"
 #define DEFAULT_WGS_INDEX2_PATH1 NCBI_TRACES04_PATH "/wgs03/WGS/ZZ/ZZ/ZZZZ98"
 #define DEFAULT_WGS_INDEX2_PATH2 NCBI_TRACES04_PATH "/wgs03/WGS/WGS_INDEX_V2"
+#define DEFAULT_WGS_INDEX3_PATH1 NCBI_TRACES04_PATH "/wgs03/WGS/ZZ/ZZ/ZZZZ97"
+#define DEFAULT_WGS_INDEX3_PATH2 NCBI_TRACES04_PATH "/wgs03/WGS/WGS_INDEX_V3"
 
 #define DEFAULT_GI_INDEX_PATH                                   \
     NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
@@ -90,12 +93,20 @@ NCBI_PARAM_DECL(string, WGS, WGS_INDEX2);
 NCBI_PARAM_DEF(string, WGS, WGS_INDEX2, "");
 
 
+NCBI_PARAM_DECL(string, WGS, WGS_INDEX3);
+NCBI_PARAM_DEF(string, WGS, WGS_INDEX3, "");
+
+
 NCBI_PARAM_DECL(string, WGS, WGS_INDEX_ACC);
 NCBI_PARAM_DEF(string, WGS, WGS_INDEX_ACC, DEFAULT_WGS_INDEX_ACC);
 
 
 NCBI_PARAM_DECL(string, WGS, WGS_INDEX2_ACC);
 NCBI_PARAM_DEF(string, WGS, WGS_INDEX2_ACC, DEFAULT_WGS_INDEX2_ACC);
+
+
+NCBI_PARAM_DECL(string, WGS, WGS_INDEX3_ACC);
+NCBI_PARAM_DEF(string, WGS, WGS_INDEX3_ACC, DEFAULT_WGS_INDEX3_ACC);
 
 
 NCBI_PARAM_DECL(string, WGS, GI_INDEX);
@@ -186,8 +197,11 @@ string CWGSResolver_VDB::GetDefaultWGSIndexPath(EIndexType index_type)
     if ( index_type == eMainIndex ) {
         return NCBI_PARAM_TYPE(WGS, WGS_INDEX)::GetDefault();
     }
-    else if ( index_type == eSmallIndex ) {
+    else if ( index_type == eSecondIndex ) {
         return NCBI_PARAM_TYPE(WGS, WGS_INDEX2)::GetDefault();
+    }
+    else if ( index_type == eThirdIndex ) {
+        return NCBI_PARAM_TYPE(WGS, WGS_INDEX3)::GetDefault();
     }
     else {
         return string();
@@ -200,8 +214,11 @@ string CWGSResolver_VDB::GetDefaultWGSIndexAcc(EIndexType index_type)
     if ( index_type == eMainIndex ) {
         return NCBI_PARAM_TYPE(WGS, WGS_INDEX_ACC)::GetDefault();
     }
-    else if ( index_type == eSmallIndex ) {
+    else if ( index_type == eSecondIndex ) {
         return NCBI_PARAM_TYPE(WGS, WGS_INDEX2_ACC)::GetDefault();
+    }
+    else if ( index_type == eThirdIndex ) {
+        return NCBI_PARAM_TYPE(WGS, WGS_INDEX3_ACC)::GetDefault();
     }
     else {
         return string();
@@ -214,12 +231,16 @@ string GetDirectWGSIndexPath(CWGSResolver_VDB::EIndexType index_type)
 {
     string path;
     if ( NCBI_PARAM_TYPE(WGS, RESOLVER_DIRECT_WGS_INDEX)::GetDefault() ) {
-        const char* path1 = (index_type == CWGSResolver_VDB::eMainIndex?
-                             DEFAULT_WGS_INDEX_PATH1:
-                             DEFAULT_WGS_INDEX2_PATH1);
-        const char* path2 = (index_type == CWGSResolver_VDB::eMainIndex?
-                             DEFAULT_WGS_INDEX_PATH2:
-                             DEFAULT_WGS_INDEX2_PATH2);
+        const char* path1 = DEFAULT_WGS_INDEX_PATH1;
+        const char* path2 = DEFAULT_WGS_INDEX_PATH2;
+        if ( index_type == CWGSResolver_VDB::eSecondIndex ) {
+            path1 = DEFAULT_WGS_INDEX2_PATH1;
+            path2 = DEFAULT_WGS_INDEX2_PATH2;
+        }
+        else if ( index_type == CWGSResolver_VDB::eThirdIndex ) {
+            path1 = DEFAULT_WGS_INDEX3_PATH1;
+            path2 = DEFAULT_WGS_INDEX3_PATH2;
+        }
         if ( CDirEntry(path1).Exists() ) {
             path = path1;
         }
@@ -285,9 +306,13 @@ CRef<CWGSResolver> CWGSResolver_VDB::CreateResolver(const CVDBMgr& mgr)
     if ( !ret->IsValid() ) {
         return null;
     }
-    CRef<CWGSResolver_VDB> ret2(new CWGSResolver_VDB(mgr, eSmallIndex, ret));
+    CRef<CWGSResolver_VDB> ret2(new CWGSResolver_VDB(mgr, eSecondIndex, ret));
     if ( ret2->IsValid() ) {
         ret = ret2;
+    }
+    CRef<CWGSResolver_VDB> ret3(new CWGSResolver_VDB(mgr, eThirdIndex, ret));
+    if ( ret3->IsValid() ) {
+        ret = ret3;
     }
     return CRef<CWGSResolver>(ret);
 }
@@ -470,13 +495,13 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(TGi gi)
 {
     TWGSPrefixes ret;
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(24, "CWGSResolver_VDB: Resolving "<<gi);
+        ERR_POST_X(24, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<gi);
     }
     CRef<SGiIdxTableCursor> cur = GiIdx();
     CVDBStringValue value = cur->WGS_PREFIX(gi, CVDBValue::eMissing_Allow);
     if ( !value.empty() ) {
         if ( s_DebugEnabled(eDebug_resolve) ) {
-            ERR_POST_X(25, "CWGSResolver_VDB: WGS prefix "<<*value);
+            ERR_POST_X(25, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<*value);
         }
         ret.push_back(*value);
     }
@@ -492,7 +517,7 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
 {
     TWGSPrefixes ret;
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(26, "CWGSResolver_VDB: Resolving "<<acc);
+        ERR_POST_X(26, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<acc);
     }
     string uacc = acc;
     NStr::ToUpper(uacc);
@@ -508,7 +533,7 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
         for ( TVDBRowId i = range.first; i <= range.second; ++i ) {
             CTempString prefix = *cur->WGS_PREFIX(i);
             if ( s_DebugEnabled(eDebug_resolve) ) {
-                ERR_POST_X(27, "CWGSResolver_VDB: WGS prefix "<<prefix);
+                ERR_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<prefix);
             }
             ret.push_back(prefix);
         }
