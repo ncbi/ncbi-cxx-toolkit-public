@@ -1,3 +1,8 @@
+Release 1.2.0
+
+    * PSG -- use schema type 4 for blob sat mapping (CXX-10524)
+    * Blob retrieval by bio_seq: convert to asyncronous (CXX-10055)
+
 Release 1.1.10
 
     * UV-1.25.0, DATASTAX-2.11.0, H2O-2.2.5
