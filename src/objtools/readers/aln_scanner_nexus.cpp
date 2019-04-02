@@ -103,9 +103,10 @@ CAlnScannerNexus::xProcessCommand(
         if (lastToken == "end") {
             theErrorReporter->Warn(
                 command.back().mNumLine,
-                EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                EAlnSubcode::eAlnSubcode_UnterminatedCommand,
                 "Unexpected \"end;\". Appending \';\' to prior command");
 
+            xEndBlock();
             if (lastWhiteSpacePos == NPOS) {
                 command.pop_back();
             }
@@ -145,7 +146,7 @@ CAlnScannerNexus::xProcessCommand(
     }
 
     if (commandName == "end") {
-        xEndBlock(command);
+        xEndBlock();
         return;
     }
     
@@ -158,18 +159,40 @@ CAlnScannerNexus::xBeginBlock(
     const TCommand& command)
 //  ----------------------------------------------------------------------------
 {
+    auto lineNum = command.front().mNumLine;
+    if (mInBlock) {
+        auto description = ErrorPrintf(
+                "Attempting to enter a new block, but still in the %s block that begins on line %d.",
+                mCurrentBlock.c_str(), mBlockStartLine);
+
+            throw SShowStopper(
+                lineNum,
+                EAlnSubcode::eAlnSubcode_IllegalDataLine,
+                description);
+
+    }
     mInBlock = true;
-    // mCurrentBlock = ...
+    mBlockStartLine = lineNum;
+    if (command.size() > 1) {
+        mCurrentBlock = next(command.begin())->mData;    
+    }
+    else {
+        string commandName;
+        NStr::SplitInTwo(command.front().mData, " \t", 
+                commandName,
+                mCurrentBlock);
+    }
 }
 
 
 //  ----------------------------------------------------------------------------
 void 
-CAlnScannerNexus::xEndBlock(
+CAlnScannerNexus::xEndBlock()
 //  ----------------------------------------------------------------------------
-    const TCommand& command)
 {
     mInBlock = false;
+    mBlockStartLine = -1;
+    mCurrentBlock.clear();
 }
 
 

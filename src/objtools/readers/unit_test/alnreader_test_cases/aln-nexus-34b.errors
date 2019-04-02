@@ -1,6 +1,6 @@
 Line No    : 24
 Severity   : Warning
-Code       : 2.7
+Code       : 2.2
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : None (Encountered during pre or post processing)

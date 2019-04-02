@@ -92,7 +92,7 @@ protected:
     xBeginBlock(const TCommand& command);
 
     void 
-    xEndBlock(const TCommand& command);
+    xEndBlock(void);
 
     pair<string, int>
     xGetKeyVal(const TCommand& command, 
@@ -129,6 +129,7 @@ protected:
     char mGapChar;
     bool mInBlock=false;
     string mCurrentBlock;
+    int mBlockStartLine;
 };
 
 END_SCOPE(objects)
