@@ -139,7 +139,9 @@ public:
 private:
     CTransmissionWriter(const CTransmissionWriter&);
     CTransmissionWriter& operator=(CTransmissionWriter&);
-private:
+
+    ERW_Result WriteUint4(const Uint4& value);
+
     IWriter*     m_Wrt;
     EOwnership   m_OwnWrt;
     ESendEofPacket m_SendEof;

@@ -52,9 +52,8 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt,
 {
     _ASSERT(wrt);
 
-    size_t written;
-    ERW_Result res = m_Wrt->Write(&sStartWord, kLengthSize, &written);
-    if (res != eRW_Success || written != kLengthSize) {
+    ERW_Result res = WriteUint4(sStartWord);
+    if (res != eRW_Success) {
         NCBI_THROW(CIOException, eWrite,  "Cannot write the byte order");
     }
 }
@@ -88,12 +87,9 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
 
     if (!m_PacketBytesToWrite) {
         Uint4 cnt = (Uint4) count;
-        size_t written = 0;
-        ERW_Result res = m_Wrt->Write(&cnt, kLengthSize, &written);
+        ERW_Result res = WriteUint4(cnt);
         if (res != eRW_Success) 
             return res;
-        if (written != kLengthSize)
-            return eRW_Error;
         m_PacketBytesToWrite = cnt;
     }
 
@@ -118,7 +114,7 @@ ERW_Result CTransmissionWriter::Close(void)
 
     m_SendEof = eDontSendEofPacket;
 
-    return m_Wrt->Write(&sEndPacket, kLengthSize);
+    return WriteUint4(sEndPacket);
 }
 
 CTransmissionWriter::~CTransmissionWriter()
@@ -127,6 +123,20 @@ CTransmissionWriter::~CTransmissionWriter()
 
     if (m_OwnWrt)
         delete m_Wrt;
+}
+
+ERW_Result CTransmissionWriter::WriteUint4(const Uint4& value)
+{
+    auto data = reinterpret_cast<const char*>(&value);
+    size_t written;
+    ERW_Result rv = eRW_Success;
+
+    for (auto to_write = kLengthSize; (rv == eRW_Success) && to_write; to_write -= written) {
+        rv = m_Wrt->Write(data, to_write, &written);
+        data += written;
+    }
+
+    return rv;
 }
 
 template <typename TType>

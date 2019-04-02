@@ -57,6 +57,9 @@ public:
                              size_t      count,
                              size_t*     bytes_written = 0)
     {
+        // Partial write
+        if ((count > 1) && (rand() % 3 == 0)) count /= 2;
+
         const unsigned char* src = (unsigned char*) buf;
         for (unsigned i = 0; i < count; ++i) {
             if (m_Capacity == 0)
@@ -194,6 +197,9 @@ void s_ReadCheck1(IReader*               rdr,
 int CTestTransmission::Run(void)
 {
     LOG_POST("Test IReader/IWriter transmission");
+
+    // Randomize the random
+    srand(static_cast<unsigned>(time(NULL)));
 
     const int test_buf_size = 1024;
     unsigned char buf[test_buf_size  * 10];
