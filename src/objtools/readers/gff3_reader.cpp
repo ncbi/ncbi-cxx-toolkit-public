@@ -252,18 +252,36 @@ bool CGff3Reader::xVerifyExonLocation(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    //return true;
     map<string,CRef<CSeq_interval> >::const_iterator cit = mMrnaLocs.find(mrnaId);
     if (cit == mMrnaLocs.end()) {
+        string message = "Bad data line: ";
+        message += exon.Type();
+        message += " referring to non-existent parent feature.";
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                message,
+                ILineError::eProblem_FeatureBadStartAndOrStop));
+        ProcessError(*pErr, pEC);
         return false;
     }
     const CSeq_interval& containingInt = cit->second.GetObject();
     const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags, mSeqIdResolve);
     const CSeq_interval& containedInt = pContainedLoc->GetInt();
-    if (containedInt.GetFrom() < containingInt.GetFrom()) {
+    if (containedInt.GetFrom() < containingInt.GetFrom()  ||  
+            containedInt.GetTo() > containingInt.GetTo()) {
+        string message = "Bad data line: ";
+        message += exon.Type();
+        message += " extends beyond parent feature.";
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                message,
+                ILineError::eProblem_FeatureBadStartAndOrStop));
+        ProcessError(*pErr, pEC);
         return false;
-    }
-    if (containedInt.GetTo() > containingInt.GetTo()) {
         return false;
     }
     return true;
@@ -288,13 +306,6 @@ bool CGff3Reader::xUpdateAnnotExon(
                 return true;
             }
             if (pParent->GetData().IsRna()  &&  !xVerifyExonLocation(parentId, record, pEC)) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                        eDiag_Error,
-                        0,
-                        "Bad data line: Exon record referring to non-existing mRNA or gene parent.",
-                        ILineError::eProblem_FeatureBadStartAndOrStop));
-                ProcessError(*pErr, pEC);
                 return false;
             }
             if (pParent->GetData().IsGene()) {

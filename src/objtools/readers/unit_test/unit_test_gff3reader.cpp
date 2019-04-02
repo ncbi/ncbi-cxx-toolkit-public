@@ -156,7 +156,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     try {
         reader.ReadSeqAnnots(annots, ifstr, &logger);
     }
-    catch (...) {
+    catch (std::exception& excpt) {
         BOOST_ERROR("Error: " << input << " failed during conversion.");
     }
     ifstr.close();

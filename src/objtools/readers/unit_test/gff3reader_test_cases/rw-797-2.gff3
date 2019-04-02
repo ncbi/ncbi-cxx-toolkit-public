@@ -1,0 +1,9 @@
+##gff-version 3
+sequence001	maker	gene	7529	13283	.	+	.	locus_tag=EL10Ac6g13083;ID=EL10Ac6g13083;
+sequence001	maker	mRNA	7529	13283	.	+	.	Parent=EL10Ac6g13083;ID=EL10Ac6g13083.1
+sequence001	maker	exon	7529	8213	.	+	.	ID=EL10Ac6g13083.1:1;Parent=EL10Ac6g13083.1;
+sequence001	maker	exon	12553	13283	.	+	.	ID=EL10Ac6g13083.1:2;Parent=EL10Ac6g13083.1;
+sequence001	maker	five_prime_UTR	7529	7953	.	+	.	ID=EL10Ac6g13083.1:five_prime_utr;Parent=EL10Ac6g13083.1;
+sequence001	maker	CDS	7954	8213	.	+	0	ID=EL10Ac6g13083.1:cds;Parent=EL10Ac6g13083.1;product=CLAVATA3/ESR (CLE)-related protein 25;
+sequence001	maker	CDS	12553	12592	.	+	1	ID=EL10Ac6g13083.1:cds;Parent=EL10Ac6g13083.1;
+sequence001	maker	three_prime_UTR	12593	18283	.	+	.	ID=EL10Ac6g13083.1:three_prime_utr;Parent=EL10Ac6g13083.1;
