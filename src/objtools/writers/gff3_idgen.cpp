@@ -309,19 +309,15 @@ string CGffIdGenerator::xGetGenericSuffix(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    //1st choice: CombinedFeatureUserObjects:TrackingID
-    auto trackingId = xExtractTrackingId(mf);
-    if (!trackingId.empty()) {
-        return trackingId;
+    const auto dbxrefs = mf.GetDbxref();
+    for (const auto& ref: dbxrefs) {
+        if (ref->GetDb() == "GeneID") {
+            stringstream ostr;
+            ostr << "GeneID:";
+            ref->GetTag().AsString(ostr);
+            return ostr.str();
+        }
     }
-
-    //2nd choice: local ID
-    auto localId = xExtractLocalId(mf);
-    if (!localId.empty()) {
-        return localId;
-    }
-
-    //3rd choice: best ID:start..stop
     return xExtractFeatureLocation(mf);
 }
 
