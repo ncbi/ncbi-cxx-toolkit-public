@@ -148,6 +148,7 @@ public:
         , m_SeqIdIndex(CAsnIndex::e_seq_id)
         , m_ExtractDelta(false)
         , m_MaxDeltaLevel(UINT_MAX)
+        , m_Genome (CBioSource::eGenome_unknown)
     {
     }
     
@@ -226,6 +227,8 @@ private: // data
     CSeq_inst::EMol m_InstMol;
     CRef<CSeqdesc> m_MolInfo;
     CRef<CSeqdesc> m_Biosource;
+    CRef<COrg_ref> m_Orgref;
+    CBioSource::EGenome m_Genome ;
     list< CRef<CSeqdesc> > m_other_descs;
     sequence::EGetIdType m_id_type;
     set<CSeq_inst::EMol> m_StripInstMol;
@@ -480,15 +483,48 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
 
         CRef<CSeq_entry> entry = reader.ReadOneSeq();
         entry->SetSeq().SetInst().SetMol(m_InstMol);
-        if (m_MolInfo) {
-            x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), m_MolInfo);
+        auto& descs  = entry->SetSeq().SetDescr().Set();
+        bool molinfo_found=false;
+        bool source_found=false;
+        for(auto& desc: descs) {
+            switch ( desc->Which() ) {
+                case CSeqdesc::e_Molinfo:
+                    molinfo_found=true;
+                    if (m_MolInfo) {
+                        desc->Assign(*m_MolInfo);
+                    }
+                    break;
+                case CSeqdesc::e_Source:
+                    source_found=true;
+                    if(m_Genome != CBioSource::eGenome_unknown && 
+                        ( 
+                            ! desc->GetSource().IsSetGenome() || desc->GetSource().GetGenome() == CBioSource::eGenome_unknown 
+                        ) 
+                      ) {
+                            desc->SetSource().SetGenome(m_Genome );
+                    }
+                    if(m_Orgref &&
+                        ( 
+                            ! desc->GetSource().IsSetOrg() || ! desc->GetSource().GetOrg().IsSetOrgname()
+                        )
+                       ) {
+                        desc->SetSource().SetOrg().Assign(*m_Orgref);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
-        if (m_Biosource) {
-            x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), m_Biosource);
+        if(!molinfo_found) {
+            descs.push_back(m_MolInfo);
         }
+        if(!source_found) {
+            descs.push_back(m_Biosource);
+        }
+            
         if (m_other_descs.size()>0) {
             NON_CONST_ITERATE(list<CRef<CSeqdesc> >, desc, m_other_descs) {
-                x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), m_MolInfo);
+                x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), *desc);
             }
         }
 
@@ -944,6 +980,8 @@ int CPrimeCacheApplication::Run(void)
 
         m_Biosource.Reset(new CSeqdesc);
         m_Biosource->SetSource().SetOrg().Assign(*ref);
+        m_Orgref.Reset(new COrg_ref);
+        m_Orgref->Assign(*ref);
     }
 
     m_InstMol = sm_InstMolTypes.find(args["inst-mol"].AsString().c_str())->second;
@@ -954,6 +992,8 @@ int CPrimeCacheApplication::Run(void)
         }
         m_Biosource->SetSource().SetGenome(
             sm_GenomeTypes.find(args["biosource"].AsString().c_str())->second);
+        m_Genome = sm_GenomeTypes.find(args["biosource"].AsString().c_str())->second;
+        
     }
 
     if (args["molinfo"]) {
@@ -963,7 +1003,6 @@ int CPrimeCacheApplication::Run(void)
     }
     if (args["submit-block-template"]) {
         CRef<CSubmit_block> submit_block;
-
         CNcbiIstream& istr_manifest = args["submit-block-template"].AsInputFile();
         auto_ptr<CObjectIStream> is
             (CObjectIStream::Open(eSerial_AsnText, istr_manifest));
@@ -979,6 +1018,10 @@ int CPrimeCacheApplication::Run(void)
                 switch (desc->Which()) {
                 case CSeqdesc::e_Source:
                     m_Biosource = desc;
+                    if(!m_Orgref) {
+                        m_Orgref.Reset(new COrg_ref);
+                    }
+                    m_Orgref->Assign(desc->GetSource().GetOrg() );
                     break;
 
                 case CSeqdesc::e_Molinfo:
