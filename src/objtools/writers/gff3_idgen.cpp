@@ -283,8 +283,7 @@ string CGffIdGenerator::xGetGenericId(
     string rawId;
 
     //try to inherit from gene:
-    auto parent = feature::GetParentFeature(mf);
-    auto stem = xExtractGeneLocusTagOrLocus(parent);
+    auto stem = xExtractGeneLocusTagOrLocus(mf);
     if (!stem.empty()) {
         rawId = commonPrefix + stem;
     }
@@ -326,10 +325,18 @@ string CGffIdGenerator::xExtractGeneLocusTagOrLocus(
     const CMappedFeat& mf)
     //  ----------------------------------------------------------------------------
 {
-    if (!mf  ||  mf.GetFeatSubtype() != CSeqFeatData::eSubtype_gene) {
+    if (!mf) {
         return "";
     }
-    const auto& geneRef = mf.GetData().GetGene();
+    auto gene = mf;
+    if (gene.GetFeatSubtype() != CSeqFeatData::eSubtype_gene) {
+        gene = feature::GetBestGeneForFeat(mf);
+    }
+    if (!gene) {
+        return "";
+    }
+
+    const auto& geneRef = gene.GetData().GetGene();
     if (geneRef.IsSetLocus_tag()) {
         return geneRef.GetLocus_tag();
     }
