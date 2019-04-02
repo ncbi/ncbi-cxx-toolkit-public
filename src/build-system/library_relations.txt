@@ -282,7 +282,6 @@ dbapi_sample_base needs $(DBAPI_ODBC)
 dbapi_sample_base needs $(XCONNEXT)
 dbapi_sample_base needs ncbi_xdbapi_ftds
 dbapi_sample_base needs ncbi_xdbapi_ftds100
-dbapi_sample_base needs ncbi_xdbapi_ftds64
 dbapi_sample_base needs ncbi_xdbapi_ftds95
 dbapi_sample_base needs xconnect
 dbapi_sample_base needs xutil
@@ -879,9 +878,8 @@ ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
 ncbi_xdbapi_ftds100 needs $(FTDS_LIB)
 ncbi_xdbapi_ftds100 needs dbapi_driver
 ncbi_xdbapi_ftds100 needs3party $(FTDS_LIBS)
-ncbi_xdbapi_ftds64 needs $(FTDS64_LIB)
+ncbi_xdbapi_ftds64 needs ct_ftds64
 ncbi_xdbapi_ftds64 needs dbapi_driver
-ncbi_xdbapi_ftds64 needs3party $(FTDS64_LIBS)
 ncbi_xdbapi_ftds95 needs $(FTDS95_LIB)
 ncbi_xdbapi_ftds95 needs dbapi_driver
 ncbi_xdbapi_mysql needs dbapi_driver
@@ -1024,7 +1022,6 @@ objspdi needs3party $(PROTOBUF_LIBS)
 objspdi needs3party $(Z_LIBS)
 objtax1 needs3party ncbiobj
 odbc_ftds100 needs tds_ftds100
-odbc_ftds64 needs tds_ftds64
 odbc_ftds95 needs tds_ftds95
 omssa needs $(SEQ_LIBS)
 omssa needs pub
@@ -1237,7 +1234,6 @@ sybdb64 includes3party sybintl64
 sybdb64 needs3party $(ORIG_LIBS)
 sybdb64 needs3party sybunic64
 sybdb_ftds100 needs tds_ftds100
-sybdb_ftds64 needs tds_ftds64
 sybdb_ftds95 needs tds_ftds95
 sybintl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party $(ORIG_LIBS)
