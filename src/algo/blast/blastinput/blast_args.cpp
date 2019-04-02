@@ -2464,7 +2464,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     			"can be additionally configured to produce\n"
     		    "a custom format specified by space delimited format specifiers,\n"
                 "or by a token specified by the delim keyword.\n"
-                " E.g.: \"17 delim=@ qacc sacc score\".\n"                
+                " E.g.: \"10 delim=@ qacc sacc score\".\n"                
                 "The delim keyword must appear after the numeric output format\n"
                 "specification.\n"
     		    "The supported format specifiers are:\n";
