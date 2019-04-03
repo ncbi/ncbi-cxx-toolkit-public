@@ -1963,6 +1963,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FCU\ts\tFukien Christian University\t\t\t",
 "FCUG\tc\tFungal Cultures University of Goteborg\t\t\t",
 "FCUL\ts\tFaculty of Sciences, University of Lisbon\t\t\t",
+"FCUL:PCS_cicada\ts\tFaculty of Sciences, University of Lisbon, Cicada collection\t",
 "FDA\tsc\tUS Food and Drug Administration\t\t\t",
 "FDC\tc\tForsyth Dental Center\t\t\t",
 "FDG\ts\tGuyana Forestry Commission\t\t\t",

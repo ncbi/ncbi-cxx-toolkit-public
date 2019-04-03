@@ -1930,6 +1930,7 @@ FCTH	s	Forestry Commission of Tasmania
 FCU	s	Fukien Christian University			
 FCUG	c	Fungal Cultures University of Goteborg			
 FCUL	s	Faculty of Sciences, University of Lisbon			
+FCUL:PCS_cicada	s	Faculty of Sciences, University of Lisbon, Cicada collection	
 FDA	sc	US Food and Drug Administration			
 FDC	c	Forsyth Dental Center			
 FDG	s	Guyana Forestry Commission			
