@@ -531,7 +531,7 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 
     void Attach(void (*ondata)(CCassQuery&, void*),
                 void* data, void (*ondata2)(void*), void* data2,
-                weak_ptr<CCassDataCallbackReceiver> ondata3)
+                shared_ptr<CCassDataCallbackReceiver> ondata3)
     {
         m_self = shared_from_this();
         m_data = data;
@@ -547,8 +547,8 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
     {
 /*        ERR_POST(Trace << "CCassQueryCbRef::Detach " << this << ", Query: " <<
                  m_query.lock().get());*/
-        m_query.reset();
-        m_ondata3.reset();
+//        m_query.reset();
+//        m_ondata3.reset();
         if (remove_self_ref)
             m_self = nullptr;
     }
