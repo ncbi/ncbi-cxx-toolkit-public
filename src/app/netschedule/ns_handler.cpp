@@ -3298,22 +3298,24 @@ void CNetScheduleHandler::x_ProcessVersion(CQueue*)
 
 void CNetScheduleHandler::x_ProcessHealth(CQueue*)
 {
+    double      real_time;
     double      user_time;
     double      system_time;
-    bool        process_time_result = GetCurrentProcessTimes(&user_time,
-                                                             &system_time);
-    Uint8       physical_memory = GetPhysicalMemorySize();
-    size_t      mem_used_total;
-    size_t      mem_used_resident;
-    size_t      mem_used_shared;
-    bool        mem_used_result = GetMemoryUsage(&mem_used_total,
-                                                 &mem_used_resident,
-                                                 &mem_used_shared);
+    bool        process_time_result = CCurrentProcess::GetTimes(&real_time,
+                                                                &user_time,
+                                                                &system_time);
+    Uint8       physical_memory = CSystemInfo::GetTotalPhysicalMemorySize();
+
+    CProcessBase::SMemoryUsage  mem_used;
+    bool                        mem_used_result =
+                                    CCurrentProcess::GetMemoryUsage(mem_used);
+
     int         proc_fd_soft_limit;
     int         proc_fd_hard_limit;
-    int         proc_fd_used = GetProcessFDCount(&proc_fd_soft_limit,
-                                                 &proc_fd_hard_limit);
-    int         proc_thread_count = GetProcessThreadCount();
+    int         proc_fd_used = CCurrentProcess::GetFileDescriptorsCount(
+                                                        &proc_fd_soft_limit,
+                                                        &proc_fd_hard_limit);
+    int         proc_thread_count = CCurrentProcess::GetThreadCount();
 
     #if defined(_DEBUG) && !defined(NDEBUG)
     if (m_CmdContext.NotNull()) {
@@ -3326,7 +3328,7 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
         err_emul = m_Server->GetDebugMemCount();
         if (err_emul.IsActive())
             if (err_emul.as_int >= 0)
-                mem_used_total = err_emul.as_int;
+                mem_used.total = err_emul.as_int;
     }
     #endif
 
@@ -3340,12 +3342,13 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
                     "&started=" +
                     NStr::URLEncode(m_Server->GetStartTime().AsString()) +
                     "&cpu_count=" +
-                    NStr::NumericToString(GetCpuCount());
+                    NStr::NumericToString(CSystemInfo::GetCpuCount());
     if (process_time_result)
         reply += "&user_time=" + NStr::NumericToString(user_time) +
-                 "&system_time=" + NStr::NumericToString(system_time);
+                 "&system_time=" + NStr::NumericToString(system_time) +
+                 "&real_time=" + NStr::NumericToString(real_time);
     else
-        reply += "&user_time=n/a&system_time=n/a";
+        reply += "&user_time=n/a&system_time=n/a&real_time=n/a";
 
     if (physical_memory > 0)
         reply += "&physical_memory=" + NStr::NumericToString(physical_memory);
@@ -3354,14 +3357,36 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
 
     if (mem_used_result)
         reply += "&mem_used_total=" +
-                 NStr::NumericToString(mem_used_total) +
+                 NStr::NumericToString(mem_used.total) +
+                 "&mem_used_total_peak=" +
+                 NStr::NumericToString(mem_used.total_peak) +
                  "&mem_used_resident=" +
-                 NStr::NumericToString(mem_used_resident) +
+                 NStr::NumericToString(mem_used.resident) +
+                 "&mem_used_resident_peak=" +
+                 NStr::NumericToString(mem_used.resident_peak) +
                  "&mem_used_shared=" +
-                 NStr::NumericToString(mem_used_shared);
+                 NStr::NumericToString(mem_used.shared) +
+                 "&mem_used_data=" +
+                 NStr::NumericToString(mem_used.data) +
+                 "&mem_used_stack=" +
+                 NStr::NumericToString(mem_used.stack) +
+                 "&mem_used_text=" +
+                 NStr::NumericToString(mem_used.text) +
+                 "&mem_used_lib=" +
+                 NStr::NumericToString(mem_used.lib) +
+                 "&mem_used_swap=" +
+                 NStr::NumericToString(mem_used.swap);
     else
-        reply += "&mem_used_total=n/a&mem_used_resident=n/a"
-                 "&mem_used_shared=n/a";
+        reply += "&mem_used_total=n/a"
+                 "&mem_used_total_peak=n/a"
+                 "&mem_used_resident=n/a"
+                 "&mem_used_resident_peak=n/a"
+                 "&mem_used_shared=n/a"
+                 "&mem_used_data=n/a"
+                 "&mem_used_stack=n/a"
+                 "&mem_used_text=n/a"
+                 "&mem_used_lib=n/a"
+                 "&mem_used_swap=n/a";
 
     if (proc_fd_soft_limit >= 0)
         reply += "&proc_fd_soft_limit=" +

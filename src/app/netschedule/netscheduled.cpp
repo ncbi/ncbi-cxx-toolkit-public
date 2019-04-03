@@ -204,10 +204,11 @@ int CNetScheduleDApp::Run(void)
         // But there's assert there which prevents fd to be equal to 0. So
         // we keep descriptors 0, 1 and 2 in child process open. Latter two -
         // just in case somebody will try to write to them.
-        bool    is_good = CProcess::Daemonize(kEmptyCStr,
-                                              CProcess::fDontChroot |
-                                              CProcess::fKeepStdin  |
-                                              CProcess::fKeepStdout);
+        bool    is_good = CCurrentProcess::Daemonize(
+                                            kEmptyCStr,
+                                            CCurrentProcess::fDF_KeepCWD |
+                                            CCurrentProcess::fDF_KeepStdin |
+                                            CCurrentProcess::fDF_KeepStdout);
         if (!is_good)
             NCBI_THROW(CNetScheduleException, eInternalError,
                        "Error during daemonization.");
