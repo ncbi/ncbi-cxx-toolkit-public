@@ -1,5 +1,5 @@
 Line No    : 9
 Severity   : Error
 Code       : 1.4
-Message    : Conflicting modifier value: organism=val2.
+Message    : Conflicting modifiers detected. Provide one modifier with one value for: organism.
 

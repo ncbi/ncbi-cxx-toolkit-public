@@ -1,30 +1,30 @@
                 Warning:
-Problem:        Deprecated modifier: gene.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene.
 
                 Warning:
-Problem:        Deprecated modifier: allele.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: allele.
 
                 Warning:
-Problem:        Deprecated modifier: Locus_Tag.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: Locus_Tag.
 
                 Warning:
-Problem:        Deprecated modifier: gene_syn.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene_syn.
 
                 Warning:
-Problem:        Deprecated modifier: gene-synonym.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene-synonym.
 
                 Warning:
-Problem:        Duplicated modifier value: topology=cirCular.
+Problem:        Duplicated modifier value detected, ignoring duplicate, no action requiredtopology=cirCular.
 
-                Error:
-Problem:        Cannot apply protein modifier to nucleotide sequence: activity, function.
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: activity, function.
 
-                Error:
-Problem:        Cannot apply protein modifier to nucleotide sequence: EC-number, Ec_Number.
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: EC-number, Ec_Number.
 
-                Error:
-Problem:        Cannot apply protein modifier to nucleotide sequence: protein.
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: protein.
 
-                Error:
-Problem:        Cannot apply protein modifier to nucleotide sequence: protein-desc.
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: protein-desc.
 

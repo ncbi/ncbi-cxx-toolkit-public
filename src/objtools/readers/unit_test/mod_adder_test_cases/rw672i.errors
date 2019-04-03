@@ -1,15 +1,15 @@
                 Warning:
-Problem:        Deprecated modifier: gene.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene.
 
                 Warning:
-Problem:        Deprecated modifier: allele.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: allele.
 
                 Warning:
-Problem:        Deprecated modifier: Locus_Tag.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: Locus_Tag.
 
                 Warning:
-Problem:        Deprecated modifier: gene_syn.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene_syn.
 
                 Warning:
-Problem:        Deprecated modifier: gene-synonym.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene-synonym.
 

@@ -202,7 +202,7 @@ void CModHandler::AddMods(const TModList& mods,
         const auto& canonical_name = x_GetCanonicalName(mod.GetName());
         if (x_IsDeprecated(canonical_name)) {
             rejected_mods.push_back(mod);
-            string message = "Deprecated modifier: " + mod.GetName() + ".";
+            string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
             if (m_fReportError) {
                 m_fReportError(message, eDiag_Warning, eModSubcode_Deprecated);
             }
@@ -221,14 +221,13 @@ void CModHandler::AddMods(const TModList& mods,
             EModSubcode subcode;
             if (NStr::EqualNocase(accepted_mods[canonical_name].front().GetValue(),
                                   mod.GetValue())) {
-                msg = "Duplicated modifier value: " 
+                msg = "Duplicated modifier value detected, ignoring duplicate, no action required" 
                     + mod.GetName() + "=" + mod.GetValue() + ".";
                 sev = eDiag_Warning;
                 subcode = eModSubcode_Duplicate;
             }
             else {
-                msg = "Conflicting modifier value: " 
-                    + mod.GetName() + "=" + mod.GetValue() + ".";
+                msg = "Conflicting modifiers detected. Provide one modifier with one value for: " + mod.GetName() + ".";
                 sev = eDiag_Error;
                 subcode = eModSubcode_ConflictingValues;
             }

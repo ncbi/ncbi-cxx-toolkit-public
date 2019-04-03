@@ -1,8 +1,8 @@
                 Warning:
-Problem:        Deprecated modifier: dosage.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: dosage.
 
                 Warning:
-Problem:        Deprecated modifier: old-name.
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: old-name.
 
                 Error:
 Problem:        Invalid value: completeness=invalid_completeness_qual.

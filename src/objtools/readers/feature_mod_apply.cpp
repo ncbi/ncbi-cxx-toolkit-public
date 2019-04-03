@@ -86,11 +86,11 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
             }     
             name_string  += name;
         }
-        string msg = "Cannot apply protein modifier to nucleotide sequence: "
+        string msg = "Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: "
                    + name_string + ".";
 
         if (m_fReportError) {
-            m_fReportError(msg, eDiag_Error, eModSubcode_ProteinModOnNucseq);
+            m_fReportError(msg, eDiag_Warning, eModSubcode_ProteinModOnNucseq);
             for (const auto& mod_data : mod_entry.second) {
                 m_SkippedMods.push_back(mod_data);
             }
