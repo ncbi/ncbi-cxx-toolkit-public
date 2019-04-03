@@ -40,6 +40,14 @@ BEGIN_SCOPE(objects);
 struct SAlignFileRaw;
 
 //  ============================================================================
+struct SNexusCommand {   
+//  ============================================================================
+    string commandName;
+    int startLineNum;
+    list<SLineInfo> commandArgs;
+};
+
+//  ============================================================================
 class CAlnScannerNexus:
     public CAlnScanner
 //  ============================================================================
@@ -73,7 +81,7 @@ protected:
     using TCommand = list<SLineInfo>;
 
     void
-    xProcessCommand(TCommand command, 
+    xProcessCommand(SNexusCommand command, 
             CSequenceInfo& sequenceInfo);
 
     void 

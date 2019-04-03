@@ -71,23 +71,19 @@ void sPrintCommand(const list<SLineInfo>& command)
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessCommand(
-    TCommand command,
+    SNexusCommand nexusCommand,
     CSequenceInfo& sequenceInfo) 
 //  ----------------------------------------------------------------------------
 {
-    if (command.empty()) {
-        return;
-    }
 
-    string firstLine = command.front().mData;
-    NStr::ToLower(firstLine);
-    string commandName;
-    string remainder;
+    auto command = nexusCommand.commandArgs;
 
-    NStr::SplitInTwo(firstLine, 
-            " \t", 
-            commandName, 
-            remainder);
+  //  if (command.empty()) {
+  //      return;
+  //  }
+
+    string commandName = nexusCommand.commandName;
+    NStr::ToLower(commandName);
 
     if (commandName != "sequin") {
         sStripNexusComments(command);
@@ -208,7 +204,7 @@ CAlnScannerNexus::xProcessMatrix(
     int blockLineLength(0);
     int sequenceCharCount(0);
 
-    for (auto cit = next(command.begin()); cit != command.end(); ++dataLineCount, ++cit) {
+    for (auto cit = command.begin(); cit != command.end(); ++dataLineCount, ++cit) {
         vector<string> tokens;
         NStr::Split(cit->mData, " \t", tokens, NStr::fSplit_Tokenize);
         if (tokens.size() < 2) {
@@ -343,13 +339,9 @@ CAlnScannerNexus::xProcessSequin(
     const TCommand& command)
 //  ----------------------------------------------------------------------------
 {
-    if (command.size() <= 1) {
-        return;
-    }   
-
     string dummy;
     string defline;
-    for (auto it = next(command.begin());
+    for (auto it = command.begin();
             it != command.end(); 
             ++it) {
         const auto lineInfo = *it;
@@ -492,7 +484,27 @@ CAlnScannerNexus::xImportAlignmentData(
                 currentCommand.push_back({commandTokens, lineCount});
             }
 
-            xProcessCommand(currentCommand, sequenceInfo);
+            SNexusCommand nexusCommand;
+            nexusCommand.commandArgs = currentCommand;
+            string remainder;
+            NStr::SplitInTwo(
+                    currentCommand.front().mData,
+                    " \t",
+                    nexusCommand.commandName,
+                    remainder);
+            nexusCommand.startLineNum = currentCommand.front().mNumLine;
+
+            NStr::TruncateSpacesInPlace(remainder);
+            if (!remainder.empty()) {
+                nexusCommand.commandArgs.front().mData = remainder;
+            }
+            else {
+                nexusCommand.commandArgs.pop_front();
+            }
+
+                    
+            
+            xProcessCommand(nexusCommand, sequenceInfo);
             currentCommand.clear();
 
             commandStart = commandEnd+1;
