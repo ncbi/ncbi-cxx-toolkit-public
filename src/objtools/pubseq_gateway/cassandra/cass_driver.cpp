@@ -1384,7 +1384,7 @@ void CCassQuery::SetupOnDataCallback()
         m_cb_ref->Detach();
 
     m_cb_ref.reset(new CCassQueryCbRef(shared_from_this()));
-    m_cb_ref->Attach(m_ondata, m_ondata_data, m_ondata2, m_ondata2_data, m_ondata3);
+    m_cb_ref->Attach(m_ondata, m_ondata_data, m_ondata2, m_ondata2_data, m_ondata3.lock());
 
     CassError       rv = cass_future_set_callback(m_future,
                                                   CCassQueryCbRef::s_OnFutureCb,
