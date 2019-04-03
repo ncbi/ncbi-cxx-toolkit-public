@@ -282,6 +282,15 @@ void s_GetProfileDBsExt(vector<string> & extns)
 	extns.push_back("wcounts");
 	extns.push_back("obsr");
 }
+void s_CheckDuplicateVols(const vector<string> & vols, const string & vol_name)
+{
+	for(unsigned int i =0; i < vols.size(); i++){
+		if(vols[i] == vol_name){
+			NCBI_THROW(CInvalidDataException, eInvalidInput,
+			            "Duplicate db volumes");
+		}
+	}
+}
 
 int CBlastdbConvertApp::Run(void)
 {
@@ -401,8 +410,10 @@ int CBlastdbConvertApp::Run(void)
             	  vol->GetAllTaxIDs(oid, tax_ids);
                   taxdb->InsertEntries(tax_ids, oid_total+oid);
              }
-            vol_names.push_back(kOutputVol);
-            vol_num_oids.push_back(kNumOids);
+
+             s_CheckDuplicateVols(vol_names, kOutputVol);
+             vol_names.push_back(kOutputVol);
+             vol_num_oids.push_back(kNumOids);
              oid_total += kNumOids;
 
              for (auto ext : extns) {
