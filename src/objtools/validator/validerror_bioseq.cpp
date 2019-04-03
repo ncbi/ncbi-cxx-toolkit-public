@@ -235,7 +235,7 @@ void CValidError_bioseq::x_SetupCommonFlags (CBioseq_Handle bsh)
         if (acc_div == CSeq_id::eAcc_wgs && tech == CMolInfo::eTech_wgs && repr == CSeq_inst::eRepr_virtual) {
             bool is_wgs_master = (acc_info & CSeq_id::fAcc_master) != 0;
             if (is_wgs_master) {
-                m_short_seq_okay = false;
+                m_report_short_seq = false;
             }
         }
     }
@@ -289,7 +289,7 @@ void CValidError_bioseq::ValidateBioseq (
 {
     m_splicing_not_expected = false;
     m_report_missing_chromosome = true;
-    m_short_seq_okay = true;
+    m_report_short_seq = true;
 
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
@@ -2408,7 +2408,7 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
                 NStr::IntToString(len) + " residues", seq);
         }
     } else {
-        if ( len <= 10 && m_short_seq_okay) {
+        if ( len <= 10 && m_report_short_seq) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_ShortSeq, "Sequence only " +
                 NStr::IntToString(len) + " residues", seq);
         }
