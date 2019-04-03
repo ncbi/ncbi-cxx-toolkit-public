@@ -147,7 +147,6 @@ CAlnScannerClustal::xImportAlignmentData(
             inBlock = true;
             ++blockCount;
         }
-        ++seqCount;
 
         if (!sProcessClustalDataLine(
              tokens, lineCount,
@@ -158,7 +157,8 @@ CAlnScannerClustal::xImportAlignmentData(
              blockLineLength)) {
             return;
         }
-        mSequences[seqCount-1].push_back({tokens[1], lineCount});
+        mSequences[seqCount].push_back({tokens[1], lineCount});
+        ++seqCount;
     }
 }
 
@@ -205,7 +205,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
         mSequences.push_back(vector<TLineInfo>());
     }
     else {
-        if (seqCount > numSeqs) {
+        if (seqCount >= numSeqs) {
             string description = ErrorPrintf(
                 "Expected %d sequences, but finding data for for another.",
                 numSeqs);
@@ -215,7 +215,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
                 description);
         }
 
-        if (seqId != mSeqIds[seqCount-1]) {
+        if (seqId != mSeqIds[seqCount]) {
             string description;
             const auto it = find(mSeqIds.begin(), mSeqIds.end(), seqId);
             if (it == mSeqIds.end()) {
@@ -228,7 +228,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
                     description);
             }
             
-            if (distance(mSeqIds.begin(), it) < seqCount-1) {
+            if (distance(mSeqIds.begin(), it) < seqCount) {
                 description = ErrorPrintf(
                     "Duplicate ID: \"%s\" has already appeared in this block.",
                     seqId.c_str());
@@ -245,7 +245,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
         }
     }
     
-    if (seqCount==1) {
+    if (seqCount==0) {
         blockLineLength = tokens[1].size();
         return true;
     }

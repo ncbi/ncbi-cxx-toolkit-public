@@ -41,6 +41,63 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+
+//  --------------------------------------------------------------------------
+void 
+AlnUtil::CheckId(const string& seqId,
+        const vector<string>& orderedIds,
+        int idCount,
+        int lineNum,
+        bool firstBlock)
+//  --------------------------------------------------------------------------
+{
+    if ((orderedIds.size() > idCount) &&
+        seqId == orderedIds[idCount]) {
+        return;
+    }
+
+    string description;
+    const auto it = find(orderedIds.begin(), orderedIds.end(), seqId);
+    if (firstBlock) {
+        if (it != orderedIds.end()) {
+            description = ErrorPrintf(
+            "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+            throw SShowStopper(
+                lineNum,
+                eAlnSubcode_UnexpectedSeqId,
+                description);
+
+        }
+        return;
+    }
+
+    if (it == orderedIds.end()) {
+        description = ErrorPrintf(
+            "Expected %d sequences, but finding data for another.",
+                orderedIds.size());
+                throw SShowStopper(
+                    lineNum,
+                    eAlnSubcode_BadSequenceCount,
+                    description);
+    }
+
+    if (distance(orderedIds.begin(), it) < idCount) {
+        description = ErrorPrintf(
+        "Duplicate ID: \"%s \" has already appeared in this block.",
+        seqId.c_str());
+    }
+    else {
+        description = ErrorPrintf(
+                    "Finding data for sequence \"%s\" out of order.",
+                    seqId.c_str());
+    }
+    throw SShowStopper(
+        lineNum,
+        eAlnSubcode_UnexpectedSeqId,
+        description);
+}
+
+
 //  --------------------------------------------------------------------------
 void
 AlnUtil::ProcessDefline(

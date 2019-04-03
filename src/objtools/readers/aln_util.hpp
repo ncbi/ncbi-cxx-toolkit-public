@@ -63,6 +63,13 @@ namespace AlnUtil
         string& seqId,
         string& seqData);
 
+    void CheckId(
+        const string& seqId,
+        const vector<string>& orderedIds,
+        int idCount,
+        int lineNum,
+        bool firstBlock);
+
     void
     StripBlanks(
         const string& line,
