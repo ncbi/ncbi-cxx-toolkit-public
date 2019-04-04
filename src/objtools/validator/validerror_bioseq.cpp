@@ -2751,6 +2751,42 @@ void CValidError_bioseq::ValidateWGSMaster(CBioseq_Handle bsh)
                     }
                 }
             }
+        } else if (m_Imp.IsGenbank()) {
+            const CUser_object& uo = d->GetUser();
+            if (uo.GetType().IsStr()) {
+                const string& type = uo.GetType().GetStr();
+                if ( NStr::CompareNocase(type, "WGSProjects") == 0 ) {
+                    int fr = 0;
+                    int to = 0;
+
+                    ITERATE (CUser_object::TData, it, uo.GetData()) {
+                        if ( !(*it)->GetLabel().IsStr() ) {
+                            continue;
+                        }
+                        const string& label = (*it)->GetLabel().GetStr();
+                        if ( NStr::CompareNocase(label, "WGS_accession_first") == 0  ||
+                             NStr::CompareNocase(label, "Accession_first") == 0 ) {
+                            const string& str = (*it)->GetData().GetStr();
+                            SIZE_TYPE fst = str.find_first_of("0123456789");
+                            fr = NStr::StringToInt (str.substr(fst));
+                        } else if ( NStr::CompareNocase(label, "WGS_accession_last") == 0 ||
+                                    NStr::CompareNocase(label, "Accession_last") == 0 ) {
+                            const string& str = (*it)->GetData().GetStr();
+                            SIZE_TYPE lst = str.find_first_of("0123456789");
+                            to = NStr::StringToInt (str.substr(lst));
+                        }
+                    }
+                    if ( (fr != 0)  &&  (to != 0) ) {
+                        int df = to - fr + 1;
+                        int blen = bsh.GetBioseqLength();
+                        if (df != blen) {
+                            PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentWGSFlags,
+                                "Number of accessions (" + NStr::IntToString(df) + ") does not correspond to number of records (" + NStr::IntToString(blen) +")",
+                                *(bsh.GetCompleteBioseq()));
+                        }
+                    }
+                }
+            }
         }
         ++d;
     }
