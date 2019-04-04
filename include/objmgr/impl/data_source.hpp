@@ -464,6 +464,11 @@ private:
                               const TSeq_idSet& ids,
                               const CTSE_Lock& tse_lock);
 
+    typedef set<TBlobId> TLoadedBlob_ids_Set;
+    void x_GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                             TLoadedTypes types,
+                             TLoadedBlob_ids_Set& ids) const;
+    
     // Used to lock: m_*_InfoMap, m_TSE_seq
     // Is locked before locks in CTSE_Info
     mutable TMainLock     m_DSMainLock;

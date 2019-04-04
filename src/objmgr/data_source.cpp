@@ -520,12 +520,10 @@ CDataSource::FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
 }
 
 
-void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
-                                    TLoadedTypes types,
-                                    TLoadedBlob_ids& blob_ids) const
+void CDataSource::x_GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                      TLoadedTypes types,
+                                      TLoadedBlob_ids_Set& ids) const
 {
-    typedef set<TBlobId> TLoadedBlob_ids_Set;
-    TLoadedBlob_ids_Set ids;
     if ( types & fLoaded_bioseqs ) {
         TMainLock::TReadLockGuard guard(m_DSMainLock);
         TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
@@ -555,6 +553,25 @@ void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                 }
             }
         }
+    }
+}
+
+
+void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                    TLoadedTypes types,
+                                    TLoadedBlob_ids& blob_ids) const
+{
+    TLoadedBlob_ids_Set ids;
+    if ( idh.HaveMatchingHandles() ) { 
+        // Try to find the best matching id (not exactly equal)
+        CSeq_id_Handle::TMatches hset;
+        idh.GetMatchingHandles(hset, eAllowWeakMatch);
+        ITERATE ( CSeq_id_Handle::TMatches, hit, hset ) {
+            x_GetLoadedBlob_ids(*hit, types, ids);
+        }
+    }
+    else {
+        x_GetLoadedBlob_ids(idh, types, ids);
     }
     ITERATE(TLoadedBlob_ids_Set, it, ids) {
         blob_ids.push_back(*it);
