@@ -32,6 +32,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include "seqid_validate.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -49,7 +50,15 @@ protected:
 
 public:
     CAlnScanner() {};
+
     virtual ~CAlnScanner() {};
+
+    void
+    SetSeqIdValidator(
+        CSeqIdValidator* pValidator) 
+    {
+        mpSeqIdValidator.reset(pValidator);
+    }
 
     virtual void
     ProcessAlignmentFile(
@@ -75,13 +84,25 @@ protected:
     xExportAlignmentData(
         SAlignmentFile& alignmentInfo);
 
+    bool
+    xValidateSeqId(
+        const string& seqId)
+    {
+        if (!mpSeqIdValidator) {
+            return true;
+        }
+        return mpSeqIdValidator->Validate(seqId);
+    }
+
     virtual void
     xVerifySingleSequenceData(
         const CSequenceInfo&,
-        const string& seqId,
+        const TLineInfo& seqId,
         const vector<TLineInfo> seqData);
 
-    vector<string> mSeqIds;
+    unique_ptr<CSeqIdValidator> mpSeqIdValidator;
+
+    vector<TLineInfo> mSeqIds;
     vector<vector<TLineInfo>> mSequences;
     vector<TLineInfo> mDeflines;
 };

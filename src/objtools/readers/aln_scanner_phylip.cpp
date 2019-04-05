@@ -140,7 +140,8 @@ CAlnScannerPhylip::xImportAlignmentData(
                     "In data line, expected seqID followed by sequence data");
             }
 
-            const auto it = find(mSeqIds.begin(), mSeqIds.end(), seqId);
+            auto it = mSeqIds.begin();
+            for (; it != mSeqIds.end()  && it->mData != seqId; ++it) {};
             if (it !=  mSeqIds.end()) {
                 auto description = ErrorPrintf(
                         "Duplicate ID: \"%s\" has already appeared in this block    .",
@@ -150,7 +151,7 @@ CAlnScannerPhylip::xImportAlignmentData(
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
                     description);
             }
-            mSeqIds.push_back(seqId);
+            mSeqIds.push_back({seqId, lineCount});
             mSequences.push_back(vector<TLineInfo>());
             //seqData = tokens[1];
         } 

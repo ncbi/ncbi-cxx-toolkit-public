@@ -158,11 +158,11 @@ CAlnScannerMultAlign::xImportAlignmentData(
                 }
             }
             if (inFirstBlock) {
-                mSeqIds.push_back(seqId);
+                mSeqIds.push_back({seqId, lineCount});
                 mSequences.push_back(vector<TLineInfo>({{seqData, lineCount}}));
             }
             else {
-                if (seqId != mSeqIds[lineInBlock]) {
+                if (seqId != mSeqIds[lineInBlock].mData) {
                     throw SShowStopper(
                         lineCount,
                         eAlnSubcode_UnexpectedSeqId,
@@ -192,7 +192,7 @@ CAlnScannerMultAlign::xAdjustSequenceInfo(
 void
 CAlnScannerMultAlign::xVerifySingleSequenceData(
     const CSequenceInfo& sequenceInfo,
-    const string& seqId,
+    const TLineInfo& seqId,
     const vector<TLineInfo> lineInfos)
 //  -----------------------------------------------------------------------------
 {
@@ -214,7 +214,7 @@ CAlnScannerMultAlign::xVerifySingleSequenceData(
                 lineInfo.mNumLine,
                 EAlnSubcode::eAlnSubcode_BadDataChars,
                 description,
-                seqId);
+                seqId.mData);
         }
     }
 }

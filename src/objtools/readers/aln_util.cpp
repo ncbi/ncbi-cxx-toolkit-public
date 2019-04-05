@@ -45,19 +45,21 @@ BEGIN_SCOPE(objects);
 //  --------------------------------------------------------------------------
 void 
 AlnUtil::CheckId(const string& seqId,
-        const vector<string>& orderedIds,
+        const vector<SLineInfo>& orderedIds,
         int idCount,
         int lineNum,
         bool firstBlock)
 //  --------------------------------------------------------------------------
 {
     if ((orderedIds.size() > idCount) &&
-        seqId == orderedIds[idCount]) {
+        seqId == orderedIds[idCount].mData) {
         return;
     }
 
     string description;
-    const auto it = find(orderedIds.begin(), orderedIds.end(), seqId);
+    auto it = orderedIds.begin();
+    for (; it != orderedIds.end()  &&  it->mData != seqId; ++it) {};
+
     if (firstBlock) {
         if (it != orderedIds.end()) {
             description = ErrorPrintf(

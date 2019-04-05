@@ -73,7 +73,7 @@ CAlnScannerSequin::xImportAlignmentData(
                 if (lineInBlock != mSeqIds.size()) {
                     string description = ErrorPrintf(
                         "Missing data line. Expected sequence data for seqID \"%s\"",
-                        mSeqIds[lineInBlock].c_str());
+                        mSeqIds[lineInBlock].mData.c_str());
                     throw SShowStopper(
                         lineCount,
                         EAlnSubcode::eAlnSubcode_MissingDataLine,
@@ -128,7 +128,9 @@ CAlnScannerSequin::xImportAlignmentData(
 
         // verify and process sequence ID:
         if (inFirstBlock) {
-            if (std::find(mSeqIds.begin(), mSeqIds.end(), seqId) != mSeqIds.end()) {
+            auto seqIdIt = mSeqIds.begin();
+            for (; seqIdIt != mSeqIds.end()  &&  seqIdIt->mData != seqId; ++seqIdIt) {};
+            if (seqIdIt != mSeqIds.end()) {
                 // error: duplicate sequence ID
                 string description = ErrorPrintf(
                     "Duplicate sequence ID \"%s\"", seqId.c_str());
@@ -137,7 +139,7 @@ CAlnScannerSequin::xImportAlignmentData(
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
                     description);
             }
-            mSeqIds.push_back(seqId);
+            mSeqIds.push_back({seqId, lineCount});
             mSequences.push_back(vector<TLineInfo>());
         }
         else {
@@ -147,7 +149,7 @@ CAlnScannerSequin::xImportAlignmentData(
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
                     "Extraneous data line in interleaved data block");
             }
-            if (seqId != mSeqIds[lineInBlock]) {
+            if (seqId != mSeqIds[lineInBlock].mData) {
                 string description = ErrorPrintf(
                     "Unexpected sequence ID \"%s\"", seqId.c_str());
                 throw SShowStopper(

@@ -84,6 +84,20 @@ CAlnScanner::xVerifyAlignmentData(
     const CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
+    const char* errTempl("Illegal sequence ID \"%s\".");
+
+    // validate seqIds first of all:
+    for (auto seqIdInfo: mSeqIds) {
+        if (!mpSeqIdValidator->Validate(seqIdInfo.mData)) {
+            string description = ErrorPrintf(errTempl, seqIdInfo.mData.c_str());
+            throw SShowStopper(
+                seqIdInfo.mNumLine,
+                EAlnSubcode::eAlnSubcode_IllegalSequenceId,
+                description,
+                seqIdInfo.mData);
+        }
+    }
+
     // make sure all sequence are of the same length(once we no longer enforce
     //  harmonized data sizes):
 
@@ -100,7 +114,7 @@ CAlnScanner::xVerifyAlignmentData(
 void
 CAlnScanner::xVerifySingleSequenceData(
     const CSequenceInfo& sequenceInfo,
-    const string& seqId,
+    const TLineInfo& seqIdInfo,
     const vector<TLineInfo> lineInfos)
 //  -----------------------------------------------------------------------------
 {
@@ -136,7 +150,7 @@ CAlnScanner::xVerifySingleSequenceData(
                     lineInfo.mNumLine,
                     EAlnSubcode::eAlnSubcode_BadDataChars,
                     description,
-                    seqId);
+                    seqIdInfo.mData);
             }
         }
         if (seqPart == ESeqPart::BODY) {
@@ -159,7 +173,7 @@ CAlnScanner::xVerifySingleSequenceData(
                 lineInfo.mNumLine,
                 EAlnSubcode::eAlnSubcode_BadDataChars,
                 description,
-                seqId);
+                seqIdInfo.mData);
         }
     }
 }
@@ -170,7 +184,10 @@ CAlnScanner::xExportAlignmentData(
     SAlignmentFile& alignInfo)
 //  ----------------------------------------------------------------------------
 {
-    alignInfo.mIds.assign(mSeqIds.begin(), mSeqIds.end());
+    alignInfo.mIds.reserve(mSeqIds.size());
+    for (auto seqId: mSeqIds) {
+        alignInfo.mIds.push_back(seqId.mData);
+    }
 
     auto numDeflines = mDeflines.size();
     alignInfo.mDeflines.assign(mDeflines.begin(), mDeflines.end());
@@ -183,7 +200,7 @@ CAlnScanner::xExportAlignmentData(
             alignInfo.mSequences[index] += seqPart.mData;
         }
         ++index;
-    }  
+    }
 }
 
 END_SCOPE(objects)

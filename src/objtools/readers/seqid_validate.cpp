@@ -1,6 +1,3 @@
-#ifndef _ALN_SCANNER_MULTALIGN_HPP_
-#define _ALN_SCANNER_MULTALIGN_HPP_
-
 /*
  * $Id$
  *
@@ -28,50 +25,43 @@
  *
  * ===========================================================================
  *
- * Authors: Frank Ludwig
+ * Authors:  Frank Ludwig
  *
  */
-#include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
+#include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/alnread.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
+#include "seqid_validate.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
-
-//  ============================================================================
-class CAlnScannerMultAlign:
-    public CAlnScanner
-    //  ============================================================================
+//  --------------------------------------------------------------------------
+bool 
+CSeqIdValidator::Validate(
+    const string& seqId)
+//  --------------------------------------------------------------------------
 {
-public:
-    CAlnScannerMultAlign() {};
-    ~CAlnScannerMultAlign() {};
+    return true;
+}
 
-protected:
-    void
-    xImportAlignmentData(
-        CSequenceInfo&,
-        CLineInput&) override;
-
-    virtual void
-    xAdjustSequenceInfo(
-        CSequenceInfo&) override;
-
-    virtual void
-    xVerifySingleSequenceData(
-        const CSequenceInfo&,
-        const TLineInfo& seqId,
-        const vector<TLineInfo> seqData) override;
-
-    void
-    xGetExpectedDataSize(
-        const string& line,
-        int lineNumber,
-        size_t& dataSize);
-};
+//  --------------------------------------------------------------------------
+bool
+CSeqIdValidatorBankit::Validate(
+    const string& seqId)
+//  --------------------------------------------------------------------------
+{
+    // if it was valid before then it still is:
+    auto seqIdIt = std::find(mValidated.rbegin(), mValidated.rend(), seqId);
+    if (seqIdIt != mValidated.rend()) {
+        return true;
+    }
+    return true;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-#endif // _ALN_SCANNER_MULTALIGN_HPP_

@@ -4,7 +4,7 @@
 
 NCBI_begin_lib(xobjread)
   NCBI_sources(
-    read_util format_guess_ex
+    read_util format_guess_ex seqid_validate
     acc_pattern agp_read agp_seq_entry agp_util agp_validate_reader 
 	aln_scanner aln_scanner_clustal aln_scanner_nexus aln_scanner_phylip 
 		aln_scanner_sequin aln_scanner_fastagap aln_scanner_multalign

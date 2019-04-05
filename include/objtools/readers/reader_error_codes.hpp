@@ -65,6 +65,7 @@ enum EAlnSubcode
     eAlnSubcode_BadSequenceCount,
     eAlnSubcode_IllegalDataLine,
     eAlnSubcode_MissingDataLine,
+    eAlnSubcode_IllegalSequenceId,
     eAlnSubcode_IllegalDefinitionLine,
     eAlnSubcode_InsufficientDeflineInfo,
     eAlnSubcode_UnsupportedFileFormat,

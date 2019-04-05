@@ -217,7 +217,7 @@ CAlnScannerNexus::xProcessMatrix(
         const string& seqId = tokens[0];
         if (mNumSequences == 0 &&    
             !mSeqIds.empty() &&
-            seqId == mSeqIds[0]) {
+            seqId == mSeqIds[0].mData) {
             mNumSequences = mSeqIds.size();
         }
 
@@ -226,7 +226,7 @@ CAlnScannerNexus::xProcessMatrix(
         AlnUtil::CheckId(seqId, mSeqIds, seqCount, cit->mNumLine, inFirstBlock);
 
         if  (inFirstBlock) {
-            mSeqIds.push_back(seqId);
+            mSeqIds.push_back({seqId, cit->mNumLine});
             mSequences.push_back(vector<TLineInfo>());
         }
         

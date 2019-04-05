@@ -32,6 +32,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include <objtools/readers/alnread.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -65,7 +66,7 @@ namespace AlnUtil
 
     void CheckId(
         const string& seqId,
-        const vector<string>& orderedIds,
+        const vector<SLineInfo>& orderedIds,
         int idCount,
         int lineNum,
         bool firstBlock);

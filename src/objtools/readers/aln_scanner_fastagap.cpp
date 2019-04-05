@@ -119,7 +119,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
                             lineNumber,
                             eAlnSubcode_BadDataCount,
                             description,
-                            mSeqIds.back());
+                            mSeqIds.back().mData);
                     }
                 }
                 mSequences.back().push_back({seqData, lineNumber});
@@ -141,7 +141,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
                 description);
         }
         sSplitFastaDef(line, seqId, defLine);
-        mSeqIds.push_back(seqId);
+        mSeqIds.push_back({seqId, lineNumber});
         mDeflines.push_back({defLine, lineNumber});
         mSequences.push_back(vector<TLineInfo>());
         waitingForSeqData = true;

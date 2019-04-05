@@ -1,5 +1,5 @@
-#ifndef _ALN_SCANNER_MULTALIGN_HPP_
-#define _ALN_SCANNER_MULTALIGN_HPP_
+#ifndef _SEQID_VALIDATE_HPP_
+#define _SEQID_VALIDATE_HPP_
 
 /*
  * $Id$
@@ -32,46 +32,49 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include "aln_scanner.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
-
-//  ============================================================================
-class CAlnScannerMultAlign:
-    public CAlnScanner
-    //  ============================================================================
+//  ----------------------------------------------------------------------------
+class CSeqIdValidator
+//  ----------------------------------------------------------------------------
 {
 public:
-    CAlnScannerMultAlign() {};
-    ~CAlnScannerMultAlign() {};
+    CSeqIdValidator() {};
+    virtual ~CSeqIdValidator() {};
 
-protected:
-    void
-    xImportAlignmentData(
-        CSequenceInfo&,
-        CLineInput&) override;
+    virtual bool
+    Validate(
+        const string&);
+};
 
-    virtual void
-    xAdjustSequenceInfo(
-        CSequenceInfo&) override;
+//  ----------------------------------------------------------------------------
+class CSeqIdValidatorBankit:
+    public CSeqIdValidator
+//  ----------------------------------------------------------------------------
+{
+public:
+    CSeqIdValidatorBankit()
+    {
+        mValidated.reserve(10);
+    };
 
-    virtual void
-    xVerifySingleSequenceData(
-        const CSequenceInfo&,
-        const TLineInfo& seqId,
-        const vector<TLineInfo> seqData) override;
+    ~CSeqIdValidatorBankit()
+    {
+        cerr << "CSeqIdValidatorBankit final validation count: " 
+             << mValidated.size() << endl;
+    };
 
-    void
-    xGetExpectedDataSize(
-        const string& line,
-        int lineNumber,
-        size_t& dataSize);
+    bool
+    Validate(
+        const string&);
+
+private:
+    vector<string> mValidated;
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // _ALN_SCANNER_MULTALIGN_HPP_
+#endif // _SEQID_VALIDATE_HPP_
