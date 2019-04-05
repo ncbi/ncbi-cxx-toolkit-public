@@ -2740,13 +2740,13 @@ void CValidError_bioseq::ValidateWGSMaster(CBioseq_Handle bsh)
     CSeqdesc_CI d(bsh, CSeqdesc::e_User);
     while (d) {
         if (d->GetUser().GetObjectType() == CUser_object::eObjectType_DBLink && d->GetUser().IsSetData()) {
-            ITERATE(CUser_object::TData, it, d->GetUser().GetData()) {
-                if (s_FieldHasLabel(**it, "BioSample")) {
-                    if (s_FieldHasNonBlankValue(**it)) {
+            for (auto it: d->GetUser().GetData()) {
+                if (s_FieldHasLabel(*it, "BioSample")) {
+                    if (s_FieldHasNonBlankValue(*it)) {
                         has_biosample = true;
                     }
-                } else if (s_FieldHasLabel(**it, "BioProject")) {
-                    if (s_FieldHasNonBlankValue(**it)) {
+                } else if (s_FieldHasLabel(*it, "BioProject")) {
+                    if (s_FieldHasNonBlankValue(*it)) {
                         has_bioproject = true;
                     }
                 }
@@ -2759,20 +2759,20 @@ void CValidError_bioseq::ValidateWGSMaster(CBioseq_Handle bsh)
                     int fr = 0;
                     int to = 0;
 
-                    ITERATE (CUser_object::TData, it, uo.GetData()) {
-                        if ( !(*it)->GetLabel().IsStr() ) {
+                    for (auto it: uo.GetData()) {
+                        if ( !it->GetLabel().IsStr() ) {
                             continue;
                         }
-                        const string& label = (*it)->GetLabel().GetStr();
+                        const string& label = it->GetLabel().GetStr();
                         if ( NStr::CompareNocase(label, "WGS_accession_first") == 0  ||
                              NStr::CompareNocase(label, "Accession_first") == 0 ) {
-                            const string& str = (*it)->GetData().GetStr();
-                            SIZE_TYPE fst = str.find_first_of("0123456789");
+                            const string& str = it->GetData().GetStr();
+                            auto fst = str.find_first_of("0123456789");
                             fr = NStr::StringToInt (str.substr(fst));
                         } else if ( NStr::CompareNocase(label, "WGS_accession_last") == 0 ||
                                     NStr::CompareNocase(label, "Accession_last") == 0 ) {
-                            const string& str = (*it)->GetData().GetStr();
-                            SIZE_TYPE lst = str.find_first_of("0123456789");
+                            const string& str = it->GetData().GetStr();
+                            auto lst = str.find_first_of("0123456789");
                             to = NStr::StringToInt (str.substr(lst));
                         }
                     }
