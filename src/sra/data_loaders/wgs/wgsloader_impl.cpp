@@ -404,6 +404,10 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
     {
         CMutexGuard guard(m_Mutex);
         ITERATE ( TFoundFiles, it, m_FoundFiles ) {
+            if ( it->second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
+                // replaced
+                continue;
+            }
             if ( it->second->FindGi(ret, gi) ) {
                 if ( GetDebugLevel() >= 2 ) {
                     ERR_POST_X(5, "CWGSDataLoader: "
@@ -460,6 +464,10 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const string& acc)
     {
         CMutexGuard guard(m_Mutex);
         ITERATE ( TFoundFiles, it, m_FoundFiles ) {
+            if ( it->second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
+                // replaced
+                continue;
+            }
             if ( it->second->FindProtAcc(ret, acc) ) {
                 if ( GetDebugLevel() >= 2 ) {
                     ERR_POST_X(9, "CWGSDataLoader: "
