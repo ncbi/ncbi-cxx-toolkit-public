@@ -14,7 +14,7 @@ Problem:        Use of the following modifier in a sequence file is discouraged 
 Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene-synonym.
 
                 Warning:
-Problem:        Duplicated modifier value detected, ignoring duplicate, no action requiredtopology=cirCular.
+Problem:        Duplicated modifier value detected, ignoring duplicate, no action required. topology=cirCular.
 
                 Warning:
 Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: activity, function.

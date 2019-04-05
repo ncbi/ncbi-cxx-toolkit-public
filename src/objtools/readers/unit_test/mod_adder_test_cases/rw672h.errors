@@ -23,7 +23,7 @@ Problem:        Invalid value: mgcode=nonintegral. Integer value expected.
 Problem:        Invalid value: mol-type=invalid_mol_type_qual.
 
                 Error:
-Problem:        moleculeInvalid value: molecule=invalid_molecule_qual.
+Problem:        Invalid value: molecule=invalid_molecule_qual.
 
                 Error:
 Problem:        Invalid value: origin=invalid_origin.
@@ -32,7 +32,7 @@ Problem:        Invalid value: origin=invalid_origin.
 Problem:        Invalid value: pgcode=nonintegral. Integer value expected.
 
                 Error:
-Problem:        strandInvalid value: strand=invalid_strand_qual.
+Problem:        Invalid value: strand=invalid_strand_qual.
 
                 Error:
 Problem:        Invalid value: tech=invalid_tech_qual.

@@ -221,7 +221,7 @@ void CModHandler::AddMods(const TModList& mods,
             EModSubcode subcode;
             if (NStr::EqualNocase(accepted_mods[canonical_name].front().GetValue(),
                                   mod.GetValue())) {
-                msg = "Duplicated modifier value detected, ignoring duplicate, no action required" 
+                msg = "Duplicated modifier value detected, ignoring duplicate, no action required. " 
                     + mod.GetName() + "=" + mod.GetValue() + ".";
                 sev = eDiag_Warning;
                 subcode = eModSubcode_Duplicate;
@@ -433,7 +433,7 @@ void CModAdder::x_ReportInvalidValue(const CModData& mod_data,
     const auto& mod_name = mod_data.GetName();
     const auto& mod_value = mod_data.GetValue();
     //string msg = mod_name + " modifier has invalid value: \"" +   mod_value + "\".";
-    string msg = mod_name + "Invalid value: " + mod_name + "=" + mod_value + ".";
+    string msg = "Invalid value: " + mod_name + "=" + mod_value + ".";
 
     if (fReportError) {
         fReportError(msg, eDiag_Error, eModSubcode_InvalidValue);
