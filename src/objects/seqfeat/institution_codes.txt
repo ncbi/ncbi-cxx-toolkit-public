@@ -5766,6 +5766,7 @@ RSY	s	Buteshire Natural History Society, The Museum
 RTCI	c	Research Laboratory, Takeda Chemical Industry			
 RTE	s	Holmesdale Natural History Club Museum			
 RTHM	s	Munidipal Museum and Art Gallery			
+RTM	s	Rishiri Town Museum			
 RTMP	s	Royal Tyrell Museum of Paleontology			
 RU	s	University of Reading, Agricultural Botany Department			
 RUBL	s	University of Rajasthan, Botany Department			

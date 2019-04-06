@@ -5799,6 +5799,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RTCI\tc\tResearch Laboratory, Takeda Chemical Industry\t\t\t",
 "RTE\ts\tHolmesdale Natural History Club Museum\t\t\t",
 "RTHM\ts\tMunidipal Museum and Art Gallery\t\t\t",
+"RTM\ts\tRishiri Town Museum\t\t\t",
 "RTMP\ts\tRoyal Tyrell Museum of Paleontology\t\t\t",
 "RU\ts\tUniversity of Reading, Agricultural Botany Department\t\t\t",
 "RUBL\ts\tUniversity of Rajasthan, Botany Department\t\t\t",
