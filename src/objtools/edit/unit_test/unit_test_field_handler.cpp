@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(StructuredCommentField)
         BOOST_CHECK_EQUAL(field_names[0], "Assembly Provider");
         BOOST_CHECK_EQUAL(field_names[1], "Finishing Goal");
     } else {
-        BOOST_CHECK_EQUAL(field_names.size(), 15);
+        BOOST_CHECK_EQUAL(field_names.size(), 16);
     }
 
     string keyword = CComment_rule::KeywordForPrefix("MIGS:3.0-Data");
