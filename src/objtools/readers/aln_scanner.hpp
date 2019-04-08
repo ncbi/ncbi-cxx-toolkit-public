@@ -49,6 +49,8 @@ protected:
     using TLineInfo = SLineInfo;
 
 public:
+    using TDeflines = vector<TLineInfo>;
+
     CAlnScanner() {};
 
     virtual ~CAlnScanner() {};

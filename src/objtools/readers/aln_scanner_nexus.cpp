@@ -76,20 +76,19 @@ CAlnScannerNexus::xProcessCommand(
 //  ----------------------------------------------------------------------------
 {
 
-    auto command = nexusCommand.commandArgs;
+    auto command = nexusCommand.args;
 
-  //  if (command.empty()) {
-  //      return;
-  //  }
 
-    string commandName = nexusCommand.commandName;
+    string commandName = nexusCommand.name;
     NStr::ToLower(commandName);
 
     if (commandName != "sequin") {
-        sStripNexusComments(command);
+        sStripNexusCommentsFromCommand(command);
+        sStripNexusCommentsFromCommand(nexusCommand.args);
     }
 
 
+    bool applyEnd = false;
     if (commandName != "end") {
         string lastLine = command.back().mData;
         NStr::ToLower(lastLine);
@@ -103,57 +102,106 @@ CAlnScannerNexus::xProcessCommand(
                 EAlnSubcode::eAlnSubcode_UnterminatedCommand,
                 "Unexpected \"end;\". Appending \';\' to prior command");
 
-            xEndBlock();
+            applyEnd = true;
             if (lastWhiteSpacePos == NPOS) {
                 command.pop_back();
+                nexusCommand.args.pop_back();
             }
             else {
                 command.back().mData = NStr::TruncateSpaces(
                         command.back().mData.substr(0, lastWhiteSpacePos));
+
+                nexusCommand.args.back().mData = NStr::TruncateSpaces(
+                        command.back().mData.substr(0, lastWhiteSpacePos));
+
             }
         }
     }
-
-    
-
-    if (commandName == "dimensions") {
-        xProcessDimensions(command);
-        return;
+   
+    if (commandName != "end" &&
+            NStr::EqualNocase(mCurrentBlock, "data") ||
+            NStr::EqualNocase(mCurrentBlock, "characters")) {
+        xProcessDataBlockCommand(nexusCommand, sequenceInfo);
     }
-
-    if (commandName == "format") {
-        xProcessFormat(command); 
-        xAdjustSequenceInfo(sequenceInfo);
-        return;
-    }
-
-    if (commandName == "matrix") {
-        xProcessMatrix(command);
-        return;
-    }
-
-    if (commandName == "sequin") {
-        xProcessSequin(command);
-        return;
+    else
+    if (NStr::EqualNocase(mCurrentBlock, "ncbi")) {
+        xProcessSequin(nexusCommand.args);
     }
 
     if (commandName == "begin") {
         xBeginBlock(command);
+    }
+
+    if (applyEnd || commandName == "end") {
+        xEndBlock();
+    }
+    return;
+}
+
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xProcessDataBlockCommand(
+        const TCommand& command,
+        CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    auto name = command.name;
+    NStr::ToLower(name);
+
+    if (name == "dimensions") {
+        xProcessDimensions(command.args);
         return;
     }
 
-    if (commandName == "end") {
-        xEndBlock();
+    if (name == "format") {
+        xProcessFormat(command.args);
+        xAdjustSequenceInfo(sequenceInfo);
+        return;   
+    }
+
+    if (name == "matrix") {
+        xProcessMatrix(command.args);
         return;
     }
-    
 }
 
 
 //  ----------------------------------------------------------------------------
 void 
+CAlnScannerNexus::xProcessSequin(
+        const TCommandArgs& args)
+//  ----------------------------------------------------------------------------
+{
+    for (auto lineInfo : args) {
+        auto line = lineInfo.mData;
+        auto lineNum = lineInfo.mNumLine;
+        string dummy, defLine;
+
+        try {
+            AlnUtil::ProcessDefline(line, dummy, defLine);
+        }
+        catch (SShowStopper& showStopper) {
+            showStopper.mLineNumber = lineNum;
+            throw;
+        }
+        
+        if (!dummy.empty()) {
+            throw SShowStopper(
+                lineNum,
+                EAlnSubcode::eAlnSubcode_IllegalDefinitionLine,
+                "Invalid NEXUS definition line, expected \">\" followed by mods.");
+        }
+        mDeflines.push_back({defLine, lineNum});
+    }
+}
+
+
+
+//  ----------------------------------------------------------------------------
+void 
 CAlnScannerNexus::xBeginBlock(
-    const TCommand& command)
+    const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
 {
     auto lineNum = command.front().mNumLine;
@@ -170,6 +218,9 @@ CAlnScannerNexus::xBeginBlock(
     }
     mInBlock = true;
     mBlockStartLine = lineNum;
+
+    mCurrentBlock = command.front().mData;
+/*
     if (command.size() > 1) {
         mCurrentBlock = next(command.begin())->mData;    
     }
@@ -179,6 +230,7 @@ CAlnScannerNexus::xBeginBlock(
                 commandName,
                 mCurrentBlock);
     }
+    */
 }
 
 
@@ -196,7 +248,7 @@ CAlnScannerNexus::xEndBlock()
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessMatrix(
-    const TCommand& command)
+    const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
 {
     int dataLineCount(0);
@@ -204,12 +256,15 @@ CAlnScannerNexus::xProcessMatrix(
     int blockLineLength(0);
     int sequenceCharCount(0);
 
-    for (auto cit = command.begin(); cit != command.end(); ++dataLineCount, ++cit) {
+    for (auto lineInfo : command) {
+        const auto& data = lineInfo.mData;
+        const int lineNum = lineInfo.mNumLine;
+
         vector<string> tokens;
-        NStr::Split(cit->mData, " \t", tokens, NStr::fSplit_Tokenize);
+        NStr::Split(data, " \t", tokens, NStr::fSplit_Tokenize);
         if (tokens.size() < 2) {
             throw SShowStopper(
-                cit->mNumLine,
+                lineNum,
                 eAlnSubcode_IllegalDataLine,
                 "In data line, expected seqID followed by sequence data");
         }
@@ -223,10 +278,11 @@ CAlnScannerNexus::xProcessMatrix(
 
         const bool inFirstBlock = ((mNumSequences == 0) || (dataLineCount < mNumSequences));
         seqCount = inFirstBlock ? dataLineCount : (dataLineCount % mNumSequences);
-        AlnUtil::CheckId(seqId, mSeqIds, seqCount, cit->mNumLine, inFirstBlock);
+
+        AlnUtil::CheckId(seqId, mSeqIds, seqCount, lineNum, inFirstBlock);
 
         if  (inFirstBlock) {
-            mSeqIds.push_back({seqId, cit->mNumLine});
+            mSeqIds.push_back({seqId, lineNum});
             mSequences.push_back(vector<TLineInfo>());
         }
         
@@ -241,7 +297,7 @@ CAlnScannerNexus::xProcessMatrix(
                     mSequenceSize,
                     sequenceCharCount);
                 throw SShowStopper(
-                    cit->mNumLine,
+                    lineNum,
                     EAlnSubcode::eAlnSubcode_BadDataCount,
                     description); 
             }
@@ -254,11 +310,13 @@ CAlnScannerNexus::xProcessMatrix(
                 blockLineLength,
                 dataSize);
             throw SShowStopper(
-                cit->mNumLine,
+                lineNum,
                 EAlnSubcode::eAlnSubcode_BadDataCount,
                 description); 
         }
-            mSequences[seqCount].push_back({tokens[1], cit->mNumLine});
+            mSequences[seqCount].push_back({tokens[1], lineNum});
+
+            ++dataLineCount;
     }
 
     if (sequenceCharCount != mSequenceSize) {
@@ -276,7 +334,7 @@ CAlnScannerNexus::xProcessMatrix(
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessDimensions(
-    const TCommand& command)
+    const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
 {
     auto ntax = xGetKeyVal(command, "ntax");
@@ -312,7 +370,7 @@ CAlnScannerNexus::xProcessDimensions(
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessFormat(
-    const TCommand& command)
+    const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
 {
     const auto missing = xGetKeyVal(command, "missing");
@@ -334,40 +392,9 @@ CAlnScannerNexus::xProcessFormat(
 
 
 //  ----------------------------------------------------------------------------
-void 
-CAlnScannerNexus::xProcessSequin(
-    const TCommand& command)
-//  ----------------------------------------------------------------------------
-{
-    string dummy;
-    string defline;
-    for (auto it = command.begin();
-            it != command.end(); 
-            ++it) {
-        const auto lineInfo = *it;
-        try {
-            AlnUtil::ProcessDefline(lineInfo.mData, dummy, defline);
-        }
-        catch (SShowStopper& showStopper) {
-            showStopper.mLineNumber = lineInfo.mNumLine;
-            throw;
-        }
-
-        if (!dummy.empty()) {
-            throw SShowStopper(
-                lineInfo.mNumLine,
-                eAlnSubcode_IllegalDefinitionLine,
-                "Invalid NEXUS definition line, expected \">\" followed by mods.");
-        }
-        mDeflines.push_back({defline, lineInfo.mNumLine});
-    }
-}
-
-
-//  ----------------------------------------------------------------------------
 pair<string, int>
 CAlnScannerNexus::xGetKeyVal(
-    const TCommand& command,
+    const TCommandArgs& command,
     const string& key)
 //  ----------------------------------------------------------------------------
 {
@@ -440,7 +467,7 @@ CAlnScannerNexus::xImportAlignmentData(
 {
     string line;
     int lineCount(0);
-    TCommand currentCommand;
+    TCommandArgs currentCommand;
     size_t commandEnd(0);
     size_t commandStart(0);
     int numOpenBrackets(0);
@@ -485,21 +512,21 @@ CAlnScannerNexus::xImportAlignmentData(
             }
 
             SNexusCommand nexusCommand;
-            nexusCommand.commandArgs = currentCommand;
+            nexusCommand.args = currentCommand;
             string remainder;
             NStr::SplitInTwo(
                     currentCommand.front().mData,
                     " \t",
-                    nexusCommand.commandName,
+                    nexusCommand.name,
                     remainder);
             nexusCommand.startLineNum = currentCommand.front().mNumLine;
 
             NStr::TruncateSpacesInPlace(remainder);
             if (!remainder.empty()) {
-                nexusCommand.commandArgs.front().mData = remainder;
+                nexusCommand.args.front().mData = remainder;
             }
             else {
-                nexusCommand.commandArgs.pop_front();
+                nexusCommand.args.pop_front();
             }
 
                     
@@ -623,36 +650,10 @@ CAlnScannerNexus::xAdjustSequenceInfo(
     }
 }
 
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerNexus::xProcessDefinitionLine(
-    const string& line,
-    int lineCount)
-//  ----------------------------------------------------------------------------
-{
-    if (NStr::StartsWith(line, ">")) {
-        string defLine = line.substr(1);
-        NStr::TruncateSpacesInPlace(defLine);
-        mDeflines.push_back({defLine, lineCount});
-        return;
-    }
-    string lineLowerCase(line);
-    NStr::ToLower(lineLowerCase);
-    if (NStr::StartsWith(lineLowerCase, "end")) {
-        mState = EState::SKIPPING;
-        return;
-    }
-    string description(
-        "Illegal definition line in NEXUS sequin command");
-    theErrorReporter->Error(
-        lineCount,
-        eAlnSubcode_IllegalDefinitionLine,
-        description);
-}
 
 //  ----------------------------------------------------------------------------
-void 
-CAlnScannerNexus::sStripNexusComments(
+static void 
+sStripNexusComments(
     string& line, 
     int &numUnmatchedLeftBrackets)
 //  ----------------------------------------------------------------------------
@@ -768,8 +769,8 @@ CAlnScannerNexus::sStripCommentsOutsideCommand(
 
 //  ----------------------------------------------------------------------------
 void 
-CAlnScannerNexus::sStripNexusComments(
-    TCommand& command)
+CAlnScannerNexus::sStripNexusCommentsFromCommand(
+    TCommandArgs& command)
 //  ----------------------------------------------------------------------------
 {
     int numUnmatchedLeftBrackets = 0;

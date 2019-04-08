@@ -40,29 +40,30 @@ BEGIN_SCOPE(objects);
 struct SAlignFileRaw;
 
 //  ============================================================================
-struct SNexusCommand {   
+struct SNexusCommand   
 //  ============================================================================
-    string commandName;
-    int startLineNum;
-    list<SLineInfo> commandArgs;
+{
+    using TArgs = list<SLineInfo>;
+    string name;
+    int startLineNum=-1;
+    TArgs args;
 };
+
 
 //  ============================================================================
 class CAlnScannerNexus:
     public CAlnScanner
 //  ============================================================================
 {
-    enum  EState {
-        SKIPPING,
-        DATA,
-        DEFLINES
-    };
 public:
     CAlnScannerNexus(): 
-        mState(SKIPPING), mGapChar(0), mMissingChar(0), mMatchChar(0) {};
+        mGapChar(0), mMissingChar(0), mMatchChar(0) {};
     ~CAlnScannerNexus() {};
 
+    TDeflines& SetDeflines(void) { return mDeflines; }
+    
 protected:
+
     void
     xImportAlignmentData(
         CSequenceInfo&,
@@ -78,38 +79,38 @@ protected:
         const string& seqId,
         const vector<TLineInfo> seqData);
 
-    using TCommand = list<SLineInfo>;
+    using TCommand = SNexusCommand;
+    using TCommandArgs = TCommand::TArgs;
 
     void
     xProcessCommand(SNexusCommand command, 
             CSequenceInfo& sequenceInfo);
 
     void 
-    xProcessDimensions(const TCommand& command);
+    xProcessDimensions(const TCommandArgs& args);
 
     void
-    xProcessFormat(const TCommand& command);
+    xProcessFormat(const TCommandArgs& args);
 
     void 
-    xProcessSequin(const TCommand& command);
+    xProcessSequin(const TCommandArgs& args);
     
     void
-    xProcessMatrix(const TCommand& command);
+    xProcessMatrix(const TCommandArgs& args);
 
     void 
-    xBeginBlock(const TCommand& command);
+    xProcessDataBlockCommand(const TCommand& command,
+            CSequenceInfo& sequenceInfo);
+
+    void 
+    xBeginBlock(const TCommandArgs& command);
 
     void 
     xEndBlock(void);
 
     pair<string, int>
-    xGetKeyVal(const TCommand& command, 
+    xGetKeyVal(const TCommandArgs& command, 
         const string& key);
-
-    void
-    xProcessDefinitionLine(
-        const string&,
-        int lineCount);
 
     static void sStripCommentsOutsideCommand(
         string& line, 
@@ -122,14 +123,10 @@ protected:
         int &numUnmatchedLeftBrackets,
         size_t startPos=0);
 
-    static void sStripNexusComments(
-        string& line,
-        int &numUnmatchedLeftBrackets);
 
-    static void sStripNexusComments(
-        TCommand& command);
+    static void sStripNexusCommentsFromCommand(
+        TCommandArgs& command);
 
-    EState mState;
     int mNumSequences = 0;
     int mSequenceSize = 0;
     char mMatchChar;

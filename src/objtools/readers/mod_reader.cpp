@@ -212,6 +212,39 @@ void CModHandler::AddMods(const TModList& mods,
         const auto allow_multiple_values = x_MultipleValuesAllowed(canonical_name);
         const auto first_occurrence = current_set.insert(canonical_name).second;
 
+       // Put this in its own method
+       if (!first_occurrence) {
+            string msg;
+            EDiagSev sev;
+            EModSubcode subcode;
+            if (NStr::EqualNocase(accepted_mods[canonical_name].front().GetValue(),
+                       mod.GetValue())) {
+                msg = "Duplicated modifier value detected, ignoring duplicate, no action required: " 
+                    + mod.GetName() + "=" + mod.GetValue() + ".";
+                sev = eDiag_Warning;
+                subcode = eModSubcode_Duplicate;
+            } 
+            else 
+            if (!allow_multiple_values) {
+                msg = "Conflicting modifiers detected. Provide one modifier with one value for: " + mod.GetName() + ".";
+                sev = eDiag_Error;
+                subcode = eModSubcode_ConflictingValues;
+                rejected_mods.push_back(mod);
+            }
+            else 
+            {
+                accepted_mods[canonical_name].push_back(mod);
+                continue;
+            }
+
+            if (m_fReportError) {
+                m_fReportError(msg, sev, subcode);
+                continue;
+            }   
+            NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
+       } 
+
+/*
         if (!allow_multiple_values &&
             !first_occurrence) {
             rejected_mods.push_back(mod);
@@ -238,6 +271,8 @@ void CModHandler::AddMods(const TModList& mods,
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
         }
+*/
+
         accepted_mods[canonical_name].push_back(mod);
     }
 

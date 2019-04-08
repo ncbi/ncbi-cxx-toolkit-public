@@ -1,4 +1,9 @@
 Line No    : 13
+Severity   : Warning
+Code       : 1.3
+Message    : Duplicated modifier value detected, ignoring duplicate, no action required: other=val1.
+
+Line No    : 13
 Severity   : Error
 Code       : 1.2
 Message    : Invalid value: environmental-sample=val1.

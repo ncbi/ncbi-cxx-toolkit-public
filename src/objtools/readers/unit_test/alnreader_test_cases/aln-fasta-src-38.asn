@@ -331,10 +331,6 @@ Seq-entry ::= set {
               name "val1"
             },
             {
-              subtype other,
-              name "val1"
-            },
-            {
               subtype phenotype,
               name "val1"
             },
