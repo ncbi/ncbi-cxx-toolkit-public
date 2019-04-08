@@ -60,6 +60,20 @@ CSeqIdValidatorBankit::Validate(
     if (seqIdIt != mValidated.rend()) {
         return true;
     }
+
+    // size constraints:
+    if (seqId.empty()  ||  seqId.size() > 50) {
+        return false;
+    }
+
+    // valid characters:
+    const string illegalChars("|\"");
+    auto firstIllegalChar = seqId.find_first_of(illegalChars);
+    if (firstIllegalChar != string::npos) {
+        return false;
+    }
+
+    mValidated.push_back(seqId);
     return true;
 }
 

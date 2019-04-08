@@ -151,6 +151,13 @@ bool ReadAlignmentFile(
     SAlignmentFile& alignmentInfo,
     ILineErrorListener* pErrorListener=nullptr);
 
+NCBI_XOBJREAD_EXPORT 
+bool ReadAlignmentFile(
+    istream& istr,
+    const string& validationScheme,
+    CSequenceInfo& sequenceInfo,
+    SAlignmentFile& alignmentInfo);
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

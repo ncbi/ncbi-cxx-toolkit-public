@@ -245,9 +245,7 @@ sReportError(
     sReportError(pEC, severity, eReader_Alignment, 0, lineNumber, message, problemType);
 }
 
-
 void CAlnReader::Read(
-    bool guess, 
     bool generate_local_ids,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
@@ -257,6 +255,32 @@ void CAlnReader::Read(
     if (m_ReadDone) {
         return;
     }
+    // make a SSequenceInfo corresponding to our CSequenceInfo argument
+    CSequenceInfo sequenceInfo(
+        m_Alphabet, m_Match, m_Missing, m_BeginningGap, m_MiddleGap, m_EndGap);
+
+    // read the alignment stream
+    SAlignmentFile alignmentInfo;
+    try {
+        ReadAlignmentFile(
+            m_IS, m_IdValidationScheme, sequenceInfo, alignmentInfo);
+    }
+    catch (const SShowStopper& showStopper) {
+        theErrorReporter->Fatal(showStopper);
+        return;
+    }
+
+    x_VerifyAlignmentInfo(alignmentInfo);
+    m_Dim = m_Ids.size();
+    m_ReadDone = true;
+    m_ReadSucceeded = true;
+}
+
+void CAlnReader::Read(
+    bool guess, 
+    bool generate_local_ids,
+    ncbi::objects::ILineErrorListener* pErrorListener)
+{
 
     // make a SSequenceInfo corresponding to our CSequenceInfo argument
     CSequenceInfo sequenceInfo(
@@ -272,7 +296,16 @@ void CAlnReader::Read(
         theErrorReporter->Fatal(showStopper);
         return;
     }
+    x_VerifyAlignmentInfo(alignmentInfo);
+    m_Dim = m_Ids.size();
+    m_ReadDone = true;
+    m_ReadSucceeded = true;
+}
 
+
+void CAlnReader::x_VerifyAlignmentInfo(
+    const SAlignmentFile& alignmentInfo)
+{
     //sanity check and post process what the raw reader presents us with:
     try {
         const auto num_sequences = alignmentInfo.NumSequences();
@@ -313,7 +346,7 @@ void CAlnReader::Read(
         // check to see if any of the lines contain gaps.
         // no gaps plus no alignment indicators -> don't guess alignment
         const auto numSequences = alignmentInfo.NumSequences();
-        if (guess && !alignmentInfo.align_format_found) {
+        if (!alignmentInfo.align_format_found) {
             bool found_gap = false;
             for (int i = 0; i < numSequences && !found_gap; i++) {
                 if (alignmentInfo.mSequences[i].find('-') != string::npos) {
@@ -361,11 +394,6 @@ void CAlnReader::Read(
         m_ReadSucceeded = false;
         return;
     }
-    m_Dim = m_Ids.size();
-    m_ReadDone = true;
-    m_ReadSucceeded = true;
-
-    return;
 }
 
 

@@ -589,6 +589,13 @@ void CMultiReaderApp::Init(void)
             "nuc", 
             "prot") );    
 
+    arg_desc->AddDefaultKey(
+        "aln-idval", 
+        "STRING",
+        "Alignment sequence ID validation scheme",
+        CArgDescriptions::eString, 
+        "");
+
     arg_desc->AddFlag(
         "force-local-ids",
         "treat all IDs as local IDs",
@@ -1123,12 +1130,13 @@ void CMultiReaderApp::xProcessAlignment(
     reader.SetAllGap(args["aln-gapchar"].AsString());
     reader.SetMissing(args["aln-missing"].AsString());
     reader.SetAlphabet(CAlnReader::eAlpha_Protein);
+    reader.SetIdValidation(args["aln-idval"].AsString());
     if (args["aln-alphabet"].AsString() == "nuc") {
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
-    reader.SetUseNexusInfo(!args["ignore-nexus-info"]);
     try {
-        reader.Read(false, args["force-local-ids"], m_pErrors.get());
+        bool allIdsAreLocal = args["all-ids-as-local"].AsBoolean();
+        reader.Read(allIdsAreLocal, m_pErrors.get());
         CRef<CSeq_entry> pEntry = reader.GetSeqEntry(fFlags, m_pErrors.get());
         if (pEntry) { 
             xWriteObject(args, *pEntry, ostr);

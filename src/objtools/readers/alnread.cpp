@@ -76,9 +76,11 @@ GetScannerForFormat(
 //  ----------------------------------------------------------------------------
 CSeqIdValidator*
 GetSeqIdValidator(
-    const string& validationProfile="")
+    const string& validationProfile_="")
 //  ----------------------------------------------------------------------------
 {
+    string validationProfile(validationProfile_);
+    NStr::ToLower(validationProfile);
     if (validationProfile == "bankit") {
         return new CSeqIdValidatorBankit();
     }
@@ -110,12 +112,35 @@ ReadAlignmentFile(
     if (!pScanner) {
         return false;
     }
-    pScanner->SetSeqIdValidator(GetSeqIdValidator(""));
 
     pScanner->ProcessAlignmentFile(sequenceInfo, iStr, alignmentInfo);
     return true;
 };
 
+//  ------------------------------------------------------------------------------
+bool ReadAlignmentFile(
+    istream& istr,
+    const string& validationScheme,
+    CSequenceInfo& sequenceInfo,
+    SAlignmentFile& alignmentInfo)
+//  ------------------------------------------------------------------------------
+{
+    if (sequenceInfo.Alphabet().empty()) {
+        return false;
+    }
+
+    CPeekAheadStream iStr(istr);
+    EAlignFormat format = CAlnFormatGuesser().GetFormat(iStr);
+
+    unique_ptr<CAlnScanner> pScanner(GetScannerForFormat(format));
+    if (!pScanner) {
+        return false;
+    }
+    pScanner->SetSeqIdValidator(GetSeqIdValidator(validationScheme));
+
+    pScanner->ProcessAlignmentFile(sequenceInfo, iStr, alignmentInfo);
+    return true;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

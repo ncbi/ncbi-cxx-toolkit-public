@@ -172,13 +172,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CErrorLogger logger(errors);
     CNcbiIfstream ifstr(input.c_str());
     unique_ptr<CAlnReader> pReader(sGetReader(test_name, ifstr));
+    pReader->SetIdValidation("bankit");
 
     CRef<CSeq_entry> pEntry;
     try {
-        pReader->Read(false, false, &logger);
+        pReader->Read(false, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(test_name), &logger);
     } 
-    catch (...) {
+    catch (std::exception&) {
     }
     ifstr.close();
     cerr << " Produced new error listing " << output << "." << endl;
@@ -225,13 +226,14 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CErrorLogger logger(newErrors.c_str());
 
     unique_ptr<CAlnReader> pReader(sGetReader(sTestName, ifstr));
+    pReader->SetIdValidation("bankit");
 
     CRef<CSeq_entry> pEntry;
     try {
-        pReader->Read(false, false, &logger);
+        pReader->Read(false, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(sTestName), &logger);
     } 
-    catch (...) {
+    catch (std::exception&) {
     }
     ifstr.close();
 

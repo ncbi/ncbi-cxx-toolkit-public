@@ -45,6 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 // class CAlnError holds error information
+
 class NCBI_XOBJREAD_EXPORT CAlnError
 {
 public:
@@ -167,6 +168,8 @@ public:
     virtual ~CAlnReader(void);
 
     /// Sequence data accessors and modifiers:
+    void          SetIdValidation(const string& idValidationScheme) 
+    { m_IdValidationScheme = idValidationScheme; };
 
     const string& GetAlphabet(void) const;
     string&       SetAlphabet(void);
@@ -210,10 +213,14 @@ public:
 
 
     /// Read the file
-    /// This is the main function
-    /// that would parse the alignment file and create the result data
+    /// This are the main functions.
+    /// either would parse the alignment file and create the result data
     void Read(
         bool guess=false, 
+        bool generate_local_ids=false,
+        objects::ILineErrorListener* pErrorListener=nullptr);
+
+    void Read(
         bool generate_local_ids=false,
         objects::ILineErrorListener* pErrorListener=nullptr);
 
@@ -253,9 +260,13 @@ private:
         int sequence_length,
         int repeat_interval) const;
 
+    void x_VerifyAlignmentInfo(
+        const ncbi::objects::SAlignmentFile&);
+
     /// A bunch of strings listing characters with various
     /// meanings in an alignment file.
     /// Analogous to SSequenceInfo.
+    string m_IdValidationScheme;
     string m_Alphabet;
     string m_BeginningGap;
     string m_MiddleGap;

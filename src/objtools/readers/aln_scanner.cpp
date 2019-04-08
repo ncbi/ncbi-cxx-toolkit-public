@@ -88,13 +88,12 @@ CAlnScanner::xVerifyAlignmentData(
 
     // validate seqIds first of all:
     for (auto seqIdInfo: mSeqIds) {
-        if (!mpSeqIdValidator->Validate(seqIdInfo.mData)) {
+        if (!xValidateSeqId(seqIdInfo.mData)) {
             string description = ErrorPrintf(errTempl, seqIdInfo.mData.c_str());
             throw SShowStopper(
                 seqIdInfo.mNumLine,
                 EAlnSubcode::eAlnSubcode_IllegalSequenceId,
-                description,
-                seqIdInfo.mData);
+                description);
         }
     }
 
