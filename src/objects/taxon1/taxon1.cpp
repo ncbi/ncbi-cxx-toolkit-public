@@ -1916,6 +1916,58 @@ CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
     return false;
 }
 
+bool
+CTaxon1::GetInheritedPropertyDefines( const string& prop_name,
+				      CTaxon1::TInfoList& results,
+				      TTaxId root )
+{
+    SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
+    CTaxon1_req req;
+    CTaxon1_resp resp;
+    CRef<CTaxon1_info> pProp( new CTaxon1_info() );
+
+    CDiagAutoPrefix( "Taxon1::GetInheritedPropertyDefines" );
+
+    if( !prop_name.empty() ) {
+        pProp->SetIval1( -root );
+        pProp->SetIval2( -4 ); // Get inherited property defines by name
+        pProp->SetSval( prop_name );
+
+        req.SetGetorgprop( *pProp );
+        try {
+            if( SendRequest( req, resp ) ) {
+                if( !resp.IsGetorgprop() ) { // error
+                    ERR_POST_X( 12, "Response type is not Getorgprop" );
+                } else {
+                    if( resp.GetGetorgprop().size() > 0 ) {
+			results = resp.SetGetorgprop();
+                        return true;
+                    }
+                }
+            } else if( resp.IsError()
+                       && resp.GetError().GetLevel()
+                       != CTaxon1_error::eLevel_none ) {
+                string sErr;
+                resp.GetError().GetErrorText( sErr );
+                ERR_POST_X( 13, sErr );
+            }
+        } catch( exception& e ) {
+            ERR_POST_X( 14, e.what() );
+            SetLastError( e.what() );
+        }
+    } else {
+        SetLastError( "Empty property name is not accepted" );
+        ERR_POST_X( 15, GetLastError() );
+    }
+    return false;
+}
+
+
 //-----------------------------------
 //  Iterator stuff
 //

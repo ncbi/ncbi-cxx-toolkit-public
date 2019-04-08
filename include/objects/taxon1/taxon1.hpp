@@ -68,6 +68,7 @@ class NCBI_TAXON1_EXPORT CTaxon1 {
 public:
     typedef list< string > TNameList;
     typedef vector< TTaxId > TTaxIdList;
+    typedef list< CRef< CTaxon1_info > > TInfoList;
 
     CTaxon1();
     ~CTaxon1();
@@ -545,6 +546,18 @@ public:
                           int& prop_val );
     bool GetNodeProperty( TTaxId tax_id, const string& prop_name,
                           string& prop_val );
+
+    //--------------------------------------------------
+    // These functions retreive the  "inheritable properties defines" of the taxonomy nodes
+    // from subtree (entire tree by default). Each "property" is a (name, value) pair where
+    // name and value are strings. 
+    // Returns: true  when success and parameter 'results_out' is filled with values 
+    // taxon1_info(ival1=taxid, ival2={1 if property is defined, 0 if undefined at taxid}, sval2=property value if ival==1);
+    //          false when call failed
+    ///
+    bool GetInheritedPropertyDefines( const string& prop_name,
+				      TInfoList& results_out,
+				      TTaxId subtree_root = 1 );
 
     //---------------------------------------------------
     // This function returns the list of "type materials" for the node with taxid given.
