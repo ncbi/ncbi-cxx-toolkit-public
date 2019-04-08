@@ -174,7 +174,7 @@ x_Practically_Equal(const TFloat v1, const TFloat v2)
     static_assert( sizeof(TFloat) == sizeof(TInt), "sizeof(TFloat) != sizeof(TInt)");
     static_assert( !is_signed<TInt>::value, "Use unsigned integer storage type");
     static_assert( numeric_limits<TFloat>::is_iec559, "Non-standard floating type");
-    const TInt allowed = sizeof(TInt) >= 8 ? 16 : 4;
+    const TInt allowed = sizeof(TInt) >= 8 ? 64 : 4;
 
     size_t total_bits = 8*sizeof(TFloat);
     TInt sign_mask = TInt(1) << (total_bits - 1);
