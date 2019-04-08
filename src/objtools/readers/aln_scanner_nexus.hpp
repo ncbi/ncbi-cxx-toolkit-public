@@ -99,7 +99,15 @@ protected:
     xProcessMatrix(const TCommandArgs& args);
 
     void 
+    xProcessNCBIBlockCommand(const TCommand& command,
+            CSequenceInfo& sequenceInfo);
+
+    void 
     xProcessDataBlockCommand(const TCommand& command,
+            CSequenceInfo& sequenceInfo);
+
+    void 
+    xProcessTaxaBlockCommand(const TCommand& command,
             CSequenceInfo& sequenceInfo);
 
     void 

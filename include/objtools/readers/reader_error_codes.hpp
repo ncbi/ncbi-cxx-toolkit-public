@@ -74,7 +74,8 @@ enum EAlnSubcode
     eAlnSubcode_InconsistentMolType,
     eAlnSubcode_IllegalDataDescription,
     eAlnSubcode_FileDoesNotExist,
-    eAlnSubcode_FileTooShort
+    eAlnSubcode_FileTooShort,
+    eAlnSubcode_UnexpectedCommand
 };
 
 

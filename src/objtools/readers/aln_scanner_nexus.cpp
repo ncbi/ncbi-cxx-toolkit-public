@@ -71,25 +71,31 @@ void sPrintCommand(const list<SLineInfo>& command)
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessCommand(
-    SNexusCommand nexusCommand,
+    SNexusCommand command,
     CSequenceInfo& sequenceInfo) 
 //  ----------------------------------------------------------------------------
 {
 
-    auto command = nexusCommand.args;
-
-
-    string commandName = nexusCommand.name;
+    string commandName = command.name;
     NStr::ToLower(commandName);
 
+
+    if (!mInBlock &&
+        commandName != "begin") {
+        throw SShowStopper(
+                command.startLineNum,
+                EAlnSubcode::eAlnSubcode_UnexpectedCommand,
+                "\"" + command.name + "\" command appears outside of block.");
+    } 
+
+
     if (commandName != "sequin") {
-        sStripNexusCommentsFromCommand(command);
-        sStripNexusCommentsFromCommand(nexusCommand.args);
+        sStripNexusCommentsFromCommand(command.args);
     }
 
     bool applyEnd = false;
     if (commandName != "end") {
-        string lastLine = command.back().mData;
+        string lastLine = command.args.back().mData;
         NStr::ToLower(lastLine);
         int lastWhiteSpacePos = lastLine.find_last_of(" \t");
         string lastToken = (lastWhiteSpacePos == NPOS) ?
@@ -97,39 +103,40 @@ CAlnScannerNexus::xProcessCommand(
                             lastLine.substr(lastWhiteSpacePos);
         if (lastToken == "end") {
             theErrorReporter->Warn(
-                command.back().mNumLine,
+                command.args.back().mNumLine,
                 EAlnSubcode::eAlnSubcode_UnterminatedCommand,
                 "Unexpected \"end;\". Appending \';\' to prior command");
 
             applyEnd = true;
             if (lastWhiteSpacePos == NPOS) {
-                command.pop_back();
-                nexusCommand.args.pop_back();
+                command.args.pop_back();
             }
             else {
-                command.back().mData = NStr::TruncateSpaces(
-                        command.back().mData.substr(0, lastWhiteSpacePos));
-
-                nexusCommand.args.back().mData = NStr::TruncateSpaces(
-                        command.back().mData.substr(0, lastWhiteSpacePos));
-
+                command.args.back().mData = NStr::TruncateSpaces(
+                    command.args.back().mData.substr(0, lastWhiteSpacePos));
             }
         }
     }
-   
-    if (commandName != "end" &&
-            NStr::EqualNocase(mCurrentBlock, "data") ||
-            NStr::EqualNocase(mCurrentBlock, "characters")) {
-        xProcessDataBlockCommand(nexusCommand, sequenceInfo);
-    }
-    else
-    if (NStr::EqualNocase(mCurrentBlock, "ncbi")) {
-        xProcessSequin(nexusCommand.args);
-    }
 
     if (commandName == "begin") {
-        xBeginBlock(command);
+        xBeginBlock(command.args);
     }
+
+    if (commandName != "end") {
+        if (NStr::EqualNocase(mCurrentBlock, "data") ||
+            NStr::EqualNocase(mCurrentBlock, "characters")) {
+            xProcessDataBlockCommand(command, sequenceInfo);
+        }
+        else 
+        if (NStr::EqualNocase(mCurrentBlock, "taxa")) {
+            xProcessTaxaBlockCommand(command, sequenceInfo);
+        }
+        else
+        if (NStr::EqualNocase(mCurrentBlock, "ncbi")) {
+            xProcessNCBIBlockCommand(command, sequenceInfo);
+        }
+    }
+
 
     if (applyEnd || commandName == "end") {
         xEndBlock();
@@ -164,6 +171,42 @@ CAlnScannerNexus::xProcessDataBlockCommand(
         return;
     }
 }
+
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xProcessTaxaBlockCommand(
+        const TCommand& command,
+        CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    auto name = command.name;
+    NStr::ToLower(name);
+
+    if (name == "dimensions") {
+        xProcessDimensions(command.args);
+        return;
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerNexus::xProcessNCBIBlockCommand(
+        const TCommand& command,
+        CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    auto name = command.name;
+    NStr::ToLower(name);
+
+    if (name == "sequin") {
+        xProcessSequin(command.args);
+    }
+
+    // report an error
+}
+
 
 
 //  ----------------------------------------------------------------------------
@@ -217,19 +260,7 @@ CAlnScannerNexus::xBeginBlock(
     }
     mInBlock = true;
     mBlockStartLine = lineNum;
-
     mCurrentBlock = command.front().mData;
-/*
-    if (command.size() > 1) {
-        mCurrentBlock = next(command.begin())->mData;    
-    }
-    else {
-        string commandName;
-        NStr::SplitInTwo(command.front().mData, " \t", 
-                commandName,
-                mCurrentBlock);
-    }
-    */
 }
 
 
@@ -528,8 +559,6 @@ CAlnScannerNexus::xImportAlignmentData(
                 nexusCommand.args.pop_front();
             }
 
-                    
-            
             xProcessCommand(nexusCommand, sequenceInfo);
             currentCommand.clear();
 
@@ -549,8 +578,6 @@ CAlnScannerNexus::xImportAlignmentData(
         commandStart = 0;
     }
 
-    if (!currentCommand.empty()) {
-    }
 
     if (numOpenBrackets > 0) {
         string description = ErrorPrintf(
