@@ -51,19 +51,28 @@ AlnUtil::CheckId(const string& seqId,
         bool firstBlock)
 //  --------------------------------------------------------------------------
 {
+    string description;
+
     if ((orderedIds.size() > idCount) &&
         seqId == orderedIds[idCount].mData) {
         return;
     }
 
-    string description;
+    auto seqIdLower(seqId);
+    NStr::ToLower(seqIdLower);
     auto it = orderedIds.begin();
-    for (; it != orderedIds.end()  &&  it->mData != seqId; ++it) {};
+    for (; it != orderedIds.end(); ++it) {
+        auto orderedIdLower(it->mData);
+        NStr::ToLower(orderedIdLower);
+        if (orderedIdLower == seqIdLower) {
+            break;
+        }
+    };
 
     if (firstBlock) {
         if (it != orderedIds.end()) {
             description = ErrorPrintf(
-            "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+                "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
             throw SShowStopper(
                 lineNum,
                 eAlnSubcode_UnexpectedSeqId,
@@ -75,23 +84,22 @@ AlnUtil::CheckId(const string& seqId,
 
     if (it == orderedIds.end()) {
         description = ErrorPrintf(
-            "Expected %d sequences, but finding data for another.",
-                orderedIds.size());
-                throw SShowStopper(
-                    lineNum,
-                    eAlnSubcode_BadSequenceCount,
-                    description);
+            "Expected %d sequences, but finding data for another.", orderedIds.size());
+        throw SShowStopper(
+            lineNum,
+            eAlnSubcode_BadSequenceCount,
+            description);
     }
 
     if (distance(orderedIds.begin(), it) < idCount) {
         description = ErrorPrintf(
-        "Duplicate ID: \"%s \" has already appeared in this block.",
-        seqId.c_str());
+            "Duplicate ID: \"%s \" has already appeared in this block.",
+            seqId.c_str());
     }
     else {
         description = ErrorPrintf(
-                    "Finding data for sequence \"%s\" out of order.",
-                    seqId.c_str());
+            "Finding data for sequence \"%s\" out of order.",
+            seqId.c_str());
     }
     throw SShowStopper(
         lineNum,

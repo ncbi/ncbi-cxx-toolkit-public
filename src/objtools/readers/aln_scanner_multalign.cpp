@@ -162,7 +162,7 @@ CAlnScannerMultAlign::xImportAlignmentData(
                 mSequences.push_back(vector<TLineInfo>({{seqData, lineCount}}));
             }
             else {
-                if (seqId != mSeqIds[lineInBlock].mData) {
+                if (!xSeqIdIsEqualToInfoAt(seqId, lineInBlock)) {
                     throw SShowStopper(
                         lineCount,
                         eAlnSubcode_UnexpectedSeqId,

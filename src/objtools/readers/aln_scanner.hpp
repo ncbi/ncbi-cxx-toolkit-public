@@ -109,6 +109,11 @@ protected:
         const string& seqId,
         TLineInfo& existingInfo);
 
+    bool
+    xSeqIdIsEqualToInfoAt(
+        const string& seqId,
+        int index);
+
     vector<TLineInfo> mSeqIds;
     vector<vector<TLineInfo>> mSequences;
     vector<TLineInfo> mDeflines;

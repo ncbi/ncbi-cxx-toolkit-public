@@ -192,11 +192,11 @@ CAlnScannerClustal::sProcessClustalDataLine(
 {
     auto seqId = tokens[0];
     if (blockCount == 1) {
-        auto it = mSeqIds.begin();
-        for (; it != mSeqIds.end()  && it->mData != seqId; ++it) {};
-        if (it != mSeqIds.end()) {
+        TLineInfo existingInfo;
+        if (xGetExistingSeqIdInfo(seqId, existingInfo)) {
             string description = ErrorPrintf(
-                    "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+                "Duplicate ID: \"%s\" has already appeared in this block, on line %d.", 
+                seqId.c_str(), existingInfo.mNumLine);
             throw SShowStopper(
                 lineNum,
                 EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
@@ -220,7 +220,6 @@ CAlnScannerClustal::sProcessClustalDataLine(
             string description;
             auto it = mSeqIds.begin();
             for (; it != mSeqIds.end()  && it->mData != seqId; ++it) {};
-            //const auto it = find(mSeqIds.begin(), mSeqIds.end(), seqId);
             if (it == mSeqIds.end()) {
                 description = ErrorPrintf(
                     "Expected %d sequences, but finding data for for another.",

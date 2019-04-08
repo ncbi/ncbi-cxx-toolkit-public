@@ -209,19 +209,36 @@ CAlnScanner::xGetExistingSeqIdInfo(
     TLineInfo& existingInfo)
 //  ----------------------------------------------------------------------------
 {
-    auto seqIdLowercase(seqId);
-    NStr::ToLower(seqIdLowercase);
-    for (auto lineInfo: mSeqIds) {
-        auto InfoIdLowercase(lineInfo.mData);
-        NStr::ToLower(InfoIdLowercase);
-        if (seqIdLowercase == InfoIdLowercase) {
-            existingInfo = lineInfo;
+    for (int i=0; i < mSeqIds.size(); ++i) {
+        if (xSeqIdIsEqualToInfoAt(seqId, i)) {
+            existingInfo = mSeqIds[i];
             return true;
         }
     }
     return false;
 };
 
+//  ----------------------------------------------------------------------------
+bool
+//  ----------------------------------------------------------------------------
+CAlnScanner::xSeqIdIsEqualToInfoAt(
+    const string& seqId,
+    int index)
+{
+    if (index >= mSeqIds.size()) {
+        return false;
+    }
+    auto seqIdCompare(mSeqIds[index].mData);
+    if (seqId.size() != seqIdCompare.size()) {
+        return false;
+    }
+    for (auto i=0; seqId[i] != 0; ++i) {
+        if (tolower(seqId[i]) != tolower(seqIdCompare[i])) {
+            return false;
+        }
+    }
+    return true;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

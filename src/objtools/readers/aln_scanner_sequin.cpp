@@ -128,12 +128,11 @@ CAlnScannerSequin::xImportAlignmentData(
 
         // verify and process sequence ID:
         if (inFirstBlock) {
-            auto seqIdIt = mSeqIds.begin();
-            for (; seqIdIt != mSeqIds.end()  &&  seqIdIt->mData != seqId; ++seqIdIt) {};
-            if (seqIdIt != mSeqIds.end()) {
-                // error: duplicate sequence ID
+            TLineInfo existingInfo;
+            if (xGetExistingSeqIdInfo(seqId, existingInfo)) {
                 string description = ErrorPrintf(
-                    "Duplicate sequence ID \"%s\"", seqId.c_str());
+                    "Duplicate sequence ID \"%s\", first seen on line %d", 
+                    seqId.c_str(), existingInfo.mNumLine);
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
@@ -149,7 +148,7 @@ CAlnScannerSequin::xImportAlignmentData(
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
                     "Extraneous data line in interleaved data block");
             }
-            if (seqId != mSeqIds[lineInBlock].mData) {
+            if (!xSeqIdIsEqualToInfoAt(seqId, lineInBlock)) {
                 string description = ErrorPrintf(
                     "Unexpected sequence ID \"%s\"", seqId.c_str());
                 throw SShowStopper(

@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Frank Ludwig
+ * Authors:
  *
  */
 
@@ -86,7 +86,6 @@ CAlnScannerNexus::xProcessCommand(
         sStripNexusCommentsFromCommand(command);
         sStripNexusCommentsFromCommand(nexusCommand.args);
     }
-
 
     bool applyEnd = false;
     if (commandName != "end") {
