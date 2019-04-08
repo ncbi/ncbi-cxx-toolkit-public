@@ -53,14 +53,20 @@ protected:
     virtual bool TestApp_Init(void);
 
 private:
-    static string   sm_Service;
+    bool x_ParseTypes(void);
+
+    static string       sm_Service;
+    static TSERV_Type   sm_Types;
+
     static string   sm_ThreadsPassed;
     static string   sm_ThreadsFailed;
     static int      sm_CompleteThreads;
 };
 
 
-string  CTestApp::sm_Service;
+string      CTestApp::sm_Service;
+TSERV_Type  CTestApp::sm_Types = fSERV_Any;
+
 string  CTestApp::sm_ThreadsPassed;
 string  CTestApp::sm_ThreadsFailed;
 int     CTestApp::sm_CompleteThreads;
@@ -69,7 +75,14 @@ int     CTestApp::sm_CompleteThreads;
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
 {
     args.AddKey("service", "Service", "Name of service",
-                CArgDescriptions::eString);
+        CArgDescriptions::eString);
+
+    args.AddDefaultKey("types",
+        "Types", "Server type(s), eg 'HTTP_GET', "
+        "'DNS | HTTP', 'NCBID+STANDALONE', etc.  "
+        "From: { NCBID, STANDALONE, HTTP_GET, HTTP_POST, HTTP, FIREWALL, DNS }",
+        CArgDescriptions::eString,
+        "HTTP");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "SERVICE CXX test");
@@ -86,8 +99,12 @@ bool CTestApp::TestApp_Init(void)
         ERR_POST(Critical << "Missing service.");
         return false;
     }
+    if ( ! x_ParseTypes()) {
+        return false;
+    }
 
     ERR_POST(Info << "Service:  '" << sm_Service << "'");
+    ERR_POST(Info << "Types:    0x" << hex << sm_Types);
 
     sm_CompleteThreads = 0;
 
@@ -103,7 +120,7 @@ bool CTestApp::Thread_Run(int idx)
     PushDiagPostPrefix(("@" + id).c_str());
 
     vector<CSERV_Info>  hosts;
-    hosts = SERV_GetServers(sm_Service);
+    hosts = SERV_GetServers(sm_Service, sm_Types);
     if (hosts.size() > 0) {
         ERR_POST(Info << "Hosts for service '" << sm_Service << "':");
         for (const auto& h : hosts) {
@@ -113,7 +130,8 @@ bool CTestApp::Thread_Run(int idx)
         }
         retval = true;
     } else {
-        ERR_POST(Error << "Service '" << sm_Service << "' appears to have no hosts.");
+        ERR_POST(Error << "Service '" << sm_Service
+            << "' appears to have no hosts.");
     }
 
     PopDiagPostPrefix();
@@ -137,6 +155,24 @@ bool CTestApp::Thread_Run(int idx)
                   << (sm_ThreadsFailed.empty() ? "(none)" : sm_ThreadsFailed));
 
     return retval;
+}
+
+
+bool CTestApp::x_ParseTypes(void)
+{
+    string types_str = GetArgs()["types"].AsString();
+    list<string> types_list;
+    NStr::Split(types_str, " |+,;", types_list, NStr::fSplit_Tokenize);
+    for (auto typ : types_list) {
+        ESERV_Type etyp;
+        const char* styp = SERV_ReadType(typ.c_str(), &etyp);
+        if ( ! styp) {
+            ERR_POST(Critical << "Invalid server type '" << typ << "'.");
+            return false;
+        }
+        sm_Types |= etyp;
+    }
+    return true;
 }
 
 

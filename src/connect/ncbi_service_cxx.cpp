@@ -64,7 +64,7 @@ vector<CSERV_Info> SERV_GetServers(const string& service,
 
     vector<CSERV_Info>  servers;
 
-    SERV_ITER iter = SERV_Open(service.c_str(), types, SERV_ANYHOST, 0);
+    SERV_ITER iter = SERV_Open(service.c_str(), fSERV_All, SERV_ANYHOST, 0);
     if (iter != 0) {
         const SSERV_Info * info;
         while ((info = SERV_GetNextInfo(iter)) != 0) {
@@ -80,7 +80,13 @@ vector<CSERV_Info> SERV_GetServers(const string& service,
             }
 
             string hostname(CSocketAPI::gethostbyaddr(host));
-            servers.push_back(CSERV_Info(hostname, port, rate, type));
+            if (types == fSERV_Any  ||  (types & info->type)) {
+                servers.push_back(CSERV_Info(hostname, port, rate, type));
+            } else {
+                ERR_POST(Info << "Skipping " << hostname
+                    << " due to incompatible type " << info->type
+                    << " (mask=0x" << hex << types << ").");
+            }
         }
         SERV_Close(iter);
     }
