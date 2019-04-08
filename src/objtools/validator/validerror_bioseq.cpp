@@ -608,6 +608,9 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                         if (idlen > maxlen) {
                             PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
                         }
+                        if (idlen == 0) {
+                            PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier must not be an empty string", ctx);
+                        }
                     }
                 }
                 if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
