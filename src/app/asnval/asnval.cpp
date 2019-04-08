@@ -206,7 +206,8 @@ CAsnvalApp::CAsnvalApp(void) :
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0)
 {
-    SetVersionByBuild(1);
+    const CVersionInfo vers (1,1,0);
+    SetVersion (vers);
 }
 
 
