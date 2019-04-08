@@ -1135,8 +1135,11 @@ void CMultiReaderApp::xProcessAlignment(
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
     try {
-        bool allIdsAreLocal = args["all-ids-as-local"].AsBoolean();
-        reader.Read(allIdsAreLocal, m_pErrors.get());
+        CAlnReader::EReadFlags flags = 
+            (args["all-ids-as-local"].AsBoolean() ? 
+                CAlnReader::fGenerateLocalIDs : 
+                CAlnReader::fReadDefaults);
+        reader.Read(0, m_pErrors.get());
         CRef<CSeq_entry> pEntry = reader.GetSeqEntry(fFlags, m_pErrors.get());
         if (pEntry) { 
             xWriteObject(args, *pEntry, ostr);

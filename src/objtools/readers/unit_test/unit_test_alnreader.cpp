@@ -176,7 +176,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     CRef<CSeq_entry> pEntry;
     try {
-        pReader->Read(false, &logger);
+        pReader->Read(0, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(test_name), &logger);
     } 
     catch (std::exception&) {
@@ -230,7 +230,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 
     CRef<CSeq_entry> pEntry;
     try {
-        pReader->Read(false, &logger);
+        pReader->Read(0, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(sTestName), &logger);
     } 
     catch (std::exception&) {

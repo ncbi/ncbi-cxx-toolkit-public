@@ -246,7 +246,7 @@ sReportError(
 }
 
 void CAlnReader::Read(
-    bool generate_local_ids,
+    TReadFlags readFlags,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
     if (pErrorListener) {

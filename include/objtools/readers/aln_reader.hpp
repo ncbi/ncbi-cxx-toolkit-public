@@ -215,13 +215,20 @@ public:
     /// Read the file
     /// This are the main functions.
     /// either would parse the alignment file and create the result data
+    enum EReadFlags {
+        fReadDefaults,
+        fGenerateLocalIDs
+    };
+    typedef int TReadFlags; ///< binary OR of EReadFlags
+
+    NCBI_DEPRECATED
     void Read(
-        bool guess=false, 
+        bool guess, 
         bool generate_local_ids=false,
         objects::ILineErrorListener* pErrorListener=nullptr);
 
     void Read(
-        bool generate_local_ids=false,
+        TReadFlags = fReadDefaults,
         objects::ILineErrorListener* pErrorListener=nullptr);
 
     /// Parsed result data accessors
