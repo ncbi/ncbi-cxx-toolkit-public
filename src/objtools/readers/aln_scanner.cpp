@@ -202,5 +202,26 @@ CAlnScanner::xExportAlignmentData(
     }
 }
 
+//  ----------------------------------------------------------------------------
+bool
+CAlnScanner::xGetExistingSeqIdInfo(
+    const string& seqId,
+    TLineInfo& existingInfo)
+//  ----------------------------------------------------------------------------
+{
+    auto seqIdLowercase(seqId);
+    NStr::ToLower(seqIdLowercase);
+    for (auto lineInfo: mSeqIds) {
+        auto InfoIdLowercase(lineInfo.mData);
+        NStr::ToLower(InfoIdLowercase);
+        if (seqIdLowercase == InfoIdLowercase) {
+            existingInfo = lineInfo;
+            return true;
+        }
+    }
+    return false;
+};
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

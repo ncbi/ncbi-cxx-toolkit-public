@@ -141,6 +141,16 @@ CAlnScannerFastaGap::xImportAlignmentData(
                 description);
         }
         sSplitFastaDef(line, seqId, defLine);
+        TLineInfo existingInfo;
+        if (xGetExistingSeqIdInfo(seqId, existingInfo)) {
+            string description = ErrorPrintf(
+                "Duplicate ID: \"%s\" has already appeared at line %d.",
+                seqId.c_str(), existingInfo.mNumLine);
+            throw SShowStopper(
+                lineNumber,
+                EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
+                description);
+        }
         mSeqIds.push_back({seqId, lineNumber});
         mDeflines.push_back({defLine, lineNumber});
         mSequences.push_back(vector<TLineInfo>());

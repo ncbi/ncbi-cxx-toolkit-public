@@ -62,8 +62,8 @@ public:
 
     ~CSeqIdValidatorBankit()
     {
-        cerr << "CSeqIdValidatorBankit final validation count: " 
-             << mValidated.size() << endl;
+        //cerr << "CSeqIdValidatorBankit final validation count: " 
+        //     << mValidated.size() << endl;
     };
 
     bool

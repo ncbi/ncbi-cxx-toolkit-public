@@ -102,6 +102,11 @@ protected:
 
     unique_ptr<CSeqIdValidator> mpSeqIdValidator;
 
+    bool
+    xGetExistingSeqIdInfo(
+        const string& seqId,
+        TLineInfo& existingInfo);
+
     vector<TLineInfo> mSeqIds;
     vector<vector<TLineInfo>> mSequences;
     vector<TLineInfo> mDeflines;
