@@ -68,6 +68,36 @@ void sPrintCommand(const list<SLineInfo>& command)
     }
 }
 
+// -----------------------------------------------------------------------------
+bool 
+CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
+// -----------------------------------------------------------------------------
+{   
+    string lastLine = command.args.back().mData;
+    NStr::ToLower(lastLine);
+    int lastWhiteSpacePos = lastLine.find_last_of(" \t");
+    string lastToken = (lastWhiteSpacePos == NPOS) ?
+                        lastLine :
+                        lastLine.substr(lastWhiteSpacePos);
+    if (lastToken == "end") {
+        theErrorReporter->Warn(
+        command.args.back().mNumLine,
+        EAlnSubcode::eAlnSubcode_UnterminatedCommand,
+                "Unexpected \"end;\". Appending \';\' to prior command");
+
+        if (lastWhiteSpacePos == NPOS) {
+            command.args.pop_back();
+        }
+        else {
+            command.args.back().mData = NStr::TruncateSpaces(
+                command.args.back().mData.substr(0, lastWhiteSpacePos));
+        }
+        return true;
+    }
+    return false;
+}
+
+
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessCommand(
@@ -79,7 +109,6 @@ CAlnScannerNexus::xProcessCommand(
     string commandName = command.name;
     NStr::ToLower(commandName);
 
-
     if (!mInBlock &&
         commandName != "begin") {
         throw SShowStopper(
@@ -89,86 +118,68 @@ CAlnScannerNexus::xProcessCommand(
     } 
 
 
-    if (commandName != "sequin") {
-        sStripNexusCommentsFromCommand(command.args);
-    }
-
-    bool applyEnd = false;
-    if (commandName != "end") {
-        string lastLine = command.args.back().mData;
-        NStr::ToLower(lastLine);
-        int lastWhiteSpacePos = lastLine.find_last_of(" \t");
-        string lastToken = (lastWhiteSpacePos == NPOS) ?
-                            lastLine :
-                            lastLine.substr(lastWhiteSpacePos);
-        if (lastToken == "end") {
-            theErrorReporter->Warn(
-                command.args.back().mNumLine,
-                EAlnSubcode::eAlnSubcode_UnterminatedCommand,
-                "Unexpected \"end;\". Appending \';\' to prior command");
-
-            applyEnd = true;
-            if (lastWhiteSpacePos == NPOS) {
-                command.args.pop_back();
-            }
-            else {
-                command.args.back().mData = NStr::TruncateSpaces(
-                    command.args.back().mData.substr(0, lastWhiteSpacePos));
-            }
-        }
-    }
-
     if (commandName == "begin") {
+        sStripNexusCommentsFromCommand(command.args);
+        const bool applyEnd = xUnexpectedEndBlock(command);
         xBeginBlock(command.args);
+        if (applyEnd) {
+            xEndBlock();
+        }
+        return;
+    }
+    
+    if (commandName == "end") {
+        xEndBlock();    
+        return;    
     }
 
-    if (commandName != "end") {
-        if (NStr::EqualNocase(mCurrentBlock, "data") ||
-            NStr::EqualNocase(mCurrentBlock, "characters")) {
-            xProcessDataBlockCommand(command, sequenceInfo);
-        }
-        else 
-        if (NStr::EqualNocase(mCurrentBlock, "taxa")) {
-            xProcessTaxaBlockCommand(command, sequenceInfo);
-        }
-        else
-        if (NStr::EqualNocase(mCurrentBlock, "ncbi")) {
-            xProcessNCBIBlockCommand(command, sequenceInfo);
-        }
+    string block = mCurrentBlock;
+    NStr::ToLower(block);
+    if (block ==  "data" ||
+        block == "characters") {
+        xProcessDataBlockCommand(command, sequenceInfo);
+        return;
     }
-
-
-    if (applyEnd || commandName == "end") {
-        xEndBlock();
+    
+    if (block == "taxa") {
+        xProcessTaxaBlockCommand(command, sequenceInfo);
+        return;
     }
-    return;
+        
+    if (block == "ncbi") {
+        xProcessNCBIBlockCommand(command, sequenceInfo);
+        return;
+    }
 }
 
 
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xProcessDataBlockCommand(
-        const TCommand& command,
+        TCommand& command,
         CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
     auto name = command.name;
     NStr::ToLower(name);
 
+    sStripNexusCommentsFromCommand(command.args);
+    bool unexpectedEnd = xUnexpectedEndBlock(command);
     if (name == "dimensions") {
         xProcessDimensions(command.args);
-        return;
     }
-
+    else
     if (name == "format") {
         xProcessFormat(command.args);
         xAdjustSequenceInfo(sequenceInfo);
-        return;   
     }
-
+    else
     if (name == "matrix") {
         xProcessMatrix(command.args);
-        return;
+    }
+
+    if (unexpectedEnd) {
+        xEndBlock();
     }
 }
 
@@ -176,16 +187,21 @@ CAlnScannerNexus::xProcessDataBlockCommand(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xProcessTaxaBlockCommand(
-        const TCommand& command,
+        TCommand& command,
         CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
     auto name = command.name;
     NStr::ToLower(name);
 
+    sStripNexusCommentsFromCommand(command.args);
+    bool unexpectedEnd = xUnexpectedEndBlock(command);
     if (name == "dimensions") {
         xProcessDimensions(command.args);
-        return;
+    }
+
+    if (unexpectedEnd) {
+        xEndBlock();
     }
 }
 
@@ -193,18 +209,22 @@ CAlnScannerNexus::xProcessTaxaBlockCommand(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xProcessNCBIBlockCommand(
-        const TCommand& command,
+        TCommand& command,
         CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
     auto name = command.name;
     NStr::ToLower(name);
 
+    bool unexpectedEnd = xUnexpectedEndBlock(command);
     if (name == "sequin") {
         xProcessSequin(command.args);
     }
 
     // report an error
+    if (unexpectedEnd) {
+        xEndBlock();
+    }
 }
 
 

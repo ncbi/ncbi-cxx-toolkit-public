@@ -99,15 +99,15 @@ protected:
     xProcessMatrix(const TCommandArgs& args);
 
     void 
-    xProcessNCBIBlockCommand(const TCommand& command,
+    xProcessNCBIBlockCommand(TCommand& command,
             CSequenceInfo& sequenceInfo);
 
     void 
-    xProcessDataBlockCommand(const TCommand& command,
+    xProcessDataBlockCommand(TCommand& command,
             CSequenceInfo& sequenceInfo);
 
     void 
-    xProcessTaxaBlockCommand(const TCommand& command,
+    xProcessTaxaBlockCommand(TCommand& command,
             CSequenceInfo& sequenceInfo);
 
     void 
@@ -115,6 +115,9 @@ protected:
 
     void 
     xEndBlock(void);
+
+    bool
+    xUnexpectedEndBlock(TCommand& command);
 
     pair<string, int>
     xGetKeyVal(const TCommandArgs& command, 
