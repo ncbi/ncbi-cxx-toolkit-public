@@ -636,6 +636,38 @@ void CTestFTPDownloadApp::Init(void)
 }
 
 
+static void s_FTPStat(iostream& ftp)
+{
+    // Print out some server info
+    if (!(ftp << "STAT" << NcbiFlush)) {
+        ERR_POST(Fatal << "Cannot connect to ftp server");
+    }
+    string status;
+    do {
+        string line;
+        getline(ftp, line);
+        size_t linelen = line.size();
+        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
+            line.resize(--linelen);
+        }
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
+        if (status.empty()) {
+            status  = "Server status:\n\t" + line;
+        } else {
+            status += "\n\t";
+            status += line;
+        }
+    } while (ftp);
+    if (!status.empty()) {
+        ERR_POST(Info << status);
+    }
+    ftp.clear();
+}
+
+
 int CTestFTPDownloadApp::Run(void)
 {
     enum EProcessor {
@@ -722,34 +754,8 @@ int CTestFTPDownloadApp::Run(void)
     CConn_FtpStream ftp(*net_info, flags | fFTP_IgnorePath,
                         &ftpcb, net_info->timeout);
 
-    // Print out some server info
-    if (!(ftp << "STAT" << NcbiFlush)) {
-        ERR_POST(Fatal << "Cannot connect to ftp server");
-    }
-    string status;
-    do {
-        string line;
-        getline(ftp, line);
-        size_t linelen = line.size();
-        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
-            line.resize(--linelen);
-        }
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()) {
-            continue;
-        }
-        if (status.empty()) {
-            status  = "Server status:\n\t" + line;
-        } else {
-            status += "\n\t";
-            status += line;
-        }
-    } while (ftp);
-    if (!status.empty()) {
-        ERR_POST(Info << status);
-    }
+    s_FTPStat(ftp);
     _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Open));  // NB: clears pos
-    ftp.clear();
 
     // Look at the file extension and figure out what stream processors to use
     TProcessor proc = fProcessor_Null;
