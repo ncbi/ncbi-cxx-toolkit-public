@@ -58,16 +58,12 @@ AlnUtil::CheckId(const string& seqId,
         return;
     }
 
-    auto seqIdLower(seqId);
-    NStr::ToLower(seqIdLower);
+
     auto it = orderedIds.begin();
-    for (; it != orderedIds.end(); ++it) {
-        auto orderedIdLower(it->mData);
-        NStr::ToLower(orderedIdLower);
-        if (orderedIdLower == seqIdLower) {
-            break;
-        }
-    };
+    while (it != orderedIds.end() && it->mData != seqId) {
+        ++it;
+    }
+
 
     if (firstBlock) {
         if (it != orderedIds.end()) {

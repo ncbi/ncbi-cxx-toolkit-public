@@ -232,12 +232,8 @@ CAlnScanner::xSeqIdIsEqualToInfoAt(
     if (seqId.size() != seqIdCompare.size()) {
         return false;
     }
-    for (auto i=0; seqId[i] != 0; ++i) {
-        if (tolower(seqId[i]) != tolower(seqIdCompare[i])) {
-            return false;
-        }
-    }
-    return true;
+
+    return (seqId == seqIdCompare);
 }
 
 END_SCOPE(objects)
