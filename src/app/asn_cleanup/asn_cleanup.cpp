@@ -492,44 +492,48 @@ void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode 
                 NCBI_THROW(CFlatException, eInternal, "Unable to read Seq-submit");
             }
         } else {
-            CRef<CSeq_entry> se(new CSeq_entry);
 
-            if (asn_type == "seq-entry") {
-                //
-                //  Straight through processing: Read a seq_entry, then process
-                //  a seq_entry:
-                //
-                if (!ObtainSeqEntryFromSeqEntry(is, se)) {
-                    NCBI_THROW(
-                        CFlatException, eInternal, "Unable to construct Seq-entry object");
+            bool proceed = true;
+            size_t num_cleaned = 0;
+
+            while (proceed) {
+                CRef<CSeq_entry> se(new CSeq_entry);
+
+                if (asn_type == "seq-entry") {
+                    //
+                    //  Straight through processing: Read a seq_entry, then process
+                    //  a seq_entry:
+                    //
+
+                    proceed = ObtainSeqEntryFromSeqEntry(is, se);
+                    if (proceed) {
+                        HandleSeqEntry(se);
+                        x_WriteToFile(*se);
+                    }
+                } else if (asn_type == "bioseq") {
+                    //
+                    //  Read object as a bioseq, wrap it into a seq_entry, then process
+                    //  the wrapped bioseq as a seq_entry:
+                    //
+                    proceed = ObtainSeqEntryFromBioseq(is, se);
+                    if (proceed) {
+                        HandleSeqEntry(se);
+                        x_WriteToFile(se->GetSeq());
+                    }
+                } else if (asn_type == "bioseq-set") {
+                    //
+                    //  Read object as a bioseq_set, wrap it into a seq_entry, then 
+                    //  process the wrapped bioseq_set as a seq_entry:
+                    //
+                    proceed = ObtainSeqEntryFromBioseqSet(is, se);
+
+                    if (proceed) {
+                        HandleSeqEntry(se);
+                        x_WriteToFile(se->GetSet());
+                    }
                 }
-                HandleSeqEntry(se);
-                x_WriteToFile(*se);
-            } else if (asn_type == "bioseq") {
-                //
-                //  Read object as a bioseq, wrap it into a seq_entry, then process
-                //  the wrapped bioseq as a seq_entry:
-                //
-                if (!ObtainSeqEntryFromBioseq(is, se)) {
-                    NCBI_THROW(
-                        CFlatException, eInternal, "Unable to construct Seq-entry object");
-                }
-                HandleSeqEntry(se);
-                x_WriteToFile(se->GetSeq());
-            } else if (asn_type == "bioseq-set") {
-                //
-                //  Read object as a bioseq_set, wrap it into a seq_entry, then 
-                //  process the wrapped bioseq_set as a seq_entry:
-                //
-                if (!ObtainSeqEntryFromBioseqSet(is, se)) {
-                    NCBI_THROW(
-                        CFlatException, eInternal, "Unable to construct Seq-entry object");
-                }
-                HandleSeqEntry(se);
-                x_WriteToFile(se->GetSet());
-            } else if (asn_type == "any") {
-                size_t num_cleaned = 0;
-                while (true) {
+                else if (asn_type == "any") {
+
                     CNcbiStreampos start = is->GetStreamPos();
                     //
                     //  Try the first three in turn:
@@ -551,23 +555,24 @@ void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode 
                             } else {
                                 is->SetStreamPos(start);
                                 if (!x_ProcessSeqSubmit(is)) {
-                                    if (num_cleaned == 0) {
-                                        NCBI_THROW(
-                                            CFlatException, eInternal,
-                                            "Unable to construct Seq-entry object"
-                                            );
-                                    } else {
-                                        break;
-                                    }
+                                    proceed = false;
                                 }
                             }
                         }
                     }
-                    num_cleaned++;
-                    if (first_only) {
-                        break;
-                    }
                 }
+
+                if (proceed) {
+                    ++num_cleaned;
+                }
+
+                if (first_only) {
+                    break;
+                }
+            }
+
+            if (num_cleaned == 0 || (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF) {
+                NCBI_THROW(CFlatException, eInternal, "Unable to construct Seq-entry object");
             }
         }
     }
@@ -747,6 +752,10 @@ bool CCleanupApp::ObtainSeqEntryFromSeqEntry(
         }
         return true;
     }
+    catch(const CEofException&) {
+        is->SetFailFlags(CObjectIStream::eEOF);
+        return false;
+    }
     catch( ... ) {
         return false;
     }
@@ -767,6 +776,10 @@ bool CCleanupApp::ObtainSeqEntryFromBioseq(
         se->SetSeq( bs.GetObject() );
         return true;
     }
+    catch (const CEofException&) {
+        is->SetFailFlags(CObjectIStream::eEOF);
+        return false;
+    }
     catch( ... ) {
         return false;
     }
@@ -786,6 +799,10 @@ bool CCleanupApp::ObtainSeqEntryFromBioseqSet(
 
         se->SetSet( bss.GetObject() );
         return true;
+    }
+    catch (const CEofException&) {
+        is->SetFailFlags(CObjectIStream::eEOF);
+        return false;
     }
     catch( ... ) {
         return false;
