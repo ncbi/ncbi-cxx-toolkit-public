@@ -43,7 +43,10 @@ class CAlnScannerPhylip:
 //  ============================================================================
 {
 public:
-    CAlnScannerPhylip() {};
+    CAlnScannerPhylip():
+        mSequenceCount(0),
+        mSequenceLength(0) {};
+
     ~CAlnScannerPhylip() {};
 
 protected:
@@ -51,6 +54,13 @@ protected:
     xImportAlignmentData(
         CSequenceInfo&,
         CLineInput&) override;
+
+    virtual void
+    xVerifyAlignmentData(
+        const CSequenceInfo&) override;
+
+    int mSequenceCount;
+    int mSequenceLength;
 };
 
 END_SCOPE(objects)

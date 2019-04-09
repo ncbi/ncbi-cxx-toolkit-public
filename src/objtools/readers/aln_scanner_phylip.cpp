@@ -80,12 +80,11 @@ CAlnScannerPhylip::xImportAlignmentData(
     vector<string> tokens;
     NStr::TruncateSpacesInPlace(line);
     NStr::Split(line,  " \t", tokens, NStr::fSplit_MergeDelimiters);
-    auto numSeqs =  NStr::StringToInt(tokens[0]);
-    auto dataCount = NStr::StringToInt(tokens[1]); 
+    mSequenceCount =  NStr::StringToInt(tokens[0]);
+    mSequenceLength = NStr::StringToInt(tokens[1]); 
 
     size_t dataLineCount(0);
     size_t blockLineLength(0);
-    // move onto the next line
 
     while (iStr.ReadLine(line, lineCount)) {
         NStr::TruncateSpacesInPlace(line);
@@ -127,10 +126,10 @@ CAlnScannerPhylip::xImportAlignmentData(
             continue;
         }
 
-        bool newBlock = ((dataLineCount % numSeqs) == 0);
+        bool newBlock = ((dataLineCount % mSequenceCount) == 0);
 
         string seqData;
-        if (dataLineCount < numSeqs) { // in first block
+        if (dataLineCount < mSequenceCount) { // in first block
             string seqId;
             NStr::SplitInTwo(line, " \t", seqId, seqData, NStr::fSplit_MergeDelimiters);
             if (seqData.empty()) {
@@ -177,9 +176,42 @@ CAlnScannerPhylip::xImportAlignmentData(
                 description);
         }
 
-        mSequences[dataLineCount % numSeqs].push_back({seqData, lineCount});
+        mSequences[dataLineCount % mSequenceCount].push_back({seqData, lineCount});
         ++dataLineCount;
     }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CAlnScannerPhylip::xVerifyAlignmentData(
+    const CSequenceInfo& sequenceInfo)
+//  ----------------------------------------------------------------------------
+{
+    if (mSequenceCount != mSeqIds.size()) {
+        auto description = ErrorPrintf(
+            "Phylip sequence count from first line (%d) does not agree with "
+            "the actual sequence count (%d).",
+            mSequenceCount, mSeqIds.size());
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            description);
+    }
+    auto actualSequenceLength = 0;
+    for (auto sequenceData: mSequences[0]) {
+        actualSequenceLength += sequenceData.mData.size();
+    }
+    if (mSequenceLength != actualSequenceLength) {
+        auto description = ErrorPrintf(
+            "Phylip sequence length from first line (%d) does not agree with "
+            "the actual sequence length (%d).",
+            mSequenceLength, actualSequenceLength);
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            description);
+    }
+    return CAlnScanner::xVerifyAlignmentData(sequenceInfo);
 }
 
 END_SCOPE(objects)
