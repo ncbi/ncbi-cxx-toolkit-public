@@ -324,16 +324,20 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
 /** Obtain status of the last I/O operation.  This is NOT a completion code of
  * the last CONN call, but rather some status from a lower level  CONNECTOR's
  * layer (if available).
- * @par Special case:  eIO_Open as "dir" checks whether the connection is in
- * an open state (which means the underlying CONNECTOR has been successfully
- * opened, but does not assure/check availability for any data or I/O), and
- * returns eIO_Success if it is, or an error code otherwise.
+ * @note eIO_Open as "dir" checks whether the connection is in an open state
+ * (which means the underlying CONNECTOR has been successfully opened, but does
+ * not assure/check for availability of any data or I/O), and returns
+ * eIO_Success if it is open, or an error code otherwise.
+ * @par A special case of eIO_ReadWrite clears internally cached read and write
+ * status (so that any following CONN_Status() call with either eIO_Read or
+ * eIO_Write would have to access the underlying CONNECTOR), and otherwise is
+ * equivalent to eIO_Open.
  * @sa
  *  CONN_Create, CONN_Read, CONN_Write, CONN_Flush
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
-(CONN      conn,  /**< [in] connection handle     */
- EIO_Event dir    /**< [in] eIO_Read or eIO_Write */
+(CONN      conn,  /**< [in] connection handle                */
+ EIO_Event dir    /**< [in] eIO_Open, eIO_Read, or eIO_Write */
  );
 
 

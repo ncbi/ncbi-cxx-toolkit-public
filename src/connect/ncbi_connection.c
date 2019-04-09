@@ -228,7 +228,8 @@ static EIO_Status x_Callback(CONN conn, ECONN_Callback type, unsigned int flag)
 }
 
 
-static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
+static EIO_Status x_Flush(CONN conn, const STimeout* timeout,
+                          int/*bool*/ isflush)
 {
     EIO_Status status;
 
@@ -242,6 +243,8 @@ static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
         assert(timeout != kDefaultTimeout);
         for (;;) {
             status = conn->meta.flush(conn->meta.c_flush, timeout);
+            if (isflush)
+                conn->w_status = status;
             if (status == eIO_Success)
                 break;
             if (status == eIO_Timeout)
@@ -265,7 +268,7 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
 
     /* flush connection first, if open */
     status = conn->meta.list  &&  conn->state == eCONN_Open
-        ? x_Flush(conn, conn->c_timeout) : eIO_Success;
+        ? x_Flush(conn, conn->c_timeout, 0/*no-flush*/) : eIO_Success;
 
     for (x_conn = conn->meta.list;  x_conn;  x_conn = x_conn->next) {
         if (x_conn == connector) {
@@ -685,6 +688,7 @@ static EIO_Status s_CONN_Write
                                   n_written, timeout);
         assert(status != eIO_Success  ||  *n_written  ||  !size);
         assert(*n_written <= size);
+        conn->w_status = status;
 
         if (*n_written) {
             conn->w_pos += *n_written;
@@ -732,13 +736,10 @@ static EIO_Status s_CONN_WritePersist
         status = s_CONN_Write(conn, (char*) buf + *n_written,
                               size - *n_written, &x_written);
         *n_written += x_written;
-        if (*n_written == size) {
-            conn->w_status = status;
+        if (*n_written == size)
             return conn->flags & fCONN_Supplement ? status : eIO_Success;
-        }
     } while (status == eIO_Success);
 
-    conn->w_status = status;
     return status;
 }
 
@@ -775,7 +776,6 @@ extern EIO_Status CONN_Write
         return eIO_NotSupported;
     }
 
-    conn->w_status = status;
     if (conn->flags & fCONN_Supplement)
         return status;
     return *n_written ? eIO_Success : status;
@@ -814,7 +814,7 @@ extern EIO_Status CONN_Flush
         return status;
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
-    status = x_Flush(conn, conn->w_timeout);
+    status = x_Flush(conn, conn->w_timeout, 1/*flush*/);
     if (status != eIO_Success) {
         /* this is only for the log message */
         const STimeout* timeout = status != eIO_Timeout ? 0
@@ -822,10 +822,9 @@ extern EIO_Status CONN_Flush
                ? conn->meta.default_timeout
                : conn->w_timeout);
         assert(timeout != kDefaultTimeout);
-        CONN_LOG(21, Flush, eLOG_Warning, "Failed to flush");
+        CONN_LOG(21, Flush, status == eIO_Timeout ? eLOG_Trace : eLOG_Warning,
+                 "Failed to flush");
     }
-    if (conn->meta.flush)
-        conn->w_status = status;
     return status;
 }
 
@@ -882,6 +881,7 @@ static EIO_Status s_CONN_Read
                                  &x_read, timeout);
         assert(status != eIO_Success  ||  x_read  ||  !size);
         assert(x_read <= size - *n_read);
+        conn->r_status = status;
 
         if (x_read) {
             *n_read     += x_read;
@@ -938,20 +938,16 @@ static EIO_Status s_CONN_ReadPersist
         status = s_CONN_Read(conn, (char*) buf + *n_read,
                              size - *n_read, &x_read, 0/*no peek*/);
         *n_read += x_read;
-        if (*n_read == size) {
-            conn->r_status = status;
+        if (*n_read == size)
             return conn->flags & fCONN_Supplement ? status : eIO_Success;
-        }
 
         if (status != eIO_Success)
             break;
 
         /* keep flushing any pending unwritten output data */
         if (!(conn->flags & (fCONN_Untie | fCONN_Flush)))
-            x_Flush(conn, conn->r_timeout);
+            x_Flush(conn, conn->r_timeout, 0/*no-flush*/);
     }
-
-    conn->r_status = status;
     return status;
 }
 
@@ -980,7 +976,7 @@ extern EIO_Status CONN_Read
 
     /* flush pending unwritten output data (if any) */
     if (!(conn->flags & (fCONN_Untie | fCONN_Flush)))
-        x_Flush(conn, conn->r_timeout);
+        x_Flush(conn, conn->r_timeout, 0/*no-flush*/);
 
     /* now do read */
     switch (how) {
@@ -996,7 +992,6 @@ extern EIO_Status CONN_Read
         return eIO_NotSupported;
     }
 
-    conn->r_status = status;
     if (conn->flags & fCONN_Supplement)
         return status;
     return *n_read ? eIO_Success : status;
@@ -1043,9 +1038,8 @@ extern EIO_Status CONN_ReadLine
 
         /* keep flushing any pending unwritten output data then read */
         if (!(conn->flags & (fCONN_Untie | fCONN_Flush)))
-            x_Flush(conn, conn->r_timeout);
+            x_Flush(conn, conn->r_timeout, 0/*no-flush*/);
         status = s_CONN_Read(conn, x_buf, size ? x_size : 0, &x_read, 0);
-        conn->r_status = status;
 
         for (i = 0;  i < x_read  &&  len < size;  ++i) {
             char c = x_buf[i];
@@ -1083,7 +1077,7 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
 {
     CONN_NOT_NULL(26, Status);
 
-    if (dir != eIO_Open  &&  dir != eIO_Read  &&  dir != eIO_Write)
+    if (dir != eIO_Open  &&  (dir & ~eIO_ReadWrite))
         return eIO_InvalidArg;
 
     if (conn->state == eCONN_Unusable)
@@ -1099,6 +1093,10 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
         return eIO_Closed;
 
     switch (dir) {
+    case eIO_ReadWrite:
+        conn->r_status = eIO_Success;
+        conn->w_status = eIO_Success;
+        /*FALLTHRU*/
     case eIO_Open:
         return eIO_Success;
     case eIO_Read:
