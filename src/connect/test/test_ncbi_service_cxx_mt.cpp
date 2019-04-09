@@ -78,11 +78,11 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
         CArgDescriptions::eString);
 
     args.AddDefaultKey("types",
-        "Types", "Server type(s), eg 'HTTP_GET', "
-        "'DNS | HTTP', 'NCBID+STANDALONE', etc.  "
+        "Types", "Server type(s), eg 'ANY', 'ALL', 'HTTP_GET', "
+        "'DNS | HTTP', 'NCBID+STANDALONE', 'NCBID, HTTP', etc.  "
         "From: { NCBID, STANDALONE, HTTP_GET, HTTP_POST, HTTP, FIREWALL, DNS }",
         CArgDescriptions::eString,
-        "HTTP");
+        "ANY");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "SERVICE CXX test");
@@ -161,16 +161,22 @@ bool CTestApp::Thread_Run(int idx)
 bool CTestApp::x_ParseTypes(void)
 {
     string types_str = GetArgs()["types"].AsString();
-    list<string> types_list;
-    NStr::Split(types_str, " |+,;", types_list, NStr::fSplit_Tokenize);
-    for (auto typ : types_list) {
-        ESERV_Type etyp;
-        const char* styp = SERV_ReadType(typ.c_str(), &etyp);
-        if ( ! styp) {
-            ERR_POST(Critical << "Invalid server type '" << typ << "'.");
-            return false;
+    if (NStr::EqualNocase(types_str, "ALL")) {
+        sm_Types = fSERV_All;
+    } else if (NStr::EqualNocase(types_str, "ANY")) {
+        sm_Types = fSERV_Any;
+    } else {
+        list<string> types_list;
+        NStr::Split(types_str, " |+,;", types_list, NStr::fSplit_Tokenize);
+        for (auto typ : types_list) {
+            ESERV_Type etyp;
+            const char* styp = SERV_ReadType(NStr::ToUpper(typ).c_str(), &etyp);
+            if ( ! styp) {
+                ERR_POST(Critical << "Invalid server type '" << typ << "'.");
+                return false;
+            }
+            sm_Types |= etyp;
         }
-        sm_Types |= etyp;
     }
     return true;
 }

@@ -1607,6 +1607,9 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     }
     if ( ! data->net_info) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
+        if (new_net_info) {
+            ConnNetInfo_Destroy(new_net_info);
+        }
         s_Close(iter);
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no net_info clone");
         return NULL;
@@ -1644,14 +1647,14 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     }
 
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_API_HOST_KEY, data->net_info->host, sizeof(net_info->host),
-        REG_NAMERD_API_HOST_DEF))
+        REG_NAMERD_API_HOST_KEY, data->net_info->host,
+        sizeof(data->net_info->host), REG_NAMERD_API_HOST_DEF))
     {
         data->net_info->host[0] = NIL;
     }
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_API_PATH_KEY, data->net_info->path, sizeof(net_info->path),
-        REG_NAMERD_API_PATH_DEF))
+        REG_NAMERD_API_PATH_KEY, data->net_info->path,
+        sizeof(data->net_info->path), REG_NAMERD_API_PATH_DEF))
     {
         data->net_info->path[0] = NIL;
     }
@@ -1660,7 +1663,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         REG_NAMERD_API_ENV_DEF))
     {
         if (strlen(data->net_info->path) + 1 + strlen(namerd_env) <
-            sizeof(net_info->path))
+            sizeof(data->net_info->path))
         {
             strcat(data->net_info->path, "/");
             strcat(data->net_info->path, namerd_env);
