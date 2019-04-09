@@ -1458,9 +1458,8 @@ static EIO_Status s_FTPRestart(SFTPConnector* xxx,
 
     if (sscanf(arg, "%" NCBI_BIGCOUNT_FORMAT_SPEC "%n", &rest, &n) < 1
         ||  arg[n]) {
-        if (xxx->flag & fFTP_DelayRestart) {
+        if (xxx->flag & fFTP_DelayRestart)
             return eIO_Unknown;
-        }
         xxx->rest = (TNCBI_BigCount)(-1L);
         xxx->rclr = 0/*false*/;
     } else {
@@ -2069,8 +2068,11 @@ static EIO_Status s_VT_Flush
     if (!xxx->cntl)
         return eIO_Closed;
 
-    if (xxx->send)
-        return xxx->open ? eIO_Success : eIO_Closed;
+    if (xxx->send) {
+        return xxx->open ? eIO_Success
+            : xxx->r_status != eIO_Success ? xxx->r_status
+            : xxx->w_status != eIO_Success ? xxx->w_status : eIO_Closed;
+    }
     if (!BUF_Size(xxx->wbuf))
         return eIO_Success;
     return s_FTPExecute(xxx, timeout);
