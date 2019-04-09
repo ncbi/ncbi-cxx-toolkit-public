@@ -639,6 +639,8 @@ private:
     
     ///Current oid to use for lmdb
     int m_LmdbOid;
+
+    static const int kMaxRedundantEntries = 50000;
 };
 
 END_NCBI_SCOPE

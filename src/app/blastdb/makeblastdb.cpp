@@ -1186,6 +1186,8 @@ void CMakeBlastDBApp::x_BuildDatabase()
     x_ProcessMaskData();
 #endif
     x_ProcessInputData(args[kInput].AsString(), is_protein);
+
+    m_DB->EndBuild();
 }
 
 int CMakeBlastDBApp::Run(void)

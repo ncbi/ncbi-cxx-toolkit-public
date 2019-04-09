@@ -830,6 +830,11 @@ void CWriteDB_Impl::x_CookHeader()
                       OID,
                       m_ParseIDs,
                       m_LongSeqId);
+
+    if (m_Deflines->CanGet() && (m_Deflines->Get().size() > kMaxRedundantEntries)) {
+            NCBI_THROW(CWriteDBException, eArgErr,
+                       "Error: Exceeded the limit of redundant entries.");
+    }
 }
 
 void CWriteDB_Impl::x_CookIds()

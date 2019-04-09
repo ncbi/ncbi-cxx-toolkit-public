@@ -1383,7 +1383,7 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
     _ASSERT(vols.empty() == files.empty());
 
     if (vols.empty()) {
-        m_LogFile << "No volumes were created because no sequences were found."
+        m_LogFile << "No volumes were created."
                   << endl;
 
         success = false;
@@ -1406,7 +1406,7 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
 
     if (close_exception) {
         NCBI_RETHROW(*close_exception, CWriteDBException, eArgErr,
-                     "Can not close files.");
+                     close_exception->GetMsg());
     }
 
     return success;
