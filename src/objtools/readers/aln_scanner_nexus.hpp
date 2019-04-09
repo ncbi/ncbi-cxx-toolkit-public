@@ -81,9 +81,10 @@ protected:
 
     using TCommand = SNexusCommand;
     using TCommandArgs = TCommand::TArgs;
+    using TCommandTokens = TCommandArgs;
 
     void
-    xProcessCommand(SNexusCommand command, 
+    xProcessCommand(const TCommandTokens& commandTokens, 
             CSequenceInfo& sequenceInfo);
 
     void 

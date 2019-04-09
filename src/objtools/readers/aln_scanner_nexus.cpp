@@ -101,24 +101,30 @@ CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessCommand(
-    SNexusCommand command,
+    const TCommandTokens& commandTokens,
     CSequenceInfo& sequenceInfo) 
 //  ----------------------------------------------------------------------------
 {
+    SNexusCommand command;
+    command.args = commandTokens;
 
-    string commandName = command.name;
-    NStr::ToLower(commandName);
+    size_t nameEnd = 
+        commandTokens.front().mData.find_first_of(" \t[");
+    if (nameEnd == NPOS) {
+        command.name = command.args.front().mData;
+        command.args.pop_front();
+    }
+    else {
+        command.name = command.args.front().mData.substr(0, nameEnd);
+        command.args.front().mData = 
+            NStr::TruncateSpaces(command.args.front().mData.substr(nameEnd));
+    }
 
-    if (!mInBlock &&
-        commandName != "begin") {
-        throw SShowStopper(
-                command.startLineNum,
-                EAlnSubcode::eAlnSubcode_UnexpectedCommand,
-                "\"" + command.name + "\" command appears outside of block.");
-    } 
+    string nameLower = command.name;
+    NStr::ToLower(nameLower);
 
 
-    if (commandName == "begin") {
+    if (nameLower == "begin") {
         sStripNexusCommentsFromCommand(command.args);
         const bool applyEnd = xUnexpectedEndBlock(command);
         xBeginBlock(command.args);
@@ -127,8 +133,17 @@ CAlnScannerNexus::xProcessCommand(
         }
         return;
     }
+
+
+    if (!mInBlock) {
+        throw SShowStopper(
+                command.startLineNum,
+                EAlnSubcode::eAlnSubcode_UnexpectedCommand,
+                "\"" + command.name + "\" command appears outside of block.");
+    } 
+
     
-    if (commandName == "end") {
+    if (nameLower == "end") {
         xEndBlock();    
         return;    
     }
@@ -160,23 +175,24 @@ CAlnScannerNexus::xProcessDataBlockCommand(
         CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
-    auto name = command.name;
-    NStr::ToLower(name);
+    auto nameLower = command.name;
+    NStr::ToLower(nameLower);
 
     sStripNexusCommentsFromCommand(command.args);
     bool unexpectedEnd = xUnexpectedEndBlock(command);
-    if (name == "dimensions") {
+
+    if (nameLower == "dimensions") {
         xProcessDimensions(command.args);
     }
     else
-    if (name == "format") {
+    if (nameLower == "format") {
         xProcessFormat(command.args);
-        xAdjustSequenceInfo(sequenceInfo);
     }
     else
-    if (name == "matrix") {
+    if (nameLower == "matrix") {
         xProcessMatrix(command.args);
     }
+    // report a warning or error?
 
     if (unexpectedEnd) {
         xEndBlock();
@@ -191,14 +207,16 @@ CAlnScannerNexus::xProcessTaxaBlockCommand(
         CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
-    auto name = command.name;
-    NStr::ToLower(name);
+    auto nameLower = command.name;
+    NStr::ToLower(nameLower);
 
     sStripNexusCommentsFromCommand(command.args);
     bool unexpectedEnd = xUnexpectedEndBlock(command);
-    if (name == "dimensions") {
+
+    if (nameLower == "dimensions") {
         xProcessDimensions(command.args);
     }
+    // else report a warning or error?
 
     if (unexpectedEnd) {
         xEndBlock();
@@ -213,15 +231,15 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
         CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
-    auto name = command.name;
-    NStr::ToLower(name);
+    auto nameLower = command.name;
+    NStr::ToLower(nameLower);
 
     bool unexpectedEnd = xUnexpectedEndBlock(command);
-    if (name == "sequin") {
+    if (nameLower == "sequin") {
         xProcessSequin(command.args);
     }
-
-    // report an error
+    // else report a warning or error?
+    //
     if (unexpectedEnd) {
         xEndBlock();
     }
@@ -517,7 +535,7 @@ CAlnScannerNexus::xImportAlignmentData(
 {
     string line;
     int lineCount(0);
-    TCommandArgs currentCommand;
+    TCommandArgs commandTokens;
     size_t commandEnd(0);
     size_t commandStart(0);
     int numOpenBrackets(0);
@@ -555,32 +573,13 @@ CAlnScannerNexus::xImportAlignmentData(
 
 
         while (commandEnd != NPOS) {
-            string commandTokens = 
+            string commandSubstr = 
                 NStr::TruncateSpaces(line.substr(commandStart, commandEnd-commandStart));
-            if (!commandTokens.empty()) {
-                currentCommand.push_back({commandTokens, lineCount});
+            if (!commandSubstr.empty()) {
+                commandTokens.push_back({commandSubstr, lineCount});
             }
-
-            SNexusCommand nexusCommand;
-            nexusCommand.args = currentCommand;
-            string remainder;
-            NStr::SplitInTwo(
-                    currentCommand.front().mData,
-                    " \t",
-                    nexusCommand.name,
-                    remainder);
-            nexusCommand.startLineNum = currentCommand.front().mNumLine;
-
-            NStr::TruncateSpacesInPlace(remainder);
-            if (!remainder.empty()) {
-                nexusCommand.args.front().mData = remainder;
-            }
-            else {
-                nexusCommand.args.pop_front();
-            }
-
-            xProcessCommand(nexusCommand, sequenceInfo);
-            currentCommand.clear();
+            xProcessCommand(commandTokens, sequenceInfo);
+            commandTokens.clear();
 
             commandStart = commandEnd+1;
             previousOpenBrackets = numOpenBrackets;
@@ -593,7 +592,7 @@ CAlnScannerNexus::xImportAlignmentData(
         }
 
         if (commandStart < line.size()) {
-            currentCommand.push_back({NStr::TruncateSpaces(line.substr(commandStart)), lineCount});
+            commandTokens.push_back({NStr::TruncateSpaces(line.substr(commandStart)), lineCount});
         }
         commandStart = 0;
     }
@@ -609,8 +608,8 @@ CAlnScannerNexus::xImportAlignmentData(
                 description);
     }
 
-    if (!currentCommand.empty()) {
-        auto commandStartLine =  currentCommand.front().mNumLine;
+    if (!commandTokens.empty()) {
+        auto commandStartLine =  commandTokens.front().mNumLine;
         string description = 
            (commandStartLine == lineCount) ?
            ErrorPrintf(
