@@ -708,6 +708,13 @@ void CThread::sx_SetThreadPid(TPid pid)
 #define NCBI_THREAD_VALIDATE(cond, error_code, message) \
     if ( !(cond) ) NCBI_THROW(CThreadException, error_code, message)
 
+
+// Stack size parameter, 2M by default.
+NCBI_PARAM_DECL(size_t, Thread, StackSize);
+NCBI_PARAM_DEF_EX(size_t, Thread, StackSize, 2048*1024, eParam_NoThread, THREAD_STACK_SIZE);
+typedef NCBI_PARAM_TYPE(Thread, StackSize) TParamThreadStackSize;
+
+
 bool CThread::Run(TRunMode flags)
 {
     CUsedTlsBases::Init();
@@ -781,6 +788,9 @@ bool CThread::Run(TRunMode flags)
                 PTHREAD_CREATE_DETACHED) == 0, eRunError,
                 "CThread::Run() - error setting thread detach state");
         }
+        NCBI_THREAD_VALIDATE(pthread_attr_setstacksize(&attr,
+            TParamThreadStackSize::GetDefault()) == 0, eRunError,
+            "Thread::Run() -- error setting stack size");
         NCBI_THREAD_VALIDATE(pthread_create(&m_Handle, &attr,
             ThreadWrapperCallerImpl, this) == 0, eRunError,
             "CThread::Run() -- error creating thread");
