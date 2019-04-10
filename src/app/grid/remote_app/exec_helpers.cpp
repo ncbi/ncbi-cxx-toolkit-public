@@ -43,6 +43,7 @@
 #endif
 
 #include "exec_helpers.hpp"
+#include "async_task.hpp"
 
 #define PIPE_SIZE 64 * 1024
 
@@ -57,134 +58,6 @@ struct CRemoteAppReaperTask
 
     bool operator()(int current, int max_attempts);
 };
-
-template <class TTask>
-class CAsyncTaskProcessor
-{
-    // Context holds all data that is shared between Scheduler and Executor.
-    // Also, it actually implements both these actors
-    class CContext
-    {
-    public:
-        CContext(int s, int m)
-            : sleep(s > 1 ? s : 1), // Sleep at least one second between executions
-              max_attempts(m),
-              stop(false)
-        {}
-
-        bool Enabled() const { return max_attempts > 0; }
-
-        bool SchedulerImpl(TTask);
-        void ExecutorImpl();
-
-        void ExecutorImplStop()
-        {
-            CMutexGuard guard(lock);
-            stop = true;
-            cond.SignalSome();
-        }
-
-    private:
-        typedef list<pair<int, TTask>> TChildren;
-        typedef typename TChildren::iterator TChildren_I;
-
-        bool FillBacklog(TChildren_I&);
-
-        CMutex lock;
-        CConditionVariable cond;
-        TChildren children;
-        TChildren backlog;
-        const unsigned sleep;
-        const int max_attempts;
-        bool stop;
-    };
-
-    // Executor runs async tasks (in a separate thread)
-    class CExecutor
-    {
-        struct SThread : public CThread
-        {
-            SThread(CContext& context, const string& app_name)
-                : m_Context(context),
-                m_ThreadName(app_name + "_cl")
-            {}
-
-            void Stop()
-            {
-                try {
-                    if (Discard()) return;
-
-                    m_Context.ExecutorImplStop();
-                    Join();
-                } STD_CATCH_ALL("Exception in CExecutor::SThread::Stop()")
-            }
-
-        private:
-            // This is the only method called in a different thread
-            void* Main(void)
-            {
-                SetCurrentThreadName(m_ThreadName);
-                m_Context.ExecutorImpl();
-                return NULL;
-            }
-
-            CContext& m_Context;
-            const string m_ThreadName;
-        };
-
-    public:
-        CExecutor(CContext& context, const string& app_name)
-            : m_Thread(context.Enabled() ? new SThread(context, app_name) : nullptr)
-        {}
-
-        void Start() { if (m_Thread) m_Thread->Run(); }
-        ~CExecutor() { if (m_Thread) m_Thread->Stop(); }
-
-    private:
-        SThread* m_Thread;
-    };
-
-public:
-    // Scheduler gives tasks to Executor
-    class CScheduler
-    {
-    public:
-        bool operator()(TTask task)
-        {
-            return m_Context.SchedulerImpl(task);
-        }
-
-    private:
-        CScheduler(CContext& context) : m_Context(context) {}
-
-        CContext& m_Context;
-
-        friend class CAsyncTaskProcessor;
-    };
-
-    CAsyncTaskProcessor(int sleep, int max_attempts, const string& app_name);
-
-    CScheduler& GetScheduler() { return m_Scheduler; }
-    void StartExecutor() { m_Executor.Start(); }
-
-private:
-    CContext m_Context;
-    CScheduler m_Scheduler;
-    CExecutor m_Executor;
-};
-
-template <class TTask>
-bool CAsyncTaskProcessor<TTask>::CContext::SchedulerImpl(TTask task)
-{
-    if (Enabled()) {
-        CMutexGuard guard(lock);
-        children.emplace_back(0, task);
-        cond.SignalSome();
-        return true;
-    }
-
-    return false;
-}
 
 bool CRemoteAppReaperTask::operator()(int current, int max_attempts)
 {
@@ -214,62 +87,6 @@ bool CRemoteAppReaperTask::operator()(int current, int max_attempts)
     }
 
     return false;
-}
-
-template <class TTask>
-void CAsyncTaskProcessor<TTask>::CContext::ExecutorImpl()
-{
-    for (;;) {
-        TChildren_I backlog_end = backlog.end();
-
-        // If stop was requested
-        if (!FillBacklog(backlog_end)) {
-            return;
-        }
-
-        // Execute tasks from the backlog
-        TChildren_I it = backlog.begin();
-        while (it != backlog_end) {
-            if (it->second(++it->first, max_attempts)) {
-                backlog.erase(it++);
-            } else {
-                ++it;
-            }
-        }
-    }
-}
-
-template <class TTask>
-bool CAsyncTaskProcessor<TTask>::CContext::FillBacklog(TChildren_I& backlog_end)
-{
-    CMutexGuard guard(lock);
-
-    while (!stop) {
-        // If there are some new tasks to execute
-        if (!children.empty()) {
-            // Move them to the backlog, these only will be processed this time
-            backlog_end = backlog.begin();
-            backlog.splice(backlog_end, children);
-            return true;
-
-        // If there is nothing to do, wait for a signal
-        } else if (backlog.empty()) {
-            while (!cond.WaitForSignal(lock));
-
-        // No backlog processing if there is a signal
-        } else if (!cond.WaitForSignal(lock, sleep)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-template <class TTask>
-CAsyncTaskProcessor<TTask>::CAsyncTaskProcessor(int sleep, int max_attempts, const string& app_name)
-    : m_Context(sleep, max_attempts),
-      m_Scheduler(m_Context),
-      m_Executor(m_Context, app_name)
-{
 }
 
 // This class is responsibe for the whole process of reaping child processes
