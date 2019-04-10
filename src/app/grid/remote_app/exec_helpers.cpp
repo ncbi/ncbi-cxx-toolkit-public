@@ -81,6 +81,8 @@ class CRemoteAppReaper
             CProcess process;
 
             SChild(TProcessHandle handle) : process(handle) {}
+
+            bool operator()(int current, int max_attempts);
         };
 
         typedef list<pair<int, SChild>> TChildren;
@@ -184,10 +186,38 @@ bool CRemoteAppReaper::CContext::ManagerImpl(
     return false;
 }
 
-void CRemoteAppReaper::CContext::CollectorImpl()
+bool CRemoteAppReaper::CContext::SChild::operator()(int current, int max_attempts)
 {
     CProcess::CExitInfo exitinfo;
+    const bool first_attempt = current == 1;
 
+    if (process.Wait(0, &exitinfo) != -1 || exitinfo.IsExited() || exitinfo.IsSignaled()) {
+        // Log a message for those that had failed to be killed before
+        if (!first_attempt) {
+            LOG_POST(Note << "Successfully waited for a process: " << process.GetHandle());
+        }
+
+        return true;
+    }
+
+    if (first_attempt) {
+        if (process.KillGroup()) return true;
+
+        LOG_POST(Warning << "Failed to kill a process: " << process.GetHandle() << ", will wait for it");
+        return false;
+    }
+
+    if (current > max_attempts) {
+        // Give up if there are too many attempts to wait for a process
+        ERR_POST("Gave up waiting for a process: " << process.GetHandle());
+        return true;
+    }
+
+    return false;
+}
+
+void CRemoteAppReaper::CContext::CollectorImpl()
+{
     for (;;) {
         TChildren_I backlog_end = backlog.end();
 
@@ -199,30 +229,7 @@ void CRemoteAppReaper::CContext::CollectorImpl()
         // Wait/kill child processes from the backlog
         TChildren_I it = backlog.begin();
         while (it != backlog_end) {
-            bool done = it->second.process.Wait(0, &exitinfo) != -1 ||
-                exitinfo.IsExited() || exitinfo.IsSignaled();
-
-            if (done) {
-                // Log a message for those that had failed to be killed
-                if (it->first) {
-                    LOG_POST(Note << "Successfully waited for a process: " <<
-                            it->second.process.GetHandle());
-                }
-            } else if (it->first++) {
-                // Give up if there are too many attempts to wait for a process
-                if (it->first > max_attempts) {
-                    done = true;
-                    ERR_POST("Give up waiting for a process: " <<
-                            it->second.process.GetHandle());
-                }
-            } else if (it->second.process.KillGroup()) {
-                done = true;
-            } else {
-                LOG_POST(Warning << "Failed to kill a process: " <<
-                        it->second.process.GetHandle() << ", will wait for it");
-            }
-
-            if (done) {
+            if (it->second(++it->first, max_attempts)) {
                 backlog.erase(it++);
             } else {
                 ++it;
