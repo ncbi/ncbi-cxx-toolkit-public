@@ -187,12 +187,15 @@ if (EXISTS ${NCBI_ThirdParty_NCBI_C}/include)
   set(NCBI_COMPONENT_NCBI_C_FOUND YES)
   set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_ThirdParty_NCBI_C}/include)
 
+if(OFF)
   set(_c_libs  blast ddvlib medarch ncbi ncbiacc ncbicdr
                ncbicn3d ncbicn3d_ogl ncbidesk ncbiid1
                ncbimain ncbimmdb ncbinacc ncbiobj ncbispel
                ncbitool ncbitxc2 netblast netcli netentr
                regexp smartnet vibgif vibnet vibrant
                vibrant_ogl)
+endif()
+  set(_c_libs  ncbiobj ncbimmdb ncbi)
 
   foreach( _lib IN LISTS _c_libs)
     set(NCBI_COMPONENT_NCBI_C_LIBS ${NCBI_COMPONENT_NCBI_C_LIBS} "${NCBI_ThirdParty_NCBI_C}/\$\(Configuration\)/${_lib}.lib")
@@ -427,7 +430,7 @@ if(NCBI_COMPONENT_PROTOBUF_FOUND)
     ${NCBI_ThirdParty_GRPC}/lib/ssl.lib
     ${NCBI_ThirdParty_GRPC}/lib/crypto.lib
   )
-  set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600 _ITERATOR_DEBUG_LEVEL=0)
+  set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
 endif()
 
 ##############################################################################
