@@ -491,97 +491,90 @@ void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode 
         x_ProcessBigFile(is, asn_type);
     }
     else {
-        if (asn_type == "seq-submit") {  // submission
-            if (!x_ProcessSeqSubmit(is)) {
-                NCBI_THROW(CFlatException, eInternal, "Unable to read Seq-submit");
+        bool proceed = true;
+        size_t num_cleaned = 0;
+
+        while (proceed) {
+            CRef<CSeq_entry> se(new CSeq_entry);
+
+            if (asn_type == "seq-entry") {
+                //
+                //  Straight through processing: Read a seq_entry, then process
+                //  a seq_entry:
+                //
+
+                proceed = ObtainSeqEntryFromSeqEntry(is, se);
+                if (proceed) {
+                    HandleSeqEntry(se);
+                    x_WriteToFile(*se);
+                }
+            } else if (asn_type == "bioseq") {
+                //
+                //  Read object as a bioseq, wrap it into a seq_entry, then process
+                //  the wrapped bioseq as a seq_entry:
+                //
+                proceed = ObtainSeqEntryFromBioseq(is, se);
+                if (proceed) {
+                    HandleSeqEntry(se);
+                    x_WriteToFile(se->GetSeq());
+                }
+            } else if (asn_type == "bioseq-set") {
+                //
+                //  Read object as a bioseq_set, wrap it into a seq_entry, then 
+                //  process the wrapped bioseq_set as a seq_entry:
+                //
+                proceed = ObtainSeqEntryFromBioseqSet(is, se);
+
+                if (proceed) {
+                    HandleSeqEntry(se);
+                    x_WriteToFile(se->GetSet());
+                }
+            } else if (asn_type == "seq-submit") {  // submission
+                proceed = x_ProcessSeqSubmit(is);
             }
-        } else {
+            else if (asn_type == "any") {
 
-            bool proceed = true;
-            size_t num_cleaned = 0;
-
-            while (proceed) {
-                CRef<CSeq_entry> se(new CSeq_entry);
-
-                if (asn_type == "seq-entry") {
-                    //
-                    //  Straight through processing: Read a seq_entry, then process
-                    //  a seq_entry:
-                    //
-
-                    proceed = ObtainSeqEntryFromSeqEntry(is, se);
-                    if (proceed) {
-                        HandleSeqEntry(se);
-                        x_WriteToFile(*se);
-                    }
-                } else if (asn_type == "bioseq") {
-                    //
-                    //  Read object as a bioseq, wrap it into a seq_entry, then process
-                    //  the wrapped bioseq as a seq_entry:
-                    //
-                    proceed = ObtainSeqEntryFromBioseq(is, se);
-                    if (proceed) {
-                        HandleSeqEntry(se);
-                        x_WriteToFile(se->GetSeq());
-                    }
-                } else if (asn_type == "bioseq-set") {
-                    //
-                    //  Read object as a bioseq_set, wrap it into a seq_entry, then 
-                    //  process the wrapped bioseq_set as a seq_entry:
-                    //
-                    proceed = ObtainSeqEntryFromBioseqSet(is, se);
-
-                    if (proceed) {
+                CNcbiStreampos start = is->GetStreamPos();
+                //
+                //  Try the first three in turn:
+                //
+                string strNextTypeName = is->PeekNextTypeName();
+                if (ObtainSeqEntryFromSeqEntry(is, se)) {
+                    HandleSeqEntry(se);
+                    x_WriteToFile(*se);
+                } else {
+                    is->SetStreamPos(start);
+                    if (ObtainSeqEntryFromBioseqSet(is, se)) {
                         HandleSeqEntry(se);
                         x_WriteToFile(se->GetSet());
-                    }
-                }
-                else if (asn_type == "any") {
-
-                    CNcbiStreampos start = is->GetStreamPos();
-                    //
-                    //  Try the first three in turn:
-                    //
-                    string strNextTypeName = is->PeekNextTypeName();
-                    if (ObtainSeqEntryFromSeqEntry(is, se)) {
-                        HandleSeqEntry(se);
-                        x_WriteToFile(*se);
                     } else {
                         is->SetStreamPos(start);
-                        if (ObtainSeqEntryFromBioseqSet(is, se)) {
+                        if (ObtainSeqEntryFromBioseq(is, se)) {
                             HandleSeqEntry(se);
-                            x_WriteToFile(se->GetSet());
+                            x_WriteToFile(se->GetSeq());
                         } else {
                             is->SetStreamPos(start);
-                            if (ObtainSeqEntryFromBioseq(is, se)) {
-                                HandleSeqEntry(se);
-                                x_WriteToFile(se->GetSeq());
-                            } else {
-                                is->SetStreamPos(start);
-                                if (!x_ProcessSeqSubmit(is)) {
-                                    proceed = false;
-                                }
+                            if (!x_ProcessSeqSubmit(is)) {
+                                proceed = false;
                             }
                         }
                     }
                 }
-
-                if (proceed) {
-                    ++num_cleaned;
-                }
-
-                if (first_only) {
-                    break;
-                }
             }
 
-            if (num_cleaned == 0 || (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF) {
-                NCBI_THROW(CFlatException, eInternal, "Unable to construct Seq-entry object");
+            if (proceed) {
+                ++num_cleaned;
+            }
+
+            if (first_only) {
+                break;
             }
         }
+
+        if (num_cleaned == 0 || (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF) {
+            NCBI_THROW(CFlatException, eInternal, "Unable to construct Seq-entry object");
+        }
     }
-
-
 }
 
 void CCleanupApp::x_ProcessOneFile(const string& filename)
