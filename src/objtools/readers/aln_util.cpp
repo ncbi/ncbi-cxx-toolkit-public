@@ -59,16 +59,35 @@ AlnUtil::CheckId(const string& seqId,
     }
 
 
+    string seqIdLower(seqId);
+    NStr::ToLower(seqIdLower);
+
     auto it = orderedIds.begin();
-    while (it != orderedIds.end() && it->mData != seqId) {
+    bool exactCopy = false;
+    while (it != orderedIds.end()) {
+        if (it->mData == seqId) {
+            exactCopy = true;
+            break;
+        }
+        auto orderedIdLower(it->mData);
+        NStr::ToLower(orderedIdLower);
+        if (orderedIdLower == seqIdLower) {
+            break;
+        }
         ++it;
     }
 
 
     if (firstBlock) {
         if (it != orderedIds.end()) {
-            description = ErrorPrintf(
-                "Duplicate ID: \"%s\" has already appeared in this block.", seqId.c_str());
+            if (exactCopy) {
+                description = ErrorPrintf(
+                    "Duplicate ID: \"%s\" has already appeared in this block, on line %d.", seqId.c_str(), it->mNumLine);
+            }
+            else {
+                description = ErrorPrintf(
+                "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.", seqId.c_str(), it->mData.c_str(), it->mNumLine);
+            }
             throw SShowStopper(
                 lineNum,
                 eAlnSubcode_UnexpectedSeqId,
@@ -87,12 +106,27 @@ AlnUtil::CheckId(const string& seqId,
             description);
     }
 
-    if (distance(orderedIds.begin(), it) < idCount) {
-        description = ErrorPrintf(
-            "Duplicate ID: \"%s \" has already appeared in this block.",
-            seqId.c_str());
+
+    auto idPos = distance(orderedIds.begin(), it);
+    if (idPos < idCount) {
+        if (exactCopy) {
+            description = ErrorPrintf(
+                "Duplicate ID: \"%s \" has already appeared in this block, on line %d.",
+                seqId.c_str(), it->mNumLine);
+        }
+        else {
+            description = ErrorPrintf(
+            "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.", seqId.c_str(), it->mData.c_str(), it->mNumLine);
+        }
     }
-    else {
+    else 
+    if (idPos == idCount) { //
+        description = ErrorPrintf(
+            "Inconsistent ID case: \"%s\" differs in case from \"%s\" used to identify this sequence in the first block.",
+            seqId.c_str(), it->mData.c_str());
+    }
+    else
+    {
         description = ErrorPrintf(
             "Finding data for sequence \"%s\" out of order.",
             seqId.c_str());

@@ -142,10 +142,21 @@ CAlnScannerFastaGap::xImportAlignmentData(
         }
         sSplitFastaDef(line, seqId, defLine);
         TLineInfo existingInfo;
-        if (xGetExistingSeqIdInfo(seqId, existingInfo)) {
-            string description = ErrorPrintf(
+        auto idComparison 
+            = xGetExistingSeqIdInfo(seqId, existingInfo);
+        if (idComparison != ESeqIdComparison::eDifferentChars) {
+            string description;
+            if (idComparison == ESeqIdComparison::eIdentical) {
+                description = ErrorPrintf(
                 "Duplicate ID: \"%s\" has already appeared at line %d.",
                 seqId.c_str(), existingInfo.mNumLine);
+            }
+             else { // ESeqIdComparison::eDifferByCase
+                description = ErrorPrintf(
+                "Conflicting IDs: \"%s\" differs only in case from \"%s\" at line %d.",
+                seqId.c_str(), existingInfo.mData.c_str(), existingInfo.mNumLine);
+            }
+
             throw SShowStopper(
                 lineNumber,
                 EAlnSubcode::eAlnSubcode_UnexpectedSeqId,

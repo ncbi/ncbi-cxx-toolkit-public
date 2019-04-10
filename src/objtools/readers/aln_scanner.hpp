@@ -69,6 +69,14 @@ public:
         SAlignmentFile&);
 
 protected:
+
+    enum class ESeqIdComparison {
+        eIdentical,
+        eDifferByCase,
+        eDifferentChars,
+        eDifferent
+    };
+
     virtual void
     xImportAlignmentData(
         CSequenceInfo&,
@@ -104,7 +112,7 @@ protected:
 
     unique_ptr<CSeqIdValidator> mpSeqIdValidator;
 
-    bool
+    ESeqIdComparison
     xGetExistingSeqIdInfo(
         const string& seqId,
         TLineInfo& existingInfo);

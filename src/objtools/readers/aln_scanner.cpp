@@ -203,19 +203,40 @@ CAlnScanner::xExportAlignmentData(
 }
 
 //  ----------------------------------------------------------------------------
-bool
+CAlnScanner::ESeqIdComparison
 CAlnScanner::xGetExistingSeqIdInfo(
     const string& seqId,
     TLineInfo& existingInfo)
 //  ----------------------------------------------------------------------------
 {
+
+    for (const auto& idInfo : mSeqIds) {
+        if (seqId == idInfo.mData) {
+            existingInfo = idInfo;
+            return ESeqIdComparison::eIdentical;
+        }
+    }
+
+    string seqIdLower(seqId);
+    NStr::ToLower(seqIdLower);
+    for (const auto& idInfo : mSeqIds) {
+        string idLower(idInfo.mData);
+        NStr::ToLower(idLower);
+        if (seqIdLower == idLower) {
+            existingInfo = idInfo;
+            return ESeqIdComparison::eDifferByCase;
+        }
+    }
+
+/*
     for (int i=0; i < mSeqIds.size(); ++i) {
         if (xSeqIdIsEqualToInfoAt(seqId, i)) {
             existingInfo = mSeqIds[i];
-            return true;
+            return ESeqIdComparison::eIdentical;
         }
     }
-    return false;
+    */
+    return ESeqIdComparison::eDifferentChars;
 };
 
 //  ----------------------------------------------------------------------------

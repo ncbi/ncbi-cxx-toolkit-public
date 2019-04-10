@@ -193,10 +193,18 @@ CAlnScannerClustal::sProcessClustalDataLine(
     auto seqId = tokens[0];
     if (blockCount == 1) {
         TLineInfo existingInfo;
-        if (xGetExistingSeqIdInfo(seqId, existingInfo)) {
-            string description = ErrorPrintf(
+        auto idComparison = xGetExistingSeqIdInfo(seqId, existingInfo);
+        if (idComparison != ESeqIdComparison::eDifferentChars) {
+            string description;
+            if (idComparison == ESeqIdComparison::eIdentical) { 
+                description = ErrorPrintf(
                 "Duplicate ID: \"%s\" has already appeared in this block, on line %d.", 
                 seqId.c_str(), existingInfo.mNumLine);
+            }
+            else { // ESeqIdComparison::eDifferByCase
+                description = ErrorPrintf(
+                "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.", seqId.c_str(), existingInfo.mData.c_str(), existingInfo.mNumLine);
+            }
             throw SShowStopper(
                 lineNum,
                 EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
@@ -217,9 +225,25 @@ CAlnScannerClustal::sProcessClustalDataLine(
         }
 
         if (seqId != mSeqIds[seqCount].mData) {
+            string seqIdLower(seqId);
+            NStr::ToLower(seqIdLower);
+
             string description;
             auto it = mSeqIds.begin();
-            for (; it != mSeqIds.end()  && it->mData != seqId; ++it) {};
+            bool exactCopy = false;
+            while (it != mSeqIds.end()) {
+                if (it->mData == seqId) {
+                    exactCopy = true;
+                    break;
+                }
+                auto idLower(it->mData);
+                NStr::ToLower(idLower);
+                if (idLower == seqIdLower) {
+                    break;
+                }
+                ++it;
+            }
+
             if (it == mSeqIds.end()) {
                 description = ErrorPrintf(
                     "Expected %d sequences, but finding data for for another.",
@@ -230,10 +254,12 @@ CAlnScannerClustal::sProcessClustalDataLine(
                     description);
             }
             
-            if (distance(mSeqIds.begin(), it) < seqCount) {
+            auto idPos = distance(mSeqIds.begin(), it);
+            if (idPos < seqCount) {
                 description = ErrorPrintf(
-                    "Duplicate ID: \"%s\" has already appeared in this block.",
-                    seqId.c_str());
+                    "Duplicate ID: \"%s\" has already appeared in this block, on line %d.",
+                    seqId.c_str(),
+                    it->mNumLine);
             }
             else {
                 description = ErrorPrintf(
