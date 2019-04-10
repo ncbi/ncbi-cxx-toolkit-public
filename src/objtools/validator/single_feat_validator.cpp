@@ -3591,6 +3591,9 @@ void CRNAValidator::x_ValidateTrnaCodons()
                     for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
                         if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
                             ok = true;
+                        } else if ( NStr::Equal (codon_values[i], "ATG") && aa == 'I') {
+                            // allow ATG recognized codon (pre-RNA-editing) for Ile2
+                            ok = true;
                         }
                     }
                 }
