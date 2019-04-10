@@ -270,10 +270,10 @@ static void RemoveBioSourseDesc(CSeq_descr& descrs)
     }
 }
 
-static bool OpenOutputFile(const string& fname, const string& description, CNcbiOfstream& stream)
+static bool OpenOutputFile(const string& fname, const string& description, CNcbiOfstream& stream, bool is_fatal)
 {
     if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
-        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_WontOverrideFile, Fatal << "The " << description << " file already exists: \"" << fname << "\". Override is not allowed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_WontOverrideFile, (is_fatal ? Fatal : Error) << "File to print out " << description << " already exists: \"" << fname << "\". Override is not allowed.");
         return false;
     }
 
@@ -281,7 +281,7 @@ static bool OpenOutputFile(const string& fname, const string& description, CNcbi
         stream.open(fname);
     }
     catch (CException& e) {
-        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOpenOutputFile, Fatal << "Failed to open " << description << " file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOpenOutputFile, (is_fatal ? Fatal : Error) << "Failed to open " << description << " file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
         return false;
     }
 
@@ -370,7 +370,7 @@ static bool OutputMaster(const CRef<CSeq_entry>& entry, const string& fname, int
     }
 
     CNcbiOfstream out;
-    if (!OpenOutputFile(path_name, "processed submission", out)) {
+    if (!OpenOutputFile(path_name, "processed submission", out, true)) {
         return false;
     }
 
@@ -448,12 +448,12 @@ static void PrintGenAccOrderList(CMasterInfo& info)
     info.m_id_infos.sort();
 
     CNcbiOfstream out;
-    if (!load_order_file.empty() && OpenOutputFile(load_order_file, "load order", out)) {
+    if (!load_order_file.empty() && OpenOutputFile(load_order_file, "load order", out, false)) {
         PrintOrderList(info.m_id_infos, out);
     }
 
     out.close();
-    if (!id_acc_file.empty() && OpenOutputFile(id_acc_file, "list of general ids and accessions", out)) {
+    if (!id_acc_file.empty() && OpenOutputFile(id_acc_file, "list of general ids and accessions", out, false)) {
         PrintGenAccList(info.m_id_infos, out);
     }
 }
@@ -482,7 +482,7 @@ static void PrintUnorderedList(CMasterInfo& info)
     }
 
     CNcbiOfstream out;
-    if (!load_order_file.empty() && OpenOutputFile(load_order_file, "load order", out)) {
+    if (!load_order_file.empty() && OpenOutputFile(load_order_file, "load order", out, false)) {
 
         OutUnorderedList(GetParams().GetInputFiles(), out);
     }
@@ -736,7 +736,7 @@ static void GetCurrentMasterInfo(const CSeq_entry& entry, CCurrentMasterInfo& cu
 static bool SaveAccessionsRange(const CCurrentMasterInfo& current_master)
 {
     CNcbiOfstream out;
-    if (!OpenOutputFile(GetParams().GetAccFile(), "", out)) {
+    if (!OpenOutputFile(GetParams().GetAccFile(), "the range of accessions from previous version master", out, true)) {
         return false;
     }
 
