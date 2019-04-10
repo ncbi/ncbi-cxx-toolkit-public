@@ -79,12 +79,11 @@ class CRemoteAppReaper
         struct SChild
         {
             CProcess process;
-            int attempts;
 
-            SChild(TProcessHandle handle) : process(handle), attempts(0) {}
+            SChild(TProcessHandle handle) : process(handle) {}
         };
 
-        typedef list<SChild> TChildren;
+        typedef list<pair<int, SChild>> TChildren;
         typedef TChildren::iterator TChildren_I;
 
         bool FillBacklog(TChildren_I&);
@@ -177,7 +176,7 @@ bool CRemoteAppReaper::CContext::ManagerImpl(
 {
     if (Enabled()) {
         CMutexGuard guard(lock);
-        children.push_back(handle);
+        children.emplace_back(0, handle);
         cond.SignalSome();
         return true;
     }
@@ -200,27 +199,27 @@ void CRemoteAppReaper::CContext::CollectorImpl()
         // Wait/kill child processes from the backlog
         TChildren_I it = backlog.begin();
         while (it != backlog_end) {
-            bool done = it->process.Wait(0, &exitinfo) != -1 ||
+            bool done = it->second.process.Wait(0, &exitinfo) != -1 ||
                 exitinfo.IsExited() || exitinfo.IsSignaled();
 
             if (done) {
                 // Log a message for those that had failed to be killed
-                if (it->attempts) {
+                if (it->first) {
                     LOG_POST(Note << "Successfully waited for a process: " <<
-                            it->process.GetHandle());
+                            it->second.process.GetHandle());
                 }
-            } else if (it->attempts++) {
+            } else if (it->first++) {
                 // Give up if there are too many attempts to wait for a process
-                if (it->attempts > max_attempts) {
+                if (it->first > max_attempts) {
                     done = true;
                     ERR_POST("Give up waiting for a process: " <<
-                            it->process.GetHandle());
+                            it->second.process.GetHandle());
                 }
-            } else if (it->process.KillGroup()) {
+            } else if (it->second.process.KillGroup()) {
                 done = true;
             } else {
                 LOG_POST(Warning << "Failed to kill a process: " <<
-                        it->process.GetHandle() << ", will wait for it");
+                        it->second.process.GetHandle() << ", will wait for it");
             }
 
             if (done) {
