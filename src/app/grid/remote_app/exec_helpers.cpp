@@ -64,7 +64,7 @@ class CRemoteAppReaper
 
         bool Enabled() const { return max_attempts > 0; }
 
-        CPipe::IProcessWatcher::EAction ManagerImpl(TProcessHandle);
+        bool ManagerImpl(TProcessHandle);
         void CollectorImpl();
 
         void CollectorImplStop()
@@ -148,7 +148,7 @@ public:
     class CManager
     {
     public:
-        CPipe::IProcessWatcher::EAction operator()(TProcessHandle handle)
+        bool operator()(TProcessHandle handle)
         {
             return m_Context.ManagerImpl(handle);
         }
@@ -172,17 +172,17 @@ private:
     CCollector m_Collector;
 };
 
-CPipe::IProcessWatcher::EAction CRemoteAppReaper::CContext::ManagerImpl(
+bool CRemoteAppReaper::CContext::ManagerImpl(
         TProcessHandle handle)
 {
     if (Enabled()) {
         CMutexGuard guard(lock);
         children.push_back(handle);
         cond.SignalSome();
-        return CPipe::IProcessWatcher::eExit;
+        return true;
     }
 
-    return CPipe::IProcessWatcher::eStop;
+    return false;
 }
 
 void CRemoteAppReaper::CContext::CollectorImpl()
@@ -311,7 +311,7 @@ public:
             ERR_POST(m_ProcessType << " run time exceeded "
                      << m_Deadline.PresetSeconds()
                      <<" second(s), stopping the child: " << pid);
-            return m_ProcessManager(pid);
+            return m_ProcessManager(pid) ? eExit : eStop;
         }
 
         return eContinue;
