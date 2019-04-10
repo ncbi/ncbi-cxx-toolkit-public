@@ -260,13 +260,31 @@ void CAsnvalApp::Init(void)
         ("x", "String", "File Selection Substring", CArgDescriptions::eString, ".ent");
     arg_desc->AddFlag("u", "Recurse");
     arg_desc->AddDefaultKey(
-        "R", "SevCount", "Severity for Error in Return Code",
+        "R", "SevCount", "Severity for Error in Return Code\n\
+\tinfo(0)\n\
+\twarning(1)\n\
+\terror(2)\n\
+\tcritical(3)\n\
+\tfatal(4)\n\
+\ttrace(5)",
         CArgDescriptions::eInteger, "4");
     arg_desc->AddDefaultKey(
-        "Q", "SevLevel", "Lowest Severity for Error to Show",
+        "Q", "SevLevel", "Lowest Severity for Error to Show\n\
+\tinfo(0)\n\
+\twarning(1)\n\
+\terror(2)\n\
+\tcritical(3)\n\
+\tfatal(4)\n\
+\ttrace(5)",
         CArgDescriptions::eInteger, "3");
     arg_desc->AddDefaultKey(
-        "P", "SevLevel", "Highest Severity for Error to Show",
+        "P", "SevLevel", "Highest Severity for Error to Show\n\
+\tinfo(0)\n\
+\twarning(1)\n\
+\terror(2)\n\
+\tcritical(3)\n\
+\tfatal(4)\n\
+\ttrace(5)",
         CArgDescriptions::eInteger, "5");
     CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax);
     arg_desc->SetConstraint("Q", constraint);
