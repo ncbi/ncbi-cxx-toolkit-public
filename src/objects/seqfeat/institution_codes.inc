@@ -3503,6 +3503,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KUKI\ts\tKurukshetra University\t\t\t",
 "KUM\ts\tResource Management Support Center\t\t\t",
 "KUMA\ts\tKumamoto University, Biology Department\t\t\t",
+"KUMCC\tc\tKunming Institute of Botany Culture Collection\t\t\t",
 "KUMF\ts\tKasetsart University Museum of Fisheries\t\t\t",
 "KUN\ts\tKunming Institute of Botany, Chinese Academy of Sciences\t\t\t",
 "KUNE\ts\tKunming Institute of Ecology, Academia Sinica\t\t\t",
