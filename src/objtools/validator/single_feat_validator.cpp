@@ -3573,6 +3573,8 @@ void CRNAValidator::x_ValidateTrnaCodons()
                     // ignore TGA codon for selenocysteine
                 } else if (aa == 'O' && NStr::Equal (anticodon, "CUA")) {
                     // ignore TAG codon for pyrrolysine
+                } else if (aa == 'I' && NStr::Equal (anticodon, "CAU")) {
+                    // ignore ATG predicted codon for Ile2
                 } else if (!m_Feat.IsSetExcept_text()
                           || (NStr::FindNoCase(m_Feat.GetExcept_text(), "modified codon recognition") == string::npos 
                               &&NStr::FindNoCase(m_Feat.GetExcept_text(), "RNA editing") == string::npos)) {
