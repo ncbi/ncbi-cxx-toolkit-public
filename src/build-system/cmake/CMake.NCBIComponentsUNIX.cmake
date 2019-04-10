@@ -217,8 +217,9 @@ else (WIN32)
 	find_external_library(Sybase
 #    DYNAMIC_ONLY
     INCLUDES sybdb.h
-#    LIBS sybblk_r64 sybdb64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
+#    LIBS sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
     LIBS  sybblk_r64         sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
+    LIBS  sybdb64 sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
     HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/")
 endif (WIN32)
 
@@ -870,10 +871,15 @@ if(HAVE_NCBI_C)
   set(NCBI_COMPONENT_NCBI_C_FOUND YES)
   set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_C_INCLUDE})
 
-  set(_c_libs  ncbiobj ncbi)
+  set(_c_libs  ncbiobj ncbimmdb ncbi)
+if (OFF)
   foreach( _lib IN LISTS _c_libs)
     set(NCBI_COMPONENT_NCBI_C_LIBS ${NCBI_COMPONENT_NCBI_C_LIBS} "${NCBI_C_LIBPATH}/lib${_lib}.a")
   endforeach()
+else()
+  set(NCBI_COMPONENT_NCBI_C_LIBS -L${NCBI_C_LIBPATH} ${_c_libs})
+endif()
+
   set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1)
 else()
   set(NCBI_COMPONENT_NCBI_C_FOUND NO)
@@ -1192,6 +1198,59 @@ endif()
 # PYTHON
 set(NCBI_COMPONENT_PYTHON_FOUND NO)
 
+##############################################################################
+# GRPC/PROTOBUF
+
+set(NCBI_ThirdParty_GRPC "/netopt/ncbi_tools64/grpc-1.14.1-ncbi1/${NCBI_BUILD_TYPE}")
+
+if(OFF)
+set(Protobuf_SRC_ROOT_FOLDER ${NCBI_ThirdParty_GRPC})
+set(Protobuf_USE_STATIC_LIBS YES)
+find_package(Protobuf)
+message("================================================================")
+message("Protobuf_FOUND = ${Protobuf_FOUND}")
+message("Protobuf_INCLUDE_DIRS = ${Protobuf_INCLUDE_DIRS}")
+message("Protobuf_LIBRARIES = ${Protobuf_LIBRARIES}")
+message("Protobuf_PROTOC_LIBRARIES = ${Protobuf_PROTOC_LIBRARIES}")
+message("================================================================")
+
+else()
+
+set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/protoc")
+set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/grpc_cpp_plugin")
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+  set(_suffix "d.a")
+else()
+  set(_suffix ".a")
+endif()
+
+set(NCBI_ThirdParty_GRPC_LIBS "/netopt/ncbi_tools64/grpc-1.14.1-ncbi1/${NCBI_BUILD_TYPE}/lib64/lib")
+if (EXISTS "${NCBI_ThirdParty_GRPC}/include" AND EXISTS "${NCBI_ThirdParty_GRPC_LIBS}protobuf${_suffix}")
+  set(NCBI_COMPONENT_PROTOBUF_FOUND YES)
+  set(NCBI_COMPONENT_PROTOBUF_INCLUDE ${NCBI_ThirdParty_GRPC}/include)
+  set(NCBI_COMPONENT_PROTOBUF_LIBS ${NCBI_ThirdParty_GRPC_LIBS}protobuf${_suffix})
+  message("PROTOBUF found at ${NCBI_ThirdParty_GRPC}")
+else()
+  set(NCBI_COMPONENT_PROTOBUF_FOUND NO)
+endif()
+
+if(NCBI_COMPONENT_PROTOBUF_FOUND)
+  set(NCBI_COMPONENT_GRPC_FOUND YES)
+  set(NCBI_COMPONENT_GRPC_INCLUDE ${NCBI_ThirdParty_GRPC}/include)
+  set(NCBI_COMPONENT_GRPC_LIBS
+    ${NCBI_ThirdParty_GRPC_LIBS}grpc++${_suffix}
+    ${NCBI_ThirdParty_GRPC_LIBS}grpc${_suffix}
+    ${NCBI_ThirdParty_GRPC_LIBS}gpr${_suffix}
+    ${NCBI_COMPONENT_PROTOBUF_LIBS}
+    ${NCBI_ThirdParty_GRPC_LIBS}cares${_suffix}
+    ${NCBI_ThirdParty_GRPC_LIBS}address_sorting${_suffix}
+    ${NCBI_ThirdParty_GRPC_LIBS}boringssl${_suffix}
+    ${NCBI_ThirdParty_GRPC_LIBS}boringcrypto${_suffix}
+  )
+endif()
+endif()
+
 #############################################################################
 # OpenSSL
 if (OpenSSL_FOUND)
@@ -1331,3 +1390,26 @@ if (WXWIDGETS_FOUND)
     set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
   endif()
 endif()
+
+##############################################################################
+# PERL
+find_package(PerlLibs)
+if (PERLLIBS_FOUND)
+  set(NCBI_COMPONENT_PERL_FOUND   YES)
+  set(NCBI_COMPONENT_PERL_INCLUDE ${PERL_INCLUDE_PATH})
+  set(NCBI_COMPONENT_PERL_LIBS    ${PERL_LIBRARY})
+  list(APPEND NCBI_ALL_COMPONENTS PERL)
+endif()
+
+##############################################################################
+# GCRYPT
+#set(GCRYPT_ROOT_DIR /netopt/ncbi_tools64/libgcrypt-1.4.3
+#include(${NCBI_TREE_CMAKECFG}/FindGCrypt.cmake)
+set(NCBI_ThirdParty_GCRYPT "/netopt/ncbi_tools64/libgcrypt-1.4.3")
+set(NCBI_COMPONENT_GCRYPT_FOUND YES)
+set(NCBI_COMPONENT_GCRYPT_INCLUDE ${NCBI_ThirdParty_GCRYPT}/include /netopt/ncbi_tools64/libgpg-error-1.6/include)
+set(NCBI_COMPONENT_GCRYPT_LIBS
+    ${NCBI_ThirdParty_GCRYPT}/lib64/libgcrypt.a
+    /netopt/ncbi_tools64/libgpg-error-1.6/lib64/libgpg-error.a
+)
+
