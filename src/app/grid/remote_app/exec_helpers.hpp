@@ -48,6 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 class CRemoteAppReaper;
+class CRemoteAppRemover;
 class CRemoteAppVersion;
 class CRemoteAppTimeoutReporter;
 class CRanges;
@@ -115,6 +116,7 @@ private:
     list<string> m_IncludeEnv;
 
     unique_ptr<CRemoteAppReaper> m_Reaper;
+    unique_ptr<CRemoteAppRemover> m_Remover;
     unique_ptr<CRemoteAppVersion> m_Version;
     unique_ptr<CRemoteAppTimeoutReporter> m_TimeoutReporter;
     unique_ptr<CRanges> m_MustFailNoRetries;

@@ -95,6 +95,95 @@ class CRemoteAppReaper : public CAsyncTaskProcessor<CRemoteAppReaperTask>
     using CAsyncTaskProcessor<CRemoteAppReaperTask>::CAsyncTaskProcessor;
 };
 
+struct CRemoteAppRemoverTask
+{
+    const string path;
+
+    CRemoteAppRemoverTask(string p);
+
+    bool operator()(int current, int max_attempts) const;
+};
+
+CRemoteAppRemoverTask::CRemoteAppRemoverTask(string p) :
+    path(move(p))
+{
+    if (path.empty()) return;
+
+    CDir dir(path);
+
+    if (dir.Exists()) return;
+
+    dir.CreatePath();
+}
+
+bool CRemoteAppRemoverTask::operator()(int current, int max_attempts) const
+{
+    if (path.empty()) return true;
+
+    const bool first_attempt = current == 1;
+
+    try {
+        if (CDir(path).Remove(CDirEntry::eRecursiveIgnoreMissing)) {
+            // Log a message for those that had failed to be removed before
+            if (!first_attempt) {
+                LOG_POST(Note << "Successfully removed a path: " << path);
+            }
+
+            return true;
+        }
+    }
+    catch (...) {
+    }
+
+    if (current > max_attempts) {
+        // Give up if there are too many attempts to remove a path
+        ERR_POST("Gave up removing a path: " << path);
+        return true;
+    }
+
+    if (first_attempt) {
+        LOG_POST(Warning << "Failed to remove a path: " << path << ", will try later");
+        return false;
+    }
+
+    return false;
+};
+
+// This class is responsibe for removing tmp directories
+class CRemoteAppRemover : public CAsyncTaskProcessor<CRemoteAppRemoverTask>
+{
+public:
+    struct SGuard;
+
+    using CAsyncTaskProcessor<CRemoteAppRemoverTask>::CAsyncTaskProcessor;
+};
+
+struct CRemoteAppRemover::SGuard
+{
+    SGuard(CRemoteAppRemover* remover, CRemoteAppRemoverTask task, bool remove_tmp_dir) :
+        m_Scheduler(remover ? &remover->GetScheduler() : nullptr),
+        m_Task(move(task)),
+        m_RemoveTmpDir(remove_tmp_dir)
+    {}
+
+    ~SGuard()
+    {
+        // Do not remove
+        if (!m_RemoveTmpDir) return;
+
+        // Remove asynchronously
+        if (m_Scheduler && (*m_Scheduler)(m_Task)) return;
+
+        // Remove synchronously
+        m_Task(1, 0);
+    }
+
+private:
+    CRemoteAppRemover::CScheduler* m_Scheduler;
+    CRemoteAppRemoverTask m_Task;
+    bool m_RemoveTmpDir;
+};
+
 class CTimer
 {
 public:
@@ -400,6 +489,8 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     m_MustFailNoRetries.reset(
             s_ReadRanges(reg, sec_name, "fail_no_retries_if_exit_code"));
 
+    const string name = CNcbiApplication::Instance()->GetProgramDisplayName();
+
     if (sec.Get("run_in_separate_dir", false)) {
         if (reg.HasEntry(sec_name, "tmp_dir"))
             m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
@@ -416,6 +507,11 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
             m_RemoveTempDir = sec.Get("remove_tmp_dir", true);
         else
             m_RemoveTempDir = sec.Get("remove_tmp_path", true);
+
+        int sleep = sec.Get("sleep_between_remove_tmp_attempts", 60);
+        int max_attempts = sec.Get("max_remove_tmp_attempts", 60);
+        m_Remover.reset(new CRemoteAppRemover(sleep, max_attempts, name + "_rm"));
+
         m_CacheStdOutErr = sec.Get("cache_std_out_err", true);
     }
 
@@ -470,7 +566,6 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
          m_AddedEnv[s] = reg.GetString("env_set", s, "");
     }
 
-    const string name = CNcbiApplication::Instance()->GetProgramDisplayName();
     int sleep = sec.Get("sleep_between_reap_attempts", 60);
     int max_attempts = sec.Get("max_reap_attempts_after_kill", 60);
     m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts, name + "_cl"));
@@ -505,38 +600,6 @@ bool CRemoteAppLauncher::CanExec(const CFile& file)
         return true;
     return false;
 }
-
-//////////////////////////////////////////////////////////////////////////////
-///
-struct STmpDirGuard
-{
-    STmpDirGuard(const string& path, bool remove_path)
-        : m_Path(path), m_RemovePath(remove_path)
-    {
-        if (!m_Path.empty()) {
-            CDir dir(m_Path);
-            if (!dir.Exists())
-                dir.CreatePath();
-        }
-    }
-    ~STmpDirGuard()
-    {
-        if (m_RemovePath && !m_Path.empty()) {
-            try {
-                if (!CDir(m_Path).Remove(CDirEntry::eRecursiveIgnoreMissing)) {
-                   ERR_POST("Could not delete temp directory \"" << m_Path <<"\"");
-                }
-                //cerr << "Deleted " << m_Path << endl;
-            } catch (exception& ex) {
-                ERR_POST("Error during tmp directory deletion\"" << m_Path <<"\": " << ex.what());
-            }  catch (...) {
-                ERR_POST("Error during tmp directory deletion\"" << m_Path <<"\": Unknown error");
-            }
-        }
-    }
-    string m_Path;
-    bool m_RemovePath;
-};
 
 //////////////////////////////////////////////////////////////////////////////
 ///
@@ -878,7 +941,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                 NStr::UIntToString((unsigned) lt.GetLocalTime().GetTimeT());
     }
 
-    STmpDirGuard guard(tmp_path, m_RemoveTempDir);
+    CRemoteAppRemover::SGuard guard(m_Remover.get(), tmp_path, m_RemoveTempDir);
     {
         CTmpStreamGuard std_out_guard(tmp_path, "std.out", out,
             m_CacheStdOutErr);
@@ -952,6 +1015,7 @@ string CRemoteAppLauncher::GetAppVersion(const string& v) const
 void CRemoteAppLauncher::OnGridWorkerStart()
 {
     m_Reaper->StartExecutor();
+    m_Remover->StartExecutor();
 }
 
 void CRemoteAppIdleTask::Run(CWorkerNodeIdleTaskContext&)
