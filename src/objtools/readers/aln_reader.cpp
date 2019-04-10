@@ -346,20 +346,6 @@ void CAlnReader::x_VerifyAlignmentInfo(
         // check to see if any of the lines contain gaps.
         // no gaps plus no alignment indicators -> don't guess alignment
         const auto numSequences = alignmentInfo.NumSequences();
-        if (!alignmentInfo.align_format_found) {
-            bool found_gap = false;
-            for (int i = 0; i < numSequences && !found_gap; i++) {
-                if (alignmentInfo.mSequences[i].find('-') != string::npos) {
-                    found_gap = true;
-                }
-            }
-            if (!found_gap) {
-                throw SShowStopper(
-                    -1,
-                    EAlnSubcode::eAlnSubcode_UnsupportedFileFormat,
-                    "Error reading alignment: File content not recognized");
-            }
-        }
 
         m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
         m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());

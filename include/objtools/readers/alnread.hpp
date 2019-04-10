@@ -139,7 +139,6 @@ public:
     vector<string> mIds;
     vector<string> mSequences;
     vector<TLineInfo> mDeflines;
-    char align_format_found;
 };
 
 NCBI_XOBJREAD_EXPORT 
