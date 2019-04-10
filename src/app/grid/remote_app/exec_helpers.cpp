@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 // A record for a child process
 struct CRemoteAppReaperTask
 {
-    CProcess process;
+    const CProcess process;
 
     CRemoteAppReaperTask(TProcessHandle handle) : process(handle) {}
 
@@ -473,7 +473,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     const string name = CNcbiApplication::Instance()->GetProgramDisplayName();
     int sleep = sec.Get("sleep_between_reap_attempts", 60);
     int max_attempts = sec.Get("max_reap_attempts_after_kill", 60);
-    m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts, name));
+    m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts, name + "_cl"));
 
     const string cmd = reg.GetString(sec_name, "version_cmd", m_AppPath);
     const string args = reg.GetString(sec_name, "version_args", "-version");

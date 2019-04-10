@@ -83,9 +83,9 @@ class CAsyncTaskProcessor
     {
         struct SThread : public CThread
         {
-            SThread(CContext& context, const string& app_name)
+            SThread(CContext& context, string thread_name)
                 : m_Context(context),
-                m_ThreadName(app_name + "_cl")
+                m_ThreadName(move(thread_name))
             {}
 
             void Stop()
@@ -112,8 +112,8 @@ class CAsyncTaskProcessor
         };
 
     public:
-        CExecutor(CContext& context, const string& app_name)
-            : m_Thread(context.Enabled() ? new SThread(context, app_name) : nullptr)
+        CExecutor(CContext& context, string thread_name)
+            : m_Thread(context.Enabled() ? new SThread(context, move(thread_name)) : nullptr)
         {}
 
         void Start() { if (m_Thread) m_Thread->Run(); }
@@ -141,7 +141,7 @@ public:
         friend class CAsyncTaskProcessor;
     };
 
-    CAsyncTaskProcessor(int sleep, int max_attempts, const string& app_name);
+    CAsyncTaskProcessor(int sleep, int max_attempts, string thread_name);
 
     CScheduler& GetScheduler() { return m_Scheduler; }
     void StartExecutor() { m_Executor.Start(); }
@@ -214,10 +214,10 @@ inline bool CAsyncTaskProcessor<TTask>::CContext::FillBacklog(TTasks_I& backlog_
     return false;
 }
 template <class TTask>
-inline CAsyncTaskProcessor<TTask>::CAsyncTaskProcessor(int sleep, int max_attempts, const string& app_name)
+inline CAsyncTaskProcessor<TTask>::CAsyncTaskProcessor(int sleep, int max_attempts, string thread_name)
     : m_Context(sleep, max_attempts),
       m_Scheduler(m_Context),
-      m_Executor(m_Context, app_name)
+      m_Executor(m_Context, move(thread_name))
 {
 }
 
