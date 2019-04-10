@@ -438,6 +438,10 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
 
         CompleteOutputFile(*m_Out);
     }
+    catch (const CEofException&) {
+        is->SetFailFlags(CObjectIStream::eEOF);
+        return false;
+    }
     catch (...) {
         return false;
     }
