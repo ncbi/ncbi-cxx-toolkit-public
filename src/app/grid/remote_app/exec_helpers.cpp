@@ -48,26 +48,36 @@
 
 BEGIN_NCBI_SCOPE
 
-// This class is responsibe for the whole process of reaping child processes
-class CRemoteAppReaper
+// A record for a child process
+struct CRemoteAppReaperTask
 {
-    // Context holds all data that is shared between Manager and Collector.
+    CProcess process;
+
+    CRemoteAppReaperTask(TProcessHandle handle) : process(handle) {}
+
+    bool operator()(int current, int max_attempts);
+};
+
+template <class TTask>
+class CAsyncTaskProcessor
+{
+    // Context holds all data that is shared between Scheduler and Executor.
     // Also, it actually implements both these actors
     class CContext
     {
     public:
         CContext(int s, int m)
-            : sleep(s > 1 ? s : 1), // Sleep at least one second between reaps
+            : sleep(s > 1 ? s : 1), // Sleep at least one second between executions
               max_attempts(m),
               stop(false)
         {}
 
         bool Enabled() const { return max_attempts > 0; }
 
-        bool ManagerImpl(TProcessHandle);
-        void CollectorImpl();
+        bool SchedulerImpl(TTask);
+        void ExecutorImpl();
 
-        void CollectorImplStop()
+        void ExecutorImplStop()
         {
             CMutexGuard guard(lock);
             stop = true;
@@ -75,18 +85,8 @@ class CRemoteAppReaper
         }
 
     private:
-        // A record for a child process
-        struct SChild
-        {
-            CProcess process;
-
-            SChild(TProcessHandle handle) : process(handle) {}
-
-            bool operator()(int current, int max_attempts);
-        };
-
-        typedef list<pair<int, SChild>> TChildren;
-        typedef TChildren::iterator TChildren_I;
+        typedef list<pair<int, TTask>> TChildren;
+        typedef typename TChildren::iterator TChildren_I;
 
         bool FillBacklog(TChildren_I&);
 
@@ -99,8 +99,8 @@ class CRemoteAppReaper
         bool stop;
     };
 
-    // Collector waits/kills child processes (in a separate thread)
-    class CCollector
+    // Executor runs async tasks (in a separate thread)
+    class CExecutor
     {
         struct SThread : public CThread
         {
@@ -114,9 +114,9 @@ class CRemoteAppReaper
                 try {
                     if (Discard()) return;
 
-                    m_Context.CollectorImplStop();
+                    m_Context.ExecutorImplStop();
                     Join();
-                } STD_CATCH_ALL("Exception in CCollector::SThread::Stop()")
+                } STD_CATCH_ALL("Exception in CExecutor::SThread::Stop()")
             }
 
         private:
@@ -124,7 +124,7 @@ class CRemoteAppReaper
             void* Main(void)
             {
                 SetCurrentThreadName(m_ThreadName);
-                m_Context.CollectorImpl();
+                m_Context.ExecutorImpl();
                 return NULL;
             }
 
@@ -133,52 +133,52 @@ class CRemoteAppReaper
         };
 
     public:
-        CCollector(CContext& context, const string& app_name)
+        CExecutor(CContext& context, const string& app_name)
             : m_Thread(context.Enabled() ? new SThread(context, app_name) : nullptr)
         {}
 
         void Start() { if (m_Thread) m_Thread->Run(); }
-        ~CCollector() { if (m_Thread) m_Thread->Stop(); }
+        ~CExecutor() { if (m_Thread) m_Thread->Stop(); }
 
     private:
         SThread* m_Thread;
     };
 
 public:
-    // Manager gives work (a pid/handle of a child process) to Collector
-    class CManager
+    // Scheduler gives tasks to Executor
+    class CScheduler
     {
     public:
-        bool operator()(TProcessHandle handle)
+        bool operator()(TTask task)
         {
-            return m_Context.ManagerImpl(handle);
+            return m_Context.SchedulerImpl(task);
         }
 
     private:
-        CManager(CContext& context) : m_Context(context) {}
+        CScheduler(CContext& context) : m_Context(context) {}
 
         CContext& m_Context;
 
-        friend class CRemoteAppReaper;
+        friend class CAsyncTaskProcessor;
     };
 
-    CRemoteAppReaper(int sleep, int max_attempts, const string& app_name);
+    CAsyncTaskProcessor(int sleep, int max_attempts, const string& app_name);
 
-    CManager& GetManager() { return m_Manager; }
-    void StartCollector() { m_Collector.Start(); }
+    CScheduler& GetScheduler() { return m_Scheduler; }
+    void StartExecutor() { m_Executor.Start(); }
 
 private:
     CContext m_Context;
-    CManager m_Manager;
-    CCollector m_Collector;
+    CScheduler m_Scheduler;
+    CExecutor m_Executor;
 };
 
-bool CRemoteAppReaper::CContext::ManagerImpl(
-        TProcessHandle handle)
+template <class TTask>
+bool CAsyncTaskProcessor<TTask>::CContext::SchedulerImpl(TTask task)
 {
     if (Enabled()) {
         CMutexGuard guard(lock);
-        children.emplace_back(0, handle);
+        children.emplace_back(0, task);
         cond.SignalSome();
         return true;
     }
@@ -186,7 +186,7 @@ bool CRemoteAppReaper::CContext::ManagerImpl(
     return false;
 }
 
-bool CRemoteAppReaper::CContext::SChild::operator()(int current, int max_attempts)
+bool CRemoteAppReaperTask::operator()(int current, int max_attempts)
 {
     CProcess::CExitInfo exitinfo;
     const bool first_attempt = current == 1;
@@ -216,7 +216,8 @@ bool CRemoteAppReaper::CContext::SChild::operator()(int current, int max_attempt
     return false;
 }
 
-void CRemoteAppReaper::CContext::CollectorImpl()
+template <class TTask>
+void CAsyncTaskProcessor<TTask>::CContext::ExecutorImpl()
 {
     for (;;) {
         TChildren_I backlog_end = backlog.end();
@@ -226,7 +227,7 @@ void CRemoteAppReaper::CContext::CollectorImpl()
             return;
         }
 
-        // Wait/kill child processes from the backlog
+        // Execute tasks from the backlog
         TChildren_I it = backlog.begin();
         while (it != backlog_end) {
             if (it->second(++it->first, max_attempts)) {
@@ -238,12 +239,13 @@ void CRemoteAppReaper::CContext::CollectorImpl()
     }
 }
 
-bool CRemoteAppReaper::CContext::FillBacklog(TChildren_I& backlog_end)
+template <class TTask>
+bool CAsyncTaskProcessor<TTask>::CContext::FillBacklog(TChildren_I& backlog_end)
 {
     CMutexGuard guard(lock);
 
     while (!stop) {
-        // If there are some new child processes to wait for
+        // If there are some new tasks to execute
         if (!children.empty()) {
             // Move them to the backlog, these only will be processed this time
             backlog_end = backlog.begin();
@@ -262,14 +264,19 @@ bool CRemoteAppReaper::CContext::FillBacklog(TChildren_I& backlog_end)
 
     return false;
 }
-
-CRemoteAppReaper::CRemoteAppReaper(int sleep, int max_attempts,
-        const string& app_name)
+template <class TTask>
+CAsyncTaskProcessor<TTask>::CAsyncTaskProcessor(int sleep, int max_attempts, const string& app_name)
     : m_Context(sleep, max_attempts),
-      m_Manager(m_Context),
-      m_Collector(m_Context, app_name)
+      m_Scheduler(m_Context),
+      m_Executor(m_Context, app_name)
 {
 }
+
+// This class is responsibe for the whole process of reaping child processes
+class CRemoteAppReaper : public CAsyncTaskProcessor<CRemoteAppReaperTask>
+{
+    using CAsyncTaskProcessor<CRemoteAppReaperTask>::CAsyncTaskProcessor;
+};
 
 class CTimer
 {
@@ -295,9 +302,9 @@ public:
     {
         string process_type;
         const CTimeout& run_timeout;
-        CRemoteAppReaper::CManager& process_manager;
+        CRemoteAppReaper::CScheduler& process_manager;
 
-        SParams(string pt, const CTimeout& rt, CRemoteAppReaper::CManager& pm) :
+        SParams(string pt, const CTimeout& rt, CRemoteAppReaper::CScheduler& pm) :
             process_type(move(pt)),
             run_timeout(rt),
             process_manager(pm)
@@ -324,7 +331,7 @@ public:
     }
 
 protected:
-    CRemoteAppReaper::CManager& m_ProcessManager;
+    CRemoteAppReaper::CScheduler& m_ProcessManager;
     const string m_ProcessType;
     const CTimer m_Deadline;
 };
@@ -730,7 +737,7 @@ public:
                 const CTimeout& rt,
                 const CTimeout& kap,
                 CRemoteAppTimeoutReporter& tr,
-                CRemoteAppReaper::CManager& pm)
+                CRemoteAppReaper::CScheduler& pm)
             : CTimedProcessWatcher::SParams(move(pt), rt, pm),
                 job_context(jc),
                 keep_alive_period(kap),
@@ -1073,7 +1080,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                 run_timeout,
                 m_KeepAlivePeriod,
                 *m_TimeoutReporter,
-                m_Reaper->GetManager());
+                m_Reaper->GetScheduler());
 
         bool monitor = !m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite();
 
@@ -1121,13 +1128,13 @@ void CRemoteAppLauncher::FinishJob(bool finished_ok, int ret,
 
 string CRemoteAppLauncher::GetAppVersion(const string& v) const
 {
-    CTimedProcessWatcher::SParams params("Version", CTimeout(1.0), m_Reaper->GetManager());
+    CTimedProcessWatcher::SParams params("Version", CTimeout(1.0), m_Reaper->GetScheduler());
     return m_Version->Get(params, v);
 }
 
 void CRemoteAppLauncher::OnGridWorkerStart()
 {
-    m_Reaper->StartCollector();
+    m_Reaper->StartExecutor();
 }
 
 void CRemoteAppIdleTask::Run(CWorkerNodeIdleTaskContext&)
