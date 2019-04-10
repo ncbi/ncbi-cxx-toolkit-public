@@ -340,6 +340,7 @@ static string s_AliasFileFilterTypeToString(EAliasFileFilterType e)
     case eGiList:       retval = "GILIST"; break;
     case eTiList:       retval = "TILIST"; break;
     case eSeqIdList:    retval = "SEQIDLIST"; break;
+    case eTaxIdList:    retval = "TAXIDLIST"; break;
     case eNoAliasFilterType: break;
     default:                _ASSERT(false); /* Need to add a type here? */
     }
@@ -394,7 +395,7 @@ s_CreateAliasFilePriv(const string& file_name,
         CDirEntry(fname).Remove();
         _TRACE("Deleting " << fname);
         CNcbiOstrstream oss;
-        oss << "No " << (alias_type == eGiList ? "GI" : "TI") << "s were found"
+        oss << "No seqs in " <<  s_AliasFileFilterTypeToString(alias_type) << " were found"
             << " in BLAST database";
         string msg = CNcbiOstrstreamToString(oss);
         NCBI_THROW(CSeqDBException, eArgErr, msg);

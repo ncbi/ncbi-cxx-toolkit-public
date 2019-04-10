@@ -600,7 +600,8 @@ enum EAliasFileFilterType {
     eNoAliasFilterType,         ///< Sentinel value
     eGiList,                    ///< Filter a BLAST database via GIs
     eTiList,                    ///< Filter a BLAST database via TIs (Trace IDs)
-    eSeqIdList                  ///< Filter a BLAST database via a Seq-id list
+    eSeqIdList,                 ///< Filter a BLAST database via a Seq-id list
+    eTaxIdList					///< Filter a BLAST database via Taxonomy Id list
 };
 
 /**

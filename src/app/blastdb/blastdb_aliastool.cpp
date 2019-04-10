@@ -204,6 +204,15 @@ void CBlastDBAliasApp::Init()
     arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
                             kArgGiList);
 
+    arg_desc->AddOptionalKey(kArgTaxIdListFile, "input_file",
+                                 "Text taxonomy id file to restrict "
+                                 "the BLAST database provided in -db argument",
+                                 CArgDescriptions::eInputFile);
+
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eRequires, kOutput);
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, kArgGiList);
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, kArgSeqIdList);
+
 #ifdef NCBI_TI
     arg_desc->AddFlag("process_as_tis", 
                       "Process all numeric ID lists as TIs instead of GIs", true);
@@ -364,7 +373,7 @@ CBlastDBAliasApp::CreateAliasFile() const
     }
 
     if (args[kArgDb].HasValue() && !args[kArgGiList].HasValue() &&
-        !args[kArgSeqIdList].HasValue()) {
+        !args[kArgSeqIdList].HasValue()&& ! args[kArgTaxIdListFile].HasValue()) {
 
         NCBI_THROW(CInputException, eInvalidInput, "Either gilist or "
                    "seqid_list must be specified if database name is used");
@@ -373,13 +382,16 @@ CBlastDBAliasApp::CreateAliasFile() const
     if (args[kArgDbTitle].HasValue()) {
         title = args[kArgDbTitle].AsString();
     } else if (args[kArgDb].HasValue()) {
-        _ASSERT(args[kArgGiList].HasValue() || args[kArgSeqIdList].HasValue());
+        _ASSERT(args[kArgGiList].HasValue() || args[kArgSeqIdList].HasValue() ||
+        		args[kArgTaxIdListFile].HasValue());
         title = args[kArgDb].AsString() + " limited by ";
         if (args[kArgGiList]) {
             title += args[kArgGiList].AsString();
         }
-        else {
+        else if (args[kArgSeqIdList]){
             title += args[kArgSeqIdList].AsString();
+        } else {
+            title += args[kArgTaxIdListFile].AsString();
         }
     }
     const CWriteDB::ESeqType seq_type = 
@@ -407,13 +419,6 @@ CBlastDBAliasApp::CreateAliasFile() const
         }
     }
 
-    string seqid_list = args[kArgSeqIdList] ? args[kArgSeqIdList].AsString() :
-        kEmptyStr;
-    if ( !seqid_list.empty() ) {
-        if ( !CFile(seqid_list).Exists() ) {
-            NCBI_THROW(CSeqDBException, eFileErr, seqid_list + " not found");
-        }
-    }
 
     const EAliasFileFilterType alias_type = (isTiList ? eTiList : eGiList);
     if (args["dblist"].HasValue() || args["dblist_file"].HasValue()) {
@@ -430,11 +435,28 @@ CBlastDBAliasApp::CreateAliasFile() const
                                  args[kArgDb].AsString(),
                                  seq_type, gilist,
                                  title, alias_type);
-    } else if (args[kArgDb].HasValue()) {
+    } else if (args[kArgDb].HasValue() && args[kArgSeqIdList]){
+    	string seqid_list = args[kArgSeqIdList].AsString();
+    	if ( !seqid_list.empty() ) {
+    	    if ( !CFile(seqid_list).Exists() ) {
+    	        NCBI_THROW(CSeqDBException, eFileErr, seqid_list + " not found");
+    	    }
+    	}
         CWriteDB_CreateAliasFile(args[kOutput].AsString(),
                                  args[kArgDb].AsString(),
                                  seq_type, seqid_list,
                                  title, eSeqIdList);
+    } else if (args[kArgDb].HasValue() && args[kArgTaxIdListFile]) {
+    	string taxid_list = args[kArgTaxIdListFile].AsString();
+    	if ( !taxid_list.empty() ) {
+    	    if ( !CFile(taxid_list).Exists() ) {
+    	        NCBI_THROW(CSeqDBException, eFileErr, taxid_list + " not found");
+    	    }
+    	}
+        CWriteDB_CreateAliasFile(args[kOutput].AsString(),
+                                 args[kArgDb].AsString(),
+                                 seq_type, taxid_list,
+                                 title, eTaxIdList);
     }
 
     if (args["vdblist"].HasValue() || args["vdblist_file"].HasValue()) {
