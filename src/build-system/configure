@@ -41054,7 +41054,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <wx/combobox.h>
-	       class CMyComboBox : public wxComboBox {};
+               class CMyComboBox : public wxComboBox {};
 int
 main ()
 {
@@ -51539,15 +51539,12 @@ _ACEOF
 
 
 
-set -x
 if test "$with_h2o" != no -a \
      -f "$H2O_PATH/lib/libh2o-static.a"; then
     H2O_STATIC_LIBS="-L$H2O_PATH/lib -lh2o-static $LIBUV_STATIC_LIBS $OPENSSL_LIBS $Z_LIBS"
 else
     H2O_STATIC_LIBS=$H2O_LIBS
 fi
-set +x
-sleep 3
 
 if test "$with_libxlsxwriter" != "no"; then
     case "$LIBXLSXWRITER_PATH:$with_libxlsxwriter" in

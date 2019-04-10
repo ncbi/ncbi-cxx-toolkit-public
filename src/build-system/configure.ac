@@ -6404,7 +6404,7 @@ if test "$with_wxwidgets" != "no" ; then
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[#include <wx/combobox.h>
-	       class CMyComboBox : public wxComboBox {};]],
+               class CMyComboBox : public wxComboBox {};]],
              [[CMyComboBox cb; cb.Clear();]])],
              [ncbi_cv_lib_wxwidgets=yes], [ncbi_cv_lib_wxwidgets=no])
        else
@@ -8077,15 +8077,12 @@ NCBI_CHECK_THIRD_PARTY_LIB(h2o,
    [AC_LANG_PROGRAM([[#include <h2o.h>>]],
        [[h2o_init_request(NULL, NULL, NULL);]])],
    [$LIBUV_LIBS $OPENSSL_LIBS $Z_LIBS], [], [$LIBUV_INCLUDE])
-set -x
 if test "$with_h2o" != no -a \
      -f "$H2O_PATH/lib/libh2o-static.a"; then
     H2O_STATIC_LIBS="-L$H2O_PATH/lib -lh2o-static $LIBUV_STATIC_LIBS $OPENSSL_LIBS $Z_LIBS"
 else
     H2O_STATIC_LIBS=$H2O_LIBS
 fi
-set +x
-sleep 3
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
    [AC_LANG_PROGRAM([[#include <xlsxwriter.h>]],
