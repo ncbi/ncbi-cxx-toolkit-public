@@ -123,27 +123,46 @@ private:
 
 class CCassOneExecConsumer : public ICassQueryListConsumer {
 public:
-    CCassOneExecConsumer(function<bool(CCassQuery& query, CCassQueryList& list)> cb) :
-        m_cb(cb)
+    CCassOneExecConsumer(function<bool(CCassQuery& query, CCassQueryList& list)> cb, function<void(CCassQuery& query, CCassQueryList& list, bool succeeded)> finish_cb = nullptr) :
+        m_cb(cb),
+        m_finish_cb(finish_cb),
+        m_is_failed(false),
+        m_is_started(false),
+        m_is_finished(false)
     {}
     CCassOneExecConsumer(const CCassOneExecConsumer&) = delete;
     CCassOneExecConsumer(CCassOneExecConsumer&&) = delete;
     CCassOneExecConsumer& operator=(const CCassOneExecConsumer&) = delete;
     CCassOneExecConsumer& operator=(CCassOneExecConsumer&&) = delete;
     virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) override {
+        assert(!m_is_started);
+        assert(!m_is_finished);
+        m_is_started = true;
         return m_cb(*query, list);
     }
     virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
+        assert(m_is_started);
+        assert(!m_is_finished);
+        m_is_finished = true;
+        if (m_finish_cb)
+            m_finish_cb(*query, list, !m_is_failed);
         return true;
     }
     virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
         assert(false);
         return true;
     }
-    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {}
-    virtual void Failed(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index, const exception* e) {}
+    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
+    }
+    virtual void Failed(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index, const exception* e) {
+        m_is_failed = true;
+    }
 private:
     function<bool(CCassQuery& query, CCassQueryList& list)> m_cb;
+    function<void(CCassQuery& query, CCassQueryList& list, bool succeeded)> m_finish_cb;
+    bool m_is_failed;
+    bool m_is_started;
+    bool m_is_finished;
 };
 
 END_IDBLOB_SCOPE
