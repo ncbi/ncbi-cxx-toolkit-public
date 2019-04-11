@@ -103,6 +103,9 @@ public:
     int OnStatus(HST::CHttpRequest &  req,
                  HST::CHttpReply<CPendingOperation> &  resp);
 
+    int OnShutdown(HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp);
+
     virtual int Run(void);
 
     static CPubseqGatewayApp *  GetInstance(void);

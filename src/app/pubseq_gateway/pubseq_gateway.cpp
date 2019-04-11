@@ -289,6 +289,13 @@ int CPubseqGatewayApp::Run(void)
                 return OnStatus(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/ADMIN/shutdown",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnShutdown(req, resp);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/favicon.ico",
             [this](HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp)->int

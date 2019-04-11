@@ -722,6 +722,34 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 }
 
 
+int CPubseqGatewayApp::OnShutdown(HST::CHttpRequest &  req,
+                                  HST::CHttpReply<CPendingOperation> &  resp)
+{
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    try {
+        // Reply should use plain http with [petentially] a plain text in the body
+        resp.SetContentType(ePlainTextMime);
+
+
+
+
+
+
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+    } catch (const exception &  exc) {
+        string      msg = "Exception when handling a shutdown request: " +
+                          string(exc.what());
+        resp.Send500("Internal Server Error", msg.c_str());
+    } catch (...) {
+        resp.Send500("Internal Server Error",
+                     "Unknown exception when handling a shutdown request");
+    }
+    return 0;
+}
+
+
 bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
