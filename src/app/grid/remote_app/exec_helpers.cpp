@@ -1015,7 +1015,7 @@ string CRemoteAppLauncher::GetAppVersion(const string& v) const
 void CRemoteAppLauncher::OnGridWorkerStart()
 {
     m_Reaper->StartExecutor();
-    m_Remover->StartExecutor();
+    if (m_Remover) m_Remover->StartExecutor();
 }
 
 void CRemoteAppIdleTask::Run(CWorkerNodeIdleTaskContext&)
