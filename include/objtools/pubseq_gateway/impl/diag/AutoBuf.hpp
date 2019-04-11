@@ -47,20 +47,20 @@ USING_NCBI_SCOPE;
 
 
 class CAutoBuf {
-private:
-	unsigned char* m_buf;
-	uint64_t m_len;
-	uint64_t m_limit;
-	void Detach() {
-		m_buf = NULL;
-		m_len = m_limit = 0;
-	}
 public:
-	explicit CAutoBuf(unsigned int rsrv = 0) : m_buf(0), m_len(0), m_limit(0) {
+	explicit CAutoBuf(unsigned int rsrv = 0) :
+        m_buf(nullptr),
+        m_len(0),
+        m_limit(0) 
+    {
 		if (rsrv > 0)
 			Reserve(rsrv);
 	}
-	CAutoBuf(const CAutoBuf& src) : m_buf(0), m_len(0), m_limit(0) {
+	CAutoBuf(const CAutoBuf& src) :
+        m_buf(nullptr),
+        m_len(0),
+        m_limit(0) 
+    {
 		*this = src; // call assignment operator
 	}
 	CAutoBuf& operator=(const CAutoBuf& src) {
@@ -77,7 +77,11 @@ public:
 		}
 		return *this;
 	}
-	CAutoBuf(CAutoBuf&& src) : m_buf(src.m_buf), m_len(src.m_len), m_limit(src.m_limit) {
+	CAutoBuf(CAutoBuf&& src) :
+        m_buf(src.m_buf),
+        m_len(src.m_len),
+        m_limit(src.m_limit) 
+    {
 		src.Detach();
 	}
 	~CAutoBuf() {
@@ -146,6 +150,14 @@ public:
 	}
 	uint64_t Reserved() const {
 		return m_limit - m_len;
+	}
+private:
+	unsigned char* m_buf;
+	uint64_t m_len;
+	uint64_t m_limit;
+	void Detach() {
+		m_buf = nullptr;
+		m_len = m_limit = 0;
 	}
 };
 
