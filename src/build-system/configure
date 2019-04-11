@@ -1031,6 +1031,7 @@ GLUT_LIBS
 GLEW_INCLUDE
 GLEW_LIBS
 GLEW_STATIC_LIBS
+GL2PS_STATIC_LIBS
 WXWIDGETS_INCLUDE
 WXWIDGETS_LIBS
 WXWIDGETS_STATIC_LIBS
@@ -46873,6 +46874,11 @@ _ACEOF
 
 
 fi
+if test -n "$GL2PS_LIBS" -a -f "$GL2PS_PATH/lib/libgl2ps-static.a"; then
+   GL2PS_STATIC_LIBS="-L$GL2PS_PATH/lib -lgl2ps-static"
+else
+   GL2PS_STATIC_LIBS=$GL2PS_LIBS
+fi
 
 ## FreeType and FTGL
 if test "$with_freetype" != "no" ; then
@@ -53395,6 +53401,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -54659,6 +54666,7 @@ GLUT_LIBS!$GLUT_LIBS$ac_delim
 GLEW_INCLUDE!$GLEW_INCLUDE$ac_delim
 GLEW_LIBS!$GLEW_LIBS$ac_delim
 GLEW_STATIC_LIBS!$GLEW_STATIC_LIBS$ac_delim
+GL2PS_STATIC_LIBS!$GL2PS_STATIC_LIBS$ac_delim
 WXWIDGETS_INCLUDE!$WXWIDGETS_INCLUDE$ac_delim
 WXWIDGETS_LIBS!$WXWIDGETS_LIBS$ac_delim
 WXWIDGETS_STATIC_LIBS!$WXWIDGETS_STATIC_LIBS$ac_delim
@@ -54720,7 +54728,6 @@ AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
 CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
-LMDB_LIB!$LMDB_LIB$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54762,6 +54769,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LMDB_LIB!$LMDB_LIB$ac_delim
 LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
@@ -54820,7 +54828,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

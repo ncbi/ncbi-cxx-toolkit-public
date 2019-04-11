@@ -7512,6 +7512,11 @@ if test "$with_gl2ps" != "no"; then
        [gl2psSpecial(GL2PS_SVG, "foo")]),
     [], [$OPENGL_LIBS $PNG_LIBS $Z_LIBS $X_ALL_LIBS], [$OPENGL_INCLUDE])
 fi
+if test -n "$GL2PS_LIBS" -a -f "$GL2PS_PATH/lib/libgl2ps-static.a"; then
+   GL2PS_STATIC_LIBS="-L$GL2PS_PATH/lib -lgl2ps-static"
+else
+   GL2PS_STATIC_LIBS=$GL2PS_LIBS
+fi
 
 ## FreeType and FTGL
 if test "$with_freetype" != "no" ; then
@@ -8871,6 +8876,7 @@ AC_SUBST(GLEW_LIBS)
 AC_SUBST(GLEW_STATIC_LIBS)
 AC_SUBST(GL2PS_INCLUDE)
 AC_SUBST(GL2PS_LIBS)
+AC_SUBST(GL2PS_STATIC_LIBS)
 AC_SUBST(WXWIDGETS_INCLUDE)
 AC_SUBST(WXWIDGETS_LIBS)
 AC_SUBST(WXWIDGETS_STATIC_LIBS)
