@@ -487,7 +487,6 @@ void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode 
         in.Read();  // HandleSeqEntry will be called from this function
     }
     else if (mode == eModeBigfile) {
-//        NCBI_THROW(CFlatException, eInternal, "\"bigfile\" option is not implemented yet");
         x_ProcessBigFile(is, asn_type);
     }
     else {
@@ -571,7 +570,7 @@ void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode 
             }
         }
 
-        if (num_cleaned == 0 || (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF) {
+        if (num_cleaned == 0 || (!first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
             NCBI_THROW(CFlatException, eInternal, "Unable to construct Seq-entry object");
         }
     }
