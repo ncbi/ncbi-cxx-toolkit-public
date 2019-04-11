@@ -73,7 +73,7 @@ USING_NCBI_SCOPE;
 typedef CSpinGuard CAppLogMuxGuard;
 typedef CSpinLock CAppLogMux;
 
-#define MAX_LOG_LINE_LEN 1024
+#define MAX_LOG_LINE_LEN 4096
 #define REQ_LOG_LEVEL 2
 
 #define __VARLOG(N)															\
@@ -290,10 +290,15 @@ private:
 					LogSetSeverity(eAppLog_Error);
 					break;
 				case 1:
+				case 2:
 					LogSetSeverity(eAppLog_Warning);
 					break;
-				default:
+                case 3:
+                case 4:
 					LogSetSeverity(eAppLog_Info);
+                    break;
+				default:
+					LogSetSeverity(eAppLog_Trace);
 					break;
 			}
 		}
