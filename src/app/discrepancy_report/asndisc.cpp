@@ -60,8 +60,8 @@ protected:
     string x_ConstructMacroName(const string& input);
     void x_ProcessFile(const string& filename, CDiscrepancySet& tests);
     void x_ParseDirectory(const string& name, bool recursive);
-    void x_ProcessOne(const string& filename);
-    void x_ProcessAll(const string& outname);
+    unsigned x_ProcessOne(const string& filename);
+    unsigned x_ProcessAll(const string& outname);
     void x_Output(const string& filename, CDiscrepancySet& tests);
     void x_OutputXml(const string& filename, CDiscrepancySet& tests);
     void x_Autofix(const TDiscrepancyCaseMap& tests);
@@ -154,6 +154,7 @@ void CDiscRepApp::Init(void)
 
     //arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, u - Submitter, b - Big Sequence, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("R", "SevCount", "Severity for Error in Return Code\n\tinfo(0)\n\twarning(1)\n\terror(2)\n\tcritical(3)\n\tfatal(4)\n\ttrace(5)", CArgDescriptions::eInteger);
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
 
@@ -315,8 +316,9 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 }
 
 
-void CDiscRepApp::x_ProcessOne(const string& fname)
+unsigned CDiscRepApp::x_ProcessOne(const string& fname)
 {
+    unsigned severity = 0;
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
@@ -325,18 +327,17 @@ void CDiscRepApp::x_ProcessOne(const string& fname)
         CStreamLineReader line_reader(istr);
         do {
             Tests->TestString(*++line_reader);
-        }
-        while (!line_reader.AtEOF());
-        Tests->Summarize();
+        } while (!line_reader.AtEOF());
+        severity = Tests->Summarize();
     }
     else {
-        for (auto& tname: m_Tests) {
+        for (auto& tname : m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetKeepRef(m_AutoFix);
         Tests->SetLineage(m_Lineage);
         x_ProcessFile(fname, *Tests);
-        Tests->Summarize();
+        severity = Tests->Summarize();
         if (m_AutoFix) {
             x_Autofix(Tests->GetTests());
             x_Autofix(Tests->GetTests());
@@ -348,17 +349,19 @@ void CDiscRepApp::x_ProcessOne(const string& fname)
     if (m_Print) {
         m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat, false);
     }
+    return severity;
 }
 
 
-void CDiscRepApp::x_ProcessAll(const string& outname)
+unsigned CDiscRepApp::x_ProcessAll(const string& outname)
 {
     int count = 0;
+    unsigned severity = 0;
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
-        for (auto& fname: m_Files) {
+        for (auto& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
@@ -368,18 +371,17 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
             CStreamLineReader line_reader(istr);
             do {
                 Tests->TestString(*++line_reader);
-            }
-            while (!line_reader.AtEOF());
+            } while (!line_reader.AtEOF());
         }
-        Tests->Summarize();
+        severity = Tests->Summarize();
     }
     else {
-        for (auto& tname: m_Tests) {
+        for (auto& tname : m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetKeepRef(m_AutoFix);
         Tests->SetLineage(m_Lineage);
-        for (auto& fname: m_Files) {
+        for (auto& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
@@ -387,10 +389,10 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
             Tests->SetFile(fname);
             x_ProcessFile(fname, *Tests);
         }
-        Tests->Summarize();
+        severity = Tests->Summarize();
         if (m_AutoFix) {
             x_Autofix(Tests->GetTests());
-            for (auto& it: m_Objects) {
+            for (auto& it : m_Objects) {
                 x_OutputObject(x_ConstructAutofixName(it.first), *it.second);
             }
         }
@@ -399,6 +401,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     if (m_Print) {
         m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat, true);
     }
+    return severity;
 }
 
 
@@ -579,24 +582,32 @@ int CDiscRepApp::Run(void)
     m_Scope->AddDefaults();
 
     // run tests
+    unsigned severity = 0;
     if (args["o"]) {
         if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
             ERR_POST("Input and output files should be different");
             return 1;
         }
-        x_ProcessAll(args["o"].AsString());
+        severity = x_ProcessAll(args["o"].AsString());
     }
     else {
         int count = 0;
-        for (auto& f: m_Files) {
+        for (auto& f : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
-            x_ProcessOne(f);
+            unsigned sev = x_ProcessOne(f);
+            severity = sev > severity ? sev : severity;
         }
     }
-   return 0;
+    if (args["R"]) {
+        auto r = args["R"].AsInteger();
+        if (r < 1 || (r < 2 && severity > 0) || severity > 1) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 

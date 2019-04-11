@@ -142,7 +142,7 @@ public:
     virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;
     virtual void Parse(const CSerialObject& root) = 0;
     virtual void TestString(const string& str) = 0;
-    virtual void Summarize(void) = 0;
+    virtual unsigned Summarize(void) = 0;
     virtual void AutofixAll(void) = 0;
     virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
     virtual void OutputText(CNcbiOstream& out, bool fatal = false, bool summary = false, bool ext = false, char group = 0) = 0;

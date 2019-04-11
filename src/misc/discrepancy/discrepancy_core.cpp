@@ -602,20 +602,27 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
 }
 
 
-void CDiscrepancyContext::Summarize()
+unsigned CDiscrepancyContext::Summarize()
 {
-    NON_CONST_ITERATE (TDiscrepancyCaseMap, it, m_Tests) {
-        static_cast<CDiscrepancyCore&>(*it->second).Summarize(*this);
+    unsigned severity = 0;
+    for (auto& tt : m_Tests) {
+        CDiscrepancyCore& test = static_cast<CDiscrepancyCore&>(*tt.second);
+        test.Summarize(*this);
+        for (auto& rep : test.GetReport()) {
+            unsigned sev = rep->GetSeverity();
+            severity = sev > severity ? sev : severity;
+        }
     }
+    return severity;
 }
 
 
 void CDiscrepancyContext::AutofixAll()
 {
-    NON_CONST_ITERATE (TDiscrepancyCaseMap, it, m_Tests) {
-        const TReportItemList& list = it->second->GetReport();
-        ITERATE (TReportItemList, it, list) {
-            (*it)->Autofix(*m_Scope);
+    for (auto& tt : m_Tests) {
+        const TReportItemList& list = tt.second->GetReport();
+        for (auto& it : list) {
+            it->Autofix(*m_Scope);
         }
     }
 }
@@ -623,8 +630,8 @@ void CDiscrepancyContext::AutofixAll()
 
 void CDiscrepancyContext::TestString(const string& str)
 {
-    NON_CONST_ITERATE (vector<CDiscrepancyVisitor<string>* >, it, m_All_string) {
-        Call(**it, str);
+    for (auto& it : m_All_string) {
+        Call(*it, str);
     }
 }
 

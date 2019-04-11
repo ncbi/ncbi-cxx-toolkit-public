@@ -355,7 +355,7 @@ public:
     bool SetAutofixHook(const string& name, TAutofixHook func);
     void Parse(const CSerialObject& root);
     void TestString(const string& str);
-    void Summarize(void);
+    unsigned Summarize(void);
     void AutofixAll(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
     void OutputText(ostream& out, bool fatal, bool summary, bool ext, char group);
