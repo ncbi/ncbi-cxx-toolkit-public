@@ -35,6 +35,7 @@
 
 #include <unistd.h>
 #include <algorithm>
+#include <sstream>
 #include <cassert>
 
 #include <corelib/ncbistre.hpp>
@@ -65,11 +66,20 @@ CAppOp::~CAppOp() {
 			CAppPerf::StopOp(this);
 		if (m_stat) {
 			delete m_stat;
-			m_stat = NULL;
+			m_stat = nullptr;
 		}
 	} catch (const EError&) {
 	// ignore b'ze we're in destructor
 	}
+}
+
+void CAppOp::SetParent(CAppOp* op) {
+    if (op != m_parent) {
+        if (m_parent && Started() && !Stopped()) {
+            CAppPerf::StopOp(this);
+        }
+        m_parent = op;
+    }
 }
 
 const CAppOp::perf_t CAppOp::GetRdPerf() const {
@@ -108,7 +118,7 @@ void CAppOp::Reset() {
 	m_lastrowupdate = 0;
 	m_tstart = 0;
 	m_tstop = 0;
-	m_parent = NULL;
+	m_parent = nullptr;
 	if (m_stat)
 		m_stat->Clear();
 	m_rd_perf.Clear();
@@ -151,9 +161,8 @@ void CAppOp::UpdatePerformance(int64_t t, CAppOp* from, bool doflush, bool locke
 
 	if (b) {
 		try {
-			
-			if (m_tstart == 0)
-				m_tstart = min(t, from->m_tstart);
+            if (m_tstart == 0)
+                m_tstart = min(t, from->m_tstart); // auto-start
 
 			//from->__log();
 			
@@ -200,7 +209,7 @@ void CAppOp::UpdatePerformance(int64_t t, CAppOp* from, bool doflush, bool locke
 			//LOG5(("CAppOp::UpdatePerformance trd: 0x%lx, rdcnt=%ld, wrcnt=%ld", (long)pthread_self(), m_rd_perf.m_rowcount, m_wr_perf.m_rowcount));
 			//__log();
 			
-			LogRowPerf(t, Stopped(), true);
+			LogRowPerf(t, Stopped() || (from && from->Stopped()), true);
 		}
 		catch(...) {
 			if (!locked)
@@ -271,7 +280,7 @@ void CAppOp::LogRowPerf(int64_t t, bool doflush, bool locked) {
 			m_stat->m_rd_snap = m_rd_perf;
 			m_stat->m_wr_snap = m_wr_perf;
 
-			if (interval > 0 || doflush) {
+			if (interval > 0 || is_final) {
 				bool has_rd_data, has_wr_data;
 
 				has_rd_data = (m_stat->m_avg_rd_kbsec != 0) || (m_stat->m_avg_rd_rowsec != 0);
@@ -322,30 +331,27 @@ void CAppOp::LogRowPerf(int64_t t, bool doflush, bool locked) {
 						}
 					}
 
-					string msg;
+                    stringstream msg;
+                    if (is_final)
+                        msg << "Done: ";
+                    else
+                        msg << "Performance: ";
 					if (!rd_msg.empty())
-						msg = m_rd_cap + rd_msg;
+						msg << m_rd_cap << rd_msg;
 
 					if (!wr_msg.empty()) {
-						if (!msg.empty())
-							msg.append(", ");
-						msg.append(m_wr_cap + wr_msg);
+						if (!rd_msg.empty())
+							msg << ", ";
+						msg << m_wr_cap << wr_msg;
 					}
 
-					if (!msg.empty() || (m_log && doflush)) {
-						m_log = true;
-						if (is_final)
-							msg =  "Done: " + msg;
-						else
-							msg =  "Performance: " + msg;
+                    m_log = true;
 
-						if (! (doflush && Stopped()) && CAppLog::IsTTY()) {
-							CAppLog::PerfLogLine(2, msg, false, true);
-						} else {
-							CAppLog::PerfLogLine(2, msg, true, false);
-						}
-					}
-
+                    if (! (doflush && Stopped()) && CAppLog::IsTTY()) {
+                        CAppLog::PerfLogLine(2, msg.str(), false, true);
+                    } else {
+                        CAppLog::PerfLogLine(2, msg.str(), true, false);
+                    }
 				}
 			}
 		}
