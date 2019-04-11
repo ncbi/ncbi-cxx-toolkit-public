@@ -919,7 +919,7 @@ static void CheckSeqIdStatus(const CBioseq::TId& ids, CSeq_id::E_Choice& choice,
 
     const CRef<CSeq_id>& first_id = ids.front();
 
-    if (ids.size() > 1) {
+    if (ids.size() > 1 && !GetParams().IsAccessionAssigned()) {
         state = eSeqIdMultiple;
     }
     else if (choice == CSeq_id::e_not_set) {

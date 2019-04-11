@@ -1863,21 +1863,15 @@ static bool IsValidDdbjEmblScaffold(const string& accession)
 
 static bool IsValidAccessionFormat(const string& accession, const CCurrentMasterInfo& info, const string& prefix, size_t no_prefix_acc_len)
 {
-    size_t start_of_prefix = 0;
-    if (NStr::StartsWith(accession, "NZ_")) {
-        start_of_prefix = 3;
-    }
-
-    size_t end_of_prefix = start_of_prefix;
+    size_t end_of_prefix = 0;
     for (; end_of_prefix < accession.size(); ++end_of_prefix) {
         if (accession[end_of_prefix] < 'A' || accession[end_of_prefix] > 'Z') {
             break;
         }
     }
 
-    static const size_t PREFIX_LEN = 4;
-    if (end_of_prefix - start_of_prefix != PREFIX_LEN || !NStr::StartsWith(accession, prefix) ||
-        accession.size() - start_of_prefix != no_prefix_acc_len ||
+    if (end_of_prefix != prefix.size() || !NStr::StartsWith(accession, prefix) ||
+        accession.size() - end_of_prefix != no_prefix_acc_len ||
         !IsDigits(accession.begin() + end_of_prefix, accession.end())) {
         return false;
     }
