@@ -62,11 +62,8 @@ typedef CSpinLock CAppPerfMux;
 	} while(0)
 
 class CAppOp {
-	friend class CAppPerf;
-private:
-	DISALLOW_COPY_AND_ASSIGN(CAppOp);
 public:
-	typedef struct perf_tag {
+	struct perf_t {
 		int64_t m_curpos;
 		int64_t m_tottime;
 		int64_t m_rowcount;
@@ -74,16 +71,21 @@ public:
 		bool Empty() const {
 			return (m_rowcount != 0 || m_bytecount != 0);
 		}
-		perf_tag() : m_curpos(0), m_tottime(0), m_rowcount(0), m_bytecount(0) {}
+		perf_t() : 
+            m_curpos(0), 
+            m_tottime(0), 
+            m_rowcount(0), 
+            m_bytecount(0) 
+        {}
 		void Clear() {
-			memset(this, 0, sizeof(struct perf_tag));
+			memset(this, 0, sizeof(perf_t));
 		}
 		void __log() const {
 			LOG4(("cp: %" PRId64 ", tm: %" PRId64 ", rc: %" PRId64 ", bc: %" PRId64, m_curpos, m_tottime, m_rowcount, m_bytecount));
 		}
-	} perf_t;
+	};
 
-	typedef struct stat_tag {
+	struct stat_t {
 		int64_t m_tsnapped;
 		perf_t m_rd_snap;
 		perf_t m_wr_snap;
@@ -95,11 +97,11 @@ public:
 		double m_avg_rd_kbsec;
 		double m_avg_wr_rowsec;
 		double m_avg_wr_kbsec;
-		stat_tag() {
+		stat_t() {
 			Clear();
 		}		
 		void Clear() {
-			memset(this, 0, sizeof(struct stat_tag));
+			memset(this, 0, sizeof(stat_t));
 		}
 		void Calc(int64_t op_interval, int64_t interval, const perf_t& new_rd_data, const perf_t& new_wr_data, int64_t final_op_time) {
 			if (final_op_time) {
@@ -123,8 +125,50 @@ public:
 				LOWPASS_FILTER_UPD(m_avg_wr_kbsec, m_curr_wr_kbsec, T);
 			}
 		}
-	} stat_t;
+	};
+
+	CAppOp(CAppOp* parent = nullptr) : 
+        m_log(false), 
+        m_produce_output(true),
+		m_rowstart(0), 
+        m_lastrowupdate(0), 
+        m_tstart(0), 
+        m_tstop(0),
+		m_parent(parent), 
+        m_stat(nullptr),
+		m_relaxt(0), 
+        m_rd_cap("read: "), 
+        m_wr_cap("write: ") {}
+	CAppOp(const string& rd_cap, const string& wr_cap) : 
+        CAppOp(nullptr) 
+    {
+        SetCaptions(rd_cap, wr_cap);
+	}
+	CAppOp(bool ProduceOutput, CAppOp* parent = nullptr): CAppOp(parent) {
+		m_produce_output = ProduceOutput;
+	}
+    CAppOp(const CAppOp&) = delete;
+    CAppOp& operator=(const CAppOp&) = delete;
+	CAppOp(CAppOp&&) = default;
+    CAppOp& operator=(CAppOp&&) = default;
+	~CAppOp();
+    void SetParent(CAppOp* op);
+	void Reset();
+    void SetCaptions(const string& rd_cap, const string& wr_cap) {
+		m_rd_cap = rd_cap;
+		m_wr_cap = wr_cap;
+    }
+	const perf_t GetRdPerf() const;
+	const perf_t GetWrPerf() const;
+	const stat_t GetPerfStat() const;
+	void __log() const {
+		LOG4(("%p: rd:", LOG_CPTR(this)));
+		m_rd_perf.__log();
+		LOG4(("%p: wr:", LOG_CPTR(this)));
+		m_wr_perf.__log();
+	}
 private:	
+	friend class CAppPerf;
 	bool m_log; // anyting logged
 	bool m_produce_output;
 
@@ -157,16 +201,14 @@ private:
 	}
 	void start() {
 		if (Started())
-			RAISE_ERROR(eSeqFailed, "operation has already been started");
+			stop();
 		m_tstart = gettime();
 		m_tstop = 0;
 		m_rd_perf.Clear();
 		m_wr_perf.Clear();
 	}
 	int64_t stop() {
-		if (!Started())
-			RAISE_ERROR(eSeqFailed, "operation hasn't been started");
-		if (!Stopped()) {
+		if (Started() && !Stopped()) {
 			m_tstop = gettime();
 			if (m_log || !Empty())
 				LogRowPerf(m_tstop, true, false);
@@ -197,33 +239,6 @@ private:
 		m_wr_perf.Clear();
 	}
 	void UpdatePerformance(int64_t t, CAppOp* from, bool doflush, bool locked);
-public:
-	CAppOp(CAppOp* parent = NULL) : m_log(false), m_produce_output(true),
-		m_rowstart(0), m_lastrowupdate(0), m_tstart(0), m_tstop(0),
-		m_parent(parent), m_stat(NULL),
-		m_relaxt(0), m_rd_cap("read: "), m_wr_cap("write: ") {}
-	CAppOp(const string& rd_cap, const string& wr_cap, CAppOp* parent = NULL) : CAppOp(parent) {
-		m_rd_cap = rd_cap;
-		m_wr_cap = wr_cap;
-	}
-	CAppOp(bool ProduceOutput, CAppOp* parent = NULL): CAppOp(parent) {
-		m_produce_output = ProduceOutput;
-	}
-	CAppOp(CAppOp&&) = default;
-	~CAppOp();
-	void SetParent(CAppOp* op) {
-		m_parent = op;
-	}
-	void Reset();
-	const perf_t GetRdPerf() const;
-	const perf_t GetWrPerf() const;
-	const stat_t GetPerfStat() const;
-	void __log() const {
-		LOG4(("%p: rd:", LOG_CPTR(this)));
-		m_rd_perf.__log();
-		LOG4(("%p: wr:", LOG_CPTR(this)));
-		m_wr_perf.__log();
-	}
 };
 
 class CAppPerf {
