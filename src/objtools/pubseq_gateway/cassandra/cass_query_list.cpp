@@ -85,8 +85,15 @@ shared_ptr<CCassQueryList> CCassQueryList::Create(shared_ptr<CCassConnection> ca
 
 CCassQueryList::~CCassQueryList() {
     m_notification_arr.clear();
-    if (!m_query_arr.empty() || !m_pending_arr.empty())
+    if (!m_query_arr.empty() || !m_pending_arr.empty()) {
+        if (NumberOfActiveQueries() > 0)
+            ERR_POST(Error << "Destructing non-empty CCassQueryList -- has active queries");
+        if (NumberOfBusySlots() > 0)
+            ERR_POST(Error << "Destructing non-empty CCassQueryList -- has busy slots");
+        if (NumberOfPendingSlots() > 0)
+            ERR_POST(Error << "Destructing non-empty CCassQueryList -- has pending tasks");
         Cancel();
+    }
 }
 
 CCassQueryList& CCassQueryList::SetMaxQueries(size_t max_queries) {
@@ -163,7 +170,7 @@ void CCassQueryList::Execute(unique_ptr<ICassQueryListConsumer> consumer, int re
             }
             size_t index = m_query_arr.size();
             while (m_query_arr.size() < m_max_queries)
-                m_query_arr.push_back({nullptr, nullptr, m_query_arr.size(), retry_count, ssAvailable});
+                m_query_arr.push_back({nullptr, nullptr, m_query_arr.size(), 0, ssAvailable});
             slot = &m_query_arr[index];
         }
         else {
@@ -222,6 +229,8 @@ void CCassQueryList::AttachSlot(SQrySlot* slot, SPendingSlot&& pending_slot) {
     assert(slot->m_state == ssAvailable);
     slot->m_state = ssAttached;
     ++m_attached_slots;
+    assert(pending_slot.m_retry_count > 0);
+    assert(pending_slot.m_retry_count < 1000);
     slot->m_retry_count = pending_slot.m_retry_count;
     assert(slot->m_consumer == nullptr);
     slot->m_consumer = move(pending_slot.m_consumer);
