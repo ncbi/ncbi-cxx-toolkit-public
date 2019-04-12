@@ -78,17 +78,23 @@ public:
     string GetScientificName(TTaxid taxid);
     short int GetGeneticCode(TTaxid taxid);
     CConstRef<objects::COrg_ref> GetOrgRef(TTaxid taxid);
+public: // lookups other than taxid
+
+    TTaxid GetTaxIdByName(const string& orgname);
 
 private:
     struct STaxidNode;
     typedef map<int, STaxidNode> TNodes;
+    typedef map<string, STaxidNode> TScientificNameIndex;
     typedef TNodes::const_iterator TNodeRef;
+    typedef TScientificNameIndex::const_iterator TScientificNameRef;
     typedef list<TNodeRef> TInternalLineage;
 
     static TNodes s_DummyNodes;
     static TNodeRef s_InvalidNode;
 
     struct STaxidNode {
+        TTaxid taxid;
         bool is_valid;
         string scientific_name;
         string rank;
@@ -103,8 +109,10 @@ private:
     unique_ptr<CSQLITE_Connection> m_SqliteConn;
     unique_ptr<objects::CTaxon1> m_TaxonConn;
     TNodes m_Nodes;
+    TScientificNameIndex m_ScientificNameIndex;
 
     TNodeRef x_Cache(TTaxid taxid, bool including_org_ref = false);
+    TScientificNameRef x_Cache(const string& orgname);
     void x_GetLineage(TTaxid taxid, TInternalLineage &lineage);
 };
 

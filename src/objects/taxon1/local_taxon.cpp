@@ -84,7 +84,7 @@ CLocalTaxon::~CLocalTaxon()
 }
 
 CLocalTaxon::STaxidNode::STaxidNode()
-: is_valid(false), parent(s_InvalidNode), genetic_code(-1)
+: is_valid(false), parent(s_InvalidNode), genetic_code(-1), taxid(-1)
 {
 }
 
@@ -223,6 +223,53 @@ CLocalTaxon::TTaxid CLocalTaxon::Join(TTaxid taxid1, TTaxid taxid2)
     }
 }
 
+CLocalTaxon::TTaxid CLocalTaxon::GetTaxIdByName(const string& orgname)
+{
+    TTaxid taxid = -1;
+    if (m_SqliteConn.get()) {
+        x_Cache(orgname);
+        auto& taxnode = m_ScientificNameIndex.find(orgname)->second;
+        taxid =  taxnode.is_valid ? taxnode.taxid : -1;
+    } else {
+        taxid = m_TaxonConn->GetTaxIdByName(orgname);
+    }
+    return taxid;
+    
+}
+
+//
+//  Implementation
+//
+
+CLocalTaxon::TScientificNameRef CLocalTaxon::x_Cache(const string& orgname)
+{
+    NCBI_ASSERT(m_SqliteConn.get(), "x_Cache called with server execution");
+
+    TScientificNameIndex::iterator it = m_ScientificNameIndex.find(orgname);
+    if (it == m_ScientificNameIndex.end()  ) {
+        CSQLITE_Statement stmt
+            (m_SqliteConn.get(),
+            "SELECT taxid "
+            "FROM TaxidInfo "
+            "WHERE scientific_name = ? ");
+        stmt.Bind(1, orgname);
+        stmt.Execute();
+        if  (stmt.Step()) {
+            auto taxid = stmt.GetInt(0);
+            auto it2 = x_Cache(taxid);
+            it = m_ScientificNameIndex.insert(TScientificNameIndex::value_type(orgname,  it2->second  )).first;
+        }
+        else {
+            //
+            //  return invalid node.
+            //
+            it = m_ScientificNameIndex.insert(TScientificNameIndex::value_type(orgname, STaxidNode())).first;
+        }
+    }
+    return it;
+}
+
+
 CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
 {
     NCBI_ASSERT(m_SqliteConn.get(), "x_Cache called with server execution");
@@ -235,6 +282,10 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
 
     if (it == m_Nodes.end()) {
         int parent = -1;
+        //
+        //  Note that we are unconditionally recording (so far) unknown input taxid here
+        //  thereby caching all successful and unsuccessful queries
+        //
         it = m_Nodes.insert(TNodes::value_type(taxid, STaxidNode())).first;
         {{
              CSQLITE_Statement stmt
@@ -245,6 +296,7 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
              stmt.Bind(1, taxid);
              stmt.Execute();
              if  (stmt.Step()) {
+                 it->second.taxid  = taxid;
                  it->second.is_valid = true;
                  it->second.scientific_name = stmt.GetString(0);
                  it->second.rank = stmt.GetString(1);
