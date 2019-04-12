@@ -1046,7 +1046,6 @@ pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
 pcsubstance needs pub
-pepXML needs xser
 pgap_yaml_input_reader needs xser
 phytree_format needs align_format
 phytree_format needs xalgophytree
@@ -1687,13 +1686,6 @@ xobjutil needs $(SOBJMGR_LIBS)
 xobjwrite needs $(XFORMAT_LIBS)
 xobjwrite needs variation_utils
 xobjwrite needs xalnmgr
-xomssa needs $(COMPRESS_LIBS)
-xomssa needs blast
-xomssa needs omssa
-xomssa needs pepXML
-xomssa needs seqdb
-xomssa needs xconnect
-xomssa needs xregexp
 xpbacktest needs xncbi
 xportal_auth needs $(CONNEXT)
 xportal_auth needs connect
