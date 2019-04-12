@@ -31,7 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <algorithm>
 
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_service_cxx.hpp>
@@ -42,11 +41,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
-static bool x_OrderHostsByRateDesc(const CSERV_Info& lhs, const CSERV_Info& rhs)
-{
-    return lhs.GetRate() > rhs.GetRate();
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // SERV_GetServers implementation
@@ -90,8 +84,6 @@ vector<CSERV_Info> SERV_GetServers(const string& service,
         }
         SERV_Close(iter);
     }
-
-    std::sort(servers.begin(), servers.end(), x_OrderHostsByRateDesc);
 
     return servers;
 }
