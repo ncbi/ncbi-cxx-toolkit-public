@@ -777,7 +777,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
             CSeq_align_set::Tdata & align_list = align_D->Set();
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             /* chain type test */
-            if (q_ct!="VH" && q_ct!="VD" && q_ct!="VA" && q_ct!="VB" && q_ct!="N/A") {
+            if (q_ct!="VH" && q_ct!="VD" && q_ct!="VA" && q_ct!="VB" ) {
                 while (it != align_list.end()) {
                     it = align_list.erase(it);
                 }
@@ -885,6 +885,8 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                             s_ct!='A' && s_ct!='B' && s_ct!='D' && s_ct!='G') s_ct = q_ct[1];
                         if (s_ct != q_ct[1]) keep = false;
                     }
+                } else {
+                    keep = false;
                 }
                 /* strand test */
                 if ((*it)->GetSeqStrand(0) != q_st) keep = false;
@@ -1329,8 +1331,8 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
     ITERATE(CSearchResultSet, result, *dm_results) {
 
         CIgAnnotation *annot = &*(annots[iq]);
-        annot->m_ChainType.push_back("NON");  // Assuming non-ig sequence first
-        annot->m_ChainTypeToShow = "NON";
+        annot->m_ChainType.push_back("N/A");  // Assuming non-ig sequence first
+        annot->m_ChainTypeToShow = "N/A";
         if ((*result)->HasAlignments() && (*gl_results)[iq].HasAlignments()) {
 
 
