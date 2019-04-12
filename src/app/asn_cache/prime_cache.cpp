@@ -515,10 +515,10 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
                     break;
             }
         }
-        if(!molinfo_found) {
+        if(!molinfo_found && m_MolInfo) {
             descs.push_back(m_MolInfo);
         }
-        if(!source_found) {
+        if(!source_found && m_Biosource) {
             descs.push_back(m_Biosource);
         }
             
