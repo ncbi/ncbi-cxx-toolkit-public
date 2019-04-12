@@ -421,16 +421,18 @@ CAlnScannerNexus::xProcessDimensions(
     }
     
     auto nchar = xGetKeyVal(command, "nchar"); 
-    try {
-        mSequenceSize = NStr::StringToInt(nchar.first);
-    }
-    catch(...) {
-        string description = ErrorPrintf("Invalid nChar setting \"%s\"", 
-                    nchar.first.c_str());
-                throw SShowStopper(
-                    nchar.second,
-                    EAlnSubcode::eAlnSubcode_IllegalDataDescription,
-                    description);
+    if (!nchar.first.empty()) {
+        try {
+            mSequenceSize = NStr::StringToInt(nchar.first);
+        }
+        catch(...) {
+            string description = ErrorPrintf("Invalid nChar setting \"%s\"", 
+                        nchar.first.c_str());
+                    throw SShowStopper(
+                        nchar.second,
+                        EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+                        description);
+        }
     }
 }
 

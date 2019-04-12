@@ -1,0 +1,10 @@
+Line No    : 18
+Severity   : Warning
+Code       : 2.2
+Message    : Unexpected "end;". Appending ';' to prior command
+
+Line No    : 14
+Severity   : Fatal
+Code       : 2.4
+Message    : Duplicate ID: "fish" has already appeared in this block, on line 13.
+
