@@ -184,7 +184,7 @@ endfunction()
 #############################################################################
 function(NCBI_add_subdirectory)
     if(NCBI_EXPERIMENTAL_CFG)
-        if (NOT NCBI_PTB_HAS_ROOT)
+        if (NOT NCBI_PTB_HAS_ROOT AND NOT DEFINED NCBI_EXTERNAL_TREE_ROOT)
             message(FATAL_ERROR "In source tree root, NCBI_add_root_subdirectory() must be used instead of NCBI_add_subdirectory() (${CMAKE_CURRENT_SOURCE_DIR})")
             return()
         endif()
