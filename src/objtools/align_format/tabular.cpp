@@ -1859,10 +1859,8 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                                             const CBioseq_Handle& query_handle, 
                                             CConstRef<CSeq_align_set> align_result,
                                             const CConstRef<blast::CIgBlastOptions>& ig_opts) {
-    //CIGAR string for v, d, and j alignment
-    
-    //get top v, d, j align
-    
+    map <string, string> locus_name =  {{"VH", "IGH"}, {"VK", "IGK"}, {"VL", "IGL"}, {"VB", "TRB"}, 
+                                                     {"VD", "TRD"}, {"VA", "TRA"}, {"VG", "TRG"}};
     int index = 1;
     bool found_v = false;
     bool found_d = false;
@@ -1916,7 +1914,12 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         } else if (m_OtherInfo[4] == "No") {
             m_AirrData["productive"] = "F"; 
         } 
-        m_AirrData["locus"] = annot->m_ChainTypeToShow;
+        if(locus_name.find(annot->m_ChainTypeToShow) != locus_name.end()) {
+            m_AirrData["locus"] = locus_name[annot->m_ChainTypeToShow];
+        } else {
+            m_AirrData["locus"] = NcbiEmptyString;
+        }
+           
         if (m_FrameInfo == "IF") {
             m_AirrData["vj_in_frame"] = "T";
         } else if (m_FrameInfo == "OF") {
@@ -2124,12 +2127,13 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         string query_id = NcbiEmptyString;
         const list<CRef<CSeq_id> > query_seqid = GetQueryId();
         CRef<CSeq_id> wid = FindBestChoice(query_seqid, CSeq_id::WorstRank); 
-        wid->GetLabel(&query_id, CSeq_id::eContent);        
-        m_AirrData["rearrangement_id"] = query_id;
+        wid->GetLabel(&query_id, CSeq_id::eContent); 
+        m_AirrData["sequence_id"] = query_id;
         string query_seq;
         query_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac)
             .GetSeqData(0, query_handle.GetBioseqLength(), query_seq);
         m_AirrData["sequence"] = query_seq;
+        m_AirrData["rev_comp"] = "F";
     }
 }
 
