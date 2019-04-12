@@ -251,7 +251,8 @@ CLocalTaxon::TScientificNameRef CLocalTaxon::x_Cache(const string& orgname)
             (m_SqliteConn.get(),
             "SELECT taxid "
             "FROM TaxidInfo "
-            "WHERE scientific_name = ? ");
+            "WHERE scientific_name = ? "
+            "COLLATE NOCASE ");
         stmt.Bind(1, orgname);
         stmt.Execute();
         if  (stmt.Step()) {
