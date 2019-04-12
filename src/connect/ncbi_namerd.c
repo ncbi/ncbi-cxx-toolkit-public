@@ -201,7 +201,7 @@ static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 
     if ( ! iter) {
         CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected NULL 'iter->data' pointer.");
+                   "Unexpected NULL 'iter' pointer.");
         return NULL;
     }
     if ( ! iter->data) {
