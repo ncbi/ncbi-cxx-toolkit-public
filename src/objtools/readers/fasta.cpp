@@ -1568,12 +1568,15 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
     default:            strictness = CFormatGuess::eST_Default; break;
     }
 
+    cout << "In AssignMolType" << endl;
     if (TestFlag(fForceType)) {
         _ASSERT(default_mol != CSeq_inst::eMol_not_set);
         inst.SetMol(default_mol);
         return;
     } else if (inst.IsSetMol()) {
-        return; // previously found an informative ID
+        if (inst.GetMol() != CSeq_inst::eMol_na) { // try to figure out if rna or dna
+            return; // previously found an informative ID
+        }
     } else if (m_SeqData.empty()) {
         // Nothing else to go on, but that's OK (no sequence to worry
         // about encoding); however, Seq-inst.mol is still mandatory.
@@ -1581,10 +1584,30 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
         return;
     }
 
+
     // Do the residue frequencies suggest a specific type?
     SIZE_TYPE length = min(m_SeqData.length(), SIZE_TYPE(4096));
     switch (CFormatGuess::SequenceType(m_SeqData.data(), length, strictness)) {
-    case CFormatGuess::eNucleotide:  inst.SetMol(CSeq_inst::eMol_na);  return;
+    case CFormatGuess::eNucleotide:  
+    {
+        /*
+        const auto endOfSearchRange = m_SeqData.data()+length;
+        const bool hasT = 
+            (find_if(m_SeqData.data(), m_SeqData.data()+length, [](char c) { return (c == 't' || c == 'T'); }) != endOfSearchRange);
+        const bool hasU = 
+            (find_if(m_SeqData.data(), m_SeqData.data()+length, [](char c) { return (c == 'u' || c == 'U'); }) != endOfSearchRange);
+        if (hasT && !hasU) {
+            inst.SetMol(CSeq_inst::eMol_dna);
+            return;
+        }
+        if (hasU && !hasT) {
+            inst.SetMol(CSeq_inst::eMol_rna);
+            return;
+        }
+        */
+        inst.SetMol(CSeq_inst::eMol_na);  
+        return;
+    }
     case CFormatGuess::eProtein:     inst.SetMol(CSeq_inst::eMol_aa);  return;
     default:
         if (default_mol == CSeq_inst::eMol_not_set) {

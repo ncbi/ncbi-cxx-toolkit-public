@@ -123,9 +123,15 @@ CAlnScanner::xVerifySingleSequenceData(
         HEAD, BODY, TAIL
     };
     const string& alphabet = sequenceInfo.Alphabet();
-    const string legalInHead = sequenceInfo.BeginningGap();
-    const string legalInBody = alphabet + sequenceInfo.MiddleGap();
-    const string legalInTail = sequenceInfo.EndGap();
+    const string legalInHead = 
+        sequenceInfo.BeginningGap() + sequenceInfo.Missing();
+    const string legalInBody = 
+        alphabet 
+        + sequenceInfo.MiddleGap() 
+        + sequenceInfo.Missing() 
+        + sequenceInfo.Match();
+    const string legalInTail = 
+        sequenceInfo.EndGap() + sequenceInfo.Missing();
 
     ESeqPart seqPart = ESeqPart::HEAD;
 

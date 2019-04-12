@@ -626,12 +626,12 @@ CAlnScannerNexus::xImportAlignmentData(
     }
 }
 
-
+/*
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerNexus::xVerifySingleSequenceData(
     const CSequenceInfo& sequenceInfo,
-    const string& seqId,
+    const TLineInfo& seqId,
     const vector<TLineInfo> lineInfos)
 //  -----------------------------------------------------------------------------
 {
@@ -671,11 +671,11 @@ CAlnScannerNexus::xVerifySingleSequenceData(
                 lineInfo.mNumLine,
                 EAlnSubcode::eAlnSubcode_BadDataChars,
                 description,
-                seqId);
+                seqId.mData);
         }
     }
 }
-
+*/
 
 //  ----------------------------------------------------------------------------
 void

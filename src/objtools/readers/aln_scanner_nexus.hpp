@@ -72,13 +72,13 @@ protected:
     virtual void
     xAdjustSequenceInfo(
         CSequenceInfo&) override;
-
+/*
     virtual void
     xVerifySingleSequenceData(
         const CSequenceInfo&,
-        const string& seqId,
-        const vector<TLineInfo> seqData);
-
+        const TLineInfo& seqId,
+        const vector<TLineInfo> seqData) override;
+*/
     using TCommand = SNexusCommand;
     using TCommandArgs = TCommand::TArgs;
     using TCommandTokens = TCommandArgs;
