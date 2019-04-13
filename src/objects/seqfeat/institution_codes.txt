@@ -5114,7 +5114,7 @@ OAX	s	Instituto Politecnico Nacional (CIIDIR-Oax., I.P.N.)
 OAXM	s	Centro Interdisciplinario de Estudios, Coleccion Mastozoologica (Mexico)			
 OB	s	Station Umwelt- und Natur Oberhausen			
 OBG<OMN>	s	The Oman Botanic Garden			
-OBI	s	California Polytechnic State University, Biological Sciences Department			
+OBI	s	Robert F. Hoover Herbarium California Polytechnic State University			
 OBPF	s	Planting Fields Arboretum State Historic Park			
 OC	s	Oberlin College, Biology Department			
 OCHA	s	Ochanomizu University			

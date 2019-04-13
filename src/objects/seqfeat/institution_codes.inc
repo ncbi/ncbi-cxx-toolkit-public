@@ -5147,7 +5147,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "OAXM\ts\tCentro Interdisciplinario de Estudios, Coleccion Mastozoologica (Mexico)\t\t\t",
 "OB\ts\tStation Umwelt- und Natur Oberhausen\t\t\t",
 "OBG<OMN>\ts\tThe Oman Botanic Garden\t\t\t",
-"OBI\ts\tCalifornia Polytechnic State University, Biological Sciences Department\t\t\t",
+"OBI\ts\tRobert F. Hoover Herbarium California Polytechnic State University\t\t\t",
 "OBPF\ts\tPlanting Fields Arboretum State Historic Park\t\t\t",
 "OC\ts\tOberlin College, Biology Department\t\t\t",
 "OCHA\ts\tOchanomizu University\t\t\t",
