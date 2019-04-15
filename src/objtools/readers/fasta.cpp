@@ -1548,6 +1548,28 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
     }
 }
 
+
+static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CSeq_inst& seqInst) 
+{
+    const bool hasT = 
+        (find_if(beginSeqData, endSeqData, [](char c) { return (c=='t' || c == 'T'); }) != endSeqData);
+    const bool hasU =
+        (find_if(beginSeqData, endSeqData, [](char c) { return (c=='u' || c == 'U'); }) != endSeqData);
+
+    if (hasT && !hasU) {
+        seqInst.SetMol(CSeq_inst::eMol_dna);
+        return true;
+    }
+
+    if (hasU && !hasT) {
+        seqInst.SetMol(CSeq_inst::eMol_rna);
+        return true;
+    }
+
+    return false;
+}
+
+
 void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
 {
     CSeq_inst&                  inst = m_CurrentSeq->SetInst();
@@ -1568,15 +1590,18 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
     default:            strictness = CFormatGuess::eST_Default; break;
     }
 
-    cout << "In AssignMolType" << endl;
     if (TestFlag(fForceType)) {
         _ASSERT(default_mol != CSeq_inst::eMol_not_set);
         inst.SetMol(default_mol);
         return;
     } else if (inst.IsSetMol()) {
-        if (inst.GetMol() != CSeq_inst::eMol_na) { // try to figure out if rna or dna
-            return; // previously found an informative ID
+        if (inst.GetMol() == CSeq_inst::eMol_na &&
+            !m_SeqData.empty()) {
+            sRefineNaMol(m_SeqData.data(), 
+                         m_SeqData.data() + min(m_SeqData.length(), SIZE_TYPE(4096)),
+                         inst);
         }
+        return;
     } else if (m_SeqData.empty()) {
         // Nothing else to go on, but that's OK (no sequence to worry
         // about encoding); however, Seq-inst.mol is still mandatory.
@@ -1587,25 +1612,13 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
 
     // Do the residue frequencies suggest a specific type?
     SIZE_TYPE length = min(m_SeqData.length(), SIZE_TYPE(4096));
-    switch (CFormatGuess::SequenceType(m_SeqData.data(), length, strictness)) {
+    const auto& data = m_SeqData.data();
+    switch (CFormatGuess::SequenceType(data, length, strictness)) {
     case CFormatGuess::eNucleotide:  
     {
-        /*
-        const auto endOfSearchRange = m_SeqData.data()+length;
-        const bool hasT = 
-            (find_if(m_SeqData.data(), m_SeqData.data()+length, [](char c) { return (c == 't' || c == 'T'); }) != endOfSearchRange);
-        const bool hasU = 
-            (find_if(m_SeqData.data(), m_SeqData.data()+length, [](char c) { return (c == 'u' || c == 'U'); }) != endOfSearchRange);
-        if (hasT && !hasU) {
-            inst.SetMol(CSeq_inst::eMol_dna);
-            return;
+        if (!sRefineNaMol(data, data+length, inst)) {
+            inst.SetMol(CSeq_inst::eMol_na);  
         }
-        if (hasU && !hasT) {
-            inst.SetMol(CSeq_inst::eMol_rna);
-            return;
-        }
-        */
-        inst.SetMol(CSeq_inst::eMol_na);  
         return;
     }
     case CFormatGuess::eProtein:     inst.SetMol(CSeq_inst::eMol_aa);  return;
