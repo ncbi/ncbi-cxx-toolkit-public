@@ -60,6 +60,7 @@ struct SBlobId
 
     SBlobId();
     SBlobId(const string &  blob_id);
+    SBlobId(const CTempString &  blob_id);
     SBlobId(int  sat, int  sat_key);
 
     void SetSatName(const string &  name)
@@ -69,6 +70,7 @@ struct SBlobId
 
     bool IsValid(void) const;
     bool operator < (const SBlobId &  other) const;
+    bool operator == (const SBlobId &  other) const;
 };
 
 

@@ -52,6 +52,7 @@ static string  kSeqIdTypeParam = "seq_id_type";
 static string  kTSEParam = "tse";
 static string  kUseCacheParam = "use_cache";
 static string  kNamesParam = "names";
+static string  kExcludeBlobsParam = "exclude_blobs";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -132,10 +133,23 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
             }
         }
 
+        vector<SBlobId>     exclude_blobs;
+        SRequestParameter   exclude_blobs_param = x_GetParam(req,
+                                                             kExcludeBlobsParam);
+        if (exclude_blobs_param.m_Found) {
+            exclude_blobs = x_GetExcludeBlobs(kExcludeBlobsParam,
+                                              exclude_blobs_param.m_Value, err_msg);
+            if (!err_msg.empty()) {
+                x_MalformedArguments(resp, context, err_msg);
+                return 0;
+            }
+        }
+
         m_RequestCounters.IncGetBlobBySeqId();
         resp.Postpone(
                 CPendingOperation(
-                    SBlobRequest(seq_id, seq_id_type, tse_option, use_cache),
+                    SBlobRequest(seq_id, seq_id_type, exclude_blobs,
+                                 tse_option, use_cache),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {

@@ -163,6 +163,9 @@ private:
     ETSEOption x_GetTSEOption(const string &  param_name,
                               const CTempString &  param_value,
                               string &  err_msg) const;
+    vector<SBlobId> x_GetExcludeBlobs(const string &  param_name,
+                                      const CTempString &  param_value,
+                                      string &  err_msg) const;
     int x_PopulateSatToKeyspaceMap(void);
 
 private:

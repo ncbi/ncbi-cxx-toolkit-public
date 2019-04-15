@@ -58,6 +58,22 @@ SBlobId::SBlobId(const string &  blob_id) :
 }
 
 
+SBlobId::SBlobId(const CTempString &  blob_id) :
+    m_Sat(-1), m_SatKey(-1)
+{
+    list<CTempString>   parts;
+    NStr::Split(blob_id, ".", parts);
+
+    if (parts.size() == 2) {
+        try {
+            m_Sat = NStr::StringToNumeric<int>(parts.front());
+            m_SatKey = NStr::StringToNumeric<int>(parts.back());
+        } catch (...) {
+        }
+    }
+}
+
+
 SBlobId::SBlobId(int  sat, int  sat_key) :
     m_Sat(sat), m_SatKey(sat_key)
 {}
@@ -74,6 +90,12 @@ bool SBlobId::operator < (const SBlobId &  other) const
     if (m_Sat < other.m_Sat)
         return true;
     return m_SatKey < other.m_SatKey;
+}
+
+
+bool SBlobId::operator == (const SBlobId &  other) const
+{
+    return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
 }
 
 

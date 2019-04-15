@@ -638,6 +638,31 @@ CPubseqGatewayApp::x_GetTSEOption(const string &  param_name,
 }
 
 
+vector<SBlobId> CPubseqGatewayApp::x_GetExcludeBlobs(const string &  param_name,
+                                                     const CTempString &  param_value,
+                                                     string &  err_msg) const
+{
+    vector<SBlobId>             result;
+    vector<CTempString>         blob_ids;
+    NStr::Split(param_value, ",", blob_ids);
+
+    for (const auto &  item : blob_ids) {
+        SBlobId     blob_id(item);
+        if (!blob_id.IsValid()) {
+            err_msg = "Invalid blob id in the '" + param_name +
+                      "' parameter comma separated list. Received: '" +
+                      string(item.data(), item.size()) +
+                      "'. Expected format 'sat.sat_key' where both "
+                      "'sat' and 'sat_key' are integers.";
+            result.clear();
+            break;
+        }
+        result.push_back(blob_id);
+    }
+    return result;
+}
+
+
 bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
                                               const CTempString &  param_value,
                                               int &  converted,

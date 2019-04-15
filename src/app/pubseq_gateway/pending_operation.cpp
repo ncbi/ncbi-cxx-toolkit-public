@@ -732,6 +732,15 @@ void CPendingOperation::x_StartMainBlobRequest(void)
 {
     // Here: m_BlobRequest has the resolved sat and a sat_key regardless
     //       how the blob was requested
+
+    // In case of the blob request by sat.sat_key it could be in the exclude
+    // blob list and thus should not be retrieved at all
+    if (m_BlobRequest.IsExcludedBlob()) {
+        x_SendReplyCompletion(true);
+        m_ProtocolSupport.Flush();
+        return;
+    }
+
     unique_ptr<CCassBlobFetch>  fetch_details;
     fetch_details.reset(new CCassBlobFetch(m_BlobRequest));
 

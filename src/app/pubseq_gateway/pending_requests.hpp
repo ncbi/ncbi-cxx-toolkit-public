@@ -57,6 +57,7 @@ struct SBlobRequest
     // Construct the request for the case of seq_id/id_type request
     SBlobRequest(const CTempString &  seq_id,
                  int  seq_id_type,
+                 vector<SBlobId> &  exclude_blobs,
                  ETSEOption  tse_option,
                  ECacheAndCassandraUse  use_cache) :
         m_TSEOption(tse_option),
@@ -64,12 +65,26 @@ struct SBlobRequest
         m_UseCache(use_cache),
         m_LastModified(INT64_MIN),
         m_SeqId(seq_id.data(), seq_id.size()),
-        m_SeqIdType(seq_id_type)
+        m_SeqIdType(seq_id_type),
+        m_ExcludeBlobs(std::move(exclude_blobs))
     {}
 
     EBlobIdentificationType  GetBlobIdentificationType(void) const
     {
         return m_BlobIdType;
+    }
+
+    bool IsExcludedBlob(void) const
+    {
+        // NOTE: in practice it makes sense to check it only if the
+        //       identification type is seq_id/seq_id_type
+        // However the m_ExcludeBlobs will be empty for the sat.sat_key
+        // identification anyway
+        for (const auto &  item : m_ExcludeBlobs) {
+            if (item == m_BlobId)
+                return true;
+        }
+        return false;
     }
 
 public:
@@ -85,6 +100,7 @@ public:
     // NB: need a copy because it could be an asynchronous request
     string                      m_SeqId;
     int                         m_SeqIdType;
+    vector<SBlobId>             m_ExcludeBlobs;
 };
 
 
