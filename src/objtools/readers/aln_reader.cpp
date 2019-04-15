@@ -264,13 +264,13 @@ void CAlnReader::Read(
     try {
         ReadAlignmentFile(
             m_IS, m_IdValidationScheme, sequenceInfo, alignmentInfo);
+            x_VerifyAlignmentInfo(alignmentInfo);
     }
     catch (const SShowStopper& showStopper) {
         theErrorReporter->Fatal(showStopper);
         return;
     }
 
-    x_VerifyAlignmentInfo(alignmentInfo);
     m_Dim = m_Ids.size();
     m_ReadDone = true;
     m_ReadSucceeded = true;
@@ -291,12 +291,12 @@ void CAlnReader::Read(
     try {
         ReadAlignmentFile(
             m_IS, generate_local_ids, m_UseNexusInfo, sequenceInfo, alignmentInfo);
+        x_VerifyAlignmentInfo(alignmentInfo);
     }
     catch (const SShowStopper& showStopper) {
         theErrorReporter->Fatal(showStopper);
         return;
     }
-    x_VerifyAlignmentInfo(alignmentInfo);
     m_Dim = m_Ids.size();
     m_ReadDone = true;
     m_ReadSucceeded = true;
@@ -306,79 +306,70 @@ void CAlnReader::Read(
 void CAlnReader::x_VerifyAlignmentInfo(
     const SAlignmentFile& alignmentInfo)
 {
-    //sanity check and post process what the raw reader presents us with:
-    try {
-        const auto num_sequences = alignmentInfo.NumSequences();
 
-        if (num_sequences == 0) {
-            throw SShowStopper(
-                -1,
-                eAlnSubcode_BadSequenceCount,
-                "Error reading alignment: No sequence data");
-        }
+    const auto num_sequences = alignmentInfo.NumSequences();
+
+    if (num_sequences == 0) {
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_BadSequenceCount,
+            "Error reading alignment: No sequence data");
+    }
 
 
-        if (num_sequences == 1) {
-            throw SShowStopper(
-                -1,
-                eAlnSubcode_BadSequenceCount,
-                "Error reading alignment: Need more than one sequence");
-        }
+    if (num_sequences == 1) {
+        throw SShowStopper(
+        -1,
+        eAlnSubcode_BadSequenceCount,
+        "Error reading alignment: Need more than one sequence");
+    }
 
  
-        // Check sequence lengths
-        size_t max_len, min_len;
-        int max_index;
-        s_GetSequenceLengthInfo(alignmentInfo, 
-            min_len,
-            max_len,
-            max_index);
+    // Check sequence lengths
+    size_t max_len, min_len;
+    int max_index;
+    s_GetSequenceLengthInfo(alignmentInfo, 
+        min_len,
+        max_len,
+        max_index);
 
-        if (min_len == 0) { // I don't think that this can ever occur
-            throw SShowStopper(
-                -1,
-                eAlnSubcode_BadDataCount,
-                "Error reading alignment: Missing sequence data");
-        }
+    if (min_len == 0) { // I don't think that this can ever occur
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_BadDataCount,
+            "Error reading alignment: Missing sequence data");
+    }
     
-        // if we're trying to guess whether this is an alignment file,
-        // and no tell-tale alignment format lines were found,
-        // check to see if any of the lines contain gaps.
-        // no gaps plus no alignment indicators -> don't guess alignment
-        const auto numSequences = alignmentInfo.NumSequences();
+    // if we're trying to guess whether this is an alignment file,
+    // and no tell-tale alignment format lines were found,
+    // check to see if any of the lines contain gaps.
+    // no gaps plus no alignment indicators -> don't guess alignment
+    const auto numSequences = alignmentInfo.NumSequences();
 
-        m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
-        m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
+    m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
+    m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
 
-        auto numDeflines = alignmentInfo.NumDeflines();
-        if (numDeflines) {
-            if (numDeflines == m_Ids.size()) {
-                m_DeflineInfo.resize(numDeflines);
-                for (int i=0;  i< numDeflines;  ++i) {
-                    m_DeflineInfo[i] = {
-                        NStr::TruncateSpaces(
-                        alignmentInfo.mDeflines[i].mData),
-                        alignmentInfo.mDeflines[i].mNumLine};
-                }
+    auto numDeflines = alignmentInfo.NumDeflines();
+    if (numDeflines) {
+        if (numDeflines == m_Ids.size()) {
+            m_DeflineInfo.resize(numDeflines);
+            for (int i=0;  i< numDeflines;  ++i) {
+                m_DeflineInfo[i] = {
+                    NStr::TruncateSpaces(
+                    alignmentInfo.mDeflines[i].mData),
+                    alignmentInfo.mDeflines[i].mNumLine};
             }
-            else {
-                string description = ErrorPrintf(
+        }
+        else {
+            string description = ErrorPrintf(
                     "Expected 0 or %d deflines but finding %d",
                      m_Ids.size(),
                      numDeflines);
-                theErrorReporter->Error(
+            theErrorReporter->Error(
                     -1,
                     EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
                     description);
-            }
         }
-    }
-    catch (const SShowStopper& showStopper) {
-        theErrorReporter->Fatal(showStopper);
-        m_Dim = 0;
-        m_ReadDone = true;
-        m_ReadSucceeded = false;
-        return;
     }
 }
 
