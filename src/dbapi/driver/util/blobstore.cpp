@@ -34,6 +34,7 @@
 #include <util/compress/bzip2.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/util/blobstore.hpp>
 
 USING_NCBI_SCOPE;
@@ -608,7 +609,7 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
     }
 }
 
-void CBlobStoreBase::GenReadQuery()
+void CBlobStoreBase::GenReadQuery(const CTempString& table_hint)
 {
     m_ReadQuery = kEmptyStr;
 
@@ -618,7 +619,16 @@ void CBlobStoreBase::GenReadQuery()
         if(i) m_ReadQuery+= ", ";
         m_ReadQuery+= m_BlobColumn[i];
     }
-    m_ReadQuery+= " from " + m_Table + " where " + m_KeyColName + "=@blob_id";
+    m_ReadQuery += " from " + m_Table;
+    if ( !table_hint.empty() ) {
+        impl::CConnection* conn_impl
+            = dynamic_cast<impl::CConnection*>(&GetConn()->GetExtraFeatures());
+        if (conn_impl != NULL
+            &&  conn_impl->GetServerType() == CDBConnParams::eMSSqlServer) {
+            m_ReadQuery += string(" WITH(") + table_hint + ')';
+        }
+    }
+    m_ReadQuery += " where " + m_KeyColName + "=@blob_id";
     if(!m_NumColName.empty())
     {
         m_ReadQuery+= " order by " + m_NumColName + " ASC";
@@ -679,12 +689,13 @@ void CBlobStoreBase::Delete(const string& blob_id)
     ReleaseConn(con);
 }
 
-istream* CBlobStoreBase::OpenForRead(const string& blob_id)
+istream* CBlobStoreBase::OpenForRead(const string& blob_id,
+                                     const CTempString& table_hint)
 {
     CDB_Connection* con = GetConn();
 
     if(m_ReadQuery.empty()) {
-        GenReadQuery();
+        GenReadQuery(table_hint);
     }
 
     unique_ptr<CDB_LangCmd> lcmd(con->LangCmd(m_ReadQuery));

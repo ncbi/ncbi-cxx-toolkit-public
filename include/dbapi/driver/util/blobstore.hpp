@@ -244,8 +244,16 @@ public:
 
 
     bool Exists(const string& blob_id);
-    //user has to delete istream
-    istream* OpenForRead(const string& blob_id);
+    /// Obtain an input stream for a specific BLOB.
+    /// @param blob_id
+    ///   The BLOB's identifier (name).
+    /// @param table_hint
+    ///   Optional table hint, such as ROWLOCK, to be applied when
+    ///   working with MS SQL.
+    /// @return
+    ///   A pointer to an input stream for the caller to delete when done.
+    istream* OpenForRead(const string& blob_id,
+                         const CTempString& table_hint = kEmptyStr);
     // user has to delete ostream
     ostream* OpenForWrite(const string& blob_id);
     void Delete(const string& blob_id);
@@ -276,7 +284,7 @@ protected:
                        bool isText = false);
     void SetTextSizeServerSide(CDB_Connection* pConn,
                                size_t textSize = 2147483647);
-    virtual void GenReadQuery();
+    virtual void GenReadQuery(const CTempString& table_hint);
     virtual CDB_Connection* GetConn() = 0;
     // Returns true if connection should be deleted.
     virtual bool ReleaseConn(CDB_Connection*) = 0;

@@ -1283,7 +1283,8 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
 
             // Read blob ...
             {
-                unique_ptr<istream> pStream(blobrw.OpenForRead( "66" ));
+                unique_ptr<istream> pStream
+                    (blobrw.OpenForRead("66", "ROWLOCK"));
                 BOOST_CHECK(pStream.get() != NULL);
 
                 string line;

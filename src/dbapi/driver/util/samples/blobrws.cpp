@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
     string passwd;
     string blob_key;
     string table_name;
+    string table_hint;
 
     size_t imagesize= 0;
 
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
         cerr << argv[0]
              << " -K<blob_id> [-r] [-d<driver_name>] [-S<server_name>] [-T<table_name>]"
              << " [-U<user_name>] [-P<password>] [-L<image size>] [-Z<compress_method>]"
-             << " [-l]"
+             << " [-H<table_hint>] [-l]"
              << endl;
         return 0;
     }
@@ -154,6 +155,9 @@ int main(int argc, char* argv[])
     }
     table_name= p? p : "MyDataTable";
 
+    p= getParam('H', argc, argv);
+    if(p) table_hint= p;
+
     try
     {
         C_DriverMgr drv_mgr;
@@ -180,7 +184,8 @@ int main(int argc, char* argv[])
         {
             if(blobrw.Exists(blob_key))
             {
-                AutoPtr<istream> pStream(blobrw.OpenForRead(blob_key));
+                AutoPtr<istream> pStream
+                    (blobrw.OpenForRead(blob_key, table_hint));
 
                 if(!pStream.get())
                 {
