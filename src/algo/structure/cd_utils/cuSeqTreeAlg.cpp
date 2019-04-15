@@ -42,12 +42,9 @@ BEGIN_SCOPE(cd_utils)
 const string TreeAlgorithm::NO_NAME = "<unnamed algorithm>";
 const TreeAlgorithm::Rootedness TreeAlgorithm::DEF_ROOTED = TreeAlgorithm::eUnrooted;
 
-#pragma warning (4 : 4701 )
-
 /*=======================================*/
 /*    Midpoint-root related functions    */
 /*=======================================*/
-#pragma warning (4 : 4018 )
 
 void MidpointRootSeqTree(const SeqTree& oldTree, SeqTree& newTree) {
 
