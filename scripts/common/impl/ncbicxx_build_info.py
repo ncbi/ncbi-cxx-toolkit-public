@@ -446,7 +446,10 @@ class Collector(object):
 
     def get_target_path(self, target_name, target_type):
         if target_type == 'app':
-            filename = target_name
+            if os.path.exists(target_name + '.exe'):
+                filename = target_name + '.exe'
+            else:
+                filename = target_name
         else:
             filename = 'lib' + target_name
             for x in ('.dylib', '-dll.dylib', '.so', '-dll.so', '.a'):
