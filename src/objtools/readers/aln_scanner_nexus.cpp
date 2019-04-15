@@ -356,6 +356,8 @@ CAlnScannerNexus::xProcessMatrix(
         
         string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
         auto dataSize = seqData.size();
+
+
         
         if (seqCount == 0) {
             sequenceCharCount += dataSize;
@@ -382,9 +384,9 @@ CAlnScannerNexus::xProcessMatrix(
                 EAlnSubcode::eAlnSubcode_BadDataCount,
                 description); 
         }
-            mSequences[seqCount].push_back({tokens[1], lineNum});
+        mSequences[seqCount].push_back({seqData, lineNum});
 
-            ++dataLineCount;
+        ++dataLineCount;
     }
 
     if (sequenceCharCount != mSequenceSize) {
