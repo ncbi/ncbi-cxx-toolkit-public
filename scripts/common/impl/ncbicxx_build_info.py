@@ -563,11 +563,13 @@ class CollectorCMake(Collector):
                 target_filename = os.path.basename(output_path)
                 (target_name,ext) = os.path.splitext(target_filename)
                 info['target_name'] = target_name
-                if ext == '.so' or ext == '.a' or ext == '.lib' or ext == '.dll':
+                if ext in ('.so', '.a', '.lib', '.dll', '.dylib'):
                     info['target_type'] = 'lib'
                     if info['target_name'].startswith("lib"):
                         info['target_name'] = info['target_name'][3:]
                 elif not ext or ext == '.exe':
+                    if ext != '.exe':
+                        info['target_name'] = target_filename
                     info['target_type'] = 'app'
                 value_expected = False
             elif x == '-o':
