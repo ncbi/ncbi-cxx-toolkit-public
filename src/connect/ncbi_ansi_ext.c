@@ -121,24 +121,18 @@ int strncasecmp(const char* s1, const char* s2, size_t n)
 
 char* strupr(char* s)
 {
-    unsigned char* t = (unsigned char*) s;
-
-    while ( *t ) {
+    unsigned char* t;
+    for (t = (unsigned char*) s;  *t;  ++t)
         *t = (unsigned char) toupper(*t);
-        t++;
-    }
     return s;
 }
 
 
 char* strlwr(char* s)
 {
-    unsigned char* t = (unsigned char*) s;
-
-    while ( *t ) {
+    unsigned char* t;
+    for (t = (unsigned char*) s;  *t;  ++t)
         *t = (unsigned char) tolower(*t);
-        t++;
-    }
     return s;
 }
 
