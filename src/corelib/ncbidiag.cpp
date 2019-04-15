@@ -2150,8 +2150,12 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
         Print("ncbi_app_package_date", NCBI_SBUILDINFO_DEFAULT().date);
 #endif
         const SBuildInfo& bi = ver.GetBuildInfo();
-        initializer_list<SBuildInfo::EExtra> bi_num =
-            {   SBuildInfo::eTeamCityProjectName, SBuildInfo::eTeamCityBuildConf, SBuildInfo::eTeamCityBuildNumber};
+        initializer_list<SBuildInfo::EExtra> bi_num = {
+            SBuildInfo::eTeamCityProjectName,
+            SBuildInfo::eTeamCityBuildConf,
+            SBuildInfo::eTeamCityBuildNumber,
+            SBuildInfo::eBuiltAs
+        };
         for(SBuildInfo::EExtra key : bi_num) {
             string value = bi.GetExtraValue(key);
             if (!value.empty()) {

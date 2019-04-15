@@ -24,6 +24,7 @@ default_rule: all
 
 ### C/C++ source file compilation setup
 
+CPPFLAGS     += -DNCBI_APP_BUILT_AS=$(APP)
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 SOURCES      = @UNIX_SRC@ $(SRC)

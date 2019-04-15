@@ -64,7 +64,7 @@ class NCBI_XCGI_EXPORT CCgiApplication : public CNcbiApplication
     typedef CNcbiApplication CParent;
 
 public:
-    CCgiApplication(void);
+    CCgiApplication(const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
     ~CCgiApplication(void);
 
     /// Singleton

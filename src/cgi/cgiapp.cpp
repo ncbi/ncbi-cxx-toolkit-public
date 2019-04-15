@@ -941,8 +941,9 @@ private:
 };
 
 
-CCgiApplication::CCgiApplication(void) 
- : m_RequestFlags(0),
+CCgiApplication::CCgiApplication(const SBuildInfo& build_info) 
+ : CNcbiApplication(build_info),
+   m_RequestFlags(0),
    m_HostIP(0), 
    m_Iteration(0),
    m_ArgContextSync(false),

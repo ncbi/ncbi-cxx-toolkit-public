@@ -492,6 +492,7 @@ string SBuildInfo::ExtraName(EExtra key)
     case eStableComponentsVersion: return "Stable-Components-Version";
     case eDevelopmentVersion:      return "Development-Version";
     case eProductionVersion:       return "Production-Version";
+    case eBuiltAs:                 return "Built-As";
     }
     return "Unknown";
 }
@@ -509,6 +510,7 @@ string SBuildInfo::ExtraNameAppLog(EExtra key)
     case eStableComponentsVersion: return "ncbi_app_sc_version";
     case eDevelopmentVersion:      return "ncbi_app_dev_version";
     case eProductionVersion:       return "ncbi_app_prod_version";
+    case eBuiltAs:                 return "ncbi_app_built_as";
     }
     return "ncbi_app_unk";
 }

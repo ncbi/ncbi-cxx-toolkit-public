@@ -70,7 +70,8 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         eSubversionRevision,
         eStableComponentsVersion,
         eDevelopmentVersion,
-        eProductionVersion
+        eProductionVersion,
+        eBuiltAs
     };
     string date;
     string tag;
@@ -124,6 +125,13 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
 #  endif
 #endif
 
+#ifdef NCBI_APP_BUILT_AS
+#  define NCBI_BUILT_AS_SBUILDINFO \
+    .Extra(SBuildInfo::eBuiltAs, NCBI_AS_STRING(NCBI_APP_BUILT_AS))
+#else
+#  define NCBI_BUILT_AS_SBUILDINFO /* empty */
+#endif
+
 #define NCBI_SBUILDINFO_DEFAULT_IMPL() \
     SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
         NCBI_TEAMCITY_PROJECT_NAME_SBUILDINFO \
@@ -131,7 +139,8 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         NCBI_TEAMCITY_BUILD_NUMBER_SBUILDINFO \
         NCBI_SUBVERSION_REVISION_SBUILDINFO \
         NCBI_SC_VERSION_SBUILDINFO \
-        NCBI_SRCTREE_VER_SBUILDINFO
+        NCBI_SRCTREE_VER_SBUILDINFO \
+        NCBI_BUILT_AS_SBUILDINFO
 
 #if defined(NCBI_USE_PCH) && !defined(NCBI_TEAMCITY_BUILD_NUMBER)
 #define NCBI_SBUILDINFO_DEFAULT() SBuildInfo()
