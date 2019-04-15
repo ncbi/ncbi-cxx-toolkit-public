@@ -43,12 +43,26 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+/// Program description without BLAST+ version
+class CIgBlastProgramDescriptionArgs : public CProgramDescriptionArgs
+{
+public:
+    CIgBlastProgramDescriptionArgs(const string& program_name,
+                                   const string& program_desc)
+        : CProgramDescriptionArgs(program_name, program_desc) {}
+
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) {
+        arg_desc.SetUsageContext(m_ProgName, m_ProgDesc);
+    }
+};
+
+
 CIgBlastpAppArgs::CIgBlastpAppArgs()
 {
     CRef<IBlastCmdLineArgs> arg;
     static const string kProgram("igblastp");
-    arg.Reset(new CProgramDescriptionArgs(kProgram,
-                                          "Protein-Protein BLAST for immunoglobulin sequences"));
+    arg.Reset(new CIgBlastProgramDescriptionArgs(kProgram,
+                                          "BLAST for Ig and TCR sequences"));
     const bool kQueryIsProtein = true;
     const bool kFilterByDefault = false;
     m_Args.push_back(arg);

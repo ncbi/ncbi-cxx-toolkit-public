@@ -54,7 +54,7 @@ BEGIN_SCOPE(blast)
 class CIgBlastVersion : public CVersionInfo {
 public:
     CIgBlastVersion()
-        : CVersionInfo(1, 0, 0) {}
+        : CVersionInfo(1, 14, 0) {}
 };
 
 class IQueryFactory;
