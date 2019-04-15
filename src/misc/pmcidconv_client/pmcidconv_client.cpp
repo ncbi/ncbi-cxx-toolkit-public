@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include <misc/pmcidconv_client/pmcidconv_client.hpp>
-#include <objects/pub/Pub.hpp>
 
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
