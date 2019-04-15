@@ -397,13 +397,16 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
             rval = extend_len ? eExtensibe_fixable : eExtensibe_abut;
         }
     }
-    if (rval == eExtensibe_fixable && strand == eNa_strand_minus) {
+    if (rval != eExtensibe_fixable) return rval;
+    if (strand == eNa_strand_minus) {
         CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
         string codon;
         svec.GetSeqData(left - extend_len, left - extend_len + 3, codon);
         if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
             rval = eExtensibe_none;
         }
+    } else {
+        rval = eExtensibe_none;
     }
     return rval;
 }
