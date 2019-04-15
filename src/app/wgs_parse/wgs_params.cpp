@@ -69,6 +69,7 @@ struct CParams_imp
     bool m_medline_lookup;
     bool m_enforce_new;
     bool m_different_biosamples;
+    bool m_change_nuc_title;
 
     string m_outdir;
     string m_id_acc_file;
@@ -129,6 +130,7 @@ struct CParams_imp
         m_medline_lookup(false),
         m_enforce_new(false),
         m_different_biosamples(false),
+        m_change_nuc_title(false),
         m_update_mode(eUpdateNew),
         m_scaffold_type(eRegularGenomic),
         m_sort_order(eUnsorted),
@@ -357,6 +359,11 @@ bool CParams::IsDiffCitSubAllowed() const
 bool CParams::IsDiffBioSamplesAllowed() const
 {
     return m_imp->m_different_biosamples;
+}
+
+bool CParams::NeedToChangeNucTitle() const
+{
+    return m_imp->m_change_nuc_title;
 }
 
 const string& CParams::GetNewNucTitle() const
@@ -1194,6 +1201,7 @@ bool SetParams(const CArgs& args)
     }
 
     if (args["n"].HasValue()) {
+        params_imp.m_change_nuc_title = true;
         params_imp.m_new_nuc_title = args["n"].AsString();
     }
 

@@ -139,6 +139,7 @@ public:
     bool IsDiffCitSubAllowed() const;
     bool IsDiffBioSamplesAllowed() const;
 
+    bool NeedToChangeNucTitle() const;
     const string& GetNewNucTitle() const;
 
     TSeqPos GetGapSize() const;

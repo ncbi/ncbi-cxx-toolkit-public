@@ -1659,7 +1659,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         StripAuthors(*entry);
                     }
 
-                    if (!GetParams().GetNewNucTitle().empty()) {
+                    if (GetParams().NeedToChangeNucTitle()) {
                         CTitleInfo title_info;
                         RepTitles(*entry, title_info);
                     }
