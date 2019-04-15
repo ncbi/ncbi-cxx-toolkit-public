@@ -395,6 +395,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             max_iterations = def_iter;
         }
 
+        int iterations_rnd_inc =
+            reg.GetInt("FastCGI", "Iterations_Random_Increase", 0, 0,
+                CNcbiRegistry::eErrPost);
+        if (iterations_rnd_inc > 0) {
+            max_iterations += rand() % iterations_rnd_inc;
+        }
+
         _TRACE("CCgiApplication::Run: FastCGI limited to "
                << max_iterations << " iterations");
 
