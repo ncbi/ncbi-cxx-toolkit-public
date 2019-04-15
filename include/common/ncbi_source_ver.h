@@ -41,3 +41,5 @@
 #  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eDevelopmentVersion
 #endif
 
+#define NCBI_SRCTREE_VER_SBUILDINFO \
+    .Extra(NCBI_SRCTREE_NAME_PROXY, NCBI_SRCTREE_VER_PROXY)
