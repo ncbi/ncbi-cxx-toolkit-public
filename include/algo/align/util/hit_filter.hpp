@@ -413,8 +413,15 @@ public:
                         phe_hi = &he[i1];
                     }
 
-                    if(phe_lo->m_X >= margin) {
-                        phe_lo->m_X -= margin;
+                    // we want all endpoints in [phe_lo->m_X - margin..phe_hi->m_X + margin]
+                    // but SHitEnd::"operator <" compares scores as well
+                    // and lower_bound(m_X - margin) will skip m_X - margin end with lower score
+                    // so we will seek for m_X - margin -1 and then skip all m_X - margin -1 ends
+
+                    auto prev_X = phe_lo->m_X;
+
+                    if(phe_lo->m_X >= margin +1) {
+                        phe_lo->m_X -= margin +1;
                     }
                     else {
                         phe_lo->m_X = 0;
@@ -425,6 +432,8 @@ public:
                     typedef typename THitEnds::iterator THitEndsIter;
                     THitEndsIter ii0 (hit_ends.lower_bound(*phe_lo));
                     THitEndsIter ii1 (hit_ends.upper_bound(*phe_hi));
+
+                    while ( ii0 != ii1 && ii0->m_X+margin < prev_X ) ++ii0; // skip m_X - margin -1 ends
 
                     // special case: if X is zero, go left as long as it's the same id
                     if(phe_lo->m_X == 0) {
