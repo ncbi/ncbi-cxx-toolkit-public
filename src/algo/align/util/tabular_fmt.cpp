@@ -1926,10 +1926,7 @@ void CTabularFormatter_Cigar::Print(CNcbiOstream& ostr,
         else
             Code = 'M';
 
-        if(Length == 1)
-            ostr << Code;
-        else
-            ostr << Length << Code;
+        ostr << Length << Code;
     }
 
 }
