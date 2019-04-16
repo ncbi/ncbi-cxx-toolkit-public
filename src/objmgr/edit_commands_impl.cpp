@@ -44,11 +44,5 @@ CCommandProcessor::CCommandProcessor(CScope_Impl& scope)
 {
 }
 
-// GCC 2.95 generates references to this for some reason.
-void CCommandProcessor::operator delete(void*)
-{
-    throw runtime_error("forbidden");
-}
-
 END_SCOPE(objects)
 END_NCBI_SCOPE

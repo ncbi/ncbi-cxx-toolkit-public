@@ -78,10 +78,10 @@ private:
 
 private:
 
-    void* operator new(size_t); // only stack allocation is allowed
-    void operator delete(void*);
-    CCommandProcessor(const CCommandProcessor&);
-    CCommandProcessor& operator=(const CCommandProcessor&);
+    void* operator new(size_t) = delete;
+    void operator delete(void*) = delete;
+    CCommandProcessor(const CCommandProcessor&) = delete;
+    CCommandProcessor& operator=(const CCommandProcessor&) = delete;
 };
 
 
