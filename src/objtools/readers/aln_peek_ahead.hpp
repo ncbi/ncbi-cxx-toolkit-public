@@ -65,8 +65,7 @@ public:
     PeekLine(
         string& str)
     {
-        std::getline(mIstr, str);
-        if (mIstr.good()) {
+        if (getline(mIstr, str)) {
             mPeeked.push_back({str,mLineNum++});
             return true;
         }
@@ -84,13 +83,14 @@ public:
             mPeeked.pop_front();
             return true;
         }
+
         str.clear();
-        std::getline(mIstr, str);
-        bool success = mIstr.good();
-        if (success) {
+        if (getline(mIstr, str)) {
             lineNum = mLineNum++;
+            return true;
         }
-        return (success  || !str.empty());
+
+        return false;
     };
 
 protected:
