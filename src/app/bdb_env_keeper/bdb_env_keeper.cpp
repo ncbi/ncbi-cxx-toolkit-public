@@ -202,7 +202,8 @@ int CBDBEnvKeeperApp::Run(void)
 #if defined(NCBI_OS_UNIX)
         if (is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
+            bool daemon
+                = CCurrentProcess::Daemonize(0, CCurrentProcess::fDF_KeepCWD);
             if (!daemon) {
                 return 0;
             }
