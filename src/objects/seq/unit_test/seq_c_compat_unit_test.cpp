@@ -124,7 +124,7 @@ enum EIDLabelType {
 static string s_IdLabel(const TAutoSeqId& c_id, EIDLabelType type)
 {
     CharPtr c_label = SeqIdWholeLabel(c_id.get(), type);
-    string result = NStr::TruncateSpaces(c_label, NStr::eTrunc_End);
+    string result = NStr::TruncateSpaces_Unsafe(c_label, NStr::eTrunc_End);
     Nlm_MemFree(c_label);
     return result;
 }
