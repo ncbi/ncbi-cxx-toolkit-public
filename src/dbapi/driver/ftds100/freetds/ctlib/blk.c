@@ -818,10 +818,11 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
                     &&  destfmt.datatype == CS_CHAR_TYPE
                     &&  is_fixed_type(_ct_get_server_type(tds, srctype))) {
                         size_t out_len;
-                        const char *buf
-                                = tds_convert_string(tds, bindcol->char_conv,
-                                                     coldata->data, destlen,
-                                                     &out_len);
+                        TDS_UCHAR *buf
+                                = (TDS_UCHAR *) tds_convert_string
+                                        (tds, bindcol->char_conv,
+                                         (char *) coldata->data, destlen,
+                                         &out_len);
                         if (buf != NULL  &&  buf != coldata->data) {
                                 free(coldata->data);
                                 coldata->data = buf;
