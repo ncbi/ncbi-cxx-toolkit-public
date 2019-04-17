@@ -221,11 +221,10 @@ bool CGff2Writer::x_WriteBioseqHandle(
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
         if (!xWriteFeature(fc, mRoot)) {
-            return false;
+            // error!
+            continue;
         }
-        if (!xWriteAllChildren(fc, mRoot)) {
-            return false;
-        }
+        xWriteAllChildren(fc, mRoot);
     }
     return true;
 }
@@ -242,11 +241,10 @@ bool CGff2Writer::xWriteAllChildren(
     for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
         CMappedFeat mChild = *cit;
         if (!xWriteFeature(fc, mChild)) {
-            return false;
+            //error!
+            continue;
         }
-        if (!xWriteAllChildren(fc, mChild)) {
-            return false;
-        }
+        xWriteAllChildren(fc, mChild);
     }
     return true;
 }
