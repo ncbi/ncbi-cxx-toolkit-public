@@ -16092,8 +16092,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadFullLengthFeature)
     unit_test_util::SetTransgenic(entry, true);
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadFullLengthFeature",
-                               "Source feature is full length, should be descriptor"));
+    // expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadFullLengthFeature",
+    //                            "Source feature is full length, should be descriptor"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadFullLengthFeature",
                                "Publication feature is full length, should be descriptor"));
     //AddChromosomeNoLocation(expected_errors, entry);
@@ -16112,8 +16112,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadFullLengthFeature)
 
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "DuplicateFeat",
                                "Features have identical intervals, but labels differ"));
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadFullLengthFeature",
-                               "Source feature is full length, should be descriptor"));
+    // expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadFullLengthFeature",
+    //                            "Source feature is full length, should be descriptor"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadFullLengthFeature",
                                "Multiple full-length source features, should only be one if descriptor is transgenic"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadFullLengthFeature",
