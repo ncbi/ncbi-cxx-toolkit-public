@@ -2796,9 +2796,14 @@ void CProtValidator::x_ReportUninformativeNames()
     if (!m_Imp.IsRefSeq()) {
         return;
     }
-    if (!m_Feat.GetData().GetProt().IsSetName()) {
-        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoNameForProtein,
-                 "Protein name is not set");
+    const CProt_ref& prot = m_Feat.GetData().GetProt();
+    if (!prot.IsSetName()) {
+        if (!prot.IsSetProcessed() ||
+            (prot.GetProcessed() != CProt_ref::eProcessed_signal_peptide &&
+             prot.GetProcessed() !=  CProt_ref::eProcessed_transit_peptide)) {
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_NoNameForProtein,
+                         "Protein name is not set");
+              }
         return;
     }
     for (auto it : m_Feat.GetData().GetProt().GetName()) {
