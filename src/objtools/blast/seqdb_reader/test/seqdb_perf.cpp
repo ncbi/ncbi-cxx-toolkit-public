@@ -187,6 +187,11 @@ CSeqDBPerfApp::x_InitApplicationData()
     const CSeqDB::ESeqType kSeqType = ParseMoleculeTypeString(args["dbtype"].AsString());
     const string& kDbName(args["db"].AsString());
 
+    int kNumThreads = 1;
+#if (defined(_OPENMP) && defined(NCBI_THREADS))
+    kNumThreads = args["num_threads"].AsInteger();
+#endif
+
     // To test the use of CSeqDB::SetMmapStrategy, uncomment one of the two
     // pairs of statements below.
 
@@ -196,22 +201,27 @@ CSeqDBPerfApp::x_InitApplicationData()
 //    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_IndexFile, CSeqDB::eMmap_WillNeed);
 //    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_SequenceFile, CSeqDB::eMmap_WillNeed);
 
-    m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
-    m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 
-    int kNumThreads = 1;
-#if (defined(_OPENMP) && defined(NCBI_THREADS))
-    kNumThreads = args["num_threads"].AsInteger();
-#endif
-    m_DbHandles.reserve(kNumThreads);
-    m_DbHandles.push_back(m_BlastDb);
-    if (kNumThreads > 1) {
-        for (int i = 1; i < kNumThreads; i++) {
-            m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
-            m_DbHandles.push_back(m_BlastDb);
+    if (args["multi_threaded_creation"]) {
+        #pragma omp parallel default(none) shared(kDbName, kNumThreads) num_threads(kNumThreads)
+        for (int i = 0; i < kNumThreads; i++)
+            CSeqDBExpert(kDbName, kSeqType);
+        
+    } else {
+
+        m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
+        m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
+
+        m_DbHandles.reserve(kNumThreads);
+        m_DbHandles.push_back(m_BlastDb);
+        if (kNumThreads > 1) {
+            for (int i = 1; i < kNumThreads; i++) {
+                m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
+                m_DbHandles.push_back(m_BlastDb);
+            }
         }
+        m_MemoryUsage.assign(kNumThreads, SMemUsage());
     }
-    m_MemoryUsage.assign(kNumThreads, SMemUsage());
 
     sw.Stop();
     cout << "Initialization time: " << sw.AsSmartString() << endl;
@@ -278,6 +288,14 @@ void CSeqDBPerfApp::Init()
                             CArgDescriptions::eString, "guess");
     arg_desc->SetConstraint("dbtype", &(*new CArgAllow_Strings,
                                         "nucl", "prot", "guess"));
+
+    arg_desc->SetCurrentGroup("Testing options");
+    arg_desc->AddFlag("multi_threaded_creation",
+                      "Create multiple CSeqDB objects in a multi-threaded environment", true);
+    arg_desc->SetDependency("multi_threaded_creation", CArgDescriptions::eRequires, "num_threads");
+    const char* exclusions[]  = { "scan_compressed", "scan_uncompressed", "get_metadata" };
+    for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++)
+        arg_desc->SetDependency("multi_threaded_creation", CArgDescriptions::eExcludes, string(exclusions[i]));
 
     arg_desc->SetCurrentGroup("Retrieval options");
     arg_desc->AddFlag("scan_uncompressed",
