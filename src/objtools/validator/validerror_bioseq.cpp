@@ -1695,11 +1695,15 @@ void CValidError_bioseq::x_ValidateSourceFeatures(
         const CCacheImpl::TFeatValue & biosrcs = GetCache().GetFeatFromCache(biosrc_key);
         CCacheImpl::TFeatValue::const_iterator feat = biosrcs.begin();
         if (feat != biosrcs.end()) {
-            if (IsLocFullLength(feat->GetLocation(), bsh) 
-                && !s_BiosrcFullLengthIsOk(feat->GetData().GetBiosrc())) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
+            if (IsLocFullLength(feat->GetLocation(), bsh)) {
+                CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
+                if (di) {
+                    if (!s_BiosrcFullLengthIsOk(di->GetSource())) {
+                                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
                          "Source feature is full length, should be descriptor",
-                         feat->GetOriginalFeature());
+                                 feat->GetOriginalFeature());
+                    }
+                }
             }
 
             CCacheImpl::TFeatValue::const_iterator feat_prev = feat;
