@@ -4638,7 +4638,9 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
     if (NStr::IsBlank (fname)) {
         return false;
     }
-    ERR_POST(Note << "Reading from " + filename + " for latlon/water data.");
+    if (getenv("NCBI_DEBUG")) {
+        ERR_POST(Note << "Reading from " + filename + " for latlon/water data.");
+    }
     CRef<ILineReader> lr = ILineReader::New (fname);
     if (lr.Empty()) {
         return false;
