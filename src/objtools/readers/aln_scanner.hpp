@@ -96,12 +96,12 @@ protected:
 
     bool
     xValidateSeqId(
-        const string& seqId)
+        const TLineInfo& seqIdInfo)
     {
         if (!mpSeqIdValidator) {
             return true;
         }
-        return mpSeqIdValidator->Validate(seqId);
+        return mpSeqIdValidator->Validate(seqIdInfo);
     }
 
     virtual void

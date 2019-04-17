@@ -88,7 +88,7 @@ CAlnScanner::xVerifyAlignmentData(
 
     // validate seqIds first of all:
     for (auto seqIdInfo: mSeqIds) {
-        if (!xValidateSeqId(seqIdInfo.mData)) {
+        if (!xValidateSeqId(seqIdInfo)) {
             string description = ErrorPrintf(errTempl, seqIdInfo.mData.c_str());
             throw SShowStopper(
                 seqIdInfo.mNumLine,

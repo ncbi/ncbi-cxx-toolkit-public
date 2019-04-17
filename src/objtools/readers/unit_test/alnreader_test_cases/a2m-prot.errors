@@ -1,5 +1,5 @@
 Line No    : 3
-Severity   : Fatal
-Code       : 2.9
-Message    : Illegal sequence ID "gi|786430|bbs|159192".
+Severity   : Warning
+Code       : 1.1
+Message    : Unrecognized modifier: leiurus-quinquestriatus.
 

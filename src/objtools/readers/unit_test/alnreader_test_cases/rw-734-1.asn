@@ -1,0 +1,166 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "KX761380"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 402,
+        seq-data ncbi2na '9381B0E74C1F577217279CC8E7537303A30C35ADF3EC7CFB328B
+CF80080A2430257FCF7C320422AEF3E75FDFF7FB3F6DCB35C73FCA1CFEDFC03B20F321FF73FF02
+3F020090201EF601A0FF3238CFF340F280F403C8B22A9A3B250BA34292E8FB83554E6620'H
+      }
+    },
+    seq {
+      id {
+        local str "KX761381"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 367,
+        seq-data ncbi2na 'CE4E06C39D307D5DC85C9E73239D4DCC0E8C30D6B7CFB328BCF8
+0080A2430257DF3DCF08C22ADF3E75FCFCFCFFFF0FCBCFF2CB0FB1F0332323BFFFFC3FC08FC080
+2C08033D83380C0000CC00C8B22A9A3B250BA34292E8FB83514E64'H
+      }
+    },
+    seq {
+      id {
+        local str "KX761382"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 358,
+        seq-data ncbi2na 'CE4A06C39D307D5DC85C9E73239D4DCC0E8C30D6B7CFB328BCF8
+0080A2430255DFBDCF08C22A6F3E75FCFCFCFDB71FBFCFF2873FB5F0332323BFFFFC3FC08FC080
+2C08033D83380C0000CC00C8B22A9A3B250BA34292E8FB8350'H
+      }
+    },
+    seq {
+      id {
+        local str "KX761383"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 362,
+        seq-data ncbi2na 'BCE4E06C39D307D5DC85C9E73239D4DCC0E8C30D6B7CFB328BCF
+80080A24302D5DFBDCF08C22A9F3E55FCFCFFFCFEBCFF2873FB5F0300323387FFC3FC08FC0802C
+080FBD83380C000CC00C8B22A9A3B250BA34292E8FB83514E660'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 4,
+          segs denseg {
+            dim 4,
+            numseg 17,
+            ids {
+              local str "KX761380",
+              local str "KX761381",
+              local str "KX761382",
+              local str "KX761383"
+            },
+            starts {
+              -1,
+              -1,
+              -1,
+              0,
+              -1,
+              0,
+              0,
+              2,
+              0,
+              3,
+              3,
+              5,
+              88,
+              -1,
+              -1,
+              -1,
+              97,
+              91,
+              91,
+              93,
+              181,
+              -1,
+              -1,
+              -1,
+              184,
+              175,
+              175,
+              177,
+              188,
+              179,
+              179,
+              -1,
+              194,
+              185,
+              185,
+              181,
+              201,
+              -1,
+              -1,
+              -1,
+              203,
+              192,
+              192,
+              188,
+              305,
+              -1,
+              -1,
+              -1,
+              326,
+              294,
+              294,
+              -1,
+              328,
+              296,
+              296,
+              290,
+              390,
+              358,
+              -1,
+              352,
+              399,
+              -1,
+              -1,
+              361,
+              400,
+              -1,
+              -1,
+              -1
+            },
+            lens {
+              2,
+              3,
+              88,
+              9,
+              84,
+              3,
+              4,
+              6,
+              7,
+              2,
+              102,
+              21,
+              2,
+              62,
+              9,
+              1,
+              2
+            }
+          }
+        }
+      }
+    }
+  }
+}

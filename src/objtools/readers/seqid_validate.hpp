@@ -36,6 +36,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+struct SLineInfo;
+
 //  ----------------------------------------------------------------------------
 class CSeqIdValidator
 //  ----------------------------------------------------------------------------
@@ -46,7 +48,9 @@ public:
 
     virtual bool
     Validate(
-        const string&);
+        const SLineInfo&) {
+        return true;
+    }
 };
 
 //  ----------------------------------------------------------------------------
@@ -68,7 +72,7 @@ public:
 
     bool
     Validate(
-        const string&);
+        const SLineInfo&);
 
 private:
     vector<string> mValidated;

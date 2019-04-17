@@ -39,22 +39,25 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
-
+/*
 //  --------------------------------------------------------------------------
 bool 
 CSeqIdValidator::Validate(
-    const string& seqId)
+    const SLineInfo& seqIdInfo)
 //  --------------------------------------------------------------------------
 {
     return true;
 }
-
+*/
 //  --------------------------------------------------------------------------
 bool
 CSeqIdValidatorBankit::Validate(
-    const string& seqId)
+    const SLineInfo& seqIdInfo)
 //  --------------------------------------------------------------------------
 {
+
+    const auto& seqId = seqIdInfo.mData;
+
     // if it was valid before then it still is:
     auto seqIdIt = std::find(mValidated.rbegin(), mValidated.rend(), seqId);
     if (seqIdIt != mValidated.rend()) {
@@ -67,7 +70,8 @@ CSeqIdValidatorBankit::Validate(
     }
 
     // valid characters:
-    const string illegalChars("|\"");
+    //const string illegalChars("|\"");
+    const string illegalChars("\""); 
     auto firstIllegalChar = seqId.find_first_of(illegalChars);
     if (firstIllegalChar != string::npos) {
         return false;

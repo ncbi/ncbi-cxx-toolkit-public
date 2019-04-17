@@ -50,6 +50,7 @@
 #include <objtools/logging/listener.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_errors.hpp"
+#include "seqid_validate.hpp"
 
 #include <cassert>
 
@@ -116,9 +117,16 @@ CAlnError::CAlnError(const CAlnError& e)
 }
 
 
-CAlnReader::~CAlnReader()
+CAlnReader::CAlnReader(CNcbiIstream& is) : 
+    mpSeqIdValidator(new CSeqIdValidator()),
+    m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
+    m_UseNexusInfo(true)
 {
+    m_Errors.clear();
+    SetAlphabet(eAlpha_Protein);
+    SetAllGap(".-");
 }
+
 
 string CAlnReader::GetAlphabetLetters(
     EAlphabet alphaId)
@@ -271,7 +279,7 @@ void CAlnReader::Read(
         return;
     }
 
-    m_Dim = m_Ids.size();
+    m_Dim = m_IdStrings.size();
     m_ReadDone = true;
     m_ReadSucceeded = true;
 }
@@ -297,11 +305,16 @@ void CAlnReader::Read(
         theErrorReporter->Fatal(showStopper);
         return;
     }
-    m_Dim = m_Ids.size();
+    m_Dim = m_IdStrings.size();
     m_ReadDone = true;
     m_ReadSucceeded = true;
 }
 
+
+void CAlnReader::xValidateSeqId(const SLineInfo& seqIdInfo)
+{
+    return;
+}
 
 void CAlnReader::x_VerifyAlignmentInfo(
     const SAlignmentFile& alignmentInfo)
@@ -347,11 +360,11 @@ void CAlnReader::x_VerifyAlignmentInfo(
     const auto numSequences = alignmentInfo.NumSequences();
 
     m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
-    m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
+    m_IdStrings.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
 
     auto numDeflines = alignmentInfo.NumDeflines();
     if (numDeflines) {
-        if (numDeflines == m_Ids.size()) {
+        if (numDeflines == m_IdStrings.size()) {
             m_DeflineInfo.resize(numDeflines);
             for (int i=0;  i< numDeflines;  ++i) {
                 m_DeflineInfo[i] = {
@@ -363,7 +376,7 @@ void CAlnReader::x_VerifyAlignmentInfo(
         else {
             string description = ErrorPrintf(
                     "Expected 0 or %d deflines but finding %d",
-                     m_Ids.size(),
+                     m_IdStrings.size(),
                      numDeflines);
             theErrorReporter->Error(
                     -1,
@@ -427,16 +440,23 @@ bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
 }
 
 CRef<CSeq_id> CAlnReader::GenerateID(const string& fasta_defline,
-    const TSeqPos& defline_number,
+    const TSeqPos& index,
     TFastaFlags fasta_flags)
 {
-    string id_string = m_Ids[defline_number];
+    _ASSERT(index < m_Dim);
 
-    CBioseq::TId xid;
-    if (CSeq_id::ParseFastaIds(xid, id_string, true) > 0) {
-        return xid.front();
-    } 
-    return  Ref(new CSeq_id(CSeq_id::e_Local, id_string));
+    if (m_Ids.size() == m_Dim &&
+        !m_Ids[index].empty()) {
+        return m_Ids[index].front();
+    }
+
+    string id_string = m_IdStrings[index];
+    CBioseq::TId ids;
+    if (CSeq_id::ParseFastaIds(ids, id_string, true) > 0) {
+        return ids.front();
+    }
+    
+    return Ref(new CSeq_id(CSeq_id::e_Local, id_string));
 }    
 
 
@@ -445,11 +465,12 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
 {
     CDense_seg::TIds& ids = denseg.SetIds();
     ids.resize(m_Dim);
+    m_Ids.resize(m_Dim);
 
     for (auto i=0; i<m_Dim; ++i) {
         // Reconstruct original defline string from results 
         // returned by C code.
-        string fasta_defline = ">" + m_Ids[i];
+        string fasta_defline = m_IdStrings[i];
         if (i < m_DeflineInfo.size() && !m_DeflineInfo[i].mData.empty()) {
             fasta_defline += " " + m_DeflineInfo[i].mData;
         }
@@ -474,6 +495,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
         return CRef<CSeq_align>();
     }
 
+    x_ProcessIds();
 
     typedef CDense_seg::TNumseg TNumseg;
 
@@ -618,6 +640,39 @@ CAlnReader::GetSequenceMolType(
     return (posFirstU == string::npos  ?  CSeq_inst::eMol_dna : CSeq_inst::eMol_rna);
 }
 
+
+void CAlnReader::x_ProcessIds()
+{
+    m_Ids.resize(m_Dim);
+    for (int i=0; i<m_Dim; ++i) {
+        const auto& id_string = m_IdStrings[i];
+        if (CSeq_id::ParseFastaIds(m_Ids[i], id_string, true) > 0) {
+            continue;
+        }
+        m_Ids[i].push_back(Ref(new CSeq_id(CSeq_id::e_Local, id_string)));
+    }
+}
+
+
+CRef<CSeq_inst> CAlnReader::x_GetSeqInst(
+        CSeq_inst::EMol mol,
+        const string& seqData) const
+{
+    auto pSeqInst = Ref(new CSeq_inst());
+    pSeqInst->SetRepr(CSeq_inst::eRepr_raw);
+    pSeqInst->SetMol(mol);
+    pSeqInst->SetLength(seqData.size());
+    CSeq_data& data = pSeqInst->SetSeq_data();
+    if (mol == CSeq_inst::eMol_aa) {
+        data.SetIupacaa().Set(seqData);
+    } else {
+        data.SetIupacna().Set(seqData);
+        CSeqportUtil::Pack(&data);
+    }
+    return pSeqInst;
+}
+
+
 CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         ILineErrorListener* pErrorListener)
 {
@@ -645,18 +700,17 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
     m_Entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
     m_Entry->SetSet().SetAnnot().push_back(seq_annot);
 
-    CBioseq_set::TSeq_set& seq_set = m_Entry->SetSet().SetSeq_set();
+    auto& seq_set = m_Entry->SetSet().SetSeq_set();
 
     typedef CDense_seg::TDim TNumrow;
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
         const string& seq_str     = m_SeqVec[row_i];
-        const size_t& seq_str_len = seq_str.size();
-
-        CRef<CSeq_entry> seq_entry (new CSeq_entry);
+        auto pSubEntry = Ref(new CSeq_entry());
 
         // seq-id(s)
-        CBioseq::TId& ids = seq_entry->SetSeq().SetId();
-        ids.push_back(denseg.GetIds()[row_i]);
+        auto& ids = pSubEntry->SetSeq().SetId();
+        //ids.push_back(denseg.GetIds()[row_i]);
+        ids = m_Ids[row_i];
 
         // mol
         CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
@@ -669,28 +723,9 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
             mol = GetSequenceMolType(m_Alphabet, seq_str, pErrorListener);
         }
         // seq-inst
-        CRef<CSeq_inst> seq_inst (new CSeq_inst);
-        seq_entry->SetSeq().SetInst(*seq_inst);
-        seq_set.push_back(seq_entry);
-
-        // repr
-        seq_inst->SetRepr(CSeq_inst::eRepr_raw);
-
-        // mol
-        seq_inst->SetMol(mol);
-
-        // len
-        _ASSERT(seq_str_len == m_SeqLen[row_i]);
-        seq_inst->SetLength(seq_str_len);
-
-        // data
-        CSeq_data& data = seq_inst->SetSeq_data();
-        if (mol == CSeq_inst::eMol_aa) {
-            data.SetIupacaa().Set(seq_str);
-        } else {
-            data.SetIupacna().Set(seq_str);
-            CSeqportUtil::Pack(&data);
-        }
+        auto pSeqInst = x_GetSeqInst(mol, seq_str);
+        pSubEntry->SetSeq().SetInst(*pSeqInst);
+        seq_set.push_back(pSubEntry);
     }
 
     if (!m_DeflineInfo.empty()) {
@@ -803,5 +838,8 @@ void CAlnReader::ParseDefline(const string& defline,
         seqTitles, 
         pMessageListener);
 }
+
+
+CAlnReader::~CAlnReader() {}
 
 END_NCBI_SCOPE

@@ -45,6 +45,11 @@
 
 BEGIN_NCBI_SCOPE
 // class CAlnError holds error information
+//
+namespace objects {
+    class CSeqIdValidator;
+}
+//class CSeqIdValidator;
 
 class NCBI_XOBJREAD_EXPORT CAlnError
 {
@@ -153,16 +158,7 @@ public:
 
     // constructor
     // defaults to protein alphabet and A2M gap characters
-    CAlnReader(CNcbiIstream& is) : 
-        m_IS(is), 
-        m_ReadDone(false),
-        m_ReadSucceeded(false),
-        m_UseNexusInfo(true) 
-    { 
-        m_Errors.clear();
-        SetAlphabet(eAlpha_Protein);
-        SetAllGap(".-");
-    };
+    CAlnReader(CNcbiIstream& is);
 
     // destructor
     virtual ~CAlnReader(void);
@@ -232,7 +228,7 @@ public:
         objects::ILineErrorListener* pErrorListener=nullptr);
 
     /// Parsed result data accessors
-    const vector<string>& GetIds(void)       const {return m_Ids;};
+    const vector<string>& GetIds(void)       const {return m_IdStrings;};
     const vector<string>& GetSeqs(void)      const {return m_Seqs;};
     NCBI_DEPRECATED const vector<string>& GetOrganisms(void) const {return m_Organisms;};
     const vector<string>& GetDeflines(void)  const {return m_Deflines;};
@@ -270,6 +266,16 @@ private:
     void x_VerifyAlignmentInfo(
         const ncbi::objects::SAlignmentFile&);
 
+
+   // void xProcessSeqIds();
+
+
+    void xValidateSeqId(const objects::SLineInfo& seqIdInfo);
+
+    CRef<objects::CSeq_inst> x_GetSeqInst(objects::CSeq_inst::EMol mol,
+            const string& seqData) const;
+
+
     /// A bunch of strings listing characters with various
     /// meanings in an alignment file.
     /// Analogous to SSequenceInfo.
@@ -286,11 +292,15 @@ private:
     /// Seqs are upper-case strings representing the sequences, with
     /// '-' for a gap.  Ids are ids read from file.  Organisms and
     /// Deflines may not be set, depending on the file.
-    vector<string> m_Ids;
+
+    using TIdList = list<CRef<objects::CSeq_id>>;
+    vector<string> m_IdStrings;
+    vector<TIdList> m_Ids;
     vector<string> m_Seqs;
     vector<string> m_Organisms;
     vector<string> m_Deflines;
     vector<TDeflineInfo> m_DeflineInfo;
+    unique_ptr<objects::CSeqIdValidator> mpSeqIdValidator;
 
 
     /// Other internal data
@@ -319,6 +329,9 @@ private:
     void x_AssignDensegIds(
         TFastaFlags fasta_flags,
         objects::CDense_seg& denseg);
+
+
+    void x_ProcessIds(void);
 
     void x_AddMods(const TDeflineInfo& defline_info, 
             objects::CBioseq& bioseq,
