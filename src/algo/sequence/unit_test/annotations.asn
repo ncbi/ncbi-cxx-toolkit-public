@@ -7123,7 +7123,7 @@ Seq-annot ::= {
       },
       location int {
         from 12608165,
-        to 12608187,
+        to 12608188,
         strand plus,
         id other {
           accession "NT_011512",
