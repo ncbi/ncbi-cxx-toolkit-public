@@ -222,7 +222,7 @@ static void s_ReplaceArg( vector<string>& args, const string& old_fname,
     }
 }
 
-void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
+bool CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
 {
     // Partial deserialization doesn't create working dir and deserialize files,
     // but fills the "files" map with deserialized filenames and blob IDs.
@@ -240,7 +240,7 @@ void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
 
     int fcount = 0;
     vector<string> args;
-    if (!is.good()) return;
+    if (!is.good()) return false;
     is >> fcount;
     if ( fcount > 0 && !partial_deserialization) {
         TokenizeCmdLine(GetCmdLine(), args);
@@ -251,7 +251,7 @@ void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
         string blobid, fname;
         ReadStrWithLen(is, fname);
         ReadStrWithLen(is, blobid);
-        if (!is.good()) return;
+        if (!is.good()) return false;
 
         const bool is_blob = blobid != kLocalFSSign;
         if (partial_deserialization) {
@@ -274,15 +274,16 @@ void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
 
     ReadStrWithLen(is, m_StdOutFileName);
     ReadStrWithLen(is, m_StdErrFileName);
-    if (!is.good()) return;
+    if (!is.good()) return false;
     int tmp;
     is >> tmp;
     m_StorageType = (EStdOutErrStorageType)tmp;
-    if (!is.good()) return;
+    if (!is.good()) return false;
     is >> tmp; SetAppRunTimeout(tmp);
-    if (!is.good()) return;
+    if (!is.good()) return false;
     is >> tmp;
     m_ExlusiveMode = tmp != 0;
+    return !is.fail();
 }
 
 void CRemoteAppRequest::Reset()

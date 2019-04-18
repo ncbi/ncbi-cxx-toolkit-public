@@ -383,7 +383,9 @@ struct SRemoteApp::SRequest : public CRemoteAppRequest
     SRequest(CNcbiIstream& is)
         : CRemoteAppRequest(NULL)
     {
-        x_Deserialize(is, &m_Files);
+        if (!x_Deserialize(is, &m_Files)) {
+            throw ios_base::failure("x_Deserialize failed");
+        }
     }
 
     CJsonNode CreateFilesNode() const

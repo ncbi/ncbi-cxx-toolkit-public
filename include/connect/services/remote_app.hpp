@@ -172,7 +172,7 @@ protected:
     void x_RemoveWDir();
 
     typedef map<string, string> TStoredFiles;
-    void x_Deserialize(CNcbiIstream& is, TStoredFiles* files = NULL);
+    bool x_Deserialize(CNcbiIstream& is, TStoredFiles* files = NULL);
 
 private:
     static CAtomicCounter sm_DirCounter;
