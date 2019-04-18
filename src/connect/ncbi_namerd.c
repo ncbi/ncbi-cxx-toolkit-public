@@ -1272,7 +1272,7 @@ static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
  *      *   CONN_DTAB environment variable
  *      *   DTab-Local header in net_info->http_user_header
  */
-static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info)
+static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info, SERV_ITER iter)
 {
 #define  DTAB_ARGS_SEP  "dtab"
     int/*bool*/ success = 1;
@@ -1281,7 +1281,7 @@ static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info)
     CORE_TRACE("Entering s_ProcessDtab()");
 
     /* Dtab precedence (highest first): registry > user_header */
-    s_UpdateDtabFromRegistry(&dtab, &success, net_info->svc);
+    s_UpdateDtabFromRegistry(&dtab, &success, iter->name);
     s_UpdateDtabFromUserHeader(&dtab, &success, net_info);
 
     if (success  &&  dtab
@@ -1350,7 +1350,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
 
     /* Handle DTAB, if present. */
-    s_ProcessDtab(net_info);
+    s_ProcessDtab(net_info, iter);
 
     /* Create connector and connection, and fetch and parse the response. */
     if (s_CONN_Create(iter, &c, &conn) == eIO_Success) {
