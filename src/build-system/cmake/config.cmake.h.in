@@ -118,7 +118,7 @@
 #cmakedefine HAVE_FREEHOSTENT 1
 
 /* Define to 1 if FreeType is available. */
-#define HAVE_FREETYPE 1
+#cmakedefine HAVE_FREETYPE 1
 
 /* Define to 1 if you have the `fseeko' function. */
 #cmakedefine HAVE_FSEEKO 1
@@ -283,7 +283,7 @@
 #define HAVE_LIBFTDS 1
 
 /* Define to 1 if libftgl is available. */
-#undef HAVE_LIBFTGL
+#cmakedefine HAVE_LIBFTGL 1
 
 /* Define to 1 if libgcrypt is available. */
 #undef HAVE_LIBGCRYPT
@@ -296,7 +296,7 @@
 
 /* Define to 1 if GLEW is available, either in its own library or as part of
    the standard libraries. */
-#define HAVE_LIBGLEW 1
+#cmakedefine HAVE_LIBGLEW 1
 
 /* Define to 1 if you have libglut. */
 /* #undef HAVE_LIBGLUT */
@@ -346,7 +346,7 @@
 #cmakedefine HAVE_LIBOPENSSL 1
 
 /* Define to 1 if you have libOSMesa. */
-#define HAVE_LIBOSMESA 1
+#cmakedefine HAVE_LIBOSMESA 1
 
 /* Define to 1 if libpcre is available. */
 #cmakedefine HAVE_LIBPCRE 1
@@ -471,7 +471,7 @@
 #cmakedefine HAVE_ODBCSS_H 1
 
 /* Define to 1 if you have OpenGL (-lGL). */
-#define HAVE_OPENGL 1
+#cmakedefine HAVE_OPENGL 1
 
 /* Define to 1 if the ORBacus CORBA package is available. */
 #define HAVE_ORBACUS 1
@@ -945,7 +945,7 @@
 
 /* Define to whatever syntax your compiler supports for declaring thread-local
    variables, or leave undefined if it doesn't. */
-#undef NCBI_TLS_VAR
+#cmakedefine NCBI_TLS_VAR @NCBI_TLS_VAR@
 
 /* Define to 1 if building universal (multi-architecture) binaries. */
 /* #undef NCBI_UNIVERSAL_BUILD */

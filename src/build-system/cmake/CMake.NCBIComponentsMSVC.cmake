@@ -124,7 +124,7 @@ set(NCBI_ThirdParty_wxWidgets   ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_Thir
 #############################################################################
 #############################################################################
 
-macro(NCBI_define_component _name)
+function(NCBI_define_component _name)
 
     if(DEFINED NCBI_COMPONENT_${_name}_FOUND)
         message("Already defined ${_name}")
@@ -140,6 +140,7 @@ macro(NCBI_define_component _name)
             set(_root ${NCBI_ThirdParty_${_dotname}})
         else()
             message("NOT FOUND ${_name}: NCBI_ThirdParty_${_name} not found")
+            return()
         endif()
     endif()
 # include dir
@@ -212,27 +213,29 @@ macro(NCBI_define_component _name)
 
     if (_found)
         message(STATUS "Found ${_name}: ${_root}")
-        set(NCBI_COMPONENT_${_name}_FOUND YES)
-        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/include)
+        set(NCBI_COMPONENT_${_name}_FOUND YES PARENT_SCOPE)
+        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/include PARENT_SCOPE)
         foreach(_lib IN LISTS _args)
             set(NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS} ${_root}/${_libtype}/${_lib})
         endforeach()
+        set(NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS} PARENT_SCOPE)
         if (EXISTS ${_root}/bin)
-            set(NCBI_COMPONENT_${_name}_BINPATH ${_root}/bin)
+            set(NCBI_COMPONENT_${_name}_BINPATH ${_root}/bin PARENT_SCOPE)
         endif()
 #message("NCBI_COMPONENT_${_name}_INCLUDE ${NCBI_COMPONENT_${_name}_INCLUDE}")
 #message("NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS}")
 
         string(TOUPPER ${_name} _upname)
-        set(HAVE_LIB${_upname} 1)
+        set(HAVE_LIB${_upname} 1 PARENT_SCOPE)
         string(REPLACE "." "_" _altname ${_upname})
-        set(HAVE_${_altname} 1)
+        set(HAVE_${_altname} 1 PARENT_SCOPE)
 
         list(APPEND NCBI_ALL_COMPONENTS ${_name})
+        set(NCBI_ALL_COMPONENTS ${NCBI_ALL_COMPONENTS} PARENT_SCOPE)
     else()
         set(NCBI_COMPONENT_${_name}_FOUND NO)
     endif()
-endmacro()
+endfunction()
 
 #############################################################################
 #############################################################################
@@ -274,6 +277,7 @@ set(HAVE_ODBCSS_H 1)
 # OpenGL
 set(NCBI_COMPONENT_OpenGL_FOUND YES)
 set(NCBI_COMPONENT_OpenGL_LIBS opengl32.lib glu32.lib)
+set(HAVE_OPENGL 1)
 
 #############################################################################
 # LMDB

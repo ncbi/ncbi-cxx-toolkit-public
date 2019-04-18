@@ -202,11 +202,6 @@ else()
     set(NCBI_ASNTOOL //snowman/win-coremake/Lib/Ncbi/C_Toolkit/vs2017.64/c.current/bin/asntool.exe)
 endif()
 
-##############################################################################
-# asntool app
-if (NOT WIN32)
-    set(NCBI_XSLTPROCTOOL $ENV{NCBI}/libxml-2.7.8/bin/xsltproc)
-endif()
 #############################################################################
 # Testing
 set(NCBITEST_DRIVER "${NCBI_TREE_CMAKECFG}/TestDriver.cmake")
@@ -328,6 +323,7 @@ if (NCBI_EXPERIMENTAL_CFG)
         set(c_ncbi_runpath ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         set(SYBASE_LCL_PATH ${SYBASE_LIBRARIES})
         set(SYBASE_PATH "")
+        set(NCBI_TLS_VAR "__thread")
 
         set(NCBI_SIGNATURE "${NCBI_COMPILER}_${NCBI_COMPILER_VERSION}-${NCBI_BUILD_TYPE}--${HOST_CPU}-${HOST_OS_WITH_VERSION}-${_local_host_name}")
         configure_file(${NCBI_TREE_CMAKECFG}/config.cmake.h.in ${NCBI_CFGINC_ROOT}/ncbiconf_unix.h)
