@@ -329,10 +329,13 @@ void CSeqDBPerfApp::Init()
 int CSeqDBPerfApp::Run(void)
 {
     int status = 0;
+    const CArgs& args = GetArgs();
 
     try {
         x_InitApplicationData();
-        if (GetArgs()["get_metadata"]) {
+        if (args["multi_threaded_creation"])
+            return status;
+        if (args["get_metadata"]) {
             status = x_PrintBlastDatabaseInformation();
         } else {
             status = x_ScanDatabase();
