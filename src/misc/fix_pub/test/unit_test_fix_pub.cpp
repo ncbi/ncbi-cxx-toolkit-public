@@ -613,7 +613,7 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
     CCit_art art_new,
         art_old;
 
-    for (size_t i = 0; i < ARRAYSIZE(GENBANK_AUTHORS); i += 2) {
+    for (size_t i = 0; i < ArraySize(GENBANK_AUTHORS); i += 2) {
         CRef<CAuthor> author(new CAuthor);
         author->SetName().SetName().SetLast(GENBANK_AUTHORS[i]);
         author->SetName().SetName().SetInitials(GENBANK_AUTHORS[i + 1]);
@@ -634,7 +634,7 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
         "et", "al"
     };
 
-    for (size_t i = 0; i < ARRAYSIZE(PUBMED_AUTHORS); i += 2) {
+    for (size_t i = 0; i < ArraySize(PUBMED_AUTHORS); i += 2) {
         CRef<CAuthor> author(new CAuthor);
         author->SetName().SetName().SetLast(PUBMED_AUTHORS[i]);
         author->SetName().SetName().SetInitials(PUBMED_AUTHORS[i + 1]);
