@@ -686,7 +686,21 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
         return false;
     }
 
-    if (new_num_names == 0) {
+    bool replace_authors = new_num_names == 0;
+    if (!replace_authors && new_num_names < num_names) {
+        // Check the last author from PubMed. If it is "et al" - leave the old authors list
+        const CAuthor& last_author = *new_cit.GetAuthors().GetNames().GetStd().back();
+        if (last_author.IsSetName() && last_author.GetName().IsName()) {
+
+            const CName_std& name = last_author.GetName().GetName();
+            string last_name = name.IsSetLast() ? name.GetLast() : "",
+                   initials = name.IsSetInitials() ? name.GetInitials() : "";
+
+            replace_authors = last_name == "et" && initials == "al";
+        }
+    }
+
+    if (replace_authors) {
         new_cit.SetAuthors(cit.SetAuthors());
         cit.ResetAuthors();
     }

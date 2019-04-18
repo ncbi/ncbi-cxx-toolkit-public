@@ -508,6 +508,7 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsCompare)
     BOOST_CHECK_EQUAL(fix_pub::TenAuthorsCompare(art_old, art_new), true);
     BOOST_CHECK_EQUAL(art_old.IsSetAuthors(), false);
     BOOST_CHECK_EQUAL(art_new.GetAuthors().Equals(expected.GetAuthors()), true);
+
 }
 
 BOOST_AUTO_TEST_CASE(Test_ExtractConsortiums)
@@ -584,3 +585,67 @@ BOOST_AUTO_TEST_CASE(Test_GetFirstTenNames)
         }
     }
 }
+
+BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
+{
+    // Complicated test checking a condition when PubMed data is obsolete (contains less authors, but should have more).
+    // This is a real publication with PMID=1302004
+    static const string GENBANK_AUTHORS[] = {
+        "Waterston", "R.",
+        "Martin", "C.",
+        "Craxton", "M.",
+        "Huynh", "C.",
+        "Coulson", "A.",
+        "Hillier", "L.",
+        "Durbin", "R.K.",
+        "Green", "P.",
+        "Shownkeen", "R.",
+        "Halloran", "N.",
+        "Hawkins", "T.",
+        "Wilson", "R.",
+        "Berks", "M.",
+        "Du", "Z.",
+        "Thomas", "K.",
+        "Thierry-Mieg", "J.",
+        "Sulston", "J."
+    };
+
+    CCit_art art_new,
+        art_old;
+
+    for (size_t i = 0; i < ARRAYSIZE(GENBANK_AUTHORS); i += 2) {
+        CRef<CAuthor> author(new CAuthor);
+        author->SetName().SetName().SetLast(GENBANK_AUTHORS[i]);
+        author->SetName().SetName().SetInitials(GENBANK_AUTHORS[i + 1]);
+        art_old.SetAuthors().SetNames().SetStd().push_back(author);
+    }
+
+    static const string PUBMED_AUTHORS[] = {
+        "Waterston", "R.",
+        "Martin", "C.",
+        "Craxton", "M.",
+        "Huynh", "C.",
+        "Coulson", "A.",
+        "Hillier", "L.",
+        "Durbin", "R.K.",
+        "Green", "P.",
+        "Shownkeen", "R.",
+        "Halloran", "N.",
+        "et", "al"
+    };
+
+    for (size_t i = 0; i < ARRAYSIZE(PUBMED_AUTHORS); i += 2) {
+        CRef<CAuthor> author(new CAuthor);
+        author->SetName().SetName().SetLast(PUBMED_AUTHORS[i]);
+        author->SetName().SetName().SetInitials(PUBMED_AUTHORS[i + 1]);
+        art_new.SetAuthors().SetNames().SetStd().push_back(author);
+    }
+
+    CCit_art expected;
+    expected.Assign(art_old);
+
+    BOOST_CHECK_EQUAL(fix_pub::TenAuthorsProcess(art_old, art_new, nullptr), true);
+    BOOST_CHECK_EQUAL(art_old.IsSetAuthors(), false);
+    BOOST_CHECK_EQUAL(art_new.GetAuthors().Equals(expected.GetAuthors()), true);
+}
+
