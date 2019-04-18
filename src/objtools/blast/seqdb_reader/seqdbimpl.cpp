@@ -1394,7 +1394,7 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in,
     			m_LMDBSet.AccessionToOids(seqid_in.AsFastaString(), tmp);
     		}
     		else {
-    			m_LMDBSet.AccessionToOids(seqid_in.GetSeqIdString(), tmp);
+    			m_LMDBSet.AccessionToOids(seqid_in.GetSeqIdString(true), tmp);
     		}
     		for(unsigned int i=0; i < tmp.size(); i++) {
     			int oid2 = tmp[i];
