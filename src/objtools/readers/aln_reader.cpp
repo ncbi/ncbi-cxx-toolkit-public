@@ -386,7 +386,8 @@ void CAlnReader::x_VerifyAlignmentInfo(
 
 
     for (auto seqIdInfo : alignmentInfo.mIds) {
-        m_IdStrings.push_back(seqIdInfo.mData); // redundant
+        m_IdStrings.push_back(seqIdInfo.mData); // m_IdStrings is redundant and should be removed
+
         TIdList ids;
         x_ParseAndValidateSeqIds(seqIdInfo, ids);
         m_Ids.push_back(ids);
