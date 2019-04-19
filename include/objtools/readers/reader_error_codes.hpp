@@ -30,9 +30,14 @@
  *
  */
 
+#include <serial/serialimpl.hpp>
+#include <serial/enumvalues.hpp>
 
 #ifndef _READER_ERROR_CODES_HPP_
 #define _READER_ERROR_CODES_HPP_
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects);
 
 enum EReaderCode
 {
@@ -40,7 +45,7 @@ enum EReaderCode
     eReader_Mods,
     eReader_Alignment,
 };
-
+NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EReaderCode)(void);
 
 enum EModSubcode 
 {
@@ -52,6 +57,7 @@ enum EModSubcode
     eModSubcode_Deprecated,
     eModSubcode_ProteinModOnNucseq
 };
+NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EModSubcode)(void);
 
 
 enum EAlnSubcode
@@ -77,6 +83,10 @@ enum EAlnSubcode
     eAlnSubcode_FileTooShort,
     eAlnSubcode_UnexpectedCommand
 };
+NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EAlnSubcode)(void);
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 
 #endif // _READER_ERROR_CODES_HPP_

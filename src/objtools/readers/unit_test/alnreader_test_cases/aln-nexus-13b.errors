@@ -1,10 +1,10 @@
 Line No    : 12
 Severity   : Warning
-Code       : 2.2
+Problem    : Alignment.UnterminatedCommand
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : 9
 Severity   : Fatal
-Code       : 2.5
+Problem    : Alignment.BadDataCount
 Message    : In data line, expected 48 symbols but finding 47
 

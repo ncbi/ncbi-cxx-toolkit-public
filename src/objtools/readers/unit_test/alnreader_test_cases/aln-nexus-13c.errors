@@ -1,10 +1,10 @@
 Line No    : 24
 Severity   : Warning
-Code       : 2.2
+Problem    : Alignment.UnterminatedCommand
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : 7
 Severity   : Fatal
-Code       : 2.7
+Problem    : Alignment.IllegalDataLine
 Message    : In data line, expected seqID followed by sequence data
 

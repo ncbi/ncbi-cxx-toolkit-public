@@ -1,5 +1,5 @@
 Line No    : 9
 Severity   : Error
-Code       : 1.4
+Problem    : Mods.ConflictingValues
 Message    : Conflicting modifiers detected. Provide one modifier with one value for: organism.
 

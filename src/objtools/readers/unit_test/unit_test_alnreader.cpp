@@ -38,9 +38,9 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 
+#include <objtools/readers/reader_error_codes.hpp>
 #include <objtools/readers/aln_reader.hpp>
 #include <objtools/readers/fasta.hpp>
-#include "error_logger.hpp"
 
 #include <cstdio>
 
@@ -50,6 +50,75 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+//  ============================================================================
+class CErrorLogger:
+//  ============================================================================
+    public CMessageListenerBase
+{
+public:
+    CErrorLogger(
+            const string& filename) {
+        mStream.open(filename.c_str());
+    };
+
+    ~CErrorLogger() {
+        mStream.close();
+    };
+    
+    bool
+    PutError(
+        const ILineError& err ) 
+    {
+        StoreError(err);
+
+        auto code = err.GetCode();
+        string codeStr = ENUM_METHOD_NAME(EReaderCode)()->FindName(err.GetCode(), false);
+        string subCodeStr;
+        switch(code) {
+        default:
+            break;
+        case EReaderCode::eReader_Alignment:
+            subCodeStr = ENUM_METHOD_NAME(EAlnSubcode)()->FindName(err.GetSubCode(), false);
+            break;
+        case EReaderCode::eReader_Mods:
+            subCodeStr = ENUM_METHOD_NAME(EModSubcode)()->FindName(err.GetSubCode(), false);
+            break;
+        }
+
+        if (err.Line() == 0) { 
+            mStream << "Line No    : " 
+                    << "None (Encountered during pre or post processing)" << endl;
+        }
+        else {
+            mStream << "Line No    : " << err.Line() << endl;
+        }
+        mStream << "Severity   : " << err.SeverityStr() << endl;
+
+        if (err.GetCode()) {
+            mStream << "Problem    : " << codeStr << "." << subCodeStr << endl;
+        }
+
+        vector<string> messageLines;
+        NStr::Split(err.Message(), "\n", messageLines);
+        if (!messageLines.empty()) {
+            mStream << "Message    : " << messageLines.front() << endl;
+            for (auto i=1; i < messageLines.size(); ++i) {
+                mStream << "             " << messageLines[i] << endl;
+            }
+        }
+        mStream << endl;
+
+        if (Count() < 500000  &&  err.Severity() != eDiag_Fatal) {
+            return true;
+        }
+        NCBI_THROW2(CObjReaderParseException, eFormat, err.Message(), 0);
+        return false;
+    };
+
+protected:
+    ofstream mStream;
+};    
 
 // Customization data
 const string extInput("aln");
@@ -233,7 +302,8 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
         pReader->Read(0, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(sTestName), &logger);
     } 
-    catch (std::exception&) {
+    catch (CObjReaderParseException& except) {
+        cerr << "";
     }
     ifstr.close();
 

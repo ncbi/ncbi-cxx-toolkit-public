@@ -1,10 +1,10 @@
 Line No    : 5
 Severity   : Error
-Code       : 1.2
+Problem    : Mods.InvalidValue
 Message    : Invalid value: germline=val1.
 
 Line No    : 9
 Severity   : Error
-Code       : 1.2
+Problem    : Mods.InvalidValue
 Message    : Invalid value: rearranged=val1.
 

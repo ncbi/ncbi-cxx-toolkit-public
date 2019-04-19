@@ -1,5 +1,5 @@
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
-Code       : 2.12
+Problem    : Alignment.UnsupportedFileFormat
 Message    : Input file format not recognized.
 

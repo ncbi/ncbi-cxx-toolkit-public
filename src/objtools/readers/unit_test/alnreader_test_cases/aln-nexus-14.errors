@@ -1,10 +1,10 @@
 Line No    : 24
 Severity   : Warning
-Code       : 2.2
+Problem    : Alignment.UnterminatedCommand
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : 32
 Severity   : Warning
-Code       : 2.2
+Problem    : Alignment.UnterminatedCommand
 Message    : Unexpected "end;". Appending ';' to prior command
 

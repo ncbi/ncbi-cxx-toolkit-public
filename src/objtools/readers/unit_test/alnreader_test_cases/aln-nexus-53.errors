@@ -1,15 +1,15 @@
 Line No    : 24
 Severity   : Warning
-Code       : 2.2
+Problem    : Alignment.UnterminatedCommand
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : 31
 Severity   : Warning
-Code       : 2.2
+Problem    : Alignment.UnterminatedCommand
 Message    : Unexpected "end;". Appending ';' to prior command
 
 Line No    : 27
 Severity   : Fatal
-Code       : 2.7
+Problem    : Alignment.IllegalDataLine
 Message    : Bad defline line: Expected initial ">"
 

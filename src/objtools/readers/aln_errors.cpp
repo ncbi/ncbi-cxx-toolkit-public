@@ -42,6 +42,59 @@ BEGIN_SCOPE(objects);
 thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
 //  ----------------------------------------------------------------------------
+BEGIN_NAMED_ENUM_INFO("", EReaderCode, false)
+//  ----------------------------------------------------------------------------
+{
+     ADD_ENUM_VALUE("Undefined", eReader_Undefined);
+     ADD_ENUM_VALUE("Mods", eReader_Mods);
+     ADD_ENUM_VALUE("Alignment", eReader_Alignment);
+}
+END_ENUM_INFO
+
+
+//  ----------------------------------------------------------------------------
+BEGIN_NAMED_ENUM_INFO("", EAlnSubcode, false)
+//  ----------------------------------------------------------------------------
+{
+     ADD_ENUM_VALUE("Undefined", eAlnSubcode_Undefined);
+     ADD_ENUM_VALUE("BadDataChars", eAlnSubcode_BadDataChars);
+     ADD_ENUM_VALUE("UnterminatedCommand", eAlnSubcode_UnterminatedCommand);
+     ADD_ENUM_VALUE("UnterminatedBlock", eAlnSubcode_UnterminatedBlock);
+     ADD_ENUM_VALUE("UnexpectedSeqId", eAlnSubcode_UnexpectedSeqId);
+     ADD_ENUM_VALUE("BadDataCount", eAlnSubcode_BadDataCount);
+     ADD_ENUM_VALUE("BadSequenceCount", eAlnSubcode_BadSequenceCount);
+     ADD_ENUM_VALUE("IllegalDataLine", eAlnSubcode_IllegalDataLine);
+     ADD_ENUM_VALUE("MissingDataLine", eAlnSubcode_MissingDataLine);
+     ADD_ENUM_VALUE("IllegalSequenceId", eAlnSubcode_IllegalSequenceId);
+     ADD_ENUM_VALUE("IllegalDefinitionLine", eAlnSubcode_IllegalDefinitionLine);
+     ADD_ENUM_VALUE("InsufficientDeflineInfo", eAlnSubcode_InsufficientDeflineInfo);
+     ADD_ENUM_VALUE("UnsupportedFileFormat", eAlnSubcode_UnsupportedFileFormat);
+     ADD_ENUM_VALUE("UnterminatedComment", eAlnSubcode_UnterminatedComment);
+     ADD_ENUM_VALUE("UnusedLine", eAlnSubcode_UnusedLine);
+     ADD_ENUM_VALUE("InconsistentMolType", eAlnSubcode_InconsistentMolType);
+     ADD_ENUM_VALUE("IllegalDataDescription", eAlnSubcode_IllegalDataDescription);
+     ADD_ENUM_VALUE("FileDoesNotExist", eAlnSubcode_FileDoesNotExist);
+     ADD_ENUM_VALUE("FileTooShort", eAlnSubcode_FileTooShort);
+     ADD_ENUM_VALUE("UnexpectedCommand", eAlnSubcode_UnexpectedCommand);
+}
+END_ENUM_INFO
+
+
+//  ----------------------------------------------------------------------------
+BEGIN_NAMED_ENUM_INFO("", EModSubcode, false)
+//  ----------------------------------------------------------------------------
+{
+     ADD_ENUM_VALUE("Undefined", eModSubcode_Undefined);
+     ADD_ENUM_VALUE("Unrecognized", eModSubcode_Unrecognized);
+     ADD_ENUM_VALUE("InvalidValue", eModSubcode_InvalidValue);
+     ADD_ENUM_VALUE("Duplicate", eModSubcode_Duplicate);
+     ADD_ENUM_VALUE("ConflictingValues", eModSubcode_ConflictingValues);
+     ADD_ENUM_VALUE("Deprecated", eModSubcode_Deprecated);
+     ADD_ENUM_VALUE("ProteinModOnNucseq", eModSubcode_ProteinModOnNucseq);
+}
+END_ENUM_INFO
+
+//  ----------------------------------------------------------------------------
 string ErrorPrintf(const char *format, ...)
 //  ----------------------------------------------------------------------------
 {
