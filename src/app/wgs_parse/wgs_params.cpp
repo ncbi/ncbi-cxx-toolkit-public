@@ -184,7 +184,7 @@ ESource CParams::GetSource() const
             case 'B':
             case 'E':
             case 'I':
-            case 'P':
+            case 'T':
                 m_imp->m_source = eDDBJ;
                 break;
 
@@ -192,6 +192,7 @@ ESource CParams::GetSource() const
             case 'F':
             case 'H':
             case 'O':
+            case 'U':
                 m_imp->m_source = eEMBL;
                 break;
 
