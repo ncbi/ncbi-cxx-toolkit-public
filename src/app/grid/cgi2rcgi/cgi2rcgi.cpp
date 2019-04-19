@@ -324,6 +324,8 @@ private:
         eUseRequestContent = 2
     };
 
+    void ReadJob(istream&, CGridCgiContext&);
+
     // This method is called when result is available immediately
     void OnJobDone(CGridCgiContext&);
 
@@ -1259,11 +1261,9 @@ bool CCgi2RCgiApp::CheckIfJobDone(
     return done;
 }
 
-void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
+void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
 {
-    CNcbiIstream& is = m_GridClient->GetIStream();
-
-    if (m_GridClient->GetBlobSize() > 0) {
+    try {
         CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
         bool no_jquery = ctx.GetJqueryCallback().empty();
 
@@ -1303,6 +1303,28 @@ void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
             out << ')';
         }
         ctx.NeedRenderPage(false);
+    }
+    catch (CException& ex) {
+        string err_msg("Failed to read job output: ");
+        err_msg += ex.ReportAll();
+        ERR_POST(err_msg);
+        OnJobFailed(err_msg, ctx);
+    }
+    catch (exception& ex) {
+        string err_msg("Failed to read job output: ");
+        err_msg += ex.what();
+        ERR_POST(err_msg);
+        OnJobFailed(err_msg, ctx);
+    }
+}
+
+void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
+{
+    CNcbiIstream& is = m_GridClient->GetIStream();
+
+    // This must be after m_GridClient->GetIStream(), otherwise size would be empty
+    if (m_GridClient->GetBlobSize() > 0) {
+        ReadJob(is, ctx);
     } else {
         const char* str_page;
 
