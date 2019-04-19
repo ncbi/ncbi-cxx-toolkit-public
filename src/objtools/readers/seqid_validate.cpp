@@ -39,54 +39,9 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include "seqid_validate.hpp"
-#include "aln_errors.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
-/*
-//  --------------------------------------------------------------------------
-bool 
-CSeqIdValidator::Validate(
-    const SLineInfo& seqIdInfo)
-//  --------------------------------------------------------------------------
-{
-    return true;
-}
-*/
-//  --------------------------------------------------------------------------
-bool
-CSeqIdValidatorBankit::Validate(
-    const SLineInfo& seqIdInfo)
-//  --------------------------------------------------------------------------
-{
-    return true;
-
-    const auto& seqId = seqIdInfo.mData;
-
-    // if it was valid before then it still is:
-    auto seqIdIt = std::find(mValidated.rbegin(), mValidated.rend(), seqId);
-    if (seqIdIt != mValidated.rend()) {
-        return true;
-    }
-
-    // size constraints:
-    if (seqId.empty()  ||  seqId.size() > 50) {
-        return false;
-    }
-
-    // valid characters:
-    //const string illegalChars("|\"");
-    const string illegalChars("\""); 
-    auto firstIllegalChar = seqId.find_first_of(illegalChars);
-    if (firstIllegalChar != string::npos) {
-        return false;
-    }
-
-    mValidated.push_back(seqId);
-    return true;
-}
-
-
 
 bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description) 
 {

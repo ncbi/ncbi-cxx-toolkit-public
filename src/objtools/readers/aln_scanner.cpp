@@ -86,17 +86,6 @@ CAlnScanner::xVerifyAlignmentData(
 {
     const char* errTempl("Illegal sequence ID \"%s\".");
 
-    // validate seqIds first of all:
-    for (auto seqIdInfo: mSeqIds) {
-        if (!xValidateSeqId(seqIdInfo)) {
-            string description = ErrorPrintf(errTempl, seqIdInfo.mData.c_str());
-            throw SShowStopper(
-                seqIdInfo.mNumLine,
-                EAlnSubcode::eAlnSubcode_IllegalSequenceId,
-                description);
-        }
-    }
-
     // make sure all sequence are of the same length(once we no longer enforce
     //  harmonized data sizes):
 
@@ -234,14 +223,6 @@ CAlnScanner::xGetExistingSeqIdInfo(
         }
     }
 
-/*
-    for (int i=0; i < mSeqIds.size(); ++i) {
-        if (xSeqIdIsEqualToInfoAt(seqId, i)) {
-            existingInfo = mSeqIds[i];
-            return ESeqIdComparison::eIdentical;
-        }
-    }
-    */
     return ESeqIdComparison::eDifferentChars;
 };
 

@@ -40,47 +40,6 @@ class CSeq_id;
 struct SLineInfo;
 
 //  ----------------------------------------------------------------------------
-class CSeqIdValidator
-//  ----------------------------------------------------------------------------
-{
-public:
-    CSeqIdValidator() {};
-    virtual ~CSeqIdValidator() {};
-
-    virtual bool
-    Validate(
-        const SLineInfo&) {
-        return true;
-    }
-};
-
-//  ----------------------------------------------------------------------------
-class CSeqIdValidatorBankit:
-    public CSeqIdValidator
-//  ----------------------------------------------------------------------------
-{
-public:
-    CSeqIdValidatorBankit()
-    {
-        mValidated.reserve(10);
-    };
-
-    ~CSeqIdValidatorBankit()
-    {
-        //cerr << "CSeqIdValidatorBankit final validation count: " 
-        //     << mValidated.size() << endl;
-    };
-
-    bool
-    Validate(
-        const SLineInfo&);
-
-private:
-    vector<string> mValidated;
-};
-
-
-//  ----------------------------------------------------------------------------
 class CSeqIdValidate
 //  ----------------------------------------------------------------------------
 {

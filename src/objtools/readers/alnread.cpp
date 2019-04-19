@@ -35,7 +35,6 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
-#include "seqid_validate.hpp"
 #include "aln_errors.hpp"
 #include "aln_formats.hpp"
 #include "aln_peek_ahead.hpp"
@@ -73,19 +72,6 @@ GetScannerForFormat(
     }
 }
 
-//  ----------------------------------------------------------------------------
-CSeqIdValidator*
-GetSeqIdValidator(
-    const string& validationProfile_="")
-//  ----------------------------------------------------------------------------
-{
-    string validationProfile(validationProfile_);
-    NStr::ToLower(validationProfile);
-    if (validationProfile == "bankit") {
-        return new CSeqIdValidatorBankit();
-    }
-    return new CSeqIdValidator();
-}
 
 //  ----------------------------------------------------------------------------
 bool 
@@ -136,7 +122,6 @@ bool ReadAlignmentFile(
     if (!pScanner) {
         return false;
     }
-    pScanner->SetSeqIdValidator(GetSeqIdValidator(validationScheme));
 
     pScanner->ProcessAlignmentFile(sequenceInfo, iStr, alignmentInfo);
     return true;
