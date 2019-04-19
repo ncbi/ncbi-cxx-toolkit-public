@@ -1275,8 +1275,17 @@ void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
         }
 
         // Amending HTTP header
-        string header_line;
-        while (getline(is, header_line)) {
+        for (;;) {
+            if (is.eof() || (is.peek() == istream::traits_type::eof())) {
+                // This will result in an internal server error if run under a web server
+                // but it might still work if run directly/otherwise
+                ERR_POST(Warning << "Job output does not look like it came from a CGI (no empty line)");
+                ctx.NeedRenderPage(false);
+                return;
+            }
+
+            string header_line;
+            getline(is, header_line);
             NStr::TruncateSpacesInPlace(header_line, NStr::eTrunc_End);
             if (header_line.empty())
                 break;
