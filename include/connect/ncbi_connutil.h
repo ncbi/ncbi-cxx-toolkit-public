@@ -201,7 +201,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
     const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     const char*     http_user_header; /* user header to add to HTTP request  */
-    const char*     http_referer;     /* default referrer (when not spec'd)  */
+    const char*     http_referer;     /* request referrer (when spec'd)      */
     NCBI_CRED       credentials;      /* connection credentials (optional)   */
 
     /* the following fields are for internal use only -- look but don't touch*/

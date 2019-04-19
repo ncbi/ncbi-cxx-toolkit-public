@@ -235,7 +235,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 
     svclen = 0;
     if (service) {
-        if (!*service  ||  strpbrk(service, "*?"))
+        if (!*service  ||  strpbrk(service, "?*"))
             svclen = 0;
         else if (!(service = SERV_ServiceName(service)))
             return 0;
@@ -313,7 +313,7 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 static void x_DestroyNetInfo(SConnNetInfo* info, unsigned int magic)
 {
     assert(info);
-    /* do not free() fields if there's version skew (offsets maybe off) */
+    /* do not free() fields if there's a version skew (offsets maybe off) */
     if (magic == CONN_NET_INFO_MAGIC) {
         if (info->http_user_header) {
             free((void*) info->http_user_header);
@@ -323,8 +323,8 @@ static void x_DestroyNetInfo(SConnNetInfo* info, unsigned int magic)
             free((void*) info->http_referer);
             info->http_referer = 0;
         }
+        info->magic++;
     }
-    info->magic++;
     free(info);
 }
 
@@ -347,7 +347,7 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
  */
 
 
-extern SConnNetInfo* ConnNetInfo_Create(const char* service)
+SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
     *value = '\0';                                                      \
@@ -363,15 +363,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     double dbl;
     char*  e;
 
-    if (service  &&  *service  &&  !strpbrk(service, "*?")) {
-        if (!(service = SERV_ServiceName(service)))
-            return 0;
-        assert(*service);
-        len = strlen(service);  /*NB: len > 0*/
-    } else {
-        service = "";
-        len = 0;
-    }
+    assert(!service  ||  !strpbrk(service, "?*"));
+    len = service ? strlen(service) : 0;
 
     /* NB: created *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
@@ -382,7 +375,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     info->http_user_header = 0;
 
     /* store the service name, which this structure is being created for */
-    memcpy((char*) info->svc, service, len + 1);
+    memcpy((char*) info->svc, service ? service : "", len + 1);
 
     /* client host: default */
     info->client_host[0] = '\0';
@@ -493,7 +486,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     val = (long) strlen(str);
     if (val < 3  ||  8 < val
         ||  strncasecmp(str, "infinite", (size_t) val) != 0) {
-        if (!*str || (dbl = NCBI_simple_atof(str, &e)) < 0.0  || errno  || *e)
+        if (!*str  || (dbl = NCBI_simple_atof(str, &e)) < 0.0  || errno  || *e)
             dbl = DEF_CONN_TIMEOUT;
         info->tmo.sec      = (unsigned int)  dbl;
         info->tmo.usec     = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
@@ -526,21 +519,32 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_ARGS, str, DEF_CONN_ARGS);
     if (!ConnNetInfo_SetArgs(info, str))
         goto err;
-
- out:
-    if (len)
-        free((void*) service);
-    /* done */
     return info;
 
  err:
     x_DestroyNetInfo(info, CONN_NET_INFO_MAGIC);
-    info = 0;
-    goto out;
-
-    /*NOTREACHED*/
     return 0;
 #undef REG_VALUE
+}
+
+
+extern SConnNetInfo* ConnNetInfo_Create(const char* service)
+{
+    const char* x_service;
+    SConnNetInfo* retval;
+
+    if (service  &&  *service  &&  !strpbrk(service, "?*")) {
+        if (!(x_service = SERV_ServiceName(service)))
+            return 0;
+        assert(*x_service);
+    } else
+        x_service = 0;
+
+    retval = ConnNetInfo_CreateInternal(x_service);
+
+    if (x_service)
+        free((void*) x_service);
+    return retval;
 }
 
 

@@ -222,6 +222,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_PenalizeEx
 extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
 
 
+/* Create SConnNetInfo for NULL, empty, or non-wildcard service name, without
+ * trying to resolve any service name substitution(s).
+ */
+SConnNetInfo* ConnNetInfo_CreateInternal(const char* service);
+
+
 /* Get the final service name, using service_CONN_SERVICE_NAME environment
  * variable(s), then (if not found) registry section [service] and a key
  * CONN_SERVICE_NAME.  Return the resultant name (perhaps, an exact copy of
