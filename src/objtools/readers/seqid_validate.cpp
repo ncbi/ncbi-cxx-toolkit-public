@@ -35,7 +35,11 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
 #include "seqid_validate.hpp"
+#include "aln_errors.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -55,6 +59,7 @@ CSeqIdValidatorBankit::Validate(
     const SLineInfo& seqIdInfo)
 //  --------------------------------------------------------------------------
 {
+    return true;
 
     const auto& seqId = seqIdInfo.mData;
 
@@ -78,6 +83,38 @@ CSeqIdValidatorBankit::Validate(
     }
 
     mValidated.push_back(seqId);
+    return true;
+}
+
+
+
+bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description) 
+{
+    description.clear();
+
+    if (seqId.IsLocal()) {
+        const auto idString = seqId.GetLocal().GetStr();
+
+        if (idString.empty()) {
+            description = "Empty local ID";
+            return false;
+        }
+
+        if (idString.size() > 50) {
+            description = "Local ID \"" + 
+                          idString +
+                          " \" exceeds 50 character limit.";
+            return false;
+        }
+
+        if (CSeq_id::CheckLocalID(idString) & CSeq_id::fInvalidChar) {
+            description = "Local ID \"" + 
+                          idString +
+                          "\" contains invalid characters";
+            return false;
+        }
+    }
+    // default implementation only checks local IDs
     return true;
 }
 

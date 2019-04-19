@@ -36,6 +36,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+class CSeq_id;
 struct SLineInfo;
 
 //  ----------------------------------------------------------------------------
@@ -76,6 +77,17 @@ public:
 
 private:
     vector<string> mValidated;
+};
+
+
+//  ----------------------------------------------------------------------------
+class CSeqIdValidate
+//  ----------------------------------------------------------------------------
+{
+public: 
+    virtual ~CSeqIdValidate(void) = default;
+
+    virtual bool operator()(const CSeq_id& seqId, string& description);
 };
 
 END_SCOPE(objects)

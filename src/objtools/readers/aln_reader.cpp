@@ -117,14 +117,17 @@ CAlnError::CAlnError(const CAlnError& e)
 }
 
 
-CAlnReader::CAlnReader(CNcbiIstream& is) : 
-    mpSeqIdValidator(new CSeqIdValidator()),
+CAlnReader::CAlnReader(CNcbiIstream& is, FIdValidate fIdValidate) : 
+    m_fIdValidate(fIdValidate),
     m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
     m_UseNexusInfo(true)
 {
     m_Errors.clear();
     SetAlphabet(eAlpha_Protein);
     SetAllGap(".-");
+    if (!m_fIdValidate) {
+        m_fIdValidate = CSeqIdValidate();
+    }
 }
 
 
@@ -311,8 +314,28 @@ void CAlnReader::Read(
 }
 
 
-void CAlnReader::xValidateSeqId(const SLineInfo& seqIdInfo)
+void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
+        TIdList& ids)
 {
+    ids.clear();
+    const auto& idString = seqIdInfo.mData;
+    if (!CSeq_id::ParseFastaIds(ids, idString, true)) {
+        // This following line should probably be removed. 
+        // Failure to parse the id string should be a show stopper
+        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, idString)));
+    }
+
+    if (m_fIdValidate) {
+        for (auto pSeqId : ids) {
+            string description;
+            if (!m_fIdValidate(*pSeqId, description)) {
+                throw SShowStopper(
+                    seqIdInfo.mNumLine,
+                    eAlnSubcode_IllegalSequenceId,
+                    description);
+            }
+        }
+    }
     return;
 }
 
@@ -360,11 +383,18 @@ void CAlnReader::x_VerifyAlignmentInfo(
     const auto numSequences = alignmentInfo.NumSequences();
 
     m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
-    m_IdStrings.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
+
+
+    for (auto seqIdInfo : alignmentInfo.mIds) {
+        m_IdStrings.push_back(seqIdInfo.mData); // redundant
+        TIdList ids;
+        x_ParseAndValidateSeqIds(seqIdInfo, ids);
+        m_Ids.push_back(ids);
+    }
 
     auto numDeflines = alignmentInfo.NumDeflines();
     if (numDeflines) {
-        if (numDeflines == m_IdStrings.size()) {
+        if (numDeflines == m_Ids.size()) {
             m_DeflineInfo.resize(numDeflines);
             for (int i=0;  i< numDeflines;  ++i) {
                 m_DeflineInfo[i] = {
@@ -376,7 +406,7 @@ void CAlnReader::x_VerifyAlignmentInfo(
         else {
             string description = ErrorPrintf(
                     "Expected 0 or %d deflines but finding %d",
-                     m_IdStrings.size(),
+                     m_Ids.size(),
                      numDeflines);
             theErrorReporter->Error(
                     -1,
@@ -444,19 +474,9 @@ CRef<CSeq_id> CAlnReader::GenerateID(const string& fasta_defline,
     TFastaFlags fasta_flags)
 {
     _ASSERT(index < m_Dim);
+    _ASSERT(!m_Ids[index].empty());    
 
-    if (m_Ids.size() == m_Dim &&
-        !m_Ids[index].empty()) {
-        return m_Ids[index].front();
-    }
-
-    string id_string = m_IdStrings[index];
-    CBioseq::TId ids;
-    if (CSeq_id::ParseFastaIds(ids, id_string, true) > 0) {
-        return ids.front();
-    }
-    
-    return Ref(new CSeq_id(CSeq_id::e_Local, id_string));
+    return m_Ids[index].front();
 }    
 
 
@@ -494,8 +514,6 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
     if (!m_ReadSucceeded) {
         return CRef<CSeq_align>();
     }
-
-    x_ProcessIds();
 
     typedef CDense_seg::TNumseg TNumseg;
 
@@ -638,19 +656,6 @@ CAlnReader::GetSequenceMolType(
         return CSeq_inst::eMol_aa;
     }
     return (posFirstU == string::npos  ?  CSeq_inst::eMol_dna : CSeq_inst::eMol_rna);
-}
-
-
-void CAlnReader::x_ProcessIds()
-{
-    m_Ids.resize(m_Dim);
-    for (int i=0; i<m_Dim; ++i) {
-        const auto& id_string = m_IdStrings[i];
-        if (CSeq_id::ParseFastaIds(m_Ids[i], id_string, true) > 0) {
-            continue;
-        }
-        m_Ids[i].push_back(Ref(new CSeq_id(CSeq_id::e_Local, id_string)));
-    }
 }
 
 

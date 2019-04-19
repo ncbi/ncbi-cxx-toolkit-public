@@ -47,9 +47,18 @@ BEGIN_NCBI_SCOPE
 // class CAlnError holds error information
 //
 namespace objects {
-    class CSeqIdValidator;
+//    class CSeqIdValidator;
+    class CSeq_id;
 }
-//class CSeqIdValidator;
+
+class NCBI_XOBJREAD_EXPORT CAlnIdValidator
+{
+public:
+    virtual ~CAlnIdValidator(void) = default;
+
+    virtual bool operator()(const list<CRef<objects::CSeq_id>>& ids, 
+                  int lineNum){ return true; }
+};
 
 class NCBI_XOBJREAD_EXPORT CAlnError
 {
@@ -108,36 +117,26 @@ public:
         eAlpha_Dna_no_ambiguity,
         eAlpha_Rna_no_ambiguity,
     };
- 
+
+    // This class is deprecated 
     class CAlnErrorContainer 
     {
-
     private:
         list<CAlnError> errors;
-        map<CAlnError::EAlnErr, size_t> error_count;
-
     public:
         size_t GetErrorCount(CAlnError::EAlnErr category) const
         {
-            auto it = error_count.find(category);
-            if (it != error_count.end()) {
-                return it->second;
-            }
             return 0;
         }
 
         void clear(void) {
-            errors.clear();
-            error_count.clear();
         }
 
         void push_back(const CAlnError& error) {
-            errors.push_back(error);
-            ++error_count[error.GetCategory()];
         }
 
         size_t size(void) const {
-            return errors.size();
+            return 0;
         }
 
         typedef list<CAlnError> TErrors;
@@ -154,11 +153,14 @@ public:
     GetAlphabetLetters(
         EAlphabet);
 
-    using TDeflineInfo = objects::SLineInfo;
+    using TLineInfo = objects::SLineInfo;
+    using FIdValidate = 
+        function<bool(const objects::CSeq_id& seqId,
+                      string& description)>;
 
     // constructor
     // defaults to protein alphabet and A2M gap characters
-    CAlnReader(CNcbiIstream& is);
+    CAlnReader(CNcbiIstream& is, FIdValidate fIdValidate=nullptr);
 
     // destructor
     virtual ~CAlnReader(void);
@@ -232,7 +234,7 @@ public:
     const vector<string>& GetSeqs(void)      const {return m_Seqs;};
     NCBI_DEPRECATED const vector<string>& GetOrganisms(void) const {return m_Organisms;};
     const vector<string>& GetDeflines(void)  const {return m_Deflines;};
-    const vector<TDeflineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
+    const vector<TLineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
     int                   GetDim(void)       const {return m_Dim;};
 
     NCBI_DEPRECATED
@@ -297,10 +299,11 @@ private:
     vector<string> m_IdStrings;
     vector<TIdList> m_Ids;
     vector<string> m_Seqs;
-    vector<string> m_Organisms;
-    vector<string> m_Deflines;
-    vector<TDeflineInfo> m_DeflineInfo;
-    unique_ptr<objects::CSeqIdValidator> mpSeqIdValidator;
+    vector<string> m_Organisms; // redundant
+    vector<string> m_Deflines; // redundant
+    vector<TLineInfo> m_DeflineInfo;
+    //unique_ptr<CAlnIdValidator> mpSeqIdValidator;
+    FIdValidate m_fIdValidate;
 
 
     /// Other internal data
@@ -330,10 +333,11 @@ private:
         TFastaFlags fasta_flags,
         objects::CDense_seg& denseg);
 
+    void x_ParseAndValidateSeqIds(
+            const TLineInfo& seqIdInfo,
+            TIdList& ids);
 
-    void x_ProcessIds(void);
-
-    void x_AddMods(const TDeflineInfo& defline_info, 
+    void x_AddMods(const TLineInfo& defline_info, 
             objects::CBioseq& bioseq,
             objects::ILineErrorListener* pErrorListener);
 

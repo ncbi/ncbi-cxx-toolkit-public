@@ -191,7 +191,7 @@ CAlnScanner::xExportAlignmentData(
 {
     alignInfo.mIds.reserve(mSeqIds.size());
     for (auto seqId: mSeqIds) {
-        alignInfo.mIds.push_back(seqId.mData);
+        alignInfo.mIds.push_back(seqId);
     }
 
     auto numDeflines = mDeflines.size();

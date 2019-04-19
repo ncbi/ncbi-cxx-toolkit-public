@@ -136,7 +136,7 @@ public:
 
     using TLineInfo = SLineInfo;
 
-    vector<string> mIds;
+    vector<TLineInfo> mIds; 
     vector<string> mSequences;
     vector<TLineInfo> mDeflines;
 };
