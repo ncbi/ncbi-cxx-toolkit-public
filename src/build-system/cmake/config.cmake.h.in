@@ -286,7 +286,7 @@
 #cmakedefine HAVE_LIBFTGL 1
 
 /* Define to 1 if libgcrypt is available. */
-#undef HAVE_LIBGCRYPT
+#cmakedefine HAVE_LIBGCRYPT
 
 /* Define to 1 if you have the <libgen.h> header file. */
 #cmakedefine HAVE_LIBGEN_H 1
@@ -366,7 +366,7 @@
 #define HAVE_LIBSABLOT 1
 
 /* Define to 1 if libdrmaa is available. */
-#define HAVE_LIBSGE 1
+#cmakedefine HAVE_LIBSGE 1
 
 /* Define to 1 if the SP SGML library is available. */
 #define HAVE_LIBSP 1
@@ -778,16 +778,16 @@
 #cmakedefine HAVE_WSTRING 1
 
 /* Define to 1 if wxWidgets is available. */
-#define HAVE_WXWIDGETS 1
+#cmakedefine HAVE_WXWIDGETS 1
 
 /* Define to 1 if you have the <x86intrin.h> header file. */
 #define HAVE_X86INTRIN_H 1
 
 /* Define to 1 if Xalan-C++ is available. */
-#define HAVE_XALAN 1
+#cmakedefine HAVE_XALAN 1
 
 /* Define to 1 if Xerces-C++ is available. */
-#define HAVE_XERCES 1
+#cmakedefine HAVE_XERCES 1
 
 /* Define to 1 if Zorba is available. */
 #undef HAVE_ZORBA
