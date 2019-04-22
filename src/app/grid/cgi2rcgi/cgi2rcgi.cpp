@@ -1263,8 +1263,11 @@ bool CCgi2RCgiApp::CheckIfJobDone(
 
 void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
 {
+    CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
+
+    string err_msg;
+
     try {
-        CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
         bool no_jquery = ctx.GetJqueryCallback().empty();
 
         // No need to amend anything
@@ -1275,17 +1278,8 @@ void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
         }
 
         // Amending HTTP header
-        for (;;) {
-            if (is.eof() || (is.peek() == istream::traits_type::eof())) {
-                // This will result in an internal server error if run under a web server
-                // but it might still work if run directly/otherwise
-                ERR_POST(Warning << "Job output does not look like it came from a CGI (no empty line)");
-                ctx.NeedRenderPage(false);
-                return;
-            }
-
-            string header_line;
-            getline(is, header_line);
+        string header_line;
+        while (getline(is, header_line)) {
             NStr::TruncateSpacesInPlace(header_line, NStr::eTrunc_End);
             if (header_line.empty())
                 break;
@@ -1312,18 +1306,24 @@ void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
             out << ')';
         }
         ctx.NeedRenderPage(false);
+        return;
     }
     catch (CException& ex) {
-        string err_msg("Failed to read job output: ");
-        err_msg += ex.ReportAll();
-        ERR_POST(err_msg);
-        OnJobFailed(err_msg, ctx);
+        err_msg = ex.ReportAll();
     }
     catch (exception& ex) {
-        string err_msg("Failed to read job output: ");
-        err_msg += ex.what();
-        ERR_POST(err_msg);
-        OnJobFailed(err_msg, ctx);
+        err_msg = ex.what();
+    }
+
+    if (!is) {
+        ERR_POST("Failed to read job output: " << err_msg);
+        OnJobFailed("Failed to read job output: " + err_msg, ctx);
+    } else if (!out) {
+        ERR_POST(Warning << "Failed to write job output to client: " << err_msg);
+        ctx.NeedRenderPage(false); // Client will not get the message anyway
+    } else {
+        ERR_POST("Failed while relaying job output: " << err_msg);
+        OnJobFailed("Failed while relaying job output: " + err_msg, ctx);
     }
 }
 
