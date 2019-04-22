@@ -236,6 +236,7 @@ function(NCBI_add_library)
     if(NCBI_PTBMODE_PARTS)
         return()
     endif()
+    set(NCBI_PROJECT_expected library)
 if(OFF)
 # this requires that ALL subdirs use this new API
     foreach(_lib IN LISTS ARGV)
@@ -277,6 +278,7 @@ else()
     endforeach()
   endif()
 endif()
+    unset(NCBI_PROJECT_expected)
 endfunction()
 
 #############################################################################
@@ -284,6 +286,7 @@ function(NCBI_add_app)
     if(NCBI_PTBMODE_PARTS)
         return()
     endif()
+    set(NCBI_PROJECT_expected app)
 if(OFF)
 # this requires that ALL subdirs use this new API
     foreach(_app IN LISTS ARGV)
@@ -319,6 +322,7 @@ else()
     endforeach()
   endif()
 endif()
+    unset(NCBI_PROJECT_expected)
 endfunction()
 
 #############################################################################
@@ -342,6 +346,9 @@ endfunction()
 
 #############################################################################
 macro(NCBI_begin_lib _name)
+    if( NOT "${NCBI_PROJECT_expected}" STREQUAL "" AND NOT "${NCBI_PROJECT_expected}" STREQUAL "library")
+        message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Unexpected NCBI_begin_lib call")
+    endif()
     if(NOT NCBI_EXPERIMENTAL_CFG)
         set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     endif()
@@ -406,6 +413,9 @@ endmacro()
 
 #############################################################################
 macro(NCBI_begin_app _name)
+    if( NOT "${NCBI_PROJECT_expected}" STREQUAL "" AND NOT "${NCBI_PROJECT_expected}" STREQUAL "app")
+        message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Unexpected NCBI_begin_app call")
+    endif()
     if(NOT NCBI_EXPERIMENTAL_CFG)
         set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     endif()
