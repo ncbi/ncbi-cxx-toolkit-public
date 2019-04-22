@@ -491,7 +491,14 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
                 case CSeqdesc::e_Molinfo:
                     molinfo_found=true;
                     if (m_MolInfo) {
-                        desc->Assign(*m_MolInfo);
+                        if( !      desc->GetMolinfo().IsSetCompleteness() 
+                           && m_MolInfo->GetMolinfo().IsSetCompleteness() ) {
+                            desc->SetMolinfo().SetCompleteness(  m_MolInfo->GetMolinfo().GetCompleteness() );
+                        } 
+                        if( !      desc->GetMolinfo().IsSetBiomol() 
+                           && m_MolInfo->GetMolinfo().IsSetBiomol() ) {
+                            desc->SetMolinfo().SetBiomol(  m_MolInfo->GetMolinfo().GetBiomol() );
+                        } 
                     }
                     break;
                 case CSeqdesc::e_Source:
