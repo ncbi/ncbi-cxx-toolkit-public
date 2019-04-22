@@ -81,7 +81,8 @@ enum EAlnSubcode
     eAlnSubcode_IllegalDataDescription,
     eAlnSubcode_FileDoesNotExist,
     eAlnSubcode_FileTooShort,
-    eAlnSubcode_UnexpectedCommand
+    eAlnSubcode_UnexpectedCommand,
+    eAlnSubcode_UnexpectedCommandArgs
 };
 NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EAlnSubcode)(void);
 

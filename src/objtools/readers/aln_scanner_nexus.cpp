@@ -73,24 +73,38 @@ bool
 CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
 // -----------------------------------------------------------------------------
 {   
-    string lastLine = command.args.back().mData;
+    auto& args = command.args;
+    string lastLine = args.back().mData;
     NStr::ToLower(lastLine);
     int lastWhiteSpacePos = lastLine.find_last_of(" \t");
     string lastToken = (lastWhiteSpacePos == NPOS) ?
                         lastLine :
                         lastLine.substr(lastWhiteSpacePos);
     if (lastToken == "end") {
+
+        const bool onlyArg = (args.size() == 1 && 
+                              lastWhiteSpacePos == NPOS);
+
+        if (onlyArg) {
+            throw SShowStopper(
+                args.back().mNumLine,
+                EAlnSubcode::eAlnSubcode_UnexpectedCommandArgs,
+                "\"end\" is not a valid argument for the \"" +
+                command.name + "\" command.");
+        }
+
+
         theErrorReporter->Warn(
         command.args.back().mNumLine,
         EAlnSubcode::eAlnSubcode_UnterminatedCommand,
                 "Unexpected \"end;\". Appending \';\' to prior command");
 
         if (lastWhiteSpacePos == NPOS) {
-            command.args.pop_back();
+            args.pop_back();
         }
         else {
-            command.args.back().mData = NStr::TruncateSpaces(
-                command.args.back().mData.substr(0, lastWhiteSpacePos));
+            args.back().mData = NStr::TruncateSpaces(
+                args.back().mData.substr(0, lastWhiteSpacePos));
         }
         return true;
     }
@@ -129,7 +143,7 @@ CAlnScannerNexus::xProcessCommand(
         const bool applyEnd = xUnexpectedEndBlock(command);
         xBeginBlock(command.args);
         if (applyEnd) {
-            xEndBlock();
+            xEndBlock(command.args.back().mNumLine);
         }
         return;
     }
@@ -142,14 +156,25 @@ CAlnScannerNexus::xProcessCommand(
                 "\"" + command.name + "\" command appears outside of block.");
     } 
 
+    string block = mCurrentBlock;
+    NStr::ToLower(block);
+    if (block == "ncbi") {
+        xProcessNCBIBlockCommand(command, sequenceInfo);
+        return;
+    }
     
     if (nameLower == "end") {
-        xEndBlock();    
+        if (!command.args.empty()) {
+            throw SShowStopper(
+                command.startLineNum,
+                EAlnSubcode::eAlnSubcode_UnexpectedCommandArgs,
+                "\"" + command.name + 
+                "\" command terminates a block and does not take any arguments.");   
+        }
+        xEndBlock(command.startLineNum);    
         return;    
     }
 
-    string block = mCurrentBlock;
-    NStr::ToLower(block);
     if (block ==  "data" ||
         block == "characters") {
         xProcessDataBlockCommand(command, sequenceInfo);
@@ -158,11 +183,6 @@ CAlnScannerNexus::xProcessCommand(
     
     if (block == "taxa") {
         xProcessTaxaBlockCommand(command, sequenceInfo);
-        return;
-    }
-        
-    if (block == "ncbi") {
-        xProcessNCBIBlockCommand(command, sequenceInfo);
         return;
     }
 }
@@ -192,10 +212,11 @@ CAlnScannerNexus::xProcessDataBlockCommand(
     if (nameLower == "matrix") {
         xProcessMatrix(command.args);
     }
-    // report a warning or error?
+    // Don't report an error. 
+    // There are many other possible commands
 
     if (unexpectedEnd) {
-        xEndBlock();
+        xEndBlock(command.args.back().mNumLine);
     }
 }
 
@@ -216,10 +237,12 @@ CAlnScannerNexus::xProcessTaxaBlockCommand(
     if (nameLower == "dimensions") {
         xProcessDimensions(command.args);
     }
-    // else report a warning or error?
+    // Don't report an error. 
+    // There are other possible commands that we currently ignore, 
+    // such as taxlabels
 
     if (unexpectedEnd) {
-        xEndBlock();
+        xEndBlock(command.args.back().mNumLine);
     }
 }
 
@@ -231,17 +254,40 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
         CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
+    static string previousCommand;
+
     auto nameLower = command.name;
     NStr::ToLower(nameLower);
+
+    if (nameLower == "end") {
+        if (previousCommand != "sequin") {
+            auto description =
+                "Exiting an empty NCBI block. Expected a \"sequin\" command.";
+            throw SShowStopper(
+                command.startLineNum,
+                EAlnSubcode::eAlnSubcode_UnexpectedCommand,
+                description);
+        }
+        previousCommand.clear();
+        xEndBlock(command.args.back().mNumLine);
+        return;
+    }
+
 
     bool unexpectedEnd = xUnexpectedEndBlock(command);
     if (nameLower == "sequin") {
         xProcessSequin(command.args);
+        previousCommand = "sequin";
     }
-    // else report a warning or error?
-    //
+    else {
+        throw SShowStopper(
+            command.startLineNum,
+            EAlnSubcode::eAlnSubcode_UnexpectedCommand,
+            "Unexpected \"" + command.name  + "\" command inside NCBI block."); 
+    }
+
     if (unexpectedEnd) {
-        xEndBlock();
+        xEndBlock(command.args.back().mNumLine);
     }
 }
 
@@ -304,9 +350,18 @@ CAlnScannerNexus::xBeginBlock(
 
 //  ----------------------------------------------------------------------------
 void 
-CAlnScannerNexus::xEndBlock()
+CAlnScannerNexus::xEndBlock(int lineNum) 
 //  ----------------------------------------------------------------------------
 {
+
+    if (!mInBlock) {
+        auto description = "\"end\" command appears outside of block.";
+        throw SShowStopper(
+            lineNum,
+            EAlnSubcode::eAlnSubcode_IllegalDataLine,
+            description);
+    }
+
     mInBlock = false;
     mBlockStartLine = -1;
     mCurrentBlock.clear();
@@ -545,6 +600,7 @@ CAlnScannerNexus::xImportAlignmentData(
     int numOpenBrackets(0);
     size_t commentStartLine(-1);
     bool inCommand(false);
+    bool firstToken = true;
 
 
     while (iStr.ReadLine(line, lineCount)) {
@@ -553,8 +609,24 @@ CAlnScannerNexus::xImportAlignmentData(
 
         string lineStrLower(line);
         NStr::ToLower(lineStrLower);
-        if (lineStrLower == "#nexus") { // Should be an error if the first word isn't #NEXUS
+        if (lineStrLower == "#nexus") { 
+            if (!firstToken) {
+                throw SShowStopper(
+                        lineCount,
+                        eAlnSubcode_IllegalDataLine,
+                        "Unexpected token. #NEXUS should appear once at the beginnng of the file."
+                        
+                        );
+            }
+            firstToken = false;
             continue;
+        }
+        else 
+        if (firstToken) {
+            throw SShowStopper(
+                    lineCount,
+                    eAlnSubcode_IllegalDataLine,
+                    "Unexpected line. \"#NEXUS\" should appear at the beginning of the file.");
         }
 
         int previousOpenBrackets = numOpenBrackets;

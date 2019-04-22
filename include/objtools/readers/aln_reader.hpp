@@ -44,21 +44,10 @@
 #include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
-// class CAlnError holds error information
-//
 namespace objects {
-//    class CSeqIdValidator;
     class CSeq_id;
 }
 
-class NCBI_XOBJREAD_EXPORT CAlnIdValidator
-{
-public:
-    virtual ~CAlnIdValidator(void) = default;
-
-    virtual bool operator()(const list<CRef<objects::CSeq_id>>& ids, 
-                  int lineNum){ return true; }
-};
 
 class NCBI_XOBJREAD_EXPORT CAlnError
 {

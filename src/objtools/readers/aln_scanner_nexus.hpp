@@ -115,7 +115,7 @@ protected:
     xBeginBlock(const TCommandArgs& command);
 
     void 
-    xEndBlock(void);
+    xEndBlock(int lineNum);
 
     bool
     xUnexpectedEndBlock(TCommand& command);
