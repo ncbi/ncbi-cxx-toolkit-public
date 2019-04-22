@@ -217,9 +217,8 @@ else (WIN32)
 	find_external_library(Sybase
 #    DYNAMIC_ONLY
     INCLUDES sybdb.h
-#    LIBS sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
-    LIBS  sybblk_r64         sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
-    LIBS  sybdb64 sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
+    LIBS           sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
+#    LIBS  sybdb64 sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
     HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/")
 endif (WIN32)
 

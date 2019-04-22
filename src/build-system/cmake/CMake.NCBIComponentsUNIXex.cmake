@@ -431,7 +431,8 @@ endif()
 
 #############################################################################
 # Sybase
-NCBI_define_component(Sybase sybdb64 sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
+#NCBI_define_component(Sybase sybdb64 sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
+NCBI_define_component(Sybase          sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
 if (NCBI_COMPONENT_Sybase_FOUND)
     set(NCBI_COMPONENT_Sybase_DEFINES SYB_LP64)
     set(SYBASE_PATH ${NCBI_ThirdParty_Sybase})
