@@ -668,6 +668,7 @@ BRNL	s	Mendel University of Agriculture and Forestry, Department of Forest Botan
 BRNM	s	Moravian Museum			
 BRNU	s	Masaryk University, Department of Botany			
 BROC	s	State University of New York, Biological Sciences Department			
+BRPP	s	Botanica Royal Park of Palm Hills			
 BRS	s	Agriculture and Agri-Food Canada			
 BRSL	s	Wroclaw University, Botany Department			
 BRSMG	s	Department of Geology			
@@ -2531,6 +2532,7 @@ HMUG	s	Hunterian Museum
 HN	s	National Center for Natural Sciences and Technology, Botany Department			
 HNBU	s	Institut de l'Environnement et de Recherche Agricola (INERA)			
 HNCMB	c	Hungarian National Collection of Medical Bacteria			
+HND	s	Centre d'Etude et de Recherche de Djibouti (CERD)			
 HNG	s	Universite. Gamal Abdel Nasser de Conakry			
 HNH	s	Dartmouth College, Biological Sciences Department			
 HNHH	s	Heilongjiang Natural History Museum			
@@ -3882,6 +3884,7 @@ MATSU	s	Ehime University, Forestry Department
 MAU	s	Mauritius Sugar Industry Research Institute			
 MAUAM	s	Universidad Autonoma de Madrid			
 MAY	s	Adygean State University, Department of Botany			
+MAZHAR	s	Mazhar Botanical Garden			
 MB<DEU-Berlin>	s	Museum of Natural History of Humboldt-University			
 MB<DEU-Marburg>	s	Philipps-Universitaet, Spezielle Botanik			
 MB<PRT>	s	Universidade de Lisboa, Museu Bocage			
@@ -4185,6 +4188,7 @@ MMF	s	Museu Municipal do Funchal
 MMG	s	Museo Marino de la Isla de Gorgona			
 MMGMK	s	Magyar Mezogazdasagi Muzeum es Konyvtar (The Museum and Library of Hungarian Agriculture)			
 MMH	s	Municipal Museum			
+MMH<FRA>	s	Museums of Montbeliard			
 MMI	s	Regionalni muzeum			
 MMK	s	McGregor Museum			
 MMKZ	s	Alexander McGregor Memorial Museum			
@@ -4778,6 +4782,7 @@ NHMS	s	Natural History Museum Split
 NHMTU	s	Natural History Museum, Tribhuvan University			
 NHMUK	sb	Natural History Museum, London	BM,BM(NH),BMNH,NHM,NHM R,NMH		
 NHMUK<PAK>	s	Natural History Museum, Karachi			
+NHMV	s	Muritzeum gGmbH / Naturhistorische Landessammlungen fur Mecklenburg-Vorpommern			
 NHMW	s	Naturhistorisches Museum, Wien	NMW		
 NHNC	s	La Chaux-de-Fons			
 NHNE	s	New England College, Biology Department			
