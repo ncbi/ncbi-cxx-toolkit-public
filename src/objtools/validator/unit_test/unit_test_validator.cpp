@@ -9219,7 +9219,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     // test for single-strand RNA viruses
-    unit_test_util::SetLineage (entry, "Viruses; ssRNA viruses; foo");
+    unit_test_util::SetLineage (entry, "Viruses; Avsunviroidae; foo");
 
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
@@ -9229,22 +9229,22 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    unit_test_util::SetLineage (entry, "Viruses; ssRNA negative-strand viruses; foo");
+    unit_test_util::SetLineage (entry, "Viruses; Deltavirus; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    unit_test_util::SetLineage (entry, "Viruses; unassigned ssRNA viruses; foo");
+    unit_test_util::SetLineage (entry, "Viruses; Arenaviridae; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
-                              "Genomic DNA viral lineage indicates no DNA stage"));
+    // expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
+    //                           "Genomic DNA viral lineage indicates no DNA stage"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
                               "Taxonomy indicates single-stranded RNA, molecule type (DNA) is conflicting."));
     //AddChromosomeNoLocation(expected_errors, entry);
 
-    unit_test_util::SetLineage (entry, "Viruses; ssRNA positive-strand viruses, no DNA stage; foo");
+    unit_test_util::SetLineage (entry, "Viruses; Albetovirus; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -9256,7 +9256,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     CheckErrors (*eval, expected_errors);
 
     // tests for double-stranded RNA viruses
-    unit_test_util::SetLineage (entry, "Viruses; dsRNA viruses; foo");
+    unit_test_util::SetLineage (entry, "Viruses; Amalgaviridae; foo");
     // should be no error because rna
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -9268,7 +9268,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     CheckErrors (*eval, expected_errors);
 
     // test for single-stranded DNS viruses
-    unit_test_util::SetLineage (entry, "Viruses; ssDNA viruses; foo");
+    unit_test_util::SetLineage (entry, "Viruses; Alphasatellitidae; foo");
     // no errors because is dna
     CLEAR_ERRORS
     //AddChromosomeNoLocation(expected_errors, entry);
@@ -9282,7 +9282,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     CheckErrors (*eval, expected_errors);
 
     // test for double-stranded DNS viruses
-    unit_test_util::SetLineage (entry, "Viruses; dsDNA viruses; foo");
+    unit_test_util::SetLineage (entry, "Viruses; Hepadnaviridae; foo");
     // error because not dna
     expected_errors.back()->SetErrMsg("Taxonomy indicates double-stranded DNA, molecule type (RNA) is conflicting.");
     eval = validator.Validate(seh, options);
