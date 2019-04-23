@@ -1100,6 +1100,7 @@ LIBSSH2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
 NGHTTP2_STATIC_LIBS
 H2O_STATIC_LIBS
+INFLUXDB_INCLUDE
 LIBXLSXWRITER_STATIC_LIBS
 PROTOBUF_BIN
 GRPC_UNSECURE_LIBS
@@ -1681,7 +1682,8 @@ oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
-libuv libssh2 cassandra nghttp2 h2o libxlsxwriter protobuf grpc msgsl aws-sdk \
+libuv libssh2 cassandra nghttp2 h2o influxdb \
+libxlsxwriter protobuf grpc msgsl aws-sdk \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1757,7 +1759,7 @@ for x_arg in "$@" ; do
       | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
-      | --with-h2o=* | --with-libxlsxwriter=* \
+      | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
@@ -2101,6 +2103,8 @@ Optional Packages:
  --without-nghttp2       do not use nghttp2
  --with-h2o=DIR          use h2o installation in DIR
  --without-h2o           do not use h2o
+ --with-influxdb=DIR     use influxdb-cpp installation in DIR
+ --without-influxdb      do not use influxdb-cpp
  --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR
  --without-libxlsxwriter do not use libxlsxwriter
  --with-protobuf=DIR     use protocol buffers installation in DIR
@@ -2713,6 +2717,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_h2o=no
+         fi
+        if test "${with_influxdb-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-influxdb but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_influxdb=no
          fi
         if test "${with_libxlsxwriter-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-libxlsxwriter but --without-3psw" >&2
@@ -4400,6 +4410,18 @@ fi
 # Check whether --with-h2o was given.
 if test "${with_h2o+set}" = set; then
   withval=$with_h2o;
+fi
+
+
+# Check whether --with-influxdb was given.
+if test "${with_influxdb+set}" = set; then
+  withval=$with_influxdb;
+fi
+
+
+# Check whether --with-influxdb was given.
+if test "${with_influxdb+set}" = set; then
+  withval=$with_influxdb;
 fi
 
 
@@ -51552,6 +51574,96 @@ else
     H2O_STATIC_LIBS=$H2O_LIBS
 fi
 
+case "$with_influxdb" in
+   yes | '' ) ;;
+   no       ) ncbi_cv_lib_influxdb=no ;;
+   *        ) INFLUXDB_PATH=$with_influxdb ;;
+esac
+if test -d "$INFLUXDB_PATH"; then
+   INFLUXDB_INCLUDE=-I$INFLUXDB_PATH/include
+   in_path=" in $INFLUXDB_PATH"
+else
+   in_path=
+fi
+CPPFLAGS="$orig_CPPFLAGS $INFLUXDB_INCLUDE"
+{ echo "$as_me:$LINENO: checking for influxdb-cpp$in_path" >&5
+echo $ECHO_N "checking for influxdb-cpp$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_influxdb+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <influxdb.hpp>
+int
+main ()
+{
+auto& b = influxdb_cpp::builder().meas("foo");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_influxdb=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_influxdb=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_influxdb" >&5
+echo "${ECHO_T}$ncbi_cv_lib_influxdb" >&6; }
+if test $ncbi_cv_lib_influxdb = yes; then
+             WithPackages="$WithPackages${WithPackagesSep}INFLUXDB"; WithPackagesSep=" "
+else
+   INFLUXDB_INCLUDE=
+   if test "${with_influxdb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-influxdb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-influxdb explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+fi
+
+
 if test "$with_libxlsxwriter" != "no"; then
     case "$LIBXLSXWRITER_PATH:$with_libxlsxwriter" in
        *:yes | *: | $with_libxlsxwriter* ) ;;
@@ -53005,7 +53117,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -53098,6 +53210,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -54781,6 +54894,7 @@ LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 NGHTTP2_STATIC_LIBS!$NGHTTP2_STATIC_LIBS$ac_delim
 H2O_STATIC_LIBS!$H2O_STATIC_LIBS$ac_delim
+INFLUXDB_INCLUDE!$INFLUXDB_INCLUDE$ac_delim
 LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
 PROTOBUF_BIN!$PROTOBUF_BIN$ac_delim
 GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
@@ -54833,7 +54947,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 58; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -58,6 +58,7 @@ try_local() {
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -f "$d/include/h2o.h"         &&  : ${H2O_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
+        test -f "$d/include/influxdb.hpp"  &&  : ${INFLUXDB_PATH=$d}
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
         test -f "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
@@ -204,6 +205,8 @@ case "$ncbi_platform" in
     Linux64    ) : ${ICU_PATH=$NCBI/icu-49.1.1} ;;
     *          ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
 esac
+
+: ${INFLUXDB_PATH=$NCBI/influxdb-cpp-0.0.20190416-31fe75d}
 
 : ${LEVELDB_PATH=$NCBI/leveldb-1.21}
 

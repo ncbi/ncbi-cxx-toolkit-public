@@ -74,7 +74,7 @@ case "$with_3psw" in
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, leveldb, gmock, lapack,
-                     libuv, libssh2, cassandra, nghttp2, h2o,
+                     libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, aws-sdk],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
@@ -549,6 +549,10 @@ AC_ARG_WITH(h2o,
    [ --with-h2o=DIR          use h2o installation in DIR])
 AC_ARG_WITH(h2o,
    [ --without-h2o           do not use h2o])
+AC_ARG_WITH(influxdb,
+   [ --with-influxdb=DIR     use influxdb-cpp installation in DIR])
+AC_ARG_WITH(influxdb,
+   [ --without-influxdb      do not use influxdb-cpp])
 AC_ARG_WITH(libxlsxwriter,
    [ --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR])
 AC_ARG_WITH(libxlsxwriter,
@@ -634,7 +638,8 @@ oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
-libuv libssh2 cassandra nghttp2 h2o libxlsxwriter protobuf grpc msgsl aws-sdk \
+libuv libssh2 cassandra nghttp2 h2o influxdb \
+libxlsxwriter protobuf grpc msgsl aws-sdk \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -709,7 +714,7 @@ for x_arg in "$@" ; do
       | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
-      | --with-h2o=* | --with-libxlsxwriter=* \
+      | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
@@ -8089,6 +8094,32 @@ else
     H2O_STATIC_LIBS=$H2O_LIBS
 fi
 
+case "$with_influxdb" in
+   yes | '' ) ;;
+   no       ) ncbi_cv_lib_influxdb=no ;;
+   *        ) INFLUXDB_PATH=$with_influxdb ;;
+esac
+if test -d "$INFLUXDB_PATH"; then
+   INFLUXDB_INCLUDE=-I$INFLUXDB_PATH/include
+   in_path=" in $INFLUXDB_PATH"
+else
+   in_path=
+fi
+CPPFLAGS="$orig_CPPFLAGS $INFLUXDB_INCLUDE"
+AC_CACHE_CHECK([for influxdb-cpp$in_path],
+   ncbi_cv_lib_influxdb,
+   [AC_COMPILE_IFELSE(
+       [AC_LANG_PROGRAM([[#include <influxdb.hpp>]],
+           [[auto& b = influxdb_cpp::builder().meas("foo");]])],
+       ncbi_cv_lib_influxdb=yes, ncbi_cv_lib_influxdb=no)])
+if test $ncbi_cv_lib_influxdb = yes; then
+   NCBI_PACKAGE(INFLUXDB)
+else
+   INFLUXDB_INCLUDE=
+   NCBI_MISSING_PACKAGE(influxdb)
+fi
+
+
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
    [AC_LANG_PROGRAM([[#include <xlsxwriter.h>]],
       [[lxw_workbook* wb = workbook_new("conftest.xlsx");]])],
@@ -8950,6 +8981,7 @@ AC_SUBST(LIBSSH2_STATIC_LIBS)
 AC_SUBST(CASSANDRA_STATIC_LIBS)
 AC_SUBST(NGHTTP2_STATIC_LIBS)
 AC_SUBST(H2O_STATIC_LIBS)
+AC_SUBST(INFLUXDB_INCLUDE)
 AC_SUBST(LIBXLSXWRITER_STATIC_LIBS)
 AC_SUBST(PROTOBUF_BIN)
 AC_SUBST(GRPC_UNSECURE_LIBS)
