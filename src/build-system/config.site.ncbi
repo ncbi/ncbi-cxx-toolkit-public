@@ -54,7 +54,6 @@ try_local() {
         test -f "$d/include/gmp.h"         &&  : ${GMP_PATH=$d}
         test -f "$d/include/gnutls/gnutls.h"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/grpc++/grpc++.h"  &&  : ${GRPC_PATH=$d}
-        test -f "$d/include/gsl/gsl"       &&  : ${MSGSL_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -f "$d/include/h2o.h"         &&  : ${H2O_PATH=$d}
@@ -74,6 +73,7 @@ try_local() {
         test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
         test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
         test -d "$d/include/mongocxx"      &&  : ${MONGODB3_PATH=$d}
+        test -f "$d/include/gsl/gsl"       &&  : ${MSGSL_PATH=$d}
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
         test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}

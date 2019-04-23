@@ -8154,6 +8154,11 @@ if test -n "$GRPC_LIBS"; then
    GRPC_BIN=$GRPC_PATH/bin
 fi
 
+case "$with_msgsl" in
+   yes | '' ) ;;
+   no       ) ncbi_cv_lib_msgsl=no ;;
+   *        ) MSGSL_PATH=$with_msgsl ;;
+esac
 if test -d "$MSGSL_PATH"; then
    MSGSL_INCLUDE=-I$MSGSL_PATH/include
    in_path=" in $MSGSL_PATH"
