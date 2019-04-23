@@ -269,7 +269,7 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
                 description);
         }
         previousCommand.clear();
-        xEndBlock(command.args.back().mNumLine);
+        xEndBlock(command.startLineNum);
         return;
     }
 
