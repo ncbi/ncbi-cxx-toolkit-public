@@ -300,7 +300,7 @@ private:
     void DefineRefreshTags(CGridCgiContext& grid_ctx, const string& url, int delay);
 
 private:
-    void ListenJobs(CCgiContext& ctx, const string& job_ids_value, const string& timeout_value);
+    void ListenJobs(const string& job_ids_value, const string& timeout_value);
     void CheckJob(CGridCgiContext& grid_ctx);
     void SubmitJob(CCgiRequest& request, CGridCgiContext& grid_ctx);
     void PopulatePage(CGridCgiContext& grid_ctx);
@@ -675,7 +675,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
         try {
             if (!listen_jobs.empty()) {
-                ListenJobs(ctx, listen_jobs, timeout);
+                ListenJobs(listen_jobs, timeout);
                 grid_ctx.NeedRenderPage(false);
             } else
             if (!grid_ctx.GetJobKey().empty()) {
@@ -720,7 +720,7 @@ struct SJob : CNetScheduleJob
     SJob(const string& id) { job_id = id; }
 };
 
-void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, const string& timeout_value)
+void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout_value)
 {
     CTimeout timeout;
 
@@ -813,7 +813,7 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
 
     // Output jobs and their current states
 
-    CNcbiOstream& out = ctx.GetResponse().out();
+    CNcbiOstream& out = m_Response->out();
     char delimiter = '{';
     out << "Content-type: application/json\nStatus: 200 OK\n\n";
 
@@ -1206,7 +1206,7 @@ bool CCgi2RCgiApp::CheckIfJobDone(
 {
     bool done = true;
     const string status_str = CNetScheduleAPI::StatusToString(status);
-    grid_ctx.GetCGIContext().GetResponse().SetHeaderValue("NCBI-RCGI-JobStatus",
+    m_Response->SetHeaderValue("NCBI-RCGI-JobStatus",
             status_str);
     grid_ctx.GetHTMLPage().AddTagMap("JOB_STATUS",
             new CHTMLPlainText(status_str, true));
@@ -1263,7 +1263,7 @@ bool CCgi2RCgiApp::CheckIfJobDone(
 
 void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
 {
-    CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
+    CNcbiOstream& out = m_Response->out();
 
     string err_msg;
 
