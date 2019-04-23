@@ -720,6 +720,11 @@ struct SJob : CNetScheduleJob
     SJob(const string& id) { job_id = id; }
 };
 
+struct SJobs : unordered_map<string, SJob>
+{
+    friend CNcbiOstream& operator<<(CNcbiOstream& out, SJobs jobs);
+};
+
 void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout_value)
 {
     CTimeout timeout;
@@ -737,7 +742,7 @@ void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout
 
     if (job_ids.empty()) return;
 
-    unordered_map<string, SJob> jobs;
+    SJobs jobs;
 
     for (const auto& job_id : job_ids) {
         jobs.emplace(job_id, job_id);
@@ -814,6 +819,19 @@ void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout
     // Output jobs and their current states
 
     CNcbiOstream& out = m_Response->out();
+
+    try {
+        out << jobs;
+    }
+    catch (exception& e) {
+        if (out) throw;
+
+        ERR_POST(Warning << "Failed to write jobs and their states to client: " << e.what());
+    }
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& out, SJobs jobs)
+{
     char delimiter = '{';
     out << "Content-type: application/json\nStatus: 200 OK\n\n";
 
@@ -835,6 +853,7 @@ void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout
     }
 
     out << "\n}" << endl;
+    return out;
 }
 
 void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
@@ -1019,6 +1038,8 @@ void CCgi2RCgiApp::PopulatePage(CGridCgiContext& grid_ctx)
 
 int CCgi2RCgiApp::RenderPage()
 {
+    CNcbiOstream& out = m_Response->out();
+
     // Compose and flush the resultant HTML page
     try {
         CRegexpTemplateFilter filter(m_Page.get());
@@ -1042,7 +1063,6 @@ int CCgi2RCgiApp::RenderPage()
             eGotStatusLine
         } status_line_status = eNoStatusLine;
 
-        CNcbiOstream& out = m_Response->out();
         while (header_stream.good()) {
             getline(header_stream, header_line);
             if (header_line.empty())
@@ -1076,6 +1096,11 @@ int CCgi2RCgiApp::RenderPage()
         m_Page->Print(out, CNCBINode::eHTML);
     }
     catch (exception& e) {
+        if (!out) {
+            ERR_POST(Warning << "Failed to write " << m_Title << " HTML page to client: " << e.what());
+            return 0;
+        }
+
         ERR_POST("Failed to compose/send " << m_Title <<
             " HTML page: " << e.what());
         return 4;
