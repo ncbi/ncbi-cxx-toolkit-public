@@ -113,6 +113,7 @@ public:
     CCassBlobFetch(const SBlobRequest &  blob_request) :
         m_BlobId(blob_request.m_BlobId),
         m_TSEOption(blob_request.m_TSEOption),
+        m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
         m_BlobIdType(blob_request.GetBlobIdentificationType()),
         m_TotalSentBlobChunks(0),
@@ -130,6 +131,11 @@ public:
         m_BlobPropItemId(0),
         m_BlobChunkItemId(0)
     {}
+
+    string GetClientId(void) const
+    {
+        return m_ClientId;
+    }
 
     virtual ~CCassBlobFetch()
     {}
@@ -153,6 +159,7 @@ public:
 private:
     SBlobId                             m_BlobId;
     ETSEOption                          m_TSEOption;
+    string                              m_ClientId;
 
     bool                                m_BlobPropSent;
 

@@ -741,6 +741,15 @@ void CPendingOperation::x_StartMainBlobRequest(void)
         return;
     }
 
+    CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
+    if (app->GetExcludeBlobCache()->IsInCache(m_BlobRequest.m_ClientId,
+                                              m_BlobRequest.m_BlobId.m_Sat,
+                                              m_BlobRequest.m_BlobId.m_SatKey)) {
+        x_SendReplyCompletion(true);
+        m_ProtocolSupport.Flush();
+        return;
+    }
+
     unique_ptr<CCassBlobFetch>  fetch_details;
     fetch_details.reset(new CCassBlobFetch(m_BlobRequest));
 
@@ -1661,6 +1670,12 @@ void CPendingOperation::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
         fetch_details->SetReadFinished();
 
         x_SendReplyCompletion();
+
+        // Add to the exclude blob cache
+        CPubseqGatewayApp::GetInstance()->GetExcludeBlobCache()->AddBlobId(
+            fetch_details->GetClientId(),
+            fetch_details->GetBlobId().m_Sat,
+            fetch_details->GetBlobId().m_SatKey);
     }
 
     x_PeekIfNeeded();
@@ -1738,7 +1753,8 @@ void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_deta
     // eUnknownUseCache is safe here; no further resolution required
     SBlobRequest    orig_blob_request(fetch_details->GetBlobId(),
                                       blob.GetModified(), eUnknownTSE,
-                                      eUnknownUseCache);
+                                      eUnknownUseCache,
+                                      fetch_details->GetClientId());
 
     // Create the cass async loader
     unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
@@ -1796,7 +1812,8 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // sending completion message, no requesting other blobs)
     // eUnknownUseCache is safe here; no further resolution
     SBlobRequest    info_blob_request(info_blob_id, INT64_MIN, eUnknownTSE,
-                                      eUnknownUseCache);
+                                      eUnknownUseCache,
+                                      fetch_details->GetClientId());
 
     // Prepare Id2Info retrieval
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
@@ -1863,7 +1880,7 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // We may need to request ID2 chunks
     if (!info_blob_only) {
         // Sat name is the same
-        x_RequestId2SplitBlobs(info_blob_id.m_SatName);
+        x_RequestId2SplitBlobs(fetch_details, info_blob_id.m_SatName);
     }
 
     // initiate retrieval
@@ -1874,7 +1891,8 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPendingOperation::x_RequestId2SplitBlobs(const string &  sat_name)
+void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
+                                               const string &  sat_name)
 {
     for (int  chunk_no = 1; chunk_no <= m_Id2InfoChunks; ++chunk_no) {
         SBlobId     chunks_blob_id(m_Id2InfoSat,
@@ -1885,7 +1903,8 @@ void CPendingOperation::x_RequestId2SplitBlobs(const string &  sat_name)
         // sending completion message, no requesting other blobs)
         // eUnknownUseCache is safe here; no further resolution required
         SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN, eUnknownTSE,
-                                      eUnknownUseCache);
+                                      eUnknownUseCache,
+                                      fetch_details->GetClientId());
 
         unique_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request));

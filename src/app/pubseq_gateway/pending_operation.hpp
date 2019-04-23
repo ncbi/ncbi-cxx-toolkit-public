@@ -217,7 +217,7 @@ private:
                                      CBlobRecord const &  blob);
     void x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                                 CBlobRecord const &  blob, bool  info_blob_only);
-    void x_RequestId2SplitBlobs(const string &  sat_name);
+    void x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details, const string &  sat_name);
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details, CBlobRecord const &  blob);
     void x_OnBadId2Info(CCassBlobFetch *  fetch_details, const string &  msg);
 

@@ -48,6 +48,9 @@
 #include "pubseq_gateway_logging.hpp"
 USING_NCBI_SCOPE;
 
+
+void CollectGarbage(void);
+
 namespace TSL {
 
 template<typename P, typename U, typename D>
@@ -152,8 +155,11 @@ public:
 
         if (!self->AnyWorkerIsRunning()) {
             uv_stop(handle->loop);
-        } else if (self->m_on_watch_dog) {
-            self->m_on_watch_dog(*self->m_daemon);
+        } else {
+            if (self->m_on_watch_dog) {
+                self->m_on_watch_dog(*self->m_daemon);
+            }
+            CollectGarbage();
         }
     }
 

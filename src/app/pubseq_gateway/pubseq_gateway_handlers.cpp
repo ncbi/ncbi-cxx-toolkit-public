@@ -53,6 +53,7 @@ static string  kTSEParam = "tse";
 static string  kUseCacheParam = "use_cache";
 static string  kNamesParam = "names";
 static string  kExcludeBlobsParam = "exclude_blobs";
+static string  kClientIdParam = "client_id";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -145,11 +146,15 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
             }
         }
 
+        SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
+
         m_RequestCounters.IncGetBlobBySeqId();
         resp.Postpone(
                 CPendingOperation(
                     SBlobRequest(seq_id, seq_id_type, exclude_blobs,
-                                 tse_option, use_cache),
+                                 tse_option, use_cache,
+                                 string(client_id_param.m_Value.data(),
+                                        client_id_param.m_Value.size())),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -223,11 +228,16 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             }
 
             if (SatToSatName(blob_id.m_Sat, blob_id.m_SatName)) {
+                SRequestParameter   client_id_param = x_GetParam(req,
+                                                                 kClientIdParam);
+
                 m_RequestCounters.IncGetBlobBySatSatKey();
                 resp.Postpone(
                         CPendingOperation(
                             SBlobRequest(blob_id, last_modified_value,
-                                         tse_option, use_cache),
+                                         tse_option, use_cache,
+                                         string(client_id_param.m_Value.data(),
+                                                client_id_param.m_Value.size())),
                             0, m_CassConnection, m_TimeoutMs,
                             m_MaxRetries, context));
 
@@ -672,6 +682,9 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
         reply.SetString("Version", PUBSEQ_GATEWAY_VERSION);
         reply.SetString("BuildDate", PUBSEQ_GATEWAY_BUILD_DATE);
         reply.SetString("StartedAt", m_StartTime.AsString());
+
+        reply.SetInteger("ExcludeBlobCacheUserCount",
+                        CPubseqGatewayApp::GetInstance()->GetExcludeBlobCache()->Size());
 
         string      content = reply.Repr();
 

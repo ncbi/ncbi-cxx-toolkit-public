@@ -46,6 +46,7 @@
 #include "pubseq_gateway_stat.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
+#include "exclude_blob_cache.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -77,6 +78,11 @@ public:
     CPubseqGatewayCache *  GetLookupCache(void)
     {
         return m_LookupCache.get();
+    }
+
+    CExcludeBlobCache *  GetExcludeBlobCache(void)
+    {
+        return m_ExcludeBlobCache.get();
     }
 
     int OnBadURL(HST::CHttpRequest &  req,
@@ -190,6 +196,10 @@ private:
     unsigned int                        m_TimeoutMs;
     unsigned int                        m_MaxRetries;
 
+    unsigned int                        m_ExcludeCacheMaxSize;
+    unsigned int                        m_ExcludeCachePurgePercentage;
+    unsigned int                        m_ExcludeCacheInactivityPurge;
+
     CTime                               m_StartTime;
     string                              m_RootKeyspace;
     string                              m_BioseqKeyspace;
@@ -203,6 +213,8 @@ private:
     CPubseqGatewayRequestCounters       m_RequestCounters;
     CPubseqGatewayCacheCounters         m_CacheCounters;
     CPubseqGatewayDBCounters            m_DBCounters;
+
+    unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

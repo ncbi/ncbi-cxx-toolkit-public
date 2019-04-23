@@ -30,6 +30,8 @@
  */
 #include <ncbi_pch.hpp>
 
+#include <math.h>
+
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
@@ -65,6 +67,10 @@ const unsigned int      kMaxRetriesMin = 0;
 const unsigned int      kMaxRetriesMax = UINT_MAX;
 const bool              kDefaultLog = true;
 const string            kDefaultRootKeyspace = "sat_info";
+const unsigned int      kDefaultExcludeCacheMaxSize = 1000;
+const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
+const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
+
 
 // Memorize the configured severity level to check before using ERR_POST.
 // Otherwise some expensive operations are executed without a real need.
@@ -89,7 +95,11 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
     m_TimeoutMs(kTimeoutDefault),
     m_MaxRetries(kMaxRetriesDefault),
-    m_StartTime(GetFastLocalTime())
+    m_ExcludeCacheMaxSize(kDefaultExcludeCacheMaxSize),
+    m_ExcludeCachePurgePercentage(kDefaultExcludeCachePurgePercentage),
+    m_ExcludeCacheInactivityPurge(kDefaultExcludeCacheInactivityPurge),
+    m_StartTime(GetFastLocalTime()),
+    m_ExcludeBlobCache(nullptr)
 {
     sm_PubseqApp = this;
 }
@@ -145,6 +155,15 @@ void CPubseqGatewayApp::ParseArgs(void)
                              kDefaultLog);
     m_RootKeyspace = registry.GetString("SERVER", "root_keyspace",
                                         kDefaultRootKeyspace);
+
+    m_ExcludeCacheMaxSize = registry.GetInt("AUTO_EXCLUDE", "max_cache_size",
+                                            kDefaultExcludeCacheMaxSize);
+    m_ExcludeCachePurgePercentage = registry.GetInt("AUTO_EXCLUDE",
+                                                    "purge_percentage",
+                                                    kDefaultExcludeCachePurgePercentage);
+    m_ExcludeCacheInactivityPurge = registry.GetInt("AUTO_EXCLUDE",
+                                                    "inactivity_purge_timeout",
+                                                    kDefaultExcludeCacheInactivityPurge);
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
@@ -235,6 +254,14 @@ int CPubseqGatewayApp::Run(void)
         PSG_CRITICAL("Unknown opening LMDB cache error");
         return 1;
     }
+
+    auto purge_size = round(float(m_ExcludeCacheMaxSize) *
+                            float(m_ExcludeCachePurgePercentage) / 100.0);
+    m_ExcludeBlobCache.reset(
+        new CExcludeBlobCache(m_ExcludeCacheInactivityPurge,
+                              m_ExcludeCacheMaxSize,
+                              m_ExcludeCacheMaxSize - static_cast<size_t>(purge_size)));
+
 
     vector<HST::CHttpHandler<CPendingOperation>>    http_handler;
     HST::CHttpGetParser                             get_parser;
@@ -464,6 +491,47 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             "default: " + NStr::NumericToString(kMaxRetriesDefault);
         PSG_ERROR(err_msg);
         m_MaxRetries = kMaxRetriesDefault;
+    }
+
+    if (m_ExcludeCacheMaxSize < 0) {
+        string  err_msg =
+            "The max exclude cache size must be a positive integer. "
+            "Received: " + NStr::NumericToString(m_ExcludeCacheMaxSize) + ". "
+            "Reset to 0 (exclude blobs cache is disabled)";
+        PSG_ERROR(err_msg);
+        m_ExcludeCacheMaxSize = 0;
+    }
+
+    if (m_ExcludeCachePurgePercentage < 0 || m_ExcludeCachePurgePercentage > 100) {
+        string  err_msg = "The exclude cache purge percentage is out of range. "
+            "Allowed: 0...100. Received: " +
+            NStr::NumericToString(m_ExcludeCachePurgePercentage) + ". ";
+        if (m_ExcludeCacheMaxSize > 0) {
+            err_msg += "Reset to " +
+                NStr::NumericToString(kDefaultExcludeCachePurgePercentage);
+            PSG_ERROR(err_msg);
+        } else {
+            err_msg += "The provided value has no effect "
+                "because the exclude cache is disabled.";
+            PSG_WARNING(err_msg);
+        }
+        m_ExcludeCachePurgePercentage = kDefaultExcludeCachePurgePercentage;
+    }
+
+    if (m_ExcludeCacheInactivityPurge <= 0) {
+        string  err_msg = "The exclude cache inactivity purge timeout must be "
+            "a positive integer greater than zero. Received: " +
+            NStr::NumericToString(m_ExcludeCacheInactivityPurge) + ". ";
+        if (m_ExcludeCacheMaxSize > 0) {
+            err_msg += "Reset to " +
+                NStr::NumericToString(kDefaultExcludeCacheInactivityPurge);
+            PSG_ERROR(err_msg);
+        } else {
+            err_msg += "The provided value has no effect "
+                "because the exclude cache is disabled.";
+            PSG_WARNING(err_msg);
+        }
+        m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
     }
 }
 
@@ -841,5 +909,12 @@ int main(int argc, const char* argv[])
     int ret = CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
     google::protobuf::ShutdownProtobufLibrary();
     return ret;
+}
+
+
+void CollectGarbage(void)
+{
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    app->GetExcludeBlobCache()->Purge();
 }
 

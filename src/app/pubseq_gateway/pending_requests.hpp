@@ -44,10 +44,12 @@ struct SBlobRequest
     SBlobRequest(const SBlobId &  blob_id,
                  int64_t  last_modified,
                  ETSEOption  tse_option,
-                 ECacheAndCassandraUse  use_cache) :
+                 ECacheAndCassandraUse  use_cache,
+                 const string &  client_id) :
         m_TSEOption(tse_option),
         m_BlobIdType(eBySatAndSatKey),
         m_UseCache(use_cache),
+        m_ClientId(client_id),
         m_BlobId(blob_id),
         m_LastModified(last_modified)
     {}
@@ -59,10 +61,12 @@ struct SBlobRequest
                  int  seq_id_type,
                  vector<SBlobId> &  exclude_blobs,
                  ETSEOption  tse_option,
-                 ECacheAndCassandraUse  use_cache) :
+                 ECacheAndCassandraUse  use_cache,
+                 const string &  client_id) :
         m_TSEOption(tse_option),
         m_BlobIdType(eBySeqId),
         m_UseCache(use_cache),
+        m_ClientId(client_id),
         m_LastModified(INT64_MIN),
         m_SeqId(seq_id.data(), seq_id.size()),
         m_SeqIdType(seq_id_type),
@@ -91,6 +95,7 @@ public:
     ETSEOption                  m_TSEOption;
     EBlobIdentificationType     m_BlobIdType;
     ECacheAndCassandraUse       m_UseCache;
+    string                      m_ClientId;
 
     // Fields in case of request by sat/sat_key
     SBlobId                     m_BlobId;

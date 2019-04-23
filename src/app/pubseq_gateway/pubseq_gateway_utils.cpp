@@ -87,9 +87,9 @@ bool SBlobId::IsValid(void) const
 
 bool SBlobId::operator < (const SBlobId &  other) const
 {
-    if (m_Sat < other.m_Sat)
-        return true;
-    return m_SatKey < other.m_SatKey;
+    if (m_Sat == other.m_Sat)
+        return m_SatKey < other.m_SatKey;
+    return m_Sat < other.m_Sat;
 }
 
 
