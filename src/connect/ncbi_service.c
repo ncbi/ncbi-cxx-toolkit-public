@@ -58,6 +58,7 @@
  */
 
 
+#define SERV_SERVICE_NAME_RECURSION  10
 #define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
 
 
@@ -73,50 +74,49 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
-static char* x_ServiceName(const char* service, unsigned int depth,
+static char* x_ServiceName(unsigned int depth,
+                           const char* service, const char* svc,
                            int/*bool*/ ismask, int/*bool*/ isfast)
 {
     char   buf[128];
-    char   srv[128];
     size_t len;
-    char*  s;
 
-    if (depth > 7) {
-        assert(service  &&  *service);
-        CORE_LOGF_X(7, eLOG_Error,
-                    ("[%s]  Maximal service name recursion depth reached: %u",
-                     service, depth));
-        return 0/*failure*/;
-    }
-    len = 0;
     assert(sizeof(buf) > sizeof(CONN_SERVICE_NAME));
-    if (!service  ||  (!ismask  &&  (!*service  ||  strpbrk(service, "?*")))
-        ||  (len = strlen(service)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)) {
-        CORE_LOGF_X(8, eLOG_Error,
-                    ("%s%s%s%s service name",
-                     !service  ||  !*service ? "" : "[",
-                     !service ? "" : service,
-                     !service  ||  !*service ? "" : "]  ",
-                     !service ? "NULL" : !*service ? "Empty" :
+    if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*")))
+        ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)) {
+        if (!service  ||  strcasecmp(service, svc) == 0)
+            service = "";
+        CORE_LOGF_X(7, eLOG_Error,
+                    ("%s%s%s%s service name%s%s",
+                     !svc  ||  !*svc ? "" : "[",
+                     !svc ? "" : svc,
+                     !svc  ||  !*svc ? "" : "]  ",
+                     !svc ? "NULL" : !*svc ? "Empty" :
                      len < sizeof(buf)-sizeof(CONN_SERVICE_NAME) ? "Invalid" :
-                     "Too long"));
+                     "Too long", *service ? " for: " : "", service));
         return 0/*failure*/;
     }
     if (!ismask  &&  !isfast) {
-        s = (char*) memcpy(buf, service, len) + len;
+        char  tmp[128];
+        char* s = (char*) memcpy(buf, svc, len) + len;
         *s++ = '_';
         memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
-        /* Looking for "service_CONN_SERVICE_NAME" in the environment */
+        /* Looking for "svc_CONN_SERVICE_NAME" in the environment */
         if (!(s = getenv(strupr(buf)))  ||  !*s) {
-            /* Looking for "CONN_SERVICE_NAME" in registry section [service] */
+            /* Looking for "CONN_SERVICE_NAME" in registry section "[svc]" */
             buf[len++] = '\0';
-            CORE_REG_GET(buf, buf + len, srv, sizeof(srv), 0);
-            s = srv;
+            s = CORE_REG_GET(buf, buf + len, tmp, sizeof(tmp), 0) ? tmp : "";
         }
-        if (*s  &&  strcasecmp(s, service) != 0)
-            return x_ServiceName(s, depth + 1, ismask, isfast);
+        if (*s  &&  strcasecmp(svc, s) != 0) {
+            if (depth++ < SERV_SERVICE_NAME_RECURSION)
+                return x_ServiceName(depth, service, s, ismask, isfast);
+            CORE_LOGF_X(8, eLOG_Error,
+                        ("[%s]  Maximal service name recursion"
+                         " depth reached: %u", service, depth));
+            return 0/*failure*/;
+        }
     }
-    return strdup(service);
+    return strdup(svc);
 }
 
 
@@ -125,7 +125,7 @@ static char* s_ServiceName(const char* service,
 {
     char* retval;
     CORE_LOCK_READ;
-    retval = x_ServiceName(service, 0/*depth*/, ismask, isfast);
+    retval = x_ServiceName(0/*depth*/, service, service, ismask, isfast);
     CORE_UNLOCK;
     return retval;
 }
@@ -176,12 +176,12 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER      iter,
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
+static int/*bool*/ s_IsMapperConfigured(const char* svc, const char* key)
 {
     char val[32];
     if (s_Fast)
         return 0/*false*/;
-    ConnNetInfo_GetValue(service, key, val, sizeof(val), 0);
+    ConnNetInfo_GetValueInternal(svc, key, val, sizeof(val), 0);
     return ConnNetInfo_Boolean(val);
 }
 
@@ -202,26 +202,27 @@ static SERV_ITER x_Open(const char*         service,
                         HOST_INFO*          host_info)
 {
     int/*bool*/
-        do_lbsmd = -1/*unassigned*/,
+        do_local,
+        do_lbsmd   = -1/*unassigned*/,
 #ifdef NCBI_CXX_TOOLKIT
         do_linkerd = -1/*unassigned*/,
-        do_namerd = -1/*unassigned*/,
-        do_lbos  = -1/*unassigned*/,
+        do_namerd  = -1/*unassigned*/,
+        do_lbos    = -1/*unassigned*/,
 #endif /*NCBI_CXX_TOOLKIT*/
-        do_dispd = -1/*unassigned*/;
+        do_dispd   = -1/*unassigned*/;
     const SSERV_VTable* op;
+    const char* svc;
     SERV_ITER iter;
-    const char* s;
 
-    if (!(s = s_ServiceName(service, ismask, s_Fast)))
+    if (!(svc = s_ServiceName(service, ismask, s_Fast)))
         return 0;
     if (!(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
-        free((void*) s);
+        free((void*) svc);
         return 0;
     }
-    assert(ismask  ||  *s);
+    assert(ismask  ||  *svc);
 
-    iter->name              = s;
+    iter->name              = svc;
     iter->host              = (preferred_host == SERV_LOCALHOST
                                ? SOCK_GetLocalHostAddress(eDefault)
                                : preferred_host);
@@ -256,6 +257,8 @@ static SERV_ITER x_Open(const char*         service,
         }
     }
     iter->time              = (TNCBI_Time) time(0);
+    if (ismask)
+        svc = 0;
 
     if (n_skip) {
         size_t i;
@@ -264,7 +267,7 @@ static SERV_ITER x_Open(const char*         service,
                                 ? SERV_NameOfInfo(skip[i]) : "");
             SSERV_Info* temp = SERV_CopyInfoEx(skip[i],
                                                !iter->reverse_dns  ||  *name ?
-                                               name : s);
+                                               name : iter->name);
             if (temp) {
                 temp->time = NCBI_TIME_INFINITE;
                 if (!s_AddSkipInfo(iter, name, temp)) {
@@ -293,27 +296,26 @@ static SERV_ITER x_Open(const char*         service,
     } else
         do_dispd = 0/*false*/;
     /* Ugly optimization not to access the registry more than necessary */
-    if ((!s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)               ||
+    if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))      ||
          !(op = SERV_LOCAL_Open(iter, info, host_info)))
 
         &&
         (!do_lbsmd                                                           ||
-         !(do_lbsmd = !s_IsMapperConfigured
-           (service, REG_CONN_LBSMD_DISABLE))                                ||
+         !(do_lbsmd = !s_IsMapperConfigured(svc, REG_CONN_LBSMD_DISABLE))    ||
          !(op = SERV_LBSMD_Open(iter, info, host_info,
                                 (!do_dispd                                   ||
                                  !(do_dispd = !s_IsMapperConfigured
-                                   (service, REG_CONN_DISPD_DISABLE)))
+                                   (svc, REG_CONN_DISPD_DISABLE)))
 #ifdef NCBI_CXX_TOOLKIT
                                 &&
                                 !(do_linkerd = s_IsMapperConfigured
-                                  (service, REG_CONN_LINKERD_ENABLE))
+                                  (svc, REG_CONN_LINKERD_ENABLE))
                                 &&
                                 !(do_namerd = s_IsMapperConfigured
-                                  (service, REG_CONN_NAMERD_ENABLE))
+                                  (svc, REG_CONN_NAMERD_ENABLE))
                                 &&
                                 !(do_lbos = s_IsMapperConfigured
-                                  (service, REG_CONN_LBOS_ENABLE))
+                                  (svc, REG_CONN_LBOS_ENABLE))
 #endif /*NCBI_CXX_TOOLKIT*/
                                 )))
 
@@ -321,32 +323,38 @@ static SERV_ITER x_Open(const char*         service,
         &&
         (!do_linkerd                                                         ||
          (do_linkerd < 0  &&  !(do_linkerd = s_IsMapperConfigured
-                                (service, REG_CONN_LINKERD_ENABLE)))         ||
+                                (svc, REG_CONN_LINKERD_ENABLE)))             ||
          !(op = SERV_LINKERD_Open(iter, net_info, info)))
         &&
         (!do_namerd                                                          ||
          (do_namerd < 0  &&  !(do_namerd = s_IsMapperConfigured
-                               (service, REG_CONN_NAMERD_ENABLE)))           ||
+                               (svc, REG_CONN_NAMERD_ENABLE)))               ||
          !(op = SERV_NAMERD_Open(iter, net_info, info)))
         &&
         (!do_lbos                                                            ||
          (do_lbos < 0  &&  !(do_lbos = s_IsMapperConfigured
-                             (service, REG_CONN_LBOS_ENABLE)))               ||
+                             (svc, REG_CONN_LBOS_ENABLE)))                   ||
          !(op = SERV_LBOS_Open(iter, net_info, info)))
 #endif /*NCBI_CXX_TOOLKIT*/
 
         &&
         (!do_dispd                                                           ||
          (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
-                              (service, REG_CONN_DISPD_DISABLE)))            ||
+                              (svc, REG_CONN_DISPD_DISABLE)))                ||
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
+        if (!do_local  &&  !do_lbsmd  &&  !do_dispd
 #ifdef NCBI_CXX_TOOLKIT
-        if (!do_linkerd  &&  !do_namerd  &&  !do_lbsmd  &&  !do_dispd) {
-#else
-        if (!do_lbsmd  &&  !do_dispd) {
+            &&  !do_linkerd  &&  !do_namerd  &&  !do_lbos
 #endif /*NCBI_CXX_TOOLKIT*/
+            ) {
+            if (svc  &&  strcasecmp(service, svc) == 0)
+                svc = 0;
+            assert(*service  ||  !svc);
             CORE_LOGF_X(1, eLOG_Error,
-                        ("[%s]  No service mappers available", service));
+                        ("%s%s%s%s%sNo service mappers available",
+                         &"["[!*service], service,
+                         &"/"[!svc], svc ? svc : "",
+                         *service ? "]  " : ""));
         }
         SERV_Close(iter);
         return 0;
@@ -858,41 +866,38 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 {
     static const char used_server_info[] = "Used-Server-Info-";
     int retval = 0/*not updated yet*/;
+    const char *c, *s;
 
-    assert(!iter  ||  iter->op);
-    if (iter  &&  text) {
-        const char *c, *b;
-        iter->time = (TNCBI_Time) time(0);
-        for (b = text;  (c = strchr(b, '\n')) != 0;  b = c + 1) {
-            size_t len = (size_t)(c - b);
-            SSERV_Info* info;
-            unsigned int d1;
-            char* p, *t;
-            int d2;
+    iter->time = (TNCBI_Time) time(0);
+    for (s = text;  (c = strchr(s, '\n')) != 0;  s = c + 1) {
+        size_t len = (size_t)(c - s);
+        SSERV_Info* info;
+        unsigned int d1;
+        char *p, *q;
+        int d2;
 
-            if (!(t = (char*) malloc(len + 1)))
-                continue;
-            memcpy(t, b, len);
-            if (t[len - 1] == '\r')
-                t[len - 1]  = '\0';
-            else
-                t[len    ]  = '\0';
-            p = t;
-            if (iter->op->Update  &&  iter->op->Update(iter, p, code))
-                retval = 1/*updated*/;
-            if (!strncasecmp(p, used_server_info, sizeof(used_server_info) - 1)
-                &&  isdigit((unsigned char) p[sizeof(used_server_info) - 1])) {
-                p += sizeof(used_server_info) - 1;
-                if (sscanf(p, "%u: %n", &d1, &d2) >= 1
-                    &&  (info = SERV_ReadInfoEx(p + d2, "", 0)) != 0) {
-                    if (!s_AddSkipInfo(iter, "", info))
-                        free(info);
-                    else
-                        retval = 1/*updated*/;
-                }
+        if (!(q = (char*) malloc(len + 1)))
+            continue;
+        memcpy(q, s, len);
+        if (q[len - 1] == '\r')
+            q[len - 1]  = '\0';
+        else
+            q[len    ]  = '\0';
+        p = q;
+        if (iter->op->Update  &&  iter->op->Update(iter, p, code))
+            retval = 1/*updated*/;
+        if (!strncasecmp(p, used_server_info, sizeof(used_server_info) - 1)
+            &&  isdigit((unsigned char) p[sizeof(used_server_info) - 1])) {
+            p += sizeof(used_server_info) - 1;
+            if (sscanf(p, "%u: %n", &d1, &d2) >= 1
+                &&  (info = SERV_ReadInfoEx(p + d2, "", 0)) != 0) {
+                if (!s_AddSkipInfo(iter, "", info))
+                    free(info);
+                else
+                    retval = 1/*updated*/;
             }
-            free(t);
         }
+        free(q);
     }
     return retval;
 }
