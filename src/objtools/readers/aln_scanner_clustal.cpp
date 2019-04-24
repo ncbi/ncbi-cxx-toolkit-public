@@ -70,11 +70,7 @@ CAlnScannerClustal::xImportAlignmentData(
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
-    int cumulative_length = 0;
-    int num_sequences = 0;
-    bool firstBlock = false;
     bool inBlock = false;
-
     int  blockLineLength = 0;
     int  blockCount = 0;
     int  numSeqs = 0;

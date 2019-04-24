@@ -84,8 +84,6 @@ CAlnScanner::xVerifyAlignmentData(
     const CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
-    const char* errTempl("Illegal sequence ID \"%s\".");
-
     // make sure all sequence are of the same length(once we no longer enforce
     //  harmonized data sizes):
 
@@ -183,7 +181,6 @@ CAlnScanner::xExportAlignmentData(
         alignInfo.mIds.push_back(seqId);
     }
 
-    auto numDeflines = mDeflines.size();
     alignInfo.mDeflines.assign(mDeflines.begin(), mDeflines.end());
 
     auto numSequences = mSequences.size();

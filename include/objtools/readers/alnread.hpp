@@ -66,7 +66,7 @@ public:
         mAlphabet(alphabet),
         mMatch(match),
         mMissing(missing),
-        mBeginningGap(beginningGap),
+        mBeginningGap(beginningGap), 
         mMiddleGap(middleGap),
         mEndGap(endGap)
     {};
@@ -114,8 +114,8 @@ public:
         char c) { mEndGap = string(1, c); return *this; };
 
 protected:
-    string& mMatch;
     string& mAlphabet;
+    string& mMatch;
     string& mMissing;
     string& mBeginningGap;
     string& mMiddleGap;
