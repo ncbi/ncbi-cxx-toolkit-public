@@ -413,9 +413,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 }
                 break;
             case 'H':
-                if (!(info->type & SERV_VHOSTABLE))
-                    break;
-                if (vh)
+                if (vh  ||  !(info->type & SERV_VHOSTABLE))
                     break;
                 vh = 1/*true*/;
                 for (len = 0;  *++str;  ++len) {
