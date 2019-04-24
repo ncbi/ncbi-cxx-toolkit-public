@@ -78,8 +78,6 @@ enum ECanConnect {
 };
 typedef unsigned       EBCanConnect;  /* packed ECanConnect */
 
-typedef unsigned short TBHTTP_Flags;  /* packed THTTP_Flags */
-
 typedef unsigned       EBSwitch;      /* packed ESwitch     */
 
 typedef enum {
@@ -126,7 +124,7 @@ typedef struct {
     FHTTP_Adjust      adjust;         /* on-the-fly net_info adjustment CB   */
     FHTTP_Cleanup     cleanup;        /* cleanup callback                    */
 
-    TBHTTP_Flags      flags;          /* as passed to constructor            */
+    THTTP_Flags       flags;          /* as passed to constructor            */
     EBSwitch          unsafe_redir:2; /* if unsafe redirects are allowed     */
     EBSwitch          error_header:2; /* only err.HTTP header on SOME debug  */
     EBCanConnect      can_connect:2;  /* whether more connections permitted  */
@@ -137,7 +135,10 @@ typedef struct {
     unsigned          keepalive:1;    /* keep-alive connection               */
     unsigned          chunked:1;      /* if writing/reading chunked, HTTP/1.1*/
     unsigned          entity:1;       /* if there's entity payload (body)/1.1*/
-    unsigned char     unused[7];
+    unsigned          reused:1;       /* if connection was re-used           */
+    unsigned          retry:1;        /* if the request is being re-tried    */
+    unsigned          reserved:14;
+    unsigned char     unused[3];
     unsigned char     minor_fault;    /* incr each minor failure since majo  */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    http_code;      /* last HTTP response code             */
@@ -519,6 +520,14 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
     assert(!retry  ||  !retry->data  ||  *retry->data);
     assert(!uuu->sock  &&  uuu->can_connect != fCC_None);
 
+    uuu->retry = 0;
+    if (uuu->reused) {
+        assert(!uuu->sock  &&  (!retry  ||  !retry->data));
+        if (uuu->entity)
+            return eIO_Unknown;
+        uuu->retry = 1;
+        return eIO_Success;
+    }
     if (!retry  ||  !retry->mode  ||  uuu->minor_fault > 5) {
         uuu->minor_fault = 0;
         uuu->major_fault++;
@@ -811,6 +820,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                : fSOCK_KeepAlive | fSOCK_LogDefault);
         sock = uuu->sock;
         uuu->sock = 0;
+        uuu->reused = sock ? 1 : 0;
         if ((!sock  ||  !SOCK_IsSecure(sock))
             &&  uuu->net_info->req_method != eReqMethod_Connect
             &&  uuu->net_info->scheme == eURL_Https
@@ -978,19 +988,21 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                      " (C Toolkit)"
 #endif /*NCBI_CXX_TOOLKIT*/
                      );
-#if 1
                 if (!uuu->net_info->http_version
                     &&  req_method != eReqMethod_Connect) {
                     ConnNetInfo_ExtendUserHeader(uuu->net_info,
                                                  "Connection: keep-alive");
                 }
-#endif
                 reset_user_header = 1;
             } else
                 reset_user_header = 0;
 
-            if (uuu->net_info->debug_printout)
-                ConnNetInfo_Log(uuu->net_info, eLOG_Note, CORE_GetLOG());
+            if (uuu->net_info->debug_printout) {
+                ConnNetInfo_Log(uuu->net_info,
+                                uuu->retry ? eLOG_Trace : eLOG_Note,
+                                CORE_GetLOG());
+            }
+            uuu->retry = 0;
 
             /* connect & send HTTP header */
             if (uuu->net_info->scheme == eURL_Https)
@@ -1006,6 +1018,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                                    uuu->net_info->http_user_header,
                                    uuu->net_info->credentials,
                                    flags, &sock);
+            /* FIXME: remember if "sock" reused here; and not cause major fault
+             * if failed later;  but simply re-try w/o calling adjust. */
 
             if (reset_user_header) {
                 ConnNetInfo_SetUserHeader(uuu->net_info, 0);
@@ -1057,6 +1071,7 @@ static void s_DropConnection(SHttpConnector* uuu, enum EConnState state)
         SOCK_SetTimeout(uuu->sock, eIO_Close, &kZeroTimeout);
     SOCK_Close(uuu->sock);
     uuu->sock = 0;
+    uuu->retry = 0;
     uuu->conn_state = state;
 }
 
@@ -1162,7 +1177,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
         }
 
         url = ConnNetInfo_URL(uuu->net_info);
-        CORE_LOGF_ERRNO_X(6, eLOG_Error, error,
+        CORE_LOGF_ERRNO_X(6, uuu->reused ? eLOG_Trace : eLOG_Error, error,
                           ("[HTTP%s%s]  Cannot %s (%s)",
                            url ? "; " : "",
                            url ? url  : "", what, IO_StatusStr(status)));
@@ -1473,6 +1488,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                                    (unsigned long) size));
                 if (url)
                     free(url);
+                uuu->reused = 0;
                 return eIO_Unknown;
             }
             verify(BUF_Peek(uuu->http, hdr, size) == size);
@@ -1499,7 +1515,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 else
                     level = eLOG_Trace;
             } else
-                level = eLOG_Error;
+                level = status  &&  uuu->reused ? eLOG_Trace : eLOG_Error;
             assert(!url);
             url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(8, level,
@@ -1511,12 +1527,17 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                                       ? status : eIO_Unknown)));
             if (url)
                 free(url);
-            return status != eIO_Success ? status : eIO_Unknown;
+            if (status != eIO_Success)
+                return status;
+            uuu->reused = 0;
+            return eIO_Unknown;
         }
     }
-    /* the entire header has been read */
+    /* the entire header has been read in */
     uuu->conn_state = eCS_ReadBody;
     BUF_Erase(uuu->http);
+    uuu->reused = 0;
+    assert(hdr);
 
     /* HTTP status must come on the first line of the response */
     fatal = 0/*false*/;
@@ -2259,6 +2280,7 @@ static void s_OpenHttpConnector(SHttpConnector* uuu,
     uuu->minor_fault     = 0;
     uuu->auth_done       = 0;
     uuu->proxy_auth_done = 0;
+    uuu->retry           = 0;
 }
 
 
@@ -2605,7 +2627,7 @@ static void s_Destroy
 }
 
 
-/* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
+/* NB: per the standard, the HTTP tag name is mis-spelled as "Referer" */
 static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
                                      int  /*bool*/ has_ref,
                                      int* /*bool*/ has_sid)
@@ -2740,12 +2762,13 @@ static EIO_Status s_CreateHttpConnector
     uuu->skip_host    = x_FixupUserHeader(xxx, ref, &sid) ? 1 : 0;
     if (sid)
         flags |= fHTTP_NoAutomagicSID;
-    uuu->flags        = (TBHTTP_Flags) flags;
+    uuu->flags        = flags;
 
     uuu->unsafe_redir = flags & fHTTP_UnsafeRedirects ? eOn : eOff;
     uuu->error_header = eDefault;
     uuu->can_connect  = fCC_None;         /* will be properly set at open    */
 
+    uuu->reserved = 0;
     memset(uuu->unused, 0, sizeof(uuu->unused));
 
     uuu->sock         = 0;
