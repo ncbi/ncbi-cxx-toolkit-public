@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description) 
+bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description, EDiagSev& severity) 
 {
     description.clear();
 
@@ -52,6 +52,7 @@ bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description)
 
         if (idString.empty()) {
             description = "Empty local ID";
+            severity = eDiag_Fatal;
             return false;
         }
 
@@ -59,6 +60,7 @@ bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description)
             description = "Local ID \"" + 
                           idString +
                           " \" exceeds 50 character limit.";
+            severity = eDiag_Fatal;
             return false;
         }
 
@@ -66,6 +68,7 @@ bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description)
             description = "Local ID \"" + 
                           idString +
                           "\" contains invalid characters";
+            severity = eDiag_Fatal;
             return false;
         }
     }

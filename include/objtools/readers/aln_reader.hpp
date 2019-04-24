@@ -145,7 +145,8 @@ public:
     using TLineInfo = objects::SLineInfo;
     using FIdValidate = 
         function<bool(const objects::CSeq_id& seqId,
-                      string& description)>;
+                      string& description,
+                      EDiagSev& severity)>;
 
     // constructor
     // defaults to protein alphabet and A2M gap characters

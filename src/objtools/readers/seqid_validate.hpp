@@ -46,7 +46,7 @@ class CSeqIdValidate
 public: 
     virtual ~CSeqIdValidate(void) = default;
 
-    virtual bool operator()(const CSeq_id& seqId, string& description);
+    virtual bool operator()(const CSeq_id& seqId, string& description, EDiagSev& severity);
 };
 
 END_SCOPE(objects)

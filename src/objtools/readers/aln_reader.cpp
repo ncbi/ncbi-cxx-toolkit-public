@@ -328,10 +328,13 @@ void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
     if (m_fIdValidate) {
         for (auto pSeqId : ids) {
             string description;
-            if (!m_fIdValidate(*pSeqId, description)) {
-                throw SShowStopper(
+            EDiagSev severity;
+            if (!m_fIdValidate(*pSeqId, description, severity)) {
+                theErrorReporter->Report(
                     seqIdInfo.mNumLine,
-                    eAlnSubcode_IllegalSequenceId,
+                    severity,
+                    EReaderCode::eReader_Alignment,
+                    EAlnSubcode::eAlnSubcode_IllegalSequenceId,
                     description);
             }
         }
