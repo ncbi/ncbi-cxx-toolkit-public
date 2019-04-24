@@ -62,6 +62,9 @@ public:
 
     TDeflines& SetDeflines(void) { return mDeflines; }
     
+    using TCommand = SNexusCommand;
+    using TCommandArgs = TCommand::TArgs;
+    using TCommandTokens = TCommandArgs;
 protected:
 
     void
@@ -78,11 +81,11 @@ protected:
         const CSequenceInfo&,
         const TLineInfo& seqId,
         const vector<TLineInfo> seqData) override;
-*/
     using TCommand = SNexusCommand;
     using TCommandArgs = TCommand::TArgs;
     using TCommandTokens = TCommandArgs;
 
+*/
     void
     xProcessCommand(const TCommandTokens& commandTokens, 
             CSequenceInfo& sequenceInfo);
@@ -119,6 +122,10 @@ protected:
 
     bool
     xUnexpectedEndBlock(TCommand& command);
+
+    pair<TCommandArgs::const_iterator, size_t>
+    xGetArgPos(const TCommandArgs& args,
+            const string& token) const;
 
     pair<string, int>
     xGetKeyVal(const TCommandArgs& command, 

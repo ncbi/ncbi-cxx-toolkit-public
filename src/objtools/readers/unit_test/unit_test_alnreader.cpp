@@ -289,6 +289,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
         testInfo.mOutFile.GetName() << " and " << 
         testInfo.mErrorFile.GetName() << endl;
 
+
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     string newOutput = CDirEntry::GetTmpName();
     string newErrors = CDirEntry::GetTmpName();

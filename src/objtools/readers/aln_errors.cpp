@@ -76,6 +76,7 @@ BEGIN_NAMED_ENUM_INFO("", EAlnSubcode, false)
      ADD_ENUM_VALUE("FileDoesNotExist", eAlnSubcode_FileDoesNotExist);
      ADD_ENUM_VALUE("FileTooShort", eAlnSubcode_FileTooShort);
      ADD_ENUM_VALUE("UnexpectedCommand", eAlnSubcode_UnexpectedCommand);
+     ADD_ENUM_VALUE("UnexpectedCommandArgs", eAlnSubcode_UnexpectedCommandArgs);
 }
 END_ENUM_INFO
 

@@ -57,6 +57,7 @@ enum EModSubcode
     eModSubcode_Deprecated,
     eModSubcode_ProteinModOnNucseq
 };
+
 NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EModSubcode)(void);
 
 
@@ -84,6 +85,7 @@ enum EAlnSubcode
     eAlnSubcode_UnexpectedCommand,
     eAlnSubcode_UnexpectedCommandArgs
 };
+
 NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EAlnSubcode)(void);
 
 END_SCOPE(objects)

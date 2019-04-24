@@ -462,6 +462,54 @@ CAlnScannerNexus::xProcessDimensions(
     const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
 {
+   if (NStr::EqualNocase(mCurrentBlock, "characters")) {
+       auto ntaxPos = xGetArgPos(command, "ntax");
+
+       if (ntaxPos.second != string::npos) {
+           // Need to refactor this 
+           bool foundError = false;
+           auto newtaxaPos = xGetArgPos(command, "newtaxa");
+           if (newtaxaPos.second == string::npos ||
+                (newtaxaPos.first == ntaxPos.first &&
+                newtaxaPos.second > ntaxPos.second) ||
+                newtaxaPos.first->mNumLine > ntaxPos.first->mNumLine) {
+               foundError = true;
+            }
+            else
+            if (newtaxaPos.first == ntaxPos.first) {
+                auto endOfPreviousToken = ntaxPos.first->mData.find_last_not_of(" \t", ntaxPos.second-1);
+                if ((endOfPreviousToken < 6) ||
+                    ((endOfPreviousToken-6) != newtaxaPos.second)) {
+                    foundError = true;
+                }
+            }
+            else {
+                auto dist = distance(newtaxaPos.first, ntaxPos.first);
+                if (dist > 1) {
+                    foundError = true;
+                }
+                else if (dist == 1) {
+                    auto pos = newtaxaPos.first->mData.find_last_of(" \t");
+                    auto lastTokenPos = (pos == string::npos) ? 0 : pos+1;
+                    if (lastTokenPos != newtaxaPos.second) {
+                        foundError = true;
+                    }
+                }
+            }
+
+            if (foundError) {
+                throw SShowStopper(
+                        ntaxPos.first->mNumLine,
+                        EAlnSubcode::eAlnSubcode_UnexpectedCommandArgs,
+                        "Invalid Command Args: \"Ntax\" must be immediately preceded by \"newtaxa\" in \"" +
+                        mCurrentBlock +
+                        "\" block.");
+            }
+        }
+    }
+
+
+
     auto ntax = xGetKeyVal(command, "ntax");
     if (!ntax.first.empty()) {
         try {
@@ -556,6 +604,26 @@ CAlnScannerNexus::xGetKeyVal(
     }
     return {"", -1};
 }
+
+//  ----------------------------------------------------------------------------
+pair<CAlnScannerNexus::TCommandArgs::const_iterator, size_t>
+CAlnScannerNexus::xGetArgPos(const TCommandArgs& args,
+        const string& token) const
+//  ----------------------------------------------------------------------------
+{
+    
+    for (auto it = args.cbegin(); it != args.cend(); ++it) {
+        string line(it->mData);
+        NStr::ToLower(line);
+        size_t pos = line.find(token);
+        if (pos != string::npos) {
+            return make_pair(it, pos);
+        }
+    }
+
+    return make_pair(args.cend(), string::npos);
+}
+
 
  
 //  ----------------------------------------------------------------------------
