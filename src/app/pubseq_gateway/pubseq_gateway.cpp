@@ -70,6 +70,7 @@ const string            kDefaultRootKeyspace = "sat_info";
 const unsigned int      kDefaultExcludeCacheMaxSize = 1000;
 const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
 const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
+const string            kDefaultAuthToken = "";
 
 
 // Memorize the configured severity level to check before using ERR_POST.
@@ -155,6 +156,7 @@ void CPubseqGatewayApp::ParseArgs(void)
                              kDefaultLog);
     m_RootKeyspace = registry.GetString("SERVER", "root_keyspace",
                                         kDefaultRootKeyspace);
+    m_AuthToken = registry.GetString("ADMIN", "auth_token", kDefaultAuthToken);
 
     m_ExcludeCacheMaxSize = registry.GetInt("AUTO_EXCLUDE", "max_cache_size",
                                             kDefaultExcludeCacheMaxSize);

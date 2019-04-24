@@ -203,6 +203,7 @@ private:
     CTime                               m_StartTime;
     string                              m_RootKeyspace;
     string                              m_BioseqKeyspace;
+    string                              m_AuthToken;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<HST::CHttpDaemon<CPendingOperation>>

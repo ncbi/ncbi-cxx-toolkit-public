@@ -54,6 +54,8 @@ static string  kUseCacheParam = "use_cache";
 static string  kNamesParam = "names";
 static string  kExcludeBlobsParam = "exclude_blobs";
 static string  kClientIdParam = "client_id";
+static string  kAuthTokenParam = "auth_token";
+static string  kTimeoutParam = "timeout";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -759,8 +761,23 @@ int CPubseqGatewayApp::OnShutdown(HST::CHttpRequest &  req,
         // Reply should use plain http with [petentially] a plain text in the body
         resp.SetContentType(ePlainTextMime);
 
+        if (!m_AuthToken.empty()) {
+            SRequestParameter   auth_token_param = x_GetParam(req, kAuthTokenParam);
 
+            bool    auth_good = false;
+            if (auth_token_param.m_Found) {
+                auth_good = m_AuthToken == string(auth_token_param.m_Value.data(),
+                                                  auth_token_param.m_Value.size());
+            }
 
+            if (!auth_good) {
+                resp.Send401("Unauthorized", "Invalid authorization token");
+                return 0;
+            }
+        }
+
+        double              timeout = 10.0; // Default: 10.0 sec
+        SRequestParameter   timeout_param = x_GetParam(req, kTimeoutParam);
 
 
 
