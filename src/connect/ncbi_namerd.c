@@ -148,12 +148,11 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             unsigned int  unused);
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
-static int/*bool*/ s_Update     (SERV_ITER, const char*, int);
 static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
 
 static const SSERV_VTable s_op = {
-    s_GetNextInfo, NULL/*Feedback*/, s_Update, s_Reset, s_Close, "NAMERD"
+    s_GetNextInfo, NULL/*Feedback*/, NULL/*s_Update*/, s_Reset, s_Close, "NAMERD"
 };
 
 static EHTTP_HeaderParse s_ParseHeader(const char* header,
@@ -253,6 +252,7 @@ static void s_Quit(void)
 
 static void s_Init(void)
 {
+    int error;
     CORE_LOCK_READ;
     if (s_initialized) {
         CORE_UNLOCK;
@@ -260,11 +260,15 @@ static void s_Init(void)
     }
     CORE_UNLOCK;
 
-    if (atexit(s_Quit) == 0) {
-        CORE_LOCK_WRITE;
+    error = 0;
+    CORE_LOCK_WRITE;
+    if (!s_initialized) {
+        if (atexit(s_Quit) != 0)
+            error = 1;
         s_initialized = 1;
-        CORE_UNLOCK;
-    } else {
+    }
+    CORE_UNLOCK;
+    if (error) {
         static void* s_Once = 0;
         if (CORE_Once(&s_Once)) {
             CORE_LOG_X(eNSub_Libc, eLOG_Error,
@@ -697,7 +701,7 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
              expires, tdiff, td_sign, td_hour, td_min, td_sec, now_str));
         return 0;
     }
-    TNCBI_Time  timeval = (TNCBI_Time)((double)tt_now + tdiff);
+    TNCBI_Time  timeval = (TNCBI_Time)((double) tt_now + tdiff);
     /*CORE_TRACEF(
         ("expires: %s   tdiff %lf   now " FMT_TIME_T "   info->time %u",
          expires, tdiff, tt_now, timeval));*/
@@ -743,7 +747,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
 
         /* Expand the buffer to the next step size. */
         buf_len = buf_len_steps[num_steps];
-        new_buf = (char*)realloc(*bufp, buf_len);
+        new_buf = (char*) realloc(*bufp, buf_len);
         if ( ! new_buf) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                 "Failed to allocate memory for response buffer.");
@@ -979,7 +983,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 CORE_TRACEF((
                     "Ignoring endpoint %s:%d with unallowed svc_type '%s'"
                     " - allowed types = 0x%lx.",
-                    host, port, svc_type, (unsigned long)iter->types));
+                    host, port, svc_type, (unsigned long) iter->types));
                 continue;
             }
             CORE_TRACEF((
@@ -1157,8 +1161,10 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     }
 
 out:
-    if (response)   free(response);
-    if (root_value) x_json_value_free(root_value);
+    if (response)
+        free(response);
+    if (root_value)
+        x_json_value_free(root_value);
     CORE_TRACE("Leaving s_ParseResponse()");
     return retval;
 }
@@ -1185,7 +1191,7 @@ static char* s_GetDtabHeaderFromBuf(const char* buf)
         while (*end  &&  *end != '\r'  &&  *end != '\n') ++end;
 
         /* clone the header value */
-        dup_hdr = (char*)malloc((size_t)(end - start + 1));
+        dup_hdr = (char*) malloc((size_t)(end - start + 1));
         if ( ! dup_hdr) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                        "Couldn't alloc for dtab header value.");
@@ -1290,7 +1296,8 @@ static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info, SERV_ITER iter)
         success = 0;
     }
 
-    if (dtab)   free(dtab);
+    if (dtab)
+        free(dtab);
 
     CORE_TRACE("Leaving s_ProcessDtab()");
     return success;
@@ -1384,7 +1391,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
         const SSERV_Info* info = data->cand[i].info;
         if (info->time < now) {
 #if defined(_DEBUG)  &&  ! defined(NDEBUG)
-            TNCBI_Time  tnow = (TNCBI_Time)time(0);
+            TNCBI_Time  tnow = (TNCBI_Time) time(0);
             CORE_TRACE("Endpoint expired:");
             CORE_TRACEF((
                 "    info->time (%u) < iter->time (%u)   now (%u)",
@@ -1399,18 +1406,6 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
     }
 
     return any_expired  ||  data->n_cand == 0;
-}
-
-
-static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
-{
-    /*struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;*/
-    int retval = 0;
-
-    CORE_TRACEF(("Entering s_Update(\"%s\", %d)", text ? text : "", code));
-
-    CORE_TRACEF(("Leaving s_Update() -- %supdated", retval ? "" : "not "));
-    return retval;
 }
 
 
@@ -1594,7 +1589,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     /* Make sure a net_info exists. */
     SConnNetInfo* new_net_info = NULL;
     if ( ! net_info) {
-        new_net_info = ConnNetInfo_Create(0);
+        new_net_info = ConnNetInfo_Create(iter->name);
         if ( ! new_net_info) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't create net_info.");
             s_Close(iter);
@@ -1685,9 +1680,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     if ((iter->types & fSERV_Firewall)  &&  !data->net_info->firewall)
         data->net_info->firewall = eFWMode_Adaptive;
 
-    iter->op = &s_op; /*SERV_Update() [from HTTP callback] expects*/
     s_Resolve(iter);
-    iter->op = NULL;
 
     if (!data->n_cand  &&  (data->fail
                             ||  !(data->net_info->stateless  &&
@@ -1698,7 +1691,8 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     }
 
     /* call GetNextInfo subsequently if info is actually needed */
-    if (info)   *info = NULL;
+    if (info)
+        *info = NULL;
 
     CORE_TRACE("Leaving SERV_NAMERD_Open()");
     return &s_op;
