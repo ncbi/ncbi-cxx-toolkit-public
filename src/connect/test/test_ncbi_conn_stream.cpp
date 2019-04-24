@@ -122,16 +122,49 @@ void CNCBITestConnStreamApp::Init(void)
     // Create and populate test registry
     CNcbiRegistry& reg = GetRWConfig();
 
-    reg.Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_HOST, DEF_CONN_HOST);
-    reg.Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg.Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg.Set("ID1",  DEF_CONN_REG_SECTION "_" REG_CONN_HOST, DEF_CONN_HOST);
+    reg.Set("ID1",  DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
+    reg.Set("ID1",  DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "www.ncbi.nlm.nih.gov");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PORT,           "443");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "10.0");
+    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_MAX_TRY,        "1");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
+}
+
+
+static void s_FTPStat(iostream& ftp)
+{
+    // Print out some server info
+    if (!(ftp << "STAT" << NcbiFlush)) {
+        ERR_POST(Fatal << "Cannot connect to ftp server");
+    }
+    string status;
+    do {
+        string line;
+        getline(ftp, line);
+        size_t linelen = line.size();
+        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
+            line.resize(--linelen);
+        }
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
+        if (status.empty()) {
+            status  = "Server status:\n\t" + line;
+        } else {
+            status += "\n\t";
+            status += line;
+        }
+    } while (ftp);
+    if (!status.empty()) {
+        ERR_POST(Info << status);
+    }
+    ftp.clear();
 }
 
 
@@ -201,15 +234,16 @@ int CNCBITestConnStreamApp::Run(void)
                     break;
                 case 1:
                     {{
-                            BUF buf = 0;
-                            assert(BUF_Write(&buf, bit.data(), l));
+                        BUF buf = 0;
+                        assert(BUF_Write(&buf, bit.data(), l));
 #if 0
-                            LOG_POST(Info << "  CConn_MemoryStream(BUF)");
+                        LOG_POST(Info << "  CConn_MemoryStream(BUF)");
 #endif
-                            ms = new CConn_MemoryStream(buf, eTakeOwnership);
-                            ms->exceptions(ex);
-                            break;
-                        }}
+                        ms = new CConn_MemoryStream(buf, eTakeOwnership);
+                        ms->exceptions(ex);
+                        break;
+                     
+                    }}
                 default:
                     break;
                 }
@@ -225,15 +259,15 @@ int CNCBITestConnStreamApp::Run(void)
             break;
         case 3:
             {{
-                    BUF buf = 0;
-                    assert(BUF_Append(&buf, data.data(), data.size()));
+                BUF buf = 0;
+                assert(BUF_Append(&buf, data.data(), data.size()));
 #if 0
-                    LOG_POST(Info << "  CConn_MemoryStream(BUF, "
-                             << (unsigned long) data.size() << ')');
+                LOG_POST(Info << "  CConn_MemoryStream(BUF, "
+                         << (unsigned long) data.size() << ')');
 #endif
-                    ms = new CConn_MemoryStream(buf, eTakeOwnership);
-                    break;
-                }}
+                ms = new CConn_MemoryStream(buf, eTakeOwnership);
+                break;
+            }}
         default:
             break;
         }
@@ -295,7 +329,7 @@ int CNCBITestConnStreamApp::Run(void)
 
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
-    if (!(net_info = ConnNetInfo_Create(0)))
+    if (!(net_info = ConnNetInfo_Create("_FTP")))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
         flag |= fFTP_LogControl;
@@ -448,6 +482,7 @@ int CNCBITestConnStreamApp::Run(void)
                             ftpuser, ftppass, "test_download",
                             0/*port = default*/, flag, 0/*cmcb*/,
                             net_info->timeout);
+        s_FTPStat(ftp);
         string temp;
         ftp << "SYST" << NcbiEndl;
         ftp >> temp;  // dangerous: may leave some putback behind
@@ -510,7 +545,7 @@ int CNCBITestConnStreamApp::Run(void)
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
-            ERR_POST(Fatal << "Test 4 failed in STOR");
+            ERR_POST(Fatal << "Test 4 failed in STOR: " + reason);
         }
         if (ftp.Close() == eIO_Success)
             ERR_POST(Fatal << "Test 4 failed");
@@ -530,6 +565,9 @@ int CNCBITestConnStreamApp::Run(void)
 
     LOG_POST(Info << "Test 5 of 10: Big buffer bounce via HTTP");
 
+    ConnNetInfo_Destroy(net_info);
+    if (!(net_info = ConnNetInfo_Create(0)))
+        ERR_POST(Fatal << "Cannot re-create net info");
     if (net_info->port == CONN_PORT_HTTPS)
         net_info->scheme = eURL_Https;
     CConn_HttpStream ios(net_info, "User-Header: My header\r\n", 0, 0, 0, 0,
