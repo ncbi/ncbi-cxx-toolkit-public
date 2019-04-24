@@ -502,7 +502,6 @@ bool CModAdder::x_TrySeqInstMod(
     const auto& mod_name = x_GetModName(mod_entry);
 
     if (mod_name == "strand") {
-        cout << "Calling x_SetStrand()" << endl;
         x_SetStrand(mod_entry, seq_inst, skipped_mods, fReportError);
         return true;
     }
