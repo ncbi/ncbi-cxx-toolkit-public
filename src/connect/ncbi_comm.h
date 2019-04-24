@@ -82,15 +82,15 @@ typedef unsigned int  ticket_t;
  *  the request.
  *  Bit 0 (FWD_RR_FIREWALL, if set) of the FWDaemon control ("flag") is used to
  *  indicate that the client is a true firewall client.  If the bit is clear,
- *  it means that the client is a relay client (and should use a secondary,
- *  _not an official firewall_, port of the daemon, if available).
+ *  it means that the client is a relay client (and hence, should use a
+ *  secondary, _not an official firewall_, port of the daemon, if available).
  *
- *  In a successful reply, the FWDaemon sends back a "host:port" pair for the
+ *  In a successful reply, FWDaemon sends back a "host:port" pair for the
  *  client to re-connect to, and to send a new (non-zero) "ticket" as the very
  *  first data of that connection, so that the client can reach the endpoint
  *  requested.  If FWD_RR_KEEPALIVE was requested in "flag", the "ticket" can
  *  be returned as 0 to indicate that the client _must_ keep reusing the
- *  existing connection to the FWDaemon to talk to the endpoint.
+ *  existing connection to that FWDaemon to talk to the endpoint.
  *  FWDaemon identifies itself in the "origin" field.
  *  Non-zero bit 0 in "flag" of a successful reply indicates that the true
  *  firewall mode (via DMZ) is available (acknowledged when requested), and is
@@ -106,7 +106,7 @@ typedef unsigned int  ticket_t;
  *  short) failure reply received:
  *  1. If "flag" does not have any bits set within FWD_RR_ERRORMASK, then:
  *      if "flag" has some bits set in FWD_RR_REJECTMASK, then the client was
- *      "rejected"; otherwise, the error is "unknown" (the "text" field, if
+ *      "rejected";  otherwise, the error is "unknown" (the "text" field, if
  *      received and non-empty, may contain an optional error message in either
  *      of these cases);
  *  2. If "flag" has some bits set within FWD_RR_ERRORMASK, then:
@@ -120,12 +120,13 @@ typedef unsigned int  ticket_t;
  *   FWDaemon_Request
  */
 
+/** FWdaemon request / reply codes (the "flag" field, see above) */
 #define FWD_RR_FIREWALL    1  /**< FIREWALL mode client, else RELAY          */
 #define FWD_RR_KEEPALIVE   2  /**< Try to reuse the connection               */
 
-/** FWDaemon rejection codes */
+/** FWDaemon rejection codes (the "flag" field, see above) */
 #define FWD_RR_BADREQUEST  1  /**< Bad request    (e.g. port 0 and no svc)   */
-#define FWD_RR_USEDIRECT   2  /**< Use directly   (e.g. direct connection)   */
+#define FWD_RR_USEDIRECT   2  /**< Use directly   (e.g. via direct connect)  */
 #define FWD_RR_NOFORWARD   3  /**< Bad forwarding (e.g. non-local endpoint)  */
 #define FWD_RR_NOTFOUND    4  /**< Service not found                         */
 #define FWD_RR_CANTCONN    5  /**< Cannot connect to server                  */
