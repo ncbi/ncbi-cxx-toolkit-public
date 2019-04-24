@@ -139,6 +139,7 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
     SServiceConnector*  uuu = (SServiceConnector*) user_data;
     EHTTP_HeaderParse   header_parse;
 
+    assert(header);
     SERV_Update(uuu->iter, header, server_error);
     if (user_callback_enabled  &&  uuu->extra.parse_header) {
         header_parse
@@ -689,7 +690,7 @@ static void x_SetDefaultReferer(SConnNetInfo* net_info, SERV_ITER iter)
     } else if ((str = strdup(mapper)) != 0) {
         const char* args = strchr(net_info->path, '?');
         const char* host = net_info->client_host;
-        const char* name = net_info->svc;
+        const char* name = iter->name;
         size_t len = strlen(strlwr(str));
 
         if (!*net_info->client_host
@@ -1236,7 +1237,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     size_t             len;
     SServiceConnector* xxx;
 
-    if (!service  ||  !*service  ||  !(x_service = SERV_ServiceName(service)))
+    if (!(x_service = SERV_ServiceName(service)))
         return 0;
 
     if (!(ccc = (SConnector*) malloc(sizeof(SConnector)))) {
@@ -1260,7 +1261,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     xxx->types    = (TSERV_TypeOnly) types;
     x_net_info    = (net_info
                      ? ConnNetInfo_Clone(net_info)
-                     : ConnNetInfo_Create(x_service));
+                     : ConnNetInfo_CreateInternal(x_service));
     xxx->net_info = x_net_info;
 
     if (!ConnNetInfo_SetupStandardArgs(x_net_info, x_service)) {
@@ -1268,7 +1269,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         s_Destroy(ccc);
         return 0;
     }
-    /* NB: zero'ed block, no need to copy trailing '\0' */
+    /* NB: zero'ed block, no need to copy the trailing '\0' */
     memcpy((char*) xxx->service, service, len);
     free(x_service);
 
