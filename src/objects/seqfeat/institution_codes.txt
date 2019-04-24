@@ -3954,6 +3954,7 @@ MCMJ	s	Mc Master University
 MCMS	s	Museo Civico di Storia Naturale, Morgegno			
 MCN	s	McNeese State University, Biology Department			
 MCNA	s	Museo de Ciencias naturals de Alava			
+MCNB	s	Natural Sciences Museum of Barcelona (Museu de Ciencies Naturals de Barcelona)			
 MCNC	s	Museo de Ciencias Naturales			
 MCNG	s	Museo de Ciencias Naturales de la UNELLEZ en Guanare			
 MCNPV	s	Fundacao Zoobotanica do Rio Grande do Sul	MCN		
@@ -3964,7 +3965,6 @@ MCP<BRA>	s	Museu de Ciencias e Tecnologia, Pontificia Universidade Catolica do R
 MCP<USA-MA>	s	Massachusetts College of Pharmacy and Allied Health Sciences, Biological Sciences Department			
 MCPM	s	Milwaukee City Public Museum			
 MCPPV	s	Museu de Ciencias e Tecnologia	MCP<BRA>		
-MCPUCRGS	s	Museu de Ciencias da Pontificia Universidade Catolica do Rio Grande do Sul			
 MCR	s	Manchester Literary and Philosophical Society			
 MCRA	s	Sezione Archeologia, Storia e Scienze Naturali			
 MCRBS	s	Manchester Botanical and Horticultural Society			
