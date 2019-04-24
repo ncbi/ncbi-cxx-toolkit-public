@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Private API to define server iterator.
+ *   Private API to define server iterator and related API.
  *
  */
 
@@ -183,6 +183,20 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
 extern NCBI_XCONNECT_EXPORT const char* SERV_CurrentName(SERV_ITER iter);
 
 
+/* Same as SERV_Penalize() but can specify penalty hold time.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_PenalizeEx
+(SERV_ITER  iter,                    /* handle obtained via 'SERV_Open*' call*/
+ double     fine,                    /* fine from range [0=min..100=max] (%%)*/
+ TNCBI_Time time                     /* for how long to keep the penalty, sec*/
+ );
+
+
+/* Get a name of the underlying service mapper.
+ */
+extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
+
+
 /* Private interface:  update mapper information from the given text
  * (<CR><LF> separated lines, usually as taken from HTTP header), and
  * by optionally (if non-zero) using the HTTP error code provided.
@@ -208,45 +222,42 @@ char* SERV_Print
  );
 
 
-/* Same as SERV_Penalize() but can specify penalty hold time.
- */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_PenalizeEx
-(SERV_ITER  iter,                    /* handle obtained via 'SERV_Open*' call*/
- double     fine,                    /* fine from range [0=min..100=max] (%%)*/
- TNCBI_Time time                     /* for how long to keep the penalty, sec*/
- );
-
-
-/* Get a name of the underlying service mapper.
- */
-extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
-
-
-/* Create SConnNetInfo for NULL, empty, or non-wildcard service name, without
- * trying to resolve any service name substitution(s).
- */
-SConnNetInfo* ConnNetInfo_CreateInternal(const char* service);
-
-
-/* Get the final service name, using service_CONN_SERVICE_NAME environment
- * variable(s), then (if not found) registry section [service] and a key
- * CONN_SERVICE_NAME.  Return the resultant name (perhaps, an exact copy of
- * "service" if no override name has been found in the environment/registry),
- * which is to be 'free()'d by the caller when no longer needed.
- * Return NULL on error.
- * NOTE:  This procedure can detect simple cyclic redefinitions, and is limited
- * to a search depth of 8.
+/* Private interface:  get the final service name, using the
+ * service_CONN_SERVICE_NAME environment variable(s), then (if not found)
+ * registry section [service] and a key CONN_SERVICE_NAME.  Return the
+ * resultant name (perhaps, an exact copy of "service" if no override name has
+ * been found in the environment/registry), which is to be 'free()'d by the
+ * caller when no longer needed.  Return NULL on error.
+ * NOTE:  This procedure can detect cyclic redefinitions, and is limited to a
+ * certain search depth.
  */
 char* SERV_ServiceName(const char* service);
 
 
-void SERV_InitFirewallPorts(void);
+/* Private interface:  create SConnNetInfo for NULL, empty, or non-wildcard
+ * service name, without trying to resolve any service name substitution(s).
+ * @sa
+ *   ConnNetInfo_Create, SERV_ServiceName, ConnNetInfo_GetValueInternal
+ */
+SConnNetInfo* ConnNetInfo_CreateInternal(const char* service);
 
+
+/* Private interface:  same as ConnNetInfo_GetValue() for NULL, empty, or
+ * non-wildcard service name but without any service name substitution(s).
+ * @sa
+ *   ConnNetInfo_GetValue, SERV_ServiceName, ConnNetInfo_CreateInternal
+ */
+const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
+                                         char* value, size_t value_size,
+                                         const char* def_value);
+
+
+/* Private interface:  manipulate a table of firewall ports */
+void SERV_InitFirewallPorts(void);
 
 int/*bool*/ SERV_AddFirewallPort
 (unsigned short port
 );
-
 
 int/*bool*/ SERV_IsFirewallPort
 (unsigned short port

@@ -108,8 +108,7 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 
 
 static const char* x_GetValue(const char* svc, size_t svclen,
-                              const char* param,
-                              char* value, size_t value_size,
+                              const char* param, char* value,size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
 {
     const char* val, *rv;
@@ -198,8 +197,8 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 }
 
 
-static const char* s_GetValue(const char* svc, size_t len, const char* param,
-                              char* value, size_t value_size,
+static const char* s_GetValue(const char* svc, size_t len,
+                              const char* param, char* value,size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
 {
     const char* retval = x_GetValue(svc, len, param,
@@ -219,6 +218,19 @@ static const char* s_GetValue(const char* svc, size_t len, const char* param,
 }
 
 
+const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
+                                         char* value, size_t value_size,
+                                         const char* def_value)
+{
+    int/*bool*/ dummy;
+    assert(!service  ||  !strpbrk(service, "?*"));
+    assert(value  &&  value_size > 1  &&  param  &&  *param);
+    *value = '\0';
+    return s_GetValue(service, service  &&  *service ? strlen(service) : 0,
+                      param, value, value_size, def_value, &dummy);
+}
+
+
 extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value)
@@ -233,7 +245,6 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     if (!param  ||  !*param)
         return 0;
 
-    svclen = 0;
     if (service) {
         if (!*service  ||  strpbrk(service, "?*"))
             svclen = 0;
@@ -241,10 +252,11 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
             return 0;
         else
             verify((svclen = strlen(service)) > 0);
-    }
+    } else
+        svclen = 0;
 
-    retval = s_GetValue(service, svclen, param,
-                        value, value_size, def_value, &dummy);
+    retval = s_GetValue(service, svclen,
+                        param, value, value_size, def_value, &dummy);
     if (svclen)
         free((void*) service);
     return retval;
@@ -351,8 +363,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
     *value = '\0';                                                      \
-    if (!s_GetValue(service, len, name, value, sizeof(value),           \
-                    def_value, &generic))                               \
+    if (!s_GetValue(service, len,                                       \
+                    name, value, sizeof(value), def_value, &generic))   \
         goto err
 
     char str[(CONN_PATH_LEN + 1)/2];
@@ -364,7 +376,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     char*  e;
 
     assert(!service  ||  !strpbrk(service, "?*"));
-    len = service ? strlen(service) : 0;
+    len = service  &&  *service ? strlen(service) : 0;
 
     /* NB: created *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
@@ -483,7 +495,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
-    val = (long) strlen(str);
+    val = *str ? (long) strlen(str) : 0;
     if (val < 3  ||  8 < val
         ||  strncasecmp(str, "infinite", (size_t) val) != 0) {
         if (!*str  || (dbl = NCBI_simple_atof(str, &e)) < 0.0  || errno  || *e)
