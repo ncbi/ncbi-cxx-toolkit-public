@@ -163,7 +163,7 @@ static void s_Resolve(SERV_ITER iter)
     SConnNetInfo* net_info = data->net_info;
     EIO_Status status = eIO_Success;
     CONNECTOR c = 0;
-    CONN conn;
+    CONN conn = 0;
     char* s;
 
     assert(!(data->eof | data->fail));
@@ -195,20 +195,24 @@ static void s_Resolve(SERV_ITER iter)
         ConnNetInfo_DeleteUserHeader(net_info, s);
         free(s);
     }
-    if (c  &&  (status = CONN_Create(c, &conn)) == eIO_Success) {
-        /* Send all the HTTP data... */
-        CONN_Flush(conn);
+    if (c  &&  (status = CONN_Create(c, &conn)) == eIO_Success
+        /* send all the HTTP data... */
+        &&  CONN_Flush(conn) == eIO_Success) {
         /* ...then trigger the header callback */
         CONN_Close(conn);
     } else {
+        const char* url = ConnNetInfo_URL(net_info);
         CORE_LOGF_X(5, eLOG_Error,
-                    ("%s%s%sUnable to create auxiliary HTTP %s: %s",
-                     &"["[!*iter->name], iter->name, *iter->name ? "]  " : "",
-                     c              ? "connection" : "connector",
-                     IO_StatusStr(c ? status       : eIO_Unknown)));
-        if (c  &&  c->destroy)
+                    ("[%s]  Unable to create %s network dispatcher%s%s%s: %s",
+                     iter->name,  c ? "connection with" : "connector for",
+                     url ? " at \"" : "", url ? url : "", &"\""[!url],
+                     IO_StatusStr(c ? status            : eIO_Unknown)));
+        if (url)
+            free((void*) url);
+        if (conn)
+            CONN_Close(conn);
+        else if (c  &&  c->destroy)
             c->destroy(c);
-        assert(0);
     }
 }
 
@@ -273,7 +277,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
             while (*text  &&  isspace((unsigned char)(*text)))
                 ++text;
             CORE_LOGF_X(6, failure ? eLOG_Warning : eLOG_Note,
-                        ("[%s]  %s", data->net_info->svc/*not exact*/, text));
+                        ("[%s]  %s", iter->name, text));
         }
 #endif /*_DEBUG && !NDEBUG*/
         if (failure) {
