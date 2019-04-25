@@ -28,6 +28,8 @@ test-pseudo-features: test-pseudo-features.gff3
 test-inference: test-inference.gff3
 test-transcript: test-transcript.gff3
 test-split-cds: test-split-cds.gff3
+rw-234: rw-234.gff3
+rw-288: rw-288.gff3
 
 # BED:
 test-12-col: test-12-col.bed

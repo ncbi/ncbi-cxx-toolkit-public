@@ -1,0 +1,164 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+        locus "thrL",
+        syn {
+          "ECK0001",
+          "JW4367"
+        },
+        locus-tag "b0001"
+      },
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene0"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "mrna_2"
+        },
+        {
+          id local str "mrna_3"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG11277"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "antisense_RNA"
+        }
+      },
+      location int {
+        from 189,
+        to 199,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ncRNA_class",
+          val "antisense_RNA"
+        },
+        {
+          qual "ID",
+          val "rna0"
+        },
+        {
+          qual "Parent",
+          val "gene0"
+        },
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_2",
+      data rna {
+        type ncRNA
+      },
+      location int {
+        from 189,
+        to 199,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ncRNA_class",
+          val "antisense_RNA"
+        },
+        {
+          qual "ID",
+          val "rna1"
+        },
+        {
+          qual "Parent",
+          val "gene0"
+        },
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_3",
+      data rna {
+        type ncRNA
+      },
+      location int {
+        from 189,
+        to 199,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "ID",
+          val "rna2"
+        },
+        {
+          qual "Parent",
+          val "gene0"
+        },
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}
