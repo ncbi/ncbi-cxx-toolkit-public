@@ -52,6 +52,33 @@ const string DIRDATA = "unit_test/data";
 
 //  ============================================================================
 bool
+sGetTestParameters(
+    const string& testEntry,
+    string& testName,
+    string& inputFile,
+    string& inputFormat,
+    vector<string>& commandArgs)
+//  ============================================================================
+{
+    string testDescr;
+    NStr::SplitInTwo(testEntry, ":", testName, testDescr);
+    NStr::TruncateSpacesInPlace(testName);
+    NStr::TruncateSpacesInPlace(testDescr);
+
+    vector<string> testParts;
+    NStr::Split(testDescr, " \t", testParts);
+    if (testParts.empty()) {
+        return false;
+    }
+    inputFile = testParts[0];
+    auto lastDot = inputFile.find_last_of('.');
+    inputFormat = inputFile.substr(lastDot + 1);
+    commandArgs.assign(testParts.begin() + 1, testParts.end());
+    return true;
+}
+
+//  ============================================================================
+bool
 sSkipTest(
     const CArgs& args,
     const string& testName,
@@ -74,6 +101,7 @@ sSkipTest(
 void sRunTest(
     const string& testName,
     const string& format,
+    const vector<string>& commandArgs,
     const string& inputName,
     const string& goldenNameAnnot,
     const string& goldenNameErrors,
@@ -233,17 +261,15 @@ BOOST_AUTO_TEST_CASE(RunTests)
         if (NStr::StartsWith(testDescription, '#')) {
             continue;
         }
-        vector<string> testComponents;
-        NStr::Split(testDescription, " ", testComponents);
+        string testName, inputFile, inputFormat;
+        vector<string> commandArgs;
         BOOST_REQUIRE_MESSAGE(
-            (testComponents.size() == 2), 
+            sGetTestParameters(testDescription, testName, inputFile, inputFormat, commandArgs),
             "Invalid test description: \"" << testDescription << "\"");
-        auto testName = testComponents[0];
-        auto format = testComponents[1];
-        if (sSkipTest(args, testName, format)) {
+        if (sSkipTest(args, testName, inputFormat)) {
             continue;
         }
-        auto inFile = dirInput + testName + "." + format;
+        auto inFile = dirInput + inputFile;
         auto goldenFile = dirGolden + testName + ".asn1";
         auto errorsFile = dirGolden + testName + ".errors";
         auto outputFileAnnot = dirOutput + testName + ".asn1";
@@ -254,7 +280,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         }
         BOOST_CHECK_NO_THROW(
             sRunTest(
-                testName, format,
+                testName, inputFormat, commandArgs,
                 inFile, goldenFile, errorsFile, 
                 outputFileAnnot, outputFileErrors, diffsFile, 
                 updateAll));
