@@ -1,0 +1,5 @@
+Line No    : 3
+Severity   : Fatal
+Problem    : Alignment.BadDataChars
+Message    : At ID 'Seq1': Bad character [e] found at data position 1.
+
