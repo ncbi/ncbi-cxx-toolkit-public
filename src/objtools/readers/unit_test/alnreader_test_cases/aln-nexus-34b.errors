@@ -1,7 +1,7 @@
 Line No    : 24
 Severity   : Warning
 Problem    : Alignment.UnterminatedCommand
-Message    : Unexpected "end;". Appending ';' to prior command
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
 
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal

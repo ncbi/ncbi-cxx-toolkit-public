@@ -97,7 +97,7 @@ CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
         theErrorReporter->Warn(
         command.args.back().mNumLine,
         EAlnSubcode::eAlnSubcode_UnterminatedCommand,
-                "Unexpected \"end;\". Appending \';\' to prior command");
+                "File format autocorrected to comply with Nexus rules. Unexpected \"end;\". Appending \';\' to prior command. No action required.");
 
         if (lastWhiteSpacePos == NPOS) {
             args.pop_back();

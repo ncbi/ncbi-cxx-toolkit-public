@@ -409,7 +409,7 @@ void CAlnReader::x_VerifyAlignmentInfo(
         }
         else {
             string description = ErrorPrintf(
-                    "Expected 0 or %d deflines but finding %d",
+                    "Expected %d deflines but finding %d. If deflines are used, each sequence must have a corresponding defline. Note that deflines are optional.",
                      m_Ids.size(),
                      numDeflines);
             theErrorReporter->Error(
