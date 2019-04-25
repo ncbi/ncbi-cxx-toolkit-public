@@ -1381,6 +1381,7 @@ CSPM	s	Colegio Lasalle Palma de Mallorca
 CSPU	s	California State Polytechnic University, Biological Sciences Department			
 CSPUP	s	California State Polytechnic University, Pomona			
 CSR	s	Caucasus State Nature Biosphere Reserve			
+CSRS	s	Centre Suisse de Recherches Scientifiques en Cote d'Ivoire			
 CSTIU	s	Faculty of Science, University of Tokyo			
 CSU<USA-CO>	s	Colorado State University	CSUC		
 CSU<USA-OK>	s	University of Central Oklahoma, Biology Department			
@@ -1494,6 +1495,7 @@ DBAI	s	Instituto de Ciencias Biologicas
 DBAU	s	Universidade Santa Ursula			
 DBC	s	University College, Botany Department			
 DBCUCH	s	Universidad de Chile, Departamento de Biologia Celular y Genetica			
+DBEV	s	University of Antananarivo			
 DBFFEUCS	s	Departamento de Biologia de la Faculdad de Filosofia y Educacion de la Universidad de Chile			
 DBG	s	Sam Mitchel Herbarium of Fungi, Denver Botanic Gardens			
 DBKKU1	c	Department of Biology, Faculty of Science			
@@ -3867,6 +3869,7 @@ MANCH	s	University of Manchester
 MAND	s	Agricultural College and Research Institute			
 MANK	s	Minnesota State University-Mankato, Department of Biological Sciences			
 MAO	c	Mircen Afrique Ouest			
+MAO<MYT>	s	Conservatoire Botanique National de Mascarin (Mayotte)			
 MAPR	s	University of Puerto Rico, Mayagueez Campus, Biology Department			
 MAR	c	Grasslands Rhizobium Collection			
 MAR<BRA>	s	Universidade Federal do Maranhao			
