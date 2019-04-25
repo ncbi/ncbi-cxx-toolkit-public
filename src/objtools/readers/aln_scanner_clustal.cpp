@@ -105,10 +105,7 @@ CAlnScannerClustal::xImportAlignmentData(
 
         if (sIsConservationLine(line)) {
             if (!inBlock) {
-                string description = "Clustal conservation characters (e.g. *.: characters) \
-                                      were detected in the alignment file, but are out of the \
-                                      expected order. Convservatiuon characters, if included, \
-                                      must appear after sequence data lines";
+                string description = "Clustal conservation characters (e.g. *.: characters) were detected in the alignment file, but are out of the expected order. Conservation characters, if included, must appear after sequence data lines.";
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
