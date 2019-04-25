@@ -145,7 +145,7 @@ public:
     {
         streamprop = GetJobStreamProperties(job_content, nc_api);
         unique_ptr<CStringOrBlobStorageReader> reader(new CStringOrBlobStorageReader(job_content, nc_api));
-        unique_ptr<CNcbiIstream> rstr(new CRStream(reader.release(), CRWStreambuf::fOwnReader));
+        unique_ptr<CNcbiIstream> rstr(new CRStream(reader.release(), 0, nullptr, CRWStreambuf::fOwnReader));
         return rstr;
     }
 
