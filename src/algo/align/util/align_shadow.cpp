@@ -48,7 +48,7 @@ namespace {
         numeric_limits<CAlignShadow::TCoord>::max());
 
     typedef pair<objects::ENa_strand, objects::ENa_strand> TStrands;
-}
+
 
 TStrands RetrieveStdStrands(const objects::CSeq_align& seq_align)
 {
@@ -60,6 +60,7 @@ TStrands RetrieveStdStrands(const objects::CSeq_align& seq_align)
     return TStrands(locs[0]->GetStrand(), locs[1]->GetStrand());
 }
 
+}
 
 CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcript)
 {
@@ -119,9 +120,40 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
             const CDense_seg & ds (seq_align.GetSegs().GetDenseg());
             const CDense_seg::TStarts& starts (ds.GetStarts());
             const CDense_seg::TLens& lens (ds.GetLens());
+            const CDense_seg::TStrands& strands = ds.GetStrands();
+
+            const char indel[2] = {'D', 'I'};
+            TSignedSeqPos next[2];
+            {
+                for (size_t j: {0,1}) {
+                    size_t i = j;
+                    while(i < starts.size() && starts[i]==-1) i += 2;
+                    next[j] = starts[i];
+                }
+            }
+
             size_t i (0);
-            ITERATE(CDense_seg::TLens, ii_lens, lens) {
+            for (size_t ii_lens = 0; ii_lens < lens.size(); ++ii_lens) {
                 char c;
+
+                for (size_t j: {0,1}) {
+                    if (starts[i+j] != -1) {
+                        if (strands[i+j] == eNa_strand_minus) {
+                            if (next[j] != starts[i+j]) {
+                                m_Transcript.push_back(indel[j]);
+                                m_Transcript.append(NStr::NumericToString(next[j]-starts[i+j]));
+                            }
+                            next[j] = starts[i+j] - lens[ii_lens+1];
+                        } else {
+                            if (next[j] != starts[i+j]) {
+                                m_Transcript.push_back(indel[j]);
+                                m_Transcript.append(NStr::NumericToString(starts[i+j]-next[j]));
+                            }
+                            next[j] = starts[i+j] + lens[ii_lens];
+                        }
+                    }
+                }
+
                 if(starts[i] < 0) {
                     c = 'I';
                 }
@@ -132,8 +164,8 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
                     c = 'M';
                 }
                 m_Transcript.push_back(c);
-                if(*ii_lens > 1) {
-                    m_Transcript.append(NStr::NumericToString(*ii_lens));
+                if(lens[ii_lens] > 1) {
+                    m_Transcript.append(NStr::NumericToString(lens[ii_lens]));
                 }
                 i += 2;
             }
