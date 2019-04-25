@@ -125,7 +125,7 @@ CAlnScannerClustal::xImportAlignmentData(
             throw SShowStopper(
                 lineCount,
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                "In data line, expected seqID followed by sequence data and (optionally) data count"); 
+                "Date line does not follow the expected pattern of sequence_ID followed by sequence data and (optionally) data count. Each data line should conform tyo the same expected pattern"); 
         }
 
         int seqLength = 0;
