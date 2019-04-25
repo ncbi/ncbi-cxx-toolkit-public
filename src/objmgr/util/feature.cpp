@@ -1756,10 +1756,11 @@ namespace {
                              SFeatRangeInfo& range_info,
                              bool by_product = false)
     {
+        const bool kAllowOriginInGap = true;
         if ( !kSplitCircular ) {
             return false;
         }
-        if ( range_info.m_Range.GetFrom() != 0 ) {
+        if ( !kAllowOriginInGap && range_info.m_Range.GetFrom() != 0 ) {
             // not from the beginning of sequence
             return false;
         }
@@ -1784,7 +1785,7 @@ namespace {
         if ( circular_length == kInvalidSeqPos ) {
             return false;
         }
-        if ( range_info.m_Range.GetToOpen() < circular_length ) {
+        if ( !kAllowOriginInGap && range_info.m_Range.GetToOpen() < circular_length ) {
             // not till the end of sequence
             return false;
         }
@@ -1793,7 +1794,7 @@ namespace {
         range_info.m_Range.SetTo(stop);
         rr.push_back(range_info);
         range_info.m_Range.SetFrom(start);
-        range_info.m_Range.SetToOpen(circular_length);
+        range_info.m_Range.SetToOpen(range_info.m_Range.GetToOpen());
         rr.push_back(range_info);
         return true;
     }        
@@ -2575,7 +2576,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     Int8 overlap;
                     try {
                         if ( kOptimizeTestOverlap && overlap_type == eOverlap_Subset &&
-                             ci->m_Id && pc->m_Id && !ci->m_SplitRange && !pc->m_SplitRange &&
+                             ci->m_Id && pc->m_Id &&
                              s_IsNotSubrange(ci->m_Range, pc->m_Range) ) {
                             // fast check with simple locations failed
                             overlap = -1;
