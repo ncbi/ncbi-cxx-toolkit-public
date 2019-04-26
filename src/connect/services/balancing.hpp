@@ -72,11 +72,6 @@ public:
         CFastMutexGuard g(m_Mutex);
         ++m_RequestCounter;
     }
-    void Reset() {
-        CFastMutexGuard g(m_Mutex);
-        m_RequestCounter = 0;
-        m_NextRebalanceTime.Clear();
-    }
 
     // The following two parameters define how often LBSMD is queried by default.
     // TODO: Replace with constexpr after it is supported by MS VS

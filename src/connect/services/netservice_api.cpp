@@ -906,7 +906,6 @@ CNetServer::SExecResult SNetServiceImpl::FindServerAndExec(const string& cmd,
 
     case eSingleServerService:
         {
-            m_RebalanceStrategy->OnResourceRequested();
             CNetServer server(new SNetServerImpl(this,
                     m_ServerPool->ReturnServer(
                     m_DiscoveredServers->m_Servers.front().first)));
