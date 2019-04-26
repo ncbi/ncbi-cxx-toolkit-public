@@ -66,15 +66,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 #define ERR_POST_TO_LISTENER(listener, severity, code, subcode, message) \
-{ \
+do { \
     if (listener) { \
-        CNcbiOstrstream ostr; \
-        ostr << message << '\0'; \
+        ostringstream ostr; \
+        ostr << message; \
         string text = ostr.str(); \
         CMessage_Basic msg(text, severity, code, subcode); \
         listener->PostMessage(msg); \
     } \
-};
+} while (false)
 
 namespace fix_pub
 {
@@ -878,10 +878,11 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
     }
 
     long oldpmid = 0;
-    if (pmids.size() > 1) {
+    if (!pmids.empty()) {
 
-        // more than one, just take the first
         oldpmid = pmids.front()->GetPmid();
+
+        // check if more than one
         for (auto& pub: pmids) {
             if (pub->GetPmid() != oldpmid) {
                 ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_pmid,
@@ -892,9 +893,11 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
     }
 
     long oldmuid = 0;
-    if (muids.size() > 1) {
-        // more than one, just take the first
+    if (!muids.empty()) {
+
         oldmuid = muids.front()->GetMuid();
+
+        // check if more than one
         for (auto& pub : muids) {
             if (pub->GetMuid() != oldmuid) {
                 ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_pmid,

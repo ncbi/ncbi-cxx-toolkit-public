@@ -63,6 +63,7 @@
 
 
 #include "../fix_pub_aux.hpp"
+#include <misc/fix_pub/fix_pub.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -649,3 +650,145 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
     BOOST_CHECK_EQUAL(art_new.GetAuthors().Equals(expected.GetAuthors()), true);
 }
 
+BOOST_AUTO_TEST_CASE(Test_FixPub)
+{
+    static const char* TEST_PUB =
+      "Pub ::= \
+       equiv { \
+         pmid 17659802, \
+         article { \
+           title { \
+             name \"Genetic diversity and reassortments among Akabane virus field isolates.\" \
+           }, \
+           authors { \
+             names std { \
+               { \
+                 name name { \
+                   last \"Kobayashi\", \
+                   initials \"T.\" \
+                 } \
+               }, \
+               { \
+                 name name { \
+                   last \"Yanase\", \
+                   initials \"T.\" \
+                 } \
+               }, \
+               { \
+                 name name { \
+                 last \"Yamakawa\", \
+                 initials \"M.\" \
+                 } \
+               }, \
+               { \
+                 name name { \
+                   last \"Kato\", \
+                   initials \"T.\" \
+                 } \
+               }, \
+               { \
+                 name name { \
+                   last \"Yoshida\", \
+                   initials \"K.\" \
+                 } \
+               }, \
+               { \
+                 name name { \
+                   last \"Tsuda\", \
+                   initials \"T.\" \
+                 } \
+               } \
+             }, \
+             affil str \"Division 1, Second Production Department, the Chemo - Sero - Therapeutic Research Institute, 1 - 6 - 1 Okubo, Kumamoto 860 - 8568, Japan.\" \
+           }, \
+           from journal { \
+             title { \
+               iso-jta \"Virus Res.\", \
+               ml-jta \"Virus Res\", \
+               issn \"0168-1702\", \
+               name \"Virus research\" \
+             }, \
+             imp { \
+               date std { \
+                 year 2007, \
+                 month 12 \
+               }, \
+               volume \"130\", \
+               issue \"1-2\", \
+               pages \"162-171\", \
+               language \"ENG\", \
+               pubstatus ppublish, \
+               history { \
+                 { \
+                   pubstatus received, \
+                   date std { \
+                     year 2007, \
+                     month 1, \
+                     day 15 \
+                   } \
+                 }, \
+                 { \
+                   pubstatus revised, \
+                   date std { \
+                     year 2007, \
+                     month 6, \
+                     day 5 \
+                   } \
+                 }, \
+                 { \
+                   pubstatus accepted, \
+                   date std { \
+                     year 2007, \
+                     month 6, \
+                     day 11 \
+                   } \
+                 }, \
+                 { \
+                   pubstatus aheadofprint, \
+                   date std { \
+                     year 2007, \
+                     month 7, \
+                     day 30 \
+                   } \
+                 }, \
+                 { \
+                   pubstatus pubmed, \
+                   date std { \
+                     year 2007, \
+                     month 7, \
+                     day 31, \
+                     hour 9, \
+                     minute 0 \
+                   } \
+                 }, \
+                 { \
+                   pubstatus medline, \
+                   date std { \
+                     year 2007, \
+                     month 7, \
+                     day 31, \
+                     hour 9, \
+                     minute 0 \
+                   } \
+                 } \
+               } \
+             } \
+           }, \
+           ids { \
+             pii \"S0168-1702(07)00221-3\", \
+             doi \"10.1016/j.virusres.2007.06.007\", \
+             pubmed 17659802 \
+           } \
+         } \
+       }";
+
+   CPub pub;
+   CNcbiIstrstream input(TEST_PUB);
+
+   input >> MSerial_AsnText >> pub;
+
+   CPubFixing pub_fixing(true, true, true, nullptr);
+   pub_fixing.FixPub(pub);
+
+   // No any tests for now. There will be in the future
+}
