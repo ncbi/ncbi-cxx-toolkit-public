@@ -112,10 +112,8 @@ CAlnScannerFastaGap::xImportAlignmentData(
                     auto currentDataSize = seqData.size();
                     auto expectedDataSize = expectedDataSizes[currentDataLineIndex];
                     if (currentDataSize != expectedDataSize) {
-                        cout << "currentDataLineIndex: " << currentDataLineIndex << endl;
-                        string description = ErrorPrintf(
-                            "Expected line length %d, actual length %d", 
-                            expectedDataSize, currentDataSize);
+                        string description = 
+                            BadCharCountPrintf(expectedDataSize, currentDataSize);
                         throw SShowStopper(
                             lineNumber,
                             eAlnSubcode_BadDataCount,

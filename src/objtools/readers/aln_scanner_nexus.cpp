@@ -434,10 +434,8 @@ CAlnScannerNexus::xProcessMatrix(
         }
         else
         if (dataSize != blockLineLength) {
-            string description = ErrorPrintf(
-                "In data line, expected %d symbols but finding %d",
-                blockLineLength,
-                dataSize);
+            string description = 
+                BadCharCountPrintf(blockLineLength,dataSize);
             throw SShowStopper(
                 lineNum,
                 EAlnSubcode::eAlnSubcode_BadDataCount,
@@ -449,10 +447,8 @@ CAlnScannerNexus::xProcessMatrix(
     }
 
     if (sequenceCharCount != mSequenceSize) {
-        string description = ErrorPrintf(
-            "Expected %d symbols per sequence but finding only %d",
-            mSequenceSize,
-            sequenceCharCount);
+        string description = 
+            BadCharCountPrintf(mSequenceSize, sequenceCharCount);
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadDataCount,

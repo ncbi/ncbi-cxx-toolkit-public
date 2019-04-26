@@ -176,10 +176,8 @@ CAlnScannerPhylip::xImportAlignmentData(
         }
         else 
         if (currentLineLength != blockLineLength) {
-            string description = ErrorPrintf(
-                "In data line, expected %d symbols but finding %d",
-                blockLineLength,
-                currentLineLength);
+            string description = 
+                BadCharCountPrintf(blockLineLength,currentLineLength);
             throw SShowStopper(
                 lineCount,
                 EAlnSubcode::eAlnSubcode_BadDataCount,
