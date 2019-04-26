@@ -87,6 +87,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
     vector<int> expectedDataSizes;
     int currentDataLineIndex = 0;
     bool processingFirstSequence = true;
+    int expectedNumLines = 0;
 
     string line;
     int lineNumber = 0;
@@ -109,8 +110,14 @@ CAlnScannerFastaGap::xImportAlignmentData(
                     expectedDataSizes.push_back(seqData.size());
                 }
                 else {
+
+                    if (!expectedNumLines) {
+                        expectedNumLines = expectedDataSizes.size(); 
+                    }
                     auto currentDataSize = seqData.size();
-                    auto expectedDataSize = expectedDataSizes[currentDataLineIndex];
+                    auto expectedDataSize = (currentDataLineIndex < expectedNumLines) ?
+                        expectedDataSizes[currentDataLineIndex] :
+                        0;
                     if (currentDataSize != expectedDataSize) {
                         string description = 
                             BadCharCountPrintf(expectedDataSize, currentDataSize);
