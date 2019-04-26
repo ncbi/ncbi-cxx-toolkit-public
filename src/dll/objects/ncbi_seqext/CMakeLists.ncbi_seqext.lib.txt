@@ -9,6 +9,7 @@ NCBI_begin_lib(ncbi_seqext SHARED)
     objtools/readers/xobjread
     objtools/readers/xobjreadex
     objtools/writers/xobjwrite
+    objtools/import/xobjimport
     objmgr/util/util
     objtools/manip/xobjmanip
     objtools/format/xformat
@@ -28,6 +29,7 @@ NCBI_begin_lib(ncbi_seqext SHARED)
     objects/valid/valid
     objtools/blast/services/blast_services
     objtools/blast/blastdb_format/blastdb_format
+    objtools/logging/logging
     objtools/snputil/snputil
     objtools/uudutil/uudutil
     objtools/unit_test_util/unit_test_util
