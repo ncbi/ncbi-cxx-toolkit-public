@@ -1,5 +1,5 @@
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
 Problem    : Alignment.BadSequenceCount
-Message    : Error reading alignment: No sequence data
+Message    : No sequence data was detected in alignment file.
 

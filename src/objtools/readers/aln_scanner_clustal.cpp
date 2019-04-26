@@ -212,9 +212,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
     }
     else {
         if (seqCount >= numSeqs) {
-            string description = ErrorPrintf(
-                "Expected %d sequences, but finding data for for another.",
-                numSeqs);
+            string description = "Inconsistent sequence_IDs in the data blocks. Each data block must contain the same set of sequence_IDs.";
             throw SShowStopper(
                 lineNum,
                 EAlnSubcode::eAlnSubcode_BadSequenceCount,

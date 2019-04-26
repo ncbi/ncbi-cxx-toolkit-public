@@ -6,5 +6,5 @@ Message    : File format autocorrected to comply with Nexus rules. Unexpected "e
 Line No    : 10
 Severity   : Fatal
 Problem    : Alignment.BadSequenceCount
-Message    : Expected 4 sequences, but finding data for another.
+Message    : Inconsistent sequence_IDs in the data blocks. Each data block must contain the same set of sequence_IDs.
 

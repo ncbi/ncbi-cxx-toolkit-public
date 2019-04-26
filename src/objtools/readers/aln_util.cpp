@@ -99,7 +99,7 @@ AlnUtil::CheckId(const string& seqId,
 
     if (it == orderedIds.end()) {
         description = ErrorPrintf(
-            "Expected %d sequences, but finding data for another.", orderedIds.size());
+            "Inconsistent sequence_IDs in the data blocks. Each data block must contain the same set of sequence_IDs.");
         throw SShowStopper(
             lineNum,
             eAlnSubcode_BadSequenceCount,

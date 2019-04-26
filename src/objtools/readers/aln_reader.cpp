@@ -190,35 +190,6 @@ void CAlnReader::SetPhylip(EAlphabet alpha)
 
 
 
-void s_GetSequenceLengthInfo(
-        const SAlignmentFile& alignmentInfo, 
-        size_t& min_len, 
-        size_t& max_len, 
-        int& max_index) 
-{
-    const auto numSequences = alignmentInfo.NumSequences();
-    if (numSequences == 0) {
-        return;
-    }
-
-    max_len = alignmentInfo.mSequences[0].size();
-    min_len = max_len;
-    max_index = 0;
-
-    for (auto i = 0; i < numSequences; ++i) {
-        size_t curr_len = alignmentInfo.mSequences[i].size();
-        if (curr_len > max_len) {
-            max_len = curr_len;
-            max_index = i;
-        } 
-        else 
-        if (curr_len < min_len){
-            min_len = curr_len;
-        }
-    }
-}
-
-
 static void
 sReportError(
     ILineErrorListener* pEC,
@@ -352,7 +323,7 @@ void CAlnReader::x_VerifyAlignmentInfo(
         throw SShowStopper(
             -1,
             eAlnSubcode_BadSequenceCount,
-            "Error reading alignment: No sequence data");
+            "No sequence data was detected in alignment file.");
     }
 
 
@@ -360,29 +331,9 @@ void CAlnReader::x_VerifyAlignmentInfo(
         throw SShowStopper(
         -1,
         eAlnSubcode_BadSequenceCount,
-        "Error reading alignment: Need more than one sequence");
+        "Only one sequence was detected in the alignment file. An alignment file must contain more than one sequence.");
     }
 
- 
-    // Check sequence lengths
-    size_t max_len, min_len;
-    int max_index;
-    s_GetSequenceLengthInfo(alignmentInfo, 
-        min_len,
-        max_len,
-        max_index);
-
-    if (min_len == 0) { // I don't think that this can ever occur
-        throw SShowStopper(
-            -1,
-            eAlnSubcode_BadDataCount,
-            "Error reading alignment: Missing sequence data");
-    }
-    
-    // if we're trying to guess whether this is an alignment file,
-    // and no tell-tale alignment format lines were found,
-    // check to see if any of the lines contain gaps.
-    // no gaps plus no alignment indicators -> don't guess alignment
     const auto numSequences = alignmentInfo.NumSequences();
 
     m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());

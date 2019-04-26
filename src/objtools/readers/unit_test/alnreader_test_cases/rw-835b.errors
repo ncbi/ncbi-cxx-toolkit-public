@@ -6,5 +6,5 @@ Message    : File format autocorrected to comply with Nexus rules. Unexpected "e
 Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
 Problem    : Alignment.BadSequenceCount
-Message    : Error reading alignment: Need more than one sequence
+Message    : Only one sequence was detected in the alignment file. An alignment file must contain more than one sequence.
 

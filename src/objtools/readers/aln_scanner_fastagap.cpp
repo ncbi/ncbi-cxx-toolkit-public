@@ -132,8 +132,9 @@ CAlnScannerFastaGap::xImportAlignmentData(
         if (line.empty()) {
             continue;
         }
-
+/*
         if (!NStr::StartsWith(line, ">")) {
+            // Commenting this out, because it cannot be reached. JF.
             string description = ErrorPrintf(
                 "Unexpected data line. Expected FASTA defline.");
             throw SShowStopper(
@@ -141,6 +142,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
                 description);
         }
+        */
         sSplitFastaDef(line, seqId, defLine);
         TLineInfo existingInfo;
         auto idComparison 

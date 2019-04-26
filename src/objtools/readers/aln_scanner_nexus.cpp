@@ -331,10 +331,14 @@ CAlnScannerNexus::xBeginBlock(
 //  ----------------------------------------------------------------------------
 {
     auto lineNum = command.front().mNumLine;
+    auto newBlockName = command.front().mData;
     if (mInBlock) {
         auto description = ErrorPrintf(
-                "Attempting to enter a new block, but still in the %s block that begins on line %d.",
-                mCurrentBlock.c_str(), mBlockStartLine);
+                "Nested blocks detected. New block %s while still in %s block. %s block begins on line %d",
+                newBlockName.c_str(),
+                mCurrentBlock.c_str(), 
+                mCurrentBlock.c_str(),
+                mBlockStartLine);
 
             throw SShowStopper(
                 lineNum,
@@ -344,7 +348,7 @@ CAlnScannerNexus::xBeginBlock(
     }
     mInBlock = true;
     mBlockStartLine = lineNum;
-    mCurrentBlock = command.front().mData;
+    mCurrentBlock = newBlockName;
 }
 
 
