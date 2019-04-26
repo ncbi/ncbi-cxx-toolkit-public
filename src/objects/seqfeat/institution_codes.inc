@@ -6981,6 +6981,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UFRJIM\tc\tDepartamento de Microbiologia Medica\t\t\t",
 "UFRN\ts\tUniversidade Federal do Rio Grande do Norte\t\t\t",
 "UFRN:Fungos\ts\tUniversidade Federal do Rio Grande do Norte, Fungal collection\t",
+"UFRPE\ts\tUniversidade Federal Rural de Pernambuco\t\t\t",
 "UFRR\ts\tUniversidade Federal de Roraima\t\t\t",
 "UFS\ts\tNyabyeya Forestry College, Department of Environmental Forestry\t\t\t",
 "UFSC\ts\tUniversidade Federal de Santa Catarina\t\t\t",
