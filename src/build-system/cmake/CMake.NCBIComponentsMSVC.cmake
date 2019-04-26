@@ -381,7 +381,9 @@ endif()
 # XML
 NCBI_define_component(XML libxml2.lib)
 if (NCBI_COMPONENT_XML_FOUND)
-    set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
+    if(NOT BUILD_SHARED_LIBS)
+        set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
+    endif()
 endif()
 
 #############################################################################
