@@ -4,7 +4,7 @@
 
 NCBI_begin_app(blastdbcheck)
   NCBI_sources(blastdbcheck)
-  NCBI_uses_toolkit_libraries(align_format xblast)
+  NCBI_uses_toolkit_libraries(blastinput)
   NCBI_add_definitions(NCBI_MODULE=BLASTDB)
   NCBI_project_watchers(camacho fongah2)
   NCBI_requires(-Cygwin)
