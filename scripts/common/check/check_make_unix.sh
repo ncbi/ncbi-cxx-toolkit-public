@@ -466,7 +466,11 @@ fi
 # Only if $NCBI_CHECK_SETLIMITS not set to 0 before, or not configured with -with-max-debug.
 # Some tools that use this configure flag, like AddressSanitizer, can fail if limited.
 
-if test "\$NCBI_CHECK_SETLIMITS" != "0"  -a  ! -f "$x_conf_dir/status/MaxDebug.enabled"; then
+is_max_debug=false
+if test -f "$x_conf_dir/status/MaxDebug.enabled"; then
+   is_max_debug=true
+fi
+if test "\$NCBI_CHECK_SETLIMITS" != "0"  -a  ! \$is_max_debug; then
    ulimit -c 1000000
    ulimit -n 8192
    if [ \$cygwin = false ]; then
@@ -705,6 +709,15 @@ EOF_launch
                                    result=254
                                fi
                                ;;
+                    * )
+                               # GCC Sanitizer can fails with a 0 exit code
+                               if \$is_max_debug; then
+                                   grep '==ERROR: AddressSanitizer:' \$x_test_out > /dev/null 2>&1 
+                                   if test \$? -eq 0;  then
+                                      result=253
+                                   fi
+                               fi
+                    
                 esac
 
                 # Write result of the test into the his output file
