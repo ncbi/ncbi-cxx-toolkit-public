@@ -334,7 +334,7 @@ CAlnScannerNexus::xBeginBlock(
     auto newBlockName = command.front().mData;
     if (mInBlock) {
         auto description = ErrorPrintf(
-                "Nested blocks detected. New block %s while still in %s block. %s block begins on line %d",
+                "Nested blocks detected. New block \"%s\" while still in \"%s\" block. \"%s\" block begins on line %d",
                 newBlockName.c_str(),
                 mCurrentBlock.c_str(), 
                 mCurrentBlock.c_str(),
@@ -390,10 +390,12 @@ CAlnScannerNexus::xProcessMatrix(
         vector<string> tokens;
         NStr::Split(data, " \t", tokens, NStr::fSplit_Tokenize);
         if (tokens.size() < 2) {
+            string description = 
+            "Data line does not follow the expected pattern of sequence_ID followed by sequence data. Each data line should conform to the same expected pattern.";
             throw SShowStopper(
                 lineNum,
                 eAlnSubcode_IllegalDataLine,
-                "In data line, expected seqID followed by sequence data");
+                description);
         }
 
         const string& seqId = tokens[0];

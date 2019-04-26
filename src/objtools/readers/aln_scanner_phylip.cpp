@@ -133,10 +133,12 @@ CAlnScannerPhylip::xImportAlignmentData(
             string seqId;
             NStr::SplitInTwo(line, " \t", seqId, seqData, NStr::fSplit_MergeDelimiters);
             if (seqData.empty()) {
+                string description =
+                "Data line does not follow the expected pattern of sequence_ID followed by sequence data. Each data line in the first block should conform to this pattern.";
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "In data line, expected seqID followed by sequence data");
+                    description);
             }
 
             TLineInfo existingInfo;
