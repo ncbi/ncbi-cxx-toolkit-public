@@ -348,6 +348,7 @@ SNetServiceImpl::SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prot
     m_Listener(prototype->m_Listener->Clone()),
     m_ServerPool(prototype->m_ServerPool),
     m_ServiceName(server->m_Address.AsString()),
+    m_RebalanceStrategy(new CSimpleRebalanceStrategy(prototype->m_RebalanceStrategy)),
     m_RoundRobin(prototype->m_RoundRobin.load()),
     m_APIName(prototype->m_APIName),
     m_ClientName(prototype->m_ClientName),
