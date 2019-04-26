@@ -130,7 +130,7 @@ void SDiscoveredServers::DeleteThis()
 
 CNetServer CNetServiceIterator::GetServer()
 {
-    m_Impl->m_ServerGroup->m_Service->m_RebalanceStrategy->OnResourceRequested();
+    m_Impl->m_ServerGroup->m_Service->m_RebalanceStrategy.OnResourceRequested();
     return new SNetServerImpl(m_Impl->m_ServerGroup->m_Service,
             m_Impl->m_ServerGroup->m_Service->m_ServerPool->
             ReturnServer(m_Impl->m_Position->first));
@@ -334,10 +334,11 @@ SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener) :
 }
 
 SNetServiceImpl::SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
-        INetServerConnectionListener* listener) :
+        INetServerConnectionListener* listener, CSynRegistry& registry, const SRegSynonyms& sections) :
     m_Listener(listener),
     m_ServerPool(new SNetServerPoolImpl(listener)),
     m_ServiceName(service_name),
+    m_RebalanceStrategy(registry, sections),
     m_RoundRobin(0),
     m_APIName(api_name),
     m_ClientName(client_name)
@@ -348,7 +349,7 @@ SNetServiceImpl::SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prot
     m_Listener(prototype->m_Listener->Clone()),
     m_ServerPool(prototype->m_ServerPool),
     m_ServiceName(server->m_Address.AsString()),
-    m_RebalanceStrategy(new CSimpleRebalanceStrategy(prototype->m_RebalanceStrategy)),
+    m_RebalanceStrategy(prototype->m_RebalanceStrategy),
     m_RoundRobin(prototype->m_RoundRobin.load()),
     m_APIName(prototype->m_APIName),
     m_ClientName(prototype->m_ClientName),
@@ -364,7 +365,7 @@ SNetServiceImpl::SNetServiceImpl(const string& service_name, SNetServiceImpl* pr
     m_Listener(prototype->m_Listener->Clone()),
     m_ServerPool(prototype->m_ServerPool),
     m_ServiceName(service_name),
-    m_RebalanceStrategy(new CSimpleRebalanceStrategy(prototype->m_RebalanceStrategy)),
+    m_RebalanceStrategy(prototype->m_RebalanceStrategy),
     m_RoundRobin(prototype->m_RoundRobin.load()),
     m_APIName(prototype->m_APIName),
     m_ClientName(prototype->m_ClientName),
@@ -404,7 +405,7 @@ SNetServiceImpl* SNetServiceImpl::Create(
         INetServerConnectionListener* listener,
         CSynRegistry& registry, SRegSynonyms& sections, const string& ns_client_name)
 {
-    CNetRef<SNetServiceImpl> rv(new SNetServiceImpl(api_name, service_name, client_name, listener));
+    CNetRef<SNetServiceImpl> rv(new SNetServiceImpl(api_name, service_name, client_name, listener, registry, sections));
     rv->Init(registry, sections, ns_client_name);
     return rv.Release();
 }
@@ -648,10 +649,6 @@ void SNetServiceImpl::Init(CSynRegistry& registry, SRegSynonyms& sections, const
         m_ClientName = app->GetProgramDisplayName();
     }
 
-    auto max_requests = registry.Get(sections, "rebalance_requests", CSimpleRebalanceStrategy::DefaultMaxRequests());
-    auto max_seconds = registry.Get(sections, "rebalance_time", CSimpleRebalanceStrategy::DefaultMaxSeconds());
-    m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
-
     m_ServerPool->Init(registry, sections);
 
     Construct();
@@ -842,7 +839,7 @@ CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, CNetServer::S
 
 CNetServer SNetServiceImpl::GetServer(CNetServer::SAddress server_address)
 {
-    m_RebalanceStrategy->OnResourceRequested();
+    m_RebalanceStrategy.OnResourceRequested();
     return m_ServerPool->GetServer(this, move(server_address));
 }
 
@@ -936,8 +933,8 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
 
     if (m_ServiceType == eLoadBalancedService) {
         // The service is load-balanced, check if rebalancing is required.
-        m_RebalanceStrategy->OnResourceRequested();
-        if (m_RebalanceStrategy->NeedRebalance())
+        m_RebalanceStrategy.OnResourceRequested();
+        if (m_RebalanceStrategy.NeedRebalance())
             ++m_LatestDiscoveryIteration;
 
         if (m_DiscoveredServers == NULL ||

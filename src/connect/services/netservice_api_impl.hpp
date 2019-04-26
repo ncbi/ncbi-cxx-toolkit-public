@@ -299,7 +299,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 private:
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
-            INetServerConnectionListener* listener);
+            INetServerConnectionListener* listener, CSynRegistry& registry, const SRegSynonyms& sections);
 
     // Constructors for 'spawning'.
     SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prototype);
@@ -356,7 +356,7 @@ public:
     SDiscoveredServers* m_DiscoveredServers = nullptr;
     SDiscoveredServers* m_ServerGroupPool = nullptr;
     unsigned m_LatestDiscoveryIteration = 0;
-    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
+    CSimpleRebalanceStrategy m_RebalanceStrategy;
     atomic<size_t> m_RoundRobin;
 
 private:

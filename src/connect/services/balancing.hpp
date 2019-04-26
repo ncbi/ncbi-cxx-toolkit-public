@@ -39,18 +39,25 @@
 
 BEGIN_NCBI_SCOPE
 
-class CSimpleRebalanceStrategy : public CObject
+class CSimpleRebalanceStrategy
 {
 public:
+    template <class TRegistry, class TSections>
+    CSimpleRebalanceStrategy(TRegistry& registry, const TSections& sections) :
+        m_MaxRequests(registry.Get(sections, "rebalance_requests", 5000)),
+        m_MaxNs(static_cast<long>(registry.Get(sections, "rebalance_time", 10.0) * kNanoSecondsPerSecond))
+    {
+    }
+
     CSimpleRebalanceStrategy(int max_requests, double max_seconds) :
         m_MaxRequests(max_requests),
         m_MaxNs(static_cast<long>(max_seconds * kNanoSecondsPerSecond))
     {
     }
 
-    CSimpleRebalanceStrategy(const CSimpleRebalanceStrategy* prototype) :
-        m_MaxRequests(prototype->m_MaxRequests),
-        m_MaxNs(prototype->m_MaxNs)
+    CSimpleRebalanceStrategy(const CSimpleRebalanceStrategy& prototype) :
+        m_MaxRequests(prototype.m_MaxRequests),
+        m_MaxNs(prototype.m_MaxNs)
     {
     }
 
@@ -72,11 +79,6 @@ public:
         CFastMutexGuard g(m_Mutex);
         ++m_RequestCounter;
     }
-
-    // The following two parameters define how often LBSMD is queried by default.
-    // TODO: Replace with constexpr after it is supported by MS VS
-    static int    DefaultMaxRequests() { return 5000; }
-    static double DefaultMaxSeconds()  { return 10.0; }
 
 private:
     const int m_MaxRequests;
