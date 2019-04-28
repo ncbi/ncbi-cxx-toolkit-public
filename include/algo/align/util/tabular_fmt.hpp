@@ -125,7 +125,7 @@ private:
 class CTabularFormatter_SeqId : public CTabularFormatter::IFormatter
 {
 public:
-    CTabularFormatter_SeqId(int row, objects::sequence::EGetIdType id_type);
+    CTabularFormatter_SeqId(int row, objects::sequence::EGetIdType id_type, bool tag_only = false);
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
@@ -134,6 +134,7 @@ public:
 private:
     int m_Row;
     objects::sequence::EGetIdType m_GetIdType;
+    bool m_TagOnly;
 };
 
 /////////////////////////////////////////////////////////////////////////////

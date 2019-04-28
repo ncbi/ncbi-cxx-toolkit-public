@@ -109,9 +109,11 @@ void CTabularFormatter_AllSeqIds::Print(CNcbiOstream& ostr,
 /////////////////////////////////////////////////////////////////////////////
 
 CTabularFormatter_SeqId::CTabularFormatter_SeqId(int row,
-                                                 sequence::EGetIdType id_type)
+                                                 sequence::EGetIdType id_type,
+                                                 bool tag_only)
 : m_Row(row)
-    , m_GetIdType(id_type)
+, m_GetIdType(id_type)
+, m_TagOnly(tag_only)
 {
 }
 
@@ -134,6 +136,10 @@ void CTabularFormatter_SeqId::PrintHelpText(CNcbiOstream& ostr) const
     default:
         NCBI_THROW(CException, eUnknown, "Unimplemented seq-id type");
     }
+    if (m_TagOnly) {
+        ostr << "; tag only for gnl seq-ids";
+    }
+
 }
 
 void CTabularFormatter_SeqId::PrintHeader(CNcbiOstream& ostr) const
@@ -158,7 +164,9 @@ void CTabularFormatter_SeqId::Print(CNcbiOstream& ostr,
     if ( !best ) {
         best = idh;
     }
-    if (m_GetIdType == sequence::eGetId_Best) {
+    if (m_TagOnly && best.GetSeqId()->IsGeneral()) {
+        best.GetSeqId()->GetGeneral().GetTag().AsString(ostr);
+    } else if (m_GetIdType == sequence::eGetId_Best) {
         string acc;
         best.GetSeqId()->GetLabel(&acc, CSeq_id::eContent);
         ostr << acc;
@@ -2309,6 +2317,8 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("qallseqid", qallseqid);
     formatter.RegisterField("qallacc", qallseqid);
 
+    formatter.RegisterField("qtag",
+        new CTabularFormatter_SeqId(0, sequence::eGetId_Best, true));
     formatter.RegisterField("qgi",
         new CTabularFormatter_SeqId(0, sequence::eGetId_ForceGi));
     formatter.RegisterField("qexactseqid",
@@ -2333,6 +2343,8 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("sallseqid", sallseqid);
     formatter.RegisterField("sallacc", sallseqid);
 
+    formatter.RegisterField("stag",
+        new CTabularFormatter_SeqId(1, sequence::eGetId_Best, true));
     formatter.RegisterField("sgi",
         new CTabularFormatter_SeqId(1, sequence::eGetId_ForceGi));
     formatter.RegisterField("sexactseqid",
