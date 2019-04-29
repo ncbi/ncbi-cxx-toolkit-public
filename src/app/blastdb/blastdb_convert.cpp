@@ -328,6 +328,14 @@ int CBlastdbConvertApp::Run(void)
     	CBuildDatabase::CreateDirectories(kOutput);
     	m_LogFile = & (args["logfile"].HasValue() ? args["logfile"].AsOutputFile() : cout);
 
+        // Check the appropriate version
+        {{
+            CRef<CSeqDB> source_blastdb(new CSeqDB(kInputDb, seqtype));
+            if (source_blastdb && source_blastdb->GetBlastDbVersion() != eBDB_Version4) {
+                NCBI_THROW(CBlastException, eNotSupported, "Only BLASTDBv4 can be used as input");
+            }
+        }}
+
         vector<string> paths, alias_files;
         bool use_index_in_filename = true;
         // FIXME: add error checking for non-handled cases
