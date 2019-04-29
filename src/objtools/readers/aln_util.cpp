@@ -127,9 +127,7 @@ AlnUtil::CheckId(const string& seqId,
     }
     else
     {
-        description = ErrorPrintf(
-            "Finding data for sequence \"%s\" out of order.",
-            seqId.c_str());
+        description = "Sequence_IDs are in different orders in the data blocks in your file. The sequences and sequence_IDs are expected to be in the same order in each block.";
     }
     throw SShowStopper(
         lineNum,

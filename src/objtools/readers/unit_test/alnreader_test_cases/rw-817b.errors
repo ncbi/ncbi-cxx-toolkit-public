@@ -1,5 +1,5 @@
 Line No    : 16
 Severity   : Fatal
 Problem    : Alignment.UnterminatedComment
-Message    : Unterminated comment beginning on line 16
+Message    : The beginning of a comment was detected, but it is missing a closing bracket. Add the closing bracket to the end of the comment or correct if it is not a comment.
 

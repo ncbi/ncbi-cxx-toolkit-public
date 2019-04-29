@@ -424,7 +424,7 @@ CAlnScannerNexus::xProcessMatrix(
             sequenceCharCount += dataSize;
             if (sequenceCharCount > mSequenceSize) {
                 string description = ErrorPrintf(
-                    "Expected %d symbols per sequence but finding already %d",
+                    "The expected number of charcters per sequence specified by nChar in the Nexus file is %d. The actual number of characters counted for the first sequence is %d. The expected number of characters must equal the actual number of characters.",
                     mSequenceSize,
                     sequenceCharCount);
                 throw SShowStopper(
@@ -533,7 +533,7 @@ CAlnScannerNexus::xProcessDimensions(
             mSequenceSize = NStr::StringToInt(nchar.first);
         }
         catch(...) {
-            string description = ErrorPrintf("Invalid nChar setting \"%s\"", 
+            string description = ErrorPrintf("Nexus file has invalid nChar setting: \"%s\". nChar must be an integer", 
                         nchar.first.c_str());
                     throw SShowStopper(
                         nchar.second,
@@ -745,9 +745,8 @@ CAlnScannerNexus::xImportAlignmentData(
 
 
     if (numOpenBrackets > 0) {
-        string description = ErrorPrintf(
-                "Unterminated comment beginning on line %d",
-                commentStartLine);
+        string description =
+                "The beginning of a comment was detected, but it is missing a closing bracket. Add the closing bracket to the end of the comment or correct if it is not a comment.";
         throw SShowStopper(
                 commentStartLine,
                 EAlnSubcode::eAlnSubcode_UnterminatedComment,
@@ -757,14 +756,7 @@ CAlnScannerNexus::xImportAlignmentData(
     if (!commandTokens.empty()) {
         auto commandStartLine =  commandTokens.front().mNumLine;
         string description = 
-           (commandStartLine == lineCount) ?
-           ErrorPrintf(
-                "Unterminated command on line %d",
-                commandStartLine)
-           :
-            ErrorPrintf(
-                "Unterminated command beginning on line %d",
-                commandStartLine);
+            "Terminating semicolon missing from command. Commands in a Nexus file must end with a semicolon.";
         throw SShowStopper(
             lineCount,
             EAlnSubcode::eAlnSubcode_UnterminatedCommand,
@@ -772,56 +764,6 @@ CAlnScannerNexus::xImportAlignmentData(
     }
 }
 
-/*
-//  ----------------------------------------------------------------------------
-void
-CAlnScannerNexus::xVerifySingleSequenceData(
-    const CSequenceInfo& sequenceInfo,
-    const TLineInfo& seqId,
-    const vector<TLineInfo> lineInfos)
-//  -----------------------------------------------------------------------------
-{
-    const char* errTempl("Bad character [%c] found at data position %d.");
-
-    const string& alphabet = sequenceInfo.Alphabet();
-    string legalAnywhere = alphabet;
-    if (mGapChar != 0) {
-        legalAnywhere += mGapChar;
-    }
-    else {
-        legalAnywhere += sequenceInfo.MiddleGap();
-    }
-    if (mMatchChar != 0) {
-        legalAnywhere += mMatchChar;
-    }
-    else {
-        legalAnywhere += sequenceInfo.Match();
-    }
-    if (mMissingChar != 0) {
-        legalAnywhere += mMissingChar;
-    }
-    else {
-        legalAnywhere += sequenceInfo.Missing();
-    }
-
-    for (auto lineInfo: lineInfos) {
-        if (lineInfo.mData.empty()) {
-            continue;
-        }
-        string seqData(lineInfo.mData);
-        auto illegalChar = seqData.find_first_not_of(legalAnywhere);
-        if (illegalChar != string::npos) {
-            string description = ErrorPrintf(
-                errTempl, seqData[illegalChar], illegalChar);
-            throw SShowStopper(
-                lineInfo.mNumLine,
-                EAlnSubcode::eAlnSubcode_BadDataChars,
-                description,
-                seqId.mData);
-        }
-    }
-}
-*/
 
 //  ----------------------------------------------------------------------------
 void
