@@ -1,3 +1,11 @@
+Apr 29, 2019
+Release 1.14.0
+*Make AIRR format more consistent with AIRR specs including changing undefined type (NON, N/A) to empty string, not appending "reversed" to seqid when query is in reversed orientation, using standard locus names such as IGH, TRB instead of traditional VH, VB etc.
+
+*Loosening criteria to show CDR3 end by allowing the first FWR4 base to be missing.	
+
+*Bug fix: Restoring seqid for no result case.
+	
 Mar 7, 2019
 Release 1.13.0
 *Determine the V gene reading frame from the end of FWR3 region instead of end of V gene.  This is to allow proper determination of the frames for rearrangements that have insertions or deletions near the V gene end.
