@@ -146,8 +146,8 @@ public:
     CPrimeCacheApplication()
         : m_MainIndex(CAsnIndex::e_main)
         , m_SeqIdIndex(CAsnIndex::e_seq_id)
-        , m_ExtractDelta(false)
         , m_Genome (CBioSource::eGenome_unknown)
+        , m_ExtractDelta(false)
         , m_MaxDeltaLevel(UINT_MAX)
     {
     }
