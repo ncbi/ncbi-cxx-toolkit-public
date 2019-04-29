@@ -343,6 +343,9 @@ static unsigned short x_PortForScheme(unsigned port, EBURLScheme scheme)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_SamePort(unsigned short port1, EBURLScheme scheme1,
                               unsigned short port2, EBURLScheme scheme2)
 {
@@ -769,6 +772,14 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
 }
 
 
+/*ARGSUSED*/
+static int s_TunnelAdjust(SConnNetInfo* net_info, void* data, unsigned int arg)
+{
+    SHttpConnector* uuu = (SHttpConnector*) data;
+    return uuu->major_fault++ >= uuu->net_info->max_try ? 0 : -1;
+}
+
+
 /* Connect to the HTTP server, specified by uuu->net_info's "port:host".
  * Return eIO_Success only if socket connection has succeeded and uuu->sock
  * is non-zero.  If unsuccessful, try to adjust uuu->net_info with s_Adjust(),
@@ -820,13 +831,14 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                : fSOCK_KeepAlive | fSOCK_LogDefault);
         sock = uuu->sock;
         uuu->sock = 0;
-        uuu->reused = sock ? 1 : 0;
+        uuu->reused = sock ? 1/*true*/ : 0/*false*/;
         if ((!sock  ||  !SOCK_IsSecure(sock))
             &&  uuu->net_info->req_method != eReqMethod_Connect
             &&  uuu->net_info->scheme == eURL_Https
             &&  uuu->net_info->http_proxy_host[0]
             &&  uuu->net_info->http_proxy_port) {
             SConnNetInfo* net_info = ConnNetInfo_Clone(uuu->net_info);
+            uuu->reused = 0/*false*/;
             if (!net_info) {
                 status = eIO_Unknown;
                 break;
@@ -838,7 +850,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 net_info->port  = CONN_PORT_HTTPS;
             net_info->firewall  = 0/*false*/;
             ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
-            status = HTTP_CreateTunnel(net_info, fHTTP_NoUpread, &sock);
+            status = HTTP_CreateTunnelEx(net_info, fHTTP_NoUpread,
+                                         0, 0, uuu, s_TunnelAdjust, &sock);
             assert((status == eIO_Success) ^ !sock);
             ConnNetInfo_Destroy(net_info);
         } else
@@ -854,7 +867,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             char*          temp;
             size_t         len;
 
-            /* RFC7230 now requires Host: for CONNECT as well */
+            /* RFC7230 now requires Host: for CONNECT just as well */
             if (!uuu->skip_host  &&  !x_SetHttpHostTag(uuu->net_info)) {
                 status = eIO_Unknown;
                 break;
@@ -2689,6 +2702,8 @@ static EIO_Status s_CreateHttpConnector
  const char*         user_header,
  int/*bool*/         tunnel,
  THTTP_Flags         flags,
+ void*               user_data,
+ FHTTP_Adjust        adjust,
  SHttpConnector**    http)
 {
     SConnNetInfo*   xxx;
@@ -2754,8 +2769,8 @@ static EIO_Status s_CreateHttpConnector
     uuu->net_info     = xxx;
 
     uuu->parse_header = 0;
-    uuu->user_data    = 0;
-    uuu->adjust       = 0;
+    uuu->user_data    = user_data;
+    uuu->adjust       = adjust;
     uuu->cleanup      = 0;
 
     sid = flags & fHTTP_NoAutomagicSID ? 1 : tunnel;
@@ -2801,7 +2816,7 @@ static CONNECTOR s_CreateConnector
     CONNECTOR       ccc;
 
     if (s_CreateHttpConnector(net_info, user_header, 0/*regular*/,
-                              flags, &uuu) != eIO_Success) {
+                              flags, user_data, adjust, &uuu) != eIO_Success) {
         assert(!uuu);
         return 0;
     }
@@ -2814,8 +2829,6 @@ static CONNECTOR s_CreateConnector
 
     /* initialize additional internal data structure */
     uuu->parse_header = parse_header;
-    uuu->user_data    = user_data;
-    uuu->adjust       = adjust;
     uuu->cleanup      = cleanup;
 
     /* enable an override from outside */
@@ -2862,8 +2875,10 @@ extern CONNECTOR HTTP_CreateConnectorEx
 extern EIO_Status HTTP_CreateTunnelEx
 (const SConnNetInfo* net_info,
  THTTP_Flags         flags,
- const void*         data,
- size_t              size,
+ const void*         init_data,
+ size_t              init_size,
+ void*               user_data,
+ FHTTP_Adjust        adjust,
  SOCK*               sock)
 {
     unsigned short  http_code;
@@ -2874,7 +2889,8 @@ extern EIO_Status HTTP_CreateTunnelEx
         return eIO_InvalidArg;
 
     status = s_CreateHttpConnector(net_info, 0/*user_header*/, 1/*tunnel*/,
-                                   flags | fHTTP_DropUnread, &uuu);
+                                   flags | fHTTP_DropUnread,
+                                   user_data, adjust, &uuu);
     if (status != eIO_Success) {
         assert(!uuu);
         return status;
@@ -2882,7 +2898,7 @@ extern EIO_Status HTTP_CreateTunnelEx
     uuu->sock = *sock;
     *sock = 0;
     assert(uuu  &&  !BUF_Size(uuu->w_buf));
-    if (!size  ||  BUF_Prepend(&uuu->w_buf, data, size)) {
+    if (!init_size  ||  BUF_Prepend(&uuu->w_buf, init_data, init_size)) {
         status = s_PreRead(uuu, uuu->net_info->timeout, eEM_Wait);
         if (status == eIO_Success) {
             assert(uuu->conn_state == eCS_ReadBody);
@@ -2920,7 +2936,7 @@ extern EIO_Status HTTP_CreateTunnel
  THTTP_Flags         flags,
  SOCK*               sock)
 {
-    return HTTP_CreateTunnelEx(net_info, flags, 0, 0, sock);
+    return HTTP_CreateTunnelEx(net_info, flags, 0, 0, 0, 0, sock);
 }
 
 

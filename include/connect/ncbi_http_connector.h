@@ -350,13 +350,15 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
 extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnelEx
 (const SConnNetInfo* net_info,
  THTTP_Flags         flags,
- const void*         data,    /**< initial data block to send via the tunnel */
- size_t              size,    /**< size of the initial data block            */
- SOCK*               sock     /**< return socket; must be non-NULL           */
+ const void*         init_data,  /**< initial data block to send via tunnel  */
+ size_t              init_size,  /**< size of the initial data block         */
+ void*               user_data,  /**< user data for the adjust callback      */
+ FHTTP_Adjust        adjust,     /**< adjust callback, may be NULL           */
+ SOCK*               sock        /**< return socket; must be non-NULL        */
  );
 
 
-/** Same as HTTP_CreateTunnelEx(net_info, flags, 0, 0, sock) */
+/** Same as HTTP_CreateTunnelEx(net_info, flags, 0, 0, 0, 0, sock) */
 extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnel
 (const SConnNetInfo* net_info,
  THTTP_Flags         flags,
