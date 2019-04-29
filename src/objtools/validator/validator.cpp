@@ -294,6 +294,17 @@ CConstRef<CValidError> CValidator::Validate
 }
 //LCOV_EXCL_STOP
 
+CConstRef<CValidError> CValidator::Validate
+(const CSeqdesc& desc, 
+ const CSeq_entry& ctx,
+ Uint4 options)
+{
+    CRef<CValidError> errors(new CValidError(&desc));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_Taxon.get(), options);
+    imp.Validate(desc, ctx);
+    return errors;
+}
+
 void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data)
 {
     m_PrgCallback = callback;

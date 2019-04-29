@@ -1587,6 +1587,14 @@ void CValidError_imp::Validate(const CPubdesc& pubdesc, CScope* scope)
     FindCollidingSerialNumbers(pubdesc);
 }
 
+void CValidError_imp::Validate(const CSeqdesc& desc, const CSeq_entry& ctx)
+{
+    CValidError_desc seqdesc_validator(*this);
+    m_Scope.Reset(new CScope(*m_ObjMgr));
+    m_Scope->AddTopLevelSeqEntry(ctx);
+    seqdesc_validator.ValidateSeqDesc(desc,ctx);
+}
+
 
 void CValidError_imp::SetProgressCallback
 (CValidator::TProgressCallback callback,

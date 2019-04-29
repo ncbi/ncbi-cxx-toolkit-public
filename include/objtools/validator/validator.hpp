@@ -172,6 +172,11 @@ public:
     CConstRef<CValidError> Validate(const CPubdesc& pubdesc, 
         Uint4 options = 0);
 
+	// Validate Seqdesc
+    CConstRef<CValidError> Validate(const CSeqdesc& desc, 
+        const CSeq_entry& ctx,
+        Uint4 options = 0);
+
     // externally callable tests
     CConstRef<CValidError> GetTSANStretchErrors(const CSeq_entry_Handle& se); 
     CConstRef<CValidError> GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se);

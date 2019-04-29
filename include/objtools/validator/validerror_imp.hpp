@@ -157,6 +157,7 @@ public:
     void Validate(const CSeq_feat& feat, CScope* scope = 0);
     void Validate(const CBioSource& src, CScope* scope = 0);
     void Validate(const CPubdesc& pubdesc, CScope* scope = 0);
+    void Validate(const CSeqdesc& desc, const CSeq_entry& ctx);
     void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
 

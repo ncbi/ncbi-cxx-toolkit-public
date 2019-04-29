@@ -47,12 +47,16 @@
 #include <connect/ncbi_util.h>
 
 // Objects includes
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Pubdesc.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -127,6 +131,7 @@ private:
     CConstRef<CValidError> ProcessPubdesc(void);
     CConstRef<CValidError> ProcessBioseqset(void);
     CConstRef<CValidError> ProcessBioseq(void);
+    CConstRef<CValidError> ProcessSeqDesc(void);
 
     CConstRef<CValidError> ValidateInput (void);
     void ValidateOneDirectory(string dir_name, bool recurse);
@@ -295,7 +300,17 @@ void CAsnvalApp::Init(void)
         CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("a", "a", 
-                            "ASN.1 Type (a Automatic, c Catenated, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit",
+                            "ASN.1 Type\n\
+\ta Automatic\n\
+\tc Catenated\n\
+\tz Any\n\
+\te Seq-entry\n\
+\tb Bioseq\n\
+\ts Bioseq-set\n\
+\tm Seq-submit\n\
+\tt Batch Bioseq-set\n\
+\tu Batch Seq-submit\n\
+\td Seq-desc",
                             CArgDescriptions::eString,
                             "a");
 
@@ -363,6 +378,9 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
         case 'b':
             header = "Bioseq";
             break;
+        case 'd':
+            header = "Seqdesc";
+            break;
         }
     }
 
@@ -384,6 +402,8 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
         eval = ProcessBioseqset();
     } else if (header == "Bioseq" ) {               // Bioseq
         eval = ProcessBioseq();
+    } else if (header == "Seqdesc" ) {             // Seq-desc
+        eval = ProcessSeqDesc();
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
@@ -943,7 +963,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
         return ReportReadFailure(&e);
     }
 
-    // Validae Seq-submit
+    // Validate Seq-submit
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
@@ -969,7 +989,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
     // Get seq-annot to validate
     m_In->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
 
-    // Validae Seq-annot
+    // Validate Seq-annot
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
@@ -978,6 +998,47 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
     }
     CSeq_annot_Handle sah = scope->AddSeq_annot(*sa);
     CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
+    m_NumRecords++;
+    return eval;
+}
+
+static CRef<objects::CSeq_entry> s_BuildGoodSeq(void)
+{
+    CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
+    entry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+    entry->SetSeq().SetInst().SetLength(60);
+
+    CRef<objects::CSeq_id> id(new objects::CSeq_id());
+    id->SetLocal().SetStr ("good");
+    entry->SetSeq().SetId().push_back(id);
+
+    CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_genomic);    
+    entry->SetSeq().SetDescr().Set().push_back(mdesc);
+
+    /*
+    AddGoodSource (entry);
+    AddGoodPub(entry);
+    */
+
+    return entry;
+}
+
+CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc(void)
+{
+    CRef<CSeqdesc> sd(new CSeqdesc);
+
+    m_In->Read(ObjectInfo(*sd), CObjectIStream::eNoFileHeader);
+
+    CRef<CSeq_entry> ctx = s_BuildGoodSeq();
+
+    CValidator validator(*m_ObjMgr);
+    CRef<CScope> scope = BuildScope();
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
+
+    CConstRef<CValidError> eval = validator.Validate(*sd, *ctx);
     m_NumRecords++;
     return eval;
 }
