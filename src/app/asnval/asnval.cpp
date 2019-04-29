@@ -90,7 +90,7 @@ using namespace ncbi;
 using namespace objects;
 using namespace validator;
 
-const char * ASNVAL_APP_VER = "10.1";
+const char * ASNVAL_APP_VER = "10.2";
 
 #define USE_XMLWRAPP_LIBS
 
