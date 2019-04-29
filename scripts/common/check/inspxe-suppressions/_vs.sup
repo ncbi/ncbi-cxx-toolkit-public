@@ -259,3 +259,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "False positive in printf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=stdio.h,func=printf;
+		}
+	}
+}

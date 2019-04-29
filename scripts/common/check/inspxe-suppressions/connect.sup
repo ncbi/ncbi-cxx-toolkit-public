@@ -33,7 +33,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "ConnNetInfo_Create/Clone (1)"
+	name = "ConnNetInfo_Create/Clone (2)"
 	type = {uninitialized_memory_access_partial}
 	stacks = {
 		allocation={
@@ -43,6 +43,21 @@ suppression = {
 		{
 			!!!;
 			src=ncbi_connutil.c,func=ConnNetInfo_Clone;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_SetupStandardArgs/x_ClientAddress/sprintf"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf,src=stdio.h;
+			func=ConnNetInfo_SetupStandardArgs,src=ncbi_connutil.c;
+		}
+		allocation={
+			...;
+			func=ConnNetInfo_SetupStandardArgs,src=ncbi_connutil.c;
 		}
 	}
 }
