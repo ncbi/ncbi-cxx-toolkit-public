@@ -123,11 +123,16 @@ test(int final_rows, int no_rows)
 	CS_RETCODE ret;
 	CS_CHAR cmdbuf[4096];
 	char results[1024];
+        char *results_end = results, *cmdbuf_end = cmdbuf;
 
 	run_command(cmd, "create table #tmp1 (i int not null)");
 
-	results[0] = 0;
-	strcpy(cmdbuf, "create proc sample_rpc as ");
+#define strcat(s, k) do { \
+            memcpy(s##_end, k, sizeof(k)); \
+            s##_end += sizeof(k) - 1; \
+        } while (0)
+
+        strcat(cmdbuf, "create proc sample_rpc as ");
 
 	strcat(results, "CS_ROW_RESULT -1\n");
 	strcat(cmdbuf,  "insert into #tmp1 values(1) "
@@ -155,6 +160,7 @@ test(int final_rows, int no_rows)
 		strcat(results, "CS_CMD_SUCCEED -1\n"
 			        "CS_CMD_DONE -1\n");
 	}
+#undef strcat
 
 	printf("testing query:\n----\n%s\n----\n", cmdbuf);
 
