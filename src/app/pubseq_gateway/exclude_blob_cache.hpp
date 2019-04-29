@@ -53,9 +53,10 @@ struct SExcludeBlobId
 {
     int     m_Sat;
     int     m_SatKey;
+    bool    m_Completed;
 
     SExcludeBlobId(int  sat, int  sat_key):
-        m_Sat(sat), m_SatKey(sat_key)
+        m_Sat(sat), m_SatKey(sat_key), m_Completed(false)
     {}
 
     bool operator < (const SExcludeBlobId &  other) const
@@ -84,8 +85,14 @@ class CUserExcludeBlobs
         {}
 
     public:
-        bool IsInCache(int  sat, int  sat_key);
-        ECacheAddResult AddBlobId(int  sat, int  sat_key);
+        // The 'completed' value is filled only if the blob is in the cache
+        bool IsInCache(int  sat, int  sat_key, bool &  completed);
+        ECacheAddResult AddBlobId(int  sat, int  sat_key, bool &  completed);
+
+        // Return true if the required blob id was found
+        bool SetCompleted(int  sat, int  sat_key, bool  new_val);
+        bool Remove(int  sat, int  sat_key);
+
         void Purge(size_t  purged_size);
         void Clear(void);
 
@@ -192,10 +199,18 @@ class CExcludeBlobCache
         }
 
     public:
+        // The 'completed' value is filled only if the blob is in the cache
         ECacheAddResult AddBlobId(const string &  user,
-                                  int  sat, int  sat_key);
+                                  int  sat, int  sat_key, bool &  completed);
         bool IsInCache(const string &  user,
-                       int  sat, int  sat_key);
+                       int  sat, int  sat_key, bool &  completed);
+
+        // Return true if the required blob id was found
+        bool SetCompleted(const string &  user,
+                          int  sat, int  sat_key, bool  new_val);
+        bool Remove(const string &  user,
+                    int  sat, int  sat_key);
+
         void Purge(void);
 
         size_t Size(void) {

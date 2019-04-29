@@ -35,16 +35,21 @@
 #include "exclude_blob_cache.hpp"
 
 
-bool CUserExcludeBlobs::IsInCache(int  sat, int  sat_key)
+bool CUserExcludeBlobs::IsInCache(int  sat, int  sat_key, bool &  completed)
 {
     m_LastTouch = std::chrono::steady_clock::now();
 
-    return m_ExcludeBlobs.find(SExcludeBlobId(sat, sat_key)) !=
-           m_ExcludeBlobs.cend();
+    auto it = m_ExcludeBlobs.find(SExcludeBlobId(sat, sat_key));
+    if (it == m_ExcludeBlobs.cend())
+        return false;
+
+    completed = it->m_Completed;
+    return true;
 }
 
 
-ECacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key)
+ECacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
+                                             bool &  completed)
 {
     m_LastTouch = std::chrono::steady_clock::now();
 
@@ -54,6 +59,9 @@ ECacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key)
         m_LRU.emplace_front(sat, sat_key);
         return eAdded;
     }
+
+    // It already exists
+    completed = ret.first->m_Completed;
 
     // Note: not really effective; search + destroy + create instead of
     //       search + move to top
@@ -65,6 +73,42 @@ ECacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key)
     }
 
     return eAlreadyInCache;
+}
+
+
+bool  CUserExcludeBlobs::SetCompleted(int  sat, int  sat_key, bool  new_val)
+{
+    m_LastTouch = std::chrono::steady_clock::now();
+
+    auto it = m_ExcludeBlobs.find(SExcludeBlobId(sat, sat_key));
+    if (it == m_ExcludeBlobs.end())
+        return false;
+
+    // The compiler does not let to change the m_Completed value via an
+    // iterator saying that the object is constant.
+    // The m_Completed though is not participating in the element comparisons
+    // so it is safe to change it.
+    SExcludeBlobId *    p = const_cast<SExcludeBlobId*>(&(*it));
+    p->m_Completed = new_val;
+    return true;
+}
+
+
+bool CUserExcludeBlobs::Remove(int  sat, int  sat_key)
+{
+    m_LastTouch = std::chrono::steady_clock::now();
+
+    SExcludeBlobId      pattern(sat, sat_key);
+    auto it = m_ExcludeBlobs.find(pattern);
+    if (it == m_ExcludeBlobs.end())
+        return false;   // not found
+
+    m_ExcludeBlobs.erase(it);
+
+    auto lru_it = find(m_LRU.begin(), m_LRU.end(), pattern);
+    if (lru_it != m_LRU.end())      // paranoid check: if the blob id is found
+        m_LRU.erase(lru_it);        // in the set then it must be in LRU
+    return true;
 }
 
 
@@ -86,7 +130,8 @@ void CUserExcludeBlobs::Clear(void)
 
 
 ECacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
-                                             int  sat, int  sat_key)
+                                             int  sat, int  sat_key,
+                                             bool &  completed)
 {
     if (m_MaxCacheSize == 0)
         return eAdded;
@@ -109,14 +154,15 @@ ECacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
     while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
     m_Lock = false;                                 // release top level lock
 
-    auto ret = user_blobs->AddBlobId(sat, sat_key);
+    auto ret = user_blobs->AddBlobId(sat, sat_key, completed);
     user_blobs->m_Lock = false;                     // release user data lock
     return ret;
 }
 
 
 bool CExcludeBlobCache::IsInCache(const string &  user,
-                                  int  sat, int  sat_key)
+                                  int  sat, int  sat_key,
+                                  bool &  completed)
 {
     if (m_MaxCacheSize == 0)
         return false;
@@ -139,7 +185,67 @@ bool CExcludeBlobCache::IsInCache(const string &  user,
     while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
     m_Lock = false;                                 // release top level lock
 
-    auto ret = user_blobs->IsInCache(sat, sat_key);
+    auto ret = user_blobs->IsInCache(sat, sat_key, completed);
+    user_blobs->m_Lock = false;                     // release user data lock
+    return ret;
+}
+
+
+bool CExcludeBlobCache::SetCompleted(const string &  user,
+                                     int  sat, int  sat_key, bool  new_val)
+{
+    if (m_MaxCacheSize == 0)
+        return true;
+    if (user.empty())
+        return true;
+
+    while (m_Lock.exchange(true)) {}    // acquire top level lock
+
+    const auto user_item = m_UserBlobs.find(user);
+    CUserExcludeBlobs *  user_blobs;
+    if (user_item == m_UserBlobs.cend()) {
+        // Not found
+        m_Lock = false;                 // release top level lock
+        return false;
+    }
+
+    // Found
+    user_blobs = user_item->second;
+
+    while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
+    m_Lock = false;                                 // release top level lock
+
+    auto ret = user_blobs->SetCompleted(sat, sat_key, new_val);
+    user_blobs->m_Lock = false;                     // release user data lock
+    return ret;
+}
+
+
+bool CExcludeBlobCache::Remove(const string &  user,
+                               int  sat, int  sat_key)
+{
+    if (m_MaxCacheSize == 0)
+        return true;
+    if (user.empty())
+        return true;
+
+    while (m_Lock.exchange(true)) {}    // acquire top level lock
+
+    const auto user_item = m_UserBlobs.find(user);
+    CUserExcludeBlobs *  user_blobs;
+    if (user_item == m_UserBlobs.cend()) {
+        // Not found
+        m_Lock = false;                 // release top level lock
+        return false;
+    }
+
+    // Found
+    user_blobs = user_item->second;
+
+    while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
+    m_Lock = false;                                 // release top level lock
+
+    auto ret = user_blobs->Remove(sat, sat_key);
     user_blobs->m_Lock = false;                     // release user data lock
     return ret;
 }

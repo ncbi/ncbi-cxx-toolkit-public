@@ -256,6 +256,18 @@ void CProtocolUtils::PrepareBlobCompletion(size_t           item_id,
 }
 
 
+void CProtocolUtils::PrepareBlobExcluded(size_t  item_id,
+                                         const SBlobId &  blob_id,
+                                         EBlobSkipReason  skip_reason)
+{
+    string  exclude = GetBlobExcludeHeader(item_id, blob_id, skip_reason);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(exclude.data()),
+                    exclude.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
 void CProtocolUtils::PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
 {
     // +1 is for the completion itself

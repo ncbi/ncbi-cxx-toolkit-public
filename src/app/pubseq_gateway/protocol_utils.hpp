@@ -94,6 +94,8 @@ public:
                             EDiagSev  severity);
     void PrepareBlobCompletion(size_t  item_id, const SBlobId &  blob_id,
                                size_t  chunk_count);
+    void PrepareBlobExcluded(size_t  item_id, const SBlobId &  blob_id,
+                             EBlobSkipReason  skip_reason);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details);
     void PrepareReplyMessage(const string &  msg,
                              CRequestStatus::ECode  status, int  err_code,

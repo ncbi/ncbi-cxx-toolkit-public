@@ -130,6 +130,8 @@ static string   s_SecAcc = "seq_acc=";
 static string   s_SeqVer = "seq_ver=";
 static string   s_SeqType = "seq_type=";
 static string   s_NA = "na=";
+static string   s_Reason = "reason=";
+static string   s_NChunksZero = "n_chunks=0";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -142,6 +144,9 @@ static string   s_Message = "message";
 static string   s_Protobuf = "protobuf";
 static string   s_Json = "json";
 static string   s_BioseqNA = "bioseq_na";
+static string   s_Excluded = "excluded";
+static string   s_InProgress = "inprogress";
+static string   s_Sent = "sent";
 
 // Combinations
 static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
@@ -327,6 +332,41 @@ string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
                 .append(1, '\n');
 }
 
+
+string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
+                             EBlobSkipReason  skip_reason)
+{
+    // E.g. PSG-Reply-Chunk: item_id=5&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=0&reason={excluded,inprogress,sent}
+    string      reason;
+    switch (skip_reason) {
+        case eExcluded:
+            reason = s_Excluded;
+            break;
+        case eInProgress:
+            reason = s_InProgress;
+            break;
+        case eSent:
+            reason = s_Sent;
+            break;
+    }
+
+    string      reply(s_ReplyBegin);
+
+    return reply.append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BlobItem)
+                .append(1, '&')
+                .append(s_MetaChunk)
+                .append(1, '&')
+                .append(s_BlobId)
+                .append(GetBlobId(blob_id))
+                .append(1, '&')
+                .append(s_NChunksZero)
+                .append(1, '&')
+                .append(s_Reason)
+                .append(reason)
+                .append(1, '\n');
+}
 
 string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
                                 size_t  chunk_count)

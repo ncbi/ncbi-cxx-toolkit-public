@@ -155,4 +155,11 @@ enum EReplyMimeType {
     eNotSet
 };
 
+
+enum EBlobSkipReason {
+    eExcluded,
+    eInProgress,
+    eSent
+};
+
 #endif
