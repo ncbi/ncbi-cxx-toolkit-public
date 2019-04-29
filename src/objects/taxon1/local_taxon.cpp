@@ -84,10 +84,7 @@ CLocalTaxon::~CLocalTaxon()
 }
 
 CLocalTaxon::STaxidNode::STaxidNode()
-    : taxid(-1)
-    , is_valid(false)
-    , parent(s_InvalidNode)
-    , genetic_code(-1)
+: is_valid(false), parent(s_InvalidNode), genetic_code(-1), taxid(-1)
 {
 }
 

@@ -1,0 +1,4 @@
+GCClient*.hpp
+NCBI_GencollClient_module.hpp
+gencoll_client__.hpp
+genomic_collections_cli_.hpp
