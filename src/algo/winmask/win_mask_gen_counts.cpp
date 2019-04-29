@@ -143,6 +143,7 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
+    // max_count( 1024*1024UL ),
     max_count( 500 ),
     t_high( arg_max_count ),
     has_min_count( arg_min_count != 0 ),
@@ -188,6 +189,7 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
+    // max_count( 1024*1024UL ),
     max_count( 500 ),
     t_high( arg_max_count ),
     has_min_count( arg_min_count != 0 ),
@@ -275,7 +277,7 @@ void CWinMaskCountsGenerator::operator()()
     Uint8 n_units( max_mem/sizeof( Uint4 ) );
 
     while( suffix_size > 0 ) {
-        Uint8 units_needed( 1<<(2*suffix_size) );
+        Uint8 units_needed( 1ULL<<(2*suffix_size) );
         if( units_needed <= n_units ) break; 
         --suffix_size;
     }
@@ -399,12 +401,37 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
                                        bool do_output )
 {
     Uint1 suffix_size( unit_size - prefix_size );
-    Uint4 vector_size( 1<<(2*suffix_size) );
+    Uint8 vector_size( 1ULL<<(2*suffix_size) );
     vector< Uint4 > counts( vector_size, 0 );
     Uint4 unit_mask( (1<<(2*unit_size)) - 1 );
     Uint4 prefix_mask( ((1<<(2*prefix_size)) - 1)<<(2*suffix_size) );
     Uint4 suffix_mask( (1<<2*suffix_size) - 1 );
     if( unit_size == 16 ) unit_mask = 0xFFFFFFFF;
+
+    if( suffix_size == 16 )
+    {
+        suffix_mask = 0xFFFFFFFF;
+        prefix_mask = 0;
+    }
+
+    _TRACE( "prefix: " << prefix <<
+            "\nprefix_size: " << (int)prefix_size <<
+            "\nsuffix_size: " << (int)suffix_size <<
+            "\nvector_size: " << vector_size <<
+            "\nunit_mask: " << unit_mask <<
+            "\nprefix_mask: " << prefix_mask <<
+            "\nsufffix_mask: " << suffix_mask );
+
+    /*
+    std::cerr << "prefix: " << prefix <<
+            "\nprefix_size: " << (int)prefix_size <<
+            "\nsuffix_size: " << (int)suffix_size <<
+            "\nvector_size: " << vector_size <<
+            "\nunit_mask: " << unit_mask <<
+            "\nprefix_mask: " << prefix_mask <<
+            "\nsufffix_mask: " << suffix_mask << std::endl;
+    */
+
     prefix <<= (2*suffix_size);
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
@@ -443,10 +470,26 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
                             Uint4 runit( reverse_complement( unit, unit_size ) );
 
                             if( unit <= runit && (unit&prefix_mask) == prefix )
-                                ++counts[unit&suffix_mask];
+                            {
+                                auto & c( counts[unit&suffix_mask] );
+
+                                if( c < 0xffffffffUL )
+                                {
+                                    ++c;
+                                }
+                                // ++counts[unit&suffix_mask];
+                            }
 
                             if( runit <= unit && (runit&prefix_mask) == prefix )
-                                ++counts[runit&suffix_mask];
+                            {
+                                auto & c( counts[runit&suffix_mask] );
+
+                                if( c < 0xffffffffUL )
+                                {
+                                    ++c;
+                                }
+                                // ++counts[runit&suffix_mask];
+                            }
                         }
 
                         ++count;
@@ -456,7 +499,21 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
         }
     }
 
-    for( Uint4 i( 0 ); i < vector_size; ++i )
+    /*
+    {
+        std::ofstream ofs( "./counts.txt" );
+
+        for( Uint8 i( 0 ); i < vector_size; ++i )
+        {
+            Uint4 u( prefix + i ), ru( 0 );
+            ofs << u << ' ' << counts[i] << '\n';
+        }
+
+        ofs << std::flush;
+    }
+    */
+
+    for( Uint8 i( 0 ); i < vector_size; ++i )
     {
         Uint4 u( prefix + i ), ru( 0 );
 

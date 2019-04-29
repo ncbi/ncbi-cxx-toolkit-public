@@ -44,7 +44,7 @@ Uint1 CSeqMaskerUtil::BitCount( Uint4 mask, Uint1 bit_value )
         Uint1 result = 0;
 
         for( Uint1 i = 0; i < 8*sizeof( mask ); ++i )
-            if( (1<<i)&mask ) ++result;
+            if( (1ULL<<i)&mask ) ++result;
 
         return result;
     }

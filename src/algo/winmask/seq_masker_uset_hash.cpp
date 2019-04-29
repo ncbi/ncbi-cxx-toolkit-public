@@ -56,7 +56,7 @@ void CSeqMaskerUsetHash::add_ht_info( Uint1 arg_k, Uint1 arg_roff, Uint1 arg_bc,
     k = arg_k;
     roff = arg_roff;
     bc = arg_bc;
-    cmask = (1<<bc) - 1;
+    cmask = (1ULL<<bc) - 1;
     ht.reset( arg_ht );
     htp = ht.get();
 }

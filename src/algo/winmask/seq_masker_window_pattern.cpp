@@ -55,7 +55,7 @@ CSeqMaskerWindowPattern::CSeqMaskerWindowPattern( const CSeqVector & arg_data,
       pattern( arg_pattern )
 {
     Uint1 cusz = unit_size - CSeqMaskerUtil::BitCount( pattern );
-    unit_mask = (cusz < 4*sizeof( TUnit )) ? ((1<<(2*cusz)) - 1) 
+    unit_mask = (cusz < 4*sizeof( TUnit )) ? ((1ULL<<(2*cusz)) - 1) 
         : ~((TUnit)0);
     FillWindow( begin );
 }
@@ -73,7 +73,7 @@ bool CSeqMaskerWindowPattern::MakeUnit( Uint4 ustart,
     result = 0;
 
     for( Uint4 i = 0; i < unit_size; ++i )
-        if( ((1<<i)&~pattern) )
+        if( ((1ULL<<i)&~pattern) )
         {
             Uint1 letter = LOOKUP[unsigned(data[ustart + i])];
 

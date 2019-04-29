@@ -78,7 +78,7 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
     Uint4 linenum = 0;
     string line;
     for( Uint4 i( 0 ); i < start_line; ++i ) getline( input_stream, line );
-    Uint1 unit_size;
+    Uint1 unit_size( 0 );
     Uint4 k, roff, bc;
     Uint4 t_low    = 0, 
           t_extend = 0, 
@@ -161,7 +161,7 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
     if( get_use_max_count() == 0 )
       set_use_max_count( get_max_count() );
 
-    Uint4 ht_size = (1<<k);
+    Uint4 ht_size = (1ULL<<k);
     Uint4 * ht = new Uint4[ht_size];
     
     if( ht == 0 )

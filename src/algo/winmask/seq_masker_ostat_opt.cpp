@@ -151,9 +151,9 @@ void CSeqMaskerOstatOpt::createCacheBitArray( Uint4 ** cba )
                 Uint4 rcunit = CSeqMaskerUtil::reverse_complement( 
                     unit, unit_bit_size/2 );
                 Uint4 & word = (*cba)[unit/divisor];
-                word |= (1<<(unit%divisor));
+                word |= (1ULL<<(unit%divisor));
                 Uint4 & word1 = (*cba)[rcunit/divisor];
-                word1 |= (1<<(rcunit%divisor));
+                word1 |= (1ULL<<(rcunit%divisor));
             }
         }
     }
@@ -164,7 +164,7 @@ Uint1 CSeqMaskerOstatOpt::findBestRoff( Uint1 k, Uint1 & max_coll,
                                         Uint4 & M, Uint4 * ht )
 {
     Uint1 u = unit_bit_size;
-    Uint4 sz = (1<<k);
+    Uint4 sz = (k < 32 ? (1ULL<<k) : 0x80000000ULL);
     Uint1 mxcoll[8];
     Uint4 ncoll[8];
     double avcoll[8];
@@ -215,8 +215,8 @@ void CSeqMaskerOstatOpt::doFinalize()
     Uint4 *cba = 0;
     createCacheBitArray( &cba );
     Uint1 k = unit_bit_size - 1;
-    Uint1 roff, max_coll;
-    Uint4 M; /* Units with collisions. */
+    Uint1 roff( 0 ), max_coll( 0 );
+    Uint4 M( 0 ); /* Units with collisions. */
     AutoPtr< Uint4, ArrayDeleter< Uint4 > > ht;
 
     Uint8 emem = 1ULL;
@@ -241,8 +241,8 @@ void CSeqMaskerOstatOpt::doFinalize()
         NCBI_THROW( Exception, eMemory,
                     "Can not find parameters to satisfy memory requirements" );
 
-    Uint1 b0, bc;
-    Uint4 sz = (1<<k);
+    Uint1 b0( 0 ), bc( 0 );
+    Uint4 sz = (k < 32 ? (1ULL<<k) : 0x80000000ULL);
 
     // find the best value of k
     while( k >= unit_bit_size - 7 )
@@ -252,18 +252,18 @@ void CSeqMaskerOstatOpt::doFinalize()
         roff = findBestRoff( k, max_coll, M, ht.get() );
         bc = 0;
 
-        while( (1UL<<bc) <= max_coll )
+        while( (1ULL<<bc) <= max_coll )
             ++bc;
 
         if( bc <= 7 )
         {
             b0 = 0;
 
-            while( (1UL<<b0) <= M )
+            while( (1ULL<<b0) <= M )
                 ++b0;
 
             if( b0 + bc <= 32 )
-                if( 2*M + (1UL<<(k+2)) <= size_requested*MB )
+                if( 2*M + (1ULL<<(k+2)) <= size_requested*MB )
                     break;
         }
 
@@ -277,7 +277,14 @@ void CSeqMaskerOstatOpt::doFinalize()
     _TRACE(     "Using the following hash parameters: \n"
              << "hash key length = " << (int)k << " bits\n"
              << "right offset    = " << (int)roff << " bits\n"
-             << "estimated size  = " << 2*M + (1UL<<(k+2)) << " bytes\n" );
+             << "estimated size  = " << 2*M + (1ULL<<(k+2)) << " bytes\n" );
+
+    /*
+    std::cerr << "Using the following hash parameters: \n"
+             << "hash key length = " << (int)k << " bits\n"
+             << "right offset    = " << (int)roff << " bits\n"
+             << "estimated size  = " << 2*M + (1ULL<<(k+2)) << " bytes" << std::endl;
+    */
 
     // fill in the hash and value tables.
     Uint4 * htp = ht.get();
@@ -290,7 +297,7 @@ void CSeqMaskerOstatOpt::doFinalize()
     AutoPtr< Uint2, ArrayDeleter< Uint2 > > vt( new Uint2[M] );
     Uint2 * vtp = vt.get();
     Uint4 vend = 0;
-    Uint4 coll_mask = ((1<<bc) - 1);
+    Uint4 coll_mask = ((1ULL<<bc) - 1);
 
     for( Uint4 i = 0; i < units.size(); ++i )
     {
@@ -312,7 +319,7 @@ void CSeqMaskerOstatOpt::doFinalize()
                     vend += ccount;
                     htp[hash.first] += ((vend - 1)<<bc);
                 }
-                else htp[hash.first] -= (1<<bc);
+                else htp[hash.first] -= (1ULL<<bc);
 
                 vtp[htp[hash.first]>>bc] 
                     = (((Uint2)(hash.second))<<9) + counts[i];

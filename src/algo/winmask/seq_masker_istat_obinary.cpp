@@ -187,7 +187,7 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
         }
     }
 
-    Uint4 ht_size = (1<<k);
+    Uint4 ht_size = (1ULL<<k);
     Uint4 * ht = new Uint4[ht_size];
     
     if( ht == 0 )

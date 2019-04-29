@@ -85,7 +85,7 @@ void CSeqMaskerOstatOptAscii::write_out( const params & p ) const
     for( Uint4 i = 0; i < GetParams().size(); ++i )
         out_stream << GetParams()[i] << "\n";
 
-    for( Uint4 i = 0, sz = (1<<p.k); i < sz; ++i )
+    for( Uint4 i = 0, sz = (1ULL<<p.k); i < sz; ++i )
         out_stream << p.ht[i] << "\n";
 
     for( Uint4 i = 0; i < p.M; ++i )

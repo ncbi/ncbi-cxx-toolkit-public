@@ -101,7 +101,7 @@ void CSeqMaskerOstatOptBin::write_out( const params & p ) const
         else write_word( (Uint4)0 );
     }
 
-    Uint4 sz = (1<<p.k);
+    Uint4 sz = (1ULL<<p.k);
     out_stream.write( (const char *)(p.ht), sz*sizeof( Uint4 ) );
     out_stream.write( (const char *)(p.vt), p.M*sizeof( Uint2 ) );
     out_stream << flush;

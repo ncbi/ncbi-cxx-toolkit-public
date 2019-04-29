@@ -67,6 +67,9 @@ void CSeqMaskerScoreMean::PostAdvance( Uint4 step )
     {
         /*!!!!NEW CODE*/ sum -= *scores_start;
         *scores_start = (*ustat)[(*window)[num - 1]];
+
+        // std::cerr << std::hex << (*window)[num - 1] << ' ' << *scores_start << std::dec << std::endl;
+
         sum += *scores_start;
         scores_start = (scores_start - &scores[0] == (int)(num - 1) ) 
 	             ? &scores[0]
@@ -95,6 +98,10 @@ void CSeqMaskerScoreMean::FillScores()
   for( Uint1 i = 0; i < num; ++i )
   {
     scores[i] = (*ustat)[(*window)[i]];
+
+    // TODO: delete
+    // std::cerr << std::hex << (*window)[i] << ' ' << scores[i] << std::dec << std::endl;
+
     sum += scores[i];
   }
 
