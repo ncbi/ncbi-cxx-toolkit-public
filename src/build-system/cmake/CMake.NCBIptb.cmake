@@ -1002,6 +1002,7 @@ function(NCBI_internal_add_dataspec)
                 add_custom_command(
                     OUTPUT ${_path}/${_basename}.pb.cc
                     COMMAND ${_cmd} VERBATIM
+                    COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
                     COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
                     WORKING_DIRECTORY ${top_src_dir}
@@ -1015,6 +1016,7 @@ function(NCBI_internal_add_dataspec)
                 add_custom_command(
                     OUTPUT ${_path}/${_basename}.grpc.pb.cc
                     COMMAND ${_cmd} VERBATIM
+                    COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
                     COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
                     WORKING_DIRECTORY ${top_src_dir}
