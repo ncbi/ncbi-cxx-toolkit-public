@@ -63,6 +63,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("B", "Do Barcode Validation");
     argdescr->AddFlag("refseq", "Use RefSeq Conventions");
 	argdescr->AddFlag("collect_locus_tags", "Collect locus tags for formatted reports");
+	argdescr->AddFlag("golden_file", "Suppress context part of message");
 }
 
 
@@ -151,6 +152,10 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
 
 	if (args["collect_locus_tags"]) {
 		options |= CValidator::eVal_collect_locus_tags;
+	}
+
+	if (args["golden_file"]) {
+		options |= CValidator::eVal_generate_golden_file;
 	}
 
     return options;

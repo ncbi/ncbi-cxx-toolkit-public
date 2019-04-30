@@ -235,6 +235,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_LatLonIgnoreWater = (options & CValidator::eVal_latlon_ignore_water) != 0;
     m_genomeSubmission = (options & CValidator::eVal_genome_submission) != 0;
     m_CollectLocusTags = (options & CValidator::eVal_collect_locus_tags) != 0;
+    m_GenerateGoldenFile = (options & CValidator::eVal_generate_golden_file) != 0;
 }
 
 
@@ -600,6 +601,11 @@ void CValidError_imp::PostErr
     item->SetMsg(msg);
     item->SetObject(ft);
 
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(item);
+        return;
+    }
+
     string content_label = CValidErrorFormat::GetFeatureContentLabel(ft, m_Scope);
     item->SetObj_content(content_label);
 
@@ -676,6 +682,12 @@ void CValidError_imp::PostErr
     // Adjust severity
     if (m_genomeSubmission && sv < eDiag_Error && RaiseGenomeSeverity(et)) {
         sv = eDiag_Error;
+    }
+
+    if (GenerateGoldenFile()) {
+        // m_ErrRepository->AddValidErrItem(sv, et, msg, "", sq, "", 0);
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
     }
 
     // Append bioseq label
