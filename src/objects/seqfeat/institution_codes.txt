@@ -3233,7 +3233,7 @@ JM	s	Jura Museum, Eichstatt
 JME	s	Jura-Museum Eichstatt			
 JMM	s	Earlham College, Joseph Moore Museum			
 JMRC	c	Jena Microbial Resource Collection		http://www.jmrc.uni-jena.de/data.php?fsu=	
-JMRC:SF	c	Jena Microbial Resource Collection, Subcollection Fungi		
+JMRC:SF	c	Jena Microbial Resource Collection, Subcollection Fungi	
 JMSMC	s	Jiamusi Medical College, Department of Pharmacy			
 JMUH	s	James Madison University, Department of Biology			
 JN	s	Jinggang Mountain Nature Reserve			
@@ -3922,7 +3922,6 @@ MBSN	s	Museo Brembano di Scienze Naturali
 MBUCV	s	Museo de Biologia de la Universidad Central de Venezuela	CBFC,MBUC		
 MBY	s	Museum Biologi Yogyakarta			
 MBZH	s	Museo y Biblioteca de la Zoologia			
-MC	s	Museo de Cipolleti			
 MCA	s	Muhlenberg College, Biology Department			
 MCAS	s	Museo Civico Archeologico e di Scienze Naturali "F. Eusebio"			
 MCBR	s	Museo Civico "Baldassarre Romano"			
