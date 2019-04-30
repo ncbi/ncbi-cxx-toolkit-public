@@ -685,7 +685,6 @@ void CValidError_imp::PostErr
     }
 
     if (GenerateGoldenFile()) {
-        // m_ErrRepository->AddValidErrItem(sv, et, msg, "", sq, "", 0);
         m_ErrRepository->AddValidErrItem(sv, et, msg);
         return;
     }
@@ -710,6 +709,11 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
+    }
+
     // Append Bioseq_set label
     int version = 0;
     const string& accession = GetAccessionFromObjects(&st, NULL, *m_Scope, &version);
@@ -728,6 +732,11 @@ void CValidError_imp::PostErr
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
+    }
+
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
     }
 
     // Append Descriptor label
@@ -782,6 +791,11 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
+    }
+
     // Append Annotation label
     string desc = "ANNOTATION: ";
 
@@ -802,6 +816,11 @@ void CValidError_imp::PostErr
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
+    }
+
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
     }
 
     // Append Graph label
@@ -832,6 +851,11 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
+    }
+
     // Append Graph label
     string desc("GRAPH: ");
     if ( graph.IsSetTitle() ) {
@@ -857,6 +881,11 @@ void CValidError_imp::PostErr
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
+    }
+
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
     }
 
     CConstRef<CSeq_id> id = GetReportableSeqIdForAlignment(align, *m_Scope);
@@ -904,6 +933,11 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
+    }
+
     if (entry.IsSeq()) {
         PostErr(sv, et, msg, entry.GetSeq());
     } else if (entry.IsSet()) {
@@ -930,6 +964,11 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
+    }
+
     string desc = "BioSource: ";
     
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, src, "", 0);
@@ -945,6 +984,11 @@ void CValidError_imp::PostErr
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
+    }
+
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
     }
 
     string desc = "Org-ref: ";
@@ -964,6 +1008,11 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
+    }
+
     string desc = "Pubdesc: ";
     
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, pd, "", 0);
@@ -979,6 +1028,11 @@ void CValidError_imp::PostErr
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
+    }
+
+    if (GenerateGoldenFile()) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg);
+        return;
     }
 
     string desc = "Seq-submit: ";
