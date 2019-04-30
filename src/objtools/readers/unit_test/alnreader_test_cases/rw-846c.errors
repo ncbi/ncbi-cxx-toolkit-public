@@ -1,5 +1,10 @@
 Line No    : 10
 Severity   : Error
 Problem    : Alignment.IllegalSequenceId
-Message    : Local ID "lcl||12345" contains invalid characters
+Message    : Unable to parse sequence ID string.
+
+Line No    : 10
+Severity   : Error
+Problem    : Alignment.IllegalSequenceId
+Message    : Local ID "lcl||12345" contains invalid characters.
 

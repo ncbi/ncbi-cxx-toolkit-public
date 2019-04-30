@@ -1,5 +1,5 @@
 Line No    : 12
 Severity   : Error
 Problem    : Alignment.IllegalSequenceId
-Message    : Local ID ""invalid_id_because_quoted"" contains invalid characters
+Message    : Local ID ""invalid_id_because_quoted"" contains invalid characters.
 
