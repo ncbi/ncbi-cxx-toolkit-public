@@ -36,6 +36,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbifile.hpp>
+#include <util/random_gen.hpp>
 
 #include <google/protobuf/stubs/common.h>
 
@@ -71,6 +72,7 @@ const unsigned int      kDefaultExcludeCacheMaxSize = 1000;
 const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
 const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
 const string            kDefaultAuthToken = "";
+const bool              kDefaultAllowIOTest = false;
 
 
 // Memorize the configured severity level to check before using ERR_POST.
@@ -100,6 +102,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_ExcludeCachePurgePercentage(kDefaultExcludeCachePurgePercentage),
     m_ExcludeCacheInactivityPurge(kDefaultExcludeCacheInactivityPurge),
     m_StartTime(GetFastLocalTime()),
+    m_AllowIOTest(kDefaultAllowIOTest),
     m_ExcludeBlobCache(nullptr)
 {
     sm_PubseqApp = this;
@@ -166,6 +169,8 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_ExcludeCacheInactivityPurge = registry.GetInt("AUTO_EXCLUDE",
                                                     "inactivity_purge_timeout",
                                                     kDefaultExcludeCacheInactivityPurge);
+    m_AllowIOTest = registry.GetBool("DEBUG", "psg_allow_io_test",
+                                     kDefaultAllowIOTest);
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
@@ -333,6 +338,26 @@ int CPubseqGatewayApp::Run(void)
                 resp.Send404("Not Found", "Not found");
                 return 0;
             }, &get_parser, nullptr);
+
+    if (m_AllowIOTest) {
+        m_IOTestBuffer.reset(new char[kMaxTestIOSize]);
+        CRandom     random;
+        char *      current = m_IOTestBuffer.get();
+        for (size_t  k = 0; k < kMaxTestIOSize; k += 8) {
+            Uint8   random_val = random.GetRandUint8();
+            memcpy(current, &random_val, 8);
+            current += 8;
+        }
+
+        http_handler.emplace_back(
+                "/TEST/io",
+                [this](HST::CHttpRequest &  req,
+                       HST::CHttpReply<CPendingOperation> &  resp)->int
+                {
+                    return OnTestIO(req, resp);
+                }, &get_parser, nullptr);
+    }
+
     http_handler.emplace_back(
             "",
             [this](HST::CHttpRequest &  req,

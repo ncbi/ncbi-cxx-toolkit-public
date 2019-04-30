@@ -202,74 +202,23 @@ public:
         Send(payload, payload_len, is_persist, true);
     }
 
-    void GenericSend(int  status, const char *  head, const char *  payload)
-    {
-        if (!m_OutputIsReady)
-            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
-                       "Output is not in ready state");
-
-        if (m_State != eReplyFinished) {
-            if (m_HttpConn->IsClosed())
-                m_OutputFinished = true;
-            if (!m_OutputFinished) {
-                if (m_State == eReplyInitialized) {
-                    x_SetContentType();
-                    switch (status) {
-                        case 400:
-                            h2o_send_error_400(m_Req, head ?
-                                head : "Bad Request", payload, 0);
-                            break;
-                        case 401:
-                            h2o_send_error_generic(m_Req, 401, head ?
-                                head : "Unauthorized", payload, 0);
-                            break;
-                        case 404:
-                            h2o_send_error_404(m_Req, head ?
-                                head : "Not Found", payload, 0);
-                            break;
-                        case 500:
-                            h2o_send_error_500(m_Req, head ?
-                                head : "Internal Server Error", payload, 0);
-                            break;
-                        case 502:
-                            h2o_send_error_502(m_Req, head ?
-                                head : "Bad Gateway", payload, 0);
-                            break;
-                        case 503:
-                            h2o_send_error_503(m_Req, head ?
-                                head : "Service Unavailable", payload, 0);
-                            break;
-                        default:
-                            NCBI_THROW(CPubseqGatewayException, eLogic,
-                                       "Unknown HTTP status to send");
-                    }
-                } else {
-                    h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
-                }
-                m_OutputFinished = true;
-            }
-            m_State = eReplyFinished;
-        }
-
-    }
-
     void Send400(const char *  head, const char *  payload)
-    { GenericSend(400, head, payload); }
+    { x_GenericSendError(400, head, payload); }
 
     void Send401(const char *  head, const char *  payload)
-    { GenericSend(401, head, payload); }
+    { x_GenericSendError(401, head, payload); }
 
     void Send404(const char *  head, const char *  payload)
-    { GenericSend(404, head, payload); }
+    { x_GenericSendError(404, head, payload); }
 
     void Send500(const char *  head, const char *  payload)
-    { GenericSend(500, head, payload); }
+    { x_GenericSendError(500, head, payload); }
 
     void Send502(const char *  head, const char *  payload)
-    { GenericSend(502, head, payload); }
+    { x_GenericSendError(502, head, payload); }
 
     void Send503(const char *  head, const char *  payload)
-    { GenericSend(503, head, payload); }
+    { x_GenericSendError(503, head, payload); }
 
     void Postpone(P &&  pending_rec)
     {
@@ -564,6 +513,58 @@ private:
             SendCancelled();
         if (m_PendingRec)
             m_PendingRec->Cancel();
+    }
+
+    void x_GenericSendError(int  status, const char *  head,
+                            const char *  payload)
+    {
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
+
+        if (m_State != eReplyFinished) {
+            if (m_HttpConn->IsClosed())
+                m_OutputFinished = true;
+            if (!m_OutputFinished) {
+                if (m_State == eReplyInitialized) {
+                    x_SetContentType();
+                    switch (status) {
+                        case 400:
+                            h2o_send_error_400(m_Req, head ?
+                                head : "Bad Request", payload, 0);
+                            break;
+                        case 401:
+                            h2o_send_error_generic(m_Req, 401, head ?
+                                head : "Unauthorized", payload, 0);
+                            break;
+                        case 404:
+                            h2o_send_error_404(m_Req, head ?
+                                head : "Not Found", payload, 0);
+                            break;
+                        case 500:
+                            h2o_send_error_500(m_Req, head ?
+                                head : "Internal Server Error", payload, 0);
+                            break;
+                        case 502:
+                            h2o_send_error_502(m_Req, head ?
+                                head : "Bad Gateway", payload, 0);
+                            break;
+                        case 503:
+                            h2o_send_error_503(m_Req, head ?
+                                head : "Service Unavailable", payload, 0);
+                            break;
+                        default:
+                            NCBI_THROW(CPubseqGatewayException, eLogic,
+                                       "Unknown HTTP status to send");
+                    }
+                } else {
+                    h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
+                }
+                m_OutputFinished = true;
+            }
+            m_State = eReplyFinished;
+        }
+
     }
 
     void x_SetContentType(void)

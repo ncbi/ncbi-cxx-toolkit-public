@@ -56,6 +56,8 @@ static string  kExcludeBlobsParam = "exclude_blobs";
 static string  kClientIdParam = "client_id";
 static string  kAuthTokenParam = "auth_token";
 static string  kTimeoutParam = "timeout";
+static string  kDataSizeParam = "return_data_size";
+static string  kLogParam = "log";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -517,11 +519,10 @@ int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
         CNcbiOstrstream             conf;
         CNcbiOstrstreamToString     converter(conf);
 
-        CNcbiApplication::Instance()->GetConfig().Write(conf);
+        GetConfig().Write(conf);
 
         CJsonNode   reply(CJsonNode::NewObjectNode());
-        reply.SetString("ConfigurationFilePath",
-                        CNcbiApplication::Instance()->GetConfigPath());
+        reply.SetString("ConfigurationFilePath", GetConfigPath());
         reply.SetString("Configuration", string(converter));
         string      content = reply.Repr();
 
@@ -558,9 +559,7 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
         CJsonNode   reply(CJsonNode::NewObjectNode());
 
         reply.SetInteger("PID", CDiagContext::GetPID());
-        reply.SetString("ExecutablePath",
-                        CNcbiApplication::Instance()->
-                                                GetProgramExecutablePath());
+        reply.SetString("ExecutablePath", GetProgramExecutablePath());
         reply.SetString("CommandLineArguments", x_GetCmdLineArguments());
 
 
@@ -789,6 +788,76 @@ int CPubseqGatewayApp::OnShutdown(HST::CHttpRequest &  req,
     } catch (...) {
         resp.Send500("Internal Server Error",
                      "Unknown exception when handling a shutdown request");
+    }
+    return 0;
+}
+
+
+int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
+                                HST::CHttpReply<CPendingOperation> &  resp)
+{
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context;
+
+    try {
+        string                  err_msg;
+
+        bool                    need_log = false;   // default
+        SRequestParameter       log_param = x_GetParam(req, kLogParam);
+        if (log_param.m_Found) {
+            if (!x_IsBoolParamValid(kLogParam, log_param.m_Value, err_msg)) {
+                resp.SetContentType(ePlainTextMime);
+                resp.Send400("Bad Request", err_msg.c_str());
+                PSG_WARNING(err_msg);
+                return 0;
+            }
+            need_log = log_param.m_Value == "true";
+        }
+
+        if (need_log)
+            context = x_CreateRequestContext(req);
+
+        // Read the return data size
+        SRequestParameter   data_size_param = x_GetParam(req, kDataSizeParam);
+        long                data_size = 0;
+        if (data_size_param.m_Found) {
+            data_size = NStr::StringToLong(data_size_param.m_Value);
+            if (data_size < 0 || data_size > kMaxTestIOSize) {
+                err_msg = "Invalid range of the " + kDataSizeParam +
+                          " parameter. Accepted values are 0..." +
+                          NStr::NumericToString(kMaxTestIOSize);
+                resp.SetContentType(ePlainTextMime);
+                resp.Send400("Bad Request", err_msg.c_str());
+                if (need_log)
+                    PSG_ERROR(err_msg);
+                return 0;
+            }
+        } else {
+            err_msg = "The " + kDataSizeParam + " must be provided";
+            resp.SetContentType(ePlainTextMime);
+            resp.Send400("Bad Request", err_msg.c_str());
+            if (need_log)
+                PSG_ERROR(err_msg);
+            return 0;
+        }
+
+        resp.SetContentType(eBinaryMime);
+        resp.SetContentLength(data_size);
+
+        // true: persistent
+        resp.SendOk(m_IOTestBuffer.get(), data_size, true);
+
+        if (need_log)
+            x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+    } catch (const exception &  exc) {
+        string      msg = "Exception when handling a test io request: " +
+                          string(exc.what());
+        resp.SetContentType(ePlainTextMime);
+        resp.Send500("Internal Server Error", msg.c_str());
+    } catch (...) {
+        resp.SetContentType(ePlainTextMime);
+        resp.Send500("Internal Server Error",
+                     "Unknown exception when handling a test io request");
     }
     return 0;
 }

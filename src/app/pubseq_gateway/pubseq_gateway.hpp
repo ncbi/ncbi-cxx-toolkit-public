@@ -52,6 +52,9 @@
 USING_NCBI_SCOPE;
 
 
+const long  kMaxTestIOSize = 1000000000;
+
+
 class CPubseqGatewayApp: public CNcbiApplication
 {
 public:
@@ -111,6 +114,9 @@ public:
 
     int OnShutdown(HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp);
+
+    int OnTestIO(HST::CHttpRequest &  req,
+                 HST::CHttpReply<CPendingOperation> &  resp);
 
     virtual int Run(void);
 
@@ -204,6 +210,9 @@ private:
     string                              m_RootKeyspace;
     string                              m_BioseqKeyspace;
     string                              m_AuthToken;
+
+    bool                                m_AllowIOTest;
+    unique_ptr<char []>                 m_IOTestBuffer;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<HST::CHttpDaemon<CPendingOperation>>
