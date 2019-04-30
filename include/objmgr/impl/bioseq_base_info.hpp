@@ -54,6 +54,9 @@ class CSeq_annot_Info;
 class CSeq_descr;
 class CSeqdesc;
 
+// ID-5570 : Set of user object names
+typedef set<string> TUserObjectTypesSet;
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CBioseq_Info::
@@ -113,6 +116,8 @@ public:
     const CSeqdesc* x_SearchFirstDesc(TDescTypeMask type) const;
 
     TDescTypeMask x_GetExistingDescrMask(void) const;
+
+    void x_AddExistingUserObjectTypes(TUserObjectTypesSet& uo_types) const;
 
     // annot
     typedef vector< CRef<CSeq_annot_Info> > TAnnot;

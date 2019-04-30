@@ -43,6 +43,8 @@
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <algorithm>
 
@@ -518,6 +520,37 @@ CBioseq_Base_Info::x_GetExistingDescrMask(void) const
         mask |= i;
     }
     return mask;
+}
+
+void
+CBioseq_Base_Info::x_AddExistingUserObjectTypes(TUserObjectTypesSet& uo_types) const
+{
+    if ( x_IsSetDescr() ) {
+        // For all user objects other than StructuredComment, just save the type string;
+        // For StructuredComment, find the data element with StructuredCommentPrefix label
+        // and add its value to the type name.
+        for ( auto& i : x_GetDescr().Get() ) {
+            if (i->Which() == CSeqdesc::e_User &&
+                i->GetUser().GetType().IsStr()) {
+                string uo_type = i->GetUser().GetType().GetStr();
+                if (uo_type != "StructuredComment") {
+                    uo_types.insert(uo_type);
+                } else {
+                    // This loop should normally stop on the first iteration...
+                    ITERATE (CUser_object::TData, it, i->GetUser().GetData()) {
+                        if ((*it)->GetLabel().IsStr() &&
+                            (*it)->GetLabel().GetStr() == "StructuredCommentPrefix") {
+                            string data = ((*it)->GetData().IsStr() ?
+                                           (string) (*it)->GetData().GetStr() :
+                                           NStr::IntToString((*it)->GetData().GetInt()));
+                            uo_types.insert(uo_type + "|" + data);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 

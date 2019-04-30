@@ -751,17 +751,34 @@ static const int kGoodDescrMask = kForceDescrMask | kOptionalDescrMask;
 
 
 static
-bool s_IsGoodDescr(const CSeqdesc& desc, int mask)
+bool s_IsGoodDescr(const CSeqdesc& desc, int mask, const TUserObjectTypesSet& uo_types)
 {
     if ( desc.Which() == CSeqdesc::e_User ) {
         const CObject_id& type = desc.GetUser().GetType();
         if ( type.Which() == CObject_id::e_Str ) {
-            const string& name = type.GetStr();
+            string name = type.GetStr();
+            // Only a few user object types are eligible to be taken from master
             if ( name == "DBLink" ||
                  name == "GenomeProjectsDB" ||
                  name == "StructuredComment" ||
                  name == "FeatureFetchPolicy" ) {
-                return true;
+                // For StructuredComment, extract the comment prefix and add to the name
+                if (name == "StructuredComment") {
+                    // This loop should normally stop on the first iteration...
+                    ITERATE (CUser_object::TData, it, desc.GetUser().GetData()) {
+                        if ((*it)->GetLabel().IsStr() &&
+                            (*it)->GetLabel().GetStr() == "StructuredCommentPrefix") {
+                            string data = ((*it)->GetData().IsStr() ?
+                                           (string) (*it)->GetData().GetStr() :
+                                           NStr::IntToString((*it)->GetData().GetInt()));
+                            name += "|" + data;
+                            break;
+                        }
+                    }
+                }
+                // Check if this user object type should be skipped because it already exists
+                if (uo_types.count(name) == 0)
+                    return true;
             }
         }
     }
@@ -799,7 +816,7 @@ void s_AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src)
 static
 CRef<CSeq_descr> s_GetWGSMasterDescr(CDataLoader* loader,
                                      const CSeq_id_Handle& master_idh,
-                                     int mask)
+                                     int mask, TUserObjectTypesSet& uo_types)
 {
     CRef<CSeq_descr> ret;
     CDataLoader::TTSE_LockSet locks =
@@ -813,7 +830,7 @@ CRef<CSeq_descr> s_GetWGSMasterDescr(CDataLoader* loader,
         if ( bs_info->IsSetDescr() ) {
             const CSeq_descr::Tdata& descr = bs_info->GetDescr().Get();
             ITERATE ( CSeq_descr::Tdata, it, descr ) {
-                if ( s_IsGoodDescr(**it, mask) ) {
+                if ( s_IsGoodDescr(**it, mask, uo_types) ) {
                     if ( !ret ) {
                         ret = new CSeq_descr;
                     }
@@ -896,15 +913,18 @@ class CWGSMasterChunkInfo : public CTSE_Chunk_Info
 {
 public:
     CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh,
-                        int mask)
+                        int mask, TUserObjectTypesSet& uo_types
+)
         : CTSE_Chunk_Info(kMasterWGS_ChunkId),
           m_MasterId(master_idh),
-          m_DescrMask(mask)
+          m_DescrMask(mask),
+          m_UserObjectTypes(move(uo_types))
         {
         }
 
     CSeq_id_Handle m_MasterId;
     int m_DescrMask;
+    TUserObjectTypesSet m_UserObjectTypes;
 };
 
 
@@ -921,7 +941,8 @@ void CProcessor::LoadWGSMaster(CDataLoader* loader,
         dynamic_cast<CWGSMasterChunkInfo&>(*chunk);
     CSeq_id_Handle id = chunk_info.m_MasterId;
     int mask = chunk_info.m_DescrMask;
-    CRef<CSeq_descr> descr = s_GetWGSMasterDescr(loader, id, mask);
+    CRef<CSeq_descr> descr =
+        s_GetWGSMasterDescr(loader, id, mask, chunk_info.m_UserObjectTypes);
     if ( descr ) {
         if ( kAddMasterDescrToTSE ) {
             chunk->x_LoadDescr(CTSE_Chunk_Info::TPlace(), *descr);
@@ -943,16 +964,19 @@ void CProcessor::AddWGSMaster(CLoadLockSetter& blob)
     ITERATE ( CTSE_Info::TSeqIds, it, ids ) {
         if ( CSeq_id_Handle id = s_GetWGSMasterSeq_id(*it) ) {
             int mask = kGoodDescrMask;
+            TUserObjectTypesSet existing_uo_types;
             if ( kAddMasterDescrToTSE ) {
                 // exclude existing descr types except User
                 mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | (1<<CSeqdesc::e_User);
+                lock->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
                 if ( lock->IsSet() ) {
                     if ( auto first_entry = lock->GetSet().GetFirstEntry() ) {
                         mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | (1<<CSeqdesc::e_User);
+                        first_entry->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
                     }
                 }
             }
-            CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id, mask));
+            CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id, mask, existing_uo_types));
             lock->GetSplitInfo().AddChunk(*chunk);
             if ( kAddMasterDescrToTSE ) {
                 chunk->x_AddDescInfo(mask, 0);
