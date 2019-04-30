@@ -123,9 +123,9 @@ class Collector(object):
         else:
             self.info['artifact_version'] = 'trunk'
         
-        self.info['artifact_name'] = self.info['name']
+        filename = self.get_target_path(self.info['name'], self.info['type'])
+        self.info['artifact_name'] = os.path.basename(filename)
         if status == 0 and self.in_want_list('artifact_hash'):
-            filename = self.get_target_path(self.info['artifact_name'], self.info['type'])
             h = self.get_artifact_hash(filename)
             if h is not None:
                 self.info['artifact_hash'] = h
