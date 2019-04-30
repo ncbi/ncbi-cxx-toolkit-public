@@ -300,7 +300,7 @@ void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
 
     
     try {
-      auto num_ids =  CSeq_id::ParseIDs(ids, idString, parseFlags);
+        CSeq_id::ParseIDs(ids, idString, parseFlags);
     }
     catch (...) {  // report an error and interpret the id string as a local ID
         theErrorReporter->Error(
