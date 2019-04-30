@@ -518,7 +518,8 @@ CAlnScannerNexus::xProcessDimensions(
             mNumSequences = NStr::StringToInt(ntax.first);
         }
         catch(...) {
-            string description = ErrorPrintf("Invalid nTax setting \"%s\"", 
+            string description = 
+                ErrorPrintf("Nexus file has invalid nTax setting: \"%s\". nTax must be an integer.",
                     ntax.first.c_str());
                 throw SShowStopper(
                     ntax.second,
@@ -533,7 +534,8 @@ CAlnScannerNexus::xProcessDimensions(
             mSequenceSize = NStr::StringToInt(nchar.first);
         }
         catch(...) {
-            string description = ErrorPrintf("Nexus file has invalid nChar setting: \"%s\". nChar must be an integer", 
+            string description = 
+                ErrorPrintf("Nexus file has invalid nChar setting: \"%s\". nChar must be an integer.", 
                         nchar.first.c_str());
                     throw SShowStopper(
                         nchar.second,
