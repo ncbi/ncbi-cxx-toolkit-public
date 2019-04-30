@@ -153,7 +153,6 @@ bool ReadAlignmentFile(
 NCBI_XOBJREAD_EXPORT 
 bool ReadAlignmentFile(
     istream& istr,
-    const string& validationScheme,
     CSequenceInfo& sequenceInfo,
     SAlignmentFile& alignmentInfo);
 

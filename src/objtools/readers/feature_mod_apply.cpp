@@ -100,7 +100,6 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
         NCBI_THROW(CModReaderException, eInvalidModifier, msg);
     }
 
-
     if (x_TryProtRefMod(mod_entry)) {
         return true;
     }

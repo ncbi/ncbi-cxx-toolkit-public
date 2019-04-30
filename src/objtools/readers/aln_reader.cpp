@@ -231,6 +231,7 @@ void CAlnReader::Read(
     TReadFlags readFlags,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
+
     if (pErrorListener) {
         theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
     }
@@ -244,9 +245,8 @@ void CAlnReader::Read(
     // read the alignment stream
     SAlignmentFile alignmentInfo;
     try {
-        ReadAlignmentFile(
-            m_IS, m_IdValidationScheme, sequenceInfo, alignmentInfo);
-            x_VerifyAlignmentInfo(alignmentInfo);
+        ReadAlignmentFile(m_IS, sequenceInfo, alignmentInfo);
+        x_VerifyAlignmentInfo(alignmentInfo, readFlags);
     }
     catch (const SShowStopper& showStopper) {
         theErrorReporter->Fatal(showStopper);
@@ -273,7 +273,8 @@ void CAlnReader::Read(
     try {
         ReadAlignmentFile(
             m_IS, generate_local_ids, m_UseNexusInfo, sequenceInfo, alignmentInfo);
-        x_VerifyAlignmentInfo(alignmentInfo);
+        TReadFlags flags = 0;
+        x_VerifyAlignmentInfo(alignmentInfo, flags);
     }
     catch (const SShowStopper& showStopper) {
         theErrorReporter->Fatal(showStopper);
@@ -286,13 +287,26 @@ void CAlnReader::Read(
 
 
 void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
+        TReadFlags flags,
         TIdList& ids)
 {
     ids.clear();
     const auto& idString = seqIdInfo.mData;
-    if (!CSeq_id::ParseFastaIds(ids, idString, true)) {
-        // This following line should probably be removed. 
-        // Failure to parse the id string should be a show stopper
+
+    CSeq_id::TParseFlags parseFlags = CSeq_id::fParse_AnyLocal;
+    if (flags^fGenerateLocalIDs) {
+        parseFlags |= CSeq_id::fParse_RawText;
+    }
+
+    
+    try {
+      auto num_ids =  CSeq_id::ParseIDs(ids, idString, parseFlags);
+    }
+    catch (...) {  // report an error and interpret the id string as a local ID
+        theErrorReporter->Error(
+                seqIdInfo.mNumLine,
+                EAlnSubcode::eAlnSubcode_IllegalSequenceId,
+                "Unable to parse sequence ID string.");
         ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, idString)));
     }
 
@@ -314,7 +328,8 @@ void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
 }
 
 void CAlnReader::x_VerifyAlignmentInfo(
-    const SAlignmentFile& alignmentInfo)
+    const SAlignmentFile& alignmentInfo,
+    TReadFlags flags)
 {
 
     const auto num_sequences = alignmentInfo.NumSequences();
@@ -341,9 +356,8 @@ void CAlnReader::x_VerifyAlignmentInfo(
 
     for (auto seqIdInfo : alignmentInfo.mIds) {
         m_IdStrings.push_back(seqIdInfo.mData); // m_IdStrings is redundant and should be removed
-
         TIdList ids;
-        x_ParseAndValidateSeqIds(seqIdInfo, ids);
+        x_ParseAndValidateSeqIds(seqIdInfo, flags, ids);
         m_Ids.push_back(ids);
     }
 

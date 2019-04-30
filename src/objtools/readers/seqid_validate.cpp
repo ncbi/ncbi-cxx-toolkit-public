@@ -47,12 +47,13 @@ bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description, EDiag
 {
     description.clear();
 
-    if (seqId.IsLocal()) {
+    if (seqId.IsLocal() &&
+        seqId.GetLocal().IsStr()) {
         const auto idString = seqId.GetLocal().GetStr();
 
         if (idString.empty()) {
-            description = "Empty local ID";
-            severity = eDiag_Fatal;
+            description = "Empty local ID.";
+            severity = eDiag_Error;
             return false;
         }
 
@@ -60,15 +61,15 @@ bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description, EDiag
             description = "Local ID \"" + 
                           idString +
                           " \" exceeds 50 character limit.";
-            severity = eDiag_Fatal;
+            severity = eDiag_Error;
             return false;
         }
 
         if (CSeq_id::CheckLocalID(idString) & CSeq_id::fInvalidChar) {
             description = "Local ID \"" + 
                           idString +
-                          "\" contains invalid characters";
-            severity = eDiag_Fatal;
+                          "\" contains invalid characters.";
+            severity = eDiag_Error;
             return false;
         }
     }

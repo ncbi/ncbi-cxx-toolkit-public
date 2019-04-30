@@ -106,7 +106,6 @@ ReadAlignmentFile(
 //  ------------------------------------------------------------------------------
 bool ReadAlignmentFile(
     istream& istr,
-    const string& validationScheme,
     CSequenceInfo& sequenceInfo,
     SAlignmentFile& alignmentInfo)
 //  ------------------------------------------------------------------------------

@@ -204,8 +204,8 @@ public:
     /// This are the main functions.
     /// either would parse the alignment file and create the result data
     enum EReadFlags {
-        fReadDefaults,
-        fGenerateLocalIDs
+        fReadDefaults = 0,
+        fGenerateLocalIDs = 1
     };
     typedef int TReadFlags; ///< binary OR of EReadFlags
 
@@ -256,13 +256,8 @@ private:
         int repeat_interval) const;
 
     void x_VerifyAlignmentInfo(
-        const ncbi::objects::SAlignmentFile&);
-
-
-   // void xProcessSeqIds();
-
-
-    void xValidateSeqId(const objects::SLineInfo& seqIdInfo);
+        const ncbi::objects::SAlignmentFile&,
+        TReadFlags readFlags);
 
     CRef<objects::CSeq_inst> x_GetSeqInst(objects::CSeq_inst::EMol mol,
             const string& seqData) const;
@@ -292,7 +287,6 @@ private:
     vector<string> m_Organisms; // redundant
     vector<string> m_Deflines; // redundant
     vector<TLineInfo> m_DeflineInfo;
-    //unique_ptr<CAlnIdValidator> mpSeqIdValidator;
     FIdValidate m_fIdValidate;
 
 
@@ -325,6 +319,7 @@ private:
 
     void x_ParseAndValidateSeqIds(
             const TLineInfo& seqIdInfo,
+            TReadFlags flags,
             TIdList& ids);
 
     void x_AddMods(const TLineInfo& defline_info, 

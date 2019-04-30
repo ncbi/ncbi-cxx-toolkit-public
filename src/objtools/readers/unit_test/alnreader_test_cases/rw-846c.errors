@@ -1,5 +1,5 @@
 Line No    : 10
-Severity   : Fatal
+Severity   : Error
 Problem    : Alignment.IllegalSequenceId
 Message    : Local ID "lcl||12345" contains invalid characters
 

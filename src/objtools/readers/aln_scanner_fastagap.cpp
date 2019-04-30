@@ -139,6 +139,13 @@ CAlnScannerFastaGap::xImportAlignmentData(
         }
 
         sSplitFastaDef(line, seqId, defLine);
+        if (seqId.empty()) {
+            throw SShowStopper(
+                lineNumber,
+                EAlnSubcode::eAlnSubcode_IllegalDefinitionLine,
+                "Invalid Fasta definition line, \">\" must be followed by a sequence_ID.");
+        }
+
         TLineInfo existingInfo;
         auto idComparison 
             = xGetExistingSeqIdInfo(seqId, existingInfo);
