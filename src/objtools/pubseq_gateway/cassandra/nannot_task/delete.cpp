@@ -109,7 +109,7 @@ void CCassNAnnotTaskDelete::Wait1()
                 m_BlobDeleteTask = unique_ptr<CCassBlobTaskDelete>(
                     new CCassBlobTaskDelete(
                          m_OpTimeoutMs, m_Conn, m_Keyspace,
-                         true, m_Annot->GetSatKey(), true,  m_MaxRetries,
+                         m_Annot->GetSatKey(), true,  m_MaxRetries,
                          [this]
                          (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
                          {this->m_ErrorCb(status, code, severity, message);}

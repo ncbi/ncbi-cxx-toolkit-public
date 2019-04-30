@@ -422,7 +422,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         m_Conn = nullptr;
     }
 
-    void GetBlobChunkTresholds(unsigned int op_timeout_ms, int64_t * LargeTreshold, int64_t * LargeChunkSize);
+    void GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size);
     void SetKeyspace(const string &  keyspace)
     {
         m_Keyspace = keyspace;
@@ -441,17 +441,8 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
                       TBlobChunkCallback data_chunk_cb,
                       TDataErrorCallback error_cb,
                       unique_ptr<CCassBlobWaiter> &  waiter);
-    void InsertBlobAsync(unsigned int  op_timeout_ms,
-                         int32_t  key, unsigned int  max_retries,
-                         CBlobRecord *  blob_rslt, ECassTristate  is_new,
-                         int64_t  LargeTreshold, int64_t  LargeChunkSz,
-                         TDataErrorCallback error_cb,
-                         unique_ptr<CCassBlobWaiter> &  waiter);
-    void InsertBlobExtended(unsigned int  op_timeout_ms,
-                         int32_t  key, unsigned int  max_retries,
-                         CBlobRecord *  blob_rslt, ECassTristate  is_new,
-                         int64_t  LargeTreshold, int64_t  LargeChunkSz,
-                         TDataErrorCallback error_cb,
+    void InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
+                         CBlobRecord *  blob_rslt, TDataErrorCallback  error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
     void InsertNAnnot(unsigned int  op_timeout_ms,
                      int32_t  key, unsigned int  max_retries,
@@ -492,11 +483,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter
     );
-
-    void DeleteBlobAsync(unsigned int  op_timeout_ms,
-                         int32_t  key, unsigned int  max_retries,
-                         TDataErrorCallback error_cb,
-                         unique_ptr<CCassBlobWaiter> &  waiter);
     void DeleteBlobExtended(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          TDataErrorCallback error_cb,
@@ -531,13 +517,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         unique_ptr<CBlobRecord> blob_record,
         bool load_chunks,
         TDataErrorCallback error_cb
-    );
-
-    void UpdateBlobFlags(
-        unsigned int op_timeout_ms,
-        int32_t key,
-        uint64_t flags,
-        EBlopOpFlag flag_op
     );
 
     void UpdateBlobFlagsExtended(

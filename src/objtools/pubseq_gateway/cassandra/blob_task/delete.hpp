@@ -50,7 +50,6 @@ public:
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
-        bool extended,
         int32_t key,
         bool async,
         unsigned int max_retries,
@@ -71,7 +70,6 @@ private:
         eError = CCassBlobWaiter::eError
     };
 
-    bool m_ExtendedSchema;
     vector<CBlobRecord::TTimestamp> m_ExtendedVersions;
 };
 

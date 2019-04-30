@@ -35,7 +35,6 @@
 #include <corelib/ncbireg.hpp>
 
 #include "blob_task/insert_extended.hpp"
-#include "blob_task/insert.hpp"
 #include "blob_task/delete.hpp"
 #include "nannot_task/insert.hpp"
 #include "nannot_task/delete.hpp"
@@ -62,12 +61,8 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define SETTING_LARGE_TRESHOLD "LARGE_TRESHOLD"
 #define SETTING_LARGE_CHUNK_SZ "LARGE_CHUNK_SZ"
-
-#define ABS_MIN_LARGE_TRESHOLD  (4 * 1024)
 #define ABS_MIN_LARGE_CHUNK_SZ  (4 * 1024)
-#define DFLT_LARGE_TRESHOLD     (64 * 1024)
 #define DFLT_LARGE_CHUNK_SZ     (512 * 1024)
 
 #define ASYNC_QUEUE_TIMESLICE_MKS 300
@@ -98,22 +93,14 @@ bool CCassBlobWaiter::CheckMaxActive()
 
 *****************************************************/
 
-void CCassBlobOp::GetBlobChunkTresholds(unsigned int  op_timeout_ms,
-                                        int64_t *     LargeTreshold,
-                                        int64_t *     LargeChunkSize)
+void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size)
 {
     string s;
-    if (!GetSetting(op_timeout_ms, SETTING_LARGE_TRESHOLD, s) ||
-        !NStr::StringToNumeric(s, LargeTreshold) ||
-        *LargeTreshold < ABS_MIN_LARGE_TRESHOLD) {
-        *LargeTreshold = DFLT_LARGE_TRESHOLD;
-        UpdateSetting(op_timeout_ms, SETTING_LARGE_TRESHOLD, NStr::NumericToString(*LargeTreshold));
-    }
-    if (!GetSetting(op_timeout_ms, SETTING_LARGE_CHUNK_SZ, s) ||
-        !NStr::StringToNumeric(s, LargeChunkSize) ||
-        *LargeChunkSize < ABS_MIN_LARGE_CHUNK_SZ) {
-        *LargeChunkSize = DFLT_LARGE_CHUNK_SZ;
-        UpdateSetting(op_timeout_ms, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(*LargeChunkSize));
+    if (!GetSetting(timeout_ms, SETTING_LARGE_CHUNK_SZ, s) ||
+        !NStr::StringToNumeric(s, chunk_size) ||
+        *chunk_size < ABS_MIN_LARGE_CHUNK_SZ) {
+        *chunk_size = DFLT_LARGE_CHUNK_SZ;
+        UpdateSetting(timeout_ms, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(*chunk_size));
     }
 }
 
@@ -169,27 +156,8 @@ void CCassBlobOp::GetBlobAsync(unsigned int  op_timeout_ms,
     ));
 }
 
-
-void CCassBlobOp::InsertBlobAsync(unsigned int op_timeout_ms,
-                                  int32_t key, unsigned int max_retries,
-                                  CBlobRecord * blob_rslt, ECassTristate  is_new,
-                                  int64_t LargeTreshold, int64_t LargeChunkSz,
-                                  TDataErrorCallback error_cb,
-                                  unique_ptr<CCassBlobWaiter> & Waiter)
-{
-    Waiter.reset(new CCassBlobTaskInsert(
-        op_timeout_ms, m_Conn, m_Keyspace,
-        key, blob_rslt, is_new, LargeTreshold,
-        LargeChunkSz, true, max_retries,
-        move(error_cb)
-    ));
-}
-
-void CCassBlobOp::InsertBlobExtended(unsigned int op_timeout_ms,
-                                  int32_t /*key*/, unsigned int max_retries,
-                                  CBlobRecord * blob_rslt, ECassTristate /*is_new*/,
-                                  int64_t /*LargeTreshold*/, int64_t /*LargeChunkSz*/,
-                                  TDataErrorCallback error_cb,
+void CCassBlobOp::InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
+                                  CBlobRecord *  blob_rslt, TDataErrorCallback  error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobTaskInsertExtended(
@@ -285,25 +253,13 @@ void CCassBlobOp::FetchNAnnot(
     ));
 }
 
-
-void CCassBlobOp::DeleteBlobAsync(unsigned int  op_timeout_ms,
-                                  int32_t  key, unsigned int  max_retries,
-                                  TDataErrorCallback error_cb,
-                                  unique_ptr<CCassBlobWaiter> &  Waiter)
-{
-    Waiter.reset(new CCassBlobTaskDelete(
-        op_timeout_ms, m_Conn, m_Keyspace, false,
-        key, true, max_retries, move(error_cb)
-    ));
-}
-
 void CCassBlobOp::DeleteBlobExtended(unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int  max_retries,
                                   TDataErrorCallback error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobTaskDelete(
-        op_timeout_ms, m_Conn, m_Keyspace, true,
+        op_timeout_ms, m_Conn, m_Keyspace,
         key, true, max_retries, move(error_cb)
     ));
 }
@@ -374,57 +330,6 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
         new CCassBlobTaskLoadBlob(
             timeout_ms, max_retries, m_Conn, m_Keyspace, move(blob_record), load_chunks, move(error_cb)
         )
-    );
-}
-
-/*****************************************************
-
-                UPDATE    FLAGS
-
-*****************************************************/
-
-void CCassBlobOp::UpdateBlobFlags(unsigned int op_timeout_ms, int32_t key, uint64_t flags, EBlopOpFlag flag_op)
-{
-    CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [this, flags, flag_op, key](bool /*is_repeated*/) {
-            int64_t new_flags = 0;
-            string sql;
-            shared_ptr<CCassQuery>  qry = m_Conn->NewQuery();
-            switch (flag_op) {
-                case eFlagOpOr:
-                case eFlagOpAnd: {
-                    sql = "SELECT flags FROM " + KeySpaceDot(m_Keyspace) + "entity WHERE ent = ?";
-                    qry->SetSQL(sql, 1);
-                    qry->BindInt32(0, key);
-                    qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM);
-                    if (!qry->IsEOF() && qry->NextRow() == ar_dataready) {
-                        switch (flag_op) {
-                            case eFlagOpOr:
-                                new_flags = qry->FieldGetInt64Value(0) | flags;
-                                break;
-                            case eFlagOpAnd:
-                                new_flags = qry->FieldGetInt64Value(0) & flags;
-                                break;
-                            default:
-                                NCBI_THROW(CCassandraException, eFatal, "Unexpected flag operation");
-                        }
-                        qry->Close();
-                    }
-                    break;
-                }
-                case eFlagOpSet:
-                    new_flags = flags;
-                    break;
-                default:
-                    NCBI_THROW(CCassandraException, eFatal, "Unexpected flag operation");
-            }
-            sql = "UPDATE " + KeySpaceDot(m_Keyspace) + "entity SET flags = ? WHERE ent = ?";
-            qry->SetSQL(sql, 2);
-            qry->BindInt64(0, new_flags);
-            qry->BindInt32(1, key);
-            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM);
-            return true;
-        }
     );
 }
 
