@@ -1,10 +1,10 @@
 Apr 29, 2019
 Release 1.14.0
-*Make AIRR format more consistent with AIRR specs including changing undefined type (NON, N/A) to empty string, not appending "reversed" to seqid when query is in reversed orientation, using standard locus names such as IGH, TRB instead of traditional VH, VB etc.
+*Making AIRR format more consistent with AIRR specs including changing undefined type (NON, N/A) to empty string, not appending "reversed" to seqid when query is in reversed orientation, using standard locus names such as IGH, TRB instead of traditional VH, VB etc.
 
 *Loosening criteria to show CDR3 end by allowing the first FWR4 base to be missing.	
 
-*Bug fix: Restoring seqid for no result case.
+*Bug fix: Restoring seqid for no result case in AIRR rearrangement format.  Printing IgBlast version number instead of Blast version number with -version option.
 	
 Mar 7, 2019
 Release 1.13.0
