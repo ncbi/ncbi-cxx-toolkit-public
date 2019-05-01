@@ -61,6 +61,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
+#include <objects/seqblock/GB_block.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
@@ -874,11 +875,18 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                            transcribed_mrna_seqloc_refs,
                            *align, rna_feat_loc_on_genome, time, model_num, seqs, opts);
 
+    const CSeq_id& genomic_id = align->GetSeq_id(mapper.GetGenomicRow());
+    if (m_is_best_refseq && mrna_feat_on_genome_with_translated_product) {
+        CSeq_id_Handle genomic_acc = sequence::GetId(genomic_id, *m_scope,
+                                                     sequence::eGetId_ForceAcc);
+        x_AddSelectMarkup(*align, query_rna_handle, *genomic_acc.GetSeqId(),
+                          *mrna_feat_on_genome_with_translated_product,
+                          cds_feat_on_genome_with_translated_product.GetPointer());
+    }
 
     CRef<CSeq_feat> gene_feat;
 
     if(!call_on_align_list){
-        const CSeq_id& genomic_id = align->GetSeq_id(mapper.GetGenomicRow());
         if (gene_id) {
             TGeneMap::iterator gene = genes.find(gene_id);
             if (gene == genes.end()) {
@@ -3842,6 +3850,120 @@ void CFeatureGenerator::SImplementation::x_SetCommentForGapFilledModel
 
     comment = " added " + s_Count(insert_length, "base") + " not found in genome assembly";
     feat.SetComment() += comment;
+}
+
+void CFeatureGenerator::SImplementation::
+x_AddSelectMarkup(const CSeq_align &align,
+                  const CBioseq_Handle& rna_handle, 
+                  const CSeq_id &genomic_acc,
+                  CSeq_feat& rna_feat, CSeq_feat* cds_feat)
+{
+    e_MatchType match_found = eNone;
+    string ensembl_match_rna, ensembl_match_cds;
+    vector<string> keywords;
+    vector<CSeqdesc::E_Choice> desc_types = {CSeqdesc::e_User,
+                                             CSeqdesc::e_Genbank};
+    for (CSeqdesc_CI desc(rna_handle, desc_types); desc; ++desc) {
+        if (desc->IsGenbank() && desc->GetGenbank().IsSetKeywords()) {
+            keywords.insert(keywords.end(),
+                            desc->GetGenbank().GetKeywords().begin(),
+                            desc->GetGenbank().GetKeywords().end());
+        } else if (desc->IsUser() &&
+                   desc->GetUser().HasField("MANE Ensembl match"))
+        {
+            NStr::SplitInTwo(desc->GetUser().GetField("MANE Ensembl match")
+                                            .GetString(),
+                             "/", ensembl_match_rna, ensembl_match_cds);
+            NStr::TruncateSpacesInPlace(ensembl_match_rna);
+            NStr::TruncateSpacesInPlace(ensembl_match_cds);
+        } else if (desc->IsUser() && desc->GetUser().GetType().IsStr() &&
+                   desc->GetUser().GetType().GetStr() == "RefGeneTracking")
+        {
+            if (desc->GetUser().HasField("EnsemblLocation")) {
+                match_found = x_CheckMatch(align, genomic_acc,
+                                  desc->GetUser().GetField("EnsemblLocation"));
+            } else if (desc->GetUser().HasField("SelectGeneLocation")) {
+                /// SelectGeneLocation is never treated as an exact match
+                match_found = min(eOverlap,
+                                  x_CheckMatch(align, genomic_acc,
+                                  desc->GetUser().GetField("SelectGeneLocation")));
+            }
+        }
+    }
+
+    if (match_found >= eOverlap && !keywords.empty()) {
+        /// Found overlap; add uql to features
+        x_AddKeywordQuals(rna_feat, keywords);
+        if (cds_feat) {
+            x_AddKeywordQuals(*cds_feat, keywords);
+        }
+    }
+
+    if (match_found == eExact && !ensembl_match_rna.empty()) {
+        CRef<CDbtag> rna_ensembl_ref(new CDbtag);
+        rna_ensembl_ref->SetDb("Ensembl");
+        rna_ensembl_ref->SetTag().SetStr(ensembl_match_rna);
+        rna_feat.SetDbxref().push_back(rna_ensembl_ref);
+        if (cds_feat && !ensembl_match_cds.empty()) {
+            CRef<CDbtag> cds_ensembl_ref(new CDbtag);
+            cds_ensembl_ref->SetDb("Ensembl");
+            cds_ensembl_ref->SetTag().SetStr(ensembl_match_cds);
+            cds_feat->SetDbxref().push_back(cds_ensembl_ref);
+        }
+    }
+}
+
+CFeatureGenerator::SImplementation::e_MatchType
+CFeatureGenerator::SImplementation::x_CheckMatch(const CSeq_align &align,
+                                                 const CSeq_id &genomic_acc,
+                                                 const CUser_field &loc_field)
+{
+    if (!loc_field.HasField("seq_id") || !loc_field.HasField("from") ||
+        !loc_field.HasField("to") || !loc_field.HasField("strand"))
+    {
+        NCBI_THROW(CException, eUnknown, loc_field.GetLabel().GetStr()
+                                       + " doesn't have expected fields");
+    }
+
+    CSeq_id loc_genomic_acc(loc_field.GetField("seq_id").GetString());
+    if (loc_genomic_acc.GetTextseq_Id()->GetAccession() ==
+            genomic_acc.GetTextseq_Id()->GetAccession() &&
+        loc_genomic_acc.GetTextseq_Id()->GetVersion() >
+            genomic_acc.GetTextseq_Id()->GetVersion())
+    {
+        /// If location is on a newer version then alignment, this is always
+        /// considered an overlap, regardless of position and strand
+        return eOverlap;
+    }
+
+    ENa_strand loc_strand = loc_field.GetField("strand").GetString() == "-"
+                          ? eNa_strand_minus : eNa_strand_plus;
+
+    /// Otherwise, this is considered a match only if same seq-id and on same
+    /// strand
+    if (!loc_genomic_acc.Match(genomic_acc) || loc_strand != align.GetSeqStrand(1))
+    {
+        return eNone;
+    }
+
+    // Considered an overlap if at least 50% of location intersects alignment
+    TSeqRange loc_range(loc_field.GetField("from").GetInt(),
+                        loc_field.GetField("to").GetInt());
+    return loc_range == align.GetSeqRange(1) ? eExact
+         : (loc_range.IntersectionWith(align.GetSeqRange(1)).GetLength() * 2
+               >= loc_range.GetLength()
+             ? eOverlap : eNone);
+}
+
+void CFeatureGenerator::SImplementation::
+x_AddKeywordQuals(CSeq_feat &feat, const vector<string> &keywords)
+{
+    for (const string &keyword : keywords) {
+        CRef<CGb_qual> qualifier(new CGb_qual);
+        qualifier->SetQual("tag");
+        qualifier->SetVal(keyword);
+        feat.SetQual().push_back(qualifier);
+    }
 }
 
 CRef<CSeq_loc> CFeatureGenerator::SImplementation::MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2)

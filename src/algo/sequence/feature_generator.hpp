@@ -159,6 +159,8 @@ private:
         CSeq_loc_Mapper::TMapOptions m_opts;
     };
 
+    enum e_MatchType {eNone, eOverlap, eExact};
+
     void TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
                                            CRef<CSeq_feat>& cd_feat);
     void x_CollectMrnaSequence(CSeq_inst& inst,
@@ -238,6 +240,15 @@ private:
 
     void x_SetCommentForGapFilledModel(CSeq_feat& feat, TSeqPos insert_length);
     void x_SetQualForGapFilledModel(CSeq_feat& feat, CSeq_id_Handle id);
+    void x_AddSelectMarkup(const CSeq_align &align,
+                           const CBioseq_Handle& rna_handle, 
+                           const CSeq_id &genomic_acc,
+                           CSeq_feat& rna_feat, CSeq_feat* cds_feat);
+    e_MatchType x_CheckMatch(const CSeq_align &align,
+                             const CSeq_id &genomic_acc,
+                             const CUser_field &loc_field);
+    void x_AddKeywordQuals(CSeq_feat &feat, const vector<string> &keywords);
+
 
     string x_ConstructRnaName(const CBioseq_Handle& handle);
 
