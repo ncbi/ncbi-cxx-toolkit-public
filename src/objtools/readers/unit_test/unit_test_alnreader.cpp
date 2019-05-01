@@ -241,11 +241,15 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CErrorLogger logger(errors);
     CNcbiIfstream ifstr(input.c_str());
     unique_ptr<CAlnReader> pReader(sGetReader(test_name, ifstr));
-    pReader->SetIdValidation("bankit");
+
+    CAlnReader::TReadFlags flags = 0;
+    if (NStr::EndsWith(test_name, "-lcl")) {
+        flags |= CAlnReader::fGenerateLocalIDs;
+    }
 
     CRef<CSeq_entry> pEntry;
     try {
-        pReader->Read(0, &logger);
+        pReader->Read(flags, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(test_name), &logger);
     } 
     catch (std::exception&) {
@@ -296,11 +300,15 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CErrorLogger logger(newErrors.c_str());
 
     unique_ptr<CAlnReader> pReader(sGetReader(sTestName, ifstr));
-    pReader->SetIdValidation("bankit");
+
+    CAlnReader::TReadFlags flags = 0;
+    if (NStr::EndsWith(sTestName, "-lcl")) {
+        flags |= CAlnReader::fGenerateLocalIDs;
+    }
 
     CRef<CSeq_entry> pEntry;
     try {
-        pReader->Read(0, &logger);
+        pReader->Read(flags, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(sTestName), &logger);
     } 
     catch (CObjReaderParseException& except) {

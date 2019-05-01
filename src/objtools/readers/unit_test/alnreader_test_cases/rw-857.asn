@@ -1,0 +1,60 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "MF109352"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 11,
+        seq-data ncbi2na '03FE54'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "MF109351"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 11,
+        seq-data ncbi2na '03FE54'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 2,
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              genbank {
+                accession "MF109352"
+              },
+              genbank {
+                accession "MF109351"
+              }
+            },
+            starts {
+              0,
+              0
+            },
+            lens {
+              11
+            }
+          }
+        }
+      }
+    }
+  }
+}
