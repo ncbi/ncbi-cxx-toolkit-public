@@ -61,12 +61,6 @@ BEGIN_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 
-void sPrintCommand(const list<SLineInfo>& command)
-{
-    for (auto lineInfo : command) {
-        cout << lineInfo.mData << endl;
-    }
-}
 
 // -----------------------------------------------------------------------------
 bool 
@@ -75,21 +69,22 @@ CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
 {   
     auto& args = command.args;
     string lastLine = args.back().mData;
-    NStr::ToLower(lastLine);
     int lastWhiteSpacePos = lastLine.find_last_of(" \t");
     string lastToken = (lastWhiteSpacePos == NPOS) ?
                         lastLine :
                         lastLine.substr(lastWhiteSpacePos);
-    if (lastToken == "end") {
 
+    string lastTokenLower(lastToken);
+    NStr::ToLower(lastTokenLower);
+
+    if (lastTokenLower == "end") {
         const bool onlyArg = (args.size() == 1 && 
                               lastWhiteSpacePos == NPOS);
-
         if (onlyArg) {
             throw SShowStopper(
                 args.back().mNumLine,
                 EAlnSubcode::eAlnSubcode_UnexpectedCommandArgs,
-                "\"end\" is not a valid argument for the \"" +
+                "\"" + lastToken + "\" is not a valid argument for the \"" +
                 command.name + "\" command.");
         }
 
@@ -133,6 +128,7 @@ CAlnScannerNexus::xProcessCommand(
         command.args.front().mData = 
             NStr::TruncateSpaces(command.args.front().mData.substr(nameEnd));
     }
+    command.startLineNum = commandTokens.front().mNumLine;
 
     string nameLower = command.name;
     NStr::ToLower(nameLower);
@@ -258,11 +254,10 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
 
     auto nameLower = command.name;
     NStr::ToLower(nameLower);
-
     if (nameLower == "end") {
         if (previousCommand != "sequin") {
             auto description =
-                "Exiting an empty NCBI block. Expected a \"sequin\" command.";
+                "Exiting empty \"NCBI\" block. Expected a \"sequin\" command.";
             throw SShowStopper(
                 command.startLineNum,
                 EAlnSubcode::eAlnSubcode_UnexpectedCommand,
@@ -283,10 +278,11 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
         throw SShowStopper(
             command.startLineNum,
             EAlnSubcode::eAlnSubcode_UnexpectedCommand,
-            "Unexpected \"" + command.name  + "\" command inside NCBI block."); 
+            "Unexpected \"" + command.name  + "\" command inside \"NCBI\" block."); 
     }
 
     if (unexpectedEnd) {
+        previousCommand.clear();
         xEndBlock(command.args.back().mNumLine);
     }
 }
@@ -503,7 +499,7 @@ CAlnScannerNexus::xProcessDimensions(
                 throw SShowStopper(
                         ntaxPos.first->mNumLine,
                         EAlnSubcode::eAlnSubcode_UnexpectedCommandArgs,
-                        "Invalid Command Args: \"Ntax\" must be immediately preceded by \"newtaxa\" in \"" +
+                        "Invalid Command Args: \"nTax\" must be immediately preceded by \"newtaxa\" in \"" +
                         mCurrentBlock +
                         "\" block.");
             }
@@ -686,13 +682,15 @@ CAlnScannerNexus::xImportAlignmentData(
                 throw SShowStopper(
                         lineCount,
                         eAlnSubcode_IllegalDataLine,
-                        "Unexpected token. #NEXUS should appear once at the beginnng of the file."
+                        "Unexpected token. \"#NEXUS\" should appear once at the beginnng of the file."
                         
                         );
             }
             firstToken = false;
             continue;
         }
+    /*  
+      // this code is redundant because the file will not be recognised as Nexus anyway.
         else 
         if (firstToken) {
             throw SShowStopper(
@@ -700,6 +698,7 @@ CAlnScannerNexus::xImportAlignmentData(
                     eAlnSubcode_IllegalDataLine,
                     "Unexpected line. \"#NEXUS\" should appear at the beginning of the file.");
         }
+        */
 
         int previousOpenBrackets = numOpenBrackets;
         sStripCommentsOutsideCommand(line, numOpenBrackets, inCommand);

@@ -1,0 +1,22 @@
+[Note that NTax and Nchar are defined in different blocks]
+#NEXUS
+BEGIN TAXA;
+TaxLabels fish frog snake mouse;
+END;
+
+[Note how there is no semi-colon at the end of the matrix]
+BEGIN CHARACTERS;
+Dimensions NChar=20 
+NewTaxa NTax=4;
+Format DataType=DNA;
+Matrix
+fish   ACATA GAGGG TACCT CTAAG
+frog   ACATA GAGGG TACCT CTAAG
+snake  ACATA GAGGG TACCT CTAAG
+mouse  ACATA GAGGG TACCT CTAAG;
+END;
+
+BEGIN TREES;
+Tree best=(fish, (frog, (snake, mouse)));
+END;
+

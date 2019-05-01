@@ -1,5 +1,5 @@
 Line No    : 10
 Severity   : Fatal
 Problem    : Alignment.UnexpectedCommandArgs
-Message    : Invalid Command Args: "Ntax" must be immediately preceded by "newtaxa" in "CHARACTERS" block.
+Message    : Invalid Command Args: "nTax" must be immediately preceded by "newtaxa" in "CHARACTERS" block.
 
