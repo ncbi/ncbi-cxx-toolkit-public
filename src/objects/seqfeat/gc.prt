@@ -96,6 +96,7 @@
 --   id 7      id 4      - Kinetoplast code now merged in code id 4
 --   id 8      id 1      - all plant chloroplast differences due to RNA edit
 --
+--
 --*************************************************************************
 
 Genetic-code-table ::= {

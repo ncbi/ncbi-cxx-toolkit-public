@@ -206,3 +206,4 @@ static const char* const s_GenCodeTblMemStr[] = {
     " }",
     "}"
 };
+
