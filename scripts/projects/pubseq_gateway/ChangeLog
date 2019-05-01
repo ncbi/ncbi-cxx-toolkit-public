@@ -1,3 +1,10 @@
+Release 1.3.0 (2019-05-01)
+
+    * PSG - add "exclude_blobs" parameter (for "ID/get" command) (CXX-10596)
+    * PSG - per-client cache of already returned data blobs (CXX-10597)
+    * PSG (server and client) -- new command TEST/io (to test performance)
+      (CXX-10619)
+
 Release 1.2.0
 
     * PSG -- use schema type 4 for blob sat mapping (CXX-10524)
