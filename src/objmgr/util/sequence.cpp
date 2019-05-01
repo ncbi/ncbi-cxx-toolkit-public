@@ -1303,7 +1303,10 @@ CConstRef<CSeq_feat> GetOverlappingGene(
 
 bool IsTransSpliced(const CSeq_feat& feat)
 {
-    if (feat.IsSetExcept_text() && NStr::Find(feat.GetExcept_text(), "trans-splicing") != string::npos) {
+    // note - even if the exception says "trans-splicing", it isn't really trans-splicing if
+    // it's a single interval
+    if (feat.IsSetExcept_text() && NStr::Find(feat.GetExcept_text(), "trans-splicing") != string::npos
+        && !feat.GetLocation().IsInt()) {
         return true;
     } else {
         return false;
