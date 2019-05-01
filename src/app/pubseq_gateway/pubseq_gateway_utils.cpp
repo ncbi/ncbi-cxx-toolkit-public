@@ -131,7 +131,7 @@ static string   s_SeqVer = "seq_ver=";
 static string   s_SeqType = "seq_type=";
 static string   s_NA = "na=";
 static string   s_Reason = "reason=";
-static string   s_NChunksZero = "n_chunks=0";
+static string   s_NChunksOne = "n_chunks=1";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -336,7 +336,7 @@ string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
 string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
                              EBlobSkipReason  skip_reason)
 {
-    // E.g. PSG-Reply-Chunk: item_id=5&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=0&reason={excluded,inprogress,sent}
+    // E.g. PSG-Reply-Chunk: item_id=5&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
     string      reason;
     switch (skip_reason) {
         case eExcluded:
@@ -361,7 +361,7 @@ string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
                 .append(s_BlobId)
                 .append(GetBlobId(blob_id))
                 .append(1, '&')
-                .append(s_NChunksZero)
+                .append(s_NChunksOne)
                 .append(1, '&')
                 .append(s_Reason)
                 .append(reason)
