@@ -445,7 +445,7 @@ CRef<CSeq_id> CAlnReader::GenerateID(const string& fasta_defline,
     _ASSERT(index < m_Dim);
     _ASSERT(!m_Ids[index].empty());    
 
-    return m_Ids[index].front();
+    return FindBestChoice(m_Ids[index], CSeq_id::BestRank);
 }    
 
 
