@@ -2240,6 +2240,42 @@ static bool s_NotPeptideException
             return false;
         }
     }
+
+    const CProt_ref& currP = curr.GetData().GetProt();
+    const CProt_ref& prevP = prev.GetData().GetProt();
+
+    if (currP.IsSetName() && prevP.IsSetName()) {
+        string currN;
+        for (auto it : currP.GetName()) {
+            currN = it;
+            break;
+        }
+        string prevN;
+        for (auto it : prevP.GetName()) {
+            prevN = it;
+            break;
+        }
+        if (NStr::EqualNocase (currN, "anchored capsid protein C") && NStr::EqualNocase (prevN, "capsid protein C")) {
+            return false;
+        }
+        if (NStr::EqualNocase (prevN, "anchored capsid protein C") && NStr::EqualNocase (currN, "capsid protein C")) {
+            return false;
+        }
+        if (NStr::EqualNocase (currN, "membrane glycoprotein precursor M") && NStr::EqualNocase (prevN, "protein pr")) {
+            return false;
+        }
+        if (NStr::EqualNocase (prevN, "membrane glycoprotein precursor M") && NStr::EqualNocase (currN, "protein pr")) {
+            return false;
+        }
+        if (NStr::EqualNocase (currN, "membrane glycoprotein precursor M") && NStr::EqualNocase (prevN, "membrane glycoprotein M")) {
+            return false;
+        }
+        if (NStr::EqualNocase (prevN, "membrane glycoprotein precursor M") && NStr::EqualNocase (currN, "membrane glycoprotein M")) {
+            return false;
+        }
+    }
+
+
     return true;
 }
 
