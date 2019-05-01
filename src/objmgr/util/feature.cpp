@@ -1789,12 +1789,13 @@ namespace {
             // not till the end of sequence
             return false;
         }
-        // 0-start, end-circular end
+        // 0-stop, start-circular end
+        TSeqPos total_end_open = range_info.m_Range.GetToOpen();
         range_info.m_SplitRange = true;
         range_info.m_Range.SetTo(stop);
         rr.push_back(range_info);
         range_info.m_Range.SetFrom(start);
-        range_info.m_Range.SetToOpen(range_info.m_Range.GetToOpen());
+        range_info.m_Range.SetToOpen(total_end_open);
         rr.push_back(range_info);
         return true;
     }        
