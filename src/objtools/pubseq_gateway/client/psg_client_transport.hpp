@@ -657,11 +657,13 @@ private:
     std::vector<std::unique_ptr<io_thread>> m_io;
     std::atomic<std::size_t> m_cur_idx;
     std::atomic<std::size_t> m_request_id;
+    const string m_client_id;
 public:
     io_coordinator(const string& service_name);
     void create_io(CNetService service);
     bool add_request(std::shared_ptr<http2_request> req, chrono::milliseconds timeout);
     string get_new_request_id() { return to_string(m_request_id++); }
+    const string& get_client_id() const { return m_client_id; }
 };
 
 };

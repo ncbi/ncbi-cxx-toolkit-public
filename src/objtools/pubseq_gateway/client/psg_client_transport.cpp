@@ -1512,7 +1512,8 @@ void io_thread::execute(uv_sem_t* sem)
 
 /** io_coordinator */
 
-io_coordinator::io_coordinator(const string& service_name) : m_cur_idx(0), m_request_id(1)
+io_coordinator::io_coordinator(const string& service_name) : m_cur_idx(0), m_request_id(1),
+    m_client_id("&client_id=" + GetDiagContext().GetStringUID())
 {
     auto service = CNetService::Create("psg", service_name, kEmptyStr);
 
