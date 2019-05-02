@@ -148,6 +148,7 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
         switch (reply_item_type) {
             case CPSG_ReplyItem::eBlobData:       return Fill(reply_item, "BlobData");
             case CPSG_ReplyItem::eBlobInfo:       return Fill(reply_item, "BlobInfo");
+            case CPSG_ReplyItem::eSkippedBlob:    return Fill(reply_item, "SkippedBlob");
             case CPSG_ReplyItem::eBioseqInfo:     return Fill(reply_item, "BioseqInfo");
             case CPSG_ReplyItem::eNamedAnnotInfo: return Fill(reply_item, "NamedAnnotInfo");
             case CPSG_ReplyItem::eEndOfReply:     _TROUBLE; return;
@@ -160,6 +161,9 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
         case CPSG_ReplyItem::eBlobInfo:
             return Fill(static_pointer_cast<CPSG_BlobInfo>(reply_item));
+
+        case CPSG_ReplyItem::eSkippedBlob:
+            return Fill(static_pointer_cast<CPSG_SkippedBlob>(reply_item));
 
         case CPSG_ReplyItem::eBioseqInfo:
             return Fill(static_pointer_cast<CPSG_BioseqInfo>(reply_item));
@@ -208,6 +212,26 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
         if (i == 1) CJson_Array ar = m_JsonObj.insert_array("chunk_blob_id");
         m_JsonObj["chunk_blob_id"].SetArray().push_back(blob_id);
     }
+}
+
+string s_ReasonToString(CPSG_SkippedBlob::EReason reason)
+{
+    switch (reason) {
+        case CPSG_SkippedBlob::eExcluded:   return "Excluded";
+        case CPSG_SkippedBlob::eInProgress: return "InProgress";
+        case CPSG_SkippedBlob::eSent:       return "Sent";
+        case CPSG_SkippedBlob::eUnknown:    return "Unknown";
+    };
+
+    _TROUBLE;
+    return "";
+}
+
+void CJsonResponse::Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob)
+{
+    m_JsonObj["reply"].SetValue().SetString("SkippedBlob");
+    m_JsonObj["id"].SetValue().SetString(skipped_blob->GetId().Get());
+    m_JsonObj["reason"].SetValue().SetString(s_ReasonToString(skipped_blob->GetReason()));
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)

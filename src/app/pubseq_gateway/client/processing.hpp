@@ -90,6 +90,7 @@ private:
 
     void Fill(shared_ptr<CPSG_BlobData> blob_data);
     void Fill(shared_ptr<CPSG_BlobInfo> blob_info);
+    void Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob);
     void Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info);
     void Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
 

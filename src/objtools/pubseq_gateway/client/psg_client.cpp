@@ -246,10 +246,25 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 
     if (item_type == "blob") {
         auto blob_id = args.GetValue("blob_id");
+        auto reason = args.GetValue("reason");
 
-        unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(blob_id));
-        blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
-        rv.reset(blob_data.release());
+        if (reason.empty()) {
+            unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(blob_id));
+            blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
+            rv.reset(blob_data.release());
+        } else {
+            auto r = CPSG_SkippedBlob::eUnknown;
+
+            if (reason == "excluded") {
+                r = CPSG_SkippedBlob::eExcluded;
+            } else if (reason == "inprogress") {
+                r = CPSG_SkippedBlob::eInProgress;
+            } else if (reason == "Sent") {
+                r = CPSG_SkippedBlob::eSent;
+            }
+
+            rv.reset(new CPSG_SkippedBlob(blob_id, r));
+        }
 
     } else if (item_type == "bioseq_info") {
         rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
@@ -734,6 +749,14 @@ CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
     };
 
     return SId2Info::GetBlobId(m_Data, l, m_Id);
+}
+
+
+CPSG_SkippedBlob::CPSG_SkippedBlob(CPSG_BlobId id, EReason reason) :
+    CPSG_ReplyItem(eSkippedBlob),
+    m_Id(id),
+    m_Reason(reason)
+{
 }
 
 

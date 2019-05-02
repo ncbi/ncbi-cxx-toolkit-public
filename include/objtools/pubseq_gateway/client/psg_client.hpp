@@ -348,6 +348,7 @@ public:
     enum EType {
         eBlobData,
         eBlobInfo,
+        eSkippedBlob,
         eBioseqInfo,
         eNamedAnnotInfo,
         eEndOfReply,    ///< No more items expected in the (overall!) reply
@@ -474,6 +475,35 @@ private:
 
     CPSG_BlobId m_Id;
     CJsonNode m_Data;
+
+    friend class CPSG_Reply;
+};
+
+
+
+/// Skipped blob.
+
+class CPSG_SkippedBlob : public CPSG_ReplyItem
+{
+public:
+    enum EReason {
+        eExcluded,   // Explicitly excluded by the client
+        eInProgress, // Is being sent to the client
+        eSent,       // Already sent to the client
+        eUnknown,    // Skipped for unknown reason
+    };
+
+    /// Get blob ID
+    const CPSG_BlobId& GetId() const { return m_Id; }
+
+    // Get reason for blob skipping
+    EReason GetReason() const { return m_Reason; }
+
+private:
+    CPSG_SkippedBlob(CPSG_BlobId id, EReason reason);
+
+    CPSG_BlobId m_Id;
+    EReason     m_Reason;
 
     friend class CPSG_Reply;
 };
