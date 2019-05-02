@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "bed_importer.hpp"
 #include "bed_import_data.hpp"
 #include "bed_line_reader.hpp"
@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 CBedImporter::CBedImporter(
     unsigned int flags,
-    CFeatMessageHandler& errorHandler):
+    CImportMessageHandler& errorHandler):
 //  ============================================================================
     CFeatImporter_impl(flags, errorHandler)
 {

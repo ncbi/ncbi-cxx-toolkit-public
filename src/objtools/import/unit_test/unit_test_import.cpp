@@ -38,8 +38,7 @@
 #include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
 
-#include <objtools/import/feat_util.hpp>
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
@@ -113,7 +112,7 @@ void sRunTest(
 {
     cerr << "Running test " << testName << " ...\n";
     // produce output:
-    CFeatMessageHandler msgHandler;
+    CImportMessageHandler msgHandler;
     unique_ptr<CFeatImporter> pImporter(
         CFeatImporter::Get(format, 0, msgHandler));
     CSeq_annot annot;
@@ -124,16 +123,17 @@ void sRunTest(
     try {
         while (true) {
             pImporter->ReadSeqAnnot(iStr, annot);
-            if (!FeatUtil::ContainsData(annot)) {
+            const auto& annotData = annot.GetData();
+            if (!annotData.IsFtable()  ||  annotData.GetFtable().empty()) {
                 break;
             }
             oStrAnnot << MSerial_Format_AsnText() << annot;
-            if (msgHandler.GetWorstErrorLevel() <= CFeatImportError::CRITICAL) {
+            if (msgHandler.GetWorstErrorLevel() <= CImportError::CRITICAL) {
                 break;
             }
         }
     }
-    catch (const CFeatImportError&) {
+    catch (const CImportError&) {
     }
     catch(std::exception& err) {
         BOOST_ERROR("Error: Test \"" << testName << "\" failed during import:");

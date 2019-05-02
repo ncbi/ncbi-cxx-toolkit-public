@@ -37,8 +37,8 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
-#include <objtools/import/feat_util.hpp>
+#include <objtools/import/import_error.hpp>
+#include "feat_util.hpp"
 #include "featid_generator.hpp"
 #include "gtf_annot_assembler.hpp"
 
@@ -183,7 +183,7 @@ public:
 
 //  ============================================================================
 CGtfAnnotAssembler::CGtfAnnotAssembler(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatAnnotAssembler(errorReporter)
 {
@@ -207,8 +207,8 @@ CGtfAnnotAssembler::ProcessRecord(
     assert(dynamic_cast<const CGtfImportData*>(&record_));
     const CGtfImportData& record = static_cast<const CGtfImportData&>(record_);
 
-    CFeatImportError errorUnknownFeatureType(
-        CFeatImportError::ERROR, "Unknown GTF feature type");
+    CImportError errorUnknownFeatureType(
+        CImportError::ERROR, "Unknown GTF feature type");
 
     vector<string> ignoredFeatureTypes = {
         "inter", "inter_cns", "intron", "intron_cns",

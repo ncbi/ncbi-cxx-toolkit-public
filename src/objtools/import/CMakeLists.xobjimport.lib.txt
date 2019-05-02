@@ -5,7 +5,7 @@
 NCBI_begin_lib(xobjimport)
   NCBI_sources(
     ftable/feat_util ftable/gff_util
-    feat_import_error feat_import_progress feat_message_handler
+    import_error import_progress import_message_handler
     id_resolver id_resolver_canonical id_resolver_prefix
     feat_importer 
 	ftable/feat_import_data ftable/feat_line_reader ftable/feat_annot_assembler

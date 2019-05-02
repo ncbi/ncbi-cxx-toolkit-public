@@ -41,7 +41,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "feat_annot_assembler.hpp"
 #include "../annot_import_data.hpp"
 
@@ -50,7 +50,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CFeatAnnotAssembler::CFeatAnnotAssembler(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     mErrorReporter(errorReporter)
 {

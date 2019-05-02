@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_IMPORT_PROGRESS__HPP
-#define FEAT_IMPORT_PROGRESS__HPP
+#ifndef IMPORT_PROGRESS__HPP
+#define IMPORT_PROGRESS__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <util/line_reader.hpp>
@@ -42,11 +42,11 @@
 BEGIN_NCBI_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatImportProgress
+class NCBI_XOBJIMPORT_EXPORT CImportProgress
 //  ============================================================================
 {
 public:
-    CFeatImportProgress(
+    CImportProgress(
         unsigned int,
         unsigned int);
 

@@ -50,7 +50,7 @@ class CBedLineReader:
 {
 public:
     CBedLineReader(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CBedLineReader() {};
 

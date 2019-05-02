@@ -49,7 +49,7 @@ class C5ColLineReader:
 {
 public:
     C5ColLineReader(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~C5ColLineReader() {};
 

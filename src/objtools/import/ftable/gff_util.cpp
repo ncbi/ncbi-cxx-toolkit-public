@@ -33,9 +33,9 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objtools/import/gff_util.hpp>
+#include "gff_util.hpp"
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

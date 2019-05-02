@@ -55,7 +55,7 @@ class C5ColImportData:
 public:
     C5ColImportData(
         const CIdResolver&,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     C5ColImportData(
         const C5ColImportData& rhs);

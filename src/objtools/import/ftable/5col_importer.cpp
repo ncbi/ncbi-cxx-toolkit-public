@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "5col_importer.hpp"
 #include "5col_line_reader.hpp"
 #include "5col_import_data.hpp"
@@ -44,7 +44,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 C5ColImporter::C5ColImporter(
     unsigned int flags,
-    CFeatMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
+    CImportMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
 //  ============================================================================
 {
     mpReader.reset(new C5ColLineReader(errorHandler));

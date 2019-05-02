@@ -58,7 +58,7 @@ public:
 
     CBedImportData(
         const CIdResolver&,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     CBedImportData(
         const CBedImportData& rhs);

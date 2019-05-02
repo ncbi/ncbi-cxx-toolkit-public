@@ -50,7 +50,7 @@ class CFeatAnnotAssembler
 {
 public:
     CFeatAnnotAssembler(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CFeatAnnotAssembler();
 
@@ -69,7 +69,7 @@ public:
         CSeq_annot&);
 
 protected:
-    CFeatMessageHandler& mErrorReporter;
+    CImportMessageHandler& mErrorReporter;
 };
 
 END_objects_SCOPE

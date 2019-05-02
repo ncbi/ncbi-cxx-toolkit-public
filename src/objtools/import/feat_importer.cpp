@@ -32,8 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_error.hpp>
+#include <objtools/import/import_message_handler.hpp>
 
 #include "feat_importer_impl.hpp"
 #include "id_resolver_canonical.hpp"
@@ -57,7 +57,7 @@ CFeatImporter*
 CFeatImporter::Get(
     const string& format,
     unsigned int flags,
-    CFeatMessageHandler& errorHandler
+    CImportMessageHandler& errorHandler
     )
 //  ============================================================================
 {
@@ -80,7 +80,7 @@ CFeatImporter::Get(
 //  ============================================================================
 CFeatImporter_impl::CFeatImporter_impl(
     unsigned int flags,
-    CFeatMessageHandler& errorHandler):
+    CImportMessageHandler& errorHandler):
 //  ============================================================================
     mFlags(flags),
     mpReader(nullptr),
@@ -136,7 +136,7 @@ CFeatImporter_impl::ReadSeqAnnot(
             }
             mpAssembler->ProcessRecord(*mpImportData, annot);
         }
-        catch(CFeatImportError& err) {
+        catch(CImportError& err) {
             if (err.LineNumber() == 0) {
                 err.SetLineNumber(lineReader.GetLineNumber());
             }
@@ -144,10 +144,10 @@ CFeatImporter_impl::ReadSeqAnnot(
             switch(err.Severity()) {
             default:
                 continue;
-            case CFeatImportError::CRITICAL:
+            case CImportError::CRITICAL:
                 terminateNow = true;
                 break;
-            case CFeatImportError::FATAL:
+            case CImportError::FATAL:
                 throw;
             }
         }

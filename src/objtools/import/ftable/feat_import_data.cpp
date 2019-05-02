@@ -33,7 +33,7 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "feat_import_data.hpp"
 
 USING_NCBI_SCOPE;
@@ -42,7 +42,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 CFeatImportData::CFeatImportData(
     const CIdResolver& idResolver,
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     mIdResolver(idResolver),
     mErrorReporter(errorReporter)

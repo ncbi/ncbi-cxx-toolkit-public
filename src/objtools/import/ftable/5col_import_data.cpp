@@ -36,7 +36,7 @@
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "5col_import_data.hpp"
 
 #include <assert.h>
@@ -47,7 +47,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 C5ColImportData::C5ColImportData(
     const CIdResolver& idResolver,
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatImportData(idResolver, errorReporter)
 {
@@ -140,8 +140,8 @@ C5ColImportData::xFeatureSetType(
     const string& type_)
 //  ============================================================================
 {
-    CFeatImportError errorBadFeatureType(
-        CFeatImportError::ERROR, 
+    CImportError errorBadFeatureType(
+        CImportError::ERROR, 
         "Feature type not recognized");
 
     vector<string> recognizedTypes {

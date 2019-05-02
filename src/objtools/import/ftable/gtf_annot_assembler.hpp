@@ -55,7 +55,7 @@ class CGtfAnnotAssembler:
 {
 public:
     CGtfAnnotAssembler(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CGtfAnnotAssembler();
 

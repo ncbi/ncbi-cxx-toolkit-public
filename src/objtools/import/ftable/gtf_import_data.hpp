@@ -57,7 +57,7 @@ public:
 
     CGtfImportData(
         const CIdResolver&,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     CGtfImportData(
         const CGtfImportData& rhs);

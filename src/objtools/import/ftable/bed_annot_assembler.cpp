@@ -43,7 +43,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "featid_generator.hpp"
 #include "bed_annot_assembler.hpp"
 #include "bed_import_data.hpp"
@@ -55,7 +55,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CBedAnnotAssembler::CBedAnnotAssembler(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatAnnotAssembler(errorReporter)
 {

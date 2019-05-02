@@ -52,7 +52,7 @@ class CBedAnnotAssembler:
 {
 public:
     CBedAnnotAssembler(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CBedAnnotAssembler();
 

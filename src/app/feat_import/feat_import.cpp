@@ -48,9 +48,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 
-#include <objtools/import/feat_util.hpp>
-#include <objtools/import/feat_import_error.hpp>
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_error.hpp>
+#include <objtools/import/import_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
 
 USING_NCBI_SCOPE;
@@ -154,8 +153,8 @@ int
 CFeatImportApp::Run(void)
 //  ============================================================================
 {
-    CFeatImportError errorFormatNotRecognized(
-        CFeatImportError::CRITICAL, "Input file format not recognized");
+    CImportError errorFormatNotRecognized(
+        CImportError::CRITICAL, "Input file format not recognized");
 
     const CArgs& args = GetArgs();
 
@@ -163,7 +162,7 @@ CFeatImportApp::Run(void)
     CNcbiOstream& ostr = args["output"].AsOutputFile();
 
     CSeq_annot annot;
-    CFeatMessageHandler errorHandler;
+    CImportMessageHandler errorHandler;
     unique_ptr<CFeatImporter> pImporter(nullptr);
  
     try {
@@ -174,7 +173,7 @@ CFeatImportApp::Run(void)
             throw errorFormatNotRecognized;
         }
     }
-    catch (const CFeatImportError& error) {
+    catch (const CImportError& error) {
         cerr << "Line " << error.LineNumber() << ": " << error.SeverityStr() 
              << ": " << error.Message() << "\n";
         return 1;
@@ -185,12 +184,13 @@ CFeatImportApp::Run(void)
         try {
             pImporter->ReadSeqAnnot(istr, annot);
         }
-        catch (const CFeatImportError& error) {
+        catch (const CImportError& error) {
             cerr << "Line " << error.LineNumber() << ": " << error.SeverityStr() 
                 << ": " << error.Message() << "\n";
             return 1;
         } 
-        if (!FeatUtil::ContainsData(annot)) {
+        const auto& annotData = annot.GetData();
+        if (!annotData.IsFtable()  ||  annotData.GetFtable().empty()) {
             break;
         }
         ostr << xGetOutputFormat(args) << annot;

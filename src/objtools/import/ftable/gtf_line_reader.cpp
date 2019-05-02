@@ -33,8 +33,8 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
-#include <objtools/import/gff_util.hpp>
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
+#include "gff_util.hpp"
 #include "gtf_line_reader.hpp"
 #include "gtf_import_data.hpp"
 
@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CGtfLineReader::CGtfLineReader(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatLineReader(errorReporter),
     mColumnDelimiter(""),
@@ -85,8 +85,8 @@ CGtfLineReader::xSplitLine(
     vector<string>& columns)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidColumnCount(
-        CFeatImportError::CRITICAL, "Invalid column count");
+    CImportError errorInvalidColumnCount(
+        CImportError::CRITICAL, "Invalid column count");
 
     columns.clear();
     if (mColumnDelimiter.empty()) {
@@ -120,13 +120,13 @@ CGtfLineReader::xInitializeRecord(
     CFeatImportData& record_)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidScore(
-        CFeatImportError::WARNING, 
+    CImportError errorInvalidScore(
+        CImportError::WARNING, 
         "Invalid score value - assuming \".\"",
         LineCount());
 
-    CFeatImportError errorInvalidPhase(
-        CFeatImportError::WARNING, 
+    CImportError errorInvalidPhase(
+        CImportError::WARNING, 
         "Invalid phase value - assuming \".\"", 
         LineCount());
 
@@ -173,8 +173,8 @@ CGtfLineReader::xInitializeAttributes(
     vector<pair<string, string>>& attributes)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidAttributeFormat(
-        CFeatImportError::ERROR, "Invalid attribute formatting", 
+    CImportError errorInvalidAttributeFormat(
+        CImportError::ERROR, "Invalid attribute formatting", 
         LineCount());
 
     string attributesStr = columns[8];
@@ -222,8 +222,8 @@ CGtfLineReader::xInitializeType(
     string& featType)
 //  ============================================================================
 {
-    CFeatImportError errorIllegalFeatureType(
-        CFeatImportError::ERROR, "Illegal feature type", LineCount());
+    CImportError errorIllegalFeatureType(
+        CImportError::ERROR, "Illegal feature type", LineCount());
 
     static const vector<string> validTypes = {
         "5utr", "3utr",
@@ -268,14 +268,14 @@ CGtfLineReader::xInitializeLocation(
     ENa_strand& seqStrand)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidSeqStartValue(
-        CFeatImportError::ERROR, "Invalid seqStart value",
+    CImportError errorInvalidSeqStartValue(
+        CImportError::ERROR, "Invalid seqStart value",
         LineCount());
-    CFeatImportError errorInvalidSeqStopValue(
-        CFeatImportError::ERROR, "Invalid seqStop value",
+    CImportError errorInvalidSeqStopValue(
+        CImportError::ERROR, "Invalid seqStop value",
         LineCount());
-    CFeatImportError errorInvalidSeqStrandValue(
-        CFeatImportError::ERROR, "Invalid seqStrand value",
+    CImportError errorInvalidSeqStrandValue(
+        CImportError::ERROR, "Invalid seqStrand value",
         LineCount());
 
     seqId = columns[0];

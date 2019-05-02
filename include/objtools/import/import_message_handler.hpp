@@ -31,80 +31,41 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_IMPORT_ERROR__HPP
-#define FEAT_IMPORT_ERROR__HPP
+#ifndef IMPORT_MESSAGE_HANDLER__HPP
+#define IMPORT_MESSAGE_HANDLER__HPP
 
-#include <corelib/ncbistd.hpp>
-#include <util/line_reader.hpp>
+#include <corelib/ncbifile.hpp>
 
-#undef ERROR
+#include "import_error.hpp"
+#include "import_progress.hpp"
 
 BEGIN_NCBI_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatImportError:
-    public CException
+class NCBI_XOBJIMPORT_EXPORT CImportMessageHandler
 //  ============================================================================
 {
 public:
-    enum  ErrorLevel {
-        PROGRESS = -1,
-        FATAL = 0,          // show stops here, discard all data
-        CRITICAL = 1,       // show stops here, preserve data retrieved so far
-        ERROR = 2,          // discard current unit of information
-        WARNING = 3,        // fix up and use current unit of information
-        DEBUG = 4,
-        NONE = 10,
-    };
+    CImportMessageHandler();
+    virtual ~CImportMessageHandler();
 
-    enum ErrorCode {
-        eUNSPECIFIED = 0,
-    };
+    virtual void
+    ReportError(
+        const CImportError&);
 
-public:
-    CFeatImportError(
-        ErrorLevel,
-        const std::string&,
-        unsigned int =0,
-        ErrorCode = eUNSPECIFIED); //line number
+    virtual void
+    ReportProgress(
+        const CImportProgress&);
 
-    CFeatImportError&
-    operator =(
-        const CFeatImportError& rhs) {
-        mSeverity = rhs.mSeverity;
-        mMessage = rhs.mMessage;
-        mLineNumber = rhs.mLineNumber;
-        return *this;
-    };
+    CImportError::ErrorLevel
+    GetWorstErrorLevel() const { return mWorstErrorLevel; };
 
-    virtual ~CFeatImportError() {};
-
-    void
-    SetLineNumber(
-        unsigned int lineNumber) { mLineNumber = lineNumber; };
-
-    void
-    AmendMessage(
-        const std::string& amend) { mAmend = amend; };
-
-    ErrorLevel Severity() const { return mSeverity; };
-    std::string Message() const;
-    unsigned int LineNumber() const { return mLineNumber; };
-    ErrorCode Code() const { return mCode; };
-
-    string 
-    SeverityStr() const;
-
-    void
-    Serialize(
-        CNcbiOstream&);
+    void Dump(
+        CNcbiOstream& out);
 
 protected:
-    ErrorLevel mSeverity;
-    ErrorCode mCode;
-    string mMessage;
-    string mAmend;
-    unsigned int mLineNumber;
+    std::vector<CImportError> mErrors;
+    CImportError::ErrorLevel mWorstErrorLevel;
 };
 
 END_NCBI_SCOPE

@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "bed_line_reader.hpp"
 #include "bed_import_data.hpp"
 
@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CBedLineReader::CBedLineReader(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatLineReader(errorReporter),
     mColumnCount(0),
@@ -132,12 +132,12 @@ CBedLineReader::xProcessTrackLine(
     const string& line)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidTrackValue(
-        CFeatImportError::WARNING, "Invalid track value", 
+    CImportError errorInvalidTrackValue(
+        CImportError::WARNING, "Invalid track value", 
         LineCount());
 
-    CFeatImportError errorTrackLineOutOfOrder(
-        CFeatImportError::CRITICAL, "Track line out of order",
+    CImportError errorTrackLineOutOfOrder(
+        CImportError::CRITICAL, "Track line out of order",
         LineCount());
 
     string track, values;
@@ -222,8 +222,8 @@ CBedLineReader::xSplitLine(
 //  See implementation notes!
 //  ============================================================================
 {
-    CFeatImportError errorInvalidColumnCount(
-        CFeatImportError::FATAL, "Invalid column count",
+    CImportError errorInvalidColumnCount(
+        CImportError::FATAL, "Invalid column count",
         LineCount());
 
     columns.clear();
@@ -250,14 +250,14 @@ CBedLineReader::xInitializeChromInterval(
     ENa_strand& chromStrand)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidChromStartValue(
-        CFeatImportError::ERROR, "Invalid chromStart value",
+    CImportError errorInvalidChromStartValue(
+        CImportError::ERROR, "Invalid chromStart value",
         LineCount());
-    CFeatImportError errorInvalidChromEndValue(
-        CFeatImportError::ERROR, "Invalid chromEnd value",
+    CImportError errorInvalidChromEndValue(
+        CImportError::ERROR, "Invalid chromEnd value",
         LineCount());
-    CFeatImportError errorInvalidStrandValue(
-        CFeatImportError::ERROR, "Invalid strand value",
+    CImportError errorInvalidStrandValue(
+        CImportError::ERROR, "Invalid strand value",
         LineCount());
 
     chromId = columns[0];
@@ -295,8 +295,8 @@ CBedLineReader::xInitializeScore(
     double& score)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::WARNING, "Invalid score value- omitting from output.",
+    CImportError errorInvalidScoreValue(
+        CImportError::WARNING, "Invalid score value- omitting from output.",
         LineCount());
 
     if (columns.size() < 5  ||  columns[4] == "."  ||  mUseScore) {
@@ -342,8 +342,8 @@ CBedLineReader::xInitializeRgbFromStrandColumn(
     CBedImportData::RgbValue& rgbValue)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidStrandValue(
-        CFeatImportError::WARNING, 
+    CImportError errorInvalidStrandValue(
+        CImportError::WARNING, 
         "Invalid strand value- setting color to BLACK.",
         LineCount());
 
@@ -372,14 +372,14 @@ CBedLineReader::xInitializeRgbFromScoreColumn(
     CBedImportData::RgbValue& rgbValue)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::WARNING, "Invalid score value- setting color to BLACK.",
+    CImportError errorInvalidScoreValue(
+        CImportError::WARNING, "Invalid score value- setting color to BLACK.",
         LineCount());
-    CFeatImportError errorScoreValueTooLow(
-        CFeatImportError::WARNING, "Invalid score value- clipping to 0.",
+    CImportError errorScoreValueTooLow(
+        CImportError::WARNING, "Invalid score value- clipping to 0.",
         LineCount());
-    CFeatImportError errorScoreValueTooHigh(
-        CFeatImportError::WARNING, "Invalid score value- clipping to 1000.",
+    CImportError errorScoreValueTooHigh(
+        CImportError::WARNING, "Invalid score value- clipping to 1000.",
         LineCount());
 
     if (columns.size() < 5 || columns[4] == ".") {
@@ -426,8 +426,8 @@ CBedLineReader::xInitializeRgbFromRgbColumn(
     CBedImportData::RgbValue& rgbValue)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidRgbValue(
-        CFeatImportError::WARNING, "Invalid RGB value- defaulting to BLACK",
+    CImportError errorInvalidRgbValue(
+        CImportError::WARNING, "Invalid RGB value- defaulting to BLACK",
         LineCount());
 
     rgbValue.R = rgbValue.G = rgbValue.B = 0;
@@ -499,11 +499,11 @@ CBedLineReader::xInitializeThickInterval(
     TSeqPos& thickEnd)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidThickStartValue(
-        CFeatImportError::ERROR, "Invalid thickStart value",
+    CImportError errorInvalidThickStartValue(
+        CImportError::ERROR, "Invalid thickStart value",
         LineCount());
-    CFeatImportError errorInvalidThickEndValue(
-        CFeatImportError::ERROR, "Invalid thickEnd value",
+    CImportError errorInvalidThickEndValue(
+        CImportError::ERROR, "Invalid thickEnd value",
         LineCount());
     if (columns.size() < 8) {
         return;
@@ -547,17 +547,17 @@ CBedLineReader::xInitializeBlocks(
     vector<int>& blockSizes)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidBlockCountValue(
-        CFeatImportError::ERROR, "Invalid blockCount value",
+    CImportError errorInvalidBlockCountValue(
+        CImportError::ERROR, "Invalid blockCount value",
         LineCount());
-    CFeatImportError errorInvalidBlockStartsValue(
-        CFeatImportError::ERROR, "Invalid blockStarts value",
+    CImportError errorInvalidBlockStartsValue(
+        CImportError::ERROR, "Invalid blockStarts value",
         LineCount());
-    CFeatImportError errorInvalidBlockSizesValue(
-        CFeatImportError::ERROR, "Invalid blockSizes value",
+    CImportError errorInvalidBlockSizesValue(
+        CImportError::ERROR, "Invalid blockSizes value",
         LineCount());
-    CFeatImportError errorInconsistentBlocksInformation(
-        CFeatImportError::ERROR, "Inconsistent blocks information",
+    CImportError errorInconsistentBlocksInformation(
+        CImportError::ERROR, "Inconsistent blocks information",
         LineCount());
 
     if (columns.size() < 12) {
@@ -615,8 +615,8 @@ CBedLineReader::xInitializeRecord(
     CFeatImportData& record_)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidThickInterval(
-        CFeatImportError::ERROR, "thickInterval extending beyond chrom feature",
+    CImportError errorInvalidThickInterval(
+        CImportError::ERROR, "thickInterval extending beyond chrom feature",
         LineCount());
 
     assert(dynamic_cast<CBedImportData*>(&record_));

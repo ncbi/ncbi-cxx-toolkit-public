@@ -33,8 +33,8 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <objtools/import/gff_util.hpp>
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
+#include "gff_util.hpp"
 #include "gtf_import_data.hpp"
 
 #include <assert.h>
@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 CGtfImportData::CGtfImportData(
     const CIdResolver& idResolver,
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatImportData(idResolver, errorReporter),
     mpScore(nullptr),
@@ -151,11 +151,11 @@ CGtfImportData::xInitializeAttributes(
     const vector<pair<string, string>>& attributes)
 //  ============================================================================
 {
-    CFeatImportError errorMissingGeneId(
-        CFeatImportError::ERROR, "Feature misses mandatory gene_id");
+    CImportError errorMissingGeneId(
+        CImportError::ERROR, "Feature misses mandatory gene_id");
 
-    CFeatImportError errorMissingTranscriptId(
-        CFeatImportError::ERROR, "Feature misses mandatory transcript_id");
+    CImportError errorMissingTranscriptId(
+        CImportError::ERROR, "Feature misses mandatory transcript_id");
 
     mAttributes.clear();
     bool foundGeneId(false), foundTranscriptId(false);

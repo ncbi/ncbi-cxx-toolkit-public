@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "5col_line_reader.hpp"
 #include "5col_import_data.hpp"
 
@@ -43,7 +43,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 C5ColLineReader::C5ColLineReader(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatLineReader(errorReporter),
     mCurrentSeqId(""),
@@ -59,11 +59,11 @@ C5ColLineReader::GetNextRecord(
     CFeatImportData& record)
 //  ============================================================================
 {
-    CFeatImportError errorDataLineOutOfOrder(
-        CFeatImportError::ERROR, 
+    CImportError errorDataLineOutOfOrder(
+        CImportError::ERROR, 
         "Data line out of order");
-    CFeatImportError errorBadDataLine(
-        CFeatImportError::ERROR, 
+    CImportError errorBadDataLine(
+        CImportError::ERROR, 
         "Bad data line", LineCount());
 
     xReportProgress();
@@ -164,8 +164,8 @@ C5ColLineReader::xSplitLine(
     vector<string>& columns)
 //  ============================================================================
 {
-    CFeatImportError errorBadDataLine(
-        CFeatImportError::ERROR, 
+    CImportError errorBadDataLine(
+        CImportError::ERROR, 
         "Bad data line", LineCount());
 
     string line = NStr::TruncateSpaces(line_, NStr::eTrunc_End);
@@ -194,8 +194,8 @@ C5ColLineReader::xLineTypeOf(
     const vector<string>& columns)
 //  ============================================================================
 {
-    CFeatImportError errorBadDataLine(
-        CFeatImportError::ERROR, 
+    CImportError errorBadDataLine(
+        CImportError::ERROR, 
         "Bad data line", LineCount());
 
     if (columns.empty()) {
@@ -229,8 +229,8 @@ C5ColLineReader::xInitializeRecord(
     CFeatImportData& record_)
     //  ============================================================================
 {
-    CFeatImportError errorBadIntervalBoundaries(
-        CFeatImportError::ERROR, 
+    CImportError errorBadIntervalBoundaries(
+        CImportError::ERROR, 
         "Invalid interval boundaries",
         LineCount());
 

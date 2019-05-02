@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "feat_line_reader.hpp"
 
 USING_NCBI_SCOPE;
@@ -40,7 +40,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CFeatLineReader::CFeatLineReader(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     mErrorReporter(errorReporter),
     mLineCount(0),
@@ -96,5 +96,5 @@ CFeatLineReader::xReportProgress()
     }
     mLastProgress += mProgressFreq;
     mErrorReporter.ReportProgress(
-        CFeatImportProgress(RecordCount(), LineCount()));
+        CImportProgress(RecordCount(), LineCount()));
 }

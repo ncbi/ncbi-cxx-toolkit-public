@@ -31,12 +31,12 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objtools/import/feat_import_progress.hpp>
+#include <objtools/import/import_progress.hpp>
 
 USING_NCBI_SCOPE;
 
 //  ============================================================================
-CFeatImportProgress::CFeatImportProgress(
+CImportProgress::CImportProgress(
     unsigned int recordCount,
     unsigned int lineCount): 
 //  ============================================================================
@@ -46,7 +46,7 @@ CFeatImportProgress::CFeatImportProgress(
 
 //  ============================================================================
 void
-CFeatImportProgress::Serialize(
+CImportProgress::Serialize(
     CNcbiOstream& out) const
 //  ============================================================================
 {

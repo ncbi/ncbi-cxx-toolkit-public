@@ -33,7 +33,7 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objtools/import/feat_util.hpp>
+#include "feat_util.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

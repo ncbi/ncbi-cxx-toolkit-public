@@ -40,7 +40,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "featid_generator.hpp"
 #include "5col_annot_assembler.hpp"
 #include "5col_import_data.hpp"
@@ -52,7 +52,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 C5ColAnnotAssembler::C5ColAnnotAssembler(
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatAnnotAssembler(errorReporter)
 {

@@ -37,7 +37,7 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_message_handler.hpp>
 #include <objtools/import/id_resolver.hpp>
 
 #include "../feat_importer_impl.hpp"
@@ -53,7 +53,7 @@ class CGtfImporter:
 public:
     CGtfImporter( 
         unsigned int,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CGtfImporter();
 };

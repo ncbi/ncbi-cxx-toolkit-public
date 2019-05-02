@@ -34,7 +34,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "bed_import_data.hpp"
 
 #include <assert.h>
@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 CBedImportData::CBedImportData(
     const CIdResolver& idResolver,
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatImportData(idResolver, errorReporter),
     mName(""),

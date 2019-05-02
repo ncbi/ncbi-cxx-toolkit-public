@@ -36,7 +36,7 @@
 
 #include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -60,7 +60,7 @@ public:
 protected:
     CFeatImporter_impl(
         unsigned int,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CFeatImporter_impl() {};
 
@@ -69,7 +69,7 @@ protected:
     unique_ptr<CFeatLineReader> mpReader;
     unique_ptr<CFeatImportData> mpImportData;
     unique_ptr<CFeatAnnotAssembler> mpAssembler;
-    CFeatMessageHandler& mErrorHandler;
+    CImportMessageHandler& mErrorHandler;
 };
 
 END_objects_SCOPE

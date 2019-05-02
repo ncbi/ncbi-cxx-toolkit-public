@@ -49,7 +49,7 @@ class CGtfLineReader:
 {
 public:
     CGtfLineReader(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CGtfLineReader() {};
 

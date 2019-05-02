@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "gff3_importer.hpp"
 #include "gff3_import_data.hpp"
 #include "gff3_line_reader.hpp"
@@ -44,7 +44,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 CGff3Importer::CGff3Importer(
     unsigned int flags,
-    CFeatMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
+    CImportMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
 //  ============================================================================
 {
     mpReader.reset(new CGff3LineReader(errorHandler));

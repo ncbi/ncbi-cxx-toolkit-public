@@ -50,7 +50,7 @@ class CGff3LineReader:
 {
 public:
     CGff3LineReader(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CGff3LineReader() {};
 

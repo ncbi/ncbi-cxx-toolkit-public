@@ -40,9 +40,9 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 
-#include <objtools/import/feat_util.hpp>
-#include <objtools/import/gff_util.hpp>
-#include <objtools/import/feat_import_error.hpp>
+#include "feat_util.hpp"
+#include "gff_util.hpp"
+#include <objtools/import/import_error.hpp>
 #include "gff3_import_data.hpp"
 
 #include <assert.h>
@@ -53,7 +53,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 CGff3ImportData::CGff3ImportData(
     const CIdResolver& idResolver,
-    CFeatMessageHandler& errorReporter):
+    CImportMessageHandler& errorReporter):
 //  ============================================================================
     CFeatImportData(idResolver, errorReporter)
 {

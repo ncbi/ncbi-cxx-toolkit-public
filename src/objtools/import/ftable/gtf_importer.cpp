@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_error.hpp>
 #include "gtf_importer.hpp"
 #include "gtf_import_data.hpp"
 #include "gtf_line_reader.hpp"
@@ -44,7 +44,7 @@ USING_SCOPE(objects);
 //  ============================================================================
 CGtfImporter::CGtfImporter(
     unsigned int flags,
-    CFeatMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
+    CImportMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
 //  ============================================================================
 {
     mpReader.reset(new CGtfLineReader(errorHandler));

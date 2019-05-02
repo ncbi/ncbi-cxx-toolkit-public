@@ -58,7 +58,7 @@ public:
 
     CGff3ImportData(
         const CIdResolver&,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     CGff3ImportData(
         const CGff3ImportData& rhs);

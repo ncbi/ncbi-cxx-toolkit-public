@@ -142,7 +142,7 @@ class CGff3AnnotAssembler:
 {
 public:
     CGff3AnnotAssembler(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~CGff3AnnotAssembler();
 

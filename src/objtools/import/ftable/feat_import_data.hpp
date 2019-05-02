@@ -40,7 +40,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/import/id_resolver.hpp>
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_message_handler.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -52,7 +52,7 @@ class CFeatImportData
 public:
     CFeatImportData(
         const CIdResolver&,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     CFeatImportData(
         const CFeatImportData& rhs);
@@ -64,7 +64,7 @@ public:
 
 protected:
     const CIdResolver& mIdResolver;
-    CFeatMessageHandler& mErrorReporter;
+    CImportMessageHandler& mErrorReporter;
 };
 
 END_objects_SCOPE

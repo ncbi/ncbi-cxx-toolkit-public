@@ -37,7 +37,7 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_message_handler.hpp>
 #include <objtools/import/id_resolver.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -63,7 +63,7 @@ public:
     Get(
         const std::string&,
         unsigned int,
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
 public:
     void

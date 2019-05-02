@@ -31,64 +31,63 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/import_message_handler.hpp>
 
 USING_NCBI_SCOPE;
+//USING_SCOPE(objects);
 
 //  ============================================================================
-CFeatImportError::CFeatImportError(
-    ErrorLevel severity,
-    const std::string& message,
-    unsigned int lineNumber,
-    ErrorCode code): 
+CImportMessageHandler::CImportMessageHandler():
 //  ============================================================================
-    mSeverity(severity),
-    mCode(code),
-    mMessage(message),
-    mLineNumber(lineNumber)
-{};
-
-//  ============================================================================
-string
-CFeatImportError::SeverityStr() const
-//  ============================================================================
+    mWorstErrorLevel(CImportError::NONE)
 {
-    static map<int, string> severityStrings = {
-        {0, "Fatal"},
-        {1, "Critical"},
-        {2, "Error"},
-        {3, "Warning"},
-        {4, "Debug"},
-    };
-    auto severityEntry = severityStrings.find(mSeverity);
-    if (severityEntry != severityStrings.end()) {
-        return severityEntry->second;
-    }
-    return "Unknown";
 };
 
 //  ============================================================================
-string
-CFeatImportError::Message() const
+CImportMessageHandler::~CImportMessageHandler()
 //  ============================================================================
 {
-    auto message = mMessage;
-    if (!mAmend.empty()) {
-        message += ": ";
-        message += mAmend;
+};
+
+//  ============================================================================
+void
+CImportMessageHandler::ReportError(
+    const CImportError& error)
+//  ============================================================================
+{
+    if (error.Severity() < mWorstErrorLevel) {
+        mWorstErrorLevel = error.Severity();
     }
-    return message;
+    switch(error.Severity()) {
+    default:
+        mErrors.push_back(error);
+        return;
+    case CImportError::PROGRESS:
+        cerr << error.Message() << "\n";
+        return;
+    case CImportError::FATAL:
+        mErrors.push_back(error);
+        throw error;
+    }
 }
 
 //  ============================================================================
 void
-CFeatImportError::Serialize(
+CImportMessageHandler::ReportProgress(
+    const CImportProgress& progress)
+//  ============================================================================
+{
+    progress.Serialize(cerr);
+}
+
+//  ============================================================================
+void
+CImportMessageHandler::Dump(
     CNcbiOstream& out)
 //  ============================================================================
 {
-    out << "CFeatureImportError:" << "\n";
-    out << "  Severity = " << SeverityStr() << "\n";
-    out << "  Message = \"" << Message() << "\"\n";
-    out << "  LineNumber = " << LineNumber() << "\n";
-    out << "\n";
-};
+    for (auto error: mErrors) {
+        error.Serialize(out);
+    } 
+    out.flush();
+}

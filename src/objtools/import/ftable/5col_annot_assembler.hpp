@@ -52,7 +52,7 @@ class C5ColAnnotAssembler:
 {
 public:
     C5ColAnnotAssembler(
-        CFeatMessageHandler&);
+        CImportMessageHandler&);
 
     virtual ~C5ColAnnotAssembler();
 

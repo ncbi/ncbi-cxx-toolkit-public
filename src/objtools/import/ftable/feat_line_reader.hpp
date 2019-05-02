@@ -36,7 +36,7 @@
 
 #include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
-#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/import_message_handler.hpp>
 
 #include "feat_import_data.hpp"
 #include "../annot_import_data.hpp"
@@ -50,7 +50,7 @@ class CFeatLineReader
 {
 public:
     CFeatLineReader(
-        CFeatMessageHandler& );
+        CImportMessageHandler& );
 
     virtual ~CFeatLineReader() {};
 
@@ -88,7 +88,7 @@ protected:
         CFeatImportData&) =0;
 
     //unique_ptr<CStreamLineReader> mpLineReader;
-    CFeatMessageHandler& mErrorReporter;
+    CImportMessageHandler& mErrorReporter;
 
     unsigned int mLineCount;
     unsigned int mRecordCount;
