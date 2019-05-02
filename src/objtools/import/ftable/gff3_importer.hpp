@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#ifndef FIVECOL_IMPORTER__HPP
-#define FIVECOL_IMPORTER__HPP
+#ifndef GFF3_IMPORTER__HPP
+#define GFF3_IMPORTER__HPP
 
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -40,22 +40,22 @@
 #include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/id_resolver.hpp>
 
-#include "feat_importer_impl.hpp"
+#include "../feat_importer_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class C5ColImporter:
+class CGff3Importer:
     public CFeatImporter_impl
 //  ============================================================================
 {
 public:
-    C5ColImporter( 
+    CGff3Importer( 
         unsigned int,
         CFeatMessageHandler&);
 
-    virtual ~C5ColImporter();
+    virtual ~CGff3Importer();
 };
 
 END_objects_SCOPE

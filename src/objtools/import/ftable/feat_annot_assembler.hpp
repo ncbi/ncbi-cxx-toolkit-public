@@ -31,31 +31,45 @@
 * ===========================================================================
 */
 
-#ifndef GFF3_IMPORTER__HPP
-#define GFF3_IMPORTER__HPP
+#ifndef FEAT_ANNOT_ASSEMBLER__HPP
+#define FEAT_ANNOT_ASSEMBLER__HPP
 
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
-#include <objtools/import/feat_message_handler.hpp>
-#include <objtools/import/id_resolver.hpp>
-
-#include "feat_importer_impl.hpp"
+#include "feat_import_data.hpp"
+#include "../annot_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGff3Importer:
-    public CFeatImporter_impl
+class CFeatAnnotAssembler
 //  ============================================================================
 {
 public:
-    CGff3Importer( 
-        unsigned int,
+    CFeatAnnotAssembler(
         CFeatMessageHandler&);
 
-    virtual ~CGff3Importer();
+    virtual ~CFeatAnnotAssembler();
+
+    virtual void
+    InitializeAnnot(
+        CSeq_annot&);
+
+    virtual void
+    ProcessRecord(
+        const CFeatImportData&,
+        CSeq_annot&) =0;
+
+    virtual void
+    FinalizeAnnot(
+        const CAnnotImportData&,
+        CSeq_annot&);
+
+protected:
+    CFeatMessageHandler& mErrorReporter;
 };
 
 END_objects_SCOPE

@@ -31,70 +31,31 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_LINE_READER__HPP
-#define FEAT_LINE_READER__HPP
+#ifndef FIVECOL_IMPORTER__HPP
+#define FIVECOL_IMPORTER__HPP
 
 #include <corelib/ncbifile.hpp>
-#include <util/line_reader.hpp>
-#include <objtools/import/feat_message_handler.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
-#include "feat_import_data.hpp"
-#include "annot_import_data.hpp"
+#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/id_resolver.hpp>
+
+#include "../feat_importer_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CFeatLineReader
+class C5ColImporter:
+    public CFeatImporter_impl
 //  ============================================================================
 {
 public:
-    CFeatLineReader(
-        CFeatMessageHandler& );
+    C5ColImporter( 
+        unsigned int,
+        CFeatMessageHandler&);
 
-    virtual ~CFeatLineReader() {};
-
-    virtual bool
-    GetNextRecord(
-        CStreamLineReader&,
-        CFeatImportData&) =0;
-
-    unsigned int LineCount() const;
-    unsigned int RecordCount() const { return mRecordCount; };
-
-    virtual void
-    SetInputStream(
-        CNcbiIstream&,
-        bool =false);
-
-    void
-    SetProgressReportFrequency(
-        unsigned int numLines) { mProgressFreq = numLines; };
-
-    const CAnnotImportData&
-    AnnotImportData() const { return mAnnotInfo; };
-
-protected:
-    virtual bool
-    xIgnoreLine(
-        const string&) const;
-
-    virtual void
-    xReportProgress();
-
-    virtual void
-    xInitializeRecord(
-        const std::vector<std::string>&,
-        CFeatImportData&) =0;
-
-    //unique_ptr<CStreamLineReader> mpLineReader;
-    CFeatMessageHandler& mErrorReporter;
-
-    unsigned int mLineCount;
-    unsigned int mRecordCount;
-    unsigned int mProgressFreq;
-    unsigned int mLastProgress;
-    CAnnotImportData mAnnotInfo;
+    virtual ~C5ColImporter();
 };
 
 END_objects_SCOPE

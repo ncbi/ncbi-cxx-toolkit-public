@@ -40,7 +40,7 @@
 #include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/id_resolver.hpp>
 
-#include "feat_importer_impl.hpp"
+#include "../feat_importer_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE

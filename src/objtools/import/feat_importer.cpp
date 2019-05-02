@@ -37,13 +37,13 @@
 
 #include "feat_importer_impl.hpp"
 #include "id_resolver_canonical.hpp"
-#include "gtf_importer.hpp"
-#include "gff3_importer.hpp"
-#include "bed_importer.hpp"
-#include "5col_importer.hpp"
-#include "feat_line_reader.hpp"
-#include "feat_import_data.hpp"
-#include "feat_annot_assembler.hpp"
+#include "ftable/gtf_importer.hpp"
+#include "ftable/gff3_importer.hpp"
+#include "ftable/bed_importer.hpp"
+#include "ftable/5col_importer.hpp"
+#include "ftable/feat_line_reader.hpp"
+#include "ftable/feat_import_data.hpp"
+#include "ftable/feat_annot_assembler.hpp"
 #include "annot_import_data.hpp"
 
 #include <assert.h>

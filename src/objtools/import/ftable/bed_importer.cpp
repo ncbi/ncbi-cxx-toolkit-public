@@ -37,7 +37,7 @@
 #include "bed_import_data.hpp"
 #include "bed_line_reader.hpp"
 #include "bed_annot_assembler.hpp"
-#include "id_resolver_canonical.hpp"
+#include "../id_resolver_canonical.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

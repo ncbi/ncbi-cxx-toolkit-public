@@ -43,7 +43,7 @@
 
 #include <objtools/import/feat_import_error.hpp>
 #include "feat_annot_assembler.hpp"
-#include "annot_import_data.hpp"
+#include "../annot_import_data.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
