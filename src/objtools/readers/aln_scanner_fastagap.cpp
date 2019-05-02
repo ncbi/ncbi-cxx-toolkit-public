@@ -143,7 +143,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
             throw SShowStopper(
                 lineNumber,
                 EAlnSubcode::eAlnSubcode_IllegalDefinitionLine,
-                "Invalid Fasta definition line, \">\" must be followed by a sequence_ID.");
+                "Invalid Fasta definition line. \">\" must be followed by a sequence_ID.");
         }
 
         TLineInfo existingInfo;

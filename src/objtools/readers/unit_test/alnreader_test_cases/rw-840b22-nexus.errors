@@ -1,0 +1,5 @@
+Line No    : 24
+Severity   : Fatal
+Problem    : Alignment.IllegalDefinitionLine
+Message    : The definition lines in the Nexus file are not correctly formatted. Definition lines are optional, but if included, must start with ">" followed by modifiers in square brackets. The sequences have been imported but the information in the definition lines will be ignored.
+

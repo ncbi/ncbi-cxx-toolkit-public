@@ -105,7 +105,7 @@ CAlnScannerPhylip::xImportAlignmentData(
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDefinitionLine,
-                    "Invalid PHYLIP definition line, expected \">\" followed by mods.");
+                    "Invalid Phylip definition line, expected \">\" followed by mods.");
             }
             mDeflines.push_back({defLine, lineCount});
             continue;

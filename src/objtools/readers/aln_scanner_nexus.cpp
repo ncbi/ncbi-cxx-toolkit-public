@@ -278,7 +278,7 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
         throw SShowStopper(
             command.startLineNum,
             EAlnSubcode::eAlnSubcode_UnexpectedCommand,
-            "Unexpected \"" + command.name  + "\" command inside \"NCBI\" block."); 
+            "Unexpected \"" + command.name  + "\" command inside \"NCBI\" block. The \"NCBI\" block must contain a \"sequin\" command and no other commands."); 
     }
 
     if (unexpectedEnd) {
@@ -309,10 +309,16 @@ CAlnScannerNexus::xProcessSequin(
         }
         
         if (!dummy.empty()) {
+            string description =
+                "The definition lines in the Nexus file are not correctly formatted. " 
+                "Definition lines are optional, " 
+                "but if included, must start with \">\" followed by modifiers in square brackets. " 
+                "The sequences have been imported " 
+                "but the information in the definition lines will be ignored.";
             throw SShowStopper(
                 lineNum,
                 EAlnSubcode::eAlnSubcode_IllegalDefinitionLine,
-                "Invalid NEXUS definition line, expected \">\" followed by mods.");
+                description);
         }
         mDeflines.push_back({defLine, lineNum});
     }
@@ -387,7 +393,8 @@ CAlnScannerNexus::xProcessMatrix(
         NStr::Split(data, " \t", tokens, NStr::fSplit_Tokenize);
         if (tokens.size() < 2) {
             string description = 
-            "Data line does not follow the expected pattern of sequence_ID followed by sequence data. Each data line should conform to the same expected pattern.";
+            "Data line does not follow the expected pattern of sequence_ID followed by sequence data. "
+            "Each data line should conform to the same expected pattern.";
             throw SShowStopper(
                 lineNum,
                 eAlnSubcode_IllegalDataLine,
@@ -419,10 +426,12 @@ CAlnScannerNexus::xProcessMatrix(
         if (seqCount == 0) {
             sequenceCharCount += dataSize;
             if (sequenceCharCount > mSequenceSize) {
-                string description = ErrorPrintf(
-                    "The expected number of charcters per sequence specified by nChar in the Nexus file is %d. The actual number of characters counted for the first sequence is %d. The expected number of characters must equal the actual number of characters.",
-                    mSequenceSize,
-                    sequenceCharCount);
+                string description = 
+                    "The expected number of characters per sequence specified by nChar in the Nexus file is " 
+                    + NStr::NumericToString(mSequenceSize) +
+                    ". The actual number of characters counted for the first sequence is "
+                    + NStr::NumericToString(sequenceCharCount) +
+                    ". The expected number of characters must equal the actual number of characters.";
                 throw SShowStopper(
                     lineNum,
                     EAlnSubcode::eAlnSubcode_BadDataCount,
@@ -499,7 +508,7 @@ CAlnScannerNexus::xProcessDimensions(
                 throw SShowStopper(
                         ntaxPos.first->mNumLine,
                         EAlnSubcode::eAlnSubcode_UnexpectedCommandArgs,
-                        "Invalid Command Args: \"nTax\" must be immediately preceded by \"newtaxa\" in \"" +
+                        "Invalid command arguments. \"nTax\" must be immediately preceded by \"newtaxa\" in \"" +
                         mCurrentBlock +
                         "\" block.");
             }

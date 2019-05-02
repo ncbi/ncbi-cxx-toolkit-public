@@ -374,9 +374,12 @@ void CAlnReader::x_VerifyAlignmentInfo(
         }
         else {
             string description = ErrorPrintf(
-                    "Expected %d deflines but finding %d. If deflines are used, each sequence must have a corresponding defline. Note that deflines are optional.",
+                    "Expected %d deflines but finding %d. ",
                      m_Ids.size(),
                      numDeflines);
+            description += 
+                "If deflines are used, each sequence must have a corresponding defline. "  
+                "Note that deflines are optional.",
             theErrorReporter->Error(
                     -1,
                     EAlnSubcode::eAlnSubcode_InsufficientDeflineInfo,
