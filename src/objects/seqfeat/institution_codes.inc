@@ -1293,6 +1293,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CNU<CHN>\ts\tCapital Normal University, College of Life Sciences\t\t\t",
 "CNU<KOR-TJ>\ts\tChungnam National University\t\t\t",
 "CNU<KOR>\ts\tChonbuk National University\t\t\t",
+"CNUFC\tsc\tChonnam National University Fungal Collection\t\t\t",
 "CNUK\ts\tChungnam National University\t\t\t",
 "CNUMH\ts\tChungnam National University, Mycological Herbarium\t\t\t",
 "CNWGRGL\tb\tChinese National Waterfowl Germplasm Resources Gene Library\t\t\t",

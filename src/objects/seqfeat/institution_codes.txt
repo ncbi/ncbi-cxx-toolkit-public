@@ -1260,6 +1260,7 @@ CNSF	s	Centre National de Semences Forestieres
 CNU<CHN>	s	Capital Normal University, College of Life Sciences			
 CNU<KOR-TJ>	s	Chungnam National University			
 CNU<KOR>	s	Chonbuk National University			
+CNUFC	sc	Chonnam National University Fungal Collection			
 CNUK	s	Chungnam National University			
 CNUMH	s	Chungnam National University, Mycological Herbarium			
 CNWGRGL	b	Chinese National Waterfowl Germplasm Resources Gene Library			
