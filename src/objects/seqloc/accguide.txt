@@ -199,9 +199,9 @@ version  1 # of file format
 4+8   U???    embl_wgs_nuc
 4+9   U???    embl_wgs_nuc
 4+10  U???    embl_wgs_nuc
-4+8   V???    gb_other_nuc # WGS-style, but not necessarily WGS per se
-4+9   V???    gb_other_nuc # WGS-style, but not necessarily WGS per se
-4+10  V???    gb_other_nuc # WGS-style, but not necessarily WGS per se
+4+8   V???    gb_wgs_nuc
+4+9   V???    gb_wgs_nuc
+4+10  V???    gb_wgs_nuc
 4+8   W???    gb_other_nuc # WGS-style, but not necessarily WGS per se
 4+9   W???    gb_other_nuc # WGS-style, but not necessarily WGS per se
 4+10  W???    gb_other_nuc # WGS-style, but not necessarily WGS per se
