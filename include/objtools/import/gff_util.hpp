@@ -31,7 +31,7 @@
 */
 
 #ifndef GFF_UTIL__HPP
-#define FEAT_UTIL__HPP
+#define GFF_UTIL__HPP
 
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
