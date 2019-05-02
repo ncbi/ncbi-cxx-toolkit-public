@@ -2128,6 +2128,11 @@ endif()
 #message("add_executable(${NCBI_PROJECT} ${NCBITMP_PROJECT_SOURCES})")
             add_executable(${NCBI_PROJECT} ${NCBITMP_PROJECT_SOURCES})
         endif()
+        if (DEFINED NCBI_${NCBI_PROJECT}_OUTPUT)
+            set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} NCBI_APP_BUILT_AS=${NCBI_${NCBI_PROJECT}_OUTPUT})
+        else()
+            set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} NCBI_APP_BUILT_AS=${NCBI_PROJECT})
+        endif()
 
 #----------------------------------------------------------------------------
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "GUIAPP")
