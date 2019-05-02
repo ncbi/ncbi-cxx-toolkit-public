@@ -486,7 +486,7 @@ CAlnScannerNexus::xProcessDimensions(
            }
 
            bool foundError = true;
-           constexpr auto litLength = strlen("newtaxa");
+           const auto litLength = strlen("newtaxa");
            if (ntaxLinePos > litLength) {
                ntaxSubStr += ntaxPos.first->mData;
                auto endOfPreviousToken = ntaxSubStr.find_last_not_of(" \t", ntaxLinePos-1);
