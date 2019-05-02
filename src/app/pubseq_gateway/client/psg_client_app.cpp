@@ -67,13 +67,7 @@ private:
     static SCommand s_GetCommand(string name, string desc, SCommand::TFlags flags = SCommand::TFlags::eDefault);
 
     template <class TRequest>
-    static void s_InitFlags(CArgDescriptions& arg_desc);
-
-    template <class TRequest>
     static void s_InitRequest(CArgDescriptions& arg_desc);
-
-    template <class TRequest>
-    static void s_InitPositional(CArgDescriptions& arg_desc);
 
     template <class TRequest>
     static int s_RunRequest(CPsgClientApp* that, const CArgs& args) { _ASSERT(that); return that->RunRequest<TRequest>(args); }
@@ -84,33 +78,9 @@ private:
     vector<SCommand> m_Commands;
 };
 
-template <class TRequest>
-int CPsgClientApp::RunRequest(const CArgs& args)
-{
-    CProcessing processing(args["service"].AsString());
-
-    auto request = CProcessing::CreateRequest<TRequest>(nullptr, args);
-
-    return processing.OneRequest(request);
-}
-
 struct SInteractive {};
 struct SPerformance {};
 struct STesting {};
-
-template <> void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc);
-template <> void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc);
-template <> void CPsgClientApp::s_InitRequest<STesting>(CArgDescriptions& arg_desc);
-
-template<> int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args);
-template<> int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args);
-template<> int CPsgClientApp::RunRequest<STesting>(const CArgs& args);
-
-template <class TRequest>
-SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags flags)
-{
-    return { move(name), move(desc), s_InitRequest<TRequest>, s_RunRequest<TRequest>, flags };
-}
 
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
@@ -157,8 +127,7 @@ int CPsgClientApp::Run()
     return -1;
 }
 
-template <class TRequest>
-void CPsgClientApp::s_InitFlags(CArgDescriptions& arg_desc)
+void s_InitDataFlags(CArgDescriptions& arg_desc)
 {
     const auto& data_flags = CProcessing::GetDataFlags();
 
@@ -171,44 +140,40 @@ void CPsgClientApp::s_InitFlags(CArgDescriptions& arg_desc)
     }
 }
 
-template <>
-void CPsgClientApp::s_InitFlags<CPSG_Request_Resolve>(CArgDescriptions& arg_desc)
+template <class TRequest>
+void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
 {
+    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
+    arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
+    s_InitDataFlags(arg_desc);
+}
+
+template <>
+void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
+    arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
+
     for (const auto& f : CProcessing::GetInfoFlags()) {
         arg_desc.AddFlag(f.name, f.desc);
     }
 }
 
 template <>
-void CPsgClientApp::s_InitFlags<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&)
-{
-}
-
-template <class TRequest>
-void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
+void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
-    s_InitPositional<TRequest>(arg_desc);
-    s_InitFlags<TRequest>(arg_desc);
-}
-
-template <class TRequest>
-void CPsgClientApp::s_InitPositional(CArgDescriptions& arg_desc)
-{
-    arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
-    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
-}
-
-template <>
-void CPsgClientApp::s_InitPositional<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
-{
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
     arg_desc.AddDefaultKey("last_modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString, "");
+    s_InitDataFlags(arg_desc);
 }
 
 template <>
-void CPsgClientApp::s_InitPositional<CPSG_Request_NamedAnnotInfo>(CArgDescriptions& arg_desc)
+void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions& arg_desc)
 {
+    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddKey("na", "NAMED_ANNOT", "Named annotation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
@@ -219,16 +184,6 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddFlag("echo", "Echo all incoming requests");
-}
-
-template<>
-int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
-{
-    CProcessing processing(args["service"].AsString(), true);
-
-    TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
-
-    return processing.Interactive(args["echo"].HasValue());
 }
 
 template <>
@@ -250,6 +205,25 @@ void CPsgClientApp::s_InitRequest<STesting>(CArgDescriptions&)
 {
 }
 
+template <class TRequest>
+int CPsgClientApp::RunRequest(const CArgs& args)
+{
+    CProcessing processing(args["service"].AsString());
+
+    auto request = CProcessing::CreateRequest<TRequest>(nullptr, args);
+
+    return processing.OneRequest(request);
+}
+
+template<>
+int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
+{
+    CProcessing processing(args["service"].AsString(), true);
+
+    TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
+
+    return processing.Interactive(args["echo"].HasValue());
+}
 
 // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
 // This templated function circumvents that shortcoming.
@@ -303,6 +277,12 @@ int CPsgClientApp::RunRequest<STesting>(const CArgs& args)
 
     CProcessing processing;
     return processing.Testing();
+}
+
+template <class TRequest>
+SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags flags)
+{
+    return { move(name), move(desc), s_InitRequest<TRequest>, s_RunRequest<TRequest>, flags };
 }
 
 int main(int argc, const char* argv[])
