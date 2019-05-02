@@ -466,43 +466,38 @@ CAlnScannerNexus::xProcessMatrix(
 //  ----------------------------------------------------------------------------
 void 
 CAlnScannerNexus::xProcessDimensions(
-    const TCommandArgs& command)
+    const TCommandArgs& args)
 //  ----------------------------------------------------------------------------
 {
    if (NStr::EqualNocase(mCurrentBlock, "characters")) {
-       auto ntaxPos = xGetArgPos(command, "ntax");
+       auto ntaxPos = xGetArgPos(args, "ntax");
 
+       // If "ntax" appears in a line,
+       // check that it is immediately preceded by "newtaxa". 
+       // "newtaxa" could be on the same line as "ntax" or at the 
+       // end of the preceding line.
        if (ntaxPos.second != string::npos) {
-           // Need to refactor this 
-           bool foundError = false;
-           auto newtaxaPos = xGetArgPos(command, "newtaxa");
-           if (newtaxaPos.second == string::npos ||
-                (newtaxaPos.first == ntaxPos.first &&
-                newtaxaPos.second > ntaxPos.second) ||
-                newtaxaPos.first->mNumLine > ntaxPos.first->mNumLine) {
-               foundError = true;
-            }
-            else
-            if (newtaxaPos.first == ntaxPos.first) {
-                auto endOfPreviousToken = ntaxPos.first->mData.find_last_not_of(" \t", ntaxPos.second-1);
-                if ((endOfPreviousToken < 6) ||
-                    ((endOfPreviousToken-6) != newtaxaPos.second)) {
-                    foundError = true;
-                }
-            }
-            else {
-                auto dist = distance(newtaxaPos.first, ntaxPos.first);
-                if (dist > 1) {
-                    foundError = true;
-                }
-                else if (dist == 1) {
-                    auto pos = newtaxaPos.first->mData.find_last_of(" \t");
-                    auto lastTokenPos = (pos == string::npos) ? 0 : pos+1;
-                    if (lastTokenPos != newtaxaPos.second) {
-                        foundError = true;
-                    }
-                }
-            }
+           string ntaxSubStr;
+           size_t ntaxLinePos = ntaxPos.second;
+           if (ntaxLinePos == 0 && 
+               ntaxPos.first != args.begin()) {
+                ntaxSubStr = prev(ntaxPos.first)->mData;
+                ntaxLinePos += ntaxSubStr.size();
+           }
+
+           bool foundError = true;
+           constexpr auto litLength = strlen("newtaxa");
+           if (ntaxLinePos > litLength) {
+               ntaxSubStr += ntaxPos.first->mData;
+               auto endOfPreviousToken = ntaxSubStr.find_last_not_of(" \t", ntaxLinePos-1);
+               if (endOfPreviousToken != NPOS &&
+                   endOfPreviousToken >= (litLength-1) && 
+                   NStr::EqualNocase(
+                       ntaxSubStr.substr(
+                           endOfPreviousToken-(litLength-1), litLength), "newtaxa")) { 
+                   foundError = false;
+               }
+           }
 
             if (foundError) {
                 throw SShowStopper(
@@ -517,7 +512,7 @@ CAlnScannerNexus::xProcessDimensions(
 
 
 
-    auto ntax = xGetKeyVal(command, "ntax");
+    auto ntax = xGetKeyVal(args, "ntax");
     if (!ntax.first.empty()) {
         try {
             mNumSequences = NStr::StringToInt(ntax.first);
@@ -533,7 +528,7 @@ CAlnScannerNexus::xProcessDimensions(
         }
     }
     
-    auto nchar = xGetKeyVal(command, "nchar"); 
+    auto nchar = xGetKeyVal(args, "nchar"); 
     if (!nchar.first.empty()) {
         try {
             mSequenceSize = NStr::StringToInt(nchar.first);
