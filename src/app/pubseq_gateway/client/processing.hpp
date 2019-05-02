@@ -290,6 +290,9 @@ private:
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
 
     static void IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified);
+
+    static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input);
+    static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CJson_ConstObject& input);
 };
 
 template <class TRequest>
@@ -327,6 +330,7 @@ inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>&
     request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
     auto specified = GetSpecified<CPSG_Request_Biodata>(input);
     IncludeData(request, specified);
+    ExcludeTSEs(request, input);
 }
 
 template <class TInput>

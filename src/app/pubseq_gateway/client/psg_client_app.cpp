@@ -144,6 +144,7 @@ template <class TRequest>
 void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("exclude-blob", "BLOB_ID", "Exclude blob by its ID", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
     s_InitDataFlags(arg_desc);

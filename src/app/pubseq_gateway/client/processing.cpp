@@ -949,6 +949,28 @@ void SRequestBuilder::IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpe
     request->IncludeInfo(include_info);
 }
 
+void SRequestBuilder::ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input)
+{
+    if (!input["exclude-blob"].HasValue()) return;
+
+    auto blob_ids = input["exclude-blob"].GetStringList();
+
+    for (const auto& blob_id : blob_ids) {
+        request->ExcludeTSE(blob_id);
+    }
+}
+
+void SRequestBuilder::ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CJson_ConstObject& input)
+{
+    if (!input.has("exclude_blobs")) return;
+
+    auto blob_ids = input["exclude_blobs"].GetArray();
+
+    for (const auto& blob_id : blob_ids) {
+        request->ExcludeTSE(blob_id.GetValue().GetString());
+    }
+}
+
 const initializer_list<SDataFlag> kDataFlags =
 {
     { "no-tse",    "Return only the info",                                  CPSG_Request_Biodata::eNoTSE    },
@@ -1042,6 +1064,13 @@ CJson_Schema& CProcessing::RequestSchema()
             "items": {
                 "type": "string"
             },
+        },
+        "exclude_blobs": {
+            "$id": "#exclude_blobs",
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
         }
     },
     "oneOf": [
@@ -1053,7 +1082,8 @@ CJson_Schema& CProcessing::RequestSchema()
                     "type": "object",
                     "properties": {
                         "bio_id" : { "$ref": "#bio_id" },
-                        "include_data": { "$ref": "#include_data" }
+                        "include_data": { "$ref": "#include_data" },
+                        "exclude_blobs": { "$ref": "#exclude_blobs" }
                     },
                     "required": [ "bio_id" ]
                 },
