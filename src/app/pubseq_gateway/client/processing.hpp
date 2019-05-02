@@ -246,11 +246,14 @@ private:
     static shared_ptr<CPSG_Request> CreateRequest(const string& method, shared_ptr<void> user_context,
             const CJson_ConstObject& params_obj);
 
-    static CPSG_BioId CreateBioId(const CArgs& input);
-    static CPSG_BioId CreateBioId(const CJson_ConstObject& input);
+    static CPSG_BioId GetBioId(const CArgs& input);
+    static CPSG_BioId GetBioId(const CJson_ConstObject& input);
 
-    template <class TRequest, class TInput>
-    static shared_ptr<TRequest> CreateRequestImpl(shared_ptr<void> user_context, const TInput& input);
+    static CPSG_BlobId GetBlobId(const CArgs& input) { return input["ID"].AsString(); }
+    static CPSG_BlobId GetBlobId(const CJson_ConstObject& input) { return input["blob_id"].GetValue().GetString(); }
+
+    static string GetLastModified(const CArgs& input) { return input["last_modified"].AsString(); }
+    static string GetLastModified(const CJson_ConstObject& input) { return input.has("last_modified") ? input["last_modified"].GetValue().GetString() : ""; }
 
     using TSpecified = function<bool(const string&)>;
 
@@ -259,8 +262,22 @@ private:
     template <class TRequest>
     static TSpecified GetSpecified(const CJson_ConstObject& input);
 
+    static vector<string> GetNamedAnnots(const CArgs& input) { return input["na"].GetStringList(); }
+    static vector<string> GetNamedAnnots(const CJson_ConstObject& input);
+
+    template <class TInput>
+    static void CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>&, shared_ptr<void>, const TInput&);
+    template <class TInput>
+    static void CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>&, shared_ptr<void>, const TInput&);
+    template <class TInput>
+    static void CreateRequestImpl(shared_ptr<CPSG_Request_Blob>&, shared_ptr<void>, const TInput&);
+    template <class TInput>
+    static void CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInfo>&, shared_ptr<void>, const TInput&);
+
     template <class TRequest>
-    static void SetInclude(shared_ptr<TRequest> request, TSpecified specified);
+    static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
+
+    static void IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified);
 
     CPSG_Queue m_Queue;
     atomic_int m_RequestsCounter;
@@ -269,48 +286,6 @@ private:
     CRetriever m_Retriever;
     CSender m_Sender;
 };
-
-template <class TRequest, class TInput>
-inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const TInput& input)
-{
-    return make_shared<TRequest>(CreateBioId(input), move(user_context));
-}
-
-template <>
-inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request_Blob>(shared_ptr<void> user_context, const CArgs& input)
-{
-    const auto& id = input["ID"].AsString();
-    const auto& last_modified = input["last_modified"].AsString();
-    return make_shared<CPSG_Request_Blob>(id, last_modified, move(user_context));
-}
-
-template <>
-inline shared_ptr<CPSG_Request_NamedAnnotInfo> CProcessing::CreateRequestImpl<CPSG_Request_NamedAnnotInfo>(shared_ptr<void> user_context, const CArgs& input)
-{
-    const auto& named_annots = input["na"].GetStringList();
-    return make_shared<CPSG_Request_NamedAnnotInfo>(CreateBioId(input), named_annots, move(user_context));
-}
-
-template <>
-inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request_Blob>(shared_ptr<void> user_context, const CJson_ConstObject& input)
-{
-    auto blob_id = input["blob_id"].GetValue().GetString();
-    auto last_modified = input.has("last_modified") ? input["last_modified"].GetValue().GetString() : "";
-    return make_shared<CPSG_Request_Blob>(blob_id, last_modified, move(user_context));
-}
-
-template <>
-inline shared_ptr<CPSG_Request_NamedAnnotInfo> CProcessing::CreateRequestImpl<CPSG_Request_NamedAnnotInfo>(shared_ptr<void> user_context, const CJson_ConstObject& input)
-{
-    auto na_array = input["named_annots"].GetArray();
-    CPSG_Request_NamedAnnotInfo::TAnnotNames names;
-
-    for (const auto& na : na_array) {
-        names.push_back(na.GetValue().GetString());
-    }
-
-    return make_shared<CPSG_Request_NamedAnnotInfo>(CreateBioId(input), move(names), move(user_context));
-}
 
 template <class TRequest>
 inline CProcessing::TSpecified CProcessing::GetSpecified(const CArgs& input)
@@ -340,8 +315,44 @@ inline CProcessing::TSpecified CProcessing::GetSpecified<CPSG_Request_Resolve>(c
     };
 }
 
+template <class TInput>
+inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>& request, shared_ptr<void> user_context, const TInput& input)
+{
+    auto bio_id = GetBioId(input);
+    request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
+    auto specified = GetSpecified<CPSG_Request_Biodata>(input);
+    IncludeData(request, specified);
+}
+
+template <class TInput>
+inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>& request, shared_ptr<void> user_context, const TInput& input)
+{
+    auto bio_id = GetBioId(input);
+    request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
+    auto specified = GetSpecified<CPSG_Request_Resolve>(input);
+    IncludeInfo(request, specified);
+}
+
+template <class TInput>
+inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Blob>& request, shared_ptr<void> user_context, const TInput& input)
+{
+    auto blob_id = GetBlobId(input);
+    auto last_modified = GetLastModified(input);
+    request = make_shared<CPSG_Request_Blob>(move(blob_id), move(last_modified), move(user_context));
+    auto specified = GetSpecified<CPSG_Request_Blob>(input);
+    IncludeData(request, specified);
+}
+
+template <class TInput>
+inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInfo>& request, shared_ptr<void> user_context, const TInput& input)
+{
+    auto bio_id = GetBioId(input);
+    auto named_annots = GetNamedAnnots(input);
+    request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
+}
+
 template <class TRequest>
-inline void CProcessing::SetInclude(shared_ptr<TRequest> request, TSpecified specified)
+inline void CProcessing::IncludeData(shared_ptr<TRequest> request, TSpecified specified)
 {
     for (const auto& f : GetDataFlags()) {
         if (specified(f.name)) {
@@ -351,39 +362,11 @@ inline void CProcessing::SetInclude(shared_ptr<TRequest> request, TSpecified spe
     }
 }
 
-template <>
-inline void CProcessing::SetInclude<CPSG_Request_Resolve>(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified)
-{
-    const auto& info_flags = CProcessing::GetInfoFlags();
-
-    auto i = info_flags.begin();
-    bool all_info_except = specified(i->name);
-    unsigned include_info = all_info_except ? CPSG_Request_Resolve::fAllInfo : 0u;
-
-    for (++i; i != info_flags.end(); ++i) {
-        if (specified(i->name)) {
-            if (all_info_except) {
-                include_info &= ~i->value;
-            } else {
-                include_info |= i->value;
-            }
-        }
-    }
-
-    request->IncludeInfo(include_info);
-}
-
-template <>
-inline void CProcessing::SetInclude<CPSG_Request_NamedAnnotInfo>(shared_ptr<CPSG_Request_NamedAnnotInfo>, TSpecified)
-{
-}
-
 template <class TRequest, class TInput>
 inline shared_ptr<CPSG_Request> CProcessing::CreateRequest(shared_ptr<void> user_context, const TInput& input)
 {
-    auto request = CreateRequestImpl<TRequest>(move(user_context), input);
-    auto specified = GetSpecified<TRequest>(input);
-    SetInclude(request, specified);
+    shared_ptr<TRequest> request;
+    CreateRequestImpl(request, move(user_context), input);
     return request;
 }
 

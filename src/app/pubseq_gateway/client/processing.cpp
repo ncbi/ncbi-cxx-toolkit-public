@@ -894,7 +894,7 @@ CPSG_BioId::TType CProcessing::GetBioIdType(string type)
     return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
 }
 
-CPSG_BioId CProcessing::CreateBioId(const CArgs& input)
+CPSG_BioId CProcessing::GetBioId(const CArgs& input)
 {
     const auto& id = input["ID"].AsString();
 
@@ -904,7 +904,7 @@ CPSG_BioId CProcessing::CreateBioId(const CArgs& input)
     return CPSG_BioId(id, type);
 }
 
-CPSG_BioId CProcessing::CreateBioId(const CJson_ConstObject& input)
+CPSG_BioId CProcessing::GetBioId(const CJson_ConstObject& input)
 {
     auto array = input["bio_id"].GetArray();
     auto id = array[0].GetValue().GetString();
@@ -914,6 +914,39 @@ CPSG_BioId CProcessing::CreateBioId(const CJson_ConstObject& input)
     auto value = array[1].GetValue();
     auto type = value.IsString() ? GetBioIdType(value.GetString()) : static_cast<CPSG_BioId::TType>(value.GetInt4());
     return CPSG_BioId(id, type);
+}
+
+vector<string> CProcessing::GetNamedAnnots(const CJson_ConstObject& input)
+{
+    auto na_array = input["named_annots"].GetArray();
+    CPSG_Request_NamedAnnotInfo::TAnnotNames names;
+
+    for (const auto& na : na_array) {
+        names.push_back(na.GetValue().GetString());
+    }
+
+    return names;
+}
+
+void CProcessing::IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified)
+{
+    const auto& info_flags = CProcessing::GetInfoFlags();
+
+    auto i = info_flags.begin();
+    bool all_info_except = specified(i->name);
+    unsigned include_info = all_info_except ? CPSG_Request_Resolve::fAllInfo : 0u;
+
+    for (++i; i != info_flags.end(); ++i) {
+        if (specified(i->name)) {
+            if (all_info_except) {
+                include_info &= ~i->value;
+            } else {
+                include_info |= i->value;
+            }
+        }
+    }
+
+    request->IncludeInfo(include_info);
 }
 
 const initializer_list<SDataFlag> kDataFlags =
