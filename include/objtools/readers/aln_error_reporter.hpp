@@ -54,9 +54,7 @@ public:
         mDescr(descr),
         mSeqId(seqId) {};
 
-    const char* what() const noexcept {
-        return mDescr.c_str();
-    }
+    const char* what() const noexcept;
 
     int mLineNumber;
     EAlnSubcode mErrCode;
@@ -76,74 +74,31 @@ public:
     ~CAlnErrorReporter() {};
 
     void
-    Fatal(
-        const SShowStopper& showStopper)
-    {
-        Fatal(
-            showStopper.mLineNumber,
-            showStopper.mErrCode,
-            showStopper.mDescr,
-            showStopper.mSeqId);
-    };
+    Fatal(const SShowStopper& showStopper);
 
     void
     Fatal(
         int lineNumber,
         EAlnSubcode errorCode,
         const string& descr,
-        const string& seqId = "")
-    {
-        Report(
-            lineNumber,
-            EDiagSev::eDiag_Fatal,
-            EReaderCode::eReader_Alignment,
-            errorCode,
-            descr,
-            seqId);
-    };
+        const string& seqId = "");
 
     void
-    Error(
-        const SShowStopper& showStopper)
-    {
-        Error(
-            showStopper.mLineNumber,
-            showStopper.mErrCode,
-            showStopper.mDescr,
-            showStopper.mSeqId);
-    };
+    Error(const SShowStopper& showStopper);
 
     void
     Error(
         int lineNumber,
         EAlnSubcode errorCode,
         const string& descr,
-        const string& seqId = "")
-    {
-        Report(
-            lineNumber,
-            EDiagSev::eDiag_Error,
-            EReaderCode::eReader_Alignment,
-            errorCode,
-            descr,
-            seqId);
-    };
+        const string& seqId = "");
 
     void
     Warn(
         int lineNumber,
         EAlnSubcode errorCode,
         const string& descr,
-        const string& seqId = "")
-    {
-        Report(
-            lineNumber,
-            EDiagSev::eDiag_Warning,
-            EReaderCode::eReader_Alignment,
-            errorCode,
-            descr,
-            seqId);
-    };
+        const string& seqId = "");
 
     void
     Report(
@@ -152,29 +107,7 @@ public:
         EReaderCode subsystem,
         EAlnSubcode errorCode,
         const string& descr,
-        const string& seqId = "")
-    {
-        string message(descr);
-        if (!seqId.empty()) {
-            message = "At ID \'" + seqId + "\': " + descr;
-        }
-        if (!mpEl) {
-            NCBI_THROW2(CObjReaderParseException, eFormat, message, 0);
-        }
-        if (lineNumber == -1) {
-            lineNumber = 0;
-        }
-        AutoPtr<CLineErrorEx> pErr(
-            CLineErrorEx::Create(
-                ILineError::eProblem_GeneralParsingError,
-                severity,
-                subsystem,
-                errorCode,
-                "",
-                lineNumber,
-                message));
-        mpEl->PutError(*pErr);
-    }
+        const string& seqId = "");
 
 protected:
     ILineErrorListener* mpEl;
