@@ -4,4 +4,5 @@
 
 NCBI_begin_lib(grpc_integration)
   NCBI_sources(grpc_integration)
+  NCBI_uses_toolkit_libraries(xutil)
 NCBI_end_lib()
