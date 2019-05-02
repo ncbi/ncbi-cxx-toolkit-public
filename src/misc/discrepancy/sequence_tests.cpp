@@ -1300,7 +1300,15 @@ const string kUnusualNT = "[n] sequence[s] contain[S] nucleotides that are not A
 static bool ContainsUnusualNucleotide(const CSeq_data& seq_data)
 {
     CSeq_data as_iupacna;
-    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
+	TSeqPos nconv;
+	try
+	{
+		nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
+	}
+	catch (...)
+	{
+		return false;
+	}
 
     bool unusual_found = false;
     if (nconv) {
@@ -1622,8 +1630,17 @@ const SIZE_TYPE MAX_N_IN_SEQ = 7; // 25% of the sequence
 static bool HasLowQualityRegion(const CSeq_data& seq_data)
 {
     CSeq_data as_iupacna;
-    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
-    if (nconv == 0) {
+	TSeqPos nconv;
+	try
+	{
+		nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	if (nconv == 0) {
         return false;
     }
 
