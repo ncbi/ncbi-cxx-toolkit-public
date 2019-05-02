@@ -120,6 +120,30 @@ private:
 
 
 
+/// Data blob unique ID
+///
+class CPSG_BlobId
+{
+public:
+    /// Mainstream blob ID ctor - from a string ID
+    /// @param id
+    ///  Blob ID
+    CPSG_BlobId(string id) : m_Id(move(id)) {}
+
+    /// Historical blob ID system -- based on the "satellite" and the "key"
+    /// inside it. It'll be translated into "<sat>.<sat_key>" string.
+    /// @sa  objects::CID2_Blob_Id::TSat, objects::CID2_Blob_Id::TSat_key
+    CPSG_BlobId(int sat, int sat_key) : m_Id(to_string(sat) + "." + to_string(sat_key)) {}
+
+    /// Get the blob ID
+    const string& Get() const { return m_Id; }
+
+private:
+    string m_Id;
+};
+
+
+
 /// Request to the PSG server (by bio-id, for a biodata specific info and data)
 ///
 
@@ -162,6 +186,12 @@ public:
 
     EIncludeData GetIncludeData() const { return m_IncludeData; }
 
+    using TExcludeTSEs = vector<CPSG_BlobId>;
+
+    void ExcludeTSE(CPSG_BlobId blob_id) { m_ExcludeTSEs.emplace_back(move(blob_id)); }
+
+    const TExcludeTSEs& GetExcludeTSEs() const { return m_ExcludeTSEs; }
+
 private:
     string x_GetType() const override { return "biodata"; }
     string x_GetId() const override { return GetBioId().Get(); }
@@ -169,6 +199,7 @@ private:
 
     CPSG_BioId    m_BioId;
     EIncludeData  m_IncludeData = EIncludeData::eDefault;
+    TExcludeTSEs  m_ExcludeTSEs;
 };
 
 
@@ -214,30 +245,6 @@ private:
 
     CPSG_BioId    m_BioId;
     TIncludeInfo  m_IncludeInfo = 0;
-};
-
-
-
-/// Data blob unique ID
-///
-class CPSG_BlobId
-{
-public:
-    /// Mainstream blob ID ctor - from a string ID
-    /// @param id
-    ///  Blob ID
-    CPSG_BlobId(string id) : m_Id(move(id)) {}
-
-    /// Historical blob ID system -- based on the "satellite" and the "key"
-    /// inside it. It'll be translated into "<sat>.<sat_key>" string.
-    /// @sa  objects::CID2_Blob_Id::TSat, objects::CID2_Blob_Id::TSat_key
-    CPSG_BlobId(int sat, int sat_key) : m_Id(to_string(sat) + "." + to_string(sat_key)) {}
-
-    /// Get the blob ID
-    const string& Get() const { return m_Id; }
-
-private:
-    string m_Id;
 };
 
 

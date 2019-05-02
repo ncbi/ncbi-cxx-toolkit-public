@@ -392,6 +392,16 @@ string CPSG_Request_Biodata::x_GetAbsPathRef() const
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
+    if (!m_ExcludeTSEs.empty()) {
+        os << "&exclude_blobs";
+
+        char delimiter = '=';
+        for (const auto& blob_id : m_ExcludeTSEs) {
+            os << delimiter << blob_id.Get();
+            delimiter = ',';
+        }
+    }
+
     return s_AddUseCache(os);
 }
 
