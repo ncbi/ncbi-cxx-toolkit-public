@@ -129,7 +129,7 @@ int CPsgClientApp::Run()
 
 void s_InitDataFlags(CArgDescriptions& arg_desc)
 {
-    const auto& data_flags = CProcessing::GetDataFlags();
+    const auto& data_flags = SRequestBuilder::GetDataFlags();
 
     for (auto i = data_flags.begin(); i != data_flags.end(); ++i) {
         arg_desc.AddFlag(i->name, i->desc);
@@ -156,7 +156,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
 
-    for (const auto& f : CProcessing::GetInfoFlags()) {
+    for (const auto& f : SRequestBuilder::GetInfoFlags()) {
         arg_desc.AddFlag(f.name, f.desc);
     }
 }
@@ -210,7 +210,7 @@ int CPsgClientApp::RunRequest(const CArgs& args)
 {
     CProcessing processing(args["service"].AsString());
 
-    auto request = CProcessing::CreateRequest<TRequest>(nullptr, args);
+    auto request = SRequestBuilder::CreateRequest<TRequest>(nullptr, args);
 
     return processing.OneRequest(request);
 }

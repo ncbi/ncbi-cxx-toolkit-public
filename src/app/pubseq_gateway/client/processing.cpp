@@ -872,19 +872,19 @@ shared_ptr<CPSG_Request> CProcessing::CreateRequest(const string& method, shared
         const CJson_ConstObject& params_obj)
 {
     if (method == "biodata") {
-        return CreateRequest<CPSG_Request_Biodata>(move(user_context), params_obj);
+        return SRequestBuilder::CreateRequest<CPSG_Request_Biodata>(move(user_context), params_obj);
     } else if (method == "blob") {
-        return CreateRequest<CPSG_Request_Blob>(move(user_context), params_obj);
+        return SRequestBuilder::CreateRequest<CPSG_Request_Blob>(move(user_context), params_obj);
     } else if (method == "resolve") {
-        return CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
+        return SRequestBuilder::CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
     } else if (method == "named_annot") {
-        return CreateRequest<CPSG_Request_NamedAnnotInfo>(move(user_context), params_obj);
+        return SRequestBuilder::CreateRequest<CPSG_Request_NamedAnnotInfo>(move(user_context), params_obj);
     } else {
         return {};
     }
 }
 
-CPSG_BioId::TType CProcessing::GetBioIdType(string type)
+CPSG_BioId::TType SRequestBuilder::GetBioIdType(string type)
 {
     CObjectTypeInfo info(objects::CSeq_id::GetTypeInfo());
 
@@ -894,7 +894,7 @@ CPSG_BioId::TType CProcessing::GetBioIdType(string type)
     return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
 }
 
-CPSG_BioId CProcessing::GetBioId(const CArgs& input)
+CPSG_BioId SRequestBuilder::GetBioId(const CArgs& input)
 {
     const auto& id = input["ID"].AsString();
 
@@ -904,7 +904,7 @@ CPSG_BioId CProcessing::GetBioId(const CArgs& input)
     return CPSG_BioId(id, type);
 }
 
-CPSG_BioId CProcessing::GetBioId(const CJson_ConstObject& input)
+CPSG_BioId SRequestBuilder::GetBioId(const CJson_ConstObject& input)
 {
     auto array = input["bio_id"].GetArray();
     auto id = array[0].GetValue().GetString();
@@ -916,7 +916,7 @@ CPSG_BioId CProcessing::GetBioId(const CJson_ConstObject& input)
     return CPSG_BioId(id, type);
 }
 
-vector<string> CProcessing::GetNamedAnnots(const CJson_ConstObject& input)
+vector<string> SRequestBuilder::GetNamedAnnots(const CJson_ConstObject& input)
 {
     auto na_array = input["named_annots"].GetArray();
     CPSG_Request_NamedAnnotInfo::TAnnotNames names;
@@ -928,9 +928,9 @@ vector<string> CProcessing::GetNamedAnnots(const CJson_ConstObject& input)
     return names;
 }
 
-void CProcessing::IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified)
+void SRequestBuilder::IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified)
 {
-    const auto& info_flags = CProcessing::GetInfoFlags();
+    const auto& info_flags = GetInfoFlags();
 
     auto i = info_flags.begin();
     bool all_info_except = specified(i->name);
@@ -958,7 +958,7 @@ const initializer_list<SDataFlag> kDataFlags =
     { "orig-tse",  "Return original blob",                                  CPSG_Request_Biodata::eOrigTSE  },
 };
 
-const initializer_list<SDataFlag>& CProcessing::GetDataFlags()
+const initializer_list<SDataFlag>& SRequestBuilder::GetDataFlags()
 {
     return kDataFlags;
 }
@@ -977,7 +977,7 @@ const initializer_list<SInfoFlag> kInfoFlags =
     { "date-changed",    "Return date changed info",                    CPSG_Request_Resolve::fDateChanged  },
 };
 
-const initializer_list<SInfoFlag>& CProcessing::GetInfoFlags()
+const initializer_list<SInfoFlag>& SRequestBuilder::GetInfoFlags()
 {
     return kInfoFlags;
 }

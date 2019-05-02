@@ -227,12 +227,6 @@ public:
     int Performance(size_t user_threads, bool raw_metrics, const string& service);
     int Testing();
 
-    static const initializer_list<SDataFlag>& GetDataFlags();
-    static const initializer_list<SInfoFlag>& GetInfoFlags();
-
-    template <class TRequest, class TInput>
-    static shared_ptr<CPSG_Request> CreateRequest(shared_ptr<void> user_context, const TInput& input);
-
 private:
     template <class TCreateContext>
     vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context) const;
@@ -241,10 +235,28 @@ private:
 
     static bool ReadRequest(string& request);
     static CJson_Schema& RequestSchema();
-    static CPSG_BioId::TType GetBioIdType(string type);
 
     static shared_ptr<CPSG_Request> CreateRequest(const string& method, shared_ptr<void> user_context,
             const CJson_ConstObject& params_obj);
+
+    CPSG_Queue m_Queue;
+    atomic_int m_RequestsCounter;
+    SJsonOut m_JsonOut;
+    CReporter m_Reporter;
+    CRetriever m_Retriever;
+    CSender m_Sender;
+};
+
+struct SRequestBuilder
+{
+    static const initializer_list<SDataFlag>& GetDataFlags();
+    static const initializer_list<SInfoFlag>& GetInfoFlags();
+
+    template <class TRequest, class TInput>
+    static shared_ptr<CPSG_Request> CreateRequest(shared_ptr<void> user_context, const TInput& input);
+
+private:
+    static CPSG_BioId::TType GetBioIdType(string type);
 
     static CPSG_BioId GetBioId(const CArgs& input);
     static CPSG_BioId GetBioId(const CJson_ConstObject& input);
@@ -278,17 +290,10 @@ private:
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
 
     static void IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified);
-
-    CPSG_Queue m_Queue;
-    atomic_int m_RequestsCounter;
-    SJsonOut m_JsonOut;
-    CReporter m_Reporter;
-    CRetriever m_Retriever;
-    CSender m_Sender;
 };
 
 template <class TRequest>
-inline CProcessing::TSpecified CProcessing::GetSpecified(const CArgs& input)
+inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified(const CArgs& input)
 {
     return [&](const string& name) {
         return input[name].HasValue();
@@ -296,7 +301,7 @@ inline CProcessing::TSpecified CProcessing::GetSpecified(const CArgs& input)
 }
 
 template <class TRequest>
-inline CProcessing::TSpecified CProcessing::GetSpecified(const CJson_ConstObject& input)
+inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified(const CJson_ConstObject& input)
 {
     return [&](const string& name) {
         return input.has("include_data") && (name == input["include_data"].GetValue().GetString());
@@ -304,7 +309,7 @@ inline CProcessing::TSpecified CProcessing::GetSpecified(const CJson_ConstObject
 }
 
 template <>
-inline CProcessing::TSpecified CProcessing::GetSpecified<CPSG_Request_Resolve>(const CJson_ConstObject& input)
+inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Resolve>(const CJson_ConstObject& input)
 {
     return [&](const string& name) {
         if (!input.has("include_info")) return false;
@@ -316,7 +321,7 @@ inline CProcessing::TSpecified CProcessing::GetSpecified<CPSG_Request_Resolve>(c
 }
 
 template <class TInput>
-inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>& request, shared_ptr<void> user_context, const TInput& input)
+inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>& request, shared_ptr<void> user_context, const TInput& input)
 {
     auto bio_id = GetBioId(input);
     request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
@@ -325,7 +330,7 @@ inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>& req
 }
 
 template <class TInput>
-inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>& request, shared_ptr<void> user_context, const TInput& input)
+inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>& request, shared_ptr<void> user_context, const TInput& input)
 {
     auto bio_id = GetBioId(input);
     request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
@@ -334,7 +339,7 @@ inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>& req
 }
 
 template <class TInput>
-inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Blob>& request, shared_ptr<void> user_context, const TInput& input)
+inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Blob>& request, shared_ptr<void> user_context, const TInput& input)
 {
     auto blob_id = GetBlobId(input);
     auto last_modified = GetLastModified(input);
@@ -344,7 +349,7 @@ inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_Blob>& reques
 }
 
 template <class TInput>
-inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInfo>& request, shared_ptr<void> user_context, const TInput& input)
+inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInfo>& request, shared_ptr<void> user_context, const TInput& input)
 {
     auto bio_id = GetBioId(input);
     auto named_annots = GetNamedAnnots(input);
@@ -352,7 +357,7 @@ inline void CProcessing::CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInf
 }
 
 template <class TRequest>
-inline void CProcessing::IncludeData(shared_ptr<TRequest> request, TSpecified specified)
+inline void SRequestBuilder::IncludeData(shared_ptr<TRequest> request, TSpecified specified)
 {
     for (const auto& f : GetDataFlags()) {
         if (specified(f.name)) {
@@ -363,7 +368,7 @@ inline void CProcessing::IncludeData(shared_ptr<TRequest> request, TSpecified sp
 }
 
 template <class TRequest, class TInput>
-inline shared_ptr<CPSG_Request> CProcessing::CreateRequest(shared_ptr<void> user_context, const TInput& input)
+inline shared_ptr<CPSG_Request> SRequestBuilder::CreateRequest(shared_ptr<void> user_context, const TInput& input)
 {
     shared_ptr<TRequest> request;
     CreateRequestImpl(request, move(user_context), input);
