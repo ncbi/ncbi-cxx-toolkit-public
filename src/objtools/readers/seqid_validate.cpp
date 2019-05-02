@@ -39,42 +39,48 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include "seqid_validate.hpp"
+#include <objtools/readers/aln_error_reporter.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-bool CSeqIdValidate::operator()(const CSeq_id& seqId, string& description, EDiagSev& severity) 
+void CSeqIdValidate::operator()(const CSeq_id& seqId, 
+        int lineNum, 
+        CAlnErrorReporter& errorReporter) 
 {
-    description.clear();
-
     if (seqId.IsLocal() &&
         seqId.GetLocal().IsStr()) {
         const auto idString = seqId.GetLocal().GetStr();
 
+        bool foundError = false;
+        string description;
         if (idString.empty()) {
             description = "Empty local ID.";
-            severity = eDiag_Error;
-            return false;
+            foundError = true;
         }
-
+        else
         if (idString.size() > 50) {
             description = "Local ID \"" + 
                           idString +
                           " \" exceeds 50 character limit.";
-            severity = eDiag_Error;
-            return false;
+            foundError = true;
         }
-
+        else
         if (CSeq_id::CheckLocalID(idString) & CSeq_id::fInvalidChar) {
             description = "Local ID \"" + 
                           idString +
                           "\" contains invalid characters.";
-            severity = eDiag_Error;
-            return false;
+            foundError = true;
+        }
+
+        if (foundError) {
+            errorReporter.Error(
+                    lineNum,
+                    EAlnSubcode::eAlnSubcode_IllegalSequenceId,
+                    description);
         }
     }
     // default implementation only checks local IDs
-    return true;
 }
 
 END_SCOPE(objects)

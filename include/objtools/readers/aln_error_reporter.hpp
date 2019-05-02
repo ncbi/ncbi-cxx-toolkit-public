@@ -1,5 +1,5 @@
-#ifndef _ALN_ERRORS_HPP_
-#define _ALN_ERRORS_HPP_
+#ifndef _ALN_ERROR_REPORTER_HPP_
+#define _ALN_ERROR_REPORTER_HPP_
 
 /*
  * $Id$
@@ -32,17 +32,16 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/aln_error_reporter.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-/*
 class ILineErrorListener;
 
 //  ============================================================================
-struct SShowStopper : std::exception
-    //  ============================================================================
+struct NCBI_XOBJREAD_EXPORT SShowStopper : std::exception
+//  ============================================================================
 {
 public:
     SShowStopper(
@@ -65,9 +64,10 @@ public:
     string mSeqId;
 };
 
+
 //  ============================================================================
-class CAlnErrorReporter
-    //  ============================================================================
+class NCBI_XOBJREAD_EXPORT CAlnErrorReporter
+//  ============================================================================
 {
 public:
     CAlnErrorReporter(
@@ -179,15 +179,8 @@ public:
 protected:
     ILineErrorListener* mpEl;
 };
-*/
 
-extern thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
+END_SCOPE(objects);
+END_NCBI_SCOPE;
 
-string ErrorPrintf(const char *format, ...);
-
-string BadCharCountPrintf(int expectedCount, int actualCount);
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
-
-#endif // _ALN_ERRORS_HPP_
+#endif // _ALN_ERROR_REPORTER_HPP_

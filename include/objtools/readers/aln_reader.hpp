@@ -41,6 +41,7 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
+#include <objtools/readers/aln_error_reporter.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -144,9 +145,9 @@ public:
 
     using TLineInfo = objects::SLineInfo;
     using FIdValidate = 
-        function<bool(const objects::CSeq_id& seqId,
-                      string& description,
-                      EDiagSev& severity)>;
+        function<void(const objects::CSeq_id&,
+                      int,
+                      objects::CAlnErrorReporter&)>;
 
     // constructor
     // defaults to protein alphabet and A2M gap characters

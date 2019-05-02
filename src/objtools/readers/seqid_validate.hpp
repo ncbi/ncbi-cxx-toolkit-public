@@ -38,6 +38,7 @@ BEGIN_SCOPE(objects);
 
 class CSeq_id;
 struct SLineInfo;
+class CAlnErrorReporter;
 
 //  ----------------------------------------------------------------------------
 class CSeqIdValidate
@@ -46,7 +47,7 @@ class CSeqIdValidate
 public: 
     virtual ~CSeqIdValidate(void) = default;
 
-    virtual bool operator()(const CSeq_id& seqId, string& description, EDiagSev& severity);
+    virtual void operator()(const CSeq_id& seqId, int lineNum, CAlnErrorReporter& errorReporter);
 };
 
 END_SCOPE(objects)
