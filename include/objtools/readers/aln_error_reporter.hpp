@@ -39,6 +39,10 @@ BEGIN_SCOPE(objects);
 
 class ILineErrorListener;
 
+// Throw SShowStopper to log a fatal error to the error listener
+// specified when calling the CAlnReader::Read() methods AND
+// to immediately exit the Read() method WITHOUT generating an 
+// alignment.
 //  ============================================================================
 struct NCBI_XOBJREAD_EXPORT SShowStopper : std::exception
 //  ============================================================================
@@ -62,7 +66,13 @@ public:
     string mSeqId;
 };
 
-
+// Use CAlnErrorReporter to log messages to the error listener passed 
+// to the CAlnReader::Read() methods.
+// CAlnErrorReporter simply logs messages and provides no other guarantee 
+// on the behavior of the code.
+// In particular, CAlnErrorReporter does not guarantee that invoking Fatal()
+// will cause a read to terminate before an alignment is generated. 
+// That behavior is dependent on underlying error listener implementation.
 //  ============================================================================
 class NCBI_XOBJREAD_EXPORT CAlnErrorReporter
 //  ============================================================================
