@@ -63,7 +63,7 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     m_RequestContext(request_context),
     m_ProtocolSupport(initial_reply_chunks)
 {
-    if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+    if (m_BlobRequest.m_BlobIdType == eBySeqId) {
         PSG_TRACE("CPendingOperation::CPendingOperation: blob "
                  "requested by seq_id/seq_id_type: " <<
                  m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_SeqIdType <<
@@ -131,7 +131,7 @@ CPendingOperation::~CPendingOperation()
 
     switch (m_RequestType) {
         case eBlobRequest:
-            if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+            if (m_BlobRequest.m_BlobIdType == eBySeqId) {
                 PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
                           "requested by seq_id/seq_id_type: " <<
                           m_BlobRequest.m_SeqId << "." <<
@@ -185,7 +185,7 @@ void CPendingOperation::Clear()
 
     switch (m_RequestType) {
         case eBlobRequest:
-            if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+            if (m_BlobRequest.m_BlobIdType == eBySeqId) {
                 PSG_TRACE("CPendingOperation::Clear: blob "
                           "requested by seq_id/seq_id_type: " <<
                           m_BlobRequest.m_SeqId << "." <<
@@ -290,7 +290,7 @@ void CPendingOperation::x_ProcessGetRequest(void)
     // Get request could be one of the following:
     // - the blob was requested by a sat/sat_key pair
     // - the blob was requested by a seq_id/seq_id_type pair
-    if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+    if (m_BlobRequest.m_BlobIdType == eBySeqId) {
         // By seq_id -> search for the bioseq key info in the cache only
         SResolveInputSeqIdError err;
         SBioseqResolution       bioseq_resolution = x_ResolveInputSeqId(err);
@@ -745,28 +745,33 @@ void CPendingOperation::x_StartMainBlobRequest(void)
 
     CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
 
-    // Adding to exclude blob cache is unconditional however skipping is only
-    // for the blobs identified by seq_id/seq_id_type
-    bool                 completed = true;
-    ECacheAddResult      cache_result =
-        app->GetExcludeBlobCache()->AddBlobId(
-                m_BlobRequest.m_ClientId,
-                m_BlobRequest.m_BlobId.m_Sat,
-                m_BlobRequest.m_BlobId.m_SatKey,
-                completed);
-    if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-        if (cache_result == eAlreadyInCache) {
-            if (completed)
-                m_ProtocolSupport.PrepareBlobExcluded(
-                    m_ProtocolSupport.GetItemId(),
-                    m_BlobRequest.m_BlobId, eSent);
-            else
-                m_ProtocolSupport.PrepareBlobExcluded(
-                    m_ProtocolSupport.GetItemId(),
-                    m_BlobRequest.m_BlobId, eInProgress);
-            x_SendReplyCompletion(true);
-            m_ProtocolSupport.Flush();
-            return;
+    if (m_BlobRequest.m_TSEOption != eNoneTSE &&
+        m_BlobRequest.m_TSEOption != eSlimTSE) {
+        if (!m_BlobRequest.m_ClientId.empty()) {
+            // Adding to exclude blob cache is unconditional however skipping
+            // is only for the blobs identified by seq_id/seq_id_type
+            bool                 completed = true;
+            ECacheAddResult      cache_result =
+                app->GetExcludeBlobCache()->AddBlobId(
+                        m_BlobRequest.m_ClientId,
+                        m_BlobRequest.m_BlobId.m_Sat,
+                        m_BlobRequest.m_BlobId.m_SatKey,
+                        completed);
+            if (m_BlobRequest.m_BlobIdType == eBySeqId) {
+                if (cache_result == eAlreadyInCache) {
+                    if (completed)
+                        m_ProtocolSupport.PrepareBlobExcluded(
+                            m_BlobRequest.m_BlobId, eSent);
+                    else
+                        m_ProtocolSupport.PrepareBlobExcluded(
+                            m_BlobRequest.m_BlobId, eInProgress);
+                    x_SendReplyCompletion(true);
+                    m_ProtocolSupport.Flush();
+                    return;
+                }
+            }
+            if (cache_result == eAdded)
+                m_BlobRequest.m_ExcludeBlobCacheAdded = true;
         }
     }
 
@@ -800,10 +805,16 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                                "Blob properties are not found "
                                "due to a cache lookup error");
 
-            app->GetExcludeBlobCache()->Remove(
-                m_BlobRequest.m_ClientId,
-                m_BlobRequest.m_BlobId.m_Sat,
-                m_BlobRequest.m_BlobId.m_SatKey);
+            if (m_BlobRequest.m_ExcludeBlobCacheAdded &&
+                !m_BlobRequest.m_ClientId.empty()) {
+                app->GetExcludeBlobCache()->Remove(
+                    m_BlobRequest.m_ClientId,
+                    m_BlobRequest.m_BlobId.m_Sat,
+                    m_BlobRequest.m_BlobId.m_SatKey);
+
+                // To prevent SetCompleted() later
+                m_BlobRequest.m_ExcludeBlobCacheAdded = false;
+            }
             return;
         }
 
@@ -863,6 +874,19 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
                 m_ProtocolSupport.Flush();
             }
        }
+    }
+
+    if (m_RequestType == eBlobRequest &&
+        all_finished_read &&
+        m_BlobRequest.m_ExcludeBlobCacheAdded &&
+        !m_BlobRequest.m_ExcludeBlobCacheCompleted &&
+        !m_BlobRequest.m_ClientId.empty()) {
+        CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
+        app->GetExcludeBlobCache()->SetCompleted(
+                m_BlobRequest.m_ClientId,
+                m_BlobRequest.m_BlobId.m_Sat,
+                m_BlobRequest.m_BlobId.m_SatKey, true);
+        m_BlobRequest.m_ExcludeBlobCacheCompleted = true;
     }
 }
 
@@ -1430,7 +1454,7 @@ bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
     // Cannot resolve
     string      msg = string("Unknown satellite number ") +
                       NStr::NumericToString(blob_id.m_Sat);
-    if (blob_request.GetBlobIdentificationType() == eBySeqId)
+    if (blob_request.m_BlobIdType == eBySeqId)
         msg += " for bioseq info with seq_id '" +
                blob_request.m_SeqId + "'";
     else
@@ -1554,8 +1578,12 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
 
     if (is_found) {
         // Found, send back as JSON
-        CJsonNode   json = ConvertBlobPropToJson(blob);
-        m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
+        auto        tse_option = fetch_details->GetTSEOption();
+
+        if (tse_option != eSlimTSE) {
+            CJsonNode   json = ConvertBlobPropToJson(blob);
+            m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
+        }
 
         // Note: initially only blob_props are requested and at that moment the
         //       TSE option is 'known'. So the initial request should be
@@ -1574,9 +1602,45 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 fetch_details->SetReadFinished();
                 if (blob.GetId2Info().empty()) {
                     // Nothing else to be sent
+                    CJsonNode   json = ConvertBlobPropToJson(blob);
+                    m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
                     m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
                     x_SendReplyCompletion();
                 } else {
+                    // Check the cache first - only if it is about the main
+                    // blob request
+                    SBlobId     blob_id = fetch_details->GetBlobId();
+                    if (blob_id == m_BlobRequest.m_BlobId) {
+                        if (!m_BlobRequest.m_ClientId.empty()) {
+                            CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
+                            bool                 completed = true;
+                            ECacheAddResult      cache_result =
+                                app->GetExcludeBlobCache()->AddBlobId(
+                                        m_BlobRequest.m_ClientId,
+                                        blob_id.m_Sat, blob_id.m_SatKey, completed);
+                            if (m_BlobRequest.m_BlobIdType == eBySeqId) {
+                                if (cache_result == eAlreadyInCache) {
+                                    if (completed)
+                                        m_ProtocolSupport.
+                                            PrepareBlobExcluded(blob_id, eSent);
+                                    else
+                                        m_ProtocolSupport.
+                                            PrepareBlobExcluded(blob_id, eInProgress);
+                                    x_SendReplyCompletion(true);
+                                    break;
+                                }
+                            }
+
+                            if (cache_result == eAdded) {
+                                m_BlobRequest.m_ExcludeBlobCacheAdded = true;
+                            }
+                        }
+                    }
+
+                    // Not in the cache, so send the blob prop
+                    CJsonNode   json = ConvertBlobPropToJson(blob);
+                    m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
+
                     // Request the split INFO blob only
                     x_RequestID2BlobChunks(fetch_details, blob, true);
 
@@ -1623,7 +1687,7 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 break;
             case eUnknownTSE:
                 // Used when INFO blobs are asked; i.e. chunks have been
-                // requeted as well, so only the prop completion message needs
+                // requested as well, so only the prop completion message needs
                 // to be sent.
                 m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
                 break;
@@ -1631,8 +1695,8 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     } else {
         // Not found, report 500 because it is data inconsistency
         // or 404 if it was requested via sat.sat_key
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
-                                                IncBlobPropsNotFoundError();
+        CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
+        app->GetErrorCounters().IncBlobPropsNotFoundError();
 
         string      message = "Blob properties are not found";
         string      blob_prop_msg;
@@ -1654,10 +1718,15 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                     eBlobPropsNotFound, eDiag_Error);
         }
 
-        CPubseqGatewayApp::GetInstance()->GetExcludeBlobCache()->Remove(
-                fetch_details->GetClientId(),
-                fetch_details->GetBlobId().m_Sat,
-                fetch_details->GetBlobId().m_SatKey);
+        SBlobId     blob_id = fetch_details->GetBlobId();
+        if (blob_id == m_BlobRequest.m_BlobId) {
+            if (m_BlobRequest.m_ExcludeBlobCacheAdded &&
+                !m_BlobRequest.m_ClientId.empty()) {
+                app->GetExcludeBlobCache()->Remove(m_BlobRequest.m_ClientId,
+                                                   blob_id.m_Sat, blob_id.m_SatKey);
+                m_BlobRequest.m_ExcludeBlobCacheAdded = false;
+            }
+        }
 
         m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
 
@@ -1701,11 +1770,8 @@ void CPendingOperation::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 
         x_SendReplyCompletion();
 
-        // Mark the blob completed
-        CPubseqGatewayApp::GetInstance()->GetExcludeBlobCache()->SetCompleted(
-            fetch_details->GetClientId(),
-            fetch_details->GetBlobId().m_Sat,
-            fetch_details->GetBlobId().m_SatKey, true);
+        // Note: no need to set the blob completed in the exclude blob cache.
+        // It will happen in Peek()
     }
 
     x_PeekIfNeeded();
@@ -1759,10 +1825,17 @@ void CPendingOperation::OnGetBlobError(
             m_ProtocolSupport.PrepareBlobCompletion(fetch_details);
         }
 
-        app->GetExcludeBlobCache()->Remove(
-            fetch_details->GetClientId(),
-            fetch_details->GetBlobId().m_Sat,
-            fetch_details->GetBlobId().m_SatKey);
+        SBlobId     blob_id = fetch_details->GetBlobId();
+        if (blob_id == m_BlobRequest.m_BlobId) {
+            if (m_BlobRequest.m_ExcludeBlobCacheAdded &&
+                !m_BlobRequest.m_ClientId.empty()) {
+                app->GetExcludeBlobCache()->Remove(m_BlobRequest.m_ClientId,
+                                                   blob_id.m_Sat, blob_id.m_SatKey);
+
+                // To prevent any updates
+                m_BlobRequest.m_ExcludeBlobCacheAdded = false;
+            }
+        }
 
         // If it is an error then regardless what stage it was, props or
         // chunks, there will be no more activity
@@ -1846,9 +1919,9 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // eUnknownTSE is treated in the blob prop handler as to do nothing (no
     // sending completion message, no requesting other blobs)
     // eUnknownUseCache is safe here; no further resolution
+    // empty client_id means that later on there will be no exclude blobs cache ops
     SBlobRequest    info_blob_request(info_blob_id, INT64_MIN, eUnknownTSE,
-                                      eUnknownUseCache,
-                                      fetch_details->GetClientId());
+                                      eUnknownUseCache, "");
 
     // Prepare Id2Info retrieval
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;

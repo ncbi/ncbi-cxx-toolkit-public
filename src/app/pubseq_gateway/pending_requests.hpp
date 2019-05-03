@@ -50,6 +50,8 @@ struct SBlobRequest
         m_BlobIdType(eBySatAndSatKey),
         m_UseCache(use_cache),
         m_ClientId(client_id),
+        m_ExcludeBlobCacheAdded(false),
+        m_ExcludeBlobCacheCompleted(false),
         m_BlobId(blob_id),
         m_LastModified(last_modified)
     {}
@@ -67,16 +69,13 @@ struct SBlobRequest
         m_BlobIdType(eBySeqId),
         m_UseCache(use_cache),
         m_ClientId(client_id),
+        m_ExcludeBlobCacheAdded(false),
+        m_ExcludeBlobCacheCompleted(false),
         m_LastModified(INT64_MIN),
         m_SeqId(seq_id.data(), seq_id.size()),
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(std::move(exclude_blobs))
     {}
-
-    EBlobIdentificationType  GetBlobIdentificationType(void) const
-    {
-        return m_BlobIdType;
-    }
 
     bool IsExcludedBlob(void) const
     {
@@ -96,6 +95,12 @@ public:
     EBlobIdentificationType     m_BlobIdType;
     ECacheAndCassandraUse       m_UseCache;
     string                      m_ClientId;
+
+    // Helps to avoid not needed cache updates;
+    // - only the one who added will remove
+    // - only the one who added will set completed once
+    bool                        m_ExcludeBlobCacheAdded;
+    bool                        m_ExcludeBlobCacheCompleted;
 
     // Fields in case of request by sat/sat_key
     SBlobId                     m_BlobId;

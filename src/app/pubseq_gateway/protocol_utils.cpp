@@ -38,30 +38,6 @@
 #include "cass_fetch.hpp"
 
 
-void CProtocolUtils::SetReply(HST::CHttpReply<CPendingOperation> *  reply)
-{
-    m_Reply = reply;
-}
-
-
-HST::CHttpReply<CPendingOperation> *  CProtocolUtils::GetReply(void)
-{
-    return m_Reply;
-}
-
-
-bool CProtocolUtils::IsReplyFinished(void) const
-{
-    return m_Reply->IsFinished();
-}
-
-
-size_t CProtocolUtils::GetItemId(void)
-{
-    return ++m_NextItemId;
-}
-
-
 void CProtocolUtils::Flush(void)
 {
     m_Reply->Send(m_Chunks, true);
@@ -252,6 +228,17 @@ void CProtocolUtils::PrepareBlobCompletion(size_t           item_id,
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
+void CProtocolUtils::PrepareBlobExcluded(const SBlobId &  blob_id,
+                                         EBlobSkipReason  skip_reason)
+{
+    string  exclude = GetBlobExcludeHeader(GetItemId(), blob_id, skip_reason);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(exclude.data()),
+                    exclude.size()));
     ++m_TotalSentReplyChunks;
 }
 

@@ -115,7 +115,7 @@ public:
         m_TSEOption(blob_request.m_TSEOption),
         m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
-        m_BlobIdType(blob_request.GetBlobIdentificationType()),
+        m_BlobIdType(blob_request.m_BlobIdType),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
         m_BlobChunkItemId(0)

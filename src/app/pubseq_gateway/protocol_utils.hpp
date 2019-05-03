@@ -53,14 +53,29 @@ public:
     {}
 
 public:
-    // Saves the reply pointer
-    void SetReply(HST::CHttpReply<CPendingOperation> *  reply);
-    HST::CHttpReply<CPendingOperation> *  GetReply(void);
-    bool IsReplyFinished(void) const;
-    size_t  GetItemId(void);
     void Flush(void);
     void Flush(bool  is_last);
     void Clear(void);
+
+    void SetReply(HST::CHttpReply<CPendingOperation> *  reply)
+    {
+        m_Reply = reply;
+    }
+
+    HST::CHttpReply<CPendingOperation> *  GetReply(void)
+    {
+        return m_Reply;
+    }
+
+    bool IsReplyFinished(void) const
+    {
+        return m_Reply->IsFinished();
+    }
+
+    size_t  GetItemId(void)
+    {
+        return ++m_NextItemId;
+    }
 
 public:
     // PSG protocol facilities
@@ -94,6 +109,8 @@ public:
                             EDiagSev  severity);
     void PrepareBlobCompletion(size_t  item_id, const SBlobId &  blob_id,
                                size_t  chunk_count);
+    void PrepareBlobExcluded(const SBlobId &  blob_id,
+                             EBlobSkipReason  skip_reason);
     void PrepareBlobExcluded(size_t  item_id, const SBlobId &  blob_id,
                              EBlobSkipReason  skip_reason);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details);
