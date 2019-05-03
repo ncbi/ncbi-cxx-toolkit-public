@@ -185,13 +185,10 @@ void CSeqTestManager::RegisterTest(const CTypeInfo* info,
 void CSeqTestManager::UnRegisterTest(const CTypeInfo* info,
                                      CSeqTest* test)
 {
-    pair<TTests::iterator, TTests::iterator> iter_pair =
-        m_Tests.equal_range(info);
-    for ( ;  iter_pair.first != iter_pair.second;  ++iter_pair.first) {
-        TTests::iterator iter = iter_pair.first;
-        if (typeid(*iter->second) == typeid(*test)) {
-            m_Tests.erase(iter);
-        }
+    const auto eq_range = m_Tests.equal_range(info);
+    for (auto it = eq_range.first; it != eq_range.second;) {
+        it = (typeid(*it->second) == typeid(*test)) ? m_Tests.erase(it)
+                                                    : std::next(it);
     }
 }
 
