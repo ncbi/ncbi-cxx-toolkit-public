@@ -1063,14 +1063,14 @@ CJson_Schema& CProcessing::RequestSchema()
             "type": "array",
             "items": {
                 "type": "string"
-            },
+            }
         },
         "exclude_blobs": {
             "$id": "#exclude_blobs",
             "type": "array",
             "items": {
                 "type": "string"
-            },
+            }
         }
     },
     "oneOf": [
