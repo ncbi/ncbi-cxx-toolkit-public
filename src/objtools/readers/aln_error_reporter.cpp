@@ -143,7 +143,7 @@ CAlnErrorReporter::Report(
             severity,
             subsystem,
             errorCode,
-            "",
+            seqId,
             lineNumber,
             message));
     mpEl->PutError(*pErr);
