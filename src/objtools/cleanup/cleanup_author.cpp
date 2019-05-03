@@ -518,9 +518,8 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
         switch (al.GetNames().Which()) {
         case TNames::e_Ml:
         { {
-            if (ConvertAuthorContainerMlToStd(al)) {
-                rval = true;
-            }
+            al.ConvertMlToStandard();
+            rval = true;
         }}
         // !!!!!!!!!!!!!!!!!!!!!!
         // !!!!!FALL-THROUGH!!!!!
