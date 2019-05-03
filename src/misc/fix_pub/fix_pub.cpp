@@ -51,8 +51,6 @@
 
 #include <objects/pub/Pub.hpp>
 
-#include <objtools/cleanup/cleanup_pub.hpp>
-
 #include <misc/fix_pub/fix_pub.hpp>
 
 #include "fix_pub_aux.hpp"
@@ -61,6 +59,9 @@
 #include <objects/mla/Title_msg_list.hpp>
 #include <objects/mla/mla_client.hpp>
 #include <misc/eutils_client/eutils_client.hpp>
+
+#include <corelib/ncbi_message.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -148,12 +149,12 @@ void MedlineToISO(CCit_art& cit_art)
         CAuth_list& auths = cit_art.SetAuthors();
         if (auths.IsSetNames()) {
             if (auths.GetNames().IsMl()) {
-                ConvertAuthorContainerMlToStd(auths);
+                auths.ConvertMlToStandard();
             }
             else if (auths.GetNames().IsStd()) {
                 for (auto& auth : auths.SetNames().SetStd()) {
                     if (auth->IsSetName() && auth->GetName().IsMl()) {
-                        auth = ConvertMltoSTD(auth->GetName().GetMl());
+                        auth = CAuthor::ConvertMlToStandard(*auth);
                     }
                 }
             }

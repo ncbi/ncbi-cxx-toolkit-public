@@ -256,12 +256,14 @@ BOOST_AUTO_TEST_CASE(Test_MedlineToISO)
 
     CRef<CAuthor> author(new CAuthor);
     author->SetName().SetName().SetLast("Doe");
-    author->SetName().SetName().SetInitials("J.");
+    author->SetName().SetName().SetFirst("J");
+    author->SetName().SetName().SetInitials("J");
     expected_art.SetAuthors().SetNames().SetStd().push_back(author);
 
     author.Reset(new CAuthor);
     author->SetName().SetName().SetLast("Author");
-    author->SetName().SetName().SetInitials("S.");
+    author->SetName().SetName().SetFirst("S");
+    author->SetName().SetName().SetInitials("S");
     expected_art.SetAuthors().SetNames().SetStd().push_back(author);
 
     BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
@@ -279,6 +281,10 @@ BOOST_AUTO_TEST_CASE(Test_MedlineToISO)
     art.SetAuthors().SetNames().SetStd().push_back(author);
 
     fix_pub::MedlineToISO(art);
+
+    expected_art.SetAuthors().SetNames().SetStd().front()->SetName().SetName().SetInitials("J.");
+    expected_art.SetAuthors().SetNames().SetStd().back()->SetName().SetName().SetInitials("S.");
+
     BOOST_CHECK_EQUAL(expected_art.Equals(art), true);
 
     // Cit_art is from a journal
@@ -340,7 +346,8 @@ BOOST_AUTO_TEST_CASE(Test_SplitMedlineEntry)
 
         CRef<CAuthor> author(new CAuthor);
         author->SetName().SetName().SetLast("Doe");
-        author->SetName().SetName().SetInitials("J.");
+        author->SetName().SetName().SetFirst("J");
+        author->SetName().SetName().SetInitials("J");
         pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
         BOOST_CHECK_EQUAL((*it)->Equals(*pub), true);
     }
@@ -789,6 +796,9 @@ BOOST_AUTO_TEST_CASE(Test_FixPub)
 
    CPubFixing pub_fixing(true, true, true, nullptr);
    pub_fixing.FixPub(pub);
+
+
+   // cout << MSerial_AsnText << pub;
 
    // No any tests for now. There will be in the future
 }
