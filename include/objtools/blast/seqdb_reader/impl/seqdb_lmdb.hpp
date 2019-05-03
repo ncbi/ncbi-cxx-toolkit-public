@@ -120,7 +120,8 @@ enum ELMDBFileType
 	eOid2SeqIds,
 	eOid2TaxIds,
 	eTaxId2Offsets,
-	eTaxId2Oids
+	eTaxId2Oids,
+	eLMDBFileTypeEnd
 };
 
 NCBI_XOBJREAD_EXPORT
@@ -135,30 +136,43 @@ class NCBI_XOBJREAD_EXPORT CBlastLMDBManager
 {
 public:
 	static CBlastLMDBManager & GetInstance();
-	lmdb::env & GetReadEnv(const string & fname);
+	lmdb::env & GetReadEnvVol(const string & fname, MDB_dbi & db_volname, MDB_dbi & db_volinfo);
+	lmdb::env & GetReadEnvAcc(const string & fname, MDB_dbi & db_acc);
+	lmdb::env & GetReadEnvTax(const string & fname, MDB_dbi & db_tax);
 	lmdb::env & GetWriteEnv(const string & fname, Uint8 map_size);
+
 	void CloseEnv(const string & fname);
 
 private:
 	class CBlastEnv
 	{
 	public:
-		CBlastEnv(const string & fname, bool read_only = true, Uint8 map_size =0);
+		CBlastEnv(const string & fname, ELMDBFileType file_type, bool read_only = true, Uint8 map_size =0);
 		lmdb::env & GetEnv() { return m_Env; }
 		const string & GetFilename () { return m_Filename; }
-		~CBlastEnv() {
-			m_Env.close();
-		}
+		~CBlastEnv();
 		unsigned int AddReference(){ m_Count++; return m_Count;}
 		unsigned int RemoveReference(){ m_Count--; return m_Count;}
+		enum EDbiType {
+				eDbiVolinof,
+				eDbiVolname,
+				eDbiAcc2oid,
+				eDbiTaxid2offset,
+				eDbiMax
+		};
+		MDB_dbi GetDbi(EDbiType dbi_type);
+		void InitDbi(lmdb::env & env, ELMDBFileType file_type);
 	private:
 		string m_Filename;
+		ELMDBFileType m_FileType;
 		lmdb::env m_Env;
 		unsigned int m_Count;
 		bool m_ReadOnly;
 		Uint8 m_MapSize;
+		vector<MDB_dbi> m_dbis;
 	};
 
+	CBlastEnv* GetBlastEnv(const string & fname, ELMDBFileType file_type);
 	CBlastLMDBManager(){}
 	~CBlastLMDBManager();
 	friend class CSafeStatic_Allocator<CBlastLMDBManager>;

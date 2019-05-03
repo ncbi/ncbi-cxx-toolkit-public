@@ -52,16 +52,37 @@ static string s_FormatNum(T value)
 #define SPEED(time, nentries) s_FormatNum((size_t)((nentries)/(time)))
 #endif /* SEQDB_LMDB_TIMING */
 
-CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, bool read_only, Uint8 map_size) :
-		m_Filename(fname), m_Env(lmdb::env::create()), m_Count(1), m_ReadOnly(read_only), m_MapSize(map_size)
+void CBlastLMDBManager::CBlastEnv::InitDbi(lmdb::env & env, ELMDBFileType file_type)
+{
+    auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
+	if(file_type == eLMDB) {
+	    m_dbis[eDbiAcc2oid] = lmdb::dbi::open(txn, blastdb::acc2oid_str.c_str(), MDB_DUPSORT | MDB_DUPFIXED).handle();
+		m_dbis[eDbiVolname] = lmdb::dbi::open(txn, blastdb::volname_str.c_str(), MDB_INTEGERKEY).handle();
+		m_dbis[eDbiVolinof] = lmdb::dbi::open(txn, blastdb::volinfo_str.c_str(), MDB_INTEGERKEY).handle();
+	}
+	else if (file_type == eTaxId2Offsets) {
+    	m_dbis[eDbiTaxid2offset] = lmdb::dbi::open(txn, blastdb::taxid2offset_str.c_str()).handle();
+	}
+	else {
+   		NCBI_THROW( CSeqDBException, eArgErr, "Invalid lmdb file type");
+	}
+	txn.commit();
+	txn.reset();
+	return;
+}
+
+CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, ELMDBFileType file_type, bool read_only, Uint8 map_size) :
+		m_Filename(fname), m_FileType(file_type),m_Env(lmdb::env::create()), m_Count(1), m_ReadOnly(read_only), m_MapSize(map_size)
 {
 	const MDB_dbi num_db(3);
 	m_Env.set_max_dbs(num_db);
+	m_dbis.resize(eDbiMax, -1);
 	if(m_ReadOnly) {
 		CFile tf(fname);
 		m_MapSize = (tf.GetLength()/10000 + 1) *10000;
 		m_Env.set_mapsize(m_MapSize);
 		m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR|MDB_NOLOCK|MDB_RDONLY, 0664);
+        InitDbi(m_Env,file_type);
 	}
 	else {
 		/// map_size 0 means use lmdb default
@@ -72,23 +93,62 @@ CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, bool read_only, Ui
 	}
 }
 
+CBlastLMDBManager::CBlastEnv::~CBlastEnv()
+{
+	for (unsigned int i=0; i < m_dbis.size(); i++){
+		if (m_dbis[i] != -1) {
+			mdb_dbi_close(m_Env,m_dbis[i]);
+		}
+	}
+	m_Env.close();
+}
+
+MDB_dbi CBlastLMDBManager::CBlastEnv::GetDbi(EDbiType dbi_type)
+{
+	if(m_dbis[dbi_type] < 0) {
+   		NCBI_THROW( CSeqDBException, eArgErr, "Invalid dbi type");
+	}
+	return m_dbis[dbi_type];
+}
+
 CBlastLMDBManager & CBlastLMDBManager::GetInstance() {
 	static CSafeStatic<CBlastLMDBManager> lmdb_manager;
 	return lmdb_manager.Get();
 }
 
-lmdb::env & CBlastLMDBManager::GetReadEnv(const string & fname)
+lmdb::env & CBlastLMDBManager::GetReadEnvVol(const string & fname,  MDB_dbi & db_volname, MDB_dbi & db_volinfo)
+{
+	CBlastEnv* p = GetBlastEnv(fname, eLMDB);
+	db_volinfo = p->GetDbi(CBlastEnv::eDbiVolinof);
+	db_volname = p->GetDbi(CBlastEnv::eDbiVolname);
+	return p->GetEnv();
+}
+lmdb::env & CBlastLMDBManager::GetReadEnvAcc(const string & fname, MDB_dbi & db_acc)
+{
+	CBlastEnv* p = GetBlastEnv(fname, eLMDB);
+	db_acc = p->GetDbi(CBlastEnv::eDbiAcc2oid);
+	return p->GetEnv();
+}
+lmdb::env & CBlastLMDBManager::GetReadEnvTax(const string & fname, MDB_dbi & db_tax)
+{
+	CBlastEnv* p = GetBlastEnv(fname, eTaxId2Offsets);
+	db_tax = p->GetDbi(CBlastEnv::eDbiTaxid2offset);
+	return p->GetEnv();
+}
+
+
+CBlastLMDBManager::CBlastEnv* CBlastLMDBManager::GetBlastEnv(const string & fname, ELMDBFileType file_type)
 {
 	CFastMutexGuard guard(m_Mutex);
 	NON_CONST_ITERATE(list <CBlastEnv* >, itr, m_EnvList) {
 		if((*itr)->GetFilename() == fname)  {
 			(*itr)->AddReference();
-			return (*itr)->GetEnv();
+			return (*itr);
 		}
 	}
-	CBlastEnv * p (new CBlastEnv(fname));
+	CBlastEnv * p (new CBlastEnv(fname, file_type));
 	m_EnvList.push_back(p);
-	return p->GetEnv();
+	return p;
 }
 
 lmdb::env & CBlastLMDBManager::GetWriteEnv(const string & fname, Uint8 map_size)
@@ -100,7 +160,7 @@ lmdb::env & CBlastLMDBManager::GetWriteEnv(const string & fname, Uint8 map_size)
 			return (*itr)->GetEnv();
 		}
 	}
-	CBlastEnv * p (new CBlastEnv(fname, false, map_size));
+	CBlastEnv * p (new CBlastEnv(fname, eLMDBFileTypeEnd, false, map_size));
 	m_EnvList.push_back(p);
 	return p->GetEnv();
 }
@@ -144,9 +204,10 @@ CSeqDBLMDB::GetOid(const string & accession, vector<blastdb::TOid> & oids, const
 	try {
     oids.clear();
     {
-	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnv(m_LMDBFile);
+    MDB_dbi dbi_handle;
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvAcc(m_LMDBFile, dbi_handle);
+    lmdb::dbi dbi(dbi_handle);
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    auto dbi = lmdb::dbi::open(txn, blastdb::acc2oid_str.c_str(), MDB_DUPSORT | MDB_DUPFIXED);
     auto cursor = lmdb::cursor::open(txn, dbi);
         
     string acc = accession;
@@ -165,6 +226,8 @@ CSeqDBLMDB::GetOid(const string & accession, vector<blastdb::TOid> & oids, const
             }
         }
     }
+    cursor.close();
+    txn.reset();
     }
     CBlastLMDBManager::GetInstance().CloseEnv(m_LMDBFile);
     } catch (lmdb::error & e) {
@@ -182,13 +245,15 @@ CSeqDBLMDB::GetOid(const string & accession, vector<blastdb::TOid> & oids, const
 
 void CSeqDBLMDB::GetVolumesInfo(vector<string> & vol_names, vector<blastdb::TOid> & vol_num_oids)
 {
-	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnv(m_LMDBFile);
+    MDB_dbi db_volname_handle;
+    MDB_dbi db_volinfo_handle;
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvVol(m_LMDBFile, db_volname_handle, db_volinfo_handle);
 	vol_names.clear();
 	vol_num_oids.clear();
 	{
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    auto db_volname = lmdb::dbi::open(txn, blastdb::volname_str.c_str(), MDB_INTEGERKEY);
-    auto db_volinfo = lmdb::dbi::open(txn, blastdb::volinfo_str.c_str(), MDB_INTEGERKEY);
+    lmdb::dbi db_volname(db_volname_handle);
+    lmdb::dbi db_volinfo(db_volinfo_handle);
     MDB_stat volinfo_stat, volname_stat;
     lmdb::dbi_stat(txn, db_volinfo, &volinfo_stat);
     lmdb::dbi_stat(txn, db_volname, &volname_stat);
@@ -222,6 +287,7 @@ void CSeqDBLMDB::GetVolumesInfo(vector<string> & vol_names, vector<blastdb::TOid
    	}
     cursor_volname.close();
     cursor_volinfo.close();
+    txn.reset();
 	}
     CBlastLMDBManager::GetInstance().CloseEnv(m_LMDBFile);
 }
@@ -233,10 +299,11 @@ CSeqDBLMDB::GetOids(const vector<string>& accessions, vector<blastdb::TOid>& oid
     oids.clear();
     oids.resize(accessions.size(), kSeqDBEntryNotFound);
 
-	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnv(m_LMDBFile);
+    MDB_dbi dbi_handle;
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvAcc(m_LMDBFile, dbi_handle);
 	{
+    lmdb::dbi dbi(dbi_handle);
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    auto dbi = lmdb::dbi::open(txn, blastdb::acc2oid_str.c_str());
 
     auto cursor = lmdb::cursor::open(txn, dbi);
 
@@ -251,6 +318,9 @@ CSeqDBLMDB::GetOids(const vector<string>& accessions, vector<blastdb::TOid>& oid
             oids[i] = (((d[3] << 24)&0xFF000000) | ((d[2] << 16) & 0xFF0000) | ((d[1] << 8) & 0xFF00) | (d[0]&0xFF));
         }
     }
+
+    cursor.close();
+    txn.reset();
 	}
     CBlastLMDBManager::GetInstance().CloseEnv(m_LMDBFile);
     } catch (lmdb::error & e) {
@@ -426,16 +496,19 @@ void CSeqDBLMDB::GetDBTaxIds(vector<Int4> & tax_ids) const
 
 	tax_ids.clear();
     try {
-	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnv(m_TaxId2OffsetsFile);
+   	MDB_dbi dbi_handle;
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvTax(m_TaxId2OffsetsFile, dbi_handle);
 	{
 		auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    	auto dbi = lmdb::dbi::open(txn, blastdb::taxid2offset_str.c_str());
+    	auto dbi(dbi_handle);
     	auto cursor = lmdb::cursor::open(txn, dbi);
     	lmdb::val key;
         while (cursor.get(key, MDB_NEXT)) {
         	Int4 taxid = *((Int4 *)key.data());
         	tax_ids.push_back(taxid);
         }
+        cursor.close();
+        txn.reset();
 	}
 	}
     catch (lmdb::error & e) {
@@ -457,10 +530,11 @@ void CSeqDBLMDB::GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOi
     oids.clear();
     tax_ids_found.clear();
     vector<Uint8> offsets;
-	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnv(m_TaxId2OffsetsFile);
+   	MDB_dbi dbi_handle;
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvTax(m_TaxId2OffsetsFile, dbi_handle);
 	{
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    auto dbi = lmdb::dbi::open(txn, blastdb::taxid2offset_str.c_str());
+   	lmdb::dbi dbi(dbi_handle);
     auto cursor = lmdb::cursor::open(txn, dbi);
     ITERATE(set<Int4>, itr, tax_ids) {
     	Int4 tax_id = *itr;
@@ -484,6 +558,8 @@ void CSeqDBLMDB::GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOi
             tax_ids_found.push_back(*itr);
         }
 	}
+    cursor.close();
+    txn.reset();
 	}
     CBlastLMDBManager::GetInstance().CloseEnv(m_TaxId2OffsetsFile);
 
