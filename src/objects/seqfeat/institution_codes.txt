@@ -316,7 +316,7 @@ ATCC	cb	American Type Culture Collection		https://www.atcc.org/Products/All/&spe
 ATCH	s	Chinese Academy of Tropical Agricultural Sciences			
 ATH	s	Goulandris Natural History Museum			
 ATHU	s	National and Kapodistrian University of Athens, Biology Department			
-ATHUM	c	ATHUM Culture Collection of Fungi			
+ATHUM	sc	ATHUM Culture Collection of Fungi			
 ATSC<AUS>	b	Australian Tree Seed Centre			
 ATU	c	Department of of Biotechnology University of Tokyo			
 AU	s	Xiamen University, Biology Department			
@@ -2697,6 +2697,7 @@ HUMC	s	Universidade de Mogi das Cruzes
 HUMO	s	Universidad Autonoma del Estado de Morelos, Centro de Educacion Ambiental e Investigacion Sierra de Huautla			
 HUMP	s	Muzeum v Humpolci			
 HUMZ	s	Hokkaido University, Laboratory of Marine Zoology			
+HUMZ<IRN>	s	University of Mazandaran			
 HUNEB	s	Universidade do Estado da Bahia			
 HUNI	s	Universidade Federal do Estado do Rio de Janeiro			
 HUNST	s	Hunan University of Science and Technology			
@@ -7064,9 +7065,7 @@ ULQC	s	University of Laval
 ULS	s	Universidad de La Serena, Departamento de Biologia			
 ULT	s	Al-Faateh University, Botany Department			
 ULV	s	Universidad Central de Las Villas			
-UM<DEU>	s	University of Marburg			
-UM<USA-TN>	s	University of Memphis, Mammal Collection			
-UM<ZWE>	s	Umtali Museum			
+UM	s	Uman National University of Horticulture			
 UMA	s	University of Massachusetts, Museum of Zoology			
 UMAN	s	University of Manitoba, Zoological Collection			
 UMB	s	Ubersee-Museums	UMBB		
