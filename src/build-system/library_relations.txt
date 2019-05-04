@@ -367,7 +367,7 @@ fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
 filter_snps needs xalnmgr
 fix_pub needs eutils_client
-fix_pub needs xcleanup
+fix_pub needs mlacli
 freetype needs $(BZ2_LIB)
 freetype needs3party $(BZ2_LIBS)
 freetype needs3party $(ORIG_LIBS)
