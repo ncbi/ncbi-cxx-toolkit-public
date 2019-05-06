@@ -133,28 +133,11 @@ CDBDefaultServiceMapper::Configure(const IRegistry*)
 TSvrRef
 CDBDefaultServiceMapper::GetServer(const string& service)
 {
-    if (m_SrvSet.find(service) != m_SrvSet.end()) {
+    if (m_ExcludeMap.find(service) != m_ExcludeMap.end()) {
         return TSvrRef();
     }
 
     return TSvrRef(new CDBServer(service));
-}
-
-void
-CDBDefaultServiceMapper::Exclude(const string&  service,
-                                 const TSvrRef& server)
-{
-    CFastMutexGuard mg(m_Mtx);
-
-    m_SrvSet.insert(service);
-}
-
-void
-CDBDefaultServiceMapper::CleanExcluded(const string& service)
-{
-    CFastMutexGuard mg(m_Mtx);
-
-    m_SrvSet.erase(service);
 }
 
 void
@@ -548,6 +531,8 @@ CDBUDRandomMapper::Add(const string&    service,
 void
 CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
 {
+    IDBServiceMapper::Exclude(service, server);
+
     CFastMutexGuard mg(m_Mtx);
 
     TSvrMap& svr_map = m_PreferenceMap[service];
@@ -573,6 +558,7 @@ void
 CDBUDRandomMapper::CleanExcluded(const string& service)
 {
     CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, "Not implemented");
+    // If implemented, should chain to IDBServiceMapper::CleanExcluded
 }
 
 void
@@ -726,6 +712,8 @@ void
 CDBUDPriorityMapper::Exclude(const string& service,
                              const TSvrRef& server)
 {
+    IDBServiceMapper::Exclude(service, server);
+
     CFastMutexGuard mg(m_Mtx);
 
     TServerUsageMap& usage_map = m_ServiceUsageMap[service];
@@ -746,6 +734,8 @@ CDBUDPriorityMapper::Exclude(const string& service,
 void
 CDBUDPriorityMapper::CleanExcluded(const string& service)
 {
+    IDBServiceMapper::CleanExcluded(service);
+
     CFastMutexGuard mg(m_Mtx);
     m_ServiceUsageMap[service] = m_OrigServiceUsageMap[service];
 }

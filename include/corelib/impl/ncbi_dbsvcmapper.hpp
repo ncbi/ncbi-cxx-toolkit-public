@@ -115,6 +115,9 @@ private:
 };
 typedef CRef<CDBServer> TSvrRef;
 
+bool operator== (const CDBServer& l, const CDBServer& r);
+bool operator< (const CDBServer& l, const CDBServer& r);
+
 /// CDBServerOption -- CDBServer extended with additional information
 /// that helps maintain a balanced pool of connections.  Rankings are
 /// relative; what matters there is the ratios between rankings
@@ -147,6 +150,8 @@ public:
     bool   IsNormal   (void) const { return m_State == fState_Normal;   }
 
 private:
+    friend class IDBServiceMapper;
+
     double m_Ranking;
     TState m_State;
 };
@@ -182,12 +187,34 @@ public:
     /// Map a service to a server
     virtual TSvrRef GetServer    (const string&    service) = 0;
 
-    /// Exclude a server from the mapping for a service
+    /// Exclude a server from the mapping for a service.
+    /// @note Classes that override this method should either override
+    /// GetServerOptions too or chain to the base implementation (and
+    /// have CleanExcluded do the same!)
     virtual void    Exclude      (const string&    service,
-                                  const TSvrRef&   server)  = 0;
+                                  const TSvrRef&   server)
+    {
+        _TRACE("For " << service << ": excluding server '" << server->GetName()
+               << "', host " << server->GetHost()
+               << ", port " << server->GetPort());
+        CFastMutexGuard mg(m_Mtx);
+        m_ExcludeMap[service].insert(server);
+    }
 
     /// Clean the list of excluded servers for the given service
-    virtual void    CleanExcluded(const string&    service) = 0;
+    virtual void    CleanExcluded(const string&    service)
+    {
+        CFastMutexGuard mg(m_Mtx);
+        _TRACE("For " << service << ": cleaning excluded list");
+        m_ExcludeMap.erase(service);
+    }
+
+    virtual bool    HasExclusions(const string& service) const
+    {
+        CFastMutexGuard mg(m_Mtx);
+        auto it = m_ExcludeMap.find(service);
+        return it != m_ExcludeMap.end()  &&  !it->second.empty();
+    }
 
     /// Get list of all servers for the given service disregarding any exclusions
     virtual void GetServersList(const string& /* service */,
@@ -222,6 +249,11 @@ public:
 protected:
     static void x_RecordServer(I_ConnectionExtra& extra, CDBServer& server)
         { extra.x_RecordServer(server); }
+
+    typedef set<TSvrRef, SDereferenceLess>  TSrvSet;
+    typedef map<string, TSrvSet>            TExcludeMap;
+    mutable CFastMutex  m_Mtx;
+    TExcludeMap         m_ExcludeMap;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -252,8 +284,14 @@ void IDBServiceMapper::GetServerOptions(const string& name, TOptions* options)
     list<string> servers;
     GetServersList(name, &servers);
     options->clear();
+    CFastMutexGuard mg(m_Mtx);
+    const auto& exclusions = m_ExcludeMap[name];
     for (const string& it : servers) {
         options->emplace_back(new CDBServerOption(it, 0, 0, 1.0));
+        auto lb = exclusions.lower_bound(options->back());
+        if (lb != exclusions.end()  &&  (*lb)->GetName() == name) {
+            options->back()->m_State |= CDBServerOption::fState_Excluded;
+        }
     }
 }
 

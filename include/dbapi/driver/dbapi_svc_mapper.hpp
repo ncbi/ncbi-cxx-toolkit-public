@@ -60,18 +60,9 @@ public:
     virtual string  GetName      (void) const;
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
-    virtual void    Exclude      (const string&    service,
-                                  const TSvrRef&   server);
-    virtual void    CleanExcluded(const string&    service);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
-
-private:
-    typedef set<string> TSrvSet;
-
-    CFastMutex  m_Mtx;
-    TSrvSet     m_SrvSet;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -111,7 +102,6 @@ protected:
 
     typedef vector<CRef<IDBServiceMapper> > TDelegates;
 
-    mutable CFastMutex m_Mtx;
     TDelegates         m_Delegates;
 };
 
@@ -157,7 +147,6 @@ private:
     typedef map<TSvrRef, double, SDereferenceLess>  TSvrMap;
     typedef map<string, TSvrMap>                    TServiceMap;
 
-    CFastMutex  m_Mtx;
     TLBNameMap  m_LBNameMap;
     TServiceMap m_ServerMap;
     TServiceMap m_PreferenceMap;
@@ -201,7 +190,6 @@ private:
     typedef multimap<double, TSvrRef>               TServerUsageMap;
     typedef map<string, TServerUsageMap>            TServiceUsageMap;
 
-    CFastMutex          m_Mtx;
     TLBNameMap          m_LBNameMap;
     TServiceMap         m_ServerMap;
     TServiceUsageMap    m_ServiceUsageMap;

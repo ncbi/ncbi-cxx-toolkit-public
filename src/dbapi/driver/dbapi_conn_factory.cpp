@@ -1036,42 +1036,35 @@ CDBConnectionFactory::CRuntimeData::IncNumOfValidationFailures(
     }
 }
 
-void CDBConnectionFactory::CRuntimeData::Exclude(const string& service_name,
-                                                 const TSvrRef& server)
-{
-    if (server.Empty()) {
-        return;
-    }
-    GetDBServiceMapper().Exclude(service_name, server);
-    if (server->GetHost() != 0) {
-        string& excluded = m_ExclusionSummaryMap[service_name];
-        if ( !excluded.empty() ) {
-            excluded += ' ';
-        }
-        excluded += (impl::ConvertN2A(server->GetHost()) + ':'
-                     + NStr::NumericToString(server->GetPort()));
-    } else if ( !server->GetName().empty() ) {
-        string& excluded = m_ExclusionSummaryMap[service_name];
-        if ( !excluded.empty() ) {
-            excluded += ' ';
-        }
-        excluded += server->GetName();
-    }
-}
-
-void CDBConnectionFactory::CRuntimeData::CleanExcluded
+string CDBConnectionFactory::CRuntimeData::GetExcluded
 (const string& service_name)
 {
-    GetDBServiceMapper().CleanExcluded(service_name);
-    m_ExclusionSummaryMap.erase(service_name);
-}
+    IDBServiceMapper& mapper = GetDBServiceMapper();
+    if ( !mapper.HasExclusions(service_name) ) {
+        return kEmptyStr;
+    }
 
-const string& CDBConnectionFactory::CRuntimeData::GetExcluded
-(const string& service_name)
-{
-    TExclusionSummaryMap::const_iterator it
-        = m_ExclusionSummaryMap.find(service_name);
-    return (it == m_ExclusionSummaryMap.end()) ? kEmptyStr : it->second;
+    IDBServiceMapper::TOptions options;
+    mapper.GetServerOptions(service_name, &options);
+    string result, delim;
+    for (const auto& it : options) {
+        if (it->IsExcluded()) {
+            string exclusion;
+            if (it->GetHost() != 0) {
+                exclusion = impl::ConvertN2A(it->GetHost());
+                if (it->GetPort() != 0) {
+                    exclusion += ':' + NStr::NumericToString(it->GetPort());
+                }
+            } else if ( !it->GetName().empty() ) {
+                exclusion = it->GetName();
+            }
+            if ( !exclusion.empty() ) {
+                result += delim + exclusion;
+                delim = " ";
+            }
+        }
+    }
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

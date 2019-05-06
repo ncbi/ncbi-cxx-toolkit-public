@@ -132,22 +132,30 @@ protected:
             return *m_Parent;
         }
 
-        void Exclude(const string& service_name, const TSvrRef& server);
-        void CleanExcluded(const string& service_name);
-        const string& GetExcluded(const string& service_name);
+        void Exclude(const string& service_name, const TSvrRef& server)
+        {
+            if (server.NotEmpty()) {
+                GetDBServiceMapper().Exclude(service_name, server);
+            }
+        }
+        
+        void CleanExcluded(const string& service_name)
+        {
+            GetDBServiceMapper().CleanExcluded(service_name);
+        }
+
+        string GetExcluded(const string& service_name);
 
     private:
         // Data types
         typedef map<string, TServerOptions> TServerOptionsMap;
         typedef map<string, TSvrRef>      TDispatchedSet;
-        typedef map<string, string>       TExclusionSummaryMap;
         typedef map<string, unsigned int> TServer2NumMap;
 
         const CDBConnectionFactory* m_Parent;
         CRef<IDBServiceMapper>      m_DBServiceMapper;
         TServerOptionsMap           m_ServerOptionsMap;
         TDispatchedSet              m_DispatchedSet;
-        TExclusionSummaryMap        m_ExclusionSummaryMap;
         TServer2NumMap              m_DispatchNumMap;
         TServer2NumMap              m_ValidationFailureMap;
     };
