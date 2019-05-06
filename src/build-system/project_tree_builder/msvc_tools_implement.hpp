@@ -145,7 +145,7 @@ static string s_GetDefaultPreprocessorDefinitions
         defines +=  "WIN32;_LIB;";
         break;
     case CMsvcPrjGeneralContext::eExe:
-        defines += "WIN32;_CONSOLE;";
+        defines += "WIN32;_CONSOLE;NCBI_APP_BUILT_AS=$(TargetName);";
         break;
     case CMsvcPrjGeneralContext::eDll:
         defines += "WIN32;_WINDOWS;_USRDLL;";

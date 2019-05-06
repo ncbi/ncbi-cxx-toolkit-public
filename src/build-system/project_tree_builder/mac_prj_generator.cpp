@@ -1276,6 +1276,9 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         tmp_str = GetApp().GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "DllBuildDefine");
         NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     }
+    if (prj.m_ProjType == CProjKey::eApp) {
+        tmp_list.push_back("NCBI_APP_BUILT_AS=$(TARGET_NAME)");
+    }
 
     tmp_list.sort();
     tmp_list.unique();
