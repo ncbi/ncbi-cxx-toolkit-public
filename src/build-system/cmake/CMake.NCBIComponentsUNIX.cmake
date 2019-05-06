@@ -482,12 +482,12 @@ endif()
 find_external_library(xerces
     INCLUDES xercesc/dom/DOM.hpp
     LIBS xerces-c
-    HINTS "${NCBI_TOOLS_ROOT}/xerces-3.1.1/GCC442-DebugMT64")
+    HINTS "${NCBI_TOOLS_ROOT}/xerces-3.1.2/${CMAKE_BUILD_TYPE}")
 
 find_external_library(xalan
     INCLUDES xalanc/XalanTransformer/XalanTransformer.hpp
     LIBS xalan-c xalanMsg
-    HINTS "${NCBI_TOOLS_ROOT}/xalan-1.11~r1302529/GCC442-DebugMT64")
+    HINTS "${NCBI_TOOLS_ROOT}/xalan-1.11/${CMAKE_BUILD_TYPE}")
 
 # Sun Grid Engine (libdrmaa):
 # libpath - /netmnt/uge/lib/lx-amd64/
@@ -502,13 +502,13 @@ find_external_library(muparser
     INCLUDES muParser.h
     LIBS muparser
     INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/muParser-1.30/include"
-    LIBS_HINTS "${NCBI_TOOLS_ROOT}/muParser-1.30/GCC-Debug64/lib/")
+    LIBS_HINTS "${NCBI_TOOLS_ROOT}/muParser-1.30/${CMAKE_BUILD_TYPE}/lib/")
 
 # HDF5
 find_external_library(hdf5
     INCLUDES hdf5.h
     LIBS hdf5
-    HINTS "${NCBI_TOOLS_ROOT}/hdf5-1.8.3/GCC401-Debug64/")
+    HINTS "${NCBI_TOOLS_ROOT}/hdf5-1.8.3/${CMAKE_BUILD_TYPE}")
 
 ############################################################################
 #
@@ -575,11 +575,11 @@ find_external_library(gsoap
     INCLUDES stdsoap2.h
     LIBS gsoapssl++
     INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/include"
-    LIBS_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib/"
+    LIBS_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/${CMAKE_BUILD_TYPE}/lib/"
     EXTRALIBS ${Z_LIBS})
 
-set(GSOAP_SOAPCPP2 ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/soapcpp2)
-set(GSOAP_WSDL2H   ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/wsdl2h)
+set(GSOAP_SOAPCPP2 ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/${CMAKE_BUILD_TYPE}/bin/soapcpp2)
+set(GSOAP_WSDL2H   ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/${CMAKE_BUILD_TYPE}/bin/wsdl2h)
 
 # Compress
 set(COMPRESS_LDEP ${CMPRS_LIB})
