@@ -155,13 +155,6 @@ CArgValue::~CArgValue(void)
 }
 
 
-const CArgValue::TStringArray& CArgValue::GetStringList() const
-{
-    NCBI_THROW(CArgException, eInvalidArg,
-        "Value lists not implemented for this argument: " + m_Name);
-}
-
-
 CArgValue::TStringArray& CArgValue::SetStringList()
 {
     NCBI_THROW(CArgException, eInvalidArg,
@@ -206,6 +199,10 @@ bool CArg_NoValue::HasValue(void) const
     NCBI_THROW(CArgException,eNoValue, s_ArgExptMsg(GetName(), \
         "The argument has no value", ""));
 
+const CArgValue::TStringArray& CArgValue::GetStringList() const
+{
+    THROW_CArg_NoValue;
+}
 const string& CArg_NoValue::AsString    (void) const { THROW_CArg_NoValue; }
 Int8          CArg_NoValue::AsInt8      (void) const { THROW_CArg_NoValue; }
 int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
