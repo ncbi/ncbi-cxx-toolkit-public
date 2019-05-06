@@ -1,16 +1,31 @@
 suppression = {
-	name = "tds95/tds_read_conf_file/vasprintf"
+	name = "tds_vasprintf_ver95"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
 			...;
 			func=vasprintf_ver95,src=vasprintf.c;
 			func=asprintf_ver95,src=asprintf.c;
-			func=tds_read_conf_file_ver95,src=config.c;
 		}
 		allocation={
 			...;
-			func=tds_get_homedir_ver95,src=threadsafe.c;
 		}
 	}
 }
+
+suppression = {
+	name = "tds_vasprintf_ver100"
+	name = "Suppression"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf_ver100,src=vasprintf.c;
+			func=tds_asprintf_ver100,src=asprintf.c;
+		}
+		allocation={
+			...;
+		}
+	}
+}
+
