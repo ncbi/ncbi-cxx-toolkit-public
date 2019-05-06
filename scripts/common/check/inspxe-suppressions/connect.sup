@@ -57,10 +57,11 @@ suppression = {
 		}
 		allocation={
 			...;
-			func=ConnNetInfo_SetupStandardArgs,src=ncbi_connutil.c;
 		}
 	}
 }
+
+
 suppression = {
 	name = "gnutls_handshake() non-important (only DLL build)"
 	type = {invalid_memory_access_partial}
