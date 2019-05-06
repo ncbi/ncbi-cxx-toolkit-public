@@ -1876,6 +1876,9 @@ void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_deta
     cass_blob_fetch.reset(new CCassBlobFetch(orig_blob_request));
     cass_blob_fetch->SetLoader(load_task);
 
+    // Blob props have already been rceived
+    cass_blob_fetch->SetBlobPropSent();
+
     load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
     load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
     load_task->SetPropsCallback(nullptr);
