@@ -1,5 +1,5 @@
-Line No    : 3
+Line No    : 22
 Severity   : Fatal
-Problem    : Alignment.BadDataChars
-Message    : At ID 'seq2': Bad character [4] found at data position 8.
+Problem    : Alignment.IllegalDataLine
+Message    : Deflines were detected in your file, however some lines are missing the '>' character at the beginning of the line. Each defline must begin with '>'.
 

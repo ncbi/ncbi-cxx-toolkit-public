@@ -92,7 +92,7 @@ CAlnScannerPhylip::xImportAlignmentData(
             continue;
         }
         // record potential defline
-        if (line[0] == '>') {
+        if (line[0] == '>' || line[0] == '[') {
             string dummy, defLine;
             try {
                 AlnUtil::ProcessDefline(line, dummy, defLine);
@@ -108,10 +108,6 @@ CAlnScannerPhylip::xImportAlignmentData(
                     "Invalid Phylip definition line, expected \">\" followed by mods.");
             }
             mDeflines.push_back({defLine, lineCount});
-            continue;
-        }
-        if (line[0] == '[') {
-            mDeflines.push_back({line, lineCount});
             continue;
         }
 

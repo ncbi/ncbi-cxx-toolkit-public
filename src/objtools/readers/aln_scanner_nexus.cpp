@@ -299,7 +299,6 @@ CAlnScannerNexus::xProcessSequin(
         auto line = lineInfo.mData;
         auto lineNum = lineInfo.mNumLine;
         string dummy, defLine;
-
         try {
             AlnUtil::ProcessDefline(line, dummy, defLine);
         }

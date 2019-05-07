@@ -1,5 +1,5 @@
 Line No    : 10
-Severity   : Warning
-Problem    : Mods.Unrecognized
-Message    : Unrecognized modifier: abc.
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Deflines were detected in your file, however some lines are missing the '>' character at the beginning of the line. Each defline must begin with '>'.
 
