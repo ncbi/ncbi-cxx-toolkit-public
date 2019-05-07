@@ -23,6 +23,7 @@ if (APPLE)
 else (APPLE)
     set(_SQLITE3_VERSION "sqlite-3.7.13-ncbi1")
 endif (APPLE)
+set(_SQLITE3_VERSION "sqlite-3.26.0-ncbi1")
 
 get_filename_component(SQLITE3_CMAKE_DIR "$ENV{NCBI}/${_SQLITE3_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" SQLITE3_VERSION_STRING "${SQLITE3_CMAKE_DIR}")
