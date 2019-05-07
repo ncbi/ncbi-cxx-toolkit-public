@@ -299,7 +299,10 @@ esac
 
 : ${SGE_PATH=/netmnt/gridengine/uge855}
 
-: ${SQLITE3_PATH=$NCBI/sqlite-3.8.10.1-ncbi1}
+case "$ncbi_platform" in
+    Linux64    ) : ${SQLITE3_PATH=$NCBI/sqlite-3.26.0-ncbi1} ;;
+    *          ) : ${SQLITE3_PATH=$NCBI/sqlite-3.8.10.1-ncbi1} ;;
+esac
 
 : ${SYBASE_PATH=/opt/sybase/clients/16.0-64bit}
 net_sybase_root="/netopt/Sybase/clients"
