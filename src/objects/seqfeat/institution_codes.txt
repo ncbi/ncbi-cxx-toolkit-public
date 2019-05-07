@@ -7910,6 +7910,7 @@ ZMK<NOR>	s	Zoological Musem, Kristiania
 ZMKR	s	Koenigsberg Zoologisches Museum			
 ZMKU	s	Kiev Zoological Museum			
 ZMKU<THA>	s	Zoological Museum, Kasetsart University			
+ZMKU<THA>:R	s	Zoological Museum, Kasetsart University, Reptile collection	
 ZML	s	St Petersburg State University			
 ZMLP	s	University of Punjab			
 ZMLU	s	Lunds Universitet, Zoologiska Institutionen			
