@@ -1,9 +1,11 @@
-Release 1.3.0 (2019-05-01)
+Release 1.3.0 (2019-05-07)
 
     * PSG - add "exclude_blobs" parameter (for "ID/get" command) (CXX-10596)
     * PSG - per-client cache of already returned data blobs (CXX-10597)
     * PSG (server and client) -- new command TEST/io (to test performance)
       (CXX-10619)
+    * PSG - send blob related errors in blobs (CXX-10642)
+    * PSG -- "eSlimTSE" to send back smaller original blobs (CXX-10635)
 
 Release 1.2.0
 
