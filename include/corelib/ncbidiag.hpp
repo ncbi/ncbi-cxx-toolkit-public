@@ -43,6 +43,7 @@
 #include <deque>
 #include <vector>
 #include <map>
+#include <atomic>
 #include <stdexcept>
 
 
@@ -2392,9 +2393,9 @@ private:
     unique_ptr<CRequestRateControl>     m_AppLogRC;
     unique_ptr<CRequestRateControl>     m_ErrLogRC;
     unique_ptr<CRequestRateControl>     m_TraceLogRC;
-    bool                                m_AppLogSuspended;
-    bool                                m_ErrLogSuspended;
-    bool                                m_TraceLogSuspended;
+    atomic<bool>                        m_AppLogSuspended;
+    atomic<bool>                        m_ErrLogSuspended;
+    atomic<bool>                        m_TraceLogSuspended;
 };
 
 

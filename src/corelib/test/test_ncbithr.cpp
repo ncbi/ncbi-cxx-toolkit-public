@@ -309,7 +309,7 @@ enum   TTestThreadState {
 
 // Pointers to all threads and corresponding states
 CTestThread*        thr[cNumThreadsMax];
-TTestThreadState    states[cNumThreadsMax];
+atomic<TTestThreadState> states[cNumThreadsMax];
 
 
 CTestThread::CTestThread(int index,
