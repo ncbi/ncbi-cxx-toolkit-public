@@ -88,6 +88,11 @@ public:
         return m_ExcludeBlobCache.get();
     }
 
+    unsigned int GetSlimMaxBlobSize(void) const
+    {
+        return m_SlimMaxBlobSize;
+    }
+
     int OnBadURL(HST::CHttpRequest &  req,
                  HST::CHttpReply<CPendingOperation> &  resp);
 
@@ -178,6 +183,10 @@ private:
     vector<SBlobId> x_GetExcludeBlobs(const string &  param_name,
                                       const CTempString &  param_value,
                                       string &  err_msg) const;
+    unsigned int x_GetDataSize(const IRegistry &  reg,
+                               const string &  section,
+                               const string &  entry,
+                               unsigned int  default_val);
     int x_PopulateSatToKeyspaceMap(void);
 
 private:
@@ -213,6 +222,8 @@ private:
 
     bool                                m_AllowIOTest;
     unique_ptr<char []>                 m_IOTestBuffer;
+
+    unsigned int                        m_SlimMaxBlobSize;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<HST::CHttpDaemon<CPendingOperation>>

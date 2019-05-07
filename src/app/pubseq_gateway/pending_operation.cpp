@@ -1577,13 +1577,9 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     x_SetRequestContext();
 
     if (is_found) {
-        // Found, send back as JSON
-        auto        tse_option = fetch_details->GetTSEOption();
-
-        if (tse_option != eSlimTSE) {
-            CJsonNode   json = ConvertBlobPropToJson(blob);
-            m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
-        }
+        // Found, send blob props back as JSON
+        CJsonNode   json = ConvertBlobPropToJson(blob);
+        m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
 
         // Note: initially only blob_props are requested and at that moment the
         //       TSE option is 'known'. So the initial request should be
@@ -1593,97 +1589,19 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         //       will be finished at the moment when blob chunks are handled.
         switch (fetch_details->GetTSEOption()) {
             case eNoneTSE:
-                fetch_details->SetReadFinished();
-                // Nothing else to be sent;
-                m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                x_SendReplyCompletion();
+                x_OnBlobPropNoneTSE(fetch_details);
                 break;
             case eSlimTSE:
-                fetch_details->SetReadFinished();
-                if (blob.GetId2Info().empty()) {
-                    // Nothing else to be sent
-                    CJsonNode   json = ConvertBlobPropToJson(blob);
-                    m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
-                    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                    x_SendReplyCompletion();
-                } else {
-                    // Check the cache first - only if it is about the main
-                    // blob request
-                    SBlobId     blob_id = fetch_details->GetBlobId();
-                    if (blob_id == m_BlobRequest.m_BlobId) {
-                        if (!m_BlobRequest.m_ClientId.empty()) {
-                            CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
-                            bool                 completed = true;
-                            ECacheAddResult      cache_result =
-                                app->GetExcludeBlobCache()->AddBlobId(
-                                        m_BlobRequest.m_ClientId,
-                                        blob_id.m_Sat, blob_id.m_SatKey, completed);
-                            if (m_BlobRequest.m_BlobIdType == eBySeqId) {
-                                if (cache_result == eAlreadyInCache) {
-                                    if (completed)
-                                        m_ProtocolSupport.
-                                            PrepareBlobExcluded(blob_id, eSent);
-                                    else
-                                        m_ProtocolSupport.
-                                            PrepareBlobExcluded(blob_id, eInProgress);
-                                    x_SendReplyCompletion(true);
-                                    break;
-                                }
-                            }
-
-                            if (cache_result == eAdded) {
-                                m_BlobRequest.m_ExcludeBlobCacheAdded = true;
-                            }
-                        }
-                    }
-
-                    // Not in the cache, so send the blob prop
-                    CJsonNode   json = ConvertBlobPropToJson(blob);
-                    m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
-
-                    // Request the split INFO blob only
-                    x_RequestID2BlobChunks(fetch_details, blob, true);
-
-                    // It is important to send completion after: there could be
-                    // an error of converting/translating ID2 info
-                    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                }
+                x_OnBlobPropSlimTSE(fetch_details, blob);
                 break;
             case eSmartTSE:
-                fetch_details->SetReadFinished();
-                if (blob.GetId2Info().empty()) {
-                    // Request original blob chunks
-                    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                    x_RequestOriginalBlobChunks(fetch_details, blob);
-                } else {
-                    // Request the split INFO blob only
-                    x_RequestID2BlobChunks(fetch_details, blob, true);
-
-                    // It is important to send completion after: there could be
-                    // an error of converting/translating ID2 info
-                    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                }
+                x_OnBlobPropSmartTSE(fetch_details, blob);
                 break;
             case eWholeTSE:
-                fetch_details->SetReadFinished();
-                if (blob.GetId2Info().empty()) {
-                    // Request original blob chunks
-                    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                    x_RequestOriginalBlobChunks(fetch_details, blob);
-                } else {
-                    // Request the split INFO blob and all split chunks
-                    x_RequestID2BlobChunks(fetch_details, blob, false);
-
-                    // It is important to send completion after: there could be
-                    // an error of converting/translating ID2 info
-                    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                }
+                x_OnBlobPropWholeTSE(fetch_details, blob);
                 break;
             case eOrigTSE:
-                fetch_details->SetReadFinished();
-                // Request original blob chunks
-                m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-                x_RequestOriginalBlobChunks(fetch_details, blob);
+                x_OnBlobPropOrigTSE(fetch_details, blob);
                 break;
             case eUnknownTSE:
                 // Used when INFO blobs are asked; i.e. chunks have been
@@ -1693,48 +1611,182 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 break;
         }
     } else {
-        // Not found, report 500 because it is data inconsistency
-        // or 404 if it was requested via sat.sat_key
-        CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
-        app->GetErrorCounters().IncBlobPropsNotFoundError();
-
-        string      message = "Blob properties are not found";
-        string      blob_prop_msg;
-        if (fetch_details->GetBlobIdType() == eBySatAndSatKey) {
-            // User requested wrong sat_key, so it is a client error
-            PSG_WARNING(message);
-            UpdateOverallStatus(CRequestStatus::e404_NotFound);
-            m_ProtocolSupport.PrepareBlobPropMessage(
-                                    fetch_details, message,
-                                    CRequestStatus::e404_NotFound,
-                                    eBlobPropsNotFound, eDiag_Error);
-        } else {
-            // Server error, data inconsistency
-            PSG_ERROR(message);
-            UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-            m_ProtocolSupport.PrepareBlobPropMessage(
-                                    fetch_details, message,
-                                    CRequestStatus::e500_InternalServerError,
-                                    eBlobPropsNotFound, eDiag_Error);
-        }
-
-        SBlobId     blob_id = fetch_details->GetBlobId();
-        if (blob_id == m_BlobRequest.m_BlobId) {
-            if (m_BlobRequest.m_ExcludeBlobCacheAdded &&
-                !m_BlobRequest.m_ClientId.empty()) {
-                app->GetExcludeBlobCache()->Remove(m_BlobRequest.m_ClientId,
-                                                   blob_id.m_Sat, blob_id.m_SatKey);
-                m_BlobRequest.m_ExcludeBlobCacheAdded = false;
-            }
-        }
-
-        m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
-
-        fetch_details->SetReadFinished();
-        x_SendReplyCompletion();
+        x_OnBlobPropNotFound(fetch_details);
     }
 
     x_PeekIfNeeded();
+}
+
+
+void CPendingOperation::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
+{
+    // Not found, report 500 because it is data inconsistency
+    // or 404 if it was requested via sat.sat_key
+    CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
+    app->GetErrorCounters().IncBlobPropsNotFoundError();
+
+    string      message = "Blob properties are not found";
+    string      blob_prop_msg;
+    if (fetch_details->GetBlobIdType() == eBySatAndSatKey) {
+        // User requested wrong sat_key, so it is a client error
+        PSG_WARNING(message);
+        UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        m_ProtocolSupport.PrepareBlobPropMessage(
+                                fetch_details, message,
+                                CRequestStatus::e404_NotFound,
+                                eBlobPropsNotFound, eDiag_Error);
+    } else {
+        // Server error, data inconsistency
+        PSG_ERROR(message);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        m_ProtocolSupport.PrepareBlobPropMessage(
+                                fetch_details, message,
+                                CRequestStatus::e500_InternalServerError,
+                                eBlobPropsNotFound, eDiag_Error);
+    }
+
+    SBlobId     blob_id = fetch_details->GetBlobId();
+    if (blob_id == m_BlobRequest.m_BlobId) {
+        if (m_BlobRequest.m_ExcludeBlobCacheAdded &&
+            !m_BlobRequest.m_ClientId.empty()) {
+            app->GetExcludeBlobCache()->Remove(m_BlobRequest.m_ClientId,
+                                               blob_id.m_Sat, blob_id.m_SatKey);
+            m_BlobRequest.m_ExcludeBlobCacheAdded = false;
+        }
+    }
+
+    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+
+    fetch_details->SetReadFinished();
+    x_SendReplyCompletion();
+}
+
+
+void CPendingOperation::x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details)
+{
+    fetch_details->SetReadFinished();
+    // Nothing else to be sent;
+    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+    x_SendReplyCompletion();
+}
+
+void CPendingOperation::x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
+                                            CBlobRecord const &  blob)
+{
+    CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+    SBlobId                 blob_id = fetch_details->GetBlobId();
+
+    fetch_details->SetReadFinished();
+    if (blob.GetId2Info().empty()) {
+        m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+
+        // An original blob may be required if its size is small
+        unsigned int         slim_max_blob_size = app->GetSlimMaxBlobSize();
+
+        if (blob.GetSize() <= slim_max_blob_size) {
+            // The blob is small, get it, but first check in the
+            // exclude blob cache
+            if (blob_id == m_BlobRequest.m_BlobId && !m_BlobRequest.m_ClientId.empty()) {
+                bool                 completed = true;
+                ECacheAddResult      cache_result =
+                    app->GetExcludeBlobCache()->AddBlobId(
+                            m_BlobRequest.m_ClientId,
+                            blob_id.m_Sat, blob_id.m_SatKey, completed);
+                if (m_BlobRequest.m_BlobIdType == eBySeqId && cache_result == eAlreadyInCache) {
+                    if (completed)
+                        m_ProtocolSupport.PrepareBlobExcluded(blob_id, eSent);
+                    else
+                        m_ProtocolSupport.PrepareBlobExcluded(blob_id, eInProgress);
+                    x_SendReplyCompletion(true);
+                    return;
+                }
+
+                if (cache_result == eAdded)
+                    m_BlobRequest.m_ExcludeBlobCacheAdded = true;
+            }
+
+            x_RequestOriginalBlobChunks(fetch_details, blob);
+        } else {
+            // Nothing else to be sent, the original blob is big
+            x_SendReplyCompletion();
+        }
+    } else {
+        // Check the cache first - only if it is about the main
+        // blob request
+        if (blob_id == m_BlobRequest.m_BlobId && !m_BlobRequest.m_ClientId.empty()) {
+            bool                 completed = true;
+            ECacheAddResult      cache_result =
+                app->GetExcludeBlobCache()->AddBlobId(
+                        m_BlobRequest.m_ClientId,
+                        blob_id.m_Sat, blob_id.m_SatKey, completed);
+            if (m_BlobRequest.m_BlobIdType == eBySeqId && cache_result == eAlreadyInCache) {
+                m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+                if (completed)
+                    m_ProtocolSupport.PrepareBlobExcluded(blob_id, eSent);
+                else
+                    m_ProtocolSupport.PrepareBlobExcluded(blob_id, eInProgress);
+                x_SendReplyCompletion(true);
+                return;
+            }
+
+            if (cache_result == eAdded)
+                m_BlobRequest.m_ExcludeBlobCacheAdded = true;
+        }
+
+        // Not in the cache, request the split INFO blob only
+        x_RequestID2BlobChunks(fetch_details, blob, true);
+
+        // It is important to send completion after: there could be
+        // an error of converting/translating ID2 info
+        m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+    }
+}
+
+
+void CPendingOperation::x_OnBlobPropSmartTSE(CCassBlobFetch *  fetch_details,
+                                             CBlobRecord const &  blob)
+{
+    fetch_details->SetReadFinished();
+    if (blob.GetId2Info().empty()) {
+        // Request original blob chunks
+        m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+        x_RequestOriginalBlobChunks(fetch_details, blob);
+    } else {
+        // Request the split INFO blob only
+        x_RequestID2BlobChunks(fetch_details, blob, true);
+
+        // It is important to send completion after: there could be
+        // an error of converting/translating ID2 info
+        m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+    }
+}
+
+
+void CPendingOperation::x_OnBlobPropWholeTSE(CCassBlobFetch *  fetch_details,
+                                             CBlobRecord const &  blob)
+{
+    fetch_details->SetReadFinished();
+    if (blob.GetId2Info().empty()) {
+        // Request original blob chunks
+        m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+        x_RequestOriginalBlobChunks(fetch_details, blob);
+    } else {
+        // Request the split INFO blob and all split chunks
+        x_RequestID2BlobChunks(fetch_details, blob, false);
+
+        // It is important to send completion after: there could be
+        // an error of converting/translating ID2 info
+        m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+    }
+}
+
+void CPendingOperation::x_OnBlobPropOrigTSE(CCassBlobFetch *  fetch_details,
+                                            CBlobRecord const &  blob)
+{
+    fetch_details->SetReadFinished();
+    // Request original blob chunks
+    m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
+    x_RequestOriginalBlobChunks(fetch_details, blob);
 }
 
 
@@ -1987,6 +2039,8 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
 
     m_FetchDetails.push_back(std::move(cass_blob_fetch));
+    auto    to_init_iter = m_FetchDetails.end();
+    --to_init_iter;
 
     // We may need to request ID2 chunks
     if (!info_blob_only) {
@@ -1994,10 +2048,11 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
         x_RequestId2SplitBlobs(fetch_details, info_blob_id.m_SatName);
     }
 
-    // initiate retrieval
-    for (auto &  fetch_details: m_FetchDetails) {
-        if (fetch_details)
-            fetch_details->GetLoader()->Wait();
+    // initiate retrieval: only those which were just created
+    while (to_init_iter != m_FetchDetails.end()) {
+        if (*to_init_iter)
+            (*to_init_iter)->GetLoader()->Wait();
+        ++to_init_iter;
     }
 }
 

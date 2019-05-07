@@ -213,6 +213,16 @@ public:
                         EDiagSev  severity, const string &  message);
 
 private:
+    void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
+    void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
+    void x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
+                             CBlobRecord const &  blob);
+    void x_OnBlobPropSmartTSE(CCassBlobFetch *  fetch_details,
+                              CBlobRecord const &  blob);
+    void x_OnBlobPropWholeTSE(CCassBlobFetch *  fetch_details,
+                              CBlobRecord const &  blob);
+    void x_OnBlobPropOrigTSE(CCassBlobFetch *  fetch_details,
+                             CBlobRecord const &  blob);
     void x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                      CBlobRecord const &  blob);
     void x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,

@@ -36,6 +36,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/plugin_manager.hpp>
 #include <util/random_gen.hpp>
 
 #include <google/protobuf/stubs/common.h>
@@ -73,6 +75,7 @@ const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
 const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
 const string            kDefaultAuthToken = "";
 const bool              kDefaultAllowIOTest = false;
+const unsigned int      kDefaultSlimMaxBlobSize = 10 * 1024;
 
 
 // Memorize the configured severity level to check before using ERR_POST.
@@ -103,6 +106,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_ExcludeCacheInactivityPurge(kDefaultExcludeCacheInactivityPurge),
     m_StartTime(GetFastLocalTime()),
     m_AllowIOTest(kDefaultAllowIOTest),
+    m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
     m_ExcludeBlobCache(nullptr)
 {
     sm_PubseqApp = this;
@@ -171,6 +175,9 @@ void CPubseqGatewayApp::ParseArgs(void)
                                                     kDefaultExcludeCacheInactivityPurge);
     m_AllowIOTest = registry.GetBool("DEBUG", "psg_allow_io_test",
                                      kDefaultAllowIOTest);
+
+    m_SlimMaxBlobSize = x_GetDataSize(registry, "SERVER", "slim_max_blob_size",
+                                      kDefaultSlimMaxBlobSize);
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
@@ -771,6 +778,26 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
         return false;
     }
     return true;
+}
+
+
+unsigned int
+CPubseqGatewayApp::x_GetDataSize(const IRegistry &  reg,
+                                 const string &  section,
+                                 const string &  entry,
+                                 unsigned int  default_val)
+{
+    CConfig                         conf(reg);
+    const CConfig::TParamTree *     param_tree = conf.GetTree();
+    const TPluginManagerParamTree * section_tree =
+                                        param_tree->FindSubNode(section);
+
+    if (!section_tree)
+        return default_val;
+
+    CConfig     c((CConfig::TParamTree*)section_tree, eNoOwnership);
+    return c.GetDataSize("psg", entry, CConfig::eErr_NoThrow,
+                         default_val);
 }
 
 
