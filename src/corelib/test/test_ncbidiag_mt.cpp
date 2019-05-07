@@ -61,9 +61,9 @@ private:
 
 
 static CNcbiOstrstream s_Sout;
-static atomic<size_t> s_CreateLine = 0;
-static atomic<size_t> s_LogLine = 0;
-static atomic<size_t> s_ErrLine = 0;
+static atomic<size_t> s_CreateLine(0);
+static atomic<size_t> s_LogLine(0);
+static atomic<size_t> s_ErrLine(0);
 
 
 bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
