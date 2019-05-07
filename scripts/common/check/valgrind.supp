@@ -863,3 +863,70 @@
     fun:*
     fun:_dl_map_object
 }
+
+
+
+################################################################################
+#
+# Helgrind
+#
+################################################################################
+
+# System issues
+{
+   CRT/throw runtime_error("...")
+   Helgrind:Race
+   fun:uw_install_context_1
+   fun:_Unwind_RaiseException
+   fun:__cxa_throw
+   fun:*
+}
+{
+   corelib/SSystemFastMutex::Lock() -- CXX-10523
+   Helgrind:Race
+   fun:_ZN4ncbi23ncbi_namespace_mutex_mt12SSystemMutex4LockENS0_16SSystemFastMutex14ELockSemanticsE
+   fun:_ZNK4ncbi11SSimpleLockINS_23ncbi_namespace_mutex_mt12SSystemMutexEEclERS2_
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:ThreadWrapperCallerImpl
+}
+{
+   corelib/CSafeStatic<ncbi::CTls -- CXX-10544
+   Helgrind:Race
+   fun:_ZN4ncbi11CSafeStaticINS_4CTlsIiEENS_20CStaticTls_CallbacksIiEEE3GetEv
+   fun:*
+   fun:_ZN4ncbi14CInGroupThread4MainEv
+   fun:_ZN4ncbi7CThread7WrapperEPv
+   fun:_ZN4ncbi19ThreadWrapperCallerEPv
+   fun:ThreadWrapperCallerImpl
+}
+{
+   corelib/CSystemInfo::GetVirtualMemoryPageSize() - static cashed value - false positive
+   Helgrind:Race
+   fun:_ZN4ncbi11CSystemInfo24GetVirtualMemoryPageSizeEv
+}
+{
+   corelib/test/test_tls_object - global statics vars, just not important, ignore -- CXX-10546
+   Helgrind:Race
+   fun:_ZSt3maxImERKT_S2_S2_
+   fun:_Z7messagePKcS0_dS0_dm
+   fun:_ZN17CTestTlsObjectApp7RunTestEv
+}
+{
+   corelib/test/test_tls_object - global statics vars, just not important, ignore -- CXX-10546
+   Helgrind:Race
+   fun:_Z7messagePKcS0_dS0_dm
+   fun:_ZN17CTestTlsObjectApp7RunTestEv
+   fun:_ZN17CTestTlsObjectApp10Thread_RunEi
+}
+{
+   corelib/test/test_tls_object - throw runtime_error(""), ignore -- CXX-10546
+   Helgrind:Race
+   fun:_Unwind_RaiseException
+   fun:__cxa_throw
+   fun:_ZN14CObjectWithTLSC1ENS_12EObjectPlaceE
+   fun:_ZN15CObjectWithTLS3C1Ei
+}
