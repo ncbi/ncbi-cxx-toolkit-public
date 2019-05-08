@@ -1,0 +1,5 @@
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Problem    : Alignment.BadSequenceCount
+Message    : The expected number of sequences specified by nTax in the Nexus file is 6. The actual number of sequences encountered is 5. The number of sequences in the file must equal the expected number of sequences.
+

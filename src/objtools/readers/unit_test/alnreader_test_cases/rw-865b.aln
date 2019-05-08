@@ -1,0 +1,19 @@
+#NEXUS
+BEGIN TAXA;
+Dimensions NTax=6 NChar=20;
+TaxLabels fish frog snake mouse;
+END;
+
+[Note how there is no semi-colon at the end of the matrix]
+BEGIN CHARACTERS;
+Dimensions NChar=20;
+Format DataType=DNA;
+Matrix
+fish   ACATA GAGGG TACCT CTAAG
+duck   ACATA GAGGG TACCT CTAAG
+Frog   ACATA GAGGG TACCT CTAAG
+snake  ACATA GAGGG TACCT CTAAG
+mouse  ACATA GAGGG TACCT CTAAG
+;
+END;
+
