@@ -4149,14 +4149,14 @@ void CFeatureItem::x_ImportQuals(
     if( ctx.Config().HideSpecificGeneMaps() && ! x_HasQual(eFQ_map) ) {
         if( x_HasQual(eFQ_cyt_map) ) {
             x_AddQual(eFQ_map, x_GetQual(eFQ_cyt_map)->second );
-            x_RemoveQuals(eFQ_cyt_map);
         } else if( x_HasQual(eFQ_gen_map) ) {
             x_AddQual(eFQ_map, x_GetQual(eFQ_gen_map)->second );
-            x_RemoveQuals(eFQ_gen_map);
         } else if( x_HasQual(eFQ_rad_map) ) {
             x_AddQual(eFQ_map, x_GetQual(eFQ_rad_map)->second );
-            x_RemoveQuals(eFQ_rad_map);
         }
+        x_RemoveQuals(eFQ_cyt_map);
+        x_RemoveQuals(eFQ_gen_map);
+        x_RemoveQuals(eFQ_rad_map);
     }
 }
 
