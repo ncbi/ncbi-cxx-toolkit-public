@@ -297,6 +297,9 @@ static EHTTP_Auth x_RetryAuth(SHttpConnector* uuu, const SRetry* retry)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_SameScheme(EBURLScheme scheme1, EBURLScheme scheme2)
 {
     if (!scheme1)
@@ -467,7 +470,7 @@ static EHTTP_Redirect x_Redirect(SHttpConnector* uuu, const SRetry* retry)
     strcpy(host, uuu->net_info->host);
     if (req_method == eReqMethod_Any)
         req_method  = BUF_Size(uuu->w_buf) ? eReqMethod_Post : eReqMethod_Get;
-    ConnNetInfo_SetArgs(uuu->net_info, "");  /*arguments not inherited*/;
+    ConnNetInfo_SetArgs(uuu->net_info, "");  /*arguments not inherited*/
  
     if (!ConnNetInfo_ParseURL(uuu->net_info, retry->data))
         return eHTTP_RedirectError;
@@ -776,7 +779,9 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
 static int s_TunnelAdjust(SConnNetInfo* net_info, void* data, unsigned int arg)
 {
     SHttpConnector* uuu = (SHttpConnector*) data;
-    return uuu->major_fault++ >= uuu->net_info->max_try ? 0 : -1;
+    uuu->minor_fault = 0;
+    uuu->major_fault++;
+    return -1/*noop*/;
 }
 
 
