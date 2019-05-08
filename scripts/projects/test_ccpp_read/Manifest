@@ -20,8 +20,6 @@ APP: test_ccpp_read
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-#Linux32-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
-
 Win64_15    : plain : static  64  ReleaseDLL
 
 Linux64-Centos        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
