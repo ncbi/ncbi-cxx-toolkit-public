@@ -1,3 +1,7 @@
+Release 1.3.1 (2019-05-08)
+
+    * PSG -- add counter for TEST/io requests (CXX-10646)
+
 Release 1.3.0 (2019-05-07)
 
     * PSG - add "exclude_blobs" parameter (for "ID/get" command) (CXX-10596)
