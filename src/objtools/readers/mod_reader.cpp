@@ -197,6 +197,7 @@ void CModHandler::AddMods(const TModList& mods,
 
     unordered_set<string> current_set;
     TMods accepted_mods;
+    TMods conflicting_mods;
 
     for (const auto& mod : mods) {
         const auto& canonical_name = x_GetCanonicalName(mod.GetName());
@@ -217,7 +218,11 @@ void CModHandler::AddMods(const TModList& mods,
             string msg;
             EDiagSev sev;
             EModSubcode subcode;
-            if (NStr::EqualNocase(accepted_mods[canonical_name].front().GetValue(),
+
+            auto it = accepted_mods.find(canonical_name);
+
+            if (it != accepted_mods.end() && 
+                NStr::EqualNocase(it->second.front().GetValue(),
                        mod.GetValue())) {
                 msg = "Duplicated modifier value detected, ignoring duplicate, no action required: " 
                     + mod.GetName() + "=" + mod.GetValue() + ".";
@@ -229,7 +234,12 @@ void CModHandler::AddMods(const TModList& mods,
                 msg = "Conflicting modifiers detected. Provide one modifier with one value for: " + mod.GetName() + ".";
                 sev = eDiag_Error;
                 subcode = eModSubcode_ConflictingValues;
-                rejected_mods.push_back(mod);
+
+                if (it != accepted_mods.end()) {
+                    conflicting_mods[canonical_name] = it->second;
+                    accepted_mods.erase(it);
+                }
+                conflicting_mods[canonical_name].push_back(mod);
             }
             else 
             {
@@ -244,36 +254,11 @@ void CModHandler::AddMods(const TModList& mods,
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
        } 
 
-/*
-        if (!allow_multiple_values &&
-            !first_occurrence) {
-            rejected_mods.push_back(mod);
-
-            string msg;
-            EDiagSev sev;
-            EModSubcode subcode;
-            if (NStr::EqualNocase(accepted_mods[canonical_name].front().GetValue(),
-                                  mod.GetValue())) {
-                msg = "Duplicated modifier value detected, ignoring duplicate, no action required. " 
-                    + mod.GetName() + "=" + mod.GetValue() + ".";
-                sev = eDiag_Warning;
-                subcode = eModSubcode_Duplicate;
-            }
-            else {
-                msg = "Conflicting modifiers detected. Provide one modifier with one value for: " + mod.GetName() + ".";
-                sev = eDiag_Error;
-                subcode = eModSubcode_ConflictingValues;
-            }
-
-            if (m_fReportError) {
-                m_fReportError(msg, sev, subcode);
-                continue;
-            }   
-            NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
-        }
-*/
-
         accepted_mods[canonical_name].push_back(mod);
+    }
+
+    for (auto& conflicts : conflicting_mods) {
+        rejected_mods.splice(rejected_mods.end(), conflicts.second);
     }
 
     x_SaveMods(move(accepted_mods), handle_existing, m_Mods);

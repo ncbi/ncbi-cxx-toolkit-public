@@ -37,7 +37,7 @@ Seq-entry ::= set {
       inst {
         repr not-set,
         mol dna,
-        topology linear,
+        topology circular,
         strand other,
         hist {
           replaces {

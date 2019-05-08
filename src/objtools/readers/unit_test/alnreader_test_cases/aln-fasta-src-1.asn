@@ -49,12 +49,7 @@ Seq-entry ::= set {
         local str "seq3"
       },
       descr {
-        source {
-          org {
-            taxname "val1"
-          }
-        },
-        title "[organism=val2]"
+        title "[organism=val1] [organism=val2]"
       },
       inst {
         repr raw,
