@@ -1,7 +1,6 @@
 # $Id$
 
-SUB_PROJ = diag cassandra client cassandra_old
-EXPENDABLE_SUB_PROJ = protobuf cache
+SUB_PROJ = diag cassandra client cassandra_old protobuf cache
 
 REQUIRES = MT LIBUV NGHTTP2
 
