@@ -20,7 +20,7 @@ endif()
 ## Module-specific checks
 ##
 
-set(_MONGODB_VERSION "mongodb-3.4.0")
+set(_MONGODB_VERSION "mongodb-3.2.0")
 set(_MONGO_C_DRIVER_VERSION "mongo-c-driver-1.14.0")
 
 get_filename_component(MONGOCXX_CMAKE_DIR "$ENV{NCBI}/${_MONGODB_VERSION}" REALPATH)
