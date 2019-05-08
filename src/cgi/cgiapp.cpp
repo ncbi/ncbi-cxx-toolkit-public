@@ -77,6 +77,13 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_Self_Url, true, eParam_NoThread,
                   CGI_PRINT_SELF_URL);
 typedef NCBI_PARAM_TYPE(CGI, Print_Self_Url) TPrintSelfUrlParam;
 
+
+NCBI_PARAM_DECL(bool, CGI, Print_Request_Method);
+NCBI_PARAM_DEF_EX(bool, CGI, Print_Request_Method, true, eParam_NoThread,
+    CGI_PRINT_REQUEST_METHOD);
+typedef NCBI_PARAM_TYPE(CGI, Print_Request_Method) TPrintRequestMethodParam;
+
+
 NCBI_PARAM_DECL(bool, CGI, Allow_Sigpipe);
 NCBI_PARAM_DEF_EX(bool, CGI, Allow_Sigpipe, false, eParam_NoThread,
                   CGI_ALLOW_SIGPIPE);
@@ -704,6 +711,13 @@ void CCgiApplication::LogRequest(void) const
 {
     const CCgiContext& ctx = GetContext();
     string str;
+    if (TPrintRequestMethodParam::GetDefault()) {
+        // Print request method
+        string method = ctx.GetRequest().GetRequestMethodName();
+        if (!method.empty()) {
+            GetDiagContext().Extra().Print("REQUEST_METHOD", method);
+        }
+    }
     if ( TPrintSelfUrlParam::GetDefault() ) {
         // Print script URL
         string self_url = ctx.GetSelfURL();
