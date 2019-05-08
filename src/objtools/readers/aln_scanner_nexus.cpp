@@ -455,14 +455,6 @@ CAlnScannerNexus::xProcessMatrix(
         ++dataLineCount;
     }
 
-    if (sequenceCharCount != mSequenceSize) {
-        string description = 
-            BadCharCountPrintf(mSequenceSize, sequenceCharCount);
-        throw SShowStopper(
-            -1,
-            EAlnSubcode::eAlnSubcode_BadDataCount,
-            description); 
-    }
 
     if (maxSeqCount != mNumSequences-1) {
         string description = 
@@ -473,6 +465,27 @@ CAlnScannerNexus::xProcessMatrix(
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            description); 
+    }
+
+    if (seqCount != maxSeqCount) {
+        string description =
+            ErrorPrintf(
+                "The final sequence block in the Nexus file is incomplete. It contains data for just %d sequences, but %d sequences are expected.",
+                seqCount+1, mNumSequences);
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            description); 
+    }
+
+
+    if (sequenceCharCount != mSequenceSize) {
+        string description = 
+            BadCharCountPrintf(mSequenceSize, sequenceCharCount);
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_BadDataCount,
             description); 
     }
 }
