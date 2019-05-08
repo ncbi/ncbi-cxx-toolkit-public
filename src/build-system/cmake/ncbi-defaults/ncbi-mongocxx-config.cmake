@@ -41,10 +41,10 @@ set(BSONCXX_INCLUDE_DIR
 
 # Choose the proper library path
 # For some libraries, we look in /opt/ncbi/64
-set(_libpath_mongocxx ${MONGOCXX_CMAKE_DIR}/lib)
+set(_libpath_mongocxx ${MONGOCXX_CMAKE_DIR})
 if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
-    if (EXISTS /opt/ncbi/64/${_MONGODB_VERSION}/lib)
-        set(_libpath_mongocxx /opt/ncbi/64/${_MONGODB_VERSION}/lib)
+    if (EXISTS /opt/ncbi/64/${_MONGODB_VERSION})
+        set(_libpath_mongocxx /opt/ncbi/64/${_MONGODB_VERSION})
     endif()
 endif()
 
@@ -53,6 +53,12 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     if (EXISTS /opt/ncbi/64/${_MONGO_C_DRIVER_VERSION}/lib)
         set(_libpath_mongo_c_driver /opt/ncbi/64/${_MONGO_C_DRIVER_VERSION}/lib)
     endif()
+endif()
+
+if (EXISTS "${_libpath_mongocxx}/${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${CMAKE_BUILD_TYPE}/lib")
+    set(_libpath_mongocxx "${_libpath_mongocxx}/${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${CMAKE_BUILD_TYPE}/lib")
+else()
+    set(_libpath_mongocxx "${_libpath_mongocxx}/lib")
 endif()
 
 set(MONGOCXX_LIBRARIES

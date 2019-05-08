@@ -79,11 +79,7 @@ set(NCBI_ThirdParty_GPG          ${NCBI_TOOLS_ROOT}/libgpg-error-1.6)
 set(NCBI_ThirdParty_GCRYPT       ${NCBI_TOOLS_ROOT}/libgcrypt-1.4.3)
 set(NCBI_ThirdParty_MSGSL        ${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94)
 set(NCBI_ThirdParty_SGE          "/netmnt/gridengine/current")
-if(BUILD_SHARED_LIBS)
-    set(NCBI_ThirdParty_LEVELDB      "/panfs/pan1/gpipe/ThirdParty/leveldb-1.20")
-else()
-    set(NCBI_ThirdParty_LEVELDB      ${NCBI_TOOLS_ROOT}/leveldb-1.21)
-endif()
+set(NCBI_ThirdParty_LEVELDB      ${NCBI_TOOLS_ROOT}/leveldb-1.21)
 
 #############################################################################
 #############################################################################
