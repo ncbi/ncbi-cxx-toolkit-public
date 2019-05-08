@@ -8130,7 +8130,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("BCC");
     ambig.push_back("FNU");
     ambig.push_back("SHM");
-    ambig.push_back("UM");
     ambig.push_back("TNSC");
     ambig.push_back("LS");
     ambig.push_back("TMC");
