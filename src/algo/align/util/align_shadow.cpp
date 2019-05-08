@@ -129,6 +129,9 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
                     size_t i = j;
                     while(i < starts.size() && starts[i]==-1) i += 2;
                     next[j] = starts[i];
+                    if (strands[i] == eNa_strand_minus) {
+                        next[j] += lens[i/2];
+                    }
                 }
             }
 
@@ -139,11 +142,11 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
                 for (size_t j: {0,1}) {
                     if (starts[i+j] != -1) {
                         if (strands[i+j] == eNa_strand_minus) {
-                            if (next[j] != starts[i+j]) {
+                            if (next[j] != starts[i+j]+lens[ii_lens]) {
                                 m_Transcript.push_back(indel[j]);
-                                m_Transcript.append(NStr::NumericToString(next[j]-starts[i+j]));
+                                m_Transcript.append(NStr::NumericToString(next[j]-starts[i+j]-lens[ii_lens]));
                             }
-                            next[j] = starts[i+j] - lens[ii_lens+1];
+                            next[j] = starts[i+j];
                         } else {
                             if (next[j] != starts[i+j]) {
                                 m_Transcript.push_back(indel[j]);
