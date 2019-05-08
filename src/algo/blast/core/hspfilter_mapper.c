@@ -4406,6 +4406,17 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
                 i++;
             }
 
+            /* find cutoff score for the query */
+            if (cutoff_score_fun[1] != 0) {
+                Int4 query_len = query_info->contexts[context].query_length;
+                cutoff_score = (cutoff_score_fun[0] +
+                                cutoff_score_fun[1] * query_len) / 100;
+            }
+            else if (params->cutoff_score == 0) {
+                cutoff_score = GetCutoffScore(
+                                query_info->contexts[context].query_length);
+            }
+
             /* find the best scoring chain of HSPs that align to exons
                parts of the query and the subject */
             new_chains = s_FindBestPath(nodes, num_hsps, path,
@@ -4454,18 +4465,6 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
 
             ASSERT(s_TestChains(first));
             ASSERT(s_TestChains(second));
-        }
-
-        /* find cutoff score for the query */
-        if (cutoff_score_fun[1] != 0) {
-            Int4 query_len =
-                query_info->contexts[query_idx * NUM_STRANDS].query_length;
-            cutoff_score = (cutoff_score_fun[0] +
-                            cutoff_score_fun[1] * query_len) / 100;
-        }
-        else if (params->cutoff_score == 0) {
-            cutoff_score = GetCutoffScore(
-                  query_info->contexts[query_idx * NUM_STRANDS].query_length);
         }
 
         /* save all chains and remove ones with scores lower than
