@@ -383,6 +383,7 @@ CAlnScannerNexus::xProcessMatrix(
     int seqCount(0);
     int blockLineLength(0);
     int sequenceCharCount(0);
+    int maxSeqCount(0);
 
     for (auto lineInfo : command) {
         const auto& data = lineInfo.mData;
@@ -409,6 +410,8 @@ CAlnScannerNexus::xProcessMatrix(
 
         const bool inFirstBlock = ((mNumSequences == 0) || (dataLineCount < mNumSequences));
         seqCount = inFirstBlock ? dataLineCount : (dataLineCount % mNumSequences);
+        maxSeqCount = max(seqCount, maxSeqCount);
+
 
         AlnUtil::CheckId(seqId, mSeqIds, seqCount, lineNum, inFirstBlock);
 
@@ -458,6 +461,18 @@ CAlnScannerNexus::xProcessMatrix(
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadDataCount,
+            description); 
+    }
+
+    if (maxSeqCount != mNumSequences-1) {
+        string description = 
+            "The expected number of sequences specified by nTax in the Nexus file is " + 
+            NStr::NumericToString(mNumSequences) +
+            ". The actual number of sequences encountered is " + NStr::NumericToString(maxSeqCount+1) +
+            ". The number of sequences in the file must equal the expected number of sequences.";
+        throw SShowStopper(
+            -1,
+            EAlnSubcode::eAlnSubcode_BadSequenceCount,
             description); 
     }
 }
