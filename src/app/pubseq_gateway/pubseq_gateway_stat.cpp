@@ -100,6 +100,9 @@ void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
     value = m_GetNA;
     req_sum += value;
     dict.SetInteger("GetNamedAnnotationsCount", value);
+    value = m_TestIO;
+    req_sum += value;
+    dict.SetInteger("TestIORequestCount", value);
 
     dict.SetInteger("TotalRequestCount", req_sum);
 }

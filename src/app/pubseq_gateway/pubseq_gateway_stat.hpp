@@ -107,7 +107,7 @@ class CPubseqGatewayRequestCounters
 public:
     CPubseqGatewayRequestCounters() :
         m_Admin(0), m_Resolve(0),
-        m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0), m_GetNA(0),
+        m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0), m_TestIO(0), m_GetNA(0),
         m_NotResolved(0)
     {}
 
@@ -123,6 +123,9 @@ public:
     void IncGetBlobBySatSatKey(void)
     { ++m_GetBlobBySatSatKey; }
 
+    void IncTestIO(void)
+    { ++m_TestIO; }
+
     void IncGetNA(void)
     { ++m_GetNA; }
 
@@ -136,6 +139,7 @@ private:
     atomic_uint_fast64_t        m_Resolve;
     atomic_uint_fast64_t        m_GetBlobBySeqId;
     atomic_uint_fast64_t        m_GetBlobBySatSatKey;
+    atomic_uint_fast64_t        m_TestIO;
     atomic_uint_fast64_t        m_GetNA;
 
     atomic_uint_fast64_t        m_NotResolved;

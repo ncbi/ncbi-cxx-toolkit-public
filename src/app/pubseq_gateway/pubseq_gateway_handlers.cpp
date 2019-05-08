@@ -841,6 +841,8 @@ int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
             return 0;
         }
 
+        m_RequestCounters.IncTestIO();
+
         resp.SetContentType(eBinaryMime);
         resp.SetContentLength(data_size);
 
