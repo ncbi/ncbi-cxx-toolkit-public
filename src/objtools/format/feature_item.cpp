@@ -5194,11 +5194,20 @@ void CFeatureItem::x_AddFTableQuals(
         x_AddFTableQual("exception");
     }
     const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+    const bool hide_ids = GetContext()->Config().HideProteinID();
     ITERATE( CSeq_feat::TQual, it, qual ) {
         const CGb_qual& qual = **it;
         const string& key = qual.IsSetQual() ? qual.GetQual() : kEmptyStr;
         const string& val = qual.IsSetVal() ? qual.GetVal() : kEmptyStr;
         if ( !key.empty()  &&  !val.empty() ) {
+            if (hide_ids &&
+                (key == "protein_id" || 
+                 key == "orig_protein_id" ||           
+                 key == "transcript_id" ||
+                 key == "orig_transcript_id"))
+            {
+                continue;
+            }
             x_AddFTableQual(key, val);
         }
     }
