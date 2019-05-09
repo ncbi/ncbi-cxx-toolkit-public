@@ -259,7 +259,7 @@ void SFixture::MtReading()
     Reset();
 
     const size_t kSizeMin = 100 * 1024;
-    const size_t kSizeMax = 1024 * 1024;
+    constexpr static size_t kSizeMax = 1024 * 1024;
     const size_t kSleepMin = 5;
     const size_t kSleepMax = 13;
     const unsigned kReadingDeadline = 300;
