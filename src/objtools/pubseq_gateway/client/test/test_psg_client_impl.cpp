@@ -28,6 +28,10 @@
  */
 
 #include <ncbi_pch.hpp>
+#if defined(NCBI_OS_MSWIN)
+#  include <windows.h>
+#endif
+#include <corelib/test_boost.hpp>
 
 #include <corelib/test_boost.hpp>
 
