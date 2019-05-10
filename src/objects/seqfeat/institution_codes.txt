@@ -7180,7 +7180,6 @@ UNMDP	s	Universidad Nacional de Mar del Plata, Mar del Plata, Argentina
 UNN	s	University of Nigeria, Botany Department			
 UNNEC	s	Universidad Nacional del Nordeste, Facultad de Ciencias Exactas y Naturales y Agrimensura			
 UNNF	s	Universite de Nancy			
-UNO	s	University of Nebraska at Omaha			
 UNOAL	s	University of Northern Alabama			
 UNOP	s	Universidade Estadual do Oeste do Parana			
 UNOVC	s	University of New Orleans			

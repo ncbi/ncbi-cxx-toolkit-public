@@ -7213,7 +7213,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNN\ts\tUniversity of Nigeria, Botany Department\t\t\t",
 "UNNEC\ts\tUniversidad Nacional del Nordeste, Facultad de Ciencias Exactas y Naturales y Agrimensura\t\t\t",
 "UNNF\ts\tUniversite de Nancy\t\t\t",
-"UNO\ts\tUniversity of Nebraska at Omaha\t\t\t",
 "UNOAL\ts\tUniversity of Northern Alabama\t\t\t",
 "UNOP\ts\tUniversidade Estadual do Oeste do Parana\t\t\t",
 "UNOVC\ts\tUniversity of New Orleans\t\t\t",
