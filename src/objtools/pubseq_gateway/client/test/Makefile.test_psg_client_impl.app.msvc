@@ -1,0 +1,2 @@
+[Linker]
+AdditionalOptions= psapi.lib Iphlpapi.lib userenv.lib
