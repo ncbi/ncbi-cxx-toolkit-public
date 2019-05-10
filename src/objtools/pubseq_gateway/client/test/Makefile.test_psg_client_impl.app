@@ -7,7 +7,7 @@ LIB = psg_client $(SEQ_LIBS) pub medline biblio general xser xconnserv xconnect 
 LIBS = $(PSG_CLIENT_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE) $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
-REQUIRES = Boost.Test.Included
+REQUIRES = Boost.Test.Included LIBUV NGHTTP2
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_psg_client_impl
