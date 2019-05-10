@@ -33,13 +33,12 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <misc/fix_pub/fix_pub.hpp>
 
 #include "wgs_errors.hpp"
 #include "wgs_utils.hpp"
-
-USING_NCBI_SCOPE;
 
 namespace wgsparse
 {
@@ -313,10 +312,23 @@ static string GetCodeStr(int err_code, int err_sub_code)
 
 static CDiagHandler* s_old_handler;
 
-CWgsParseDiagHandler::CWgsParseDiagHandler()
+CWgsParseDiagHandler::CWgsParseDiagHandler(const string& logfile, bool overwrite)
 {
     if (s_old_handler == nullptr) {
         s_old_handler = GetDiagHandler(true);
+    }
+
+    if (!logfile.empty()) {
+
+        int mode = ofstream::out;
+        if (!overwrite) {
+            mode |= ofstream::app;
+        }
+
+        m_out.open(logfile, mode);
+        if (!overwrite) {
+            m_out << "========================[ " << CTime(CTime::eCurrent).AsString(CTimeFormat(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeSec))) << " ]========================\n";
+        }
     }
 
     SetDiagHandler(this, false);
@@ -349,8 +361,10 @@ void CWgsParseDiagHandler::Post(const SDiagMessage& mess)
     str_os << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << '\n';
 
     string str = CNcbiOstrstreamToString(str_os);
-    cerr.write(str.data(), str.size());
-    cerr << NcbiFlush;
+
+    CNcbiOstream& out = m_out.is_open() ? m_out : cerr;
+    out.write(str.data(), str.size());
+    out << NcbiFlush;
 }
 
 }

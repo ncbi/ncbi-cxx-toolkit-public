@@ -33,6 +33,8 @@
 #ifndef WGS_ERRORS_H
 #define WGS_ERRORS_H
 
+#include <string>
+#include <fstream>
 #include <corelib/ncbidiag.hpp>
 
 #define ERR_INPUT                              1
@@ -242,13 +244,16 @@ namespace wgsparse
 class CWgsParseDiagHandler : public ncbi::CDiagHandler
 {
 public:
-    CWgsParseDiagHandler();
+    CWgsParseDiagHandler(const std::string& logfile, bool overwrite);
     ~CWgsParseDiagHandler();
 
     CWgsParseDiagHandler(const CWgsParseDiagHandler&) = delete;
     CWgsParseDiagHandler& operator=(const CWgsParseDiagHandler&) = delete;
 
     virtual void Post(const ncbi::SDiagMessage& mess);
+
+private:
+    std::ofstream m_out;
 };
 
 }

@@ -1502,9 +1502,22 @@ static const int ERROR_RET = 1;
 int CWGSParseApp::Run(void)
 {
     int ret = 0;
-    CWgsParseDiagHandler diag_handler;
 
-    if (SetParams(GetArgs())) {
+    const CArgs& args = GetArgs();
+    string logfile;
+    
+    if (args["logfile"].HasValue()) {
+        logfile = args["logfile"].AsString();
+    }
+
+    bool overwrite = false;
+    if (args["w"].HasValue()) {
+        overwrite = args["w"].AsBoolean();
+    }
+
+    CWgsParseDiagHandler diag_handler(logfile, overwrite);
+
+    if (SetParams(args)) {
 
         CCleanup cleanup;
 
