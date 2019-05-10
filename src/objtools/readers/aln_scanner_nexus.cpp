@@ -258,7 +258,7 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
         if (previousCommand != "sequin") {
             auto description =
                 "Exiting empty \"NCBI\" block. Expected a \"sequin\" command.";
-            throw SShowStopper(
+            theErrorReporter->Error(
                 command.startLineNum,
                 EAlnSubcode::eAlnSubcode_UnexpectedCommand,
                 description);
