@@ -479,10 +479,13 @@ CAlnScannerNexus::xProcessMatrix(
             description); 
     }
 
-
     if (sequenceCharCount != mSequenceSize) {
         string description = 
-            BadCharCountPrintf(mSequenceSize, sequenceCharCount);
+            "The expected number of characters per sequence specified by nChar in the Nexus file is " +
+            NStr::NumericToString(mSequenceSize) +
+            ". The actual number of characters counted for the first sequence is "
+            + NStr::NumericToString(sequenceCharCount) +
+            ". The expected number of characters must equal the actual number of characters.";
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadDataCount,
