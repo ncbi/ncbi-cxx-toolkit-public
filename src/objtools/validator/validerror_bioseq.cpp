@@ -8925,7 +8925,8 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
 }
 
 
-std::map<std::string, std::string> const kViralStrandMap {
+typedef map<string, string> TViralMap;
+static const TViralMap kViralStrandMap {
     {"root",                            "dsDNA"},
     {"Alphasatellitidae",               "ssDNA"},
     {"Anelloviridae",                   "ssDNA(-)"},
@@ -9038,66 +9039,54 @@ std::map<std::string, std::string> const kViralStrandMap {
 };
 
 
-std::map<std::string, std::string> kViralTaxonMap;
-bool kViralMapInitialized = false;
-bool kViralMapOkay = false;
+static TViralMap s_ViralTaxonMap;
+static const TViralMap* s_ViralMap = &kViralStrandMap;
+static volatile bool s_ViralMapInitialized;
+DEFINE_STATIC_FAST_MUTEX(s_ViralMapMutex);
 
 
 size_t CValidError_bioseq::s_GetStrandedMolTypeFromLineage(const string& lineage)
 {
     size_t smol = eStrandedMoltype_unknown;
 
-    if (! kViralMapInitialized) {
-        kViralMapInitialized = true;
-        CTaxon1 tax;
-        CTaxon1::TInfoList moltypes;
-        if( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
-          for (auto it: moltypes) {
-              string sName;
-              if( tax.GetScientificName( it->GetIval1(), sName ) ) {
-                  if ( it->GetIval2() == 1 ) {
-                      kViralTaxonMap [sName] = it->GetSval();
-                      kViralMapOkay = true;
-                  }
-              }
-          }
-        }
-    }
-
-    if (kViralMapOkay) {
-
-        for (auto const& x : kViralStrandMap) {
-            if (NStr::Find(lineage, x.first) != string::npos) {
-                if (NStr::Find(x.second, "ssRNA") != string::npos) {
-                    return eStrandedMoltype_ssRNA;
+    if ( !s_ViralMapInitialized ) {
+        CFastMutexGuard GUARD(s_ViralMapMutex);
+        if ( !s_ViralMapInitialized ) {
+            try {
+                CTaxon1 tax;
+                CTaxon1::TInfoList moltypes;
+                if( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
+                  for (auto it: moltypes) {
+                      string sName;
+                      if( tax.GetScientificName( it->GetIval1(), sName ) ) {
+                          if ( it->GetIval2() == 1 ) {
+                              s_ViralTaxonMap [sName] = it->GetSval();
+                          }
+                      }
+                   }
                 }
-                if (NStr::Find(x.second, "dsRNA") != string::npos) {
-                    return eStrandedMoltype_dsRNA;
+                if ( !s_ViralTaxonMap.empty() ) {
+                    s_ViralMap = &s_ViralTaxonMap;
                 }
-                if (NStr::Find(x.second, "ssDNA") != string::npos) {
-                    return eStrandedMoltype_ssDNA;
-                }
-                if (NStr::Find(x.second, "dsDNA") != string::npos) {
-                    return eStrandedMoltype_dsDNA;
-                }
+            } catch (CException&) {
+                // report if desired (at severity info or warning, probably)
             }
+            s_ViralMapInitialized = true;
         }
-
-        return smol;
     }
 
-    for (auto const& x : kViralTaxonMap) {
-        if (NStr::Find(lineage, x.first) != string::npos) {
-            if (NStr::Find(x.second, "ssRNA") != string::npos) {
+    for (const auto & x : *s_ViralMap) {
+        if (NStr::Find(lineage, x.first) != NPOS) {
+            if (NStr::Find(x.second, "ssRNA") != NPOS) {
                 return eStrandedMoltype_ssRNA;
             }
-            if (NStr::Find(x.second, "dsRNA") != string::npos) {
+            if (NStr::Find(x.second, "dsRNA") != NPOS) {
                 return eStrandedMoltype_dsRNA;
             }
-            if (NStr::Find(x.second, "ssDNA") != string::npos) {
+            if (NStr::Find(x.second, "ssDNA") != NPOS) {
                 return eStrandedMoltype_ssDNA;
             }
-            if (NStr::Find(x.second, "dsDNA") != string::npos) {
+            if (NStr::Find(x.second, "dsDNA") != NPOS) {
                 return eStrandedMoltype_dsDNA;
             }
         }
