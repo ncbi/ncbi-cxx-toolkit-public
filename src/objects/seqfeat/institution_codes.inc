@@ -2544,7 +2544,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HJBL\ts\tEscuela Nacional de Ciencias Forestales\t\t\t",
 "HJBS\ts\tFundacio Jardi Botanic de Soller\t\t\t",
 "HK\ts\tAgriculture, Fisheries, and Conservation Department\t\t\t",
-"HKAS\ts\tCryptogamic Herbarium of Kunming Institute of Botany, Chinese Academy of Sciences\t\t\t",
+"HKAS\ts\tCryptogamic Herbarium of Kunming Institute of Botany, Chinese Academy of Sciences\tKUN-HKAS\t\t",
 "HKBU\ts\tHong Kong Baptist University, Biology Department\t\t\t",
 "HKFRS\ts\tHong Kong Fisheries Research Station\t\t\t",
 "HKGL\ts\tNaturwissenschaftliche Sammlungen des Kantons Glarus\t\t\t",
