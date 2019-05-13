@@ -15,7 +15,6 @@ suppression = {
 
 suppression = {
 	name = "tds_vasprintf_ver100"
-	name = "Suppression"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
