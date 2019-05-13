@@ -242,7 +242,7 @@ public:
     {
 
         int max_idx = 2;
-        int min_idx = 0;
+        Uint1 min_idx = 0;
         switch (unique_type) {
             case e_Strict:
                 break;
@@ -298,8 +298,8 @@ public:
             // A hot dog is a higher-scoring hit within a lower scoring one.
             THitEnds hit_mids;
             typename THit::TId id(new typename THit::TId::element_type());
-            typedef pair<THitRef*, Uint1> THitEndInfo;
-            typedef set<THitEndInfo> TOpenHits;
+
+            typedef set<THitRef*> TOpenHits;
             TOpenHits open_hits;
             ITERATE(typename THitEnds, ii, hit_ends) {
 
@@ -308,43 +308,21 @@ public:
                 if((*hitrefptr)->GetId(where)->CompareOrdered(*id) != 0) {
                     // new id => reset
                     open_hits.clear();
-                    open_hits.insert(THitEndInfo(hitrefptr,where));
+                    open_hits.insert(hitrefptr);
                     id = (*hitrefptr)->GetId(where);
                 }
                 else {
-                    typename TOpenHits::const_iterator iise = open_hits.end();
-                    typename TOpenHits::iterator iis 
-                        = open_hits.find(THitEndInfo(hitrefptr,where));
-                    if(iis == iise) {
+                    auto iis = open_hits.find(hitrefptr);
+                    if(iis == open_hits.end()) {
                         // new open
-                        open_hits.insert(THitEndInfo(hitrefptr,where));
-                    }
-                    else {
+                        open_hits.insert(hitrefptr);
+                    } else {
                         // hit closed => check for hot fogs
                         open_hits.erase(iis);
                         const float curscore = (*hitrefptr)->GetScore();
-                        ITERATE(typename TOpenHits, iis2, open_hits) {
-                            
-                            bool hd_score (((*(iis2->first))->GetScore() < curscore));
-                            // In large-scale alignments, the 'hot dogs' can be 
-                            // numerous and increase the size of hit_mids 
-                            // significantly. This is addressed by using the margin,
-                            // which reduces the number of mid-points stored,
-                            // but requires to scan through endpoints in a larger
-                            // vicinity of a current best hit.
-                            bool hd_xl (margin + (*(iis2->first))->GetMin(iis2->second)
-                                        < (*hitrefptr)->GetMin(where));
-                            bool hd_xr (margin + (*hitrefptr)->GetMax(where)
-                                        < (*(iis2->first))->GetMax(iis2->second));
-                            if(hd_score && hd_xl && hd_xr) {
-                                
-                                THitEnd hm;
-                                hm.m_Point = iis2->second * 2;
-                                hm.m_Ptr = iis2->first;
-                                hm.m_X = ( (*hitrefptr)->GetStart(where) 
-                                           + (*hitrefptr)->GetStop(where) ) / 2;
-                                hit_mids.insert(hm);
-                            }
+                        for (auto& open_hit: open_hits) {
+
+                            sx_AddMidIfNeeded(hitrefptr, curscore, open_hit, where, margin, hit_mids);
                         }
                     }
                 }
@@ -378,80 +356,18 @@ public:
                     break;
                 }
 
-                // truncate overlaps with the current best hit
                 const THitRef& hc = *ii_best;
-                const bool is_constraint = hc->GetScore() > 1e20;
-                THitEnd he [4];
-                for(Uint1 point = 0; point < 4; ++point) {
 
-                    he[point].m_Point = point;
-                    he[point].m_Ptr = const_cast<THitRef*>(&hc);
-                    if(is_constraint == false) {
-                        he[point].m_X = hc->GetBox()[point];
-                    }
-                    else {
-                        const TCoord a = 0, b = numeric_limits<TCoord>::max() / 2;
-                        const bool is_start = point % 2 == 0;
-                        const bool is_plus  = hc->GetStrand(point / 2);
-                        he[point].m_X =  (is_start ^ is_plus)? b: a;
-                    }
-                }
-      
+                // truncate overlaps with the current best hit
+
                 for(Uint1 where = min_idx; where < max_idx; ++where) {
+
+                    auto iters = sx_GetEndsInRange(hc, hc->GetBox(), where, margin, hit_ends);
 
                     const TCoord cmin = hc->GetMin(where);
                     const TCoord cmax = hc->GetMax(where);
 
-                    THitEnd *phe_lo, *phe_hi;
-                    const Uint1 i1 = 2*where, i2 = i1 + 1;
-                    if(hc->GetStrand(where)) {
-                        phe_lo = &he[i1];
-                        phe_hi = &he[i2];
-                    }
-                    else {
-                        phe_lo = &he[i2];
-                        phe_hi = &he[i1];
-                    }
-
-                    // we want all endpoints in [phe_lo->m_X - margin..phe_hi->m_X + margin]
-                    // but SHitEnd::"operator <" compares scores as well
-                    // and lower_bound(m_X - margin) will skip m_X - margin end with lower score
-                    // so we will seek for m_X - margin -1 and then skip all m_X - margin -1 ends
-
-                    auto prev_X = phe_lo->m_X;
-
-                    if(phe_lo->m_X >= margin +1) {
-                        phe_lo->m_X -= margin +1;
-                    }
-                    else {
-                        phe_lo->m_X = 0;
-                    }
-
-                    phe_hi->m_X += margin;
-
-                    typedef typename THitEnds::iterator THitEndsIter;
-                    THitEndsIter ii0 (hit_ends.lower_bound(*phe_lo));
-                    THitEndsIter ii1 (hit_ends.upper_bound(*phe_hi));
-
-                    while ( ii0 != ii1 && ii0->m_X+margin < prev_X ) ++ii0; // skip m_X - margin -1 ends
-
-                    // special case: if X is zero, go left as long as it's the same id
-                    if(phe_lo->m_X == 0) {
-                        THitRef hitref (*(ii0->m_Ptr));
-                        const typename THit::TId& id_lcl (hitref->GetId(ii0->m_Point/2));
-                        for(THitEndsIter ii_start(hit_ends.begin()); 
-                            ii0 != ii_start; --ii0)
-                        {
-                            THitRef hr (*(ii0->m_Ptr));
-                            const typename THit::TId & id2 (hr->GetId(ii0->m_Point/2));
-                            if(0 != id_lcl->CompareOrdered(*id2)) {
-                                ++ii0;
-                                break;
-                            }
-                        }
-                    }
-
-                    for(typename THitEnds::iterator ii_lcl (ii0); ii_lcl != ii1; ++ii_lcl) {
+                    for(auto ii_lcl=iters.first; ii_lcl != iters.second; ++ii_lcl) {
                     
                         const THitEnd& he_lcl = *ii_lcl;                   
 
@@ -461,8 +377,13 @@ public:
 
                         if(alive && !self) {
                             
+                            TCoord saved_box[4];
+                            const TCoord* box = (*he_lcl.m_Ptr)->GetBox();
+                            std::copy(box, box+4, saved_box);
                             THitRef hit_new;
-                            int newpos 
+                            int newpos;
+                            Uint1 newpoint;
+                            tie(newpos, newpoint)
                                 = sx_Cleave(*he_lcl.m_Ptr, he_lcl.m_Point/2, 
                                             cmin, cmax, min_hit_len, 
                                             min_hit_idty, & hit_new,
@@ -474,19 +395,20 @@ public:
 
                             if(newpos >= 0) { // truncated or split
 
-                                const TCoord* box = (*he_lcl.m_Ptr)->GetBox();
 
                                 THitEnd he2;
-                                he2.m_Point = he_lcl.m_Point;
+                                he2.m_Point = newpoint; //he_lcl.m_Point;
                                 he2.m_Ptr = he_lcl.m_Ptr;
                                 he2.m_X = box[he2.m_Point];
                                 hit_ends.insert(he2);
 
                                 THitEnd he3;
-                                he3.m_Point = (he_lcl.m_Point + 2) % 4;
+                                he3.m_Point = (he2.m_Point ^ 2);
                                 he3.m_Ptr = he_lcl.m_Ptr;
                                 he3.m_X = box[he3.m_Point];
                                 hit_ends.insert(he3);
+
+                                sx_AddMidPoints(*he_lcl.m_Ptr, saved_box, margin, hit_ends, skip, hitref_firstptr);
 
                                 if(hit_new.NotEmpty()) {
                                 
@@ -501,31 +423,24 @@ public:
                                     del.push_back(false);
                                     skip.push_back(false);
 
-                                    Uint1 point = he_lcl.m_Point;
-                                    Uint1 where_lcl = point / 2;
+                                    box = hit_new->GetBox();
+
+                                    Uint1 point = he2.m_Point ^ 1;
 
                                     // only two new ends to add
                                     THitEnd he2_lcl;
                                     he2_lcl.m_Point = point;
                                     he2_lcl.m_Ptr = ptr;
-                                    he2_lcl.m_X = (box[point]== hit_new->GetStart(where_lcl))?
-                                        hit_new->GetStop(where_lcl): 
-                                        hit_new->GetStart(where_lcl);
+                                    he2_lcl.m_X = box[he2_lcl.m_Point];
                                     hit_ends.insert(he2_lcl);
 
-                                    point = (he_lcl.m_Point + 2) % 4;
-                                    where_lcl = point / 2;
-
                                     THitEnd he3_lcl;
-                                    he3_lcl.m_Point = point;
+                                    he3_lcl.m_Point = (he2_lcl.m_Point ^ 2);
                                     he3_lcl.m_Ptr = ptr;
-                                    he3_lcl.m_X = (box[point]==hit_new->GetStart(where_lcl))?
-                                        hit_new->GetStop(where_lcl):
-                                        hit_new->GetStart(where_lcl);
+                                    he3_lcl.m_X = box[he3_lcl.m_Point];
                                     hit_ends.insert(he3_lcl);
 
-                                    // TODO: add midpoints for potential 
-                                    // hot dogs as above
+                                    sx_AddMidPoints(*ptr, saved_box, margin, hit_ends, skip, hitref_firstptr);
 
                                 } // if(new_hit.NotEmpty())
                             } // if(newpos >= 0) 
@@ -700,16 +615,129 @@ protected:
 
     typedef SHitEnd THitEnd;
     typedef multiset<THitEnd> THitEnds;
+    typedef typename THitEnds::iterator THitEndsIter;
 
+    static void sx_AddMidIfNeeded(THitRef* hit, const float curscore,
+                                  THitRef* container_candidate,
+                                  const Uint1 where, TCoord margin, THitEnds& hit_mids) 
+    {                           
+        bool hd_score (((*(container_candidate))->GetScore() < curscore));
+        // In large-scale alignments, the 'hot dogs' can be 
+        // numerous and increase the size of hit_mids 
+        // significantly. This is addressed by using the margin,
+        // which reduces the number of mid-points stored,
+        // but requires to scan through endpoints in a larger
+        // vicinity of a current best hit.
+        bool hd_xl (margin + (*(container_candidate))->GetMin(where)
+                    < (*hit)->GetMin(where));
+        bool hd_xr (margin + (*hit)->GetMax(where)
+                    < (*(container_candidate))->GetMax(where));
+        if(hd_score && hd_xl && hd_xr) {
+                                
+            THitEnd hm;
+            hm.m_Point = where << 1;
+            hm.m_Ptr = container_candidate;
+            hm.m_X = ( (*hit)->GetStart(where) 
+                       + (*hit)->GetStop(where) ) / 2;
+            hit_mids.insert(hm);
+        }
+    }
+    static pair<THitEndsIter, THitEndsIter> sx_GetEndsInRange(const THitRef& hc, const TCoord* box, Uint1 where, TCoord margin, THitEnds& hit_ends)
+    {
+        const bool is_constraint = hc->GetScore() > 1e20;
+        THitEnd he [4];
+        for(Uint1 point = 0; point < 4; ++point) {
+
+            he[point].m_Point = point;
+            he[point].m_Ptr = const_cast<THitRef*>(&hc);
+            if(is_constraint == false) {
+                he[point].m_X = box[point];
+            } else {
+                const TCoord a = 0, b = numeric_limits<TCoord>::max() / 2;
+                const bool is_start = (point & 1) == 0;
+                const bool is_plus  = hc->GetStrand(point / 2);
+                he[point].m_X =  (is_start ^ is_plus)? b: a;
+            }
+        }
+
+        THitEnd *phe_lo, *phe_hi;
+        const Uint1 i1 = where << 1, i2 = i1 | 1;
+        if(hc->GetStrand(where)) {
+            phe_lo = &he[i1];
+            phe_hi = &he[i2];
+        } else {
+            phe_lo = &he[i2];
+            phe_hi = &he[i1];
+        }
+
+        // we want all endpoints in [phe_lo->m_X - margin..phe_hi->m_X + margin]
+        // but SHitEnd::"operator <" compares scores as well
+        // and lower_bound(m_X - margin) will skip m_X - margin end with lower score
+        // so we will seek for m_X - margin -1 and then skip all m_X - margin -1 ends
+
+        auto prev_X = phe_lo->m_X;
+
+        if(phe_lo->m_X >= margin +1) {
+            phe_lo->m_X -= margin +1;
+        } else {
+            phe_lo->m_X = 0;
+        }
+
+        phe_hi->m_X += margin;
+
+        THitEndsIter ii0 (hit_ends.lower_bound(*phe_lo));
+        THitEndsIter ii1 (hit_ends.upper_bound(*phe_hi));
+
+        while ( ii0 != ii1 && ii0->m_X+margin < prev_X ) ++ii0; // skip m_X - margin -1 ends
+
+        // special case: if X is zero, go left as long as it's the same id
+        if(phe_lo->m_X == 0) {
+            THitRef hitref (*(ii0->m_Ptr));
+            const typename THit::TId& id_lcl (hitref->GetId(ii0->m_Point/2));
+            for(THitEndsIter ii_start(hit_ends.begin()); 
+                ii0 != ii_start; --ii0) {
+                THitRef hr (*(ii0->m_Ptr));
+                const typename THit::TId & id2 (hr->GetId(ii0->m_Point/2));
+                if(0 != id_lcl->CompareOrdered(*id2)) {
+                    ++ii0;
+                    break;
+                }
+            }
+        }
+        return make_pair(ii0, ii1);
+    }
+    static void sx_AddMidPoints(THitRef& h, const TCoord* outer_box, TCoord margin, THitEnds& hit_ends,
+                                vector<bool>& skip, const THitRef* hitref_firstptr)
+    {
+        THitEnds hit_mids;
+        
+        const float score = h->GetScore();
+        for (Uint1 where: {0, 1}) {
+            auto iters = sx_GetEndsInRange(h, outer_box, where, margin, hit_ends);
+            for (auto it = iters.first; it != iters.second; ++it) {
+                const size_t hitrefidx = it->m_Ptr - hitref_firstptr;
+                const bool alive       = skip[hitrefidx] == false;
+                const bool self        = it->m_Ptr == &h;
+
+                if(alive && !self) {
+                    sx_AddMidIfNeeded(&h, score, it->m_Ptr, where, margin, hit_mids);
+                    sx_AddMidIfNeeded(it->m_Ptr, (*it->m_Ptr)->GetScore(), &h, where, margin, hit_mids);
+                }
+            }
+        }
+        hit_ends.insert(hit_mids.begin(), hit_mids.end());
+    }
     // return adjusted coordinate; -1 if unaffected; -2 to delete; -3 on exception;
     // 0 on split.
-    static int sx_Cleave(THitRef& h, Uint1 where, 
+    static pair<int, Uint1> sx_Cleave(THitRef& h, Uint1 where, 
                          TCoord cmin, TCoord cmax, 
                          TCoord min_hit_len, double& min_idty,
                          THitRef* pnew_hit,
                          TCoord retain_overlap)
     {
         int rv = -1;
+        Uint1 rp = 0;
+        Uint1 reverse = 0;
         pnew_hit->Reset(NULL);
 
         try {
@@ -718,61 +746,71 @@ protected:
             if(retain_overlap > 0) {
                 const TCoord overlap = s_GetOverlap(lmin, lmax, cmin, cmax);
                 if(overlap >= retain_overlap) {
-                    return -1;
+                    return make_pair(-1, 0);
                 }
             }
 
             if(cmin <= lmin && lmax <= cmax) {
-                return -2;
+                return make_pair(-2, 0);
             }
 
             int ldif = cmin - lmin, rdif = lmax - cmax;
+            reverse = h->GetStrand(where) ? 0 : 1;
 
             if(ldif > int(min_hit_len) && rdif > int(min_hit_len)) {
                 
                 // create a new hit
                 pnew_hit->Reset(new THit (*h));
-                h->Modify(2*where + 1, lmax = cmin - 1);
-                (*pnew_hit)->Modify(2*where, lmin = cmax + 1);
+                (*pnew_hit)->Modify(2*where, cmax + 1);
+
+                h->Modify(rp = 2*where + 1, lmax = cmin - 1);
+                rv = lmax;
+
                 if((*pnew_hit)->GetIdentity() < min_idty) {
                     pnew_hit->Reset(NULL);
+                    return make_pair((h->GetIdentity() < min_idty)? -2: rv, rp ^ reverse);
+                } 
+
+                if (h->GetIdentity() < min_idty) {
+                    *h = **pnew_hit;
+                    return make_pair(cmax + 1, (2*where) ^ reverse);
                 }
-                return (h->GetIdentity() < min_idty)? -2: 0;
+                return make_pair(0, rp ^ reverse);
             }
             else if(ldif > rdif) {
 
                 if(lmin <= cmin && cmin <= lmax) {
-                    if(cmin == 0) return -2;
-                    h->Modify(2*where + 1, lmax = cmin - 1);
+                    if(cmin == 0) return make_pair(-2, 0);
+                    h->Modify(rp = 2*where + 1, lmax = cmin - 1);
                     rv = lmax;
                 }
                 if(lmin <= cmax && cmax <= lmax) {
-                    h->Modify(2*where, lmin = cmax + 1);
+                    h->Modify(rp = 2*where, lmin = cmax + 1);
                     rv = lmin;
                 }
             }
             else {
 
                 if(lmin <= cmax && cmax <= lmax) {
-                    h->Modify(2*where, lmin = cmax + 1);
+                    h->Modify(rp = 2*where, lmin = cmax + 1);
                     rv = lmin;
                 }
                 if(lmin <= cmin && cmin <= lmax) {
-                    if(cmin == 0) return -2;
-                    h->Modify(2*where + 1, lmax = cmin - 1);
+                    if(cmin == 0) return make_pair(-2, 0);
+                    h->Modify(rp = 2*where + 1, lmax = cmin - 1);
                     rv = lmax;
                 }
 
             }
 
             if(1 + lmax - lmin < min_hit_len || h->GetIdentity() < min_idty) {
-                return -2;
+                return make_pair(-2, 0);
             }
         }
         catch(CAlgoAlignUtilException&) {
             rv = -3; // hit would become inconsistent through the adjustment
         }
-        return rv;
+        return make_pair(rv, rp ^ reverse);
     }
 
     
@@ -908,7 +946,7 @@ protected:
 
                 --jj;
                 bool can_merge = true;
-                const Uint1 where2 ((where + 1) % 2);
+                const Uint1 where2 (where ^ 1);
                 const bool subj_strand ((*ii)->GetSubjStrand());
                 if(subj_strand) {
                     can_merge = (*ii)->GetMax(where2) < (*jj)->GetMin(where2);
@@ -944,7 +982,6 @@ protected:
                         he_ii.m_X = (*jj)->GetStart(where2) + 1;
                     }
 
-                    typedef typename THitEnds::const_iterator THitEndsIter;
                     const THitEndsIter ii0 = hit_ends.lower_bound(he_ii);
                     const THitEndsIter ii1 = hit_ends.upper_bound(he_jj);
 
