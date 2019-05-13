@@ -328,6 +328,9 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("-0 56' 51'' -114 14' 42''", true), "0.9475 S 114.2450 W");
 
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0.000 S 2.417 W", true), "0.000 N 2.417 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N 16 degree 46 min 57 sec; E 99 degree 01 min 08 sec", true), "16.7825 N 99.0189 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N 16 degree 30 min 16 sec, E 99 degree 09 min 40 sec", true), "16.5044 N 99.1611 E");
+    
 }
 
 

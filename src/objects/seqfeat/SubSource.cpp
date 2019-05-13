@@ -1626,6 +1626,7 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	       pattern == "1 1 ' 1 \" N 1 1 ' 1 \" N" || 
 	       pattern == "1 degrees 1 ' 1 \" 1 degrees 1 ' 1 \"" || 
 	       pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \" N" ||
+               pattern == "N 1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \"" ||
 	       pattern == "1 degrees 1 ' 1 N 1 degrees 1 ' 1 N" ||
 	       pattern == "1 degrees 1 1 N 1 degrees 1 1 N" ||
 	       pattern == "1 1 1 N 1 1 1 N")
