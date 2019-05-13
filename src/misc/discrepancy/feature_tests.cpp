@@ -600,7 +600,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         if (start > 0) {
             TSeqPos extend_len = 0;
             if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len, obj.GetLocation().GetStrand()) == eExtensibe_fixable) {
-cout << "extend: " << extend_len << "\n";
+//cout << "extend: " << extend_len << "\n";
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
@@ -610,7 +610,7 @@ cout << "extend: " << extend_len << "\n";
         if (stop < seq->GetLength() - 1) {
             TSeqPos extend_len = 0;
             if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len, obj.GetLocation().GetStrand()) == eExtensibe_fixable) {
-cout << "extend: " << extend_len << "\n";
+//cout << "extend: " << extend_len << "\n";
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
