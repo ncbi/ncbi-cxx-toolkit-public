@@ -199,7 +199,7 @@ CBlastPrelimSearch::Run()
 {
     if (! BlastSeqSrcGetNumSeqs(m_InternalData->m_SeqSrc->GetPointer())) {
         string msg =
-            "GI or TI list filtering resulted in an empty database.";
+            "Filtering resulted in an empty database.";
 
         m_Messages.AddMessageAllQueries(eBlastSevWarning,
                                         kBlastMessageNoContext,
