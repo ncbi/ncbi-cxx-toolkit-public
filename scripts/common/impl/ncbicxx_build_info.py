@@ -318,15 +318,13 @@ class Collector(object):
     def get_git_info(self, srcdir, rest):
         info = { 'vcs_type': 'git' }
         git = os.environ.get('TEAMCITY_GIT_PATH', 'git')
+        url = None
         try:
             cmd = [git, 'remote', 'get-url', 'origin'] 
             url = subprocess.check_output(cmd, stderr = subprocess.DEVNULL,
                                           universal_newlines = True,
                                           cwd = srcdir)
             url = url.rstrip('\n')
-            if len(rest) > 0:
-                url = url + '#' + os.path.join(*rest)
-            info['vcs_path'] = url
         except subprocess.CalledProcessError:
             try:
                 cmd = [git, 'remote', 'show', 'origin'] 
@@ -338,15 +336,15 @@ class Collector(object):
                         (k, v) = l.strip().split(': ', 1)
                         if k == 'Fetch URL':
                             url = v
-                            if len(rest) > 0:
-                                url = url + '#' + os.path.join(*rest)
-                            info['vcs_path'] = url
                             break
             except subprocess.CalledProcessError:
                 pass
-            if 'vcs_path' not in info:
-                info['vcs_path'] = ('file://' + srcdir + '#'
-                                    + os.path.join(*rest))
+            if url is None:
+                url = 'file://' + srcdir
+        if url is not None:
+            if len(rest) > 0:
+                url = url + '#' + os.path.join(*rest)
+            info['vcs_path'] = url
         try:
             cmd = [git, 'rev-parse', '--symbolic-full-name', 'HEAD']
             rev = subprocess.check_output(cmd, stderr = subprocess.DEVNULL,
