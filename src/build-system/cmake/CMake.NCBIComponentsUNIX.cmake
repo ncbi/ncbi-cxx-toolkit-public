@@ -538,13 +538,8 @@ message(STATUS "MongoCXX Includes: ${MONGOCXX_INCLUDE}")
 ##
 ## LevelDB
 
-find_package(LEVELDB
-             PATHS
-             /panfs/pan1/gpipe/ThirdParty/leveldb-1.20
-             /usr/local
-             /usr
-             NO_DEFAULT_PATH
-)
+find_package(LEVELDB)
+
 ############################################################################
 ##
 ## wgMLST
