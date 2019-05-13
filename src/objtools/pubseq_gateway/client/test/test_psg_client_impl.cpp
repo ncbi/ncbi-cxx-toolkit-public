@@ -192,7 +192,7 @@ SFixture::SFixture()
 
     auto blobs_number = r.Get(kBlobsMin, kBlobsMax);
     src_blobs.reserve(blobs_number);
-    array<char, kSizeMax> buf;
+    vector<char> buf(kSizeMax);
 
     while (blobs_number > 0) {
         auto blob_id = "id_" + to_string(r.Get());
@@ -272,7 +272,7 @@ void SFixture::MtReading()
 
     auto reader_impl = [&](const vector<char>& src, SPSG_Reply::SItem::TTS* dst) {
         TReadImpl read_impl(dst);
-        array<char, kSizeMax> received;
+        vector<char> received(kSizeMax);
         auto expected = src.data();
         size_t expected_to_read = src.size();
         CDeadline deadline(kReadingDeadline, 0);
@@ -363,7 +363,7 @@ void SFixture::MtReading()
 
     // Sending
 
-    array<char, kSizeMax> buf;
+    vector<char> buf(kSizeMax);
     SPSG_Receiver receiver({}, reply, make_shared<SPSG_Future>());
 
     for (auto& chunk_stream : src_chunks) {
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_CASE(Receiver)
 
     // Reading
 
-    array<char, kSizeMax> buf;
+    vector<char> buf(kSizeMax);
     SPSG_Receiver receiver({}, reply, make_shared<SPSG_Future>());
 
     for (auto& chunk_stream : src_chunks) {
