@@ -1388,13 +1388,7 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
 
         success = false;
     } else {
-        ITERATE(vector<string>, iterv, vols) {
-            m_LogFile << "volume: " << *iterv << endl;
-        }
-
-        m_LogFile << endl;
         ITERATE(vector<string>, iterf, files) {
-            m_LogFile << "file: " << *iterf << endl;
             if (erase) {
                 CFile(*iterf).Remove();
                 _TRACE("Deleting " << *iterf);
