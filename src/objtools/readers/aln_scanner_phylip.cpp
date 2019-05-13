@@ -80,8 +80,41 @@ CAlnScannerPhylip::xImportAlignmentData(
     vector<string> tokens;
     NStr::TruncateSpacesInPlace(line);
     NStr::Split(line,  " \t", tokens, NStr::fSplit_MergeDelimiters);
-    mSequenceCount =  NStr::StringToInt(tokens[0]);
-    mSequenceLength = NStr::StringToInt(tokens[1]); 
+
+
+    if (tokens.size() != 2) {
+        string description = "Invalid Phylip header. The first line in a Phylip file should contain two positive integers. The first integer specifies the number of sequences in the alignment. The second integer specifies the length of the sequences in the alignment. Nothing else should appear in the header line.";
+       throw SShowStopper(
+               lineCount,
+               EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+               description); 
+    }
+
+    try {
+        mSequenceCount =  NStr::StringToInt(tokens[0]);
+    }
+    catch(...) {
+        string description =
+            "Invalid sequence count: " + tokens[0] +   
+            "The first word in the Phylip header line specifies the number of sequences in the alignment.";
+        throw SShowStopper(
+                lineCount,
+                EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+                description);
+    }
+
+    try {
+        mSequenceLength = NStr::StringToInt(tokens[1]); 
+    }
+    catch(...) {
+        string description = 
+            "Invalid sequence length: " + tokens[1] +
+            "The second word in the Phylip header line specifies the length if the sequences in the alignment.";
+        throw SShowStopper(
+                lineCount,
+                EAlnSubcode::eAlnSubcode_IllegalDataDescription,
+                description);
+    }
 
     size_t dataLineCount(0);
     size_t blockLineLength(0);
@@ -185,7 +218,16 @@ CAlnScannerPhylip::xImportAlignmentData(
         mSequences[dataLineCount % mSequenceCount].push_back({seqData, lineCount});
         ++dataLineCount;
     }
+
+    int incompleteBlockSize = dataLineCount % mSequenceCount; 
+    if (incompleteBlockSize) {
+        string description =
+            ErrorPrintf("The final sequence block in the Phylip file is incomplete. It contains data for just %d sequences, but %d sequences are expected.",
+            incompleteBlockSize,
+            mSequenceCount);
+    }
 }
+
 
 //  ----------------------------------------------------------------------------
 void

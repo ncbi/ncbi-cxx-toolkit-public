@@ -1,0 +1,5 @@
+Line No    : 13
+Severity   : Fatal
+Problem    : Alignment.BadSequenceCount
+Message    : Inconsistent number of sequences in the data blocks. Each data block must contain the same number of sequences. The first block contains 5 sequences. This block contains 4 sequences.
+

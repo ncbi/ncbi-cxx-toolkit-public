@@ -57,7 +57,7 @@ protected:
     static bool 
     sIsConservationLine(
         const string& line);
-
+/*
     static void 
     sResetBlockInfo(int& seqCount,
         int& blockLineLength,
@@ -66,7 +66,7 @@ protected:
         blockLineLength = 0;
         inBlock = false;
     }
-
+*/
     bool
     sProcessClustalDataLine(
         const vector<string>& tokens,

@@ -64,6 +64,53 @@ BEGIN_SCOPE(objects);
 
 
 //  ----------------------------------------------------------------------------
+static void 
+sResetBlockInfo(int& seqCount,
+        int& blockLineLength,
+        bool& inBlock)
+//  ----------------------------------------------------------------------------
+{
+    seqCount = 0;
+    blockLineLength = 0;
+    inBlock = false;
+}
+
+struct SBlockInfo 
+{
+    int seqCount = 0;
+    int lineLength = 0;
+};
+
+//  ----------------------------------------------------------------------------
+static void sTerminateBlock(
+        int lineCount,
+        int blockCount,
+        int& numSeqs,
+        SBlockInfo& blockInfo)
+//  ----------------------------------------------------------------------------
+{
+    if (blockCount == 1) {
+        numSeqs = blockInfo.seqCount;
+    }
+    else 
+    if (numSeqs != blockInfo.seqCount) {
+        string description =
+            "Inconsistent number of sequences in the data blocks. " +
+            ("Each data block must contain the same number of sequences. " + 
+            ErrorPrintf("The first block contains %d sequences. This block contains %d sequences.", numSeqs, blockInfo.seqCount));
+
+        throw SShowStopper(
+            lineCount,
+            EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            description);
+    }
+    blockInfo.seqCount = 0;
+    blockInfo.lineLength = 0;
+}
+
+
+
+//  ----------------------------------------------------------------------------
 void
 CAlnScannerClustal::xImportAlignmentData(
     CSequenceInfo& sequenceInfo,
@@ -75,9 +122,11 @@ CAlnScannerClustal::xImportAlignmentData(
     int  blockCount = 0;
     int  numSeqs = 0;
     int  seqCount = 0;
+    int  maxSeqCount = 0;
 
     string line;
     int lineCount(0);
+    SBlockInfo blockInfo;
 
     while (iStr.ReadLine(line, lineCount)) {
         if (lineCount == 1) {
@@ -88,17 +137,11 @@ CAlnScannerClustal::xImportAlignmentData(
             }
         }
 
-        if (line.empty()) {
-            continue;
-        }
         NStr::TruncateSpacesInPlace(line);
         if (line.empty()) {
             if (inBlock) {
-                if (blockCount == 1) {
-                    numSeqs = seqCount;
-                }
-                sResetBlockInfo(
-                    seqCount, blockLineLength, inBlock);
+                sTerminateBlock(lineCount, blockCount, numSeqs, blockInfo);
+                inBlock = false;
             }
             continue;
         }
@@ -111,10 +154,8 @@ CAlnScannerClustal::xImportAlignmentData(
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
                     description); 
             }
-            if (blockCount == 1) {
-                numSeqs = seqCount;
-            }
-            sResetBlockInfo(seqCount, blockLineLength, inBlock);
+            sTerminateBlock(lineCount, blockCount, numSeqs, blockInfo);
+            inBlock = false;
             continue;
         }
         // Search for end of block
@@ -125,7 +166,7 @@ CAlnScannerClustal::xImportAlignmentData(
             throw SShowStopper(
                 lineCount,
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                "Date line does not follow the expected pattern of sequence_ID followed by sequence data and (optionally) data count. Each data line should conform tyo the same expected pattern"); 
+                "Date line does not follow the expected pattern of sequence_ID followed by sequence data and (optionally) data count. Each data line should conform to the same expected pattern."); 
         }
 
         int seqLength = 0;
@@ -135,7 +176,7 @@ CAlnScannerClustal::xImportAlignmentData(
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "In data line, expected seqID followed by sequence data and (optionally) data count"); 
+                    "In data line, expected seqID followed by sequence data and (optionally) data count."); 
             }
         }
 
@@ -146,15 +187,27 @@ CAlnScannerClustal::xImportAlignmentData(
 
         if (!sProcessClustalDataLine(
              tokens, lineCount,
-             seqCount,
+             blockInfo.seqCount,
              numSeqs, 
              seqLength,
              blockCount, 
-             blockLineLength)) {
+             blockInfo.lineLength)) {
             return;
         }
-        mSequences[seqCount].push_back({tokens[1], lineCount});
-        ++seqCount;
+
+        mSequences[blockInfo.seqCount].push_back({tokens[1], lineCount});
+        ++(blockInfo.seqCount);
+    }
+
+    if (inBlock) { 
+        string description = 
+            string("The final data block does not end with a conservation line. ") +
+            "Each Clustal data block must end with a line that can contain a mix of *.: characters and white space, " +
+            "which shows the degree of conservation for the segment of the alignment in the block.";
+        throw SShowStopper(
+                lineCount,
+                EAlnSubcode::eAlnSubcode_UnterminatedBlock,
+                description);
     }
 }
 
