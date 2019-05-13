@@ -320,9 +320,9 @@ CWgsParseDiagHandler::CWgsParseDiagHandler(const string& logfile, bool overwrite
 
     if (!logfile.empty()) {
 
-        int mode = ofstream::out;
+        ios_base::openmode mode = ofstream::out;
         if (!overwrite) {
-            mode |= ofstream::app;
+            mode = ofstream::app;
         }
 
         m_out.open(logfile, mode);
