@@ -151,6 +151,7 @@ public:
 
 private:
     friend class IDBServiceMapper;
+    friend class CDBUDRandomMapper;
 
     double m_Ranking;
     TState m_State;

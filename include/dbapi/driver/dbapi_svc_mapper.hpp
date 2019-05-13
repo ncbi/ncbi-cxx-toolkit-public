@@ -43,6 +43,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <random>
 
 BEGIN_NCBI_SCOPE
 
@@ -124,10 +125,12 @@ public:
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server);
     virtual void    CleanExcluded(const string&    service);
+    virtual bool    HasExclusions(const string&    service) const;
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
-    // Not implemented yet ...
+    virtual void GetServerOptions(const string& service, TOptions* options);
+
             void    Add          (const string&    service,
                                   const TSvrRef&   server,
                                   double           preference = 0.0);
@@ -136,20 +139,24 @@ public:
 
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
-    void ScalePreference(const string& service, double coeff);
-    void SetPreference(const string& service, double coeff);
-    void SetServerPreference(const string& service,
-                             double preference,
-                             const TSvrRef& server);
 
 private:
-    typedef map<string, bool>                       TLBNameMap;
-    typedef map<TSvrRef, double, SDereferenceLess>  TSvrMap;
-    typedef map<string, TSvrMap>                    TServiceMap;
+    void x_RecalculatePreferences(const string& service);
 
-    TLBNameMap  m_LBNameMap;
-    TServiceMap m_ServerMap;
-    TServiceMap m_PreferenceMap;
+    struct SPreferences {
+        vector<CRef<CDBServerOption> >       servers;
+        unique_ptr<discrete_distribution<> > distribution;
+    };
+    
+    typedef map<string, bool>              TLBNameMap;
+    typedef map<string, TOptions>          TServiceMap;
+    typedef map<string, SPreferences>      TPreferenceMap;
+
+    TLBNameMap             m_LBNameMap;
+    TServiceMap            m_ServerMap;
+    TServiceMap            m_FavoritesMap;
+    TPreferenceMap         m_PreferenceMap;
+    default_random_engine  m_RandomEngine;
 };
 
 

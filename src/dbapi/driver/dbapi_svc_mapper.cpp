@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 static
-TSvrRef
+CRef<CDBServerOption>
 make_server(const CTempString& specification, double& preference)
 {
     CTempString server;
@@ -105,7 +105,8 @@ make_server(const CTempString& specification, double& preference)
                               110100 );
     }
 
-    return TSvrRef(new CDBServer(server, host, port));
+    return CRef<CDBServerOption>
+        (new CDBServerOption(server, host, port, preference));
 }
 
 
@@ -307,6 +308,8 @@ CDBServiceMapperCoR::Empty(void) const
 //////////////////////////////////////////////////////////////////////////////
 CDBUDRandomMapper::CDBUDRandomMapper(const IRegistry* registry)
 {
+    random_device rdev;
+    m_RandomEngine.seed(rdev());
     ConfigureFromRegistry(registry);
 }
 
@@ -341,7 +344,9 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
 
     if (registry) {
         // Erase previous data ...
+        m_LBNameMap.clear();
         m_ServerMap.clear();
+        m_FavoritesMap.clear();
         m_PreferenceMap.clear();
 
         registry->EnumerateEntries(section_name, &entries);
@@ -358,45 +363,24 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
 
             // Replace with new data ...
             if (!server_name.empty()) {
-                TSvrMap& server_list = m_ServerMap[service_name];
-                TSvrMap& service_preferences = m_PreferenceMap[service_name];
-
-                // Set equal preferences for all servers.
-                double curr_preference =
-                    static_cast<double>(100 / server_name.size());
-                bool non_default_preferences = false;
+                TOptions& server_list = m_ServerMap[service_name];
 
                 ITERATE(vector<string>, sn_it, server_name) {
                     double tmp_preference = 0;
 
                     // Parse server preferences.
-                    TSvrRef cur_server = make_server(*sn_it, tmp_preference);
-
-                    // Should be raplaced with Add() one day ...
-                    {
-                        if (tmp_preference > 0.01) {
-                            non_default_preferences = true;
-                        }
-
-                        server_list.insert(
-                            TSvrMap::value_type(cur_server, tmp_preference));
-                        service_preferences.insert(
-                            TSvrMap::value_type(cur_server, curr_preference));
+                    auto cur_server = make_server(*sn_it, tmp_preference);
+                    if (tmp_preference < 0) {
+                        cur_server->m_Ranking = 0;
+                    } else if (tmp_preference >= 100) {
+                        cur_server->m_Ranking = 100;
+                        m_FavoritesMap[service_name].push_back(cur_server);
                     }
 
-//                     Add(service_name, cur_server, tmp_preference);
-                }
+                    server_list.push_back(cur_server);
 
-                // Should become a part of Add() ...
-                if (non_default_preferences) {
-                    ITERATE(TSvrMap, sl_it, server_list) {
-                        if (sl_it->second > 0) {
-                            SetServerPreference(service_name,
-                                                sl_it->second,
-                                                sl_it->first);
-                        }
-                    }
                 }
+                x_RecalculatePreferences(service_name);
             }
         }
     }
@@ -414,76 +398,16 @@ CDBUDRandomMapper::GetServer(const string& service)
         return TSvrRef();
     }
 
-    const TSvrMap& svr_map = m_PreferenceMap[service];
-    if (!svr_map.empty()) {
-        srand((unsigned int)time(NULL));
-        double cur_pref = rand() / (RAND_MAX / 100);
-        double pref = 0;
-
-        ITERATE(TSvrMap, sr_it, svr_map) {
-            pref += sr_it->second;
-            if (pref >= cur_pref) {
-                m_LBNameMap[service] = true;
-                return sr_it->first;
-            }
-        }
+    const auto& it = m_PreferenceMap.find(service);
+    if (it != m_PreferenceMap.end()) {
+        m_LBNameMap[service] = true;
+        return it->second.servers[(*it->second.distribution)(m_RandomEngine)];
     }
 
     m_LBNameMap[service] = false;
     return TSvrRef();
 }
 
-void
-CDBUDRandomMapper::ScalePreference(const string& service, double coeff)
-{
-    TSvrMap& svr_map = m_PreferenceMap[service];
-
-    NON_CONST_ITERATE(TSvrMap, sr_it, svr_map) {
-        sr_it->second *= coeff;
-    }
-}
-
-void
-CDBUDRandomMapper::SetPreference(const string& service, double pref)
-{
-    TSvrMap& svr_map = m_PreferenceMap[service];
-
-    NON_CONST_ITERATE(TSvrMap, sr_it, svr_map) {
-        sr_it->second = pref;
-    }
-}
-
-void
-CDBUDRandomMapper::SetServerPreference(const string& service,
-                                       double preference,
-                                       const TSvrRef& server)
-{
-    TSvrMap& svr_map = m_PreferenceMap[service];
-    TSvrMap::iterator sr_it = svr_map.find(server);
-
-    if (sr_it != svr_map.end()) {
-        // Scale ...
-        if (preference >= 100) {
-            // Set the rest of service preferences to 0 ...
-            SetPreference(service, 0);
-        } else if (preference <= 0) {
-            // Means *no preferences*
-            SetServerPreference(service,
-                                static_cast<double>(100 /
-                                                    m_PreferenceMap.size()),
-                                server);
-        } else {
-            // (100 - new) / (100 - old)
-            ScalePreference(service,
-                            (100 - preference) / (100 - sr_it->second));
-        }
-
-        // Set the server preference finally ...
-        sr_it->second = preference;
-    }
-}
-
-// Implementation below doesn't work correctly at the moment ...
 void
 CDBUDRandomMapper::Add(const string&    service,
                        const TSvrRef&   server,
@@ -495,70 +419,68 @@ CDBUDRandomMapper::Add(const string&    service,
         return;
     }
 
-    TSvrMap& server_list = m_ServerMap[service];
-    TSvrMap& service_preferences = m_PreferenceMap[service];
-    bool non_default_preferences = false;
-    double curr_preference =
-        static_cast<double>(100 / m_ServerMap.size() + 1);
+    TOptions& server_list = m_ServerMap[service];
+    CRef<CDBServerOption> option
+        (new CDBServerOption(server->GetName(), server->GetHost(),
+                             server->GetPort(), preference));
 
     if (preference < 0) {
-        preference = 0;
-    } else if (preference > 100) {
-        preference = 100;
+        option->m_Ranking = 0;
+    } else if (preference >= 100) {
+        option->m_Ranking = 100;
+        m_FavoritesMap[service].push_back(option);
     }
 
-    if (preference > 0.01) {
-        non_default_preferences = true;
-    }
+    server_list.push_back(option);
 
-    server_list.insert(
-        TSvrMap::value_type(server, preference));
-    service_preferences.insert(
-        TSvrMap::value_type(server, curr_preference));
-
-    // Recalculate preferences ...
-    if (non_default_preferences) {
-        ITERATE(TSvrMap, sl_it, server_list) {
-            if (sl_it->second > 0) {
-                SetServerPreference(service,
-                                    sl_it->second,
-                                    sl_it->first);
-            }
-        }
-    }
+    x_RecalculatePreferences(service);
 }
 
 void
 CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
 {
-    IDBServiceMapper::Exclude(service, server);
-
     CFastMutexGuard mg(m_Mtx);
-
-    TSvrMap& svr_map = m_PreferenceMap[service];
-    TSvrMap::iterator sr_it = svr_map.find(server);
-    if (sr_it != svr_map.end()) {
-        // Recalculate preferences ...
-        if (svr_map.size() > 1) {
-            if (sr_it->second >= 100) {
-                // Divide preferences equally.
-                SetPreference(service,
-                    static_cast<double>(100 / (m_PreferenceMap.size() - 1)));
-            } else {
-                // Rescale preferences.
-                ScalePreference(service, 100 / (100 - sr_it->second));
+    auto svc = m_ServerMap.find(service);
+    if (svc != m_ServerMap.end()) {
+        for (auto svr : svc->second) {
+            if (svr == server  ||  *svr == *server) {
+                svr->m_State |= CDBServerOption::fState_Excluded;
             }
         }
-
-        svr_map.erase(sr_it);
+        x_RecalculatePreferences(service);
     }
 }
 
 void
 CDBUDRandomMapper::CleanExcluded(const string& service)
 {
-    CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, "Not implemented");
-    // If implemented, should chain to IDBServiceMapper::CleanExcluded
+    CFastMutexGuard mg(m_Mtx);
+    auto svc = m_ServerMap.find(service);
+    if (svc != m_ServerMap.end()) {
+        for (auto svr : svc->second) {
+            svr->m_State &= ~CDBServerOption::fState_Excluded;
+        }
+        x_RecalculatePreferences(service);
+    }
+}
+
+bool
+CDBUDRandomMapper::HasExclusions(const string& service) const
+{
+    CFastMutexGuard mg(m_Mtx);
+    auto svc   = m_ServerMap.find(service);
+    auto prefs = m_PreferenceMap.find(service);
+    if (svc == m_ServerMap.end()) {
+        return false;
+    } else if (prefs == m_PreferenceMap.end()) {
+        return true;
+    } else if (svc->second.size() == prefs->second.servers.size()) {
+        return false;
+    } else if (prefs->second.servers.size() != 1) {
+        return true;
+    } else {
+        return prefs->second.servers[0]->GetRanking() < 100.0;
+    }
 }
 
 void
@@ -568,17 +490,82 @@ CDBUDRandomMapper::SetPreference(const string&  service,
 {
     CFastMutexGuard mg(m_Mtx);
 
-    // Set absolute value.
-    m_ServerMap[service][preferred_server] = preference;
-    // Set relative value;
-    SetServerPreference(service, preference, preferred_server);
+    auto svc = m_ServerMap.find(service);
+    if (svc != m_ServerMap.end()) {
+        for (auto svr : svc->second) {
+            if (svr == preferred_server  ||  *svr == *preferred_server) {
+                double old_preference = svr->GetRanking();
+                svr->m_Ranking = max(0.0, min(100.0, preference));
+                if (preference >= 100.0  &&  old_preference < 100.0) {
+                    m_FavoritesMap[service].push_back(svr);
+                } else if (preference < 100.0  &&  old_preference >= 100.0) {
+                    auto& favorites = m_FavoritesMap[service];
+                    favorites.erase(find(favorites.begin(), favorites.end(),
+                                         svr));
+                    if (favorites.empty()) {
+                        m_FavoritesMap.erase(service);
+                    }
+                }
+            }
+        }
+        x_RecalculatePreferences(service);
+    }
 }
 
+void
+CDBUDRandomMapper::GetServerOptions(const string& service, TOptions* options)
+{
+    CFastMutexGuard mg(m_Mtx);
+    auto it = m_ServerMap.find(service);
+    if (it == m_ServerMap.end()) {
+        options->clear();
+    } else {
+        *options = it->second;
+    }
+}
 
 IDBServiceMapper*
 CDBUDRandomMapper::Factory(const IRegistry* registry)
 {
     return new CDBUDRandomMapper(registry);
+}
+
+void
+CDBUDRandomMapper::x_RecalculatePreferences(const string& service)
+{
+    SPreferences& service_preferences = m_PreferenceMap[service];
+    service_preferences.servers.clear();
+    {{
+        TServiceMap::const_iterator favs = m_FavoritesMap.find(service);
+        if (favs != m_FavoritesMap.end()) {
+            REVERSE_ITERATE(TOptions, it, favs->second) {
+                if ( !(*it)->IsExcluded() ) {
+                    service_preferences.servers.push_back(*it);
+                    service_preferences.distribution.reset
+                        (new discrete_distribution<>({100.0}));
+                    return;
+                }
+            }
+        }
+    }}
+    vector<double> weights;
+    bool all_zero = true;
+    for (const auto & it : m_ServerMap[service]) {
+        if ( !it->IsExcluded() ) {
+            double weight = it->GetRanking();
+            _ASSERT(weight < 100.0);
+            if (weight > 0.0) {
+                all_zero = false;
+            }
+        }
+    }
+    if (all_zero) {
+        for (auto & w : weights) {
+            w = 1.0;
+        }
+    }
+    service_preferences.distribution.reset
+        (new discrete_distribution<>(weights.begin(), weights.end()));
 }
 
 
