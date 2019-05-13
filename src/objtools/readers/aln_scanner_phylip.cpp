@@ -109,7 +109,7 @@ CAlnScannerPhylip::xImportAlignmentData(
     catch(...) {
         string description = 
             "Invalid sequence length: " + tokens[1] +
-            "The second word in the Phylip header line specifies the length if the sequences in the alignment.";
+            "The second word in the Phylip header line specifies the length of the sequences in the alignment.";
         throw SShowStopper(
                 lineCount,
                 EAlnSubcode::eAlnSubcode_IllegalDataDescription,
