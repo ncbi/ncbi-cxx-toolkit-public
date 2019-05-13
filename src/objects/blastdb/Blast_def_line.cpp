@@ -97,6 +97,7 @@ CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
 CBlast_def_line::TTaxIds
 CBlast_def_line::GetTaxIds() const
 {
+	static const int ZERO_TAXID =0;
     TTaxIds retval;                 // set<int>, initially empty
 
     // If there's a 'taxid' value, add it to the result set.
@@ -109,6 +110,11 @@ CBlast_def_line::GetTaxIds() const
         TLinks taxids = GetLinks();  // see ASN.1 spec comment
         retval.insert(taxids.begin(), taxids.end());
     }
+
+    if(retval.size() > 1) {
+    	retval.erase(ZERO_TAXID);
+    }
+
     // Remember, set containers guarantee that all members are unique,
     // so if the 'taxid' and 'links' fields share a value, it will not
     // be returned twice.
