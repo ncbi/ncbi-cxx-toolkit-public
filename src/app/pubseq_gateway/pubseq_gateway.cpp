@@ -47,6 +47,7 @@
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "shutdown_data.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -77,17 +78,20 @@ const string            kDefaultAuthToken = "";
 const bool              kDefaultAllowIOTest = false;
 const unsigned int      kDefaultSlimMaxBlobSize = 10 * 1024;
 
+static const string     kDaemonizeArgName = "daemonize";
+
 
 // Memorize the configured severity level to check before using ERR_POST.
 // Otherwise some expensive operations are executed without a real need.
-EDiagSev    g_ConfiguredSeverity = eDiag_Critical;
+EDiagSev                g_ConfiguredSeverity = eDiag_Critical;
 
 // Memorize the configured log on/off flag.
 // It is used in the context resetter to avoid unnecessary context resets
-bool        g_Log = kDefaultLog;
+bool                    g_Log = kDefaultLog;
 
-
-static const string     kDaemonizeArgName = "daemonize";
+// Create the shutdown related data. It is used in a few places:
+// a URL handler, signal handlers, watchdog handlers
+SShutdownData           g_ShutdownData;
 
 
 CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;

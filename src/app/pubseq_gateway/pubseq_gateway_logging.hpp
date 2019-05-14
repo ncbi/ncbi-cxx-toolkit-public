@@ -69,5 +69,9 @@ extern EDiagSev  g_ConfiguredSeverity;
             ERR_POST(Critical << message);                                                      \
     } while (0)
 
+#define PSG_MESSAGE(message)                        \
+    do {                                            \
+        ERR_POST(Message << message);               \
+    } while (0)
 
 #endif

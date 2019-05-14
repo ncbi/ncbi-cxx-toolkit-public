@@ -48,6 +48,9 @@
 #include "pubseq_gateway_logging.hpp"
 USING_NCBI_SCOPE;
 
+#include "shutdown_data.hpp"
+extern SShutdownData       g_ShutdownData;
+
 
 void CollectGarbage(void);
 
@@ -150,6 +153,19 @@ public:
 
     static void s_OnWatchDog(uv_timer_t *  handle)
     {
+        if (g_ShutdownData.m_ShutdownRequested) {
+            if (g_ShutdownData.m_ActiveRequestCount == 0) {
+                uv_stop(handle->loop);
+            } else {
+                if (chrono::steady_clock::now() > g_ShutdownData.m_Expired) {
+                    PSG_MESSAGE("Shutdown timeout is over when there are "
+                                "unfinished requests. Exiting immediately.");
+                    exit(0);
+                }
+            }
+            return;
+        }
+
         CTcpWorkersList<P, U, D> *      self =
                         static_cast<CTcpWorkersList<P, U, D>*>(handle->data);
 
@@ -188,14 +204,12 @@ public:
 
 struct CTcpWorkerInternal_t {
     CUvLoop         m_loop;
-    CUvSignal       m_sigint;
     uv_tcp_t        m_listener;
     uv_async_t      m_async_stop;
     uv_async_t      m_async_work;
     uv_timer_t      m_timer;
 
     CTcpWorkerInternal_t() :
-        m_sigint(m_loop.Handle()),
         m_listener({0}),
         m_async_stop({0}),
         m_async_work({0}),
@@ -306,7 +320,6 @@ struct CTcpWorker
 
             uv_timer_start(&m_internal->m_timer, s_OnTimer, 1000, 1000);
 
-            m_internal->m_sigint.Start(SIGINT, s_OnWorkerSigInt);
             m_started = true;
             m_protocol.ThreadStart(m_internal->m_loop.Handle(), this);
 
@@ -327,7 +340,6 @@ struct CTcpWorker
             try {
                 int         err_code;
 
-                m_internal->m_sigint.Close();
                 if (m_internal->m_listener.type != 0)
                     uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_listener),
                              NULL);
@@ -476,12 +488,6 @@ private:
                  " (" << worker << ")");
     }
 
-    static void s_OnWorkerSigInt(uv_signal_t *  req, int  signum)
-    {
-        PSG_INFO("Worker SIGINT delivered");
-        uv_stop(req->loop);
-    }
-
     void OnTcpConnection(uv_stream_t *  listener)
     {
         if (m_free_list.empty())
@@ -530,11 +536,35 @@ private:
     friend class CTcpWorker<P, U, D>;
 
 private:
-    static void s_OnMainSigInt(uv_signal_t *  req, int  signum)
+    static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */)
     {
-        PSG_INFO("Main SIGINT delivered");
-        uv_stop(req->loop);
+        PSG_MESSAGE("SIGINT received. Immediate shutdown performed.");
+        exit(0);
+        // The uv_stop() may hang if some syncronous long operation is in
+        // progress. So it was decided to use exit() which is not a big problem
+        // for PSG because it is a stateless server.
+        // uv_stop(req->loop);
     }
+
+    static void s_OnMainSigTerm(uv_signal_t *  /* req */, int  /* signum */)
+    {
+        PSG_MESSAGE("SIGTERM received. Graceful shutdown is initiated");
+        g_ShutdownData.m_Expired = chrono::steady_clock::now() +
+                                   chrono::hours(24);
+        g_ShutdownData.m_ShutdownRequested = true;
+    }
+
+    static void s_OnMainSigHup(uv_signal_t *  /* req */, int  /* signum */)
+    { PSG_MESSAGE("SIGHUP received. Ignoring."); }
+
+    static void s_OnMainSigUsr1(uv_signal_t *  /* req */, int  /* signum */)
+    { PSG_MESSAGE("SIGUSR1 received. Ignoring."); }
+
+    static void s_OnMainSigUsr2(uv_signal_t *  /* req */, int  /* signum */)
+    { PSG_MESSAGE("SIGUSR2 received. Ignoring."); }
+
+    static void s_OnMainSigWinch(uv_signal_t *  /* req */, int  /* signum */)
+    { PSG_MESSAGE("SIGWINCH received. Ignoring."); }
 
     bool ClientConnected(void)
     {
@@ -616,9 +646,23 @@ public:
             CUvLoop         loop;
 
             CUvSignal       sigint(loop.Handle());
-            CUvSignal       sigusr1(loop.Handle());
             sigint.Start(SIGINT, s_OnMainSigInt);
-            sigusr1.Start(SIGUSR1, s_OnMainSigInt);
+
+            CUvSignal       sigterm(loop.Handle());
+            sigterm.Start(SIGTERM, s_OnMainSigTerm);
+
+            CUvSignal       sighup(loop.Handle());
+            sighup.Start(SIGHUP, s_OnMainSigHup);
+
+            CUvSignal       sigusr1(loop.Handle());
+            sigusr1.Start(SIGUSR1, s_OnMainSigUsr1);
+
+            CUvSignal       sigusr2(loop.Handle());
+            sigusr2.Start(SIGUSR2, s_OnMainSigUsr2);
+
+            CUvSignal       sigwinch(loop.Handle());
+            sigwinch.Start(SIGWINCH, s_OnMainSigWinch);
+
 
             CUvTcp          listener(loop.Handle());
             listener.Bind(m_address.c_str(), m_port);

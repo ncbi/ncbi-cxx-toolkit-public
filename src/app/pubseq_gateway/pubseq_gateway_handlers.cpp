@@ -39,6 +39,9 @@
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
 
+#include "shutdown_data.hpp"
+extern SShutdownData    g_ShutdownData;
+
 
 USING_NCBI_SCOPE;
 
@@ -58,6 +61,7 @@ static string  kAuthTokenParam = "auth_token";
 static string  kTimeoutParam = "timeout";
 static string  kDataSizeParam = "return_data_size";
 static string  kLogParam = "log";
+static string  kUsernameParam = "username";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -79,6 +83,9 @@ static string  kBadUrlMessage = "Unknown request, the provided URL "
 int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
                                 HST::CHttpReply<CPendingOperation> &  resp)
 {
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -110,6 +117,9 @@ int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                              HST::CHttpReply<CPendingOperation> &  resp)
 {
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -180,6 +190,9 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                                  HST::CHttpReply<CPendingOperation> &  resp)
 {
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -283,6 +296,9 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
                                  HST::CHttpReply<CPendingOperation> &  resp)
 {
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -405,6 +421,9 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
                                HST::CHttpReply<CPendingOperation> &  resp)
 {
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -510,6 +529,8 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
                                 HST::CHttpReply<CPendingOperation> &  resp)
 {
+    // NOTE: expected to work regardless of the shutdown request
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -548,6 +569,8 @@ int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
                               HST::CHttpReply<CPendingOperation> &  resp)
 {
+    // NOTE: expected to work regardless of the shutdown request
+
     static string   kNA = "n/a";
 
     CRequestContextResetter context_resetter;
@@ -711,6 +734,8 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
                                 HST::CHttpReply<CPendingOperation> &  resp)
 {
+    // NOTE: expected to work regardless of the shutdown request
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -723,6 +748,18 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
                          m_CassConnection->GetActiveStatements());
         reply.SetInteger("NumberOfConnections",
                          m_TcpDaemon->NumOfConnections());
+        reply.SetInteger("ActiveRequestCount",
+                         g_ShutdownData.m_ActiveRequestCount);
+        reply.SetBoolean("ShutdownRequested",
+                         g_ShutdownData.m_ShutdownRequested);
+        if (g_ShutdownData.m_ShutdownRequested) {
+            auto        now = chrono::steady_clock::now();
+            reply.SetInteger("GracefulShutdownExpiredInSec",
+                              std::chrono::duration_cast<std::chrono::seconds>
+                                (g_ShutdownData.m_Expired - now).count());
+        } else {
+            reply.SetString("GracefulShutdownExpiredInSec", "n/a");
+        }
 
         m_ErrorCounters.PopulateDictionary(reply);
         m_RequestCounters.PopulateDictionary(reply);
@@ -753,12 +790,27 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnShutdown(HST::CHttpRequest &  req,
                                   HST::CHttpReply<CPendingOperation> &  resp)
 {
+    // NOTE: expected to work regardless of the shutdown request
+
+    static const char *     s_ImmediateShutdown = "Immediate shutdown request accepted";
+    static const char *     s_GracefulShutdown = "Graceful shutdown request accepted";
+    static size_t           s_ImmediateShutdownSize = strlen(s_ImmediateShutdown);
+    static size_t           s_GracefulShutdownSize = strlen(s_GracefulShutdown);
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     try {
         // Reply should use plain http with [petentially] a plain text in the body
         resp.SetContentType(ePlainTextMime);
+
+        string              msg;
+        string              username;
+        SRequestParameter   username_param = x_GetParam(req, kUsernameParam);
+        if (username_param.m_Found) {
+            username = string(username_param.m_Value.data(),
+                              username_param.m_Value.size());
+        }
 
         if (!m_AuthToken.empty()) {
             SRequestParameter   auth_token_param = x_GetParam(req, kAuthTokenParam);
@@ -770,17 +822,94 @@ int CPubseqGatewayApp::OnShutdown(HST::CHttpRequest &  req,
             }
 
             if (!auth_good) {
+                msg = "Unauthorized shutdown request: invalid authorization token. ";
+                if (username.empty())
+                    msg += "Unknown user";
+                else
+                    msg += "User: " + username;
+                PSG_MESSAGE(msg);
+
                 resp.Send401("Unauthorized", "Invalid authorization token");
+                x_PrintRequestStop(context, CRequestStatus::e401_Unauthorized);
                 return 0;
             }
         }
 
-        double              timeout = 10.0; // Default: 10.0 sec
+        int                 timeout = 10; // Default: 10 sec
         SRequestParameter   timeout_param = x_GetParam(req, kTimeoutParam);
+        if (timeout_param.m_Found) {
+            try {
+                timeout = stoi(string(timeout_param.m_Value.data(),
+                                      timeout_param.m_Value.size()));
+            } catch (...) {
+                msg = "Invalid shutdown request: cannot convert timeout to an integer. ";
+                if (username.empty())
+                    msg += "Unknown user";
+                else
+                    msg += "User: " + username;
+                PSG_MESSAGE(msg);
 
+                resp.Send400("Bad request", "Invalid timeout (must be a positive integer)");
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
 
+            if (timeout < 0) {
+                msg = "Invalid shutdown request: timeout must be >= 0. ";
+                if (username.empty())
+                    msg += "Unknown user";
+                else
+                    msg += "User: " + username;
+                PSG_MESSAGE(msg);
 
-        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                resp.Send400("Bad request", "Invalid timeout (must be a positive integer)");
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
+        }
+
+        if (timeout == 0) {
+            // Immediate shutdown is requested
+            msg = "Immediate shutdown request received from ";
+            if (username.empty())
+                msg += "an unknown user";
+            else
+                msg += "user " + username;
+            PSG_MESSAGE(msg);
+
+            resp.Send202(s_ImmediateShutdown, s_ImmediateShutdownSize);
+            x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+            exit(0);
+        }
+
+        msg = "Graceful shutdown request received from ";
+        if (username.empty())
+            msg += "an unknown user";
+        else
+            msg += "user " + username;
+
+        auto        now = chrono::steady_clock::now();
+        auto        expiration = now + chrono::seconds(timeout);
+        if (g_ShutdownData.m_ShutdownRequested) {
+            // Consequest shutdown request
+            if (expiration >= g_ShutdownData.m_Expired) {
+                msg += ". The previous shutdown expiration is shorter "
+                       "than this one. Ignored.";
+                PSG_MESSAGE(msg);
+                resp.Send409("Conflict", msg.c_str());
+                x_PrintRequestStop(context, CRequestStatus::e409_Conflict);
+                return 0;
+            }
+        }
+
+        // New shutdown request or a shorter expiration request
+        PSG_MESSAGE(msg);
+
+        resp.Send202(s_GracefulShutdown, s_GracefulShutdownSize);
+        x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+
+        g_ShutdownData.m_Expired = expiration;
+        g_ShutdownData.m_ShutdownRequested = true;
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a shutdown request: " +
                           string(exc.what());
@@ -796,6 +925,9 @@ int CPubseqGatewayApp::OnShutdown(HST::CHttpRequest &  req,
 int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
                                 HST::CHttpReply<CPendingOperation> &  resp)
 {
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context;
 
@@ -964,5 +1096,16 @@ CPubseqGatewayApp::x_GetUseCacheParameter(HST::CHttpRequest &  req,
         return eCassandraOnly;
     }
     return eCacheAndCassandra;
+}
+
+
+bool CPubseqGatewayApp::x_IsShuttingDown(HST::CHttpRequest &  /* req */,
+                                         HST::CHttpReply<CPendingOperation> &  resp)
+{
+    if (g_ShutdownData.m_ShutdownRequested) {
+        resp.Send503("Service Unavailable", nullptr);
+        return true;
+    }
+    return false;
 }
 

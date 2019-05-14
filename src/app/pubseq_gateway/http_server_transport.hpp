@@ -49,6 +49,9 @@
 #include "pubseq_gateway_logging.hpp"
 #include "pubseq_gateway_types.hpp"
 
+#include "shutdown_data.hpp"
+extern SShutdownData    g_ShutdownData;
+
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
@@ -62,6 +65,10 @@ namespace HST {
 
 #define MAX_QUERY_PARAMS            64
 #define QUERY_PARAMS_RAW_BUF_SIZE   2048
+
+
+static const char *    k_ReasonOK = "OK";
+static const char *    k_ReasonAccepted = "Accepted";
 
 
 struct CQueryParam
@@ -183,7 +190,7 @@ public:
         } else {
             body = h2o_strdup(&m_Req->pool, payload, payload_len);
         }
-        DoSend(&body, payload_len > 0 ? 1 : 0, is_last);
+        x_DoSend(&body, payload_len > 0 ? 1 : 0, is_last);
     }
 
     void Send(std::vector<h2o_iovec_t> &  payload, bool  is_last)
@@ -191,15 +198,19 @@ public:
         size_t      payload_size = payload.size();
         if (payload_size > 0 || is_last) {
             if (payload_size > 0)
-                DoSend(&payload.front(), payload_size, is_last);
+                x_DoSend(&payload.front(), payload_size, is_last);
             else
-                DoSend(nullptr, payload_size, is_last);
+                x_DoSend(nullptr, payload_size, is_last);
         }
     }
 
     void SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
+    { Send(payload, payload_len, is_persist, true); }
+
+    void Send202(const char *  payload, size_t  payload_len)
     {
-        Send(payload, payload_len, is_persist, true);
+        h2o_iovec_t     body = h2o_strdup(&m_Req->pool, payload, payload_len);
+        x_DoSend(&body, 1, true, 202, k_ReasonAccepted);
     }
 
     void Send400(const char *  head, const char *  payload)
@@ -210,6 +221,9 @@ public:
 
     void Send404(const char *  head, const char *  payload)
     { x_GenericSendError(404, head, payload); }
+
+    void Send409(const char *  head, const char *  payload)
+    { x_GenericSendError(409, head, payload); }
 
     void Send500(const char *  head, const char *  payload)
     { x_GenericSendError(500, head, payload); }
@@ -436,7 +450,8 @@ private:
         repl->ProceedCB();
     }
 
-    void DoSend(h2o_iovec_t *  vec, size_t  count, bool  is_last)
+    void x_DoSend(h2o_iovec_t *  vec, size_t  count, bool  is_last,
+                  int  status=200, const char *  reason=k_ReasonOK)
     {
         if (!m_HttpConn)
             NCBI_THROW(CPubseqGatewayException, eConnectionNotAssigned,
@@ -445,7 +460,7 @@ private:
         if (m_HttpConn->IsClosed()) {
             m_OutputFinished = true;
             if (count > 0)
-                PSG_ERROR("attempt to send " << count << " chunks (islast=" <<
+                PSG_ERROR("attempt to send " << count << " chunks (is_last=" <<
                           is_last << ") to a closed connection");
             if (is_last) {
                 m_State = eReplyFinished;
@@ -459,7 +474,7 @@ private:
             NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
                        "Output is not in ready state");
 
-        PSG_TRACE("DoSend: " << count << " chunks, "
+        PSG_TRACE("x_DoSend: " << count << " chunks, "
                   "is_last: " << is_last << ", state: " << m_State);
 
         switch (m_State) {
@@ -467,8 +482,8 @@ private:
                 if (!m_Cancelled) {
                     x_SetContentType();
                     m_State = eReplyStarted;
-                    m_Req->res.status = 200;
-                    m_Req->res.reason = "OK";
+                    m_Req->res.status = status;
+                    m_Req->res.reason = reason;
                     AssignGenerator();
                     m_OutputIsReady = false;
                     h2o_start_response(m_Req, &m_RespGenerator);
@@ -540,6 +555,10 @@ private:
                         case 404:
                             h2o_send_error_404(m_Req, head ?
                                 head : "Not Found", payload, 0);
+                            break;
+                        case 409:
+                            h2o_send_error_generic(m_Req, 409, head ?
+                                head : "Conflict", payload, 0);
                             break;
                         case 500:
                             h2o_send_error_500(m_Req, head ?
@@ -641,24 +660,30 @@ public:
 
     void Reset(void)
     {
-        if (!m_Backlog.empty())
+        if (!m_Backlog.empty()) {
+            auto    cnt = m_Backlog.size();
             m_Finished.splice(m_Finished.cend(), m_Backlog);
-        if (!m_Pending.empty())
+            g_ShutdownData.m_ActiveRequestCount -= cnt;
+        }
+        if (!m_Pending.empty()) {
+            auto    cnt = m_Pending.size();
             m_Finished.splice(m_Finished.cend(), m_Pending);
+            g_ShutdownData.m_ActiveRequestCount -= cnt;
+        }
         m_IsClosed = false;
     }
 
     void OnClosedConnection(void)
     {
         m_IsClosed = true;
-        CancelAll();
+        x_CancelAll();
     }
 
     void OnBeforeClosedConnection(void)
     {
         PSG_INFO("OnBeforeClosedConnection:");
         m_IsClosed = true;
-        CancelAll();
+        x_CancelAll();
     }
 
     static void s_OnBeforeClosedConnection(void *  data)
@@ -674,23 +699,23 @@ public:
                 it.PeekPending();
             }
         }
-        MaintainFinished();
-        MaintainBacklog();
+        x_MaintainFinished();
+        x_MaintainBacklog();
     }
 
     void RegisterPending(P &&  pending_rec, CHttpReply<P> &&  hresp)
     {
         if (m_Pending.size() < m_HttpMaxPending) {
-            auto req_it = RegisterPending(move(hresp), m_Pending);
+            auto req_it = x_RegisterPending(move(hresp), m_Pending);
             CHttpReply<P>& req = *req_it;
             req.AssignPendingRec(std::move(pending_rec));
             req.PostponedStart();
             if (req.GetState() >= CHttpReply<P>::eReplyFinished) {
                 PSG_TRACE("Pospone self-drained");
-                UnregisterPending(req_it);
+                x_UnregisterPending(req_it);
             }
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
-            auto req_it = RegisterPending(move(hresp), m_Backlog);
+            auto req_it = x_RegisterPending(move(hresp), m_Backlog);
             CHttpReply<P>& req = *req_it;
             req.AssignPendingRec(std::move(pending_rec));
         } else {
@@ -710,8 +735,8 @@ public:
     void OnTimer(void)
     {
         PeekAsync(false);
-        // MaintainFinished();
-        // MaintainBacklog();
+        // x_MaintainFinished();
+        // x_MaintainBacklog();
     }
 
 private:
@@ -724,30 +749,34 @@ private:
     std::list<CHttpReply<P>>    m_Finished;
 
     using reply_list_iterator_t = typename std::list<CHttpReply<P>>::iterator;
-    void CancelAll(void)
+    void x_CancelAll(void)
     {
-        CancelBacklog();
+        x_CancelBacklog();
         while (!m_Pending.empty()) {
-            MaintainFinished();
+            x_MaintainFinished();
             for (auto &  it: m_Pending) {
                 if (it.GetState() < CHttpReply<P>::eReplyFinished) {
                     it.CancelPending();
                     it.PeekPending();
                 }
             }
-            MaintainFinished();
+            x_MaintainFinished();
         }
     }
 
-    void UnregisterPending(reply_list_iterator_t &  it)
+    void x_UnregisterPending(reply_list_iterator_t &  it)
     {
         it->Clear();
         m_Finished.splice(m_Finished.cend(), m_Pending, it);
+
+        --g_ShutdownData.m_ActiveRequestCount;
     }
 
-    reply_list_iterator_t RegisterPending(CHttpReply<P> &&  hresp,
-                                     std::list<CHttpReply<P>> &  list)
+    reply_list_iterator_t x_RegisterPending(CHttpReply<P> &&  hresp,
+                                            std::list<CHttpReply<P>> &  list)
     {
+        ++g_ShutdownData.m_ActiveRequestCount;
+
         if (m_Finished.size() > 0) {
             list.splice(list.cend(), m_Finished, m_Finished.begin());
             list.back().Reset(move(hresp));
@@ -759,14 +788,14 @@ private:
         return it;
     }
 
-    void MaintainFinished(void)
+    void x_MaintainFinished(void)
     {
         auto    it = m_Pending.begin();
         while (it != m_Pending.end()) {
             if (it->GetState() >= CHttpReply<P>::eReplyFinished) {
                 auto    next = it;
                 ++next;
-                UnregisterPending(it);
+                x_UnregisterPending(it);
                 it = next;
             } else {
                 ++it;
@@ -774,7 +803,7 @@ private:
         }
     }
 
-    void MaintainBacklog(void)
+    void x_MaintainBacklog(void)
     {
         while (m_Pending.size() < m_HttpMaxPending && !m_Backlog.empty()) {
             auto    it = m_Backlog.begin();
@@ -783,13 +812,19 @@ private:
         }
     }
 
-    void CancelBacklog(void)
+    void x_CancelBacklog(void)
     {
-        for (auto& it : m_Backlog) {
-            it.CancelPending();
-            it.Clear();
+        if (!m_Backlog.empty()) {
+            for (auto& it : m_Backlog) {
+                it.CancelPending();
+                it.Clear();
+            }
+
+            auto    cnt = m_Backlog.size();
+            m_Finished.splice(m_Finished.cend(), m_Backlog);
+
+            g_ShutdownData.m_ActiveRequestCount -= cnt;
         }
-        m_Finished.splice(m_Finished.cend(), m_Backlog);
     }
 };
 
@@ -1186,6 +1221,11 @@ public:
     uint16_t NumOfConnections(void) const
     {
         return m_TcpDaemon->NumOfConnections();
+    }
+
+    void StopListening(void)
+    {
+        m_TcpDaemon->StopListening();
     }
 
 private:

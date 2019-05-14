@@ -193,6 +193,9 @@ private:
     void x_MalformedArguments(HST::CHttpReply<CPendingOperation> &  resp,
                               CRef<CRequestContext> &  context,
                               const string &  err_msg);
+    bool x_IsShuttingDown(HST::CHttpRequest &  req,
+                          HST::CHttpReply<CPendingOperation> &  resp);
+
 
 private:
     string                              m_Si2csiDbFile;
