@@ -131,13 +131,13 @@ if ($location eq "GCP") {
     my ($json, $url) = &get_gcs_blastdb_metadata($latest_dir);
     unless (length($json)) {
         print STDERR "ERROR: Missing manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
-        exit(2);
+        exit(EXIT_FAILURE);
     }
     print "Connected to $location\n" if $opt_verbose;
     my $metadata = from_json($json);
     unless (exists($$metadata{version}) and ($$metadata{version} eq GCP_MANIFEST_VERSION)) {
         print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
-        exit(2);
+        exit(EXIT_FAILURE);
     }
     if (defined($opt_showall)) {
         my $print_header = 1;
@@ -445,8 +445,13 @@ sub get_num_volumes
 # Retrieves the name of the 'subdirectory' where the latest BLASTDBs residue in GCP
 sub get_gcs_latest_dir
 {
-    my $cmd = "/usr/bin/curl -s " . GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
+    my $url = GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
+    my $cmd = "/usr/bin/curl -s $url";
     chomp(my $retval = `$cmd`);
+    unless (length($retval)) {
+        print STDERR "ERROR: Missing file $url, please try again or report to blast-help\@ncbi.nlm.nih.gov\n";
+        exit(EXIT_FAILURE);
+    }
     return $retval;
 }
 
