@@ -1719,7 +1719,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
 string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
 {
     string defline = m_DeflineTemplates->defLineTmpl;
-    string show_new,psi_new,psi_new_accesible,show_checked,replaceBy;
+    string show_new,psi_new,psi_new_accesible,show_checked,replaceBy,psiNewSeq;
     if((m_Option & eShowNewSeqGif)) {
         replaceBy = (sdl->is_new && first_new) ? m_DeflineTemplates->psiFirstNewAnchorTmpl : "";
         first_new = (sdl->is_new && first_new) ? false : first_new;
@@ -1729,17 +1729,26 @@ string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
         if (sdl->is_new && m_StepNumber > 1) {
             psi_new = "psi_new";
             psi_new_accesible = "psiNw";
+            psiNewSeq = "on";
+        }
+        else {
+            psiNewSeq = "off";
         }
 
         if(!sdl->was_checked) {
             show_checked = "hidden";
         }
+        string psiUsedToBuildPssm = (sdl->was_checked) ? "on" : "off";
+        
 
         defline = CAlignFormatUtil::MapTemplate(defline,"first_new",replaceBy);
         defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_gi",show_new);
         defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_gi_hl",psi_new);
         defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_gi_accs",psi_new_accesible);//insert for accesibilty
         defline = CAlignFormatUtil::MapTemplate(defline,"psi_checked_gi",show_checked);
+
+        defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_seq",psiNewSeq);
+        defline = CAlignFormatUtil::MapTemplate(defline,"psi_used_in_pssm",psiUsedToBuildPssm);
     }
 
     replaceBy = (m_Option & eCheckboxChecked) ? m_DeflineTemplates->psiGoodGiHiddenTmpl : "";//<@psi_good_gi@>
