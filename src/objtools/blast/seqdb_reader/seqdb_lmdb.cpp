@@ -76,7 +76,7 @@ CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, ELMDBFileType file
 {
 	const MDB_dbi num_db(3);
 	m_Env.set_max_dbs(num_db);
-	m_dbis.resize(eDbiMax, -1);
+	m_dbis.resize(eDbiMax, UINT_MAX);
 	if(m_ReadOnly) {
 		CFile tf(fname);
 		m_MapSize = (tf.GetLength()/10000 + 1) *10000;
@@ -96,7 +96,7 @@ CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, ELMDBFileType file
 CBlastLMDBManager::CBlastEnv::~CBlastEnv()
 {
 	for (unsigned int i=0; i < m_dbis.size(); i++){
-		if (m_dbis[i] != -1) {
+		if (m_dbis[i] != UINT_MAX) {
 			mdb_dbi_close(m_Env,m_dbis[i]);
 		}
 	}
@@ -105,7 +105,7 @@ CBlastLMDBManager::CBlastEnv::~CBlastEnv()
 
 MDB_dbi CBlastLMDBManager::CBlastEnv::GetDbi(EDbiType dbi_type)
 {
-	if(m_dbis[dbi_type] < 0) {
+	if(m_dbis[dbi_type] == UINT_MAX) {
    		NCBI_THROW( CSeqDBException, eArgErr, "Invalid dbi type");
 	}
 	return m_dbis[dbi_type];
