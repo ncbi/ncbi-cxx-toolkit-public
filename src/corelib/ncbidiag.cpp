@@ -832,7 +832,7 @@ enum EThreadDataState {
     eReinitializing
 };
 
-static volatile atomic<EThreadDataState> s_ThreadDataState(eUninitialized);
+static atomic<EThreadDataState> s_ThreadDataState(eUninitialized);
 
 static void s_ThreadDataSafeStaticCleanup(void*)
 {
@@ -911,7 +911,8 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         // Avoid false positives, while also taking care not to call
         // anything that might itself produce diagnostics.
         TThreadSystemID thread_id = GetCurrentThreadSystemID();
-        switch (s_ThreadDataState) {
+        EThreadDataState thread_data_state = s_ThreadDataState; // for Clang10
+        switch (thread_data_state) {
         case eInitialized:
             break;
 
