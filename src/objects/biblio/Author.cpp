@@ -138,7 +138,8 @@ string CAuthor::x_GetInitials(vector<string>& tokens)
     string init = "";
     while (tokens.size() > 1) {
         string val = tokens.back();
-        if (!s_IsAllCaps(val)) {
+        
+        if (!NStr::IsUpper(val)) {
             break;
         }
         init += val;

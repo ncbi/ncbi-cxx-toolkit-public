@@ -180,38 +180,6 @@ bool CAuth_list::GetLabelV2(string* label, TLabelFlags flags) const
 }
 
 
-bool s_IsAllCaps(const string& str)
-{
-    ITERATE(string, it, str) {
-        if (!isalpha(*it) || !isupper(*it)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-string s_GetInitials(vector<string>& tokens)
-{
-    string init = "";
-    if (tokens.size() > 1) {
-        string val = tokens.back();
-        if (s_IsAllCaps(val)) {
-            init = val;
-            tokens.pop_back();
-            if (tokens.size() > 1) {
-                val = tokens.back();
-                if (s_IsAllCaps(val)) {
-                    init = val + init;
-                    tokens.pop_back();
-                }
-            }
-        }
-    }
-    return init;
-}
-
-
 void CAuth_list::ConvertMlToStandard(void)
 {
     if (!IsSetNames() || !GetNames().IsMl()) {
@@ -219,30 +187,9 @@ void CAuth_list::ConvertMlToStandard(void)
     }
     list< CRef< CAuthor > > standard_names;
 
-    ITERATE(CAuth_list::TNames::TMl, it, GetNames().GetMl()) {
-        if (!NStr::IsBlank(*it)) {
-            CRef<CAuthor> new_auth(new CAuthor());
-            vector<string> tokens;
-            NStr::Split(*it, " ", tokens);
-            string suffix = "";
-            string init = s_GetInitials(tokens);
-            if (NStr::IsBlank(init) && tokens.size() > 1) {
-                suffix = tokens.back();
-                tokens.pop_back();
-                init = s_GetInitials(tokens);
-            }
-            string last = NStr::Join(tokens, " ");
-            new_auth->SetName().SetName().SetLast(last);
-            if (!NStr::IsBlank(suffix)) {
-                new_auth->SetName().SetName().SetSuffix(suffix);
-            }
-            if (!NStr::IsBlank(init)) {                
-                new_auth->SetName().SetName().SetFirst(init.substr(0, 1));
-                vector<string> letters;
-                NStr::Split(init, "", letters);
-                string initials = NStr::Join(letters, ".");
-                new_auth->SetName().SetName().SetInitials(initials);
-            }
+    for (auto& author_ml_str: GetNames().GetMl()) {
+        if (!NStr::IsBlank(author_ml_str)) {
+            CRef<CAuthor> new_auth = CAuthor::ConvertMlToStandard(author_ml_str);
             standard_names.push_back(new_auth);
         }
     }
