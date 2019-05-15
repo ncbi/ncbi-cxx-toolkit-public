@@ -56,17 +56,21 @@ BEGIN_NCBI_SCOPE
 /// CHistogram <TValue, TScale, TCounter>
 ///
 /// TValue -   type of values that distribution will be collected.
+///            This can be any numerical or user defined type, if it allow
+///            comparison abd can be converted to scale type TScale, see note. 
+///
 /// TScale -   type used to calculate histogram's bins start positions
-///            and sizes. For integer types some scales, natural logarithmic
-///            for examples, will lead to truncating values and creating
-///            unequal bins, so these scale types should have be float/double based.
+///            and sizes, any numerical. For integer types some scales,
+///            natural logarithmic for examples, will lead to truncating values
+///            and creating unequal bins, so these scale types should have
+///            be float/double based.
+///
 /// TCounter - type for the counters. Usually this is a positive integer type:
 ///            int, unsigned int, long, size_t, Uint8 and etc.
 /// @note
 ///   TValue and TScale types should be equal, or allow comparison
 ///   between them. Also, TValue should allow conversion to TScale.
 ///   User defined type can be used for TValue (see test/demo), 
-///   TScale usually some numeric type (integer or real).
 
 template <typename TValue, typename TScale, typename TCounter>
 class CHistogram
@@ -134,9 +138,7 @@ public:
         /// parameter. You can pass single TScale type value everywhere when TStep parameter
         /// is specified, or use pair {TValue, TValue}, that represent {step, start} respectively.
         ///
-        
-        struct TStep
-        {
+        struct TStep  {
             TStep(TScale v, TScale s = 0) : value(v), start(s > 0 ? s : v) {};
             TScale value;
             TScale start;

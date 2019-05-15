@@ -326,7 +326,7 @@ void CDataHistogramDemoApp::TestHistogram(void)
         }}
     }}
 
-    // Custom datat types
+    // Custom data types
     {{
         // Histogram example with a custom data type and double scale
         {{
