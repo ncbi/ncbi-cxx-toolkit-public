@@ -48,6 +48,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stack>
+#include <atomic>
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Diag
@@ -59,8 +60,8 @@ BEGIN_NCBI_SCOPE
 // SetThrowTraceAbort
 // DoThrowTraceAbort
 
-static bool s_DoThrowTraceAbort = false; //if to abort() in DoThrowTraceAbort()
-static bool s_DTTA_Initialized  = false; //if s_DoThrowTraceAbort is init'd
+static atomic<bool> s_DoThrowTraceAbort(false); //if to abort() in DoThrowTraceAbort()
+static atomic<bool> s_DTTA_Initialized(false); //if s_DoThrowTraceAbort is init'd
 
 extern void SetThrowTraceAbort(bool abort_on_throw_trace)
 {

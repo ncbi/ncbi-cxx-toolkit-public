@@ -832,7 +832,7 @@ enum EThreadDataState {
     eReinitializing
 };
 
-static volatile EThreadDataState s_ThreadDataState = eUninitialized;
+static volatile atomic<EThreadDataState> s_ThreadDataState(eUninitialized);
 
 static void s_ThreadDataSafeStaticCleanup(void*)
 {

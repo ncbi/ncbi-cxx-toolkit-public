@@ -40,6 +40,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
+#include <atomic>
 
 
 /** @addtogroup Param
@@ -595,7 +596,7 @@ private:
     static bool sx_IsSetFlag(ENcbiParamFlags flag);
     static bool sx_CanGetDefault(void);
 
-    mutable bool       m_ValueSet = false;
+    mutable atomic<bool> m_ValueSet;
     mutable TValueType m_Value;
 };
 
