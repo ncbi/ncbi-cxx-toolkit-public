@@ -64,7 +64,6 @@
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <corelib/ncbimisc.hpp>
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
 
@@ -73,6 +72,8 @@
 #include <util/util_misc.hpp>
 #include <util/random_gen.hpp>
 
+#include <objtools/unit_test_util/unit_test_util.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -80,7 +81,7 @@ USING_SCOPE(objects);
 
 namespace {
     bool s_TestSubtype(CSeqFeatData::ESubtype eSubtype) {
-        const string & sNameOfSubtype = 
+        const string & sNameOfSubtype =
             CSeqFeatData::SubtypeValueToName(eSubtype);
         if( sNameOfSubtype.empty() ) {
             return false;
@@ -125,15 +126,15 @@ BOOST_AUTO_TEST_CASE(s_TestSubtypeMaps)
 
 #undef ESUBTYPE_SHOULD_FAIL
 
-    ITERATE_0_IDX(iSubtypeAsInteger, CSeqFeatData::eSubtype_max) 
+    ITERATE_0_IDX(iSubtypeAsInteger, CSeqFeatData::eSubtype_max)
     {
-        CSeqFeatData::ESubtype eSubtype = 
+        CSeqFeatData::ESubtype eSubtype =
             static_cast<CSeqFeatData::ESubtype>(iSubtypeAsInteger);
 
         // subtypesExpectedToFail tells us which ones are
         // expected to fail.  Others are expected to succeed
-        if( subtypesExpectedToFail.find(eSubtype) == 
-            subtypesExpectedToFail.end() ) 
+        if( subtypesExpectedToFail.find(eSubtype) ==
+            subtypesExpectedToFail.end() )
         {
             NCBITEST_CHECK(s_TestSubtype(eSubtype));
         } else {
@@ -330,7 +331,7 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0.000 S 2.417 W", true), "0.000 N 2.417 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N 16 degree 46 min 57 sec; E 99 degree 01 min 08 sec", true), "16.7825 N 99.0189 E");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N 16 degree 30 min 16 sec, E 99 degree 09 min 40 sec", true), "16.5044 N 99.1611 E");
-    
+
 }
 
 
@@ -540,7 +541,7 @@ void s_ChangeTitle(CPub& pub)
 }
 
 
-void s_ChangeDate(CDate& date) 
+void s_ChangeDate(CDate& date)
 {
     date.SetStd().SetYear(2014);
 }
@@ -909,7 +910,7 @@ BOOST_AUTO_TEST_CASE(Test_PubEquiv_SameCitation)
     eq2->Set().push_back(pmid2);
     BOOST_CHECK_EQUAL(eq1->SameCitation(*eq2), true);
 
-    // but not if first has different article    
+    // but not if first has different article
     s_ChangeAuthorLastName(eq1->Set().front()->SetArticle().SetAuthors());
     BOOST_CHECK_EQUAL(eq1->SameCitation(*eq2), false);
 
@@ -933,7 +934,7 @@ BOOST_AUTO_TEST_CASE(Test_PubEquiv_SameCitation)
     c = o1->MakeCommon(*o2); \
     BOOST_CHECK_EQUAL(c->IsSet##Field(), true); \
     BOOST_CHECK_EQUAL(c->Get##Field(), o1->Get##Field());
-    
+
 
 BOOST_AUTO_TEST_CASE(Test_OrgName_MakeCommon)
 {
@@ -1069,6 +1070,102 @@ BOOST_AUTO_TEST_CASE(Test_BioSource_MakeCommon)
     CHECK_COMMON_FIELD(src1,src2,common,Origin,CBioSource::eOrigin_artificial,CBioSource::eOrigin_mut);
 }
 
+BOOST_AUTO_TEST_CASE(Test_BioSource_GetRepliconName_CXX_10657)
+{
+    CRef<CBioSource> src1(new CBioSource());
+
+    src1->SetOrg().SetTaxId(1);
+
+    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_altitude,"X");
+    BOOST_CHECK_EQUAL(src1->IsSetSubtype(), true);
+    // chromosome-name
+    unit_test_util::SetChromosome(*src1,"X");
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "X");
+    // remove chromosome setting
+    src1->ResetSubtype();
+    // Plasmid-name
+    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_plasmid_name,"plasmid1");
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "plasmid1");
+    src1->ResetSubtype();
+
+    // Plastid-name
+    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_plastid_name,"pltd1");
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "pltd1");
+    src1->ResetSubtype();
+
+    // endogenous-virus-name
+    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_endogenous_virus_name,"virus1");
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "virus1");
+    src1->ResetSubtype();
+
+    // linkage-group
+    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_linkage_group,"LG2");
+    src1->SetGenome(CBioSource_Base::eGenome_chromosome);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "LG2");
+
+    // cleanup for next test
+    src1->ResetSubtype();
+    src1->ResetGenome();
+
+    // segment
+    // {
+    //   subtype segment,
+    //   name "DNA-U1"
+    // }
+    src1->SetOrg().SetOrgname().SetLineage("Viruses; ssDNA viruses; Nanoviridae; Nanovirus");
+    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_segment,"DNA-U1");
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "DNA-U1");
+    // reset for next tests
+    src1->ResetSubtype();
+    src1->ResetGenome();
+
+    src1->SetGenome(CBioSource::eGenome_unknown);
+    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_insertion_seq_name,"insername");
+    BOOST_CHECK_EQUAL(NStr::IsBlank(src1->GetRepliconName()), true);
+    src1->ResetSubtype();
+    src1->ResetGenome();
+    //
+    // default values
+    //
+    src1->SetGenome(CBioSource::eGenome_plasmid);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "unnamed");
+    src1->SetGenome(CBioSource::eGenome_plasmid_in_mitochondrion);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "unnamed");
+    src1->SetGenome(CBioSource::eGenome_plasmid_in_plastid);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "unnamed");
+    // chromosome
+    src1->SetGenome(CBioSource::eGenome_chromosome);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "ANONYMOUS");
+    // kinetoplast
+    src1->SetGenome(CBioSource::eGenome_kinetoplast);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "kinetoplast");
+    // plastid
+    src1->SetGenome(CBioSource::eGenome_plastid);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "Pltd");
+    src1->SetGenome(CBioSource::eGenome_chloroplast);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "Pltd");
+    src1->SetGenome(CBioSource::eGenome_chromoplast);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "Pltd");
+    src1->SetGenome(CBioSource::eGenome_apicoplast);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "Pltd");
+    src1->SetGenome(CBioSource::eGenome_leucoplast);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "Pltd");
+    src1->SetGenome(CBioSource::eGenome_proplastid);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "Pltd");
+    src1->SetGenome(CBioSource::eGenome_chromatophore);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "Pltd");
+    //
+    // mitochondrion
+    //
+    src1->SetGenome(CBioSource::eGenome_mitochondrion);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "MT");
+    src1->SetGenome(CBioSource::eGenome_hydrogenosome);
+    BOOST_CHECK_EQUAL(src1->GetRepliconName(), "MT");
+    // blank
+    src1->ResetGenome();
+    BOOST_CHECK_EQUAL(NStr::IsBlank(src1->GetRepliconName()), true);
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_Regulatory)
 {
@@ -1119,7 +1216,7 @@ BOOST_AUTO_TEST_CASE(Test_RmCultureNotes)
 BOOST_AUTO_TEST_CASE(Test_DiscouragedEnums)
 {
     // check for enums that pass
-    // 
+    //
     // make sure to pick subtypes and quals that are
     // very unlikely to be deprecated in the future
 
@@ -1152,7 +1249,7 @@ BOOST_AUTO_TEST_CASE(Test_CheckCellLine)
 
     msg = CSubSource::CheckCellLine("aRO81-1", "Homo sapiens");
     BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that aRO81-1 from Homo sapiens is known to be contaminated by HT-29 from Human. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
-    
+
     msg = CSubSource::CheckCellLine("IPRI-OL-7", "Orgyia leucostigma");
     BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that IPRI-OL-7 from Orgyia leucostigma is known to be contaminated by IPRI-CF-124 from Choristoneura fumiferana. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
 }
@@ -1207,7 +1304,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2183)
 
 BOOST_AUTO_TEST_CASE(Test_SQD_2164)
 {
-    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("Mediterranean, Malvarrosa Beach (Valencia, Spain)", false), 
+    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("Mediterranean, Malvarrosa Beach (Valencia, Spain)", false),
                       "Spain: Mediterranean, Malvarrosa Beach (Valencia)");
 
 }
@@ -1215,7 +1312,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2164)
 
 BOOST_AUTO_TEST_CASE(Test_GB_4111)
 {
-    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("China:, Guangdong Province, Guangzhou City, Tianlu Lake Forest Park", false), 
+    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("China:, Guangdong Province, Guangzhou City, Tianlu Lake Forest Park", false),
                       "China: Guangdong Province, Guangzhou City, Tianlu Lake Forest Park");
 
     BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("China", false), "China");
@@ -1230,7 +1327,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3965)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("06/11/11", true, ambig), "11-Jun-2011");
     BOOST_CHECK_EQUAL(ambig, true);
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("06/11/11"), "");
-    
+
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/8/12"), "");
     ambig = false;
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/8/12", true, ambig), "08-Nov-2012");
@@ -1365,7 +1462,7 @@ BOOST_AUTO_TEST_CASE(Test_GetRNAProduct)
     string product("mRNA product");
     rna->SetExt().SetName(product);
     BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
-    
+
     rna->SetType(CRNA_ref::eType_miscRNA);
     CRef<CRNA_gen> rna_gen(new CRNA_gen());
     rna->SetExt().SetGen(*rna_gen);
@@ -1408,7 +1505,7 @@ BOOST_AUTO_TEST_CASE(Test_GetRNAProduct)
 
     product.clear();
     rna->SetExt().SetTRNA().SetAa().SetIupacaa(43);
-    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product); 
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
 }
 
 BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
@@ -1427,7 +1524,7 @@ BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
     rna->SetRnaProductName(product, remainder);
     BOOST_CHECK_EQUAL(rna->IsSetExt(), false);
     BOOST_CHECK_EQUAL(remainder, kEmptyStr);
-    
+
     product.assign("rRNA product");
     rna->SetType(CRNA_ref::eType_rRNA);
     rna->SetRnaProductName(product, remainder);
@@ -1671,7 +1768,7 @@ BOOST_AUTO_TEST_CASE(Test_FixSexMatingTypeInconsistencies)
 BOOST_AUTO_TEST_CASE(Test_RemoveUnexpectedViralQualifiers)
 {
     CRef<CBioSource> src(new CBioSource());
-    
+
     src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_breed, "x")));
     src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_cultivar, "y")));
     src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_specimen_voucher, "z")));
@@ -1777,7 +1874,7 @@ void CheckBioProjectLocationVals(CBioSource::EGenome genome, const string& biopr
 
 BOOST_AUTO_TEST_CASE(Test_GetBioProjectTypeAndLocation)
 {
-    CRef<CBioSource> src(new CBioSource());    
+    CRef<CBioSource> src(new CBioSource());
     BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
     BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eNuclearProkaryote");
     CheckViruses(*src);
@@ -1894,7 +1991,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_693)
 {
     BOOST_CHECK_EQUAL(CSubSource::FixDevStageCapitalization("FOO"), "FOO");
     BOOST_CHECK_EQUAL(CSubSource::FixDevStageCapitalization("LARVA"), "larva");
- 
+
     BOOST_CHECK_EQUAL(CSubSource::FixCellTypeCapitalization("FOO"), "FOO");
     BOOST_CHECK_EQUAL(CSubSource::FixCellTypeCapitalization("Lymphocyte"), "lymphocyte");
 
@@ -1977,7 +2074,7 @@ BOOST_AUTO_TEST_CASE(Test_RefGeneTracking)
     BOOST_CHECK_EQUAL(user->GetType().GetStr(), "RefGeneTracking");
     BOOST_CHECK_EQUAL(user->GetObjectType(), CUser_object::eObjectType_RefGeneTracking);
     BOOST_CHECK_EQUAL(user->IsRefGeneTracking(), true);
-    
+
     BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_NotSet);
     BOOST_CHECK_EQUAL(user->IsSetRefGeneTrackingStatus(), false);
     user->SetRefGeneTrackingStatus(CUser_object::eRefGeneTrackingStatus_PIPELINE);

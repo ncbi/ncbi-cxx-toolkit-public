@@ -169,7 +169,7 @@ CBioSource::EGenome CBioSource::GetGenomeByOrganelle (const string& organelle, N
 {
     CBioSource::EGenome gtype = CBioSource::eGenome_unknown;
 
-    if (use_case == NStr::eCase && !starts_with) {       
+    if (use_case == NStr::eCase && !starts_with) {
         TGenomeMap::const_iterator g_iter = sm_GenomeKeys.find (organelle.c_str ());
         if (g_iter == sm_GenomeKeys.end()) {
             if (NStr::Equal(organelle, "mitochondrial")) {
@@ -420,26 +420,29 @@ bool CBioSource::IsSetOrgMod(void) const
 
 string CBioSource::GetRepliconName(void) const
 {
+    string bioprojtype = GetBioprojectType();
     ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
-        if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_plasmid_name
-            && (*sit)->IsSetName()) {
-            return (*sit)->GetName();
-        }
-    }
-
-    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
-        ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
-            if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_linkage_group
-                && (*sit)->IsSetName()) {
-                return (*sit)->GetName();
+        if ((*sit)->IsSetSubtype() && (*sit)->IsSetName()){
+            CSubSource_Base::TSubtype subtype=(*sit)->GetSubtype();
+            string name  =(*sit)->GetName();
+            switch(subtype){
+                case CSubSource::eSubtype_plasmid_name:
+                case CSubSource::eSubtype_chromosome:
+                case CSubSource::eSubtype_plastid_name:
+                case CSubSource::eSubtype_endogenous_virus_name:
+                    return name;
+                    break;
+                case CSubSource::eSubtype_linkage_group:
+                    if(IsSetGenome() &&
+                       GetGenome() == CBioSource::eGenome_chromosome){
+                        return name;
+                    }
+                    break;
+                case CSubSource::eSubtype_segment:
+                    if(bioprojtype == "eSegment")
+                        return  name;
+                    break;
             }
-        }
-    }
-
-    ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
-        if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_chromosome
-            && (*sit)->IsSetName()) {
-            return (*sit)->GetName();
         }
     }
 
@@ -701,9 +704,9 @@ bool CBioSource::BiosampleDiffsOkForUpdate(const TFieldDiffList& diffs) const
 void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bool is_local_copy)
 {
     TFieldDiffList diffs = GetBiosampleDiffs(biosample, is_local_copy);
-    if (!force && !BiosampleDiffsOkForUpdate(diffs)) {        
+    if (!force && !BiosampleDiffsOkForUpdate(diffs)) {
         // throw exception
-        NCBI_THROW(CException, eUnknown, "Conflicts found");                      
+        NCBI_THROW(CException, eUnknown, "Conflicts found");
     }
 
     COrgName_Base::TMod mods;
@@ -724,14 +727,14 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
             }
         } else {
             string sample_val = (*it)->GetSampleVal();
-            if (IsStopWord(sample_val)) { 
-                sample_val = ""; 
+            if (IsStopWord(sample_val)) {
+                sample_val = "";
             }
             try {
                 COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue((*it)->GetFieldName());
                 if (!NStr::IsBlank((*it)->GetSrcVal())) {
                     RemoveOrgMod(subtype, (*it)->GetSrcVal());
-                }                
+                }
                 if (!NStr::IsBlank(sample_val)) {
                     CRef<COrgMod> mod(new COrgMod());
                     mod->SetSubtype(subtype);
@@ -863,13 +866,13 @@ int s_iCompareNameVals (const CBioSource::TNameVal& f1, const CBioSource::TNameV
 
 
 bool s_CompareNameVals (const CBioSource::TNameVal& f1, const CBioSource::TNameVal& f2)
-{ 
+{
     int cmp = s_iCompareNameVals (f1, f2);
     if (cmp < 0) {
         return true;
     } else {
         return false;
-    }        
+    }
 }
 
 
@@ -941,7 +944,7 @@ typedef CStaticArraySet<const char*, PNocase_CStr> TCIgnoreCaseQualsSet;
 static const TCIgnoreCaseQualsSet s_IgnoreCaseQualsSet(s_IgnoreCaseQuals, sizeof(s_IgnoreCaseQuals), __FILE__, __LINE__);
 
 bool s_MayIgnoreCase(const string& value)
-{   
+{
     return s_IgnoreCaseQualsSet.find(value.c_str()) != s_IgnoreCaseQualsSet.end();
 }
 
@@ -963,7 +966,7 @@ typedef CStaticArraySet<const char*, PNocase_CStr> TCTaxNameElementQualsSet;
 static const TCTaxNameElementQualsSet s_TaxNameElementQualsSet(s_TaxNameElementQuals, sizeof(s_TaxNameElementQuals), __FILE__, __LINE__);
 
 bool s_IsTaxNameElement(const string& value)
-{   
+{
     return s_TaxNameElementQualsSet.find(value.c_str()) != s_TaxNameElementQualsSet.end();
 }
 
@@ -1025,7 +1028,7 @@ bool s_SameExceptPrecision (double val1, double val2)
     }
     return false;
 }
-    
+
 
 bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, string sample_val, bool is_local_copy)
 {
@@ -1055,7 +1058,7 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
             if (!NStr::IsBlank(test_val)) {
                 if (NStr::Equal(src_val, test_val)) {
                     return true;
-                } 
+                }
             }
         } catch (...) {
             try {
@@ -1111,7 +1114,7 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
         CSubSource::IsCorrectLatLonFormat(sample_val, smpl_format_correct, smpl_precision_correct,
                                           smpl_lat_in_range, smpl_lon_in_range,
                                           smpl_lat_value, smpl_lon_value);
-        if (src_format_correct && smpl_format_correct 
+        if (src_format_correct && smpl_format_correct
             && s_SameExceptPrecision(src_lat_value, smpl_lat_value)
             && s_SameExceptPrecision(src_lon_value, smpl_lon_value)) {
             rval = true;
@@ -1202,7 +1205,7 @@ void CompareValLists(TFieldDiffList& list, const string& val_name, bool is_local
 
 
 void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
-                                   CBioSource::TNameValList& list1, 
+                                   CBioSource::TNameValList& list1,
                                    CBioSource::TNameValList& list2,
                                    bool is_local_copy)
 {
@@ -1368,7 +1371,7 @@ static const TCStopWordStrSet s_StopWordsSet(s_StopWords, sizeof(s_StopWords), _
 
 
 bool CBioSource::IsStopWord(const string& value)
-{   
+{
     if (s_StopWordsSet.find(value.c_str()) != s_StopWordsSet.end()) {
         return true;
     } else {
@@ -1450,7 +1453,7 @@ static const char* s_SpecialLineageWords[] = {
     "Species",
     "Superfamily",
     "Tax class/lineage",
-    "Taxonomic classification", 
+    "Taxonomic classification",
     "Taxonomic Classification is",
     "Taxonomy"
 };
@@ -1516,10 +1519,10 @@ bool CBioSource::RemoveLineageSourceNotes()
 
     string lineage(GetLineage());
     s_GetWordListFromText(lineage, word_list);
-   
+
     string taxname(GetTaxname());
     s_GetWordListFromText(taxname, word_list);
-    
+
     for (unsigned int i = 0; i < ArraySize(s_SpecialLineageWords); ++i) {
         word_list.push_back(s_SpecialLineageWords[i]);
     }
@@ -1536,7 +1539,7 @@ bool CBioSource::RemoveLineageSourceNotes()
                         it = SetSubtype().erase(it);
                         removed = true;
                         any_removed = true;
-                    } 
+                    }
                 }
             }
             if (!removed) {
@@ -1560,7 +1563,7 @@ bool CBioSource::RemoveLineageSourceNotes()
                         iter = SetOrg().SetOrgname().SetMod().erase(iter);
                         removed = true;
                         any_removed = true;
-                    } 
+                    }
                 }
             }
             if (!removed) {
@@ -1687,23 +1690,23 @@ bool CBioSource::FixEnvironmentalSample()
         }
     }
 
-    if (!has_env_sample && 
+    if (!has_env_sample &&
         IsSetOrg() &&
-        GetOrg().IsSetTaxname() && 
+        GetOrg().IsSetTaxname() &&
         NStr::StartsWith(GetOrg().GetTaxname(), "uncultured ")) {
         //If taxname starts with uncultured, set environmental - sample to true
         SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, "")));
         has_env_sample = true;
         any_change = true;
     }
-    
+
     if (has_metagenomic && !has_env_sample) {
         // If metagenomic, set environmental_sample
         SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, "")));
         has_env_sample = true;
         any_change = true;
     }
-       
+
     if (!has_env_sample &&
         IsSetOrg() && GetOrg().IsSetOrgname() &&
         GetOrg().GetOrgname().IsSetDiv() &&
@@ -1713,7 +1716,7 @@ bool CBioSource::FixEnvironmentalSample()
         has_env_sample = true;
         any_change = true;
     }
-    
+
     if (IsSetOrg() && GetOrg().IsSetOrgname() &&
         GetOrg().GetOrgname().IsSetLineage() &&
         NStr::Find(GetOrg().GetOrgname().GetLineage(), "metagenomes") != string::npos) {
@@ -1762,10 +1765,10 @@ bool CBioSource::RemoveNullTerms()
     bool any_change = false;
 
     if (IsSetSubtype()) {
-        CBioSource::TSubtype::iterator s = SetSubtype().begin(); 
+        CBioSource::TSubtype::iterator s = SetSubtype().begin();
         while (s != SetSubtype().end()) {
             if ((*s)->IsSetName() &&
-                (NStr::EqualNocase((*s)->GetName(), "Missing") 
+                (NStr::EqualNocase((*s)->GetName(), "Missing")
                  || NStr::EqualNocase((*s)->GetName(), "N/A"))) {
                 s = SetSubtype().erase(s);
                 any_change = true;
@@ -1782,7 +1785,7 @@ bool CBioSource::RemoveNullTerms()
         && GetOrg().GetOrgname().IsSetMod()) {
         COrgName::TMod::iterator m = SetOrg().SetOrgname().SetMod().begin();
         while (m != SetOrg().SetOrgname().SetMod().end()) {
-            if ((*m)->IsSetSubname() && 
+            if ((*m)->IsSetSubname() &&
                 (NStr::EqualNocase((*m)->GetSubname(), "Missing")
                 || NStr::EqualNocase((*m)->GetSubname(), "N/A"))) {
                 m = SetOrg().SetOrgname().SetMod().erase(m);
@@ -1905,7 +1908,7 @@ bool CBioSource::FixSexMatingTypeInconsistencies()
                     any_change = true;
                 } else if (!AllowMatingTypeQualifier()) {
                     remove = true;
-                } 
+                }
             }
         }
         if (remove) {
@@ -1927,7 +1930,7 @@ bool CBioSource::FixSexMatingTypeInconsistencies()
 
 bool CBioSource::RemoveUnexpectedViralQualifiers()
 {
-    if (!IsViral()  || !IsSetOrg() || !GetOrg().IsSetOrgname() || 
+    if (!IsViral()  || !IsSetOrg() || !GetOrg().IsSetOrgname() ||
         !GetOrg().GetOrgname().IsSetMod()) {
         return false;
     }
