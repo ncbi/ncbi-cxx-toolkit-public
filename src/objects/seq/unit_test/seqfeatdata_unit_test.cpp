@@ -72,12 +72,32 @@
 #include <util/util_misc.hpp>
 #include <util/random_gen.hpp>
 
-#include <objtools/unit_test_util/unit_test_util.hpp>
-
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+static void SetSubSource (objects::CBioSource& src, objects::CSubSource::TSubtype subtype, string val)
+{
+    if (NStr::IsBlank(val)) {
+        if (src.IsSetSubtype()) {
+            objects::CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
+            while (it != src.SetSubtype().end()) {
+                if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
+                    it = src.SetSubtype().erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+    } else {
+        CRef<objects::CSubSource> sub(new objects::CSubSource(subtype, val));
+        if (NStr::EqualNocase(val, "true")) {
+            sub->SetName("");
+        }
+        src.SetSubtype().push_back(sub);
+    }
+}
 
 namespace {
     bool s_TestSubtype(CSeqFeatData::ESubtype eSubtype) {
@@ -1076,30 +1096,30 @@ BOOST_AUTO_TEST_CASE(Test_BioSource_GetRepliconName_CXX_10657)
 
     src1->SetOrg().SetTaxId(1);
 
-    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_altitude,"X");
+    SetSubSource(*src1,CSubSource::eSubtype_altitude,"X");
     BOOST_CHECK_EQUAL(src1->IsSetSubtype(), true);
     // chromosome-name
-    unit_test_util::SetChromosome(*src1,"X");
+    SetSubSource(*src1,CSubSource::eSubtype_chromosome,"X");
     BOOST_CHECK_EQUAL(src1->GetRepliconName(), "X");
     // remove chromosome setting
     src1->ResetSubtype();
     // Plasmid-name
-    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_plasmid_name,"plasmid1");
+    SetSubSource(*src1,CSubSource::eSubtype_plasmid_name,"plasmid1");
     BOOST_CHECK_EQUAL(src1->GetRepliconName(), "plasmid1");
     src1->ResetSubtype();
 
     // Plastid-name
-    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_plastid_name,"pltd1");
+    SetSubSource(*src1,CSubSource::eSubtype_plastid_name,"pltd1");
     BOOST_CHECK_EQUAL(src1->GetRepliconName(), "pltd1");
     src1->ResetSubtype();
 
     // endogenous-virus-name
-    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_endogenous_virus_name,"virus1");
+    SetSubSource(*src1,CSubSource::eSubtype_endogenous_virus_name,"virus1");
     BOOST_CHECK_EQUAL(src1->GetRepliconName(), "virus1");
     src1->ResetSubtype();
 
     // linkage-group
-    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_linkage_group,"LG2");
+    SetSubSource(*src1,CSubSource::eSubtype_linkage_group,"LG2");
     src1->SetGenome(CBioSource_Base::eGenome_chromosome);
     BOOST_CHECK_EQUAL(src1->GetRepliconName(), "LG2");
 
@@ -1113,14 +1133,14 @@ BOOST_AUTO_TEST_CASE(Test_BioSource_GetRepliconName_CXX_10657)
     //   name "DNA-U1"
     // }
     src1->SetOrg().SetOrgname().SetLineage("Viruses; ssDNA viruses; Nanoviridae; Nanovirus");
-    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_segment,"DNA-U1");
+    SetSubSource(*src1,CSubSource::eSubtype_segment,"DNA-U1");
     BOOST_CHECK_EQUAL(src1->GetRepliconName(), "DNA-U1");
     // reset for next tests
     src1->ResetSubtype();
     src1->ResetGenome();
 
     src1->SetGenome(CBioSource::eGenome_unknown);
-    unit_test_util::SetSubSource(*src1,CSubSource::eSubtype_insertion_seq_name,"insername");
+    SetSubSource(*src1,CSubSource::eSubtype_insertion_seq_name,"insername");
     BOOST_CHECK_EQUAL(NStr::IsBlank(src1->GetRepliconName()), true);
     src1->ResetSubtype();
     src1->ResetGenome();
