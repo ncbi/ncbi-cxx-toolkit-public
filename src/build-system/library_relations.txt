@@ -192,10 +192,8 @@ boost_unit_test_framework-gcc73-mt-d-64 needs3party $(ORIG_LIBS)
 boringcrypto needs3party $(ORIG_LIBS)
 boringssl needs3party $(ORIG_LIBS)
 boringssl needs3party boringcrypto
-bson needs3party $(ORIG_LIBS)
 bson-1.0 needs3party $(ORIG_LIBS)
 bsoncxx needs3party $(ORIG_LIBS)
-bsoncxx needs3party bson
 bsoncxx needs3party bson-1.0
 build_config needs aligndb_reader
 build_config needs bacterial_pipeline_proc
@@ -547,6 +545,7 @@ gpipe_kmer_metadata_cache needs3party $(OPENSSL_LIBS)
 gpipe_kpi needs xmlwrapp
 gpipe_meta_access needs xncbi
 gpipe_minhash needs xncbi
+gpipe_names needs gpipe_xmlutil
 gpipe_object_edit needs xalgoalignutil
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
 gpipe_objutil needs $(OBJEDIT_LIBS)
@@ -782,15 +781,6 @@ mmdb needs $(SEQ_LIBS)
 mmdb needs pub
 moleblastasn_g needs $(SEQ_LIBS)
 moleblastasn_g needs pub
-mongoc needs $(Z_LIB)
-mongoc needs3party $(KRB5_LIBS)
-mongoc needs3party $(NETWORK_LIBS)
-mongoc needs3party $(OPENSSL_LIBS)
-mongoc needs3party $(ORIG_LIBS)
-mongoc needs3party $(SASL2_LIBS)
-mongoc needs3party $(Z_LIBS)
-mongoc needs3party bson
-mongoc needs3party bson-1.0
 mongoc-1.0 needs $(Z_LIB)
 mongoc-1.0 needs3party $(KRB5_LIBS)
 mongoc-1.0 needs3party $(NETWORK_LIBS)
@@ -798,7 +788,6 @@ mongoc-1.0 needs3party $(OPENSSL_LIBS)
 mongoc-1.0 needs3party $(ORIG_LIBS)
 mongoc-1.0 needs3party $(SASL2_LIBS)
 mongoc-1.0 needs3party $(Z_LIBS)
-mongoc-1.0 needs3party bson
 mongoc-1.0 needs3party bson-1.0
 mongocxx needs $(Z_LIB)
 mongocxx needs3party $(KRB5_LIBS)
@@ -807,10 +796,8 @@ mongocxx needs3party $(OPENSSL_LIBS)
 mongocxx needs3party $(ORIG_LIBS)
 mongocxx needs3party $(SASL2_LIBS)
 mongocxx needs3party $(Z_LIBS)
-mongocxx needs3party bson
 mongocxx needs3party bson-1.0
 mongocxx needs3party bsoncxx
-mongocxx needs3party mongoc
 mongocxx needs3party mongoc-1.0
 monitor_buildrun needs general
 msbuild_dataobj needs xser
