@@ -89,19 +89,22 @@ public:
     {
     public:
         /// Scale type.
+        /// For linear scale each bin have the same size.
+        /// For logarithmic scales each next bin have a greather size, and bins increasing
+        /// depends on a logariphmic base and used step (see Collector constructors).
         ///
-        /// @sa TFunc
+        /// @sa TFunc, Collector
         enum EType {
             eLinear = 1, ///< Arithmetic or linear scale
-            eLog,        ///< Natural logarithmic, scale with a base e ~ 2.72
-            eLog2,       ///< Binary logarithm, logarithmic scale with a base 2
-            eLog10       ///< Common logarithm, logarithmic scale with a base 10
+            eLog,        ///< Natural logarithmic scale with a base e ~ 2.72
+            eLog2,       ///< Binary logarithmic scale with a base 2
+            eLog10       ///< Common logarithmic scale with a base 10
         };
 
         /// Methods to builds bins for a specified scale.
         /// @note
         ///   Matter for non-linear scales only.
-        ///   For a linear scale (eLinear) bins wil have the same sizes regardless of used method.
+        ///   For a linear scale (eLinear) bins will have the same sizes regardless of used method.
         enum EView {
             /// Use specified scale method to calculate bins sizes from a minimum
             /// to a maximum value.
@@ -111,30 +114,30 @@ public:
             eSymmetrical,
             /// Special value used for multi-scale histograms with major/minor scales,
             /// the collector automatically use monotonic or symmetrical view depending on a number of scales.
-            /// For single-scale histograms eMonotonic will be used instead.
+            /// For single-scale histograms eMonotonic will be always used.
             eAuto
         };
 
         /// Type of function to calculate scale's bin range. 
         /// @note
         ///   Regardless of a scale name, that is a mathematical term,
-        ///   API use scale functions (or inverse functions) to calculate bins ranges.
+        ///   API use scale functions, or inverse functions, to calculate bins ranges.
         ///   https://en.wikipedia.org/wiki/Inverse_function
         ///   For example, to implement a common logarithmic scale 
-        ///   exponential function with a base 10 should be used: f(x) = 10^x.
+        ///   an exponential function with a base 10 should be used: f(x) = 10^x.
         ///   All custom functions should implement the same principle to calculate bin
         ///   ranges on a base of a scale step (provided via constructor's parameter).
         /// @note
         ///   With 'step' increase returned value should increase also.
-        ///   Usually difference between returned values should increase or be the same
-        ///   with each iteration.
+        ///   Usually difference between returned values should increase or be
+        ///   the same with each iteration.
         ///   
         /// @sa EType
         typedef TScale (*TFunc)(TScale);
 
         /// Scale step type.
-        /// Usually Scale start calculating bins with passing initial step value into
-        /// the scale function, and increase step on a 'step' value on each iteration.
+        /// Usually scale starts calculating bins with passing initial step value into
+        /// the scale function, and increase step on each iteration on a 'step' value.
         /// But some function behave really bad or even cannot be calculated for
         /// some values. To avoid this you can specify a starting point for a 'step'
         /// parameter. You can pass single TScale type value everywhere when TStep parameter
@@ -157,9 +160,10 @@ public:
         /// @param step
         ///   Step for a scale function. A parameter for inverse function 'func' to calculate bins start
         ///   position (and sizes). For example, for a linear scale each bin will have the same
-        ///   size from in range from a 'min_value' to 'max_value' with step 'step' for a scale distribution
-        ///   function. For example, for a common logarithm  this is a step for an exponent in inverse function:
-        ///   10 ^ (step*n). Step parameter can be an integer type or float. 
+        ///   size on whole range from a 'min_value' to 'max_value' with specified step 'step'.
+        ///   Another example, a common logarithm, this is a step for an exponent in inverse function:
+        ///   10 ^ (step*n). 
+        ///   Step parameter can be an integer type or float.
         /// @param type
         ///   Predefined scale type. Corresponding inverse function will be used to calculate 
         ///   scale's bins ranges. See TFunc description.
@@ -178,9 +182,10 @@ public:
         /// @param step
         ///   Step for a scale function. A parameter for inverse function 'func' to calculate bins start
         ///   position (and sizes). For example, for a linear scale each bin will have the same
-        ///   size from in range from a 'min_value' to 'max_value' with step 'step' for a scale distribution
-        ///   function. For example, for a common logarithm  this is a step for an exponent in inverse function:
-        ///   10 ^ (step*n). Step parameter can be an integer type or float. 
+        ///   size on whole range from a 'min_value' to 'max_value' with specified step 'step'.
+        ///   Another example, a common logarithm, this is a step for an exponent in inverse function:
+        ///   10 ^ (step*n). 
+        ///   Step parameter can be an integer type or float. 
         /// @param func
         ///   Function to calculate scale's bins range (distribution function).
         /// @param view
@@ -190,7 +195,7 @@ public:
         Scale(TValue min_value, TValue max_value, TStep step, TFunc func, EView view = eAuto);
 
     protected:
-        /// Default constructor (needed for Collector's members definitions)
+        /// Default constructor (needed for a Collector's members definitions)
         Scale(void) {}
         friend class CHistogram<TValue,TScale,TCounter>::Collector;
 
@@ -199,7 +204,8 @@ public:
 
         /// Calculate number of bins and its starting positions.
         /// Calculate for [start,end] range. If 'start' > 'end', calculating going from the right to left.
-        /// This is applicable for symmetrical scales only, to calculate left side of a scale.
+        /// This is applicable for symmetrical scales, or multi-scale collectors, with minor scales on the left,
+        /// to calculate left side of a scale.
         /// @return
         ///   Number of bins.
         size_t CalculateBins(TScale start, TScale end, EView view = eMonotonic);
@@ -236,21 +242,21 @@ public:
     };
 
     /// Scale used in a multi-scale collectors for a less significant data range,
-    /// allow to collect all deviations, that doesnt't fit into a "major" data range,
+    /// allow to collect all deviations, that doesn't fit into a "major" data range,
     /// but still be usefull to collect. Any logarithmic scale works best here,
-    /// depends how much deviation yours data have.
+    /// depending how much deviation yours data have.
     ///
-    /// If major monotonic scale always calculates from the left to right, that 
-    /// minor scales depends from a major scale limits and side from each it adjoin
-    /// a major scale. If it locates on the left from a major scale, it will be
-    /// calculated from a right to left, from a majors scale minimum value to
-    /// a 'limit_value'.
+    /// If major monotonic scale always calculates from the left to right, or simmetricaly
+    /// around the center of the range, that minor scales depends from a major scale
+    /// limits and side from which it adjoin a major scale. If it locates on the left side
+    /// from a major scale, calculation going from a right to left, from a major's scale
+    /// minimum value to a 'limit_value' of a minor scale.
     ///
     /// @param limit_value
     ///    Minimum or maximum value for a minor scale.
     ///    Minor scale automatically use range from a 'limit_value' to a majors's scale
     ///    minimum value, or from a majors's scale maximum value to a 'limit_value',
-    ///    depends on used collectors constructor, and side from each it adjoin a major scale.
+    ///    depends on used collectors constructor, and side from which it adjoin a major scale.
     /// @sa Scale, MajorScale
     ///
     class MinorScale : public Scale
@@ -276,18 +282,19 @@ public:
     {
     public:
         /// Single scale histogram data collector.
+        /// @sa Scale
         Collector(Scale scale);
 
-        /// Two scale histogram data collector.
-        /// [major_scale][minor_scale]
+        /// Two scale histogram data collector - [major_scale][minor_scale]
+        /// @sa MajorScale, MinorScale
         Collector(MajorScale major_scale, MinorScale minor_scale);
 
-        /// Two scale histogram data collector.
-        /// [minor_scale][major_scale]
+        /// Two scale histogram data collector - [minor_scale][major_scale]
+        /// @sa MajorScale, MinorScale
         Collector(MinorScale minor_scale, MajorScale major_scale);
 
-        /// Triple scale histogram data collector.
-        /// [min_scale][major_scale][max_scale]
+        /// Triple scale histogram data collector - [min_scale][major_scale][max_scale]
+        /// @sa MajorScale, MinorScale
         Collector(MinorScale min_scale, MajorScale major_scale, MinorScale max_scale);
 
         /// Destructor.
@@ -306,9 +313,8 @@ public:
 
         /// Get total counted values.
         /// This is a number of Add() method calls.
-        /// If value doesn't fit to scale, or combined scale if the constructor
-        /// with multiple scales were used, it marks as an "anomaly". 
-        /// Anomalies doesn't increase any bin counters.
+        /// If value doesn't fit to scale, or combined scale for a multi-scale collector,
+        /// it counts as an "anomaly". Anomalies doesn't increase any bin counters.
         /// You can get number of anomalies with GetAnomalyCount().
         /// @sa GetMin, GetMax, GetAnomalyCount
         size_t GetTotalCount() const { return m_Total; }
