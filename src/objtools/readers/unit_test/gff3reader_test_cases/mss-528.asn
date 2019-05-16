@@ -122,10 +122,6 @@ Seq-annot ::= {
           val "leader; Amino acid biosynthesis: Threonine"
         },
         {
-          qual "go_process",
-          val "threonine biosynthetic process|0009088"
-        },
-        {
           qual "product",
           val "thr operon leader peptide"
         },
@@ -136,6 +132,29 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "mrna0"
+        }
+      },
+      ext {
+        type str "GeneOntology",
+        data {
+          {
+            label str "Process",
+            data fields {
+              {
+                label id 0,
+                data fields {
+                  {
+                    label str "text string",
+                    data str "threonine biosynthetic process"
+                  },
+                  {
+                    label str "go id",
+                    data str "0009088"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       xref {
@@ -274,22 +293,6 @@ Seq-annot ::= {
           val "enzyme; Amino acid biosynthesis: Threonine"
         },
         {
-          qual "go_component",
-          val "cytoplasm|0005737"
-        },
-        {
-          qual "go_process",
-          val "threonine biosynthetic process|0009088"
-        },
-        {
-          qual "go_process",
-          val "methionine biosynthetic process|0009086"
-        },
-        {
-          qual "go_process",
-          val "homoserine biosynthetic process|0009090"
-        },
-        {
           qual "product",
           val "Bifunctional aspartokinase/homoserine dehydrogenase 1"
         },
@@ -300,6 +303,55 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "mrna1"
+        }
+      },
+      ext {
+        type str "GeneOntology",
+        data {
+          {
+            label str "Component",
+            data fields {
+              {
+                label id 0,
+                data fields {
+                  {
+                    label str "text string",
+                    data str "cytoplasm"
+                  },
+                  {
+                    label str "go id",
+                    data str "0005737"
+                  }
+                }
+              }
+            }
+          },
+          {
+            label str "Process",
+            data fields {
+              {
+                label id 0,
+                data fields {
+                  {
+                    label str "text string",
+                    data str "threonine biosynthetic process"
+                  },
+                  {
+                    label str "go id",
+                    data str "0009088,methionine biosynthetic process"
+                  },
+                  {
+                    label str "go ref",
+                    data str "0009086,homoserine biosynthetic process"
+                  },
+                  {
+                    label str "evidence",
+                    data str "0009090"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       xref {
