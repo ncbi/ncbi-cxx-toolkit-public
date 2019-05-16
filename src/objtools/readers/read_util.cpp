@@ -278,13 +278,15 @@ bool CReadUtil::FeatureAddGeneOntologyTerm(
 
     CRef<CUser_field> text_field(new CUser_field());
     text_field->SetLabel().SetStr("text string");
-    text_field->SetData().SetStr( CUtf8::AsUTF8(fields[0], eEncoding_Ascii));
+    text_field->SetData().SetStr( 
+        CUtf8::AsUTF8(NStr::TruncateSpaces(fields[0]), eEncoding_Ascii));
     field.SetData().SetFields().push_back(text_field);
   
     if (!NStr::IsBlank(fields[1])) {
         CRef<CUser_field> goid (new CUser_field());
         goid->SetLabel().SetStr("go id");
-        goid->SetData().SetStr( CUtf8::AsUTF8(fields[1], eEncoding_Ascii) );
+        goid->SetData().SetStr( 
+            CUtf8::AsUTF8(NStr::TruncateSpaces(fields[1]), eEncoding_Ascii) );
         field.SetData().SetFields().push_back(goid);
     }
 
@@ -298,7 +300,8 @@ bool CReadUtil::FeatureAddGeneOntologyTerm(
     if (!NStr::IsBlank(fields[2])) {
         CRef<CUser_field> goref (new CUser_field());
         goref->SetLabel().SetStr("go ref");
-        goref->SetData().SetStr( CUtf8::AsUTF8(fields[2], eEncoding_Ascii) );
+        goref->SetData().SetStr( 
+            CUtf8::AsUTF8(NStr::TruncateSpaces(fields[2]), eEncoding_Ascii) );
         field.SetData().SetFields().push_back(goref);
     }
 
