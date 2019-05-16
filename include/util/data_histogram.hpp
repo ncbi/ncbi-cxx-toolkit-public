@@ -76,6 +76,8 @@ template <typename TValue, typename TScale, typename TCounter>
 class CHistogram
 {
 public:
+    class Collector;
+    
     /// Scale for a histogram.
     /// Defines scale type and data range it cover. Doesn't store any data.
     /// 
