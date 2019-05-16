@@ -92,7 +92,7 @@
 #include <unordered_set>
 
 #include <objtools/readers/message_listener.hpp>
-
+#include <objtools/readers/read_util.hpp>
 #include "best_feat_finder.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
@@ -395,9 +395,6 @@ private:
 
     bool x_AddGBQualToFeature    (CRef<CSeq_feat> sfp,
                                   const string& qual, const string& val);
-
-    bool x_AddGeneOntologyToFeature (CRef<CSeq_feat> sfp, 
-                                     const CTempString& qual, const CTempString& val);
 
     bool x_AddCodons(const string& val, CTrna_ext& trna_ext) const;
 
@@ -1931,97 +1928,6 @@ bool CFeatureTableReader_Imp::x_AddGBQualToFeature (
 }
 
 
-static const string k_GoQuals[] = { "go_process", "go_component", "go_function" };
-static const int k_NumGoQuals = sizeof (k_GoQuals) / sizeof (string);
-
-bool CFeatureTableReader_Imp::x_AddGeneOntologyToFeature (
-    CRef<CSeq_feat> sfp,
-    const CTempString& qual,
-    const CTempString& val
-)
-
-{
-    if (qual.empty ()) return false;
-
-    int j = 0;
-    while (j < k_NumGoQuals && !NStr::EqualNocase(k_GoQuals[j], qual)) {
-        j++;
-    }
-    if (j == k_NumGoQuals) {
-        return false;
-    }
-
-    vector<CTempString> fields; fields.reserve(4);
-    NStr::Split(val, "|", fields);
-    while (fields.size() < 4) {
-        fields.push_back("");
-    }
-    if (NStr::StartsWith(fields[1], "GO:")) {
-        fields[1] = fields[1].substr(3);
-    }
-    if (NStr::StartsWith(fields[2], "GO_REF:")) {
-        fields[2] = fields[2].substr(7);
-    }
-
-    int pmid = 0;
-    
-    if (!NStr::IsBlank(fields[2])) {
-        if (!NStr::StartsWith(fields[2], "0")) {
-            try {
-                pmid = NStr::StringToLong(fields[2]);
-                fields[2] = "";
-            } catch( ... ) {
-                pmid = 0;
-            }
-        }
-    }
-    string label;
-    qual.Copy(label, 3, CTempString::npos); // prefix 'go_' should be eliminated
-    label[0] = toupper(label[0]);
-
-    sfp->SetExt().SetType().SetStr("GeneOntology");
-    CUser_field& wrap = sfp->SetExt().SetField(label);
-    CRef<CUser_field> new_field(new CUser_field);
-    CUser_field& field = *new_field;
-    wrap.SetData().SetFields().push_back(new_field);
-    field.SetLabel().SetId(0); // compatible with C-toolkit
-
-    CRef<CUser_field> text_field(new CUser_field());
-    text_field->SetLabel().SetStr("text string");
-    text_field->SetData().SetStr( CUtf8::AsUTF8(fields[0], eEncoding_Ascii));
-    field.SetData().SetFields().push_back(text_field);
-  
-    if (!NStr::IsBlank(fields[1])) {
-        CRef<CUser_field> goid (new CUser_field());
-        goid->SetLabel().SetStr("go id");
-        goid->SetData().SetStr( CUtf8::AsUTF8(fields[1], eEncoding_Ascii) );
-        field.SetData().SetFields().push_back(goid);
-    }
-
-    if (pmid > 0) {
-        CRef<CUser_field> pubmed_id (new CUser_field());
-        pubmed_id->SetLabel().SetStr("pubmed id");
-        pubmed_id->SetData().SetInt(pmid);
-        field.SetData().SetFields().push_back(pubmed_id);
-    }
-
-    if (!NStr::IsBlank(fields[2])) {
-        CRef<CUser_field> goref (new CUser_field());
-        goref->SetLabel().SetStr("go ref");
-        goref->SetData().SetStr( CUtf8::AsUTF8(fields[2], eEncoding_Ascii) );
-        field.SetData().SetFields().push_back(goref);
-    }
-
-    if (!NStr::IsBlank(fields[3])) {
-        CRef<CUser_field> evidence (new CUser_field());
-        evidence->SetLabel().SetStr("evidence");
-        evidence->SetData().SetStr( CUtf8::AsUTF8(fields[3], eEncoding_Ascii) );
-        field.SetData().SetFields().push_back(evidence);
-    }
-
-    return true;
-}
-
 void CFeatureTableReader_Imp::x_CreateGenesFromCDSs(
     CRef<CSeq_annot> sap,
     TChoiceToFeatMap & choiceToFeatMap,
@@ -2569,7 +2475,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
             case eQual_go_function:
             case eQual_go_process:
                 if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
-                    return x_AddGeneOntologyToFeature(sfp, qual, val);
+                    return CReadUtil::FeatureAddGeneOntologyTerm(qual, val, sfp);
                 }
                 return false;
             case eQual_transcript_id:

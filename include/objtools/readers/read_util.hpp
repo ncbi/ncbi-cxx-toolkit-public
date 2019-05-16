@@ -33,6 +33,8 @@
 #define OBJTOOLS_READERS___READ_UTIL__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
@@ -92,6 +94,11 @@ public:
         const CSeq_annot& annot,
         const string& key,
         string& value);
+
+    static bool FeatureAddGeneOntologyTerm(
+        const CTempString& qual,
+        const CTempString& val,
+        CRef<CSeq_feat> feature);
 };
 
 END_SCOPE(objects)

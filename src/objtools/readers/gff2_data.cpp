@@ -862,6 +862,10 @@ bool CGff2Record::xMigrateAttributes(
         }
     }
 
+    if (!xMigrateAttributesGo(flags, pFeature, attrs_left)) {
+		return false;
+	}
+
     if (pFeature->GetData().IsBiosrc()) { 
         if (!xMigrateAttributesSubSource(flags, pFeature, attrs_left)) {
             return false;
@@ -995,6 +999,25 @@ bool CGff2Record::xMigrateAttributesOrgName(
         pOrgMod->SetSubname(ait->second);
         orgMod.push_back(pOrgMod);
         attrs_left.erase(ait);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::xMigrateAttributesGo(
+    int flags,
+    CRef<CSeq_feat> pFeature,
+    TAttributes& attrs) const
+//  ----------------------------------------------------------------------------
+{
+    for (auto it = attrs.begin(); it != attrs.end(); /**/) {
+        if (NStr::StartsWith(it->first, "go_")) {
+            CReadUtil::FeatureAddGeneOntologyTerm(it->first, it->second, pFeature);
+            attrs.erase(it++);
+        }
+        else {
+            it++;
+        }
     }
     return true;
 }

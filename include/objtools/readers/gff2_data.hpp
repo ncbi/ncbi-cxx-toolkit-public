@@ -137,6 +137,11 @@ protected:
         CRef<CSeq_feat>,
         TAttributes& ) const;
 
+    virtual bool xMigrateAttributesGo(
+        int,
+        CRef<CSeq_feat>,
+        TAttributes& ) const;
+
     //utility helpers:
     //
     static string xNormalizedAttributeKey(
