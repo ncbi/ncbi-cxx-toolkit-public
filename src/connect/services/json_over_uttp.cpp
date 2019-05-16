@@ -1555,9 +1555,9 @@ bool CJsonOverUTTPWriter::CompleteMessage()
                     return false;
             } else {
                 if (!m_SendHashValue) {
-                    string key(m_CurrentOutputNode.m_Iterator.GetKey());
+                    m_Key = m_CurrentOutputNode.m_Iterator.GetKey();
                     if (!m_UTTPWriter.SendChunk(
-                            key.data(), key.length(), false)) {
+                            m_Key.data(), m_Key.length(), false)) {
                         m_SendHashValue = true;
                         return false;
                     }

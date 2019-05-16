@@ -557,6 +557,15 @@ private:
     SOutputStackFrame m_CurrentOutputNode;
     double m_Double;
     bool m_SendHashValue;
+
+    // The member is used only to extend the lifetime of the object key in the
+    // CompleteMessage() method. A copy of the key is taken and is written to a
+    // buffer however the buffer may be too small for the control charaters
+    // together with the key value so the rest of the key is written later. On
+    // GCC 4.9.3 a local std::string copy worked fine but with GCC 7.3.0 there
+    // was a crash. So to extend the key lifetime if it did not fit the buffer
+    // this variable is introduced.
+    string m_Key;
 };
 
 inline void CJsonOverUTTPWriter::GetOutputBuffer(
