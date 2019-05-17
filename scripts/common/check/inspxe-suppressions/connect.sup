@@ -47,21 +47,20 @@ suppression = {
 	}
 }
 suppression = {
-	name = "ConnNetInfo_SetupStandardArgs/x_ClientAddress/sprintf"
+	name = "ConnNetInfo_SetupStandardArgs/sprintf"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
 			...;
-			func=sprintf,src=stdio.h;
-			func=ConnNetInfo_SetupStandardArgs,src=ncbi_connutil.c;
+			func=sprintf;
+			func=ConnNetInfo_SetupStandardArgs;
 		}
 		allocation={
 			...;
+			func=ConnNetInfo_SetupStandardArgs;
 		}
 	}
 }
-
-
 suppression = {
 	name = "gnutls_handshake() non-important (only DLL build)"
 	type = {invalid_memory_access_partial}

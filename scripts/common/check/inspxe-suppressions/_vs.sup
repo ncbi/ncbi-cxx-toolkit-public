@@ -250,6 +250,18 @@ suppression = {
 	}
 }
 suppression = {
+	name = "ucrtbase.dll -- system()/wspawnvpe()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=wspawnvpe;
+			func=System,src=ncbiexec.cpp;
+		}
+	}
+}
+
+suppression = {
 	name = "False positive in sscanf()"
 	type = {invalid_memory_access_partial}
 	stacks = {

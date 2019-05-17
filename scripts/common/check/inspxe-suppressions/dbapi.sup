@@ -14,7 +14,7 @@ suppression = {
 }
 
 suppression = {
-	name = "tds_vasprintf_ver100"
+	name = "tds_vasprintf_ver100 - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
@@ -28,3 +28,18 @@ suppression = {
 	}
 }
 
+suppression = {
+	name = "tds_vasprintf_ver100 - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
+			func=tds_vasprintf_ver100;
+		}
+		allocation={
+			...;
+			func=tds_get_homedir_ver100;
+		}
+	}
+}
