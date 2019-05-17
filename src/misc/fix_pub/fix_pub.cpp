@@ -697,7 +697,35 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
             string last_name = name.IsSetLast() ? name.GetLast() : "",
                    initials = name.IsSetInitials() ? name.GetInitials() : "";
 
-            replace_authors = last_name == "et" && initials == "al";
+            replace_authors = NStr::EqualNocase(last_name, "et") && 
+                              NStr::EqualNocase(initials, "al");
+        }
+
+        // If the last author does not contain "et al", look at the amount of authors
+        // This is done according to the next document:
+        // ~cavanaug/WORK/MedArch/doc.medarch.4genbank.txt
+        //
+        //    If the MedArchCitArt has zero Name-std Author.name ...     
+        //
+        //    Or if the InputCitArt has more than 10 Name - std Author.name while
+        //    the MedArchCitArt has less than 12 ...
+        //
+        //    Or if the InputCitArt has more than 25 Name - std Author.name while
+        //    the MedArchCitArt has less than 27 ...
+        //
+        //    Then free the Auth - list of the MedArchCitArt and replace it with
+        //     the Auth - list of the InputCitArt, and **null out** the Auth - list
+        //     of the MedArchCitArt .
+        if (!replace_authors)
+        {
+            static const int MIN_FIRST_AUTHORS_THRESHOLD_1995 = 10;
+            static const int MAX_FIRST_AUTHORS_THRESHOLD_1995 = 12;
+
+            static const int MIN_SECOND_AUTHORS_THRESHOLD_1999 = 25;
+            static const int MAX_SECOND_AUTHORS_THRESHOLD_1999 = 27;
+
+            replace_authors = (new_num_names < MAX_FIRST_AUTHORS_THRESHOLD_1995 && num_names > MIN_FIRST_AUTHORS_THRESHOLD_1995) ||
+                              (new_num_names < MAX_SECOND_AUTHORS_THRESHOLD_1999 && num_names > MIN_SECOND_AUTHORS_THRESHOLD_1999);
         }
     }
 
@@ -1129,6 +1157,7 @@ CRef<CCit_art> CPubFixing::FetchPubPmId(int pmid)
     if (pub.NotEmpty() && pub->IsArticle()) {
         cit_art.Reset(new CCit_art);
         cit_art->Assign(pub->GetArticle());
+
         MedlineToISO(*cit_art);
     }
 

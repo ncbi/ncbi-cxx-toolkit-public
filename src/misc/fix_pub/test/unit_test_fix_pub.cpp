@@ -796,3 +796,143 @@ BOOST_AUTO_TEST_CASE(Test_FixPub)
 
    // No any tests for now. There will be in the future
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_FixPubPreserveOriginalListOfAuthors)
+{
+    static const char* TEST_PUB = 
+        "Pub ::= \
+         equiv { \
+           pmid 1302004, \
+           article { \
+             title { name \"A survey of expressed genes in Caenorhabditis elegans\" }, \
+             authors { \
+               names std { \
+                 { \
+                   name name { \
+                     last \"Waterston\", \
+                     initials \"R.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Martin\", \
+                     initials \"C.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Craxton\", \
+                     initials \"M.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Huynh\", \
+                     initials \"C.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Coulson\", \
+                     initials \"A.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Hillier\", \
+                     initials \"L.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Durbin\", \
+                     initials \"R.K.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Green\", \
+                     initials \"P.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Shownkeen\", \
+                     initials \"R.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Halloran\", \
+                     initials \"N.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Hawkins\", \
+                     initials \"T.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Wilson\", \
+                     initials \"R.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Berks\", \
+                     initials \"M.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Du\", \
+                     initials \"Z.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Thomas\", \
+                     initials \"K.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Thierry-Mieg\", \
+                     initials \"J.\" \
+                   } \
+                 }, \
+                 { \
+                   name name { \
+                     last \"Sulston\", \
+                     initials \"J.\" \
+                   } \
+                 } \
+               } \
+             }, \
+             from journal { \
+               title { iso-jta \"Nat. Genet.\" }, \
+               imp { \
+                 date std { year 1992 }, \
+                 volume \"1\", \
+                 pages \"114-123\" \
+               } \
+             } \
+           } \
+         }";
+        
+    CPub pub;
+    CNcbiIstrstream input(TEST_PUB);
+
+    input >> MSerial_AsnText >> pub;
+
+    CPubFixing pub_fixing(true, true, true, nullptr);
+    pub_fixing.FixPub(pub);
+
+
+    // cout << MSerial_AsnText << pub;
+
+    // No any tests for now. There will be in the future
+}
