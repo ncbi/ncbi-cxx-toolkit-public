@@ -1517,7 +1517,7 @@ bool CPendingOperation::OnNamedAnnotData(CNAnnotRecord &&        annot_record,
                                                      annot_record.GetVersion(),
                                                      annot_record.GetSeqIdType(),
                                                      annot_record.GetAnnotName(),
-                                                     json.Repr());
+                                                     json.Repr(CJsonNode::fStandardJson));
     }
 
     x_PeekIfNeeded();
@@ -1579,7 +1579,8 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     if (is_found) {
         // Found, send blob props back as JSON
         CJsonNode   json = ConvertBlobPropToJson(blob);
-        m_ProtocolSupport.PrepareBlobPropData(fetch_details, json.Repr());
+        m_ProtocolSupport.PrepareBlobPropData(fetch_details,
+                                              json.Repr(CJsonNode::fStandardJson));
 
         // Note: initially only blob_props are requested and at that moment the
         //       TSE option is 'known'. So the initial request should be

@@ -545,7 +545,7 @@ int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
         CJsonNode   reply(CJsonNode::NewObjectNode());
         reply.SetString("ConfigurationFilePath", GetConfigPath());
         reply.SetString("Configuration", string(converter));
-        string      content = reply.Repr();
+        string      content = reply.Repr(CJsonNode::fStandardJson);
 
         resp.SetContentType(eJsonMime);
         resp.SetContentLength(content.length());
@@ -710,7 +710,7 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
         reply.SetInteger("ExcludeBlobCacheUserCount",
                         CPubseqGatewayApp::GetInstance()->GetExcludeBlobCache()->Size());
 
-        string      content = reply.Repr();
+        string      content = reply.Repr(CJsonNode::fStandardJson);
 
         resp.SetContentType(eJsonMime);
         resp.SetContentLength(content.length());
@@ -766,7 +766,7 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
         m_CacheCounters.PopulateDictionary(reply);
         m_DBCounters.PopulateDictionary(reply);
 
-        string      content = reply.Repr();
+        string      content = reply.Repr(CJsonNode::fStandardJson);
 
         resp.SetContentType(eJsonMime);
         resp.SetContentLength(content.length());

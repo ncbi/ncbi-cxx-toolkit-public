@@ -144,7 +144,7 @@ void ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
                              string &  bioseq_json)
 {
     CJsonNode   json = ConvertBioseqInfoToJson(bioseq_info, include_data_flags);
-    bioseq_json = json.Repr();
+    bioseq_json = json.Repr(CJsonNode::fStandardJson);
 }
 
 
