@@ -229,7 +229,7 @@ int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
 // This templated function circumvents that shortcoming.
 template <class TDescription>
-EPSG_UseCache s_GetUseCacheValue(CParam<TDescription>, const string& use_cache)
+EPSG_UseCache s_GetUseCacheValue(const CParam<TDescription>&, const string& use_cache)
 {
     return CParam<TDescription>::TParamParser::StringToValue(use_cache, TDescription::sm_ParamDescription);
 }
