@@ -461,7 +461,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BCCM/ITM\tc\tBelgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection\tITM\t\t",
 "BCCM/LMG\tc\tBelgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection\tLMG\thttp://bccm.belspo.be/catalogues/lmg-strain-details?NUM=\t",
 "BCCM/MUCL\tc\tBelgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection\tMUCL\t\t",
-"BCCM/ULC\tc\tBelgian Co-ordinated Collections of Micro-organisms / ULC Cyanobacteria Collection\tUCL\t\t",
+"BCCM/ULC\tc\tBelgian Co-ordinated Collections of Microorganisms / ULC Cyanobacteria Collection\tUCL\t\t",
 "BCCN\tc\tBrucella Culture Collection\t\t\t",
 "BCCUSP\tc\tBrazilian Cyanobacteria Collection - University of Sao Paulo\t\t\t",
 "BCF\ts\tUniversitat de Barcelona, Laboratori de Botanica\t\t\t",

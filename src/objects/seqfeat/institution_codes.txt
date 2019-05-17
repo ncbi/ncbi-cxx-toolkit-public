@@ -428,7 +428,7 @@ BCCM/IHEM	c	Belgian Co-ordinated Collections of Micro-organisms / IHEM Fungi col
 BCCM/ITM	c	Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM		
 BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG	http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
 BCCM/MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
-BCCM/ULC	c	Belgian Co-ordinated Collections of Micro-organisms / ULC Cyanobacteria Collection	UCL		
+BCCM/ULC	c	Belgian Co-ordinated Collections of Microorganisms / ULC Cyanobacteria Collection	UCL		
 BCCN	c	Brucella Culture Collection			
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo			
 BCF	s	Universitat de Barcelona, Laboratori de Botanica			
