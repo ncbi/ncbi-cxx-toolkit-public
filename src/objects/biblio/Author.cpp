@@ -123,34 +123,28 @@ bool CAuthor::x_GetLabelV2(string* label, TLabelFlags flags, CTempString name,
     return true;
 }
 
-bool CAuthor::x_IsAllCaps(const string& str)
+static string s_NormalizeInitials(const string& raw_initials)
 {
-    for(const char c  : str) {
-        if (!isalpha(c) || !isupper(c)) {
-            return false;
+    //
+    //  Note:
+    //  Periods _only_ after CAPs to avoid decorating hyphens (which _are_ 
+    //  legal in the "initials" part.
+    //
+    string normal_initials;
+    for (auto cur_char: raw_initials) {
+        normal_initials += cur_char;
+        if (isupper(cur_char)) {
+            normal_initials += '.';
         }
     }
-    return true;
+    return normal_initials;
 }
 
-string CAuthor::x_GetInitials(vector<string>& tokens) 
+static string s_NormalizeSuffix(const string& raw_suffix)
 {
-    string init = "";
-    while (tokens.size() > 1) {
-        string val = tokens.back();
-        
-        if (!NStr::IsUpper(val)) {
-            break;
-        }
-        init += val;
-        tokens.pop_back();
-    }
-    return init;
-}
-
-
-void CAuthor::x_NormalizeSuffix(string& suffix) 
-{
+    //
+    //  Note: (2008-02-13) Suffixes I..VI no longer have trailing periods.
+    //
     static const map<string, string> smap = {
                                 {"1d",  "I"  },
                                 {"1st", "I"  },
@@ -162,63 +156,98 @@ void CAuthor::x_NormalizeSuffix(string& suffix)
                                 {"5th", "V"  },
                                 {"6th", "VI" },
                                 {"Jr",  "Jr."},
-                                {"Sr",  "Sr."}};
+                                {"Sr",  "Sr."} };
 
-    auto search = smap.find(suffix);
+    auto search = smap.find(raw_suffix);
     if (search != smap.end()) {
-        suffix = search->second;  
-    } 
-}
-
-
-bool CAuthor::x_IsPossibleSuffix(const string& str) {    
-    if (!x_IsAllCaps(str)) {
-        return true;
+        return search->second;
     }
-    static set<string> suffixes = {"II", "III", "IV", "VI"}; 
-    auto search = suffixes.find(str);
-
-    return (search != suffixes.end());
+    return raw_suffix;
 }
 
+void s_SplitMLAuthorName(string name, string& last, string& initials, string& suffix, bool normalize_suffix)
+{
+    NStr::TruncateSpacesInPlace(name);
+    if (name.empty()) {
+        return;
+    }
+
+    vector<string> parts;
+    NStr::Split(name, " ", parts, NStr::fSplit_Tokenize);
+    if (parts.empty()) {
+        return;
+    }
+    if (parts.size() == 1) {
+        //
+        //  Designate the only part we have as the last name.
+        //
+        last = parts[0];
+        return;
+    }
+
+
+    const string& last_part = parts[parts.size() - 1];
+    const string& second_to_last_part = parts[parts.size() - 2];
+
+    if (parts.size() == 2) {
+        //
+        //  Designate the first part as the last name and the second part as the
+        //  initials.
+        //
+        last = parts[0];
+        initials = s_NormalizeInitials(last_part);
+        return;
+    }
+
+    //
+    //  At least three parts.
+    //
+    //  If the second to last part is all CAPs then those are the initials. The 
+    //  last part is the suffix, and everything up to the initials is the last 
+    //  name.
+    //
+    if (NStr::IsUpper(second_to_last_part)) {
+        last = NStr::Join(vector<string>(parts.begin(), parts.end() - 2), " ");
+        initials = s_NormalizeInitials(second_to_last_part);
+
+        suffix = normalize_suffix ? s_NormalizeSuffix(last_part) : last_part;
+        return;
+    }
+
+    //
+    //  Fall through:
+    //  Guess that the last part is the initials and everything leading up to it 
+    //  is a (rather unusual) last name.
+    //
+    last = NStr::Join(vector<string>(parts.begin(), parts.end() - 1), " ");
+    initials = s_NormalizeInitials(last_part);
+    return;
+
+    //  ------------------------------------------------------------------------
+    //  CASE NOT HANDLED:
+    //
+    //  (1) Initials with a blank in them. UNFIXABLE!
+    //  (2) Initials with non CAPs in them. Probably fixable through a 
+    //      white list of allowable exceptions. Tedious, better let the indexers
+    //      fix it.
+    //  ------------------------------------------------------------------------
+}
 
 CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool normalize_suffix) 
 {
-    CRef<CPerson_id> person_id(new CPerson_id());
+    string last, initials, suffix;
+    s_SplitMLAuthorName(name, last, initials, suffix, normalize_suffix);
 
-    if (!NStr::IsBlank(name)) {
-        vector<string> tokens;
-        NStr::Split(name, " ", tokens, NStr::fSplit_Tokenize);
-        // Check for suffix
-        const size_t num_tokens = tokens.size();
-        string suffix = "";
-        if (num_tokens >= 3 && 
-            !x_IsPossibleSuffix(tokens.back()) &&
-            x_IsAllCaps(tokens[num_tokens-2])) {
-            suffix = tokens.back();
-            tokens.pop_back();
-        }
+    CRef<CPerson_id> person_id;
+    if (!last.empty()) {
 
-        const string init = x_GetInitials(tokens);
-        const string last = NStr::Join(tokens, " ");
+        person_id.Reset(new CPerson_id());
         person_id->SetName().SetLast(last);
-
-
-        if (!NStr::IsBlank(suffix)) {
-            if (normalize_suffix) {
-                x_NormalizeSuffix(suffix);
-            }
-            person_id->SetName().SetSuffix(suffix);
-        }
-
-        if (!NStr::IsBlank(init)) {
-            person_id->SetName().SetFirst(init.substr(0,1));
-            string initials = "";
-            for (const char& c : init) {
-                initials.push_back(c);
-                initials.push_back('.');
-            }
+        if (!initials.empty()) {
             person_id->SetName().SetInitials(initials);
+        }
+        if (!suffix.empty()) {
+            person_id->SetName().SetSuffix(suffix);
         }
     }
     return person_id;
