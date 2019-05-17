@@ -1,3 +1,8 @@
+Release 1.4.0 (2019-05-17)
+
+    * PSG -- termination with command and signals (CXX-10592)
+    * PSG: when reply in JSON, use the standard JSON strings (CXX-10664)
+
 Release 1.3.1 (2019-05-08)
 
     * PSG -- add counter for TEST/io requests (CXX-10646)
