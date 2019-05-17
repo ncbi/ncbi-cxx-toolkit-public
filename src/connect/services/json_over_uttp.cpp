@@ -895,54 +895,61 @@ bool CJsonNode::AsBoolean() const
         m_Impl.GetPointerOrNull())->m_Boolean;
 }
 
-static void s_Repr_Value(string& os, const CJsonNode& node);
+static void s_Repr_Value(string& os, const CJsonNode& node,
+                         CJsonNode::TReprFlags flags);
 
-static void s_Repr_Object(string& os, const CJsonNode& node)
+static void s_Repr_Object(string& os, const CJsonNode& node,
+                          CJsonNode::TReprFlags flags)
 {
     CJsonIterator it = node.Iterate();
     if (it) {
         os.append(1, '"')
           .append(it.GetKey())
           .append("\": ");
-        s_Repr_Value(os, *it);
+        s_Repr_Value(os, *it, flags);
         while (++it) {
             os.append(", \"")
               .append(it.GetKey())
               .append("\": ");
-            s_Repr_Value(os, *it);
+            s_Repr_Value(os, *it, flags);
         }
     }
 }
 
-static void s_Repr_Array(string& os, const CJsonNode& node)
+static void s_Repr_Array(string& os, const CJsonNode& node,
+                         CJsonNode::TReprFlags flags)
 {
     CJsonIterator it = node.Iterate();
     if (it) {
-        s_Repr_Value(os, *it);
+        s_Repr_Value(os, *it, flags);
         while (++it) {
             os.append(", ");
-            s_Repr_Value(os, *it);
+            s_Repr_Value(os, *it, flags);
         }
     }
 }
 
-static void s_Repr_Value(string& os, const CJsonNode& node)
+static void s_Repr_Value(string& os, const CJsonNode& node,
+                         CJsonNode::TReprFlags flags)
 {
     switch (node.GetNodeType()) {
     case CJsonNode::eObject:
         os.append(1, '{');
-        s_Repr_Object(os, node);
+        s_Repr_Object(os, node, flags);
         os.append(1, '}');
         break;
     case CJsonNode::eArray:
         os.append(1, '[');
-        s_Repr_Array(os, node);
+        s_Repr_Array(os, node, flags);
         os.append(1, ']');
         break;
     case CJsonNode::eString:
-        os.append(1, '"')
-          .append(NStr::PrintableString(node.AsString()))
-          .append(1, '"');
+        os.append(1, '"');
+        if (flags & CJsonNode::fStandardJson)
+            os.append(NStr::JsonEncode(node.AsString()));
+        else
+            os.append(NStr::PrintableString(node.AsString()));
+        os.append(1, '"');
         break;
     case CJsonNode::eInteger:
         os.append(NStr::NumericToString(node.AsInteger()));
@@ -965,19 +972,19 @@ string CJsonNode::Repr(TReprFlags flags) const
     switch (GetNodeType()) {
     case CJsonNode::eObject:
         if (flags & fOmitOutermostBrackets)
-            s_Repr_Object(os, *this);
+            s_Repr_Object(os, *this, flags);
         else {
             os.append(1, '{');
-            s_Repr_Object(os, *this);
+            s_Repr_Object(os, *this, flags);
             os.append(1, '}');
         }
         break;
     case CJsonNode::eArray:
         if (flags & fOmitOutermostBrackets)
-            s_Repr_Array(os, *this);
+            s_Repr_Array(os, *this, flags);
         else {
             os.append(1, '[');
-            s_Repr_Array(os, *this);
+            s_Repr_Array(os, *this, flags);
             os.append(1, ']');
         }
         break;
@@ -987,7 +994,7 @@ string CJsonNode::Repr(TReprFlags flags) const
                     m_Impl.GetPointerOrNull())->m_String);
         /* FALL THROUGH */
     default:
-        s_Repr_Value(os, *this);
+        s_Repr_Value(os, *this, flags);
     }
 
     return os;

@@ -311,6 +311,7 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     enum EReprFlags {
         fVerbatimIfString = 1 << 0,
         fOmitOutermostBrackets = 1 << 1,
+        fStandardJson = 1 << 2
     };
     /// Binary OR of EReprFlags.
     typedef int TReprFlags;

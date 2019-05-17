@@ -153,6 +153,37 @@ BOOST_AUTO_TEST_CASE(JsonOverUTTPTest)
     delete[] buffer;
 }
 
+
+BOOST_AUTO_TEST_CASE(JsonStringSerialize)
+{
+    CJsonNode       node = CJsonNode::NewStringNode("test");
+    BOOST_CHECK(node.Repr() == string("\"test\""));
+
+    CJsonNode       node1 = CJsonNode::NewStringNode("te'st");
+    BOOST_CHECK(node1.Repr(CJsonNode::fStandardJson) == string("\"te'st\""));
+
+    // Default behavior is non standard for JSON
+    CJsonNode       node2 = CJsonNode::NewStringNode("te'st");
+    BOOST_CHECK(node2.Repr() == string("\"te\\'st\""));
+}
+
+
+BOOST_AUTO_TEST_CASE(JsonStringDeserialize)
+{
+    string      json = "[\"test\"]";
+    CJsonNode   node = CJsonNode::ParseJSON(json);
+    BOOST_CHECK(node.GetAt(0).AsString() == string("test"));
+
+    string      json1 = "[\"te'st\"]";
+    CJsonNode   node1 = CJsonNode::ParseJSON(json1);
+    BOOST_CHECK(node1.GetAt(0).AsString() == string("te'st"));
+
+    string      json2 = "[\"te\\'st\"]";
+    CJsonNode   node2 = CJsonNode::ParseJSON(json2);
+    BOOST_CHECK(node2.GetAt(0).AsString() == string("te'st"));
+}
+
+
 void CJsonOverUTTPTest::MakeRandomJsonTree()
 {
     size_t tree_size = m_Random.GetRand(1, MAX_RANDOM_TREE_SIZE);
