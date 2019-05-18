@@ -7380,7 +7380,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USCWH\ts\tUnited Services College\t\t\t",
 "USD<DOM>\ts\tUniversidad Autonoma de Santo Domingo\t\t\t",
 "USD<USA-SD>\ts\tUniversity of South Dakota\t\t\t",
-"USDA\tsb\tUnited States Department of Agriculture\t\t\t",
+"USDA\tscb\tUnited States Department of Agriculture\t\t\t",
 "USDA:CFRA\tb\tUnited States Department of Agriculture, Corvallis Fragaria Catalog\t\t",
 "USDA:GRIN\tb\tUnited States Department of Agriculture, Germplasm Resources Information Network\t\t",
 "USDA:NCGR\tb\tUnited States Department of Agriculture, National Clonal Germplasm Repository\t\t",

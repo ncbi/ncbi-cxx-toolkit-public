@@ -7347,7 +7347,7 @@ USCS	s	University of South Carolina, Science and Mathematics Department
 USCWH	s	United Services College			
 USD<DOM>	s	Universidad Autonoma de Santo Domingo			
 USD<USA-SD>	s	University of South Dakota			
-USDA	sb	United States Department of Agriculture			
+USDA	scb	United States Department of Agriculture			
 USDA:CFRA	b	United States Department of Agriculture, Corvallis Fragaria Catalog		
 USDA:GRIN	b	United States Department of Agriculture, Germplasm Resources Information Network		
 USDA:NCGR	b	United States Department of Agriculture, National Clonal Germplasm Repository		
