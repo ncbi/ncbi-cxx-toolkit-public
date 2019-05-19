@@ -551,8 +551,8 @@ gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
 gpipe_objutil needs $(OBJEDIT_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
 gpipe_objutil needs gpipe_attr
+gpipe_objutil needs local_taxon
 gpipe_objutil needs mlacli
-gpipe_objutil needs taxon1
 gpipe_objutil needs valid
 gpipe_objutil needs writedb
 gpipe_objutil needs xid_wgsdb
@@ -1233,7 +1233,6 @@ sybtcl64 needs3party sybunic64
 sybunic64 needs3party $(ORIG_LIBS)
 tables needs3party $(ORIG_LIBS)
 tax_xml needs bacterial_pipeline_proc
-tax_xml needs local_taxon
 tax_xml needs simple_asm
 tax_xml needs xgencoll
 taxon needs xser
