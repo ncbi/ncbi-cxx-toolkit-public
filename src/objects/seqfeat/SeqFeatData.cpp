@@ -43,9 +43,12 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/seqfeat/Prot_ref.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 
 #include <algorithm>
 #include <util/static_map.hpp>
+#include <array>
 
 // generated classes
 
@@ -387,8 +390,7 @@ static bool sx_SubtypesTableInitialized = false;
 
 typedef map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> TFeatQuals;
 // these maps contain sorted vectors for faster lookup
-static CSafeStatic<TFeatQuals> sx_LegalQuals;
-static bool sx_LegalQualsInitialized = false;
+const TFeatQuals& GetLegalQuals();
 static CSafeStatic<TFeatQuals> sx_MandatoryQuals;
 static bool sx_MandatoryQualsInitialized = false;
 static CSafeStatic<CSeqFeatData::TQualifiers> sx_EmptyQuals;
@@ -592,11 +594,8 @@ CSeqFeatData::SubtypeValueToName(ESubtype eSubtype)
 
 bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 {
-    if ( !sx_LegalQualsInitialized ) {
-        s_InitLegalQuals();  // does nothing if already intialized
-    }
-    TFeatQuals::const_iterator iter = sx_LegalQuals->find(subtype);
-    if ( iter == sx_LegalQuals->end() ) {
+    TFeatQuals::const_iterator iter = GetLegalQuals().find(subtype);
+    if ( iter == GetLegalQuals().end() ) {
         return false;
     }
     const TQualifiers& legal = iter->second;
@@ -606,11 +605,8 @@ bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
 {
-    if ( !sx_LegalQualsInitialized ) {
-        s_InitLegalQuals();  // does nothing if already intialized
-    }
-    TFeatQuals::const_iterator iter = sx_LegalQuals->find(subtype);
-    if ( iter == sx_LegalQuals->end() ) {
+    TFeatQuals::const_iterator iter = GetLegalQuals().find(subtype);
+    if ( iter == GetLegalQuals().end() ) {
         return *sx_EmptyQuals;
     }
     return iter->second;
@@ -835,2221 +831,2242 @@ void CSeqFeatData::s_InitSubtypesTable(void)
 #endif    
 }
 
-
-void CSeqFeatData::s_InitLegalQuals(void)
+namespace
 {
-    if (sx_LegalQualsInitialized) {
-        return;
+
+    template<typename _M, typename _R, typename _I>
+    void set_table(_M& _map, _R index, const _I* init, size_t size)
+    {
+      auto& table = _map[index];	
+      table.insert(table.begin(), init, init + size);
+      std::sort(table.begin(), table.end());
     }
-    CMutexGuard guard(sx_InitTablesMutex);
-    if (sx_LegalQualsInitialized) {
-        return;
+
+    template<typename _M, typename _R, typename _I>
+    void fill_table(_M& _map, _R index, _I _start, _I _end)
+    {
+      auto& table = _map[index];
+      auto dist = _end - _start + 1;
+      table.reserve(dist);
+      for (int it = 0; it <= dist; ++it)
+        table.push_back(static_cast<_I>(_start + it));
+      std::sort(table.begin(), table.end());
     }
 
-    TFeatQuals& table = *sx_LegalQuals;
+    template<typename...TArgs>
+    constexpr
+    auto make_array(TArgs&&...args) -> std::array<CSeqFeatData::EQualifier, sizeof...(args)>
+    {
+      return std::array<CSeqFeatData::EQualifier, sizeof...(args)>{args...};
+    }
 
-#define START_SUBTYPE(x) { \
-    TQualifiers& quals = table[eSubtype_##x];
-#define ADD_QUAL(y) quals.push_back(eQual_##y)
-#define END_SUBTYPE }
+TFeatQuals s_InitLegalQuals(void)
+{
+  TFeatQuals table;
 
-START_SUBTYPE(gene)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(nomenclature);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+#define ADD_QUAL(n) CSeqFeatData::eQual_##n
 
-//START_SUBTYPE(org)
-//END_SUBTYPE
+#define START_SUBTYPE(name, ...) \
+	static constexpr auto init_auto_##name = make_array(__VA_ARGS__); \
+	set_table(table, CSeqFeatData::eSubtype_##name, init_auto_##name.data(), init_auto_##name.size()); 
 
-START_SUBTYPE(cdregion)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(artificial_location);
-    ADD_QUAL(citation);
-    ADD_QUAL(coded_by);
-    ADD_QUAL(codon);
-    ADD_QUAL(codon_start);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gdb_xref);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(partial);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(ribosomal_slippage);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(transl_except);
-    ADD_QUAL(transl_table);
-    ADD_QUAL(translation);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(gene
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(nomenclature)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(prot)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(UniProtKB_evidence);
-    ADD_QUAL(allele);
-    ADD_QUAL(calculated_mol_wt);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(derived_from);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(name);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+//START_SUBTYPE(org
+//)
 
-START_SUBTYPE(preprotein)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(calculated_mol_wt);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(name);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(cdregion
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(artificial_location)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(coded_by)
+   ,ADD_QUAL(codon)
+   ,ADD_QUAL(codon_start)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gdb_xref)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(partial)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(ribosomal_slippage)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(transl_except)
+   ,ADD_QUAL(transl_table)
+   ,ADD_QUAL(translation)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(mat_peptide_aa)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(calculated_mol_wt);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(derived_from);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(name);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(prot
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(UniProtKB_evidence)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(calculated_mol_wt)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(derived_from)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(name)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(sig_peptide_aa)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(calculated_mol_wt);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(derived_from);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(name);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(preprotein
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(calculated_mol_wt)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(name)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(transit_peptide_aa)
-    ADD_QUAL(allele);
-    ADD_QUAL(calculated_mol_wt);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(derived_from);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(name);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(mat_peptide_aa
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(calculated_mol_wt)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(derived_from)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(name)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(preRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(sig_peptide_aa
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(calculated_mol_wt)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(derived_from)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(name)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(mRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(artificial_location);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(partial);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(transcript_id);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(transit_peptide_aa
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(calculated_mol_wt)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(derived_from)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(name)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(tRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(anticodon);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(preRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(rRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(mRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(artificial_location)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(partial)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(transcript_id)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(snRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(tRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(anticodon)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(scRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(rRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(snoRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(snRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(ncRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(ncRNA_class);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(scRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(tmRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(tag_peptide);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(snoRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(ncRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(ncRNA_class)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(tmRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(tag_peptide)
+   ,ADD_QUAL(usedin)
+)
 
 //  a.k.a. misc_RNA
-START_SUBTYPE(otherRNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(ncRNA_class);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-//START_SUBTYPE(pub)
-//END_SUBTYPE
-
-//START_SUBTYPE(seq)
-//END_SUBTYPE
-
-//START_SUBTYPE(imp)
-//END_SUBTYPE
-
-//START_SUBTYPE(allele)
-//END_SUBTYPE
-
-START_SUBTYPE(attenuator)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(C_region)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(CAAT_signal)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(Imp_CDS)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(artificial_location);
-    ADD_QUAL(citation);
-    ADD_QUAL(codon);
-    ADD_QUAL(codon_start);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(transl_except);
-    ADD_QUAL(transl_table);
-    ADD_QUAL(translation);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(conflict)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(compare);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(replace);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(D_loop)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(D_segment)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(enhancer)
-    ADD_QUAL(allele);
-    ADD_QUAL(bound_moiety);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(exon)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(partial);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(GC_signal)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(iDNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(intron)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(cons_splice);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(partial);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(J_segment)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(LTR)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(mat_peptide)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(misc_binding)
-    ADD_QUAL(allele);
-    ADD_QUAL(bound_moiety);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(misc_difference)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(clone);
-    ADD_QUAL(compare);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(replace);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(misc_feature)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(misc_recomb)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(recombination_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(misc_RNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(misc_signal)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(misc_structure)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(modified_base)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(mod_base);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-//START_SUBTYPE(mutation)
-//END_SUBTYPE
-
-START_SUBTYPE(N_region)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(old_sequence)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(compare);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(replace);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(polyA_signal)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(polyA_site)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(precursor_RNA)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(derived_from);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(product);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(prim_transcript)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(primer_bind)
-    ADD_QUAL(PCR_conditions);
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(promoter)
-    ADD_QUAL(allele);
-    ADD_QUAL(bound_moiety);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(protein_bind)
-    ADD_QUAL(allele);
-    ADD_QUAL(bound_moiety);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(RBS)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(repeat_region)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(insertion_seq);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(mobile_element);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(partial);
-    ADD_QUAL(rpt_family);
-    ADD_QUAL(rpt_type);
-    ADD_QUAL(rpt_unit);
-    ADD_QUAL(rpt_unit_range);
-    ADD_QUAL(rpt_unit_seq);
-    ADD_QUAL(satellite);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(transposon);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(repeat_unit)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(rpt_family);
-    ADD_QUAL(rpt_type);
-    ADD_QUAL(rpt_unit);
-    ADD_QUAL(rpt_unit_range);
-    ADD_QUAL(rpt_unit_seq);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(rep_origin)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(direction);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(S_region)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(satellite)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(rpt_family);
-    ADD_QUAL(rpt_type);
-    ADD_QUAL(rpt_unit);
-    ADD_QUAL(rpt_unit_range);
-    ADD_QUAL(rpt_unit_seq);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(sig_peptide)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(source)
-    ADD_QUAL(PCR_primers);
-    ADD_QUAL(altitude);
-    ADD_QUAL(bio_material);
-    ADD_QUAL(cell_line);
-    ADD_QUAL(cell_type);
-    ADD_QUAL(chloroplast);
-    ADD_QUAL(chromoplast);
-    ADD_QUAL(chromosome);
-    ADD_QUAL(citation);
-    ADD_QUAL(clone);
-    ADD_QUAL(clone_lib);
-    ADD_QUAL(collected_by);
-    ADD_QUAL(collection_date);
-    ADD_QUAL(country);
-    ADD_QUAL(cultivar);
-    ADD_QUAL(culture_collection);
-    ADD_QUAL(cyanelle);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(dev_stage);
-    ADD_QUAL(ecotype);
-    ADD_QUAL(environmental_sample);
-    ADD_QUAL(exception);
-    ADD_QUAL(focus);
-    ADD_QUAL(frequency);
-    ADD_QUAL(germline);
-    ADD_QUAL(haplogroup);
-    ADD_QUAL(haplotype);
-    ADD_QUAL(host);
-    ADD_QUAL(identified_by);
-    ADD_QUAL(isolate);
-    ADD_QUAL(isolation_source);
-    ADD_QUAL(kinetoplast);
-    ADD_QUAL(lab_host);
-    ADD_QUAL(label);
-    ADD_QUAL(lat_lon);
-    ADD_QUAL(linkage_group);
-    ADD_QUAL(macronuclear);
-    ADD_QUAL(map);
-    ADD_QUAL(mating_type);
-    ADD_QUAL(metagenomic);
-    ADD_QUAL(mitochondrion);
-    ADD_QUAL(mol_type);
-    ADD_QUAL(note);
-    ADD_QUAL(organelle);
-    ADD_QUAL(organism);
-    ADD_QUAL(plasmid);
-    ADD_QUAL(pop_variant);
-    ADD_QUAL(proviral);
-    ADD_QUAL(rearranged);
-    ADD_QUAL(segment);
-    ADD_QUAL(sequenced_mol);
-    ADD_QUAL(serotype);
-    ADD_QUAL(serovar);
-    ADD_QUAL(sex);
-    ADD_QUAL(specimen_voucher);
-    ADD_QUAL(strain);
-    ADD_QUAL(submitter_seqid);
-    ADD_QUAL(sub_clone);
-    ADD_QUAL(sub_species);
-    ADD_QUAL(sub_strain);
-    ADD_QUAL(tissue_lib);
-    ADD_QUAL(tissue_type);
-    ADD_QUAL(transgenic);
-    ADD_QUAL(transposon);
-    ADD_QUAL(type_material);
-    ADD_QUAL(usedin);
-    ADD_QUAL(variety);
-    ADD_QUAL(virion);
-    ADD_QUAL(whole_replicon);
-END_SUBTYPE
-
-START_SUBTYPE(stem_loop)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(STS)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(TATA_signal)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(terminator)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(transit_peptide)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(unsure)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(compare);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(replace);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(V_region)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(V_segment)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(variation)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(compare);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(frequency);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(replace);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-//START_SUBTYPE(virion)
-
-START_SUBTYPE(3clip)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(3UTR)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(5clip)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(5UTR)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(trans_splicing);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(10_signal)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(35_signal)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(gap)
-    ADD_QUAL(estimated_length);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(inference);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-END_SUBTYPE
-
-START_SUBTYPE(assembly_gap)
-    ADD_QUAL(estimated_length);
-    ADD_QUAL(exception);
-    ADD_QUAL(gap_type);
-    ADD_QUAL(linkage_evidence);
-END_SUBTYPE
-
-START_SUBTYPE(operon)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(operon);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-START_SUBTYPE(oriT)
-    ADD_QUAL(allele);
-    ADD_QUAL(bound_moiety);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(direction);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(rpt_type);
-    ADD_QUAL(rpt_unit);
-    ADD_QUAL(rpt_unit_range);
-    ADD_QUAL(rpt_unit_seq);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
-
-//START_SUBTYPE(site_ref)
-//END_SUBTYPE
-
-START_SUBTYPE(region)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(region_name);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(otherRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(ncRNA_class)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+//START_SUBTYPE(pub
+//)
+
+//START_SUBTYPE(seq
+//)
+
+//START_SUBTYPE(imp
+//)
+
+//START_SUBTYPE(allele
+//)
+
+START_SUBTYPE(attenuator
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(C_region
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(CAAT_signal
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(Imp_CDS
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(artificial_location)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(codon)
+   ,ADD_QUAL(codon_start)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(transl_except)
+   ,ADD_QUAL(transl_table)
+   ,ADD_QUAL(translation)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(conflict
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(compare)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(replace)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(D_loop
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(D_segment
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(enhancer
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(bound_moiety)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(exon
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(partial)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(GC_signal
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(iDNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(intron
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(cons_splice)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(partial)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(J_segment
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(LTR
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(mat_peptide
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(misc_binding
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(bound_moiety)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(misc_difference
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(clone)
+   ,ADD_QUAL(compare)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(replace)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(misc_feature
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(misc_recomb
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(recombination_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(misc_RNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(misc_signal
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(misc_structure
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(modified_base
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(mod_base)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(usedin)
+)
+
+//START_SUBTYPE(mutation
+//)
+
+START_SUBTYPE(N_region
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(old_sequence
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(compare)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(replace)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(polyA_signal
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(polyA_site
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(precursor_RNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(derived_from)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(prim_transcript
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(primer_bind
+   ,ADD_QUAL(PCR_conditions)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(promoter
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(bound_moiety)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(protein_bind
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(bound_moiety)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(RBS
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(repeat_region
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(insertion_seq)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(mobile_element)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(partial)
+   ,ADD_QUAL(rpt_family)
+   ,ADD_QUAL(rpt_type)
+   ,ADD_QUAL(rpt_unit)
+   ,ADD_QUAL(rpt_unit_range)
+   ,ADD_QUAL(rpt_unit_seq)
+   ,ADD_QUAL(satellite)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(transposon)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(repeat_unit
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(rpt_family)
+   ,ADD_QUAL(rpt_type)
+   ,ADD_QUAL(rpt_unit)
+   ,ADD_QUAL(rpt_unit_range)
+   ,ADD_QUAL(rpt_unit_seq)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(rep_origin
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(direction)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(S_region
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(satellite
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(rpt_family)
+   ,ADD_QUAL(rpt_type)
+   ,ADD_QUAL(rpt_unit)
+   ,ADD_QUAL(rpt_unit_range)
+   ,ADD_QUAL(rpt_unit_seq)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(sig_peptide
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(source
+   ,ADD_QUAL(PCR_primers)
+   ,ADD_QUAL(altitude)
+   ,ADD_QUAL(bio_material)
+   ,ADD_QUAL(cell_line)
+   ,ADD_QUAL(cell_type)
+   ,ADD_QUAL(chloroplast)
+   ,ADD_QUAL(chromoplast)
+   ,ADD_QUAL(chromosome)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(clone)
+   ,ADD_QUAL(clone_lib)
+   ,ADD_QUAL(collected_by)
+   ,ADD_QUAL(collection_date)
+   ,ADD_QUAL(country)
+   ,ADD_QUAL(cultivar)
+   ,ADD_QUAL(culture_collection)
+   ,ADD_QUAL(cyanelle)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(dev_stage)
+   ,ADD_QUAL(ecotype)
+   ,ADD_QUAL(environmental_sample)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(focus)
+   ,ADD_QUAL(frequency)
+   ,ADD_QUAL(germline)
+   ,ADD_QUAL(haplogroup)
+   ,ADD_QUAL(haplotype)
+   ,ADD_QUAL(host)
+   ,ADD_QUAL(identified_by)
+   ,ADD_QUAL(isolate)
+   ,ADD_QUAL(isolation_source)
+   ,ADD_QUAL(kinetoplast)
+   ,ADD_QUAL(lab_host)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(lat_lon)
+   ,ADD_QUAL(linkage_group)
+   ,ADD_QUAL(macronuclear)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(mating_type)
+   ,ADD_QUAL(metagenomic)
+   ,ADD_QUAL(mitochondrion)
+   ,ADD_QUAL(mol_type)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(organelle)
+   ,ADD_QUAL(organism)
+   ,ADD_QUAL(plasmid)
+   ,ADD_QUAL(pop_variant)
+   ,ADD_QUAL(proviral)
+   ,ADD_QUAL(rearranged)
+   ,ADD_QUAL(segment)
+   ,ADD_QUAL(sequenced_mol)
+   ,ADD_QUAL(serotype)
+   ,ADD_QUAL(serovar)
+   ,ADD_QUAL(sex)
+   ,ADD_QUAL(specimen_voucher)
+   ,ADD_QUAL(strain)
+   ,ADD_QUAL(submitter_seqid)
+   ,ADD_QUAL(sub_clone)
+   ,ADD_QUAL(sub_species)
+   ,ADD_QUAL(sub_strain)
+   ,ADD_QUAL(tissue_lib)
+   ,ADD_QUAL(tissue_type)
+   ,ADD_QUAL(transgenic)
+   ,ADD_QUAL(transposon)
+   ,ADD_QUAL(type_material)
+   ,ADD_QUAL(usedin)
+   ,ADD_QUAL(variety)
+   ,ADD_QUAL(virion)
+   ,ADD_QUAL(whole_replicon)
+)
+
+START_SUBTYPE(stem_loop
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(STS
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(TATA_signal
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(terminator
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(transit_peptide
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(unsure
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(compare)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(replace)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(V_region
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(V_segment
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(variation
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(compare)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(frequency)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(replace)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+//START_SUBTYPE(virion
+
+START_SUBTYPE(3clip
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(3UTR
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(5clip
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(5UTR
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(10_signal
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(35_signal
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(gap
+   ,ADD_QUAL(estimated_length)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+)
+
+START_SUBTYPE(assembly_gap
+   ,ADD_QUAL(estimated_length)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(gap_type)
+   ,ADD_QUAL(linkage_evidence)
+)
+
+START_SUBTYPE(operon
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+START_SUBTYPE(oriT
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(bound_moiety)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(direction)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(rpt_type)
+   ,ADD_QUAL(rpt_unit)
+   ,ADD_QUAL(rpt_unit_range)
+   ,ADD_QUAL(rpt_unit_seq)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
+
+//START_SUBTYPE(site_ref
+//)
+
+START_SUBTYPE(region
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(region_name)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
 // same as misc_feature
-START_SUBTYPE(comment)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(comment
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
 // same as misc_feature
-START_SUBTYPE(bond)
-    ADD_QUAL(allele);
-    ADD_QUAL(bond_type);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(bond
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(bond_type)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
 //  same as misc_feature
-START_SUBTYPE(site)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(site_type);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(site
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(site_type)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-//START_SUBTYPE(rsite)
-//END_SUBTYPE
+//START_SUBTYPE(rsite
+//)
 
-//START_SUBTYPE(user)
-//END_SUBTYPE
+//START_SUBTYPE(user
+//)
 
-//START_SUBTYPE(txinit)
-//END_SUBTYPE
+//START_SUBTYPE(txinit
+//)
 
-//START_SUBTYPE(num)
-//END_SUBTYPE
+//START_SUBTYPE(num
+//)
 
 //  same as misc_feature???
-START_SUBTYPE(psec_str)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(sec_str_type);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(psec_str
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(sec_str_type)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-//START_SUBTYPE(non_std_residue)
-//END_SUBTYPE
+//START_SUBTYPE(non_std_residue
+//)
 
 //  same as misc_feature
-START_SUBTYPE(het)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(heterogen);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(number);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(het
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(heterogen)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(number)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(mobile_element)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(insertion_seq);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(mobile_element_type);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(rpt_family);
-    ADD_QUAL(rpt_type);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(transposon);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(mobile_element
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(insertion_seq)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(mobile_element_type)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(rpt_family)
+   ,ADD_QUAL(rpt_type)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(transposon)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(biosrc)
-    ADD_QUAL(PCR_primers);
-    ADD_QUAL(altitude);
-    ADD_QUAL(bio_material);
-    ADD_QUAL(cell_line);
-    ADD_QUAL(cell_type);
-    ADD_QUAL(chloroplast);
-    ADD_QUAL(chromoplast);
-    ADD_QUAL(chromosome);
-    ADD_QUAL(citation);
-    ADD_QUAL(clone);
-    ADD_QUAL(clone_lib);
-    ADD_QUAL(collected_by);
-    ADD_QUAL(collection_date);
-    ADD_QUAL(country);
-    ADD_QUAL(cultivar);
-    ADD_QUAL(culture_collection);
-    ADD_QUAL(cyanelle);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(dev_stage);
-    ADD_QUAL(ecotype);
-    ADD_QUAL(environmental_sample);
-    ADD_QUAL(exception);
-    ADD_QUAL(focus);
-    ADD_QUAL(frequency);
-    ADD_QUAL(germline);
-    ADD_QUAL(haplogroup);
-    ADD_QUAL(haplotype);
-    ADD_QUAL(host);
-    ADD_QUAL(identified_by);
-    ADD_QUAL(isolate);
-    ADD_QUAL(isolation_source);
-    ADD_QUAL(kinetoplast);
-    ADD_QUAL(lab_host);
-    ADD_QUAL(label);
-    ADD_QUAL(lat_lon);
-    ADD_QUAL(linkage_group);
-    ADD_QUAL(macronuclear);
-    ADD_QUAL(map);
-    ADD_QUAL(mating_type);
-    ADD_QUAL(metagenomic);
-    ADD_QUAL(mitochondrion);
-    ADD_QUAL(mol_type);
-    ADD_QUAL(note);
-    ADD_QUAL(organelle);
-    ADD_QUAL(organism);
-    ADD_QUAL(plasmid);
-    ADD_QUAL(pop_variant);
-    ADD_QUAL(proviral);
-    ADD_QUAL(rearranged);
-    ADD_QUAL(segment);
-    ADD_QUAL(sequenced_mol);
-    ADD_QUAL(serotype);
-    ADD_QUAL(serovar);
-    ADD_QUAL(sex);
-    ADD_QUAL(specimen_voucher);
-    ADD_QUAL(strain);
-    ADD_QUAL(submitter_seqid);
-    ADD_QUAL(sub_clone);
-    ADD_QUAL(sub_species);
-    ADD_QUAL(sub_strain);
-    ADD_QUAL(tissue_lib);
-    ADD_QUAL(tissue_type);
-    ADD_QUAL(transgenic);
-    ADD_QUAL(transposon);
-    ADD_QUAL(type_material);
-    ADD_QUAL(usedin);
-    ADD_QUAL(variety);
-    ADD_QUAL(virion);
-    ADD_QUAL(whole_replicon);
-END_SUBTYPE
+START_SUBTYPE(biosrc
+   ,ADD_QUAL(PCR_primers)
+   ,ADD_QUAL(altitude)
+   ,ADD_QUAL(bio_material)
+   ,ADD_QUAL(cell_line)
+   ,ADD_QUAL(cell_type)
+   ,ADD_QUAL(chloroplast)
+   ,ADD_QUAL(chromoplast)
+   ,ADD_QUAL(chromosome)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(clone)
+   ,ADD_QUAL(clone_lib)
+   ,ADD_QUAL(collected_by)
+   ,ADD_QUAL(collection_date)
+   ,ADD_QUAL(country)
+   ,ADD_QUAL(cultivar)
+   ,ADD_QUAL(culture_collection)
+   ,ADD_QUAL(cyanelle)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(dev_stage)
+   ,ADD_QUAL(ecotype)
+   ,ADD_QUAL(environmental_sample)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(focus)
+   ,ADD_QUAL(frequency)
+   ,ADD_QUAL(germline)
+   ,ADD_QUAL(haplogroup)
+   ,ADD_QUAL(haplotype)
+   ,ADD_QUAL(host)
+   ,ADD_QUAL(identified_by)
+   ,ADD_QUAL(isolate)
+   ,ADD_QUAL(isolation_source)
+   ,ADD_QUAL(kinetoplast)
+   ,ADD_QUAL(lab_host)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(lat_lon)
+   ,ADD_QUAL(linkage_group)
+   ,ADD_QUAL(macronuclear)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(mating_type)
+   ,ADD_QUAL(metagenomic)
+   ,ADD_QUAL(mitochondrion)
+   ,ADD_QUAL(mol_type)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(organelle)
+   ,ADD_QUAL(organism)
+   ,ADD_QUAL(plasmid)
+   ,ADD_QUAL(pop_variant)
+   ,ADD_QUAL(proviral)
+   ,ADD_QUAL(rearranged)
+   ,ADD_QUAL(segment)
+   ,ADD_QUAL(sequenced_mol)
+   ,ADD_QUAL(serotype)
+   ,ADD_QUAL(serovar)
+   ,ADD_QUAL(sex)
+   ,ADD_QUAL(specimen_voucher)
+   ,ADD_QUAL(strain)
+   ,ADD_QUAL(submitter_seqid)
+   ,ADD_QUAL(sub_clone)
+   ,ADD_QUAL(sub_species)
+   ,ADD_QUAL(sub_strain)
+   ,ADD_QUAL(tissue_lib)
+   ,ADD_QUAL(tissue_type)
+   ,ADD_QUAL(transgenic)
+   ,ADD_QUAL(transposon)
+   ,ADD_QUAL(type_material)
+   ,ADD_QUAL(usedin)
+   ,ADD_QUAL(variety)
+   ,ADD_QUAL(virion)
+   ,ADD_QUAL(whole_replicon)
+)
 
-//START_SUBTYPE(clone)
-//END_SUBTYPE
+//START_SUBTYPE(clone
+//)
 
-START_SUBTYPE(variation_ref)
-    ADD_QUAL(allele);
-    ADD_QUAL(citation);
-    ADD_QUAL(compare);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(frequency);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(product);
-    ADD_QUAL(replace);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(variation_ref
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(compare)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(frequency)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(replace)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(centromere)
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(inference);
-    ADD_QUAL(note);
-    ADD_QUAL(standard_name);
-END_SUBTYPE
+START_SUBTYPE(centromere
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(standard_name)
+)
 
-START_SUBTYPE(telomere)
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(inference);
-    ADD_QUAL(note);
-    ADD_QUAL(rpt_type);
-    ADD_QUAL(rpt_unit_range);
-    ADD_QUAL(rpt_unit_seq);
-    ADD_QUAL(standard_name);
-END_SUBTYPE
+START_SUBTYPE(telomere
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(rpt_type)
+   ,ADD_QUAL(rpt_unit_range)
+   ,ADD_QUAL(rpt_unit_seq)
+   ,ADD_QUAL(standard_name)
+)
 
-START_SUBTYPE(regulatory)
-    ADD_QUAL(allele);
-    ADD_QUAL(bound_moiety);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(operon);
-    ADD_QUAL(phenotype);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(regulatory_class);
-    ADD_QUAL(standard_name);
-END_SUBTYPE
+START_SUBTYPE(regulatory
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(bound_moiety)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(phenotype)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(regulatory_class)
+   ,ADD_QUAL(standard_name)
+)
 
-START_SUBTYPE(propeptide)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(calculated_mol_wt);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(derived_from);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(name);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-END_SUBTYPE
+START_SUBTYPE(propeptide
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(calculated_mol_wt)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(derived_from)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(name)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(propeptide_aa)
-    ADD_QUAL(EC_number);
-    ADD_QUAL(allele);
-    ADD_QUAL(calculated_mol_wt);
-    ADD_QUAL(citation);
-    ADD_QUAL(db_xref);
-    ADD_QUAL(derived_from);
-    ADD_QUAL(evidence);
-    ADD_QUAL(exception);
-    ADD_QUAL(experiment);
-    ADD_QUAL(function);
-    ADD_QUAL(gene);
-    ADD_QUAL(gene_synonym);
-    ADD_QUAL(inference);
-    ADD_QUAL(label);
-    ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
-    ADD_QUAL(name);
-    ADD_QUAL(note);
-    ADD_QUAL(old_locus_tag);
-    ADD_QUAL(product);
-    ADD_QUAL(protein_id);
-    ADD_QUAL(pseudo);
-    ADD_QUAL(pseudogene);
-    ADD_QUAL(standard_name);
-    ADD_QUAL(usedin);
-    END_SUBTYPE
+START_SUBTYPE(propeptide_aa
+   ,ADD_QUAL(EC_number)
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(calculated_mol_wt)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(derived_from)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(name)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(protein_id)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(usedin)
+)
 
-START_SUBTYPE(any)
-    for (size_t it = eQual_allele; it <= eQual_whole_replicon; ++it) {
-         quals.push_back((EQualifier)it);
-    }
-END_SUBTYPE
+
 #undef START_SUBTYPE
 #undef ADD_QUAL
-#undef END_SUBTYPE
 
-    // sort for binary_search
-    NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
-        sort(iter->second.begin(), iter->second.end());
-    }
+    fill_table(table, CSeqFeatData::eSubtype_any, CSeqFeatData::eQual_allele, CSeqFeatData::eQual_whole_replicon);
 
-    sx_LegalQualsInitialized = true;
+    return table;
+} // s_InitLegalQuals
+
+} // anonymous namespace
+
+const TFeatQuals& GetLegalQuals()
+{
+    static TFeatQuals s_legal_quals = s_InitLegalQuals();
+
+    return s_legal_quals;
 }
-
 
 void CSeqFeatData::s_InitMandatoryQuals(void)
 {
