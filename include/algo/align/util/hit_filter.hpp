@@ -662,7 +662,7 @@ protected:
 
         THitEnd *phe_lo, *phe_hi;
         const Uint1 i1 = where << 1, i2 = i1 | 1;
-        if(hc->GetStrand(where)) {
+        if(he[i1].m_X <= he[i2].m_X) {
             phe_lo = &he[i1];
             phe_hi = &he[i2];
         } else {
