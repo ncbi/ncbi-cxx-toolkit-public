@@ -47,7 +47,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "ConnNetInfo_SetupStandardArgs/sprintf"
+	name = "ConnNetInfo_SetupStandardArgs/sprintf - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
@@ -58,6 +58,21 @@ suppression = {
 		allocation={
 			...;
 			func=ConnNetInfo_SetupStandardArgs;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_SetupStandardArgs/sprintf - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf;
+			func=ConnNetInfo_SetupStandardArgs;
+		}
+		allocation={
+			...;
+			func=assign,src=xstring;
 		}
 	}
 }
