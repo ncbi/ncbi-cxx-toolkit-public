@@ -58,25 +58,28 @@ namespace
     static const CTempString g_dblink = "DBLink";
 };
 
-void TSrcQuals::AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
+void SSrcQuals::AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
 {
     // first is always skipped since it's an id 
-    for (size_t i = 1; i < values.size() && i < m_cols.size(); i++)
-    {
+    for (size_t i = 1; i < values.size() && i < columnNames.size(); i++) {
+    //for (size_t i = 1; i < columnNames.size(); i++) {
+        // Number of values cannot be greater than the number of columns
         if (!values[i].empty())
         {
-            mod.AddMods(m_cols[i], values[i]);
+            mod.AddMods(columnNames[i], values[i]);
         }
     }
 }
 
-bool TSrcQuals::AddQualifiers(objects::CSourceModParser& mod, const string& id)
+bool SSrcQuals::AddQualifiers(objects::CSourceModParser& mod, const string& id)
 {
     TLineMap::iterator it = m_lines_map.find(id);
+
     if (it != m_lines_map.end())
     {
         vector<CTempString> values;
         NStr::Split(it->second.m_unparsed, "\t", values, 0);
+
 
         AddQualifiers(mod, values);
         m_lines_map.erase(it);
@@ -86,14 +89,17 @@ bool TSrcQuals::AddQualifiers(objects::CSourceModParser& mod, const string& id)
     return false;
 }
 
-bool TSrcQuals::AddQualifiers(CSourceModParser& mod, const CBioseq& id)
+bool SSrcQuals::AddQualifiers(CSourceModParser& mod, const CBioseq::TId& ids)
 {
-    if (m_cols.empty())
+
+
+    if (columnNames.empty())
         return false;
 
-    for (auto id_it: id.GetId() )
+    for (auto pId : ids)
     {
-        string id = id_it->AsFastaString();
+        string id = pId->AsFastaString();
+
         NStr::ToLower(id);
         if (AddQualifiers(mod, id))
             return true;
@@ -112,6 +118,19 @@ CSourceQualifiersReader::~CSourceQualifiersReader()
 
 bool CSourceQualifiersReader::ApplyQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq, objects::ILineErrorListener* listener)
 {
+    CSourceModParser::TModsRange mods[2];
+    mods[0] = mod.FindAllMods("note");
+    mods[1] = mod.FindAllMods("notes");
+    for (size_t i = 0; i < 2; i++)
+    {
+        for (CSourceModParser::TModsCI it = mods[i].first; it != mods[i].second; it++)
+        {
+            NStr::ReplaceInPlace((string&)it->value, "<", "[");
+            NStr::ReplaceInPlace((string&)it->value, ">", "]");
+        }
+    }
+
+    mod.ApplyAllMods(bioseq);
     CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
     for (auto mod : unused_mods)
     {
@@ -127,161 +146,103 @@ bool CSourceQualifiersReader::ApplyQualifiers(objects::CSourceModParser& mod, ob
     return true;
 }
 
-bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq)
-{
-    // first is always skipped since it's an id 
-    CSourceModParser::TModsRange mods[2];
-    mods[0] = mod.FindAllMods("note");
-    mods[1] = mod.FindAllMods("notes");
-    for (size_t i = 0; i < 2; i++)
-    {
-        for (CSourceModParser::TModsCI it = mods[i].first; it != mods[i].second; it++)
-        {
-            NStr::ReplaceInPlace((string&)it->value, "<", "[");
-            NStr::ReplaceInPlace((string&)it->value, ">", "]");
-        }
-    }
-    mod.ApplyAllMods(bioseq);
 
-    return ApplyQualifiers(mod, bioseq, m_context->m_logger);
-}
-
-bool CSourceQualifiersReader::LoadSourceQualifiers(const string& filename, const string& opt_map_filename)
+bool CSourceQualifiersReader::LoadSourceQualifiers(const string& namedFile, const string& defaultFile)
 {
     bool loaded = false;
-    if (CFile(filename).Exists())
+    if (CFile(defaultFile).Exists())
     {
         loaded = true;
-        x_LoadSourceQualifiers(m_quals[0], filename, opt_map_filename);
+        x_LoadSourceQualifiers(m_QualsFromDefaultSrcFile, defaultFile); // .src file
     }
 
-    if (!m_context->m_single_source_qual_file.empty())
+    if (!NStr::IsBlank(namedFile) && CFile(namedFile).Exists()) // Should report an error if it doesn't exist
     {
         loaded = true;
-        x_LoadSourceQualifiers(m_quals[1], m_context->m_single_source_qual_file, opt_map_filename);
+        x_LoadSourceQualifiers(m_QualsFromNamedSrcFile, namedFile); // -src-file
     }
     return loaded;
 }
 
-void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const string& filename, const string& opt_map_filename)
+void CSourceQualifiersReader::x_LoadSourceQualifiers(SSrcQuals& quals, const string& filename)
 {
-    quals.m_id_col = 0;
-    quals.m_filemap.reset(new CMemoryFileMap(filename));
+    unique_ptr<CMemoryFileMap> pFileMap(new CMemoryFileMap(filename));
 
-    size_t sz = quals.m_filemap->GetFileSize();
-    const char* ptr = (const char*)quals.m_filemap->Map(0, sz);
-    const char* end = ptr + sz;
+    size_t fileSize = pFileMap->GetFileSize();
+    const char* ptr = (const char*)pFileMap->Map(0, fileSize);
+    const char* end = ptr + fileSize;
+
     while (ptr < end)
     {
         // search for next non empty line
-        if (*ptr == '\r' || *ptr == '\n')
-        {
-            ptr++;
+        if (*ptr == '\r' || *ptr == '\n') {
+            ++ptr;
             continue;
         }
 
         const char* start = ptr;
-
         // search for end of line
         const char* endline = (const char*)memchr(ptr, '\n', end - ptr);
-        if (endline == 0) // this is the last line
-        {
+        if (endline == NULL) {
             endline = ptr;
             ptr = end;
-        }
+        } 
         else
         {
             ptr = endline + 1;
             endline--;
         }
 
-        while (start < endline && *endline == '\r')
+        while (start < endline && *endline == '\r') {
             endline--;
+        }
 
 
         // compose line control structure
         if (start < endline)
         {
-            CTempString newline(start, endline - start + 1);
-            // parse the header
-            if (quals.m_cols.empty())
-            {
-                NStr::Split(newline, "\t", quals.m_cols, 0);
-                if (!opt_map_filename.empty())
-                {
-                    //LCOV_EXCL_START
-                    // optical maps are no longer supported
-                    ITERATE(vector<CTempString>, it, quals.m_cols)
-                    {
-                        if (*it == "id" ||
-                            *it == "seqid" ||
-                            NStr::CompareNocase(*it, "Filename") == 0 ||
-                            NStr::CompareNocase(*it, "File name") == 0)
-                        {
-                            quals.m_id_col = (it - quals.m_cols.begin());
-                            break;
-                        }
-                    }
-                    //LCOV_EXCL_STOP
-                }
+            string line(start, endline-start+1);
+            if (quals.columnNames.empty()) {
+                NStr::Split(line, "\t", quals.columnNames, 0);
             }
+    
+            else 
             // parse regular line
-            else
             {
-                const char* endid = (const char*)memchr(start, '\t', endline - start);
-                if (endid)
-                {
-                    string id_text(start, endid - start);
-#if 0
-                    NStr::ReplaceInPlace(id_text, ":", "|");
-                    if (id_text.find('|') != string::npos)
-                    {
-                        if (!NStr::StartsWith(id_text, "gnl|"))
-                        {
-                            id_text.insert(0, "gnl|");
-                        }
-                    else {
-                        if (!m_context->m_genome_center_id.empty())
-                        {
-                            id_text = "gnl|" + m_context->m_genome_center_id + "|" + id_text;
-                        }
-                    }
-#endif
-
-                    if (opt_map_filename.empty())
-                    {
-                        CRef<CSeq_id> id(new CSeq_id(id_text, 
-                            m_context->m_allow_accession ? CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal : CSeq_id::fParse_AnyLocal));
-
-                        id_text = id->AsFastaString();
-                        NStr::ToLower(id_text);
-                        TSrcQualParsed& ref = quals.m_lines_map[id_text];
-                        ref.m_id = id;
-                        ref.m_unparsed = newline;
-                    }
-                    else
-                    {
-                        //LCOV_EXCL_START
-                        // optical maps are no longer supported
-                        TSrcQualParsed& ref = quals.m_lines_map[id_text];
-                        ref.m_unparsed = newline;
-                        //LCOV_EXCL_STOP
-                    }
+                string idString, remainder;
+                NStr::SplitInTwo(line, "\t", idString, remainder);
+                
+                if (!idString.empty()) {
+                    auto parseFlags = 
+                        m_context->m_allow_accession ?
+                        CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal :
+                        CSeq_id::fParse_AnyLocal;
+                    auto pSeqId = 
+                        Ref(new CSeq_id(idString, parseFlags));
+                    string idKey = pSeqId->AsFastaString();
+                    NStr::ToLower(idKey);
+                    SSrcQualParsed& ref = quals.m_lines_map[idKey];
+                    ref.m_id = pSeqId;
+                    ref.m_unparsed = line;
                 }
             }
         }
     }
 
-    if (quals.m_cols.empty())
+    if (quals.columnNames.empty())
        NCBI_THROW(CArgException, eConstraint,
        "source modifiers file header line is not valid");
 }
 
-void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const string& opt_map_filename)
-{
-    CScope scope(*CObjectManager::GetInstance());
 
+void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry)
+{
+
+    CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_EditHandle h_entry = scope.AddTopLevelSeqEntry(entry).GetEditHandle();
+
+    
+
 
     // apply for all sequences
     for (CBioseq_CI bioseq_it(h_entry); bioseq_it; ++bioseq_it)
@@ -290,28 +251,18 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
 
         CBioseq* dest = (CBioseq*)bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull();
 
-        if (!m_context->m_source_mods.empty())
-           mod.ParseTitle(m_context->m_source_mods, CConstRef<CSeq_id>(dest->GetFirstId()));
+        if (!m_context->mCommandLineMods.empty())
+           mod.ParseTitle(m_context->mCommandLineMods, CConstRef<CSeq_id>(dest->GetFirstId()));
 
-        bool handled = false;
+        bool handled = m_QualsFromNamedSrcFile.AddQualifiers(mod, dest->GetId());
 
-        if (opt_map_filename.empty())
-        {
-            handled |= m_quals[1].AddQualifiers(mod, *dest);
-            handled |= m_quals[0].AddQualifiers(mod, *dest);
-        }
-        else
-        {
-            //LCOV_EXCL_START
-            // optical maps are no longer supported
-            handled |= m_quals[1].AddQualifiers(mod, opt_map_filename);
-            handled |= m_quals[0].AddQualifiers(mod, opt_map_filename);
-            //LCOV_EXCL_STOP
-        }
+        handled |= m_QualsFromDefaultSrcFile.AddQualifiers(mod, dest->GetId());
 
-        if (!x_ApplyAllQualifiers(mod, *dest))
+        if (!ApplyQualifiers(mod, *dest, m_context->m_logger))
           NCBI_THROW(CArgException, eConstraint,
              "there are found unrecognised source modifiers");
+
+
 
         if (m_context->m_verbose && !handled)
         {
@@ -320,10 +271,20 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
                     "Source qualifiers file doesn't contain qualifiers for sequence id " + dest->GetId().front()->AsFastaString())));
         }
     }
+
+    // Since entries
     if (m_context->m_verbose)
     {
-        for (auto m : m_quals)
-            for (auto line : m.m_lines_map)
+
+            for (auto line : m_QualsFromDefaultSrcFile.m_lines_map)
+            {
+                m_context->m_logger->PutError(*auto_ptr<CLineError>(
+                    CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                    "File " + m_context->m_current_file + " doesn't contain sequence with id " + line.first)));
+            }
+
+
+            for (auto line : m_QualsFromNamedSrcFile.m_lines_map)
             {
                 m_context->m_logger->PutError(*auto_ptr<CLineError>(
                     CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
@@ -332,73 +293,6 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
     }
 }
 
-
-//LCOV_EXCL_START
-// no longer used
-void CSourceQualifiersReader::x_AddQualifiers(CSourceModParser& mod, const string& filename)
-{
-    CRef<ILineReader> reader(ILineReader::New(filename));
-
-    vector<CTempString> cols;
-
-    //size_t filename_id = string::npos;
-    while (!reader->AtEOF())
-    {
-        reader->ReadLine();
-        // First line is a collumn definitions
-        CTempString current = reader->GetCurrentLine();
-        if (current.empty())
-            continue;
-
-        if (cols.empty())
-        {
-            NStr::Split(current, "\t", cols, 0);
-#if 0
-            if (!opt_map_filename.empty())
-            {
-                ITERATE(vector<CTempString>, it, cols)
-                {
-                    if (*it == "id" ||
-                        *it == "seqid" ||
-                        NStr::CompareNocase(*it, "Filename") == 0 ||
-                        NStr::CompareNocase(*it, "File name") == 0)
-                    {
-                        filename_id = (it - cols.begin());
-                        break;
-                    }
-                }
-            }
-#endif
-            if (cols.empty())
-                NCBI_THROW(CArgException, eConstraint,
-                "source modifiers file header line is not valid");
-            continue;
-        }
-
-        if (current.empty())
-            continue;
-
-        // Each line except first is a set of values, first collumn is a sequence id
-        vector<CTempString> values;
-        NStr::Split(current, "\t", values, 0);
-#if 0
-        string id;
-
-        if (opt_map_filename.empty())
-        {
-            id = values[0];
-        }
-        else
-        {
-            if (filename_id < values.size())
-                id = values[filename_id];
-        }
-#endif
-
-        //x_AddQualifiers(mod, cols, values);
-    }
-}
-//LCOV_EXCL_STOP
 
 bool CSourceQualifiersReader::x_ParseAndAddTracks(CBioseq& container, const string& name, const string& value)
 {

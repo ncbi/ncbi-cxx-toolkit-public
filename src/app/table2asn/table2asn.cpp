@@ -143,7 +143,10 @@ private:
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessSecretFiles1Phase(CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
-    void ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml);
+    void ProcessSRCFileAndQualifiers(
+            const string& namedSrcFile, 
+            const string& defaultSrcFile,
+            const string& commandLineMods, CSeq_entry& result);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
     void ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows);
@@ -161,12 +164,6 @@ private:
     CRef<CTable2AsnLogger> m_logger;
     auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
     CTable2AsnContext    m_context;
-
-    //bool m_Continue;
-    //bool m_OnlyAnnots;
-
-    //EDiagSev m_LowCutoff;
-    //EDiagSev m_HighCutoff;
 };
 
 CTbl2AsnApp::CTbl2AsnApp(void)
@@ -481,7 +478,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_accession.Reset(new CSeq_id(args["A"].AsString()));
     if (args["j"])
     {       
-        m_context.m_source_mods = args["j"].AsString();
+        m_context.mCommandLineMods = args["j"].AsString();
     }
     if (args["src-file"])
         m_context.m_single_source_qual_file = args["src-file"].AsString();
@@ -1124,7 +1121,13 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(CSeq_entry& result)
 
     string name = dir + base;
 
-    ProcessSRCFileAndQualifiers(name + ".src", result, ext == ".xml" ? (name + ".xml") : "");
+    string defaultSrcFile = name + ".src";
+    string namedSrcFile = m_context.m_single_source_qual_file;
+    ProcessSRCFileAndQualifiers(namedSrcFile, 
+            defaultSrcFile, 
+            m_context.mCommandLineMods, result);
+
+
 
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
@@ -1167,11 +1170,15 @@ void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
     }
 }
 
-void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
+void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& namedSrcFile,
+        const string& defaultSrcFile,
+        const string& commandLineMods,
+        CSeq_entry& result)
 { 
     CSourceQualifiersReader src_reader(&m_context);
-    if (src_reader.LoadSourceQualifiers(pathname, opt_map_xml) || !m_context.m_source_mods.empty())
-       src_reader.ProcessSourceQualifiers(result, opt_map_xml);
+    if (src_reader.LoadSourceQualifiers(namedSrcFile, defaultSrcFile) || !NStr::IsBlank(commandLineMods)) {
+       src_reader.ProcessSourceQualifiers(result);
+    }
 }
 
 void CTbl2AsnApp::ProcessQVLFile(const string& pathname, CSeq_entry& result)

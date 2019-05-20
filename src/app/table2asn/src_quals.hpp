@@ -3,6 +3,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbifile.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -26,26 +27,26 @@ class ILineReader;
   Usage examples
 */
 
-typedef struct 
+struct SSrcQualParsed
 {
-    CTempString m_unparsed;
+    //CTempString m_unparsed;
+    string m_unparsed;
     vector<CTempString> m_parsed;
     CRef<objects::CSeq_id> m_id;
-} TSrcQualParsed;
+};
 
-class TSrcQuals
+struct SSrcQuals
 {
-public:
-    typedef map<string, TSrcQualParsed> TLineMap;
-    TLineMap m_lines_map;
-    size_t m_id_col;
-    auto_ptr<CMemoryFileMap> m_filemap;
-    vector<CTempString> m_cols;
-
-    bool AddQualifiers(objects::CSourceModParser& mod, const objects::CBioseq& bioseq);
+    bool AddQualifiers(objects::CSourceModParser& mod, const objects::CBioseq::TId& ids);
     bool AddQualifiers(objects::CSourceModParser& mod, const string& id);
     void AddQualifiers(objects::CSourceModParser& mod, const vector<CTempString>& values);
+
+    using TLineMap = map<string, SSrcQualParsed>;
+    TLineMap m_lines_map;
+    //vector<CTempString> columnNames;
+    vector<string> columnNames;
 };
+
 
 class CTable2AsnContext;
 class CSourceQualifiersReader
@@ -54,18 +55,18 @@ public:
    CSourceQualifiersReader(CTable2AsnContext* context);
    ~CSourceQualifiersReader();
 
-   bool LoadSourceQualifiers(const string& filename, const string& opt_map_filename);
-   void ProcessSourceQualifiers(objects::CSeq_entry& container, const string& opt_map_filename);
+   bool LoadSourceQualifiers(const string& namedFile, const string& defaultFile);
+   void ProcessSourceQualifiers(objects::CSeq_entry& container);
    static bool ApplyQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq, objects::ILineErrorListener* listener);
 private:
    static bool x_ParseAndAddTracks(objects::CBioseq& container,  const string& name, const string& value);
 
-   bool x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq);
-   void x_AddQualifiers(objects::CSourceModParser& mod, const string& filename);
-   void x_LoadSourceQualifiers(TSrcQuals& quals, const string& filename, const string& opt_map_filename);
+   void x_LoadSourceQualifiers(SSrcQuals& quals, const string& fileName);
 
    CTable2AsnContext* m_context;
-   TSrcQuals m_quals[2];
+   SSrcQuals m_quals[2];
+   SSrcQuals m_QualsFromDefaultSrcFile;
+   SSrcQuals m_QualsFromNamedSrcFile;
 };
 
 END_NCBI_SCOPE

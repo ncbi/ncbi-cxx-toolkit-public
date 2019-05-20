@@ -155,7 +155,7 @@ public:
 
     CRef<objects::CScope>      m_scope;
     CRef<objects::CObjectManager> m_ObjMgr;
-    string m_source_mods;
+    string mCommandLineMods;
 
     static bool GetOrgName(string& name, const objects::CSeq_entry& entry);
     static CRef<objects::COrg_ref> GetOrgRef(objects::CSeq_descr& descr);
