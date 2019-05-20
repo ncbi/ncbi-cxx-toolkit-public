@@ -9,8 +9,8 @@
 # WGMLST_LIBPATH
 
 find_package(LIBWGMLST REQUIRED
-                PATHS /panfs/pan1/gpipe/ThirdParty/skesa-1.1/
-                NO_DEFAULT_PATH
+    PATHS /panfs/pan1/gpipe/ThirdParty/skesa-1.1/${NCBI_COMPILER}-${NCBI_COMPILER_VERSION_DOTTED}
+    NO_DEFAULT_PATH
 )
 
 if (LIBWGMLST_FOUND)

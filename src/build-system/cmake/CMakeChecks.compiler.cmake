@@ -111,6 +111,7 @@ if (WIN32)
 else()
     set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
     set(NCBI_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
+    set(NCBI_COMPILER_VERSION_DOTTED ${NCBI_COMPILER_VERSION})
     string(REPLACE "." "" NCBI_COMPILER_VERSION ${NCBI_COMPILER_VERSION})
 endif()
 
@@ -139,6 +140,9 @@ endif (NOT buildconf)
 
 message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build shared libraries: ${BUILD_SHARED_LIBS}")
+message(STATUS "NCBI Compiler: ${NCBI_COMPILER}")
+message(STATUS "NCBI Compiler Version: ${NCBI_COMPILER_VERSION}")
+message(STATUS "NCBI Compiler Version Tag: ${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${CMAKE_BUILD_TYPE}")
 
 # pass these back for ccache to pick up
 set(ENV{CCACHE_UMASK} 002)
