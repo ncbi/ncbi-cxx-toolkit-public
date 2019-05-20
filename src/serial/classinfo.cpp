@@ -471,12 +471,8 @@ bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
 
     // User defined comparison
     if ( IsCObject() ) {
-        if ( const CSerialUserOp* op1 =
-             dynamic_cast<const CSerialUserOp*>
-             (static_cast<const CObject*>(object1)) ) {
-            if ( const CSerialUserOp* op2 =
-                 dynamic_cast<const CSerialUserOp*>
-                 (static_cast<const CObject*>(object2)) ) {
+        if ( const CSerialUserOp* op1 = AsCSerialUserOp(object1) ) {
+            if ( const CSerialUserOp* op2 = AsCSerialUserOp(object2) ) {
                 return op1->UserOp_Equals(*op2);
             }
         }
@@ -498,12 +494,8 @@ void CClassTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
 
     // User defined assignment
     if ( IsCObject() ) {
-        if ( const CSerialUserOp* opsrc =
-             dynamic_cast<const CSerialUserOp*>
-             (static_cast<const CObject*>(src)) ) {
-            if ( CSerialUserOp* opdst =
-                 dynamic_cast<CSerialUserOp*>
-                 (static_cast<CObject*>(dst)) ) {
+        if ( const CSerialUserOp* opsrc = AsCSerialUserOp(src) ) {
+            if ( CSerialUserOp* opdst = AsCSerialUserOp(dst) ) {
                 opdst->UserOp_Assign(*opsrc);
             }
         }

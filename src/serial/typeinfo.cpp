@@ -107,6 +107,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
       m_TagType(CAsnBinaryDefs::eAutomatic),
       m_TagConstructed(CAsnBinaryDefs::eConstructed),
+      m_CSerialUserOp(eTriState_Unknown),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -128,6 +129,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
       m_TagType(CAsnBinaryDefs::eAutomatic),
       m_TagConstructed(CAsnBinaryDefs::eConstructed),
+      m_CSerialUserOp(eTriState_Unknown),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -148,6 +150,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
       m_TagType(CAsnBinaryDefs::eAutomatic),
       m_TagConstructed(CAsnBinaryDefs::eConstructed),
+      m_CSerialUserOp(eTriState_Unknown),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -327,6 +330,26 @@ const CObject* CTypeInfo::GetCObjectPtr(TConstObjectPtr /*objectPtr*/) const
 bool CTypeInfo::IsParentClassOf(const CClassTypeInfo* /*classInfo*/) const
 {
     return false;
+}
+
+const CSerialUserOp* CTypeInfo::AsCSerialUserOp(TConstObjectPtr obj) const
+{
+    if (IsCObject() && m_CSerialUserOp != eTriState_False) {
+        const CSerialUserOp* op = dynamic_cast<const CSerialUserOp*>( static_cast<const CObject*>(obj));
+        m_CSerialUserOp = (op != nullptr) ? eTriState_True : eTriState_False;
+        return op;
+    }
+    return nullptr;
+}
+
+CSerialUserOp* CTypeInfo::AsCSerialUserOp(TObjectPtr obj) const
+{
+    if (IsCObject() && m_CSerialUserOp != eTriState_False) {
+        CSerialUserOp* op = dynamic_cast<CSerialUserOp*>( static_cast<CObject*>(obj));
+        m_CSerialUserOp = (op != nullptr) ? eTriState_True : eTriState_False;
+        return op;
+    }
+    return nullptr;
 }
 
 void CTypeInfo::SetCreateFunction(TTypeCreate func)

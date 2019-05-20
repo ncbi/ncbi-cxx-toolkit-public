@@ -68,6 +68,7 @@ class CTypeInfoFunctions;
 
 class CNamespaceInfoItem;
 class CObjectMemoryPool;
+class CSerialUserOp;
 
 /// CTypeInfo class contains all information about C++ types (both basic and
 /// classes): members and layout in memory.
@@ -149,6 +150,9 @@ public:
     virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
     // return true CTypeInfo of object (redefined in polymorphic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
+
+    const CSerialUserOp* AsCSerialUserOp(TConstObjectPtr obj) const;
+    CSerialUserOp* AsCSerialUserOp(TObjectPtr obj) const;
 
     /// Check if this TypeInfo describes internal unnamed type
     bool IsInternal(void) const;
@@ -303,6 +307,7 @@ protected:
     CAsnBinaryDefs::ETagClass m_TagClass;
     CAsnBinaryDefs::ETagType  m_TagType;
     CAsnBinaryDefs::ETagConstructed m_TagConstructed;
+    mutable ETriState m_CSerialUserOp;
 
 private:
     // type specific function pointers
