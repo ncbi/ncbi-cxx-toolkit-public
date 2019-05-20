@@ -41,8 +41,8 @@ if(DEFINED NCBI_VERBOSE_PROJECTS)
 endif()
 
 cmake_policy(SET CMP0057 NEW)
+cmake_policy(SET CMP0054 NEW)
 if(NCBI_EXPERIMENTAL)
-    cmake_policy(SET CMP0054 NEW)
 
     set(NCBI_EXPERIMENTAL_CFG              ON)
     set(NCBI_EXPERIMENTAL_SUBDIRS          ON)
@@ -77,7 +77,6 @@ endif()
     set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
 
 else()
-    cmake_policy(SET CMP0054 OLD)
 
     set(NCBI_EXPERIMENTAL_CFG              OFF)
     set(NCBI_EXPERIMENTAL_SUBDIRS          OFF)
