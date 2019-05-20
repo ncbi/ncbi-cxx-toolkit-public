@@ -94,6 +94,11 @@ public:
         const CSeq_annot& annot,
         const string& key,
         string& value);
+
+    static bool FeatureAddGeneOntologyTerm(
+        const CTempString& qual,
+        const CTempString& val,
+        CRef<CSeq_feat> feature);
 };
 
 END_SCOPE(objects)

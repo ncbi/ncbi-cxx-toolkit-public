@@ -366,7 +366,6 @@ private:
     };
 
     // Gb_qual cleanup.
-    void x_ConvertGoQualifiers(CSeq_feat& sf);
     void x_CleanSeqFeatQuals(CSeq_feat& sf);
     EAction GBQualSeqFeatBC(CGb_qual& gbq, CSeq_feat& seqfeat);
 

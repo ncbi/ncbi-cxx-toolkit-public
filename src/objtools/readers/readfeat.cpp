@@ -81,8 +81,6 @@
 
 #include <objects/misc/sequence_macros.hpp>
 
-#include <objmgr/util/feature.hpp>
-
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
@@ -2477,7 +2475,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
             case eQual_go_function:
             case eQual_go_process:
                 if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
-                    return feature::AddGeneOntologyTerm(*sfp, qual, val);
+                    return CReadUtil::FeatureAddGeneOntologyTerm(qual, val, sfp);
                 }
                 return false;
             case eQual_transcript_id:

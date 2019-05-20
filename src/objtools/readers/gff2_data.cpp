@@ -55,8 +55,6 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 
-#include <objmgr/util/feature.hpp>
-
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/gff2_data.hpp>
@@ -1014,7 +1012,7 @@ bool CGff2Record::xMigrateAttributesGo(
 {
     for (auto it = attrs.begin(); it != attrs.end(); /**/) {
         if (NStr::StartsWith(it->first, "go_")) {
-            feature::AddGeneOntologyTerm(*pFeature, it->first, it->second);
+            CReadUtil::FeatureAddGeneOntologyTerm(it->first, it->second, pFeature);
             it = attrs.erase(it);
         }
         else {
