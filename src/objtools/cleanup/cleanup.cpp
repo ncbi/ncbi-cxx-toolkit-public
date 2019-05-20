@@ -448,6 +448,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Add SeqFeatXref",
     "Convert Unstructured Org-ref Modifier",
     "Change taxname",
+    "Move GO term to GeneOntology object",
 
     // set when any other change is made.
     "Change Other", 

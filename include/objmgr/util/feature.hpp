@@ -556,6 +556,15 @@ NCBI_XOBJUTIL_EXPORT bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_fea
 /// @return          Boolean to indicate whether the feature was changed
 NCBI_XOBJUTIL_EXPORT bool CopyFeaturePartials(CSeq_feat& dst, const CSeq_feat& src);
 
+/// AddGeneOntologyTerm
+/// Add go_function/go_component/go_process information to a feature
+/// @param feat     The feature to be adjusted
+/// @param term     The GO term to be added
+/// @param value    The setting of the GO term to be added
+///
+/// @return         Boolean to indicate whether the feature was changed
+NCBI_XOBJUTIL_EXPORT bool AddGeneOntologyTerm(CSeq_feat& feat, const CTempString& term, const CTempString& value);
+
 /// AdjustProteinMolInfoToMatchCDS
 /// A function to change an existing MolInfo to match a coding region
 /// @param molinfo  The MolInfo to be adjusted (if necessary)
