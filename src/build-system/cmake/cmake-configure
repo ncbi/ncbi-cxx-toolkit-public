@@ -413,6 +413,10 @@ while [ $# != 0 ]; do
             shift
             ;;
 
+        "--with-experimental-cmake")
+            CMAKE_ARGS="$CMAKE_ARGS -DNCBI_EXPERIMENTAL_CFG=Yes"
+            ;;
+
         "--with-experimental="*)
             EXPERIMENTAL="${1#*=}";;
 
