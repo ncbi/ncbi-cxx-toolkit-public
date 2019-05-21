@@ -257,8 +257,8 @@ void CassValueConvert<string>(const CassValue *  Val, string& v)
         case CASS_VALUE_TYPE_TIMESTAMP: {
             int64_t rv = 0;
             CassValueConvert<int64_t>(Val, rv);
-            CTime c(rv / 1000);
-            c.SetMilliSecond(rv % 1000);
+            CTime c;
+            TimeTmsToCTime(rv, &c);
             v = c;
             break;
         }
