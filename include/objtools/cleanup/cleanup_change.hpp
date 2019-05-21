@@ -162,7 +162,7 @@ public:
         eAddSeqFeatXref,
         eConvertUnstructuredOrgrefModifier,
         eChangeTaxname,
-
+        eMoveGeneOntologyTerm,
         // set when any other change is made.
         eChangeOther,
         
