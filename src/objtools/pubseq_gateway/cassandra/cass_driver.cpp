@@ -1023,6 +1023,19 @@ void CCassQuery::ParamAsStr(int  iprm, string &  value) const
 }
 
 
+CassValueType CCassQuery::ParamType(int  iprm) const
+{
+    string      rv;
+    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
+        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    if (!m_params[iprm].IsAssigned())
+        NCBI_THROW(CCassandraException, eSeqFailed,
+                   "invalid sequence of operations, Param #" +
+                   NStr::NumericToString(iprm) + " is not assigned");
+    return m_params[iprm].GetType();
+}
+
+
 void CCassQuery::SetEOF(bool  value)
 {
     if (m_EOF != value) {
@@ -1604,9 +1617,24 @@ string CCassQuery::ToString() const
 {
     string params;
     for (size_t i = 0; i < ParamCount(); ++i) {
-        if (i > 0)
+        if (!params.empty())
             params.append(", ");
-        params.append(ParamAsStr(i));
+        switch (ParamType(i)) {
+            case CASS_VALUE_TYPE_SET:
+                params.append("?SET");
+                break;
+            case CASS_VALUE_TYPE_LIST:
+                params.append("?LIST");
+                break;
+            case CASS_VALUE_TYPE_MAP:
+                params.append("?MAP");
+                break;
+            case CASS_VALUE_TYPE_TUPLE:
+                params.append("?TUPLE");
+                break;
+            default:
+                params.append(ParamAsStr(i));
+        }
     }
 
     return m_sql.empty() ? "<>" : m_sql + "\nparams: " + params;
