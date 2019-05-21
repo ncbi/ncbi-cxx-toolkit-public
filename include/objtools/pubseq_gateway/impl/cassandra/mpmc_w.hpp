@@ -68,6 +68,7 @@ private:
 
 	CFutex m_readypush_ev;
 	CFutex m_readypop_ev;
+    atomic<size_t>          m_size;
 
 public:
 	mpmc_bounded_queue_w() {
@@ -91,6 +92,11 @@ public:
 		m_pop_pos.store(0, std::memory_order_relaxed);
 	}
 
+    // advisory only (e.g. for monitoring)
+    size_t size() const {
+        return m_size.load();
+    }
+
     template<class TT>
 	bool push(TT&& data) {
         static_assert(!is_const<typename remove_reference<TT>::type>::value, "argument for this method can not be const");
@@ -112,6 +118,7 @@ public:
 		}
 		cell->m_data = std::move(data); // there is a "move", not "forward" and it is on purpose of grabbing original data for non-RValue references too
 		cell->m_sequence.store(pos + 1, std::memory_order_release);
+        ++m_size;
 		return true;
 	}
 
@@ -163,6 +170,7 @@ public:
 				pos = m_pop_pos.load(std::memory_order_relaxed);
 		}
 		*data = std::move(cell->m_data);
+        --m_size;
 		cell->m_sequence.store(pos + SZ, std::memory_order_release);
 		return true;
 	}
