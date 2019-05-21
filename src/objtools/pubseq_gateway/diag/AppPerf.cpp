@@ -130,13 +130,13 @@ void CAppOp::Reset() {
 // in case if DB is heavily loaded, we'd better wait for 0.3sec and re-try again, than do this without a pause
 // timeout grows from 7ms up to 0.9s exponentially
 void CAppOp::Relax() {
-	if (m_relaxt == 0)
-		m_relaxt = PERF_RELAX_TIME_MKS;
-	else if (m_relaxt < PERF_RELAX_MAX_TIME_MKS)
-		m_relaxt = m_relaxt * 2;
+    if (m_relaxt == 0)
+        m_relaxt = PERF_RELAX_TIME_MKS;
+    else if (m_relaxt < PERF_RELAX_MAX_TIME_MKS)
+        m_relaxt = m_relaxt * 2;
     else
         m_relaxt = PERF_RELAX_MAX_TIME_MKS;
-	usleep(m_relaxt);
+    usleep(m_relaxt);
 }
 
 void CAppOp::BeginRow() {
