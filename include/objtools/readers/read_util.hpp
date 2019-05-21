@@ -95,10 +95,10 @@ public:
         const string& key,
         string& value);
 
-    static bool FeatureAddGeneOntologyTerm(
+    static bool AddGeneOntologyTerm(
+        CSeq_feat& feature,
         const CTempString& qual,
-        const CTempString& val,
-        CRef<CSeq_feat> feature);
+        const CTempString& val);
 };
 
 END_SCOPE(objects)

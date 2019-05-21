@@ -56,6 +56,7 @@
 
 #include <objtools/cleanup/cleanup_pub.hpp>
 #include <objtools/cleanup/fix_feature_id.hpp>
+#include <objtools/readers/read_util.hpp>
 
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/object_manager.hpp>
@@ -6032,6 +6033,25 @@ bool SortGBQuals(CSeq_feat& sf)
 }
 
 
+void CNewCleanup_imp::x_ConvertGoQualifiers(CSeq_feat& sf)
+{
+    if (!sf.CanGetQual()) {
+        return;
+    }
+    auto& quals = sf.SetQual();
+    //auto& ext = sf.SetExt();
+    for (auto qualIt = quals.begin(); qualIt != quals.end(); /**/) {
+        auto& qualRef = *qualIt;
+        if (!qualRef->CanGetQual()  ||  !NStr::StartsWith(qualRef->GetQual(), "go_")) {
+            ++qualIt;
+            continue;
+        }
+        CReadUtil::AddGeneOntologyTerm(sf, qualRef->GetQual(), qualRef->GetVal()); 
+        qualIt = quals.erase(qualIt);
+        ChangeMade (CCleanupChange::eMoveGeneOntologyTerm);
+    }
+}
+
 void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
 {
     if (!sf.IsSetQual()) {
@@ -6080,6 +6100,7 @@ void CNewCleanup_imp::SeqfeatBC (
 {
     // note - need to clean up GBQuals before dbxrefs, because they may be converted to populate other fields
     x_CleanSeqFeatQuals(sf);
+    x_ConvertGoQualifiers(sf);
 
     CLEAN_STRING_MEMBER (sf, Title);
 

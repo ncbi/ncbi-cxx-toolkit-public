@@ -2475,7 +2475,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
             case eQual_go_function:
             case eQual_go_process:
                 if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
-                    return CReadUtil::FeatureAddGeneOntologyTerm(qual, val, sfp);
+                    return CReadUtil::AddGeneOntologyTerm(*sfp, qual, val);
                 }
                 return false;
             case eQual_transcript_id:
