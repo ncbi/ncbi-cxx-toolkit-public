@@ -850,7 +850,7 @@ namespace
       table.reserve(dist);
       for (int it = 0; it < dist; ++it)
         table.push_back(static_cast<_I>(_start + it));
-      std::sort(table.begin(), table.end());
+      // no need to sort the generatted array
     }
 
     template<typename...TArgs>
