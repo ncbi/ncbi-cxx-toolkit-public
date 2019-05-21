@@ -184,7 +184,7 @@ xFindFile(SGiDataIndex* data_index, struct stat* fstat) {
 static SGiDataIndex*
 GiDataIndex_New(const char* prefix, Uint1 readonly) { 
 	int rc;
-	char logmsg[256];
+	char logmsg[4100];
 	SGiDataIndex*  data_index;
 	struct stat fstat;
 	int fstat_err;
@@ -202,7 +202,7 @@ GiDataIndex_New(const char* prefix, Uint1 readonly) {
 		/* file does not exist */
 		if (readonly) {
 			rc = errno;
-			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to access file (%s): %s\n", data_index->m_FileName, strerror(rc));
+			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to access file (%.256s): %s\n", data_index->m_FileName, strerror(rc));
 			goto ERROR;
 		}
 	}
@@ -237,7 +237,7 @@ GiDataIndex_New(const char* prefix, Uint1 readonly) {
 
 	rc = mdb_env_open(data_index->m_env, data_index->m_FileName, MDB_NOSUBDIR | (readonly ? MDB_RDONLY : 0) | (MDB_NOSYNC | MDB_NOMETASYNC), 0644);
 	if (rc) {
-		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to open LMDB db (%s): %s\n", data_index->m_FileName, mdb_strerror(rc));
+		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to open LMDB db (%.256s): %s\n", data_index->m_FileName, mdb_strerror(rc));
 		goto ERROR;
 	}
 
