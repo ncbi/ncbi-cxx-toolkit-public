@@ -35,14 +35,20 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
 #include "IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE
+
+USING_NCBI_SCOPE;
 
 int64_t gettime(void);
 
 std::string TimeTmsToString(int64_t time);
 int64_t StringToTimeTms(const std::string& time);
+int64_t CTimeToTimeTms(const CTime& time);
+void TimeTmsToCTime(int64_t time, CTime* ct);
+CTime TimeTmsToCTime(int64_t time);
 
 
 END_IDBLOB_SCOPE
