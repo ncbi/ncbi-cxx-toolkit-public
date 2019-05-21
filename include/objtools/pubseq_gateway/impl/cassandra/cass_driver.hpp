@@ -389,6 +389,11 @@ class CCassPrm
         return m_assigned;
     }
 
+    CassValueType GetType() const
+    {
+        return m_type;
+    }
+
     int32_t AsInt8(void) const
     {
         switch (m_type) {
@@ -493,6 +498,7 @@ class CCassPrm
             case CASS_VALUE_TYPE_VARCHAR:
                 value = m_bytes;
                 break;
+            case CASS_VALUE_TYPE_SET:
             default:
                 RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to string"));
         }
@@ -790,6 +796,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         return m_params.size();
     }
 
+    CassValueType ParamType(int  iprm) const;
     int32_t ParamAsInt32(int iprm);
     int64_t ParamAsInt64(int iprm);
     string ParamAsStr(int iprm) const;
