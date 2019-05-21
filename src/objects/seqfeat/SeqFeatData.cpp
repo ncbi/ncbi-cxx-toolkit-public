@@ -848,7 +848,7 @@ namespace
       auto& table = _map[index];
       auto dist = _end - _start + 1;
       table.reserve(dist);
-      for (int it = 0; it <= dist; ++it)
+      for (int it = 0; it < dist; ++it)
         table.push_back(static_cast<_I>(_start + it));
       std::sort(table.begin(), table.end());
     }
