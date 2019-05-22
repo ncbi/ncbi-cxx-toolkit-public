@@ -105,9 +105,11 @@ static char* x_ServiceName(unsigned int depth,
         if (!(s = getenv(strupr(buf)))  ||  !*s) {
             /* Looking for "CONN_SERVICE_NAME" in registry section "[svc]" */
             buf[len++] = '\0';
-            s = CORE_REG_GET(buf, buf + len, tmp, sizeof(tmp), 0) ? tmp : "";
+            if (!CORE_REG_GET(buf, buf + len, tmp, sizeof(tmp), 0))
+                *tmp = '\0';
+            s = tmp;
         }
-        if (*s  &&  strcasecmp(svc, s) != 0) {
+        if (*s  &&  strcasecmp(s, svc) != 0) {
             if (depth++ < SERV_SERVICE_NAME_RECURSION)
                 return x_ServiceName(depth, service, s, ismask, isfast);
             CORE_LOGF_X(8, eLOG_Error,

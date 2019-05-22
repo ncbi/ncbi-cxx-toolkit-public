@@ -50,7 +50,9 @@
  */
 #define CONN_LOG_EX(subcode, func_name, level, message, status)            \
   do {                                                                     \
-      const char* ststr = status ? IO_StatusStr((EIO_Status) status) : ""; \
+      const char* ststr = ((EIO_Status) status != eIO_Success              \
+                           ? IO_StatusStr((EIO_Status) status)             \
+                           : "");                                          \
       const char* ctype = (conn  &&  conn->meta.get_type                   \
                            ? conn->meta.get_type(conn->meta.c_get_type)    \
                            : 0);                                           \
