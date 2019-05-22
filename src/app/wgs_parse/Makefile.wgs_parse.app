@@ -17,10 +17,8 @@ SRC     = \
 
 APP     = wgs_parse
 
-LIB     = fix_pub taxon1 mlacli mla medlars pubmed xconnect \
-          id1cli id1 xcleanup taxon3 submit valid xregexp \
-          seq seqcode xobjutil xobjmgr genome_collection xncbi sequtil pub medline biblio general \
-          eutils_client xser seqset xutil xobjedit xmlwrapp $(PCRE_LIB)
-
+LIB     = fix_pub eutils_client xcleanup id1cli id1 xmlwrapp $(OBJEDIT_LIBS) \
+          xobjutil valid taxon1 mlacli mla medlars pubmed xconnect \
+          xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
 LIBS    = $(SYBASE_LIBS) $(VDB_LIBS) $(FTDS_LIBS) $(PCRE_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(ORIG_LIBS)
