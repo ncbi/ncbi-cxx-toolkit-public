@@ -46808,7 +46808,7 @@ if test "${ncbi_cv_lib_gl2ps+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$OPENGL_INCLUDE $GL2PS_INCLUDE $orig_CPPFLAGS"
-       LIBS="$GL2PS_LIBS $OPENGL_LIBS $PNG_LIBS $Z_LIBS $X_ALL_LIBS $orig_LIBS"
+       LIBS="$GL2PS_LIBS $OPENGL_LIBS $PNG_LIBS $Z_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF

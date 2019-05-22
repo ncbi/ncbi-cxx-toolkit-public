@@ -7515,7 +7515,7 @@ if test "$with_gl2ps" != "no"; then
    NCBI_CHECK_THIRD_PARTY_LIB(gl2ps,
     AC_LANG_PROGRAM([#include <gl2ps.h>],
        [gl2psSpecial(GL2PS_SVG, "foo")]),
-    [], [$OPENGL_LIBS $PNG_LIBS $Z_LIBS $X_ALL_LIBS], [$OPENGL_INCLUDE])
+    [], [$OPENGL_LIBS $PNG_LIBS $Z_LIBS], [$OPENGL_INCLUDE])
 fi
 if test -n "$GL2PS_LIBS" -a -f "$GL2PS_PATH/lib/libgl2ps-static.a"; then
    GL2PS_STATIC_LIBS="-L$GL2PS_PATH/lib -lgl2ps-static"
