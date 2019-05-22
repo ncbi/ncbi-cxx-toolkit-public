@@ -1383,7 +1383,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
 /** Control OS-defined send strategy by disabling/enabling the TCP layer to
  * send incomplete network frames (packets).  With the "cork" set on, data gets
  * always buffered until a complete hardware packet is full (or connection is
- * about to close), and only then is sent out to the medium.
+ * about to close), and only then is sent out to the wire.
  * @note The setting cancels the effects of SOCK_DisableOSSendDelay().
  * @param sock
  *  [in]  socket handle [stream socket only]
@@ -1400,11 +1400,11 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
 
 /** Control OS-defined send strategy by disabling/enabling the TCP Nagle
  * algorithm (which is on by default) that packs multiple requests into a
- * single packet and thus transferring data in fewer transactions, miminizing
+ * single packet and thus transfers the data in fewer transactions, miminizing
  * the network traffic and generally bursting the throughput.  However, some
  * applications may find it useful to disable this default behavior for the
  * sake of their performance increase (like in case of short transactions
- * otherwise held off by the system to be possibly coalesced into larger
+ * otherwise held off by the system in anticipation of coalescing into larger
  * chunks -- a typical example is an interactive transmission of keystrokes).
  * Disabling the Nagle algorithm causes all internally pending yet
  * untransmitted data to flush down to the hardware.
