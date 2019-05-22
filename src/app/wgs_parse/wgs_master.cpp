@@ -404,6 +404,29 @@ struct CDBLinkInfo
     }
 };
 
+static bool ExtractSRAsFromDblink(CUser_object& user_obj, bool& reject)
+{
+    bool ret = false;
+
+    CConstRef<CUser_field> sra_field = user_obj.GetFieldRef("Sequence Read Archive");
+    if (sra_field.NotEmpty() && sra_field->IsSetData() && sra_field->GetData().IsStrs()) {
+
+        for (auto& cur_id : sra_field->GetData().GetStrs()) {
+
+            if (!IsValidSRA(cur_id)) {
+                reject = true;
+            }
+
+            ret = true;
+            AddSRA(cur_id);
+        }
+
+        user_obj.RemoveNamedField("Sequence Read Archive");
+    }
+
+    return ret;
+}
+
 static bool ExtractBiosamplesFromDblink(CUser_object& user_obj, bool& reject)
 {
     bool ret = false;
@@ -450,6 +473,10 @@ static void CollectDblink(CSeq_entry& entry, CDBLinkInfo& info, bool& reject)
 
                         ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_MissingBioSample, Critical << "The files being processed contain some records with DBLink User-objects lacking required BioSamples. Rejecting the whole project.");
                         reject = true;
+                    }
+                    if (!ExtractSRAsFromDblink(user_obj, reject)) {
+
+                        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_MissingSRA, Warning << "The files being processed contain some records with DBLink User-objects lacking SRAs.");
                     }
                 }
 
