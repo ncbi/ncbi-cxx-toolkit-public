@@ -556,6 +556,14 @@ bool IsValidBiosample(const string& id)
     return IsDigits(id.begin() + offset, id.end());
 }
 
+bool IsValidSRA(const string& sra)
+{
+    static const size_t MIN_SRA_ID_SIZE = 8;
+
+    return sra.size() > MIN_SRA_ID_SIZE &&
+           (NStr::StartsWith(sra, "ERR") || NStr::StartsWith(sra, "DRR") || NStr::StartsWith(sra, "SRR")) &&
+           IsDigits(sra.begin() + 3, sra.end());
+}
 
 int GetSubmissionTypeErrorCode(EInputType type)
 {
