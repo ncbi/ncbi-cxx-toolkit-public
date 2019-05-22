@@ -46,6 +46,7 @@
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_ci.hpp>
 
 #include <util/line_reader.hpp>
 #include <objtools/edit/remote_updater.hpp>
@@ -829,6 +830,15 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
     m_reader->ApplyAdditionalProperties(*entry);
+
+    auto pScope =  Ref(new CScope(*CObjectManager::GetInstance()));
+    auto editHandle = pScope->AddTopLevelSeqEntry(*entry).GetEditHandle();
+    for (CBioseq_CI bioseq_it(editHandle); bioseq_it; ++bioseq_it) {
+        auto pBioseq = const_cast<CBioseq*>(bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull());
+        if (pBioseq) {
+            g_ApplyDeflineMods(*pBioseq);
+        }
+    }
 
     ProcessSecretFiles1Phase(*entry);
 

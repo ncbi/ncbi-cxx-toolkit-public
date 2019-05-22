@@ -57,7 +57,7 @@
 //#include <objects/biblio/Cit_sub.hpp>
 
 #include "table2asn_context.hpp"
-#include "src_quals.hpp"
+//#include "src_quals.hpp"
 
 
 #include <common/test_assert.h>  /* This header must go last */

@@ -47,6 +47,7 @@
 #include "table2asn_context.hpp"
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/mod_reader.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -57,6 +58,28 @@ namespace
 {
     static const CTempString g_dblink = "DBLink";
 };
+
+
+bool SSrcQuals::AddQualifiers(const CBioseq::TId& ids, TModList& mods)
+{
+    mods.clear();
+    for (const auto& pId : ids) {
+        string id = pId->AsFastaString();
+        NStr::ToLower(id);
+        auto it = m_lines_map.find(id);
+        if (it != m_lines_map.end()) {
+            vector<CTempString> tokens;
+            NStr::Split(it->second.m_unparsed, "\t", tokens, 0);
+            for (size_t i=1; i < tokens.size() && i < columnNames.size(); ++i) {
+                mods.push_back(CModData(columnNames[i], tokens[i]));
+            }
+            m_lines_map.erase(it);
+            return true;
+        }
+    }   
+
+    return false;
+}
 
 void SSrcQuals::AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
 {
@@ -99,14 +122,14 @@ bool SSrcQuals::AddQualifiers(CSourceModParser& mod, const CBioseq::TId& ids)
     for (auto pId : ids)
     {
         string id = pId->AsFastaString();
-
         NStr::ToLower(id);
         if (AddQualifiers(mod, id))
             return true;
     }
-
     return false;
 }
+
+
 
 CSourceQualifiersReader::CSourceQualifiersReader(CTable2AsnContext* context) : m_context(context)
 {
@@ -115,6 +138,64 @@ CSourceQualifiersReader::CSourceQualifiersReader(CTable2AsnContext* context) : m
 CSourceQualifiersReader::~CSourceQualifiersReader()
 {
 }
+
+
+static void s_AppendMods(
+    const CModHandler::TModList& mods,
+    string& title)
+{
+    for (const auto& mod : mods) {
+
+        title.append(" ["
+                + mod.GetName()
+                + "="
+                + mod.GetValue()
+                + "]");
+    }
+}
+
+
+void g_ApplyDeflineMods(CBioseq& bioseq) {
+    if (!bioseq.IsSetDescr() || !bioseq.GetDescr().IsSet()) {
+        return;
+    }
+
+    auto& descriptors = bioseq.SetDescr().Set();
+    auto title_it = find_if(descriptors.begin(), descriptors.end(),
+            [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
+    if (title_it == descriptors.end()) {
+        return;
+    }
+
+    auto& title = (*title_it)->SetTitle();
+    
+    string remainder;
+    CModHandler::TModList mods;
+    CTitleParser::Apply(title, mods, remainder);
+
+    auto fReportError = 
+        [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
+            // dummy function
+        };
+
+
+    CModHandler mod_handler;
+    CModHandler::TModList rejected_mods;
+    mod_handler.AddMods(mods, CModHandler::eReplace, rejected_mods);
+    s_AppendMods(rejected_mods, remainder);
+
+
+    CModHandler::TModList skipped_mods;
+    CModAdder::Apply(mod_handler, bioseq, skipped_mods, fReportError);
+    s_AppendMods(skipped_mods, remainder);
+
+    title = remainder;
+    NStr::TruncateSpacesInPlace(title);
+    if (title.empty()) {
+        descriptors.erase(title_it);
+    }
+}
+
 
 bool CSourceQualifiersReader::ApplyQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq, objects::ILineErrorListener* listener)
 {
@@ -147,24 +228,29 @@ bool CSourceQualifiersReader::ApplyQualifiers(objects::CSourceModParser& mod, ob
 }
 
 
+
 bool CSourceQualifiersReader::LoadSourceQualifiers(const string& namedFile, const string& defaultFile)
 {
     bool loaded = false;
     if (CFile(defaultFile).Exists())
     {
         loaded = true;
-        x_LoadSourceQualifiers(m_QualsFromDefaultSrcFile, defaultFile); // .src file
+        LoadSourceQualifiers(defaultFile, 
+                m_context->m_allow_accession, 
+                m_QualsFromDefaultSrcFile); // .src file
     }
 
     if (!NStr::IsBlank(namedFile) && CFile(namedFile).Exists()) // Should report an error if it doesn't exist
     {
         loaded = true;
-        x_LoadSourceQualifiers(m_QualsFromNamedSrcFile, namedFile); // -src-file
+        LoadSourceQualifiers(namedFile, 
+                m_context->m_allow_accession,
+                m_QualsFromNamedSrcFile); // -src-file
     }
     return loaded;
 }
 
-void CSourceQualifiersReader::x_LoadSourceQualifiers(SSrcQuals& quals, const string& filename)
+void CSourceQualifiersReader::LoadSourceQualifiers(const string& filename, bool allowAcc, SSrcQuals& quals)
 {
     unique_ptr<CMemoryFileMap> pFileMap(new CMemoryFileMap(filename));
 
@@ -214,7 +300,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(SSrcQuals& quals, const str
                 
                 if (!idString.empty()) {
                     auto parseFlags = 
-                        m_context->m_allow_accession ?
+                        allowAcc ?
                         CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal :
                         CSeq_id::fParse_AnyLocal;
                     auto pSeqId = 
@@ -234,6 +320,108 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(SSrcQuals& quals, const str
        "source modifiers file header line is not valid");
 }
 
+void g_ApplyMods(
+        const string& commandLineStr,
+        const string& namedSrcFile,
+        const string& defaultSrcFile,
+        bool allowAcc,
+        CSeq_entry& entry) 
+{
+    using TModList = CModHandler::TModList;
+
+    auto fReportError = 
+        [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
+            // dummy function
+        };
+    
+    TModList rejectedMods;
+    string commandLineRemainder;
+    TModList commandLineMods;
+    if (!NStr::IsBlank(commandLineStr)) {
+        CTitleParser::Apply(commandLineStr, commandLineMods, commandLineRemainder);
+    }
+
+
+
+    SSrcQuals qualsFromNamedFile;
+    if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
+        CSourceQualifiersReader::LoadSourceQualifiers(
+                namedSrcFile, 
+                allowAcc, 
+                qualsFromNamedFile);
+    }
+
+    SSrcQuals qualsFromDefaultFile;
+    if (!NStr::IsBlank(defaultSrcFile) && CFile(defaultSrcFile).Exists()) {
+        CSourceQualifiersReader::LoadSourceQualifiers(
+                defaultSrcFile, 
+                allowAcc, 
+                qualsFromDefaultFile);
+    }
+   
+    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+    auto editHandle = pScope->AddTopLevelSeqEntry(entry).GetEditHandle();
+
+    for (CBioseq_CI bioseq_it(editHandle); bioseq_it; ++bioseq_it) {
+        auto pBioseq = const_cast<CBioseq*>(bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull());
+        if (pBioseq) {
+            string remainder = commandLineRemainder;
+            CModHandler mod_handler(fReportError);
+            mod_handler.AddMods(commandLineMods, CModHandler::eAppendReplace, rejectedMods);
+            s_AppendMods(rejectedMods, remainder); 
+
+            if (!qualsFromNamedFile.m_lines_map.empty()) {
+                TModList mods;
+                qualsFromNamedFile.AddQualifiers(pBioseq->GetId(), mods);
+                mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods);
+                s_AppendMods(rejectedMods, remainder);
+            }
+
+            if (!qualsFromDefaultFile.m_lines_map.empty()) {
+                TModList mods;
+                qualsFromDefaultFile.AddQualifiers(pBioseq->GetId(), mods);
+                mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods);
+                s_AppendMods(rejectedMods, remainder);
+            }
+
+            CRef<CSeqdesc> pTitleDesc;
+            CSeq_descr::Tdata* pDescriptors = nullptr;
+            if ((pBioseq->IsSetDescr() &&
+                pBioseq->GetDescr().IsSet()) ||
+                !NStr::IsBlank(remainder)) {
+                pDescriptors = &(pBioseq->SetDescr().Set());
+            }
+
+            if (pDescriptors) {
+                CSeq_descr::Tdata::iterator title_it = 
+                    find_if(pDescriptors->begin(), pDescriptors->end(),
+                        [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
+                if (title_it != pDescriptors->end()) {
+                    pTitleDesc = *title_it;
+                    auto& title = (*title_it)->SetTitle();
+                    string titleRemainder;
+                    TModList mods, rejectedTitleMods;
+                    CTitleParser::Apply(title, mods, titleRemainder);
+                    mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedTitleMods);
+                    s_AppendMods(rejectedTitleMods, titleRemainder);
+                    remainder = titleRemainder +  remainder;
+                }
+            }
+            TModList skippedMods;
+            CModAdder::Apply(mod_handler, *pBioseq, skippedMods, fReportError);
+            s_AppendMods(skippedMods, remainder);
+
+            NStr::TruncateSpacesInPlace(remainder);
+            if (!remainder.empty()) {
+                if (!pTitleDesc) {
+                    pTitleDesc = Ref(new CSeqdesc());
+                    pDescriptors->push_back(pTitleDesc);
+                }
+                pTitleDesc->SetTitle() = remainder;
+            }
+        }
+    }
+}
 
 void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry)
 {
@@ -249,16 +437,16 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry)
     {
         CSourceModParser mod;
 
-        CBioseq* dest = (CBioseq*)bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull();
+        CBioseq* pBioseq = (CBioseq*)bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull();
 
         if (!m_context->mCommandLineMods.empty())
-           mod.ParseTitle(m_context->mCommandLineMods, CConstRef<CSeq_id>(dest->GetFirstId()));
+           mod.ParseTitle(m_context->mCommandLineMods, CConstRef<CSeq_id>(pBioseq->GetFirstId()));
 
-        bool handled = m_QualsFromNamedSrcFile.AddQualifiers(mod, dest->GetId());
+        bool handled = m_QualsFromNamedSrcFile.AddQualifiers(mod, pBioseq->GetId());
+        handled |= m_QualsFromDefaultSrcFile.AddQualifiers(mod, pBioseq->GetId());
 
-        handled |= m_QualsFromDefaultSrcFile.AddQualifiers(mod, dest->GetId());
 
-        if (!ApplyQualifiers(mod, *dest, m_context->m_logger))
+        if (!ApplyQualifiers(mod, *pBioseq, m_context->m_logger))
           NCBI_THROW(CArgException, eConstraint,
              "there are found unrecognised source modifiers");
 
@@ -268,7 +456,7 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry)
         {
             m_context->m_logger->PutError(*auto_ptr<CLineError>(
                 CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                    "Source qualifiers file doesn't contain qualifiers for sequence id " + dest->GetId().front()->AsFastaString())));
+                    "Source qualifiers file doesn't contain qualifiers for sequence id " + pBioseq->GetId().front()->AsFastaString())));
         }
     }
 

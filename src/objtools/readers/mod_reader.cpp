@@ -343,7 +343,7 @@ const string& CModHandler::AssertReturnSingleValue(const TModEntry& mod_entry)
     return mod_entry.second.front().GetValue(); 
 }
 
-string CModHandler::x_GetCanonicalName(const string& name) const
+string CModHandler::x_GetCanonicalName(const string& name) 
 {
     const auto& normalized_name = x_GetNormalizedString(name);
     const auto& it = sm_NameMap.find(normalized_name);
@@ -362,7 +362,7 @@ bool CModHandler::x_IsDeprecated(const string& canonical_name)
 }
 
 
-string CModHandler::x_GetNormalizedString(const string& name) const
+string CModHandler::x_GetNormalizedString(const string& name)
 {
     string normalized_name = name;
     NStr::ToLower(normalized_name);

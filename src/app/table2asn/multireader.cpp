@@ -246,7 +246,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 //                 |  CFastaReader::fLeaveAsText;
     }
 
-    m_iFlags |= CFastaReader::fAddMods
+    m_iFlags |= CFastaReader::fIgnoreMods
              |  CFastaReader::fValidate
              |  CFastaReader::fHyphensIgnoreAndWarn;
 

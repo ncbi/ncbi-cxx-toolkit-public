@@ -2054,6 +2054,7 @@ CSourceModParser* CFastaReader::xCreateSourceModeParser(
     return new CSourceModParser(CSourceModParser::eHandleBadMod_Ignore);
 }
 
+/*
 void CFastaReader::x_ApplyMods(     
      const string& title, 
      TSeqPos line_number, 
@@ -2101,8 +2102,8 @@ void CFastaReader::x_ApplyMods(
         bioseq.SetDescr().Set().push_back(move(pDesc));
     }
 }
+*/
 
-/*
 static void s_AppendMods(
         const CModHandler::TModList& mods, 
         string& title
@@ -2137,7 +2138,7 @@ void CFastaReader::x_ApplyMods(
         s_AppendMods(rejected_mods, remainder);
 
         CModHandler::TModList skipped_mods;
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener, skipped_mods);
+        CModAdder::Apply(mod_handler, bioseq, skipped_mods); // Need to add an error reporter here
         s_AppendMods(skipped_mods, remainder);
 
         processed_title = remainder;
@@ -2160,7 +2161,6 @@ void CFastaReader::x_ApplyMods(
     }
 }
 
-*/
 
 
 void CFastaReader::x_ApplyAllMods( 

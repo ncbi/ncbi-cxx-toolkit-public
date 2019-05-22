@@ -92,8 +92,8 @@ public:
     static const string& AssertReturnSingleValue(const TModEntry& mod_entry);
 
 private:
-    string x_GetCanonicalName(const string& name) const;
-    string x_GetNormalizedString(const string& name) const;
+    static string x_GetCanonicalName(const string& name);
+    static string x_GetNormalizedString(const string& name);
     static bool x_MultipleValuesAllowed(const string& canonical_name);
     static bool x_IsDeprecated(const string& canonical_name);
     void x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMods& dest);

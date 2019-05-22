@@ -4,20 +4,20 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objtools/readers/mod_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
+namespace objects {
 // forward declarations
-namespace objects
-{
-    class CUser_object;
-    class CSeq_descr;
-    class CBioseq;
-    class CObject_id;
-    class CSeq_entry;
-    class CSeq_id;
-    class ILineErrorListener;
-    class CSourceModParser;
+class CUser_object;
+class CSeq_descr;
+class CBioseq;
+class CObject_id;
+class CSeq_entry;
+class CSeq_id;
+class ILineErrorListener;
+class CSourceModParser;
 };
 
 class CSerialObject;
@@ -27,20 +27,31 @@ class ILineReader;
   Usage examples
 */
 
+USING_SCOPE(objects);
+void g_ApplyDeflineMods(CBioseq& bioseq);
+void g_ApplyMods(
+        const string& commandLineStr,
+        const string& namedSrcFile,
+        const string& defaultSrcFile,
+        bool allowAcc,
+        CSeq_entry& entry);
+
 struct SSrcQualParsed
 {
     //CTempString m_unparsed;
     string m_unparsed;
     vector<CTempString> m_parsed;
-    CRef<objects::CSeq_id> m_id;
+    CRef<CSeq_id> m_id;
 };
 
 struct SSrcQuals
 {
-    bool AddQualifiers(objects::CSourceModParser& mod, const objects::CBioseq::TId& ids);
-    bool AddQualifiers(objects::CSourceModParser& mod, const string& id);
-    void AddQualifiers(objects::CSourceModParser& mod, const vector<CTempString>& values);
+    using TModList = CModHandler::TModList;
 
+    bool AddQualifiers(CSourceModParser& mod, const CBioseq::TId& ids);
+    bool AddQualifiers(CSourceModParser& mod, const string& id);
+    void AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values);
+    bool AddQualifiers(const CBioseq::TId& ids, TModList& mods);
     using TLineMap = map<string, SSrcQualParsed>;
     TLineMap m_lines_map;
     //vector<CTempString> columnNames;
@@ -55,13 +66,21 @@ public:
    CSourceQualifiersReader(CTable2AsnContext* context);
    ~CSourceQualifiersReader();
 
-   bool LoadSourceQualifiers(const string& namedFile, const string& defaultFile);
-   void ProcessSourceQualifiers(objects::CSeq_entry& container);
-   static bool ApplyQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq, objects::ILineErrorListener* listener);
-private:
-   static bool x_ParseAndAddTracks(objects::CBioseq& container,  const string& name, const string& value);
+/*
+    void ApplyMods(
+            const string& commandLineStr,
+            const string& namedSrcFile,
+            const string& defaultSrcFile,
+            CSeq_entry& entry);
+*/
 
-   void x_LoadSourceQualifiers(SSrcQuals& quals, const string& fileName);
+   bool LoadSourceQualifiers(const string& namedFile, const string& defaultFile);
+   static void LoadSourceQualifiers(const string& fileName, bool allowAcc, SSrcQuals& quals);
+   void ProcessSourceQualifiers(CSeq_entry& container);
+   static bool ApplyQualifiers(CSourceModParser& mod, CBioseq& bioseq, ILineErrorListener* listener);
+private:
+   static bool x_ParseAndAddTracks(CBioseq& container,  const string& name, const string& value);
+
 
    CTable2AsnContext* m_context;
    SSrcQuals m_quals[2];
