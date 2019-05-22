@@ -69,6 +69,7 @@ class CTSE_Split_Info;
 class CTSE_Info_Object;
 class CTSE_Lock;
 class CTSE_LoadLock;
+class CTSE_LoadLockGuard;
 
 class CDataSource;
 class CHandleRange;
@@ -652,6 +653,7 @@ private:
 
     friend class CTSE_Lock;
     friend class CTSE_LoadLock;
+    friend class CTSE_LoadLockGuard;
 
     // Owner data-source
     CDataSource*           m_DataSource;
@@ -699,6 +701,8 @@ private:
 
     class CLoadMutex : public CObject, public CMutex
     {
+    public:
+        CConditionVariable m_LoadWait;
     };
 
     CRef<CLoadMutex>       m_LoadMutex;

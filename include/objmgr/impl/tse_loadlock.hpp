@@ -42,6 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CTSE_Info;
+class CTSE_LoadLockGuard;
 
 class NCBI_XOBJMGR_EXPORT CTSE_LoadLock
 {
@@ -88,7 +89,10 @@ public:
 protected:
     friend class CDataSource;
 
-    //void x_SetLoadLock(CDataSource* ds, CTSE_Info* info);
+    CTSE_LoadLockGuard& x_GetGuard()
+    {
+        return *reinterpret_cast<CTSE_LoadLockGuard*>(m_LoadLock.GetPointer());
+    }
 
 private:
     CRef<CTSE_Info>     m_Info;

@@ -1709,6 +1709,52 @@ CDataSource::TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,
 }
 
 
+class CTSE_LoadLockGuard : public CObject
+{
+public:
+    CTSE_LoadLockGuard(CDataSource* ds, CTSE_Info::CLoadMutex* mutex)
+        : m_DataSource(ds), m_Mutex(mutex), m_Guard(*mutex), m_Waiting(false)
+        {
+        }
+    ~CTSE_LoadLockGuard(void)
+        {
+            Release();
+        }
+
+    void Release(void)
+        {
+            if ( m_Mutex ) {
+                if ( !m_Waiting ) {
+                    m_Mutex->m_LoadWait.SignalAll();
+                }
+                m_Guard.Release();
+                m_Mutex.Reset();
+            }
+        }
+
+    bool WaitForSignal(const CDeadline& deadline)
+        {
+            m_Waiting = true;
+            return m_Mutex->m_LoadWait.WaitForSignal(*m_Mutex, deadline);
+        }
+
+    CRef<CDataSource> GetDataSource(void) const
+        {
+            return m_DataSource;
+        }
+
+private:
+    CRef<CDataSource>   m_DataSource;
+    CRef<CTSE_Info::CLoadMutex>  m_Mutex;
+    CMutexGuard     m_Guard;
+    bool m_Waiting;
+
+private:
+    CTSE_LoadLockGuard(const CTSE_LoadLockGuard&);
+    CTSE_LoadLockGuard operator=(const CTSE_LoadLockGuard&);
+};
+
+
 CTSE_LoadLock CDataSource::GetTSE_LoadLock(const TBlobId& blob_id)
 {
     _ASSERT(blob_id);
@@ -1757,6 +1803,25 @@ CTSE_LoadLock CDataSource::GetTSE_LoadLockIfLoaded(const TBlobId& blob_id)
         ret.m_Info = const_cast<CTSE_Info*>(lock.GetNonNullPointer());
     }}
     return ret;
+}
+
+
+CTSE_LoadLock CDataSource::GetLoadedTSE_Lock(const TBlobId& blob_id, const CTimeout& timeout)
+{
+    CTSE_LoadLock lock = GetTSE_LoadLock(blob_id);
+    if ( IsLoaded(*lock) ) {
+        return lock;
+    }
+    CDeadline deadline(timeout);
+    while ( lock.x_GetGuard().WaitForSignal(deadline) ) {
+        if ( IsLoaded(*lock) ) {
+            return lock;
+        }
+    }
+    if ( IsLoaded(*lock) ) {
+        return lock;
+    }
+    return CTSE_LoadLock();
 }
 
 
@@ -1860,41 +1925,6 @@ void CDataSource::x_SetLock(CTSE_Lock& lock, CConstRef<CTSE_Info> tse) const
 }
 
 
-class CTSE_LoadLockGuard : public CObject
-{
-public:
-    explicit CTSE_LoadLockGuard(CDataSource* ds,
-                                const CObject* lock,
-                                CMutex& mutex)
-        : m_DataSource(ds), m_Lock(lock), m_Guard(mutex)
-        {
-        }
-    ~CTSE_LoadLockGuard(void)
-        {
-        }
-
-    void Release(void)
-        {
-            m_Guard.Release();
-            m_Lock.Reset();
-        }
-
-    CRef<CDataSource> GetDataSource(void) const
-        {
-            return m_DataSource;
-        }
-
-private:
-    CRef<CDataSource>   m_DataSource;
-    CConstRef<CObject>  m_Lock;
-    CMutexGuard     m_Guard;
-
-private:
-    CTSE_LoadLockGuard(const CTSE_LoadLockGuard&);
-    CTSE_LoadLockGuard operator=(const CTSE_LoadLockGuard&);
-};
-
-
 void CDataSource::x_SetLoadLock(CTSE_LoadLock& load, CTSE_Lock& lock)
 {
     _ASSERT(lock && !load);
@@ -1905,9 +1935,7 @@ void CDataSource::x_SetLoadLock(CTSE_LoadLock& load, CTSE_Lock& lock)
     load.m_Info->m_LockCounter.Add(1);
     if ( !IsLoaded(*load) ) {
         _ASSERT(load->m_LoadMutex);
-        load.m_LoadLock.Reset(new CTSE_LoadLockGuard(this,
-                                                     load->m_LoadMutex,
-                                                     *load->m_LoadMutex));
+        load.m_LoadLock.Reset(new CTSE_LoadLockGuard(this, load->m_LoadMutex));
         if ( IsLoaded(*load) ) {
             load.ReleaseLoadLock();
         }
@@ -1927,9 +1955,7 @@ void CDataSource::x_SetLoadLock(CTSE_LoadLock& load,
     load.m_Info.Reset(&tse);
     if ( !IsLoaded(tse) ) {
         _ASSERT(load_mutex);
-        load.m_LoadLock.Reset(new CTSE_LoadLockGuard(this,
-                                                     load_mutex,
-                                                     *load_mutex));
+        load.m_LoadLock.Reset(new CTSE_LoadLockGuard(this, load_mutex));
         if ( IsLoaded(tse) ) {
             load.ReleaseLoadLock();
         }
@@ -1981,25 +2007,6 @@ CTSE_LoadLock& CTSE_LoadLock::operator=(const CTSE_LoadLock& lock)
     return *this;
 }
 
-/*
-void CTSE_LoadLock::x_SetLoadLock(CDataSource* ds, CTSE_Info* info)
-{
-    _ASSERT(info && !m_Info);
-    _ASSERT(ds && !m_DataSource);
-    m_Info.Reset(info);
-    m_DataSource.Reset(ds);
-    info->m_LockCounter.Add(1);
-    if ( !IsLoaded() ) {
-        _ASSERT(info->m_LoadMutex);
-        m_LoadLock.Reset(new CTSE_LoadLockGuard(ds,
-                                                info->m_LoadMutex,
-                                                *info->m_LoadMutex));
-        if ( IsLoaded() ) {
-            ReleaseLoadLock();
-        }
-    }
-}
-*/
 
 bool CTSE_LoadLock::IsLoaded(void) const
 {
@@ -2038,7 +2045,7 @@ void CTSE_LoadLock::ReleaseLoadLock(void)
 {
     if ( m_LoadLock ) {
         if ( IsLoaded() ) {
-            static_cast<CTSE_LoadLockGuard&>(*m_LoadLock).Release();
+            x_GetGuard().Release();
         }
         m_LoadLock.Reset();
     }
