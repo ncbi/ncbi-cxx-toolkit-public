@@ -222,6 +222,8 @@
 #define ERR_DBLINK_SRAAccessionsMissing        13
 #define ERR_DBLINK_MissingBioSample            14
 #define ERR_DBLINK_IncorrectBioSampleId        15
+#define ERR_DBLINK_MissingSRA                  16
+#define ERR_DBLINK_IncorrectSRA                17
 
 #define ERR_ACCESSION                          14
 #define ERR_ACCESSION_ForcedAssemblyVersion    1
