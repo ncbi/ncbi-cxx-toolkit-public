@@ -191,6 +191,7 @@ private:
     friend void SetAssemblyVersion(int version);
     friend void SetUpdateMode(EUpdateMode mode);
     friend void AddBioSample(const string& biosample);
+    friend void AddSRA(const string& sra);
 
     CParams();
     CParams(const CParams&) = delete;
@@ -202,6 +203,7 @@ void SetScaffoldPrefix(const string& scaffold_prefix);
 void SetAssemblyVersion(int version);
 void SetUpdateMode(EUpdateMode mode);
 void AddBioSample(const string& biosample);
+void AddSRA(const string& biosample);
 
 }
 
