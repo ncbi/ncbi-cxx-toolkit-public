@@ -358,7 +358,7 @@ s_ReportLineLengthError
  */
 static void 
 s_ReportBlockLengthError 
-(char *               id,
+(const char *         id,
  int                  line_num,
  int                  expected_num,
  int                  actual_num,
@@ -2134,7 +2134,7 @@ s_GetOneNexusSizeComment
         return eFalse;
     }
 
-    cpstart = strstr (str, valname);
+    cpstart = (char*) strstr (str, valname);
     if (cpstart == NULL) {
         return eFalse;
     }
@@ -2343,9 +2343,9 @@ static EBool s_UpdateNexusCharInfo
         return eFalse;
     }
 
-    cp = strstr (str, "format ");
+    cp = (char*) strstr (str, "format ");
     if (cp == NULL) {
-        cp = strstr (str, "FORMAT ");
+        cp = (char*) strstr (str, "FORMAT ");
     }
     if (cp == NULL) {
         return eFalse;
@@ -2704,7 +2704,7 @@ static void s_RemoveOrganismCommentFromLine (char * string)
             if (diff < len-1) {
                 char* pbuf = pbuf1024;
                 if (len > sizeof(pbuf1024)-1) {
-                    pbuf = malloc(len + 1);
+                    pbuf = (char*) malloc(len + 1);
                 }
                 strcpy(pbuf, clp->end + 1);
                 strcpy(clp->start, pbuf);
@@ -2925,7 +2925,7 @@ static void s_ReadOrgNamesFromText
         afrp->organisms = s_AddLineInfo(
             afrp->organisms, dummy, line_num, linelen);
         afrp->num_organisms ++;
-        s_AddDeflineFromOrganismLine(dummy, line_num, linelen, afrp);
+        s_AddDeflineFromOrganismLine((char*) dummy, line_num, linelen, afrp);
         return;
     }
     while (clp != NULL) {
@@ -3208,7 +3208,7 @@ static SAlignRawFilePtr s_AlignFileRawNew (void)
 /* This function creates a SLengthListData structure that describes the pattern
  * of character lengths in the string pointed to by cp.
  */
-static SLengthListPtr s_GetBlockPattern (char * cp)
+static SLengthListPtr s_GetBlockPattern (const char * cp)
 {
     SLengthListPtr this_pattern;
     int           len;
