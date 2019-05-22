@@ -650,15 +650,6 @@ static bool SetBioProjectIds(const list<string>& ids, TIdContainer& bioproject_i
     return true;
 }
 
-static bool IsValidSRA(const string& sra)
-{
-    static const size_t MIN_SRA_ID_SIZE = 8;
-
-    return sra.size() > MIN_SRA_ID_SIZE &&
-           (NStr::StartsWith(sra, "ERR") || NStr::StartsWith(sra, "DRR") || NStr::StartsWith(sra, "SRR")) &&
-           IsDigits(sra.begin() + 3, sra.end());
-}
-
 static bool SetBioSampleSRAIds(const list<string>& ids, TIdContainer& biosample_ids, TIdContainer& sra_ids)
 {
     static const size_t MIN_ID_SIZE = 4;
@@ -1277,6 +1268,12 @@ void AddBioSample(const string& biosample)
 {
     CParams_imp& params_imp = *params->m_imp;
     params_imp.m_biosample_ids.insert(biosample);
+}
+
+void AddSRA(const string& sra)
+{
+    CParams_imp& params_imp = *params->m_imp;
+    params_imp.m_sra_ids.insert(sra);
 }
 
 }
