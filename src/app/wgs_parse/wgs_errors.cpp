@@ -260,7 +260,9 @@ static map<int, SErrorSubcodes> ERROR_CODE_STR =
             { ERR_DBLINK_SRAAccessionsMismatch, "SRAAccessionsMismatch" },
             { ERR_DBLINK_SRAAccessionsMissing, "SRAAccessionsMissing" },
             { ERR_DBLINK_MissingBioSample, "MissingBioSample" },
-            { ERR_DBLINK_IncorrectBioSampleId, "IncorrectBioSampleId" }
+            { ERR_DBLINK_IncorrectBioSampleId, "IncorrectBioSampleId" },
+            { ERR_DBLINK_MissingSRA, "MissingSRA" },
+            { ERR_DBLINK_IncorrectSRA, "IncorrectSRA" }
         }
     } },
     { ERR_ACCESSION, { "ACCESSION",
