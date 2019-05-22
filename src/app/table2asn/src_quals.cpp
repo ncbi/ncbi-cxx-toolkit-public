@@ -50,6 +50,7 @@
 #include <objtools/readers/mod_reader.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
+#include <unordered_set>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -320,6 +321,7 @@ void CSourceQualifiersReader::LoadSourceQualifiers(const string& filename, bool 
        "source modifiers file header line is not valid");
 }
 
+
 void g_ApplyMods(
         const string& commandLineStr,
         const string& namedSrcFile,
@@ -342,7 +344,6 @@ void g_ApplyMods(
     }
 
 
-
     SSrcQuals qualsFromNamedFile;
     if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
         CSourceQualifiersReader::LoadSourceQualifiers(
@@ -362,6 +363,8 @@ void g_ApplyMods(
     auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
     auto editHandle = pScope->AddTopLevelSeqEntry(entry).GetEditHandle();
 
+    unordered_set<string> rejectedSet;
+
     for (CBioseq_CI bioseq_it(editHandle); bioseq_it; ++bioseq_it) {
         auto pBioseq = const_cast<CBioseq*>(bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull());
         if (pBioseq) {
@@ -369,19 +372,32 @@ void g_ApplyMods(
             CModHandler mod_handler(fReportError);
             mod_handler.AddMods(commandLineMods, CModHandler::eAppendReplace, rejectedMods);
             s_AppendMods(rejectedMods, remainder); 
+            for (const auto& mod : rejectedMods) {
+                rejectedSet.insert(CModHandler::GetCanonicalName(mod.GetName()));
+            }
 
             if (!qualsFromNamedFile.m_lines_map.empty()) {
                 TModList mods;
                 qualsFromNamedFile.AddQualifiers(pBioseq->GetId(), mods);
                 mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods);
+                rejectedMods.remove_if([&](const CModData& mod) 
+                        {  return (rejectedSet.find(CModHandler::GetCanonicalName(mod.GetName())) != rejectedSet.end()); });
                 s_AppendMods(rejectedMods, remainder);
+                for (const auto& mod : rejectedMods) {
+                    rejectedSet.insert(CModHandler::GetCanonicalName(mod.GetName()));
+                }
             }
 
             if (!qualsFromDefaultFile.m_lines_map.empty()) {
                 TModList mods;
                 qualsFromDefaultFile.AddQualifiers(pBioseq->GetId(), mods);
                 mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods);
+                rejectedMods.remove_if([&](const CModData& mod) 
+                        {  return (rejectedSet.find(CModHandler::GetCanonicalName(mod.GetName())) != rejectedSet.end()); });
                 s_AppendMods(rejectedMods, remainder);
+                for (const auto& mod : rejectedMods) {
+                    rejectedSet.insert(CModHandler::GetCanonicalName(mod.GetName()));
+                }
             }
 
             CRef<CSeqdesc> pTitleDesc;
@@ -400,16 +416,25 @@ void g_ApplyMods(
                     pTitleDesc = *title_it;
                     auto& title = (*title_it)->SetTitle();
                     string titleRemainder;
-                    TModList mods, rejectedTitleMods;
+                    TModList mods;
                     CTitleParser::Apply(title, mods, titleRemainder);
-                    mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedTitleMods);
-                    s_AppendMods(rejectedTitleMods, titleRemainder);
+                    mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods);
+                    rejectedMods.remove_if([&](const CModData& mod) 
+                        {  return (rejectedSet.find(CModHandler::GetCanonicalName(mod.GetName())) != rejectedSet.end()); });
+                    s_AppendMods(rejectedMods, titleRemainder);
+                    for (const auto& mod : rejectedMods) {
+                        rejectedSet.insert(CModHandler::GetCanonicalName(mod.GetName()));
+                    }
                     remainder = titleRemainder +  remainder;
                 }
             }
-            TModList skippedMods;
-            CModAdder::Apply(mod_handler, *pBioseq, skippedMods, fReportError);
-            s_AppendMods(skippedMods, remainder);
+            CModAdder::Apply(mod_handler, *pBioseq, rejectedMods, fReportError);
+            rejectedMods.remove_if([&](const CModData& mod) 
+                    {  return (rejectedSet.find(CModHandler::GetCanonicalName(mod.GetName())) != rejectedSet.end()); });
+            s_AppendMods(rejectedMods, remainder);
+            for (const auto& mod : rejectedMods) {
+                rejectedSet.insert(CModHandler::GetCanonicalName(mod.GetName()));
+            }
 
             NStr::TruncateSpacesInPlace(remainder);
             if (!remainder.empty()) {
@@ -422,6 +447,7 @@ void g_ApplyMods(
         }
     }
 }
+
 
 void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry)
 {
