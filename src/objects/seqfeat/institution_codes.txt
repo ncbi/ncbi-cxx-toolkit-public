@@ -931,6 +931,7 @@ CCIBt	c	Culture Collection at the Institute of Botany, Sao Paulo
 CCIM	c	Culture Collection of Industrial Microorganisms			
 CCM	c	Czech Collection of Microorganisms	CCM<CZE>		
 CCM-A	c	Coleccion de Cultivos Microbianos			
+CCM-CIBE	c	Escuela Superior Politecnica del Litoral			
 CCM<CHN>	s	Changchun College of Traditional Chinese Medicine, Department of Chinese Materia Medica			
 CCM<USA-MT>	s	Carter County Museum			
 CCMAC	c	Culture Collection of Macromycetes (Basidiomycotina and Ascomycotina)			
