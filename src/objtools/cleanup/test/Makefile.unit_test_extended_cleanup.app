@@ -6,7 +6,7 @@ SRC = unit_test_extended_cleanup
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 
-LIB = xcleanup xobjedit xunittestutil xalnmgr xobjutil valid taxon3 gbseq submit \
+LIB = xcleanup $(OBJEDIT_LIBS) xunittestutil xalnmgr xobjutil valid gbseq \
       tables xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
