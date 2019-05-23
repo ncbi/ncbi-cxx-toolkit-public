@@ -90,9 +90,9 @@ public:
 
     static const string& GetCanonicalName(const TModEntry& mod_entry);
     static const string& AssertReturnSingleValue(const TModEntry& mod_entry);
+    static string GetCanonicalName(const string& name);
 
 private:
-    static string x_GetCanonicalName(const string& name);
     static string x_GetNormalizedString(const string& name);
     static bool x_MultipleValuesAllowed(const string& canonical_name);
     static bool x_IsDeprecated(const string& canonical_name);

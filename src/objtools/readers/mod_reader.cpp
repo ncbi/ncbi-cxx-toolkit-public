@@ -200,7 +200,7 @@ void CModHandler::AddMods(const TModList& mods,
     TMods conflicting_mods;
 
     for (const auto& mod : mods) {
-        const auto& canonical_name = x_GetCanonicalName(mod.GetName());
+        const auto& canonical_name = GetCanonicalName(mod.GetName());
         if (x_IsDeprecated(canonical_name)) {
             rejected_mods.push_back(mod);
             string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
@@ -343,7 +343,7 @@ const string& CModHandler::AssertReturnSingleValue(const TModEntry& mod_entry)
     return mod_entry.second.front().GetValue(); 
 }
 
-string CModHandler::x_GetCanonicalName(const string& name) 
+string CModHandler::GetCanonicalName(const string& name) 
 {
     const auto& normalized_name = x_GetNormalizedString(name);
     const auto& it = sm_NameMap.find(normalized_name);
