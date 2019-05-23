@@ -23,4 +23,4 @@ POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects LIBXML LIBXSLT BerkeleyDB SQLITE3
 
-WATCHERS = bollin gotvyans
+WATCHERS = bollin gotvyans foleyjp
