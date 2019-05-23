@@ -74,6 +74,8 @@ private:
     void x_SetGenomeProjects(const TModEntry& mod_entry);
     void x_SetComment(const TModEntry& mod_entry);
     void x_SetPMID(const TModEntry& mod_entry);
+    void x_SetFileTrack(const TModEntry& mod_entry);
+
 
     static const string& x_GetModName(const TModEntry& mod_entry);
     static const string& x_GetModValue(const TModEntry& mod_entry);

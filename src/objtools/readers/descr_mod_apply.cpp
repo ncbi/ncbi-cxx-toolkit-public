@@ -91,6 +91,7 @@ public:
     CUser_object& SetDBLink(void);
     CUser_object& SetTpaAssembly(void);
     CUser_object& SetGenomeProjects(void);
+    CUser_object& SetFileTrack(void);
 
     CGB_block& SetGBblock(void);
     CMolInfo& SetMolInfo(void);
@@ -111,6 +112,7 @@ private:
         eMolInfo = 4,
         eGBblock = 5,
         eBioSource = 6,
+        eFileTrack = 7,
     };
 
     void x_SetUserType(const string& type, CUser_object& user_object);
@@ -173,7 +175,9 @@ bool CDescrModApply::Apply(const TModEntry& mod_entry)
                            {"keyword", &CDescrModApply::x_SetGBblockKeywords},
                            {"project", &CDescrModApply::x_SetGenomeProjects},
                            {"comment", &CDescrModApply::x_SetComment},
-                           {"pmid", &CDescrModApply::x_SetPMID}
+                           {"pmid", &CDescrModApply::x_SetPMID},
+                           {"ft-map", &CDescrModApply::x_SetFileTrack},
+                           {"ft-mod", &CDescrModApply::x_SetFileTrack}
                           };
         const auto& mod_name = x_GetModName(mod_entry);
         auto it = s_MethodMap.find(mod_name);
@@ -705,6 +709,28 @@ void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 }
 
 
+void CDescrModApply::x_SetFileTrack(const TModEntry& mod_entry)
+{
+    list<string> vals;
+    for (const auto& mod : mod_entry.second) {
+        vals.push_back(mod.GetValue());
+    }
+    
+    string label = (mod_entry.first == "ft-map") ?
+                    "Map-FileTrackURL" :
+                    "BaseModification-FileTrackURL";
+
+    for (auto val : vals) {
+        auto& user = m_pDescrCache->SetFileTrack();
+        auto pField = Ref(new CUser_field());
+        pField->SetLabel().SetStr(label);
+        pField->SetNum(1);
+        pField->SetData().SetStr(val);
+        user.SetData().push_back(pField);
+    }
+}
+
+
 void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry)
 { 
     list<CStringUTF8> accession_list; 
@@ -784,6 +810,8 @@ void CDescrModApply::x_SetGBblockKeywords(const TModEntry& mod_entry)
     }
     m_pDescrCache->SetGBblock().SetKeywords().assign(value_list.begin(), value_list.end());
 }
+
+
 
 
 void CDescrModApply::x_SetGenomeProjects(const TModEntry& mod_entry)
@@ -1008,6 +1036,22 @@ CUser_object& CDescrCache::SetDBLink()
             pDesc->SetUser().SetObjectType(CUser_object::eObjectType_DBLink);
             return pDesc;
         }).SetUser();
+}
+
+
+
+CUser_object& CDescrCache::SetFileTrack()
+{
+    return x_SetDescriptor(eFileTrack,
+        [this](const CSeqdesc& desc) {
+            return (desc.IsUser() && s_IsUserType(desc.GetUser(), "FileTrack"));
+        },
+        [this]() {
+            auto pDesc = Ref(new CSeqdesc());
+            x_SetUserType("FileTrack", pDesc->SetUser());
+            return pDesc;
+        }
+    ).SetUser();
 }
 
 
