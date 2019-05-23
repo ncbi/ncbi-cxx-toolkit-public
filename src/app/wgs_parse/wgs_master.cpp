@@ -1876,7 +1876,7 @@ static bool IsValidAccessionType(const string& accession)
 static bool IsValidDdbjEmblScaffold(const string& accession)
 {
     static const size_t SCAFFOLD_PREFIX_LEN = 2;
-    static const size_t VALID_ACCESSION_LEN = 10;
+    static const size_t VALID_ACCESSION_LEN = 8;
 
     bool ret = false;
     if ((GetParams().GetSource() == eDDBJ || GetParams().GetSource() == eEMBL || IsScaffoldPrefix(accession, SCAFFOLD_PREFIX_LEN)) &&
