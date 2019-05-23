@@ -72,7 +72,9 @@ bool SSrcQuals::AddQualifiers(const CBioseq::TId& ids, TModList& mods)
             vector<CTempString> tokens;
             NStr::Split(it->second.m_unparsed, "\t", tokens, 0);
             for (size_t i=1; i < tokens.size() && i < columnNames.size(); ++i) {
-                mods.push_back(CModData(columnNames[i], tokens[i]));
+                if (!NStr::IsBlank(tokens[i])) {
+                    mods.push_back(CModData(columnNames[i], tokens[i]));
+                }
             }
             m_lines_map.erase(it);
             return true;
@@ -401,6 +403,7 @@ void g_ApplyMods(
             }
 
             CRef<CSeqdesc> pTitleDesc;
+
             CSeq_descr::Tdata* pDescriptors = nullptr;
             if ((pBioseq->IsSetDescr() &&
                 pBioseq->GetDescr().IsSet()) ||
@@ -408,8 +411,9 @@ void g_ApplyMods(
                 pDescriptors = &(pBioseq->SetDescr().Set());
             }
 
+            CSeq_descr::Tdata::iterator title_it;
             if (pDescriptors) {
-                CSeq_descr::Tdata::iterator title_it = 
+                title_it = 
                     find_if(pDescriptors->begin(), pDescriptors->end(),
                         [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
                 if (title_it != pDescriptors->end()) {
@@ -418,6 +422,7 @@ void g_ApplyMods(
                     string titleRemainder;
                     TModList mods;
                     CTitleParser::Apply(title, mods, titleRemainder);
+
                     mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods);
                     rejectedMods.remove_if([&](const CModData& mod) 
                         {  return (rejectedSet.find(CModHandler::GetCanonicalName(mod.GetName())) != rejectedSet.end()); });
@@ -443,6 +448,15 @@ void g_ApplyMods(
                     pDescriptors->push_back(pTitleDesc);
                 }
                 pTitleDesc->SetTitle() = remainder;
+            }
+            else // remainder.empty() 
+            if (pDescriptors) {
+                if (title_it != pDescriptors->end()) {
+                    pDescriptors->erase(title_it);
+                } 
+                if (pDescriptors->empty()) {
+                    pBioseq->ResetDescr();
+                }
             }
         }
     }
