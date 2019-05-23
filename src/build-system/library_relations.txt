@@ -946,7 +946,7 @@ ncbils2_asn needs xser
 ncbils2_authxml needs xser
 ncbils2_cli needs ncbils2_asn
 ncbils2_cli needs xconnect
-ncbils2_cmn needs $(LIBSSSUTILS)
+ncbils2_cmn needs sssutils
 ncbils2_cmn needs3party $(GCRYPT_LIBS)
 ncbils2_dispxml needs xser
 ncbimime needs cdd
@@ -1058,6 +1058,11 @@ prok_cluster_data needs gpipe_sqlite
 prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
 protein_match needs xobjutil
+proteinkmer needs xalgoblastdbindex
+proteinkmer needs xalgodustmask
+proteinkmer needs xalgowinmask
+proteinkmer needs xblast
+proteinkmer needs xnetblastcli
 protobuf-lited needs3party $(ORIG_LIBS)
 protobufd includes3party protobuf-lited
 protobufd needs $(Z_LIB)
@@ -1193,7 +1198,7 @@ ssscli needs ssrvcmn
 sssdb needs ssssys
 sssdb needs3party $(SYBASE_DLLS)
 sssdb needs3party $(SYBASE_LIBS)
-ssssys needs $(LIBSSSUTILS)
+ssssys needs sssutils
 ssssys needs xconnect
 sssutils needs3party $(ORIG_LIBS)
 ssswww needs3party $(ORIG_LIBS)
@@ -1331,8 +1336,15 @@ validation_details needs xmlwrapp
 validation_results needs $(SEQ_LIBS)
 validation_results needs pub
 validation_results needs xmlwrapp
+var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
+variation_lib needs intvarutil
+variation_lib needs ncbi_xloader_blastdb
+variation_lib needs objannotation
+variation_lib needs refseq_aln_source
+variation_lib needs variation_utils
+variation_lib needs xconnserv
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
@@ -1636,7 +1648,7 @@ xlsxwriter needs3party $(ORIG_LIBS)
 xlsxwriter needs3party $(Z_LIBS)
 xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
-xmlcgi needs $(LIBSSSUTILS)
+xmlcgi needs sssutils
 xmlcgi needs xhtml
 xmlcgi needs xid_utils
 xmlreaders needs xmlwrapp
