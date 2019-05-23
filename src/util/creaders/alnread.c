@@ -2920,12 +2920,12 @@ static void s_ReadOrgNamesFromText
         //  we still need to create and record dummies to remain in sync
         //  with the sequence data:
         // 
-        const char* dummy = "";
+        char dummy = '\0';
         const int linelen = strlen(string);
         afrp->organisms = s_AddLineInfo(
-            afrp->organisms, dummy, line_num, linelen);
+            afrp->organisms, &dummy, line_num, linelen);
         afrp->num_organisms ++;
-        s_AddDeflineFromOrganismLine((char*) dummy, line_num, linelen, afrp);
+        s_AddDeflineFromOrganismLine(&dummy, line_num, linelen, afrp);
         return;
     }
     while (clp != NULL) {
