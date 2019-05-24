@@ -206,6 +206,34 @@ struct SPSG_Chunk
     TData data;
 };
 
+struct SDebugPrintout
+{
+    enum EType { eSend = 1000, eReceive, ePush, ePop, eClose };
+
+    SDebugPrintout() :
+        m_Level(GetLevel()),
+        m_Perf(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::ePerformance)
+    {}
+
+    explicit operator bool() { return m_Level != eNone; }
+    void Print(string id, const string& authority, const string& path);
+    void Print(string id, SPSG_Chunk& chunk);
+    void Print(string id, EType type);
+    void Print(string id, uint32_t error_code);
+
+    static SDebugPrintout& GetInstance() { static SDebugPrintout instance; return instance; }
+
+private:
+    enum ELevel { eNone, eSome, eAll };
+
+    static double GetSeconds() { return chrono::duration<double, milli>(chrono::steady_clock::now().time_since_epoch()).count(); }
+    static ELevel GetLevel();
+
+    const ELevel m_Level;
+    const bool m_Perf;
+    mutex m_Mutex;
+};
+
 struct SPSG_Reply
 {
     struct SState
