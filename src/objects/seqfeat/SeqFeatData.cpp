@@ -49,12 +49,120 @@
 #include <algorithm>
 #include <util/static_map.hpp>
 #include <array>
+#include <cassert>
+#include <bitset>
 
 // generated classes
+
+namespace cstd
+{
+    template<typename T, typename...TArgs>
+    constexpr auto make_array(T first, TArgs...args)->std::array<T, 1 + sizeof...(TArgs)>
+    {
+        return std::array<T, 1 + sizeof...(TArgs)>({ first, args... });
+    }
+
+    template<size_t index, class TIndex = unsigned>
+    class bit_mask
+    {
+    private:
+        static constexpr uint64_t set_bit(size_t high, unsigned char low)
+        {
+            return (index == high) ? (uint64_t(1) << (low & 63)) : 0;
+        }
+
+        static constexpr uint64_t set_bit(TIndex v)
+        {
+            return set_bit(v / 64, v % 64);
+        }
+
+        static constexpr uint64_t merge()
+        {
+            return 0;
+        }
+
+    public:
+        template<typename T, typename...TRest>
+        static constexpr uint64_t merge(T first, TRest...rest)
+        {
+            //static_assert(first < static_cast<T>(std::numeric_limits<TIndex>::max()));
+            return merge(rest...) | set_bit(static_cast<TIndex>(first));
+        }
+    };
+
+    template<size_t index, typename... TArgs>
+    constexpr uint64_t make_mask(TArgs&&...args)
+    {
+        return bit_mask<index>::merge(args...);
+    }
+
+}
+
+namespace
+{
+    template<size_t _Bits, class T>
+    class XBitset: public cstd::bitset<_Bits, T>
+    {
+    public:
+        using mybase = cstd::bitset<_Bits, T>;
+        using _Ty = typename mybase::_Ty;
+        static_assert(mybase::_Words == 3, "only supported 3*64 bitsets at the momment");
+        enum class init_params
+        {
+            set,
+        };
+
+        constexpr XBitset() = default;
+        constexpr XBitset(init_params, size_t size) : mybase(size, cstd::make_array(
+            std::numeric_limits<_Ty>::max(),
+            std::numeric_limits<_Ty>::max(),
+            std::numeric_limits<_Ty>::max()))
+        {
+        };
+
+        //template<typename std::enable_if<_Words==3, T>::type, typename...TArgs>
+        template<typename...TArgs>
+        constexpr XBitset(TArgs...args): mybase(
+            sizeof...(args),
+            cstd::make_mask<0>(args...),
+            cstd::make_mask<1>(args...),
+            cstd::make_mask<2>(args...))
+        {
+        }
+
+        static constexpr XBitset<_Bits, T> all_set(size_t size = _Bits)
+        {
+            return XBitset<_Bits, T>(init_params::set, size);
+        }
+    };
+
+    template<typename _It, typename _Pred>
+    bool check_sorted_table(_It begin, _It end, _Pred pred)
+    {
+#ifdef _DEBUG
+        if (begin != end)
+        {
+            _It prev = begin++;
+            while (begin != end)
+            {
+                //std::cout << current->first << std::endl;
+                assert(pred(*prev, *begin));
+                prev = begin++;
+            }
+        }
+#endif
+        return true;
+    }
+}
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+using TLegalQualBitset = XBitset<CSeqFeatData::eQual_whole_replicon + 1, CSeqFeatData::EQualifier>;
+
+using TLegalQualMapRecord = std::pair<CSeqFeatData::ESubtype, TLegalQualBitset>;
+
 
 // constructor
 CSeqFeatData::CSeqFeatData(void)
@@ -388,9 +496,8 @@ typedef vector<CSeqFeatData::E_Choice> TSubtypesTable;
 static CSafeStatic<TSubtypesTable> sx_SubtypesTable;
 static bool sx_SubtypesTableInitialized = false;
 
-typedef map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> TFeatQuals;
 // these maps contain sorted vectors for faster lookup
-const TFeatQuals& GetLegalQuals();
+typedef map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> TFeatQuals;
 static CSafeStatic<TFeatQuals> sx_MandatoryQuals;
 static bool sx_MandatoryQualsInitialized = false;
 static CSafeStatic<CSeqFeatData::TQualifiers> sx_EmptyQuals;
@@ -591,27 +698,6 @@ CSeqFeatData::SubtypeValueToName(ESubtype eSubtype)
     
     return find_iter->second;
 }
-
-bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
-{
-    TFeatQuals::const_iterator iter = GetLegalQuals().find(subtype);
-    if ( iter == GetLegalQuals().end() ) {
-        return false;
-    }
-    const TQualifiers& legal = iter->second;
-    return binary_search(legal.begin(), legal.end(), qual);
-}
-
-
-const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
-{
-    TFeatQuals::const_iterator iter = GetLegalQuals().find(subtype);
-    if ( iter == GetLegalQuals().end() ) {
-        return *sx_EmptyQuals;
-    }
-    return iter->second;
-}
-
 
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(ESubtype subtype)
 {
@@ -834,42 +920,13 @@ void CSeqFeatData::s_InitSubtypesTable(void)
 namespace
 {
 
-    template<typename _M, typename _R, typename _I>
-    void set_table(_M& _map, _R index, const _I* init, size_t size)
-    {
-      auto& table = _map[index];	
-      table.insert(table.begin(), init, init + size);
-      std::sort(table.begin(), table.end());
-    }
-
-    template<typename _M, typename _R, typename _I>
-    void fill_table(_M& _map, _R index, _I _start, _I _end)
-    {
-      auto& table = _map[index];
-      auto dist = _end - _start + 1;
-      table.reserve(dist);
-      for (int it = 0; it < dist; ++it)
-        table.push_back(static_cast<_I>(_start + it));
-      // no need to sort the generatted array
-    }
-
-    template<typename...TArgs>
-    constexpr
-    auto make_array(TArgs&&...args) -> std::array<CSeqFeatData::EQualifier, sizeof...(args)>
-    {
-      return std::array<CSeqFeatData::EQualifier, sizeof...(args)>{args...};
-    }
-
-TFeatQuals s_InitLegalQuals(void)
-{
-  TFeatQuals table;
-
 #define ADD_QUAL(n) CSeqFeatData::eQual_##n
 
 #define START_SUBTYPE(name, ...) \
-	static constexpr auto init_auto_##name = make_array(__VA_ARGS__); \
-	set_table(table, CSeqFeatData::eSubtype_##name, init_auto_##name.data(), init_auto_##name.size()); 
+    TLegalQualMapRecord({ CSeqFeatData::eSubtype_##name, TLegalQualBitset(__VA_ARGS__) })
 
+static constexpr auto g_legal_quals = make_array(
+//    auto 
 START_SUBTYPE(gene
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
@@ -894,7 +951,7 @@ START_SUBTYPE(gene
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 //START_SUBTYPE(org
 //)
@@ -934,7 +991,7 @@ START_SUBTYPE(cdregion
    ,ADD_QUAL(transl_table)
    ,ADD_QUAL(translation)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(prot
    ,ADD_QUAL(EC_number)
@@ -962,7 +1019,7 @@ START_SUBTYPE(prot
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(preprotein
    ,ADD_QUAL(EC_number)
@@ -988,7 +1045,7 @@ START_SUBTYPE(preprotein
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(mat_peptide_aa
    ,ADD_QUAL(EC_number)
@@ -1016,7 +1073,7 @@ START_SUBTYPE(mat_peptide_aa
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(sig_peptide_aa
    ,ADD_QUAL(EC_number)
@@ -1043,7 +1100,7 @@ START_SUBTYPE(sig_peptide_aa
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(transit_peptide_aa
    ,ADD_QUAL(allele)
@@ -1069,7 +1126,7 @@ START_SUBTYPE(transit_peptide_aa
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(preRNA
    ,ADD_QUAL(allele)
@@ -1093,7 +1150,7 @@ START_SUBTYPE(preRNA
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(mRNA
    ,ADD_QUAL(allele)
@@ -1120,7 +1177,7 @@ START_SUBTYPE(mRNA
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(transcript_id)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(tRNA
    ,ADD_QUAL(allele)
@@ -1145,7 +1202,7 @@ START_SUBTYPE(tRNA
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(rRNA
    ,ADD_QUAL(allele)
@@ -1169,7 +1226,7 @@ START_SUBTYPE(rRNA
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(snRNA
    ,ADD_QUAL(allele)
@@ -1192,7 +1249,7 @@ START_SUBTYPE(snRNA
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(scRNA
    ,ADD_QUAL(allele)
@@ -1215,7 +1272,7 @@ START_SUBTYPE(scRNA
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(snoRNA
    ,ADD_QUAL(allele)
@@ -1238,60 +1295,9 @@ START_SUBTYPE(snoRNA
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
-START_SUBTYPE(ncRNA
-   ,ADD_QUAL(allele)
-   ,ADD_QUAL(citation)
-   ,ADD_QUAL(db_xref)
-   ,ADD_QUAL(evidence)
-   ,ADD_QUAL(exception)
-   ,ADD_QUAL(experiment)
-   ,ADD_QUAL(function)
-   ,ADD_QUAL(gene)
-   ,ADD_QUAL(gene_synonym)
-   ,ADD_QUAL(inference)
-   ,ADD_QUAL(label)
-   ,ADD_QUAL(locus_tag)
-   ,ADD_QUAL(map)
-   ,ADD_QUAL(ncRNA_class)
-   ,ADD_QUAL(note)
-   ,ADD_QUAL(old_locus_tag)
-   ,ADD_QUAL(operon)
-   ,ADD_QUAL(product)
-   ,ADD_QUAL(pseudo)
-   ,ADD_QUAL(pseudogene)
-   ,ADD_QUAL(standard_name)
-   ,ADD_QUAL(trans_splicing)
-   ,ADD_QUAL(usedin)
-)
-
-START_SUBTYPE(tmRNA
-   ,ADD_QUAL(allele)
-   ,ADD_QUAL(citation)
-   ,ADD_QUAL(db_xref)
-   ,ADD_QUAL(evidence)
-   ,ADD_QUAL(exception)
-   ,ADD_QUAL(experiment)
-   ,ADD_QUAL(function)
-   ,ADD_QUAL(gene)
-   ,ADD_QUAL(gene_synonym)
-   ,ADD_QUAL(inference)
-   ,ADD_QUAL(label)
-   ,ADD_QUAL(locus_tag)
-   ,ADD_QUAL(map)
-   ,ADD_QUAL(note)
-   ,ADD_QUAL(old_locus_tag)
-   ,ADD_QUAL(operon)
-   ,ADD_QUAL(product)
-   ,ADD_QUAL(pseudo)
-   ,ADD_QUAL(pseudogene)
-   ,ADD_QUAL(standard_name)
-   ,ADD_QUAL(tag_peptide)
-   ,ADD_QUAL(usedin)
-)
-
-//  a.k.a. misc_RNA
+//a.k.a.misc_RNA
 START_SUBTYPE(otherRNA
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
@@ -1316,7 +1322,7 @@ START_SUBTYPE(otherRNA
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 //START_SUBTYPE(pub
 //)
@@ -1351,7 +1357,7 @@ START_SUBTYPE(attenuator
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(C_region
    ,ADD_QUAL(allele)
@@ -1373,7 +1379,7 @@ START_SUBTYPE(C_region
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(CAAT_signal
    ,ADD_QUAL(allele)
@@ -1394,7 +1400,7 @@ START_SUBTYPE(CAAT_signal
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(Imp_CDS
    ,ADD_QUAL(EC_number)
@@ -1427,7 +1433,7 @@ START_SUBTYPE(Imp_CDS
    ,ADD_QUAL(transl_table)
    ,ADD_QUAL(translation)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(conflict
    ,ADD_QUAL(allele)
@@ -1447,7 +1453,7 @@ START_SUBTYPE(conflict
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(replace)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(D_loop
    ,ADD_QUAL(allele)
@@ -1465,7 +1471,7 @@ START_SUBTYPE(D_loop
    ,ADD_QUAL(note)
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(D_segment
    ,ADD_QUAL(allele)
@@ -1487,7 +1493,7 @@ START_SUBTYPE(D_segment
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(enhancer
    ,ADD_QUAL(allele)
@@ -1510,7 +1516,7 @@ START_SUBTYPE(enhancer
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(exon
    ,ADD_QUAL(EC_number)
@@ -1536,7 +1542,7 @@ START_SUBTYPE(exon
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(GC_signal
    ,ADD_QUAL(allele)
@@ -1557,7 +1563,7 @@ START_SUBTYPE(GC_signal
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(iDNA
    ,ADD_QUAL(allele)
@@ -1580,7 +1586,7 @@ START_SUBTYPE(iDNA
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(intron
    ,ADD_QUAL(allele)
@@ -1605,7 +1611,7 @@ START_SUBTYPE(intron
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(J_segment
    ,ADD_QUAL(allele)
@@ -1627,7 +1633,7 @@ START_SUBTYPE(J_segment
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(LTR
    ,ADD_QUAL(allele)
@@ -1647,7 +1653,7 @@ START_SUBTYPE(LTR
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(mat_peptide
    ,ADD_QUAL(EC_number)
@@ -1671,7 +1677,7 @@ START_SUBTYPE(mat_peptide
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(misc_binding
    ,ADD_QUAL(allele)
@@ -1691,7 +1697,7 @@ START_SUBTYPE(misc_binding
    ,ADD_QUAL(note)
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(misc_difference
    ,ADD_QUAL(allele)
@@ -1714,7 +1720,7 @@ START_SUBTYPE(misc_difference
    ,ADD_QUAL(replace)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(misc_feature
    ,ADD_QUAL(allele)
@@ -1739,7 +1745,7 @@ START_SUBTYPE(misc_feature
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(misc_recomb
    ,ADD_QUAL(allele)
@@ -1759,7 +1765,7 @@ START_SUBTYPE(misc_recomb
    ,ADD_QUAL(recombination_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(misc_RNA
    ,ADD_QUAL(allele)
@@ -1781,7 +1787,7 @@ START_SUBTYPE(misc_RNA
    ,ADD_QUAL(product)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(misc_signal
    ,ADD_QUAL(allele)
@@ -1806,7 +1812,7 @@ START_SUBTYPE(misc_signal
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(misc_structure
    ,ADD_QUAL(allele)
@@ -1826,7 +1832,7 @@ START_SUBTYPE(misc_structure
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(modified_base
    ,ADD_QUAL(allele)
@@ -1845,7 +1851,7 @@ START_SUBTYPE(modified_base
    ,ADD_QUAL(note)
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(usedin)
-)
+),
 
 //START_SUBTYPE(mutation
 //)
@@ -1870,7 +1876,7 @@ START_SUBTYPE(N_region
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(old_sequence
    ,ADD_QUAL(allele)
@@ -1890,7 +1896,7 @@ START_SUBTYPE(old_sequence
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(replace)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(polyA_signal
    ,ADD_QUAL(allele)
@@ -1911,7 +1917,7 @@ START_SUBTYPE(polyA_signal
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(polyA_site
    ,ADD_QUAL(allele)
@@ -1929,7 +1935,7 @@ START_SUBTYPE(polyA_site
    ,ADD_QUAL(note)
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(precursor_RNA
    ,ADD_QUAL(allele)
@@ -1953,7 +1959,7 @@ START_SUBTYPE(precursor_RNA
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(prim_transcript
    ,ADD_QUAL(allele)
@@ -1974,7 +1980,7 @@ START_SUBTYPE(prim_transcript
    ,ADD_QUAL(operon)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(primer_bind
    ,ADD_QUAL(PCR_conditions)
@@ -1994,7 +2000,7 @@ START_SUBTYPE(primer_bind
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(promoter
    ,ADD_QUAL(allele)
@@ -2020,7 +2026,7 @@ START_SUBTYPE(promoter
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(protein_bind
    ,ADD_QUAL(allele)
@@ -2042,7 +2048,7 @@ START_SUBTYPE(protein_bind
    ,ADD_QUAL(operon)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(RBS
    ,ADD_QUAL(allele)
@@ -2064,7 +2070,7 @@ START_SUBTYPE(RBS
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(repeat_region
    ,ADD_QUAL(allele)
@@ -2094,7 +2100,7 @@ START_SUBTYPE(repeat_region
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(transposon)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(repeat_unit
    ,ADD_QUAL(allele)
@@ -2118,7 +2124,7 @@ START_SUBTYPE(repeat_unit
    ,ADD_QUAL(rpt_unit_range)
    ,ADD_QUAL(rpt_unit_seq)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(rep_origin
    ,ADD_QUAL(allele)
@@ -2139,7 +2145,7 @@ START_SUBTYPE(rep_origin
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(S_region
    ,ADD_QUAL(allele)
@@ -2161,7 +2167,7 @@ START_SUBTYPE(S_region
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(satellite
    ,ADD_QUAL(allele)
@@ -2185,7 +2191,7 @@ START_SUBTYPE(satellite
    ,ADD_QUAL(rpt_unit_seq)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(sig_peptide
    ,ADD_QUAL(allele)
@@ -2208,7 +2214,7 @@ START_SUBTYPE(sig_peptide
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(source
    ,ADD_QUAL(PCR_primers)
@@ -2280,7 +2286,7 @@ START_SUBTYPE(source
    ,ADD_QUAL(variety)
    ,ADD_QUAL(virion)
    ,ADD_QUAL(whole_replicon)
-)
+),
 
 START_SUBTYPE(stem_loop
    ,ADD_QUAL(allele)
@@ -2300,7 +2306,7 @@ START_SUBTYPE(stem_loop
    ,ADD_QUAL(operon)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(STS
    ,ADD_QUAL(allele)
@@ -2318,7 +2324,7 @@ START_SUBTYPE(STS
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(TATA_signal
    ,ADD_QUAL(allele)
@@ -2338,7 +2344,7 @@ START_SUBTYPE(TATA_signal
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(terminator
    ,ADD_QUAL(allele)
@@ -2361,7 +2367,7 @@ START_SUBTYPE(terminator
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(transit_peptide
    ,ADD_QUAL(allele)
@@ -2383,7 +2389,7 @@ START_SUBTYPE(transit_peptide
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(unsure
    ,ADD_QUAL(allele)
@@ -2402,7 +2408,7 @@ START_SUBTYPE(unsure
    ,ADD_QUAL(old_locus_tag)
    ,ADD_QUAL(replace)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(V_region
    ,ADD_QUAL(allele)
@@ -2423,7 +2429,7 @@ START_SUBTYPE(V_region
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(V_segment
    ,ADD_QUAL(allele)
@@ -2444,7 +2450,7 @@ START_SUBTYPE(V_segment
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(variation
    ,ADD_QUAL(allele)
@@ -2467,7 +2473,7 @@ START_SUBTYPE(variation
    ,ADD_QUAL(replace)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 //START_SUBTYPE(virion
 
@@ -2489,7 +2495,7 @@ START_SUBTYPE(3clip
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(3UTR
    ,ADD_QUAL(allele)
@@ -2509,7 +2515,7 @@ START_SUBTYPE(3UTR
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(5clip
    ,ADD_QUAL(allele)
@@ -2529,7 +2535,7 @@ START_SUBTYPE(5clip
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(5UTR
    ,ADD_QUAL(allele)
@@ -2549,7 +2555,7 @@ START_SUBTYPE(5UTR
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(trans_splicing)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(10_signal
    ,ADD_QUAL(allele)
@@ -2571,7 +2577,7 @@ START_SUBTYPE(10_signal
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(35_signal
    ,ADD_QUAL(allele)
@@ -2593,7 +2599,7 @@ START_SUBTYPE(35_signal
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(gap
    ,ADD_QUAL(estimated_length)
@@ -2602,14 +2608,7 @@ START_SUBTYPE(gap
    ,ADD_QUAL(inference)
    ,ADD_QUAL(map)
    ,ADD_QUAL(note)
-)
-
-START_SUBTYPE(assembly_gap
-   ,ADD_QUAL(estimated_length)
-   ,ADD_QUAL(exception)
-   ,ADD_QUAL(gap_type)
-   ,ADD_QUAL(linkage_evidence)
-)
+),
 
 START_SUBTYPE(operon
    ,ADD_QUAL(allele)
@@ -2628,7 +2627,7 @@ START_SUBTYPE(operon
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(oriT
    ,ADD_QUAL(allele)
@@ -2652,7 +2651,7 @@ START_SUBTYPE(oriT
    ,ADD_QUAL(rpt_unit_seq)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 //START_SUBTYPE(site_ref
 //)
@@ -2680,9 +2679,9 @@ START_SUBTYPE(region
    ,ADD_QUAL(region_name)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
-// same as misc_feature
+//sameasmisc_feature
 START_SUBTYPE(comment
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
@@ -2705,9 +2704,9 @@ START_SUBTYPE(comment
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
-// same as misc_feature
+//sameasmisc_feature
 START_SUBTYPE(bond
    ,ADD_QUAL(allele)
    ,ADD_QUAL(bond_type)
@@ -2731,9 +2730,9 @@ START_SUBTYPE(bond
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
-//  same as misc_feature
+//sameasmisc_feature
 START_SUBTYPE(site
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
@@ -2755,7 +2754,7 @@ START_SUBTYPE(site
    ,ADD_QUAL(site_type)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 //START_SUBTYPE(rsite
 //)
@@ -2769,7 +2768,7 @@ START_SUBTYPE(site
 //START_SUBTYPE(num
 //)
 
-//  same as misc_feature???
+//sameasmisc_feature???
 START_SUBTYPE(psec_str
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
@@ -2793,12 +2792,12 @@ START_SUBTYPE(psec_str
    ,ADD_QUAL(sec_str_type)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 //START_SUBTYPE(non_std_residue
 //)
 
-//  same as misc_feature
+//sameasmisc_feature
 START_SUBTYPE(het
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
@@ -2822,32 +2821,7 @@ START_SUBTYPE(het
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
-
-START_SUBTYPE(mobile_element
-   ,ADD_QUAL(allele)
-   ,ADD_QUAL(citation)
-   ,ADD_QUAL(db_xref)
-   ,ADD_QUAL(evidence)
-   ,ADD_QUAL(exception)
-   ,ADD_QUAL(experiment)
-   ,ADD_QUAL(function)
-   ,ADD_QUAL(gene)
-   ,ADD_QUAL(gene_synonym)
-   ,ADD_QUAL(inference)
-   ,ADD_QUAL(insertion_seq)
-   ,ADD_QUAL(label)
-   ,ADD_QUAL(locus_tag)
-   ,ADD_QUAL(map)
-   ,ADD_QUAL(mobile_element_type)
-   ,ADD_QUAL(note)
-   ,ADD_QUAL(old_locus_tag)
-   ,ADD_QUAL(rpt_family)
-   ,ADD_QUAL(rpt_type)
-   ,ADD_QUAL(standard_name)
-   ,ADD_QUAL(transposon)
-   ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(biosrc
    ,ADD_QUAL(PCR_primers)
@@ -2919,7 +2893,58 @@ START_SUBTYPE(biosrc
    ,ADD_QUAL(variety)
    ,ADD_QUAL(virion)
    ,ADD_QUAL(whole_replicon)
-)
+),
+
+START_SUBTYPE(ncRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(ncRNA_class)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(trans_splicing)
+   ,ADD_QUAL(usedin)
+),
+
+START_SUBTYPE(tmRNA
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(operon)
+   ,ADD_QUAL(product)
+   ,ADD_QUAL(pseudo)
+   ,ADD_QUAL(pseudogene)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(tag_peptide)
+   ,ADD_QUAL(usedin)
+),
 
 //START_SUBTYPE(clone
 //)
@@ -2945,7 +2970,32 @@ START_SUBTYPE(variation_ref
    ,ADD_QUAL(replace)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
+
+START_SUBTYPE(mobile_element
+   ,ADD_QUAL(allele)
+   ,ADD_QUAL(citation)
+   ,ADD_QUAL(db_xref)
+   ,ADD_QUAL(evidence)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(experiment)
+   ,ADD_QUAL(function)
+   ,ADD_QUAL(gene)
+   ,ADD_QUAL(gene_synonym)
+   ,ADD_QUAL(inference)
+   ,ADD_QUAL(insertion_seq)
+   ,ADD_QUAL(label)
+   ,ADD_QUAL(locus_tag)
+   ,ADD_QUAL(map)
+   ,ADD_QUAL(mobile_element_type)
+   ,ADD_QUAL(note)
+   ,ADD_QUAL(old_locus_tag)
+   ,ADD_QUAL(rpt_family)
+   ,ADD_QUAL(rpt_type)
+   ,ADD_QUAL(standard_name)
+   ,ADD_QUAL(transposon)
+   ,ADD_QUAL(usedin)
+),
 
 START_SUBTYPE(centromere
    ,ADD_QUAL(citation)
@@ -2955,7 +3005,7 @@ START_SUBTYPE(centromere
    ,ADD_QUAL(inference)
    ,ADD_QUAL(note)
    ,ADD_QUAL(standard_name)
-)
+),
 
 START_SUBTYPE(telomere
    ,ADD_QUAL(citation)
@@ -2968,7 +3018,14 @@ START_SUBTYPE(telomere
    ,ADD_QUAL(rpt_unit_range)
    ,ADD_QUAL(rpt_unit_seq)
    ,ADD_QUAL(standard_name)
-)
+),
+
+START_SUBTYPE(assembly_gap
+   ,ADD_QUAL(estimated_length)
+   ,ADD_QUAL(exception)
+   ,ADD_QUAL(gap_type)
+   ,ADD_QUAL(linkage_evidence)
+),
 
 START_SUBTYPE(regulatory
    ,ADD_QUAL(allele)
@@ -2992,7 +3049,7 @@ START_SUBTYPE(regulatory
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(regulatory_class)
    ,ADD_QUAL(standard_name)
-)
+),
 
 START_SUBTYPE(propeptide
    ,ADD_QUAL(EC_number)
@@ -3020,7 +3077,7 @@ START_SUBTYPE(propeptide
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
+),
 
 START_SUBTYPE(propeptide_aa
    ,ADD_QUAL(EC_number)
@@ -3048,25 +3105,51 @@ START_SUBTYPE(propeptide_aa
    ,ADD_QUAL(pseudogene)
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
-)
-
+),
+TLegalQualMapRecord({CSeqFeatData::eSubtype_any, TLegalQualBitset::all_set(CSeqFeatData::eQual_whole_replicon)})
+);
 
 #undef START_SUBTYPE
 #undef ADD_QUAL
 
-    fill_table(table, CSeqFeatData::eSubtype_any, CSeqFeatData::eQual_allele, CSeqFeatData::eQual_whole_replicon);
 
-    return table;
-} // s_InitLegalQuals
+struct LegalQualPred
+{
+    bool operator()(const TLegalQualMapRecord& l, CSeqFeatData::ESubtype r) const
+    {
+        return l.first < r;
+    }
+    bool operator()(const TLegalQualMapRecord& l, const TLegalQualMapRecord& r) const
+    {
+        return l.first < r.first;
+    }
+};
 
 } // anonymous namespace
 
-const TFeatQuals& GetLegalQuals()
+const CSeqFeatData::TLegalQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
 {
-    static TFeatQuals s_legal_quals = s_InitLegalQuals();
+    static CSeqFeatData::TLegalQualifiers empty;
+    auto it = std::lower_bound(g_legal_quals.begin(), g_legal_quals.end(), subtype, LegalQualPred());
+    if (it == g_legal_quals.end() || it->first != subtype)
+        return empty;
 
-    return s_legal_quals;
+    return it->second;
 }
+
+bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
+{
+#ifdef _DEBUG
+    static auto test_sort = check_sorted_table(g_legal_quals.begin(), g_legal_quals.end(), LegalQualPred());
+#endif
+
+    auto it = std::lower_bound(g_legal_quals.begin(), g_legal_quals.end(), subtype, LegalQualPred());
+    if (it == g_legal_quals.end() || it->first != subtype)
+        return false;
+
+    return it->second.test(qual);
+}
+
 
 void CSeqFeatData::s_InitMandatoryQuals(void)
 {
@@ -3264,10 +3347,10 @@ TQualsInverseMap *s_CreateNameToQualsMap()
     return pNewMap.release();
 }
 
-string CSeqFeatData::GetQualifierAsString(EQualifier qual)
+CTempString CSeqFeatData::GetQualifierAsString(EQualifier qual)
 {
     TQualsMap::const_iterator iter = sc_QualPairs.find(qual);
-    return (iter != sc_QualPairs.end()) ? iter->second : kEmptyStr;
+    return (iter != sc_QualPairs.end()) ? CTempString(iter->second) : CTempString(kEmptyStr);
 }
 
 

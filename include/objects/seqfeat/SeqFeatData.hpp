@@ -95,8 +95,143 @@
 
 #include <corelib/ncbistr.hpp>
 #include <util/static_map.hpp>
+#include <array>
 
 // generated classes
+
+namespace cstd
+{
+    template<typename _T>
+    struct const_vector
+    {
+        using value_type = _T;
+        using const_iterator = const value_type*;
+        size_t size() const
+        {
+            return std::distance(m_begin, m_end);
+        }
+        const_iterator begin() const
+        {
+            return m_begin;
+        }
+        const_iterator end() const
+        {
+            return m_end;
+        }
+
+        const value_type* m_begin = nullptr;
+        const value_type* m_end = nullptr;
+    };
+
+    // partially backported std::bitset until it's constexpr version becomes available
+    template<size_t _Bits, class T>
+    class bitset
+    {
+    public:
+        using _Ty = uint64_t;
+        static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
+        static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
+
+        constexpr bitset() = default;
+        template<typename...TArgs>
+        constexpr bitset(size_t size, TArgs...args) : m_size{ size }, _Array{ args... }
+        {
+        }
+        template<size_t N>
+        constexpr bitset(size_t size, const std::array<_Ty, N>& init) : m_size{ size }, _Array{ init }
+        {
+        }
+
+        constexpr size_t size() const
+        {
+            return m_size;
+        }
+        static constexpr size_t capacity()
+        {
+            return _Bits;
+        }
+
+        constexpr bool empty() const
+        {
+            return m_size == 0;
+        }
+        constexpr bool test(size_t _Pos) const
+        {
+            //if (_Bits <= _Pos)
+            //    _Xran();    // _Pos off end
+            return _Subscript(_Pos);
+        }
+
+        class const_iterator
+        {
+        public:
+            const_iterator() = default;
+            const_iterator(const bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
+            {
+                while (m_index < m_bitset->capacity() && !m_bitset->test(m_index))
+                {
+                    ++m_index;
+                }
+            }
+            bool operator==(const const_iterator& o) const
+            {
+                return m_bitset == o.m_bitset && m_index == o.m_index;
+            }
+            bool operator!=(const const_iterator& o) const
+            {
+                return m_bitset != o.m_bitset || m_index != o.m_index;
+            }
+            const_iterator& operator++()
+            {
+                while (m_index < m_bitset->capacity())
+                {
+                    ++m_index;
+                    if (m_bitset->test(m_index))
+                        break;
+                }
+                return *this;
+            }
+            const_iterator operator++(int)
+            {
+                const_iterator _this(*this);
+                operator++();
+                return _this;
+            }
+            T operator*() const
+            {
+                return static_cast<T>(m_index);
+            }
+            T operator->() const
+            {
+                return static_cast<T>(m_index);
+            }
+
+        private:
+            size_t m_index;
+            const bitset* m_bitset;
+        };
+
+        const_iterator begin() const
+        {
+            return const_iterator(this, 0);
+        }
+
+        const_iterator end() const
+        {
+            return const_iterator(this, capacity());
+        }
+
+    private:
+        size_t m_size;
+        std::array<_Ty, _Words> _Array;    // the set of bits
+
+        constexpr bool _Subscript(size_t _Pos) const
+        {    // subscript nonmutable sequence
+            return ((_Array[_Pos / _Bitsperword]
+                & ((_Ty)1 << _Pos % _Bitsperword)) != 0);
+        }
+    };
+}
 
 BEGIN_NCBI_SCOPE
 
@@ -457,15 +592,16 @@ public:
         eQual_virion,
         eQual_whole_replicon
     };
-    typedef vector<EQualifier> TQualifiers;
+    using TQualifiers = vector<EQualifier>;
+    using TLegalQualifiers = cstd::bitset<eQual_whole_replicon + 1, EQualifier>;
 
     /// Test wheather a certain qualifier is legal for the feature
     bool IsLegalQualifier(EQualifier qual) const;
     static bool IsLegalQualifier(ESubtype subtype, EQualifier qual);
 
     /// Get a list of all the legal qualifiers for the feature.
-    const TQualifiers& GetLegalQualifiers(void) const;
-    static const TQualifiers& GetLegalQualifiers(ESubtype subtype);
+    const TLegalQualifiers& GetLegalQualifiers(void) const;
+    static const TLegalQualifiers& GetLegalQualifiers(ESubtype subtype);
 
     /// Get the list of all mandatory qualifiers for the feature.
     const TQualifiers& GetMandatoryQualifiers(void) const;
@@ -473,15 +609,11 @@ public:
     
     /// Convert a qualifier from an enumerated value to a string representation
     /// or empty if not found.
-    static string GetQualifierAsString(EQualifier qual);
+    static CTempString GetQualifierAsString(EQualifier qual);
 
     /// convert qual string to enumerated value
     static EQualifier GetQualifierType(
         const string& qual, NStr::ECase search_case = NStr::eNocase);
-
-    NCBI_DEPRECATED
-    static string GetQulifierAsString(EQualifier qual)
-    { return GetQualifierAsString(qual); }
 
     static const CFeatList* GetFeatList();
     static const CBondList* GetBondList();
@@ -571,7 +703,7 @@ bool CSeqFeatData::IsLegalQualifier(EQualifier qual) const
 
 
 inline
-const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(void) const
+const CSeqFeatData::TLegalQualifiers& CSeqFeatData::GetLegalQualifiers(void) const
 {
     return GetLegalQualifiers(GetSubtype());
 }

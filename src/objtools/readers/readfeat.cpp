@@ -1899,28 +1899,26 @@ bool CFeatureTableReader_Imp::x_AddGBQualToFeature (
     if (qual.empty ()) return false;
 
     // need this pointer because references can't be repointed
-    const string *p_normalized_qual = &qual;
+    CTempString normalized_qual = qual;
 
     // normalize qual if needed, especially regarding case, and
     // use as-is if no normalization applies
-    string potential_normalized_qual;
-    const CSeqFeatData::EQualifier qual_type =
-        CSeqFeatData::GetQualifierType(qual);
+    auto qual_type = CSeqFeatData::GetQualifierType(qual);
     if( qual_type != CSeqFeatData::eQual_bad ) {
         // swap is constant time
-        CSeqFeatData::GetQualifierAsString(qual_type).swap(potential_normalized_qual);;
+        CTempString potential_normalized_qual = CSeqFeatData::GetQualifierAsString(qual_type);
         if( ! potential_normalized_qual.empty() ) {
-            p_normalized_qual = &potential_normalized_qual;
+            normalized_qual = potential_normalized_qual;
         }
     }
 
-    CSeq_feat::TQual& qlist = sfp->SetQual ();
+    auto& qlist = sfp->SetQual ();
     CRef<CGb_qual> gbq (new CGb_qual);
-    gbq->SetQual (*p_normalized_qual);
+    gbq->SetQual() = normalized_qual;
     if (x_StringIsJustQuotes (val)) {
-        gbq->SetVal (kEmptyStr);
+        gbq->SetVal() = kEmptyStr;
     } else {
-        gbq->SetVal (val);
+        gbq->SetVal() = val;
     }
     qlist.push_back (gbq);
 
