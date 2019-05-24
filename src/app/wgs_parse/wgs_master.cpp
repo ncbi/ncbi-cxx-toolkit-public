@@ -2168,7 +2168,7 @@ static void ConvertAccessionsToRanges(const list<string>& accs, list<TAccessionR
 
     range.second.swap(last_acc);
     ranges.push_back(range);
-    sort(ranges.begin(), ranges.end());
+    ranges.sort();
 }
 
 static bool CheckContigsAccessionsRange(const list<TAccessionRange>& ranges, TSeqPos num_of_entries)
