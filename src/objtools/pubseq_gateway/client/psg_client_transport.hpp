@@ -208,7 +208,7 @@ struct SPSG_Chunk
 
 struct SDebugPrintout
 {
-    enum EType { eSend = 1000, eReceive, ePush, ePop, eClose };
+    enum EType { eSend = 1000, eReceive, eClose };
 
     SDebugPrintout() :
         m_Level(GetLevel()),

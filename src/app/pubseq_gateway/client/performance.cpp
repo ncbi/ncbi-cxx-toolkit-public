@@ -51,8 +51,6 @@ const vector<SRule> SRule::Rules =
     { "StartToSubmit",    { SMetricType::eStart,   SPoint::eFirst }, { SMetricType::eSubmit,  SPoint::eFirst } },
     { "SubmitToReply",    { SMetricType::eSubmit,  SPoint::eFirst }, { SMetricType::eReply,   SPoint::eFirst } },
     { "ReplyToDone",      { SMetricType::eReply,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
-
-    { "PushToPop",        { SMetricType::ePush,    SPoint::eFirst }, { SMetricType::ePop,     SPoint::eFirst } },
 };
 
 const vector<pair<size_t, string>> SPercentiles::PercentileTypes =
@@ -75,8 +73,6 @@ const char* SMetricType::Name(EType t)
         case eDone:    return "Done";
         case eSend:    return "Send";
         case eReceive: return "Receive";
-        case ePush:    return "Push";
-        case ePop:     return "Pop";
         case eClose:   return "Close";
 
         case eLastType:

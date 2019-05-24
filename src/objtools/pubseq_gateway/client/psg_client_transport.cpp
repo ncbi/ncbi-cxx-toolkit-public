@@ -1206,8 +1206,6 @@ void http2_session::process_requests()
                 if (!m_io->m_req_queue.pop_move(req)) {
                     ERR_POST(Trace << this << ": process_requests: no more req in queue");
                     break;
-                } else if (auto& printout = SDebugPrintout::GetInstance()) {
-                    printout.Print(req->m_id, SDebugPrintout::ePop);
                 }
 
                 if (req->get_canceled())
@@ -1410,14 +1408,9 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req)
         NCBI_THROW_FMT(CPSG_Exception, eInternalError, "IO thread is dead: " << static_cast<int>(m_state.load()));
     }
 
-    auto req_id = req->m_id;
     auto rv = m_req_queue.push_move(req);
 
     if (rv) {
-        if (auto& printout = SDebugPrintout::GetInstance()) {
-            printout.Print(req_id, SDebugPrintout::ePush);
-        }
-
         wake();
     } else {
         uv_async_send(&m_wake);

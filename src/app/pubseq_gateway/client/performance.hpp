@@ -54,8 +54,6 @@ struct SMetricType
         // Internal metrics (must correspond to values of SDebugPrintout::EType)
         eSend = 1000,
         eReceive,
-        ePush,
-        ePop,
         eClose,
 
         // Should always be the last
@@ -141,8 +139,6 @@ struct SMessage
             case SMetricType::eSize:
             case SMetricType::eSend:
             case SMetricType::eReceive:
-            case SMetricType::ePush:
-            case SMetricType::ePop:
             case SMetricType::eClose:
                 message.type = static_cast<SMetricType::EType>(type);
                 break;
