@@ -113,10 +113,10 @@ namespace
         };
 
         constexpr XBitset() = default;
-        constexpr XBitset(init_params, size_t size) : mybase(size, cstd::make_array(
+        constexpr XBitset(init_params, size_t size) : mybase(size,
             std::numeric_limits<_Ty>::max(),
             std::numeric_limits<_Ty>::max(),
-            std::numeric_limits<_Ty>::max()))
+            std::numeric_limits<_Ty>::max())
         {
         };
 

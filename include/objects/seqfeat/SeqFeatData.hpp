@@ -137,10 +137,6 @@ namespace cstd
         constexpr bitset(size_t size, TArgs...args) : m_size{ size }, _Array{ args... }
         {
         }
-        template<size_t N>
-        constexpr bitset(size_t size, const std::array<_Ty, N>& init) : m_size{ size }, _Array{ init }
-        {
-        }
 
         constexpr size_t size() const
         {
