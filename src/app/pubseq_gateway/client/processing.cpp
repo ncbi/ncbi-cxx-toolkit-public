@@ -546,6 +546,7 @@ int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string
 
     auto l = [&]() {
         shared_ptr<CPSG_Queue> queue;
+        deque<shared_ptr<CPSG_Reply>> replies;
         
         if (service.empty()) {
             queue = shared_ptr<CPSG_Queue>(shared_ptr<CPSG_Queue>(), &m_Queue);
@@ -574,6 +575,9 @@ int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string
             // Response
             auto reply = queue->GetNextReply(CDeadline::eInfinite);
             _ASSERT(reply);
+
+            // Store the reply for now to prevent internal metrics from being written to cout (affects performance)
+            replies.emplace_back(reply);
 
             auto request = reply->GetRequest();
             auto metrics = request->GetUserContext<SMetrics>();
@@ -624,6 +628,9 @@ int CProcessing::Performance(size_t user_threads, bool raw_metrics, const string
     for (auto& t : threads) {
         t.join();
     }
+
+    // Release any replies held in the queue
+    m_Queue = CPSG_Queue();
 
     // Output metrics
     cerr << "Outputting metrics: ";

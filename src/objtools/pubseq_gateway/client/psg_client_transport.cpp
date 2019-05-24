@@ -85,26 +85,20 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
 
-void SDebugPrintout::Print(string id, const string& authority, const string& path)
+void SDebugPrintout::Print(pair<const string*, const string*> url)
 {
-    if (m_Perf) {
-        ostringstream os;
-        os << fixed << id << '\t' << GetSeconds() << '\t' << eSend << '\t' << this_thread::get_id() << "\tHost '" << authority << "' to get request '" << path << '\'';
-        lock_guard<mutex> lock(m_Mutex);
-        cout << os.str() << endl;
-    } else {
-        ERR_POST(Warning << id << ": Host '" << authority << "' to get request '" << path << '\'');
-    }
+    ERR_POST(Warning << m_Id << ": Host '" << *url.first << "' to get request '" << *url.second << '\'');
 }
 
-void SDebugPrintout::Print(string id, SPSG_Chunk& chunk)
+void SDebugPrintout::Print(const SPSG_Chunk& chunk)
 {
     auto& args = chunk.args;
     ostringstream os;
 
     os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
 
-    if ((m_Level == eAll) || (args.GetValue("item_type") != "blob") || (args.GetValue("chunk_type") != "data")) {
+    if ((m_DebugOutput.level == SDebugOutput::eAll) ||
+            (args.GetValue("item_type") != "blob") || (args.GetValue("chunk_type") != "data")) {
         for (auto& v : chunk.data) {
             os.write(v.data(), v.size());
         }
@@ -113,42 +107,46 @@ void SDebugPrintout::Print(string id, SPSG_Chunk& chunk)
         os << "<BINARY DATA OF " << accumulate(chunk.data.begin(), chunk.data.end(), 0ul, l) << " BYTES>";
     }
 
-    if (m_Perf) {
-        auto data = NStr::PrintableString(os.str());
-        os.str(string());
-        os << fixed << id << '\t' << GetSeconds() << '\t' << eReceive << '\t' << this_thread::get_id() << '\t' << data;
-        lock_guard<mutex> lock(m_Mutex);
-        cout << os.str() << endl;
-    } else {
-        ERR_POST(Warning << id << ": " << NStr::PrintableString(os.str()));
-    }
+    ERR_POST(Warning << m_Id << ": " << NStr::PrintableString(os.str()));
 }
 
-void SDebugPrintout::Print(string id, EType type)
+void SDebugPrintout::Print(uint32_t error_code)
 {
-    if (m_Perf) {
+    ERR_POST(Warning << m_Id << ": Closed with status " << error_code);
+}
+
+SDebugPrintout::~SDebugPrintout()
+{
+    if (m_DebugOutput.perf) {
         ostringstream os;
-        os << fixed << id << '\t' << GetSeconds() << '\t' << type << '\t' << this_thread::get_id();
-        lock_guard<mutex> lock(m_Mutex);
-        cout << os.str() << endl;
+
+        for (const auto& event : m_Events) {
+            auto ms = get<0>(event);
+            auto type = get<1>(event);
+            auto thread_id = get<2>(event);
+            os << fixed << m_Id << '\t' << ms << '\t' << type << '\t' << thread_id << '\n';
+        }
+
+        lock_guard<mutex> lock(m_DebugOutput.cout_mutex);
+        cout << os.str();
+        cout.flush();
     }
 }
 
-void SDebugPrintout::Print(string id, uint32_t error_code)
+bool SDebugOutput::IsPerf()
 {
-    if (m_Perf) {
-        ostringstream os;
-        os << fixed << id << '\t' << GetSeconds() << '\t' << eClose << '\t' << this_thread::get_id() << "\tstatus=" << error_code;
-        lock_guard<mutex> lock(m_Mutex);
-        cout << os.str() << endl;
-    } else {
-        ERR_POST(Warning << id << ": Closed with status " << error_code);
+    switch (TPSG_PsgClientMode::GetDefault()) {
+        case EPSG_PsgClientMode::eOff:         return false;
+        case EPSG_PsgClientMode::eInteractive: return false;
+        case EPSG_PsgClientMode::ePerformance: return true;
     }
+
+    return false;
 }
 
-SDebugPrintout::ELevel SDebugPrintout::GetLevel()
+SDebugOutput::ELevel SDebugOutput::GetLevel()
 {
-    if (TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::ePerformance) return eSome;
+    if (IsPerf()) return eSome;
 
     const auto& value = TPSG_DebugPrintout::GetDefault();
 
@@ -236,8 +234,7 @@ void SPSG_Reply::SetState(SState::EState state)
     }
 }
 
-SPSG_Receiver::SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
-    m_Id(id),
+SPSG_Receiver::SPSG_Receiver(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
     m_Reply(reply),
     m_Queue(queue)
 {
@@ -312,9 +309,7 @@ void SPSG_Receiver::Add()
 {
     assert(m_Reply);
 
-    if (auto& printout = SDebugPrintout::GetInstance()) {
-        printout.Print(m_Id, m_Buffer.chunk);
-    }
+    m_Reply->debug_printout << m_Buffer.chunk;
 
     auto& chunk = m_Buffer.chunk;
     auto& args = chunk.args;
@@ -425,22 +420,18 @@ namespace HCT {
 
 /** http2_request */
 
-http2_request::http2_request(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path) :
+http2_request::http2_request(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path) :
     m_session_data(nullptr),
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
     m_full_path(move(full_path)),
-    m_reply(id, move(reply), move(queue)),
-    m_id(id)
+    m_reply(move(reply), move(queue))
 {
 }
 
 void http2_request::on_complete(uint32_t error_code)
 {
-    if (auto& printout = SDebugPrintout::GetInstance()) {
-        printout.Print(m_id, error_code);
-    }
-
+    m_reply.get_debug_printout() << error_code;
     ERR_POST(Trace << m_session_data << ": on_complete: stream " << m_stream_id << ": result: " << error_code);
     if (error_code)
         error(SPSG_Error::NgHttp2(error_code));
@@ -463,9 +454,9 @@ void http2_request::do_complete()
 
 /** http2_reply */
 
-http2_reply::http2_reply(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
+http2_reply::http2_reply(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
     m_Reply(reply),
-    m_Receiver(id, reply, queue),
+    m_Receiver(reply, queue),
     m_Queue(queue),
     m_session_data(nullptr)
 {
@@ -1238,9 +1229,7 @@ void http2_session::process_requests()
                     MAKE_NV (":path",      path.c_str(), path.length())
                 };
 
-                if (auto& printout = SDebugPrintout::GetInstance()) {
-                    printout.Print(req->m_id, authority, path);
-                }
+                req->get_debug_printout() << make_pair(&authority, &path);
 
                 int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, sizeof(hdrs) / sizeof(hdrs[0]), NULL, req.get());
                 if (stream_id == NGHTTP2_ERR_STREAM_ID_NOT_AVAILABLE) {

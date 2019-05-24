@@ -206,32 +206,68 @@ struct SPSG_Chunk
     TData data;
 };
 
-struct SDebugPrintout
+struct SDebugOutput
 {
-    enum EType { eSend = 1000, eReceive, eClose };
-
-    SDebugPrintout() :
-        m_Level(GetLevel()),
-        m_Perf(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::ePerformance)
-    {}
-
-    explicit operator bool() { return m_Level != eNone; }
-    void Print(string id, const string& authority, const string& path);
-    void Print(string id, SPSG_Chunk& chunk);
-    void Print(string id, EType type);
-    void Print(string id, uint32_t error_code);
-
-    static SDebugPrintout& GetInstance() { static SDebugPrintout instance; return instance; }
-
-private:
     enum ELevel { eNone, eSome, eAll };
 
-    static double GetSeconds() { return chrono::duration<double, milli>(chrono::steady_clock::now().time_since_epoch()).count(); }
-    static ELevel GetLevel();
+    const ELevel level;
+    const bool perf;
+    mutex cout_mutex;
 
-    const ELevel m_Level;
-    const bool m_Perf;
-    mutex m_Mutex;
+    SDebugOutput() :
+        level(GetLevel()),
+        perf(IsPerf())
+    {}
+
+    static SDebugOutput& GetInstance() { static SDebugOutput instance; return instance; }
+
+private:
+    static ELevel GetLevel();
+    static bool IsPerf();
+};
+
+struct SDebugPrintout
+{
+    SDebugPrintout(string id) :
+        m_DebugOutput(SDebugOutput::GetInstance()),
+        m_Id(move(id))
+    {
+        if (m_DebugOutput.perf) m_Events.reserve(20);
+    }
+
+    ~SDebugPrintout();
+
+    template <class ...TArgs>
+    void operator<<(TArgs... args)
+    {
+        if (m_DebugOutput.level == SDebugOutput::eNone) return;
+
+        if (m_DebugOutput.perf) return Event(forward<TArgs>(args)...);
+
+        Print(forward<TArgs>(args)...);
+    }
+
+private:
+    enum EType { eSend = 1000, eReceive, eClose };
+
+    void Event(pair<const string*, const string*>) { Event(eSend);    }
+    void Event(const SPSG_Chunk&)                  { Event(eReceive); }
+    void Event(uint32_t)                           { Event(eClose);   }
+
+    void Event(EType type)
+    {
+        auto ms = chrono::duration<double, milli>(chrono::steady_clock::now().time_since_epoch()).count();
+        auto thread_id = this_thread::get_id();
+        m_Events.emplace_back(ms, type, thread_id);
+    }
+
+    void Print(pair<const string*, const string*> url);
+    void Print(const SPSG_Chunk& chunk);
+    void Print(uint32_t error_code);
+
+    SDebugOutput& m_DebugOutput;
+    const string m_Id;
+    vector<tuple<double, EType, thread::id>> m_Events;
 };
 
 struct SPSG_Reply
@@ -288,7 +324,9 @@ struct SPSG_Reply
 
     SItemsTS items;
     SItem::TTS reply_item;
+    SDebugPrintout debug_printout;
 
+    SPSG_Reply(string id) : debug_printout(move(id)) {}
     void SetSuccess()  { SetState(SState::eSuccess);  }
     void SetCanceled() { SetState(SState::eCanceled); }
 
@@ -298,7 +336,7 @@ private:
 
 struct SPSG_Receiver
 {
-    SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
+    SPSG_Receiver(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
 
     void operator()(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
 
@@ -325,7 +363,6 @@ private:
         size_t data_to_read = 0;
     };
 
-    const string m_Id;
     SBuffer m_Buffer;
     shared_ptr<SPSG_Reply> m_Reply;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
@@ -349,7 +386,7 @@ private:
     mutable weak_ptr<SPSG_Future> m_Queue;
     std::atomic<http2_session*> m_session_data;
 public:
-    http2_reply(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
+    http2_reply(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
 
     ~http2_reply()
     {
@@ -386,6 +423,8 @@ public:
         assert(m_Reply);
         m_Reply->reply_item.GetUnsafe().state.AddError(err);
     }
+
+    SDebugPrintout& get_debug_printout() { return m_Reply->debug_printout; }
 };
 
 enum class http2_request_state {
@@ -408,9 +447,7 @@ private:
     void do_complete();
     http2_reply m_reply;
 public:
-    const string m_id;
-
-    http2_request(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path);
+    http2_request(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path);
 
     ~http2_request()
     {
@@ -478,6 +515,7 @@ public:
         m_reply.error(err);
         do_complete();
     }
+    SDebugPrintout& get_debug_printout() { return m_reply.get_debug_printout(); }
 };
 
 enum class connection_state_t {
