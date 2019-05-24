@@ -270,7 +270,7 @@ private:
 
 struct SPSG_Receiver
 {
-    SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue);
+    SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
 
     void operator()(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
 
@@ -301,7 +301,7 @@ private:
     SBuffer m_Buffer;
     shared_ptr<SPSG_Reply> m_Reply;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
-    shared_ptr<SPSG_Future> m_Queue;
+    weak_ptr<SPSG_Future> m_Queue;
 };
 
 END_NCBI_SCOPE
@@ -318,10 +318,10 @@ class http2_reply final
 private:
     shared_ptr<SPSG_Reply> m_Reply;
     SPSG_Receiver m_Receiver;
-    mutable std::shared_ptr<SPSG_Future> m_Queue;
+    mutable weak_ptr<SPSG_Future> m_Queue;
     std::atomic<http2_session*> m_session_data;
 public:
-    http2_reply(string id, shared_ptr<SPSG_Reply> reply, std::shared_ptr<SPSG_Future> queue);
+    http2_reply(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
 
     ~http2_reply()
     {
@@ -382,7 +382,7 @@ private:
 public:
     const string m_id;
 
-    http2_request(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path);
+    http2_request(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path);
 
     ~http2_request()
     {
@@ -508,7 +508,7 @@ private:
     const CNetServer::SAddress m_Address;
     std::vector<char> m_read_buf;
     std::atomic<bool> m_cancel_requested;
-    std::set<pair<shared_ptr<SPSG_Reply>, std::shared_ptr<SPSG_Future>>> m_completion_list;
+    vector<pair<shared_ptr<SPSG_Reply>, weak_ptr<SPSG_Future>>> m_completion_list;
 
     void dump_requests();
 
@@ -559,7 +559,7 @@ public:
     void notify_cancel();
 
     void request_complete(http2_request* req);
-    void add_to_completion(shared_ptr<SPSG_Reply>& reply, shared_ptr<SPSG_Future>& queue);
+    void add_to_completion(shared_ptr<SPSG_Reply>& reply, weak_ptr<SPSG_Future>& queue);
 
     size_t get_num_requests() const
     {

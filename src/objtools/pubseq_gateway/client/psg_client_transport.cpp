@@ -264,7 +264,7 @@ void SPSG_Reply::SetState(SState::EState state)
     }
 }
 
-SPSG_Receiver::SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
+SPSG_Receiver::SPSG_Receiver(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
     m_Id(id),
     m_Reply(reply),
     m_Queue(queue)
@@ -339,7 +339,6 @@ void SPSG_Receiver::StateData(const char*& data, size_t& len)
 void SPSG_Receiver::Add()
 {
     assert(m_Reply);
-    assert(m_Queue);
 
     if (auto& printout = SDebugPrintout::GetInstance()) {
         printout.Print(m_Id, m_Buffer.chunk);
@@ -377,7 +376,7 @@ void SPSG_Receiver::Add()
             item_by_id->GetLock()->args = args;
             auto reply_item_ts = &m_Reply->reply_item;
             reply_item_ts->NotifyOne();
-            m_Queue->NotifyOne();
+            if (auto queue = m_Queue.lock()) queue->NotifyOne();
         }
 
         item_ts = item_by_id;
@@ -454,7 +453,7 @@ namespace HCT {
 
 /** http2_request */
 
-http2_request::http2_request(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path) :
+http2_request::http2_request(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path) :
     m_session_data(nullptr),
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
@@ -492,7 +491,7 @@ void http2_request::do_complete()
 
 /** http2_reply */
 
-http2_reply::http2_reply(string id, shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
+http2_reply::http2_reply(string id, shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
     m_Reply(reply),
     m_Receiver(id, reply, queue),
     m_Queue(queue),
@@ -529,7 +528,6 @@ void http2_reply::on_status(int status)
 void http2_reply::on_complete()
 {
     assert(m_Reply);
-    assert(m_Queue);
 
     m_Reply->SetSuccess();
     http2_session* session_data = m_session_data;
@@ -537,7 +535,7 @@ void http2_reply::on_complete()
         session_data->add_to_completion(m_Reply, m_Queue);
     else {
         m_Reply->reply_item.NotifyOne();
-        m_Queue->NotifyOne();
+        if (auto queue = m_Queue.lock()) queue->NotifyOne();
     }
 }
 
@@ -1169,7 +1167,7 @@ void http2_session::process_completion_list()
 {
     for (auto& it : m_completion_list) {
         it.first->reply_item.NotifyOne();
-        it.second->NotifyOne();
+        if (auto queue = it.second.lock()) queue->NotifyOne();
     }
     m_completion_list.clear();
 }
@@ -1185,11 +1183,10 @@ void http2_session::request_complete(http2_request* req)
         --m_num_requests;
     }
 }
-void http2_session::add_to_completion(shared_ptr<SPSG_Reply>& reply, shared_ptr<SPSG_Future>& queue)
+void http2_session::add_to_completion(shared_ptr<SPSG_Reply>& reply, weak_ptr<SPSG_Future>& queue)
 {
     assert(reply.use_count() > 1);
-    assert(queue.use_count() > 1);
-    m_completion_list.emplace(reply, queue);
+    m_completion_list.emplace_back(reply, queue);
 }
 
 #define MAKE_NV(NAME, VALUE, VALUELEN)                                         \
@@ -1241,10 +1238,10 @@ void http2_session::process_requests()
                     printout.Print(req->m_id, SDebugPrintout::ePop);
                 }
 
-                req->on_queue(this);
-
                 if (req->get_canceled())
                     continue;
+
+                req->on_queue(this);
 
                 if (m_connection_state != connection_state_t::cs_connected) {
                     if (m_session_state >= session_state_t::ss_closing) {
