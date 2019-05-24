@@ -189,14 +189,16 @@ void CPubseqGatewayApp::ParseArgs(void)
         ERR_POST("Decrypting error detected while reading "
                  "[ADMIN]/auth_token value: " << ex.what());
 
-        // Anyone will be able to shutdown the server
-        m_AuthToken = kDefaultAuthToken;
+        // Treat the value as a clear text
+        m_AuthToken = registry.GetString("ADMIN", "auth_token",
+                                         kDefaultAuthToken);
     } catch (...) {
         ERR_POST("Unknown decrypting error detected while reading "
                  "[ADMIN]/auth_token value");
 
-        // Anyone will be able to shutdown the server
-        m_AuthToken = kDefaultAuthToken;
+        // Treat the value as a clear text
+        m_AuthToken = registry.GetString("ADMIN", "auth_token",
+                                         kDefaultAuthToken);
     }
 
     m_CassConnectionFactory->AppParseArgs(args);
