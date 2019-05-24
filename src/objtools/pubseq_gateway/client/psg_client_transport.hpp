@@ -599,7 +599,6 @@ private:
     uv_async_t m_wake;
     uv_timer_t m_timer;
     CNetService m_Service;
-    atomic_int m_RequestsToAdd;
     std::thread m_thrd;
 
     static void s_on_wake(uv_async_t* handle)
@@ -631,7 +630,6 @@ public:
         m_wake({0}),
         m_timer({0}),
         m_Service(service),
-        m_RequestsToAdd(TPSG_RequestsPerIo::GetDefault()),
         m_thrd(s_execute, this, &sem)
     {}
     ~io_thread();
@@ -655,7 +653,7 @@ class io_coordinator
 {
 private:
     std::vector<std::unique_ptr<io_thread>> m_io;
-    std::atomic<std::size_t> m_cur_idx;
+    std::atomic<std::size_t> m_request_counter;
     std::atomic<std::size_t> m_request_id;
     const string m_client_id;
 public:

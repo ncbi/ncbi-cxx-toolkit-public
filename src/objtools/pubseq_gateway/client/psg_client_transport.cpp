@@ -1424,11 +1424,6 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req)
         NCBI_THROW_FMT(CPSG_Exception, eInternalError, "IO thread is dead: " << static_cast<int>(m_state.load()));
     }
 
-    if (m_RequestsToAdd-- <= 0) {
-        m_RequestsToAdd = TPSG_RequestsPerIo::GetDefault();
-        return false;
-    }
-
     auto req_id = req->m_id;
     auto rv = m_req_queue.push_move(req);
 
@@ -1512,7 +1507,7 @@ void io_thread::execute(uv_sem_t* sem)
 
 /** io_coordinator */
 
-io_coordinator::io_coordinator(const string& service_name) : m_cur_idx(0), m_request_id(1),
+io_coordinator::io_coordinator(const string& service_name) : m_request_counter(0), m_request_id(1),
     m_client_id("&client_id=" + GetDiagContext().GetStringUID())
 {
     auto service = CNetService::Create("psg", service_name, kEmptyStr);
@@ -1544,14 +1539,25 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::millisec
     if (m_io.size() == 0)
         NCBI_THROW(CPSG_Exception, eInternalError, "IO is not open");
 
-    size_t first = m_cur_idx.load();
+    const auto requests_per_io = TPSG_RequestsPerIo::GetDefault();
+    auto counter = m_request_counter++;
+    const auto first = (counter++ / requests_per_io) % m_io.size();
+    auto idx = first;
+
     while(true) {
-        size_t idx = first;
         if (m_io[idx]->add_request_move(req)) return true;
 
-        m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_io.size(),  memory_order_release, memory_order_relaxed);
+        // No room for the request
 
-        if (m_cur_idx.load() == first) {
+        // Try to update request counter once so the next IO thread would be tried for new requests
+        if (idx == first) {
+            m_request_counter.compare_exchange_weak(counter, counter + requests_per_io);
+        }
+
+        // Try next IO thread for this request, too
+        idx = (idx + 1) % m_io.size();
+
+        if (idx == first) {
             auto wait_ms = deadline - chrono::system_clock::now();
             if (wait_ms <= chrono::milliseconds::zero()) {
                 return false;
