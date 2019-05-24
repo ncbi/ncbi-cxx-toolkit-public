@@ -264,7 +264,7 @@ void SFixture::MtReading()
     const size_t kSleepMax = 13;
     const unsigned kReadingDeadline = 300;
 
-    auto reply = make_shared<SPSG_Reply>();
+    auto reply = make_shared<SPSG_Reply>("");
     map<SPSG_Reply::SItem::TTS*, thread> readers;
 
 
@@ -364,7 +364,8 @@ void SFixture::MtReading()
     // Sending
 
     vector<char> buf(kSizeMax);
-    SPSG_Receiver receiver({}, reply, make_shared<SPSG_Future>());
+    auto queue = make_shared<SPSG_Future>();
+    SPSG_Receiver receiver(reply, queue);
 
     for (auto& chunk_stream : src_chunks) {
         do {
@@ -394,13 +395,14 @@ BOOST_AUTO_TEST_CASE(Receiver)
     const size_t kSizeMin = 100 * 1024;
     const size_t kSizeMax = 1024 * 1024;
 
-    auto reply = make_shared<SPSG_Reply>();
+    auto reply = make_shared<SPSG_Reply>("");
 
 
     // Reading
 
     vector<char> buf(kSizeMax);
-    SPSG_Receiver receiver({}, reply, make_shared<SPSG_Future>());
+    auto queue = make_shared<SPSG_Future>();
+    SPSG_Receiver receiver(reply, queue);
 
     for (auto& chunk_stream : src_chunks) {
         do {
@@ -442,7 +444,7 @@ BOOST_AUTO_TEST_CASE(Receiver)
             auto src_end = src_blob->second.end();
 
             // Reorder chunks according to 'blob_chunk'
-            chunks.sort([](const SPSG_Reply::SChunk& lhs, const SPSG_Reply::SChunk& rhs) {
+            chunks.sort([](const SPSG_Chunk& lhs, const SPSG_Chunk& rhs) {
                     auto ln = stoul(lhs.args.GetValue("blob_chunk"));
                     auto rn = stoul(rhs.args.GetValue("blob_chunk"));
                     return ln < rn;
