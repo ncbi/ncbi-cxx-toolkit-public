@@ -54,7 +54,7 @@ private:
     ERW_Result x_Read(void* buf, size_t count, size_t* bytes_read);
 
     SPSG_Reply::SItem::TTS* m_Src;
-    deque<SPSG_Reply::SChunk> m_Data;
+    deque<SPSG_Chunk> m_Data;
     size_t m_Chunk = 0;
     size_t m_Part = 0;
     size_t m_Index = 0;
@@ -82,7 +82,7 @@ struct CPSG_Reply::SImpl
 
 private:
     template <class TReplyItem>
-    TReplyItem* CreateImpl(TReplyItem* item, list<SPSG_Reply::SChunk>& chunks);
+    TReplyItem* CreateImpl(TReplyItem* item, list<SPSG_Chunk>& chunks);
 };
 
 struct CPSG_Queue::SImpl

@@ -96,7 +96,7 @@ struct SDebugPrintout
 
     explicit operator bool() { return m_Level != eNone; }
     void Print(string id, const string& authority, const string& path);
-    void Print(string id, SPSG_Reply::SChunk& chunk);
+    void Print(string id, SPSG_Chunk& chunk);
     void Print(string id, EType type);
 
     static SDebugPrintout& GetInstance() { static SDebugPrintout instance; return instance; }
@@ -124,7 +124,7 @@ void SDebugPrintout::Print(string id, const string& authority, const string& pat
     }
 }
 
-void SDebugPrintout::Print(string id, SPSG_Reply::SChunk& chunk)
+void SDebugPrintout::Print(string id, SPSG_Chunk& chunk)
 {
     auto& args = chunk.args;
     ostringstream os;

@@ -197,17 +197,17 @@ struct SPSG_Nullable : protected CNullable<TValue>
     using CNullable<TValue>::operator=;
 };
 
+struct SPSG_Chunk
+{
+    using TPart = vector<char>;
+    using TData = deque<TPart>;
+
+    SPSG_Args args;
+    TData data;
+};
+
 struct SPSG_Reply
 {
-    struct SChunk
-    {
-        using TPart = vector<char>;
-        using TData = deque<TPart>;
-
-        SPSG_Args args;
-        TData data;
-    };
-
     struct SState
     {
         enum EState {
@@ -244,7 +244,7 @@ struct SPSG_Reply
     {
         using TTS = SPSG_ThreadSafe<SItem>;
 
-        list<SChunk> chunks;
+        list<SPSG_Chunk> chunks;
         SPSG_Args args;
         SPSG_Nullable<size_t> expected;
         size_t received = 0;
@@ -293,7 +293,7 @@ private:
     struct SBuffer {
         size_t prefix_index = 0;
         string args;
-        SPSG_Reply::SChunk chunk;
+        SPSG_Chunk chunk;
         size_t data_to_read = 0;
     };
 

@@ -196,7 +196,7 @@ static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId mo
 
 
 template <class TReplyItem>
-TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, list<SPSG_Reply::SChunk>& chunks)
+TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, list<SPSG_Chunk>& chunks)
 {
     if (chunks.empty()) return item;
 
