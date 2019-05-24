@@ -81,7 +81,8 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
 {
     { "off",         EPSG_PsgClientMode::eOff         },
     { "interactive", EPSG_PsgClientMode::eInteractive },
-    { "performance", EPSG_PsgClientMode::ePerformance }
+    { "performance", EPSG_PsgClientMode::ePerformance },
+    { "io",          EPSG_PsgClientMode::eIo          }
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
 
@@ -139,6 +140,7 @@ bool SDebugOutput::IsPerf()
         case EPSG_PsgClientMode::eOff:         return false;
         case EPSG_PsgClientMode::eInteractive: return false;
         case EPSG_PsgClientMode::ePerformance: return true;
+        case EPSG_PsgClientMode::eIo:          return true;
     }
 
     return false;
@@ -235,9 +237,12 @@ void SPSG_Reply::SetState(SState::EState state)
 }
 
 SPSG_Receiver::SPSG_Receiver(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
+    m_State(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo ?
+            &SPSG_Receiver::StateIo : &SPSG_Receiver::StatePrefix),
     m_Reply(reply),
     m_Queue(queue)
 {
+    if (TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo) AddIo();
 }
 
 void SPSG_Receiver::StatePrefix(const char*& data, size_t& len)
@@ -303,6 +308,40 @@ void SPSG_Receiver::StateData(const char*& data, size_t& len)
     if (!m_Buffer.data_to_read) {
         SetStatePrefix();
     }
+}
+
+void SPSG_Receiver::AddIo()
+{
+    SPSG_Chunk chunk;
+    chunk.args = SPSG_Args("item_id=1&item_type=blob&chunk_type=data&size=1&blob_id=0&blob_chunk=0");
+    chunk.data.emplace_back(1, ' ');
+
+    SPSG_Reply::SItem::TTS* item_ts = nullptr;
+    auto reply_item_ts = &m_Reply->reply_item;
+
+    if (auto items_locked = m_Reply->items.GetLock()) {
+        auto& items = *items_locked;
+        items.emplace_back();
+        item_ts = &items.back();
+    }
+
+    if (auto item_locked = item_ts->GetLock()) {
+        auto& item = *item_locked;
+        item.chunks.push_back(move(chunk));
+        item.args = SPSG_Args("item_id=1&item_type=blob&chunk_type=meta&blob_id=0&n_chunks=2");
+        item.received = item.expected = 2;
+        item.state.SetNotEmpty();
+    }
+
+    if (auto item_locked = reply_item_ts->GetLock()) {
+        auto& item = *item_locked;
+        item.args = SPSG_Args("item_id=0&item_type=reply&chunk_type=meta&n_chunks=3");
+        item.received = item.expected = 3;
+    }
+
+    reply_item_ts->NotifyOne();
+    if (auto queue = m_Queue.lock()) queue->NotifyOne();
+    item_ts->NotifyOne();
 }
 
 void SPSG_Receiver::Add()

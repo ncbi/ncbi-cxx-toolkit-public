@@ -81,6 +81,7 @@ private:
 struct SInteractive {};
 struct SPerformance {};
 struct STesting {};
+struct SIo {};
 
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
@@ -91,6 +92,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode"),
             s_GetCommand<SPerformance>               ("performance", "Performance testing mode", SCommand::TFlags::eHidden),
             s_GetCommand<STesting>                   ("test",        "Testing mode", SCommand::TFlags::eHidden),
+            s_GetCommand<SIo>                        ("io",          "IO mode", SCommand::TFlags::eHidden),
         })
 {
 }
@@ -206,6 +208,16 @@ void CPsgClientApp::s_InitRequest<STesting>(CArgDescriptions&)
 {
 }
 
+template <>
+void CPsgClientApp::s_InitRequest<SIo>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddPositional("SERVICE", "PSG service or host:port", CArgDescriptions::eString);
+    arg_desc.AddPositional("START_TIME", "Start time (time_t)", CArgDescriptions::eInteger);
+    arg_desc.AddPositional("DURATION", "Duration (seconds)", CArgDescriptions::eInteger);
+    arg_desc.AddPositional("USER_THREADS", "Number of user threads", CArgDescriptions::eInteger);
+    arg_desc.AddPositional("DOWNLOAD_SIZE", "Download size", CArgDescriptions::eInteger);
+}
+
 template <class TRequest>
 int CPsgClientApp::RunRequest(const CArgs& args)
 {
@@ -280,6 +292,18 @@ int CPsgClientApp::RunRequest<STesting>(const CArgs& args)
     return processing.Testing();
 }
 
+template <>
+int CPsgClientApp::RunRequest<SIo>(const CArgs& args)
+{
+    auto service = args["SERVICE"].AsString();
+    auto start_time = args["START_TIME"].AsInteger();
+    auto duration = args["DURATION"].AsInteger();
+    auto user_threads = args["USER_THREADS"].AsInteger();
+    auto download_size = args["DOWNLOAD_SIZE"].AsInteger();
+
+    return CProcessing::Io(service, start_time, duration, user_threads, download_size);
+}
+
 template <class TRequest>
 SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags flags)
 {
@@ -288,5 +312,6 @@ SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags 
 
 int main(int argc, const char* argv[])
 {
+    SetDiagPostLevel(eDiag_Warning);
     return CPsgClientApp().AppMain(argc, argv);
 }

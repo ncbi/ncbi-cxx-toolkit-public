@@ -227,6 +227,8 @@ public:
     int Performance(size_t user_threads, bool raw_metrics, const string& service);
     int Testing();
 
+    static int Io(const string& service, time_t start_time, int duration, int user_threads, int download_size);
+
 private:
     template <class TCreateContext>
     vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context) const;

@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <numeric>
+
 #include <serial/enumvalues.hpp>
 
 #include "performance.hpp"
@@ -872,6 +874,257 @@ int CProcessing::Interactive(bool echo)
     m_Sender.Stop();
     m_Retriever.Stop();
     m_Reporter.Stop();
+    return 0;
+}
+
+class CPSG_Request_Io : public CPSG_Request
+{
+public:
+    CPSG_Request_Io(size_t size) :
+        m_AbsPathRef("/TEST/io?return_data_size=" + to_string(size))
+    {}
+
+private:
+    string x_GetType() const override { return "io"; }
+    string x_GetId() const override { return ""; }
+    string x_GetAbsPathRef() const override { return m_AbsPathRef; }
+
+    const string m_AbsPathRef;
+};
+
+struct SIoContext
+{
+    const string service;
+    const size_t size;
+    mutex m;
+    condition_variable cv;
+
+    SIoContext(const string& s, size_t z) : service(s), size(z), m_Work(true) {}
+
+    bool Work() const { return m_Work; }
+    void Stop() { m_Work = false; }
+
+private:
+    atomic<bool> m_Work;
+};
+
+struct SIoWorker
+{
+    size_t errors = 0;
+
+    SIoWorker(SIoContext& context) :
+        m_Context(context),
+        m_Thread(&SIoWorker::Do, this)
+    {}
+
+    void Do();
+    void Join() { m_Thread.join(); }
+
+private:
+    SIoContext& m_Context;
+    thread m_Thread;
+    deque<shared_ptr<CPSG_Reply>> m_Replies;
+};
+
+void SIoWorker::Do()
+{
+    const CDeadline kInfinite = CDeadline::eInfinite;
+
+    CPSG_Queue queue(m_Context.service);
+    auto request = make_shared<CPSG_Request_Io>(m_Context.size);
+    ostringstream err_stream;
+
+    // Wait
+    {
+        unique_lock<mutex> lock(m_Context.m);
+        m_Context.cv.wait(lock);
+    }
+
+    // Submit requests and receive response
+    while (m_Context.Work()) {
+        // Submit
+        _VERIFY(queue.SendRequest(request, kInfinite));
+
+        // Response
+        auto reply = queue.GetNextReply(kInfinite);
+        _ASSERT(reply);
+
+        // Store the reply for now to prevent internal metrics from being written to cout (affects performance)
+        m_Replies.emplace_back(reply);
+
+        auto reply_status = reply->GetStatus(kInfinite);
+        bool success = reply_status == EPSG_Status::eSuccess;
+
+        if (!success) {
+            err_stream << "Warning: Reply error status " << (int)reply_status << "\n";
+
+            for (;;) {
+                auto message = reply->GetNextMessage();
+
+                if (message.empty()) break;
+
+                err_stream << "Warning: Reply error message '" << message << "'\n";
+            }
+        }
+
+        // Items
+        while (m_Context.Work()) {
+            auto reply_item = reply->GetNextItem(kInfinite);
+            _ASSERT(reply_item);
+
+            if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
+
+            auto item_status = reply_item->GetStatus(kInfinite);
+
+            if (item_status != EPSG_Status::eSuccess) {
+                success = false;
+                err_stream << "Warning: Item error status " << (int)item_status << "\n";
+
+                for (;;) {
+                    auto message = reply->GetNextMessage();
+
+                    if (message.empty()) break;
+
+                    err_stream << "Warning: Item error message '" << message << "'\n";
+                }
+            }
+        }
+
+        if (!m_Context.Work()) break;
+
+        if (!success) ++errors;
+    }
+
+    cerr << err_stream.str();
+};
+
+struct SIoOutput : SIoRedirector<stringstream>
+{
+    SIoOutput() : SIoRedirector<stringstream>(cout) {}
+
+    void Output(size_t errors);
+};
+
+void SIoOutput::Output(size_t errors)
+{
+    map<size_t, vector<SMessage>> raw_data;
+
+    while (*this) {
+        size_t request;
+        SMessage message;
+
+        if ((*this >> request >> message) && (message.type != SMetricType::eError)) {
+            raw_data[request].emplace_back(std::move(message));
+        }
+    }
+
+    cout << "Requests: " << raw_data.size() << endl;
+    cout << "Errors: " << errors << endl;
+
+    vector<double> stats;
+    stats.reserve(raw_data.size());
+
+    for (const auto& pair: raw_data) {
+        const auto& messages = pair.second;
+        auto send = find_if(messages.begin(), messages.end(), SMessage::IsSameType<SMetricType::eSend>);
+
+        if (send == messages.end()) {
+            cerr << "Warning: Cannot find event 'Send' for request '" << pair.first << endl;
+            continue;
+        }
+
+        auto close = find_if(messages.begin(), messages.end(), SMessage::IsSameType<SMetricType::eClose>);
+
+        if (close == messages.end()) {
+            cerr << "Warning: Cannot find event 'Close' for request '" << pair.first << endl;
+            continue;
+        }
+
+        stats.emplace_back(close->milliseconds - send->milliseconds);
+    }
+
+
+    const size_t size = stats.size();
+    const double avg = accumulate(stats.begin(), stats.end(), 0.0) / size;
+    sort(stats.begin(), stats.end());
+
+    cout << "Avg: " << avg << endl;
+    cout << "Min: " << stats.front() << endl;
+    cout << " 1%: " << stats[size_t(max(0.0, 0.01 * size - 1))] << endl;
+    cout << "10%: " << stats[size_t(max(0.0, 0.10 * size - 1))] << endl;
+    cout << "25%: " << stats[size_t(max(0.0, 0.25 * size - 1))] << endl;
+    cout << "50%: " << stats[size_t(max(0.0, 0.50 * size - 1))] << endl;
+    cout << "75%: " << stats[size_t(max(0.0, 0.75 * size - 1))] << endl;
+    cout << "90%: " << stats[size_t(max(0.0, 0.90 * size - 1))] << endl;
+    cout << "99%: " << stats[size_t(max(0.0, 0.99 * size - 1))] << endl;
+    cout << "Max: " << stats.back() << endl;
+}
+
+int CProcessing::Io(const string& service, time_t start_time, int duration, int user_threads, int download_size)
+{
+    SIoOutput io_output;
+
+    // Half a second delay between threads start and actual work
+    chrono::milliseconds kWarmUpDelay(500);
+
+    TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eIo);
+
+    auto now = chrono::system_clock::now();
+    auto start = chrono::system_clock::from_time_t(start_time);
+    auto sleep = chrono::duration_cast<chrono::milliseconds>(start - now) - kWarmUpDelay;
+
+    if (sleep.count() <= 0) {
+        cerr << "Warning: Start time (" << start_time << ") has already passed or too close\n";
+        sleep = chrono::milliseconds::zero();
+    }
+
+    this_thread::sleep_for(sleep);
+
+    SIoContext context(service, download_size);
+
+    vector<SIoWorker> threads;
+    threads.reserve(user_threads);
+
+    // Start threads in advance so it won't affect metrics
+    for (int i = 0; i < user_threads; ++i) {
+        threads.emplace_back(context);
+    }
+
+    this_thread::sleep_for(kWarmUpDelay);
+    context.cv.notify_all();
+
+    if (duration < 1) {
+        cerr << "Warning: Duration (" << duration << ") is less that a second\n";
+    } else {
+        this_thread::sleep_for(chrono::seconds(duration));
+    }
+
+    context.Stop();
+
+    size_t errors = 0;
+
+    for (auto& t : threads) {
+        t.Join();
+
+        errors += t.errors;
+    }
+
+    // Make internal metrics be written to (redirected) cout
+    threads.clear();
+
+    // Report statistics
+    auto start_format = CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeFrac);
+    CTime start_ctime(start_time);
+    auto start_ctime_str = start_ctime.GetLocalTime().AsString(start_format);
+
+    io_output.Reset();
+
+    cout << "Start: " << start_ctime_str << " = " << start_ctime.GetTimeT() << "." << setfill('0') << setw(3) << start_ctime.MilliSecond() << endl;
+    cout << "Duration: " << static_cast<double>(duration) << endl;
+    cout << "Threads: " << user_threads << endl;
+    cout << "Size: " << download_size << endl;
+
+    io_output.Output(errors);
     return 0;
 }
 

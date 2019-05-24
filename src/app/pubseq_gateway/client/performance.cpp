@@ -173,7 +173,6 @@ SPostProcessing::~SPostProcessing()
     cerr << "Reading raw metrics: ";
 
     Reset();
-    seekg(0);
 
     map<size_t, vector<SMessage>> raw_data;
 
@@ -211,8 +210,7 @@ SPostProcessing::~SPostProcessing()
 
         sort(messages.begin(), messages.end());
 
-        auto l = [](const SMessage& m) { return m.type == SMetricType::eDone; };
-        auto done = find_if(messages.rbegin(), messages.rend(), l);
+        auto done = find_if(messages.rbegin(), messages.rend(), SMessage::IsSameType<SMetricType::eDone>);
         auto success = done != messages.rend() && SMetrics::GetSuccess(done->rest);
 
         complex_metrics.emplace_back(request, success);

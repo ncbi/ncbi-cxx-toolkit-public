@@ -96,7 +96,7 @@ NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
 typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
 
 // Performance reporting/request IDs for psg_client app
-enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance };
+enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
 NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
 typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
 
@@ -346,15 +346,17 @@ private:
     void StatePrefix(const char*& data, size_t& len);
     void StateArgs(const char*& data, size_t& len);
     void StateData(const char*& data, size_t& len);
+    void StateIo(const char*& data, size_t& len) { data += len; len = 0; }
 
     void SetStatePrefix()  { Add(); m_State = &SPSG_Receiver::StatePrefix; }
     void SetStateArgs()           { m_State = &SPSG_Receiver::StateArgs;   }
     void SetStateData(size_t dtr) { m_State = &SPSG_Receiver::StateData;   m_Buffer.data_to_read = dtr; }
 
     void Add();
+    void AddIo();
 
     using TState = void (SPSG_Receiver::*)(const char*& data, size_t& len);
-    TState m_State = &SPSG_Receiver::StatePrefix;
+    TState m_State;
 
     struct SBuffer {
         size_t prefix_index = 0;

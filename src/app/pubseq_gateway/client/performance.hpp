@@ -124,6 +124,9 @@ struct SMessage
         return milliseconds < rhs.milliseconds;
     }
 
+    template <SMetricType::EType type>
+    static bool IsSameType(const SMessage& message) { return type == message.type; }
+
     friend istream& operator>>(istream& is, SMessage& message)
     {
         size_t type;
@@ -136,7 +139,6 @@ struct SMessage
             case SMetricType::eSubmit:
             case SMetricType::eReply:
             case SMetricType::eDone:
-            case SMetricType::eSize:
             case SMetricType::eSend:
             case SMetricType::eReceive:
             case SMetricType::eClose:
@@ -229,7 +231,7 @@ struct SIoRedirector : TStream
         m_Io.rdbuf(TStream::rdbuf());
     }
 
-    void Reset() { m_Io.rdbuf(m_Buf); }
+    void Reset() { m_Io.rdbuf(m_Buf); TStream::seekg(0); }
 
 private:
     ios& m_Io;
@@ -256,7 +258,7 @@ enum class EPSG_UseCache { eDefault, eNo, eYes };
 NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
 typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
 
-enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance };
+enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
 NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
 typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
 
