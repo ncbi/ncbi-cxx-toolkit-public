@@ -167,7 +167,6 @@ void CPubseqGatewayApp::ParseArgs(void)
                              kDefaultLog);
     m_RootKeyspace = registry.GetString("SERVER", "root_keyspace",
                                         kDefaultRootKeyspace);
-    m_AuthToken = registry.GetString("ADMIN", "auth_token", kDefaultAuthToken);
 
     m_ExcludeCacheMaxSize = registry.GetInt("AUTO_EXCLUDE", "max_cache_size",
                                             kDefaultExcludeCacheMaxSize);
@@ -182,6 +181,23 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     m_SlimMaxBlobSize = x_GetDataSize(registry, "SERVER", "slim_max_blob_size",
                                       kDefaultSlimMaxBlobSize);
+
+    try {
+        m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
+                                                  IRegistry::fPlaintextAllowed);
+    } catch (const CRegistryException &  ex) {
+        ERR_POST("Decrypting error detected while reading "
+                 "[ADMIN]/auth_token value: " << ex.what());
+
+        // Anyone will be able to shutdown the server
+        m_AuthToken = kDefaultAuthToken;
+    } catch (...) {
+        ERR_POST("Unknown decrypting error detected while reading "
+                 "[ADMIN]/auth_token value");
+
+        // Anyone will be able to shutdown the server
+        m_AuthToken = kDefaultAuthToken;
+    }
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
