@@ -462,7 +462,9 @@ protected:
     /// Parse user agent string.
     void x_Parse(const string& user_agent);
     /// Parse token with browser name and version.
-    bool x_ParseToken(const string& token, int where);
+    /// 'where' flag specifies what part of the user agent to look at, 
+    /// 'engine' allow to check a specific type of engine in the lookup table.
+    bool x_ParseToken(const string& token, int where, EBrowserEngine engine = eEngine_Unknown);
     /// Helper method to check UA-string against external pattern lists.
     bool x_CheckPattern(int what, bool current_status, bool use_patterns,
                         const string& include_patterns = kEmptyStr,

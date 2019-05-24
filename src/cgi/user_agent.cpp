@@ -551,10 +551,10 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eCrawler,      "genieBot",                 "geniebot",                 CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "Gigabot",                  "Gigabot",                  CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "Girafabot",                "www.girafa.com",           CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
-    { CCgiUserAgent::eCrawler,      "Googlebot-Image",          "Googlebot-Image",          CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "Googlebot",                "Googlebot",                CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
-    { CCgiUserAgent::eCrawler,      "Googlebot",                "www.googlebot.com",        CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "Google AdsBot",            "AdsBot-Google",            CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
+    { CCgiUserAgent::eCrawler,      "Google AdSense",           "Mediapartners-Google",     CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
+    { CCgiUserAgent::eCrawler,      "Googlebot",                "www.googlebot.com",        CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "GSA crawler",              "gsa-crawler",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "Hatena Antenna",           "Hatena Antenna",           CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "Heritrix",                 "archive.org_bot",          CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
@@ -576,7 +576,6 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eCrawler,      "mabontland",               "www.mabontland.com",       CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "magpie-crawler",           "magpie-crawler",           CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "Maxamine Web Analyst",     "maxamine.com",             CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
-    { CCgiUserAgent::eCrawler,      "Mediapartners",            "Mediapartners-Google",     CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "Metacarta.com",            "metacarta.com",            CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eCrawler,      "MJ12bot",                  "MJ12bot",                  CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "Mnogosearch",              "Mnogosearch",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
@@ -878,33 +877,56 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     m_UserAgent = USTR(NStr::TruncateSpaces(user_agent));
     SIZE_TYPE len = m_UserAgent.length();
 
-    // Check VendorProduct token first.
-    string vendor_product;
+    // Check on bots using user-provided external patterns
+    if ( F_ISSET(fUseBotPatterns) ) {
+        if (x_CheckPattern(eBot, false, true)) {
+            m_Engine = eEngine_Bot;
+            return;
+        }
+    }
+    // Check on bots using internal table
+    if (x_ParseToken(m_UserAgent, fAny, eEngine_Bot)) {
+        return;
+    }
 
-    SIZE_TYPE pos = m_UserAgent.rfind(")", NPOS);
-    if (pos != NPOS) {
-        // Have VendorProduct only
-        if (pos < len-1) {
-            vendor_product = m_UserAgent.substr(pos+1);
-            x_ParseToken(vendor_product, fVendorProduct);
-        } 
-        // Have VendorComment also, cut it off before parsing VendorProduct token
-        else if ((pos == len-1)  &&
-                 (len >= 5 /* min possible for string with VendorComment */)) { 
-            // AppComment token should be present also
-            pos = m_UserAgent.rfind(")", pos-1);
-            if (pos != NPOS) {
-                pos++;
-                SIZE_TYPE pos_comment = m_UserAgent.find("(", pos);
-                if (pos_comment != NPOS) {
-                    vendor_product = m_UserAgent.substr(pos, pos_comment - pos);
-                    x_ParseToken(vendor_product, fVendorProduct);
+    // Expecting regular non-bot user agent below.
+    // NOTE:
+    //   For bots we don't parse any additional info like platform or OS anymore,
+    ///  because modern user agent strings spammed with keywords in all departments,
+    //   even by Google.
+
+    // Check VendorProduct first
+
+    string vendor_product;
+    SIZE_TYPE pos;
+
+    if (m_Browser == eUnknown) {
+        pos = m_UserAgent.rfind(")", NPOS);
+        if (pos != NPOS) {
+            // Have VendorProduct only
+            if (pos < len - 1) {
+                vendor_product = m_UserAgent.substr(pos + 1);
+                x_ParseToken(vendor_product, fVendorProduct);
+            }
+            // Have VendorComment also, cut it off before parsing VendorProduct token
+            else if ((pos == len - 1) &&
+                (len >= 5 /* min possible for string with VendorComment */)) {
+                // AppComment token should be present also
+                pos = m_UserAgent.rfind(")", pos - 1);
+                if (pos != NPOS) {
+                    pos++;
+                    SIZE_TYPE pos_comment = m_UserAgent.find("(", pos);
+                    if (pos_comment != NPOS) {
+                        vendor_product = m_UserAgent.substr(pos, pos_comment - pos);
+                        x_ParseToken(vendor_product, fVendorProduct);
+                    }
                 }
             }
         }
-        // Possible, we already have browser name and version, but
-        // try to tune up it, and detect Mozilla and engine versions (below).
     }
+
+    // Probably we already have browser name and version, but
+    // try to tune up it, and detect Mozilla and engine versions (below).
 
     // eSafariMobile -- special case.
     // Sometimes Mobile Safari can be specified as "... Version/x.x.x Mobile/xxxxxx Safari/x.x.x".
@@ -922,15 +944,13 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         search = "Mozilla/";
         s_ParseVersion(m_UserAgent, search.length(), &m_MozillaVersion);
 
-        // Get Mozilla engine version (except bots)
-        if ( m_Engine != eEngine_Bot ) {
-            search = "; rv:";
-            pos = m_UserAgent.find(search);
-            if (pos != NPOS) {
-                m_Engine = eEngine_Gecko;
-                pos += search.length();
-                s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
-            }
+        // Get Mozilla engine version
+        search = "; rv:";
+        pos = m_UserAgent.find(search);
+        if (pos != NPOS) {
+            m_Engine = eEngine_Gecko;
+            pos += search.length();
+            s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
         }
 
         // Ignore next code if the browser type already detected
@@ -983,7 +1003,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         }
     }
 
-    // If none of the above matches, uses first product token in list
+    // If none of the above matches, use first product token in list
 
     if ( m_Browser == eUnknown ) {
         x_ParseToken(m_UserAgent, fAppProduct);
@@ -1059,7 +1079,8 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
 
     // Try to get engine version for KHTML/WebKit-based browsers
 
-    if (m_Engine != eEngine_IE  &&  m_Engine != eEngine_Edge) {
+    if (m_Engine != eEngine_IE  &&  m_Engine != eEngine_Edge) 
+    {
         search = USTR(" AppleWebKit/");
         pos = m_UserAgent.find(search);
         if (pos == NPOS) {
@@ -1096,7 +1117,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // Safari/x.x.x for real browser version (for Safari, numbers after browser
     // name represent a build version).
     //
-    // Check it in VendorProduct only!
+    // Check its VendorProduct only!
 
     if ( m_Browser != eUnknown  &&  !vendor_product.empty() ) {
         // VendorProduct token is not empty
@@ -1130,15 +1151,6 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
                     m_BrowserVersion.SetVersion(3,-1,-1);   // 3.x
                 }
             }
-        }
-    }
-
-    // Check on bots using external patterns
-    if ( F_ISSET(fUseBotPatterns) ) {
-        if (x_CheckPattern(eBot, (m_Engine == eEngine_Bot), true)) {
-            m_Engine = eEngine_Bot;
-        } else {
-            m_Engine = eEngine_Unknown;
         }
     }
 
@@ -1221,13 +1233,19 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
 }
 
 
-bool CCgiUserAgent::x_ParseToken(const string& token, int where)
+bool CCgiUserAgent::x_ParseToken(const string& token, int where, EBrowserEngine engine)
 {
     SIZE_TYPE len = token.length();
     // Check all user agent signatures
     for (size_t i = 0; i < kBrowsers; i++) {
         if ( !(s_Browsers[i].flags & where) ) {
             continue;
+        }
+        if ( engine != eEngine_Unknown) {
+            // check specific engine only
+            if (!(s_Browsers[i].engine == engine) ) {
+                continue;
+            }
         }
         string key = USTR(s_Browsers[i].key);
         SIZE_TYPE pos = token.find(key);

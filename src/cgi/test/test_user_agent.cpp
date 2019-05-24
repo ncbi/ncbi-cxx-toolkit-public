@@ -108,12 +108,6 @@ const SUserAgent s_UserAgentTests[] = {
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
-    { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Googlebot/2.1",
-        CCgiUserAgent::eCrawler,        { 2,  1, -1},
-        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
-        { 5,  0, -1},
-        CCgiUserAgent::ePlatform_Windows
-    },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1b2) Gecko/20060821 SeaMonkey/1.1a",
         CCgiUserAgent::eSeaMonkey,      {  1,  1, -1},
         CCgiUserAgent::eEngine_Gecko,   {  1,  8,  1},
@@ -241,12 +235,6 @@ const SUserAgent s_UserAgentTests[] = {
         { 6, 2, -1},
         CCgiUserAgent::ePlatform_Windows
     },
-    { "Mozilla/4.75 [en] (Win98; U)libwww-perl/5.41",
-        CCgiUserAgent::eScript,         { 5, 41, -1},
-        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
-        { 4, 75, -1},
-        CCgiUserAgent::ePlatform_Windows
-    },
 
      // Genuine Netscape/Mozilla
 
@@ -301,11 +289,54 @@ const SUserAgent s_UserAgentTests[] = {
         {-1, -1, -1},
         CCgiUserAgent::ePlatform_Windows
     },
+
+    // Bots
+
+    // Googlebot (Desktop)
+    { "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Safari/537.36",
+        CCgiUserAgent::eCrawler,        { 2,  1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    { "Googlebot/2.1 (+http://www.google.com/bot.html)",
+        CCgiUserAgent::eCrawler,        { 2,  1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Googlebot/2.1",
+        CCgiUserAgent::eCrawler,        { 2,  1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    // Googlebot (Smartphone)
+    { "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        CCgiUserAgent::eCrawler,        { 2,  1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    // Googlebot Video (identified as Googlebot)
+    { "Googlebot-Video/1.0",
+        CCgiUserAgent::eCrawler,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    // Google AdSense
+    { "Mediapartners-Google",
+        CCgiUserAgent::eCrawler,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    { "Various mobile device types (compatible; Mediapartners-Google/2.1; +http://www.google.com/bot.html)",
+        CCgiUserAgent::eCrawler,        { 2,  1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    // Mobile apps android 
+    { "AdsBot-Google-Mobile-Apps",
+        CCgiUserAgent::eCrawler,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
+    // Other
+    { "Mozilla/4.75 [en] (Win98; U)libwww-perl/5.41",
+        CCgiUserAgent::eScript,         { 5, 41, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
+    },
     { "check_http/1.89 (nagios-plugins 1.4.3)",
         CCgiUserAgent::eNagios,         { 1,  89, -1},
-        CCgiUserAgent::eEngine_Bot,     {-1,  -1, -1},
-        { -1, -1, -1},
-        CCgiUserAgent::ePlatform_Unix
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1}, { -1, -1, -1}, CCgiUserAgent::ePlatform_Unknown
     },
 
     // Mobile devices
@@ -649,7 +680,6 @@ int main(int argc, char** argv)
     cout << "is_phone  = " << agent.IsPhoneDevice()   << endl;
     cout << "is_tablet = " << agent.IsTabletDevice()  << endl;
     cout << "is_mobile = " << agent.IsMobileDevice()  << endl;
-
     return 0;
 #endif
 
