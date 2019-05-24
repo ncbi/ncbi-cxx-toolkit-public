@@ -56,6 +56,7 @@ struct SMetricType
         eReceive,
         ePush,
         ePop,
+        eClose,
 
         // Should always be the last
         eLastType
@@ -142,6 +143,7 @@ struct SMessage
             case SMetricType::eReceive:
             case SMetricType::ePush:
             case SMetricType::ePop:
+            case SMetricType::eClose:
                 message.type = static_cast<SMetricType::EType>(type);
                 break;
 

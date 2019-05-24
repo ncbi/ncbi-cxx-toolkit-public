@@ -87,7 +87,7 @@ NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgC
 
 struct SDebugPrintout
 {
-    enum EType { eSend = 1000, eReceive, ePush, ePop };
+    enum EType { eSend = 1000, eReceive, ePush, ePop, eClose };
 
     SDebugPrintout() :
         m_Level(GetLevel()),
@@ -98,6 +98,7 @@ struct SDebugPrintout
     void Print(string id, const string& authority, const string& path);
     void Print(string id, SPSG_Chunk& chunk);
     void Print(string id, EType type);
+    void Print(string id, uint32_t error_code);
 
     static SDebugPrintout& GetInstance() { static SDebugPrintout instance; return instance; }
 
@@ -158,6 +159,18 @@ void SDebugPrintout::Print(string id, EType type)
         os << fixed << id << '\t' << GetSeconds() << '\t' << type << '\t' << this_thread::get_id();
         lock_guard<mutex> lock(m_Mutex);
         cout << os.str() << endl;
+    }
+}
+
+void SDebugPrintout::Print(string id, uint32_t error_code)
+{
+    if (m_Perf) {
+        ostringstream os;
+        os << fixed << id << '\t' << GetSeconds() << '\t' << eClose << '\t' << this_thread::get_id() << "\tstatus=" << error_code;
+        lock_guard<mutex> lock(m_Mutex);
+        cout << os.str() << endl;
+    } else {
+        ERR_POST(Warning << id << ": Closed with status " << error_code);
     }
 }
 
@@ -453,6 +466,10 @@ http2_request::http2_request(string id, shared_ptr<SPSG_Reply> reply, shared_ptr
 
 void http2_request::on_complete(uint32_t error_code)
 {
+    if (auto& printout = SDebugPrintout::GetInstance()) {
+        printout.Print(m_id, error_code);
+    }
+
     ERR_POST(Trace << m_session_data << ": on_complete: stream " << m_stream_id << ": result: " << error_code);
     if (error_code)
         error(SPSG_Error::NgHttp2(error_code));

@@ -40,12 +40,13 @@ size_t SMetrics::CurrentRequestId = 0;
 const vector<SRule> SRule::Rules =
 {
     { "StartToDone",      { SMetricType::eStart,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
-    { "SendToLastChunk",  { SMetricType::eSend,    SPoint::eFirst }, { SMetricType::eReceive, SPoint::eLast  } },
+    { "SendToClose",      { SMetricType::eSend,    SPoint::eFirst }, { SMetricType::eClose,   SPoint::eFirst } },
 
     { "StartToSend",      { SMetricType::eStart,   SPoint::eFirst }, { SMetricType::eSend,    SPoint::eFirst } },
     { "SendToFirstChunk", { SMetricType::eSend,    SPoint::eFirst }, { SMetricType::eReceive, SPoint::eFirst } },
     { "FirstToLastChunk", { SMetricType::eReceive, SPoint::eFirst }, { SMetricType::eReceive, SPoint::eLast  } },
-    { "LastChunkToDone",  { SMetricType::eReceive, SPoint::eLast  }, { SMetricType::eDone,    SPoint::eFirst } },
+    { "LastChunkToClose", { SMetricType::eReceive, SPoint::eLast  }, { SMetricType::eClose,   SPoint::eFirst } },
+    { "CloseToDone",      { SMetricType::eClose,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
 
     { "StartToSubmit",    { SMetricType::eStart,   SPoint::eFirst }, { SMetricType::eSubmit,  SPoint::eFirst } },
     { "SubmitToReply",    { SMetricType::eSubmit,  SPoint::eFirst }, { SMetricType::eReply,   SPoint::eFirst } },
@@ -76,6 +77,7 @@ const char* SMetricType::Name(EType t)
         case eReceive: return "Receive";
         case ePush:    return "Push";
         case ePop:     return "Pop";
+        case eClose:   return "Close";
 
         case eLastType:
         case eError:   break;
