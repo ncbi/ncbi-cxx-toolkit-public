@@ -801,7 +801,7 @@ int CPubseqGatewayApp::OnShutdown(HST::CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     try {
-        // Reply should use plain http with [petentially] a plain text in the body
+        // Reply should use plain http with [potentially] a plain text in the body
         resp.SetContentType(ePlainTextMime);
 
         string              msg;
