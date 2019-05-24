@@ -44,19 +44,20 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define MPMC_CPU_CACHE_LINE_SZ 64L
-
 template<typename T, size_t SZ>
 class mpmc_bounded_queue_w {
-private:
-	typedef char cacheline_pad_t[MPMC_CPU_CACHE_LINE_SZ - sizeof(std::atomic<size_t>)];
-	typedef char cacheline_pad_data_t[MPMC_CPU_CACHE_LINE_SZ - sizeof(T) - sizeof(std::atomic<size_t>)];
+public:
+    static constexpr const size_t kCpuCacheLineSz = 64;
+    static constexpr const size_t kPadSz = (-sizeof(std::atomic<size_t>) % kCpuCacheLineSz);
+	using cacheline_pad_t = char[kPadSz];
+    static constexpr const size_t kPadDataSz = ((-sizeof(T) - sizeof(std::atomic<size_t>)) % kCpuCacheLineSz);
+    using cacheline_pad_data_t = char[kPadDataSz];
 
-	typedef struct cell_tag {
+	struct cell_t {
 		std::atomic<size_t> m_sequence;
 		cacheline_pad_data_t m_pad;
 		T m_data;
-	} cell_t;
+	};
 
 	cacheline_pad_t         m_pad0;
 	cell_t                  m_buffer[SZ];
@@ -72,12 +73,8 @@ private:
 
 public:
 	mpmc_bounded_queue_w() {
-		if ((SZ & (SZ - 1)) != 0)
-            NCBI_THROW(CCassandraException, eGeneric, "SZ template parameter value must be power of two");
-		if (sizeof(intptr_t) != sizeof(size_t))
-            NCBI_THROW(CCassandraException, eGeneric, "All of sudden size_t is of different size than intptr_t, you've to update sources");
-		if (sizeof(T) + sizeof(std::atomic<size_t>) > MPMC_CPU_CACHE_LINE_SZ)
-            NCBI_THROW(CCassandraException, eGeneric, "This template can't hold this T type, consider using smart pointers");
+		static_assert ((SZ & (SZ - 1)) == 0, "SZ template parameter value must be power of two");
+		static_assert (sizeof(intptr_t) == sizeof(size_t), "All of sudden size_t is of different size than intptr_t, you've to update sources");
 		clear();
 	}
 	mpmc_bounded_queue_w(const mpmc_bounded_queue_w&) = delete;
