@@ -925,7 +925,13 @@ namespace
 #define START_SUBTYPE(name, ...) \
     TLegalQualMapRecord({ CSeqFeatData::eSubtype_##name, TLegalQualBitset(__VA_ARGS__) })
 
-static constexpr auto g_legal_quals = cstd::make_array(
+    static
+#ifdef __clang__
+    const
+#else
+    constexpr
+#endif
+    auto g_legal_quals = cstd::make_array(
 START_SUBTYPE(gene
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
