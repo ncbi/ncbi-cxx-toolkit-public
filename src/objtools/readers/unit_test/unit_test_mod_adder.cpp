@@ -307,7 +307,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         pMessageListener->PutMessage(
                 CObjtoolsMessage(msg, sev));
     };
-    CModHandler mod_handler(fReportError);
+    CModHandler mod_handler;
     
     CModAdder::TSkippedMods skipped_mods;
     CModHandler::TModList rejected_mods;
@@ -327,7 +327,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
             auto it = handle_existing_map.find(line);
             if (it != handle_existing_map.end()) {
                 if (!mods.empty()) {
-                    mod_handler.AddMods(mods, handle_existing, rejected_mods);
+                    mod_handler.AddMods(mods, handle_existing, rejected_mods, fReportError);
                     mods.clear();
                 }
                 handle_existing = it->second;
@@ -338,7 +338,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
             mods.emplace_back(mod_info.name, mod_info.value);
         }
 
-        mod_handler.AddMods(mods, handle_existing, rejected_mods);
+        mod_handler.AddMods(mods, handle_existing, rejected_mods, fReportError);
         CModAdder::Apply(mod_handler, bioseq, skipped_mods, fReportError);
     }
     catch (...) {
@@ -415,7 +415,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CModHandler::TModList rejected_mods;
 
     CModAdder::TSkippedMods skipped_mods;
-    CModHandler mod_handler(fReportError);
+    CModHandler mod_handler;
 
     CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
     static const map<string, CModHandler::EHandleExisting>
@@ -432,7 +432,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
             auto it = handle_existing_map.find(line);
             if (it != handle_existing_map.end()) {
                 if (!mods.empty()) {
-                    mod_handler.AddMods(mods, handle_existing, rejected_mods);
+                    mod_handler.AddMods(mods, handle_existing, rejected_mods, fReportError);
                     mods.clear();
                 }
                 handle_existing = it->second;
@@ -443,7 +443,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
             mods.emplace_back(mod_info.name, mod_info.value);
         }
 
-        mod_handler.AddMods(mods, handle_existing, rejected_mods);
+        mod_handler.AddMods(mods, handle_existing, rejected_mods, fReportError);
         CModAdder::Apply(mod_handler, bioseq, skipped_mods, fReportError);
     }
     catch (...) {

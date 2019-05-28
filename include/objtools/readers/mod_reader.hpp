@@ -78,11 +78,12 @@ public:
     using TModEntry = TMods::value_type;
     using FReportError = function<void(const string& message, EDiagSev severity, EModSubcode subcode)>;
 
-    CModHandler(FReportError fReportError=nullptr);
+    CModHandler();
 
     void AddMods(const TModList& mods, 
                  EHandleExisting handle_existing, 
-                 TModList& rejected_mods);
+                 TModList& rejected_mods,
+                 FReportError fReportError=nullptr);
 
     const TMods& GetMods(void) const;
 
@@ -106,7 +107,6 @@ private:
     static const TNameSet sm_MultipleValuesForbidden;
     static const TNameSet sm_DeprecatedModifiers;
 
-    FReportError m_fReportError;
 };
 
 

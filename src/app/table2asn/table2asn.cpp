@@ -144,10 +144,6 @@ private:
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessSecretFiles1Phase(CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
-    void ProcessSRCFileAndQualifiers(
-            const string& namedSrcFile, 
-            const string& defaultSrcFile,
-            const string& commandLineMods, CSeq_entry& result);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
     void ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows);
@@ -830,16 +826,7 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
     m_reader->ApplyAdditionalProperties(*entry);
-/*
-    auto pScope =  Ref(new CScope(*CObjectManager::GetInstance()));
-    auto editHandle = pScope->AddTopLevelSeqEntry(*entry).GetEditHandle();
-    for (CBioseq_CI bioseq_it(editHandle); bioseq_it; ++bioseq_it) {
-        auto pBioseq = const_cast<CBioseq*>(bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull());
-        if (pBioseq) {
-            g_ApplyDeflineMods(*pBioseq);
-        }
-    }
-    */
+
     {
         string  dir, base, ext;
         CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
@@ -851,6 +838,7 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
                 namedSrcFile,
                 defaultSrcFile,
                 m_context.m_allow_accession,
+                m_logger,
                 *entry);
     }
 
@@ -1144,14 +1132,6 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(CSeq_entry& result)
     CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
 
     string name = dir + base;
-/*
-    string defaultSrcFile = name + ".src";
-    string namedSrcFile = m_context.m_single_source_qual_file;
-    ProcessSRCFileAndQualifiers(namedSrcFile, 
-            defaultSrcFile, 
-            m_context.mCommandLineMods, result);
-*/
-
 
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
@@ -1194,16 +1174,6 @@ void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
     }
 }
 
-void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& namedSrcFile,
-        const string& defaultSrcFile,
-        const string& commandLineMods,
-        CSeq_entry& result)
-{ 
-    CSourceQualifiersReader src_reader(&m_context);
-    if (src_reader.LoadSourceQualifiers(namedSrcFile, defaultSrcFile) || !NStr::IsBlank(commandLineMods)) {
-       src_reader.ProcessSourceQualifiers(result);
-    }
-}
 
 void CTbl2AsnApp::ProcessQVLFile(const string& pathname, CSeq_entry& result)
 {

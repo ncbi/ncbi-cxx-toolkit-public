@@ -758,9 +758,9 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
         return;
     } 
 
-    CModHandler mod_handler(fReportError);
+    CModHandler mod_handler;
     CModHandler::TModList rejected_mods;
-    mod_handler.AddMods(mod_list, CModHandler::eAppendReplace, rejected_mods);
+    mod_handler.AddMods(mod_list, CModHandler::eAppendReplace, rejected_mods, fReportError);
 
     // Apply modifiers to the bioseq
     CModHandler::TModList skipped_mods;

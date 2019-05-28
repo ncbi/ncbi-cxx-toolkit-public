@@ -181,9 +181,7 @@ const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
 };
 
 
-CModHandler::CModHandler(FReportError fReportError) 
-    : m_fReportError(fReportError) {}
-
+CModHandler::CModHandler(){}
 
 
 // Replace CModValueAndAttrib class with a CModData
@@ -191,7 +189,8 @@ CModHandler::CModHandler(FReportError fReportError)
 // Then, AddMods will take a list<CModInfo> 
 void CModHandler::AddMods(const TModList& mods,
                           EHandleExisting handle_existing,
-                          TModList& rejected_mods)
+                          TModList& rejected_mods,
+                          FReportError fReportError)
 {
     rejected_mods.clear();
 
@@ -201,16 +200,25 @@ void CModHandler::AddMods(const TModList& mods,
 
     for (const auto& mod : mods) {
         const auto& canonical_name = GetCanonicalName(mod.GetName());
+        const auto allow_multiple_values = x_MultipleValuesAllowed(canonical_name);
+        // Don't want to check for errors if we're not going to keep the modifier
+        if (handle_existing == ePreserve ||
+            (handle_existing == eAppendPreserve &&
+             !allow_multiple_values)) {
+            if (m_Mods.find(canonical_name) != m_Mods.end()) {
+                continue;
+            }
+        }
+
         if (x_IsDeprecated(canonical_name)) {
             rejected_mods.push_back(mod);
             string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
-            if (m_fReportError) {
-                m_fReportError(message, eDiag_Warning, eModSubcode_Deprecated);
-            }
+            if (fReportError) {
+                fReportError(message, eDiag_Warning, eModSubcode_Deprecated);
+            } 
             continue;
         }
 
-        const auto allow_multiple_values = x_MultipleValuesAllowed(canonical_name);
         const auto first_occurrence = current_set.insert(canonical_name).second;
 
        // Put this in its own method
@@ -247,8 +255,8 @@ void CModHandler::AddMods(const TModList& mods,
                 continue;
             }
 
-            if (m_fReportError) {
-                m_fReportError(msg, sev, subcode);
+            if (fReportError) {
+                fReportError(msg, sev, subcode);
                 continue;
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
