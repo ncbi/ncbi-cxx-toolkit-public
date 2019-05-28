@@ -1881,8 +1881,13 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         if (!tags)
             break;
     }
-    if (uuu->keepalive  &&  uuu->expected == (TNCBI_BigCount)(-1L))
-        uuu->keepalive = 0;
+    if (uuu->keepalive  &&  uuu->expected == (TNCBI_BigCount)(-1L)) {
+        if (uuu->net_info->http_version
+            ||  uuu->net_info->req_method != eReqMethod_Head) {
+            uuu->keepalive = 0;
+        } else
+            uuu->expected = 0;
+    }
 
     if (uuu->flags & fHTTP_KeepHeader) {
         assert(retry->mode == eRetry_None);
@@ -2912,7 +2917,7 @@ extern EIO_Status HTTP_CreateTunnelEx
             *sock = uuu->sock;
             uuu->sock = 0;
             http_code = 0;
-        } else 
+        } else
             http_code = uuu->http_code;
     } else {
         http_code = 0;
