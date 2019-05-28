@@ -234,9 +234,8 @@ int CTestApp::Run(void)
                       " authorization credentials, which you may want to"
                       " redact prior to actually submitting the file for"
                       " review.", PAGE_WIDTH, msg, "      ", "NOTE: ");
-        ITERATE(list<string>, line, msg) {
+        ITERATE(list<string>, line, msg)
             m_Tee << NcbiEndl << *line;
-        }
     } else {
         _ASSERT(everything == CConnTest::eStatefulService);
         m_Tee << NcbiEndl << "NCBI Connectivity Test Suite PASSED!";
