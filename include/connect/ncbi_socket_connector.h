@@ -54,9 +54,9 @@ extern "C" {
 /* Create new CONNECTOR, which handles connection to a network socket.
  * Make up to "max_try" attempts to connect to "host:port" before giving up.
  * On successful connect, send the first "size" bytes from buffer "data"
- * (can be NULL -- then send nothing, regardless of "size") to the newly
+ * (can be NULL -- then send nothing, regardless of "size") into the newly
  * opened connection.
- * NOTE:  the connector makes (and then uses) its own copy of the "data".
+ * NOTE:  the connector makes (and then uses) its own copy of "data".
  * Return NULL on error.
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorEx
@@ -96,6 +96,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
 
 
 /* Equivalent to SOCK_CreateConnectorOnTopEx(sock, own_sock, 0)
+ * with connection name inquired from "sock" (when non-NULL).
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
 (SOCK                   sock,    /* existing socket handle (NULL is allowed) */
