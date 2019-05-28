@@ -33,17 +33,19 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <stdlib.h>
 
 #include "test_assert.h"  // This header must go last
 
-#define _STR(s)     #s
-#define  STR(s) _STR(s)
 
-#define DEFAULT_PORT    5001
-#define DEFAULT_TIMEOUT 30
+#define _STR(s)      #s
+#define  STR(s)  _STR(s)
+
+#define DEFAULT_PORT     5001
+#define DEFAULT_TIMEOUT  ((unsigned int) DEF_CONN_TIMEOUT)
 
 
 USING_NCBI_SCOPE;

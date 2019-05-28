@@ -33,13 +33,17 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_namedpipe.hpp>
 
 #include "test_assert.h"  // This header must go last
 
-#ifdef pipe
-#undef pipe
-#endif
+#ifdef   pipe
+#  undef pipe
+#endif /*pipe*/
+
+
+#define DEFAULT_TIMEOUT  5
 
 
 USING_NCBI_SCOPE;
@@ -135,7 +139,7 @@ protected:
 
 CTest::CTest(void)
 {
-    m_Timeout.sec  = 5;
+    m_Timeout.sec  = DEFAULT_TIMEOUT;
     m_Timeout.usec = 0;
 }
 
@@ -204,7 +208,7 @@ int CTest::Run(void)
     }
     else if (args["mode"].AsString() == "server") {
         if (!args["timeout"].HasValue()) {
-            m_Timeout.sec = 30;
+            m_Timeout.sec = (unsigned int) DEF_CONN_TIMEOUT;
         }
         SetDiagPostPrefix("Server");
         Server();

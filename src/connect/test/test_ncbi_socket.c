@@ -32,18 +32,19 @@
 
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket_unix.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
-#  define X_SLEEP(x) /*((void) sleep(x))*/
+#  define X_SLEEP(x)  /*((void) sleep(x))*/
 #elif defined(NCBI_OS_MSWIN)
 #  include <windows.h>
-#  define X_SLEEP(x) /*((void) Sleep(1000 * x))*/
+#  define X_SLEEP(x)  /*((void) Sleep(1000 * x))*/
 #else
-#  define X_SLEEP(x) ((void) 0)
+#  define X_SLEEP(x)  ((void) 0)
 #endif
 
 #include "test_assert.h"  /* This header must go last */
@@ -54,10 +55,10 @@
 #  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
 #endif
 
-#define DEF_PORT 5555
-#define DEF_HOST "localhost"
+#define DEF_PORT      5555
+#define DEF_HOST      "localhost"
 
-#define TEST_BUFSIZE 8192
+#define TEST_BUFSIZE  8192
 
 
 /* The simplest randezvous (a plain request-reply) test functions
@@ -69,9 +70,9 @@ static const char s_C1[] = "C1";
 static const char s_M1[] = "M1";
 static const char s_S1[] = "S1";
 
-#define N_SUB_BLOB    10
-#define SUB_BLOB_SIZE 70000
-#define BIG_BLOB_SIZE (N_SUB_BLOB * SUB_BLOB_SIZE)
+#define N_SUB_BLOB     10
+#define SUB_BLOB_SIZE  70000
+#define BIG_BLOB_SIZE  (N_SUB_BLOB * SUB_BLOB_SIZE)
 
 
 static void TEST__client_1(SOCK sock)
@@ -290,10 +291,10 @@ static void s_DoubleTimeout(STimeout *to)
 
 static void TEST__client_2(SOCK sock)
 {
-#define W_FIELD  10
-#define N_FIELD  1000
-#define N_REPEAT 10
-#define N_RECONNECT 3
+#define W_FIELD      10
+#define N_FIELD      1000
+#define N_REPEAT     10
+#define N_RECONNECT  3
     EIO_Status status;
     size_t     n_io, n_io_done, i;
     char       buf[W_FIELD * N_FIELD + 1];
@@ -447,7 +448,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
     r_to.usec  = 0;
     w_to = r_to;
 
-    rc_to.sec  = 30;
+    rc_to.sec  = (unsigned int) DEF_CONN_TIMEOUT;
     rc_to.usec = 123456;
 
     /* goto */
