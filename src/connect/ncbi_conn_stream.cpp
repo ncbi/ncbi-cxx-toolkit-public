@@ -50,32 +50,17 @@
 BEGIN_NCBI_SCOPE
 
 
-CConn_IOStream::CConn_IOStream(const TConn_Pair& connpair,
+
+CConn_IOStream::CConn_IOStream(const TConnector& connector,
                                const STimeout* timeout,
                                size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
-    : CNcbiIostream(0), m_CSb(0)
+    : CNcbiIostream(0), m_CSb(new CConn_Streambuf(connector.first,
+                                                  connector.second,
+                                                  timeout, buf_size, flgs,
+                                                  ptr, size))
 {
-    auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(connpair.first, connpair.second,
-                                timeout, buf_size, flgs, ptr, size));
-    CONN conn = csb->GetCONN();
-    if (conn) {
-        EIO_Status status;
-        if (!(flgs & fConn_DelayOpen)) {
-            SOCK s/*dummy*/;
-            // NB: CONN_Write(0 bytes) could have caused the same effect
-            (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
-            status  = CONN_Status(conn, eIO_Open);
-        } else
-            status  = eIO_Success;
-        if (status == eIO_Success) {
-            init(csb.get());
-            m_CSb = csb.release();
-            return;
-        }
-    }
-    init(0); // according to the standard (27.4.4.1.3), badbit is set here
+    x_Init(m_CSb->GetCONN(), flgs);
 }
 
 
@@ -83,27 +68,11 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                const STimeout* timeout,
                                size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
-    : CNcbiIostream(0), m_CSb(0)
+    : CNcbiIostream(0), m_CSb(new CConn_Streambuf(conn, close,
+                                                  timeout, buf_size, flgs,
+                                                  ptr, size))
 {
-    auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(conn, close,
-                                timeout, buf_size, flgs, ptr, size));
-    if (conn) {
-        EIO_Status status;
-        if (!(flgs & fConn_DelayOpen)) {
-            SOCK s/*dummy*/;
-            // NB: CONN_Write(0 bytes) could have caused the same effect
-            (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
-            status  = CONN_Status(conn, eIO_Open);
-        } else
-            status  = eIO_Success;
-        if (status == eIO_Success) {
-            init(csb.get());
-            m_CSb = csb.release();
-            return;
-        }
-    }
-    init(0); // according to the standard (27.4.4.1.3), badbit is set here
+    x_Init(conn, flgs);
 }
 
 
@@ -173,6 +142,26 @@ EIO_Status CConn_IOStream::Close(void)
 }
 
 
+void CConn_IOStream::x_Init(CONN conn, TConn_Flags flgs)
+{
+    if (conn) {
+        EIO_Status status;
+        if (!(flgs & fConn_DelayOpen)) {
+            SOCK s/*dummy*/;
+            // NB: CONN_Write(0 bytes) could have caused the same effect
+            (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
+            status  = CONN_Status(conn, eIO_Open);
+        } else
+            status  = eIO_Success;
+        if (status == eIO_Success) {
+            init(m_CSb);
+            return;
+        }
+    }
+    init(0); // according to the standard (27.4.4.1.3), badbit is set here
+}
+
+
 void CConn_IOStream::x_Destroy(void)
 {
     CConn_Streambuf* sb = m_CSb;
@@ -237,10 +226,9 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(TConn_Pair(SOCK_CreateConnector(host.c_str(),
+    : CConn_IOStream(TConnector(SOCK_CreateConnector(host.c_str(),
                                                      port,
-                                                     max_try),
-                                eIO_Unknown),
+                                                     max_try)),
                      timeout, buf_size)
 {
     return;
@@ -255,13 +243,12 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(TConn_Pair(SOCK_CreateConnectorEx(host.c_str(),
+    : CConn_IOStream(TConnector(SOCK_CreateConnectorEx(host.c_str(),
                                                        port,
                                                        max_try,
                                                        data,
                                                        size,
-                                                       flgs),
-                                eIO_Unknown),
+                                                       flgs)),
                      timeout, buf_size)
 {
     return;
@@ -272,17 +259,16 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
                                        EOwnership      if_to_own,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(TConn_Pair(SOCK_CreateConnectorOnTop(sock,
+    : CConn_IOStream(TConnector(SOCK_CreateConnectorOnTop(sock,
                                                           if_to_own
-                                                          != eNoOwnership),
-                                eIO_Unknown),
+                                                          != eNoOwnership)),
                      timeout, buf_size)
 {
     return;
 }
 
 
-static CConn_IOStream::TConn_Pair
+static CConn_IOStream::TConnector
 s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                          const STimeout*     timeout,
                          const void*         data,
@@ -359,15 +345,13 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
     string hostport(net_info->host);
     hostport += ':';
     hostport += NStr::UIntToString(net_info->port);
-    CONNECTOR c = SOCK_CreateConnectorOnTopEx(sock,
-                                              1/*own*/,
-                                              hostport.c_str());
+    CONNECTOR c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/,hostport.c_str());
     if (!c) {
         SOCK_Abort(sock);
         SOCK_Close(sock);
         status = eIO_Unknown;
     }
-    return CConn_IOStream::TConn_Pair(c, status);
+    return CConn_IOStream::TConnector(c, status);
 }
 
 
@@ -408,9 +392,8 @@ static SOCK s_GrabSOCK(CSocket& socket)
 CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(TConn_Pair(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket),
-                                                          1/*own*/),
-                                eIO_Unknown),
+    : CConn_IOStream(TConnector(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket),
+                                                          1/*own*/)),
                      timeout, buf_size)
 {
     return;
@@ -425,7 +408,7 @@ struct Deleter<SConnNetInfo>
 };
 
 
-static CConn_IOStream::TConn_Pair
+static CConn_IOStream::TConnector
 s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                        EReqMethod          method,
                        const char*         url,
@@ -500,7 +483,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                                          user_data,
                                          adjust,
                                          cleanup);
-    return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
+    return CConn_IOStream::TConnector(c);
 }
 
 
@@ -734,7 +717,7 @@ EHTTP_HeaderParse CConn_HttpStream::x_ParseHeader(const char* header,
 }
 
 
-static CConn_IOStream::TConn_Pair
+static CConn_IOStream::TConnector
 s_ServiceConnectorBuilder(const char*                           service,
                           TSERV_Type                            types,
                           const SConnNetInfo*                   net_info,
@@ -781,7 +764,7 @@ s_ServiceConnectorBuilder(const char*                           service,
                                             types,
                                             x_net_info.get(),
                                             &x_extra);
-    return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
+    return CConn_IOStream::TConnector(c);
 }
 
 
@@ -914,7 +897,7 @@ const SSERV_Info* CConn_ServiceStream::x_GetNextInfo(void* data,SERV_ITER iter)
 
 
 CConn_MemoryStream::CConn_MemoryStream(size_t buf_size)
-    : CConn_IOStream(TConn_Pair(MEMORY_CreateConnector(), eIO_Unknown),
+    : CConn_IOStream(TConnector(MEMORY_CreateConnector()),
                      kInfiniteTimeout/*0*/, buf_size),
       m_Ptr(0)
 {
@@ -925,12 +908,11 @@ CConn_MemoryStream::CConn_MemoryStream(size_t buf_size)
 CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
                                        EOwnership owner,
                                        size_t     buf_size)
-    : CConn_IOStream(TConn_Pair(MEMORY_CreateConnectorEx(buf,
+    : CConn_IOStream(TConnector(MEMORY_CreateConnectorEx(buf,
                                                          owner
                                                          == eTakeOwnership
                                                          ? 1/*true*/
-                                                         : 0/*false*/),
-                                eIO_Unknown),
+                                                         : 0/*false*/)),
                      kInfiniteTimeout/*0*/, buf_size, 0/*flags*/,
                      0, BUF_Size(buf)),
       m_Ptr(0)
@@ -943,7 +925,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        size_t      size,
                                        EOwnership  owner,
                                        size_t      buf_size)
-    : CConn_IOStream(TConn_Pair(MEMORY_CreateConnector(), eIO_Unknown),
+    : CConn_IOStream(TConnector(MEMORY_CreateConnector()),
                      kInfiniteTimeout/*0*/, buf_size, 0/*flags*/,
                      (CT_CHAR_TYPE*) ptr, size),
       m_Ptr(owner == eTakeOwnership ? ptr : 0)
@@ -1004,7 +986,7 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
 }
 
 
-static CConn_IOStream::TConn_Pair
+static CConn_IOStream::TConnector
 s_PipeConnectorBuilder(const string&         cmd,
                        const vector<string>& args,
                        CPipe::TCreateFlags   flgs,
@@ -1013,7 +995,7 @@ s_PipeConnectorBuilder(const string&         cmd,
 {
     pipe = new CPipe(pipe_size);
     CONNECTOR c = PIPE_CreateConnector(cmd, args, flgs, pipe, eNoOwnership);
-    return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
+    return CConn_IOStream::TConnector(c);
 }
 
 
@@ -1056,15 +1038,14 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
                                              size_t          pipesize,
                                              const STimeout* timeout,
                                              size_t          buf_size)
-    : CConn_IOStream(TConn_Pair(NAMEDPIPE_CreateConnector(pipename, pipesize),
-                                eIO_Unknown),
+    : CConn_IOStream(TConnector(NAMEDPIPE_CreateConnector(pipename, pipesize)),
                      timeout, buf_size)
 {
     return;
 }
 
 
-static CConn_IOStream::TConn_Pair
+static CConn_IOStream::TConnector
 s_FtpConnectorBuilder(const SConnNetInfo*  net_info,
                       TFTP_Flags           flgs,
                       const SFTP_Callback* cmcb,
@@ -1084,7 +1065,7 @@ s_FtpConnectorBuilder(const SConnNetInfo*  net_info,
     CONNECTOR c = FTP_CreateConnector(x_net_info, flgs, cmcb);
     if (x_net_info != net_info)
         ConnNetInfo_Destroy((SConnNetInfo*) x_net_info);
-    return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
+    return CConn_IOStream::TConnector(c);
 }
  
 
@@ -1104,14 +1085,13 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
                                  const SFTP_Callback* cmcb,
                                  const STimeout*      timeout,
                                  size_t               buf_size)
-    : CConn_IOStream(TConn_Pair(FTP_CreateConnectorSimple(host.c_str(),
+    : CConn_IOStream(TConnector(FTP_CreateConnectorSimple(host.c_str(),
                                                           port,
                                                           user.c_str(),
                                                           pass.c_str(),
                                                           path.c_str(),
                                                           flgs,
-                                                          cmcb),
-                                eIO_Unknown),
+                                                          cmcb)),
                      timeout, buf_size,
                      fConn_Untie | fConn_WriteUnbuffered)
 {
@@ -1271,10 +1251,9 @@ public:
     CConn_FileStream(const string&   ifname,
                      const string&   ofname = kEmptyStr,
                      SFILE_ConnAttr* attr   = 0)
-        : CConn_IOStream(TConn_Pair(FILE_CreateConnectorEx(ifname.c_str(),
+        : CConn_IOStream(TConnector(FILE_CreateConnectorEx(ifname.c_str(),
                                                            ofname.c_str(),
-                                                           attr),
-                                    eIO_Unknown),
+                                                           attr)),
                          0/*timeout*/, 0/*unbuffered*/,
                          fConn_Untie)
     {

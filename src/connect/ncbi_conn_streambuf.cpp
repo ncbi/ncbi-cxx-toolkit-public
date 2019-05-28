@@ -89,7 +89,8 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                   CConn_IOStream::fConn_WriteUnbuffered))  &&  buf_size) {
         m_Tie = true;
     }
-    if ((m_Status = CONN_CreateEx(connector, fCONN_Supplement
+    if (m_Status != eIO_Success  ||
+        (m_Status = CONN_CreateEx(connector, fCONN_Supplement
                                   | (m_Tie ? 0 : flgs & fCONN_Untie), &m_Conn))
         != eIO_Success) {
         ERR_POST_X(3, x_Message("CConn_Streambuf():  CONN_Create() failed"));

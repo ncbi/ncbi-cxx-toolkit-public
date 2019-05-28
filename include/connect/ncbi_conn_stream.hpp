@@ -157,7 +157,15 @@ public:
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
 
-    typedef pair<CONNECTOR, EIO_Status> TConn_Pair;
+    typedef pair<CONNECTOR, EIO_Status> TConnPair;
+    class TConnector : public TConnPair
+    {
+    public:
+        TConnector(CONNECTOR c, EIO_Status s = eIO_Success)
+            : TConnPair(c, s != eIO_Success ? s :
+                        c ? eIO_Success : eIO_Unknown)
+        { }
+    };
 protected:
     /// Create a stream based on a CONNECTOR --
     /// only for internal use in derived classes.
@@ -182,7 +190,7 @@ protected:
     /// @sa
     ///  CONNECTOR, ncbi_connector.h
     CConn_IOStream
-    (const TConn_Pair& connpair,
+    (const TConnector& connector,
      const STimeout*   timeout  = kDefaultTimeout,
      size_t            buf_size = kConn_DefaultBufSize,
      TConn_Flags       flags    = 0,
@@ -267,6 +275,7 @@ public:
     CONN               GetCONN(void) const;
 
 protected:
+    void x_Init(CONN conn, TConn_Flags flags);
     void x_Destroy(void);
 
 private:
