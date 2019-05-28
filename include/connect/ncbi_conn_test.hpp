@@ -240,7 +240,7 @@ protected:
 
 private:
     string                m_CheckPoint;
-    STimeout              m_TimeoutStorage;
+    STimeout              x_Timeout;  // Timeout storage
 
     /// Pretect from runaway stage argument
     EIO_Status x_CheckTrap(string* reason);
