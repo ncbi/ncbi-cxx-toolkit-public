@@ -190,10 +190,9 @@ int CTestApp::Run(void)
     s_Run = true;
 
     const CArgs& args = GetArgs();
-    size_t n = args.GetNExtra();
     double timeout;
 
-    if (!n) {
+    if (!args.GetNExtra()) {
         char val[40], *e;
         if (!ConnNetInfo_GetValue(0, REG_CONN_TIMEOUT, val, sizeof(val), 0)
             ||  !*val  ||  (timeout = NCBI_simple_atof(val, &e)) < 0.0
