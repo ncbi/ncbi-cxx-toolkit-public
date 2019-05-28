@@ -362,6 +362,11 @@ bool CParams::IsDiffBioSamplesAllowed() const
     return m_imp->m_different_biosamples;
 }
 
+bool CParams::IsVersionTrusted() const
+{
+    return m_imp->m_trust_version;
+}
+
 bool CParams::NeedToChangeNucTitle() const
 {
     return m_imp->m_change_nuc_title;

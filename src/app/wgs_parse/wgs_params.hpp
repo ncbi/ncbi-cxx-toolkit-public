@@ -138,6 +138,7 @@ public:
     bool IsStripAuthors() const;
     bool IsDiffCitSubAllowed() const;
     bool IsDiffBioSamplesAllowed() const;
+    bool IsVersionTrusted() const;
 
     bool NeedToChangeNucTitle() const;
     const string& GetNewNucTitle() const;

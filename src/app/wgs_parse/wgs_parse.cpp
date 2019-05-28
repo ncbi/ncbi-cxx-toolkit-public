@@ -1566,12 +1566,18 @@ int CWGSParseApp::Run(void)
 
                 if (GetParams().GetUpdateMode() == eUpdateAssembly) {
                     ++current_master.m_version;
+
                     master_info.m_cit_sub = current_master.m_cit_sub;
                     if (GetParams().IsCitArtFromMaster()) {
                         master_info.m_cit_arts.swap(current_master.m_cit_arts);
                     }
                 }
 
+                if (!GetParams().IsAccessionAssigned() &&
+                    GetParams().GetAssemblyVersion() != current_master.m_version &&
+                    !GetParams().IsVersionTrusted()) {
+                    SetAssemblyVersion(current_master.m_version);
+                }
                 master_info.m_current_master = &current_master;
             }
         }
