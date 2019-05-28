@@ -73,6 +73,11 @@ public:
     // Shortcut method for fetching a single blob.
     CRef<CCDD_Reply> AskBlob(int serial_number, const CID2_Blob_Id& blob_id);
 
+    void JustAsk(const CCDD_Request_Packet& request);
+    void JustFetch(CCDD_Reply& reply)
+        { ReadReply(*m_In, reply); }
+
+    
 private:
     // Prohibit copy constructor and assignment operator
     CCDDClient(const CCDDClient& value);

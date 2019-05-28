@@ -56,8 +56,12 @@ class NCBI_ID2PROC_CDD_EXPORT CID2CDDProcessorPacketContext : public CID2Process
 public:
     typedef CRef<CID2_Reply> TID2ReplyPtr;
     typedef map<int, TID2ReplyPtr> TReplies;
+    typedef map<int, CConstRef<CSeq_id> > TSeqIDs;
+    typedef map<int, CConstRef<CID2_Blob_Id> > TBlobIDs;
 
     TReplies m_Replies;
+    TSeqIDs  m_SeqIDs;
+    TBlobIDs m_BlobIDs;
 };
 
 
@@ -86,14 +90,23 @@ public:
     void InitContext(CID2CDDContext& context, const CID2_Request& main_request);
 
 private:
+    void x_TranslateReplies(const CID2CDDContext& context,
+                            CID2CDDProcessorPacketContext& packet_context);
     CRef<CID2_Reply> x_GetBlobId(const CID2CDDContext& context,
                                  int serial_number,
                                  const CID2_Seq_id& req_id);
+    void x_TranslateBlobIdReply(CRef<CID2_Reply> id2_reply,
+                                CConstRef<CSeq_id> id,
+                                CConstRef<CCDD_Reply> cdd_reply);
     CRef<CID2_Reply> x_GetBlob(const CID2CDDContext& context,
                                int serial_number,
                                const CID2_Blob_Id& blob_id);
+    void x_TranslateBlobReply(CRef<CID2_Reply> id2_reply,
+                              const CID2CDDContext& context,
+                              const CID2_Blob_Id& blob_id,
+                              CRef<CCDD_Reply> cdd_reply);
     CRef<CID2_Reply> x_CreateID2_Reply(int serial_number,
-                                       CCDD_Reply& cdd_reply);
+                                       const CCDD_Reply& cdd_reply);
     void x_CreateBlobIdReply(const CCDD_Request::TRequest& cdd_request,
                              CCDD_Reply::TReply& cdd_reply,
                              CID2_Reply::TReply& id2_reply);

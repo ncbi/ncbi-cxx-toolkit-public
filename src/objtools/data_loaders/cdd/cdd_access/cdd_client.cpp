@@ -115,6 +115,16 @@ CRef<CCDD_Reply> CCDDClient::AskBlob(int serial_number, const CID2_Blob_Id& blob
 }
 
 
+void CCDDClient::JustAsk(const CCDD_Request_Packet& request)
+{
+    static const STimeout kZeroTimeout = { 0, 0 };
+    Connect();
+    WriteRequest(*m_Out, request);
+    dynamic_cast<CConn_ServiceStream&>(*m_Stream).Fetch(&kZeroTimeout);
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
