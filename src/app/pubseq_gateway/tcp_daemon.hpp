@@ -548,9 +548,19 @@ private:
 
     static void s_OnMainSigTerm(uv_signal_t *  /* req */, int  /* signum */)
     {
+        auto        now = chrono::steady_clock::now();
+        auto        expiration = now + chrono::hours(24);
+
+        if (g_ShutdownData.m_ShutdownRequested) {
+            if (expiration >= g_ShutdownData.m_Expired) {
+                PSG_MESSAGE("SIGTERM received. The previous shutdown "
+                            "expiration is shorter than this one. Ignored.");
+                return;
+            }
+        }
+
         PSG_MESSAGE("SIGTERM received. Graceful shutdown is initiated");
-        g_ShutdownData.m_Expired = chrono::steady_clock::now() +
-                                   chrono::hours(24);
+        g_ShutdownData.m_Expired = expiration;
         g_ShutdownData.m_ShutdownRequested = true;
     }
 
