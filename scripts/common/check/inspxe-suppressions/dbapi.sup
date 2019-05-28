@@ -19,6 +19,18 @@ suppression = {
 		{
 			...;
 			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
+			func=vasprintf_ver95,src=vasprintf.c;
+			func=asprintf_ver95,src=asprintf.c;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver95 - 3"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
 			func=vasprintf_ver95;
 			func=asprintf_ver95;
 		}

@@ -77,6 +77,20 @@ suppression = {
 	}
 }
 suppression = {
+	name = "HTTP_CreateConnectorEx/x_FixupUserHeader/sprintf"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf;
+			func=x_FixupUserHeader,src=ncbi_http_connector.c;
+		}
+		allocation={
+			...;
+		}
+	}
+}
+suppression = {
 	name = "gnutls_handshake() non-important (only DLL build)"
 	type = {invalid_memory_access_partial}
 	stacks = {
