@@ -297,6 +297,8 @@ static CONNECTOR s_Init
     /* some sanity checks */
     assert(!sock  ||  !(size  ||  data  ||  flags));
 
+    if (!sock  &&  !host  &&  !port)
+        return 0;
     if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
         return 0;
     if (!(xxx = (SSockConnector*) malloc(sizeof(*xxx)
