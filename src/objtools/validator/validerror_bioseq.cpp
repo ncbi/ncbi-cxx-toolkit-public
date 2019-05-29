@@ -9045,9 +9045,9 @@ static volatile bool s_ViralMapInitialized;
 DEFINE_STATIC_FAST_MUTEX(s_ViralMapMutex);
 
 
-size_t CValidError_bioseq::s_GetStrandedMolTypeFromLineage(const string& lineage)
+CValidError_bioseq::EStrandedMoltype CValidError_bioseq::s_GetStrandedMolTypeFromLineage(const string& lineage)
 {
-    size_t smol = eStrandedMoltype_unknown;
+    EStrandedMoltype smol = eStrandedMoltype_unknown;
 
     if ( !s_ViralMapInitialized ) {
         CFastMutexGuard GUARD(s_ViralMapMutex);
@@ -9137,7 +9137,7 @@ CSeq_inst::EMol CValidError_bioseq::s_ExpectedMoltypeForStrandedMol(EStrandedMol
 }
 
 
-void CValidError_bioseq::x_ReportLineageConflictWithMol(size_t smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx)
+void CValidError_bioseq::x_ReportLineageConflictWithMol(EStrandedMoltype smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx)
 {
     if ((smol & esmol) && mol != s_ExpectedMoltypeForStrandedMol(esmol)) {
         m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
@@ -9158,7 +9158,7 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol
     if (! m_Imp.DoTaxLookup()) {
         return;
     }
-    size_t smol = s_GetStrandedMolTypeFromLineage(lineage);
+    EStrandedMoltype smol = s_GetStrandedMolTypeFromLineage(lineage);
     if (smol == eStrandedMoltype_unknown || mol == CSeq_inst::eMol_aa) {
         return;
     }
