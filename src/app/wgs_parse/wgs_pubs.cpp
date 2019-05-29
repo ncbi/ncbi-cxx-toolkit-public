@@ -64,10 +64,13 @@ string CPubCollection::AddPub(CPubdesc& pubdesc, bool medline_lookup)
     string pubdesc_no_lookup_str = GetPubdescKey(pubdesc, false);
     auto it = m_map_lookup_to_origin.find(pubdesc_no_lookup_str);
 
-    string pubdesc_str(pubdesc_no_lookup_str);
+    string pubdesc_str;
     if (it == m_map_lookup_to_origin.end()) {
         pubdesc_str = GetPubdescKey(pubdesc, medline_lookup);
         m_map_lookup_to_origin[pubdesc_no_lookup_str] = pubdesc_str;
+    }
+    else {
+        pubdesc_str = it->second;
     }
 
     auto lookup_it = m_pubs.find(pubdesc_str);
