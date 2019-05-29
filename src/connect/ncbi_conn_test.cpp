@@ -908,7 +908,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             continue;
         status = eIO_Success;
 
-        typedef pair<AutoPtr<CConn_SocketStream>, CFWConnPoint*> CFWCheck;
+        typedef pair<AutoPtr<CConn_IOStream>, CFWConnPoint*> CFWCheck;
         vector<CFWCheck> fwck;
 
         // Spawn connections for all non-failing CPs
@@ -917,7 +917,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 status = eIO_Interrupt;
                 break;
             }
-            AutoPtr<CConn_SocketStream> fw;
+            AutoPtr<CConn_IOStream> fw;
             if (cp->status != eIO_Success)
                 cp->status  = eIO_Unknown;
             else if (status == eIO_Success  ||  n) {
@@ -926,7 +926,9 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 fw.reset(new CConn_SocketStream(*net_info.get(),
                                                 "\r\n"/*data*/, 2/*size*/,
                                                 fSOCK_LogDefault, &kZeroTmo));
-                if (!fw->good()  ||  !fw->GetCONN()) {
+                if (!fw->good()
+                    /* NB: eIO_Success assures there's an underlying CONN */
+                    ||  fw->SetTimeout(eIO_Close, &kZeroTmo) != eIO_Success) {
                     EIO_Status st = fw->Status();
                     if (st == eIO_Success)
                         st  = eIO_InvalidArg;
@@ -943,17 +945,18 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         unsigned int valid = 0;
         do {
             NON_CONST_ITERATE(vector<CFWCheck>, ck, fwck) {
-                CConn_IOStream* is = ck->first.get();
+                CConn_IOStream* fw = ck->first.get();
                 CFWConnPoint*   cp = ck->second;
-                if (!is  ||  cp->status != eIO_Success)
+                if (!fw  ||  cp->status != eIO_Success)
                     continue;
+                CONN conn = fw->GetCONN();
                 if (status != eIO_Success  &&  !n) {
                     size_t drain;
-                    is->SetTimeout(eIO_Read, &kZeroTmo);
-                    CONN_Read(is->GetCONN(), 0, 1<<20, &drain, eIO_ReadPlain);
+                    CONN_SetTimeout(conn, eIO_Read, &kZeroTmo);
+                    CONN_Read(conn, 0, 1<<20, &drain, eIO_ReadPlain);
                     continue;
                 }
-                EIO_Status st = CONN_Wait(is->GetCONN(), eIO_Read, &kZeroTmo);
+                EIO_Status st = CONN_Wait(conn, eIO_Read, &kZeroTmo);
                 if (st == eIO_Timeout)
                     continue;
                 if (st != eIO_Success) {
@@ -964,8 +967,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     continue;
                 }
                 char line[sizeof(kFWSign) + 2/*"\r\0"*/];
-                if (!is->getline(line, sizeof(line)))
-                    cp->status = ConnStatus(true, is);
+                if (!fw->getline(line, sizeof(line)))
+                    cp->status = ConnStatus(true, fw);
                 else if (NStr::strncasecmp(line,kFWSign,sizeof(kFWSign)-1)!=0)
                     cp->status = eIO_NotSupported;
                 else
@@ -980,7 +983,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             vector< AutoPtr<CSocket> >  sock;
             vector<CSocketAPI::SPoll>   poll;
             ITERATE(vector<CFWCheck>, ck, fwck) {
-                CConn_SocketStream* fw = ck->first.get();
+                CConn_IOStream* fw = ck->first.get();
                 if (!fw  ||  ck->second->status != eIO_Success)
                     continue;
                 AutoPtr<CSocket> s(new CSocket);
@@ -1380,9 +1383,8 @@ void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
     } else if (!end) {
         *m_Output << "\tFAILED (" << IO_StatusStr(status) << ')';
         const string& where = GetCheckPoint();
-        if (!where.empty()) {
+        if (!where.empty())
             *m_Output << ':' << NcbiEndl << string(kParIndent, ' ') << where;
-        }
         if (!stmt.empty())
             *m_Output << NcbiEndl;
     }
