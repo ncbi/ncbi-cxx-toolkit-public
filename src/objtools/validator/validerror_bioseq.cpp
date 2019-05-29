@@ -4622,7 +4622,7 @@ size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& sr
             NStr::Find(lineage, "Placozoa") != NPOS) {
             return 50000;
         } else {
-            return 25000;
+            return 30000;
         }
     }
     return 0;
@@ -4664,7 +4664,7 @@ void CValidError_bioseq::CheckSourceDescriptor(
     size_t max_len = x_BadMetazoanMitochondrialLength(src, bsh.GetInst());
     if (max_len > 0 && bsh.GetInst().IsSetLength() && bsh.GetInst().GetLength() > max_len) {
         PostErr(eDiag_Error, eErr_SEQ_INST_MitoMetazoanTooLong,
-            "Mitochondrial Metozoan sequences should be less than 25000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)",
+            "Mitochondrial Metozoan sequences should be less than 30000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)",
             *(bsh.GetBioseqCore()));
     }
 }
