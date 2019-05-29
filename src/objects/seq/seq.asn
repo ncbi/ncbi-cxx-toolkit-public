@@ -392,6 +392,7 @@ Linkage-evidence ::= SEQUENCE {
         strobe(7),
         unspecified(8),
         pcr(9),
+        proximity-ligation(10),
         other(255)
     }
 }
