@@ -47,7 +47,7 @@ class CSeqIdValidate
 public: 
     virtual ~CSeqIdValidate(void) = default;
 
-    virtual void operator()(const CSeq_id& seqId, int lineNum, CAlnErrorReporter& errorReporter);
+    virtual void operator()(const CSeq_id& seqId, int lineNum, CAlnErrorReporter* pErrorReporter);
 };
 
 END_SCOPE(objects)

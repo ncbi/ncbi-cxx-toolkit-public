@@ -147,7 +147,7 @@ public:
     using FIdValidate = 
         function<void(const objects::CSeq_id&,
                       int,
-                      objects::CAlnErrorReporter&)>;
+                      objects::CAlnErrorReporter*)>;
 
     // constructor
     // defaults to protein alphabet and A2M gap characters

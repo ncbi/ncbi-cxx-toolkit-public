@@ -46,8 +46,13 @@ BEGIN_SCOPE(objects);
 
 void CSeqIdValidate::operator()(const CSeq_id& seqId, 
         int lineNum, 
-        CAlnErrorReporter& errorReporter) 
+        CAlnErrorReporter* pErrorReporter) 
 {
+
+    if (!pErrorReporter) {
+        return;
+    }
+
     if (seqId.IsLocal() &&
         seqId.GetLocal().IsStr()) {
         const auto idString = seqId.GetLocal().GetStr();
@@ -74,7 +79,7 @@ void CSeqIdValidate::operator()(const CSeq_id& seqId,
         }
 
         if (foundError) {
-            errorReporter.Error(
+            pErrorReporter->Error(
                     lineNum,
                     EAlnSubcode::eAlnSubcode_IllegalSequenceId,
                     description);
