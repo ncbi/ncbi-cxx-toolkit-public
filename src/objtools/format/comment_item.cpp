@@ -1563,7 +1563,8 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 // returns the data_str, but wrapped in appropriate <a href...>...</a> if applicable
 static
 string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_str, const string &data_str,
-                                       const char* provider, const char* status, bool has_name, const char* source )
+                                       const char* provider, const char* status, bool has_name,
+                                       const char* source, const char* category, const char* accession )
 {
     if( ! is_html ) {
         return data_str;
@@ -1630,6 +1631,16 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (category, "HMM") ) {
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_prok/evidence/"
+               << data_str
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (category, "BlastRule") ) {
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_prok/evidence/"
+               << data_str
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
     } else {
         // normalize case: nothing to do
         return data_str;
@@ -1655,6 +1666,8 @@ void s_GetStrForStructuredComment(
     const char* provider = "";
     const char* status = "";
     const char* source = "";
+    const char* category = "";
+    const char* accession = "";
     bool has_name = false;
 
     bool fieldOverThreshold = false;
@@ -1678,8 +1691,16 @@ void s_GetStrForStructuredComment(
                     status = (*it_for_len)->GetData().GetStr().c_str();
                 } else if ( label == "Annotation Name" ) {
                     has_name = true;
-                } else if ( label == "Evidence Source" && NStr::EqualNocase(prefix, "##Evidence-For-Name-Assignment-START##") ) {
-                    source = (*it_for_len)->GetData().GetStr().c_str();
+                } else if (NStr::EqualNocase(prefix, "##Evidence-For-Name-Assignment-START##")) {
+                    if ( label == "Evidence Source" ) {
+                        source = (*it_for_len)->GetData().GetStr().c_str();
+                    }
+                    if ( label == "Evidence Category" ) {
+                        category = (*it_for_len)->GetData().GetStr().c_str();
+                    }
+                    if ( label == "Evidence Accession" ) {
+                        accession = (*it_for_len)->GetData().GetStr().c_str();
+                    }
                 }
                 const string::size_type label_len = label.length();
                 if( (label_len > longest_label_len) && (label_len <= kFieldLenThreshold) ) {
@@ -1729,7 +1750,8 @@ void s_GetStrForStructuredComment(
             next_line.resize( max( next_line.size(), longest_label_len), ' ' );
         }
         next_line.append( " :: " );
-        next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(), provider, status, has_name, source ) );
+        next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(),
+                          provider, status, has_name, source, category, accession ) );
         next_line.append( "\n" );
 
         ExpandTildes(next_line, eTilde_comment);
