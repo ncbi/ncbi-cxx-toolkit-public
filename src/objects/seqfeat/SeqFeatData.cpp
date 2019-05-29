@@ -59,83 +59,149 @@ namespace cstd
     template<typename T, typename...TArgs>
     constexpr auto make_array(T first, TArgs...args)->std::array<T, 1 + sizeof...(TArgs)>
     {
-        return std::array<T, 1 + sizeof...(TArgs)>({ first, args... });
+        return { { first, args... } };
     }
+};
 
-    template<size_t index, class TIndex = unsigned>
-    class bit_mask
+namespace detail
+{
+
+    // this helper packs set of bits into an array usefull for initialisation of bitset
+    // ugly C++11 templates until C++14 or C++17 advanced constexpr becomes available
+
+    template<size_t array_size, class _Ty = uint64_t, size_t bit_count = array_size * sizeof(_Ty) * 8, class TIndex = unsigned>
+    struct bitset_helper
     {
-    private:
-        static constexpr uint64_t set_bit(size_t high, unsigned char low)
+        struct const_input_array
         {
-            return (index == high) ? (uint64_t(1) << (low & 63)) : 0;
+            TIndex m_data[bit_count];
+        };
+
+        using array_t = std::array<_Ty, array_size>;
+
+        static constexpr int width = 8 * sizeof(_Ty);
+
+        template<size_t index>
+        static constexpr _Ty set_bit(size_t high, unsigned char low)
+        { // set only bit if high size is equal to index
+            return (index == high) ? (_Ty(1) << (low & (width - 1))) : 0;
         }
 
-        static constexpr uint64_t set_bit(TIndex v)
+        template<size_t index>
+        static constexpr _Ty set_bit(TIndex v)
         {
-            return set_bit(v / 64, v % 64);
+            return set_bit<index>(v / width, v % width);
         }
 
-        static constexpr uint64_t merge()
+        struct range_t
         {
-            return 0;
+            size_t m_from;
+            size_t m_to;
+        };
+
+        template<size_t index, size_t i, typename...TArgs>
+        static constexpr _Ty getbits(const std::tuple<TArgs...>& tup)
+        {
+            return set_bit<index>(std::get<i>(tup));
         }
 
-    public:
-        template<typename T, typename...TRest>
-        static constexpr uint64_t merge(T first, TRest...rest)
+        template<size_t index, size_t i>
+        static constexpr _Ty getbits(const const_input_array& tup)
         {
-            //static_assert(first < static_cast<T>(std::numeric_limits<TIndex>::max()));
-            return merge(rest...) | set_bit(static_cast<TIndex>(first));
+            return set_bit<index>(tup.m_data[i]);
+        }
+
+        template<size_t index, size_t i>
+        static constexpr _Ty getbits(const range_t& tup)
+        {
+            return (tup.m_from <= i && i <= tup.m_to) ? set_bit<index>(i) : 0;
+        }
+
+        template<size_t index, size_t i>
+        struct assemble_mask
+        {
+            using next_t = assemble_mask<index, i - 1>;
+
+            template<class _TTuple>
+            constexpr _Ty operator()(const _TTuple& tup) const
+            {
+                return getbits<index, i - 1>(tup) | next_t()(tup);
+            }
+        };
+
+        template<size_t index>
+        struct assemble_mask<index, 0>
+        {
+            template<class _TTuple>
+            constexpr _Ty operator()(const _TTuple& tup) const
+            {
+                return 0;
+            }
+        };
+
+        template<size_t N, size_t i>
+        struct assemble_bitset
+        {
+            using next_t = assemble_bitset<N, i - 1>;
+
+            template<class _TTuple, typename...TArgs>
+            constexpr array_t operator()(const _TTuple& tup, TArgs...args) const
+            {
+                return next_t()(
+                    tup,
+                    assemble_mask<i - 1, bit_count>()(tup),
+                    args...);
+            }
+        };
+
+        template<size_t N>
+        struct assemble_bitset<N, 0>
+        {
+            template<class _TTuple, typename...TArgs>
+            constexpr array_t operator()(const _TTuple& tup, TArgs...args) const
+            {
+                return array_t{{ args... }};
+            }
+        };
+
+        template<typename...TArgs>
+        static constexpr array_t set_bits(TArgs...args)
+        {
+            return assemble_bitset<0, array_size>()(const_input_array{{static_cast<TIndex>(args)...}});
+            //return assemble_bitset<0, array_size>()(std::tuple<TArgs...>(args...));
+        }
+
+        template<typename _T>
+        static constexpr array_t set_range(_T from, _T to)
+        {
+            return assemble_bitset<0, array_size>() (range_t{ static_cast<size_t>(from), static_cast<size_t>(to) });
         }
     };
-
-    template<size_t index, typename... TArgs>
-    constexpr uint64_t make_mask(TArgs&&...args)
-    {
-        return bit_mask<index>::merge(args...);
-    }
-
-}
+};
 
 namespace
 {
-    template<size_t _Bits, class T>
-    class XBitset: public cstd::bitset<_Bits, T>
+    template<class _bitset>
+    struct BitsetHelper
     {
-    public:
-        using mybase = cstd::bitset<_Bits, T>;
-        using _Ty = typename mybase::_Ty;
-        static_assert(mybase::_Words == 3, "only supported 3*64 bitsets at the momment");
-        enum class init_params
-        {
-            set,
-        };
+        using _Ty = typename _bitset::_Ty;
+        using T = typename _bitset::T;
 
-        constexpr XBitset() = default;
-        constexpr XBitset(init_params, size_t size) : mybase(size,
-            std::numeric_limits<_Ty>::max(),
-            std::numeric_limits<_Ty>::max(),
-            std::numeric_limits<_Ty>::max())
-        {
-        };
-
-        //template<typename std::enable_if<_Words==3, T>::type, typename...TArgs>
         template<typename...TArgs>
-        constexpr XBitset(TArgs...args): mybase(
-            sizeof...(args),
-            cstd::make_mask<0>(args...),
-            cstd::make_mask<1>(args...),
-            cstd::make_mask<2>(args...))
+        static constexpr _bitset set_bits(TArgs...args)
         {
+            return _bitset(sizeof...(args), detail::bitset_helper<_bitset::_Words, _Ty, sizeof...(args)>::set_bits(args...));
         }
-
-        static constexpr XBitset<_Bits, T> all_set(size_t size = _Bits)
+        static constexpr _bitset set_range(T _from, T _to)
         {
-            return XBitset<_Bits, T>(init_params::set, size);
+            return _bitset(_to - _from + 1, detail::bitset_helper<_bitset::_Words, _Ty>::set_range(_from, _to));
         }
     };
+};
 
+
+namespace
+{
     template<typename _It, typename _Pred>
     bool check_sorted_table(_It begin, _It end, _Pred pred)
     {
@@ -159,10 +225,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-using TLegalQualBitset = XBitset<CSeqFeatData::eQual_whole_replicon + 1, CSeqFeatData::EQualifier>;
-
-using TLegalQualMapRecord = std::pair<CSeqFeatData::ESubtype, TLegalQualBitset>;
-
+using TLegalQualBitsetHelper = BitsetHelper<CSeqFeatData::TLegalQualifiers>;
+using TLegalQualMapRecord = SStaticPair<CSeqFeatData::ESubtype, CSeqFeatData::TLegalQualifiers>;
 
 // constructor
 CSeqFeatData::CSeqFeatData(void)
@@ -923,14 +987,10 @@ namespace
 #define ADD_QUAL(n) CSeqFeatData::eQual_##n
 
 #define START_SUBTYPE(name, ...) \
-    TLegalQualMapRecord({ CSeqFeatData::eSubtype_##name, TLegalQualBitset(__VA_ARGS__) })
+    TLegalQualMapRecord{ CSeqFeatData::eSubtype_##name, TLegalQualBitsetHelper::set_bits(__VA_ARGS__) }
 
     static
-#ifdef __clang__
-    const
-#else
     constexpr
-#endif
     auto g_legal_quals = cstd::make_array(
 START_SUBTYPE(gene
    ,ADD_QUAL(allele)
@@ -3111,7 +3171,7 @@ START_SUBTYPE(propeptide_aa
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
 ),
-TLegalQualMapRecord({CSeqFeatData::eSubtype_any, TLegalQualBitset::all_set(CSeqFeatData::eQual_whole_replicon)})
+TLegalQualMapRecord{ CSeqFeatData::eSubtype_any, TLegalQualBitsetHelper::set_range(CSeqFeatData::eQual_allele, CSeqFeatData::eQual_whole_replicon)}
 );
 
 #undef START_SUBTYPE

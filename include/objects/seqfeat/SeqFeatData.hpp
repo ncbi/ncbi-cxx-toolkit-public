@@ -124,19 +124,18 @@ namespace cstd
     };
 
     // partially backported std::bitset until it's constexpr version becomes available
-    template<size_t _Bits, class T>
+    template<size_t _Bits, class _T>
     class bitset
     {
     public:
         using _Ty = uint64_t;
+        using T = _T;
         static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
         static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
+        using _Array_t = std::array<_Ty, _Words>;
 
         constexpr bitset() = default;
-        template<typename...TArgs>
-        constexpr bitset(size_t size, TArgs...args) : m_size{ size }, _Array{ args... }
-        {
-        }
+        constexpr bitset(const bitset&) = default;
 
         constexpr size_t size() const
         {
@@ -217,9 +216,13 @@ namespace cstd
             return const_iterator(this, capacity());
         }
 
+        constexpr bitset(size_t _size, const _Array_t& args) : m_size(_size), _Array(args)
+        {
+        }
+
     private:
-        size_t m_size;
-        std::array<_Ty, _Words> _Array;    // the set of bits
+        size_t m_size {0};
+        _Array_t _Array {};    // the set of bits
 
         constexpr bool _Subscript(size_t _Pos) const
         {    // subscript nonmutable sequence
