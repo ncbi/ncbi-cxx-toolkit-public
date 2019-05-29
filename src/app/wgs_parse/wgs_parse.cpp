@@ -644,7 +644,7 @@ static bool IsDateRecent(const CCit_sub& cit_sub, const CDate& date)
 {
     if (cit_sub.IsSetDate()) {
 
-        return date.Which() != CDate::e_not_set ? cit_sub.GetDate().Compare(date) == CDate::eCompare_after : true;
+        return date.Which() != CDate::e_not_set ? cit_sub.GetDate().Compare(date) == CDate::eCompare_before : true;
     }
 
     return false;
