@@ -184,6 +184,12 @@ const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
 CModHandler::CModHandler(){}
 
 
+void CModHandler::SetMods(const TMods& mods) 
+{
+    m_Mods = mods;
+}
+
+
 // Replace CModValueAndAttrib class with a CModData
 // or CModifier class, which also has a name attribute. 
 // Then, AddMods will take a list<CModInfo> 

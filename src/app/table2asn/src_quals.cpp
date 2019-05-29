@@ -48,6 +48,12 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+const CMemorySrcFileMap::TLineMap& 
+CMemorySrcFileMap::GetLineMap(void) const
+{
+    return m_LineMap;
+}
+
 
 bool CMemorySrcFileMap::Empty(void) const 
 {
@@ -160,10 +166,7 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
 
     m_FileMapped = true;
 }
-    
 
-
-    
 
 static void s_AppendMods(
     const CModHandler::TModList& mods,
@@ -190,7 +193,6 @@ static void sReportError(
 {
     if (!pEC) {
         // throw an exception
-        return;
     }
 
     AutoPtr<CLineErrorEx> pErr(
@@ -207,22 +209,95 @@ static void sReportError(
 }
 
 
+static void sReportMissingMods(
+        ILineErrorListener* pEC,
+        const string& fileName,
+        const CBioseq& bioseq)
+{
+
+    if (!pEC) {
+        // throw an exception
+    }
+
+    string seqId = bioseq.GetId().front()->AsFastaString();
+    string message = 
+        fileName + 
+        " doesn't contain qualifiers for sequence id " +
+        seqId + 
+       "."; 
+
+    AutoPtr<CLineErrorEx> pErr(
+            CLineErrorEx::Create(
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error,
+                0, 0, // code and subcode
+                seqId,
+                0, // lineNumber,
+                message));
+
+    pEC->PutError(*pErr);
+}
+
+
+static void sReportUnusedMods(
+        ILineErrorListener* pEC,
+        const string& fileName,
+        const string& seqId)
+{
+    if (!pEC) {
+        // throw an exception
+    }
+
+    string message =
+    fileName + 
+    " contains qualifiers for sequence id " +
+    seqId +
+    " , but no sequence with that id was found.";
+
+    AutoPtr<CLineErrorEx> pErr(
+            CLineErrorEx::Create(
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error,
+                0, 0, // code and subcode
+                seqId,
+                0, // lineNumber,
+                message));
+
+    pEC->PutError(*pErr);
+}
+
+
 void g_ApplyMods(
         const string& commandLineStr,
         const string& namedSrcFile,
         const string& defaultSrcFile,
         bool allowAcc,
+        bool isVerbose,
         ILineErrorListener* pEC,
         CSeq_entry& entry) 
 {
     using TModList = CModHandler::TModList;
-
+    using TMods = CModHandler::TMods;
     
     TModList rejectedMods;
     string commandLineRemainder;
-    TModList commandLineMods;
+    TMods commandLineMods;
+
     if (!NStr::IsBlank(commandLineStr)) {
-        CTitleParser::Apply(commandLineStr, commandLineMods, commandLineRemainder);
+        TModList mods;
+        CTitleParser::Apply(commandLineStr, mods, commandLineRemainder);
+        auto fReportCommandLineError = 
+            [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
+                return sReportError(pEC, sev, subcode, "", msg);
+            };
+
+        CModHandler mod_handler;
+        mod_handler.AddMods(mods,
+            CModHandler::ePreserve,
+            rejectedMods, 
+            fReportCommandLineError);
+        s_AppendMods(rejectedMods, commandLineRemainder);
+        commandLineMods = mod_handler.GetMods();
     }
 
 
@@ -239,34 +314,49 @@ void g_ApplyMods(
     auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
     auto editHandle = pScope->AddTopLevelSeqEntry(entry).GetEditHandle();
 
-
     for (CBioseq_CI bioseq_it(editHandle); bioseq_it; ++bioseq_it) {
-        auto pBioseq = const_cast<CBioseq*>(bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull());
-        if (pBioseq) {
-            string remainder = commandLineRemainder;
-            string seqId = pBioseq->GetId().front()->AsFastaString();
+        auto pBioseq = const_cast<CBioseq*>(
+                bioseq_it->GetEditHandle()
+                .GetCompleteBioseq()
+                .GetPointerOrNull());
 
+        if (pBioseq) {
+            CModHandler mod_handler;
+            mod_handler.SetMods(commandLineMods);
+            string remainder = commandLineRemainder;
+
+            string seqId = pBioseq->GetId().front()->AsFastaString();
             auto fReportError = 
                 [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
                     return sReportError(pEC, sev, subcode, seqId, msg);
                 };
  
-            CModHandler mod_handler;
-            mod_handler.AddMods(commandLineMods, CModHandler::eAppendReplace, rejectedMods, fReportError);
-            s_AppendMods(rejectedMods, remainder); 
-
             if (!namedSrcFileMap.Empty()) {
                 TModList mods;
-                namedSrcFileMap.GetMods(*pBioseq, mods);
-                mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods, fReportError);
-                s_AppendMods(rejectedMods, remainder);
+                if (namedSrcFileMap.GetMods(*pBioseq, mods)) {
+                    mod_handler.AddMods(mods, 
+                            CModHandler::ePreserve, 
+                            rejectedMods, 
+                            fReportError);
+                    s_AppendMods(rejectedMods, remainder);
+                }
+                else if (isVerbose) {
+                    sReportMissingMods(pEC, namedSrcFile, *pBioseq);
+                }
             }
 
             if (!defaultSrcFileMap.Empty()) {
                 TModList mods;
-                defaultSrcFileMap.GetMods(*pBioseq, mods);
-                mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods, fReportError);
-                s_AppendMods(rejectedMods, remainder);
+                if (defaultSrcFileMap.GetMods(*pBioseq, mods)) {
+                    mod_handler.AddMods(mods, 
+                            CModHandler::ePreserve, 
+                            rejectedMods, 
+                            fReportError);
+                    s_AppendMods(rejectedMods, remainder);
+                }
+                else if (isVerbose) {
+                    sReportMissingMods(pEC, defaultSrcFile, *pBioseq);
+                }
             }
 
             CRef<CSeqdesc> pTitleDesc;
@@ -289,7 +379,10 @@ void g_ApplyMods(
                     TModList mods;
                     CTitleParser::Apply(title, mods, titleRemainder);
 
-                    mod_handler.AddMods(mods, CModHandler::ePreserve, rejectedMods, fReportError);
+                    mod_handler.AddMods(mods, 
+                            CModHandler::ePreserve, 
+                            rejectedMods, 
+                            fReportError);
                     s_AppendMods(rejectedMods, titleRemainder);
                     remainder = titleRemainder +  remainder;
                 }
@@ -314,6 +407,25 @@ void g_ApplyMods(
                     pBioseq->ResetDescr();
                 }
             }
+        }
+    }
+
+    if (isVerbose && !namedSrcFileMap.Empty()) {
+        const auto& lineMap = namedSrcFileMap.GetLineMap();
+        for (const auto& entry : lineMap) {
+            CTempString seqId, remainder; 
+            NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
+            sReportUnusedMods(pEC, namedSrcFile, seqId);
+        }
+    }
+
+
+    if (isVerbose && !defaultSrcFileMap.Empty()) {
+        const auto& lineMap = defaultSrcFileMap.GetLineMap();
+        for (const auto& entry : lineMap) {
+            CTempString seqId, remainder;
+            NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
+            sReportUnusedMods(pEC, defaultSrcFile, seqId);
         }
     }
 }

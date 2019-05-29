@@ -838,6 +838,7 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
                 namedSrcFile,
                 defaultSrcFile,
                 m_context.m_allow_accession,
+                m_context.m_verbose,
                 m_logger,
                 *entry);
     }

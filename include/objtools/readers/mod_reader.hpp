@@ -85,6 +85,8 @@ public:
                  TModList& rejected_mods,
                  FReportError fReportError=nullptr);
 
+    void SetMods(const TMods& mods);
+
     const TMods& GetMods(void) const;
 
     void Clear(void);

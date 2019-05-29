@@ -21,6 +21,7 @@ void g_ApplyMods(
         const string& namedSrcFile,
         const string& defaultSrcFile,
         bool allowAcc,
+        bool isVerbose,
         ILineErrorListener* pEC,
         CSeq_entry& entry);
 
@@ -34,6 +35,7 @@ public:
     bool GetMods(const CBioseq& bioseq, TModList& mods);
     void MapFile(const string& fileName, bool allowAcc);
     bool Empty(void) const;
+    const TLineMap& GetLineMap(void) const;
 private:
     bool m_FileMapped = false;
     unique_ptr<CMemoryFileMap> m_pFileMap;
