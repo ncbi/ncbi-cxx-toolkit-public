@@ -550,3 +550,22 @@ CRequestContextResetter::~CRequestContextResetter()
     if (g_Log)
         CDiagContext::SetRequestContext(NULL);
 }
+
+
+string FormatPreciseTime(const chrono::system_clock::time_point &  t_point)
+{
+    std::time_t             t = chrono::system_clock::to_time_t(t_point);
+    chrono::milliseconds    t_ms = chrono::duration_cast<chrono::milliseconds>
+                                                    (t_point.time_since_epoch());
+
+    struct tm               local_time;
+    localtime_r(&t, &local_time);
+
+    char                    buffer[64];
+    size_t                  char_count = strftime(buffer, 64,
+                                                  "%Y-%m-%d %H:%M:%S",
+                                                  &local_time);
+    sprintf(&buffer[char_count], ".%03ld", t_ms.count() % 1000);
+    return buffer;
+}
+

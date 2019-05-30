@@ -186,15 +186,19 @@ void CPubseqGatewayApp::ParseArgs(void)
         m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
                                                   IRegistry::fPlaintextAllowed);
     } catch (const CRegistryException &  ex) {
-        ERR_POST("Decrypting error detected while reading "
-                 "[ADMIN]/auth_token value: " << ex.what());
+        string  msg = "Decrypting error detected while reading "
+                      "[ADMIN]/auth_token value: " + string(ex.what());
+        ERR_POST(msg);
+        m_Alerts.Register(eConfig, msg);
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
                                          kDefaultAuthToken);
     } catch (...) {
-        ERR_POST("Unknown decrypting error detected while reading "
-                 "[ADMIN]/auth_token value");
+        string  msg = "Unknown decrypting error detected while reading "
+                      "[ADMIN]/auth_token value";
+        ERR_POST(msg);
+        m_Alerts.Register(eConfig, msg);
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
@@ -357,6 +361,20 @@ int CPubseqGatewayApp::Run(void)
                    HST::CHttpReply<CPendingOperation> &  resp)->int
             {
                 return OnShutdown(req, resp);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/ADMIN/get_alerts",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnGetAlerts(req, resp);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/ADMIN/ack_alert",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnAckAlert(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/favicon.ico",

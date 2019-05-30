@@ -47,6 +47,7 @@
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
 #include "exclude_blob_cache.hpp"
+#include "alerts.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -118,6 +119,12 @@ public:
                  HST::CHttpReply<CPendingOperation> &  resp);
 
     int OnShutdown(HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp);
+
+    int OnGetAlerts(HST::CHttpRequest &  req,
+                    HST::CHttpReply<CPendingOperation> &  resp);
+
+    int OnAckAlert(HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp);
 
     int OnTestIO(HST::CHttpRequest &  req,
@@ -239,6 +246,8 @@ private:
     CPubseqGatewayDBCounters            m_DBCounters;
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
+
+    CPSGAlerts                          m_Alerts;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

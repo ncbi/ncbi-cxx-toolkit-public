@@ -44,6 +44,7 @@ USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
 #include <string>
+#include <chrono>
 using namespace std;
 
 // The request URLs and the reply content parameters need the blob ID as a
@@ -182,6 +183,9 @@ public:
     CRequestContextResetter();
     ~CRequestContextResetter();
 };
+
+
+string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
 
 
 #endif
