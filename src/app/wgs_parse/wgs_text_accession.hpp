@@ -52,6 +52,7 @@ public:
     const string& GetAccession() const;
     const string& GetPrefix() const;
     size_t GetNumber() const;
+    size_t GetNumberNoVersion() const;
 
     void swap(CTextAccessionContainer& other);
 
@@ -61,7 +62,8 @@ private:
     string m_accession,
            m_prefix;
 
-    size_t m_number;
+    size_t m_number,
+           m_number_no_version;
 
     bool m_valid;
 };

@@ -76,17 +76,26 @@ void CTextAccessionContainer::Set(const string& accession)
     }
     else {
 
+        size_t mod = 1;
+
         for (; idx < m_accession.size(); ++idx) {
             if (!isdigit(m_accession[idx])) {
                 break;
             }
 
             m_number *= 10;
+            mod *= 10;
             m_number += m_accession[idx] - '0';
         }
 
         if (idx != m_accession.size()) {
             m_valid = false;
+        }
+        else {
+            mod /= 100; // ABCD01000005, m_number = 1000005, version 01 should be removed for m_number_no_version
+            if (mod) {
+                m_number_no_version = m_number % mod;
+            }
         }
     }
 
@@ -113,6 +122,11 @@ const string& CTextAccessionContainer::GetPrefix() const
 size_t CTextAccessionContainer::GetNumber() const
 {
     return m_number;
+}
+
+size_t CTextAccessionContainer::GetNumberNoVersion() const
+{
+    return m_number_no_version;
 }
 
 void CTextAccessionContainer::swap(CTextAccessionContainer& other)

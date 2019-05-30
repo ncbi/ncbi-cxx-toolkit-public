@@ -2189,7 +2189,7 @@ static bool CheckContigsAccessionsRange(const list<TAccessionRange>& ranges, TSe
                 is_reject = !GetParams().IsDblinkOverride();
             }
         }
-        else if (first.GetNumber() != 1 && last.GetNumber() != num_of_entries) {
+        else if (first.GetNumberNoVersion() != 1 && last.GetNumberNoVersion() != num_of_entries) {
             is_warning = true;
             is_reject = !GetParams().IsDblinkOverride();
         }
