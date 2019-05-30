@@ -840,6 +840,10 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
             cd_feature.RemoveQualifier(qual_to_remove);
         }
     }
+    else {
+        cd_feature.RemoveQualifier("protein_id");
+        cd_feature.RemoveQualifier("orig_protein_id");
+    }
 
     if (protein->GetId().empty())
     {
