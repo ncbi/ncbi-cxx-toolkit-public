@@ -787,19 +787,32 @@ static void BuildFilenameWithPath(const string& outdir, string& filename)
     }
 }
 
+static long long ToLongLong(string::const_iterator& it, string::const_iterator end)
+{
+    long long ret = 0;
+    for (; it != end && isdigit(*it); ++it) {
+        ret *= 10;
+        ret += *it - '0';
+    }
+
+    return ret;
+}
+
 static bool FileNameCmp(const string& name1, const string& name2)
 {
     auto it1 = name1.begin(),
          it2 = name2.begin();
 
-    bool digits = false;
     for (; it1 != name1.end() && it2 != name2.end(); ++it1, ++it2) {
 
-        if (!digits && isdigit(*it1) && isdigit(*it2))
+        if (isdigit(*it1) && isdigit(*it2))
         {
-            digits = true;
-            for (; it1 != name1.end() && *it1 == '0'; ++it1);
-            for (; it2 != name2.end() && *it2 == '0'; ++it2);
+            long long num1 = ToLongLong(it1, name1.end()),
+                      num2 = ToLongLong(it2, name2.end());
+
+            if (num1 != num2) {
+                return num1 < num2;
+            }
 
             if (it1 == name1.end() && it2 == name2.end()) {
                 return false; // semantically equal strings, like 'abc01' and 'abc0001'
@@ -807,12 +820,6 @@ static bool FileNameCmp(const string& name1, const string& name2)
 
             if (it1 == name1.end() || it2 == name2.end()) {
                 return it1 == name1.end();
-            }
-        }
-        else {
-
-            if (!isdigit(*it1) || !isdigit(*it2)) {
-                digits = false;
             }
         }
 
