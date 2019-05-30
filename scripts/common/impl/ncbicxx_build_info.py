@@ -568,8 +568,10 @@ class CollectorCMake(Collector):
                     info['target_type'] = 'lib'
                     if info['target_name'].startswith("lib"):
                         info['target_name'] = info['target_name'][3:]
-                elif not ext or ext == '.exe':
-                    if ext != '.exe':
+                elif ext in ('.o', '.obj'):
+                    raise IrrelevantCommandError
+                else:
+                    if ext and ext != '.exe':
                         info['target_name'] = target_filename
                     info['target_type'] = 'app'
                 value_expected = False
