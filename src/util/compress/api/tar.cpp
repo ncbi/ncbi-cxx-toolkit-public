@@ -1392,6 +1392,9 @@ void CTar::x_Init(void)
 bool CTar::x_Flush(bool no_throw)
 {
     m_Current.m_Name.erase();
+    if (m_BufferPos == m_BufferSize) {
+        m_Bad = true;  // In case of unhandled exception(s)
+    }
     if (m_Bad  ||  !m_OpenMode) {
         return false;
     }
@@ -1773,9 +1776,13 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
                 streamsize xwritten;
                 IOS_BASE::iostate iostate = m_Stream.rdstate();
                 if (!(iostate & ~NcbiEofbit)) {  // NB: good() OR eof()
-                    xwritten = m_Stream.rdbuf()
-                        ->sputn(m_Buffer                  + nwritten,
-                                (streamsize)(m_BufferSize - nwritten));
+                    try {
+                        xwritten = m_Stream.rdbuf()
+                            ->sputn(m_Buffer                  + nwritten,
+                                    (streamsize)(m_BufferSize - nwritten));
+                    } catch (IOS_BASE::failure&) {
+                        xwritten = -1;
+                    }
                     if (xwritten > 0) {
                         if (iostate) {
                             m_Stream.clear();

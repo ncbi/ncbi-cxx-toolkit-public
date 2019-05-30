@@ -230,6 +230,8 @@ void CTarTest::Init(void)
                          "Exclude pattern", CArgDescriptions::eString,
                          CArgDescriptions::fAllowMultiple);
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
+    args->AddFlag("e", "Enable exceptions on the underlying stream(s)"
+                  " [non-standard]");
     args->AddFlag("s", "Use stream operations with archive"
                   " [non-standard]");
     args->AddFlag("G", "Always supplement long names with addt'l GNU header(s)"
@@ -432,10 +434,11 @@ int CTarTest::Run(void)
                    "Sorry, -z is not supported with either -r or -u");
     }
 
-    size_t bfactor  = args["b"].AsInteger();
     bool   pipethru = args["F"].HasValue();
-    bool   stream   = args["s"].HasValue();
+    bool   ioexcpts = args["e"].HasValue();
+    size_t bfactor  = args["b"].AsInteger();
     bool   verbose  = args["v"].HasValue();
+    bool   stream   = args["s"].HasValue();
     size_t n        = args.GetNExtra();
 
     if (verbose) {
@@ -478,6 +481,13 @@ int CTarTest::Run(void)
             file.erase();
             in = &ifs;
         }
+    if (ioexcpts) {
+        if (in) {
+            in->exceptions(~NcbiGoodbit);
+        }
+        NcbiCin.exceptions(~NcbiGoodbit);
+        NcbiCout.exceptions(~NcbiGoodbit);
+    }
 
 #ifdef NCBI_OS_MSWIN
     _setmode(_fileno(stdin),  _O_BINARY);
@@ -507,6 +517,9 @@ int CTarTest::Run(void)
             if (!os->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
             }
+            if (ioexcpts) {
+                os->exceptions(~NcbiGoodbit);
+            }
             if (zip) {
                 // Very hairy :-)
                 CZipCompressor* zc = new CZipCompressor;
@@ -525,6 +538,9 @@ int CTarTest::Run(void)
                      (zc, CCompressionStreamProcessor::eDelete),
                      CCompressionStream::fOwnProcessor);
                 zs.reset(os);
+                if (ioexcpts) {
+                    zs->exceptions(~NcbiGoodbit);
+                }
             }
             io = os;
         } else {
@@ -540,9 +556,15 @@ int CTarTest::Run(void)
             if (!is->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
             }
+            if (ioexcpts) {
+                is->exceptions(~NcbiGoodbit);
+            }
             if (zip) {
                 is = new CDecompressIStream(*is, CCompressStream::eGZipFile);
                 zs.reset(is);
+                if (ioexcpts) {
+                    zs->exceptions(~NcbiGoodbit);
+                }
             }
             io = is;
         }
