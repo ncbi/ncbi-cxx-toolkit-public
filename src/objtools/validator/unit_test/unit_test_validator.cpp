@@ -23712,19 +23712,19 @@ BOOST_AUTO_TEST_CASE(Test_BADRRNAcomponentOverlapTRNA)
 
 BOOST_AUTO_TEST_CASE(Test_VR_796)
 {
-    const string cMitoMezoMsg = "Mitochondrial Metozoan sequences should be less than 25000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)";
+    const string cMitoMezoMsg = "Mitochondrial Metazoan sequences should be less than 30000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)";
 
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetLineage(entry, "Metazoan");
     SetGenome(entry, CBioSource::eGenome_mitochondrion);
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    entry->SetSeq().SetInst().SetLength(26000);
+    entry->SetSeq().SetInst().SetLength(31000);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, 
         "MitoMetazoanTooLong", cMitoMezoMsg));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
-        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [26000]"));
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [31000]"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -23735,7 +23735,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_796)
     SetLineage(entry, "Metazoan; Mollusca");
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
-        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [26000]"));
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [31000]"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
