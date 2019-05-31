@@ -2569,7 +2569,7 @@ public:
                            CTempString_Storage* storage = NULL);
 
 
-    /// Variation of Split() wih fSplit_ByPattern flag applied by default
+    /// Variation of Split() with fSplit_ByPattern flag applied by default
 
     static list<string>& SplitByPattern(
                                 const CTempString    str,
