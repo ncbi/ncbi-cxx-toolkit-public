@@ -497,14 +497,25 @@ struct SBlobReader
         }
 
         auto to_read = r.Get(1, buf_size);
-        auto reading_result = reader.Read(buf, to_read, read);
+        auto reading_result = eRW_Success;
 
-        if ((reading_result != eRW_Success) && (reading_result != eRW_Eof)) {
-            BOOST_ERROR("Read() failed");
+        try {
+            reading_result = reader.Read(buf, to_read, read);
+        }
+        catch (CPSG_Exception& ex) {
+            BOOST_ERROR("Read() exception: " << ex.GetErrCodeString());
+            return -1;
+        }
+        catch (...) {
+            BOOST_ERROR("Read() exception: Unknown");
             return -1;
         }
 
-        return reading_result == eRW_Eof ? 0 : 1;
+        if (reading_result == eRW_Eof)     return 0;
+        if (reading_result == eRW_Success) return 1;
+
+        BOOST_ERROR("Read() failed: " << g_RW_ResultToString(reading_result));
+        return -1;
     }
 
 private:
