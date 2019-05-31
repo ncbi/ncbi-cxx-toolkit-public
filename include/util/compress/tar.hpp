@@ -359,15 +359,15 @@ public:
     /// Mask type enumerator.
     /// @enum eExtractMask
     ///   CMask can select both inclusions and exclusions (in this order) of
-    ///   fully-qualified archive entries for list or extraction, so that e.g.
-    ///   the mask ".svn" does not match an entry like "a/.svn" for processing.
+    ///   fully-qualified archive entries for listing or extraction, so that
+    ///   e.g. ".svn" does not match an entry like "a/.svn" for processing.
     /// @enum eExcludeMask
     ///   CMask can select both exclusions and inclusions (in this order) of
-    ///   patterns of archive entries for all operations (excepting eTest),
-    ///   and so the mask ".svn" matches "a/b/c/.svn" for processing.
+    ///   patterns of the archive entries for all operations (excepting eTest),
+    ///   and so that ".svn" matches "a/b/c/.svn".
     enum EMaskType {
-        eExtractMask = 0,  ///< for list or extract
-        eExcludeMask       ///< applied as a pattern
+        eExtractMask = 0,  ///< exact for list or extract
+        eExcludeMask       ///< pattern for all but test
     };
 
     /// Constructors
@@ -417,10 +417,14 @@ public:
     /// Append an entry at the end of the archive that already exists.
     ///
     /// Appended entry can be either a file, a directory, a symbolic link,
-    /// a device special file (block or character), or a FIFO special file.
+    /// a device special file (block or character), or a FIFO special file,
+    /// subject to any exclusions as set by SetMask() with eExcludeMask.
     /// The name is taken with respect to the base directory, if any set.
-    /// Adding a directory results in all its files and subdirectories to
-    /// get added (examine the return value to find out what has been added).
+    ///
+    /// Adding a directory results in all its files and subdirectories (subject
+    //  for the exclusion mask) to get added: examine the return value to find
+    /// out what has been added.
+    ///
     /// Note that the final name of an entry may not contain embedded '..'.
     /// Leading slash in the absolute paths will be retained.  The names of
     /// all appended entries will be converted to Unix format (that is, to
@@ -434,10 +438,12 @@ public:
     /// @return
     ///   A list of entries appended.
     /// @sa
-    ///   Create, Update, SetBaseDir
+    ///   Create, Update, SetBaseDir, SetMask
     unique_ptr<TEntries> Append(const string& name);
 
     /// Append an entry from a stream (exactly entry.GetSize() bytes).
+    /// @note
+    ///   Name masks (if any set with SetMask()) are all ignored.
     /// @return
     ///   A list (containing this one entry) with full archive info filled in
     /// @sa
@@ -445,7 +451,7 @@ public:
     unique_ptr<TEntries> Append(const CTarUserEntryInfo& entry,
                                 CNcbiIstream& is);
 
-    /// Look whether more recent copies of archive members are available in
+    /// Look whether more recent copies of the archive members are available in
     /// the file system, and if so, append them to the archive:
     ///
     /// - if fUpdate is set in processing flags, only the existing archive
@@ -454,7 +460,7 @@ public:
     /// however, do the recursive update should "." be found in the archive;
     ///
     /// - if fUpdate is unset, the existing entries will be updated (if their
-    /// file system counterparts are newer), and inexistent entries will be
+    /// file system counterparts are newer), and nonexistent entries will be
     /// added to the archive;  that is, Update(".") will recursively scan "."
     /// to update both existing entries (if newer files found), and also add
     /// new entries for any files/directories, which are currently not in.
@@ -465,11 +471,11 @@ public:
     /// @return
     ///   A list of entries that have been updated.
     /// @sa
-    ///   Append, SetBaseDir, SetFlags
+    ///   Append, SetBaseDir, SetMask, SetFlags
     unique_ptr<TEntries> Update(const string& name);
 
-    /// Extract the entire archive (into either current directory or
-    /// a directory otherwise specified by SetBaseDir()).
+    /// Extract the entire archive (into either current directory or a
+    /// directory otherwise specified by SetBaseDir()).
     ///
     /// If the same-named files exist, they will be replaced (subject to
     /// fOverwrite) or backed up (fBackup), unless fUpdate is set, which would
@@ -478,10 +484,18 @@ public:
     /// files will be updated / backed up / overwritten, but skipped.
     ///
     /// Extract all archive entries, whose names match the pre-set mask.
+    /// @note
+    ///   Unlike Append(), extracting a matching directory does *not*
+    ///   automatically extract all files within:  for them to be extracted,
+    ///   they still must match the mask.  So if there is a directory "dir/"
+    ///   stored in the archive, the extract mask can be "dir/*" for the
+    ///   entire subtree to be extracted.  Note that "dir/" will only extract
+    ///   the directory itself, and "dir" won't cause that directory to be
+    ///   extracted at all (mismatch due to the trailing slash '/' missing).
     /// @return
     ///   A list of entries that have been actually extracted.
     /// @sa
-    ///   SetMask, SetBaseDir
+    ///   SetMask, SetBaseDir, SetFlags
     unique_ptr<TEntries> Extract(void);
 
     /// Get information about all matching archive entries.
@@ -518,8 +532,9 @@ public:
 
     /// Set name mask.
     ///
-    /// The set of masks is used to process existing entries in the archive,
-    /// and apply to list and extract operations only.
+    /// The set of masks is used to process existing entries in the archive:
+    /// both the extract and exclude masks apply to the list and extract
+    /// operations, and only the exclude mask apply to the named append.
     /// If masks are not defined then all archive entries will be processed.
     ///
     /// @note Unset mask means wildcard processing (all entries match).
@@ -725,6 +740,7 @@ private:
                         const CDirEntry*     path = 0,
                         TTarMode             perm = 0/*override*/) const;
 
+    // Read a text string terminated with '\n'.
     string x_ReadLine(Uint8& size, const char*& data, size_t& nread);
 
     // Read/write specified number of bytes from/to the archive.

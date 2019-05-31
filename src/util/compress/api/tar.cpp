@@ -664,7 +664,6 @@ static string s_OSReason(int x_errno)
 static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
                                  const string& entryname)
 {
-    _ASSERT(!OFFSET_OF(pos));
     _ASSERT(!OFFSET_OF(recsize));
     _ASSERT(recsize >= BLOCK_SIZE);
     string result;
@@ -1683,8 +1682,8 @@ const char* CTar::x_ReadArchive(size_t& n)
                     // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
                     CNcbiIstream* is = dynamic_cast<CNcbiIstream*>(&m_Stream);
                     _ASSERT(is);
-                    is->read(m_Buffer                  + nread,
-                             (streamsize)(m_BufferSize - nread));
+                    is->read (m_Buffer                  + nread,
+                              (streamsize)(m_BufferSize - nread));
                     xread = is->gcount();
                     if (xread > 0) {
                         is->clear();
@@ -1693,14 +1692,18 @@ const char* CTar::x_ReadArchive(size_t& n)
                     xread = m_Stream.rdstate() & NcbiEofbit ? 0 : -1;
                 }
 #else
-                xread = m_Stream.rdbuf()
-                    ->sgetn (m_Buffer                  + nread,
-                             (streamsize)(m_BufferSize - nread));
+                try {
+                    xread = m_Stream.rdbuf()->
+                        sgetn(m_Buffer                  + nread,
+                              (streamsize)(m_BufferSize - nread));
 #  ifdef NCBI_COMPILER_WORKSHOP
-                if (xread < 0) {
-                    xread = 0;  // NB: WS6 is known to return -1 :-/
-                }
+                    if (xread < 0) {
+                        xread = 0;  // NB: WS6 is known to return -1 :-/
+                    }
 #  endif //NCBI_COMPILER_WORKSHOP
+                } catch (IOS_BASE::failure&) {
+                    xread = -1;
+                }
 #endif //NCBI_COMPILER_MIPSPRO
             } else {
                 xread = iostate == NcbiEofbit ? 0 : -1;
@@ -2066,6 +2069,7 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
                    const string& entryname, const SHeader* h,
                    ETar_Format fmt, Uint8 datasize)
 {
+    _ASSERT(!OFFSET_OF(pos));
     EDiagSev level = SetDiagPostLevel(eDiag_Info);
     Uint8 blocks = BLOCK_OF(ALIGN_SIZE(datasize));
     ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
@@ -2084,6 +2088,7 @@ static void s_DumpSparse(const string& file, Uint8 pos, size_t recsize,
                          const string& entryname, const SHeader* h,
                          const char* contind, Uint8 datasize)
 {
+    _ASSERT(!OFFSET_OF(pos));
     EDiagSev level = SetDiagPostLevel(eDiag_Info);
     Uint8 blocks = !*contind ? BLOCK_OF(ALIGN_SIZE(datasize)) : 0;
     ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
@@ -2100,6 +2105,7 @@ static void s_DumpSparse(const string& file, Uint8 pos, size_t recsize,
                          const string& entryname,
                          const vector< pair<Uint8, Uint8> >& bmap)
 {
+    _ASSERT(!OFFSET_OF(pos));
     EDiagSev level = SetDiagPostLevel(eDiag_Info);
     ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
              + "PAX GNU/1.0 sparse file map data:\n"
@@ -2111,6 +2117,7 @@ static void s_DumpSparse(const string& file, Uint8 pos, size_t recsize,
 static void s_DumpZero(const string& file, Uint8 pos, size_t recsize,
                        size_t zeroblock_count, bool eot = false)
 {
+    _ASSERT(!OFFSET_OF(pos));
     EDiagSev level = SetDiagPostLevel(eDiag_Info);
     ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, kEmptyStr)
              + (zeroblock_count
@@ -2905,18 +2912,21 @@ void CTar::x_Backspace(EAction action)
 }
 
 
-static bool s_MatchPattern(const list<CTempString>& elems,
-                           const CMask*             mask,
-                           NStr::ECase              acase)
+static bool s_MatchExcludeMask(const CTempString&       name,
+                               const list<CTempString>& elems,
+                               const CMask*             mask,
+                               NStr::ECase              acase)
 {
-    _ASSERT(mask  &&  !elems.empty());
+    _ASSERT(!name.empty()  &&  mask);
+    if (elems.empty()) {
+        return mask->Match(name, acase);
+    }
     if (elems.size() == 1) {
         return mask->Match(elems.front(), acase);
     }
-
     string temp;
-    REVERSE_ITERATE(list<CTempString>, it, elems) {
-        temp = temp.empty() ? string(*it) : string(*it) + '/' + temp;
+    REVERSE_ITERATE(list<CTempString>, e, elems) {
+        temp = temp.empty() ? string(*e) : string(*e) + '/' + temp;
         if (mask->Match(temp, acase)) {
             return true;
         }
@@ -3149,9 +3159,9 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             _ASSERT(!m_Current.GetName().empty());
             NStr::Split(m_Current.GetName(), "/", elems,
                         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-            match = !s_MatchPattern(elems,
-                                    m_Mask[eExcludeMask].mask,
-                                    m_Mask[eExcludeMask].acase);
+            match = !s_MatchExcludeMask(m_Current.GetName(), elems,
+                                        m_Mask[eExcludeMask].mask,
+                                        m_Mask[eExcludeMask].acase);
         }
 
         // NB: match is 'false' when processing a failing entry
@@ -4134,9 +4144,9 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                   "Name '" + temp + "' embeds parent directory (\"..\")");
     }
     if (m_Mask[eExcludeMask].mask
-        &&  s_MatchPattern(elems,
-                           m_Mask[eExcludeMask].mask,
-                           m_Mask[eExcludeMask].acase)) {
+        &&  s_MatchExcludeMask(temp, elems,
+                               m_Mask[eExcludeMask].mask,
+                               m_Mask[eExcludeMask].acase)) {
         goto out;
     }
     elems.clear();
@@ -4432,7 +4442,7 @@ void CTar::x_AppendStream(const string& name, CNcbiIstream& is)
             TAR_THROW(this, eRead,
                       "Cannot read "
                       + string(ifs ? "file" : "stream")
-                      + " '" + name + '\'' + s_OSReason(ifs ? x_errno : 0));
+                      + " '" + name + '\'' + s_OSReason(x_errno));
         }
         // Write buffer to the archive
         avail = (size_t) xread;
