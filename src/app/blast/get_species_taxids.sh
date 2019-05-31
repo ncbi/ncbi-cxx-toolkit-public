@@ -34,7 +34,7 @@
 #
 # ===========================================================================
 
-export PATH=/bin:/usr/bin:/am/ncbiapdata/bin:$HOME/edirect
+export PATH=/bin:/usr/bin:/am/ncbiapdata/bin:$HOME/edirect:$PATH
 set -uo pipefail
 
 TOO_MANY_MATCHES=500
