@@ -128,55 +128,55 @@ int NStr::CompareCase(const CTempStringEx s1, const CTempStringEx s2)
 }
 
 
-int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const char* pattern)
+int NStr::CompareCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                      const char* s2)
 {
-    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
-        return *pattern ? -1 : 0;
+    if (pos == NPOS  ||  !n  ||  s1.length() <= pos) {
+        return *s2 ? -1 : 0;
     }
-    if ( !*pattern ) {
+    if ( !*s2 ) {
         return 1;
     }
-    if (n == NPOS  ||  n > str.length() - pos) {
-        n = str.length() - pos;
+    if (n == NPOS  ||  n > s1.length() - pos) {
+        n = s1.length() - pos;
     }
-    const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&  *s == *pattern) {
-        s++;  pattern++;  n--;
+    const char* s = s1.data() + pos;
+    while (n  &&  *s2  &&  *s == *s2) {
+        s++;  s2++;  n--;
     }
     if (n == 0) {
-        return *pattern ? -1 : 0;
+        return *s2 ? -1 : 0;
     }
-    return *s - *pattern;
+    return *s - *s2;
 }
 
 
-int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const CTempString pattern)
+int NStr::CompareCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                      const CTempString s2)
 {
-    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
-        return pattern.empty() ? 0 : -1;
+    if (pos == NPOS  ||  !n  ||  s1.length() <= pos) {
+        return s2.empty() ? 0 : -1;
     }
-    if (pattern.empty()) {
+    if (s2.empty()) {
         return 1;
     }
-    if (n == NPOS  ||  n > str.length() - pos) {
-        n = str.length() - pos;
+    if (n == NPOS  ||  n > s1.length() - pos) {
+        n = s1.length() - pos;
     }
     SIZE_TYPE n_cmp = n;
-    if (n_cmp > pattern.length()) {
-        n_cmp = pattern.length();
+    if (n_cmp > s2.length()) {
+        n_cmp = s2.length();
     }
-    const char* s = str.data() + pos;
-    const char* p = pattern.data();
+    const char* s = s1.data() + pos;
+    const char* p = s2.data();
     while (n_cmp  &&  *s == *p) {
         s++;  p++;  n_cmp--;
     }
 
     if (n_cmp == 0) {
-        if (n == pattern.length())
+        if (n == s2.length())
             return 0;
-        return n > pattern.length() ? 1 : -1;
+        return n > s2.length() ? 1 : -1;
     }
 
     return *s - *p;
@@ -212,60 +212,60 @@ int NStr::CompareNocase(const CTempStringEx s1, const CTempStringEx s2)
 }
 
 
-int NStr::CompareNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                        const char* pattern)
+int NStr::CompareNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                        const char* s2)
 {
-    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
-        return *pattern ? -1 : 0;
+    if (pos == NPOS  ||  !n  ||  s1.length() <= pos) {
+        return *s2 ? -1 : 0;
     }
-    if ( !*pattern ) {
+    if ( !*s2 ) {
         return 1;
     }
 
-    if (n == NPOS  ||  n > str.length() - pos) {
-        n = str.length() - pos;
+    if (n == NPOS  ||  n > s1.length() - pos) {
+        n = s1.length() - pos;
     }
 
-    const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&  (*s == *pattern  ||  
-           tolower((unsigned char)(*s)) ==  tolower((unsigned char)(*pattern))) ) {
-        s++;  pattern++;  n--;
+    const char* s = s1.data() + pos;
+    while (n  &&  *s2  &&  (*s == *s2  ||  
+           tolower((unsigned char)(*s)) ==  tolower((unsigned char)(*s2))) ) {
+        s++;  s2++;  n--;
     }
     if (n == 0) {
-        return *pattern ? -1 : 0;
+        return *s2 ? -1 : 0;
     }
-    if (*s == *pattern) {
+    if (*s == *s2) {
         return 0;
     }
-    return tolower((unsigned char)(*s)) - tolower((unsigned char)(*pattern));
+    return tolower((unsigned char)(*s)) - tolower((unsigned char)(*s2));
 }
 
 
-int NStr::CompareNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                        const CTempString pattern)
+int NStr::CompareNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                        const CTempString s2)
 {
-    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
-        return pattern.empty() ? 0 : -1;
+    if (pos == NPOS  ||  !n  ||  s1.length() <= pos) {
+        return s2.empty() ? 0 : -1;
     }
-    if (pattern.empty()) {
+    if (s2.empty()) {
         return 1;
     }
-    if (n == NPOS  ||  n > str.length() - pos) {
-        n = str.length() - pos;
+    if (n == NPOS  ||  n > s1.length() - pos) {
+        n = s1.length() - pos;
     }
 
     SIZE_TYPE n_cmp = n;
-    if (n_cmp > pattern.length()) {
-        n_cmp = pattern.length();
+    if (n_cmp > s2.length()) {
+        n_cmp = s2.length();
     }
-    const char* s = str.data() + pos;
-    const char* p = pattern.data();
+    const char* s = s1.data() + pos;
+    const char* p = s2.data();
     while (n_cmp  &&  (*s == *p  ||
            tolower((unsigned char)(*s)) == tolower((unsigned char)(*p))) ) {
         s++;  p++;  n_cmp--;
     }
     if (n_cmp == 0) {
-        return (n == pattern.length()) ? 0 : (n > pattern.length() ? 1 : -1);
+        return (n == s2.length()) ? 0 : (n > s2.length() ? 1 : -1);
     }
     if (*s == *p) {
         return 0;

@@ -1196,55 +1196,55 @@ public:
     //
     // 1) "Compare***(..., SIZE_TYPE pos, SIZE_TYPE n, ...)" functions
     //    follow the ANSI C++ comparison rules a la "basic_string::compare()":
-    //       str[pos:pos+n) == pattern   --> return 0
-    //       str[pos:pos+n) <  pattern   --> return negative value
-    //       str[pos:pos+n) >  pattern   --> return positive value
+    //       s1[pos:pos+n) == s2   --> return 0
+    //       s1[pos:pos+n) <  s2   --> return negative value
+    //       s1[pos:pos+n) >  s2   --> return positive value
     //
     // 2) "strn[case]cmp()" functions follow the ANSI C comparison rules:
-    //       str[0:n) == pattern[0:n)   --> return 0
-    //       str[0:n) <  pattern[0:n)   --> return negative value
-    //       str[0:n) >  pattern[0:n)   --> return positive value
+    //       s1[0:n) == s2[0:n)   --> return 0
+    //       s1[0:n) <  s2[0:n)   --> return negative value
+    //       s1[0:n) >  s2[0:n)   --> return positive value
 
 
-    /// Case-sensitive compare of a substring with a pattern.
+    /// Case-sensitive compare of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern (char*) to be compared with substring.
+    /// @param s2
+    ///   String (char*) to be compared with substring.
     /// @return
-    ///   - 0, if str[pos:pos+n) == pattern.   
-    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
-    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    ///   - 0, if s1[pos:pos+n) == s2;
+    ///   - Negative integer, if s1[pos:pos+n) <  s2;
+    ///   - Positive integer, if s1[pos:pos+n) >  s2.
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static int CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const char* pattern);
+    static int CompareCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                           const char* s2);
 
-    /// Case-sensitive compare of a substring with a pattern.
+    /// Case-sensitive compare of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern to be compared with substring.
+    /// @param s2
+    ///   String to be compared with substring.
     /// @return
-    ///   - 0, if str[pos:pos+n) == pattern.   
-    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
-    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    ///   - 0, if s1[pos:pos+n) == s2;
+    ///   - Negative integer, if s1[pos:pos+n) <  s2;
+    ///   - Positive integer, if s1[pos:pos+n) >  s2.
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static int CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const CTempString pattern);
+    static int CompareCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                           const CTempString s2);
 
     /// Case-sensitive compare of two strings -- char* version.
     ///
@@ -1253,9 +1253,9 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2;
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   CompareNocase(), Compare() versions with same argument types.
     static int CompareCase(const char* s1, const char* s2);
@@ -1267,57 +1267,52 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2;
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   CompareNocase(), Compare() versions with same argument types.
     static int CompareCase(const CTempStringEx s1, const CTempStringEx s2);
 
-    /// Case-insensitive compare of a substring with a pattern.
+    /// Case-insensitive compare of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern (char*) to be compared with substring.
+    /// @param s2
+    ///   String (char*) to be compared with substring.
     /// @return
-    ///   - 0, if str[pos:pos+n) == pattern (case-insensitive compare).   
-    ///   - Negative integer, if str[pos:pos+n) <  pattern (case-insensitive
-    ///     compare).
-    ///   - Positive integer, if str[pos:pos+n) >  pattern (case-insensitive
-    ///     compare).
+    ///   - 0, if s1[pos:pos+n) == s2 (case-insensitive compare);
+    ///   - Negative integer, if s1[pos:pos+n) < s2 (case-insensitive compare);
+    ///   - Positive integer, if s1[pos:pos+n) > s2 (case-insensitive compare).
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]
-    static int CompareNocase(const CTempString str, 
-                             SIZE_TYPE pos, SIZE_TYPE n, const char* pattern);
+    static int CompareNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                             const char* s2);
 
-    /// Case-insensitive compare of a substring with a pattern.
+    /// Case-insensitive compare of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern to be compared with substring.
+    /// @param s2
+    ///   String to be compared with substring.
     /// @return
-    ///   - 0, if str[pos:pos+n) == pattern (case-insensitive compare).   
-    ///   - Negative integer, if str[pos:pos+n) <  pattern (case-insensitive
-    ///     compare).
-    ///   - Positive integer, if str[pos:pos+n) >  pattern (case-insensitive
-    ///     compare).
+    ///   - 0, if s1[pos:pos+n) == s2 (case-insensitive compare);
+    ///   - Negative integer, if s1[pos:pos+n) < s2 (case-insensitive compare);
+    ///   - Positive integer, if s1[pos:pos+n) > s2 (case-insensitive compare).
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]
-    static int CompareNocase(const CTempString str, 
-                             SIZE_TYPE pos, SIZE_TYPE n,
-                             const CTempString pattern);
+    static int CompareNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                             const CTempString s2);
 
     /// Case-insensitive compare of two strings -- char* version.
     ///
@@ -1326,9 +1321,9 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - 0, if s1 == s2 (case-insensitive compare).      
-    ///   - Negative integer, if s1 < s2 (case-insensitive compare).      
-    ///   - Positive integer, if s1 > s2 (case-insensitive compare).    
+    ///   - 0, if s1 == s2 (case-insensitive compare);
+    ///   - Negative integer, if s1 < s2 (case-insensitive compare);
+    ///   - Positive integer, if s1 > s2 (case-insensitive compare).
     /// @sa
     ///   CompareCase(), Compare() versions with same argument types.
     static int CompareNocase(const char* s1, const char* s2);
@@ -1340,58 +1335,58 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - 0, if s1 == s2 (case-insensitive compare).      
-    ///   - Negative integer, if s1 < s2 (case-insensitive compare).      
-    ///   - Positive integer, if s1 > s2 (case-insensitive compare).    
+    ///   - 0, if s1 == s2 (case-insensitive compare);
+    ///   - Negative integer, if s1 < s2 (case-insensitive compare);
+    ///   - Positive integer, if s1 > s2 (case-insensitive compare).
     /// @sa
     ///   CompareCase(), Compare() versions with same argument types.
     static int CompareNocase(const CTempStringEx s1, const CTempStringEx s2);
 
-    /// Compare of a substring with a pattern.
+    /// Compare of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern (char*) to be compared with substring.
+    /// @param s2
+    ///   String (char*) to be compared with substring.
     /// @param use_case
     ///   Whether to do a case sensitive compare(eCase -- default), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - 0, if str[pos:pos+n) == pattern.   
-    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
-    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    ///   - 0, if s1[pos:pos+n) == s2;
+    ///   - Negative integer, if s1[pos:pos+n) < s2;
+    ///   - Positive integer, if s1[pos:pos+n) > s2.
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static int Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const char* pattern, ECase use_case = eCase);
+    static int Compare(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                       const char* s2, ECase use_case = eCase);
 
-    /// Compare of a substring with a pattern.
+    /// Compare of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern to be compared with substring.
+    /// @param s2
+    ///   String to be compared with substring.
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - 0, if str[pos:pos+n) == pattern.   
-    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
-    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    ///   - 0, if s1[pos:pos+n) == s2;
+    ///   - Negative integer, if s1pos:pos+n) < s2;
+    ///   - Positive integer, if s1[pos:pos+n) > s2.
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static int Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const CTempString pattern, ECase use_case = eCase);
+    static int Compare(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                       const CTempString s2, ECase use_case = eCase);
 
     /// Compare two strings -- char* version.
     ///
@@ -1403,15 +1398,14 @@ public:
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2.
+    ///   - Negative integer, if s1 < s2.
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
     ///   types: char* vs. CTempString[Ex]
     static int Compare(const char* s1, const char* s2,
                        ECase use_case = eCase);
-
 
     /// Compare two strings -- CTempStringEx version.
     ///
@@ -1423,52 +1417,52 @@ public:
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2;
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
     ///   types: char* vs. CTempString[Ex]
     static int Compare(const CTempStringEx s1, const CTempStringEx s2,
                        ECase use_case = eCase);
 
-    /// Case-sensitive equality of a substring with a pattern.
+    /// Case-sensitive equality of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern (char*) to be compared with substring.
+    /// @param s2
+    ///   String (char*) to be compared with substring.
     /// @return
-    ///   - true, if str[pos:pos+n) equals pattern.   
+    ///   - true, if s1[pos:pos+n) equals s2;
     ///   - false, otherwise
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static bool EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                          const char* pattern);
+    static bool EqualCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                          const char* s2);
 
-    /// Case-sensitive equality of a substring with a pattern.
+    /// Case-sensitive equality of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern to be compared with substring.
+    /// @param s2
+    ///   String to be compared with substring.
     /// @return
-    ///   - true, if str[pos:pos+n) equals pattern.   
+    ///   - true, if s1[pos:pos+n) equals s2;
     ///   - false, otherwise
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static bool EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                          const CTempString pattern);
+    static bool EqualCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                          const CTempString s2);
 
     /// Case-sensitive equality of two strings -- char* version.
     ///
@@ -1496,43 +1490,43 @@ public:
     ///   EqualCase(), Equal() versions with same argument types.
     static bool EqualCase(const CTempStringEx s1, const CTempStringEx s2);
 
-    /// Case-insensitive equality of a substring with a pattern.
+    /// Case-insensitive equality of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern (char*) to be compared with substring.
+    /// @param s2
+    ///   String (char*) to be compared with substring.
     /// @return
-    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).
+    ///   - true, if s1[pos:pos+n) equals s2 (case-insensitive compare);
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]
-    static bool EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                            const char* pattern);
+    static bool EqualNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                            const char* s2);
 
-    /// Case-insensitive equality of a substring with a pattern.
+    /// Case-insensitive equality of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern to be compared with substring.
+    /// @param s2
+    ///   String to be compared with substring.
     /// @return
-    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).
+    ///   - true, if s1[pos:pos+n) equals s2 (case-insensitive compare);
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]
-    static bool EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                            const CTempString pattern);
+    static bool EqualNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                            const CTempString s2);
 
     /// Case-insensitive equality of two strings -- char* version.
     ///
@@ -1541,7 +1535,7 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - true, if s1 equals s2 (case-insensitive compare).      
+    ///   - true, if s1 equals s2 (case-insensitive compare);
     ///   - false, otherwise.
     /// @sa
     ///   EqualCase(), Equal() versions with same argument types.
@@ -1554,56 +1548,56 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - true, if s1 equals s2 (case-insensitive compare).      
+    ///   - true, if s1 equals s2 (case-insensitive compare);
     ///   - false, otherwise.
     /// @sa
     ///   EqualCase(), Equal() versions with same argument types.
     static bool EqualNocase(const CTempStringEx s1, const CTempStringEx s2);
 
-    /// Test for equality of a substring with a pattern.
+    /// Test for equality of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern (char*) to be compared with substring.
+    /// @param s2
+    ///   String (char*) to be compared with substring.
     /// @param use_case
     ///   Whether to do a case sensitive compare(eCase -- default), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - true, if str[pos:pos+n) equals pattern.   
+    ///   - true, if s1[pos:pos+n) equals s2;
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static bool Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const char* pattern, ECase use_case = eCase);
+    static bool Equal(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                      const char* s2, ECase use_case = eCase);
 
-    /// Test for equality of a substring with a pattern.
+    /// Test for equality of a substring with another string.
     ///
-    /// @param str
+    /// @param s1
     ///   String containing the substring to be compared.
     /// @param pos
     ///   Start position of substring to be compared.
     /// @param n
     ///   Number of characters in substring to be compared.
-    /// @param pattern
-    ///   String pattern to be compared with substring.
+    /// @param s2
+    ///   String to be compared with substring.
     /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - 0, if str[pos:pos+n) == pattern.   
-    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
-    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    ///   - 0, if s1[pos:pos+n) == s2;
+    ///   - Negative integer, if s1[pos:pos+n) < s2;
+    ///   - Positive integer, if s1[pos:pos+n) > s2.
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
     ///   types: char* vs. CTempString[Ex]
-    static bool Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const CTempString pattern, ECase use_case = eCase);
+    static bool Equal(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                      const CTempString s2, ECase use_case = eCase);
 
     /// Test for equality of two strings -- char* version.
     ///
@@ -1612,12 +1606,12 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2;
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   EqualNocase(), Equal() versions with similar argument types.
     static bool Equal(const char* s1, const char* s2,
@@ -1630,10 +1624,10 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase).
     /// @return
-    ///   - true, if s1 equals s2.   
+    ///   - true, if s1 equals s2;
     ///   - false, otherwise.
     /// @sa
     ///   EqualNocase(), Equal() versions with similar argument types.
@@ -1650,9 +1644,9 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2;
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   strncmp(), strcasecmp(), strncasecmp()
     static int strcmp(const char* s1, const char* s2);
@@ -1666,9 +1660,9 @@ public:
     /// @param n
     ///   Number of characters in string 
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2;
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   strcmp(), strcasecmp(), strncasecmp()
     static int strncmp(const char* s1, const char* s2, size_t n);
@@ -1680,9 +1674,9 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2;
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   strcmp(), strncmp(), strncasecmp()
     static int strcasecmp(const char* s1, const char* s2);
@@ -1695,9 +1689,9 @@ public:
     /// @param s2
     ///   String to be compared -- operand 2.
     /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
+    ///   - 0, if s1 == s2;
+    ///   - Negative integer, if s1 < s2.
+    ///   - Positive integer, if s1 > s2.
     /// @sa
     ///   strcmp(), strcasecmp(), strcasecmp()
     static int strncasecmp(const char* s1, const char* s2, size_t n);
@@ -5063,19 +5057,19 @@ int NStr::CompareNocase(const char* s1, const char* s2)
 }
 
 inline
-int NStr::Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const char* pattern, ECase use_case)
+int NStr::Compare(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                  const char* s2, ECase use_case)
 {
-    return use_case == eCase ? CompareCase(str.substr(pos, n), pattern)
-                             : CompareNocase(str.substr(pos, n), pattern);
+    return use_case == eCase ? CompareCase(s1.substr(pos, n), s2)
+                             : CompareNocase(s1.substr(pos, n), s2);
 }
 
 inline
-int NStr::Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const CTempString pattern, ECase use_case)
+int NStr::Compare(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                  const CTempString s2, ECase use_case)
 {
-    return use_case == eCase ? CompareCase(str.substr(pos, n), pattern)
-                             : CompareNocase(str.substr(pos, n), pattern);
+    return use_case == eCase ? CompareCase(s1.substr(pos, n), s2)
+                             : CompareNocase(s1.substr(pos, n), s2);
 }
 
 inline
@@ -5091,17 +5085,15 @@ int NStr::Compare(const CTempStringEx s1, const CTempStringEx s2, ECase use_case
 }
 
 inline
-bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                     const char* pattern)
+bool NStr::EqualCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n, const char* s2)
 {
-    return str.substr(pos, n) == pattern;
+    return s1.substr(pos, n) == s2;
 }
 
 inline
-bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                     const CTempString pattern)
+bool NStr::EqualCase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n, const CTempString s2)
 {
-    return str.substr(pos, n) == pattern;
+    return s1.substr(pos, n) == s2;
 }
 
 inline
@@ -5121,17 +5113,15 @@ bool NStr::EqualCase(const CTempStringEx s1, const CTempStringEx s2)
 }
 
 inline
-bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const char* pattern)
+bool NStr::EqualNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n, const char* s2)
 {
-    return CompareNocase(str.substr(pos, n), pattern) == 0;
+    return CompareNocase(s1.substr(pos, n), s2) == 0;
 }
 
 inline
-bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const CTempString pattern)
+bool NStr::EqualNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n, const CTempString s2)
 {
-    return CompareNocase(str.substr(pos, n), pattern) == 0;
+    return CompareNocase(s1.substr(pos, n), s2) == 0;
 }
 
 inline
@@ -5154,19 +5144,19 @@ bool NStr::EqualNocase(const CTempStringEx s1, const CTempStringEx s2)
 }
 
 inline
-bool NStr::Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                 const char* pattern, ECase use_case)
+bool NStr::Equal(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                 const char* s2, ECase use_case)
 {
-    return use_case == eCase ? EqualCase(str.substr(pos, n), pattern) 
-                             : EqualNocase(str.substr(pos, n), pattern);
+    return use_case == eCase ? EqualCase(s1.substr(pos, n), s2) 
+                             : EqualNocase(s1.substr(pos, n), s2);
 }
 
 inline
-bool NStr::Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
-                 const CTempString pattern, ECase use_case)
+bool NStr::Equal(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
+                 const CTempString s2, ECase use_case)
 {
-    return use_case == eCase ? EqualCase(str.substr(pos, n), pattern)
-                             : EqualNocase(str.substr(pos, n), pattern);
+    return use_case == eCase ? EqualCase(s1.substr(pos, n), s2)
+                             : EqualNocase(s1.substr(pos, n), s2);
 }
 
 inline
