@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include <map>
+#include <sstream>
 #include <functional>
 
 #include <objects/seqset/Bioseq_set.hpp>
@@ -711,7 +712,7 @@ static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
 
         if (!ids.empty() && ids != cur_ids) {
 
-            CNcbiOstrstream msg;
+            stringstream msg;
             msg << "Submission supplied " << tag << " values do not match the ones provided in command line: \"" << NStr::Join(cur_ids, ",") << "\" vs \"" << NStr::Join(ids, ",") << ends;
             if (GetParams().IsDblinkOverride()) {
                 ERR_POST_EX(ERR_DBLINK, err_code_mismatch, Warning << msg.str() << "\". Using values from the command line.");
@@ -751,7 +752,7 @@ static CUser_object* GetDBLinkFromIdMasterBioseq(CRef<CSeq_entry>& bioseq)
 
 static void ReportLackOfDBLinkData(const string& tag, const string& val, bool& reject)
 {
-    CNcbiOstrstream msg;
+    stringstream msg;
     msg << "The DBLink User-object content from the files being processed lacks \"" << tag << ":" << val << "\" link that is present in the current WGS-Master for this WGS project. " << ends;
 
     if (GetParams().IsDblinkOverride()) {
@@ -772,7 +773,7 @@ static void ReportLackOfDBLinkDataAll(const string& tag, const CUser_field::C_Da
 
 static void ReportNewDBLinkData(const string& tag, const string& val, bool& reject)
 {
-    CNcbiOstrstream msg;
+    stringstream msg;
     msg << "The DBLink User-object content from the files being processed contains new link \"" << tag << ":" << val << "\", not present in the current WGS-Master for this WGS project. " << ends;
 
     if (GetParams().IsDblinkOverride()) {
@@ -908,7 +909,7 @@ static void CheckMasterDblink(CMasterInfo& info)
 
 static string GetAccessionValue(size_t val_len, int val)
 {
-    CNcbiOstrstream sstream;
+    stringstream sstream;
     sstream << setfill('0') << setw(2) << GetParams().GetAssemblyVersion() << setw(val_len) << val << ends;
     return sstream.str();
 }

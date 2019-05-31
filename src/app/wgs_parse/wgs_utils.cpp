@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <sstream>
+
 #include <corelib/ncbistr.hpp>
 #include <objmgr/scope.hpp>
 
@@ -404,7 +406,7 @@ bool IsUserObjectOfType(const CSeqdesc& descr, const string& type)
 
 string ToString(const CSerialObject& obj)
 {
-    CNcbiOstrstream stream;
+    ostringstream stream;
     stream << MSerial_AsnText << obj << ends;
 
     return stream.str();
