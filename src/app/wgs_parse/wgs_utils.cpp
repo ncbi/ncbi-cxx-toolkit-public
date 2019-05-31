@@ -409,7 +409,7 @@ string ToString(const CSerialObject& obj)
     ostringstream stream;
     stream << MSerial_AsnText << obj << ends;
 
-    return stream.str();
+    return stream.str().c_str();
 }
 
 string ToStringKey(const CSerialObject& obj)

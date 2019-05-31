@@ -712,14 +712,14 @@ static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
 
         if (!ids.empty() && ids != cur_ids) {
 
-            stringstream msg;
+            ostringstream msg;
             msg << "Submission supplied " << tag << " values do not match the ones provided in command line: \"" << NStr::Join(cur_ids, ",") << "\" vs \"" << NStr::Join(ids, ",") << ends;
             if (GetParams().IsDblinkOverride()) {
-                ERR_POST_EX(ERR_DBLINK, err_code_mismatch, Warning << msg.str() << "\". Using values from the command line.");
+                ERR_POST_EX(ERR_DBLINK, err_code_mismatch, Warning << msg.str().c_str() << "\". Using values from the command line.");
             }
             else {
                 reject = true;
-                ERR_POST_EX(ERR_DBLINK, err_code_mismatch, Critical << msg.str() << "\". Rejecting the whole project.");
+                ERR_POST_EX(ERR_DBLINK, err_code_mismatch, Critical << msg.str().c_str() << "\". Rejecting the whole project.");
             }
 
             ReplaceFieldInDBLink(ids, tag, *user_obj);
@@ -752,15 +752,15 @@ static CUser_object* GetDBLinkFromIdMasterBioseq(CRef<CSeq_entry>& bioseq)
 
 static void ReportLackOfDBLinkData(const string& tag, const string& val, bool& reject)
 {
-    stringstream msg;
+    ostringstream msg;
     msg << "The DBLink User-object content from the files being processed lacks \"" << tag << ":" << val << "\" link that is present in the current WGS-Master for this WGS project. " << ends;
 
     if (GetParams().IsDblinkOverride()) {
-        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Warning << msg.str() << "Using DBLink from the input data.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Warning << msg.str().c_str() << "Using DBLink from the input data.");
     }
     else {
         reject = true;
-        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Critical << msg.str() << "Rejecting the whole project.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Critical << msg.str().c_str() << "Rejecting the whole project.");
     }
 }
 
@@ -773,15 +773,15 @@ static void ReportLackOfDBLinkDataAll(const string& tag, const CUser_field::C_Da
 
 static void ReportNewDBLinkData(const string& tag, const string& val, bool& reject)
 {
-    stringstream msg;
+    ostringstream msg;
     msg << "The DBLink User-object content from the files being processed contains new link \"" << tag << ":" << val << "\", not present in the current WGS-Master for this WGS project. " << ends;
 
     if (GetParams().IsDblinkOverride()) {
-        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkForMaster, Warning << msg.str() << "Using DBLink from the input data.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkForMaster, Warning << msg.str().c_str() << "Using DBLink from the input data.");
     }
     else {
         reject = true;
-        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkForMaster, Critical << msg.str() << "Rejecting the whole project.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkForMaster, Critical << msg.str().c_str() << "Rejecting the whole project.");
     }
 }
 
@@ -909,9 +909,9 @@ static void CheckMasterDblink(CMasterInfo& info)
 
 static string GetAccessionValue(size_t val_len, int val)
 {
-    stringstream sstream;
+    ostringstream sstream;
     sstream << setfill('0') << setw(2) << GetParams().GetAssemblyVersion() << setw(val_len) << val << ends;
-    return sstream.str();
+    return sstream.str().c_str();
 }
 
 static const size_t LENGTH_NOT_SET = -1;
@@ -927,15 +927,15 @@ static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_le
     CRef<CSeq_id> ret;
     if (accession_len != max_accession_len) {
 
-        CNcbiStrstream msg;
+        ostringstream msg;
         msg << "Incorrect format for accessions, given the total number of contigs in the project: \"N+2+" << accession_len << "\" was used, but only \"N+2+" << max_accession_len << "\" is needed." << ends;
 
         if (GetParams().GetSource() == eNCBI) {
-            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_WrongLength, Critical << msg.str());
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_WrongLength, Critical << msg.str().c_str());
             return ret;
         }
 
-        ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_WrongLength, Info << msg.str());
+        ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_WrongLength, Info << msg.str().c_str());
     }
 
     string id_num(accession_len + 2, '0');
