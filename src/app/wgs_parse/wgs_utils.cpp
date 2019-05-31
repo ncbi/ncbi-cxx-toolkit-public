@@ -418,6 +418,7 @@ string ToStringKey(const CSerialObject& obj)
 
     ret.erase(remove_if(ret.begin(), ret.end(), [](char& c) { return c == ' '; }), ret.end());
     ret.erase(remove_if(ret.begin(), ret.end(), [](char& c) { return c == '\n'; }), ret.end());
+    ret.erase(remove_if(ret.begin(), ret.end(), [](char& c) { return c == '\r'; }), ret.end());
 
     return ret;
 }
