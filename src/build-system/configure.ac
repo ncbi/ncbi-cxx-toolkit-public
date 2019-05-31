@@ -8197,18 +8197,8 @@ else
    in_path=
 fi
 CPPFLAGS="$orig_CPPFLAGS $MSGSL_INCLUDE"
-AC_CACHE_CHECK([for the Guideline Support Library$in_path],
-   ncbi_cv_lib_msgsl,
-   [AC_COMPILE_IFELSE(
-       [AC_LANG_PROGRAM([[#include <gsl/gsl>]],
-           [[int i;  gsl::not_null<int*> p{&i};]])],
-       ncbi_cv_lib_msgsl=yes, ncbi_cv_lib_msgsl=no)])
-if test $ncbi_cv_lib_msgsl = yes; then
-   NCBI_PACKAGE(MSGSL)
-else
-   MSGSL_INCLUDE=
-   NCBI_MISSING_PACKAGE(msgsl)
-fi
+AC_CHECK_HEADERS([gsl/gsl], [NCBI_PACKAGE(MSGSL)],
+   [MSGSL_INCLUDE=; NCBI_MISSING_PACKAGE(msgsl)])
 
 case "$with_aws_sdk" in
    yes | no | '' ) ;;

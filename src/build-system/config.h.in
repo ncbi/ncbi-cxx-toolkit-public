@@ -258,6 +258,9 @@
 /* Define to 1 if you have the `gnutls_rnd' function. */
 #undef HAVE_GNUTLS_RND
 
+/* Define to 1 if you have the <gsl/gsl> header file. */
+#undef HAVE_GSL_GSL
+
 /* Define to 1 if ICU libraries are available. */
 #undef HAVE_ICU
 
