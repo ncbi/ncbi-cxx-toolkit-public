@@ -55,7 +55,7 @@ PORT=${PORTCFG:=2180}
 
 # full_url="http://nctest21:2180/${url}"
 full_url="http://localhost:${PORT}/${url}"
-if [[ $url == ADMIN* ]]; then
+if [[ $url == ADMIN* ]] && [[ $obasename != admin_ack_alert* ]]; then
     curl -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | ${cdir}/printable_string -z > $ofile
     exit 0
 fi
