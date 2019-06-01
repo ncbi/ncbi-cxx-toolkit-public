@@ -50,7 +50,6 @@
 BEGIN_NCBI_SCOPE
 
 
-
 CConn_IOStream::CConn_IOStream(const TConnector& connector,
                                const STimeout* timeout,
                                size_t buf_size, TConn_Flags flgs,
