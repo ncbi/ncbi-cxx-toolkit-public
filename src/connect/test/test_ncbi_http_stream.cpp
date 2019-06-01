@@ -108,15 +108,6 @@ CNCBITestHttpStreamApp::CNCBITestHttpStreamApp(void)
 
 void CNCBITestHttpStreamApp::Init(void)
 {
-    // Ctrl-C handling
-#  if   defined(NCBI_OS_MSWIN)
-    SetConsoleCtrlHandler(s_Interrupt, TRUE);
-#  elif defined(NCBI_OS_UNIX)
-    signal(SIGINT,  s_Interrupt);
-    signal(SIGTERM, s_Interrupt);
-    signal(SIGQUIT, s_Interrupt);
-#  endif // NCBI_OS
-
     // Usage setup
     unique_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist ("h"))
@@ -167,6 +158,7 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
+    // Ctrl-C handling
 #if   defined(NCBI_OS_MSWIN)
     SetConsoleCtrlHandler(s_Interrupt, TRUE);
     static char buf[4096];
@@ -174,9 +166,9 @@ int main(int argc, const char* argv[])
     cerr.unsetf(ios_base::unitbuf);
 #elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
-    signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
+    SOCK_SetInterruptOnSignalAPI(eOn);
 
     return CNCBITestHttpStreamApp().AppMain(argc, argv, 0, eDS_User);
 }

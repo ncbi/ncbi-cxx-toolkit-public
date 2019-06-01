@@ -48,6 +48,7 @@
 #include <stdlib.h>
 #include <time.h>
 #ifdef NCBI_OS_UNIX
+#  include <signal.h>
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
 #ifdef HAVE_LIBGNUTLS
@@ -284,6 +285,14 @@ static int xstrcasecmp(const char* s1, const char* s2)
 }
 
 
+#ifdef NCBI_OS_UNIX
+/*ARGSUSED*/
+static void s_Interrupt(int signo)
+{
+}
+#endif /*NCBI_OS_UNIX*/
+
+
 int main(int argc, char* argv[])
 {
 #ifdef HAVE_LIBGNUTLS
@@ -303,6 +312,11 @@ int main(int argc, char* argv[])
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+
+#ifdef NCBI_OS_UNIX
+    signal(SIGINT, s_Interrupt);
+#endif /*NCBI_OS_UNIX*/
+    SOCK_SetInterruptOnSignalAPI(eOn);
 
     if (argc < 2  ||  !*argv[1])
         CORE_LOG(eLOG_Fatal, "URL has to be supplied on the command line");

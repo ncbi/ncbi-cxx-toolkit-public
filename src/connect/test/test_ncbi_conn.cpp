@@ -275,7 +275,6 @@ int main(int argc, const char* argv[])
     SetConsoleCtrlHandler(s_Interrupt, TRUE);
 #elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
-    signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
 

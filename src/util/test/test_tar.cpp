@@ -176,9 +176,9 @@ void CTarTest::Init(void)
     SetConsoleCtrlHandler(s_Interrupt, TRUE);
 #  elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
-    signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #  endif // NCBI_OS
+    SOCK_SetInterruptOnSignalAPI(eOn);
 #endif // TEST_CONN_TAR
 
     unique_ptr<CArgDescriptions> args(new CArgDescriptions);
@@ -459,7 +459,6 @@ int CTarTest::Run(void)
     CCanceled canceled;
     unique_ptr<CConn_IOStream> conn;
     if (NStr::Find(CTempString(file, 3/*pos*/, 5/*len*/), "://") != NPOS) {
-        SOCK_SetInterruptOnSignalAPI(eOn);
         if (action == eList  ||  action == eExtract  ||  action == eTest
             ||  (pipethru  &&  action != eCreate)) {
             conn.reset(NcbiOpenURL(file));

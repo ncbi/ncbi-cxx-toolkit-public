@@ -594,17 +594,6 @@ CTestFTPDownloadApp::CTestFTPDownloadApp(void)
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
-
-    // Setup signal handling
-#if   defined(NCBI_OS_MSWIN)
-    SetConsoleCtrlHandler(s_Interrupt, TRUE);
-#elif defined(NCBI_OS_UNIX)
-    signal(SIGINT,  s_Interrupt);
-    signal(SIGTERM, s_Interrupt);
-    signal(SIGQUIT, s_Interrupt);
-#endif // NCBI_OS
-
-    CSocketAPI::SetInterruptOnSignal(eOn);
 }
 
 
@@ -849,5 +838,14 @@ int CTestFTPDownloadApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    // Setup signal handling
+#if   defined(NCBI_OS_MSWIN)
+    SetConsoleCtrlHandler(s_Interrupt, TRUE);
+#elif defined(NCBI_OS_UNIX)
+    signal(SIGINT,  s_Interrupt);
+    signal(SIGQUIT, s_Interrupt);
+#endif // NCBI_OS
+    CSocketAPI::SetInterruptOnSignal(eOn);
+
     return CTestFTPDownloadApp().AppMain(argc, argv);
 }
