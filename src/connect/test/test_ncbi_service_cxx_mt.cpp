@@ -35,7 +35,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/test_mt.hpp>
 
-#include <connect/ncbi_service_cxx.hpp>
+#include <connect/ncbi_service.hpp>
 
 #include "test_assert.h"  // This header must go last
 

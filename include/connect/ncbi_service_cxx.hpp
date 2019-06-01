@@ -26,85 +26,17 @@
  *
  * ===========================================================================
  *
- * Author:  David McElhany
+ * Author:  Anton Lavrentiev
  *
  * File description:
  * @file ncbi_service_cxx.hpp
- *   C++-only API for named network services.
+ *   Backward-compatible orwarding header for <connectncbi_service.hpp>
+ *
+ *   @warning Use <connect/ncbi_service.hpp> directly instead!
  *
  */
 
-#include <string>
-#include <vector>
+#include <connect/ncbi_service.hpp>
 
-#include <corelib/ncbistl.hpp>
-
-#include <connect/ncbi_server_info.h>
-#include <connect/ncbi_service.h>
-
-
-/** @addtogroup UtilityFunc
- *
- * @{
- */
-
-
-BEGIN_NCBI_SCOPE
-
-
-/// Service mapper types.
-///
-enum ESERV_Mapper {
-    fSERV_Local     = 0x01,
-    fSERV_Lbsmd     = 0x02,
-    fSERV_Dispd     = 0x04,
-    fSERV_Namerd    = 0x08,
-    fSERV_Linkerd   = 0x10
-};
-typedef unsigned int   TSERV_Mapper;    ///< Bitwise OR of ESERV_Mapper
-
-
-/// Attributes of a given service.
-///
-class NCBI_XCONNECT_EXPORT CSERV_Info {
-public:
-    CSERV_Info(const string& host, unsigned int port, double rate, ESERV_Type type) :
-        m_Host(host), m_Port(port), m_Rate(rate), m_Type(type)
-    {
-    }
-
-    string          GetHost(void) const { return m_Host; }
-    unsigned int    GetPort(void) const { return m_Port; }
-    double          GetRate(void) const { return m_Rate; }
-    ESERV_Type      GetType(void) const { return m_Type; }
-
-private:
-    string          m_Host;
-    unsigned int    m_Port;
-    double          m_Rate;
-    ESERV_Type      m_Type;
-};
-
-
-/// Get the servers for a given service
-///
-/// @param[in] service
-///  Service name
-/// @param[in] types
-///  Which service types to check
-/// @param[in] mapper_types
-///  Which mapper(s) to use
-/// @return
-///  List of servers (ordered according to their rates)
-extern NCBI_XCONNECT_EXPORT
-vector<CSERV_Info> SERV_GetServers(const string& service,
-                                   TSERV_Type    types    = fSERV_Http,
-                                   TSERV_Mapper  mappers  = fSERV_Namerd);
-
-
-END_NCBI_SCOPE
-
-
-/* @} */
 
 #endif  // CONNECT___NCBI_SERVICE_CXX__HPP

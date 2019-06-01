@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_service_cxx.hpp>
+#include <connect/ncbi_service.hpp>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbidiag.hpp>
