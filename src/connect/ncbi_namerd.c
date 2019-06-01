@@ -1130,7 +1130,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             CORE_TRACEF(
                 ("Parsing server description: '%s'", server_description));
             SSERV_Info* info = SERV_ReadInfoEx(server_description,
-                iter->name, 0);
+                iter->ismask  ||  iter->reverse_dns ? iter->name : "", 0);
             /*CORE_TRACEF(
                 ("Parsed server description; expires=%u", info->time));*/
 
