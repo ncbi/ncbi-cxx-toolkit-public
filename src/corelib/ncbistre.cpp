@@ -215,7 +215,7 @@ CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str, SIZE_TYPE* count)
 
 bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 {
-    if (!os.good())
+    if (!os.good()  ||  is.bad())
         return false;
 #ifndef NCBI_COMPILER_GCC
     if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {

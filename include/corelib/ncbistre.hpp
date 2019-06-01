@@ -461,7 +461,7 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str,
 /// with all of its _available_ contents (including none) written to "os";
 /// "false" if either extraction from "is" or insertion into "os" failed.
 ///
-/// Note that input ("is") stream state is not always asserted accurately, in
+/// Note that input ("is") stream state is not always asserted accurately:  in
 /// particular, upon successful completion "is.eof()" may not necessarily be
 /// true.  The call may throw exceptions only if they are enabled on the
 /// respective stream(s).
@@ -471,13 +471,13 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str,
 /// which severely lacks error checking (esp. for partial write failures).
 ///
 /// NOTE that the call (as well as the mentioned STL counterpart) provides
-/// only a mechanism of delivering data to the destination "os" stream(buf);
-/// and the successful return result does not generally guarantee that the
-/// data have yet reached the physical destination.  Other "os"-specific API
-/// must be performed to assure the data integrity at the receiving device;
-/// such as checking for errors after doing a "close()" on an ofstream "os".
-/// E.g. data uploading into the Toolkit FTP stream must be finalized with a
-/// read for the byte count delivered;  otherwise, it may not work correctly.
+/// only a mechanism of delivering data to the destination stream(buf) "os";
+/// and a successful return result does not generally guarantee that the data
+/// have yet reached the physical destination.  Other "os"-specific API must be
+/// performed to assure the data integrity at the receiving device:  such as
+/// checking for errors after doing a "close()" on an ofstream "os".  E.g. data
+/// uploading into the Toolkit FTP stream must be finalized with a read for the
+/// byte count delivered;  otherwise, it may not work correctly.
 /// @sa
 ///   CConn_IOStream
 NCBI_XNCBI_EXPORT
