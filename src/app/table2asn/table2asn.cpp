@@ -138,10 +138,11 @@ private:
     static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
     void Setup(const CArgs& args);
 
-    void ProcessOneFile();
+    void ProcessOneFile(bool isAlignment=false);
     void ProcessOneFile(CRef<CSerialObject>& result);
-    void ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
+    void ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
+    void ProcessAlignmentFile(const string& filename);
     void ProcessSecretFiles1Phase(CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
@@ -154,13 +155,14 @@ private:
 
     CRef<CScope> GetScope(void);
 
-    auto_ptr<CMultiReader> m_reader;
+    unique_ptr<CMultiReader> m_reader;
     CRef<CSeq_entry> m_replacement_proteins;
     CRef<CSeq_entry> m_possible_proteins;
     CRef<CTable2AsnValidator> m_validator;
     CRef<CTable2AsnLogger> m_logger;
     auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
     CTable2AsnContext    m_context;
+    bool m_IsAlignment = false;
 };
 
 CTbl2AsnApp::CTbl2AsnApp(void)
@@ -191,6 +193,10 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey
         ("i", "InFile", "Single Input File",
         CArgDescriptions::eInputFile);
+
+    arg_desc->AddOptionalKey
+        ("aln-file", "AlnFile", "Input alignment file",
+         CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey(
         "o", "OutFile", "Single Output File",
@@ -689,6 +695,7 @@ int CTbl2AsnApp::Run(void)
             "Error loading descriptors file")));
     }
 
+    m_IsAlignment = false;
     if (m_logger->Count() == 0)
     try
     {
@@ -717,6 +724,13 @@ int CTbl2AsnApp::Run(void)
                 ProcessOneDirectory(directory, masks, args["E"].AsBoolean());
             }
         }
+        else
+        if (args["aln-file"]) {
+            m_context.m_current_file = args["aln-file"].AsString();
+            const bool isAlignment = true;
+            ProcessOneFile(isAlignment);
+        }
+
         if (m_validator->TotalErrors() > 0)
         {
             m_validator->ReportErrorStats(m_context.GetOstream(".stats", m_context.m_base_name));
@@ -782,7 +796,7 @@ CRef<CScope> CTbl2AsnApp::GetScope(void)
     return m_context.m_scope;
 }
 
-void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObject> obj, CRef<CSerialObject>& result)
+void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
@@ -790,7 +804,6 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
     m_reader->GetSeqEntry(entry, submit, obj);
    
     bool avoid_submit_block = false;
-    bool do_dates = false;
 
     if (m_fcs_reader.get())
     {
@@ -803,15 +816,6 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
         m_context.SetSeqId(*entry);
     }
 
-    switch (format)
-    {
-    case CFormatGuess::eTextASN:
-    case CFormatGuess::eBinaryASN:
-        do_dates = true;
-        break;
-    default:
-        break;
-    }
 
     m_context.ApplyAccession(*entry);
 
@@ -886,7 +890,7 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
         fr.ConvertNucSetToSet(entry);
     }
 
-    if (do_dates)
+    if (updateDates)
     {
         // if create-date exists apply update date
         m_context.ApplyCreateUpdateDates(*entry);
@@ -902,7 +906,8 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
     else
         result = m_context.CreateSubmitFromTemplate(entry, submit);
 
-    CSerialObject& submit_or_entry = submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit;
+ //   CSerialObject& submit_or_entry = submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit;
+
 
     //m_context.MakeGenomeCenterId(*entry);
 
@@ -924,7 +929,8 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
 
     if (m_context.m_RemotePubLookup)
     {
-        m_context.m_remote_updater->UpdatePubReferences(submit_or_entry);
+        //m_context.m_remote_updater->UpdatePubReferences(submit_or_entry);
+        m_context.m_remote_updater->UpdatePubReferences(*obj);
     }
     if (m_context.m_postprocess_pubs)
     {
@@ -960,7 +966,7 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
 
         if (m_context.m_discrepancy)
         {
-            m_validator->CollectDiscrepancies(submit_or_entry, m_context.m_disc_eucariote, m_context.m_disc_lineage);
+            m_validator->CollectDiscrepancies(*obj, m_context.m_disc_eucariote, m_context.m_disc_lineage);
         }
 
         if (m_context.m_make_flatfile)
@@ -979,7 +985,7 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
     }
 }
 
-void CTbl2AsnApp::ProcessOneFile()
+void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 {
     if (m_context.m_split_log_files)
         m_context.m_logger->ClearAll();
@@ -1007,47 +1013,52 @@ void CTbl2AsnApp::ProcessOneFile()
 
     try
     {
-        CRef<CSerialObject> input_obj;
 
         //m_context.ReleaseOutputs();
 
-        CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
-        do
-        {
-            m_context.m_scope->ResetDataAndHistory();
-            CRef<CSerialObject> result;
-            ProcessOneEntry(format, input_obj, result);
-
-            if (!IsDryRun() && result.NotEmpty())
+        if (isAlignment) {
+            ProcessAlignmentFile(m_context.m_current_file);
+        }
+        else {
+            CRef<CSerialObject> input_obj;
+            CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
+            do
             {
-                const CSerialObject* to_write = result;
-                if (m_context.m_save_bioseq_set)
+                m_context.m_scope->ResetDataAndHistory();
+                CRef<CSerialObject> result;
+                const bool updateDates = 
+                    (format == CFormatGuess::eTextASN ||
+                     format == CFormatGuess::eBinaryASN);
+                ProcessOneEntry(updateDates, input_obj, result);
+
+                if (!IsDryRun() && result.NotEmpty())
                 {
-                    if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+                    const CSerialObject* to_write = result;
+                    if (m_context.m_save_bioseq_set)
                     {
-                        const CSeq_entry* se = (const CSeq_entry*)result.GetPointer();
-                        if (se->IsSet())
-                            to_write = &se->GetSet();
+                        if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+                        {
+                            const CSeq_entry* se = (const CSeq_entry*)result.GetPointer();
+                            if (se->IsSet())
+                                to_write = &se->GetSet();
+                        }
                     }
-                }
 
-                if (m_context.m_output == 0)
-                {
-                    if (output == 0) {
-                        local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
-                        output = new CNcbiOfstream(local_file.GetPath().c_str());
+
+                    if (!output) {
+                        if (m_context.m_output) {
+                            output = m_context.m_output;
+                        }
+                        else  {
+                            local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
+                            output = new CNcbiOfstream(local_file.GetPath().c_str());
+                        }
                     }
+                    m_reader->WriteObject(*to_write, *output);
                 }
-                else
-                {
-                    output = m_context.m_output;
-                }
-
-                m_reader->WriteObject(*to_write, *output);
-            }
-            input_obj = m_reader->ReadNextEntry();
-        } while (input_obj.NotEmpty());
-
+                input_obj = m_reader->ReadNextEntry();
+            } while (input_obj.NotEmpty());
+        } // !isAlignment
 
         if (!log_name.GetPath().empty())
         {
@@ -1063,11 +1074,60 @@ void CTbl2AsnApp::ProcessOneFile()
 
         if (m_context.m_output == 0) 
         {
-            delete output;
+            if (output) {
+                delete output;
+            }
             local_file.Remove();
         }
         output = 0;
 
+        throw;
+    }
+}
+
+
+void CTbl2AsnApp::ProcessAlignmentFile(const string& filename)
+{
+    CRef<CSeq_entry> pEntry = m_reader->ReadAlignment(filename);
+    pEntry->Parentize();
+    m_context.MergeWithTemplate(*pEntry);
+
+    CRef<CSerialObject> pResult;
+    const bool updateDates = false;
+    ProcessOneEntry(updateDates, pEntry, pResult);
+
+
+    if (IsDryRun() || !pResult) {
+        return;
+    }
+
+    CNcbiOstream* pOstream = nullptr;
+    unique_ptr<CNcbiOstream> pLocalOstream; 
+    CFile localFile;
+
+    try {
+        if (m_context.m_output) {
+            pOstream = m_context.m_output;
+        }
+        else {
+            localFile = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
+            pLocalOstream.reset(new CNcbiOfstream(localFile.GetPath().c_str()));
+            pOstream = pLocalOstream.get();
+        }
+
+        if (m_context.m_save_bioseq_set && 
+            pResult->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
+
+            const CSeq_entry* pTempEntry = static_cast<const CSeq_entry*>(pResult.GetPointer());
+            if (pTempEntry->IsSet()) {
+                m_reader->WriteObject(pTempEntry->GetSet(), *pOstream);
+                return;
+            }
+        }
+        m_reader->WriteObject(*pResult, *pOstream);
+    }
+    catch (...) {
+        localFile.Remove();
         throw;
     }
 }

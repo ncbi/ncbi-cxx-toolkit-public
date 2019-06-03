@@ -69,6 +69,7 @@
 #include <objects/seq/Annot_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objtools/readers/readfeat.hpp>
+#include <objtools/readers/aln_reader.hpp>
 
 #include <util/format_guess.hpp>
 
@@ -229,6 +230,31 @@ CRef<CSerialObject> CMultiReader::xReadASN1(CObjectIStream& pObjIstrm)
     else
         return submit;
 }
+
+//  ----------------------------------------------------------------------------
+CRef<CSeq_entry>
+CMultiReader::ReadAlignment(const string& filename)
+//  ----------------------------------------------------------------------------
+{
+
+    unique_ptr<istream> pIstream(new CNcbiIfstream(filename.c_str()));
+    CAlnReader reader(*pIstream);
+/*
+    reader.SetAllGap(args["aln-gapchar"].AsString());
+    reader.SetMissing(args["aln-gapchar"].AsString());
+    if (args["aln-alphabet"].AsString() == "nuc") {
+        reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
+    } 
+    else {
+        reader.SetAlphabet(CAlnReader::eAlpha_Protein);
+    }
+    */
+    reader.Read(0, m_context.m_logger);
+    return reader.GetSeqEntry(
+            CAlnReader::fGenerateLocalIDs,
+            m_context.m_logger);
+}
+
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_entry>

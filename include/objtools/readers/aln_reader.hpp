@@ -156,9 +156,6 @@ public:
     // destructor
     virtual ~CAlnReader(void);
 
-    /// Sequence data accessors and modifiers:
-    void          SetIdValidation(const string& idValidationScheme) 
-    { m_IdValidationScheme = idValidationScheme; };
 
     const string& GetAlphabet(void) const;
     string&       SetAlphabet(void);
@@ -267,7 +264,6 @@ private:
     /// A bunch of strings listing characters with various
     /// meanings in an alignment file.
     /// Analogous to SSequenceInfo.
-    string m_IdValidationScheme;
     string m_Alphabet;
     string m_BeginningGap;
     string m_MiddleGap;
