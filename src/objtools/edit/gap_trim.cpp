@@ -51,6 +51,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objtools/edit/cds_fix.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -322,45 +323,12 @@ void CFeatGapInfo::x_AdjustOrigLabel(CSeq_feat& feat, size_t& id_offset, string&
             if (id_label.empty()) {
                 id_label = (*it)->GetVal();
             }
-            (*it)->SetVal(id_label + "_" + NStr::NumericToString(id_offset));
+            if (id_offset != 0)
+                (*it)->SetVal(id_label + "_" + NStr::NumericToString(id_offset));
             id_offset++;
         }
     }
 }
-
-
-CRef<CSeq_id> CFeatGapInfo::x_AdjustProtId(const CDbtag& orig_gen, size_t& id_offset)
-{
-    string id_base;
-    if (!orig_gen.IsSetTag()) {
-        id_base = kEmptyStr;
-    } else if (orig_gen.GetTag().IsId())
-    {
-        id_base = NStr::NumericToString(orig_gen.GetTag().GetId());
-    } else {
-        id_base = orig_gen.GetTag().GetStr();
-    }
-
-    CRef<CSeq_id> new_id(new CSeq_id());
-    new_id->SetGeneral().Assign(orig_gen);
-    new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(id_offset));
-    return new_id;
-}
-
-
-CRef<CSeq_id> CFeatGapInfo::x_AdjustProtId(const CSeq_id& orig, size_t& id_offset)
-{
-    if (orig.IsGeneral()) {
-        return x_AdjustProtId(orig.GetGeneral(), id_offset);
-    } else {
-        string id_base;
-        orig.GetLabel(&id_base, NULL, CSeq_id::eContent);
-        CRef<CSeq_id> new_id(new CSeq_id());
-        new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(id_offset));
-        return new_id;
-    }
-}
-
 
 CRef<CBioseq> CFeatGapInfo::AdjustProteinSeq(const CBioseq& seq, const CSeq_feat& feat, const CSeq_feat& orig_cds, CScope& scope)
 {
@@ -523,7 +491,7 @@ void s_FixPartial(CSeq_feat& feat)
 // if list is empty, feature should be removed
 // list should only contain one element if split is not specified
 // coding regions should be retranslated after split
-vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_partial, bool trim, bool split, bool in_intron)
+vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_partial, bool trim, bool split, bool in_intron, bool create_general_only)
 {
     CRef<objects::CSeq_feat> new_feat(new CSeq_feat);
     new_feat->Assign(*m_Feature.GetOriginalSeq_feat());
@@ -564,11 +532,13 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
             }
 
             // adjust transcript id if splitting
-            size_t transcript_id_offset = 1;
+            size_t transcript_id_offset = 0;
             string transcript_id_label = kEmptyStr;
-            size_t protein_id_offset = 1;
+            size_t protein_id_offset = 0;
             string protein_id_label = kEmptyStr;
-            size_t protein_seqid_offset = 1;
+            int protein_seqid_offset = 0;
+            string protein_seqid_label;
+
 
             ITERATE(vector<CRef<CSeq_loc> >, lit, locs) {
                 CRef<CSeq_feat> split_feat(new CSeq_feat());
@@ -586,17 +556,22 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
                         sequence::eOffset_FromStart, &(m_Feature.GetScope()));
                     x_AdjustFrame(split_feat->SetData().SetCdregion(), frame_adjust);
                     // adjust product ID
-                    if (split_feat->IsSetProduct() && split_feat->GetProduct().IsWhole()) {
-                        CRef<CSeq_id> new_id = x_AdjustProtId(split_feat->GetProduct().GetWhole(), protein_seqid_offset);
-                        protein_seqid_offset++;
-                        CBioseq_Handle bsh = m_Feature.GetScope().GetBioseqHandle(*new_id);
-                        while (bsh) {                            
-                            new_id = x_AdjustProtId(split_feat->GetProduct().GetWhole(), protein_seqid_offset);
-                            protein_seqid_offset++;
-                            bsh = m_Feature.GetScope().GetBioseqHandle(*new_id);
+                    if (split_feat->IsSetProduct() && split_feat->GetProduct().IsWhole() && protein_seqid_offset > 0) {
+                        objects::CBioseq_Handle product = m_Feature.GetScope().GetBioseqHandle(split_feat->GetProduct());
+                        CRef<CSeq_id> new_id;
+                        if (product)
+                        {
+                            vector<CRef<objects::CSeq_id> > new_ids = objects::edit::GetNewProtIdFromExistingProt(product, protein_seqid_offset, protein_seqid_label);
+                            new_id = new_ids.front();
+                        }
+                        else
+                        {
+                            objects::CBioseq_Handle bsh = m_Feature.GetScope().GetBioseqHandle(split_feat->GetLocation());
+                            new_id = objects::edit::GetNewProtId(bsh, protein_seqid_offset, protein_seqid_label, create_general_only);
                         }
                         split_feat->SetProduct().SetWhole().Assign(*new_id);
                     }
+                    protein_seqid_offset++;                       
                 }
                 rval.push_back(split_feat);
             }

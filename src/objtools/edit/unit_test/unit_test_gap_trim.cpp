@@ -118,7 +118,7 @@ void TestTrimMiscOnRight(TSeqPos start, TSeqPos stop, bool is_minus)
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 0);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 11);
@@ -137,7 +137,7 @@ void TestTrimMiscOnLeft(TSeqPos start, TSeqPos stop, bool is_minus)
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 22);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 33);
@@ -156,7 +156,7 @@ void TestSplitMisc(TSeqPos start, TSeqPos stop, bool is_minus)
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 0);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 11);
@@ -179,7 +179,7 @@ void TestRemoveMisc(TSeqPos start, TSeqPos stop, bool is_minus)
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 0);
 }
 
@@ -216,10 +216,10 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoMisc)
 void CheckTags(CSeq_entry_Handle seh, const string& orig_tag, size_t num_updates)
 {
     CFeat_CI f(seh, SAnnotSelector(CSeqFeatData::e_Cdregion));
-    size_t offset = 1;
+    size_t offset = 0;
     while (f) {
         const string& tag = f->GetProduct().GetWhole().GetGeneral().GetTag().GetStr();
-        if (num_updates == 1) {
+        if (num_updates == 1 || offset == 0) {
             BOOST_CHECK_EQUAL(tag, orig_tag);
         } else {
             BOOST_CHECK_EQUAL(tag, orig_tag + "_" + NStr::NumericToString(offset));
@@ -227,13 +227,13 @@ void CheckTags(CSeq_entry_Handle seh, const string& orig_tag, size_t num_updates
         ++f;
         ++offset;
     }
-    BOOST_CHECK_EQUAL(offset - 1, num_updates);
+    BOOST_CHECK_EQUAL(offset, num_updates);
 
     CBioseq_CI prot_i(seh, CSeq_inst::eMol_aa);
-    offset = 1;
+    offset = 0;
     while (prot_i) {
         const string& tag = prot_i->GetId().front().GetSeqId()->GetGeneral().GetTag().GetStr();
-        if (num_updates == 1) {
+        if (num_updates == 1 || offset == 0) {
             BOOST_CHECK_EQUAL(tag, orig_tag);
         } else {
             BOOST_CHECK_EQUAL(tag, orig_tag + "_" + NStr::NumericToString(offset));
@@ -241,7 +241,7 @@ void CheckTags(CSeq_entry_Handle seh, const string& orig_tag, size_t num_updates
         ++prot_i;
         ++offset;
     }
-    BOOST_CHECK_EQUAL(offset - 1, num_updates);
+    BOOST_CHECK_EQUAL(offset, num_updates);
 }
 
 
@@ -330,22 +330,22 @@ void TestSplitCDS(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFram
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), start);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 11);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStart(eExtreme_Positional), false);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStop(eExtreme_Positional), true);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetData().GetCdregion().GetFrame(), frame_one);
-    CheckQual(*(adjusted_feats.front()), "orig_protein_id", "x_1");
-    CheckQual(*(adjusted_feats.front()), "orig_transcript_id", "y_1");
+    CheckQual(*(adjusted_feats.front()), "orig_protein_id", "x");
+    CheckQual(*(adjusted_feats.front()), "orig_transcript_id", "y");
     BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().GetStart(eExtreme_Positional), 11 + gap_len + 1);
     BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().GetStop(eExtreme_Positional), stop);
     BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().IsPartialStart(eExtreme_Positional), true);
     BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().IsPartialStop(eExtreme_Positional), false);
     BOOST_CHECK_EQUAL(adjusted_feats.back()->GetData().GetCdregion().GetFrame(), frame_two);
-    CheckQual(*(adjusted_feats.back()), "orig_protein_id", "x_2");
-    CheckQual(*(adjusted_feats.back()), "orig_transcript_id", "y_2");
+    CheckQual(*(adjusted_feats.back()), "orig_protein_id", "x_1");
+    CheckQual(*(adjusted_feats.back()), "orig_transcript_id", "y_1");
 
     TestUpdateCDS(gapped_list[0]->GetFeature(), adjusted_feats);
 }
@@ -428,7 +428,7 @@ void TestTrimForFrame(TSeqPos gap_len, CCdregion::EFrame frame)
     CFeat_CI f(seh);
     edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
     gapped_list.front()->CalculateRelevantIntervals(true, true);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     
     string before_protstr;
     CSeqTranslator::Translate(*(adjusted_feats[0]), *scope, before_protstr);
@@ -494,7 +494,7 @@ void TestTrimCDS(TSeqPos start, TSeqPos stop, CCdregion::TFrame frame_before, CC
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
     if (start < 11) {
         // trim on right, no frame change
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(TestRemoveCDS)
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 0);
 
     TestUpdateCDS(gapped_list[0]->GetFeature(), adjusted_feats);
@@ -602,9 +602,9 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntron)
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
-    adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, false);
+    adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, false, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
 }
 
@@ -823,7 +823,7 @@ void TestCodeBreakSplit(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, bo
 {
     CRef<CFeatGapInfo> cds = MakeCDSWithCodeBreak(start, stop, anticodon_start);
     cds->CalculateRelevantIntervals(false, true);
-    vector<CRef<CSeq_feat> > adjusted_feats = cds->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = cds->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
     BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetCdregion().IsSetCode_break(), first_cb);
     BOOST_CHECK_EQUAL(adjusted_feats[1]->GetData().GetCdregion().IsSetCode_break(), second_cb);
@@ -834,7 +834,7 @@ void TestCodeBreakTrim(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, boo
 {
     CRef<CFeatGapInfo> cds = MakeCDSWithCodeBreak(start, stop, anticodon_start);
     cds->CalculateRelevantIntervals(false, true);
-    vector<CRef<CSeq_feat> > adjusted_feats = cds->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = cds->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
     BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetCdregion().IsSetCode_break(), expect_code_break);
 
@@ -883,7 +883,7 @@ void TestAnticodonSplit(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, bo
 {
     CRef<CFeatGapInfo> trna = MakeTrnaWithAnticodon(start, stop, anticodon_start);
     trna->CalculateRelevantIntervals(false, true);
-    vector<CRef<CSeq_feat> > adjusted_feats = trna->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = trna->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
     BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), first);
     BOOST_CHECK_EQUAL(adjusted_feats[1]->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), second);
@@ -894,7 +894,7 @@ void TestAnticodonTrim(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, boo
 {
     CRef<CFeatGapInfo> trna = MakeTrnaWithAnticodon(start, stop, anticodon_start);
     trna->CalculateRelevantIntervals(false, true);
-    vector<CRef<CSeq_feat> > adjusted_feats = trna->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = trna->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
     BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), expect_anticodon);
 
@@ -961,7 +961,7 @@ void TestTrimMiscOnRightMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TS
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 0);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 11);
@@ -979,7 +979,7 @@ void TestTrimMiscOnLeftMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSe
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 22);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 33);
@@ -997,7 +997,7 @@ void TestSplitMiscMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSeqPos 
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 0);
     BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 11);
@@ -1019,7 +1019,7 @@ void TestRemoveMiscMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSeqPos
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
-    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 0);
 }
 
