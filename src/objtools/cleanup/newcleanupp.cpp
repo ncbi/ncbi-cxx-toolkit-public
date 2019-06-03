@@ -2253,6 +2253,7 @@ void CNewCleanup_imp::DbtagBC (
         }
     }
 
+    /*
     // convert to number if all digits
     if (s_IsAllDigits(str) && !NStr::StartsWith(str, "0")) {
         try {
@@ -2274,6 +2275,7 @@ void CNewCleanup_imp::DbtagBC (
             // just leave things as are
         }
     }
+    */
 }
 
 
