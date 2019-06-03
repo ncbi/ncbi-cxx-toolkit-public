@@ -19,18 +19,15 @@ Suspect-rule-set ::= {
         }
       },
       whole-word FALSE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
     },
     feat-constraint {
       string {
-        match-text "16S rRNA pseudouridine(516) synthase",
-        match-location equals,
+        match-text "hydroxycytidine",
+        match-location contains,
         case-sensitive FALSE,
         ignore-space FALSE,
         ignore-punct FALSE,
@@ -39,13 +36,11 @@ Suspect-rule-set ::= {
         is-all-caps FALSE,
         is-all-lower FALSE,
         is-all-punct FALSE,
-        ignore-weasel TRUE,
-        is-first-cap FALSE,
-        is-first-each-cap FALSE
+        ignore-weasel FALSE
       },
       string {
-        match-text "23S rRNA pseudouridine(955/2504/2580) synthase",
-        match-location equals,
+        match-text "pseudouridine",
+        match-location contains,
         case-sensitive FALSE,
         ignore-space FALSE,
         ignore-punct FALSE,
@@ -54,13 +49,11 @@ Suspect-rule-set ::= {
         is-all-caps FALSE,
         is-all-lower FALSE,
         is-all-punct FALSE,
-        ignore-weasel TRUE,
-        is-first-cap FALSE,
-        is-first-each-cap FALSE
+        ignore-weasel FALSE
       },
       string {
-        match-text "23S rRNA pseudouridine(1911/1915/1917) synthase",
-        match-location equals,
+        match-text "glycoside hydrolase family",
+        match-location starts,
         case-sensitive FALSE,
         ignore-space FALSE,
         ignore-punct FALSE,
@@ -69,14 +62,22 @@ Suspect-rule-set ::= {
         is-all-caps FALSE,
         is-all-lower FALSE,
         is-all-punct FALSE,
-        ignore-weasel TRUE,
-        is-first-cap FALSE,
-        is-first-each-cap FALSE
+        ignore-weasel TRUE
       }
     },
     rule-type database,
     description "contains three or more numbers together that may be
  identifiers more appropriate in note",
+    fatal FALSE
+  },
+  {
+    find underscore NULL,
+    rule-type database,
+    fatal FALSE
+  },
+  {
+    find unbalanced-paren NULL,
+    rule-type inappropriate-symbol,
     fatal FALSE
   },
   {
@@ -90,15 +91,10 @@ Suspect-rule-set ::= {
     fatal FALSE
   },
   {
-    find unbalanced-paren NULL,
-    rule-type inappropriate-symbol,
-    fatal FALSE
-  },
-  {
     find too-long 100,
     feat-constraint {
       string {
-        match-text "multifunctional",
+        match-text "acetylglucosamine",
         match-location contains,
         case-sensitive FALSE,
         ignore-space FALSE,
@@ -128,7 +124,7 @@ Suspect-rule-set ::= {
         is-first-each-cap FALSE
       },
       string {
-        match-text "acetylglucosamine",
+        match-text "multifunctional",
         match-location contains,
         case-sensitive FALSE,
         ignore-space FALSE,
@@ -141,108 +137,25 @@ Suspect-rule-set ::= {
         ignore-weasel FALSE,
         is-first-cap FALSE,
         is-first-each-cap FALSE
+      },
+      string {
+        match-text "trifunctional",
+        match-location contains,
+        case-sensitive FALSE,
+        ignore-space FALSE,
+        ignore-punct FALSE,
+        whole-word FALSE,
+        not-present TRUE,
+        is-all-caps FALSE,
+        is-all-lower FALSE,
+        is-all-punct FALSE,
+        ignore-weasel FALSE
       }
     },
     rule-type description,
     description "Is longer than 100 characters. Remove descriptive phrases or
  synonyms from product names. Keep valid long product names, eg long enzyme
  names",
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Anopheles",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type remove-organism-name,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "citochrome",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "cytochrome",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "cytochome",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "cytochrome",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "cytochorme",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "cytochrome",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
     fatal FALSE
   },
   {
@@ -332,6 +245,30 @@ Suspect-rule-set ::= {
       ignore-weasel FALSE
     },
     rule-type inappropriate-symbol,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "(fungal and plant)",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
     fatal FALSE
   },
   {
@@ -533,6 +470,57 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "1 domain",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "14-3-3",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "14-3-3 protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "16S ribosomal RNA",
       match-location equals,
       case-sensitive FALSE,
@@ -617,6 +605,54 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "18S rRNA, ITS 1, 5.8S rRNA, ITS 2, and 28S rRNA",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "5 -methylthioadenosine s-adenosylhomocysteine",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text ":",
       match-location ends,
       case-sensitive FALSE,
@@ -649,6 +685,38 @@ Suspect-rule-set ::= {
       ignore-weasel TRUE,
       is-first-cap FALSE,
       is-first-each-cap FALSE
+    },
+    rule-type inappropriate-symbol,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text ";",
+      match-location ends,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type inappropriate-symbol,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text ";",
+      match-location starts,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
     },
     rule-type inappropriate-symbol,
     fatal FALSE
@@ -731,6 +799,79 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "\",
+      match-location ends,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type inappropriate-symbol,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "\",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type inappropriate-symbol,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "\\-PA",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type inappropriate-symbol,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "_",
+      match-location ends,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type inappropriate-symbol,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "a",
       match-location starts,
       case-sensitive TRUE,
@@ -781,6 +922,33 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "about the patent is no further information available",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -840,6 +1008,22 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "activity",
+      match-location ends,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type description,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "adenine",
       match-location equals,
       case-sensitive FALSE,
@@ -859,30 +1043,6 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Non",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -1042,6 +1202,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Aldehyde conserved site",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
     },
     fatal FALSE
   },
@@ -1359,26 +1543,18 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
-      match-text "plymerase",
-      match-location contains,
+      match-text "and",
+      match-location starts,
       case-sensitive FALSE,
       ignore-space FALSE,
       ignore-punct FALSE,
-      whole-word FALSE,
+      whole-word TRUE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE
+      ignore-weasel TRUE
     },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "polymerase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
+    rule-type inappropriate-symbol,
     fatal FALSE
   },
   {
@@ -1510,6 +1686,57 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "Anopheles",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type remove-organism-name,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Anopheles",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type remove-organism-name,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "aparaginase",
       match-location contains,
       case-sensitive FALSE,
@@ -1548,6 +1775,33 @@ Suspect-rule-set ::= {
       is-all-lower FALSE,
       is-all-punct FALSE,
       ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type remove-organism-name,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Arabidopsis",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
       is-first-cap FALSE,
       is-first-each-cap FALSE
     },
@@ -1846,6 +2100,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "assemlby",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "assembly",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "assessory",
       match-location contains,
       case-sensitive FALSE,
@@ -1880,6 +2158,30 @@ Suspect-rule-set ::= {
       is-all-lower FALSE,
       is-all-punct FALSE,
       ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "ATP release",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
     },
     rule-type hypothetical,
     replace {
@@ -2147,6 +2449,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "belicase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "helicase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "believed",
       match-location starts,
       case-sensitive FALSE,
@@ -2282,6 +2608,57 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "bindign",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "binding",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "bindng",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "binding",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "binds",
       match-location starts,
       case-sensitive FALSE,
@@ -2363,6 +2740,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "biosyntheis",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "biosynthesis",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "biosythesis",
       match-location contains,
       case-sensitive FALSE,
@@ -2412,6 +2813,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "bloking",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "blocking",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -2752,6 +3177,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "casette",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "cassette",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "catalize",
       match-location contains,
       case-sensitive FALSE,
@@ -2843,6 +3295,30 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "cell division FtsK/SpoIIIE",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "celllular",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "cellular",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -3170,6 +3646,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "citochrome",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "cytochrome",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "citrate",
       match-location equals,
       case-sensitive FALSE,
@@ -3300,6 +3800,33 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "COG",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "COG",
       match-location contains,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -3329,33 +3856,6 @@ Suspect-rule-set ::= {
       is-first-each-cap FALSE
     },
     rule-type database,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "COG",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
     fatal FALSE
   },
   {
@@ -3438,6 +3938,30 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "color",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "comlex",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "complex",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -3694,6 +4218,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "conserved fungal",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "conserved hypothetical",
       match-location equals,
       case-sensitive FALSE,
@@ -3934,6 +4482,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "conserved uncharacterized protein",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "Conserved with",
       match-location starts,
       case-sensitive FALSE,
@@ -4032,6 +4604,22 @@ Suspect-rule-set ::= {
       },
       move-to-note FALSE
     },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "containin",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type putative-typo,
     fatal FALSE
   },
   {
@@ -4282,7 +4870,127 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "cyrocrome",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "cytochrome",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "Cysteine",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "cytochome",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "cytochrome",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "cytochorme",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "cytochrome",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "cytocrome",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "cytochrome",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "cytoplasm",
       match-location equals,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -4541,6 +5249,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "dialkylrecorsinol",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "dialkylresorcinol",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "dimerisation",
       match-location contains,
       case-sensitive FALSE,
@@ -4644,6 +5376,33 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "distantly",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -5105,6 +5864,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "domain-domain-containing",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "domain-containing",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "domainl",
       match-location contains,
       case-sensitive FALSE,
@@ -5230,6 +6013,33 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "DUF",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "DUF",
       match-location contains,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -5259,33 +6069,6 @@ Suspect-rule-set ::= {
       is-first-each-cap FALSE
     },
     rule-type database,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "DUF",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
     fatal FALSE
   },
   {
@@ -5393,6 +6176,102 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "eendonuclease",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "endonuclease",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "endonucelase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "endonuclease",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "endonulease",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "endonuclease",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "endunuclease",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "endonuclease",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -5518,6 +6397,30 @@ Suspect-rule-set ::= {
       is-first-each-cap FALSE
     },
     rule-type remove-organism-name,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Essential N-terminal",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
     replace {
       replace-func simple-replace {
         replace "hypothetical protein",
@@ -5662,6 +6565,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "exon",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "exporte",
       match-location contains,
       case-sensitive FALSE,
@@ -5766,6 +6693,22 @@ Suspect-rule-set ::= {
       },
       move-to-note FALSE
     },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "facto",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type putative-typo,
     fatal FALSE
   },
   {
@@ -5959,6 +6902,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "familly",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "family",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "family",
       match-location equals,
       case-sensitive FALSE,
@@ -6029,6 +6999,30 @@ Suspect-rule-set ::= {
       replace-func simple-replace {
         replace "hypothetical protein",
         whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "famly",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "family",
+        whole-string FALSE,
         weasel-to-putative FALSE
       },
       move-to-note FALSE
@@ -6167,13 +7161,25 @@ Suspect-rule-set ::= {
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word FALSE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
+    },
+    feat-constraint {
+      string {
+        match-text "fragmentation",
+        match-location contains,
+        case-sensitive FALSE,
+        ignore-space FALSE,
+        ignore-punct FALSE,
+        whole-word FALSE,
+        not-present TRUE,
+        is-all-caps FALSE,
+        is-all-lower FALSE,
+        is-all-punct FALSE,
+        ignore-weasel FALSE
+      }
     },
     rule-type might-be-nonfunctional,
     fatal FALSE
@@ -6335,6 +7341,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "fungal protein",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "fungi",
       match-location contains,
       case-sensitive FALSE,
@@ -6446,13 +7476,25 @@ Suspect-rule-set ::= {
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word TRUE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
+    },
+    feat-constraint {
+      string {
+        match-text "gene transfer",
+        match-location contains,
+        case-sensitive FALSE,
+        ignore-space FALSE,
+        ignore-punct FALSE,
+        whole-word FALSE,
+        not-present TRUE,
+        is-all-caps FALSE,
+        is-all-lower FALSE,
+        is-all-punct FALSE,
+        ignore-weasel FALSE
+      }
     },
     rule-type gene,
     fatal FALSE
@@ -6465,13 +7507,25 @@ Suspect-rule-set ::= {
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word TRUE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
+    },
+    feat-constraint {
+      string {
+        match-text "genes activator",
+        match-location contains,
+        case-sensitive FALSE,
+        ignore-space FALSE,
+        ignore-punct FALSE,
+        whole-word FALSE,
+        not-present TRUE,
+        is-all-caps FALSE,
+        is-all-lower FALSE,
+        is-all-punct FALSE,
+        ignore-weasel FALSE
+      }
     },
     rule-type gene,
     fatal FALSE
@@ -6884,6 +7938,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "glyosyltransferase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "glycosyltransferase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "GMP",
       match-location equals,
       case-sensitive FALSE,
@@ -6989,6 +8067,30 @@ Suspect-rule-set ::= {
     },
     rule-type putative-typo,
     description "may contain systematic gene product identifiers from phage",
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "grass carp reovirus (GCRV)-",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "GCRV-",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
     fatal FALSE
   },
   {
@@ -7371,6 +8473,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "Heterokaryon incompatibility OR allele",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "Heterokaryon incompatibility protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "hexapaptide",
       match-location contains,
       case-sensitive FALSE,
@@ -7644,6 +8770,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "homobox",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "homeobox",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -7924,7 +9074,55 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "hydroxyindole o",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "hyopothetical",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "hyoptetical",
       match-location contains,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -8188,6 +9386,57 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "hypoothetical",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "hypopthetical",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "hypot",
       match-location contains,
       case-sensitive FALSE,
@@ -8404,6 +9653,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "hypotheitical",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "hypotherical",
       match-location contains,
       case-sensitive FALSE,
@@ -8491,6 +9767,33 @@ Suspect-rule-set ::= {
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "hypothetetical",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
       not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
@@ -8905,6 +10208,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "hypothetical-related protein",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "hypotheticala",
       match-location contains,
       case-sensitive FALSE,
@@ -9041,6 +10371,57 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "hypotheticla",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "hypothetieal",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "hypothetisches",
       match-location contains,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -9356,6 +10737,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "ifunctional ",
+      match-location starts,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "bifunctional ",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "immunoreactive",
       match-location equals,
       case-sensitive FALSE,
@@ -9581,6 +10989,22 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "initiatio",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type putative-typo,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "inorganic phosphate",
       match-location equals,
       case-sensitive FALSE,
@@ -9737,6 +11161,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "intergrase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "integrase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "internal repeat sequences detected",
       match-location equals,
       case-sensitive FALSE,
@@ -9770,13 +11218,25 @@ Suspect-rule-set ::= {
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word FALSE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
+    },
+    feat-constraint {
+      string {
+        match-text "interrupting",
+        match-location contains,
+        case-sensitive FALSE,
+        ignore-space FALSE,
+        ignore-punct FALSE,
+        whole-word FALSE,
+        not-present TRUE,
+        is-all-caps FALSE,
+        is-all-lower FALSE,
+        is-all-punct FALSE,
+        ignore-weasel FALSE
+      }
     },
     rule-type might-be-nonfunctional,
     fatal FALSE
@@ -9805,6 +11265,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "intron",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
     },
     fatal FALSE
   },
@@ -9887,6 +11371,30 @@ Suspect-rule-set ::= {
     fatal FALSE
   },
   {
+    find string-constraint {
+      match-text "iron sulfur",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
     find prefix-and-numbers "IS",
     rule-type hypothetical,
     replace {
@@ -9946,6 +11454,33 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "ization",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "isform",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "isoform",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -10055,6 +11590,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "juction",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "junction",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -10236,22 +11795,6 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "likely",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type description,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "likely",
       match-location starts,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -10274,6 +11817,22 @@ Suspect-rule-set ::= {
       },
       move-to-note FALSE
     },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "likely",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type description,
     fatal FALSE
   },
   {
@@ -10361,14 +11920,11 @@ Suspect-rule-set ::= {
       case-sensitive FALSE,
       ignore-space FALSE,
       ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
+      whole-word FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
     },
     rule-type british,
     replace {
@@ -10473,26 +12029,55 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
-      match-text "Low Quality Protein: ",
+      match-text "Low Quality Protein:",
       match-location starts,
       case-sensitive FALSE,
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word FALSE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
     },
     rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
     fatal FALSE
   },
   {
     find string-constraint {
       match-text "Lysine",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Magnesium",
       match-location equals,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -10643,6 +12228,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "matruation",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "maturation",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -10963,6 +12572,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "methlyase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "methylase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "methlytransferase",
       match-location contains,
       case-sensitive FALSE,
@@ -11091,6 +12724,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "mitochondrion",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
     },
     fatal FALSE
   },
@@ -11426,21 +13083,26 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
-      match-text "MULTISPECIES: ",
+      match-text "MULTISPECIES:",
       match-location starts,
       case-sensitive FALSE,
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word FALSE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
     },
     rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
     fatal FALSE
   },
   {
@@ -12006,25 +13668,6 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "No definition line found",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type inappropriate-symbol,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "No definition line found",
       match-location equals,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -12044,6 +13687,25 @@ Suspect-rule-set ::= {
       },
       move-to-note FALSE
     },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "No definition line found",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type inappropriate-symbol,
     fatal FALSE
   },
   {
@@ -12075,6 +13737,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "no hit",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "no likeity",
       match-location equals,
       case-sensitive FALSE,
@@ -12098,6 +13787,25 @@ Suspect-rule-set ::= {
       },
       move-to-note FALSE
     },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "no product string in file",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type none,
     fatal FALSE
   },
   {
@@ -12207,6 +13915,54 @@ Suspect-rule-set ::= {
       ignore-weasel TRUE
     },
     rule-type description,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "no significant similarity found",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Non",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
     fatal FALSE
   },
   {
@@ -12370,6 +14126,70 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "nuclase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "nuclease",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "nucleolar",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "nucleotid",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type putative-typo,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "nucleotydyl",
       match-location contains,
       case-sensitive FALSE,
@@ -12421,6 +14241,78 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "nucleus",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "nucloetide",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "nucleotide",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "nucloside",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "nucleoside",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "nulcear",
       match-location contains,
       case-sensitive FALSE,
@@ -12439,6 +14331,30 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "nuclear",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "nulcease",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "nuclease",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -12650,6 +14566,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "only prolin and serin are matching in the corresponding",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "open reading frame",
       match-location equals,
       case-sensitive FALSE,
@@ -12710,6 +14650,22 @@ Suspect-rule-set ::= {
     },
     rule-type might-be-nonfunctional,
     fatal TRUE
+  },
+  {
+    find string-constraint {
+      match-text "or",
+      match-location starts,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type inappropriate-symbol,
+    fatal FALSE
   },
   {
     find string-constraint {
@@ -13183,6 +15139,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "oxioreductase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "oxidoreductase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "oxydase",
       match-location contains,
       case-sensitive FALSE,
@@ -13201,6 +15181,30 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "oxidase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "oxydoreductase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "oxidoreductase",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -13299,6 +15303,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "parolog",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "paralog",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "part",
       match-location starts,
       case-sensitive FALSE,
@@ -13368,6 +15396,35 @@ Suspect-rule-set ::= {
       },
       move-to-note FALSE
     },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "patent",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    except string-constraint {
+      match-text "about the patent is no further information available",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type inappropriate-symbol,
     fatal FALSE
   },
   {
@@ -14002,6 +16059,54 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "plymerase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "polymerase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Podospora",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type remove-organism-name,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "polimerase",
       match-location contains,
       case-sensitive FALSE,
@@ -14015,6 +16120,30 @@ Suspect-rule-set ::= {
       ignore-weasel FALSE,
       is-first-cap FALSE,
       is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "polymerase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "polymearse",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
     },
     rule-type typo,
     replace {
@@ -14068,6 +16197,33 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "polymeriz",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "polymersae",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "polymerase",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -14374,6 +16530,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "poymerase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "polymerase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "precurso",
       match-location contains,
       case-sensitive FALSE,
@@ -14630,6 +16810,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "prehard",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "prohead",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "presursor",
       match-location contains,
       case-sensitive FALSE,
@@ -14866,6 +17070,78 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "proetin",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "proetin",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "prolin",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "proline",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "Proline",
       match-location equals,
       case-sensitive FALSE,
@@ -14885,6 +17161,33 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "prootein",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -15195,6 +17498,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "protein distantly",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "protein of",
       match-location equals,
       case-sensitive FALSE,
@@ -15222,6 +17552,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "protein of 100 residues with WXG",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "protein of unknown function",
       match-location equals,
       case-sensitive FALSE,
@@ -15238,30 +17595,6 @@ Suspect-rule-set ::= {
       replace-func simple-replace {
         replace "hypothetical protein",
         whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "celllular",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "cellular",
-        whole-string FALSE,
         weasel-to-putative FALSE
       },
       move-to-note FALSE
@@ -15441,6 +17774,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "protein-like protein",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "proteine",
       match-location contains,
       case-sensitive FALSE,
@@ -15481,6 +17838,57 @@ Suspect-rule-set ::= {
       ignore-weasel FALSE,
       is-first-cap FALSE,
       is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "proteins of 100 residues with WXG",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "proteion",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
     },
     rule-type typo,
     replace {
@@ -15875,6 +18283,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "pupative",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "putative",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "purine",
       match-location equals,
       case-sensitive FALSE,
@@ -15900,33 +18332,6 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "putaitive",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "putative",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "putatiuve",
       match-location contains,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -16035,6 +18440,33 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "putatitve",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "putative",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "putatiuve",
       match-location contains,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -16687,6 +19119,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "pyimidine",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "pyrimidine",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "pylori",
       match-location contains,
       case-sensitive FALSE,
@@ -16789,6 +19245,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "pytative",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "putative",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "qlcohol",
       match-location contains,
       case-sensitive FALSE,
@@ -16871,6 +19351,33 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "raw score",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "raw score",
       match-location contains,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -16906,33 +19413,6 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
-      match-text "raw score",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
       match-text "recognised",
       match-location contains,
       case-sensitive FALSE,
@@ -16951,6 +19431,54 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "recognized",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "redctase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "reductase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "reducase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "reductase",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -16987,6 +19515,22 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "refseq",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct TRUE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type database,
+    fatal TRUE
+  },
+  {
+    find string-constraint {
       match-text "region",
       match-location starts,
       case-sensitive FALSE,
@@ -17009,6 +19553,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "reglatory",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "regulatory",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -17202,6 +19770,54 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "repeats-containing",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "repeat-containing",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "repessor",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "repressor",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "replicaiton",
       match-location contains,
       case-sensitive FALSE,
@@ -17253,6 +19869,58 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "required for cell",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "residue",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    except string-constraint {
+      match-text "dihydrolipoyllysine-residue",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type description,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "resistence",
       match-location contains,
       case-sensitive FALSE,
@@ -17271,6 +19939,54 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "resistance",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "reslovase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "resolvase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "resovlase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "resolvase",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -17373,6 +20089,30 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "ribosomal",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "riboslytransferase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "ribosyltransferase",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -17635,6 +20375,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "salycilate",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "salicylate",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "sapiens",
       match-location contains,
       case-sensitive FALSE,
@@ -17662,6 +20426,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "scafold",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "scaffold",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "secreted",
       match-location equals,
       case-sensitive FALSE,
@@ -17681,6 +20469,54 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Ser-Thr",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "serin",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "serine",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -17752,6 +20588,30 @@ Suspect-rule-set ::= {
       is-first-each-cap FALSE
     },
     rule-type remove-organism-name,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "short-chain alcohol",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
     replace {
       replace-func simple-replace {
         replace "hypothetical protein",
@@ -18032,6 +20892,30 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "similar",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "singel",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "single",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -18322,6 +21206,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "stabilizatio",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "stabilization",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "Staphlococcal",
       match-location contains,
       case-sensitive FALSE,
@@ -18413,33 +21321,6 @@ Suspect-rule-set ::= {
     },
     rule-type might-be-nonfunctional,
     fatal TRUE
-  },
-  {
-    find string-constraint {
-      match-text "streptococcal",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type remove-organism-name,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
   },
   {
     find string-constraint {
@@ -18575,6 +21456,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "strucural",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "structural",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "subitilus",
       match-location contains,
       case-sensitive FALSE,
@@ -18615,6 +21520,30 @@ Suspect-rule-set ::= {
       ignore-weasel FALSE,
       is-first-cap FALSE,
       is-first-each-cap FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "subunit",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "subnuit",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
     },
     rule-type typo,
     replace {
@@ -18683,6 +21612,22 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "subuni",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type putative-typo,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "subunit",
       match-location equals,
       case-sensitive FALSE,
@@ -18702,6 +21647,30 @@ Suspect-rule-set ::= {
         weasel-to-putative FALSE
       },
       move-to-note TRUE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "sudunit",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "subunit",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -18914,6 +21883,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "synthease",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "synthetase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal TRUE
+  },
+  {
+    find string-constraint {
       match-text "systhesis",
       match-location contains,
       case-sensitive FALSE,
@@ -18959,6 +21952,54 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "synthase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "tansferase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "transferase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "temrinase",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "terminase",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -19022,6 +22063,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "thiamin",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "thiamine",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "thiamin/thiamin",
       match-location contains,
       case-sensitive FALSE,
@@ -19067,30 +22132,6 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "thiamine S",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "thiamin",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "thiamine",
         whole-string FALSE,
         weasel-to-putative FALSE
       },
@@ -19229,8 +22270,8 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
-      match-text "TPA:",
-      match-location starts,
+      match-text "to fill in",
+      match-location equals,
       case-sensitive FALSE,
       ignore-space FALSE,
       ignore-punct FALSE,
@@ -19243,12 +22284,44 @@ Suspect-rule-set ::= {
       is-first-cap FALSE,
       is-first-each-cap FALSE
     },
-    rule-type database,
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
     fatal FALSE
   },
   {
     find string-constraint {
-      match-text "TPA_inf",
+      match-text "topisomerase",
+      match-location contains,
+      case-sensitive TRUE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "topoisomerase",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "TPA:",
       match-location starts,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -19259,14 +22332,110 @@ Suspect-rule-set ::= {
       is-all-punct FALSE,
       ignore-weasel TRUE
     },
-    rule-type hypothetical,
+    rule-type typo,
     replace {
       replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
+        replace "",
+        whole-string FALSE,
         weasel-to-putative FALSE
       },
-      move-to-note TRUE
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "TPA_asm:",
+      match-location starts,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "TPA_exp:",
+      match-location starts,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "TPA_inf:",
+      match-location starts,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "tran sposon",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "transposon",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
     },
     fatal FALSE
   },
@@ -19478,6 +22647,22 @@ Suspect-rule-set ::= {
       },
       move-to-note FALSE
     },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "transcriptio",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type putative-typo,
     fatal FALSE
   },
   {
@@ -19908,6 +23093,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "Transposase (or an inactivated derivative)",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "transposase",
+        whole-string FALSE,
+        weasel-to-putative TRUE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "transposase and inactivated derivative",
       match-location equals,
       case-sensitive FALSE,
@@ -19933,6 +23142,30 @@ Suspect-rule-set ::= {
   {
     find string-constraint {
       match-text "transposase and inactivated derivatives",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "transposase",
+        whole-string FALSE,
+        weasel-to-putative TRUE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Transposase and inactivated derivatives, xyz",
       match-location equals,
       case-sensitive FALSE,
       ignore-space FALSE,
@@ -19995,6 +23228,30 @@ Suspect-rule-set ::= {
     replace {
       replace-func simple-replace {
         replace "transposase",
+        whole-string FALSE,
+        weasel-to-putative TRUE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Transposase InsO and inactivated derivatives",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "transposase InsO",
         whole-string FALSE,
         weasel-to-putative TRUE
       },
@@ -20175,6 +23432,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "transpot",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "transport",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "transproter",
       match-location contains,
       case-sensitive FALSE,
@@ -20334,13 +23615,25 @@ Suspect-rule-set ::= {
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word FALSE,
-      not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
       is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
+      ignore-weasel FALSE
+    },
+    feat-constraint {
+      string {
+        match-text "hemoglobin",
+        match-location contains,
+        case-sensitive FALSE,
+        ignore-space FALSE,
+        ignore-punct FALSE,
+        whole-word FALSE,
+        not-present TRUE,
+        is-all-caps FALSE,
+        is-all-lower FALSE,
+        is-all-punct FALSE,
+        ignore-weasel FALSE
+      }
     },
     rule-type might-be-nonfunctional,
     fatal FALSE
@@ -20671,6 +23964,33 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "unassigned protein",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "uncharacterizaed",
       match-location contains,
       case-sensitive FALSE,
@@ -20872,6 +24192,58 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "uncharacterized protein",
+      match-location starts,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    except string-constraint {
+      match-text "uncharacterized protein",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type putative-typo,
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "Uncharacterized protein family protein",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "unclassified",
       match-location equals,
       case-sensitive FALSE,
@@ -21049,30 +24421,6 @@ Suspect-rule-set ::= {
       replace-func simple-replace {
         replace "hypothetical protein",
         whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "unknwon",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "unknown",
-        whole-string FALSE,
         weasel-to-putative FALSE
       },
       move-to-note FALSE
@@ -21297,6 +24645,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "unknwon",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "unknown",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "unkown",
       match-location contains,
       case-sensitive FALSE,
@@ -21393,6 +24765,33 @@ Suspect-rule-set ::= {
       ignore-space FALSE,
       ignore-punct FALSE,
       whole-word TRUE,
+      not-present FALSE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel TRUE,
+      is-first-cap FALSE,
+      is-first-each-cap FALSE
+    },
+    rule-type hypothetical,
+    replace {
+      replace-func simple-replace {
+        replace "hypothetical protein",
+        whole-string TRUE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "unnamed protein product-like",
+      match-location equals,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word FALSE,
       not-present FALSE,
       is-all-caps FALSE,
       is-all-lower FALSE,
@@ -21949,6 +25348,30 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
+      match-text "ysozyme",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "lysozyme",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
       match-text "ytochrome",
       match-location contains,
       case-sensitive FALSE,
@@ -22054,68 +25477,6 @@ Suspect-rule-set ::= {
   },
   {
     find string-constraint {
-      match-text "\",
-      match-location ends,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type inappropriate-symbol,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "\\-PA",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type inappropriate-symbol,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "_",
-      match-location ends,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type inappropriate-symbol,
-    fatal FALSE
-  },
-  {
-    find underscore NULL,
-    rule-type database,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
       match-text "|",
       match-location contains,
       case-sensitive FALSE,
@@ -22131,2242 +25492,6 @@ Suspect-rule-set ::= {
       is-first-each-cap FALSE
     },
     rule-type inappropriate-symbol,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "familly",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "family",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "hypotheitical",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "hypopthetical",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "hypothetetical",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "no product string in file",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type none,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "distantly",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "protein distantly",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "ifunctional ",
-      match-location starts,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "bifunctional ",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "refseq",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct TRUE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type database,
-    fatal TRUE
-  },
-  {
-    find string-constraint {
-      match-text "casette",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "cassette",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "prootein",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "protein",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "polymersae",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "polymerase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "nulcease",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "nuclease",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "hypothetical-related protein",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "residue",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    except string-constraint {
-      match-text "dihydrolipoyllysine-residue",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type description,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "proteins of 100 residues with WXG",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "no hit",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "protein of 100 residues with WXG",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "subnuit",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "subunit",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "repessor",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "repressor",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "strucural",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "structural",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Anopheles",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type remove-organism-name,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Arabidopsis",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type remove-organism-name,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "scafold",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "scaffold",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "pupative",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "putative",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "unnamed protein product-like",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "glyosyltransferase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "glycosyltransferase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "14-3-3",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "14-3-3 protein",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "parolog",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "paralog",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "unassigned protein",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "to fill in",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "transpot",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "transport",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "about the patent is no further information available",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "patent",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    except string-constraint {
-      match-text "about the patent is no further information available",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type inappropriate-symbol,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "hypothetisches",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "bindng",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "binding",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "isform",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      not-present FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE,
-      is-first-cap FALSE,
-      is-first-each-cap FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "isoform",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "bindign",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "binding",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "proetin",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "protein",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "bloking",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "blocking",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Transposase (or an inactivated derivative)",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "transposase",
-        whole-string FALSE,
-        weasel-to-putative TRUE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Transposase InsO and inactivated derivatives",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "transposase InsO",
-        whole-string FALSE,
-        weasel-to-putative TRUE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Transposase and inactivated derivatives, xyz",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "transposase",
-        whole-string FALSE,
-        weasel-to-putative TRUE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Uncharacterized protein family protein",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "reslovase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "resolvase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "tansferase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "transferase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "endunuclease",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "endonuclease",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "belicase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "helicase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "pyimidine",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "pyrimidine",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "topisomerase",
-      match-location contains,
-      case-sensitive TRUE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "topoisomerase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "no significant similarity found",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Podospora",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type remove-organism-name,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "ysozyme",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "lysozyme",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "nucleus",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "cytoplasm",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "nucleolar",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "fungal protein",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "prolin",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "proline",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "serin",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "serine",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "stabilizatio",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "stabilization",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "proetin",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "protein",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "polymearse",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "polymerase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "synthease",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    fatal TRUE
-  },
-  {
-    find string-constraint {
-      match-text "nuclase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "nuclease",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "or",
-      match-location starts,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word TRUE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type description,
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "iron sulfur",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "hydroxyindole o",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "required for cell",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "short-chain alcohol",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "sudunit",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "subunit",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "prehard",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "prohead",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "pytative",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "putative",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "only prolin and serin are matching in the corresponding",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "(fungal and plant)",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "18S rRNA, ITS 1, 5.8S rRNA, ITS 2, and 28S rRNA",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "ATP release",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "5 -methylthioadenosine s-adenosylhomocysteine",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Aldehyde conserved site",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Essential N-terminal",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "conserved fungal",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Heterokaryon incompatibility OR allele",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "Heterokaryon incompatibility protein",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "1 domain",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "conserved uncharacterized protein",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "nucloetide",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "nucleotide",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "temrinase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "terminase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "oxydoreductase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "oxidoreductase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "oxioreductase",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "oxidoreductase",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Magnesium",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "Ser-Thr",
-      match-location equals,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel TRUE
-    },
-    rule-type hypothetical,
-    replace {
-      replace-func simple-replace {
-        replace "hypothetical protein",
-        whole-string TRUE,
-        weasel-to-putative FALSE
-      },
-      move-to-note TRUE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "biosyntheis",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "biosynthesis",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
-    fatal FALSE
-  },
-  {
-    find string-constraint {
-      match-text "comlex",
-      match-location contains,
-      case-sensitive FALSE,
-      ignore-space FALSE,
-      ignore-punct FALSE,
-      whole-word FALSE,
-      is-all-caps FALSE,
-      is-all-lower FALSE,
-      is-all-punct FALSE,
-      ignore-weasel FALSE
-    },
-    rule-type typo,
-    replace {
-      replace-func simple-replace {
-        replace "complex",
-        whole-string FALSE,
-        weasel-to-putative FALSE
-      },
-      move-to-note FALSE
-    },
     fatal FALSE
   }
 }
