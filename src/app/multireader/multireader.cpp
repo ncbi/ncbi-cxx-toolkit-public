@@ -1130,7 +1130,7 @@ void CMultiReaderApp::xProcessAlignment(
     reader.SetAllGap(args["aln-gapchar"].AsString());
     reader.SetMissing(args["aln-missing"].AsString());
     reader.SetAlphabet(CAlnReader::eAlpha_Protein);
-    reader.SetIdValidation(args["aln-idval"].AsString());
+    //reader.SetIdValidation(args["aln-idval"].AsString());
     if (args["aln-alphabet"].AsString() == "nuc") {
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
