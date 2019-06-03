@@ -562,7 +562,7 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
                         if (product)
                         {
                             vector<CRef<objects::CSeq_id> > new_ids = objects::edit::GetNewProtIdFromExistingProt(product, protein_seqid_offset, protein_seqid_label);
-                            new_id = new_ids.front();
+                            new_id = FindBestChoice(new_ids, CSeq_id::Score);
                         }
                         else
                         {
