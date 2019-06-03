@@ -30,7 +30,7 @@
  *
  * File description:
  * @file ncbi_service_cxx.hpp
- *   Backward-compatible orwarding header for <connectncbi_service.hpp>
+ *   Backward-compatible forwarding header for <connect/ncbi_service.hpp>
  *
  *   @warning Use <connect/ncbi_service.hpp> directly instead!
  *
