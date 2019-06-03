@@ -54,14 +54,19 @@ public:
 class NCBI_ID2PROC_CDD_EXPORT CID2CDDProcessorPacketContext : public CID2ProcessorPacketContext
 {
 public:
+    ~CID2CDDProcessorPacketContext(void);
+    
     typedef CRef<CID2_Reply> TID2ReplyPtr;
     typedef map<int, TID2ReplyPtr> TReplies;
     typedef map<int, CConstRef<CSeq_id> > TSeqIDs;
     typedef map<int, CConstRef<CID2_Blob_Id> > TBlobIDs;
-
-    TReplies m_Replies;
-    TSeqIDs  m_SeqIDs;
-    TBlobIDs m_BlobIDs;
+    typedef multimap<time_t, CRef<CCDDClient> > TClientPool;
+    
+    CRef<CID2CDDProcessor_Impl>  m_Processor;
+    TClientPool::iterator        m_Client;
+    TReplies                     m_Replies;
+    TSeqIDs                      m_SeqIDs;
+    TBlobIDs                     m_BlobIDs;
 };
 
 
@@ -73,6 +78,7 @@ public:
     ~CID2CDDProcessor_Impl(void);
 
     typedef CID2CDDProcessor::TReplies TReplies;
+    typedef CID2CDDProcessorPacketContext::TClientPool TClientPool;
 
     CRef<CID2ProcessorPacketContext> ProcessPacket(CID2CDDProcessorContext* context,
                                                    CID2_Request_Packet& packet,
@@ -89,6 +95,11 @@ public:
     }
     void InitContext(CID2CDDContext& context, const CID2_Request& main_request);
 
+    /// Public for the sake of ~CID2CDDProcessorPacketContext.
+    void ReturnClient(TClientPool::iterator& client);
+
+    void GetClientCounts(size_t& in_use, size_t& not_in_use) const;
+
 private:
     void x_TranslateReplies(const CID2CDDContext& context,
                             CID2CDDProcessorPacketContext& packet_context);
@@ -101,9 +112,15 @@ private:
                               CRef<CCDD_Reply> cdd_reply);
     CRef<CID2_Reply> x_CreateID2_Reply(int serial_number,
                                        const CCDD_Reply& cdd_reply);
+    void x_DiscardClient(TClientPool::iterator& client);
 
-    CID2CDDContext m_InitialContext;
-    CRef<CCDDClient> m_Client;
+    CID2CDDContext      m_InitialContext;
+    string              m_ServiceName;
+    TClientPool         m_InUse;
+    TClientPool         m_NotInUse;
+    size_t              m_PoolSoftLimit;
+    time_t              m_PoolAgeLimit;
+    mutable CFastMutex  m_PoolLock;
 };
 
 

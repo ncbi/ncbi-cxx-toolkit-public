@@ -74,6 +74,14 @@ CConstRef<CSeq_id> ID2_id_To_Seq_id(const CID2_Seq_id& id2_id)
 }
 
 
+CID2CDDProcessorPacketContext::~CID2CDDProcessorPacketContext(void)
+{
+    if (m_Processor.NotEmpty()) {
+        m_Processor->ReturnClient(m_Client);
+    }
+}
+
+
 CID2CDDProcessor_Impl::CID2CDDProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
 {
@@ -93,7 +101,7 @@ CID2CDDProcessor_Impl::CID2CDDProcessor_Impl(const CConfig::TParamTree* params,
     }
     CConfig conf(params);
 
-    string service_name = conf.GetString(driver_name,
+    m_ServiceName = conf.GetString(driver_name,
         NCBI_ID2PROC_CDD_PARAM_SERVICE_NAME,
         CConfig::eErr_NoThrow,
         DEFAULT_CDD_SERVICE_NAME);
@@ -103,7 +111,13 @@ CID2CDDProcessor_Impl::CID2CDDProcessor_Impl(const CConfig::TParamTree* params,
         CConfig::eErr_NoThrow,
         false);
 
-    m_Client.Reset(new CCDDClient(service_name));
+    m_PoolSoftLimit = conf.GetInt(driver_name,
+                                  NCBI_ID2PROC_CDD_PARAM_POOL_SOFT_LIMIT,
+                                  CConfig::eErr_NoThrow, 10);
+
+    m_PoolAgeLimit = conf.GetInt(driver_name,
+                                 NCBI_ID2PROC_CDD_PARAM_POOL_AGE_LIMIT,
+                                 CConfig::eErr_NoThrow, 15 * 60);
 }
 
 
@@ -193,6 +207,7 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
 
         if ( !packet_context ) {
             packet_context.Reset(new CID2CDDProcessorPacketContext);
+            packet_context->m_Client = m_InUse.end();
             cdd_packet.Reset(new CCDD_Request_Packet);
         }
         if ( req_id ) {
@@ -214,12 +229,38 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
     }
     if (cdd_packet.NotEmpty()) {
         _TRACE("Sending queued CDD requests.");
+        {{
+            time_t now;
+            CTime::GetCurrentTimeT(&now);
+            time_t cutoff = now - m_PoolAgeLimit;
+            CFastMutexGuard GUARD(m_PoolLock);
+            TClientPool::iterator it = m_NotInUse.lower_bound(cutoff);
+            if (it == m_NotInUse.end()) {
+                CRef<CCDDClient> client(new CCDDClient(m_ServiceName));
+                packet_context->m_Client = m_InUse.emplace(now, client);
+            } else {
+                packet_context->m_Client = m_InUse.insert(*it);
+                ++it;
+            }
+            m_NotInUse.erase(m_NotInUse.begin(), it);
+        }}
         if (packet_context->m_BlobIDs.empty()) {
-            m_Client->JustAsk(*cdd_packet);
+            try {
+                packet_context->m_Client->second->JustAsk(*cdd_packet);
+            } catch (...) {
+                x_DiscardClient(packet_context->m_Client);
+                throw;
+            }
         } else {
             CCDD_Reply last_reply;
-            m_Client->Ask(*cdd_packet, last_reply);
-            x_TranslateReplies(context->m_Context, *packet_context);
+            try {
+                packet_context->m_Client->second->Ask(*cdd_packet, last_reply);
+                x_TranslateReplies(context->m_Context, *packet_context);
+                ReturnClient(packet_context->m_Client);
+            } catch (...) {
+                x_DiscardClient(packet_context->m_Client);
+                throw;
+            }
             for (auto & id : packet_context->m_BlobIDs) {
                 const auto & reply = packet_context->m_Replies.find(id.first);
                 if (reply != packet_context->m_Replies.end()
@@ -259,9 +300,15 @@ void CID2CDDProcessor_Impl::ProcessReply(
                 if (id_it != cdd_packet_context->m_SeqIDs.end()) {
                     if (cdd_packet_context->m_Replies.empty()) {
                         CCDD_Reply last_reply;
-                        m_Client->JustFetch(last_reply);
-                        x_TranslateReplies(cdd_context->m_Context,
-                                           *cdd_packet_context);
+                        try {
+                            cdd_packet_context->m_Client->second
+                                ->JustFetch(last_reply);
+                            x_TranslateReplies(cdd_context->m_Context,
+                                               *cdd_packet_context);
+                            ReturnClient(cdd_packet_context->m_Client);
+                        } catch (...) {
+                            x_DiscardClient(cdd_packet_context->m_Client);
+                        }
                     }
                     auto it = cdd_packet_context->m_Replies.find(serial_num);
                     if (it != cdd_packet_context->m_Replies.end()) {
@@ -291,7 +338,10 @@ void CID2CDDProcessor_Impl::ProcessReply(
 void CID2CDDProcessor_Impl::x_TranslateReplies
 (const CID2CDDContext& context, CID2CDDProcessorPacketContext& packet_context)
 {
-    for (auto& it : m_Client->GetReplies()) {
+    for (auto& it : packet_context.m_Client->second->GetReplies()) {
+        if (it->GetReply().IsEmpty()  &&  !it->IsSetError()) {
+            continue;
+        }
         if (it->GetReply().IsEmpty()  &&  !it->IsSetError()) {
             continue;
         }
@@ -455,6 +505,40 @@ CRef<CID2_Reply> CID2CDDProcessor_Impl::x_CreateID2_Reply(
         id2_reply->SetReply().SetEmpty();
     }
     return id2_reply;
+}
+
+
+void CID2CDDProcessor_Impl::ReturnClient(TClientPool::iterator& client)
+{
+    time_t now;
+    CTime::GetCurrentTimeT(&now);
+    time_t cutoff = now - m_PoolAgeLimit;
+    CFastMutexGuard GUARD(m_PoolLock);
+    // Clean up unconditionally (may as well)
+    m_NotInUse.erase(m_NotInUse.begin(), m_NotInUse.lower_bound(cutoff));
+    if (client != m_InUse.end()) {
+        if (client->first >= cutoff
+            &&  m_InUse.size() + m_NotInUse.size() <= m_PoolSoftLimit) {
+            m_NotInUse.insert(*client);
+        }
+        m_InUse.erase(client);
+        client = m_InUse.end();
+    }
+}
+
+void CID2CDDProcessor_Impl::GetClientCounts(size_t& in_use, size_t& not_in_use)
+    const
+{
+    CFastMutexGuard GUARD(m_PoolLock);
+    in_use     = m_InUse.size();
+    not_in_use = m_NotInUse.size();
+}
+
+void CID2CDDProcessor_Impl::x_DiscardClient(TClientPool::iterator& client)
+{
+    CFastMutexGuard GUARD(m_PoolLock);
+    m_InUse.erase(client);
+    client = m_InUse.end();
 }
 
 

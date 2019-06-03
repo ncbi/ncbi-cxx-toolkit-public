@@ -107,6 +107,13 @@ void CID2CDDProcessor::ProcessReply(CID2ProcessorContext* context,
 }
 
 
+void CID2CDDProcessor::GetClientCounts(size_t& in_use, size_t& not_in_use)
+    const
+{
+    m_Impl->GetClientCounts(in_use, not_in_use);
+}
+
+
 END_NAMESPACE(objects);
 
 void ID2Processors_Register_CDD(void)

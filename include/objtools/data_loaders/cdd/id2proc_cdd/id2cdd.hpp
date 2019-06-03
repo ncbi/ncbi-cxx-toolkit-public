@@ -76,6 +76,9 @@ public:
                               CID2ProcessorPacketContext* packet_context,
                               CID2_Reply& reply,
                               TReplies& replies);
+
+    void GetClientCounts(size_t& in_use, size_t& not_in_use) const;
+
 private:
     CRef<CID2CDDProcessor_Impl> m_Impl;
 };

@@ -49,4 +49,10 @@
 /* Data compression for CDD annotaions */
 #define NCBI_ID2PROC_CDD_PARAM_COMPRESS_DATA "compress_data"
 
+/* Soft limit on pooled CCDDClient instances */
+#define NCBI_ID2PROC_CDD_PARAM_POOL_SOFT_LIMIT "pool_soft_limit"
+
+/* Age limit on pooled CCDDClient instances (in seconds) */
+#define NCBI_ID2PROC_CDD_PARAM_POOL_AGE_LIMIT "pool_age_limit"
+
 #endif//OBJTOOLS_DATA_LOADERS_CDD_ID2PROC_CDD__ID2CDD_PARAMS__H
