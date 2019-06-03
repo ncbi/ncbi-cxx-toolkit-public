@@ -107,12 +107,6 @@ private:
                               CRef<CCDD_Reply> cdd_reply);
     CRef<CID2_Reply> x_CreateID2_Reply(int serial_number,
                                        const CCDD_Reply& cdd_reply);
-    void x_CreateBlobIdReply(const CCDD_Request::TRequest& cdd_request,
-                             CCDD_Reply::TReply& cdd_reply,
-                             CID2_Reply::TReply& id2_reply);
-    void x_CreateBlobReply(const CCDD_Request::TRequest& cdd_request,
-                           CCDD_Reply::TReply& cdd_reply,
-                           CID2_Reply::TReply& id2_reply);
 
     CID2CDDContext m_InitialContext;
     CRef<CCDDClient> m_Client;
