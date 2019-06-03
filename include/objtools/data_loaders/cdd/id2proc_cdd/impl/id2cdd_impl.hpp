@@ -99,6 +99,8 @@ public:
     void ReturnClient(TClientPool::iterator& client);
 
     void GetClientCounts(size_t& in_use, size_t& not_in_use) const;
+    const string& GetServiceName(void) const
+        { return m_ServiceName; }
 
 private:
     void x_TranslateReplies(const CID2CDDContext& context,

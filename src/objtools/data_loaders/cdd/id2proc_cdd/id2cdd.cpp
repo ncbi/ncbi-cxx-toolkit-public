@@ -114,6 +114,12 @@ void CID2CDDProcessor::GetClientCounts(size_t& in_use, size_t& not_in_use)
 }
 
 
+const string& CID2CDDProcessor::GetServiceName(void) const
+{
+    return m_Impl->GetServiceName();
+}
+
+
 END_NAMESPACE(objects);
 
 void ID2Processors_Register_CDD(void)

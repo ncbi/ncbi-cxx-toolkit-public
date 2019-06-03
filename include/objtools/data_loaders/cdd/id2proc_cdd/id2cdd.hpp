@@ -78,6 +78,7 @@ public:
                               TReplies& replies);
 
     void GetClientCounts(size_t& in_use, size_t& not_in_use) const;
+    const string& GetServiceName(void) const;
 
 private:
     CRef<CID2CDDProcessor_Impl> m_Impl;
