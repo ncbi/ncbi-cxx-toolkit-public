@@ -77,7 +77,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "HTTP_CreateConnectorEx/x_FixupUserHeader/sprintf"
+	name = "x_FixupUserHeader/sprintf - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
@@ -87,6 +87,17 @@ suppression = {
 		}
 		allocation={
 			...;
+		}
+	}
+}
+suppression = {
+	name = "x_FixupUserHeader/sprintf - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf;
+			func=x_FixupUserHeader,src=ncbi_http_connector.c;
 		}
 	}
 }

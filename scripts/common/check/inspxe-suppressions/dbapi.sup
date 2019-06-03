@@ -69,3 +69,29 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "tds_vasprintf_ver100 - 3"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf_ver100;
+			func=tds_asprintf_ver100;
+		}
+	}
+}
+suppression = {
+	name = "read_login_info/snprintf"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=snprintf;
+			func=read_login_info,src=common.c;
+		}
+		allocation={
+			...;
+			func=read_login_info,src=common.c;
+		}
+	}
+}

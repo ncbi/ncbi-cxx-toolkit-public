@@ -281,3 +281,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "False positive in fprintf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=stdio.h,func=fprintf;
+		}
+	}
+}
+
