@@ -92,15 +92,9 @@ public:
 private:
     void x_TranslateReplies(const CID2CDDContext& context,
                             CID2CDDProcessorPacketContext& packet_context);
-    CRef<CID2_Reply> x_GetBlobId(const CID2CDDContext& context,
-                                 int serial_number,
-                                 const CID2_Seq_id& req_id);
     void x_TranslateBlobIdReply(CRef<CID2_Reply> id2_reply,
                                 CConstRef<CSeq_id> id,
                                 CConstRef<CCDD_Reply> cdd_reply);
-    CRef<CID2_Reply> x_GetBlob(const CID2CDDContext& context,
-                               int serial_number,
-                               const CID2_Blob_Id& blob_id);
     void x_TranslateBlobReply(CRef<CID2_Reply> id2_reply,
                               const CID2CDDContext& context,
                               const CID2_Blob_Id& blob_id,

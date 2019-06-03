@@ -292,9 +292,12 @@ void CID2CDDProcessor_Impl::x_TranslateReplies
 (const CID2CDDContext& context, CID2CDDProcessorPacketContext& packet_context)
 {
     for (auto& it : m_Client->GetReplies()) {
+        if (it->GetReply().IsEmpty()  &&  !it->IsSetError()) {
+            continue;
+        }
         if ( !it->IsSetSerial_number() ) {
             CNcbiOstrstream oss;
-            oss << "Discarding CDD-Reply with no serial number";
+            oss << "Discarding non-empty CDD-Reply with no serial number";
             if (it->IsSetError()) {
                 const CCDD_Error& e = it->GetError();
                 oss << " and error message " << e.GetMessage() << " (code "
@@ -308,8 +311,7 @@ void CID2CDDProcessor_Impl::x_TranslateReplies
         }
         int serial_number = it->GetSerial_number();
         _TRACE("Received CDD reply with serial number " << serial_number);
-        CRef<CID2_Reply>& id2_reply = packet_context.m_Replies[serial_number];
-        id2_reply = x_CreateID2_Reply(serial_number, *it);
+        CRef<CID2_Reply> id2_reply = x_CreateID2_Reply(serial_number, *it);
         switch (it->GetReply().Which()) {
         case CCDD_Reply::TReply::e_Get_blob_id:
         {
@@ -340,27 +342,12 @@ void CID2CDDProcessor_Impl::x_TranslateReplies
         default:
             break;
         }
+        if (id2_reply.NotEmpty()) {
+            packet_context.m_Replies[serial_number] = id2_reply;
+        }
     }
 }
 
-
-CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlobId(
-    const CID2CDDContext& /*context*/,
-    int serial_number,
-    const CID2_Seq_id& req_id)
-{
-    CConstRef<CSeq_id> id = ID2_id_To_Seq_id(req_id);
-    CRef<CCDD_Reply> cdd_reply = m_Client->AskBlobId(serial_number, *id);
-    CRef<CID2_Reply> id2_reply = x_CreateID2_Reply(serial_number, *cdd_reply);
-    if (id2_reply == nullptr  ||  !id2_reply->IsSetReply()
-        ||  !id2_reply->GetReply().IsGet_blob_id()) {
-        // Not a blob-id reply.
-        return id2_reply;
-    }
-
-    x_TranslateBlobIdReply(id2_reply, id, cdd_reply);
-    return id2_reply;
-}
 
 void
 CID2CDDProcessor_Impl::x_TranslateBlobIdReply(CRef<CID2_Reply> id2_reply,
@@ -405,23 +392,6 @@ CID2CDDProcessor_Impl::x_TranslateBlobIdReply(CRef<CID2_Reply> id2_reply,
     id2_gb.SetAnnot_info().push_back(annot_info);
 }
 
-
-CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlob(
-    const CID2CDDContext& context,
-    int serial_number,
-    const CID2_Blob_Id& blob_id)
-{
-    CRef<CCDD_Reply> cdd_reply = m_Client->AskBlob(serial_number, blob_id);
-    CRef<CID2_Reply> id2_reply = x_CreateID2_Reply(serial_number, *cdd_reply);
-    if (id2_reply == nullptr  ||  !id2_reply->IsSetReply()
-        ||  !id2_reply->GetReply().IsGet_blob()) {
-        // Not a blob reply.
-        return id2_reply;
-    }
-
-    x_TranslateBlobReply(id2_reply, context, blob_id, cdd_reply);
-    return id2_reply;
-}
 
 void CID2CDDProcessor_Impl::x_TranslateBlobReply(CRef<CID2_Reply> id2_reply,
                                                  const CID2CDDContext& context,
