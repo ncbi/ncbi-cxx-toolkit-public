@@ -77,6 +77,12 @@ CConstRef<CSeq_id> ID2_id_To_Seq_id(const CID2_Seq_id& id2_id)
 CID2CDDProcessorPacketContext::~CID2CDDProcessorPacketContext(void)
 {
     if (m_Processor.NotEmpty()) {
+        if (m_Replies.empty()  &&  !m_SeqIDs.empty()) {
+            CCDD_Reply last_reply;
+            try {
+                m_Client->second->JustFetch(last_reply);
+            } STD_CATCH_ALL("~CID2CDDProcessorPacketContext");
+        }
         m_Processor->ReturnClient(m_Client);
     }
 }
