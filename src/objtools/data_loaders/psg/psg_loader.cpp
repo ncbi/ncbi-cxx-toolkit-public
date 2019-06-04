@@ -71,7 +71,10 @@ public:
         CObjectManager::GetInstance()->RevokeDataLoaders(filter);
     }
 };
-static CRevoker s_Revoker;
+CSafeStatic<CRevoker> s_Revoker(
+        CSafeStaticLifeSpan(
+            CSafeStaticLifeSpan::eLifeLevel_AppMain,
+            CSafeStaticLifeSpan::eLifeSpan_Longest));
 
 END_LOCAL_NAMESPACE;
 
@@ -171,6 +174,9 @@ CPSGDataLoader::CPSGDataLoader(const string& loader_name,
     : CDataLoader(loader_name)
 {
     m_Impl.Reset(new CPSGDataLoader_Impl(params));
+
+    // Register this safe static (it would be destroyed too late otherwise)
+    s_Revoker.Get();
 }
 
 

@@ -48,6 +48,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.h>
+#include <array>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -63,6 +64,11 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT CSafeStaticLifeSpan
 {
 public:
+    /// Predefined life levels for the safe static objects
+    enum ELifeLevel {
+        eLifeLevel_Default,
+        eLifeLevel_AppMain ///< Destroyed in CNcbiApplication::AppMain, if possible
+    };
     /// Predefined life spans for the safe static objects
     enum ELifeSpan {
         eLifeSpan_Min      = kMin_Int, ///< std static, not adjustable
@@ -77,6 +83,14 @@ public:
     /// argument is too big (<= -5000 or >= 5000). If span is eLifeSpan_Min
     /// "adjust" is ignored.
     CSafeStaticLifeSpan(ELifeSpan span, int adjust = 0);
+    /// Same as above but allows to specify life level.
+    /// E.g. eLifeLevel_AppMain allows to destroy such objects on AppMain exit
+    /// (useful for static objects that join threads in their destructors,
+    /// otherwise threads might disappear before such destructors are called).
+    CSafeStaticLifeSpan(ELifeLevel level, ELifeSpan span, int adjust = 0);
+
+    /// Get life level value.
+    ELifeLevel GetLifeLevel() const { return m_LifeLevel; }
 
     /// Get life span value.
     int GetLifeSpan(void) const { return m_LifeSpan; }
@@ -85,6 +99,7 @@ public:
     static CSafeStaticLifeSpan& GetDefault(void);
 
 private:
+    ELifeLevel m_LifeLevel;
     int m_LifeSpan;
 };
 
@@ -131,7 +146,7 @@ protected:
                         TLifeSpan life_span = TLifeSpan::GetDefault())
         : m_SelfCleanup(self_cleanup),
           m_UserCleanup(user_cleanup),
-          m_LifeSpan(life_span.GetLifeSpan()),
+          m_LifeSpan(life_span),
           m_CreationOrder(x_GetCreationOrder())
     {}
 
@@ -180,7 +195,7 @@ protected:
 
     FSelfCleanup m_SelfCleanup;   // Derived class' cleanup function
     FUserCleanup m_UserCleanup;   // User-provided  cleanup function
-    int          m_LifeSpan;      // Life span of the object
+    TLifeSpan    m_LifeSpan;      // Life span of the object
     int          m_CreationOrder; // Creation order of the object
     int          m_MutexRefCount; // Mutex reference counter.
     CMutex*      m_InstanceMutex; // Mutex used to create/destroy value.
@@ -191,7 +206,8 @@ protected:
     // (no delayed destruction).
     bool x_IsStdStatic(void) const
     {
-        return m_LifeSpan == int(CSafeStaticLifeSpan::eLifeSpan_Min);
+        return (m_LifeSpan.GetLifeLevel() == CSafeStaticLifeSpan::eLifeLevel_Default) &&
+            (m_LifeSpan.GetLifeSpan() == int(CSafeStaticLifeSpan::eLifeSpan_Min));
     }
 
     // To be called by CSafeStaticGuard on the program termination
@@ -218,10 +234,10 @@ public:
     typedef CSafeStaticPtr_Base* TPtr;
     bool operator()(const TPtr& ptr1, const TPtr& ptr2) const
     {
-        if (ptr1->m_LifeSpan == ptr2->m_LifeSpan) {
+        if (ptr1->m_LifeSpan.GetLifeSpan() == ptr2->m_LifeSpan.GetLifeSpan()) {
             return ptr1->m_CreationOrder > ptr2->m_CreationOrder;
         }
-        return ptr1->m_LifeSpan < ptr2->m_LifeSpan;
+        return ptr1->m_LifeSpan.GetLifeSpan() < ptr2->m_LifeSpan.GetLifeSpan();
     }
 };
 
@@ -251,14 +267,20 @@ public:
             // Do not add the object to the stack
             return;
         }
-        if ( !sm_Stack ) {
+
+        auto& stack = x_GetStack(ptr->m_LifeSpan.GetLifeLevel());
+
+        if ( !stack ) {
             x_Get();
         }
-        sm_Stack->insert(ptr);
+        stack->insert(ptr);
     }
 
     /// Disable checking on child thread(s) running during destruction
     static void DisableChildThreadsCheck();
+
+    /// Explicitly destroy all on-demand variables up to a specified level
+    static void Destroy(CSafeStaticLifeSpan::ELifeLevel level);
 
 private:
     // Initialize the guard, return pointer to it.
@@ -266,7 +288,20 @@ private:
 
     // Stack to keep registered variables.
     typedef multiset<CSafeStaticPtr_Base*, CSafeStatic_Less> TStack;
-    static TStack* sm_Stack;
+
+    // Get a stack based on a level
+    static TStack*& x_GetStack(CSafeStaticLifeSpan::ELifeLevel level)
+    {
+        static array<TStack*, 2> stacks;
+
+        const size_t index = level;
+        _ASSERT(level >= 0);
+        _ASSERT(index < stacks.size());
+        return stacks[index];
+    }
+
+    // Cleanup a stack
+    static void x_Cleanup(CMutexGuard& guard, TStack*& stack);
 
     // Reference counter. The stack is destroyed when
     // the last reference is removed.

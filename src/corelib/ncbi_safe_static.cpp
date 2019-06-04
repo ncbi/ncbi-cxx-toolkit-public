@@ -51,7 +51,13 @@ BEGIN_NCBI_SCOPE
 
 
 CSafeStaticLifeSpan::CSafeStaticLifeSpan(ELifeSpan span, int adjust)
-    : m_LifeSpan(int(span) + adjust)
+    : CSafeStaticLifeSpan(eLifeLevel_Default, span, adjust)
+{
+}
+
+CSafeStaticLifeSpan::CSafeStaticLifeSpan(ELifeLevel level, ELifeSpan span, int adjust)
+    : m_LifeLevel(level),
+      m_LifeSpan(int(span) + adjust)
 {
     if (span == eLifeSpan_Min) {
         m_LifeSpan = int(span); // ignore adjustments
@@ -103,10 +109,6 @@ CSafeStaticPtr_Base::~CSafeStaticPtr_Base(void)
 //  CSafeStaticGuard::
 //
 
-// Cleanup stack to keep all on-demand variables
-CSafeStaticGuard::TStack* CSafeStaticGuard::sm_Stack;
-
-
 // CSafeStaticGuard reference counter
 int CSafeStaticGuard::sm_RefCount;
 
@@ -125,7 +127,8 @@ CSafeStaticGuard::CSafeStaticGuard(void)
 {
     // Initialize the guard only once
     if (sm_RefCount == 0) {
-        CSafeStaticGuard::sm_Stack = new CSafeStaticGuard::TStack;
+        x_GetStack(CSafeStaticLifeSpan::eLifeLevel_Default) = new CSafeStaticGuard::TStack;
+        x_GetStack(CSafeStaticLifeSpan::eLifeLevel_AppMain) = new CSafeStaticGuard::TStack;
     }
 
     sm_RefCount++;
@@ -135,6 +138,19 @@ CSafeStaticGuard::CSafeStaticGuard(void)
 void CSafeStaticGuard::DisableChildThreadsCheck()
 {
     sm_ChildThreadsCheck = false;
+}
+
+
+void CSafeStaticGuard::Destroy(CSafeStaticLifeSpan::ELifeLevel level)
+{
+    CMutexGuard guard(CSafeStaticPtr_Base::sm_ClassMutex);
+
+    // AppMain level variables are always destroyed before default level ones
+    x_Cleanup(guard, x_GetStack(CSafeStaticLifeSpan::eLifeLevel_AppMain));
+
+    if (level == CSafeStaticLifeSpan::eLifeLevel_Default) {
+        x_Cleanup(guard, x_GetStack(CSafeStaticLifeSpan::eLifeLevel_Default));
+    }
 }
 
 
@@ -166,10 +182,19 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
         }
     }
 
+    x_Cleanup(guard, x_GetStack(CSafeStaticLifeSpan::eLifeLevel_AppMain));
+    x_Cleanup(guard, x_GetStack(CSafeStaticLifeSpan::eLifeLevel_Default));
+}
+
+
+void CSafeStaticGuard::x_Cleanup(CMutexGuard& guard, TStack*& stack)
+{
+    if (!stack) return;
+
     for ( int pass = 0; pass < 3; ++pass ) {
         // Call Cleanup() for all variables registered
         TStack cur_Stack;
-        swap(cur_Stack, *sm_Stack);
+        swap(cur_Stack, *stack);
         guard.Release();
         NON_CONST_ITERATE(TStack, it, cur_Stack) {
             (*it)->x_Cleanup();
@@ -177,8 +202,8 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
         guard.Guard(CSafeStaticPtr_Base::sm_ClassMutex);
     }
 
-    delete sm_Stack;
-    sm_Stack = 0;
+    delete stack;
+    stack = nullptr;
 }
 
 
