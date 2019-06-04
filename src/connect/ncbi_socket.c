@@ -4483,11 +4483,11 @@ static EIO_Status s_Create(const char*       hostpath,
     x_sock->type      = eSocket;
     x_sock->side      = eSOCK_Client;
     x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
-    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
-    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
-    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
-    x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
-    x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
+    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/ : 0/*false*/;
+    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn : eDefault;
+    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn : eDefault;
+    x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/ : 0/*false*/;
+    x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/ : 0/*false*/;
 #ifdef NCBI_OS_UNIX
     if (!port)
         memcpy(x_sock->path, hostpath, size + 1);
@@ -4743,8 +4743,8 @@ static EIO_Status s_CreateOnTop(const void*       handle,
     }
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen)))
         goto errout;
-    x_sock->sock       = fd;
-    x_sock->id         = x_id;
+    x_sock->sock      = fd;
+    x_sock->id        = x_id;
 #ifdef NCBI_OS_UNIX
     if (socklen) {
         strncpy0(x_sock->path,
@@ -4753,27 +4753,27 @@ static EIO_Status s_CreateOnTop(const void*       handle,
 #endif /*NCBI_OS_UNIX*/
     {
         assert(x_orig  ||  peer.sa.sa_family == AF_INET);
-        x_sock->host   = x_orig ? x_orig->host :       peer.in.sin_addr.s_addr;
-        x_sock->port   = x_orig ? x_orig->port : ntohs(peer.in.sin_port);
+        x_sock->host  = x_orig ? x_orig->host :       peer.in.sin_addr.s_addr;
+        x_sock->port  = x_orig ? x_orig->port : ntohs(peer.in.sin_port);
         assert(x_sock->port);
     }
-    x_sock->myport     = myport;
-    x_sock->type       = eSocket;
-    x_sock->side       = x_orig ? x_orig->side : eSOCK_Server;
-    x_sock->log        = flags & (fSOCK_LogDefault | fSOCK_LogOn);
-    x_sock->keep       = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
-    x_sock->r_on_w     = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
-    x_sock->i_on_sig   = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
-    x_sock->pending    = 1/*have to check at the nearest I/O*/;
+    x_sock->myport    = myport;
+    x_sock->type      = eSocket;
+    x_sock->side      = x_orig ? x_orig->side : eSOCK_Server;
+    x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
+    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/ : 0/*false*/;
+    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn : eDefault;
+    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn : eDefault;
+    x_sock->pending   = 1/*have to check at the nearest I/O*/;
  #ifdef NCBI_OS_MSWIN
-    x_sock->event      = event;
-    x_sock->writable   = 1/*true*/;
+    x_sock->event     = event;
+    x_sock->writable  = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
-    x_sock->connected  = x_orig ? x_orig->connected             : 0/*false*/;
-    x_sock->crossexec  = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
-    x_sock->keepalive  = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
+    x_sock->connected = x_orig ? x_orig->connected            : 0/*false*/;
+    x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/ : 0/*false*/;
+    x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/ : 0/*false*/;
     /* all timeout bits zeroed - infinite */
-    x_sock->w_buf      = w_buf;
+    x_sock->w_buf     = w_buf;
     if (oldctx  &&  sslctx) {
         NCBI_CRED   cred;
         const char* host;
