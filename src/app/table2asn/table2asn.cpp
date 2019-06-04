@@ -617,7 +617,7 @@ int CTbl2AsnApp::Run(void)
     }
 
     if (m_context.m_gap_Unknown_length > 0  &&  m_context.m_gapNmin == 0) {
-        m_context.m_gapNmin = 1;
+        m_context.m_gapNmin = m_context.m_gap_Unknown_length;
     }
 
     if (args["H"])
