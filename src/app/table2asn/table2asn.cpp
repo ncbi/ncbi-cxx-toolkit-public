@@ -526,10 +526,22 @@ int CTbl2AsnApp::Run(void)
             m_context.m_di_fasta = true;
         }
     }
-    if (args["gaps-min"])
-        m_context.m_gapNmin = args["gaps-min"].AsInteger();
-    if (args["gaps-unknown"])
-        m_context.m_gap_Unknown_length = args["gaps-unknown"].AsInteger();
+    if (args["gaps-min"]) {
+        int gaps_min = args["gaps-min"].AsInteger();
+        if (gaps_min < 0) {
+            NCBI_THROW(CArgException, eConvert,
+                "Invalid value: gaps-min cannot be negative.");
+        }
+        m_context.m_gapNmin = static_cast<TSeqPos>(gaps_min);
+    }
+    if (args["gaps-unknown"]) {
+        int gaps_unknown = args["gaps-unknown"].AsInteger();
+        if (gaps_unknown < 0) {
+            NCBI_THROW(CArgException, eConvert,
+                "Invalid value: gaps-unknown cannot be negative.");
+        }
+        m_context.m_gap_Unknown_length = static_cast<TSeqPos>(gaps_unknown);
+    }
 
     if (args["l"])
     {
@@ -570,11 +582,9 @@ int CTbl2AsnApp::Run(void)
 
     }
 
-    if (m_context.m_gapNmin < 0)
-        m_context.m_gapNmin = 0;
-
-    if (m_context.m_gapNmin == 0 || m_context.m_gap_Unknown_length < 0)
-        m_context.m_gap_Unknown_length = 0;
+    if (m_context.m_gap_Unknown_length > 0  &&  m_context.m_gapNmin == 0) {
+        m_context.m_gapNmin = 1;
+    }
 
     if (args["H"])
     {
