@@ -644,7 +644,8 @@ static Boolean s_TestHSPRanges(const BlastHSP* hsp)
    from the end */
 static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
                       Boolean is_start, Int4 mismatch_score,
-                      Int4 gap_open_score, Int4 gap_extend_score)
+                      Int4 gap_open_score, Int4 gap_extend_score,
+                      const Uint1* query_seq)
 {
     Int4 num_left = num;
     Int4 i = is_start ? 0 : hsp->gap_info->size - 1;
@@ -654,6 +655,7 @@ static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
     Boolean is_subject = !is_query;
     Boolean is_end = !is_start;
     Int4 k;
+    const Uint1 kGap = 15;
 
     ASSERT(hsp /* */ && num > 0 /* */);
     ASSERT((is_query && num <= hsp->query.end - hsp->query.offset) ||
@@ -746,11 +748,105 @@ static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
         hsp->gap_info->size = i + 1;
     }
 
+
+    if (!hsp->map_info->subject_overhangs) {
+        hsp->map_info->subject_overhangs = calloc(1, sizeof(SequenceOverhangs));
+        if (!hsp->map_info->subject_overhangs) {
+            return -1;
+        }
+    }
+
+
+    /* update subject overhangs */
+    if (is_start) {
+        SequenceOverhangs* overhangs = hsp->map_info->subject_overhangs;
+        Uint1* subject_bases = NULL;
+        Int4 offset = 0;  /* query pos -> subject pos */
+
+        ASSERT((overhangs->left && overhangs->left_len > 0) ||
+               (!overhangs->left && overhangs->left_len == 0));
+
+        overhangs->left = realloc(overhangs->left,
+                                  (overhangs->left_len + delta_subject) *
+                                  sizeof(Uint1));
+        if (!overhangs->left) {
+            return -1;
+        }
+        subject_bases = overhangs->left + overhangs->left_len;
+        overhangs->left_len += delta_subject;
+
+        memcpy(subject_bases, query_seq + hsp->query.offset, delta_subject);
+        for (k = 0;k < hsp->map_info->edits->num_edits &&
+                 hsp->map_info->edits->edits[k].query_pos <
+                 hsp->query.offset; k++) {
+            
+            JumperEdit* edits = hsp->map_info->edits->edits + k;
+            if (edits->subject_base == kGap) {
+                offset--;
+            }
+            else {
+                ASSERT(edits->query_pos + offset >= 0);
+                ASSERT(edits->query_pos + offset < delta_subject);
+                subject_bases[edits->query_pos + offset] = edits->subject_base;
+            }
+        }
+    }
+    else {
+        SequenceOverhangs* overhangs = hsp->map_info->subject_overhangs;
+        Uint1* subject_bases = NULL;
+        Int4 offset /*= hsp->subject.offset - hsp->query.offset*/;
+        Uint1* tmp = NULL;
+
+        ASSERT((overhangs->right && overhangs->right_len > 0) ||
+               (!overhangs->right && overhangs->right_len == 0));
+
+        tmp = malloc((overhangs->right_len + delta_subject) * sizeof(Uint1));
+        if (!tmp) {
+            return -1;
+        }
+        memcpy(tmp + delta_subject, overhangs->right, overhangs->right_len);
+        free(overhangs->right);
+        overhangs->right = tmp;
+        subject_bases = overhangs->right;
+
+        memcpy(subject_bases, query_seq + hsp->query.end - delta_subject,
+               delta_subject);
+
+
+        k = 0;
+        while (k < hsp->map_info->edits->num_edits &&
+               hsp->map_info->edits->edits[k].query_pos <
+               hsp->query.end - delta_query) {
+            k++;
+        }
+
+        offset = -(hsp->query.end - delta_query);
+        for (;k < hsp->map_info->edits->num_edits; k++) {
+
+            JumperEdit* edits = hsp->map_info->edits->edits + k;
+
+            if (edits->query_pos >= hsp->query.end) {
+                ASSERT(edits->query_base == kGap);
+                continue;
+            }
+
+            if (edits->subject_base == kGap) {
+                offset--;
+            }
+            else {
+                ASSERT(edits->query_pos + offset >= 0);
+                ASSERT(edits->query_pos + offset < delta_subject);
+                subject_bases[edits->query_pos + offset] = edits->subject_base;
+            }
+        }
+        
+    }
+
+
     /* update the Jumper edit script */
     if (is_start) {
         Int4 k = hsp->map_info->edits->num_edits - 1;
         Int4 p = hsp->query.end - 1;
-        const Uint1 kGap = 15;
         for (i = hsp->gap_info->size - 1;i >= 0;i--) {
             if (hsp->gap_info->op_type[i] != eGapAlignDel) {
 
@@ -902,7 +998,8 @@ static Int4 s_FindAdapterInSequence(Int4 hsp_from, Int4 hsp_to, Uint1* query,
 /* Set adapter position in the chain and trim alignments that span beyond
    adapter start position */
 static Int2 s_SetAdapter(HSPChain** chains_ptr, Int4 adapter_pos,
-                         Int4 query_len, const ScoringOptions* scores)
+                         const Uint1* query, Int4 query_len,
+                         const ScoringOptions* scores)
 {
     HSPChain* head = NULL;
     HSPChain* chain = NULL;
@@ -987,7 +1084,7 @@ static Int2 s_SetAdapter(HSPChain** chains_ptr, Int4 adapter_pos,
                     ASSERT(hsp->query.end - adapter_pos > 0);
                     s_TrimHSP(hsp, hsp->query.end - adapter_pos, TRUE,
                               FALSE, scores->penalty, scores->gap_open,
-                              scores->gap_extend);
+                              scores->gap_extend, query);
                     chain->score += hsp->score - old_score;
 
                     /* remove HSPs after h as they are past the adapter */
@@ -1080,7 +1177,7 @@ static Int2 s_SetAdapter(HSPChain** chains_ptr, Int4 adapter_pos,
                 ASSERT(pos_minus - hsp->query.offset + 1 > 0);
                 s_TrimHSP(hsp, pos_minus - hsp->query.offset + 1,
                           TRUE, TRUE, scores->penalty, scores->gap_open,
-                          scores->gap_extend);
+                          scores->gap_extend, query);
                 chain->score += hsp->score - old_score;
             }
         }
@@ -1211,7 +1308,7 @@ static Int4 s_FindAdapters(HSPChain** saved,
         /* set adapter information in all chains and trim HSPs that extend
            into the adapter */
         if (adapter_pos >= 0) {
-            s_SetAdapter(&(saved[query_idx]), adapter_pos, query_len,
+            s_SetAdapter(&(saved[query_idx]), adapter_pos, query, query_len,
                          score_opts);
         }
     }
@@ -1396,6 +1493,7 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
     Int4 gap_info_size;
     Int4 edits_size;
     Int4 k;
+    Int4 offset;
     const Uint1 kGap = 15;
 
     if (!first || !second || !query || !score_opts) {
@@ -1522,9 +1620,22 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
         ASSERT(merged_hsp->gap_info->size <= gap_info_size);
     }
 
+    /* find translation of a query into the subject position:
+       query pos + offset = subject pos */
+    offset = merged_hsp->subject.offset - merged_hsp->query.offset;
+    for (k = 0;k < merged_hsp->map_info->edits->num_edits; k++) {
+        if (merged_hsp->map_info->edits->edits[k].query_base == kGap) {
+            offset++;
+        }
+        else if (merged_hsp->map_info->edits->edits[k].subject_base == kGap) {
+            offset--;
+        }
+    }
+
     /* add mismatches to jumper edits */
     if (mismatches > 0) {
         for (k = 0;k < mismatches;k++) {
+            Int4 subject_pos;
             JumperEdit* edit = merged_hsp->map_info->edits->edits +
                 merged_hsp->map_info->edits->num_edits++;
 
@@ -1532,7 +1643,21 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
             /* FIXME: Mismatch bases cannot be currently set because there is
                no access to query or subject sequence in this function. */
             edit->query_base = query[edit->query_pos];
-            edit->subject_base = edit->query_base;
+
+
+            subject_pos = edit->query_pos + offset - merged_hsp->subject.end;
+            if (merged_hsp->map_info->subject_overhangs &&
+                merged_hsp->map_info->subject_overhangs->right &&
+                subject_pos <
+                merged_hsp->map_info->subject_overhangs->right_len) {
+
+                edit->subject_base =
+                    merged_hsp->map_info->subject_overhangs->right[subject_pos];
+            }
+            else {
+                edit->subject_base = edit->query_base;
+            }
+
 
             ASSERT(merged_hsp->map_info->edits->num_edits <= edits_size);
         }
@@ -1541,6 +1666,7 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
     /* add query gap to jumper edits */
     if (query_gap > 0) {
         for (k = 0;k < query_gap;k++) {
+            Int4 subject_pos;
             JumperEdit* edit = merged_hsp->map_info->edits->edits +
                 merged_hsp->map_info->edits->num_edits++;
             
@@ -1548,8 +1674,21 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
             /* FIXME: Mismatch bases cannot be currently set because there is
                no access to query or subject sequence in this function. */
             edit->query_base = kGap;
-            edit->subject_base = 0;
 
+            subject_pos = edit->query_pos + offset - merged_hsp->subject.end;
+            if (merged_hsp->map_info->subject_overhangs &&
+                merged_hsp->map_info->subject_overhangs->right &&
+                subject_pos <
+                merged_hsp->map_info->subject_overhangs->right_len) {
+
+                edit->subject_base =
+                    merged_hsp->map_info->subject_overhangs->right[subject_pos];
+            }
+            else {
+                edit->subject_base = 0;
+            }
+            offset++;
+            
             ASSERT(merged_hsp->map_info->edits->num_edits <= edits_size);
         }
     }
@@ -2387,10 +2526,10 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                 if (edits[num_edits - 1].query_base == kGap) {
                     trim_by++;
                     /* FIXME: use proper scores here */
-                    s_TrimHSP(first, trim_by, FALSE, FALSE, -4, -4, -4);
+                    s_TrimHSP(first, trim_by, FALSE, FALSE, -4, -4, -4, query);
                 }
                 else {
-                    s_TrimHSP(first, trim_by, TRUE, FALSE, -4, -4, -4);
+                    s_TrimHSP(first, trim_by, TRUE, FALSE, -4, -4, -4, query);
                 }
                 first->map_info->right_edge = edge;
             }
@@ -2434,12 +2573,12 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                     /* FIXME: use proper scores here */
                     s_TrimHSP(second,
                               edits[0].query_pos - second->query.offset + 1,
-                              FALSE, TRUE, -4, -4, -4);
+                              FALSE, TRUE, -4, -4, -4, query);
                 }
                 else {
                     s_TrimHSP(second,
                               edits[0].query_pos - second->query.offset + 1,
-                              TRUE, TRUE, -4, -4, -4);
+                              TRUE, TRUE, -4, -4, -4, query);
                 }
                 second->map_info->left_edge = edge;
             }
@@ -2878,7 +3017,8 @@ s_FindSpliceJunctionsForGap(BlastHSP* first, BlastHSP* second,
                         s_TrimHSP(first, q, TRUE, FALSE,
                                   score_options->penalty,
                                   score_options->gap_open,
-                                  score_options->gap_extend);
+                                  score_options->gap_extend,
+                                  query);
                     }
 
                     status = s_ExtendAlignment(second, query,
@@ -2966,7 +3106,8 @@ s_FindSpliceJunctionsForGap(BlastHSP* first, BlastHSP* second,
                         s_TrimHSP(second, q, TRUE, TRUE,
                                   score_options->penalty,
                                   score_options->gap_open,
-                                  score_options->gap_extend);
+                                  score_options->gap_extend,
+                                  query);
                     }
 
                     status = s_ExtendAlignment(first, query,
@@ -3167,7 +3308,7 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
 
 
 static Int4
-s_TrimOverlap(BlastHSP* first, BlastHSP* second)
+s_TrimOverlap(BlastHSP* first, BlastHSP* second, const Uint1* query)
 {
     if (second->query.offset - first->query.end < 0) {
         Int4 overlap = first->query.end - second->query.offset;
@@ -3175,10 +3316,10 @@ s_TrimOverlap(BlastHSP* first, BlastHSP* second)
 
         if (second->query.end - second->query.offset > overlap) {
 
-            s_TrimHSP(second, overlap, TRUE, TRUE, -4, -4, -4);
+            s_TrimHSP(second, overlap, TRUE, TRUE, -4, -4, -4, query);
         }
         else {
-            s_TrimHSP(first, overlap, TRUE, FALSE, -4, -4, -4);
+            s_TrimHSP(first, overlap, TRUE, FALSE, -4, -4, -4, query);
         }
 
                               
@@ -3195,10 +3336,10 @@ s_TrimOverlap(BlastHSP* first, BlastHSP* second)
 
         if (second->subject.end - second->subject.offset > overlap) {
 
-            s_TrimHSP(second, overlap, FALSE, TRUE, -4, -4, -4);
+            s_TrimHSP(second, overlap, FALSE, TRUE, -4, -4, -4, query);
         }
         else {
-            s_TrimHSP(first, overlap, FALSE, FALSE, -4, -4, -4);
+            s_TrimHSP(first, overlap, FALSE, FALSE, -4, -4, -4, query);
         }
                               
         ASSERT(first->subject.end == second->subject.offset);
@@ -3209,6 +3350,66 @@ s_TrimOverlap(BlastHSP* first, BlastHSP* second)
 
     ASSERT(first->query.end <= second->query.offset);
     ASSERT(first->subject.end <= second->subject.offset);
+
+    return 0;
+}
+
+
+/* Relpace an intron with a gap */
+static Int4
+s_IntronToGap(HSPContainer* h, HSPContainer* next, const Uint1* query,
+              const ScoringOptions* scoring_opts)
+{
+    BlastHSP* new_hsp = NULL;
+    HSPContainer* following = NULL;
+
+    ASSERT(h);
+    ASSERT(next);
+    ASSERT(query);
+    ASSERT(scoring_opts);
+
+    following = h->next->next;
+    h->next->next = NULL;
+
+    s_TrimOverlap(h->hsp, next->hsp, query); 
+
+#if _DEBUG
+    s_TestHSPRanges(h->hsp);
+#endif
+
+                    
+    /* merge HSPs */
+    new_hsp = s_MergeHSPs(h->hsp, h->next->hsp, query,
+                          scoring_opts);
+        
+
+#if _DEBUG
+    s_TestHSPRanges(new_hsp);
+#endif
+
+
+    if (new_hsp) {
+
+        /* replace the two processed HSPs with the combined one */
+        Blast_HSPFree(h->hsp);
+        HSPContainerFree(h->next);
+        h->hsp = new_hsp;
+        h->next = following;
+    }
+    else {
+        /* something went wrong with merging, use the initial HSPs */
+
+        /* remove splice signal */
+        h->hsp->map_info->right_edge &= ~MAPPER_SPLICE_SIGNAL;
+        next->hsp->map_info->left_edge &= ~MAPPER_SPLICE_SIGNAL;
+
+        h->next->next = following;
+        h = h->next;
+
+        ASSERT(!h->next ||
+               (h->hsp->query.end <= h->next->hsp->query.offset &&
+                h->hsp->subject.end <= h->next->hsp->subject.offset));
+    }
 
     return 0;
 }
@@ -3263,7 +3464,7 @@ s_FindSpliceJunctions(HSPChain* chains,
                 /* duplicate HSPContainer with the two HSPs */
                 h->next->next = NULL;
 
-                s_TrimOverlap(h->hsp, next->hsp);
+                s_TrimOverlap(h->hsp, next->hsp, query);
 
                 /* extend the first HSP to cover the gap between HSPs */
                 if (next->hsp->query.offset - h->hsp->query.end > 1) {
@@ -3322,18 +3523,29 @@ s_FindSpliceJunctions(HSPChain* chains,
                 s_FindSpliceJunctionsForOverlaps(h->hsp, next->hsp, query,
                                                  query_len, consensus_only);
 
+
                 if ((h->hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) == 0) {
 
-                    s_TrimOverlap(h->hsp, next->hsp);
+                    s_TrimOverlap(h->hsp, next->hsp, query);
                 }
 
+                /* if the intron is shorter than 30 bases, replace it with
+                   deletion and merge HSPs */
+                if ((h->hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) != 0 &&
+                    next->hsp->subject.offset - h->hsp->subject.end < 30) {
+
+
+                    s_IntronToGap(h, next, query, scoring_opts);
+
+                }
+                else {
 
 #if _DEBUG
                     s_TestHSPRanges(h->hsp);
 #endif
 
-
-                h = h->next;
+                    h = h->next;
+                }
             }
             else if (next->hsp->query.offset - h->hsp->query.end > 0 &&
                      next->hsp->query.offset - h->hsp->query.end <
@@ -3342,21 +3554,38 @@ s_FindSpliceJunctions(HSPChain* chains,
                 s_FindSpliceJunctionsForGap(h->hsp, next->hsp, query,
                                             query_len, scoring_opts);
 
+
                 if ((h->hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) == 0) {
 
-                    s_TrimOverlap(h->hsp, next->hsp);
+                    s_TrimOverlap(h->hsp, next->hsp, query);
                 }
 
 
+                
+                /* if the intron is shorter than 30 bases, replace it with
+                   deletion and merge HSPs */
+                if ((h->hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) != 0 &&
+                    next->hsp->subject.offset - h->hsp->subject.end < 30) {
+
+
+                    s_IntronToGap(h, next, query, scoring_opts);
+
+                }
+                else {
+
+
 #if _DEBUG
                     s_TestHSPRanges(h->hsp);
 #endif
 
-                h = h->next;
+                    h = h->next;
+                }
             }
+
+
             else {
 
-                s_TrimOverlap(h->hsp, next->hsp);
+                s_TrimOverlap(h->hsp, next->hsp, query);
 
 #if _DEBUG
                     s_TestHSPRanges(h->hsp);
@@ -3364,6 +3593,7 @@ s_FindSpliceJunctions(HSPChain* chains,
 
                 h = h->next;
             }
+
         }
 
         /* recalculated chain score */
@@ -3742,19 +3972,25 @@ s_ComparePairs(const void* v1, const void* v2)
 static Int4 s_TrimChainStartToSubjPos(HSPChain* chain, Int4 subj_pos,
                                       Int4 mismatch_score,
                                       Int4 gap_open_score,
-                                      Int4 gap_extend_score)
+                                      Int4 gap_extend_score,
+                                      const BLAST_SequenceBlk* query_blk,
+                                      const BlastQueryInfo* query_info)
 {
     HSPContainer* h = NULL;
     BlastHSP* hsp = NULL;
     BlastHSP* next_hsp = NULL;
     Int4 num_left;
     Int4 old_score;
+    Uint1* query = NULL;
 
     ASSERT(chain);
     ASSERT(subj_pos >= 0);
     if (!chain || subj_pos < 0) {
         return 0;
     }
+
+    query = query_blk->sequence +
+        query_info->contexts[chain->context].query_offset;
 
     /* first remove HSPs that are fully below the subject position */
     h = chain->hsps;
@@ -3784,7 +4020,7 @@ static Int4 s_TrimChainStartToSubjPos(HSPChain* chain, Int4 subj_pos,
 
     old_score = hsp->score;
     s_TrimHSP(hsp, num_left, FALSE, TRUE, mismatch_score, gap_open_score,
-              gap_extend_score);
+              gap_extend_score, query);
 
     /* update chain score */
     chain->score -= old_score - hsp->score;
@@ -3811,18 +4047,24 @@ static Int4 s_TrimChainStartToSubjPos(HSPChain* chain, Int4 subj_pos,
 /* Trim chain alignment end up the the given subject position */
 static Int4 s_TrimChainEndToSubjPos(HSPChain* chain, Int4 subj_pos,
                                     Int4 mismatch_score,
-                                    Int4 gap_open_score, Int4 gap_extend_score)
+                                    Int4 gap_open_score, Int4 gap_extend_score,
+                                    const BLAST_SequenceBlk* query_blk,
+                                    const BlastQueryInfo* query_info)
 {
     HSPContainer* h = NULL;
     BlastHSP* hsp = NULL;
     Int4 num_left;
     Int4 old_score;
+    Uint1* query = NULL;
 
     ASSERT(chain);
     ASSERT(subj_pos >= 0);
-    if (!chain || subj_pos <= 0) {
+    if (!chain || subj_pos <= 0 || !query_blk || !query_info) {
         return -1;
     }
+
+    query = query_blk->sequence +
+        query_info->contexts[chain->context].query_offset;
 
     /* first remove HSPs that are full above the subject position */
     h = chain->hsps;
@@ -3857,7 +4099,7 @@ static Int4 s_TrimChainEndToSubjPos(HSPChain* chain, Int4 subj_pos,
 
     old_score = hsp->score;
     s_TrimHSP(hsp, num_left, FALSE, FALSE, mismatch_score, gap_open_score,
-              gap_extend_score);
+              gap_extend_score, query);
 
     /* update chain score */
     chain->score -= old_score - hsp->score;
@@ -3892,7 +4134,9 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                                Pairinfo** pair_info_ptr,
                                Int4* max_num_pairs,
                                Boolean is_spliced,
-                               const ScoringOptions* scoring_options)
+                               const ScoringOptions* scoring_options,
+                               const BLAST_SequenceBlk* query_blk,
+                               const BlastQueryInfo* query_info)
 {
     HSPChain* first;
     HSPChain* second;
@@ -4176,7 +4420,9 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                                             pair_info[i].trim_first,
                                             scoring_options->penalty,
                                             scoring_options->gap_open,
-                                            scoring_options->gap_extend);
+                                            scoring_options->gap_extend,
+                                            query_blk,
+                                            query_info);
                 }
                 else {
                     /* minus strand of the qurey is represented by another
@@ -4187,7 +4433,9 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                                               pair_info[i].trim_first,
                                               scoring_options->penalty,
                                               scoring_options->gap_open,
-                                              scoring_options->gap_extend);
+                                              scoring_options->gap_extend,
+                                              query_blk,
+                                              query_info);
                 }
             }
 
@@ -4199,14 +4447,18 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                                             pair_info[i].trim_second,
                                             scoring_options->penalty,
                                             scoring_options->gap_open,
-                                            scoring_options->gap_extend);
+                                            scoring_options->gap_extend,
+                                            query_blk,
+                                            query_info);
                 }
                 else {
                     s_TrimChainStartToSubjPos(pair_info[i].second,
                                               pair_info[i].trim_second,
                                               scoring_options->penalty,
                                               scoring_options->gap_open,
-                                              scoring_options->gap_extend);
+                                              scoring_options->gap_extend,
+                                              query_blk,
+                                              query_info);
                 }
             }
 
@@ -4461,7 +4713,8 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
         if (first && second) {
 
             s_FindBestPairs(&first, &second, 0, &pair_workspace,
-                            &workspace_size, is_spliced, scoring_opts);
+                            &workspace_size, is_spliced, scoring_opts,
+                            query_blk, query_info);
 
             ASSERT(s_TestChains(first));
             ASSERT(s_TestChains(second));

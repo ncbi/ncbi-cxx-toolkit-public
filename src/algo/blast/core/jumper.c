@@ -3032,8 +3032,16 @@ static Int4 s_SaveSubjectOverhangs(BlastHSP* hsp, Uint1* subject,
 
     if (hsp->query.end <= query_len - kMinOverhangLength) {
         Int4 i;
-        Int4 len =
-            MIN(MAX(query_len - hsp->query.end + 1, 2), kMaxSubjectOverhang);
+        Int4 len;
+        /* right side overhangs are used to populate SAM MD tag, so we need
+           to save a long overhang, unless very few query bases are left and
+           we are not expecting to find another local alignment */
+        if (query_len - hsp->query.end + 1 < 6) 
+            len =
+          MIN(MAX(query_len - hsp->query.end + 1, 2), kMaxSubjectOverhang);
+        else {
+            len = kMaxSubjectOverhang;
+        }
         Uint1* overhang = calloc(len, sizeof(Uint1));
         if (!overhang) {
             SequenceOverhangsFree(overhangs);
