@@ -2473,7 +2473,18 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
             case eQual_go_function:
             case eQual_go_process:
                 if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
-                    return CReadUtil::AddGeneOntologyTerm(*sfp, qual, val);
+                    try {
+                        CReadUtil::AddGeneOntologyTerm(*sfp, qual, val);
+                    }
+                    catch( ILineError& err) {
+                        x_ProcessMsg(
+                            err.Problem(), 
+                            err.Severity(), 
+                            feat_name, qual, val, 
+                            err.ErrorMessage());
+                    }
+                    //rw-621: throw out the faulty qualifier but retain the rest of the feature.
+                    return true;
                 }
                 return false;
             case eQual_transcript_id:

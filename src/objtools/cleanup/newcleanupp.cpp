@@ -6048,9 +6048,14 @@ void CNewCleanup_imp::x_ConvertGoQualifiers(CSeq_feat& sf)
             ++qualIt;
             continue;
         }
-        CReadUtil::AddGeneOntologyTerm(sf, qualRef->GetQual(), qualRef->GetVal()); 
-        qualIt = quals.erase(qualIt);
-        ChangeMade (CCleanupChange::eMoveGeneOntologyTerm);
+        try {
+            CReadUtil::AddGeneOntologyTerm(sf, qualRef->GetQual(), qualRef->GetVal()); 
+            qualIt = quals.erase(qualIt);
+            ChangeMade (CCleanupChange::eMoveGeneOntologyTerm);
+        }
+        catch (CException&) {
+            //just silence
+        };
     }
 }
 

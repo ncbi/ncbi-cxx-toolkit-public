@@ -404,6 +404,11 @@ public:
     void PatchLineNumber(
         unsigned int uLine) { m_uLine = uLine; };
 
+    void PatchErrorMessage(
+        const string& errorMessage) {
+        m_strErrorMessage = errorMessage;
+    };
+
     // "OtherLines" not set in ctor because it's
     // use should be somewhat rare
     void AddOtherLine(unsigned int uOtherLine) {

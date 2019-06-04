@@ -1012,7 +1012,11 @@ bool CGff2Record::xMigrateAttributesGo(
 {
     for (auto it = attrs.begin(); it != attrs.end(); /**/) {
         if (NStr::StartsWith(it->first, "go_")) {
-            CReadUtil::AddGeneOntologyTerm(*pFeature, it->first, it->second);
+            try {
+                CReadUtil::AddGeneOntologyTerm(*pFeature, it->first, it->second);
+            }
+            catch(ILineError& err) {
+            }
             it = attrs.erase(it);
         }
         else {

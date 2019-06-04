@@ -277,32 +277,6 @@ Seq-annot ::= {
                 }
               }
             }
-          },
-          {
-            label str "Process",
-            data fields {
-              {
-                label id 0,
-                data fields {
-                  {
-                    label str "text string",
-                    data str "threonine biosynthetic process"
-                  },
-                  {
-                    label str "go id",
-                    data str "0009088,methionine biosynthetic process"
-                  },
-                  {
-                    label str "go ref",
-                    data str "0009086,homoserine biosynthetic process"
-                  },
-                  {
-                    label str "evidence",
-                    data str "0009090"
-                  }
-                }
-              }
-            }
           }
         }
       },

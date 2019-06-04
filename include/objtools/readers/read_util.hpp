@@ -95,7 +95,7 @@ public:
         const string& key,
         string& value);
 
-    static bool AddGeneOntologyTerm(
+    static void AddGeneOntologyTerm(
         CSeq_feat& feature,
         const CTempString& qual,
         const CTempString& val);

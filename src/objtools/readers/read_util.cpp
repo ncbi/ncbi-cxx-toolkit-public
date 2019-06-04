@@ -38,6 +38,7 @@
 #include <objects/general/User_field.hpp>
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/line_error.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -222,7 +223,77 @@ bool CReadUtil::GetTrackValue(
 }
 
 //  ----------------------------------------------------------------------------
-bool CReadUtil::AddGeneOntologyTerm(
+void sParseGeneOntologyTerm(
+    const CTempString& qual,
+    const CTempString& rawVal,
+    string& comment,
+    string& goId,
+    string& pmId,
+    string& evidenceCodes)
+//  ----------------------------------------------------------------------------
+{
+    unique_ptr<CLineError> pErr(CLineError::Create(
+        ILineError::eProblem_QualifierBadValue,
+        eDiag_Error,
+        "",
+        0,
+        "",
+        qual,
+        rawVal, 
+        ""));
+        
+    vector<CTempString> fields; fields.reserve(4);
+    NStr::Split(rawVal, "|", fields);
+    while (fields.size() < 4) {
+        fields.push_back("");
+    }
+    if (fields.size() != 4) {
+        pErr->PatchErrorMessage("GO term contains too many columns");
+        pErr->Throw();
+    }
+    for (auto& field: fields) {
+        NStr::TruncateSpacesInPlace(field);
+    }
+
+    //column 0: comment, anything goes:
+    comment = fields[0]; 
+
+    //column 1: GO id, must be seven digits if present at all:
+    goId = fields[1];
+    NStr::ToLower(goId);
+    if (NStr::StartsWith(goId, "go:")) {
+        goId = goId.substr(3);
+    } 
+    if (goId.size() > 7) {
+        pErr->PatchErrorMessage("GO ID (column 2) must be at most seven digits long");
+        pErr->Throw();
+    }
+    if (goId.find_first_not_of("0123456789") != string::npos) {
+        pErr->PatchErrorMessage("GO ID (column 2) can only contain digits");
+        pErr->Throw();
+    }
+    if (!goId.empty()) {
+        while (goId.size() < 7) {
+            goId = string("000000") + goId;
+            goId = goId.substr(goId.size() - 7);
+        }
+    }
+
+    //column 2: PMID or GO_REF:
+    pmId = fields[2];
+    NStr::ToLower(pmId);
+    if (pmId.find_first_not_of("0123456789") != string::npos) {
+        pErr->PatchErrorMessage("Pubmed ID (column 3) may only contain digits");
+        pErr->Throw();
+    }
+
+    //column 3: comma separated string of evidence codes. We don't validate it yet (rw-621)
+    evidenceCodes = fields[3];
+
+}
+
+//  ----------------------------------------------------------------------------
+void CReadUtil::AddGeneOntologyTerm(
     CSeq_feat& feature,
     const CTempString& qual,
     const CTempString& val)
@@ -231,43 +302,28 @@ bool CReadUtil::AddGeneOntologyTerm(
     static const string k_GoQuals[] = {"go_process", "go_component", "go_function"};
     static const int k_NumGoQuals = sizeof (k_GoQuals) / sizeof (string);
 
-    if (qual.empty ()) return false;
+    if (qual.empty ()) return;
 
     int j = 0;
     while (j < k_NumGoQuals && !NStr::EqualNocase(k_GoQuals[j], qual)) {
         j++;
     }
     if (j == k_NumGoQuals) {
-        return false;
+        unique_ptr<CLineError> pErr(CLineError::Create(
+            ILineError::eProblem_InvalidQualifier,
+            eDiag_Error,
+            "",
+            0,
+            "",
+            qual,
+            val, 
+            "GO_ qualifier not recognized"));
+        pErr->Throw();
     }
 
-    vector<CTempString> fields; fields.reserve(4);
-    NStr::Split(val, "|", fields);
-    for (auto& field: fields) {
-        NStr::TruncateSpacesInPlace(field);
-    }
-    while (fields.size() < 4) {
-        fields.push_back("");
-    }
-    if (NStr::StartsWith(fields[1], "GO:")) {
-        fields[1] = fields[1].substr(3);
-    }
-    if (NStr::StartsWith(fields[2], "GO_REF:")) {
-        fields[2] = fields[2].substr(7);
-    }
+    string comment, goId, pmId, evidenceCodes;
+    sParseGeneOntologyTerm(qual, val, comment, goId, pmId, evidenceCodes);
 
-    int pmid = 0;
-    
-    if (!NStr::IsBlank(fields[2])) {
-        if (!NStr::StartsWith(fields[2], "0")) {
-            try {
-                pmid = NStr::StringToLong(fields[2]);
-                fields[2] = "";
-            } catch( ... ) {
-                pmid = 0;
-            }
-        }
-    }
     string label;
     qual.Copy(label, 3, CTempString::npos); // prefix 'go_' should be eliminated
     label[0] = toupper(label[0]);
@@ -281,38 +337,37 @@ bool CReadUtil::AddGeneOntologyTerm(
 
     CRef<CUser_field> text_field(new CUser_field());
     text_field->SetLabel().SetStr("text string");
-    text_field->SetData().SetStr(CUtf8::AsUTF8(fields[0], eEncoding_Ascii));
+    text_field->SetData().SetStr(CUtf8::AsUTF8(comment, eEncoding_Ascii));
     field.SetData().SetFields().push_back(text_field);
   
-    if (!NStr::IsBlank(fields[1])) {
+    if (!NStr::IsBlank(goId)) {
         CRef<CUser_field> goid (new CUser_field());
         goid->SetLabel().SetStr("go id");
-        goid->SetData().SetStr(CUtf8::AsUTF8(fields[1], eEncoding_Ascii));
+        goid->SetData().SetStr(CUtf8::AsUTF8(goId, eEncoding_Ascii));
         field.SetData().SetFields().push_back(goid);
     }
 
-    if (pmid > 0) {
-        CRef<CUser_field> pubmed_id (new CUser_field());
-        pubmed_id->SetLabel().SetStr("pubmed id");
-        pubmed_id->SetData().SetInt(pmid);
-        field.SetData().SetFields().push_back(pubmed_id);
-    }
-
-    if (!NStr::IsBlank(fields[2])) {
+    if (NStr::StartsWith(pmId, "0")) {
+        //pmId really is goRef
         CRef<CUser_field> goref (new CUser_field());
         goref->SetLabel().SetStr("go ref");
-        goref->SetData().SetStr(CUtf8::AsUTF8(fields[2], eEncoding_Ascii));
+        goref->SetData().SetStr(pmId);
         field.SetData().SetFields().push_back(goref);
     }
 
-    if (!NStr::IsBlank(fields[3])) {
-        CRef<CUser_field> evidence (new CUser_field());
-        evidence->SetLabel().SetStr("evidence");
-        evidence->SetData().SetStr( CUtf8::AsUTF8(fields[3], eEncoding_Ascii) );
-        field.SetData().SetFields().push_back(evidence);
+    else if (!NStr::IsBlank(pmId)) {
+        CRef<CUser_field> pubmed (new CUser_field());
+        pubmed->SetLabel().SetStr("pubmed id");
+        pubmed->SetData().SetInt(NStr::StringToInt(pmId));
+        field.SetData().SetFields().push_back(pubmed);
     }
 
-    return true;
+    if (!NStr::IsBlank(evidenceCodes)) {
+        CRef<CUser_field> evidence (new CUser_field());
+        evidence->SetLabel().SetStr("evidence");
+        evidence->SetData().SetStr( CUtf8::AsUTF8(evidenceCodes, eEncoding_Ascii) );
+        field.SetData().SetFields().push_back(evidence);
+    }
 }
 
 
