@@ -61,7 +61,7 @@ s_IntervalNodeInit(BlastIntervalTree *tree,
                    Int2* ret_status)
 {
     Int4 new_index;
-    Int4 midpt;
+    Int8 midpt;
     SIntervalNode *new_node;
     SIntervalNode *parent_node;
 
@@ -92,7 +92,7 @@ s_IntervalNodeInit(BlastIntervalTree *tree,
     new_node->midptr = 0;
     new_node->rightptr = 0;
     new_node->hsp = NULL;
-    midpt = (parent_node->leftend + parent_node->rightend) / 2;
+    midpt = ((Int8) parent_node->leftend + (Int8) parent_node->rightend) / 2;
 
     /* the endpoints of the new node depend on whether
        it is for the left or right subtree of the parent.
@@ -101,10 +101,10 @@ s_IntervalNodeInit(BlastIntervalTree *tree,
 
     if (dir == eIntervalTreeLeft) {
         new_node->leftend = parent_node->leftend;
-        new_node->rightend = midpt;
+        new_node->rightend =(Int4) midpt;
     }
     else {
-        new_node->leftend = midpt + 1;
+        new_node->leftend = (Int4) midpt + 1;
         new_node->rightend = parent_node->rightend;
     }
 
@@ -326,7 +326,7 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
     SIntervalNode *list_node, *next_node;
     Int4 tmp_index;
     Int4 target_offset;
-    Int4 midpt;
+    Int8 midpt;
 
     if (which_end == eIntervalTreeLeft)
         target_offset = in_hsp->subject.offset;
@@ -369,7 +369,7 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
            contains the endpoint from in_hsp */
 
         tmp_index = 0;
-        midpt = (root_node->leftend + root_node->rightend) / 2;
+        midpt = ((Int8) root_node->leftend + (Int8) root_node->rightend) / 2;
         if (target_offset < midpt)
             tmp_index = root_node->leftptr;
         else if (target_offset > midpt)
@@ -435,7 +435,7 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
     SIntervalNode *next_node;
     Int4 tmp_index;
     Int4 target_offset;
-    Int4 midpt;
+    Int8 midpt;
 
     if (which_end == eIntervalTreeLeft)
         target_offset = in_q_start + in_hsp->query.offset;
@@ -464,7 +464,7 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
            contains the endpoint from in_hsp */
 
         tmp_index = 0;
-        midpt = (root_node->leftend + root_node->rightend) / 2;
+        midpt = ((Int8) root_node->leftend + (Int8) root_node->rightend) / 2;
         if (target_offset < midpt)
             tmp_index = root_node->leftptr;
         else if (target_offset > midpt)
@@ -523,7 +523,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
     Int4 new_index;
     Int4 mid_index;
     Int4 old_index;
-    Int4 middle;
+    Int8 middle;
     enum EIntervalDirection which_half;
     Boolean index_subject_range = FALSE;
     Int2 retval = 0;
@@ -605,8 +605,8 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
         ASSERT(region_start >= nodes[root_index].leftend);
         ASSERT(region_end <= nodes[root_index].rightend);
 
-        middle = (nodes[root_index].leftend +
-                  nodes[root_index].rightend) / 2;
+        middle = ((Int8) nodes[root_index].leftend +
+                  (Int8) nodes[root_index].rightend) / 2;
 
         if (region_end < middle) {
 
@@ -744,8 +744,8 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
         }
 
         root_index = mid_index;
-        middle = (nodes[root_index].leftend +
-                  nodes[root_index].rightend) / 2;
+        middle = ((Int8) nodes[root_index].leftend +
+                  (Int8) nodes[root_index].rightend) / 2;
         if (old_region_end < middle) {
 
             /* old leaf belongs in left subtree of new node */
@@ -779,8 +779,8 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
                 old_region_end =  old_hsp->subject.end;
                 nodes = tree->nodes;
                 nodes[mid_index].midptr = mid_index2;
-                middle = (nodes[mid_index2].leftend +
-                          nodes[mid_index2].rightend) / 2;
+                middle = ((Int8) nodes[mid_index2].leftend +
+                          (Int8) nodes[mid_index2].rightend) / 2;
     
                 if (old_region_end < middle)
                     nodes[mid_index2].leftptr = old_index;
@@ -871,7 +871,7 @@ s_MidpointTreeContainsHSP(const BlastIntervalTree *tree,
     SIntervalNode *node = tree->nodes + root_index;
     Int4 region_start = in_hsp->subject.offset;
     Int4 region_end = in_hsp->subject.end;
-    Int4 middle;
+    Int8 middle;
     Int4 tmp_index = 0;
 
     /* Descend the tree */
@@ -903,7 +903,7 @@ s_MidpointTreeContainsHSP(const BlastIntervalTree *tree,
            it lies completely to the right */
 
         tmp_index = 0;
-        middle = (node->leftend + node->rightend) / 2;
+        middle = ((Int8) node->leftend + (Int8) node->rightend) / 2;
         if (region_end < middle)
             tmp_index = node->leftptr;
         else if (region_start > middle)
@@ -937,7 +937,7 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
     Int4 query_start = s_GetQueryStrandOffset(query_info, hsp->context);
     Int4 region_start = query_start + hsp->query.offset;
     Int4 region_end = query_start + hsp->query.end;
-    Int4 middle;
+    Int8 middle;
     Int4 tmp_index = 0;
 
     ASSERT(region_start >= node->leftend);
@@ -971,7 +971,7 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
            it lies completely to the right */
 
         tmp_index = 0;
-        middle = (node->leftend + node->rightend) / 2;
+        middle = ((Int8) node->leftend + (Int8) node->rightend) / 2;
         if (region_end < middle)
             tmp_index = node->leftptr;
         else if (region_start > middle)
@@ -1113,7 +1113,7 @@ BlastIntervalTreeMasksHSP(const BlastIntervalTree *tree,
     Int4 region_start;
     Int4 region_end;
     Int4 in_query_start;
-    Int4 middle;
+    Int8 middle;
     Int4 tmp_index = 0;
 
     SIntervalNode *node = tree->nodes + subtree_index;
@@ -1156,7 +1156,7 @@ BlastIntervalTreeMasksHSP(const BlastIntervalTree *tree,
            to the left of this node's center, or to the right subtree if
            it lies completely to the right */
 
-        middle = (node->leftend + node->rightend) / 2;
+        middle = ((Int8) node->leftend + (Int8) node->rightend) / 2;
         tmp_index = 0;
         if (region_end < middle)
             tmp_index = node->leftptr;
@@ -1201,7 +1201,7 @@ BlastIntervalTreeNumRedundant(const BlastIntervalTree *tree,
     Int4 in_query_start = s_GetQueryStrandOffset(query_info, hsp->context);
     Int4 region_start = in_query_start + hsp->query.offset;
     Int4 region_end = in_query_start + hsp->query.end;
-    Int4 middle;
+    Int8 middle;
     Int4 tmp_index = 0;
     Int4 num_redundant = 0;
 
@@ -1235,7 +1235,7 @@ BlastIntervalTreeNumRedundant(const BlastIntervalTree *tree,
            it lies completely to the right */
 
         tmp_index = 0;
-        middle = (node->leftend + node->rightend) / 2;
+        middle = ((Int8) node->leftend + (Int8) node->rightend) / 2;
         if (region_end < middle)
             tmp_index = node->leftptr;
         else if (region_start > middle)
