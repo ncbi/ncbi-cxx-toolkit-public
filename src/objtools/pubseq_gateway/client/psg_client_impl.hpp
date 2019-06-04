@@ -95,11 +95,30 @@ struct CPSG_Queue::SImpl
     bool IsEmpty() const;
 
 private:
+    class CService
+    {
+        using TIoC = HCT::io_coordinator;
+
+        // Have to use unique_ptr as some old compilers do not use move ctor of TIoC
+        using TMap = unordered_map<string, unique_ptr<TIoC>>;
+
+        TIoC& GetIoC(const string& service);
+        static shared_ptr<TMap> GetMap();
+
+        shared_ptr<TMap> m_Map;
+        static pair<mutex, weak_ptr<TMap>> sm_Instance;
+
+    public:
+        TIoC& ioc;
+
+        CService(const string& service) : m_Map(GetMap()), ioc(GetIoC(service)) {}
+    };
+
     struct SRequest;
     using TRequests = list<SRequest>;
 
     shared_ptr<SPSG_ThreadSafe<TRequests>> m_Requests;
-    const string m_Service;
+    CService m_Service;
 };
 
 struct CPSG_Queue::SImpl::SRequest

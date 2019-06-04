@@ -334,13 +334,45 @@ bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
 }
 
 
+pair<mutex, weak_ptr<CPSG_Queue::SImpl::CService::TMap>> CPSG_Queue::SImpl::CService::sm_Instance;
+
+CPSG_Queue::SImpl::CService::TIoC& CPSG_Queue::SImpl::CService::GetIoC(const string& service)
+{
+    if (service.empty()) {
+        NCBI_THROW(CPSG_Exception, eParameterMissing, "Service name is empty");
+    }
+
+    unique_lock<mutex> lock(sm_Instance.first);
+
+    auto found = m_Map->find(service);
+
+    if (found != m_Map->end()) {
+        return *found->second;
+    }
+
+    auto created = m_Map->emplace(service, unique_ptr<TIoC>(new TIoC(service)));
+    return *created.first->second;
+}
+
+shared_ptr<CPSG_Queue::SImpl::CService::TMap> CPSG_Queue::SImpl::CService::GetMap()
+{
+    unique_lock<mutex> lock(sm_Instance.first);
+
+    auto rv = sm_Instance.second.lock();
+
+    if (!rv) {
+        rv = make_shared<TMap>();
+        sm_Instance.second = rv;
+    }
+
+    return rv;
+}
+
+
 CPSG_Queue::SImpl::SImpl(const string& service) :
     m_Requests(new SPSG_ThreadSafe<TRequests>),
     m_Service(service)
 {
-    if (m_Service.empty()) {
-        NCBI_THROW(CPSG_Exception, eParameterMissing, "Service name is empty");
-    }
 }
 
 const char* s_GetTSE(CPSG_Request_Biodata::EIncludeData include_data)
@@ -466,7 +498,7 @@ string CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef() const
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)
 {
-    static HCT::io_coordinator ioc(m_Service);
+    auto& ioc = m_Service.ioc;
 
     chrono::milliseconds wait_ms{};
     auto user_context = TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eOff ?
