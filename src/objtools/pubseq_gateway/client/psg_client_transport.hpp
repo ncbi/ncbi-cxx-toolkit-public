@@ -32,6 +32,10 @@
  *
  */
 
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
+
+#ifdef HAVE_PSG_CLIENT
+
 #define __STDC_FORMAT_MACROS
 
 #include <memory>
@@ -734,4 +738,5 @@ public:
 
 };
 
+#endif
 #endif

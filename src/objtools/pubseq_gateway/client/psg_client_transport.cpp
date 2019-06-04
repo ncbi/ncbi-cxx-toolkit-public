@@ -29,6 +29,10 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
+
+#ifdef HAVE_PSG_CLIENT
+
 #include <memory>
 #include <string>
 #include <sstream>
@@ -49,7 +53,6 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
-#include <objtools/pubseq_gateway/client/psg_client.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 
 #include <corelib/request_status.hpp>
@@ -1581,3 +1584,5 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::millisec
 
 
 };
+
+#endif

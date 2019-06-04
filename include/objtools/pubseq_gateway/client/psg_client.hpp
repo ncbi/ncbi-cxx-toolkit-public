@@ -38,6 +38,9 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
+#if defined(NCBI_THREADS) && defined(HAVE_LIBNGHTTP2) && defined(HAVE_LIBUV)
+
+#define HAVE_PSG_CLIENT 1
 
 BEGIN_NCBI_SCOPE
 
@@ -773,4 +776,5 @@ DECLARE_SAFE_FLAGS(CPSG_Request_Resolve::EIncludeInfo);
 END_NCBI_SCOPE
 
 
+#endif
 #endif  /* OBJTOOLS__PUBSEQ_GATEWAY__PSG_CLIENT_HPP */

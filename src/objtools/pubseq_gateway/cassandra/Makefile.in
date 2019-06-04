@@ -3,6 +3,8 @@
 LIB_PROJ = psg_cassandra
 SUB_PROJ = test
 
+REQUIRES = MT
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 

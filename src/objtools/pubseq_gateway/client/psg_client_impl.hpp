@@ -32,6 +32,8 @@
 
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
+#ifdef HAVE_PSG_CLIENT
+
 #include "psg_client_transport.hpp"
 
 #include <corelib/reader_writer.hpp>
@@ -139,4 +141,5 @@ private:
 
 END_NCBI_SCOPE
 
+#endif
 #endif

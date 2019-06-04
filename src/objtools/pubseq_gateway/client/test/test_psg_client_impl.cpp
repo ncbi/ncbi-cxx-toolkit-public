@@ -29,12 +29,14 @@
 
 #include <ncbi_pch.hpp>
 
+#include "../psg_client_impl.hpp"
+
+#ifdef HAVE_PSG_CLIENT
+
 #include <corelib/test_boost.hpp>
 
 #include <thread>
 #include <random>
-
-#include "../psg_client_impl.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -583,3 +585,5 @@ BOOST_AUTO_TEST_CASE(StreamRead)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+#endif

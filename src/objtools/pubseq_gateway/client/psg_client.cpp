@@ -29,6 +29,10 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
+
+#ifdef HAVE_PSG_CLIENT
+
 #include <condition_variable>
 #include <mutex>
 #include <string>
@@ -39,8 +43,6 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_service.h>
 #include <connect/ncbi_connutil.h>
-
-#include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #include "psg_client_impl.hpp"
 
@@ -1178,3 +1180,5 @@ bool CPSG_Queue::IsEmpty() const
 
 
 END_NCBI_SCOPE
+
+#endif
