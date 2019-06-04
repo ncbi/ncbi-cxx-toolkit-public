@@ -142,7 +142,7 @@ private:
     void ProcessOneFile(CRef<CSerialObject>& result);
     void ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
-    void ProcessAlignmentFile(const string& filename);
+    void ProcessAlignmentFile();
     void ProcessSecretFiles1Phase(CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
@@ -152,6 +152,8 @@ private:
     void ProcessRNAFile(const string& pathname, CSeq_entry& result);
     void ProcessPRTFile(const string& pathname, CSeq_entry& result);
     void ProcessAnnotFile(const string& pathname, CSeq_entry& result);
+    void x_SetAlnArgs(CArgDescriptions& arg_desc);
+
 
     CRef<CScope> GetScope(void);
 
@@ -162,13 +164,47 @@ private:
     CRef<CTable2AsnLogger> m_logger;
     auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
     CTable2AsnContext    m_context;
-    bool m_IsAlignment = false;
 };
+
 
 CTbl2AsnApp::CTbl2AsnApp(void)
 {
     SetVersionByBuild(1);
 }
+
+
+void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc) 
+{
+    arg_desc.AddOptionalKey(
+        "aln-file", "InFile", "Alignment input file",
+         CArgDescriptions::eInputFile);
+
+    arg_desc.SetDependency("aln-file",
+            CArgDescriptions::eExcludes,
+            "i");
+
+    arg_desc.AddDefaultKey(
+        "aln-gapchar", "STRING", "Alignment missing indicator",
+        CArgDescriptions::eString,
+        "-");
+
+    arg_desc.AddDefaultKey(
+        "aln-missing", "STRING", "Alignment missing indicator",
+        CArgDescriptions::eString,
+        "");
+
+    arg_desc.AddDefaultKey(
+        "aln-alphabet", "STRING", "Alignment alphabet",
+        CArgDescriptions::eString,
+        "prot");
+
+    arg_desc.SetConstraint(
+        "aln-alphabet",
+        &(*new CArgAllow_Strings,
+            "nuc",
+            "prot"));
+}
+
 
 void CTbl2AsnApp::Init(void)
 {
@@ -194,9 +230,7 @@ void CTbl2AsnApp::Init(void)
         ("i", "InFile", "Single Input File",
         CArgDescriptions::eInputFile);
 
-    arg_desc->AddOptionalKey
-        ("aln-file", "AlnFile", "Input alignment file",
-         CArgDescriptions::eInputFile);
+    x_SetAlnArgs(*arg_desc);
 
     arg_desc->AddOptionalKey(
         "o", "OutFile", "Single Output File",
@@ -705,7 +739,6 @@ int CTbl2AsnApp::Run(void)
             "Error loading descriptors file")));
     }
 
-    m_IsAlignment = false;
     if (m_logger->Count() == 0)
     try
     {
@@ -1023,11 +1056,9 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 
     try
     {
-
         //m_context.ReleaseOutputs();
-
         if (isAlignment) {
-            ProcessAlignmentFile(m_context.m_current_file);
+            ProcessAlignmentFile();
         }
         else {
             CRef<CSerialObject> input_obj;
@@ -1096,16 +1127,20 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 }
 
 
-void CTbl2AsnApp::ProcessAlignmentFile(const string& filename)
+void CTbl2AsnApp::ProcessAlignmentFile()
 {
-    CRef<CSeq_entry> pEntry = m_reader->ReadAlignment(filename);
+    const string& filename = m_context.m_current_file;
+    unique_ptr<CNcbiIstream> pIstream(
+            new CNcbiIfstream(filename.c_str()));
+
+    CRef<CSeq_entry> pEntry = 
+        m_reader->ReadAlignment(*pIstream, GetArgs());
     pEntry->Parentize();
     m_context.MergeWithTemplate(*pEntry);
 
     CRef<CSerialObject> pResult;
     const bool updateDates = false;
     ProcessOneEntry(updateDates, pEntry, pResult);
-
 
     if (IsDryRun() || !pResult) {
         return;
@@ -1128,7 +1163,8 @@ void CTbl2AsnApp::ProcessAlignmentFile(const string& filename)
         if (m_context.m_save_bioseq_set && 
             pResult->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
 
-            const CSeq_entry* pTempEntry = static_cast<const CSeq_entry*>(pResult.GetPointer());
+            const CSeq_entry* pTempEntry 
+                = static_cast<const CSeq_entry*>(pResult.GetPointer());
             if (pTempEntry->IsSet()) {
                 m_reader->WriteObject(pTempEntry->GetSet(), *pOstream);
                 return;
@@ -1141,6 +1177,7 @@ void CTbl2AsnApp::ProcessAlignmentFile(const string& filename)
         throw;
     }
 }
+
 
 bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse)
 {
@@ -1167,6 +1204,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
 
     return true;
 }
+
 
 void CTbl2AsnApp::Setup(const CArgs& args)
 {

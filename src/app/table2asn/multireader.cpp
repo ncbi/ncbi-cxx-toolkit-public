@@ -233,13 +233,10 @@ CRef<CSerialObject> CMultiReader::xReadASN1(CObjectIStream& pObjIstrm)
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_entry>
-CMultiReader::ReadAlignment(const string& filename)
+CMultiReader::ReadAlignment(CNcbiIstream& instream, const CArgs& args)
 //  ----------------------------------------------------------------------------
 {
-
-    unique_ptr<istream> pIstream(new CNcbiIfstream(filename.c_str()));
-    CAlnReader reader(*pIstream);
-/*
+    CAlnReader reader(instream);
     reader.SetAllGap(args["aln-gapchar"].AsString());
     reader.SetMissing(args["aln-gapchar"].AsString());
     if (args["aln-alphabet"].AsString() == "nuc") {
@@ -248,7 +245,7 @@ CMultiReader::ReadAlignment(const string& filename)
     else {
         reader.SetAlphabet(CAlnReader::eAlpha_Protein);
     }
-    */
+
     reader.Read(0, m_context.m_logger);
     return reader.GetSeqEntry(
             CAlnReader::fGenerateLocalIDs,

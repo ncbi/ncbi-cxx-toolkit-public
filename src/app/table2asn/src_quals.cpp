@@ -142,7 +142,6 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
             {
                 CTempString idString, remainder;
                 NStr::SplitInTwo(line, "\t", idString, remainder);
-                
                 if (!idString.empty()) {
                     auto parseFlags = 
                         allowAcc ?
