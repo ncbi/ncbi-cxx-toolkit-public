@@ -1,3 +1,9 @@
+Release 1.5.0 (2019-06-05)
+
+    * PSG -- add "server alerts" mechanism (CXX-10682)
+    * PSG: SigTerm may delay the graceful shutdown (CXX-10681)
+    * Allow encrypted [ADMIN].auth_token (CXX-10674)
+
 Release 1.4.0 (2019-05-17)
 
     * PSG -- termination with command and signals (CXX-10592)
