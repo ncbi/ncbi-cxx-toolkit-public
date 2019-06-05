@@ -878,11 +878,6 @@ void SThrottleParams::SIOFailureThreshold::Init(CSynRegistry& registry, const SR
 
 struct SNameByHost
 {
-    void Set(unsigned host, unsigned short port, string name)
-    {
-        m_Data[host][port] = move(name);
-    }
-
     const string& Get(unsigned host, unsigned short port)
     {
         auto& name = m_Data[host][port];
@@ -915,7 +910,6 @@ CNetServer::SAddress::SAddress(string n, unsigned short p) :
     host(g_NetService_gethostbyname(n)),
     port(p)
 {
-    SNameByHost::GetInstance().Set(host, port, n + ':' + NStr::UIntToString(port));
 }
 
 bool operator==(const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs)
