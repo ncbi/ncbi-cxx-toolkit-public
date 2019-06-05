@@ -175,7 +175,7 @@ private:
     TRange                  m_TotalRange;
     Int1                    m_MappedFlags; // partial, product
     Int1                    m_MappedObjectType;
-    Int1                    m_MappedStrand;
+    Uint1                   m_MappedStrand;
     CRef<CGraphRanges>      m_GraphRanges;
 };
 
