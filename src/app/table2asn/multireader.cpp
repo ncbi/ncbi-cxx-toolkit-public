@@ -727,7 +727,9 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not recognized", 0);
 
-    obj = xApplyTemplate(obj);
+    //rw-617: apply template descriptors only if input is *not* ASN1:
+    bool merge_template_descriptors = (format != CFormatGuess::eTextASN);
+    obj = xApplyTemplate(obj, merge_template_descriptors);
 
     return format;
 }
@@ -745,7 +747,7 @@ void CMultiReader::GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::C
     }
 }
 
-CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj)
+CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors)
 {
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
@@ -766,7 +768,9 @@ CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj)
         entry->ResetParentEntry();
         entry->Parentize();
 
-        m_context.MergeWithTemplate(*entry);
+        if (merge_template_descriptors) {
+            m_context.MergeWithTemplate(*entry);
+        }
     }
 
     if (submit.Empty())

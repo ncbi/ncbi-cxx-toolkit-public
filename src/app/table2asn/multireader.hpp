@@ -51,7 +51,7 @@ protected:
 private:
     CFormatGuess::EFormat xReadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
-    CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj);
+    CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors);
     CRef<CSerialObject> xReadASN1(CObjectIStream& pObjIstrm);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
