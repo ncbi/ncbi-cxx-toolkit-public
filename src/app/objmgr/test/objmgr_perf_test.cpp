@@ -63,7 +63,8 @@ public:
     virtual void Init(void);
     virtual int  Run (void);
 
-    bool TestId(void);
+    void TestIds(void);
+    void TestId(CSeq_id_Handle idh);
 
 private:
     typedef set<CSeq_id_Handle> TIds;
@@ -88,6 +89,7 @@ private:
     bool m_PrintInfo = false;
     bool m_PrintBlobId = false;
     bool m_PrintData = false;
+    bool m_AllIds = false;
 
     CFastMutex m_IdsMutex;
     CFastMutex m_FailMutex;
@@ -130,7 +132,7 @@ CFastMutex CAtomicOut::sm_Mutex;
 
 void* CTestThread::Main(void)
 {
-    while (m_App.TestId()) {}
+    m_App.TestIds();
     return nullptr;
 }
 
@@ -184,6 +186,7 @@ void CPerfTestApp::Init(void)
     arg_desc->AddFlag("print_info", "print sequence info");
     arg_desc->AddFlag("print_blob_id", "print blob-id");
     arg_desc->AddFlag("print_data", "print TSE");
+    arg_desc->AddFlag("all_ids", "fetch all seq-ids from each thread");
 
     // Special mode - parse cassandra dump file, save ids in fasta format.
     arg_desc->AddOptionalKey("dump", "DumpFile",
@@ -225,6 +228,7 @@ int CPerfTestApp::Run(void)
     m_PrintInfo = args["print_info"];
     m_PrintBlobId = args["print_blob_id"];
     m_PrintData = args["print_data"];
+    m_AllIds = args["all_ids"];
 
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     m_Scope.Reset(new CScope(*om));
@@ -307,7 +311,7 @@ int CPerfTestApp::Run(void)
         sw2.Start();
 
         if (thread_count == 0) {
-            while (TestId()) {}
+            TestIds();
         }
         else {
             vector<CRef<CThread>> threads;
@@ -400,10 +404,26 @@ void CPerfTestApp::x_LoadIds(CNcbiIstream& in, TIds& ids, bool filter)
 }
 
 
-bool CPerfTestApp::TestId()
+void CPerfTestApp::TestIds()
 {
-    CSeq_id_Handle idh = x_NextId();
-    if (!idh) return false;
+    if (m_AllIds) {
+        ITERATE(TIds, it, m_Ids) {
+            TestId(*it);
+        }
+    }
+    else {
+        while (true) {
+            CSeq_id_Handle idh = x_NextId();
+            if (!idh) break;
+            TestId(idh);
+        }
+    }
+}
+
+
+void CPerfTestApp::TestId(CSeq_id_Handle idh)
+{
+    _ASSERT(idh);
     CAtomicOut atomic_out;
     if (m_PrintInfo || m_PrintData) {
         atomic_out << "ID: " << idh.AsString() << endl;
@@ -416,7 +436,7 @@ bool CPerfTestApp::TestId()
                 CFastMutexGuard guard(m_FailMutex);
                 ++m_Failed;
                 m_IgnoreIds.insert(idh);
-                return true;
+                return;
             }
             CSeq_inst::TMol moltype = m_Scope->GetSequenceType(idh);
             TSeqPos len = m_Scope->GetSequenceLength(idh);
@@ -443,7 +463,7 @@ bool CPerfTestApp::TestId()
                 CFastMutexGuard guard(m_FailMutex);
                 ++m_Failed;
                 m_IgnoreIds.insert(idh);
-                return true;
+                return;
             }
             if (m_PrintBlobId) {
                 atomic_out << "  Blob-id: " << bh.GetTSE_Handle().GetBlobId() << endl;
@@ -463,7 +483,7 @@ bool CPerfTestApp::TestId()
     if (m_PrintInfo || m_PrintData) {
         atomic_out << endl;
     }
-    return true;
+    return;
 }
 
 
