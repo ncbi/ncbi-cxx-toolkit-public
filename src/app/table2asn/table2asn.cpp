@@ -284,7 +284,8 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("q", "Seq ID from File Name");      // done
 
-    arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
+//    RW-733 -G doesn't actually work right now
+//    arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
       n Nucleotide or p Protein,\n\
       Begin, Middle, End Gap Characters,\n\
       Missing Characters, Match Characters", CArgDescriptions::eString);
