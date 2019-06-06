@@ -39,6 +39,7 @@ shift
 # Run test
 "$inspxe" -collect mi3 -knob detect-leaks-on-exit=false -knob enable-memory-growth-detection=false -knob enable-on-demand-leak-detection=false -knob still-allocated-memory=false -knob detect-resource-leaks=false -knob stack-depth=32 -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $exe "$@"
 app_result=$?
+sleep 5
 "$inspxe" -report problems -report-all -result-dir $rd
 insp_result=$?
 
