@@ -2057,11 +2057,12 @@ bool CCleanup::SetGeneticCodes(CBioseq_Handle bsh)
         return false;
     }
 
-    int bioseqGenCode = 0;
     CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
-    if (src) {
-        bioseqGenCode = src->GetSource().GetGenCode();
-    }    
+    if (!src) {
+        // no source, don't fix
+        return false;
+    }
+    int bioseqGenCode = src->GetSource().GetGenCode();
 
     bool any_changed = false;
     // set Cdregion's gcode from BioSource (unless except-text)
