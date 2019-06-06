@@ -673,10 +673,31 @@ void CDescrModApply::x_SetDBLinkFieldVals(const string& label,
 
 }
 
+static string s_GetNormalizedString(const string& unnormalized)
+{
+    string normalized = unnormalized;
+    NStr::ToLower(normalized);
+    NStr::TruncateSpacesInPlace(normalized);
+    auto new_end = unique(normalized.begin(), 
+                          normalized.end(),
+                          [](char a, char b) { 
+                              return ((a=='-' || a=='_' || a==' ') &&
+                                      (b=='-' || b=='_' || b==' ')); });
+
+    normalized.erase(new_end, normalized.end());
+    for (char& c : normalized) {
+        if (c == '_' || c == ' ') {
+            c = '-';
+        }
+    }
+    return normalized;
+}
+
+
 void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(NStr::ToLower(value));
+    auto it = s_BiomolStringToEnum.find(s_GetNormalizedString(value));
     if (it != s_BiomolStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetBiomol(it->second);
         return;
@@ -688,7 +709,7 @@ void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_TechStringToEnum.find(NStr::ToLower(value));
+    auto it = s_TechStringToEnum.find(s_GetNormalizedString(value));
     if (it != s_TechStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetTech(it->second);
         return;
@@ -700,7 +721,7 @@ void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_CompletenessStringToEnum.find(NStr::ToLower(value));
+    auto it = s_CompletenessStringToEnum.find(s_GetNormalizedString(value));
     if (it != s_CompletenessStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetCompleteness(it->second);
         return;

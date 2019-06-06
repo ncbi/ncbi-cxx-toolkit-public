@@ -376,21 +376,48 @@ bool CModHandler::x_IsDeprecated(const string& canonical_name)
 }
 
 
+static string s_GetNormalizedString(const string& unnormalized) 
+{
+    string normalized = unnormalized;
+    NStr::ToLower(normalized);
+    NStr::TruncateSpacesInPlace(normalized);
+    auto new_end = unique(normalized.begin(), 
+                          normalized.end(),
+                          [](char a, char b) { 
+                              return ((a=='-' || a=='_' || a==' ') &&
+                                      (b=='-' || b=='_' || b==' ')); });
+
+    normalized.erase(new_end, normalized.end());
+    for (char& c : normalized) {
+        if (c == '_' || c == ' ') {
+            c = '-';
+        }
+    }
+    return normalized;
+}
+
 string CModHandler::x_GetNormalizedString(const string& name)
 {
+    return s_GetNormalizedString(name);
+/*
     string normalized_name = name;
     NStr::ToLower(normalized_name);
     NStr::TruncateSpacesInPlace(normalized_name);
-    NStr::ReplaceInPlace(normalized_name, "_", "-");
-    NStr::ReplaceInPlace(normalized_name, " ", "-");
     auto new_end = unique(normalized_name.begin(), 
                           normalized_name.end(),
-                          [](char a, char b) { return ((a==b) && (a==' ')); });
+                          //[](char a, char b) { return ((a==b) && (a=='-')); });
+                          [](char a, char b) { 
+                              return ((a=='-' || a=='_' || a==' ') &&
+                                      (b=='-' || b=='_' || b==' ')); });
 
     normalized_name.erase(new_end, normalized_name.end());
-    NStr::ReplaceInPlace(normalized_name, " ", "-");
-
+    for (char& c : normalized_name) {
+        if (c == '_' || c == ' ') {
+            c = '-';
+        }
+    }
     return normalized_name;
+*/
 }
 
 
@@ -559,7 +586,8 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
 void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(NStr::ToLower(value));
+    //auto it = s_BiomolStringToEnum.find(NStr::ToLower(value));
+    auto it = s_BiomolStringToEnum.find(s_GetNormalizedString(value));
     if (it == s_BiomolStringToEnum.end()) {
         // No need to report an error here.
         // The error is reported in x_SetMolInfoType

@@ -1,0 +1,42 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        db {
+          {
+            db "taxon",
+            tag id 1
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      descr {
+        molinfo {
+          biomol transcribed-RNA
+        }
+      },
+      inst {
+        repr not-set,
+        mol rna,
+        topology circular,
+        strand mixed,
+        hist {
+          replaces {
+            ids {
+              swissprot {
+                accession "dummy"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
