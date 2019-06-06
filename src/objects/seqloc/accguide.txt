@@ -1265,6 +1265,15 @@ version  1 # of file format
 2+6  OB  embl_other_nuc *
 2+8  OB  embl_other_nuc
 2+10 OB  embl_other_nuc
+2+6  OC  embl_other_nuc
+2+8  OC  embl_other_nuc
+2+10 OC  embl_other_nuc
+2+6  OD  embl_other_nuc
+2+8  OD  embl_other_nuc
+2+10 OD  embl_other_nuc
+2+6  OE  embl_other_nuc
+2+8  OE  embl_other_nuc
+2+10 OE  embl_other_nuc
 2+6  TI  unreserved_nuc # deliberately skipped
 2+8  TI  unreserved_nuc # deliberately skipped
 2+10 TI  unreserved_nuc # deliberately skipped
