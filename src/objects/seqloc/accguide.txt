@@ -1265,9 +1265,9 @@ version  1 # of file format
 2+6  TI  unreserved_nuc # deliberately skipped
 2+8  TI  unreserved_nuc # deliberately skipped
 2+10 TI  unreserved_nuc # deliberately skipped
-2+6  W?  unreserved_nuc # deliberately skipped
-2+8  W?  unreserved_nuc # deliberately skipped
-2+10 W?  unreserved_nuc # deliberately skipped
+2+6  WP  unreserved_nuc # deliberately skipped
+2+8  WP  unreserved_nuc # deliberately skipped
+2+10 WP  unreserved_nuc # deliberately skipped
 2+6  XM  unreserved_nuc # deliberately skipped
 2+8  XM  unreserved_nuc # deliberately skipped
 2+10 XM  unreserved_nuc # deliberately skipped
