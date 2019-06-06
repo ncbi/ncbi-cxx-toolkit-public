@@ -4194,7 +4194,7 @@ CNCMessageHandler::x_DoCmd_GetStat(void)
     LOG_CURRENT_FUNCTION
     CSrvRef<CNCStat> stat = CNCStat::GetStat(m_StatType, m_StatPrev);
     if (!stat) {
-        x_ReportError("ERR:Unknown statistics type");
+        x_ReportError("ERR:Unknown statistics type: " + m_StatType);
         GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
     }
     else {
