@@ -247,9 +247,28 @@ CMultiReader::ReadAlignment(CNcbiIstream& instream, const CArgs& args)
     }
 
     reader.Read(0, m_context.m_logger);
-    return reader.GetSeqEntry(
+    auto pSeqEntry = 
+        reader.GetSeqEntry(
             CAlnReader::fGenerateLocalIDs,
             m_context.m_logger);
+
+    if (pSeqEntry && args["a"]) {
+        static const map<string, CBioseq_set::EClass> 
+            s_StringToClass = 
+            {{"s",  CBioseq_set::eClass_genbank},
+             {"s1", CBioseq_set::eClass_pop_set},
+             {"s2", CBioseq_set::eClass_phy_set},
+             {"s3", CBioseq_set::eClass_mut_set},
+             {"s4", CBioseq_set::eClass_eco_set},
+             {"s9", CBioseq_set::eClass_small_genome_set}};
+
+        auto it = s_StringToClass.find(args["a"].AsString());
+        if (it != s_StringToClass.end()) {
+            pSeqEntry->SetSet().SetClass(it->second);
+        }
+    }
+
+    return pSeqEntry;
 }
 
 
