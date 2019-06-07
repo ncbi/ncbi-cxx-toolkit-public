@@ -1244,23 +1244,30 @@ void http2_session::process_requests()
                 if (req->get_canceled())
                     continue;
 
-                req->on_queue(this);
-
                 if (m_connection_state != connection_state_t::cs_connected) {
                     if (m_session_state >= session_state_t::ss_closing) {
                         req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
+                        req->on_queue(this);
                         purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
                         return;
                     }
                     if (!check_connection()) {
-                        req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "connection is not established"));
+                        if (!m_io->m_req_queue.push_move(req)) {
+                            req->on_queue(this);
+                            req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "connection is not established"));
+                        }
                         return;
                     }
                 }
                 if (!m_session) {
-                    req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "http2 session is not established"));
+                    if (!m_io->m_req_queue.push_move(req)) {
+                        req->on_queue(this);
+                        req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "http2 session is not established"));
+                    }
                     return;
                 }
+
+                req->on_queue(this);
 
                 const auto& authority = m_Address.AsString();
                 const auto& path = req->get_full_path();
