@@ -489,7 +489,7 @@ gpipe_ani needs tax_xml
 gpipe_ani needs xalgoalignutil
 gpipe_ani needs xgpsubmit
 gpipe_asn_cleanup needs xvalidate
-gpipe_asn_proc needs gencoll_client
+gpipe_asn_proc needs bacterial_pipeline_proc
 gpipe_asn_proc needs gpipe_blast
 gpipe_asn_proc needs xalgoalignutil
 gpipe_asn_proc needs xalgognomon
@@ -1022,7 +1022,6 @@ pathogen_connection needs taxon1
 pathogen_ctl needs $(GPIPE_COMMON_LIBS)
 pathogen_ctl needs bag_access
 pathogen_ctl needs gpipe_kmer
-pathogen_ctl needs grid_wrapper
 pathogen_ctl needs pathogen_connection
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs $(SDBAPI_LIB)
