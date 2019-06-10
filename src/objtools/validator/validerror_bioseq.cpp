@@ -2273,6 +2273,24 @@ static bool s_NotPeptideException
         if (NStr::EqualNocase (prevN, "membrane glycoprotein precursor prM") && NStr::EqualNocase (currN, "membrane glycoprotein M")) {
             return false;
         }
+        if (NStr::EqualNocase (currN, "anchored capsid protein C") && NStr::EqualNocase (prevN, "capsid protein C")) {
+            return false;
+        }
+        if (NStr::EqualNocase (prevN, "anchored capsid protein C") && NStr::EqualNocase (currN, "capsid protein C")) {
+            return false;
+        }
+        if (NStr::EqualNocase (currN, "membrane glycoprotein precursor M") && NStr::EqualNocase (prevN, "protein pr")) {
+            return false;
+        }
+        if (NStr::EqualNocase (prevN, "membrane glycoprotein precursor M") && NStr::EqualNocase (currN, "protein pr")) {
+            return false;
+        }
+        if (NStr::EqualNocase (currN, "membrane glycoprotein precursor M") && NStr::EqualNocase (prevN, "membrane glycoprotein M")) {
+            return false;
+        }
+        if (NStr::EqualNocase (prevN, "membrane glycoprotein precursor M") && NStr::EqualNocase (currN, "membrane glycoprotein M")) {
+            return false;
+        }
     }
 
 
