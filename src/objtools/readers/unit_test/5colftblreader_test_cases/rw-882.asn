@@ -1,0 +1,22 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data imp {
+        key "variation"
+      },
+      location pnt {
+        point 49,
+        strand plus,
+        id genbank {
+          accession "MK164652"
+        }
+      },
+      qual {
+        {
+          qual "replace",
+          val ""
+        }
+      }
+    }
+  }
+}

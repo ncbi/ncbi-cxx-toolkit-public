@@ -819,8 +819,10 @@ typedef CStaticPairArrayMap <const char*, int, PCase_CStr> TTrnaMap;
 DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 
 
-static const char * const single_key_list [] = {
-    "environmental_sample",
+static 
+set<const char*, PCase_CStr> 
+sc_SingleKeys {
+    "environmental_sample", 
     "germline",
     "metagenomic",
     "partial",
@@ -828,12 +830,9 @@ static const char * const single_key_list [] = {
     "rearranged",
     "ribosomal_slippage",
     "trans_splicing",
-    "transgenic"
+    "transgenic",
+    "replace" // RW-882
 };
-
-typedef CStaticArraySet <const char*, PCase_CStr> TSingleSet;
-DEFINE_STATIC_ARRAY_MAP(TSingleSet, sc_SingleKeys, single_key_list);
-
 
 // constructor
 CFeatureTableReader_Imp::CFeatureTableReader_Imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener)
@@ -3312,30 +3311,26 @@ void CFeatureTableReader_Imp::AddFeatQual (
 {
     x_InitId(seq_id1, flags);
 
-    if ((! qual.empty ()) && (! val.empty ())) {
+    if (NStr::IsBlank(qual)) {
+        return;
+    }
 
+    if (!val.empty ()) { // Should probably use NStr::IsBlank()
         if (! x_AddQualifierToFeature (sfp, feat_name, qual, val, flags)) {
-
             // unrecognized qualifier key
-
             if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                 ERR_POST_X (5, Warning << "Unrecognized qualifier '" << qual << "'");
             }
-
             if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
                 x_AddGBQualToFeature (sfp, qual, val);
             }
         }
-
-    } else if ((! qual.empty ()) && (val.empty ())) {
-
+    } 
+    else { // empty val
         // check for the few qualifiers that do not need a value
-
-        TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
+        auto s_iter = sc_SingleKeys.find (qual.c_str ());
         if (s_iter != sc_SingleKeys.end ()) {
-
             x_AddQualifierToFeature (sfp, feat_name, qual, val, flags);
-
         }
     }
 }
