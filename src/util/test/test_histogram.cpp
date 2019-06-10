@@ -52,17 +52,16 @@ public:
         // Init randomizer
         rnd.seed(seed());
     }
-    // Simple linear scale histograms
     void SimpleLinear(void);
-    // Simple logarithmic scale histograms
     void SimpleLog(void);
-    // Combined scale histograms
     void CombinedScale(void);
+    void CustomDataType(void);
 
     int Run(void) {
         SimpleLinear();
         SimpleLog();
-        //CombinedScale();
+        CombinedScale();
+        CustomDataType();
         return 0;
     }
 
@@ -172,6 +171,7 @@ void PrintArray(size_t n, const T* arr)
 
 void CDataHistogramDemoApp::SimpleLinear(void)
 {
+    PRINT_HEADER("Simple linear monotonic/simmetrical scales");
     {{
         cout << "Linear scale from 0 to 10, 10 bins with size 1 (10x1)" << endl;
         CHistogram<int> h(0, 10, 10);
@@ -218,7 +218,7 @@ void CDataHistogramDemoApp::SimpleLog(void)
     // We use a common logarithmic scales (eLog10) here for simplicity,
     // but you feel free to use binary or natural logarithmic scales instead.
 
-    {{
+   {{
         PRINT_HEADER("Monotonic common logarithmic scale from 1 to 1000");
 
         typedef CHistogram<unsigned int, double> H;
@@ -392,155 +392,121 @@ void CDataHistogramDemoApp::SimpleLog(void)
 
 void CDataHistogramDemoApp::CombinedScale(void)
 {
-    // We use a common logarithmic scales (eLog10) here for simplicity,
-    // but you feel free to use binary or natural logarithmic scales instead.
-
     {{
-        PRINT_HEADER("Monotonic common logarithmic scale from 1 to 1000");
         typedef CHistogram<unsigned int, unsigned int> H;
         {{
-            H h(1, 1000, 3, H::eLog10, H::eMonotonic);
-
-//    void AddLeftScale (TValue min_value, unsigned n_bins, EScaleType scale_type);
-//    void AddRightScale(TValue max_value, unsigned n_bins, EScaleType scale_type);
-
-            RUN_INT(h, 1, 1000);
+            PRINT_HEADER("Combined scale: monotonic linear scale from 0 to 100 + 1L");
+            H h(50, 100, 5, H::eLinear, H::eMonotonic);
+            h.AddLeftScale(0, 10, H::eLinear);
+            RUN_INT(h, 0, 100);
         }}
-if(0)
         {{
-            H h(1, 1000, 6, H::eLog10, H::eMonotonic);
-            RUN_INT(h, 1, 1000);
+            PRINT_HEADER("Combined scale: monotonic linear scale from 0 to 100 + 1R");
+            H h(0, 50, 5, H::eLinear, H::eMonotonic);
+            h.AddRightScale(100, 10, H::eLinear);
+            RUN_INT(h, 0, 100);
         }}
-if(0)
         {{
-            H h(1, 1000, 20, H::eLog10, H::eMonotonic);
-            RUN_INT(h, 1, 1000);
+            PRINT_HEADER("Combined scale: monotonic linear scale from 0 to 100 + 2L + 2R");
+            H h(50, 60, 10, H::eLinear, H::eMonotonic);  // [50:60]  10 x 1
+            h.AddLeftScale(20, 5, H::eLinear);           // [20:50]   5 x 6
+            h.AddLeftScale(0, 4, H::eLinear);            // [ 0:20]   4 x 5
+            h.AddRightScale(70, 5, H::eLinear);          // [60:70]   5 x 2
+            h.AddRightScale(100, 6, H::eLinear);         // [70:100]  6 x 5
+            RUN_INT(h, 0, 100);
+        }}
+    }}
+    {{
+        typedef CHistogram<int, double> H;
+        {{
+            PRINT_HEADER("Combined scale: monotonic linear scale from 0 to 10 (x10) + log10 to 1000 (x3)");
+            H h(0, 10, 10, H::eLinear, H::eMonotonic);
+            h.AddRightScale(1000, 3, H::eLog10);
+            RUN_INT(h, 0, 1000);
+        }}
+        {{
+            PRINT_HEADER("Combined scale: monotonic linear scale from 0 to -10 (x10) + log10 to -1000 (x3)");
+            H h(-10, 0, 10, H::eLinear, H::eMonotonic);
+            h.AddLeftScale(-1000, 3, H::eLog10);
+            RUN_INT(h, -1000, 0);
+        }}
+        {{
+            PRINT_HEADER("Combined scale: symmetrical log2 from 0 to 10 (x10) + log10 to 1000 (x5)");
+            H h(0, 10, 10, H::eLog2, H::eSymmetrical);
+            h.AddRightScale(1000, 5, H::eLog10);
+            RUN_INT(h, 0, 1000);
+        }}
+    }}
+    {{
+        {{
+            PRINT_HEADER("Combined scale: mix (int)");
+            typedef CHistogram<int> H;
+            H h(5, 100, 4, H::eLog, H::eSymmetrical);
+            h.AddLeftScale(0, 2, H::eLinear);
+            h.AddLeftScale(-5, 3, H::eLinear);
+            h.AddLeftScale(-1000, 3, H::eLog2);
+            h.AddLeftScale(-10000, 3, H::eLog10);
+            h.AddRightScale(110, 5, H::eLinear);
+            h.AddRightScale(200, 6, H::eLinear);
+            h.AddRightScale(10000, 10, H::eLog2);
+            RUN_INT(h, -1000, 1000);
+        }}
+        {{
+            // same as above, but no truncation due int type
+            PRINT_HEADER("Combined scale: mix (double)");
+            typedef CHistogram<double> H;
+            H h(5, 100, 4, H::eLog, H::eSymmetrical);
+            h.AddLeftScale(0, 2, H::eLinear);
+            h.AddLeftScale(-5, 3, H::eLinear);
+            h.AddLeftScale(-1000, 3, H::eLog2);
+            h.AddLeftScale(-10000, 3, H::eLog10);
+            h.AddRightScale(110, 5, H::eLinear);
+            h.AddRightScale(200, 6, H::eLinear);
+            h.AddRightScale(10000, 10, H::eLog2);
+            RUN_DOUBLE(h, -1000, 1000);
         }}
     }}
 }
 
-#if 0
-   
-    // 2 scale collectors
-    {{
-        // Double scale for unsigned int values, size_t counter type.
-        typedef CHistogram<unsigned int, double, size_t> H;
-        {{
-            // Most relevant data at start of the scales, starting from 0.
-            cout << "2 scales - Linear scale from 0 to 10, and log to 100, step 0.5 for both" << endl;
-            H::Collector c(
-                H::MajorScale(0, 10, 0.5, H::Scale::eLinear),
-                H::MinorScale(100, 0.5, H::Scale::eLog)
-            );
-            RUN_INT(c, 0, 100);
-        }}
-        {{
-            // Reverse to above. Most relevant data at the end of the scales.
-            cout << "2 scales - Linear scale from 90 to 100, and log from 90 to 0, step 0.5 for both" << endl;
-            H::Collector c(
-                H::MinorScale(0, 0.5, H::Scale::eLog),
-                H::MajorScale(90, 100, 0.5, H::Scale::eLinear)
-            );
-            RUN_INT(c, 0, 100);
-        }}
-        {{
-            cout << "2 scales - Linear scale from 0 to 10, and log to 100, step 0.5 for both" << endl;
-            H::Collector c(
-                H::MajorScale(0, 10, { 0.5, 0 }, H::Scale::eLinear),  // step starts from 0.5
-                H::MinorScale(100, { 0.5, 1 }, H::Scale::eLog2)       // step starts from 1
-            );
-            RUN_INT(c, 0, 100);
-        }}
-        {{
-            cout << "2 scales - Custon function monotonic scale from 1000 to 1010, and log from 100 to 0" << endl;
-            H::Collector c(
-                H::MinorScale(0, 1, H::Scale::eLog),
-                H::MajorScale(1000, 1010, 1, fCustomFunc)
-            );
-            RUN_INT(c, 0, 100);
-        }}
-    }}
 
-    // 3 scale collectors
-    {{
-        {{
-            // Double scale for long values, size_t counter type.
-            typedef CHistogram<long, double, size_t> H;
-            cout << "3 scales - Linear scale for range [-10,+10] step 1, and log to -1000/+1000 with steps 0.7/0.5 accordingly" << endl;
-            H::Collector c(
-                H::MinorScale(-1000,    0.7, H::Scale::eLog),
-                H::MajorScale(-10, +10,   1, H::Scale::eLinear),
-                H::MinorScale(+1000,    0.5, H::Scale::eLog)
-            );
-            RUN_INT(c, -1000, 1000);
-        }}
-        {{
-            // Double scale for double values, 'unsigned int' counter type.
-            typedef CHistogram<double, double, unsigned int> H;
-            cout << "3 scales - Linear scale for range [5,10] step 0.4, log2 on [0,5]/step 0.1, log10 on [10,100000] step 1" << endl;
-            H::Collector c(
-                H::MinorScale(0,     0.1, H::Scale::eLog2),
-                H::MajorScale(5, 10, 0.4, H::Scale::eLinear),
-                H::MinorScale(100000,  1, H::Scale::eLog10)
-            );
-            RUN_INT(c, 0, 100000);
-        }}
-        {{
-            // Double scale for double values, 'unsigned int' counter type.
-            typedef CHistogram<double, double, unsigned int> H;
-            cout << "3 scales - Natural logaritm scale for [1000,1005] step 0.1, and log 10 for left/right parts - [0,1000] / [1005/10000] step 1" << endl;
-            H::Collector c(
-                H::MinorScale(0,            1, H::Scale::eLog10),
-                H::MajorScale(1000, 1005, 0.1, H::Scale::eLog),
-                H::MinorScale(100000,       1, H::Scale::eLog10)
-            );
-            RUN_INT(c, 0, 100000);
-        }}
-    }}
+void CDataHistogramDemoApp::CustomDataType(void)
+{
+    // Custom data type should have:
+    //   - operator T() -- to convert to scale type T ('double' in our case)
+    //   - operator >()
+    //
+    struct SValue {
+        // Constructor
+        SValue(size_t p1, size_t p2) : v1(p1), v2(p2) {};
+        // Conversion to double (scale type).
+        operator double(void) const {
+            return (double)v1 + (v2 == 0 ? 0 : 1/(double)v2);
+        }
+        // Comparison: operatior >
+        bool operator> (const SValue& other) const {
+            if (v1 > other.v1) return true;
+            if (v1 < other.v1) return false;
+            return v2 > other.v2;
+        }
+        // Some value(s)
+        size_t v1;
+        size_t v2;
+    };
 
-    // Custom data types
-    {{
-        // Histogram example with a custom data type and double scale
-        {{
-            // Custom data type should have:
-            //   - default constructor
-            //   - operator T() -- to convert to scale type T ('double' in our case)
-            //   - operator >()
-            //
-            struct SValue {
-                // Constructor / default constructor (0,0)
-                SValue(size_t p1 = 0, double p2 = 0) : v1(p1), v2(p2) {};
-                // Conversion to double (scale type).
-                operator double(void) const {
-                    return (double)v1 + v2;
-                }
-                // Comparison: operatior >
-                bool operator> (const SValue& other) const {
-                    if (v1 > other.v1) return true;
-                    if (v1 < other.v1) return false;
-                    return v2 > other.v2;
-                }
-                // Some value(s)
-                size_t v1;
-                double v2;
-            };
+    PRINT_HEADER("Custom data type: symmetrical natural logarithmic scale from (0,0) to (100,0)");
+    typedef CHistogram<SValue, double, unsigned long> H;
+    H h(SValue(0,0), SValue(100,0), 10, H::eLog, H::eSymmetrical);
 
-            typedef CHistogram<SValue, double, unsigned long> H;
-            cout << "Custom data type - Symmetrical natural logarithmic scale from (0,0) to (100,0), step 0.6" << endl;
-            H::Scale s(SValue(0,0), SValue(100,0), 0.6, H::Scale::eLog, H::Scale::eSymmetrical);
-            H::Collector c(s);
+    // Generate and add some random data
+    std::uniform_int_distribution<size_t>  d1(0, 99);
+    std::uniform_int_distribution<size_t>  d2(0, 9999);
 
-            // Generate and add some random data
-            std::uniform_int_distribution<size_t>  d1(0, 100); // 100 instead of 99 for some anomalies on right
-            std::uniform_real_distribution<double> d2(0, 1.0);
-            for (size_t i = 0; i < 1000; i++) {
-                c.Add(SValue(d1(rnd),d2(rnd)));
-            }
-            // Print result
-            PRINT_STATS(c);
-        }}
-    }}
-#endif
+    for (size_t i = 0; i < 1000; i++) {
+        h.Add(SValue(d1(rnd),d2(rnd)));
+    }
+    // Print result
+    PRINT_STATS(h);
+}
 
 
 int main(int argc, char** argv)

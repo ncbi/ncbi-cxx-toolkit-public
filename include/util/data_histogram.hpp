@@ -69,10 +69,12 @@ BEGIN_NCBI_SCOPE
 /// TCounter - type to store counters. Usually this is a positive integer type:
 ///            int, unsigned int, long, size_t, Uint8 and etc.
 /// 
-/// @note ???
-///   TValue and TScale types should be equal, or allow comparison
-///   between them. Also, TValue should allow conversion to TScale.
-///   User defined type can be used for TValue (see test/demo), 
+/// @note
+///   TValue and TScale types should be equal, or allow comparison and conversion
+///   between them. Any types can ve used as TValue if it have:
+///   - operator TScale() const        -- to convert to scale type TScale;
+///   - bool operator >(const TValue&) -- for comparison.
+
 
 template <typename TValue = int, typename TScale = TValue, typename TCounter = Uint8>
 class CHistogram
@@ -313,28 +315,29 @@ void
 CHistogram<TValue, TScale, TCounter>::AddLeftScale(
     TValue min_value, unsigned n_bins, EScaleType scale_type)
 {
-#if 0
     if ( min_value >= m_Min ) {
-        NCBI_THROW(CCoreException, eInvalidArg, "Minimum value cannot exceed maximum value");
+        NCBI_THROW(CCoreException, eInvalidArg, "New minimum value cannot exceed minimum value for the histogram");
     }
-    if ( !m_NumBins ) {
+    if ( !n_bins ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Number of bins cannot be zero");
     }
     if (m_Count + m_LowerAnomalyCount + m_UpperAnomalyCount) {
         NCBI_THROW(CCoreException, eInvalidArg, "Please call AddLeftScale() before Add()");
     }
+    unsigned n_prev = m_NumBins;
+    m_NumBins += n_bins;
 
-    : m_Min(min_value), m_Max(max_value), m_NumBins(n_bins) 
-{
+    // Reallocate memory for starting positions and counters
 
+    std::unique_ptr<TScale[]> tmp_starts(new TScale[m_NumBins]);
+    memcpy(tmp_starts.get() + n_bins, m_Starts.get(), sizeof(TScale) * n_prev);
+    m_Starts.swap(tmp_starts);
+    m_Counters.reset(new TCounter[m_NumBins]);
+    memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
 
-    std::unique_ptr<TScale[]>   m_Starts;    ///< Combined scale: starting bins positions
-
-    if ()
-    m_Starts.reset(new TScale[m_NumBins]);
-
-    ;
-#endif
+    // Calculate scale for newly added bins: from right to left
+    x_CalculateBins((TScale)m_Min, (TScale)min_value, n_bins-1, n_bins, scale_type, eMonotonic);
+    m_Min = min_value;
 }
 
 
@@ -343,11 +346,29 @@ void
 CHistogram<TValue, TScale, TCounter>::AddRightScale(
     TValue max_value, unsigned n_bins, EScaleType scale_type)
 {
-#if 0
+    if ( max_value <= m_Max ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "New maximum value cannot be less than a maximum value for the histogram");
+    }
+    if ( !n_bins ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Number of bins cannot be zero");
+    }
     if (m_Count + m_LowerAnomalyCount + m_UpperAnomalyCount) {
         NCBI_THROW(CCoreException, eInvalidArg, "Please call AddRightScale() before Add()");
     }
-#endif
+    unsigned n_prev = m_NumBins;
+    m_NumBins += n_bins;
+
+    // Reallocate memory for starting positions and counters
+
+    std::unique_ptr<TScale[]> tmp_starts(new TScale[m_NumBins]);
+    memcpy(tmp_starts.get(), m_Starts.get(), sizeof(TScale) * n_prev);
+    m_Starts.swap(tmp_starts);
+    m_Counters.reset(new TCounter[m_NumBins]);
+    memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
+
+    // Calculate scale for newly added bins: from left to right
+    x_CalculateBins((TScale)m_Max, (TScale)max_value, n_prev, n_bins, scale_type, eMonotonic);
+    m_Max = max_value;
 }
 
 
@@ -447,7 +468,7 @@ CHistogram<TValue, TScale, TCounter>::x_CalculateBins
     if (scale_type == eLinear) {
         // Special processing for linear scales to account for
         // an integer TScale type and calculation truncation.
-        TScale step = (end_value - start_value) / n;
+        TScale step = (max(start_value, end_value) - min(start_value, end_value)) / n;
         if ( step == 0 ) {
             NCBI_THROW(CCoreException, eCore, errmsg_step);
         }
@@ -465,9 +486,10 @@ CHistogram<TValue, TScale, TCounter>::x_CalculateBins
     // Check that we don't have bins with the same starting positions.
     // This can happens mostly if TScale is an integer type due truncation.
     // Linear scale doesn't need this check, because we check 'step' instead (see above).
+    // Check whole combined scale.
     //
-    for (unsigned i = 1; i < n; i++) {
-        if ( arr[pos+i] <= arr[pos+i-1] ) {
+    for (unsigned i = 1; i < m_NumBins; i++) {
+        if ( arr[i] <= arr[i-1] ) {
             NCBI_THROW(CCoreException, eCore, errmsg_dup);
         }
     }

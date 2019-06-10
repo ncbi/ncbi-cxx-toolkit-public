@@ -39,6 +39,7 @@ NCBI_add_app(
     test_utf8
     test_uttp
     test_value_convert
+    test_histogram
     test_histogram_binning
     test_table_printer
     test_random
@@ -87,6 +88,7 @@ include(CMakeLists.test_thread_pool_old.app.txt)
 include(CMakeLists.test_utf8.app.txt)
 include(CMakeLists.test_uttp.app.txt)
 include(CMakeLists.test_value_convert.app.txt)
+include(CMakeLists.test_histogram.app.txt)
 include(CMakeLists.test_histogram_binning.app.txt)
 include(CMakeLists.test_table_printer.app.txt)
 include(CMakeLists.test_random.app.txt)
