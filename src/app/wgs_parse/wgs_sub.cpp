@@ -1150,41 +1150,6 @@ static void RemoveDblinkGPID(CSeq_entry& entry, size_t& dblink_order_num)
     }
 }
 
-static string GetAssignedAccessionFromIds(const CBioseq::TId& ids)
-{
-    for (auto& id : ids) {
-        if (id->Which() == GetParams().GetIdChoice() && id->GetTextseq_Id() && id->GetTextseq_Id()->IsSetAccession()) {
-            return id->GetTextseq_Id()->GetAccession();
-        }
-    }
-
-    return "";
-}
-
-static string GetAssignedAccession(const CSeq_entry& entry)
-{
-    string ret;
-
-    if (entry.IsSet()) {
-
-        if (entry.GetSet().IsSetSeq_set()) {
-            auto& seq_set = entry.GetSet().GetSeq_set();
-            auto nuc_seq = find_if(seq_set.begin(), seq_set.end(), [](const CRef<CSeq_entry>& cur_entry) { return cur_entry->IsSeq() && cur_entry->GetSeq().IsSetId(); });
-
-            if (nuc_seq != seq_set.end()) {
-                ret = GetAssignedAccessionFromIds((*nuc_seq)->GetSeq().GetId());
-            }
-        }
-    }
-    else if (entry.IsSeq()) {
-        if (entry.GetSeq().IsNa() && entry.GetSeq().IsSetId()) {
-            ret = GetAssignedAccessionFromIds(entry.GetSeq().GetId());
-        }
-    }
-
-    return ret;
-}
-
 static void SeqToDelta(CSeq_entry& entry, TSeqPos gap_size)
 {
     if (gap_size) {
@@ -1693,12 +1658,12 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
         if (!GetParams().IsVDBMode()) {
 
-            auto sort_by_accessions_func = [](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
+            auto sort_by_accessions_func = [&master_info](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
                 {
-                    //const string & sa = GetAssignedAccession(*a);
-                    //const string & sb = GetAssignedAccession(*b);
+                    const string & sa = a->IsSeq() ? GetSeqIdKey(a->GetSeq()) : kEmptyStr;
+                    const string & sb = b->IsSeq() ? GetSeqIdKey(b->GetSeq()) : kEmptyStr;;
 
-                    return GetAssignedAccession(*a) > GetAssignedAccession(*b);
+                    return master_info.m_order_of_entries[sa] > master_info.m_order_of_entries[sb];
                 };
 
             bioseq_set->SetSeq_set().sort(sort_by_accessions_func);

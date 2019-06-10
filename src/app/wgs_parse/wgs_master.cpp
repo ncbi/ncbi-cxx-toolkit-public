@@ -1774,9 +1774,6 @@ static void AddOrderInfo(const CSeq_entry& entry, list<CEntryOrderInfo>& seq_ord
 static void SortSequences(list<CEntryOrderInfo>& seq_order)
 {
     ESortOrder sort_order = GetParams().GetSortOrder();
-    if (GetParams().IsAccessionAssigned()) {
-        sort_order = eByAccession;
-    }
 
     if (sort_order != eUnsorted) {
 
