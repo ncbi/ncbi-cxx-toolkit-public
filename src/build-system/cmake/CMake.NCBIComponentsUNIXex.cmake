@@ -80,6 +80,7 @@ set(NCBI_ThirdParty_GCRYPT       ${NCBI_TOOLS_ROOT}/libgcrypt-1.4.3)
 set(NCBI_ThirdParty_MSGSL        ${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94)
 set(NCBI_ThirdParty_SGE          "/netmnt/gridengine/current")
 set(NCBI_ThirdParty_LEVELDB      ${NCBI_TOOLS_ROOT}/leveldb-1.21)
+set(NCBI_ThirdParty_wxWidgets    ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2)
 
 #############################################################################
 #############################################################################
@@ -466,6 +467,7 @@ endif()
 
 ##############################################################################
 # wxWidgets
+if(OFF)
 include(${NCBI_TREE_CMAKECFG}/CMakeChecks.wxwidgets.cmake)
 if (WXWIDGETS_FOUND)
     set(NCBI_COMPONENT_wxWidgets_FOUND   YES)
@@ -478,6 +480,36 @@ if (WXWIDGETS_FOUND)
         set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
     endif()
     list(APPEND NCBI_ALL_COMPONENTS wxWidgets)
+endif()
+else()
+    find_package(GTK2)
+    if (GTK2_FOUND)
+        NCBI_define_component(wxWidgets
+            wx_gtk2_gl-3.1
+            wx_gtk2_richtext-3.1
+            wx_gtk2_aui-3.1
+            wx_gtk2_propgrid-3.1
+            wx_gtk2_xrc-3.1
+            wx_gtk2_html-3.1
+            wx_gtk2_qa-3.1
+            wx_gtk2_adv-3.1
+            wx_gtk2_core-3.1
+            wx_base_xml-3.1
+            wx_base_net-3.1
+            wx_base-3.1
+        )
+        if(NCBI_COMPONENT_wxWidgets_FOUND)
+            list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
+            get_filename_component(_libdir ${_lib} DIRECTORY)
+            set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-3.1 ${_libdir}/wx/include/gtk2-ansi-3.1)
+            set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} ${GTK2_LIBRARIES})
+            if(BUILD_SHARED_LIBS)
+                set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
+            else()
+                set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
+            endif()
+        endif()
+    endif()
 endif()
 
 ##############################################################################
