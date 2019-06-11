@@ -31,7 +31,7 @@
  */
 
 /// @file data_histogram.hpp
-/// Collector for data distribution of the numerical samples.
+/// Frequency histogram for data distribution of the numerical samples.
 
 #include <corelib/ncbistd.hpp>
 
@@ -45,7 +45,6 @@
  *
  * @{
  */
-
 
 BEGIN_NCBI_SCOPE
 
@@ -82,9 +81,9 @@ class CHistogram
 public:
     /// Scale type.
     /// Most common is a linear scale, where each bin have the same size.
-    /// This is good if you have a limited range, but sometimes values are distributed
-    /// very wide, and if you want to count all of them, but concentrate on a some range
-    /// with most significant values, logarithmic scales helps a lot.
+    /// It is good if you have a limited range, but sometimes values are distributed
+    /// very wide, and if you want to count all of them, but concentrate on a 
+    /// some range with most significant values, logarithmic scales helps a lot.
     /// For logarithmic scales each next bin have a greather size.
     /// Bins size increasing depends on a logariphmic base (used scale type).
     ///
@@ -96,6 +95,7 @@ public:
     };
 
     /// Methods to build bins for a specified scale.
+    // Applies to the main scale, defined in constructor, only.
     enum EScaleView {
         /// Use specified scale method to calculate bins sizes from a minimum
         /// to a maximum value.
@@ -137,8 +137,9 @@ public:
     /// but each returns a single number of hits outside of the range.
     /// The other method is to use auxiliary scale(s) to count the number of hits
     /// for the less significant range(s). You can add any number of scales from each side.
-    /// With a help of logarithmic scales it is possible to cover a very wide range
-    /// of data with a limited number of bins. See EScaleType for details.
+    /// So, you can use linear scale with much greater bin sizes, or logarithmic scales,
+    /// that allow to cover a very wide range of data with a limited number of bins.
+    /// See EScaleType for details.
     ///
     /// @param min_value
     ///   Minimum allowed value for the auxiliary scale. 
@@ -157,7 +158,7 @@ public:
     void AddLeftScale (TValue min_value, unsigned n_bins, EScaleType scale_type);
     void AddRightScale(TValue max_value, unsigned n_bins, EScaleType scale_type);
 
-    
+
     /////////////////////////////////////////////////////////////////////////
     // Structure
 
@@ -172,7 +173,7 @@ public:
     unsigned GetNumberOfBins() const { return m_NumBins; };
 
     /// Get starting positions for bins on the combined scale.
-    /// The number of bins can be obtained with GetNumberOfBins()
+    /// Returns a pointer to array. The number of bins can be obtained with GetNumberOfBins().
     /// and a number of a counters in each bin -- with GetBinCounters().
     /// @sa GetNumberOfBins, GetBinCounters
     const TScale* GetBinStarts() const { return (const TScale*) m_Starts.get(); }
@@ -194,6 +195,7 @@ public:
     // Results
 
     /// Get counters for the combined scale's bins.
+    /// Returns a pointer to array. The number of bins can be obtained with GetNumberOfBins().
     /// @sa Add, GetBinStarts, GetNumberOfBins
     const TCounter* GetBinCounters() const { return (const TCounter*) m_Counters.get(); }
 
@@ -210,6 +212,45 @@ public:
     /// Get number of hits whose values were greater than GetMax().
     /// @sa GetLowerAnomalyCount, GetCount
     size_t GetUpperAnomalyCount() const { return m_UpperAnomalyCount; }
+
+
+    /////////////////////////////////////////////////////////////////////////
+    // Helpers
+
+    /// Rules to calculate an estimated numbers of bins on the base of the expected
+    /// number of observations.
+    /// Note, that there is no "best" number of bins, and different bin sizes can reveal
+    /// different features of the data. All these methods generally make strong assumptions
+    /// about the shape of the distribution. Depending on the actual data distribution
+    /// and the goals of the analysis, different bin widths may be appropriate, 
+    /// so experimentation is usually needed to determine an appropriate width.
+    /// @note
+    ///   All methods applies to the linear scale only, that have a fixed bin sizes.
+    /// @sa
+    ///   EstimateNumberOfBins
+    ///
+    enum EEstimateNumberOfBinsRule {
+        /// Square root rule. Used by Excel histograms and many others. 
+        /// Default value for EstimateNumberOfBins() as well.
+        eSquareRoot = 0,
+        /// Juran's "Quality Control Handbook" that provide guidelines
+        /// to select the number of bins for histograms.
+        eJuran,
+        /// Herbert Sturge`s rule. It works best for continuous data that is
+        /// normally distributed and symmetrical. As long as your data is not skewed,
+        /// using Sturge’s rule should give you a nice-looking, easy to read
+        /// histogram that represents the data well.
+        eSturge,
+        /// Rice's rule. Presented as a simple alternative to Sturges's rule.
+        eRice
+    };
+
+    /// Estimate numbers of bins on the base of the expected number of observations 'n'.
+    /// @note
+    ///   Applies to the linear scale only.
+    /// @sa
+    ///   EEstimateNumberOfBinsRules
+    static unsigned EstimateNumberOfBins(size_t n, EEstimateNumberOfBinsRule rule = 0);
 
 protected:
     /// Calculate bins starting positions.
@@ -246,7 +287,7 @@ protected:
     /// Add value to the data distribution using a linear search method.
     /// Usually faster than bisection method on a small number of bins,
     /// or if the values have a tendency to fall into the starting bins
-    /// for a used scale(s).
+    /// for a used scale.
     /// @sa Add, x_AddBisection
     void x_AddLinear(TValue value);
 
@@ -373,6 +414,33 @@ CHistogram<TValue, TScale, TCounter>::AddRightScale(
 
 
 template <typename TValue, typename TScale, typename TCounter>
+unsigned 
+CHistogram<TValue, TScale, TCounter>::EstimateNumberOfBins(size_t n, EEstimateNumberOfBinsRule rule)
+{
+    switch (rule) {
+    case eSquareRoot:
+        return (unsigned) ceil(sqrt(n));
+    case eJuran:
+        // It have no info for n < 20, but 5 is a reasonable minimum
+        if (n <    20) return  5;
+        if (n <=   50) return  6;
+        if (n <=  100) return  7;
+        if (n <=  200) return  8;
+        if (n <=  500) return  9;
+        if (n <= 1000) return 10;
+        return 11;  // handbook: 11-20  for 1000+ observations
+    case eSturge:
+        return 1 + (unsigned) ceil(log2(n));
+    case eRice:
+        return (unsigned) ceil(pow(n, double(1)/3));
+    }
+    _TROUBLE;
+    // unreachable, just to avoid warning
+    return 0;
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
 void 
 CHistogram<TValue, TScale, TCounter>::Add(TValue value)
 {
@@ -384,8 +452,6 @@ CHistogram<TValue, TScale, TCounter>::Add(TValue value)
         m_UpperAnomalyCount++;
         return;
     }
-    x_AddBisection(value);
-    return;
     if (m_NumBins < 50) {
         x_AddLinear(value);
         return;
@@ -485,8 +551,8 @@ CHistogram<TValue, TScale, TCounter>::x_CalculateBins
 
     // Check that we don't have bins with the same starting positions.
     // This can happens mostly if TScale is an integer type due truncation.
-    // Linear scale doesn't need this check, because we check 'step' instead (see above).
-    // Check whole combined scale.
+    // Linear scale doesn't need this, because we check 'step' instead (see above).
+    // Checking whole combined scale.
     //
     for (unsigned i = 1; i < m_NumBins; i++) {
         if ( arr[i] <= arr[i-1] ) {

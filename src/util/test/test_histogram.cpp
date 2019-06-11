@@ -52,6 +52,7 @@ public:
         // Init randomizer
         rnd.seed(seed());
     }
+    void EstimateNumberOfBins();
     void SimpleLinear(void);
     void SimpleLog(void);
     void CombinedScale(void);
@@ -62,6 +63,7 @@ public:
         SimpleLog();
         CombinedScale();
         CustomDataType();
+        EstimateNumberOfBins();
         return 0;
     }
 
@@ -506,6 +508,38 @@ void CDataHistogramDemoApp::CustomDataType(void)
     }
     // Print result
     PRINT_STATS(h);
+}
+
+
+void CDataHistogramDemoApp::EstimateNumberOfBins(void)
+{
+    PRINT_HEADER("Estimate number of bins");
+    typedef CHistogram<> H;
+
+    const int N = 12;
+    const size_t num[N] = { 1, 3, 7, 10, 20, 40, 60, 100, 500, 1000, 5000, 20000 }; 
+
+    cout << "N          : ";
+    for (int i = 0; i < N; i++) {
+        cout << num[i] << " ";
+    }
+    cout << "\nSquareRoot : ";
+    for (int i = 0; i < N; i++) {
+        cout << H::EstimateNumberOfBins(num[i], H::eSquareRoot) << " ";
+    }
+    cout << "\nJuran      : ";
+    for (int i = 0; i < N; i++) {
+        cout << H::EstimateNumberOfBins(num[i], H::eJuran) << " ";
+    }
+    cout << "\nSturge     : ";
+    for (int i = 0; i < N; i++) {
+        cout << H::EstimateNumberOfBins(num[i], H::eSturge) << " ";
+    }
+    cout << "\nRice       : ";
+    for (int i = 0; i < N; i++) {
+        cout << H::EstimateNumberOfBins(num[i], H::eRice) << " ";
+    }
+    cout << endl;
 }
 
 
