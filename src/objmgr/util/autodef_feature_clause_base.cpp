@@ -865,10 +865,14 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (size_t clause1, size_t cl
         || m_ClauseList[clause2]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion) {
         return false;
     }
-    
-    if (!ShareInterval(*(m_ClauseList[clause1]->GetLocation()), *(m_ClauseList[clause2]->GetLocation()))) {
+
+    // locations must share an interval
+    CRef<CSeq_loc> loc1 = m_ClauseList[clause1]->GetLocation();
+    CRef<CSeq_loc> loc2 = m_ClauseList[clause2]->GetLocation();
+    if (!loc1 || !loc2 || !ShareInterval(*loc1, *loc2)) {
         return false;
     }
+
     // are genes the same?
     if (!NStr::Equal(m_ClauseList[clause1]->GetGeneName(), m_ClauseList[clause2]->GetGeneName())
         || !NStr::Equal(m_ClauseList[clause1]->GetAlleleName(), m_ClauseList[clause2]->GetAlleleName())) {
