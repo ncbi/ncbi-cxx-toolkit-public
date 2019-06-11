@@ -82,14 +82,6 @@ private:
                              CTempString initials = kEmptyStr,
                              CTempString suffix = kEmptyStr);
 
-    static bool x_IsAllCaps(const string& str);
-
-    static string x_GetInitials(vector<string>& tokens);
-
-    static bool x_IsPossibleSuffix(const string& str);
-
-    static void x_NormalizeSuffix(string& suffix);
-
     static CRef<CPerson_id> x_ConvertMlToStandard(const string& name,
                                                   bool normalize_suffix=false);
 
