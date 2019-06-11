@@ -480,6 +480,15 @@ if (WXWIDGETS_FOUND)
     list(APPEND NCBI_ALL_COMPONENTS wxWidgets)
 endif()
 
+##############################################################################
+# GCRYPT
+NCBI_define_component(GCRYPT gcrypt)
+NCBI_define_component(GPG    gpg-error)
+if(NCBI_COMPONENT_GCRYPT_FOUND)
+    set(NCBI_COMPONENT_GCRYPT_INCLUDE ${NCBI_COMPONENT_GCRYPT_INCLUDE} ${NCBI_COMPONENT_GPG_INCLUDE})
+    set(NCBI_COMPONENT_GCRYPT_LIBS    ${NCBI_COMPONENT_GCRYPT_LIBS}    ${NCBI_COMPONENT_GPG_LIBS})
+endif()
+
 #############################################################################
 # XML
 NCBI_define_component(XML xml2)
@@ -489,18 +498,28 @@ endif()
 
 #############################################################################
 # XSLT
-NCBI_define_component(XSLT xslt exslt)
+if (NCBI_COMPONENT_GCRYPT_FOUND)
+NCBI_define_component(XSLT xslt exslt xml2)
 if (NCBI_COMPONENT_XSLT_FOUND)
     set(NCBI_COMPONENT_XSLT_INCLUDE ${NCBI_COMPONENT_XSLT_INCLUDE} ${NCBI_COMPONENT_XSLT_INCLUDE}/libxml2)
+    set(NCBI_COMPONENT_XSLT_LIBS ${NCBI_COMPONENT_XSLT_LIBS} ${NCBI_COMPONENT_GCRYPT_LIBS})
     set(NCBI_COMPONENT_XSLTPROCTOOL_FOUND YES)
     set(NCBI_XSLTPROCTOOL ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
+endif()
+else()
+    message("NOT FOUND XSLT: required component GCRYPT not found")
 endif()
 
 #############################################################################
 # EXSLT
-NCBI_define_component(EXSLT xslt exslt)
+if (NCBI_COMPONENT_GCRYPT_FOUND)
+NCBI_define_component(EXSLT xslt exslt xml2)
 if (NCBI_COMPONENT_EXSLT_FOUND)
     set(NCBI_COMPONENT_EXSLT_INCLUDE ${NCBI_COMPONENT_EXSLT_INCLUDE} ${NCBI_COMPONENT_EXSLT_INCLUDE}/libxml2)
+    set(NCBI_COMPONENT_EXSLT_LIBS ${NCBI_COMPONENT_EXSLT_LIBS} ${NCBI_COMPONENT_GCRYPT_LIBS})
+endif()
+else()
+    message("NOT FOUND XSLT: required component GCRYPT not found")
 endif()
 
 #############################################################################
@@ -596,15 +615,6 @@ NCBI_define_component(GRPC grpc++ grpc gpr protobuf${_suffix} cares address_sort
 #############################################################################
 # XALAN
 NCBI_define_component(XALAN xalan-c xalanMsg)
-
-##############################################################################
-# GCRYPT
-NCBI_define_component(GCRYPT gcrypt)
-NCBI_define_component(GPG    gpg-error)
-if(NCBI_COMPONENT_GCRYPT_FOUND)
-    set(NCBI_COMPONENT_GCRYPT_INCLUDE ${NCBI_COMPONENT_GCRYPT_INCLUDE} ${NCBI_COMPONENT_GPG_INCLUDE})
-    set(NCBI_COMPONENT_GCRYPT_LIBS    ${NCBI_COMPONENT_GCRYPT_LIBS}    ${NCBI_COMPONENT_GPG_LIBS})
-endif()
 
 ##############################################################################
 # PERL
