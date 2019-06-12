@@ -70,6 +70,7 @@ NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 NCBI_PARAM_DEF(string,   PSG, debug_printout,         "none");
 NCBI_PARAM_DEF(unsigned, PSG, requests_per_io,        1);
+NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 
 NCBI_PARAM_ENUM_ARRAY(EPSG_UseCache, PSG, use_cache)
 {
@@ -464,7 +465,8 @@ http2_request::http2_request(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future>
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
     m_full_path(move(full_path)),
-    m_reply(move(reply), move(queue))
+    m_reply(move(reply), move(queue)),
+    m_retries(TPSG_RequestRetries::GetDefault())
 {
 }
 
@@ -656,7 +658,26 @@ int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
     try {
         auto it = m_requests.find(stream_id);
         if (it != m_requests.end()) {
-            it->second->on_complete(error_code);
+            auto& req = it->second;
+
+            // If there is an error and the request is allowed to retry
+            if (error_code && req->retry()) {
+                if (error_code != NGHTTP2_REFUSED_STREAM) {
+                    ERR_POST(Warning << "Retrying after stream closed with error " << s_NgHttp2Error(error_code));
+                }
+
+                req->on_queue(nullptr);
+
+                // Return to queue for a re-send
+                if (m_io->m_req_queue.push_move(req)) {
+                    m_requests.erase(it);
+                    return 0;
+                }
+
+                req->on_queue(this);
+            }
+
+            req->on_complete(error_code);
         }
     }
     catch(const std::exception& e) {

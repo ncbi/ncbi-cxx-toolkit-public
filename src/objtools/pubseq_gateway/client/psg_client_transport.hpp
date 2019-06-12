@@ -99,6 +99,9 @@ enum class EPSG_UseCache { eDefault, eNo, eYes };
 NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
 typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
 
+NCBI_PARAM_DECL(unsigned, PSG, request_retries);
+typedef NCBI_PARAM_TYPE(PSG, request_retries) TPSG_RequestRetries;
+
 // Performance reporting/request IDs for psg_client app
 enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
 NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
@@ -452,6 +455,7 @@ private:
     std::string m_full_path;
     void do_complete();
     http2_reply m_reply;
+    size_t m_retries;
 public:
     http2_request(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path);
 
@@ -521,6 +525,8 @@ public:
         m_reply.error(err);
         do_complete();
     }
+    bool retry() { return (m_state <= http2_request_state::rs_wait) && (m_retries-- > 0); }
+
     SDebugPrintout& get_debug_printout() { return m_reply.get_debug_printout(); }
 };
 
