@@ -1660,18 +1660,22 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
             auto sort_by_accessions_func = [&master_info](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
                 {
-                    string sa = a->IsSeq() ? GetSeqIdKey(a->GetSeq()) : kEmptyStr;
-                    string sb = b->IsSeq() ? GetSeqIdKey(b->GetSeq()) : kEmptyStr;
+                    if (!a->IsSeq() || !b->IsSeq()) {
+                        return false;
+                    }
+
+                    string sa = GetSeqIdKey(a->GetSeq()),
+                           sb = GetSeqIdKey(b->GetSeq());
 
                     auto it_a = master_info.m_order_of_entries.find(sa);
                     if (it_a == master_info.m_order_of_entries.end()) {
-                        sa = a->IsSeq() ? GetSeqIdLocalOrGeneral(a->GetSeq()) : kEmptyStr;
+                        sa = GetSeqIdLocalOrGeneral(a->GetSeq());
                         it_a = master_info.m_order_of_entries.find(sa);
                     }
 
                     auto it_b = master_info.m_order_of_entries.find(sb);
                     if (it_b == master_info.m_order_of_entries.end()) {
-                        sb = b->IsSeq() ? GetSeqIdLocalOrGeneral(b->GetSeq()) : kEmptyStr;
+                        sb = GetSeqIdLocalOrGeneral(b->GetSeq());
                         it_b = master_info.m_order_of_entries.find(sb);
                     }
 
@@ -1680,10 +1684,11 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         return false;
                     }
 
-                    return it_a->second > it_b->second;
+                    return it_a->second < it_b->second;
                 };
 
             bioseq_set->SetSeq_set().sort(sort_by_accessions_func);
+            bioseq_set->SetSeq_set().reverse();
         }
 
         if (GetParams().IsTest()) {
