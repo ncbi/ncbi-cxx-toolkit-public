@@ -239,6 +239,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         param_fmt.name[l] = '\0';
         param_fmt.namelen = l;
     }}
+    param_fmt.maxlength = 0;
 
 
     CS_RETCODE ret_code = CS_FAIL;
@@ -318,6 +319,9 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     case eDB_Char: {
         CDB_Char& par = dynamic_cast<CDB_Char&> (param);
         param_fmt.datatype = CS_CHAR_TYPE;
+        if ( (param_fmt.status & CS_RETURN) != 0) {
+            param_fmt.maxlength = 8000;
+        }
         if ( declare_only ) {
             break;
         }
@@ -333,6 +337,9 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     case eDB_LongChar: {
         CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
         param_fmt.datatype = CS_LONGCHAR_TYPE;
+        if ( (param_fmt.status & CS_RETURN) != 0) {
+            param_fmt.maxlength = 8000;
+        }
         if ( declare_only ) {
             break;
         }
@@ -349,6 +356,9 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
 
         param_fmt.datatype = NCBI_CS_STRING_TYPE;
+        if ( (param_fmt.status & CS_RETURN) != 0) {
+            param_fmt.maxlength = 8000;
+        }
 #ifdef FTDS_IN_USE
         if (GetConnection().GetCTLibContext().GetClientEncoding() == eEncoding_UTF8
             &&  !par.IsNULL())
@@ -384,6 +394,9 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     case eDB_Binary: {
         CDB_Binary& par = dynamic_cast<CDB_Binary&> (param);
         param_fmt.datatype = CS_BINARY_TYPE;
+        if ( (param_fmt.status & CS_RETURN) != 0) {
+            param_fmt.maxlength = 8000;
+        }
         if ( declare_only ) {
             break;
         }
@@ -405,10 +418,20 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
                 param_fmt.datatype = CS_IMAGE_TYPE;
             else
 #  endif
+            {
                 param_fmt.datatype = CS_BINARY_TYPE;
+                if ( (param_fmt.status & CS_RETURN) != 0) {
+                    param_fmt.maxlength = 8000;
+                }
+            }
         } else
 #endif
+        {
             param_fmt.datatype = CS_LONGBINARY_TYPE;
+            if ( (param_fmt.status & CS_RETURN) != 0) {
+                param_fmt.maxlength = 8000;
+            }
+        }
 
         if ( declare_only ) {
             break;
@@ -428,7 +451,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             param_fmt.datatype = CS_IMAGE_TYPE;
         else
 #endif
+        {
             param_fmt.datatype = CS_BINARY_TYPE;
+            if ( (param_fmt.status & CS_RETURN) != 0) {
+                param_fmt.maxlength = 8000;
+            }
+        }
         if ( declare_only ) {
             break;
         }
@@ -1035,7 +1063,14 @@ bool CTL_LangCmd::x_AssignParams()
     param_fmt.status  = CS_INPUTVALUE;
 
     for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
-        if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
+        auto status = GetBindParamsImpl().GetParamStatus(i);
+        if (status == 0) {
+            continue;
+        } else if ((status & impl::CDB_Params::fOutput) != 0) {
+            param_fmt.status |= CS_RETURN;
+        } else {
+            param_fmt.status &= ~CS_RETURN;
+        }
 
         CDB_Object&   param      = *GetBindParamsImpl().GetParam(i);
         const string& param_name = GetBindParamsImpl().GetParamName(i);
