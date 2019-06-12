@@ -9174,7 +9174,7 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol
     const CSeq_entry    *ctx)
 {
     if (! m_Imp.DoTaxLookup()) {
-        return;
+        // return;
     }
     EStrandedMoltype smol = s_GetStrandedMolTypeFromLineage(lineage);
     if (smol == eStrandedMoltype_unknown || mol == CSeq_inst::eMol_aa) {
