@@ -114,9 +114,18 @@ void SDebugPrintout::Print(const SPSG_Chunk& chunk)
     ERR_POST(Warning << m_Id << ": " << NStr::PrintableString(os.str()));
 }
 
+const char* s_NgHttp2Error(int error_code)
+{
+    try {
+        return error_code < 0 ? nghttp2_strerror(error_code) : nghttp2_http2_strerror(error_code);
+    } catch (...) {
+        return "Unknown error";
+    }
+}
+
 void SDebugPrintout::Print(uint32_t error_code)
 {
-    ERR_POST(Warning << m_Id << ": Closed with status " << error_code);
+    ERR_POST(Warning << m_Id << ": Closed with status " << s_NgHttp2Error(error_code));
 }
 
 SDebugPrintout::~SDebugPrintout()
@@ -172,19 +181,7 @@ string SPSG_Error::Generic(int errc, const char* details)
 string SPSG_Error::NgHttp2(int errc)
 {
     std::stringstream ss;
-    ss << "nghttp2 error: ";
-
-    try {
-        if (errc < 0) {
-            ss << nghttp2_strerror(errc);
-        } else {
-            ss << nghttp2_http2_strerror(errc);
-        }
-    } catch (...) {
-        ss << "Unknown error";
-    }
-
-    ss << " (" << errc << ")";
+    ss << "nghttp2 error: " << s_NgHttp2Error(errc) << " (" << errc << ")";
     return ss.str();
 }
 
