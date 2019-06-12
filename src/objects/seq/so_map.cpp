@@ -1224,6 +1224,7 @@ CSoMap::SOALIASMAP CSoMap::mMapSoAliases = {
     {"Protein", "polypeptide"},
     {"protein_bind", "protein_binding_site"},
     {"SecStr", "sequence_secondary_structure"},
+    {"regulatory", "regulatory_region"},
     {"rep_origin", "origin_of_replication"},
     {"Rsite", "restriction_enzyme_cut_site"},
     {"satellite", "satellite_DNA"},
