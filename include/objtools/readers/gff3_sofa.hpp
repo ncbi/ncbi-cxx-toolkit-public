@@ -69,7 +69,7 @@ typedef map< string, string, CompareNoCase > TAliasToTerm;
 typedef TAliasToTerm::const_iterator TAliasToTermCit;
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJREAD_EXPORT CGff3SofaTypes
+class NCBI_DEPRECATED NCBI_XOBJREAD_EXPORT CGff3SofaTypes
 //  ----------------------------------------------------------------------------
 {
     friend CGff3SofaTypes& SofaTypes();

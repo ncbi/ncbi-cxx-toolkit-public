@@ -42,8 +42,7 @@
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Code_break.hpp>
-#include <objects/seq/sofa_type.hpp>
-#include <objects/seq/sofa_map.hpp>
+#include <objects/seq/so_map.hpp>
 
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/mapped_feat.hpp>
@@ -210,12 +209,7 @@ bool CGff3WriteRecordFeature::x_AssignType(
         }
     }
 
-    static CSafeStatic<CSofaMap> SOFAMAP;
-
-    if ( ! mf.IsSetData() ) {
-        mType = SOFAMAP->DefaultName();
-    }
-    mType = SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature());
+    CSoMap::FeatureToSoType(mf.GetOriginalFeature(), mType);
     return true;
 };
 

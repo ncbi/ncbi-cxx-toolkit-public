@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_SEQ_EXPORT CSofaMap
+class NCBI_DEPRECATED NCBI_SEQ_EXPORT CSofaMap
 //  ============================================================================
 {
 public:
