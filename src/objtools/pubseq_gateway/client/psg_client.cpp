@@ -1131,7 +1131,6 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
         // Wait for more items or reply completion
         auto wait_ms = RemainingTimeMs(deadline);
         reply_item.WaitFor(wait_ms);
-        was_in_progress = reply_item.GetUnsafe().state.InProgress();
     }
 
     return {};
