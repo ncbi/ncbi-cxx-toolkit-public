@@ -3392,6 +3392,7 @@ CFastaOstream::GetGapModText(
             break;
         case CSeq_gap::eType_contamination:
             gap_type = "contamination";
+            need_evidence = is_linkage;
             break;
         case CSeq_gap::eType_other:
             gap_type = "other";
