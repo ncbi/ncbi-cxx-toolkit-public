@@ -879,9 +879,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     if (m_is_best_refseq && mrna_feat_on_genome_with_translated_product) {
         CSeq_id_Handle genomic_acc = sequence::GetId(genomic_id, *m_scope,
                                                      sequence::eGetId_ForceAcc);
-        x_AddSelectMarkup(*align, query_rna_handle, *genomic_acc.GetSeqId(),
-                          *mrna_feat_on_genome_with_translated_product,
-                          cds_feat_on_genome_with_translated_product.GetPointer());
+        if (genomic_acc) {
+            x_AddSelectMarkup(*align, query_rna_handle, *genomic_acc.GetSeqId(),
+                              *mrna_feat_on_genome_with_translated_product,
+                              cds_feat_on_genome_with_translated_product.GetPointer());
+        }
     }
 
     CRef<CSeq_feat> gene_feat;
