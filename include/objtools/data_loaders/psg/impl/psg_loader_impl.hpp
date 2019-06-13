@@ -168,7 +168,11 @@ private:
         }
         EPSG_Status status = reply->GetStatus(CDeadline(0));
         if (status == EPSG_Status::eSuccess || status == EPSG_Status::eInProgress) return true;
-        ERR_POST("Request failed: " << (int)status << " - " << reply->GetNextMessage());
+        while (true) {
+            string msg = reply->GetNextMessage();
+            if (msg.empty()) break;
+            ERR_POST("Request failed: " << (int)status << " - " << msg);
+        }
         return false;
     }
 
