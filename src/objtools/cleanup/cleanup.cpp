@@ -2062,6 +2062,14 @@ bool CCleanup::SetGeneticCodes(CBioseq_Handle bsh)
         // no source, don't fix
         return false;
     }
+    const auto& bsrc = src->GetSource();
+    if (!bsrc.IsSetOrg() || !bsrc.IsSetOrgname()) {
+        return false;
+    }
+    const auto& orgname = bsrc.GetOrg().GetOrgname();
+    if (!orgname.IsSetGcode() && !orgname.IsSetMgcode() && !orgname.IsSetPgcode()) {
+        return false;
+    }
     int bioseqGenCode = src->GetSource().GetGenCode();
 
     bool any_changed = false;
