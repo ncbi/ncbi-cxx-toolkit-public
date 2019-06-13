@@ -1633,12 +1633,12 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         return CNcbiOstrstreamToString(result);
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (category, "HMM") ) {
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_prok/evidence/"
-               << data_str
+               << accession
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (category, "BlastRule") ) {
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_prok/evidence/"
-               << data_str
+               << accession
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
     } else {
@@ -1699,7 +1699,12 @@ void s_GetStrForStructuredComment(
                         category = (*it_for_len)->GetData().GetStr().c_str();
                     }
                     if ( label == "Evidence Accession" ) {
-                        accession = (*it_for_len)->GetData().GetStr().c_str();
+                        string accn = (*it_for_len)->GetData().GetStr();
+                        string str1;
+                        string str2;
+                        NStr::SplitInTwo(accn, ".", str1, str2);
+                        accession = str1.c_str();
+                        // accession = (*it_for_len)->GetData().GetStr().c_str();
                     }
                 }
                 const string::size_type label_len = label.length();
