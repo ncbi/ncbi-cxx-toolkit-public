@@ -47,6 +47,7 @@ sub process
       $ggg = $ggg eq '' ? 'eSubmitter' : "$ggg | eSubmitter" if $ttt{$test}=~/S/;
       $ggg = $ggg eq '' ? 'eSmart' : "$ggg | eSmart" if $ttt{$test}=~/T/;
       $ggg = $ggg eq '' ? 'eBig' : "$ggg | eBig" if $ttt{$test}=~/B/;
+      $ggg = $ggg eq '' ? 'eTSA' : "$ggg | eTSA" if $ttt{$test}=~/A/;
       $ggg = 0 if $ggg eq '';
       if ($ggg ne $group)
       { print "$test:  $group  =>  $ggg\n";

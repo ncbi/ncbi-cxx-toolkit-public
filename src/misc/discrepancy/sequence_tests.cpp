@@ -353,7 +353,7 @@ DISCREPANCY_SUMMARIZE(MISSING_DEFLINES)
 const string kMoreThan14NRuns = "[n] sequence[s] [has] runs of 15 or more Ns";
 const TSeqPos MIN_BAD_RUN_LEN = 15;
 
-DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
+DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc | eTSA, "Runs of more than 14 Ns")
 {
     if (obj.IsNa()) {
         if (obj.IsSetSeq_data()) {
@@ -419,7 +419,7 @@ DISCREPANCY_SUMMARIZE(EXTERNAL_REFERENCE)
 const string kMoreThan10PercentsN = "[n] sequence[s] [has] > 10% Ns";
 const double MIN_N_PERCENTAGE = 10.0;
 
-DISCREPANCY_CASE(10_PERCENTN, CSeq_inst, eDisc | eSubmitter | eSmart, "Greater than 10 percent Ns")
+DISCREPANCY_CASE(10_PERCENTN, CSeq_inst, eDisc | eSubmitter | eSmart | eTSA, "Greater than 10 percent Ns")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -1163,7 +1163,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
 
 // MISSING_STRUCTURED_COMMENT
 
-DISCREPANCY_CASE(MISSING_STRUCTURED_COMMENT, CSeq_inst, eDisc, "Structured comment not included")
+DISCREPANCY_CASE(MISSING_STRUCTURED_COMMENT, CSeq_inst, eDisc | eTSA, "Structured comment not included")
 {
     if (obj.IsAa()) {
         return;
@@ -1195,7 +1195,7 @@ DISCREPANCY_SUMMARIZE(MISSING_STRUCTURED_COMMENT)
 
 // MISSING_PROJECT
 
-DISCREPANCY_CASE(MISSING_PROJECT, CSeq_inst, eDisc, "Project not included")
+DISCREPANCY_CASE(MISSING_PROJECT, CSeq_inst, eDisc | eTSA, "Project not included")
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq) return;
@@ -1835,7 +1835,7 @@ static bool IsmRNASequenceInGenProdSet(CDiscrepancyContext& context, const CBios
 }
 
 
-DISCREPANCY_CASE(SEQ_SHORTER_THAN_200bp, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Short Contig")
+DISCREPANCY_CASE(SEQ_SHORTER_THAN_200bp, CSeq_inst, eDisc | eSubmitter | eSmart | eBig | eTSA, "Short Contig")
 {
     static TSeqPos MIN_CONTIG_LEN = 200;
     if (obj.IsNa() && obj.IsSetLength() && obj.GetLength() < MIN_CONTIG_LEN) {
