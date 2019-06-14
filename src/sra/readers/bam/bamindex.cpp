@@ -1853,7 +1853,7 @@ void CBamAuxIterator::x_InitData()
             ptr = static_cast<const char*>(memchr(ptr, 0, end-ptr));
             if ( ptr ) {
                 // found zero termination
-                m_AuxData.m_ElementCount = ptr-m_AuxData.m_DataPtr;
+                m_AuxData.m_ElementCount = uint32_t(ptr-m_AuxData.m_DataPtr);
                 m_AuxPtr = ptr + 1; // skip zero-termination too
                 return;
             }
