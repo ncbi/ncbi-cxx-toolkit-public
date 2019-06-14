@@ -603,6 +603,86 @@ private:
 };
 
 
+class CBamAuxIterator;
+
+
+struct SBamAuxData
+{
+    SBamAuxData()
+        : m_Tag(),
+          m_DataType(),
+          m_IsArray(false),
+          m_ElementCount(),
+          m_DataPtr(0)
+        {
+        }
+
+    DECLARE_OPERATOR_BOOL(m_DataPtr);
+
+    CTempString GetTag() const { return CTempString(m_Tag, 2); }
+    bool IsTag(char c1, char c2) const { return m_Tag[0] == c1 && m_Tag[1] == c2; }
+
+    char GetDataType() const { return m_DataType; }
+    
+    bool IsArray() const { return m_IsArray; }
+    size_t size() const { return m_ElementCount; }
+
+    bool IsChar() const { return m_DataType == 'A'; }
+    bool IsString() const { return m_DataType == 'Z' || m_DataType == 'H'; }
+    bool IsFloat() const { return m_DataType == 'f'; }
+    bool IsInt() const { return !IsString() && !IsFloat() && !IsChar(); }
+    
+    NCBI_BAMREAD_EXPORT char GetChar() const;
+    NCBI_BAMREAD_EXPORT CTempString GetString() const;
+    NCBI_BAMREAD_EXPORT float GetFloat(size_t index = 0) const;
+    NCBI_BAMREAD_EXPORT Int8 GetInt(size_t index = 0) const;
+
+private:
+    friend class CBamAuxIterator;
+    
+    char m_Tag[2];
+    char m_DataType;
+    bool m_IsArray;
+    uint32_t m_ElementCount; // either string length or array element count
+    const char* m_DataPtr;
+};
+
+class CBamAuxIterator
+{
+  public:
+    CBamAuxIterator()
+        : m_AuxPtr(0),
+          m_AuxEnd(0)
+        {
+        }
+    CBamAuxIterator(const char* aux_ptr, const char* aux_end)
+        : m_AuxPtr(aux_ptr),
+          m_AuxEnd(aux_end)
+        {
+            x_InitData();
+        }
+
+    CBamAuxIterator& operator++()
+        {
+            x_InitData();
+            return *this;
+        }
+    
+    typedef SBamAuxData value_type;
+        
+    DECLARE_OPERATOR_BOOL(m_AuxData);
+        
+    const SBamAuxData& operator*() const { return m_AuxData; }
+    const SBamAuxData* operator->() const { return &m_AuxData; }
+    
+private:
+    NCBI_BAMREAD_EXPORT void x_InitData();
+    
+    SBamAuxData m_AuxData;
+    const char* m_AuxPtr;
+    const char* m_AuxEnd;
+};
+
 struct NCBI_BAMREAD_EXPORT SBamAlignInfo
 {
     void Read(CBGZFStream& in);
@@ -761,8 +841,7 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
     string get_cigar() const;
     bool has_ambiguous_match() const;
 
-    const char* get_aux_data(char c1, char c2) const;
-    CTempString get_aux_data_string(char c1, char c2) const;
+    SBamAuxData get_aux_data(char c1, char c2, bool allow_missing = false) const;
     CTempString get_short_seq_accession_id() const;
 
 private:
@@ -1017,6 +1096,19 @@ public:
 
     void GetSegments(vector<int>& starts, vector<TSeqPos>& lens) const;
 
+    CBamAuxIterator GetAuxIterator() const
+       {
+           return CBamAuxIterator(m_AlignInfo.get_aux_data_ptr(), m_AlignInfo.get_aux_data_end());
+       }
+    SBamAuxData GetAuxData(char c1, char c2, bool allow_missing = false) const
+        {
+            return m_AlignInfo.get_aux_data(c1, c2, allow_missing);
+        }
+    Int8 GetAuxInt(char c1, char c2, size_t index = 0) const
+        {
+            return GetAuxData(c1, c2).GetInt(index);
+        }
+    
 protected:
     void x_Select(const CBamHeader& header);
     void x_Select(const CBamIndex& index,

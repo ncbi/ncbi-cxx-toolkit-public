@@ -47,6 +47,7 @@
 #include <align/align-access.h>
 
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqset/seqset__.hpp>
@@ -444,6 +445,7 @@ CBamMgr::CBamMgr(void)
                     "Cannot create AlignAccessMgr", rc);
     }
     
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     if ( CNcbiApplication* app = CNcbiApplication::Instance() ) {
         CBamVFSManager vfs_mgr;
         CBamRef<KNSManager> kns_mgr;
@@ -1189,6 +1191,38 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
     return count;
 }
 #endif // HAVE_NEW_PILEUP_COLLECTOR
+
+bool CBamDb::IncludeAlignTag(CTempString tag)
+{
+    if ( tag.size() != 2 ) {
+        NCBI_THROW_FMT(CBamException, eInvalidArg, "Tag name must have 2 characters: \""<<tag<<'"');
+    }
+    auto iter = find(m_IncludedAlignTags.begin(), m_IncludedAlignTags.end(), tag);
+    if ( iter != m_IncludedAlignTags.end() ) {
+        // already included
+        return false;
+    }
+    STagInfo info;
+    info.name[0] = tag[0];
+    info.name[1] = tag[1];
+    m_IncludedAlignTags.push_back(info);
+    return true;
+}
+
+
+bool CBamDb::ExcludeAlignTag(CTempString tag)
+{
+    if ( tag.size() != 2 ) {
+        NCBI_THROW_FMT(CBamException, eInvalidArg, "Tag name must have 2 characters: \""<<tag<<'"');
+    }
+    auto iter = find(m_IncludedAlignTags.begin(), m_IncludedAlignTags.end(), tag);
+    if ( iter == m_IncludedAlignTags.end() ) {
+        // already excluded
+        return false;
+    }
+    m_IncludedAlignTags.erase(iter);
+    return true;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2306,6 +2340,15 @@ bool CBamAlignIterator::TryGetFlags(Uint2& flags) const
 }
 
 
+CBamAuxIterator CBamAlignIterator::GetAuxIterator() const
+{
+    if ( auto impl = GetRawIndexIteratorPtr() ) {
+        return impl->GetAuxIterator();
+    }
+    NCBI_THROW(CBamException, eInvalidArg, "BAM aux iterator is supported only in raw index mode");
+}
+
+
 CRef<CBioseq> CBamAlignIterator::GetShortBioseq(void) const
 {
     CTempString data = GetShortSequence();
@@ -2326,6 +2369,27 @@ CRef<CBioseq> CBamAlignIterator::GetShortBioseq(void) const
         CSeqManip::ReverseComplement(iupac, CSeqUtil::e_Iupacna, 0, length);
     }
     return seq;
+}
+
+
+CBamAlignIterator::SCreateCache&
+CBamAlignIterator::x_GetCreateCache(void) const
+{
+    if ( !m_CreateCache ) {
+        m_CreateCache = new SCreateCache;
+    }
+    return *m_CreateCache;
+}
+
+
+static inline CObject_id& sx_GetObject_id(CTempString name,
+                                          CRef<CObject_id>& cache)
+{
+    if ( !cache ) {
+        cache = new CObject_id();
+        cache->SetStr(name);
+    }
+    return *cache;
 }
 
 
@@ -2420,24 +2484,71 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
     denseg.SetNumseg(segcount);
 
     bool add_cigar = s_GetCigarInAlignExt();
+    const CBamDb::TTagList& tags = m_DB->GetIncludedAlignTags();
+    bool add_aux = !tags.empty();
     if ( add_cigar && s_OmitAmbiguousMatchCigar() && x_HasAmbiguousMatch() ) {
         add_cigar = false;
     }
-    if ( add_cigar ) {
+    if ( add_aux && !UsesRawIndex() ) {
+        // only raw index API provides aux tags 
+        add_aux = false;
+    }
+    if ( add_cigar || add_aux ) {
+        SCreateCache& cache = x_GetCreateCache();
         CRef<CUser_object> obj(new CUser_object);
-        CRef<CObject_id> id;
-        id = new CObject_id();
-        id->SetStr("Tracebacks");
-        obj->SetType(*id);
-        
-        CRef<CUser_field> field(new CUser_field());
-        id = new CObject_id();
-        id->SetStr("CIGAR");
-        field->SetLabel(*id);
-        field->SetData().SetStr(GetCIGAR());
-        obj->SetData().push_back(field);
+        obj->SetType(sx_GetObject_id("Tracebacks", cache.m_ObjectIdTracebacks));
 
-        align->SetExt().push_back(obj);
+        if ( add_cigar ) {
+            CRef<CUser_field> field(new CUser_field());
+            field->SetLabel(sx_GetObject_id("CIGAR", cache.m_ObjectIdCIGAR));
+            field->SetData().SetStr(GetCIGAR());
+            obj->SetData().push_back(field);
+        }
+
+        if ( add_aux ) {
+            for ( auto aux_it = GetAuxIterator(); aux_it; ++aux_it ) {
+                CTempString name = aux_it->GetTag();
+                CBamDb::TTagList::const_iterator info_iter = find(tags.begin(), tags.end(), name);
+                if ( info_iter == tags.end() ) {
+                    continue;
+                }
+                CRef<CUser_field> field(new CUser_field());
+                field->SetLabel(sx_GetObject_id(name, info_iter->id_cache));
+                if ( aux_it->IsArray() ) {
+                    if ( aux_it->IsFloat() ) {
+                        auto& arr = field->SetData().SetReals();
+                        for ( size_t i = 0; i < aux_it->size(); ++i ) {
+                            arr.push_back(aux_it->GetFloat(i));
+                        }
+                    }
+                    else {
+                        auto& arr = field->SetData().SetInts();
+                        for ( size_t i = 0; i < aux_it->size(); ++i ) {
+                            arr.push_back(CUser_field::TData::TInt(aux_it->GetInt(i)));
+                        }
+                    }
+                }
+                else {
+                    if ( aux_it->IsChar() ) {
+                        field->SetData().SetStr(string(1, aux_it->GetChar()));
+                    }
+                    else if ( aux_it->IsString() ) {
+                        field->SetData().SetStr(aux_it->GetString());
+                    }
+                    else if ( aux_it->IsFloat() ) {
+                        field->SetData().SetReal(aux_it->GetFloat());
+                    }
+                    else {
+                        field->SetData().SetInt(CUser_field::TData::TInt(aux_it->GetInt()));
+                    }
+                }
+                obj->SetData().push_back(field);
+            }
+        }
+
+        if ( obj->IsSetData() ) {
+            align->SetExt().push_back(obj);
+        }
     }
     
     return align;

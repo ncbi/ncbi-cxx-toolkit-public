@@ -135,6 +135,9 @@ public:
 
 
 struct SBamUtil {
+    // conversion of BAM bytes into larger values - ints and floats
+    // the source data have any alignment
+    
     static Uint2 MakeUint2(const char* buf)
         {
             return Uint2(Uint1(buf[0]))|
@@ -159,6 +162,17 @@ struct SBamUtil {
                 (Uint8(Uint1(buf[5]))<<40)|
                 (Uint8(Uint1(buf[6]))<<48)|
                 (Uint8(Uint1(buf[7]))<<56);
+        }
+
+    union UFloatUint4 {
+        float f;
+        Uint4 i;
+    };
+    static float MakeFloat(const char* buf)
+        {
+            UFloatUint4 u;
+            u.i = MakeUint4(buf);
+            return u.f;
         }
 };
 

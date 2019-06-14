@@ -113,6 +113,9 @@ void CBAMTestApp::Init(void)
                       "Do not run expensive conflict detection");
     arg_desc->AddFlag("make_seq_entry", "Generated Seq-entries");
     arg_desc->AddFlag("print_seq_entry", "Print generated Seq-entry");
+    arg_desc->AddOptionalKey("include_tags", "IncludeTags",
+                             "Include comma-separated list of alignmnet tags",
+                             CArgDescriptions::eString);
     arg_desc->AddFlag("ignore_errors", "Ignore errors in individual entries");
 
     // Setup arg.descriptions for this application
@@ -363,7 +366,8 @@ int LowLevelTest()
 #ifdef _MSC_VER
 # define BAM_FILE "//traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
 #else
-# define BAM_FILE "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
+//# define BAM_FILE "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
+# define BAM_FILE "/am/ncbiapdata/test_data//traces04//1000genomes3/ftp/data/NA10851/alignment/NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam"
 #endif
     cout << "Testing BAM file: "<<BAM_FILE<<endl;
     CALL(VFSManagerMakeSysPath(vfs_mgr, &bam_path, BAM_FILE));
@@ -378,28 +382,29 @@ int LowLevelTest()
 #endif
 
     if ( 1 ) {
-        if ( 0 ) {
-            AlignAccessAlignmentEnumerator* iter = 0;
-            CALL(AlignAccessDBWindowedAlignments(bam, &iter, "1", 0, 0));
-            for ( int i = 0; i < 1000; ++i ) {
-                CALL(AlignAccessAlignmentEnumeratorNext(iter));
-            }
-            CALL(AlignAccessAlignmentEnumeratorRelease(iter));
+        AlignAccessAlignmentEnumerator* iter = 0;
+#if 1
+        CALL(AlignAccessDBEnumerateAlignments(bam, &iter));
+#endif
+#if 0
+        CALL(AlignAccessDBWindowedAlignments(bam, &iter, "1", 0, 0));
+        for ( int i = 0; i < 1000; ++i ) {
+            CALL(AlignAccessAlignmentEnumeratorNext(iter));
         }
-        if ( 1 ) {
-            AlignAccessAlignmentEnumerator* iter = 0;
-            CALL(AlignAccessDBWindowedAlignments(bam, &iter, "1", 24725086, 0));
-            for ( int i = 0; i < 10; ++i ) {
-                uint64_t refpos = 0, readpos = 0;
-                CALL(AlignAccessAlignmentEnumeratorGetRefSeqPos(iter, &refpos));
-                char cigar[999];
-                size_t cigarlen = 0;
-                CALL(AlignAccessAlignmentEnumeratorGetCIGAR(iter, &readpos, cigar, sizeof(cigar), &cigarlen));
-                cout << "ref @ "<<refpos<<" read @ "<<readpos<<" CIGAR: "<<cigar<<endl;
-                CALL(AlignAccessAlignmentEnumeratorNext(iter));
-            }
-            CALL(AlignAccessAlignmentEnumeratorRelease(iter));
+#endif
+#if 0
+        CALL(AlignAccessDBWindowedAlignments(bam, &iter, "1", 24725086, 0));
+        for ( int i = 0; i < 10; ++i ) {
+            uint64_t refpos = 0, readpos = 0;
+            CALL(AlignAccessAlignmentEnumeratorGetRefSeqPos(iter, &refpos));
+            char cigar[999];
+            size_t cigarlen = 0;
+            CALL(AlignAccessAlignmentEnumeratorGetCIGAR(iter, &readpos, cigar, sizeof(cigar), &cigarlen));
+            cout << "ref @ "<<refpos<<" read @ "<<readpos<<" CIGAR: "<<cigar<<endl;
+            CALL(AlignAccessAlignmentEnumeratorNext(iter));
         }
+#endif
+        CALL(AlignAccessAlignmentEnumeratorRelease(iter));
     }
     else {
         const size_t kNumCursors = 8;
@@ -481,8 +486,8 @@ int LowLevelTestFile()
 int CBAMTestApp::Run(void)
 {
 #ifdef CALL
-    //return LowLevelTest();
-    return LowLevelTestFile();
+    return LowLevelTest();
+    //return LowLevelTestFile();
 #endif
 
     // Get arguments
@@ -535,6 +540,13 @@ int CBAMTestApp::Run(void)
         int limit_count = args["limit_count"].AsInteger();
         bool ignore_errors = args["ignore_errors"];
         bool make_seq_entry = args["make_seq_entry"];
+        if ( args["include_tags"] ) {
+            vector<string> tags;
+            NStr::Split(args["include_tags"].AsString(), ",", tags);
+            for ( auto& tag : tags ) {
+                bam_db.IncludeAlignTag(tag);
+            }
+        }
         bool print_seq_entry = args["print_seq_entry"];
         int min_quality = args["min_quality"].AsInteger();
         vector<CRef<CSeq_entry> > entries;
@@ -736,6 +748,40 @@ int CBAMTestApp::Run(void)
                         }
                         p_data = data;
                         p_cigar = cigar;
+                    }
+                    if ( verbose && it.UsesRawIndex() ) {
+                        // dump tags
+                        out << "Tags:";
+                        for ( auto it2 = it.GetAuxIterator(); it2; ++it2 ) {
+                            out << ' ' << it2->GetTag() << ':';
+                            if ( it2->IsArray() ) {
+                                out << "B:" << it2->GetDataType();
+                                for ( size_t i = 0; i < it2->size(); ++it ) {
+                                    out << ',';
+                                    if ( it2->IsFloat() ) {
+                                        out << it2->GetFloat(i);
+                                    }
+                                    else {
+                                        out << it2->GetInt(i);
+                                    }
+                                }
+                            }
+                            else {
+                                if ( it2->IsChar() ) {
+                                    out << "A:" << it2->GetChar();
+                                }
+                                else if ( it2->IsString() ) {
+                                    out << "Z:" << it2->GetString();
+                                }
+                                else if ( it2->IsFloat() ) {
+                                    out << "f:" << it2->GetFloat();
+                                }
+                                else {
+                                    out << "i:" << it2->GetInt();
+                                }
+                            }
+                        }
+                        out << endl;
                     }
                     if ( print_seq_entry || make_seq_entry ) {
                         CRef<CSeq_entry> entry = it.GetMatchEntry();

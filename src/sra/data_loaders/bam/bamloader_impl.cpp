@@ -212,6 +212,28 @@ void CBAMDataLoader::SetPreOpenParam(bool param)
 }
 
 
+NCBI_PARAM_DECL(string, BAM_LOADER, INCLUDE_ALIGN_TAGS);
+NCBI_PARAM_DEF_EX(string, BAM_LOADER, INCLUDE_ALIGN_TAGS, "",
+                  eParam_NoThread, "");
+
+string CBAMDataLoader::GetIncludeAlignTagsParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, INCLUDE_ALIGN_TAGS)::GetDefault();
+}
+
+
+void CBAMDataLoader::SetIncludeAlignTagsParamDefault(const string& param)
+{
+    NCBI_PARAM_TYPE(BAM_LOADER, INCLUDE_ALIGN_TAGS)::SetDefault(param);
+}
+
+
+static inline string GetIncludeAlignTagsParam(void)
+{
+    return CBAMDataLoader::GetIncludeAlignTagsParamDefault();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBAMBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -577,6 +599,14 @@ void CBamFileInfo::x_Initialize(const CBAMDataLoader_Impl& impl,
                                      bam.m_IndexName));
     if ( impl.m_IdMapper.get() ) {
         m_BamDb.SetIdMapper(impl.m_IdMapper.get(), eNoOwnership);
+    }
+    string include_tags = GetIncludeAlignTagsParam();
+    if ( !include_tags.empty() ) {
+        vector<string> tags;
+        NStr::Split(include_tags, ",", tags);
+        for ( auto& tag : tags ) {
+            m_BamDb.IncludeAlignTag(tag);
+        }
     }
 }
 

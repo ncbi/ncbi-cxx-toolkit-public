@@ -1794,133 +1794,214 @@ void SBamAlignInfo::get_cigar(CBamString& str) const
 }
 
 
-static inline int sx_TagDataSize(char type)
+void CBamAuxIterator::x_InitData()
 {
-    switch (type) {
-    case 'A':
-    case 'c':
-    case 'C':
-        return 1;
-    case 's':
-    case 'S':
-        return 2;
-    case 'i':
-    case 'I':
-    case 'f':
-        return 4;
-    case 'Z':
-    case 'H':
-        return -'Z';
-    case 'B':
-        return -'B';
+    const char* ptr = m_AuxPtr;
+    const char* end = m_AuxEnd;
+    if ( ptr == end ) {
+        // end of tags
+        m_AuxData = SBamAuxData();
+        return;
+    }
+    ptr += 3; // skip tag name and type
+    if ( ptr <= end ) {
+        m_AuxData.m_Tag[0] = ptr[-3];
+        m_AuxData.m_Tag[1] = ptr[-2];
+        m_AuxData.m_DataType = ptr[-1];
+        m_AuxData.m_IsArray = false;
+        m_AuxData.m_ElementCount = 1;
+        m_AuxData.m_DataPtr = ptr;
+        switch ( m_AuxData.m_DataType ) {
+        case 'A':
+        case 'c':
+        case 'C':
+            // 1-byte value
+            ptr += 1;
+            if ( ptr <= end ) {
+                // fits
+                m_AuxPtr = ptr;
+                return;
+            }
+            // fallback to error
+            break;
+        case 's':
+        case 'S':
+            // 2-byte value
+            ptr += 2;
+            if ( ptr <= end ) {
+                // fits
+                m_AuxPtr = ptr;
+                return;
+            }
+            // fallback to error
+            break;
+        case 'i':
+        case 'I':
+        case 'f':
+            // 4-byte value
+            ptr += 4;
+            if ( ptr <= end ) {
+                // fits
+                m_AuxPtr = ptr;
+                return;
+            }
+            // fallback to error
+            break;
+        case 'Z':
+        case 'H':
+            // zero-terminated string
+            ptr = static_cast<const char*>(memchr(ptr, 0, end-ptr));
+            if ( ptr ) {
+                // found zero termination
+                m_AuxData.m_ElementCount = ptr-m_AuxData.m_DataPtr;
+                m_AuxPtr = ptr + 1; // skip zero-termination too
+                return;
+            }
+            // fallback to error
+            break;
+        case 'B':
+            // array of fixed-size elements
+            ptr += 5; // skip element type and count
+            if ( ptr <= end ) {
+                m_AuxData.m_IsArray = true;
+                m_AuxData.m_DataType = ptr[-5];
+                m_AuxData.m_ElementCount = SBamUtil::MakeUint4(ptr-4);
+                m_AuxData.m_DataPtr = ptr;
+                size_t element_size;
+                switch ( m_AuxData.m_DataType ) {
+                case 'c':
+                case 'C':
+                    element_size = 1;
+                    break;
+                case 's':
+                case 'S':
+                    element_size = 2;
+                    break;
+                case 'i':
+                case 'I':
+                case 'f':
+                    element_size = 4;
+                    break;
+                default:
+                    element_size = 0;
+                    break;
+                }
+                if ( element_size == 0 ) {
+                    // fallback to error
+                    break;
+                }
+                ptr += m_AuxData.m_ElementCount*element_size;
+                if ( ptr <= end ) {
+                    // fits
+                    m_AuxPtr = ptr;
+                    return;
+                }
+            }
+            // fallback to error
+            break;
+        default:
+            // fallback to error
+            break;
+        }
+    }
+    // bad aux format, cannot continue parsing aux data
+    ERR_POST("BAM: Alignment aux tag parse error");
+    m_AuxData = SBamAuxData();
+    m_AuxPtr = end;
+}
+
+
+char SBamAuxData::GetChar() const
+{
+    if ( !IsChar() ) {
+        NCBI_THROW_FMT(CBamException, eOtherError,
+                       "Conversion error: "
+                       "type "<<GetDataType()<<" cannot be converted to char");
+    }
+    return m_DataPtr[0];
+}
+
+
+CTempString SBamAuxData::GetString() const
+{
+    if ( !IsString() ) {
+        NCBI_THROW_FMT(CBamException, eOtherError,
+                       "Conversion error: "
+                       "type "<<GetDataType()<<" cannot be converted to string");
+    }
+    return CTempString(m_DataPtr, size());
+}
+
+
+Int8 SBamAuxData::GetInt(size_t index) const
+{
+    if ( !IsInt() ) {
+        NCBI_THROW_FMT(CBamException, eOtherError,
+                       "Conversion error: "
+                       "type "<<GetDataType()<<" cannot be converted to int");
+    }
+    if ( index >= size() ) {
+        NCBI_THROW_FMT(CBamException, eInvalidArg,
+                       "Index overflow: "<<index<<" >= "<<size());
+        return false;
+    }
+    switch ( GetDataType() ) {
+    case 'c': // signed byte
+        return Int1(m_DataPtr[index]);
+    case 'C': // unsigned byte
+        return Uint1(m_DataPtr[index]);
+    case 's': // signed 2-byte int
+        return Int2(SBamUtil::MakeUint2(m_DataPtr+2*index));
+    case 'S': // unsigned 2-byte int
+        return Uint2(SBamUtil::MakeUint2(m_DataPtr+2*index));
+    case 'i': // signed 4-byte int
+        return Int4(SBamUtil::MakeUint4(m_DataPtr+4*index));
+    case 'I': // unsigned 4-byte int
+        return Uint4(SBamUtil::MakeUint4(m_DataPtr+4*index));
     default:
+        // couldn't be here because IsInt() == true
         return 0;
     }
 }
 
 
-static inline int sx_GetStringLen(const char* beg, const char* end)
+float SBamAuxData::GetFloat(size_t index) const
 {
-    for ( const char* ptr = beg; ptr != end; ++ptr ) {
-        if ( !*ptr ) {
-            return int(ptr-beg);
-        }
+    if ( !IsFloat() ) {
+        NCBI_THROW_FMT(CBamException, eOtherError,
+                       "Conversion error: "
+                       "type "<<GetDataType()<<" cannot be converted to float");
     }
-    // no zero termination -> bad string
-    return -1;
+    if ( index >= size() ) {
+        NCBI_THROW_FMT(CBamException, eInvalidArg,
+                       "Index overflow: "<<index<<" >= "<<size());
+        return false;
+    }
+    return SBamUtil::MakeFloat(m_DataPtr+4*index);
 }
 
 
-const char* SBamAlignInfo::get_aux_data(char c1, char c2) const
+SBamAuxData SBamAlignInfo::get_aux_data(char c1, char c2, bool allow_missing) const
 {
-    const char* end = get_aux_data_end();
-    const char* ptr = get_aux_data_ptr();
-    for ( ;; ) {
-        if ( ptr+3 > end ) {
-            // end of data
-            return 0;
+    for ( CBamAuxIterator iter(get_aux_data_ptr(), get_aux_data_end()); iter; ++iter ) {
+        if ( iter->IsTag(c1, c2) ) {
+            return *iter;
         }
-        if ( ptr[0] == c1 && ptr[1] == c2 ) {
-            return ptr;
-        }
-        int size = sx_TagDataSize(ptr[2]);
-        ptr += 3;
-        if ( size > 0 ) {
-            if ( ptr+size > end ) {
-                // end of data
-                return 0;
-            }
-            ptr += size;
-        }
-        else if ( size == -'Z' ) {
-            // zero terminated
-            size = sx_GetStringLen(ptr, end);
-            if ( size < 0 ) {
-                // no termination, cannot continue parsing
-                return 0;
-            }
-            ptr += size+1;
-        }
-        else if ( size == -'B' ) {
-            if ( ptr+5 > end ) {
-                // end of data
-                return 0;
-            }
-            size = sx_TagDataSize(ptr[0]);
-            uint32_t count = SBamUtil::MakeUint4(ptr+1);
-            ptr += 5;
-            // array
-            if ( size > 0 ) {
-                size *= count;
-                if ( ptr+size > end ) {
-                    // end of data
-                    return 0;
-                }
-                ptr += size;
-            }
-            else if ( size == -'Z' ) {
-                // zero terminated
-                for ( uint32_t i = 0; i < count; ++i ) {
-                    size = sx_GetStringLen(ptr, end);
-                    if ( size < 0 ) {
-                        // no termination, cannot continue parsing
-                        return 0;
-                    }
-                    ptr += size+1;
-                }
-            }
-            else {
-                // bad element type, cannot continue parsing
-                return 0;
-            }
-        }
-        else {
-            // bad type, cannot continue parsing
-            return 0;
-        }
-    }        
-    return 0;
-}
-
-
-CTempString SBamAlignInfo::get_aux_data_string(char c1, char c2) const
-{
-    const char* data = get_aux_data(c1, c2);
-    if ( !data || data[2] != 'Z' ) {
-        return CTempString();
     }
-    data += 3;
-    int len = sx_GetStringLen(data, get_aux_data_end());
-    if ( len < 0 ) {
-        return CTempString();
+    if ( !allow_missing ) {
+        NCBI_THROW_FMT(CBamException, eNoData,
+                       "Tag "<<c1<<c2<<" not found");
     }
-    return CTempString(data, len);
+    return SBamAuxData();
 }
 
 
 CTempString SBamAlignInfo::get_short_seq_accession_id() const
 {
-    return get_aux_data_string('R', 'G');
+    if ( auto data = get_aux_data('R', 'G', true) ) {
+        return data.GetString();
+    }
+    return CTempString();
 }
 
 

@@ -37,6 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_fast.hpp>
 
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -201,6 +202,25 @@ public:
         {
             return m_IdMapper.get();
         }
+
+    struct STagInfo {
+        bool operator==(CTempString n) const
+            {
+                return n.size() == 2 && n[0] == name[0] && n[1] == name[1];
+            }
+        
+        char name[2];
+        mutable CRef<CObject_id> id_cache;
+    };
+    typedef vector<STagInfo> TTagList;
+    const TTagList& GetIncludedAlignTags() const
+        {
+            return m_IncludedAlignTags;
+        }
+    // return true if tag was included in this call, false if it was included before
+    bool IncludeAlignTag(CTempString tag);
+    // return true if tag was excluded in this call, false if it wasn't included before
+    bool ExcludeAlignTag(CTempString tag);
 
     CRef<CSeq_id> GetRefSeq_id(const string& label) const;
     CRef<CSeq_id> GetShortSeq_id(const string& str, bool external = false) const;
@@ -454,6 +474,7 @@ private:
     string m_DbName;
     string m_IndexName;
     AutoPtr<IIdMapper> m_IdMapper;
+    TTagList m_IncludedAlignTags;
     typedef unordered_map<string, TSeqPos> TRefSeqLengths;
     mutable AutoPtr<TRefSeqLengths> m_RefSeqLengths;
     typedef unordered_map<string, CRef<CSeq_id> > TRefSeqIds;
@@ -730,6 +751,8 @@ public:
     // returns false if BAM flags are not available
     bool TryGetFlags(Uint2& flags) const;
 
+    CBamAuxIterator GetAuxIterator() const;
+
 private:
     friend class CBamFileAlign;
 
@@ -816,6 +839,16 @@ private:
     mutable EBamFlagsAvailability m_BamFlagsAvailability;
     mutable CRef<CSeq_id> m_RefSeq_id;
     mutable CRef<CSeq_id> m_ShortSeq_id;
+
+    typedef CRef<CObject_id> TObjectIdCache;
+    struct SCreateCache {
+        TObjectIdCache m_ObjectIdTracebacks;
+        TObjectIdCache m_ObjectIdCIGAR;
+        TObjectIdCache m_ObjectIdHP;
+    };
+    mutable AutoPtr<SCreateCache> m_CreateCache;
+
+    SCreateCache& x_GetCreateCache(void) const;
 };
 
 

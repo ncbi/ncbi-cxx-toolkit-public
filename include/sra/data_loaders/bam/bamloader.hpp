@@ -140,6 +140,9 @@ public:
     static bool GetPreOpenParam(void);
     static void SetPreOpenParam(bool param);
 
+    static string GetIncludeAlignTagsParamDefault(void);
+    static void SetIncludeAlignTagsParamDefault(const string& param);
+
     virtual double EstimateLoadSeconds(const CTSE_Chunk_Info& chunk, Uint4 bytes) const;
     
     virtual unsigned GetDefaultBlobCacheSizeLimit() const;
