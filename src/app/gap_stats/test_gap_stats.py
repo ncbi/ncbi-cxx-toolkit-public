@@ -13,6 +13,8 @@ TEST_DATA_DIR = "./test_data"
 if not os.path.exists(TEST_DATA_DIR):
     raise Exception("Not found: " + TEST_DATA_DIR)
 
+# to remove irrelevant applog-style messages from stderr
+os.environ["DIAG_OLD_POST_FORMAT"] = "1"
 
 class TestGapStats(unittest.TestCase):
 
@@ -32,14 +34,6 @@ class TestGapStats(unittest.TestCase):
             )
         # never give stdin input
         (stdout_str, stderr_str) = proc.communicate('')
-
-        # remove irrelevant applog-style messages from stderr, if any
-        stderr_irrelevant_lines_re = re.compile(
-            br'(UNK_SESSION|UNK_CLIENT).*gap_stats\s*(start|stop|extra)')
-        stderr_str = b'\n'.join(
-            filter((lambda line: not stderr_irrelevant_lines_re.search(line)),
-                   stderr_str.split(b'\n'))
-        )
 
         return (proc.returncode, stdout_str, stderr_str)
 
