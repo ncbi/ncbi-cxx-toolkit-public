@@ -73,10 +73,15 @@ set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite-3.8.10.1-ncbi1)
 #set(NCBI_ThirdParty_Sybase
 set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.9.2-1")
 set(NCBI_ThirdParty_VDB_ARCH x86_64)
+set(NCBI_ThirdParty_wxWidgets ${NCBI_ThirdPartyBasePath}/wxWidgets-3.1.2-ncbi1)
+set(NCBI_ThirdParty_GLEW      ${NCBI_ThirdPartyBasePath}/glew-1.5.8)
+set(NCBI_ThirdParty_FTGL      ${NCBI_ThirdPartyBasePath}/ftgl-2.1.3-rc5)
+set(NCBI_ThirdParty_FreeType  ${NCBI_OPT_ROOT})
 
 #############################################################################
 #############################################################################
 
+set(_XCODE_EXTRA_LIBS)
 function(NCBI_define_component _name)
 
     if(DEFINED NCBI_COMPONENT_${_name}_FOUND)
@@ -98,9 +103,7 @@ function(NCBI_define_component _name)
         endif()
     endif()
 
-    if (EXISTS ${_root}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/include)
-        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/include PARENT_SCOPE)
-    elseif (EXISTS ${_root}/include)
+    if (EXISTS ${_root}/include)
         set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/include PARENT_SCOPE)
     else()
         message("NOT FOUND ${_name}: ${_root}/include not found")
@@ -115,8 +118,8 @@ function(NCBI_define_component _name)
         set(_suffixes .a .dylib)
     endif()
     set(_roots ${_root})
-#    set(_subdirs ${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/lib lib64 lib)
-    set(_subdirs ${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/lib lib64)
+#    set(_subdirs Release${NCBI_PlatformBits}/lib lib64 lib)
+    set(_subdirs Release${NCBI_PlatformBits}/lib lib64 ${_XCODE_EXTRA_LIBS})
     if (BUILD_SHARED_LIBS AND DEFINED NCBI_ThirdParty_${_name}_SHLIB)
         set(_roots ${NCBI_ThirdParty_${_name}_SHLIB} ${_roots})
         set(_subdirs shlib64 shlib lib64 lib)
@@ -247,6 +250,7 @@ else()
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
 endif()
 
+set(_XCODE_EXTRA_LIBS lib)
 #############################################################################
 # Boost.Test
 NCBI_define_component(Boost.Test boost_unit_test_framework)
@@ -254,6 +258,7 @@ NCBI_define_component(Boost.Test boost_unit_test_framework)
 #############################################################################
 # Boost.Spirit
 NCBI_define_component(Boost.Spirit boost_thread-mt)
+set(_XCODE_EXTRA_LIBS "")
 
 #############################################################################
 # JPEG
@@ -368,7 +373,55 @@ NCBI_define_component(XSLT exslt xslt)
 NCBI_define_component(EXSLT exslt)
 
 #############################################################################
-#LAPACK
+# LAPACK
 set(NCBI_COMPONENT_LAPACK_FOUND YES)
 set(NCBI_COMPONENT_LAPACK_LIBS -llapack)
 list(APPEND NCBI_ALL_COMPONENTS LAPACK)
+
+#############################################################################
+# wxWidgets
+NCBI_define_component(wxWidgets
+    wx_osx_cocoa_gl-3.1
+    wx_osx_cocoa_richtext-3.1
+    wx_osx_cocoa_aui-3.1
+    wx_osx_cocoa_propgrid-3.1
+    wx_osx_cocoa_xrc-3.1
+    wx_osx_cocoa_qa-3.1
+    wx_osx_cocoa_html-3.1
+    wx_osx_cocoa_adv-3.1
+    wx_osx_cocoa_core-3.1
+    wx_base_xml-3.1
+    wx_base_net-3.1
+    wx_base-3.1
+)
+if(NCBI_COMPONENT_wxWidgets_FOUND)
+    list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
+    get_filename_component(_libdir ${_lib} DIRECTORY)
+    set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-3.1 ${_libdir}/wx/include/osx_cocoa-ansi-3.1)
+    set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS}  -framework Cocoa)
+    set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMAC__ __WXOSX__ __WXOSX_COCOA__ wxDEBUG_LEVEL=0)
+endif()
+
+#############################################################################
+# GLEW
+NCBI_define_component(GLEW GLEW)
+
+#############################################################################
+# OpenGL
+set(NCBI_COMPONENT_OpenGL_FOUND YES)
+set(NCBI_COMPONENT_OpenGL_LIBS -framework AGL -framework OpenGL -framework Metal -framework MetalKit)
+list(APPEND NCBI_ALL_COMPONENTS OpenGL)
+
+#############################################################################
+# FTGL
+NCBI_define_component(FTGL ftgl)
+
+#############################################################################
+# FreeType
+set(_XCODE_EXTRA_LIBS lib)
+NCBI_define_component(FreeType freetype)
+if(NCBI_COMPONENT_FreeType_FOUND)
+    set(NCBI_COMPONENT_FreeType_INCLUDE ${NCBI_COMPONENT_FreeType_INCLUDE} ${NCBI_COMPONENT_FreeType_INCLUDE}/freetype2)
+endif()
+set(_XCODE_EXTRA_LIBS "")
+
