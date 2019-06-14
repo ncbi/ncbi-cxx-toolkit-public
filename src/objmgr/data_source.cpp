@@ -1308,7 +1308,7 @@ string CDataSource::GetLabel(const CSeq_id_Handle& idh)
             ret = objects::GetLabel(match.m_Bioseq->GetId());
         }
     }
-    catch ( CObjMgrException& exc ) {
+    catch ( CObjMgrException& /*exc*/ ) {
         if ( !m_Loader ) {
             throw;
         }
