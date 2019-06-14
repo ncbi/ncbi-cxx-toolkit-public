@@ -39,6 +39,159 @@
 
 namespace ct
 {
+    using namespace compile_time_bits;
+
+    // partially backported std::bitset until it's constexpr version becomes available
+    template<size_t _Bits, class _T>
+    class const_bitset
+    {
+    public:
+        using _Ty = uint64_t;
+        using T = _T;
+        static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
+        static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
+        using _Array_t = const_array<_Ty, _Words>;
+
+        constexpr const_bitset() = default;
+
+        template<typename...TArgs>
+        constexpr const_bitset(_T first, TArgs...args)
+            : m_size(1+sizeof...(args)), 
+              _Array(bitset_traits<
+                  _Words, 
+                  typename enforce_same<unsigned, _T, TArgs...>::type,
+                  _Ty,
+                  1+sizeof...(args)>::set_bits(first, args...))
+        {}
+
+        template<size_t N>
+        constexpr const_bitset(const char(&s)[N])
+            :m_size(N-1),
+            _Array(bitset_traits<_Words, unsigned, _Ty, N-1>::set_bits(s))
+        {}
+        static constexpr const_bitset set_range(T _from, T _to)
+        {//this uses private constructor
+            return const_bitset(bitset_traits<_Words, _T, _Ty>::set_range(_from, _to), _to - _from + 1);
+        }
+
+        constexpr size_t size() const
+        {
+            return m_size;
+        }
+        static constexpr size_t capacity()
+        {
+            return _Bits;
+        }
+        constexpr bool empty() const
+        {
+            return m_size == 0;
+        }
+        constexpr bool test(size_t _Pos) const
+        {
+            //if (_Bits <= _Pos)
+            //    _Xran();    // _Pos off end
+            return _Subscript(_Pos);
+        }
+
+        class const_iterator
+        {
+        public:
+            const_iterator() = default;
+            const_iterator(const const_bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
+            {
+                while (m_index < m_bitset->capacity() && !m_bitset->test(m_index))
+                {
+                    ++m_index;
+                }
+            }
+            bool operator==(const const_iterator& o) const
+            {
+                return m_bitset == o.m_bitset && m_index == o.m_index;
+            }
+            bool operator!=(const const_iterator& o) const
+            {
+                return m_bitset != o.m_bitset || m_index != o.m_index;
+            }
+            const_iterator& operator++()
+            {
+                while (m_index < m_bitset->capacity())
+                {
+                    ++m_index;
+                    if (m_bitset->test(m_index))
+                        break;
+                }
+                return *this;
+            }
+            const_iterator operator++(int)
+            {
+                const_iterator _this(*this);
+                operator++();
+                return _this;
+            }
+            T operator*() const
+            {
+                return static_cast<T>(m_index);
+            }
+            T operator->() const
+            {
+                return static_cast<T>(m_index);
+            }
+
+        private:
+            size_t m_index;
+            const const_bitset* m_bitset;
+        };
+
+        const_iterator begin() const
+        {
+            return const_iterator(this, 0);
+        }
+
+        const_iterator end() const
+        {
+            return const_iterator(this, capacity());
+        }
+
+    private:
+        explicit constexpr const_bitset(const _Array_t& args, size_t _size) : m_size(_size), _Array(args)
+        {
+        }
+
+        size_t m_size{ 0 };
+        _Array_t _Array{};    // the set of bits
+
+        constexpr bool _Subscript(size_t _Pos) const
+        {    // subscript nonmutable sequence
+            return ((_Array[_Pos / _Bitsperword]
+                & ((_Ty)1 << _Pos % _Bitsperword)) != 0);
+        }
+    };
+
+
+    template<typename _T>
+    class const_xlate_table
+    {
+    public:
+        using charset = const_bitset<256, char>;
+        using traits = xlate_traits<charset, _T>;
+        using init_pair_t = typename traits::init_pair_t;
+        using array_t = typename traits::array_t;
+
+        //constexpr const_xlate_table() = default;
+
+        template<size_t N>
+        constexpr const_xlate_table(_T _default, const init_pair_t(&args)[N])
+            : m_data(traits{}(_default, args))
+        {
+        }
+        _T operator[](char _v) const
+        {
+            return m_data[_v];
+        }
+    private:
+        array_t m_data;
+    };
+
     template<size_t N, typename _Key, typename _Value>
     class const_map
     {
@@ -46,13 +199,13 @@ namespace ct
         static_assert(N > 0, "empty const_map not supported");
         using key_type = _Key;
         using mapped_type = _Value;
-        using value_type = cstd::pair<_Key, _Value>;
+        using value_type = const_pair<_Key, _Value>;
         using size_type = size_t;
-        using array_t = cstd::const_array<value_type, N>;
+        using array_t = const_array<value_type, N>;
 
         using const_iterator = typename array_t::const_iterator;
 
-        using TRecastKey = ct_const_map_bits::recast<key_type>;
+        using TRecastKey = recast<key_type>;
 
         constexpr const_map(const array_t& init)
             : m_array(init)
@@ -60,7 +213,7 @@ namespace ct
 
         constexpr bool in_order() const
         {
-            return ct_const_map_bits::CheckOrder(m_array);
+            return CheckOrder(m_array);
         }
         constexpr const_iterator begin() const noexcept
         {
@@ -170,13 +323,13 @@ namespace ct
         template<typename...Unused>
         struct DeduceType<true, const char*, Unused...>
         {
-            using type = ct::CHashString<case_sensitive>;
+            using type = CHashString<case_sensitive>;
         };
 
         template<typename...Unused>
         struct DeduceType<false, const char*, Unused...>
         {
-            using type = cstd::string_view;
+            using type = string_view;
         };
 
         template<bool need_hash, class C, class T, class A>
@@ -187,7 +340,7 @@ namespace ct
 
         using first_type = typename DeduceType<true, T1>::type;
         using second_type = typename DeduceType<two_way, T2>::type;
-        using init_pair_t = typename cstd::pair<first_type, second_type>;
+        using init_pair_t = const_pair<first_type, second_type>;
 
         template<size_t N>
         struct DeduceMapType
@@ -205,7 +358,7 @@ namespace ct
             return typename DeduceMapType<N>::map_type(input);
         }
         template<size_t N>
-        constexpr auto operator()(const cstd::const_array<init_pair_t, N> &input) const ->
+        constexpr auto operator()(const const_array<init_pair_t, N> &input) const ->
             typename DeduceMapType<N>::map_type
         {
             return typename DeduceMapType<N>::map_type(input);

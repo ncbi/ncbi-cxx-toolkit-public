@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 
 
-#include <corelib/impl/ct_crc32.hpp>
+#include <util/impl/ct_crc32.hpp>
 
 //#define __ENABLE_SSE42
 
