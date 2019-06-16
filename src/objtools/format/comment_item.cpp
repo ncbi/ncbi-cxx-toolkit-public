@@ -1584,7 +1584,11 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
     } else if ( NStr::Equal (label_str, "Annotation Name") && NStr::Equal (provider, "NCBI") ) {
         string fst;
         string snd;
-        NStr::Replace( data_str, " Annotation Release ", "/", fst );
+        if (NStr::Find(data_str, "Updated Annotation Release") != NPOS) {
+            NStr::Replace( data_str, " Updated Annotation Release ", "/", fst );
+        } else {
+            NStr::Replace( data_str, " Annotation Release ", "/", fst );
+        }
         NStr::Replace( fst, " ", "_", snd );
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
                << snd
@@ -1739,7 +1743,8 @@ void s_GetStrForStructuredComment(
 
         // special fields are skipped
         if( (*it)->GetLabel().GetStr() == "StructuredCommentPrefix" || 
-                (*it)->GetLabel().GetStr() == "StructuredCommentSuffix" ) {
+                (*it)->GetLabel().GetStr() == "StructuredCommentSuffix" || 
+                (*it)->GetLabel().GetStr() == "Annotation Freeze" ) {
             continue;
         }
 
