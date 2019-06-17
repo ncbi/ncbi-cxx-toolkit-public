@@ -60,10 +60,6 @@ namespace compile_time_bits
             return { {std::forward<TArgs>(args)...} };
         }
     };
-};
-
-namespace crc32
-{
 
     constexpr uint32_t sse42_poly = 0x82f63b78;
     constexpr uint32_t armv8_poly = 0x04c11db7;
@@ -217,7 +213,7 @@ namespace crc32
             }
         };
     }; // ct_crc32
-}; // namespace crc32
+}; // namespace compile_time_bits
 
 namespace ct
 {
@@ -229,19 +225,12 @@ namespace ct
         template<size_t N>
         static type constexpr ct(const char(&s)[N]) noexcept
         {
-            return crc32::ct_crc32<crc32::platform_poly>::SaltedHash<!case_sensitive, N>(s);
+            return compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<!case_sensitive, N>(s);
         }
         static type sse42(const char* s, size_t realsize) noexcept;
         static type general(const char* s, size_t realsize) noexcept;
     };
 };
-
-constexpr
-auto hash_good = ct::SaltedCRC32<true>::ct("Good");
-static_assert(948072359 == hash_good, "not good");
-static_assert(
-    ct::SaltedCRC32<false>::ct("Good") == ct::SaltedCRC32<true>::ct("good"),
-    "not good");
 
 #endif
 

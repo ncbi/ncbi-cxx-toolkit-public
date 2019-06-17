@@ -54,7 +54,7 @@
 
 static
 constexpr
-auto g_crc32_table = crc32::ct_crc32<crc32::platform_poly>::MakeCRC32Table{}();
+auto g_crc32_table = compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::MakeCRC32Table{}();
 
 static
 // this should generate non branching lower case functionality

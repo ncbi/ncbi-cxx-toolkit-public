@@ -38,6 +38,11 @@
 #include <common/test_assert.h>  /* This header must go last */
 
 
+NCBITEST_AUTO_INIT()
+{
+    boost::unit_test::framework::master_test_suite().p_name->assign(
+        "compile time const_map Unit Test");
+}
 
 BOOST_AUTO_TEST_CASE(TestConstCharset1)
 {
@@ -179,9 +184,17 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
 };
 
-NCBITEST_AUTO_INIT()
+BOOST_AUTO_TEST_CASE(TestCRC32)
 {
-    boost::unit_test::framework::master_test_suite().p_name->assign(
-        "compile time const_map Unit Test");
-}
+    constexpr auto hash_good_cs = ct::SaltedCRC32<true>::ct("Good");
+    constexpr auto hash_good_ncs = ct::SaltedCRC32<false>::ct("Good");
+    static_assert(hash_good_cs != hash_good_ncs, "not good");
 
+    static_assert(948072359 == hash_good_cs, "not good");
+    static_assert(
+        ct::SaltedCRC32<false>::ct("Good") == ct::SaltedCRC32<true>::ct("good"),
+        "not good");
+
+    BOOST_CHECK(hash_good_cs  == ct::SaltedCRC32<true>::general("Good", 4));
+    BOOST_CHECK(hash_good_ncs == ct::SaltedCRC32<false>::general("Good", 4));
+}
