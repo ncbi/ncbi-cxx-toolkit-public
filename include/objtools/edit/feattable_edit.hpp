@@ -181,6 +181,21 @@ protected:
     set<CMappedFeat> mProcessedMrnas;
 };
 
+class NCBI_XOBJEDIT_EXPORT CFeatureTableLoader
+{
+public:
+    CFeatureTableLoader() = default;
+
+    void PostProcessAnnotation(CBioseq::TAnnot& annots);
+    void PostProcessAnnotation(CRef<CSeq_annot> annot);
+
+    unsigned int m_startingLocusTagNumber = 1;
+    unsigned int m_startingFeatureId = 1;
+    std::string  m_locus_tag_prefix;
+    IObjtoolsListener* m_logger = nullptr;
+    bool m_eukariote = false;
+};
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

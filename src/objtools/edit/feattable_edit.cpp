@@ -1659,6 +1659,30 @@ CFeatTableEdit::xGetCurrentLocusTagPrefix(
     return "";
 }
 
+
+void CFeatureTableLoader::PostProcessAnnotation(CBioseq::TAnnot& annots)
+{
+    for (auto it = annots.begin(); it != annots.end(); ++it) {
+        PostProcessAnnotation(*it);
+    }
+}
+
+void CFeatureTableLoader::PostProcessAnnotation(CRef<CSeq_annot> annot)
+{
+    CFeatTableEdit fte(
+        *annot, m_locus_tag_prefix, m_startingLocusTagNumber, m_startingFeatureId, m_logger);
+    //fte.InferPartials();
+    fte.GenerateMissingParentFeatures(m_eukariote);
+    fte.GenerateLocusTags();
+    fte.GenerateProteinAndTranscriptIds();
+    //fte.InstantiateProducts();
+    fte.EliminateBadQualifiers();
+    fte.SubmitFixProducts();
+
+    m_startingLocusTagNumber = fte.PendingLocusTagNumber();
+    m_startingFeatureId = fte.PendingFeatureId();
+};
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
