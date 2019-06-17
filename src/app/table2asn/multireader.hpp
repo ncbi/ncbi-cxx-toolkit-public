@@ -34,7 +34,7 @@ public:
    CRef<CSerialObject> ReadNextEntry();
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
-   void ApplyAdditionalProperties(objects::CSeq_entry& entry);
+   //void ApplyAdditionalProperties(objects::CSeq_entry& entry);
    void LoadTemplate(CTable2AsnContext& context, const string& ifname);
    void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc);
    CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);

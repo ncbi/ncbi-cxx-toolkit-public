@@ -380,6 +380,7 @@ CMultiReader::CMultiReader(CTable2AsnContext& context)
 {
 }
 
+/*
 void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 {
     switch(entry.Which())
@@ -416,6 +417,7 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
         break;
     }
 }
+*/
 
 void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_desc)
 {

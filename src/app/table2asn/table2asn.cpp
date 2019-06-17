@@ -55,7 +55,6 @@
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
 #include "struc_cmt_reader.hpp"
-#include "OpticalXML2ASN.hpp"
 #include "feature_table_reader.hpp"
 #include "fcs_reader.hpp"
 #include "src_quals.hpp"
@@ -261,8 +260,8 @@ void CTbl2AsnApp::Init(void)
         ("A", "String", "Accession", CArgDescriptions::eString);           // done
     arg_desc->AddOptionalKey
         ("C", "String", "Genome Center Tag", CArgDescriptions::eString);   // done
-    arg_desc->AddOptionalKey
-        ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
+//    arg_desc->AddOptionalKey
+//        ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
     arg_desc->AddOptionalKey
         ("j", "String", "Source Qualifiers.\nThese qualifier values override any conflicting values read from a file (See -src-file)", 
          CArgDescriptions::eString);   // done
@@ -357,8 +356,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
     // all new options are done
-    arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
-    arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
+    //arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
+  //  arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url-mod", "String", "FileTrack URL for the XML file base modifications", CArgDescriptions::eString);
 
@@ -461,8 +460,8 @@ int CTbl2AsnApp::Run(void)
     }
 #endif
 
-    if (args["n"])
-        m_context.m_OrganismName = args["n"].AsString();
+   // if (args["n"])
+   //     m_context.m_OrganismName = args["n"].AsString();
 
     if (args["y"])
         m_context.m_Comment = args["y"].AsString();
@@ -504,10 +503,10 @@ int CTbl2AsnApp::Run(void)
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
     m_context.m_augustus_fix = args["augustus-fix"].AsBoolean();
 
-    if (args["taxname"])
-        m_context.m_OrganismName = args["taxname"].AsString();
-    if (args["taxid"])
-        m_context.m_taxid = args["taxid"].AsInteger();
+ //   if (args["taxname"])
+ //       m_context.m_OrganismName = args["taxname"].AsString();
+ //   if (args["taxid"])
+ //       m_context.m_taxid = args["taxid"].AsInteger();
     if (args["ft-url"])
         m_context.m_ft_url = args["ft-url"].AsString();
     if (args["ft-url-mod"])
@@ -873,7 +872,7 @@ void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRe
     if (m_context.m_descriptors.NotNull())
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
-    m_reader->ApplyAdditionalProperties(*entry);
+   // m_reader->ApplyAdditionalProperties(*entry);
 
     {
         string  dir, base, ext;
