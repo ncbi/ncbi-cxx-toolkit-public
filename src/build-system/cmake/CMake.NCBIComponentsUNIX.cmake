@@ -1233,14 +1233,14 @@ if(NCBI_COMPONENT_PROTOBUF_FOUND)
   set(NCBI_COMPONENT_GRPC_FOUND YES)
   set(NCBI_COMPONENT_GRPC_INCLUDE ${NCBI_ThirdParty_GRPC}/include)
   set(NCBI_COMPONENT_GRPC_LIBS
-    ${NCBI_ThirdParty_GRPC_LIBS}grpc++${_suffix}
-    ${NCBI_ThirdParty_GRPC_LIBS}grpc${_suffix}
-    ${NCBI_ThirdParty_GRPC_LIBS}gpr${_suffix}
+    ${NCBI_ThirdParty_GRPC_LIBS}grpc++.a
+    ${NCBI_ThirdParty_GRPC_LIBS}grpc.a
+    ${NCBI_ThirdParty_GRPC_LIBS}gpr.a
     ${NCBI_COMPONENT_PROTOBUF_LIBS}
-    ${NCBI_ThirdParty_GRPC_LIBS}cares${_suffix}
-    ${NCBI_ThirdParty_GRPC_LIBS}address_sorting${_suffix}
-    ${NCBI_ThirdParty_GRPC_LIBS}boringssl${_suffix}
-    ${NCBI_ThirdParty_GRPC_LIBS}boringcrypto${_suffix}
+    ${NCBI_ThirdParty_GRPC_LIBS}cares.a
+    ${NCBI_ThirdParty_GRPC_LIBS}address_sorting.a
+    ${NCBI_ThirdParty_GRPC_LIBS}boringssl.a
+    ${NCBI_ThirdParty_GRPC_LIBS}boringcrypto.a
   )
 endif()
 endif()
