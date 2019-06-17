@@ -1015,7 +1015,7 @@ bool CGff2Record::xMigrateAttributesGo(
             try {
                 CReadUtil::AddGeneOntologyTerm(*pFeature, it->first, it->second);
             }
-            catch(ILineError& err) {
+            catch(ILineError&) {
             }
             it = attrs.erase(it);
         }
@@ -1143,7 +1143,16 @@ bool CGff2Record::xInitFeatureData(
                 ILineError::eProblem_UnrecognizedFeatureName) );
         pErr->Throw();
     }
-
+    else {
+        // rule bending special cases
+        auto& data = pFeature->SetData();
+        if (data.IsImp()  &&  data.GetImp().GetKey() == "regulatory") {
+            const auto& regulatoryClass = m_Attributes.find("regulatory_class");
+            if (regulatoryClass != m_Attributes.end()) {
+                data.SetImp().SetKey(regulatoryClass->second);
+            }
+        }
+    }
     return CGffBaseColumns::xInitFeatureData(flags, pFeature);
 }
 
