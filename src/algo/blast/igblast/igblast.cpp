@@ -54,6 +54,7 @@ BEGIN_SCOPE(blast)
 static int max_allowed_VJ_distance_with_D = 225;
 static int max_allowed_VJ_distance_without_D = 50;
 static int max_allowed_VD_distance = 120;
+static int max_allowed_j_deletion = 32;
 static int extend_length = 30;
 static int max_J_length = 70;
 static int max_allowed_V_end_to_J_end = max_allowed_VJ_distance_with_D + max_J_length;
@@ -891,7 +892,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 /* strand test */
                 if ((*it)->GetSeqStrand(0) != q_st) keep = false;
                 /* subject start test */
-                if ((*it)->GetSeqStart(1) > 32) keep = false;
+                if ((*it)->GetSeqStart(1) > max_allowed_j_deletion) keep = false;
                 /* v end test */
                 int q_js = (*it)->GetSeqStart(0);
                 int q_je = (*it)->GetSeqStop(0);
