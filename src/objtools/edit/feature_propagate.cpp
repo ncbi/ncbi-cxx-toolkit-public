@@ -567,6 +567,11 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         {
             new_start = AlignPosToSeqPos(align_start, target_row, true, sub_partial5, sub_partial3);
             new_stop = AlignPosToSeqPos(align_stop, target_row, false, sub_partial5, sub_partial3);
+            if (new_stop < new_start && !IsReverse(strand)) {
+                // location completely in the gap, skip it
+                loc_it.Delete();
+                continue;
+            }
         }
         catch(const CException &e)
         {

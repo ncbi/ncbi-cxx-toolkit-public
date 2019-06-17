@@ -2063,6 +2063,155 @@ BOOST_AUTO_TEST_CASE(Test_PropagateFeaturesWithXrefsWithCDS)
 }
 
 
+CRef<CSeq_entry> BuildAlignmentWithInternalGap()
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+
+    CRef<objects::CSeq_entry> seq4 = unit_test_util::BuildGoodSeq();
+    unit_test_util::ChangeId(seq4, "4");
+    entry->SetSet().SetSeq_set().push_back(seq4);
+
+    CRef<objects::CSeq_align> align(new CSeq_align());
+    align->SetType(objects::CSeq_align::eType_global);
+    align->SetDim(entry->GetSet().GetSeq_set().size());
+
+    // assign IDs
+    for (auto& s : entry->SetSet().SetSeq_set()) {
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*(s->GetSeq().GetId().front()));
+        align->SetSegs().SetDenseg().SetIds().push_back(id);
+    }
+
+    auto s = entry->SetSet().SetSeq_set().begin();
+    auto first_seq = (*s)->GetSeq().GetInst().GetSeq_data().GetIupacna().Get(); // original
+    s++;
+    // second sequence: remove beginning
+    (*s)->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(first_seq.substr(20, 40));
+    (*s)->SetSeq().SetInst().SetLength(40);
+    s++;
+    // third sequence: remove part of the middle
+    (*s)->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(first_seq.substr(0, 20) + first_seq.substr(40, 20));
+    (*s)->SetSeq().SetInst().SetLength(40);
+    s++;
+    // fourth sequence: remove end
+    (*s)->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(first_seq.substr(0, 40));
+    (*s)->SetSeq().SetInst().SetLength(40);
+
+    // now make first sequence longer than alignment
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+    first->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAATTTTTGGGGGCCCCC" + first_seq + "AAAAATTTTTGGGGGCCCCC");
+    first->SetSeq().SetInst().SetLength(100);
+
+
+    auto& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(3);
+    denseg.SetLens().push_back(20);
+    denseg.SetLens().push_back(20);
+    denseg.SetLens().push_back(20);
+    denseg.SetDim(entry->GetSet().GetSeq_set().size());
+    // first segment - second sequence missing
+    denseg.SetStarts().push_back(20);
+    denseg.SetStarts().push_back(-1);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    // second segment - third sequence is gap
+    denseg.SetStarts().push_back(40);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(-1);
+    denseg.SetStarts().push_back(20);
+    // third segment - fourth sequence is gap
+    denseg.SetStarts().push_back(60);
+    denseg.SetStarts().push_back(20);
+    denseg.SetStarts().push_back(20);
+    denseg.SetStarts().push_back(-1);
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+    return entry;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_DoNotPropagateToGap_RW_887)
+{
+    CRef<CSeq_entry> entry = BuildAlignmentWithInternalGap();
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+
+    // before alignment
+    CRef<CSeq_feat> gene1 = unit_test_util::AddMiscFeature(first);
+    gene1->SetData().SetGene().SetLocus("gene locus");
+    gene1->SetLocation().SetInt().SetFrom(0);
+    gene1->SetLocation().SetInt().SetTo(19);
+
+    // first gap
+    CRef<CSeq_feat> gene2 = unit_test_util::AddMiscFeature(first);
+    gene2->SetData().SetGene().SetLocus("gene locus");
+    gene2->SetLocation().SetInt().SetFrom(20);
+    gene2->SetLocation().SetInt().SetTo(39);
+
+    // second gap
+    CRef<CSeq_feat> gene3 = unit_test_util::AddMiscFeature(first);
+    gene3->SetData().SetGene().SetLocus("gene locus");
+    gene3->SetLocation().SetInt().SetFrom(40);
+    gene3->SetLocation().SetInt().SetTo(59);
+
+    // third gap
+    CRef<CSeq_feat> gene4 = unit_test_util::AddMiscFeature(first);
+    gene4->SetData().SetGene().SetLocus("gene locus");
+    gene4->SetLocation().SetInt().SetFrom(60);
+    gene4->SetLocation().SetInt().SetTo(79);
+
+    // after alignment
+    CRef<CSeq_feat> gene5 = unit_test_util::AddMiscFeature(first);
+    gene5->SetData().SetGene().SetLocus("gene locus");
+    gene5->SetLocation().SetInt().SetFrom(80);
+    gene5->SetLocation().SetInt().SetTo(99);
+
+    vector<CConstRef<CSeq_feat>> feat_list{ gene1, gene2, gene3, gene4, gene5 };
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
+
+
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
+    CBioseq_Handle src_bseq = *b_iter;
+    
+    ++b_iter;
+
+    CMessageListener_Basic listener;
+    edit::CFeaturePropagator propagator_to_2(src_bseq, *b_iter, *align, true, true, true, true, &listener);
+    vector<CRef<CSeq_feat>> propagated_feats = propagator_to_2.PropagateFeatureList(feat_list);
+    BOOST_CHECK_EQUAL(listener.Count(), 3);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature lcl|good1:1-20 to lcl|good2");
+    BOOST_CHECK_EQUAL(listener.GetMessage(1).GetText(), "Unable to propagate location of feature lcl|good1:21-40 to lcl|good2");
+    BOOST_CHECK_EQUAL(listener.GetMessage(2).GetText(), "Unable to propagate location of feature lcl|good1:81-100 to lcl|good2");
+    listener.Clear();
+
+    ++b_iter;
+    edit::CFeaturePropagator propagator_to_3(src_bseq, *b_iter, *align, true, true, true, true, &listener);
+    propagated_feats = propagator_to_3.PropagateFeatureList(feat_list);
+    BOOST_CHECK_EQUAL(listener.Count(), 3);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature lcl|good1:1-20 to lcl|good3");
+    BOOST_CHECK_EQUAL(listener.GetMessage(1).GetText(), "Unable to propagate location of feature lcl|good1:41-60 to lcl|good3");
+    BOOST_CHECK_EQUAL(listener.GetMessage(2).GetText(), "Unable to propagate location of feature lcl|good1:81-100 to lcl|good3");
+    listener.Clear();
+
+    ++b_iter;
+    edit::CFeaturePropagator propagator_to_4(src_bseq, *b_iter, *align, true, true, true, true, &listener);
+    propagated_feats = propagator_to_4.PropagateFeatureList(feat_list);
+    BOOST_CHECK_EQUAL(listener.Count(), 3);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature lcl|good1:1-20 to lcl|good4");
+    BOOST_CHECK_EQUAL(listener.GetMessage(1).GetText(), "Unable to propagate location of feature lcl|good1:61-80 to lcl|good4");
+    BOOST_CHECK_EQUAL(listener.GetMessage(2).GetText(), "Unable to propagate location of feature lcl|good1:81-100 to lcl|good4");
+    listener.Clear();
+
+}
+
+
 #if 0
 // checked in by mistake
 BOOST_AUTO_TEST_CASE(Test_MergeIntervals)
