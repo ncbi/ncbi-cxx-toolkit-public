@@ -61,7 +61,7 @@ CRef<CSeq_entry> GetMasterEntryById(const string& prefix, CSeq_id::E_Choice choi
     CID1Client id1;
 
     TGi gi = 0;
-    for (size_t i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
         gi = max(gi, id1.AskGetgi(id));
         text_id.SetAccession().push_back('0');
     }
