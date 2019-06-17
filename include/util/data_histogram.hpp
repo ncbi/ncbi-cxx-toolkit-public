@@ -160,6 +160,18 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////
+    // Populating
+
+    /// Add value to the data distribution.
+    /// Try to find an appropriate bin for a specified value and increase its counter on 1.
+    /// @sa GetStarts, GetCounters
+    void Add(TValue value);
+
+    /// Reset all data counters.
+    void Reset();
+
+
+    /////////////////////////////////////////////////////////////////////////
     // Structure
 
     /// Get the lower bound of the combined scale.
@@ -176,19 +188,7 @@ public:
     /// Returns a pointer to array. The number of bins can be obtained with GetNumberOfBins().
     /// and a number of a counters in each bin -- with GetBinCounters().
     /// @sa GetNumberOfBins, GetBinCounters
-    const TScale* GetBinStarts() const { return (const TScale*) m_Starts.get(); }
-
-
-    /////////////////////////////////////////////////////////////////////////
-    // Populating
-
-    /// Add value to the data distribution.
-    /// Try to find an appropriate bin for a specified value and increase its counter on 1.
-    /// @sa GetStarts, GetCounters
-    void Add(TValue value);
-
-    /// Reset all data counters.
-    void Reset();
+    const TScale* GetBinStarts() const { return m_Starts.get(); }
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -197,13 +197,13 @@ public:
     /// Get counters for the combined scale's bins.
     /// Returns a pointer to array. The number of bins can be obtained with GetNumberOfBins().
     /// @sa Add, GetBinStarts, GetNumberOfBins
-    const TCounter* GetBinCounters() const { return (const TCounter*) m_Counters.get(); }
+    const TCounter* GetBinCounters() const { return m_Counters.get(); }
 
     /// Get total number of hits whose value fell between GetMin() and GetMax().
     /// The number of hits whose values fall outside that range can be obtained
     /// using GetLowerAnomalyCount() and GetUpperAnomalyCount() methods.
     /// @sa GetMin, GetMax, GetLowerAnomalyCount, GetUpperAnomalyCount, GetBinCounters
-    size_t GetCount() const { return m_Count; }
+    TCounter GetCount() const { return m_Count; }
 
     /// Get number of hits whose values were less than GetMin().
     /// @sa GetUpperAnomalyCount, GetCount
@@ -339,13 +339,11 @@ CHistogram<TValue, TScale, TCounter>::CHistogram
     if ( !m_NumBins ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Number of bins cannot be zero");
     }
-
     // Allocate memory
     m_Starts.reset(new TScale[m_NumBins]);
     m_Counters.reset(new TCounter[m_NumBins]);
 
-    x_CalculateBins((TScale)m_Min, (TScale)m_Max, 0, m_NumBins, scale_type, scale_view);
-
+    x_CalculateBins(m_Min, m_Max, 0, m_NumBins, scale_type, scale_view);
     // Reset counters
     Reset();
 }
@@ -377,7 +375,7 @@ CHistogram<TValue, TScale, TCounter>::AddLeftScale(
     memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
 
     // Calculate scale for newly added bins: from right to left
-    x_CalculateBins((TScale)m_Min, (TScale)min_value, n_bins-1, n_bins, scale_type, eMonotonic);
+    x_CalculateBins(m_Min, min_value, n_bins-1, n_bins, scale_type, eMonotonic);
     m_Min = min_value;
 }
 
@@ -408,7 +406,7 @@ CHistogram<TValue, TScale, TCounter>::AddRightScale(
     memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
 
     // Calculate scale for newly added bins: from left to right
-    x_CalculateBins((TScale)m_Max, (TScale)max_value, n_prev, n_bins, scale_type, eMonotonic);
+    x_CalculateBins(m_Max, max_value, n_prev, n_bins, scale_type, eMonotonic);
     m_Max = max_value;
 }
 
@@ -587,7 +585,7 @@ CHistogram<TValue, TScale, TCounter>::x_CalculateBinsLinear
 
         if (n % 2 == 0) {
             // Calculate from the center to both sides with step 'step'
-            TScale median = start_value + (TScale)((end_value - start_value) / 2);
+            TScale median = start_value + (end_value - start_value)/2;
             x_CalculateBinsLinear(median, start_value, step, arr, pos + n/2 - 1, n/2, eMonotonic);
             x_CalculateBinsLinear(median, end_value,   step, arr, pos + n/2,     n/2, eMonotonic);
             // We already know value for the most left bin, assign it 
@@ -641,7 +639,7 @@ CHistogram<TValue, TScale, TCounter>::x_CalculateBinsLog
         // For even number of bins most left and right bins can be larger.
         // For odd number of bins the center bin can be larger than other.
 
-        TScale median = start_value + (TScale)((end_value - start_value) / 2);
+        TScale median = start_value + (end_value - start_value)/2;
         // Set most left bin directly, we already know its value
         arr[pos] = start_value;
         unsigned n2 = n/2;
