@@ -712,12 +712,15 @@ bool CSeqFeatData::CanHaveGene(CSeqFeatData::ESubtype subtype)
 {
     switch(subtype) {
     case eSubtype_cdregion:
+    case eSubtype_preRNA:
     case eSubtype_mRNA:
     case eSubtype_tRNA:
     case eSubtype_rRNA:
     case eSubtype_otherRNA:
     case eSubtype_ncRNA:
     case eSubtype_tmRNA:
+    case eSubtype_exon:
+    case eSubtype_intron:
         return true;
     default:
         break;
