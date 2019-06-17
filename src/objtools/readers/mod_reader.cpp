@@ -137,7 +137,9 @@ const CModHandler::TNameMap CModHandler::sm_NameMap =
  {"primary-accessions", "primary-accession"},
  {"projects", "project"},
  {"db-xref", "dbxref"},
- {"pubmed", "pmid"}
+ {"pubmed", "pmid"},
+ {"ft-url-mod", "ft-mod"},
+ {"ft-url", "ft-map"}
 };
 
 
