@@ -211,24 +211,24 @@ static void RemoveDupPubs(CSeq_descr& descrs)
     if (descrs.IsSet()) {
 
         // Removes pubs with the same pmid
-        set<int> pmids;
+        map<int, CSeq_descr::Tdata::iterator> pmids;
         CSeq_descr::Tdata& descr_list = descrs.Set();
-        for (auto descr = descr_list.begin(); descr != descr_list.end();) {
+        for (auto descr = descr_list.begin(); descr != descr_list.end(); ++descr) {
 
-            bool increment = true;
             if ((*descr)->IsPub()) {
 
                 int pmid = 0;
                 if (GetPmid((*descr)->GetPub(), pmid)) {
-                    if (!pmids.insert(pmid).second) {
-                        descr = descr_list.erase(descr);
-                        increment = false;
+
+                    auto prev_pmid = pmids.find(pmid);
+                    if (prev_pmid !=  pmids.end()) {
+                        descr_list.erase(prev_pmid->second);
+                        prev_pmid->second = descr;
+                    }
+                    else {
+                        pmids[pmid] = descr;
                     }
                 }
-            }
-
-            if (increment) {
-                ++descr;
             }
         }
 
@@ -1365,8 +1365,8 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, CCit_sub& new_cit_sub)
                 }
 
                 if (old_cit_sub == nullptr ||
-                    (GetParams().GetUpdateMode() == eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub)) ||
-                    (GetParams().GetUpdateMode() != eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub))) {
+                    (GetParams().GetUpdateMode() == eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub)) ||
+                    (GetParams().GetUpdateMode() != eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub))) {
                     old_cit_sub = cur_cit_sub;
                     before_cit_sub = descr;
                 }
