@@ -232,6 +232,7 @@ public:
 
     CSize       m_Size;
     CSeqsRange  m_Location;
+    mutable vector< CRef<CSeq_descr_SplitInfo> > m_SubPieces;
 };
 
 

@@ -269,9 +269,9 @@ void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
             CRef<CSeqdesc> desc(&NonConst(**i));
             CRef<CSeq_descr> descr_piece(new CSeq_descr);
             descr_piece->Set().push_back(desc);
-            CSeq_descr_SplitInfo* piece_info =
-                new CSeq_descr_SplitInfo(place_id, seq_length,
-                *descr_piece, m_Params);
+            CRef<CSeq_descr_SplitInfo> piece_info(new CSeq_descr_SplitInfo(place_id, seq_length,
+                                                                           *descr_piece, m_Params));
+            info.m_SubPieces.push_back(piece_info);
             piece_info->m_Priority = GetSeqdescPriority(*desc);
             Add(SAnnotPiece(place_id, *piece_info));
         }
