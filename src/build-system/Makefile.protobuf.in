@@ -24,11 +24,15 @@ GRPC_BIN = @GRPC_BIN@
 PROTOC = $(PROTOBUF_BIN)/protoc
 GRPC_CPP_PLUGIN = $(GRPC_BIN)/grpc_cpp_plugin
 
+PROTOC_VERSION := $(lastword $(shell $(PROTOC) --version))
+VERSION_MARKER_BASE = $(MODULE).using-protoc-
+VERSION_MARKER = $(VERSION_MARKER_BASE)$(PROTOC_VERSION)
+
 ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
   GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.h
 endif
 
-DEPS = $(SPEC) $(PROTOC) $(MODULE).module $(IMPDEPS)
+DEPS = $(SPEC) $(PROTOC) $(MODULE).module $(IMPDEPS) $(VERSION_MARKER)
 
 all: sources
 
@@ -37,13 +41,15 @@ all_files: sources
 sources: $(FILES)
 
 clean_sources:
-	-$(RM) $(FILES) *.pb.cpp *.pb.h
+	-$(RM) $(FILES) *.pb.cpp *.pb.h $(VERSION_MARKER_BASE)*
 
 purge_sources:
-	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h* \
+	    $(VERSION_MARKER_BASE)*
 
 purge_all_sources:
-	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h* \
+	    $(VERSION_MARKER_BASE)*
 
 purge_all_files:
 	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
@@ -64,4 +70,8 @@ $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
 	/bin/mv -f $*.pb.h $@
 
 $(MODULE).module:
+	@$(TOUCH) $@
+
+$(VERSION_MARKER):
+	@-$(RM) $(VERSION_MARKER_BASE)*
 	@$(TOUCH) $@
