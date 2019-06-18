@@ -49,11 +49,24 @@ class CNamedAnnotationCallback
                 int32_t  sat) :
             m_PendingOp(pending_op),
             m_FetchDetails(fetch_details),
-            m_Sat(sat)
+            m_Sat(sat),
+            m_AnnotCount(0),
+            m_RetrieveTiming(chrono::high_resolution_clock::now())
         {}
 
         bool operator()(CNAnnotRecord &&  annot_record, bool  last)
         {
+            if (last) {
+                auto    app = CPubseqGatewayApp::GetInstance();
+                if (m_AnnotCount == 0)
+                    app->GetTiming().Register(eNARetrieve, eOpStatusNotFound,
+                                              m_RetrieveTiming);
+                else
+                    app->GetTiming().Register(eNARetrieve, eOpStatusFound,
+                                              m_RetrieveTiming);
+            }
+
+            ++m_AnnotCount;
             return m_PendingOp->OnNamedAnnotData(std::move(annot_record),
                                                  last, m_FetchDetails, m_Sat);
         }
@@ -62,6 +75,9 @@ class CNamedAnnotationCallback
         CPendingOperation *                     m_PendingOp;
         CCassNamedAnnotFetch *                  m_FetchDetails;
         int32_t                                 m_Sat;
+
+        size_t                                      m_AnnotCount;
+        chrono::high_resolution_clock::time_point   m_RetrieveTiming;
 };
 
 

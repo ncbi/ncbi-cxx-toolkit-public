@@ -68,6 +68,8 @@ private:
     CPendingOperation *     m_PendingOp;
 
     CCassFetch *            m_CurrentFetch;
+
+    chrono::system_clock::time_point    m_BioseqRequestStart;
 };
 
 #endif

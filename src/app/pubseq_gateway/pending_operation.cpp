@@ -836,7 +836,8 @@ void CPendingOperation::x_StartMainBlobRequest(void)
 
     load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
     load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
-    load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get()));
+    load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(),
+                                                  blob_prop_cache_lookup_result != eFound));
 
     m_FetchDetails.push_back(std::move(fetch_details));
 
@@ -1086,6 +1087,8 @@ CPendingOperation::x_ResolveInputSeqId(SResolveInputSeqIdError &  err)
 
     if (m_UrlUseCache != eCassandraOnly) {
         // Try cache
+        auto    start = chrono::high_resolution_clock::now();
+
         if (composed_ok)
             x_ResolveViaComposeOSLTInCache(oslt_seq_id, effective_seq_id_type,
                                            secondary_id_list, primary_id,
@@ -1093,8 +1096,12 @@ CPendingOperation::x_ResolveInputSeqId(SResolveInputSeqIdError &  err)
         else
             x_ResolveAsIsInCache(bioseq_resolution, err);
 
-        if (bioseq_resolution.IsValid())
+        auto    app = CPubseqGatewayApp::GetInstance();
+        if (bioseq_resolution.IsValid()) {
+            app->GetTiming().Register(eResolutionLmdb, eOpStatusFound, start);
             return bioseq_resolution;
+        }
+        app->GetTiming().Register(eResolutionLmdb, eOpStatusNotFound, start);
     }
 
     if (m_UrlUseCache != eCacheOnly) {
@@ -1118,6 +1125,7 @@ CPendingOperation::x_ResolveInputSeqId(SResolveInputSeqIdError &  err)
                                             secondary_id_list, primary_id,
                                             m_UrlSeqId, composed_ok,
                                             m_PostponedSeqIdResolution, this));
+        m_AsyncCassResolutionStart = chrono::high_resolution_clock::now();
         m_AsyncSeqIdResolver->Process();
         return bioseq_resolution;
     }
@@ -2036,7 +2044,8 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
     load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
     load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
-    load_task->SetPropsCallback(CBlobPropCallback(this, cass_blob_fetch.get()));
+    load_task->SetPropsCallback(CBlobPropCallback(this, cass_blob_fetch.get(),
+                                                  blob_prop_cache_lookup_result != eFound));
     load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
 
     m_FetchDetails.push_back(std::move(cass_blob_fetch));
@@ -2130,7 +2139,8 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
 
         load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
         load_task->SetErrorCB(CGetBlobErrorCallback(this, details.get()));
-        load_task->SetPropsCallback(CBlobPropCallback(this, details.get()));
+        load_task->SetPropsCallback(CBlobPropCallback(this, details.get(),
+                                                      blob_prop_cache_lookup_result != eFound));
         load_task->SetChunkCallback(CBlobChunkCallback(this, details.get()));
 
         m_FetchDetails.push_back(std::move(details));
@@ -2213,8 +2223,16 @@ void CPendingOperation::x_OnBadId2Info(CCassBlobFetch *  fetch_details,
 
 void CPendingOperation::OnSeqIdAsyncResolutionFinished(void)
 {
-    if (!m_PostponedSeqIdResolution.IsValid())
-        CPubseqGatewayApp::GetInstance()->GetRequestCounters().IncNotResolved();
+    auto    app = CPubseqGatewayApp::GetInstance();
+
+    if (!m_PostponedSeqIdResolution.IsValid()) {
+        app->GetTiming().Register(eResolutionCass, eOpStatusNotFound,
+                                  m_AsyncCassResolutionStart);
+        app->GetRequestCounters().IncNotResolved();
+    } else {
+        app->GetTiming().Register(eResolutionCass, eOpStatusFound,
+                                  m_AsyncCassResolutionStart);
+    }
 
     // The results are populated by CAsyncSeqIdResolver in
     // m_PostponedSeqIdResolution

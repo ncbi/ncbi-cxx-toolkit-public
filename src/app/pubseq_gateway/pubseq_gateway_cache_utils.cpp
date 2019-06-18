@@ -44,11 +44,14 @@ ECacheLookupResult  CPSGCache::s_LookupBioseqInfo(
                                     string &  bioseq_info_cache_data)
 {
     bool                    cache_hit = false;
-    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
-                                                            GetLookupCache();
+    auto                    app = CPubseqGatewayApp::GetInstance();
+    CPubseqGatewayCache *   cache = app->GetLookupCache();
+    COperationTiming &      timing = app->GetTiming();
 
     int     version = bioseq_info_record.GetVersion();
     int     seq_id_type = bioseq_info_record.GetSeqIdType();
+
+    auto    start = chrono::high_resolution_clock::now();
 
     try {
         if (version >= 0) {
@@ -97,22 +100,22 @@ ECacheLookupResult  CPSGCache::s_LookupBioseqInfo(
     } catch (const exception &  exc) {
         ERR_POST(Critical << "Exception while bioseq info cache lookup: "
                           << exc.what());
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncLMDBError();
+        app->GetErrorCounters().IncLMDBError();
         return eFailure;
     } catch (...) {
         ERR_POST(Critical << "Unknown exception while bioseq info cache lookup");
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncLMDBError();
+        app->GetErrorCounters().IncLMDBError();
         return eFailure;
     }
 
     if (cache_hit) {
-        CPubseqGatewayApp::GetInstance()->GetCacheCounters().
-                                                IncBioseqInfoCacheHit();
+        timing.Register(eLookupLmdbBioseqInfo, eOpStatusFound, start);
+        app->GetCacheCounters().IncBioseqInfoCacheHit();
         return eFound;
     }
 
-    CPubseqGatewayApp::GetInstance()->GetCacheCounters().
-                                            IncBioseqInfoCacheMiss();
+    timing.Register(eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
+    app->GetCacheCounters().IncBioseqInfoCacheMiss();
     return eNotFound;
 }
 
@@ -121,12 +124,15 @@ ECacheLookupResult  CPSGCache::s_LookupSi2csi(CBioseqInfoRecord &  bioseq_info_r
                                               string &  csi_cache_data)
 {
     bool                    cache_hit = false;
-    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
-                                                            GetLookupCache();
+    auto                    app = CPubseqGatewayApp::GetInstance();
+    CPubseqGatewayCache *   cache = app->GetLookupCache();
+    COperationTiming &      timing = app->GetTiming();
 
     // The Cassandra DB data types are incompatible with the cache API
     // so this is a temporary value to retrieve the seq_id from cache
     int     seq_id_type = bioseq_info_record.GetSeqIdType();
+
+    auto    start = chrono::high_resolution_clock::now();
 
     try {
         if (seq_id_type < 0) {
@@ -141,23 +147,23 @@ ECacheLookupResult  CPSGCache::s_LookupSi2csi(CBioseqInfoRecord &  bioseq_info_r
     } catch (const exception &  exc) {
         ERR_POST(Critical << "Exception while csi cache lookup: "
                           << exc.what());
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncLMDBError();
+        app->GetErrorCounters().IncLMDBError();
         return eFailure;
     } catch (...) {
         ERR_POST(Critical << "Unknown exception while csi cache lookup");
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncLMDBError();
+        app->GetErrorCounters().IncLMDBError();
         return eFailure;
     }
 
     if (cache_hit) {
+        timing.Register(eLookupLmdbSi2csi, eOpStatusFound, start);
         bioseq_info_record.SetSeqIdType(seq_id_type);
-        CPubseqGatewayApp::GetInstance()->GetCacheCounters().
-                                                IncSi2csiCacheHit();
+        app->GetCacheCounters().IncSi2csiCacheHit();
         return eFound;
     }
 
-    CPubseqGatewayApp::GetInstance()->GetCacheCounters().
-                                            IncSi2csiCacheMiss();
+    timing.Register(eLookupLmdbSi2csi, eOpStatusNotFound, start);
+    app->GetCacheCounters().IncSi2csiCacheMiss();
     return eNotFound;
 }
 
@@ -168,9 +174,12 @@ ECacheLookupResult  CPSGCache::s_LookupBlobProp(int  sat,
                                                 CBlobRecord &  blob_record)
 {
     bool                    cache_hit = false;
-    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
-                                                        GetLookupCache();
+    auto                    app = CPubseqGatewayApp::GetInstance();
+    CPubseqGatewayCache *   cache = app->GetLookupCache();
+    COperationTiming &      timing = app->GetTiming();
     string                  blob_prop_cache_data;
+
+    auto    start = chrono::high_resolution_clock::now();
 
     try {
         if (last_modified == INT64_MIN) {
@@ -185,24 +194,24 @@ ECacheLookupResult  CPSGCache::s_LookupBlobProp(int  sat,
     } catch (const exception &  exc) {
         ERR_POST(Critical << "Exception while blob prop cache lookup: "
                           << exc.what());
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncLMDBError();
+        app->GetErrorCounters().IncLMDBError();
         return eFailure;
     } catch (...) {
         ERR_POST(Critical << "Unknown exception while blob prop cache lookup");
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncLMDBError();
+        app->GetErrorCounters().IncLMDBError();
         return eFailure;
     }
 
     if (cache_hit) {
-        CPubseqGatewayApp::GetInstance()->GetCacheCounters().
-                                                IncBlobPropCacheHit();
+        timing.Register(eLookupLmdbBlobProp, eOpStatusFound, start);
+        app->GetCacheCounters().IncBlobPropCacheHit();
         ConvertBlobPropProtobufToBlobRecord(sat_key, last_modified,
                                             blob_prop_cache_data, blob_record);
         return eFound;
     }
 
-    CPubseqGatewayApp::GetInstance()->GetCacheCounters().
-                                                IncBlobPropCacheMiss();
+    timing.Register(eLookupLmdbBlobProp, eOpStatusNotFound, start);
+    app->GetCacheCounters().IncBlobPropCacheMiss();
     return eNotFound;
 }
 

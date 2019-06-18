@@ -275,6 +275,8 @@ private:
     EAsyncInterruptPoint                    m_AsyncInterruptPoint;
     SResolveInputSeqIdError                 m_PostponedSeqIdResolveError;
     SBioseqResolution                       m_PostponedSeqIdResolution;
+
+    chrono::high_resolution_clock::time_point       m_AsyncCassResolutionStart;
 };
 
 

@@ -46,18 +46,30 @@ class CBlobChunkCallback
                 CPendingOperation *  pending_op,
                 CCassBlobFetch *  fetch_details) :
             m_PendingOp(pending_op),
-            m_FetchDetails(fetch_details)
+            m_FetchDetails(fetch_details),
+            m_BlobSize(0),
+            m_BlobRetrieveTiming(chrono::high_resolution_clock::now())
         {}
 
         void operator()(CBlobRecord const & blob, const unsigned char *  data,
                         unsigned int  size, int  chunk_no)
         {
+            if (chunk_no >= 0)
+                m_BlobSize += size;
+            else
+                CPubseqGatewayApp::GetInstance()->GetTiming().
+                    Register(eBlobRetrieve, eOpStatusFound,
+                             m_BlobRetrieveTiming, m_BlobSize);
+
             m_PendingOp->OnGetBlobChunk(m_FetchDetails, blob, data, size, chunk_no);
         }
 
     private:
         CPendingOperation *     m_PendingOp;
         CCassBlobFetch *        m_FetchDetails;
+
+        unsigned long                                   m_BlobSize;
+        chrono::high_resolution_clock::time_point       m_BlobRetrieveTiming;
 };
 
 
@@ -66,15 +78,32 @@ class CBlobPropCallback
     public:
         CBlobPropCallback(
                 CPendingOperation *  pending_op,
-                CCassBlobFetch *  fetch_details) :
+                CCassBlobFetch *  fetch_details,
+                bool  need_timing) :
             m_PendingOp(pending_op),
             m_FetchDetails(fetch_details),
-            m_InProcess(false)
-        {}
+            m_InProcess(false),
+            m_NeedTiming(need_timing)
+        {
+            if (need_timing)
+                m_BlobPropTiming = chrono::high_resolution_clock::now();
+        }
 
         void operator()(CBlobRecord const &  blob, bool is_found)
         {
             if (!m_InProcess) {
+                if (m_NeedTiming) {
+                    CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
+                    if (is_found)
+                        app->GetTiming().Register(eLookupCassBlobProp,
+                                                  eOpStatusFound,
+                                                  m_BlobPropTiming);
+                    else
+                        app->GetTiming().Register(eLookupCassBlobProp,
+                                                  eOpStatusNotFound,
+                                                  m_BlobPropTiming);
+                }
+
                 m_InProcess = true;
                 m_PendingOp->OnGetBlobProp(m_FetchDetails, blob, is_found);
                 m_InProcess = false;
@@ -82,18 +111,15 @@ class CBlobPropCallback
         }
 
     private:
-        void x_RequestOriginalBlobChunks(CBlobRecord const &  blob);
-        void x_RequestID2BlobChunks(CBlobRecord const &  blob,
-                                    bool  info_blob_only);
-        void x_ParseId2Info(CBlobRecord const &  blob);
-        void x_RequestId2SplitBlobs(const string &  sat_name);
-
-    private:
         CPendingOperation *                     m_PendingOp;
         CCassBlobFetch *                        m_FetchDetails;
 
         // Avoid an infinite loop
         bool            m_InProcess;
+
+        // Timing
+        bool                                            m_NeedTiming;
+        chrono::high_resolution_clock::time_point       m_BlobPropTiming;
 };
 
 
@@ -104,7 +130,8 @@ class CGetBlobErrorCallback
                 CPendingOperation *  pending_op,
                 CCassBlobFetch *  fetch_details) :
             m_PendingOp(pending_op),
-            m_FetchDetails(fetch_details)
+            m_FetchDetails(fetch_details),
+            m_BlobRetrieveTiming(chrono::high_resolution_clock::now())
         {}
 
         void operator()(CRequestStatus::ECode  status,
@@ -112,6 +139,10 @@ class CGetBlobErrorCallback
                         EDiagSev  severity,
                         const string &  message)
         {
+            if (status == CRequestStatus::e404_NotFound)
+                CPubseqGatewayApp::GetInstance()->GetTiming().
+                    Register(eBlobRetrieve, eOpStatusNotFound,
+                             m_BlobRetrieveTiming);
             m_PendingOp->OnGetBlobError(m_FetchDetails, status, code,
                                         severity, message);
         }
@@ -119,6 +150,8 @@ class CGetBlobErrorCallback
     private:
         CPendingOperation *                     m_PendingOp;
         CCassBlobFetch *                        m_FetchDetails;
+
+        chrono::high_resolution_clock::time_point       m_BlobRetrieveTiming;
 };
 
 

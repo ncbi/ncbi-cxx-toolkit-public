@@ -76,6 +76,8 @@ void CAsyncBioseqQuery::MakeRequest(void)
     fetch_task->SetDataReadyCB(m_PendingOp->GetDataReadyCB());
 
     m_CurrentFetch = details.release();
+
+    m_BioseqRequestStart = chrono::high_resolution_clock::now();
     m_PendingOp->RegisterFetch(m_CurrentFetch);
     fetch_task->Wait();
 }
@@ -84,17 +86,26 @@ void CAsyncBioseqQuery::MakeRequest(void)
 void CAsyncBioseqQuery::x_OnBioseqInfoRecord(CBioseqInfoRecord &&  record,
                                              CRequestStatus::ECode  ret_code)
 {
+    auto    app = CPubseqGatewayApp::GetInstance();
+
     m_CurrentFetch->SetReadFinished();
 
     if (ret_code != CRequestStatus::e200_Ok) {
         // Multiple records or did not find anything. Need more tries
-        if (ret_code == CRequestStatus::e300_MultipleChoices)
-            CPubseqGatewayApp::GetInstance()->GetDBCounters().IncBioseqInfoFoundMany();
-        else
-            CPubseqGatewayApp::GetInstance()->GetDBCounters().IncBioseqInfoNotFound();
+        if (ret_code == CRequestStatus::e300_MultipleChoices) {
+            app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
+                                      m_BioseqRequestStart);
+            app->GetDBCounters().IncBioseqInfoFoundMany();
+        } else {
+            app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
+                                      m_BioseqRequestStart);
+            app->GetDBCounters().IncBioseqInfoNotFound();
+        }
         m_BioseqResolution.m_ResolutionResult = eNotResolved;
     } else {
-        CPubseqGatewayApp::GetInstance()->GetDBCounters().IncBioseqInfoFoundOne();
+        app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
+                                  m_BioseqRequestStart);
+        app->GetDBCounters().IncBioseqInfoFoundOne();
         m_BioseqResolution.m_ResolutionResult = eFromBioseqDB;
         m_BioseqResolution.m_BioseqInfo = std::move(record);
     }

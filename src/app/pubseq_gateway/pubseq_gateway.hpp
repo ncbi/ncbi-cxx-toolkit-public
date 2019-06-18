@@ -48,6 +48,7 @@
 #include "pubseq_gateway_types.hpp"
 #include "exclude_blob_cache.hpp"
 #include "alerts.hpp"
+#include "timing.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -89,7 +90,7 @@ public:
         return m_ExcludeBlobCache.get();
     }
 
-    unsigned int GetSlimMaxBlobSize(void) const
+    unsigned long GetSlimMaxBlobSize(void) const
     {
         return m_SlimMaxBlobSize;
     }
@@ -127,6 +128,9 @@ public:
     int OnAckAlert(HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp);
 
+    int OnStatistics(HST::CHttpRequest &  req,
+                     HST::CHttpReply<CPendingOperation> &  resp);
+
     int OnTestIO(HST::CHttpRequest &  req,
                  HST::CHttpReply<CPendingOperation> &  resp);
 
@@ -137,6 +141,11 @@ public:
     CPubseqGatewayRequestCounters &  GetRequestCounters(void);
     CPubseqGatewayCacheCounters &  GetCacheCounters(void);
     CPubseqGatewayDBCounters &  GetDBCounters(void);
+
+    COperationTiming & GetTiming(void)
+    {
+        return *m_Timing.get();
+    }
 
 private:
     struct SRequestParameter
@@ -190,10 +199,10 @@ private:
     vector<SBlobId> x_GetExcludeBlobs(const string &  param_name,
                                       const CTempString &  param_value,
                                       string &  err_msg) const;
-    unsigned int x_GetDataSize(const IRegistry &  reg,
-                               const string &  section,
-                               const string &  entry,
-                               unsigned int  default_val);
+    unsigned long x_GetDataSize(const IRegistry &  reg,
+                                const string &  section,
+                                const string &  entry,
+                                unsigned long  default_val);
     int x_PopulateSatToKeyspaceMap(void);
 
 private:
@@ -224,6 +233,11 @@ private:
     unsigned int                        m_ExcludeCacheMaxSize;
     unsigned int                        m_ExcludeCachePurgePercentage;
     unsigned int                        m_ExcludeCacheInactivityPurge;
+    unsigned long                       m_SmallBlobSize;
+    unsigned long                       m_MinStatValue;
+    unsigned long                       m_MaxStatValue;
+    unsigned long                       m_NStatBins;
+    string                              m_StatScaleType;
 
     CTime                               m_StartTime;
     string                              m_RootKeyspace;
@@ -233,7 +247,7 @@ private:
     bool                                m_AllowIOTest;
     unique_ptr<char []>                 m_IOTestBuffer;
 
-    unsigned int                        m_SlimMaxBlobSize;
+    unsigned long                       m_SlimMaxBlobSize;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<HST::CHttpDaemon<CPendingOperation>>
@@ -248,6 +262,7 @@ private:
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
 
     CPSGAlerts                          m_Alerts;
+    unique_ptr<COperationTiming>        m_Timing;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

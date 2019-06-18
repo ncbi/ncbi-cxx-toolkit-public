@@ -106,6 +106,9 @@ private:
     size_t                  m_SecondaryIndex;
     bool                    m_NeedToTryBioseqInfo;
     int16_t                 m_EffectiveVersion;
+
+    chrono::high_resolution_clock::time_point       m_Si2csiStart;
+    chrono::high_resolution_clock::time_point       m_BioseqInfoStart;
 };
 
 #endif

@@ -63,6 +63,7 @@ static string  kDataSizeParam = "return_data_size";
 static string  kLogParam = "log";
 static string  kUsernameParam = "username";
 static string  kAlertParam = "alert";
+static string  kResetParam = "reset";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -1039,6 +1040,63 @@ int CPubseqGatewayApp::OnAckAlert(HST::CHttpRequest &  req,
     return 0;
 }
 
+int CPubseqGatewayApp::OnStatistics(HST::CHttpRequest &  req,
+                                    HST::CHttpReply<CPendingOperation> &  resp)
+{
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    try {
+        m_RequestCounters.IncAdmin();
+
+        bool                    reset = false;
+        SRequestParameter       reset_param = x_GetParam(req, kResetParam);
+        if (reset_param.m_Found) {
+            string      err_msg;
+            if (!x_IsBoolParamValid(kResetParam, reset_param.m_Value, err_msg)) {
+                resp.SetContentType(ePlainTextMime);
+                resp.Send400("Bad Request", err_msg.c_str());
+                PSG_WARNING(err_msg);
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
+            reset = reset_param.m_Value == "yes";
+        }
+
+        if (reset) {
+            m_Timing->Reset();
+            resp.SetContentType(ePlainTextMime);
+            resp.SendOk(nullptr, 0, true);
+            x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+            return 0;
+        }
+
+        CJsonNode   reply(m_Timing->Serialize());
+        string      content = reply.Repr(CJsonNode::fStandardJson);
+
+        resp.SetContentType(eJsonMime);
+        resp.SetContentLength(content.length());
+        resp.SendOk(content.c_str(), content.length(), false);
+
+        x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+    } catch (const exception &  exc) {
+        string      msg = "Exception when handling a statistics request: " +
+                          string(exc.what());
+        resp.SetContentType(ePlainTextMime);
+        resp.Send500("Internal Server Error", msg.c_str());
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    } catch (...) {
+        resp.SetContentType(ePlainTextMime);
+        resp.Send500("Internal Server Error",
+                     "Unknown exception when handling a statistics request");
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    }
+    return 0;
+}
+
 
 int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
                                 HST::CHttpReply<CPendingOperation> &  resp)
@@ -1061,7 +1119,7 @@ int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
                 PSG_WARNING(err_msg);
                 return 0;
             }
-            need_log = log_param.m_Value == "true";
+            need_log = log_param.m_Value == "yes";
         }
 
         if (need_log)

@@ -76,7 +76,8 @@ const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
 const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
 const string            kDefaultAuthToken = "";
 const bool              kDefaultAllowIOTest = false;
-const unsigned int      kDefaultSlimMaxBlobSize = 10 * 1024;
+const unsigned long     kDefaultSlimMaxBlobSize = 10 * 1024;
+const unsigned long     kDefaultSmallBlobSize = 16;
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -108,6 +109,11 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_ExcludeCacheMaxSize(kDefaultExcludeCacheMaxSize),
     m_ExcludeCachePurgePercentage(kDefaultExcludeCachePurgePercentage),
     m_ExcludeCacheInactivityPurge(kDefaultExcludeCacheInactivityPurge),
+    m_SmallBlobSize(kDefaultSmallBlobSize),
+    m_MinStatValue(kMinStatValue),
+    m_MaxStatValue(kMaxStatValue),
+    m_NStatBins(kNStatBins),
+    m_StatScaleType(kStatScaleType),
     m_StartTime(GetFastLocalTime()),
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
@@ -209,6 +215,13 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_CassConnectionFactory->LoadConfig(registry, "");
     m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
 
+    m_SmallBlobSize = x_GetDataSize(registry, "STATISTICS", "small_blob_size",
+                                    kDefaultSmallBlobSize);
+    m_MinStatValue = registry.GetInt("STATISTICS", "min", kMinStatValue);
+    m_MaxStatValue = registry.GetInt("STATISTICS", "max", kMaxStatValue);
+    m_NStatBins = registry.GetInt("STATISTICS", "n_bins", kNStatBins);
+    m_StatScaleType = registry.GetString("STATISTICS", "type", kStatScaleType);
+
     // It throws an exception in case of inability to start
     x_ValidateArgs();
 }
@@ -302,6 +315,11 @@ int CPubseqGatewayApp::Run(void)
                               m_ExcludeCacheMaxSize,
                               m_ExcludeCacheMaxSize - static_cast<size_t>(purge_size)));
 
+    m_Timing.reset(new COperationTiming(m_MinStatValue,
+                                        m_MaxStatValue,
+                                        m_NStatBins,
+                                        m_StatScaleType,
+                                        m_SmallBlobSize));
 
     vector<HST::CHttpHandler<CPendingOperation>>    http_handler;
     HST::CHttpGetParser                             get_parser;
@@ -375,6 +393,13 @@ int CPubseqGatewayApp::Run(void)
                    HST::CHttpReply<CPendingOperation> &  resp)->int
             {
                 return OnAckAlert(req, resp);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/ADMIN/statistics",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnStatistics(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/favicon.ico",
@@ -607,6 +632,51 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         }
         m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
     }
+
+    bool        stat_settings_good = true;
+    if (NStr::CompareNocase(m_StatScaleType, "log") != 0 &&
+        NStr::CompareNocase(m_StatScaleType, "linear") != 0) {
+        string  err_msg = "Invalid [STATISTICS]/type value '" +
+            m_StatScaleType + "'. Allowed values are: log, linear. "
+            "The statistics parameters are reset to default.";
+        PSG_ERROR(err_msg);
+        stat_settings_good = false;
+
+        m_MinStatValue = kMinStatValue;
+        m_MaxStatValue = kMaxStatValue;
+        m_NStatBins = kNStatBins;
+        m_StatScaleType = kStatScaleType;
+    }
+
+    if (stat_settings_good) {
+        if (m_MinStatValue > m_MaxStatValue) {
+            string  err_msg = "Invalid [STATISTICS]/min and max values. The "
+                "max cannot be less than min. "
+                "The statistics parameters are reset to default.";
+            PSG_ERROR(err_msg);
+            stat_settings_good = false;
+
+            m_MinStatValue = kMinStatValue;
+            m_MaxStatValue = kMaxStatValue;
+            m_NStatBins = kNStatBins;
+            m_StatScaleType = kStatScaleType;
+        }
+    }
+
+    if (stat_settings_good) {
+        if (m_NStatBins <= 0) {
+            string  err_msg = "Invalid [STATISTICS]/n_bins value. The "
+                "number of bins must be greater than 0. "
+                "The statistics parameters are reset to default.";
+            PSG_ERROR(err_msg);
+            stat_settings_good = false;
+
+            m_MinStatValue = kMinStatValue;
+            m_MaxStatValue = kMaxStatValue;
+            m_NStatBins = kNStatBins;
+            m_StatScaleType = kStatScaleType;
+        }
+    }
 }
 
 
@@ -821,11 +891,11 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
 }
 
 
-unsigned int
+unsigned long
 CPubseqGatewayApp::x_GetDataSize(const IRegistry &  reg,
                                  const string &  section,
                                  const string &  entry,
-                                 unsigned int  default_val)
+                                 unsigned long  default_val)
 {
     CConfig                         conf(reg);
     const CConfig::TParamTree *     param_tree = conf.GetTree();
