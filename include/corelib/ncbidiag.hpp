@@ -576,7 +576,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 /// this header.
 #define NCBI_REPEAT_POST_N_TIMES(post_macro, count, params)     \
     do {                                                        \
-        static volatile int sx_to_show = (count);               \
+        static atomic<int> sx_to_show(count);                   \
         int to_show = sx_to_show;                               \
         if ( to_show > 0 ) {                                    \
             sx_to_show = to_show - 1;                           \
