@@ -398,7 +398,7 @@ if(NCBI_COMPONENT_wxWidgets_FOUND)
     list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
     get_filename_component(_libdir ${_lib} DIRECTORY)
     set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-3.1 ${_libdir}/wx/include/osx_cocoa-ansi-3.1)
-    set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS}  -framework Cocoa)
+    set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS}  "-framework Cocoa")
     set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMAC__ __WXOSX__ __WXOSX_COCOA__ wxDEBUG_LEVEL=0)
 endif()
 
@@ -409,7 +409,7 @@ NCBI_define_component(GLEW GLEW)
 #############################################################################
 # OpenGL
 set(NCBI_COMPONENT_OpenGL_FOUND YES)
-set(NCBI_COMPONENT_OpenGL_LIBS -framework AGL -framework OpenGL -framework Metal -framework MetalKit)
+set(NCBI_COMPONENT_OpenGL_LIBS "-framework AGL -framework OpenGL -framework Metal -framework MetalKit")
 list(APPEND NCBI_ALL_COMPONENTS OpenGL)
 
 #############################################################################
