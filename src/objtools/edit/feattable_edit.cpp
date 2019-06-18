@@ -52,6 +52,9 @@
 #include <objtools/logging/listener.hpp>
 #include <objtools/edit/cds_fix.hpp>
 
+#include <objects/general/Dbtag.hpp>
+
+#include <unordered_set>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
@@ -1662,6 +1665,9 @@ CFeatTableEdit::xGetCurrentLocusTagPrefix(
 
 void CFeatureTableLoader::PostProcessAnnotation(CBioseq::TAnnot& annots)
 {
+    m_Feat_Tree.Reset(new feature::CFeatTree());
+    m_scope.Reset(new CScope(*CObjectManager::GetInstance()));
+
     for (auto it = annots.begin(); it != annots.end(); ++it) {
         PostProcessAnnotation(*it);
     }
@@ -1669,6 +1675,9 @@ void CFeatureTableLoader::PostProcessAnnotation(CBioseq::TAnnot& annots)
 
 void CFeatureTableLoader::PostProcessAnnotation(CRef<CSeq_annot> annot)
 {
+    auto h_annot = m_scope->AddSeq_annot(*annot);
+    m_Feat_Tree->AddFeatures(CFeat_CI(h_annot));
+
     CFeatTableEdit fte(
         *annot, m_locus_tag_prefix, m_startingLocusTagNumber, m_startingFeatureId, m_logger);
     //fte.InferPartials();
@@ -1681,7 +1690,321 @@ void CFeatureTableLoader::PostProcessAnnotation(CRef<CSeq_annot> annot)
 
     m_startingLocusTagNumber = fte.PendingLocusTagNumber();
     m_startingFeatureId = fte.PendingFeatureId();
+
+    for (auto feat : annot->GetData().GetFtable())
+    {
+        if (feat.NotEmpty() && feat->IsSetData() && feat->GetData().IsCdregion())
+        {
+            Generate_mRNA_Product(*feat);
+        }
+    }
 };
+
+CRef<feature::CFeatTree> CFeatureTableLoader::GetFeatTree()
+{
+    return m_Feat_Tree;
+}
+
+
+CConstRef<CSeq_feat> CFeatureTableLoader::GetLinkedFeature(const CSeq_feat& cd_feature, bool gene)
+{
+    CConstRef<CSeq_feat> feature;
+    if (feature.Empty())
+    {
+
+        CMappedFeat cds(m_scope->GetSeq_featHandle(cd_feature));
+        CMappedFeat other;
+        if (gene)
+            other = feature::GetBestGeneForCds(cds, GetFeatTree());
+        else
+            other = feature::GetBestMrnaForCds(cds, GetFeatTree());
+
+        if (other)
+            feature.Reset(&other.GetOriginalFeature());
+
+    }
+    return feature;
+}
+
+
+static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_ref)
+{
+
+    auto append_nonduplicated_item = [](list<string>& current_list,
+        const list<string>& other_list)
+    {
+        unordered_set<string> current_set;
+        for (const auto& item : current_list) {
+            current_set.insert(item);
+        }
+
+        for (const auto& item : other_list) {
+            if (current_set.find(item) == current_set.end()) {
+                current_list.push_back(item);
+            }
+        }
+    };
+
+    if (other_ref.IsSetName()) {
+        append_nonduplicated_item(current_ref.SetName(),
+            other_ref.GetName());
+    }
+
+    if (other_ref.IsSetDesc()) {
+        current_ref.SetDesc() = other_ref.GetDesc();
+    }
+
+    if (other_ref.IsSetEc()) {
+        append_nonduplicated_item(current_ref.SetEc(),
+            other_ref.GetEc());
+    }
+
+    if (other_ref.IsSetActivity()) {
+        append_nonduplicated_item(current_ref.SetActivity(),
+            other_ref.GetActivity());
+    }
+
+    if (other_ref.IsSetDb()) {
+        for (const auto pDBtag : other_ref.GetDb()) {
+            current_ref.SetDb().push_back(pDBtag);
+        }
+    }
+
+    if (current_ref.GetProcessed() == CProt_ref::eProcessed_not_set) {
+        const auto processed = other_ref.GetProcessed();
+        if (processed != CProt_ref::eProcessed_not_set) {
+            current_ref.SetProcessed(processed);
+        }
+    }
+}
+
+static void s_SetProtRef(const CSeq_feat& cds,
+    CConstRef<CSeq_feat> pMrna,
+    CProt_ref& prot_ref)
+{
+    const CProt_ref* pProtXref = cds.GetProtXref();
+    if (pProtXref) {
+        s_AppendProtRefInfo(prot_ref, *pProtXref);
+    }
+
+
+    if (!prot_ref.IsSetName()) {
+        const string& product_name = cds.GetNamedQual("product");
+        if (product_name != kEmptyStr) {
+            prot_ref.SetName().push_back(product_name);
+        }
+    }
+
+    if (pMrna.Empty()) { // Nothing more we can do here
+        return;
+    }
+
+    if (prot_ref.IsSetName()) {
+        for (auto& prot_name : prot_ref.SetName()) {
+            if (NStr::CompareNocase(prot_name, "hypothetical protein") == 0) {
+                if (pMrna->GetData().GetRna().IsSetExt() &&
+                    pMrna->GetData().GetRna().GetExt().IsName()) {
+                    prot_name = pMrna->GetData().GetRna().GetExt().GetName();
+                    break;
+                }
+            }
+        }
+    } // prot_ref.IsSetName() 
+}
+
+void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
+{
+    if (sequence::IsPseudo(cd_feature, *m_scope))
+        return; // CRef<CSeq_entry>();
+
+#if 0
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(bioseq);
+
+    CConstRef<CSeq_entry> replacement = LocateProtein(m_replacement_protein, cd_feature);
+#endif
+
+    CConstRef<CSeq_feat> mrna = GetLinkedFeature(cd_feature, false);
+    CConstRef<CSeq_feat> gene = GetLinkedFeature(cd_feature, true);
+
+#if 0
+    CRef<CBioseq> protein;
+    bool was_extended = false;
+    if (replacement.Empty())
+    {
+        was_extended = CCleanup::ExtendToStopIfShortAndNotPartial(cd_feature, bsh);
+
+        protein = CSeqTranslator::TranslateToProtein(cd_feature, *m_scope);
+
+        if (protein.Empty())
+            return CRef<CSeq_entry>();
+    }
+    else
+    {
+        protein.Reset(new CBioseq());
+        protein->Assign(replacement->GetSeq());
+    }
+
+    CRef<CSeq_entry> protein_entry(new CSeq_entry);
+    protein_entry->SetSeq(*protein);
+
+    CAutoAddDesc molinfo_desc(protein->SetDescr(), CSeqdesc::e_Molinfo);
+    molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    molinfo_desc.Set().SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+    feature::AdjustProteinMolInfoToMatchCDS(molinfo_desc.Set().SetMolinfo(), cd_feature);
+
+    string org_name;
+    CTable2AsnContext::GetOrgName(org_name, *top_entry_h.GetCompleteObject());
+
+    CTempString locustag;
+    if (!gene.Empty() && gene->IsSetData() && gene->GetData().IsGene() && gene->GetData().GetGene().IsSetLocus_tag())
+    {
+        locustag = gene->GetData().GetGene().GetLocus_tag();
+}
+
+    string base_name;
+    CRef<CSeq_id> newid;
+    CTempString qual_to_remove;
+
+    if (protein->GetId().empty())
+    {
+        const string* protein_ids = 0;
+
+        qual_to_remove = "protein_id";
+        protein_ids = &cd_feature.GetNamedQual(qual_to_remove);
+
+        if (protein_ids->empty())
+        {
+            qual_to_remove = "orig_protein_id";
+            protein_ids = &cd_feature.GetNamedQual(qual_to_remove);
+        }
+
+        if (protein_ids->empty())
+        {
+            if (mrna.NotEmpty())
+                protein_ids = &mrna->GetNamedQual("protein_id");
+        }
+
+        if (protein_ids->empty())
+        {
+            protein_ids = &cd_feature.GetNamedQual("product_id");
+        }
+
+        if (!protein_ids->empty())
+        {
+            CBioseq::TId new_ids;
+            CSeq_id::ParseIDs(new_ids, *protein_ids, CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
+
+            MergeSeqIds(*protein, new_ids);
+            cd_feature.RemoveQualifier(qual_to_remove);
+        }
+    }
+    else {
+        cd_feature.RemoveQualifier("protein_id");
+        cd_feature.RemoveQualifier("orig_protein_id");
+    }
+
+    if (protein->GetId().empty())
+    {
+        if (base_name.empty() && !bioseq.GetId().empty())
+        {
+            bioseq.GetId().front()->GetLabel(&base_name, CSeq_id::eContent);
+        }
+
+        newid = GetNewProteinId(*m_scope, base_name);
+        protein->SetId().push_back(newid);
+    }
+
+#endif
+
+#if 0
+    CSeq_feat& prot_feat = CreateOrSetFTable(*protein);
+    CProt_ref& prot_ref = prot_feat.SetData().SetProt();
+#else
+    CRef<CProt_ref> p_prot_ref(new CProt_ref);
+    CProt_ref& prot_ref = *p_prot_ref;
+#endif
+
+    s_SetProtRef(cd_feature, mrna, prot_ref);
+    if ((!prot_ref.IsSetName() ||
+        prot_ref.GetName().empty()) &&
+        m_use_hypothetic_protein) {
+        prot_ref.SetName().push_back("hypothetical protein");
+    }
+
+#if 0
+    prot_feat.SetLocation().SetInt().SetFrom(0);
+    prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
+    prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
+    feature::CopyFeaturePartials(prot_feat, cd_feature);
+
+    if (!cd_feature.IsSetProduct())
+        cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
+
+    CBioseq_Handle protein_handle = m_scope->AddBioseq(*protein);
+#endif
+
+    AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
+    if (gene.NotEmpty() && mrna.NotEmpty())
+        cd_feature.SetXref().clear();
+
+    if (gene.NotEmpty())
+    {
+        CSeq_feat& gene_feature = (CSeq_feat&)*gene;
+        AssignLocalIdIfEmpty(gene_feature, m_local_id_counter);
+        cd_feature.AddSeqFeatXref(gene_feature.GetId());
+        gene_feature.AddSeqFeatXref(cd_feature.GetId());
+    }
+
+    if (mrna.NotEmpty())
+    {
+        CSeq_feat& mrna_feature = (CSeq_feat&)*mrna;
+
+        AssignLocalIdIfEmpty(mrna_feature, m_local_id_counter);
+
+        if (prot_ref.IsSetName() && !prot_ref.GetName().empty())
+        {
+            auto& ext = mrna_feature.SetData().SetRna().SetExt();
+            if (ext.Which() == CRNA_ref::C_Ext::e_not_set ||
+                (ext.IsName() && ext.SetName().empty()))
+                ext.SetName() = prot_ref.GetName().front();
+        }
+        mrna_feature.AddSeqFeatXref(cd_feature.GetId());
+        cd_feature.AddSeqFeatXref(mrna_feature.GetId());
+    }
+
+#if 0
+    if (!protein_name.empty())
+    {
+        //cd_feature.ResetProduct();
+        cd_feature.SetProtXref().SetName().clear();
+        cd_feature.SetProtXref().SetName().push_back(protein_name);
+        cd_feature.RemoveQualifier("product");
+    }
+
+
+    if (was_extended)
+    {
+        if (!mrna.Empty() && mrna->IsSetLocation() && CCleanup::LocationMayBeExtendedToMatch(mrna->GetLocation(), cd_feature.GetLocation()))
+            CCleanup::ExtendStopPosition((CSeq_feat&)*mrna, &cd_feature);
+        if (!gene.Empty() && gene->IsSetLocation() && CCleanup::LocationMayBeExtendedToMatch(gene->GetLocation(), cd_feature.GetLocation()))
+            CCleanup::ExtendStopPosition((CSeq_feat&)*gene, &cd_feature);
+    }
+
+    return protein_entry;
+#endif
+}
+
+bool CFeatureTableLoader::AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, unsigned& id)
+{
+    if (feature.IsSetId())
+        return true;
+    else
+    {
+        feature.SetId().SetLocal().SetId(id++);
+        return false;
+    }
+}
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

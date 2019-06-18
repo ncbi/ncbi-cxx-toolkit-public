@@ -189,11 +189,21 @@ public:
     void PostProcessAnnotation(CBioseq::TAnnot& annots);
     void PostProcessAnnotation(CRef<CSeq_annot> annot);
 
-    unsigned int m_startingLocusTagNumber = 1;
-    unsigned int m_startingFeatureId = 1;
-    std::string  m_locus_tag_prefix;
-    IObjtoolsListener* m_logger = nullptr;
-    bool m_eukariote = false;
+    IObjtoolsListener* m_logger                 = nullptr;
+    std::string        m_locus_tag_prefix;
+    bool               m_eukariote              = false;
+    bool               m_use_hypothetic_protein = false;
+protected:
+    void Generate_mRNA_Product(CSeq_feat& cd_feature);
+    CConstRef<CSeq_feat> GetLinkedFeature(const CSeq_feat& cd_feature, bool gene);
+    bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, unsigned& id);
+    CRef<feature::CFeatTree> GetFeatTree();
+
+    CRef<CScope>       m_scope;
+    unsigned           m_local_id_counter = 1;
+    unsigned int       m_startingLocusTagNumber = 1;
+    unsigned int       m_startingFeatureId = 1;
+    CRef<feature::CFeatTree> m_Feat_Tree;
 };
 
 END_SCOPE(edit)
