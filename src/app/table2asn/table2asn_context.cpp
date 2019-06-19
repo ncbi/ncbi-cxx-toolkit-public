@@ -81,6 +81,8 @@
 #include <objtools/edit/dblink_field.hpp>
 
 #include "table2asn_context.hpp"
+#include "descr_apply.hpp"
+
 
 #include "visitors.hpp"
 #include <objects/seqfeat/Feat_id.hpp>
@@ -452,6 +454,9 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 {
     if (m_entry_template.IsNull() || !m_entry_template->IsSetDescr())
         return;
+
+//    g_ApplyDescriptors(m_entry_template->GetDescr().Get(),
+//            entry);
 
     if (entry.IsSet())// && entry.GetSet().IsSetClass())
     {

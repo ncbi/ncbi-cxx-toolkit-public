@@ -75,6 +75,7 @@
 
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
+#include "descr_apply.hpp"
 
 #include <objtools/edit/feattable_edit.hpp>
 
@@ -705,6 +706,7 @@ void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
 void CMultiReader::ApplyDescriptors(CSeq_entry& entry, const CSeq_descr& source)
 {
     MergeDescriptors(entry.SetDescr(), source);
+    //g_ApplyDescriptors(source.Get(), entry);
 }
 
 namespace
