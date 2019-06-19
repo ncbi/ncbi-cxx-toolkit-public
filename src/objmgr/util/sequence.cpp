@@ -3443,6 +3443,9 @@ CFastaOstream::GetGapModText(
                 case CLinkage_evidence::eType_pcr:
                     gap_linkage_evidences.push_back("pcr");
                     break;
+                case CLinkage_evidence::eType_proximity_ligation:
+                    gap_linkage_evidences.push_back("proximity ligation");
+                    break;
                 case CLinkage_evidence::eType_other:
                     gap_linkage_evidences.push_back("other");
                     break;
