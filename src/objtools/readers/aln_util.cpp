@@ -148,7 +148,7 @@ AlnUtil::ProcessDefline(
         throw SShowStopper(
             -1,
             eAlnSubcode_IllegalDataLine,
-            "Deflines were detected in your file, however some lines are missing the \'>'\ character at the beginning of the line. Each defline must begin with \'>\'.");
+            "Deflines were detected in your file, however some lines are missing the \'>\' character at the beginning of the line. Each defline must begin with \'>\'.");
     }
     auto dataStart = line.find_first_not_of(" \t", 1);
     if (dataStart == string::npos) {
