@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <serial/objostrjson.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/CDD_Request.hpp>
@@ -38,14 +39,39 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_PARAM_ENUM_DECL(objects::CCDDClient::EDataFormat, CDD, data_format);
+NCBI_PARAM_ENUM_ARRAY(objects::CCDDClient::EDataFormat, CDD, data_format)
+{
+    // Deliberately not covering eDefaultFormat!
+    { "JSON",        objects::CCDDClient::eJSON       },
+    { "semi-binary", objects::CCDDClient::eSemiBinary },
+    { "binary",      objects::CCDDClient::eBinary     }
+};
+
+NCBI_PARAM_ENUM_DEF(objects::CCDDClient::EDataFormat, CDD, data_format,
+                    objects::CCDDClient::eSemiBinary);
+
+typedef NCBI_PARAM_TYPE(CDD, data_format) TDataFormatParam;
+
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-
-CCDDClient::CCDDClient(const string& service_name)
-    : Tparent(service_name.empty() ? DEFAULT_CDD_SERVICE_NAME : service_name,
-              eSerial_AsnBinary)
+static
+ESerialDataFormat s_GetSerialFormat(CCDDClient::EDataFormat& data_format)
 {
-    SetArgs("binary=1");
+    if (data_format == CCDDClient::eDefaultFormat) {
+        data_format = TDataFormatParam::GetDefault();
+    }
+    return data_format == CCDDClient::eJSON ? eSerial_Json : eSerial_AsnBinary;
+}
+
+CCDDClient::CCDDClient(const string& service_name, EDataFormat data_format)
+    : Tparent(service_name.empty() ? DEFAULT_CDD_SERVICE_NAME : service_name,
+              s_GetSerialFormat(data_format)),
+      m_DataFormat(data_format)
+{
+    if (data_format == eBinary) {
+        SetArgs("binary=1");
+    }
 }
 
 
@@ -58,6 +84,29 @@ void CCDDClient::Ask(const CCDD_Request_Packet& request, CCDD_Reply& reply)
 {
     m_Replies.clear();
     Tparent::Ask(request, reply);
+}
+
+
+void CCDDClient::WriteRequest(CObjectOStream& out,
+                              const CCDD_Request_Packet& request)
+{
+    static const TSerial_Format_Flags kJSONFlags
+        = fSerial_Json_NoIndentation | fSerial_Json_NoEol;
+    if (m_DataFormat == eSemiBinary) {
+        CNcbiOstrstream oss;
+        CObjectOStreamJson joos(oss, eNoOwnership);
+        joos.SetFormattingFlags(kJSONFlags);
+        joos << request;
+        string s = CNcbiOstrstreamToString(oss);
+        SetArgs("binary=1&requestPacket="
+                + NStr::URLEncode(s, NStr::eUrlEnc_URIQueryValue));
+        x_Connect();
+    } else {
+        if (m_DataFormat == eJSON) {
+            out.SetFormattingFlags(kJSONFlags);
+        }
+        Tparent::WriteRequest(out, request);
+    }
 }
 
 

@@ -53,8 +53,17 @@ class NCBI_CDD_ACCESS_EXPORT CCDDClient : public CRPCClient<CCDD_Request_Packet,
 {
     typedef CRPCClient<CCDD_Request_Packet, CCDD_Reply> Tparent;
 public:
+    /// Serial data format for requests and replies
+    enum EDataFormat {
+        eDefaultFormat, ///< Determined by [CCddClient] data_format
+        eJSON,          ///< Bidirectional JSON
+        eSemiBinary,    ///< JSON requests, binary ASN.1 replies
+        eBinary         ///< Bidirectional binary ASN.1
+    };
+    
     // constructor
-    CCDDClient(const string& service_name = kEmptyStr);
+    CCDDClient(const string& service_name = kEmptyStr,
+               EDataFormat data_format = eDefaultFormat);
     // destructor
     ~CCDDClient(void);
 
@@ -62,6 +71,9 @@ public:
     typedef vector< CConstRef<CCDD_Reply> > TReplies;
 
     virtual void Ask(const CCDD_Request_Packet& request, CCDD_Reply& reply);
+
+    virtual void WriteRequest(CObjectOStream& out,
+                              const CCDD_Request_Packet& request);
 
     virtual void ReadReply(CObjectIStream& in, CCDD_Reply& reply);
 
@@ -84,6 +96,7 @@ private:
     CCDDClient& operator=(const CCDDClient& value);
 
     TReplies m_Replies;
+    EDataFormat m_DataFormat;
 };
 
 
