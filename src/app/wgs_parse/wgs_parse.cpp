@@ -41,6 +41,10 @@
 #include <objects/biblio/Cit_gen.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
+
 #include "wgs_params.hpp"
 #include "wgs_id1.hpp"
 #include "wgs_master.hpp"
@@ -1516,6 +1520,14 @@ int CWGSParseApp::Run(void)
     }
 
     CWgsParseDiagHandler diag_handler(logfile, overwrite);
+
+    GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
+    DBAPI_RegisterDriver_FTDS();
+
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CGBDataLoader::RegisterInObjectManager(*om);
+    GetScope().AddDefaults();
 
     if (SetParams(args)) {
 

@@ -34,6 +34,7 @@
 
 #include <objects/id1/id1_client.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include "wgs_id1.hpp"
 #include "wgs_utils.hpp"
@@ -47,7 +48,7 @@ CRef<CSeq_entry> GetMasterEntryById(const string& prefix, CSeq_id::E_Choice choi
 
     static const string suffix = "00000000";
     string accession = prefix + suffix;
-    CTextseq_id text_id;
+/*    CTextseq_id text_id;
     text_id.SetAccession(accession);
 
     auto set_fun = FindSetTextSeqIdFunc(choice);
@@ -58,21 +59,36 @@ CRef<CSeq_entry> GetMasterEntryById(const string& prefix, CSeq_id::E_Choice choi
     CSeq_id id;
     (id.*set_fun)(text_id);
 
-    CID1Client id1;
+    CID1Client id1;*/
 
     TGi gi = 0;
     for (size_t i = 0; i < 4; ++i) {
-        gi = max(gi, id1.AskGetgi(id));
-        text_id.SetAccession().push_back('0');
+        gi = max(gi, sequence::GetGiForAccession(accession, GetScope()));
+        //gi = max(gi, id1.AskGetgi(id));
+        //text_id.SetAccession().push_back('0');
+        accession.push_back('0');
     }
 
     if (gi > 0) {
-        ret = id1.FetchEntry(gi);
+
+        CSeq_id gi_id;
+        gi_id.SetGi(gi);
+        CBioseq_Handle bio_handle = GetScope().GetBioseqHandle(gi_id);
+
+        if (bio_handle) {
+            CSeq_entry_Handle entry_handle = bio_handle.GetTopLevelEntry();
+            if (entry_handle && entry_handle.IsSeq() && entry_handle.GetSeq().IsSetInst() && entry_handle.GetSeq().IsNa()) {
+                ret.Reset(new CSeq_entry);
+                ret->Assign(*entry_handle.GetCompleteSeq_entry());
+            }
+        }
+
+//        ret = id1.FetchEntry(gi);
 
         // should be a sequence of nucleotides
-        if (!ret->IsSeq() || !ret->GetSeq().IsSetInst() || !ret->GetSeq().GetInst().IsNa()) {
-            ret.Reset();
-        }
+//        if (!ret->IsSeq() || !ret->GetSeq().IsSetInst() || !ret->GetSeq().GetInst().IsNa()) {
+//            ret.Reset();
+//        }
     }
 
     return ret;
