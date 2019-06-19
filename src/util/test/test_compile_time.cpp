@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include <util/compile_time.hpp>
+//#include <util/cpubound.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -44,17 +45,18 @@ NCBITEST_AUTO_INIT()
         "compile time const_map Unit Test");
 }
 
+#if 0
 BOOST_AUTO_TEST_CASE(TestConstCharset1)
 {
     constexpr
-        ct::const_xlate_table<int>::init_pair_t init_charset[] = {
+        ct::const_translate_table<int>::init_pair_t init_charset[] = {
             {500, {'A', 'B', 'C'}},
             {700, {'x', 'y', 'z'}},
             {400, {"OPRS"}}
     };
 
     constexpr
-        ct::const_xlate_table<int> test_xlate(100, init_charset);
+        ct::const_translate_table<int> test_xlate(100, init_charset);
 
     BOOST_CHECK(test_xlate['A'] == 500);
     BOOST_CHECK(test_xlate['B'] == 500);
@@ -67,7 +69,7 @@ BOOST_AUTO_TEST_CASE(TestConstCharset1)
     BOOST_CHECK(test_xlate['P'] == 400);
 }
 
-using xlate_call = std::string(*)(const char*);
+using xlat_call = std::string(*)(const char*);
 
 static std::string call1(const char* s)
 {
@@ -83,16 +85,17 @@ BOOST_AUTO_TEST_CASE(TestConstCharset2)
     //xlate_call c1 = [](const char*s)->std::string { return s; };
     //xlate_call c2 = [](const char*s)->std::string { return std::string(s) + ":" + s; };
 
-    constexpr ct::const_xlate_table<xlate_call>::init_pair_t init_charset[] = {
+    constexpr ct::const_translate_table<xlat_call>::init_pair_t init_charset[] = {
             {call1, {'A', 'B', 'c'} },
             {call2, {'x', 'y', 'z'} }
     };
-    constexpr ct::const_xlate_table<xlate_call> test_xlate(nullptr, init_charset);
+    constexpr ct::const_translate_table<xlat_call> test_xlat(nullptr, init_charset);
 
-    BOOST_CHECK(test_xlate['P'] == nullptr);
-    BOOST_CHECK(test_xlate['A']("alpha") == "alpha");
-    BOOST_CHECK(test_xlate['x']("beta") == "beta:beta");
+    BOOST_CHECK(test_xlat['P'] == nullptr);
+    BOOST_CHECK(test_xlat['A']("alpha") == "alpha");
+    BOOST_CHECK(test_xlat['x']("beta") == "beta:beta");
 }
+#endif
 
 MAKE_TWOWAY_CONST_MAP(test_two_way1, false, const char*, const char*,
     {
@@ -198,3 +201,67 @@ BOOST_AUTO_TEST_CASE(TestCRC32)
     BOOST_CHECK(hash_good_cs  == ct::SaltedCRC32<true>::general("Good", 4));
     BOOST_CHECK(hash_good_ncs == ct::SaltedCRC32<false>::general("Good", 4));
 }
+
+#if 0
+struct Impl_t
+{
+    struct general
+    {
+        const char* call() const
+        {
+            return "general";
+        };
+    };
+};
+
+struct Impl
+{
+    static const char* general()
+    {
+        return "no general";
+    };
+};
+
+template<class I>
+struct RebindClass
+{
+    static int rebind(int a)
+    {
+        auto s = I{}.call();
+        //auto s = "oo";
+        //std::cout << s << ":";
+        return (int)strlen(s);
+    };
+};
+
+template<class I>
+struct RebindMethod
+{
+    static int rebind(int a)
+    {
+        auto s = I{}();
+        return (int)strlen(s);
+    };
+};
+
+
+BOOST_AUTO_TEST_CASE(TestCPUCaps)
+{
+    using I1 = cpu_bound::SwitchFunc<Impl, const char*>;
+    using I2 = cpu_bound::SwitchFuncEx<RebindMethod, Impl, int, int>;
+    using I3 = cpu_bound::SwitchFuncEx<RebindClass, Impl_t, int, int>;
+
+    I1 inst1;
+    I2 inst2;
+    I3 inst3;
+
+    //decltype(&strlen) temp = nullptr;
+    //decltype(&std::min<int>) temp2 = nullptr;
+    using f_result = decltype(std::min(2,3)); //f_result is Foo
+    f_result temp = 4;
+
+    auto res1 = inst1();
+    auto res2 = inst2(2);
+    auto res3 = inst3(3);
+}
+#endif

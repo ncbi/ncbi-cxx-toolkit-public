@@ -168,32 +168,8 @@ namespace ct
     };
 
 
-    template<typename _T>
-    class const_xlate_table
-    {
-    public:
-        using charset = const_bitset<256, char>;
-        using traits = xlate_traits<charset, _T>;
-        using init_pair_t = typename traits::init_pair_t;
-        using array_t = typename traits::array_t;
-
-        //constexpr const_xlate_table() = default;
-
-        template<size_t N>
-        constexpr const_xlate_table(_T _default, const init_pair_t(&args)[N])
-            : m_data(traits{}(_default, args))
-        {
-        }
-        _T operator[](char _v) const
-        {
-            return m_data[_v];
-        }
-    private:
-        array_t m_data;
-    };
-
     template<size_t N, typename _Key, typename _Value>
-    class const_map
+    class const_unordered_map
     {
     public:
         static_assert(N > 0, "empty const_map not supported");
@@ -207,7 +183,7 @@ namespace ct
 
         using TRecastKey = recast<key_type>;
 
-        constexpr const_map(const array_t& init)
+        constexpr const_unordered_map(const array_t& init)
             : m_array(init)
         {}
 
@@ -348,7 +324,7 @@ namespace ct
             static constexpr size_t size = N;
             static_assert(size > 0, "empty const_map not supported");
 
-            using map_type = ct::const_map<size, first_type, second_type>;
+            using map_type = ct::const_unordered_map<size, first_type, second_type>;
         };
 
         template<size_t N>

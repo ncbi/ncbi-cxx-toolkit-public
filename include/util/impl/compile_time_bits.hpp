@@ -626,69 +626,6 @@ namespace compile_time_bits
         //    "Requires: (is_same_v<T, U> && ...) is true. Otherwise the program is ill-formed.");
         using type = _T;
     };
-
-    template<typename _Charset, typename _T>
-    struct xlate_traits
-    {
-        using value_type = _T;
-        using init_pair_t = const_pair<_T, _Charset>;
-        using array_t = const_array<_T, _Charset::capacity()>;
-
-        template<unsigned i, unsigned _v>
-        struct find_value
-        {
-            using next_t = find_value<i - 1, _v>;
-            template<size_t N>
-            constexpr _T operator()(_T _default, const init_pair_t(&init)[N]) const
-            {
-                return
-                    init[i - 1].second.test(_v) ? init[i - 1].first : next_t{}(_default, init);
-            }
-        };
-        template<unsigned _v>
-        struct find_value<0, _v>
-        {
-            template<size_t N>
-            constexpr _T operator()(_T _default, const init_pair_t(&init)[N]) const
-            {
-                return _default;
-            }
-        };
-
-        template<unsigned i, typename...Unused>
-        struct fill_array
-        {
-            using next_t = fill_array<i - 1, Unused...>;
-
-            template<size_t N, typename...TArgs>
-            constexpr array_t operator()(_T _default, const init_pair_t(&init)[N], TArgs...args) const
-            {
-                return next_t{}
-                    (_default, init,
-                        find_value<N, i - 1>{}(_default, init),
-                        args...
-                        );
-
-            }
-        };
-
-        template<typename...Unused>
-        struct fill_array<0, Unused...>
-        {
-            template<size_t N, typename...TArgs>
-            constexpr array_t operator()(_T _default, const init_pair_t(&init)[N], TArgs...args) const
-            {
-                return { {args...} };
-            }
-        };
-
-
-        template<size_t N>
-        constexpr array_t operator()(_T _default, const init_pair_t(&init)[N]) const
-        {
-            return fill_array<256>{}(_default, init);
-        }
-    }; 
 };
 
 namespace std

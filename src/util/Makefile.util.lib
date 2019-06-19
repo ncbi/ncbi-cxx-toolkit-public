@@ -9,7 +9,8 @@ SRC = random_gen utf8 checksum checksum_cityhash checksum_farmhash \
       util_exception uttp multi_writer itransaction thread_pool \
       thread_pool_ctrl scheduler distribution rangelist util_misc \
       histogram_binning table_printer retry_ctx stream_source \
-      file_manifest cache_async multipattern_search
+      file_manifest cache_async multipattern_search \
+      crc32_sse
 
 LIB = xutil
 PROJ_TAG = core
