@@ -1671,7 +1671,7 @@ void s_GetStrForStructuredComment(
     const char* status = "";
     const char* source = "";
     const char* category = "";
-    const char* accession = "";
+    string accession;
     bool has_name = false;
 
     bool fieldOverThreshold = false;
@@ -1704,11 +1704,8 @@ void s_GetStrForStructuredComment(
                     }
                     if ( label == "Evidence Accession" ) {
                         string accn = (*it_for_len)->GetData().GetStr();
-                        string str1;
-                        string str2;
-                        NStr::SplitInTwo(accn, ".", str1, str2);
-                        accession = str1.c_str();
-                        // accession = (*it_for_len)->GetData().GetStr().c_str();
+                        string version;
+                        NStr::SplitInTwo(accn, ".", accession, version);
                     }
                 }
                 const string::size_type label_len = label.length();
@@ -1761,7 +1758,7 @@ void s_GetStrForStructuredComment(
         }
         next_line.append( " :: " );
         next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(),
-                          provider, status, has_name, source, category, accession ) );
+                                                          provider, status, has_name, source, category, accession.c_str() ) );
         next_line.append( "\n" );
 
         ExpandTildes(next_line, eTilde_comment);
