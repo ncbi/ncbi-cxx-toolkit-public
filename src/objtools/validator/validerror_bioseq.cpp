@@ -4451,7 +4451,8 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
             if (gaptype != CSeq_gap::eType_fragment &&
                 gaptype != CSeq_gap::eType_clone &&
                 gaptype != CSeq_gap::eType_repeat &&
-                gaptype != CSeq_gap::eType_scaffold) {
+                gaptype != CSeq_gap::eType_scaffold &&
+                gaptype != CSeq_gap::eType_contamination) {
                 if (gaptype == CSeq_gap::eType_unknown && is_unspec) {
                     /* suppress for legacy records */
                 } else {
