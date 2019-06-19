@@ -386,13 +386,6 @@ string GetSeqIdStr(const CBioseq& bioseq)
     string id;
     if (bioseq.IsSetId() && !bioseq.GetId().empty()) {
         id = bioseq.GetId().front()->AsFastaString();
-
-        static const size_t MAX_IDSTR_LEN = 50;
-
-        if (id.size() > MAX_IDSTR_LEN) {
-            id = id.substr(0, MAX_IDSTR_LEN);
-            id[MAX_IDSTR_LEN - 1] = '>';
-        }
     }
 
     return id;

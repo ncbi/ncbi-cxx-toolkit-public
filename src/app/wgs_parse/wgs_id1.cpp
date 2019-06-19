@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objects/id1/id1_client.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -48,24 +47,10 @@ CRef<CSeq_entry> GetMasterEntryById(const string& prefix, CSeq_id::E_Choice choi
 
     static const string suffix = "00000000";
     string accession = prefix + suffix;
-/*    CTextseq_id text_id;
-    text_id.SetAccession(accession);
-
-    auto set_fun = FindSetTextSeqIdFunc(choice);
-    if (set_fun == nullptr) {
-        return ret;
-    }
-
-    CSeq_id id;
-    (id.*set_fun)(text_id);
-
-    CID1Client id1;*/
 
     TGi gi = 0;
     for (size_t i = 0; i < 4; ++i) {
         gi = max(gi, sequence::GetGiForAccession(accession, GetScope()));
-        //gi = max(gi, id1.AskGetgi(id));
-        //text_id.SetAccession().push_back('0');
         accession.push_back('0');
     }
 
@@ -82,13 +67,6 @@ CRef<CSeq_entry> GetMasterEntryById(const string& prefix, CSeq_id::E_Choice choi
                 ret->Assign(*entry_handle.GetCompleteSeq_entry());
             }
         }
-
-//        ret = id1.FetchEntry(gi);
-
-        // should be a sequence of nucleotides
-//        if (!ret->IsSeq() || !ret->GetSeq().IsSetInst() || !ret->GetSeq().GetInst().IsNa()) {
-//            ret.Reset();
-//        }
     }
 
     return ret;
