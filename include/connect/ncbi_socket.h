@@ -368,8 +368,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Set
  );
 
 
-/** Check whether the trigger has been set.  Should not be used from
- * multiple threads concurrently at a time.
+/** Check whether the trigger has been set.  Should not be used from multiple
+ * threads concurrently at a time, including along with TRIGGER_Reset().
  * @param trigger
  *  [in]  a handle returned by TRIGGER_Create()
  * @return
@@ -384,13 +384,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_IsSet
  );
 
 
-/** Reset trigger.  Should not be used from multiple threads concurently.
+/** Reset the trigger.  Should not be used from multiple threads concurrently,
+ * including along with TRIGGER_IsSet().
  * @param trigger
  *  [in]  a handle returned by TRIGGER_Create()
  * @return
- *  eIO_Success if the trigger has been set; other status on error
+ *  eIO_Success if the trigger has been reset;  other status on error
  * @sa
- *  TRIGGER_Create, TRIGGER_Set
+ *  TRIGGER_Create, TRIGGER_Set, TRIGGER_IsSet
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Reset
 (TRIGGER trigger

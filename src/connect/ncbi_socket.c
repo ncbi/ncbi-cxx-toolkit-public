@@ -5951,9 +5951,11 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
     if (s_InitAPI(0) != eIO_Success)
         return eIO_NotSupported;
 
-#ifdef NCBI_CXX_TOOLKIT
+#ifndef NCBI_CXX_TOOLKIT
 
-#  if defined(NCBI_OS_UNIX)
+    return eIO_NotSupported;
+
+#elif defined(NCBI_OS_UNIX)
     {{
         int fd[3];
 
@@ -5964,7 +5966,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
             return eIO_Closed;
         }
 
-#    ifdef FD_SETSIZE
+#  ifdef FD_SETSIZE
         if ((fd[2] = fcntl(fd[1], F_DUPFD, FD_SETSIZE)) < 0) {
             /* We don't need "out" to be selectable, so move it out
              * of the way to spare precious "selectable" fd numbers */
@@ -5976,7 +5978,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
             close(fd[1]);
             fd[1] = fd[2];
         }
-#    endif /*FD_SETSIZE*/
+#  endif /*FD_SETSIZE*/
 
         if (!s_SetNonblock(fd[0], 1/*true*/)  ||
             !s_SetNonblock(fd[1], 1/*true*/)) {
@@ -6013,11 +6015,9 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
                         ("TRIGGER#%u[%u, %u]: Ready", x_id, fd[0], fd[1]));
         }
     }}
-
     return eIO_Success;
 
-#  elif defined(NCBI_OS_MSWIN)
-
+#elif defined(NCBI_OS_MSWIN)
     {{
         HANDLE event = WSACreateEvent();
         if (!event) {
@@ -6046,28 +6046,26 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
                         ("TRIGGER#%u: Ready", x_id));
         }
     }}
-
     return eIO_Success;
 
-#  else
+#else
 
     CORE_LOGF_X(31, eLOG_Error, ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                  " Not yet supported on this platform", x_id));
     return eIO_NotSupported;
 
-#  endif /*NCBI_OS*/
-
-#else
-
-    return eIO_NotSupported;
-
-#endif /*NCBI_CXX_TOOLKIT*/
+#endif /*NCBI_OS*/
 }
 
 
+/*ARGSUSED*/
 extern EIO_Status TRIGGER_Close(TRIGGER trigger)
 {
-#ifdef NCBI_CXX_TOOLKIT
+#ifndef NCBI_CXX_TOOLKIT
+
+    return eIO_NotSupported;
+
+#else
 
     /* statistics & logging */
     if (trigger->log == eOn  ||  (trigger->log == eDefault  &&  s_Log == eOn)){
@@ -6090,19 +6088,18 @@ extern EIO_Status TRIGGER_Close(TRIGGER trigger)
     free(trigger);
     return eIO_Success;
 
-#else
-
-    return eIO_NotSupported;
-
 #endif /*NCBI_CXX_TOOLKIT*/
 }
 
 
+/*ARGSUSED*/
 extern EIO_Status TRIGGER_Set(TRIGGER trigger)
 {
-#ifdef NCBI_CXX_TOOLKIT
+#ifndef NCBI_CXX_TOOLKIT
 
-#  if   defined(NCBI_OS_UNIX)
+    return eIO_NotSupported;
+
+#elif defined(NCBI_OS_UNIX)
 
     if (CORE_Once((void**) &trigger->isset.ptr)) {
         if (write(trigger->out, "", 1) < 0  &&  errno != EAGAIN)
@@ -6111,75 +6108,103 @@ extern EIO_Status TRIGGER_Set(TRIGGER trigger)
 
     return eIO_Success;
 
-#  elif defined(NCBI_OS_MSWIN)
+#elif defined(NCBI_OS_MSWIN)
 
     return WSASetEvent(trigger->fd) ? eIO_Success : eIO_Unknown;
 
-#  else
+#else
 
     CORE_LOG_X(32, eLOG_Error,
                "[TRIGGER::Set] "
                " Not yet supported on this platform");
     return eIO_NotSupported;
 
-#  endif /*NCBI_OS*/
-
-#else
-
-    return eIO_NotSupported;
-
-#endif /*NCBI_CXX_TOOLKIT*/
+#endif /*NCBI_OS*/
 }
 
 
-extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
+#ifdef __GNUC__
+inline
+#endif/*__GNUC__*/
+/*ARGSUSED*/
+static EIO_Status x_TriggerRead(const TRIGGER trigger)
 {
-#ifdef NCBI_CXX_TOOLKIT
+#ifndef NCBI_CXX_TOOLKIT
 
-#  if   defined(NCBI_OS_UNIX)
+    return eIO_NotSupported;
 
-#    ifdef PIPE_SIZE
-#      define MAX_TRIGGER_BUF PIPE_SIZE
-#    else
-#      define MAX_TRIGGER_BUF 8192
-#    endif /*PIPE_SIZE*/
+#elif defined(NCBI_OS_UNIX)
+
+#  ifdef PIPE_SIZE
+#    define MAX_TRIGGER_BUF  PIPE_SIZE
+#  else
+#    define MAX_TRIGGER_BUF  8192
+#  endif /*PIPE_SIZE*/
 
     static char x_buf[MAX_TRIGGER_BUF];
-    ssize_t     x_read;
+    EIO_Status  status = eIO_Unknown;
 
-    while ((x_read = read(trigger->fd, x_buf, sizeof(x_buf))) > 0)
-        trigger->isset.ptr = (void*) 1/*true*/;
+    for (;;) {
+        int error;
+        ssize_t x_read = read(trigger->fd, x_buf, sizeof(x_buf));
+        if (x_read == 0/*EOF?*/)
+            break;
+        if (x_read < 0) {
+            if (status == eIO_Success)
+                break;
+            if ((error = errno) == EAGAIN  ||  error == EWOULDBLOCK)
+                status  = eIO_Timeout;
+            break;
+        }
+        status = eIO_Success;
+    }
+    return status;
 
-    if (x_read == 0/*EOF?*/)
-        return eIO_Unknown;
-
-    return trigger->isset.ptr ? eIO_Success : eIO_Closed;
-
-#  elif defined(NCBI_OS_MSWIN)
+#elif defined(NCBI_OS_MSWIN)
 
     switch (WaitForSingleObject(trigger->fd, 0)) {
     case WAIT_OBJECT_0:
         return eIO_Success;
     case WAIT_TIMEOUT:
-        return eIO_Closed;
+        return eIO_Timeout;
     default:
         break;
     }
-
     return eIO_Unknown;
 
-#  else
+#else
 
     CORE_LOG_X(33, eLOG_Error,
                "[TRIGGER::IsSet] "
                " Not yet supported on this platform");
     return eIO_NotSupported;
 
-#  endif /*NCBI_OS*/
+#endif /*NCBI_OS*/
+}
 
-#else
+
+extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
+{
+#ifndef NCBI_CXX_TOOLKIT
 
     return eIO_NotSupported;
+
+#else
+    EIO_Status status = x_TriggerRead(trigger);
+
+#  ifdef NCBI_OS_UNIX
+
+    if (status == eIO_Success)
+        trigger->isset.ptr = (void*) 1/*true*/;
+    else if (status != eIO_Timeout)
+        return status;
+    return trigger->isset.ptr ? eIO_Success : eIO_Closed;
+
+#  else
+
+    return status == eIO_Timeout ? eIO_Closed : status;
+
+#  endif /*NCBI_OS_UNIX*/
 
 #endif /*NCBI_CXX_TOOLKIT*/
 }
@@ -6187,7 +6212,7 @@ extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
 
 extern EIO_Status TRIGGER_Reset(TRIGGER trigger)
 {
-    EIO_Status status = TRIGGER_IsSet(trigger);
+    EIO_Status status = x_TriggerRead(trigger);
 
 #if   defined(NCBI_OS_UNIX)
 
@@ -6200,7 +6225,7 @@ extern EIO_Status TRIGGER_Reset(TRIGGER trigger)
 
 #endif /*NCBI_OS*/
 
-    return status == eIO_Closed ? eIO_Success : status;
+    return status == eIO_Timeout ? eIO_Success : status;
 }
 
 
