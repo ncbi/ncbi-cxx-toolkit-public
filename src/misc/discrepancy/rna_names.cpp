@@ -69,24 +69,28 @@ static const pair<const char*, const char*> rrna_name_replace[] = {
     { "Large Subunit Ribosomal RNA; lsuRNA; LSU ribosomal RNA", "large subunit ribosomal RNA" }
 };
 
-SAFE_CONST_STATIC_STRING(rrna_name_conflicts_complain,
-                         "[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\"");
-
 DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc | eSubmitter | eSmart, "rRNA name conflicts")
 {
+    static const string msg = "[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\"";
     if (!obj.IsRna() || !obj.GetRna().CanGetExt() || !obj.GetRna().GetExt().IsName() || obj.GetRna().GetType() != CRNA_ref::eType_rRNA) {
         return;
     }
     const string& name = obj.GetRna().GetExt().GetName();
-    for (size_t i = 0; i < ArraySize(rrna_standard_name); i++) {
-        // ??? do you really need this?
-        // It is the same as NStr::EqualNocase() below.
-        if (NStr::EqualNocase(name, rrna_standard_name[i])) {
+    for (auto& s : rrna_standard_name) {
+        if (NStr::EqualNocase(name, s)) {
+            if (name != s) {
+                m_Objs[msg].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)).Fatal();
+            }
             return;
         }
     }
-    CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
-    node.Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)).Fatal();
+    for (auto& p : rrna_name_replace) {
+        if (NStr::EqualNocase(name, p.first)) {
+            m_Objs[msg].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)).Fatal();
+            return;
+        }
+    }
+    m_Objs[msg].Add(*context.DiscrObj(*context.GetCurrentSeq_feat())).Fatal();
 }
 
 
