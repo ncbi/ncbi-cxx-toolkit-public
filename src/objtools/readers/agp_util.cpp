@@ -241,6 +241,7 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
     "fragment",
     "repeat",
     "scaffold",
+    "contamination",
 
     "contig",
     "centromere",
@@ -285,7 +286,7 @@ CAgpRow::~CAgpRow()
 {
 }
 
-TSeqPos CAgpRow::ReadSeqPos(const CTempString seq_pos_str, const string& details, 
+TSeqPos CAgpRow::ReadSeqPos(const CTempString seq_pos_str, const string& details,
     int *perror_code, bool log_errors)
 {
     Int8 pos = NStr::StringToInt8( seq_pos_str, NStr::fConvErr_NoThrow );
@@ -552,6 +553,7 @@ int CAgpRow::str_to_le(const string& str)
     if( str == "strobe"        ) return fLinkageEvidence_strobe;
     if( str == "unspecified"   ) return fLinkageEvidence_unspecified;
     if( str == "pcr"           ) return fLinkageEvidence_pcr;
+    if( str == "proximity_ligation" ) return fLinkageEvidence_proximity_ligation;
     //if( str == "na"            ) return fLinkageEvidence_na;
     return fLinkageEvidence_INVALID;
 }
@@ -592,7 +594,9 @@ int CAgpRow::ParseGapCols(bool log_errors)
         if( gap_type != eGapClone &&
             gap_type != eGapRepeat &&
             gap_type != eGapFragment &&
-            gap_type != eGapScaffold )
+            gap_type != eGapScaffold &&
+            gap_type != eGapContamination
+            )
         {
             if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidLinkage, " \"yes\" for gap_type "+GetGapType() );
             return CAgpErr::E_InvalidLinkage;
@@ -606,7 +610,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
         }
         else {
             m_agp_version = eAgpVersion_2_0;
-            msg = "2.0 since linkage evidence (column 9) is NOT empty";
+            msg = "2 since linkage evidence (column 9) is NOT empty";
         }
         if(m_reader) m_reader->SetVersion(m_agp_version);
         m_AgpErr->Msg(CAgpErr::W_AssumingVersion, msg );
@@ -761,6 +765,7 @@ const char* CAgpRow::le_str(CAgpRow::ELinkageEvidence le)
         case fLinkageEvidence_strobe       : return "strobe";
         case fLinkageEvidence_unspecified  : return "unspecified";
         case fLinkageEvidence_pcr          : return "pcr";
+        case fLinkageEvidence_proximity_ligation: return "proximity_ligation";
         case fLinkageEvidence_na           : return "na";
         case fLinkageEvidence_INVALID      : return "INVALID_LINKAGE_EVIDENCE";
         default:;

@@ -146,6 +146,8 @@ public:
       string version_str = "$Date$";
       version_str = version_str.substr(7); // chop "$Date: " from beginning
       version_str.resize( version_str.length() - 1 ); // remove final '$'
+      version_str.resize(version_str.find(" "), 1);
+      version_str+=", AGP Specification v2.1";
 
     str="Validate data in the AGP format:\n"
     "https://www.ncbi.nlm.nih.gov/assembly/agp/AGP_Specification/\n"
@@ -170,7 +172,7 @@ public:
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions (need -alt),\n"
     "             or adding gaps where runs of Ns longer than 10 bp are found in components (need FASTA files).\n"
     "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
-    "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
+    "  -v VER     AGP version (1 or 2). The default is to choose automatically. Version 2 is chosen\n"
     "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
     "  -xml       Report results in XML format.\n"
     "  -sub       Treat serious warnings as errors, put summary and stats at the top.\n"
@@ -427,7 +429,7 @@ int CAgpValidateApplication::Run(void)
       m_agp_version=eAgpVersion_2_0;
     }
     else {
-      cerr << "Error -- invalid AGP version after -v. Use 1.1 or 2.0.\n";
+      cerr << "Error -- invalid AGP version after -v (must start with 1 or 2).\n";
       exit(1);
     }
   }
@@ -844,7 +846,7 @@ void CAgpCompSpanSplitter::SaveRow(const string& s, CRef<CAgpRow> row, TRangeCol
     if(runs_of_Ns && runs_of_Ns->size()) {
 
       if( row->GetVersion() == eAgpVersion_auto ) {
-        cerr << "FATAL: need AGP version (for adding gap lines). Please use -v 1.1 or -v 2.0\n";
+        cerr << "FATAL: need AGP version (for adding gap lines). Please use -v 1 or -v 2\n";
         exit(1);
       }
       /*

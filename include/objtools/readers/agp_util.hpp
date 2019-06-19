@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 enum EAgpVersion {
     eAgpVersion_auto, ///< auto-detect using the first gap line
     eAgpVersion_1_1,  ///< AGP spec 1.1
-    eAgpVersion_2_0   ///< AGP spec 2.0
+    eAgpVersion_2_0   ///< AGP spec 2.0 or later
 };
 
 class CAgpErr; // full definition below
@@ -173,7 +173,8 @@ public:
         eGapClone          , // AGP 1.1 only
         eGapFragment       , // AGP 1.1 only
         eGapRepeat         ,
-        eGapScaffold       , // AGP 2.0 only
+        eGapScaffold       , // AGP 2.0 and later
+        eGapContamination  , // AGP 2.1 and later
 
         eGapContig         ,
         eGapCentromere     ,
@@ -182,7 +183,7 @@ public:
         eGapTelomere       ,
 
         eGapCount,
-        eGapYes_count=eGapScaffold+1
+        eGapYes_count=eGapContamination+1
     };
     EGap gap_type;
     bool linkage;
@@ -197,8 +198,9 @@ public:
         fLinkageEvidence_map          = (1 << 6),
         fLinkageEvidence_strobe       = (1 << 7),
         fLinkageEvidence_pcr          = (1 << 8),
+        fLinkageEvidence_proximity_ligation = (1 << 9),
         // update fLinkageEvidence_HIGHEST_BIT_MASK if more added
-        fLinkageEvidence_HIGHEST_BIT_MASK = fLinkageEvidence_pcr,
+        fLinkageEvidence_HIGHEST_BIT_MASK = fLinkageEvidence_proximity_ligation,
 
         fLinkageEvidence_unspecified  = 0,
         fLinkageEvidence_INVALID = -1,
@@ -277,7 +279,7 @@ public:
     virtual void SetVersion(EAgpVersion ver);
 
 protected:
-    TSeqPos ReadSeqPos(const CTempString seq_pos_str, const string& details, 
+    TSeqPos ReadSeqPos(const CTempString seq_pos_str, const string& details,
         int *perror_code, bool log_errors = true);
     int ParseComponentCols(bool log_errors=true);
     int ParseGapCols(bool log_errors=true);

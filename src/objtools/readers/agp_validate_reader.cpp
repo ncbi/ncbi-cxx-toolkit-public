@@ -1038,7 +1038,8 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
       m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]+
       m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]+
       m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]+
-      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold];
+      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold]+
+      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapContamination];
     int linkageNoCnt = m_GapCount - linkageYesCnt;
 
     int doNotBreakCnt= linkageYesCnt + m_GapTypeCnt[CAgpRow::eGapFragment];
@@ -1055,6 +1056,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
       xprint.last_tag="GapsWithinScaf_byType linkage=\"yes\" type=";
       x_PrintGapCountsLine(xprint, CAgpRow::eGapCount+CAgpRow::eGapRepeat  , "  repeat  , linkage yes: ");
       x_PrintGapCountsLine(xprint, CAgpRow::eGapCount+CAgpRow::eGapScaffold, "  scaffold, linkage yes: ");
+      x_PrintGapCountsLine(xprint, CAgpRow::eGapCount+CAgpRow::eGapContamination, "  contamination, linkage yes: ");
     }
 
     xprint.line("- break it, linkage no : ", breakCnt, "GapsBreakScaf");

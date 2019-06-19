@@ -168,7 +168,7 @@ EG1_scaffold21	262064	262266	8	N	203	scaffold	yes	paired-ends
 EG1_scaffold21	262267	265059	9	W	AADB02037641.1	1	2793	-
 EG1_scaffold21	265060	272140	10	N	7081	scaffold	yes	paired-ends
 EG1_scaffold21	272141	342501	11	W	AADB02037642.1	1	70361	+
-EG1_scaffold21	342502	343797	12	N	1296	scaffold	yes	paired-ends
+EG1_scaffold21	342502	343797	12	N	1296	contamination	yes	proximity_ligation
 EG1_scaffold21	343798	656420	13	W	AADB02037643.1	1	312623	+
 EG1_scaffold22	1	4051	1	W	AADB02037644.1	1	4051	+
 EG1_scaffold23	1	4430	1	W	AADB02037645.1	1	4430	+
