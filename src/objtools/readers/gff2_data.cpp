@@ -832,6 +832,15 @@ bool CGff2Record::xMigrateAttributes(
         attrs_left.erase(it);
     }
 
+    it = attrs_left.find("regulatory_class");
+    if (it != attrs_left.end()) {
+        if (pFeature->GetData().IsImp()  &&  (pFeature->GetData().GetImp().GetKey()  == "regulatory")) {
+            pFeature->SetData().SetImp().SetKey(it->second);
+            attrs_left.erase(it);
+        }
+        pFeature->RemoveQualifier("regulatory_class");
+    }
+
     it = attrs_left.find("transl_except");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsCdregion()) {
@@ -1142,16 +1151,6 @@ bool CGff2Record::xInitFeatureData(
                 string("Bad data line: Invalid feature type \"") + recognizedType + "\"",
                 ILineError::eProblem_UnrecognizedFeatureName) );
         pErr->Throw();
-    }
-    else {
-        // rule bending special cases
-        auto& data = pFeature->SetData();
-        if (data.IsImp()  &&  data.GetImp().GetKey() == "regulatory") {
-            const auto& regulatoryClass = m_Attributes.find("regulatory_class");
-            if (regulatoryClass != m_Attributes.end()) {
-                data.SetImp().SetKey(regulatoryClass->second);
-            }
-        }
     }
     return CGffBaseColumns::xInitFeatureData(flags, pFeature);
 }
