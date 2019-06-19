@@ -94,7 +94,7 @@ extern "C" {
  * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
  */
 NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  36);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,   302, 163);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,   302, 160);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   9);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     304,  30);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  13);

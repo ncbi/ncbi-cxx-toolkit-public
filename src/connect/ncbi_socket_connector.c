@@ -168,7 +168,7 @@ static EIO_Status s_VT_Open
         }
         if (!xxx->sock  &&  xxx->try_own > 1) {
             char* descr = x_Descr(xxx);
-            CORE_LOGF_X(163, eLOG_Error,
+            CORE_LOGF_X(33, eLOG_Error,
                         ("[%s%s%s]  Too many failed attempts (%hu), giving up",
                          x_GetType(xxx),
                          descr  &&  *descr ? "; "  : "",

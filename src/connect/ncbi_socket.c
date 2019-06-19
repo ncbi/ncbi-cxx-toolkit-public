@@ -1464,7 +1464,7 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
                  ? flags |        O_NONBLOCK
                  : flags & (int) ~O_NONBLOCK) == 0;
 #else
-#   error "Unsupported platform"
+#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 
@@ -1488,7 +1488,7 @@ static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 #elif defined(NCBI_OS_MSWIN)
     return SetHandleInformation((HANDLE)x_sock, HANDLE_FLAG_INHERIT, !cloexec);
 #else
-#   error "Unsupported platform"
+#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 
@@ -4687,7 +4687,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         if (!(event = WSACreateEvent())) {
             DWORD err = GetLastError();
             const char* strerr = s_WinStrerror(err);
-            CORE_LOGF_ERRNO_EXX(161, eLOG_Error,
+            CORE_LOGF_ERRNO_EXX(31, eLOG_Error,
                                 err, strerr ? strerr : "",
                                 ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                                  " Failed to create IO event",
@@ -4698,7 +4698,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         /* NB: WSAEventSelect() sets non-blocking automatically */
         if (WSAEventSelect(fd, event, SOCK_EVENTS) != 0) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
-            CORE_LOGF_ERRNO_EXX(162, eLOG_Error,
+            CORE_LOGF_ERRNO_EXX(32, eLOG_Error,
                                 error, strerr ? strerr : "",
                                 ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                                  " Failed to bind IO event",
@@ -6049,11 +6049,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
     return eIO_Success;
 
 #else
-
-    CORE_LOGF_X(31, eLOG_Error, ("TRIGGER#%u[?]: [TRIGGER::Create] "
-                                 " Not yet supported on this platform", x_id));
-    return eIO_NotSupported;
-
+#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 
@@ -6113,21 +6109,13 @@ extern EIO_Status TRIGGER_Set(TRIGGER trigger)
     return WSASetEvent(trigger->fd) ? eIO_Success : eIO_Unknown;
 
 #else
-
-    CORE_LOG_X(32, eLOG_Error,
-               "[TRIGGER::Set] "
-               " Not yet supported on this platform");
-    return eIO_NotSupported;
-
+#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 
 
-#ifdef __GNUC__
-inline
-#endif/*__GNUC__*/
 /*ARGSUSED*/
-static EIO_Status x_TriggerRead(const TRIGGER trigger)
+static EIO_Status x_TriggerRead(const TRIGGER trigger, int/*bool*/ isset)
 {
 #ifndef NCBI_CXX_TOOLKIT
 
@@ -6141,15 +6129,14 @@ static EIO_Status x_TriggerRead(const TRIGGER trigger)
 #    define MAX_TRIGGER_BUF  8192
 #  endif /*PIPE_SIZE*/
 
-    static char x_buf[MAX_TRIGGER_BUF];
     EIO_Status  status = eIO_Unknown;
-
     for (;;) {
-        int error;
-        ssize_t x_read = read(trigger->fd, x_buf, sizeof(x_buf));
+        static char x_buf[MAX_TRIGGER_BUF];
+        ssize_t     x_read = read(trigger->fd, x_buf, sizeof(x_buf));
         if (x_read == 0/*EOF?*/)
             break;
         if (x_read < 0) {
+            int error;
             if (status == eIO_Success)
                 break;
             if ((error = errno) == EAGAIN  ||  error == EWOULDBLOCK)
@@ -6173,12 +6160,7 @@ static EIO_Status x_TriggerRead(const TRIGGER trigger)
     return eIO_Unknown;
 
 #else
-
-    CORE_LOG_X(33, eLOG_Error,
-               "[TRIGGER::IsSet] "
-               " Not yet supported on this platform");
-    return eIO_NotSupported;
-
+#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 
@@ -6190,7 +6172,7 @@ extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
     return eIO_NotSupported;
 
 #else
-    EIO_Status status = x_TriggerRead(trigger);
+    EIO_Status status = x_TriggerRead(trigger, 1/*IsSet*/);
 
 #  ifdef NCBI_OS_UNIX
 
@@ -6212,7 +6194,7 @@ extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
 
 extern EIO_Status TRIGGER_Reset(TRIGGER trigger)
 {
-    EIO_Status status = x_TriggerRead(trigger);
+    EIO_Status status = x_TriggerRead(trigger, 0/*Reset*/);
 
 #if   defined(NCBI_OS_UNIX)
 
