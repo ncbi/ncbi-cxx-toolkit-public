@@ -28,7 +28,7 @@ class TestGapStats(unittest.TestCase):
         assert isinstance(gap_stats_args, list)
 
         proc = subprocess.Popen(
-            ['./gap_stats'] + gap_stats_args,
+            ['./gap_stats', '-logfile', '/dev/null'] + gap_stats_args,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             )
