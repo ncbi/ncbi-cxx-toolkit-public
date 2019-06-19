@@ -47,7 +47,7 @@ APP_PROJ = example_value_convert \
            test_row_reader_iana_csv \
            test_row_reader_ncbi_tsv \
            test_row_reader_excel_csv \
-		   test_compile_time
+           test_compile_time
 
 EXPENDABLE_APP_PROJ = \
            test_limited_map
