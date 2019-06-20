@@ -15,6 +15,8 @@ if not os.path.exists(TEST_DATA_DIR):
 
 # to remove irrelevant applog-style messages from stderr
 os.environ["DIAG_OLD_POST_FORMAT"] = "1"
+# to remove clang suppression report from stderr
+os.environ["LSAN_OPTIONS"] = "print_suppressions=0"
 
 class TestGapStats(unittest.TestCase):
 
