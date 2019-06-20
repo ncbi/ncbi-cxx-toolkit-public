@@ -51,6 +51,7 @@ NCBI_add_app(
     test_row_reader_ncbi_tsv
     test_row_reader_excel_csv
     test_limited_map
+    test_compile_time
 )
 
 if (OFF)
