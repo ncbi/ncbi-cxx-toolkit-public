@@ -135,10 +135,10 @@ namespace compile_time_bits
         first_type first;
         second_type second;
 
-        // GCC 4.9.3 doesn't forward correctly arguments types
+        // GCC 4.9.3 and 5.3.0 doesn't forward correctly arguments types
         // when aggregated initialised
 
-#ifdef __GNUC__
+#if __GNUC__ < 6
         constexpr const_pair() = default;
 
         template<typename T1, typename T2>
@@ -204,6 +204,7 @@ namespace compile_time_bits
         const char* m_data{ nullptr };
     };
 
+#if 0
     template<size_t _cap, class T>
     struct AssembleArray
     {
@@ -254,6 +255,7 @@ namespace compile_time_bits
     {
         return AssembleArray<N, T>{}(input, N);
     }
+#endif
 
     template<class...> struct conjunction : std::true_type { };
     template<class B1> struct conjunction<B1> : B1 { };
