@@ -1665,21 +1665,23 @@ CFeatTableEdit::xGetCurrentLocusTagPrefix(
 
 void CFeatureTableLoader::PostProcessAnnotation(CBioseq::TAnnot& annots)
 {
-    m_Feat_Tree.Reset(new feature::CFeatTree());
-    m_scope.Reset(new CScope(*CObjectManager::GetInstance()));
-
     for (auto it = annots.begin(); it != annots.end(); ++it) {
-        PostProcessAnnotation(*it);
+        PostProcessAnnotation(**it);
     }
 }
 
-void CFeatureTableLoader::PostProcessAnnotation(CRef<CSeq_annot> annot)
+void CFeatureTableLoader::PostProcessAnnotation(CSeq_annot& annot)
 {
-    auto h_annot = m_scope->AddSeq_annot(*annot);
+    if (m_Feat_Tree.Empty())
+        m_Feat_Tree.Reset(new feature::CFeatTree());
+    if (m_scope.Empty())
+        m_scope.Reset(new CScope(*CObjectManager::GetInstance()));
+
+    auto h_annot = m_scope->AddSeq_annot(annot);
     m_Feat_Tree->AddFeatures(CFeat_CI(h_annot));
 
     CFeatTableEdit fte(
-        *annot, m_locus_tag_prefix, m_startingLocusTagNumber, m_startingFeatureId, m_logger);
+        annot, m_locus_tag_prefix, m_startingLocusTagNumber, m_startingFeatureId, m_logger);
     //fte.InferPartials();
     fte.GenerateMissingParentFeatures(m_eukariote);
     fte.GenerateLocusTags();
@@ -1691,7 +1693,7 @@ void CFeatureTableLoader::PostProcessAnnotation(CRef<CSeq_annot> annot)
     m_startingLocusTagNumber = fte.PendingLocusTagNumber();
     m_startingFeatureId = fte.PendingFeatureId();
 
-    for (auto feat : annot->GetData().GetFtable())
+    for (auto feat : annot.GetData().GetFtable())
     {
         if (feat.NotEmpty() && feat->IsSetData() && feat->GetData().IsCdregion())
         {

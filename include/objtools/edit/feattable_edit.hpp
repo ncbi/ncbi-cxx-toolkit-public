@@ -187,7 +187,7 @@ public:
     CFeatureTableLoader() = default;
 
     void PostProcessAnnotation(CBioseq::TAnnot& annots);
-    void PostProcessAnnotation(CRef<CSeq_annot> annot);
+    void PostProcessAnnotation(CSeq_annot& annot);
 
     IObjtoolsListener* m_logger                 = nullptr;
     std::string        m_locus_tag_prefix;
