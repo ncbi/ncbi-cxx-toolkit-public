@@ -4220,7 +4220,7 @@ fi
 
 AC_MSG_CHECKING([whether in-house NCBI resources are available])
 if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
-    -a -d /am/coremake_builds/test_data; \
+    -a -d /am/ncbiapdata/test_data; \
 then
    NCBI_FEATURE(in-house-resources)
    AC_MSG_RESULT(yes)

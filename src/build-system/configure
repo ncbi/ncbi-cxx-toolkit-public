@@ -26907,7 +26907,7 @@ fi
 { echo "$as_me:$LINENO: checking whether in-house NCBI resources are available" >&5
 echo $ECHO_N "checking whether in-house NCBI resources are available... $ECHO_C" >&6; }
 if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
-    -a -d /am/coremake_builds/test_data; \
+    -a -d /am/ncbiapdata/test_data; \
 then
              WithFeatures="$WithFeatures${WithFeaturesSep}in-house-resources"; WithFeaturesSep=" "
    { echo "$as_me:$LINENO: result: yes" >&5
