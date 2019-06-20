@@ -238,14 +238,11 @@ void CAlnReader::Read(
     if (m_ReadDone) {
         return;
     }
-    // make a SSequenceInfo corresponding to our CSequenceInfo argument
-    CSequenceInfo sequenceInfo(
-        m_Alphabet, m_Match, m_Missing, m_BeginningGap, m_MiddleGap, m_EndGap);
 
     // read the alignment stream
     SAlignmentFile alignmentInfo;
     try {
-        ReadAlignmentFile(m_IS, sequenceInfo, alignmentInfo);
+        ReadAlignmentFile(m_IS, mSequenceInfo, alignmentInfo);
         x_VerifyAlignmentInfo(alignmentInfo, readFlags);
     }
     catch (const SShowStopper& showStopper) {
@@ -263,16 +260,11 @@ void CAlnReader::Read(
     bool generate_local_ids,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
-
-    // make a SSequenceInfo corresponding to our CSequenceInfo argument
-    CSequenceInfo sequenceInfo(
-        m_Alphabet, m_Match, m_Missing, m_BeginningGap, m_MiddleGap, m_EndGap);
-
     // read the alignment stream
     SAlignmentFile alignmentInfo;
     try {
         ReadAlignmentFile(
-            m_IS, generate_local_ids, m_UseNexusInfo, sequenceInfo, alignmentInfo);
+            m_IS, generate_local_ids, m_UseNexusInfo, mSequenceInfo, alignmentInfo);
         TReadFlags flags = 0;
         x_VerifyAlignmentInfo(alignmentInfo, flags);
     }
@@ -385,13 +377,13 @@ void CAlnReader::x_CalculateMiddleSections()
     m_MiddleSections.clear();
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        TSeqPos begin_len = m_Seqs[row_i].find_first_not_of(m_BeginningGap);
+        TSeqPos begin_len = m_Seqs[row_i].find_first_not_of(GetBeginningGap());
         TSeqPos end_len = 0;
         if (begin_len < m_Seqs[row_i].length()) {
             string::iterator s = m_Seqs[row_i].end();
             while (s != m_Seqs[row_i].begin()) {
                 --s;
-                if (m_EndGap.find(*s) != string::npos) {
+                if (GetEndGap().find(*s) != string::npos) {
                     end_len++;
                 } else {
                     break;
@@ -412,19 +404,19 @@ bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
         return false;
     }
     if (pos < m_MiddleSections[row].first) {
-        if (NStr::Find(m_BeginningGap, residue) == string::npos) {
+        if (NStr::Find(GetBeginningGap(), residue) == string::npos) {
             return false;
         } else {
             return true;
         }
     } else if (pos > m_MiddleSections[row].second) {
-        if (NStr::Find(m_EndGap, residue) == string::npos) {
+        if (NStr::Find(GetEndGap(), residue) == string::npos) {
             return false;
         } else {
             return true;
         }
     } else {
-        if (NStr::Find(m_MiddleGap, residue) == string::npos) {
+        if (NStr::Find(GetMiddleGap(), residue) == string::npos) {
             return false;
         } else {
             return true;
@@ -688,7 +680,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         } else if (ai & CSeq_id::fAcc_prot) {
             mol = CSeq_inst::eMol_aa;
         } else {
-            mol = GetSequenceMolType(m_Alphabet, seq_str, pErrorListener);
+            mol = GetSequenceMolType(GetAlphabet(), seq_str, pErrorListener);
         }
         // seq-inst
         auto pSeqInst = x_GetSeqInst(mol, seq_str);

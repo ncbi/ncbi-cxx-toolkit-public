@@ -808,13 +808,15 @@ CAlnScannerNexus::xAdjustSequenceInfo(
 {
     if (mGapChar != 0) {
         sequenceInfo
-            .SetBeginningGap(mGapChar).SetMiddleGap(mGapChar).SetEndGap(mGapChar);
+            .SetBeginningGap(string(1, mGapChar))
+			.SetMiddleGap(string(1, mGapChar))
+			.SetEndGap(string(1, mGapChar));
     }
     if (mMatchChar != 0) {
-        sequenceInfo.SetMatch(mMatchChar);
+        sequenceInfo.SetMatch(string(1, mMatchChar));
     }
     if (mMissingChar != 0) {
-        sequenceInfo.SetMissing(mMissingChar);
+        sequenceInfo.SetMissing(string(1, mMissingChar));
     }
 }
 

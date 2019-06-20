@@ -203,8 +203,8 @@ CAlnScannerSequin::xAdjustSequenceInfo(
 //  ----------------------------------------------------------------------------
 {
     sequenceInfo
-        .SetBeginningGap('-').SetMiddleGap('-').SetEndGap('-')
-        .SetMatch('.');
+        .SetBeginningGap("-").SetMiddleGap("-").SetEndGap("-")
+        .SetMatch(".");
 }
 
 //  ----------------------------------------------------------------------------

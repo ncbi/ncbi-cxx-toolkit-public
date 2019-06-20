@@ -184,8 +184,8 @@ CAlnScannerMultAlign::xAdjustSequenceInfo(
 //  ----------------------------------------------------------------------------
 {
     // set sequence info to multi-align conventions:
-    sequenceInfo.SetMiddleGap('.').SetBeginningGap('.').SetEndGap('.');
-    sequenceInfo.SetMatch(0).SetMissing(0);
+    sequenceInfo.SetMiddleGap(".").SetBeginningGap(".").SetEndGap(".");
+    sequenceInfo.SetMatch("").SetMissing("");
 }
 
 //  ----------------------------------------------------------------------------

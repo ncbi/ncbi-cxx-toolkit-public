@@ -1127,13 +1127,6 @@ void CMultiReaderApp::xProcessAlignment(
         fFlags |= CFastaReader::fAddMods;
     }
     CAlnReader reader(istr);
-    reader.SetAllGap(args["aln-gapchar"].AsString());
-    reader.SetMissing(args["aln-missing"].AsString());
-    reader.SetAlphabet(CAlnReader::eAlpha_Protein);
-    //reader.SetIdValidation(args["aln-idval"].AsString());
-    if (args["aln-alphabet"].AsString() == "nuc") {
-        reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
-    }
     try {
         CAlnReader::EReadFlags flags = 
             (args["all-ids-as-local"].AsBoolean() ? 
@@ -1145,7 +1138,7 @@ void CMultiReaderApp::xProcessAlignment(
             xWriteObject(args, *pEntry, ostr);
         }
     }
-    catch (...) {
+    catch (std::exception&) {
     }
 }
 

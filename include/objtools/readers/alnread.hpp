@@ -56,13 +56,16 @@ struct SLineInfo {
 class CSequenceInfo {
 //  =============================================================================
 public:
+    CSequenceInfo()
+    {};
+
     CSequenceInfo(
-        string& alphabet,
-        string& match,
-        string& missing,
-        string& beginningGap,
-        string& middleGap,
-        string& endGap):
+        const string& alphabet,
+        const string& match,
+        const string& missing,
+        const string& beginningGap,
+        const string& middleGap,
+        const string& endGap):
         mAlphabet(alphabet),
         mMatch(match),
         mMissing(missing),
@@ -83,43 +86,43 @@ public:
 
     CSequenceInfo&
     SetMatch(
-        char c) { mMatch = string(1, c); return *this; };
+        const string& c) { mMatch = c; return *this; };
 
     const string&
     Missing() const { return mMissing; };
 
     CSequenceInfo&
     SetMissing(
-        char c) { mMissing = string(1, c); return *this; };
+        const string& c) { mMissing = c; return *this; };
 
     const string&
     BeginningGap() const { return mBeginningGap; };
 
     CSequenceInfo&
     SetBeginningGap(
-        char c) { mBeginningGap = string(1, c); return *this; };
+        const string& c) { mBeginningGap = c; return *this; };
 
     const string&
     MiddleGap() const { return mMiddleGap; };
 
     CSequenceInfo&
     SetMiddleGap(
-        char c) { mMiddleGap = string(1, c); return *this; };
+        const string& c) { mMiddleGap = c; return *this; };
 
     const string&
     EndGap() const { return mEndGap; };
 
     CSequenceInfo&
     SetEndGap(
-        char c) { mEndGap = string(1, c); return *this; };
+        const string& c) { mEndGap = c; return *this; };
 
 protected:
-    string& mAlphabet;
-    string& mMatch;
-    string& mMissing;
-    string& mBeginningGap;
-    string& mMiddleGap;
-    string& mEndGap;
+    string mAlphabet;
+    string mMatch;
+    string mMissing;
+    string mBeginningGap;
+    string mMiddleGap;
+    string mEndGap;
 }; 
 
 

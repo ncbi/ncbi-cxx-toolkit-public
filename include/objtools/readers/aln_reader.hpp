@@ -158,21 +158,17 @@ public:
 
 
     const string& GetAlphabet(void) const;
-    string&       SetAlphabet(void);
     void          SetAlphabet(const string& value);
     void          SetAlphabet(EAlphabet alpha);
     bool          IsAlphabet(EAlphabet alpha) const;
 
     const string& GetBeginningGap(void) const;
-    string&       SetBeginningGap(void);
     void          SetBeginningGap(const string& value);
 
     const string& GetMiddleGap(void) const;
-    string&       SetMiddleGap(void);
     void          SetMiddleGap(const string& value);
 
     const string& GetEndGap(void) const;
-    string&       SetEndGap(void);
     void          SetEndGap(const string& value);
 
     bool GetUseNexusInfo() const {return m_UseNexusInfo; };
@@ -182,13 +178,11 @@ public:
     /// end gap to the same thing
     void          SetAllGap(const string& value);
 
-    const string& GetMissing(void)                     const {return m_Missing;};
-    string&       SetMissing(void)                           {return m_Missing;};
-    void          SetMissing(const string& value)            {m_Missing = value;};
+    const string& GetMissing(void)                     const {return mSequenceInfo.Missing();};
+    void          SetMissing(const string& value)            {mSequenceInfo.SetMissing(value);};
 
-    const string& GetMatch(void)                       const {return m_Match;};
-    string&       SetMatch(void)                             {return m_Match;};
-    void          SetMatch(const string& value)              {m_Match = value;};
+    const string& GetMatch(void)                       const {return mSequenceInfo.Match();};
+    void          SetMatch(const string& value)              {mSequenceInfo.SetMatch(value);};
 
 
     /// Alternative & easy way to choose alphabet, etc.
@@ -261,15 +255,7 @@ private:
             const string& seqData) const;
 
 
-    /// A bunch of strings listing characters with various
-    /// meanings in an alignment file.
-    /// Analogous to SSequenceInfo.
-    string m_Alphabet;
-    string m_BeginningGap;
-    string m_MiddleGap;
-    string m_EndGap;
-    string m_Missing;
-    string m_Match;
+    ncbi::objects::CSequenceInfo mSequenceInfo;
 
 
     /// Parsed result data (analogous to SAlignmentFile)
@@ -360,83 +346,55 @@ protected:
 inline
 const string& CAlnReader::GetAlphabet(void) const
 {
-    return m_Alphabet;
-}
-
-
-inline
-string& CAlnReader::SetAlphabet(void)
-{
-    return m_Alphabet;
+    return mSequenceInfo.Alphabet();
 }
 
 
 inline
 void CAlnReader::SetAlphabet(const string& value)
 {
-    m_Alphabet = value;
+    mSequenceInfo.SetAlphabet(value);
 }
 
 
 inline
 const string& CAlnReader::GetBeginningGap(void) const
 {
-    return m_BeginningGap;
-}
-
-
-inline
-string& CAlnReader::SetBeginningGap(void)
-{
-    return m_BeginningGap;
+    return mSequenceInfo.BeginningGap();
 }
 
 
 inline
 void CAlnReader::SetBeginningGap(const string& value)
 {
-    m_BeginningGap = value;
+    mSequenceInfo.SetBeginningGap(value);
 }
 
 
 inline
 const string& CAlnReader::GetMiddleGap(void) const
 {
-    return m_MiddleGap;
-}
-
-
-inline
-string& CAlnReader::SetMiddleGap(void)
-{
-    return m_MiddleGap;
+    return mSequenceInfo.MiddleGap();
 }
 
 
 inline
 void CAlnReader::SetMiddleGap(const string& value)
 {
-    m_MiddleGap = value;
+    mSequenceInfo.SetMiddleGap(value);
 }
 
 
 inline
 const string& CAlnReader::GetEndGap(void) const
 {
-    return m_EndGap;
+    return mSequenceInfo.EndGap();
 }
     
 inline
-string& CAlnReader::SetEndGap(void)
-{
-    return m_EndGap;
-}
-
-
-inline
 void CAlnReader::SetEndGap(const string& value)
 {
-    m_EndGap = value;
+    mSequenceInfo.SetEndGap(value);
 }
 
 
@@ -450,14 +408,14 @@ void CAlnReader::SetAlphabet(EAlphabet alpha)
 inline 
 bool CAlnReader::IsAlphabet(EAlphabet alpha) const
 {
-    return (m_Alphabet == GetAlphabetLetters(alpha));
+    return (GetAlphabet() == GetAlphabetLetters(alpha));
 }
 
 
 inline
 void CAlnReader::SetAllGap(const string& value)
 {
-    m_BeginningGap = m_MiddleGap = m_EndGap = value;
+    mSequenceInfo.SetBeginningGap(value).SetMiddleGap(value).SetEndGap(value);
 };
 
 
