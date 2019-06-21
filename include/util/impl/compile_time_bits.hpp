@@ -138,7 +138,7 @@ namespace compile_time_bits
         // GCC 4.9.3 and 5.3.0 doesn't forward correctly arguments types
         // when aggregated initialised
 
-#if __GNUC__ < 6
+#if __GNUC__ < 6 && !defined(__clang__)
         constexpr const_pair() = default;
 
         template<typename T1, typename T2>
