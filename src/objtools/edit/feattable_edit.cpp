@@ -63,8 +63,8 @@ BEGIN_SCOPE(edit)
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_loc> sProductFromString(
-const string str)
-//  ----------------------------------------------------------------------------
+    const string str)
+    //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> pProduct(new CSeq_loc(CSeq_loc::e_Whole));
     CRef<CSeq_id> pId(new CSeq_id(CSeq_id::e_Local, str));
@@ -73,10 +73,10 @@ const string str)
 }
 
 //  ----------------------------------------------------------------------------
-string sGetCdsProductName (
-    const CSeq_feat& cds, 
+string sGetCdsProductName(
+    const CSeq_feat& cds,
     CScope& scope)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     string productName;
     if (cds.IsSetProduct()) {
@@ -90,8 +90,8 @@ string sGetCdsProductName (
                 }
             }
             return productName;
-        }  
-    } 
+        }
+    }
     if (cds.IsSetXref()) {
         ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
             const CSeqFeatXref& xref = **it;
@@ -147,7 +147,7 @@ void CFeatTableEdit::GenerateMissingMrnaForCds()
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI it(mHandle, sel);
-    for ( ; it; ++it) {
+    for (; it; ++it) {
         const CSeq_feat& cds = it->GetOriginalFeature();
         CConstRef<CSeq_feat> pOverlappingRna =
             sequence::GetBestOverlappingFeat(
@@ -231,7 +231,7 @@ void CFeatTableEdit::InferPartials()
     bool infered(false);
     edit::CLocationEditPolicy editPolicy(
         edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd,
-        edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd, 
+        edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd,
         false, //extend 5'
         false, //extend 3'
         edit::CLocationEditPolicy::eMergePolicy_NoChange);
@@ -239,20 +239,20 @@ void CFeatTableEdit::InferPartials()
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI it(mHandle, sel);
-    for ( ; it; ++it) {
+    for (; it; ++it) {
         const CSeq_feat& cds = it->GetOriginalFeature();
         CRef<CSeq_feat> pEditedCds(new CSeq_feat);
         pEditedCds->Assign(cds);
         infered = editPolicy.ApplyPolicyToFeature(*pEditedCds, *mpScope);
         if (!infered) {
             continue;
-        }   
+        }
         CSeq_feat_EditHandle cdsEh(mpScope->GetObjectHandle(cds));
         cdsEh.Replace(*pEditedCds);
 
         // make sure the parent rna is partial as well
         CMappedFeat parentRna = feature::GetBestMrnaForCds(*it, &mTree);
-        if (parentRna  &&
+        if (parentRna &&
             !(parentRna.IsSetPartial() && parentRna.GetPartial())) {
             CRef<CSeq_feat> pEditedRna(new CSeq_feat);
             pEditedRna->Assign(parentRna.GetOriginalFeature());
@@ -264,8 +264,8 @@ void CFeatTableEdit::InferPartials()
 
         // make sure the gene parent is partial as well
         CMappedFeat parentGene = feature::GetBestGeneForCds(*it);
-        if (parentGene  &&  
-                !(parentGene.IsSetPartial()  &&  parentGene.GetPartial())) {
+        if (parentGene &&
+            !(parentGene.IsSetPartial() && parentGene.GetPartial())) {
             CRef<CSeq_feat> pEditedGene(new CSeq_feat);
             pEditedGene->Assign(parentGene.GetOriginalFeature());
             pEditedGene->SetPartial(true);
@@ -284,7 +284,7 @@ void CFeatTableEdit::SubmitFixProducts()
     //sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
     sel.IncludeFeatType(CSeqFeatData::e_Rna);
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-    for (CFeat_CI it(mHandle, sel); it; ++it){
+    for (CFeat_CI it(mHandle, sel); it; ++it) {
         CMappedFeat mf = *it;
         if (mf.IsSetProduct()) {
             continue;
@@ -300,7 +300,7 @@ void CFeatTableEdit::SubmitFixProducts()
         }
         CSeq_feat_EditHandle feh(mf);
         feh.Replace(*pEditedFeature);
-    }   
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -314,25 +314,25 @@ void CFeatTableEdit::EliminateBadQualifiers()
         "go_function", "go_component", "go_process" };
 
     CFeat_CI it(mHandle);
-    for ( ; it; ++it) {
+    for (; it; ++it) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (it)->GetOriginalFeature()));
         const QUALS& quals = (*it).GetQual();
         vector<string> badQuals;
-        for (QUALS::const_iterator qual = quals.begin(); qual != quals.end(); 
-                ++qual) {
+        for (QUALS::const_iterator qual = quals.begin(); qual != quals.end();
+            ++qual) {
             string qualKey = (*qual)->GetQual();
-            if (std::find(specialQuals.begin(), specialQuals.end(), qualKey) 
-                    != specialQuals.end()) {
+            if (std::find(specialQuals.begin(), specialQuals.end(), qualKey)
+                != specialQuals.end()) {
                 continue;
             }
-            if (subtype == CSeqFeatData::eSubtype_cdregion  ||  
-                    subtype == CSeqFeatData::eSubtype_mRNA) {
-                if (qualKey == "protein_id"  ||  qualKey == "transcript_id") {
+            if (subtype == CSeqFeatData::eSubtype_cdregion ||
+                subtype == CSeqFeatData::eSubtype_mRNA) {
+                if (qualKey == "protein_id" || qualKey == "transcript_id") {
                     continue;
                 }
-                if (qualKey == "orig_protein_id"  ||  qualKey == "orig_transcript_id") {
+                if (qualKey == "orig_protein_id" || qualKey == "orig_transcript_id") {
                     continue;
                 }
             }
@@ -348,7 +348,7 @@ void CFeatTableEdit::EliminateBadQualifiers()
             badQuals.push_back(qualKey);
         }
         for (vector<string>::const_iterator badIt = badQuals.begin();
-                badIt != badQuals.end(); ++badIt) {
+            badIt != badQuals.end(); ++badIt) {
             feh.RemoveQualifier(*badIt);
         }
     }
@@ -362,40 +362,40 @@ void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 {
     mProcessedMrnas.clear();
 
-    {{
-        SAnnotSelector sel;
-        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-        for (CFeat_CI it(mHandle, sel); it; ++it) {
-            CMappedFeat cds = *it;
-            xAddTranscriptAndProteinIdsToCdsAndParentMrna(cds);
-        }
-     }}
+    { {
+            SAnnotSelector sel;
+            sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+            for (CFeat_CI it(mHandle, sel); it; ++it) {
+                CMappedFeat cds = *it;
+                xAddTranscriptAndProteinIdsToCdsAndParentMrna(cds);
+            }
+        }}
 
-    {{
-        SAnnotSelector sel;
-        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-        for (CFeat_CI it(mHandle, sel); it; ++it) {
-            CMappedFeat mrna = *it;
-            xAddTranscriptAndProteinIdsToUnmatchedMrna(mrna);
-        }
-    }}
+    { {
+            SAnnotSelector sel;
+            sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+            for (CFeat_CI it(mHandle, sel); it; ++it) {
+                CMappedFeat mrna = *it;
+                xAddTranscriptAndProteinIdsToUnmatchedMrna(mrna);
+            }
+        }}
 
 }
 
 
 // ---------------------------------------------------------------------------
-static bool s_ShouldConvertToGeneral(const string& id) 
+static bool s_ShouldConvertToGeneral(const string& id)
 // ---------------------------------------------------------------------------
 {
     return (!NStr::StartsWith(id, "gb|") &&
-            !NStr::StartsWith(id, "gnl|") &&
-            !NStr::StartsWith(id, "cds.gnl|") && 
-            !NStr::StartsWith(id, "mrna.gnl|"));
+        !NStr::StartsWith(id, "gnl|") &&
+        !NStr::StartsWith(id, "cds.gnl|") &&
+        !NStr::StartsWith(id, "mrna.gnl|"));
 }
 
 
 // ---------------------------------------------------------------------------
-static string s_GetTranscriptIdFromMrna(const CMappedFeat& mrna) 
+static string s_GetTranscriptIdFromMrna(const CMappedFeat& mrna)
 // ---------------------------------------------------------------------------
 {
     string transcript_id = mrna.GetNamedQual("transcript_id");
@@ -423,33 +423,33 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
         }
     }
     bool is_genbank_protein = NStr::StartsWith(protein_id, "gb|");
-    
+
     string transcript_id = cds.GetNamedQual("transcript_id");
     const bool no_transcript_id_qual = NStr::IsBlank(transcript_id);
     if (no_transcript_id_qual) { // no transcript_id qual on CDS - check mRNA
-        if (mrna) { 
+        if (mrna) {
             transcript_id = s_GetTranscriptIdFromMrna(mrna);
         }
     }
     bool is_genbank_transcript = NStr::StartsWith(transcript_id, "gb|");
 
-   
+
     if ((is_genbank_protein ||
-         NStr::StartsWith(protein_id, "gnl|")) &&
+        NStr::StartsWith(protein_id, "gnl|")) &&
         (is_genbank_transcript ||
-         NStr::StartsWith(transcript_id, "gnl|"))) { // No further processing of ids is required - simply assign to features
+            NStr::StartsWith(transcript_id, "gnl|"))) { // No further processing of ids is required - simply assign to features
         if (no_protein_id_qual) { // protein_id from ID qualifier or mRNA => need to add protein_id qual to CDS
             xFeatureSetQualifier(cds, "protein_id", protein_id);
         }
-        
+
         if (no_transcript_id_qual) { // transcript_id from mRNA => need to add transcript_id qual to CDS
             xFeatureSetQualifier(cds, "transcript_id", transcript_id);
         }
-        
+
         if (mrna) {
-            xAddTranscriptAndProteinIdsToMrna(transcript_id,  
-                                              protein_id,
-                                              mrna);
+            xAddTranscriptAndProteinIdsToMrna(transcript_id,
+                protein_id,
+                mrna);
         }
         return;
     }
@@ -458,26 +458,26 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
     bool has_protein_id = !NStr::IsBlank(protein_id);
     bool has_transcript_id = !NStr::IsBlank(transcript_id);
 
-    if ( has_protein_id &&
-         has_transcript_id ) {
+    if (has_protein_id &&
+        has_transcript_id) {
         if (!is_genbank_protein &&
             (transcript_id == protein_id)) {
             protein_id = "cds." + protein_id;
         }
     }
     else {
-        if ( has_protein_id &&
+        if (has_protein_id &&
             !is_genbank_protein) {
             transcript_id = "mrna." + protein_id;
             has_transcript_id = true;
 
         }
-        else 
-        if (has_transcript_id &&
-            !is_genbank_transcript) {
-            protein_id = "cds." + transcript_id;
-            has_protein_id = true;
-        }
+        else
+            if (has_transcript_id &&
+                !is_genbank_transcript) {
+                protein_id = "cds." + transcript_id;
+                has_protein_id = true;
+            }
 
         // Generate new transcript_id and protein_id if necessary
         if (!has_transcript_id) {
@@ -487,14 +487,14 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
         if (!has_protein_id) {
             protein_id = xNextProteinId(cds);
         }
-    } 
+    }
 
-    xConvertToGeneralIds(cds, transcript_id, protein_id);    
+    xConvertToGeneralIds(cds, transcript_id, protein_id);
 
     if (mrna) {
-        xAddTranscriptAndProteinIdsToMrna(transcript_id,  
-                                          protein_id,
-                                          mrna);
+        xAddTranscriptAndProteinIdsToMrna(transcript_id,
+            protein_id,
+            mrna);
     }
 
 
@@ -504,15 +504,15 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
 
 
 // ---------------------------------------------------------------------------
-void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcript_id, 
-                                                       const string& cds_protein_id, 
-                                                       CMappedFeat& mrna)
-// ---------------------------------------------------------------------------
+void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcript_id,
+    const string& cds_protein_id,
+    CMappedFeat& mrna)
+    // ---------------------------------------------------------------------------
 {
     if (mProcessedMrnas.find(mrna) != mProcessedMrnas.end()) {
         return;
     }
-   
+
     bool use_local_ids = false; // 
 
     string transcript_id = mrna.GetNamedQual("transcript_id");
@@ -529,7 +529,7 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
     }
     else {
         if ((protein_id == transcript_id) &&
-             !NStr::StartsWith(protein_id, "gb|")) {
+            !NStr::StartsWith(protein_id, "gb|")) {
             protein_id = "cds." + protein_id;
         }
         use_local_ids = true;
@@ -539,7 +539,7 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
                          // Process these ids and check that the processed quals match the qualifiers on the child CDS feature
         xConvertToGeneralIds(mrna, transcript_id, protein_id);
 
-        if (transcript_id  != cds_transcript_id) {
+        if (transcript_id != cds_transcript_id) {
             xPutErrorDifferingTranscriptIds(mrna);
         }
 
@@ -574,30 +574,30 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToUnmatchedMrna(CMappedFeat& mrn
     const bool is_genbank_protein = NStr::StartsWith(protein_id, "gb|");
 
     if ((is_genbank_protein ||
-         NStr::StartsWith(protein_id, "gnl|")) &&
+        NStr::StartsWith(protein_id, "gnl|")) &&
         (is_genbank_transcript ||
-         NStr::StartsWith(transcript_id, "gnl|"))) {
+            NStr::StartsWith(transcript_id, "gnl|"))) {
         if (no_transcript_id_qual) {
             xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
         }
         return;
-    } 
-    
-    if (!NStr::IsBlank(protein_id) && 
+    }
+
+    if (!NStr::IsBlank(protein_id) &&
         !NStr::IsBlank(transcript_id)) {
         if ((transcript_id == protein_id) &&
             !is_genbank_transcript) {
             protein_id = "cds." + protein_id;
         }
-    } 
-    else 
-    if (!is_genbank_protein && !NStr::IsBlank(protein_id)) {
-        transcript_id = "mrna." + protein_id;
     }
-    else 
-    if (!is_genbank_transcript && !NStr::IsBlank(transcript_id)) {
-        protein_id = "cds." + transcript_id;
-    }
+    else
+        if (!is_genbank_protein && !NStr::IsBlank(protein_id)) {
+            transcript_id = "mrna." + protein_id;
+        }
+        else
+            if (!is_genbank_transcript && !NStr::IsBlank(transcript_id)) {
+                protein_id = "cds." + transcript_id;
+            }
 
     if (NStr::IsBlank(protein_id)) {
         protein_id = xNextProteinId(mrna);
@@ -607,7 +607,7 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToUnmatchedMrna(CMappedFeat& mrn
     }
 
     xConvertToGeneralIds(mrna, transcript_id, protein_id);
-    
+
     xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
     xFeatureSetQualifier(mrna, "protein_id", protein_id);
 
@@ -615,9 +615,9 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToUnmatchedMrna(CMappedFeat& mrn
 }
 
 
-void CFeatTableEdit::xConvertToGeneralIds(const CMappedFeat& mf, 
-                                          string& transcript_id,
-                                          string& protein_id)
+void CFeatTableEdit::xConvertToGeneralIds(const CMappedFeat& mf,
+    string& transcript_id,
+    string& protein_id)
 {
     const bool update_protein_id = s_ShouldConvertToGeneral(protein_id);
     const bool update_transcript_id = s_ShouldConvertToGeneral(transcript_id);
@@ -672,12 +672,12 @@ void CFeatTableEdit::InstantiateProducts()
 //  ---------------------------------------------------------------------------
 void CFeatTableEdit::xGenerateMissingGeneForChoice(
     CSeqFeatData::E_Choice choice)
-//  ---------------------------------------------------------------------------
+    //  ---------------------------------------------------------------------------
 {
     SAnnotSelector sel;
     sel.IncludeFeatType(choice);
     CFeat_CI it(mHandle, sel);
-    for ( ; it; ++it) {
+    for (; it; ++it) {
         CMappedFeat mf = *it;
         if (xCreateMissingParentGene(mf)) {
             xAdjustExistingParentGene(mf);
@@ -689,12 +689,12 @@ void CFeatTableEdit::xGenerateMissingGeneForChoice(
 //  ---------------------------------------------------------------------------
 void CFeatTableEdit::xGenerateMissingGeneForSubtype(
     CSeqFeatData::ESubtype subType)
-//  ---------------------------------------------------------------------------
+    //  ---------------------------------------------------------------------------
 {
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(subType);
     CFeat_CI it(mHandle, sel);
-    for ( ; it; ++it) {
+    for (; it; ++it) {
         CMappedFeat mf = *it;
         if (xCreateMissingParentGene(mf)) {
             xAdjustExistingParentGene(mf);
@@ -706,9 +706,9 @@ void CFeatTableEdit::xGenerateMissingGeneForSubtype(
 bool
 CFeatTableEdit::xAdjustExistingParentGene(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
-    if (!mf.IsSetPartial()  ||  !mf.GetPartial()) {
+    if (!mf.IsSetPartial() || !mf.GetPartial()) {
         return true;
     }
     CMappedFeat parentGene = feature::GetBestGeneForFeat(mf, &mTree);
@@ -716,7 +716,7 @@ CFeatTableEdit::xAdjustExistingParentGene(
         return false;
     }
 
-    if (parentGene.IsSetPartial()  &&  parentGene.GetPartial()) {
+    if (parentGene.IsSetPartial() && parentGene.GetPartial()) {
         return true;
     }
     CRef<CSeq_feat> pEditedGene(new CSeq_feat);
@@ -732,7 +732,7 @@ CFeatTableEdit::xAdjustExistingParentGene(
 bool
 CFeatTableEdit::xCreateMissingParentGene(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene = xMakeGeneForFeature(mf);
     if (!pGene) {
@@ -759,7 +759,7 @@ CFeatTableEdit::xCreateMissingParentGene(
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::xFeatureAddProteinIdMrna(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     //rw-451 rules for mRNA:
     // no mRNA survives with an orig_protein_id
@@ -772,7 +772,7 @@ void CFeatTableEdit::xFeatureAddProteinIdMrna(
         xFeatureRemoveQualifier(mf, "orig_protein_id");
     }
     auto pid = mf.GetNamedQual("protein_id");
-    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
+    if (NStr::StartsWith(pid, "gb|") || NStr::StartsWith(pid, "gnl|")) {
         // already what we want
         return;
     }
@@ -796,7 +796,7 @@ void CFeatTableEdit::xFeatureAddProteinIdMrna(
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::xFeatureAddProteinIdCds(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     //rw-451 rules for CDS:
     // no CDS survives with an orig_protein_id
@@ -811,7 +811,7 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
     }
 
     auto pid = mf.GetNamedQual("protein_id");
-    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
+    if (NStr::StartsWith(pid, "gb|") || NStr::StartsWith(pid, "gnl|")) {
         // already what we want
         return;
     }
@@ -850,7 +850,7 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::xFeatureAddProteinIdDefault(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     //rw-451 rules for non CDS, non mRNA:
     // we won't touch orig_protein_id
@@ -862,7 +862,7 @@ void CFeatTableEdit::xFeatureAddProteinIdDefault(
     if (pid.empty()) {
         return;
     }
-    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
+    if (NStr::StartsWith(pid, "gb|") || NStr::StartsWith(pid, "gnl|")) {
         // already what we want
         return;
     }
@@ -898,7 +898,7 @@ void CFeatTableEdit::xFeatureAddTranscriptIdMrna(
     }
 
     auto tid = mf.GetNamedQual("transcript_id");
-    if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
+    if (NStr::StartsWith(tid, "gb|") || NStr::StartsWith(tid, "gnl|")) {
         // already what we want
         return;
     }
@@ -946,7 +946,7 @@ void CFeatTableEdit::xFeatureAddTranscriptIdCds(
 
     auto tid = mf.GetNamedQual("transcript_id");
     // otherwise, we need to police the existing transcript_id:
-    if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
+    if (NStr::StartsWith(tid, "gb|") || NStr::StartsWith(tid, "gnl|")) {
         // already what we want
         return;
     }
@@ -970,7 +970,7 @@ void CFeatTableEdit::xFeatureAddTranscriptIdCds(
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::xFeatureAddTranscriptIdDefault(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     //rw-451 rules for non CDS, non mRNA:
     // we won't touch orig_transcript_id
@@ -982,7 +982,7 @@ void CFeatTableEdit::xFeatureAddTranscriptIdDefault(
     if (tid.empty()) {
         return;
     }
-    if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
+    if (NStr::StartsWith(tid, "gb|") || NStr::StartsWith(tid, "gnl|")) {
         // already what we want
         return;
     }
@@ -1003,13 +1003,13 @@ void CFeatTableEdit::xFeatureAddTranscriptIdDefault(
 string CFeatTableEdit::xGenerateTranscriptOrProteinId(
     CMappedFeat mf,
     const string& rawId)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     //weed out badly formatted original tags:
-     if (string::npos != rawId.find("|")) {
+    if (string::npos != rawId.find("|")) {
         xPutError(
-            "Feature " + xGetIdStr(mf) + 
-                " does not have a usable transcript_ or protein_id.");
+            "Feature " + xGetIdStr(mf) +
+            " does not have a usable transcript_ or protein_id.");
         return "";
     }
 
@@ -1026,38 +1026,38 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
     if (!rawId.empty()) {
         return string("gnl|") + locusTagPrefix + "|" + rawId;
     }
-    
+
     //attempt to make transcript_id from protein_id, or protein_id from transcript_id:
     switch (mf.GetFeatSubtype()) {
-        case CSeqFeatData::eSubtype_mRNA: {
-                auto id = mf.GetNamedQual("protein_id");
-                if (id.empty()) {
-                    id = mf.GetNamedQual("ID");
-                }
-                if (id.empty()) {
-                    if (mf.GetId().IsLocal()) {
-                        id = mf.GetId().GetLocal().GetStr();
-                    }
-                }
-                if (!id.empty()) {
-                    return string("gnl|") + locusTagPrefix + "|mrna." + id;
-                }
+    case CSeqFeatData::eSubtype_mRNA: {
+        auto id = mf.GetNamedQual("protein_id");
+        if (id.empty()) {
+            id = mf.GetNamedQual("ID");
+        }
+        if (id.empty()) {
+            if (mf.GetId().IsLocal()) {
+                id = mf.GetId().GetLocal().GetStr();
             }
-            break;
+        }
+        if (!id.empty()) {
+            return string("gnl|") + locusTagPrefix + "|mrna." + id;
+        }
+    }
+                                      break;
 
-        case CSeqFeatData::eSubtype_cdregion: {
-                auto id = mf.GetNamedQual("transcript_id");
-                if (id.empty()) {
-                    id = mf.GetNamedQual("ID");
-                }
-                if (!id.empty()) {
-                    return string("gnl|") + locusTagPrefix + "|cds." + id;
-                }
-            }
-            break;
+    case CSeqFeatData::eSubtype_cdregion: {
+        auto id = mf.GetNamedQual("transcript_id");
+        if (id.empty()) {
+            id = mf.GetNamedQual("ID");
+        }
+        if (!id.empty()) {
+            return string("gnl|") + locusTagPrefix + "|cds." + id;
+        }
+    }
+                                          break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
 
@@ -1117,16 +1117,16 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
 
         CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
         switch (subtype) {
-            case CSeqFeatData::eSubtype_mRNA: {
-                string proteinId = xNextProteinId(mf);
-                feh.AddQualifier("orig_protein_id", proteinId);
-                string transcriptId = xNextTranscriptId(mf);
-                feh.AddQualifier("orig_transcript_id", transcriptId);
-                break;
-            }
-            default: {
-                break;
-            }
+        case CSeqFeatData::eSubtype_mRNA: {
+            string proteinId = xNextProteinId(mf);
+            feh.AddQualifier("orig_protein_id", proteinId);
+            string transcriptId = xNextTranscriptId(mf);
+            feh.AddQualifier("orig_transcript_id", transcriptId);
+            break;
+        }
+        default: {
+            break;
+        }
         }
     }
 
@@ -1159,35 +1159,35 @@ void CFeatTableEdit::xGenerateLocusIdsUseExisting()
 
         CMappedFeat mf = *it;
         CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
-        
+
         switch (subtype) {
-            case CSeqFeatData::eSubtype_gene: {
-                if (!mf.GetData().GetGene().IsSetLocus_tag()) {
-                    xPutErrorMissingLocustag(mf);
-                }
-                break;
+        case CSeqFeatData::eSubtype_gene: {
+            if (!mf.GetData().GetGene().IsSetLocus_tag()) {
+                xPutErrorMissingLocustag(mf);
             }
-            case CSeqFeatData::eSubtype_mRNA: {
-                string transcriptId = mf.GetNamedQual("transcript_id");
-                if (transcriptId.empty()) {
-                    xPutErrorMissingTranscriptId(mf);
-                }
-                string proteinId = mf.GetNamedQual("protein_id");
-                if (proteinId.empty()) {
-                    xPutErrorMissingProteinId(mf);
-                }
-                break;
+            break;
+        }
+        case CSeqFeatData::eSubtype_mRNA: {
+            string transcriptId = mf.GetNamedQual("transcript_id");
+            if (transcriptId.empty()) {
+                xPutErrorMissingTranscriptId(mf);
             }
-            case CSeqFeatData::eSubtype_cdregion: {
-                string transcriptId = mf.GetNamedQual("transcript_id");
-                if (transcriptId.empty()) {
-                    xPutErrorMissingTranscriptId(mf);
-                }
-                break;
+            string proteinId = mf.GetNamedQual("protein_id");
+            if (proteinId.empty()) {
+                xPutErrorMissingProteinId(mf);
             }
-            default: {
-                break;
+            break;
+        }
+        case CSeqFeatData::eSubtype_cdregion: {
+            string transcriptId = mf.GetNamedQual("transcript_id");
+            if (transcriptId.empty()) {
+                xPutErrorMissingTranscriptId(mf);
             }
+            break;
+        }
+        default: {
+            break;
+        }
         }
     }
 }
@@ -1204,19 +1204,19 @@ void CFeatTableEdit::GenerateLocusTags()
         return;
     }
 
-	CRef<CGb_qual> pLocusTag;
+    CRef<CGb_qual> pLocusTag;
     SAnnotSelector selGenes;
     vector<CSeq_id_Handle> annotIds;
     selGenes.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     CFeat_CI itGenes(mHandle, selGenes);
-    for ( ; itGenes; ++itGenes) {
+    for (; itGenes; ++itGenes) {
         CSeq_feat_Handle fh = *itGenes;
         CSeq_id_Handle idh = fh.GetLocationId();
         vector<CSeq_id_Handle>::const_iterator compIt;
-        for ( compIt = annotIds.begin(); 
-                compIt != annotIds.end(); 
-                ++compIt) {
+        for (compIt = annotIds.begin();
+            compIt != annotIds.end();
+            ++compIt) {
             if (*compIt == idh) {
                 break;
             }
@@ -1228,16 +1228,16 @@ void CFeatTableEdit::GenerateLocusTags()
     std::sort(annotIds.begin(), annotIds.end(), idAlpha);
 
     for (vector<CSeq_id_Handle>::const_iterator idIt = annotIds.begin();
-            idIt != annotIds.end();
-            ++idIt) {
+        idIt != annotIds.end();
+        ++idIt) {
         CSeq_id_Handle curId = *idIt;
 
-	    CRef<CGb_qual> pLocusTag;
+        CRef<CGb_qual> pLocusTag;
         SAnnotSelector selGenes;
         selGenes.SetSortOrder(SAnnotSelector::eSortOrder_None);
         selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
         CFeat_CI itGenes(mHandle, selGenes);
-        for ( ; itGenes; ++itGenes) {
+        for (; itGenes; ++itGenes) {
             CSeq_feat_Handle fh = *itGenes;
             string id1 = fh.GetLocationId().AsString();
             string id2 = curId.AsString();
@@ -1250,29 +1250,29 @@ void CFeatTableEdit::GenerateLocusTags()
             pEditedFeat->Assign(itGenes->GetOriginalFeature());
             pEditedFeat->RemoveQualifier("locus_tag");
             pEditedFeat->SetData().SetGene().SetLocus_tag(xNextLocusTag());
-		    feh.Replace(*pEditedFeat);
+            feh.Replace(*pEditedFeat);
         }
     }
-	SAnnotSelector selOther;
-	selOther.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+    SAnnotSelector selOther;
+    selOther.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     CFeat_CI itOther(mHandle, selOther);
 
     // mss-315:
     //  only the genes get the locus_tags. they are inherited down
     //  to the features that live on them when we generate a flat file,
     //  but we don't want them here in the ASN.1
-	for ( ; itOther; ++itOther) {
+    for (; itOther; ++itOther) {
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (itOther)->GetOriginalFeature()));
-		feh.RemoveQualifier("locus_tag");
-	}
+        feh.RemoveQualifier("locus_tag");
+    }
 }
 
 
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateMissingParentFeatures(
     bool forEukaryote)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     if (forEukaryote) {
         GenerateMissingParentFeaturesForEukaryote();
@@ -1307,7 +1307,7 @@ void CFeatTableEdit::xFeatureAddQualifier(
     CMappedFeat mf,
     const string& qualKey,
     const string& qualVal)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& origFeat = mf.GetOriginalFeature();
     CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
@@ -1319,7 +1319,7 @@ void CFeatTableEdit::xFeatureAddQualifier(
 void CFeatTableEdit::xFeatureRemoveQualifier(
     CMappedFeat mf,
     const string& qualKey)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& origFeat = mf.GetOriginalFeature();
     CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
@@ -1331,7 +1331,7 @@ void CFeatTableEdit::xFeatureSetQualifier(
     CMappedFeat mf,
     const string& qualKey,
     const string& qualVal)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     auto existing = mf.GetNamedQual(qualKey);
     if (!existing.empty()) {
@@ -1344,11 +1344,11 @@ void CFeatTableEdit::xFeatureSetQualifier(
 void CFeatTableEdit::xFeatureSetProduct(
     CMappedFeat mf,
     const string& proteinIdStr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_id> pProteinId( 
-        new CSeq_id(proteinIdStr, 
-            CSeq_id::fParse_ValidLocal|CSeq_id::fParse_PartialOK));
+    CRef<CSeq_id> pProteinId(
+        new CSeq_id(proteinIdStr,
+            CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK));
 
     const CSeq_feat& origFeat = mf.GetOriginalFeature();
     CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
@@ -1366,7 +1366,7 @@ string CFeatTableEdit::xNextFeatId()
     const string padding = string(WIDTH, '0');
     string suffix = NStr::NumericToString(mNextFeatId++);
     if (suffix.size() < WIDTH) {
-        suffix = padding.substr(0, WIDTH-suffix.size()) + suffix;
+        suffix = padding.substr(0, WIDTH - suffix.size()) + suffix;
     }
     string nextTag("auto");
     return nextTag + suffix;
@@ -1380,7 +1380,7 @@ string CFeatTableEdit::xNextLocusTag()
     const string padding = string(WIDTH, '0');
     string suffix = NStr::NumericToString(mLocusTagNumber++);
     if (suffix.size() < WIDTH) {
-        suffix = padding.substr(0, WIDTH-suffix.size()) + suffix;
+        suffix = padding.substr(0, WIDTH - suffix.size()) + suffix;
     }
     string nextTag = mLocusTagPrefix + "_" + suffix;
     return nextTag;
@@ -1388,8 +1388,8 @@ string CFeatTableEdit::xNextLocusTag()
 
 //	----------------------------------------------------------------------------
 string CFeatTableEdit::xNextProteinId(
-	const CMappedFeat& mf)
-//	----------------------------------------------------------------------------
+    const CMappedFeat& mf)
+    //	----------------------------------------------------------------------------
 {
     const string dbPrefix("gnl|");
 
@@ -1403,14 +1403,14 @@ string CFeatTableEdit::xNextProteinId(
 
     int offset = 0;
     string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
-	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
-	if (it == mMapProtIdCounts.end()) {
-		mMapProtIdCounts[locusTag] = 0;
-	}
-	else {
-		++mMapProtIdCounts[locusTag];
-                offset = mMapProtIdCounts[locusTag];
-	}
+    map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
+    if (it == mMapProtIdCounts.end()) {
+        mMapProtIdCounts[locusTag] = 0;
+    }
+    else {
+        ++mMapProtIdCounts[locusTag];
+        offset = mMapProtIdCounts[locusTag];
+    }
     string db = mLocusTagPrefix;
     if (locusTag.empty() &&
         db.empty()) {
@@ -1428,27 +1428,27 @@ string CFeatTableEdit::xNextProteinId(
 
 //	----------------------------------------------------------------------------
 string CFeatTableEdit::xNextTranscriptId(
-	const CMappedFeat& cds)
-//	----------------------------------------------------------------------------
+    const CMappedFeat& cds)
+    //	----------------------------------------------------------------------------
 {
     const string dbPrefix("gnl|");
 
 
-	// format: mLocusTagPrefix|mrna.<locus tag of gene or hash>[_numeric disambiguation]
-	CMappedFeat parentGene = feature::GetBestGeneForFeat(cds, &mTree);
+    // format: mLocusTagPrefix|mrna.<locus tag of gene or hash>[_numeric disambiguation]
+    CMappedFeat parentGene = feature::GetBestGeneForFeat(cds, &mTree);
     if (!parentGene ||
         !parentGene.GetData().GetGene().IsSetLocus_tag()) {
         xPutErrorMissingLocustag(cds);
-		return "";
-	}
+        return "";
+    }
 
 
     string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
     int offset = 0;
-	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
-	if (it != mMapProtIdCounts.end()  &&  mMapProtIdCounts[locusTag] != 0) {
-		offset = mMapProtIdCounts[locusTag];
-	}
+    map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
+    if (it != mMapProtIdCounts.end() && mMapProtIdCounts[locusTag] != 0) {
+        offset = mMapProtIdCounts[locusTag];
+    }
     string db = mLocusTagPrefix;
 
     if (locusTag.empty() &&
@@ -1464,13 +1464,13 @@ string CFeatTableEdit::xNextTranscriptId(
     }
 
     string transcriptId = dbPrefix + db + "|mrna." + GetIdHashOrValue(locusTag, offset);
-	return transcriptId;
+    return transcriptId;
 }
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
     const CMappedFeat& rna)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene;
     //const CSeq_loc& loc = rna.GetOriginalFeature().GetLocation();
@@ -1500,8 +1500,8 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
 void
 CFeatTableEdit::xPutError(
     const string& message)
-//  ----------------------------------------------------------------------------
-{   
+    //  ----------------------------------------------------------------------------
+{
     if (!mpMessageListener) {
         return;
     }
@@ -1515,7 +1515,7 @@ CFeatTableEdit::xPutError(
 void
 CFeatTableEdit::xPutErrorMissingLocustag(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     if (!mpMessageListener) {
         return;
@@ -1537,7 +1537,7 @@ CFeatTableEdit::xPutErrorMissingLocustag(
 void
 CFeatTableEdit::xPutErrorMissingTranscriptId(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     if (!mpMessageListener) {
         return;
@@ -1558,8 +1558,8 @@ CFeatTableEdit::xPutErrorMissingTranscriptId(
 //  ----------------------------------------------------------------------------
 void
 CFeatTableEdit::xPutErrorMissingProteinId(
-CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    CMappedFeat mf)
+    //  ----------------------------------------------------------------------------
 {
     if (!mpMessageListener) {
         return;
@@ -1571,7 +1571,7 @@ CMappedFeat mf)
     unsigned int upper = mf.GetLocation().GetStop(eExtreme_Positional);
     subName = NStr::IntToString(lower) + ".." + NStr::IntToString(upper) + " " +
         subName;
-        
+
     string message = subName + " feature is missing protein ID.";
     xPutError(message);
 }
@@ -1580,8 +1580,8 @@ CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 void
 CFeatTableEdit::xPutErrorDifferingProteinIds(
-const CMappedFeat& mrna)
-//  ----------------------------------------------------------------------------
+    const CMappedFeat& mrna)
+    //  ----------------------------------------------------------------------------
 {
     if (!mpMessageListener) {
         return;
@@ -1592,14 +1592,14 @@ const CMappedFeat& mrna)
     }
     xPutError("Protein ID on mRNA feature differs from protein ID on child CDS.");
 
-//    xPutError(ILineError::eProblem_InconsistentQualifiers,
-//        "Protein ID on mRNA feature differs from protein ID on child CDS.");
+    //    xPutError(ILineError::eProblem_InconsistentQualifiers,
+    //        "Protein ID on mRNA feature differs from protein ID on child CDS.");
 }
 
 void
 CFeatTableEdit::xPutErrorDifferingTranscriptIds(
-const CMappedFeat& mrna)
-//  ----------------------------------------------------------------------------
+    const CMappedFeat& mrna)
+    //  ----------------------------------------------------------------------------
 {
     if (!mpMessageListener) {
         return;
@@ -1608,7 +1608,7 @@ const CMappedFeat& mrna)
     if (mrna.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
     }
-   
+
     xPutError("Transcript ID on mRNA feature differs from transcript ID on child CDS.");
 }
 
@@ -1617,7 +1617,7 @@ const CMappedFeat& mrna)
 string
 CFeatTableEdit::xGetIdStr(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     stringstream strstr;
     auto& id = mf.GetId();
@@ -1634,7 +1634,7 @@ CFeatTableEdit::xGetIdStr(
 string
 CFeatTableEdit::xGetCurrentLocusTagPrefix(
     CMappedFeat mf)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     if (!mLocusTagPrefix.empty()) {
         return mLocusTagPrefix;
@@ -1646,7 +1646,7 @@ CFeatTableEdit::xGetCurrentLocusTagPrefix(
     if (!geneFeature) {
         return "";
     }
-	const auto& geneRef = geneFeature.GetData().GetGene();
+    const auto& geneRef = geneFeature.GetData().GetGene();
     if (geneRef.IsSetLocus_tag()) {
         const auto& locusTag = geneFeature.GetData().GetGene().GetLocus_tag();
         string prefix, suffix;
@@ -1662,64 +1662,18 @@ CFeatTableEdit::xGetCurrentLocusTagPrefix(
     return "";
 }
 
-
-void CFeatureTableLoader::PostProcessAnnotation(CBioseq::TAnnot& annots)
-{
-    for (auto it = annots.begin(); it != annots.end(); ++it) {
-        PostProcessAnnotation(**it);
-    }
-}
-
-void CFeatureTableLoader::PostProcessAnnotation(CSeq_annot& annot)
-{
-    if (m_Feat_Tree.Empty())
-        m_Feat_Tree.Reset(new feature::CFeatTree());
-    if (m_scope.Empty())
-        m_scope.Reset(new CScope(*CObjectManager::GetInstance()));
-
-    auto h_annot = m_scope->AddSeq_annot(annot);
-    m_Feat_Tree->AddFeatures(CFeat_CI(h_annot));
-
-    CFeatTableEdit fte(
-        annot, m_locus_tag_prefix, m_startingLocusTagNumber, m_startingFeatureId, m_logger);
-    //fte.InferPartials();
-    fte.GenerateMissingParentFeatures(m_eukariote);
-    fte.GenerateLocusTags();
-    fte.GenerateProteinAndTranscriptIds();
-    //fte.InstantiateProducts();
-    fte.EliminateBadQualifiers();
-    fte.SubmitFixProducts();
-
-    m_startingLocusTagNumber = fte.PendingLocusTagNumber();
-    m_startingFeatureId = fte.PendingFeatureId();
-
-    for (auto feat : annot.GetData().GetFtable())
-    {
-        if (feat.NotEmpty() && feat->IsSetData() && feat->GetData().IsCdregion())
-        {
-            Generate_mRNA_Product(*feat);
-        }
-    }
-};
-
-CRef<feature::CFeatTree> CFeatureTableLoader::GetFeatTree()
-{
-    return m_Feat_Tree;
-}
-
-
-CConstRef<CSeq_feat> CFeatureTableLoader::GetLinkedFeature(const CSeq_feat& cd_feature, bool gene)
+CConstRef<CSeq_feat> CFeatTableEdit::xGetLinkedFeature(const CSeq_feat& cd_feature, bool gene)
 {
     CConstRef<CSeq_feat> feature;
     if (feature.Empty())
     {
 
-        CMappedFeat cds(m_scope->GetSeq_featHandle(cd_feature));
+        CMappedFeat cds(mpScope->GetSeq_featHandle(cd_feature));
         CMappedFeat other;
         if (gene)
-            other = feature::GetBestGeneForCds(cds, GetFeatTree());
+            other = feature::GetBestGeneForCds(cds, &mTree);
         else
-            other = feature::GetBestMrnaForCds(cds, GetFeatTree());
+            other = feature::GetBestMrnaForCds(cds, &mTree);
 
         if (other)
             feature.Reset(&other.GetOriginalFeature());
@@ -1814,9 +1768,31 @@ static void s_SetProtRef(const CSeq_feat& cds,
     } // prot_ref.IsSetName() 
 }
 
-void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
+static bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, unsigned& id)
 {
-    if (sequence::IsPseudo(cd_feature, *m_scope))
+    if (feature.IsSetId())
+        return true;
+    else
+    {
+        feature.SetId().SetLocal().SetId(id++);
+        return false;
+    }
+}
+
+void CFeatTableEdit::InstantiateProductsNames()
+{
+    for (auto feat : mAnnot.GetData().GetFtable())
+    {
+        if (feat.NotEmpty() && feat->IsSetData() && feat->GetData().IsCdregion())
+        {
+            xGenerate_mRNA_Product(*feat);
+        }
+    }
+}
+
+void CFeatTableEdit::xGenerate_mRNA_Product(CSeq_feat& cd_feature)
+{
+    if (sequence::IsPseudo(cd_feature, *mpScope))
         return; // CRef<CSeq_entry>();
 
 #if 0
@@ -1825,8 +1801,8 @@ void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
     CConstRef<CSeq_entry> replacement = LocateProtein(m_replacement_protein, cd_feature);
 #endif
 
-    CConstRef<CSeq_feat> mrna = GetLinkedFeature(cd_feature, false);
-    CConstRef<CSeq_feat> gene = GetLinkedFeature(cd_feature, true);
+    CConstRef<CSeq_feat> mrna = xGetLinkedFeature(cd_feature, false);
+    CConstRef<CSeq_feat> gene = xGetLinkedFeature(cd_feature, true);
 
 #if 0
     CRef<CBioseq> protein;
@@ -1861,7 +1837,7 @@ void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
     if (!gene.Empty() && gene->IsSetData() && gene->GetData().IsGene() && gene->GetData().GetGene().IsSetLocus_tag())
     {
         locustag = gene->GetData().GetGene().GetLocus_tag();
-}
+    }
 
     string base_name;
     CRef<CSeq_id> newid;
@@ -1927,11 +1903,14 @@ void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
 #endif
 
     s_SetProtRef(cd_feature, mrna, prot_ref);
-    if ((!prot_ref.IsSetName() ||
-        prot_ref.GetName().empty()) &&
-        m_use_hypothetic_protein) {
+    if ((!prot_ref.IsSetName() || prot_ref.GetName().empty()) && m_use_hypothetic_protein)
+    {
         prot_ref.SetName().push_back("hypothetical protein");
+        cd_feature.SetProtXref().SetName().clear();
+        cd_feature.SetProtXref().SetName().push_back("hypothetical protein");
+        //cd_feature.RemoveQualifier("product");
     }
+
 
 #if 0
     prot_feat.SetLocation().SetInt().SetFrom(0);
@@ -1943,7 +1922,6 @@ void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
         cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
 
     CBioseq_Handle protein_handle = m_scope->AddBioseq(*protein);
-#endif
 
     AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
     if (gene.NotEmpty() && mrna.NotEmpty())
@@ -1956,12 +1934,13 @@ void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
         cd_feature.AddSeqFeatXref(gene_feature.GetId());
         gene_feature.AddSeqFeatXref(cd_feature.GetId());
     }
+#endif
 
     if (mrna.NotEmpty())
     {
         CSeq_feat& mrna_feature = (CSeq_feat&)*mrna;
 
-        AssignLocalIdIfEmpty(mrna_feature, m_local_id_counter);
+        AssignLocalIdIfEmpty(mrna_feature, mNextFeatId);
 
         if (prot_ref.IsSetName() && !prot_ref.GetName().empty())
         {
@@ -1975,11 +1954,11 @@ void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
     }
 
 #if 0
-    if (!protein_name.empty())
+    if (prot_ref.IsSetName() && !prot_ref.GetName().empty())
     {
         //cd_feature.ResetProduct();
         cd_feature.SetProtXref().SetName().clear();
-        cd_feature.SetProtXref().SetName().push_back(protein_name);
+        cd_feature.SetProtXref().SetName().push_back(prot_ref.GetName().front());
         cd_feature.RemoveQualifier("product");
     }
 
@@ -1995,18 +1974,6 @@ void CFeatureTableLoader::Generate_mRNA_Product(CSeq_feat& cd_feature)
     return protein_entry;
 #endif
 }
-
-bool CFeatureTableLoader::AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, unsigned& id)
-{
-    if (feature.IsSetId())
-        return true;
-    else
-    {
-        feature.SetId().SetLocal().SetId(id++);
-        return false;
-    }
-}
-
 
 END_SCOPE(edit)
 END_SCOPE(objects)

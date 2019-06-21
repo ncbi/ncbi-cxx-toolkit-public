@@ -46,26 +46,27 @@ BEGIN_SCOPE(edit)
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJEDIT_EXPORT CFeatTableEdit
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef list<CRef<CSeq_feat> > FEATS;
 
 public:
     CFeatTableEdit(
         CSeq_annot&,
-		const string& = "",
+        const string& = "",
         unsigned int = 1, //starting locus tag
         unsigned int = 1, //starting feature id
-        IObjtoolsListener* =nullptr);
+        IObjtoolsListener* = nullptr);
     ~CFeatTableEdit();
 
-	void GenerateLocusTags();
+    void GenerateLocusTags();
     void InferParentMrnas();
     void InferParentGenes();
     void InferPartials();
     void EliminateBadQualifiers();
     void GenerateProteinAndTranscriptIds();
     void InstantiateProducts();
+    void InstantiateProductsNames();
     void GenerateLocusIds();
     void SubmitFixProducts();
     void GenerateMissingMrnaForCds();
@@ -82,17 +83,21 @@ public:
         return mNextFeatId;
     }
 
+    bool m_use_hypothetic_protein = true;
+    string mLocusTagPrefix;
+    unsigned int mLocusTagNumber = 1;
+    unsigned int mNextFeatId     = 1;
 
 protected:
     void xGenerateLocusIdsUseExisting();
     void xGenerateLocusIdsRegenerate();
 
     string xNextFeatId();
-	string xNextLocusTag();
-	string xNextProteinId(
-		const CMappedFeat&);
-	string xNextTranscriptId(
-		const CMappedFeat&);
+    string xNextLocusTag();
+    string xNextProteinId(
+        const CMappedFeat&);
+    string xNextTranscriptId(
+        const CMappedFeat&);
 
     void xPutError(const string& message);
 
@@ -119,7 +124,7 @@ protected:
         CMappedFeat,
         const std::string&,                 // qual key
         const std::string&);                // qual value
-        
+
     void xFeatureAddProteinIdMrna(
         CMappedFeat);
     void xFeatureAddProteinIdCds(
@@ -159,11 +164,15 @@ protected:
     void xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& cds);
     void xAddTranscriptAndProteinIdsToUnmatchedMrna(CMappedFeat& mrna);
     void xAddTranscriptAndProteinIdsToMrna(const string& cds_transcript_id,
-                                           const string& cds_protein_id,
-                                           CMappedFeat& mrna);
+        const string& cds_protein_id,
+        CMappedFeat& mrna);
     void xConvertToGeneralIds(const CMappedFeat& mf,
-                              string& transcript_id,
-                              string& protein_id);
+        string& transcript_id,
+        string& protein_id);
+
+    void xGenerate_mRNA_Product(CSeq_feat& cd_feature);
+    CConstRef<CSeq_feat> xGetLinkedFeature(const CSeq_feat& cd_feature, bool gene);
+
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
@@ -171,39 +180,11 @@ protected:
     feature::CFeatTree mTree;
     CSeq_annot_EditHandle mEditHandle;
     IObjtoolsListener* mpMessageListener;
-    unsigned int mNextFeatId;
-	unsigned int mLocusTagNumber;
-	string mLocusTagPrefix;
 
-	map<string, int> mMapProtIdCounts;
+    map<string, int> mMapProtIdCounts;
 
-    using TFeatQualMap = map<CMappedFeat,string>;
+    using TFeatQualMap = map<CMappedFeat, string>;
     set<CMappedFeat> mProcessedMrnas;
-};
-
-class NCBI_XOBJEDIT_EXPORT CFeatureTableLoader
-{
-public:
-    CFeatureTableLoader() = default;
-
-    void PostProcessAnnotation(CBioseq::TAnnot& annots);
-    void PostProcessAnnotation(CSeq_annot& annot);
-
-    IObjtoolsListener* m_logger                 = nullptr;
-    std::string        m_locus_tag_prefix;
-    bool               m_eukariote              = false;
-    bool               m_use_hypothetic_protein = false;
-protected:
-    void Generate_mRNA_Product(CSeq_feat& cd_feature);
-    CConstRef<CSeq_feat> GetLinkedFeature(const CSeq_feat& cd_feature, bool gene);
-    bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, unsigned& id);
-    CRef<feature::CFeatTree> GetFeatTree();
-
-    CRef<CScope>       m_scope;
-    unsigned           m_local_id_counter = 1;
-    unsigned int       m_startingLocusTagNumber = 1;
-    unsigned int       m_startingFeatureId = 1;
-    CRef<feature::CFeatTree> m_Feat_Tree;
 };
 
 END_SCOPE(edit)
