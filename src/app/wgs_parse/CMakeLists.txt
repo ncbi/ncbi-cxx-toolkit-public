@@ -18,5 +18,8 @@ NCBI_begin_app(wgs_parse)
     wgs_text_accession
     wgs_utils
   )
-  NCBI_uses_toolkit_libraries(xcleanup id1cli taxon1 fix_pub)
+  NCBI_requires(FreeTDS)
+  NCBI_uses_toolkit_libraries(
+    ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 ncbi_xloader_genbank
+    xcleanup id1cli taxon1 fix_pub)
 NCBI_end_app()
