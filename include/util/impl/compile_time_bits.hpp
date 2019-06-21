@@ -138,7 +138,7 @@ namespace compile_time_bits
         // GCC 4.9.3 and 5.3.0 doesn't forward correctly arguments types
         // when aggregated initialised
 
-#if __GNUC__ < 6 && !defined(__clang__)
+#if defined(__GNUC__) && (__GNUC__ < 6) && !defined(__clang__)
         constexpr const_pair() = default;
 
         template<typename T1, typename T2>
@@ -412,7 +412,7 @@ namespace compile_time_bits
         return sorter<flipped_sort_traits<decltype(input), T, N>>::order_array(input);
     }
 
-    template<bool case_sensitive = true, class _Hash = ct::SaltedCRC32<case_sensitive>>
+    template<ncbi::NStr::ECase case_sensitive, class _Hash = ct::SaltedCRC32<case_sensitive>>
     class CHashString : public string_view
     {
     public:
@@ -444,11 +444,11 @@ namespace compile_time_bits
         }
         bool operator!=(const sv& o) const
         {
-            return (case_sensitive ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) != 0;
+            return (case_sensitive==ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) != 0;
         }
         bool operator==(const sv& o) const
         {
-            return (case_sensitive ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) == 0;
+            return (case_sensitive == ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) == 0;
         }
 
         hash_t m_hash{ 0 };
@@ -487,7 +487,7 @@ namespace compile_time_bits
         using intermediate = T;
     };
 
-    template<bool _C, class _H>
+    template<ncbi::NStr::ECase _C, typename _H>
     struct recast<CHashString<_C, _H>>
     {
         using type = CHashString<_C, _H>;

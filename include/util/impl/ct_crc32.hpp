@@ -38,6 +38,7 @@
 #include <utility>
 #include <cstdint>
 
+#include <corelib/ncbistr.hpp>
 #include <common/ncbi_export.h>
 
 namespace compile_time_bits
@@ -219,7 +220,7 @@ namespace compile_time_bits
 
 namespace ct
 {
-    template<bool case_sensitive>
+    template<ncbi::NStr::ECase case_sensitive>
     struct NCBI_XUTIL_EXPORT SaltedCRC32
     {
         using type = uint32_t;
@@ -227,7 +228,7 @@ namespace ct
         template<size_t N>
         static type constexpr ct(const char(&s)[N]) noexcept
         {
-            return compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<!case_sensitive, N>(s);
+            return compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<case_sensitive==ncbi::NStr::eNocase, N>(s);
         }
         static type sse42(const char* s, size_t realsize) noexcept;
         static type general(const char* s, size_t realsize) noexcept;

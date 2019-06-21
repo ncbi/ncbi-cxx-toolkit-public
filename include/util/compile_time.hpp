@@ -286,36 +286,47 @@ namespace ct
         array_t m_array = {};
     };
 
+    enum class TwoWayMap
+    {
+        no,
+        yes
+    };
 
-    template<bool case_sensitive, bool two_way, typename T1, typename T2>
+    enum class NeedHash
+    {
+        no,
+        yes
+    };
+
+    template<ncbi::NStr::ECase case_sensitive, TwoWayMap two_way, typename T1, typename T2>
     struct MakeConstMap
     {
-        template<bool need_hash, typename T, typename...Unused>
+        template<NeedHash need_hash, typename T, typename...Unused>
         struct DeduceType
         {
             using type = T;
         };
 
         template<typename...Unused>
-        struct DeduceType<true, const char*, Unused...>
+        struct DeduceType<NeedHash::yes, const char*, Unused...>
         {
             using type = CHashString<case_sensitive>;
         };
 
         template<typename...Unused>
-        struct DeduceType<false, const char*, Unused...>
+        struct DeduceType<NeedHash::no, const char*, Unused...>
         {
             using type = string_view;
         };
 
-        template<bool need_hash, class C, class T, class A>
+        template<NeedHash need_hash, class C, class T, class A>
         struct DeduceType<need_hash, std::basic_string<C, T, A>>
         {
             using type = typename DeduceType<need_hash, const char*>::type;
         };
 
-        using first_type = typename DeduceType<true, T1>::type;
-        using second_type = typename DeduceType<two_way, T2>::type;
+        using first_type = typename DeduceType<NeedHash::yes, T1>::type;
+        using second_type = typename DeduceType<two_way==TwoWayMap::yes ? NeedHash::yes : NeedHash::no, T2>::type;
         using init_pair_t = const_pair<first_type, second_type>;
 
         template<size_t N>
@@ -344,18 +355,18 @@ namespace ct
 };
 
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
-    static constexpr ct::MakeConstMap<case_sensitive, false, type1, type2>::init_pair_t                                      \
+    static constexpr ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>::init_pair_t                          \
         name ## _init[]  __VA_ARGS__;                                                                                        \
-    static constexpr auto name = ct::MakeConstMap<case_sensitive, false, type1, type2>{}                                     \
+    static constexpr auto name = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>{}                         \
         (ct::Reorder(name ## _init));
 
 
 #define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \
-    static constexpr ct::MakeConstMap<case_sensitive, true, type1, type2>::init_pair_t                                       \
+    static constexpr ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type1, type2>::init_pair_t                         \
         name ## _init[]  __VA_ARGS__;                                                                                        \
-    static constexpr auto name = ct::MakeConstMap<case_sensitive, true, type1, type2>{}                                      \
+    static constexpr auto name = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type1, type2>{}                        \
         (ct::Reorder(name ## _init));                                                                                        \
-    static constexpr auto name ## _flipped = ct::MakeConstMap<case_sensitive, true, type2, type1>{}                          \
+    static constexpr auto name ## _flipped = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type2, type1>{}            \
         (ct::FlipReorder(name ## _init));
 
 /*static_assert(name.in_order(), "const map " #name "is not in order");*/

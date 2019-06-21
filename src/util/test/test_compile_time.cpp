@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(TestConstCharset2)
 }
 #endif
 
-MAKE_TWOWAY_CONST_MAP(test_two_way1, false, const char*, const char*,
+MAKE_TWOWAY_CONST_MAP(test_two_way1, ncbi::NStr::eNocase, const char*, const char*,
     {
         {"SO:0000001", "region"},
         {"SO:0000002", "sequece_secondary_structure"},
@@ -112,7 +112,7 @@ MAKE_TWOWAY_CONST_MAP(test_two_way1, false, const char*, const char*,
     });
 
 
-MAKE_TWOWAY_CONST_MAP(test_two_way2, false, const char*, int,
+MAKE_TWOWAY_CONST_MAP(test_two_way2, ncbi::NStr::eNocase, const char*, int,
     {
         {"SO:0000001", 1},
         {"SO:0000002", 2},
@@ -189,17 +189,17 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
 BOOST_AUTO_TEST_CASE(TestCRC32)
 {
-    constexpr auto hash_good_cs = ct::SaltedCRC32<true>::ct("Good");
-    constexpr auto hash_good_ncs = ct::SaltedCRC32<false>::ct("Good");
+    constexpr auto hash_good_cs = ct::SaltedCRC32<ncbi::NStr::eCase>::ct("Good");
+    constexpr auto hash_good_ncs = ct::SaltedCRC32<ncbi::NStr::eNocase>::ct("Good");
     static_assert(hash_good_cs != hash_good_ncs, "not good");
 
     static_assert(948072359 == hash_good_cs, "not good");
     static_assert(
-        ct::SaltedCRC32<false>::ct("Good") == ct::SaltedCRC32<true>::ct("good"),
+        ct::SaltedCRC32<ncbi::NStr::eNocase>::ct("Good") == ct::SaltedCRC32<ncbi::NStr::eCase>::ct("good"),
         "not good");
 
-    BOOST_CHECK(hash_good_cs  == ct::SaltedCRC32<true>::general("Good", 4));
-    BOOST_CHECK(hash_good_ncs == ct::SaltedCRC32<false>::general("Good", 4));
+    BOOST_CHECK(hash_good_cs  == ct::SaltedCRC32<ncbi::NStr::eCase>::general("Good", 4));
+    BOOST_CHECK(hash_good_ncs == ct::SaltedCRC32<ncbi::NStr::eNocase>::general("Good", 4));
 }
 
 #if 0

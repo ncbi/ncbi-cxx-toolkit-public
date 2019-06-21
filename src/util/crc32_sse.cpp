@@ -202,7 +202,7 @@ struct sse42_crc32
     }
 };
 
-template<bool case_sensitive>
+template<ncbi::NStr::ECase case_sensitive>
 uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
@@ -210,7 +210,7 @@ uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noex
     while (len--)
     {
         int c = static_cast<uint8_t>(*s++);
-        if (!case_sensitive)
+        if (case_sensitive == ncbi::NStr::eNocase)
             c = convert_lower_case(c);
         hash = sse42_crc32::update(hash, static_cast<uint8_t>(c));
     }
@@ -219,7 +219,7 @@ uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noex
 
 #endif
 
-template<bool case_sensitive>
+template<ncbi::NStr::ECase case_sensitive>
 uint32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
@@ -227,17 +227,17 @@ uint32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) no
     while (len--)
     {
         int c = static_cast<uint8_t>(*s++);
-        if (!case_sensitive)
+        if (case_sensitive == ncbi::NStr::eNocase)
             c = convert_lower_case(c);
         hash = tabled_crc32::update(hash, static_cast<uint8_t>(c));
     }
     return hash;
 }
 
-template uint32_t ct::SaltedCRC32<true>::general(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<false>::general(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
 #ifdef  __ENABLE_SSE42
-template uint32_t ct::SaltedCRC32<true>::sse42(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<false>::sse42(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
 #endif
 
