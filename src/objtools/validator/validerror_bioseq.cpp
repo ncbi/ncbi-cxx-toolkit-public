@@ -3976,6 +3976,7 @@ static string linkEvStrings [] = {
     "strobe",
     "unspecified",
     "pcr",
+    "proximity ligation",
     "other",
     "UNKNOWN VALUE"
 };
@@ -4408,8 +4409,8 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
 {
     if (gap.IsSetLinkage_evidence()) {
         int linkcount = 0;
-        int linkevarray[12];
-        for (int i = 0; i < 12; i++) {
+        int linkevarray[13];
+        for (int i = 0; i < 13; i++) {
             linkevarray[i] = 0;
         }
         bool is_unspec = false;
@@ -4422,10 +4423,10 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
             }
             linkcount++;
             if (linktype == 255) {
-                (linkevarray[10])++;
-            }
-            else if (linktype < 0 || linktype > 9) {
                 (linkevarray[11])++;
+            }
+            else if (linktype < 0 || linktype > 10) {
+                (linkevarray[12])++;
             }
             else {
                 (linkevarray[linktype])++;
@@ -4435,7 +4436,7 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
             PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapBadLinkage,
                 "Seq-gap type has unspecified and additional linkage evidence", seq);
         }
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 13; i++) {
             if (linkevarray[i] > 1) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapBadLinkage,
                     "Linkage evidence '" + linkEvStrings[i] + "' appears " +
@@ -4451,10 +4452,11 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
             if (gaptype != CSeq_gap::eType_fragment &&
                 gaptype != CSeq_gap::eType_clone &&
                 gaptype != CSeq_gap::eType_repeat &&
-                gaptype != CSeq_gap::eType_scaffold &&
-                gaptype != CSeq_gap::eType_contamination) {
+                gaptype != CSeq_gap::eType_scaffold) {
                 if (gaptype == CSeq_gap::eType_unknown && is_unspec) {
                     /* suppress for legacy records */
+                } else if (gaptype == CSeq_gap::eType_contamination && linkevarray[8] > 0 && linkcount == linkevarray[8]) {
+                    /* contamination can only have linked unspecified */
                 } else {
                    PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapBadLinkage,
                        "Seq-gap of type " + NStr::IntToString(gaptype) +
