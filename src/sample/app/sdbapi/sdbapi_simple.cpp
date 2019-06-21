@@ -386,7 +386,8 @@ void CSdbapiSimpleApp::DemoDynamicSql(void)
     // Sanitize.
     // For strings, use SQLEncode().  For scalars, first convert to an
     // appropriate scalar type, then convert back to a string.
-    user_last   = NStr::SQLEncode(CUtf8::AsUTF8(user_last,eEncoding_ISO8859_1));
+    user_last   = NStr::SQLEncode(CUtf8::AsUTF8(user_last,eEncoding_ISO8859_1),
+                                  NStr::eSqlEnc_TagNonASCII);
     user_salary = NStr::UIntToString(NStr::StringToUInt(user_salary));
     user_hire   = "'" + CTime(user_hire).AsString() + "'";
 

@@ -4557,20 +4557,28 @@ BOOST_AUTO_TEST_CASE(s_GetField_SingleDilimiter_Unsafe)
 BOOST_AUTO_TEST_CASE(s_SQLEncode)
 {
     BOOST_CHECK_EQUAL( NStr::SQLEncode(
-        CUtf8::AsUTF8("should not be touched",eEncoding_ISO8859_1)),
+        CUtf8::AsUTF8("should not be touched",eEncoding_ISO8859_1),
+        NStr::eSqlEnc_TagNonASCII),
         CUtf8::AsUTF8("'should not be touched'",eEncoding_ISO8859_1) );
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(CUtf8::AsUTF8("", eEncoding_ISO8859_1),
+                                      NStr::eSqlEnc_TagNonASCII),
+                      CUtf8::AsUTF8("''",eEncoding_ISO8859_1));
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(CUtf8::AsUTF8("'", eEncoding_ISO8859_1),
+                                      NStr::eSqlEnc_TagNonASCII),
+                      CUtf8::AsUTF8("''''",eEncoding_ISO8859_1));
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(CUtf8::AsUTF8("\\'",eEncoding_ISO8859_1),
+                                      NStr::eSqlEnc_TagNonASCII),
+                      CUtf8::AsUTF8("'\\'''",eEncoding_ISO8859_1));
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(CUtf8::AsUTF8("'a", eEncoding_ISO8859_1),
+                                      NStr::eSqlEnc_TagNonASCII),
+                      CUtf8::AsUTF8("'''a'",eEncoding_ISO8859_1));
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(CUtf8::AsUTF8("a'", eEncoding_ISO8859_1),
+                                      NStr::eSqlEnc_TagNonASCII),
+                      CUtf8::AsUTF8("'a'''",eEncoding_ISO8859_1));
     BOOST_CHECK_EQUAL( NStr::SQLEncode(
-        CUtf8::AsUTF8("",   eEncoding_ISO8859_1)), CUtf8::AsUTF8("''",eEncoding_ISO8859_1) );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(
-        CUtf8::AsUTF8("'",  eEncoding_ISO8859_1)), CUtf8::AsUTF8("''''",eEncoding_ISO8859_1) );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(
-        CUtf8::AsUTF8("\\'",eEncoding_ISO8859_1)), CUtf8::AsUTF8("'\\'''",eEncoding_ISO8859_1) );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(
-        CUtf8::AsUTF8("'a", eEncoding_ISO8859_1)), CUtf8::AsUTF8("'''a'",eEncoding_ISO8859_1) );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(
-        CUtf8::AsUTF8("a'", eEncoding_ISO8859_1)), CUtf8::AsUTF8("'a'''",eEncoding_ISO8859_1) );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(
-        CUtf8::AsUTF8("`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?",eEncoding_ISO8859_1)),
+                           CUtf8::AsUTF8("`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?",
+                                         eEncoding_ISO8859_1),
+                           NStr::eSqlEnc_TagNonASCII),
         CUtf8::AsUTF8("'`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?'",eEncoding_ISO8859_1) );
 
     const unsigned char s_UpperHalf[] = {
@@ -4598,7 +4606,10 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
     CStringUTF8      upperHalf( CUtf8::AsUTF8(CTempString((char*)s_UpperHalf, 128),eEncoding_ISO8859_1 ));
     CStringUTF8      expected( CUtf8::AsUTF8( CTempString((char*)s_Expected, 130),eEncoding_ISO8859_1 ));
 
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(upperHalf), expected );
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(upperHalf, NStr::eSqlEnc_Plain),
+                      expected);
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(upperHalf, NStr::eSqlEnc_TagNonASCII),
+                      'N' + expected);
 }
 
 

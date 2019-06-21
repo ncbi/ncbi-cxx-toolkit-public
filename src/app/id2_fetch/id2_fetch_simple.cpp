@@ -275,7 +275,11 @@ void CId2FetchApp::x_InitPubSeqConnection(const string& server_name,
     if ( GetArgs()["HUP"] ) {
         string user_name = GetProcessUserName();
         LOG_POST("Setting cubby_user = "<<user_name);
-        AutoPtr<CDB_LangCmd> cmd(m_PubSeqOS->LangCmd("set cubby_user "+NStr::SQLEncode(user_name)));
+        // Using a formal parameter is typically better practice, but
+        // likely won't work here (a custom Open Server).
+        string encoded = NStr::SQLEncode(user_name, NStr::eSqlEnc_TagNonASCII);
+        AutoPtr<CDB_LangCmd> cmd
+            (m_PubSeqOS->LangCmd("set cubby_user " + encoded));
         cmd->Send();
         cmd->DumpResults();
     }

@@ -5885,21 +5885,29 @@ string NStr::URLEncode(const CTempString str, EUrlEncode flag)
 }
 
 
-CStringUTF8 NStr::SQLEncode(const CStringUTF8& str) {
-    SIZE_TYPE     stringSize = str.size();
+CStringUTF8 NStr::SQLEncode(const CStringUTF8& str, ESqlEncode flag)
+{
+    SIZE_TYPE     stringSize = str.size(), offset = 0;
     CStringUTF8   result;
 
-    result.reserve(stringSize + 6);
+    result.reserve(stringSize + 7);
+    if (flag == eSqlEnc_TagNonASCII) {
+        result.append(1, 'N');
+        offset = 1;
+    }
     result.append(1, '\'');
     for (SIZE_TYPE i = 0;  i < stringSize;  i++) {
         char  c = str[i];
-        if (c ==  '\'')
+        if (c == '\'') {
             result.append(1, '\'');
+        } else if (offset > 0  &&  (c & 0x80) != 0) {
+            offset = 0;
+        }
         result.append(1, c);
     }
     result.append(1, '\'');
 
-    return result;
+    return result.substr(offset);
 }
 
 

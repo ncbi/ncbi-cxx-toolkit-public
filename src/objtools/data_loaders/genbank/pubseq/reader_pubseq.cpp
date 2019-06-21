@@ -443,7 +443,11 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
     }
     
     if ( m_SetCubbyUser ) {
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+NStr::SQLEncode(CSystemInfo::GetUserName())));
+        // Using a formal parameter is typically better practice, but
+        // likely won't work here (a custom Open Server).
+        string encoded = NStr::SQLEncode(CSystemInfo::GetUserName(),
+                                         NStr::eSqlEnc_TagNonASCII);
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user " + encoded));
         cmd->Send();
         cmd->DumpResults();
     }

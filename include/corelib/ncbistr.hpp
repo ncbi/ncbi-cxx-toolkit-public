@@ -3061,6 +3061,11 @@ public:
     static string URLEncode(const CTempString str,
                             EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
+    /// SQL encode flags
+    enum ESqlEncode {
+        eSqlEnc_Plain,       ///< Always produce '...', with no tag.
+        eSqlEnc_TagNonASCII  ///< Produce N'...' when input's not pure ASCII.
+    };
     /// SQL-encode string
     ///
     /// There are some assumptions/notes about the function:
@@ -3074,9 +3079,15 @@ public:
     ///    Win1252 string, and the input encoding is preserved.
     /// @param str
     ///   The string to encode
+    /// @param flag
+    ///   Whether to tag the result with an N prefix if it contains any
+    ///   non-ASCII characters.  Such tagging is generally advisable,
+    ///   but off by default per historical practice, since there are
+    ///   corner cases in which it may be inappropriate.
     /// @return
     ///   Encoded string with added outer single quotes
-    static CStringUTF8 SQLEncode(const CStringUTF8& str);
+    static CStringUTF8 SQLEncode(const CStringUTF8& str,
+                                 ESqlEncode flag = eSqlEnc_Plain);
 
     /// URL-decode string
     static string URLDecode(const CTempString str,

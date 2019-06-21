@@ -452,8 +452,11 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
     }
 
     if ( m_SetCubbyUser ) {
-        string cubby_user = s_GetCubbyUserName(m_WebCookie);
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+NStr::SQLEncode(cubby_user)));
+        // Using a formal parameter is typically better practice, but
+        // likely won't work here (a custom Open Server).
+        string encoded = NStr::SQLEncode(s_GetCubbyUserName(m_WebCookie),
+                                         NStr::eSqlEnc_TagNonASCII);
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user " + encoded));
         cmd->Send();
         cmd->DumpResults();
     }
