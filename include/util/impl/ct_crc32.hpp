@@ -38,6 +38,8 @@
 #include <utility>
 #include <cstdint>
 
+#include <common/ncbi_export.h>
+
 namespace compile_time_bits
 {
     template<size_t N, typename _Ret>
@@ -218,7 +220,7 @@ namespace compile_time_bits
 namespace ct
 {
     template<bool case_sensitive>
-    struct SaltedCRC32
+    struct NCBI_XUTIL_EXPORT SaltedCRC32
     {
         using type = uint32_t;
 
