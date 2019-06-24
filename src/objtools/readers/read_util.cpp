@@ -347,15 +347,15 @@ void CReadUtil::AddGeneOntologyTerm(
         field.SetData().SetFields().push_back(goid);
     }
 
-    if (NStr::StartsWith(pmId, "0")) {
-        //pmId really is goRef
-        CRef<CUser_field> goref (new CUser_field());
-        goref->SetLabel().SetStr("go ref");
-        goref->SetData().SetStr(pmId);
-        field.SetData().SetFields().push_back(goref);
-    }
+    //if (NStr::StartsWith(pmId, "0")) {
+    //    //pmId really is goRef
+    //    CRef<CUser_field> goref (new CUser_field());
+    //    goref->SetLabel().SetStr("go ref");
+    //    goref->SetData().SetStr(pmId);
+    //    field.SetData().SetFields().push_back(goref);
+    //}
 
-    else if (!NStr::IsBlank(pmId)) {
+    if (!NStr::IsBlank(pmId)) {
         CRef<CUser_field> pubmed (new CUser_field());
         pubmed->SetLabel().SetStr("pubmed id");
         pubmed->SetData().SetInt(NStr::StringToInt(pmId));
