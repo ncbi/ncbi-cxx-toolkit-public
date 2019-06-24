@@ -1087,6 +1087,23 @@ mem_simple = false;
                         inlineMethods <<
                             "}\n"
                             "\n";
+                        if (kind == eKindString) {
+                            setters <<
+                                "    void Set"<<mem_cName<<"("<<i->tName<<"&& value);\n";
+                            inlineMethods <<
+                                "inline\n"
+                                "void "<<methodPrefix<<"Set"<<mem_cName<<"("<<rType<<"&& value)\n"
+                                "{\n";
+                            inlineMethods <<                        
+                                "    "<<valueRef<<" = std::forward<"<<rType<<">(value);\n";
+                            if ( i->haveFlag ) {
+                                inlineMethods <<
+                                    "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                            }
+                            inlineMethods <<
+                                "}\n"
+                                "\n";
+                        }
                     }
                     if (CClassCode::GetDoxygenComments()) {
                         setters <<
