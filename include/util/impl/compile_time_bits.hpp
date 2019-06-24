@@ -487,10 +487,10 @@ namespace compile_time_bits
         using intermediate = T;
     };
 
-    template<ncbi::NStr::ECase _C, typename _H>
-    struct recast<CHashString<_C, _H>>
+    template<ncbi::NStr::ECase _TC, typename _TH>
+    struct recast<CHashString<_TC, _TH>>
     {
-        using type = CHashString<_C, _H>;
+        using type = CHashString<_TC, _TH>;
         using intermediate = typename type::sv;
     };
 
