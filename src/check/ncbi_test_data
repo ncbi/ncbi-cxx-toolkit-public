@@ -7,6 +7,6 @@
 #     CHECK_COPY = <testname>.sh ../../check/ncbi_test_data
 #
 # <testname>.sh:
-#.     ./ncbi_test_data
+# . ./ncbi_test_data
 
 : ${NCBI_TEST_DATA:=/am/ncbiapdata/test_data}
