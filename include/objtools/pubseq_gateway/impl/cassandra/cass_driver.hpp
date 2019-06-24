@@ -404,11 +404,11 @@ class CCassPrm
                 if (NStr::StringToNumeric(m_bytes, &i8))
                     return i8;
                 else
-                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int8");
+                    RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int8 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
             }
             // no break
             default:
-                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int8");
+                RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int8 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
         }
     }
 
@@ -424,11 +424,11 @@ class CCassPrm
                 if (NStr::StringToNumeric(m_bytes, &i16))
                     return i16;
                 else
-                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int16");
+                    RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int16 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
             }
             // no break
             default:
-                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int16");
+                RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int16 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
         }
     }
 
@@ -448,11 +448,11 @@ class CCassPrm
                 if (NStr::StringToNumeric(m_bytes, &i32))
                     return i32;
                 else
-                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int32");
+                    RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int32 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
             }
             // no break
             default:
-                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int32");
+                RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int32 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
         }
     }
 
@@ -472,11 +472,11 @@ class CCassPrm
                 if (NStr::StringToNumeric(m_bytes, &i64))
                     return i64;
                 else
-                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int64");
+                    RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int64 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
             }
             // no break
             default:
-                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int64");
+                RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to int64 (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
         }
     }
 
@@ -500,7 +500,7 @@ class CCassPrm
                 break;
             case CASS_VALUE_TYPE_SET:
             default:
-                RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to string"));
+                RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to string (type=") + NStr::NumericToString(static_cast<int>(m_type)) + ")");
         }
     }
 
