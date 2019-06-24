@@ -4770,7 +4770,7 @@ void CValidError_bioseq::x_ValidateCompletness
     bool reported = false;
 
     if ( comp == CMolInfo::eCompleteness_complete ) {
-        if ( biomol == CMolInfo::eBiomol_genomic ) {
+        if ( biomol == CMolInfo::eBiomol_genomic || biomol == CMolInfo::eBiomol_cRNA ) {
             bool is_gb = false;
             FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
                 if ( (*it)->IsGenbank() ) {
