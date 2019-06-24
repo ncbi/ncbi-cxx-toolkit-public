@@ -38,21 +38,21 @@ export PATH=/bin:/usr/bin:/am/ncbiapdata/bin:$HOME/edirect:$PATH
 set -uo pipefail
 
 TOO_MANY_MATCHES=500
-OUTPUT=`mktemp -t $(basename -s .sh $0)-XXXXXXX`
-TMP=`mktemp -t $(basename -s .sh $0)-XXXXXXX`
+OUTPUT=`mktemp`
+TMP=`mktemp`
 trap " /bin/rm -fr $OUTPUT $TMP" INT QUIT EXIT HUP KILL ALRM
 
 usage() { 
     echo "$0 usage:"; 
     echo -e "\t-t <taxonomy ID>\n\t\tGet taxonomy IDs at or below input taxonomy ID level"; 
     echo -e "\t-n <Scientific Name, Common Name or Keyword>\n\t\tGet taxonomy information for organism";
-    exit 1; 
+    exit 0; 
 }
 
 error_exit() {
     msg=$1
     exit_code=${2:-1}
-    echo $msg;
+    >&2 echo $msg;
     exit $exit_code;
 }
 
