@@ -1632,8 +1632,16 @@ string CCassQuery::ToString() const
             case CASS_VALUE_TYPE_TUPLE:
                 params.append("?TUPLE");
                 break;
-            default:
-                params.append(ParamAsStr(i));
+            default: {
+                string prm;
+                try {
+                    prm = ParamAsStr(i);
+                }
+                catch(const CCassandraException&) {
+                    prm = "???[" + NStr::NumericToString(i) + "]";
+                }
+                params.append(prm);
+            }
         }
     }
 

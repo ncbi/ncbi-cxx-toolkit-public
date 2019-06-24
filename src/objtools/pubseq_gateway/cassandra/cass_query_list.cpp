@@ -41,16 +41,6 @@ constexpr const uint64_t CCassQueryList::kReadyPushWaitTimeout;
 constexpr const uint64_t CCassQueryList::kReadyPopWaitTimeout;
 constexpr const size_t CCassQueryList::kNotifyQueueLen;
 
-static string AllParams(shared_ptr<CCassQuery> qry) {
-    string rv;
-    for (size_t i = 0; i < qry->ParamCount(); ++i) {
-        if (i > 0)
-            rv.append(", ");
-        rv.append(qry->ParamAsStr(i));
-    }
-    return rv;
-}
-
 
 /** CCassQueryList::CQryNotification */
 
@@ -478,7 +468,7 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard) 
                     slot->m_state = ssAttached;
                 }
                     
-                ERR_POST(Warning << "CCassQueryList::CheckSlots: exception (IGNORING & RESTARTING) [" << index << "]: " << e.what() <<  "\nparams: " << AllParams(slot->m_qry).c_str());
+                ERR_POST(Warning << "CCassQueryList::CheckSlots: exception (IGNORING & RESTARTING) [" << index << "]: " << e.what() <<  "\nquery: " << slot->m_qry->ToString().c_str());
             }
             else {
                 m_has_error = true;
