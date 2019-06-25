@@ -338,7 +338,10 @@ void CTbl2AsnApp::Init(void)
       within-clone\n\
       clone-contig\n\
       map\n\
-      strobe", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);  //done
+      strobe\n\
+      unspecified\n\
+      pcr\n\
+      proximity-ligation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);  //done
 
     arg_desc->AddOptionalKey("gap-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
       unknown\n\
@@ -351,6 +354,7 @@ void CTbl2AsnApp::Init(void)
       repeat\n\
       contig\n\
       scaffold\n\
+      contamination\n\
       other", CArgDescriptions::eString);  //done
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
