@@ -2287,6 +2287,9 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
 	set<int> tax_ids;
     for(unsigned int i=0; i < ids.size(); i++) {
     	try {
+    		if(NStr::IsBlank(ids[i])){
+    			continue;
+    		}
     		tax_ids.insert(NStr::StringToInt(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
     	}
     	catch(CException & e){
