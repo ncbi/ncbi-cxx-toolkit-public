@@ -35,6 +35,9 @@ ifeq "" "$(NCBI_BUILD_SESSION_ID)"
   endif
   NCBI_BUILD_SESSION_ID := $(shell $(UUIDGEN))
   export NCBI_BUILD_SESSION_ID
+  ifneq "" "$(NCBI_BUILD_SESSION_ID)"
+    $(info Build session ID: $(NCBI_BUILD_SESSION_ID))
+  endif
 endif
 
 # Work around GNU Make's tendency to double its automatic

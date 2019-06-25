@@ -488,6 +488,7 @@ string SBuildInfo::ExtraName(EExtra key)
     case eTeamCityProjectName:     return "TeamCity-Project-Name";
     case eTeamCityBuildConf:       return "TeamCity-BuildConf-Name";
     case eTeamCityBuildNumber:     return "TeamCity-Build-Number";
+    case eBuildID:                 return "Build-ID";
     case eSubversionRevision:      return "Subversion-Revision";
     case eStableComponentsVersion: return "Stable-Components-Version";
     case eDevelopmentVersion:      return "Development-Version";
@@ -506,6 +507,7 @@ string SBuildInfo::ExtraNameAppLog(EExtra key)
     case eTeamCityProjectName:     return "ncbi_app_tc_project";
     case eTeamCityBuildConf:       return "ncbi_app_tc_conf";
     case eTeamCityBuildNumber:     return "ncbi_app_tc_build";
+    case eBuildID:                 return "ncbi_app_build_id";
     case eSubversionRevision:      return "ncbi_app_vcs_revision";
     case eStableComponentsVersion: return "ncbi_app_sc_version";
     case eDevelopmentVersion:      return "ncbi_app_dev_version";

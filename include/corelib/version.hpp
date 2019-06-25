@@ -67,6 +67,7 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         eTeamCityProjectName,
         eTeamCityBuildConf,
         eTeamCityBuildNumber,
+        eBuildID,
         eSubversionRevision,
         eStableComponentsVersion,
         eDevelopmentVersion,
@@ -132,11 +133,21 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
 #  define NCBI_BUILT_AS_SBUILDINFO /* empty */
 #endif
 
+#if defined(NCBI_BUILD_SESSION_ID)  &&  !defined(NCBI_BUILD_ID)
+#  define NCBI_BUILD_ID NCBI_AS_STRING(NCBI_BUILD_SESSION_ID)
+#endif
+#ifdef NCBI_BUILD_ID
+#  define NCBI_BUILD_ID_SBUILDINFO .Extra(SBuildInfo::eBuildID, NCBI_BUILD_ID)
+#else
+#  define NCBI_BUILD_ID_SBUILDINFO /* empty */
+#endif
+
 #define NCBI_SBUILDINFO_DEFAULT_IMPL() \
     SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
         NCBI_TEAMCITY_PROJECT_NAME_SBUILDINFO \
         NCBI_TEAMCITY_BUILDCONF_NAME_SBUILDINFO \
         NCBI_TEAMCITY_BUILD_NUMBER_SBUILDINFO \
+        NCBI_BUILD_ID_SBUILDINFO \
         NCBI_SUBVERSION_REVISION_SBUILDINFO \
         NCBI_SC_VERSION_SBUILDINFO \
         NCBI_SRCTREE_VER_SBUILDINFO \

@@ -1147,6 +1147,7 @@ NCBI_PLATFORM_BITS
 NCBI_TEAMCITY_BUILD_NUMBER
 NCBI_TEAMCITY_PROJECT_NAME
 NCBI_TEAMCITY_BUILDCONF_NAME
+NCBI_TEAMCITY_BUILD_ID
 NCBI_SUBVERSION_REVISION
 NCBI_SC_VERSION
 LIBOBJS
@@ -4903,6 +4904,8 @@ echo "${ECHO_T}$BUILD_NUMBER" >&6; }
    NCBI_TEAMCITY_BUILD_NUMBER=$BUILD_NUMBER
    NCBI_TEAMCITY_PROJECT_NAME=$TEAMCITY_PROJECT_NAME
    NCBI_TEAMCITY_BUILDCONF_NAME=$TEAMCITY_BUILDCONF_NAME
+   NCBI_TEAMCITY_BUILD_ID=`sed -ne 's/^teamcity\.build\.id=//p' \
+                           $TEAMCITY_BUILD_PROPERTIES_FILE`
 else
    { echo "$as_me:$LINENO: result: none" >&5
 echo "${ECHO_T}none" >&6; }
@@ -53619,6 +53622,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -55040,13 +55044,14 @@ NCBI_PLATFORM_BITS!$NCBI_PLATFORM_BITS$ac_delim
 NCBI_TEAMCITY_BUILD_NUMBER!$NCBI_TEAMCITY_BUILD_NUMBER$ac_delim
 NCBI_TEAMCITY_PROJECT_NAME!$NCBI_TEAMCITY_PROJECT_NAME$ac_delim
 NCBI_TEAMCITY_BUILDCONF_NAME!$NCBI_TEAMCITY_BUILDCONF_NAME$ac_delim
+NCBI_TEAMCITY_BUILD_ID!$NCBI_TEAMCITY_BUILD_ID$ac_delim
 NCBI_SUBVERSION_REVISION!$NCBI_SUBVERSION_REVISION$ac_delim
 NCBI_SC_VERSION!$NCBI_SC_VERSION$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 58; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 59; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

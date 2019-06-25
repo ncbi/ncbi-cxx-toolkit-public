@@ -127,6 +127,10 @@ else
 	$(make_c)
 endif
 
+ifneq "" "$(NCBI_BUILD_SESSION_ID)"
+  CPPFLAGS += -DNCBI_BUILD_SESSION_ID=$(NCBI_BUILD_SESSION_ID)
+endif
+
 ###  Header precompilation
 @GCCPCH@pchdir = $(incdir)/common/ncbi_pch_impl.hpp.gch
 @GCCPCH@pchsrc = $(includedir0)/common/ncbi_pch_impl.hpp

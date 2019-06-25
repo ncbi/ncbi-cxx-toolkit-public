@@ -2155,6 +2155,7 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
             SBuildInfo::eTeamCityProjectName,
             SBuildInfo::eTeamCityBuildConf,
             SBuildInfo::eTeamCityBuildNumber,
+            SBuildInfo::eBuildID,
             SBuildInfo::eBuiltAs
         };
         for(SBuildInfo::EExtra key : bi_num) {
@@ -2173,6 +2174,9 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
 #endif
 #if defined(NCBI_TEAMCITY_BUILD_NUMBER)
     Print("ncbi_app_tc_build", NStr::NumericToString<Uint8>(NCBI_TEAMCITY_BUILD_NUMBER));
+#endif
+#if defined(NCBI_TEAMCITY_BUILD_ID)
+    Print("ncbi_app_build_id", NCBI_TEAMCITY_BUILD_ID);
 #endif
 
     return *this;
