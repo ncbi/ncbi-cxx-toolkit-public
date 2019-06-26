@@ -38,6 +38,7 @@ public:
     static constexpr const uint64_t kReadyPushWaitTimeout = 500000;
     static constexpr const uint64_t kReadyPopWaitTimeout = 500;
     static constexpr const size_t kNotifyQueueLen = 2048;
+    static constexpr const unsigned int kResetRelaxTime = 10;
     static shared_ptr<CCassQueryList> Create(shared_ptr<CCassConnection> cass_conn) noexcept;
     virtual ~CCassQueryList();
 
