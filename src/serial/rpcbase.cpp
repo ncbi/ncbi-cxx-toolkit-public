@@ -289,6 +289,24 @@ CTimeSpan CRPCClient_Base::x_GetRetryDelay(double max_delay) const
 }
 
 
+const char* CRPCClient_Base::GetContentTypeHeader(ESerialDataFormat format)
+{
+    switch (format) {
+    case eSerial_None:
+        break;
+    case eSerial_AsnText:
+        return "Content-Type: x-ncbi-data/x-asn-text\r\n";
+    case eSerial_AsnBinary:
+        return "Content-Type: x-ncbi-data/x-asn-binary\r\n";
+    case eSerial_Xml:
+        return "Content-Type: application/xml\r\n";
+    case eSerial_Json:
+        return "Content-Type: application/json\r\n";
+    }
+    return NULL; // kEmptyCStr?
+}
+
+
 const char* CRPCClientException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {

@@ -166,6 +166,13 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
                 "Error sending request affinity");
         }
     }
+    const char* user_header = GetContentTypeHeader(GetFormat());
+    if (user_header != NULL  &&  *user_header != '\0') {
+        if ( !ConnNetInfo_AppendUserHeader(net_info.get(), user_header)) {
+            NCBI_THROW(CRPCClientException, eArgs,
+                "Error sending user header");
+        }
+    }
 
     // Install callback for parsing headers.
     SSERVICE_Extra x_extra;
@@ -203,7 +210,7 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
         }
     }
     unique_ptr<CConn_HttpStream> stream(new CConn_HttpStream(net_info.get(),
-        kEmptyStr, // user_header
+        GetContentTypeHeader(GetFormat()),
         sx_ParseHeader, // callback
         &m_RetryCtx,    // user data for the callback
         0, // adjust callback

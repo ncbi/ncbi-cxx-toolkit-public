@@ -101,6 +101,8 @@ protected:
     virtual void x_ReadReply(CObjectIStream& in, CSerialObject& reply) = 0;
     virtual string x_GetAffinity(const CSerialObject& request) const = 0;
 
+    static const char* GetContentTypeHeader(ESerialDataFormat format);
+
 private:
     /// Prohibit default copy constructor and assignment operator.
     CRPCClient_Base(const CRPCClient_Base&);
