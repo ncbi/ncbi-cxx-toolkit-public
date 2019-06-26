@@ -2,8 +2,8 @@
 
 REQUIRES = dbapi
 
-APP = db_copy
-SRC = db_copy
+APP = dbcopy
+SRC = dbcopy
 
 ### BEGIN COPIED SETTINGS
 LIB  = dbapi dbapi_driver xncbi
