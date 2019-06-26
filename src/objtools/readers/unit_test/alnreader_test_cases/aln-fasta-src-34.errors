@@ -2,4 +2,6 @@ Line No    : 13
 Severity   : Error
 Problem    : Mods.InvalidValue
 Message    : Invalid value: metagenomic=val1.
+Mod Name   : metagenomic
+Mod Value  : val1
 

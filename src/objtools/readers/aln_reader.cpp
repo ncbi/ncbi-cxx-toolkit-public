@@ -733,13 +733,34 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
 
     auto fReportError = 
         [&](const CModData& mod, const string& msg, EDiagSev sev, EModSubcode subcode) {
+      /*
             return sReportError(pErrorListener, 
                     sev, 
                     EReaderCode::eReader_Mods,
                     subcode,
                     defline_info.mNumLine,
                     msg);
-        };
+*/
+        if (!pErrorListener) {
+            NCBI_THROW2(CObjReaderParseException, eFormat, msg, 0);
+        }
+
+        AutoPtr<CLineErrorEx> pErr(
+            CLineErrorEx::Create(
+            ILineError::eProblem_GeneralParsingError,
+            sev,
+            EReaderCode::eReader_Mods,
+            subcode,
+            "",
+            defline_info.mNumLine,
+            msg,
+            "",
+            mod.GetName(),
+            mod.GetValue()));
+
+        pErrorListener->PutError(*pErr);
+    };
+
         
     CModHandler::TModList mod_list;
     string remainder;

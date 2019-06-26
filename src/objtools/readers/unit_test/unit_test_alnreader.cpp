@@ -107,6 +107,17 @@ public:
                 mStream << "             " << messageLines[i] << endl;
             }
         }
+
+        auto qualName = err.QualifierName();
+        if (!qualName.empty()) {
+            mStream << "Mod Name   : " << qualName << endl;
+        }
+
+        auto qualValue = err.QualifierValue();
+        if (!qualValue.empty()) {
+            mStream << "Mod Value  : " << qualValue << endl;
+        }
+
         mStream << endl;
 
         if (Count() < 500000  &&  err.Severity() != eDiag_Fatal) {
