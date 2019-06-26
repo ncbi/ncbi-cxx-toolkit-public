@@ -40,6 +40,7 @@ constexpr const unsigned int CCassQueryList::kDfltMaxQuery;
 constexpr const uint64_t CCassQueryList::kReadyPushWaitTimeout;
 constexpr const uint64_t CCassQueryList::kReadyPopWaitTimeout;
 constexpr const size_t CCassQueryList::kNotifyQueueLen;
+constexpr const unsigned int CCassQueryList::kResetRelaxTime;
 
 
 /** CCassQueryList::CQryNotification */
@@ -439,6 +440,7 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard) 
     SQrySlot *slot = &m_query_arr[index];
     if (slot->m_qry) {
         bool need_restart = false;
+        string ex_msg;
         try {
             if (slot->m_qry->IsActive()) {
                 switch (slot->m_qry->WaitAsync(0)) {
@@ -458,17 +460,8 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard) 
             if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) &&
                 --slot->m_retry_count > 0) 
             {
+                ex_msg = e.what();
                 need_restart = true;
-                if (slot->m_state != ssReseting && slot->m_consumer) {
-                    slot->m_state = ssReseting;
-                    slot->m_consumer->Reset(slot->m_qry, *this, slot->m_index);
-                    slot->m_state = ssAttached;
-                }
-                else {
-                    slot->m_state = ssAttached;
-                }
-                    
-                ERR_POST(Warning << "CCassQueryList::CheckSlots: exception (IGNORING & RESTARTING) [" << index << "]: " << e.what() <<  "\nquery: " << slot->m_qry->ToString().c_str());
             }
             else {
                 m_has_error = true;
@@ -478,8 +471,32 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard) 
                 throw;
             }
         }
-        if (slot->m_state == ssAttached && need_restart) {
-            slot->m_qry->Restart();
+        if (need_restart) {
+            if (slot->m_state == ssAttached) {
+                slot->m_state = ssReseting;
+                if (slot->m_consumer) {
+                    slot->m_consumer->Reset(slot->m_qry, *this, slot->m_index);
+                    if (slot->m_state != ssReseting)
+                        return nullptr;
+                }
+                this_thread::sleep_for(chrono::milliseconds(kResetRelaxTime));
+                slot->m_qry->Restart();
+                ERR_POST(Warning << "CCassQueryList::CheckSlots: exception (IGNORING & RESTARTING) [" << index << "]: " << ex_msg <<  "\nquery: " << slot->m_qry->ToString().c_str());
+                if (slot->m_state != ssReseting)
+                    return nullptr;
+                slot->m_state = ssAttached;
+            }
+            else {
+                assert(slot->m_state == ssAvailable);
+                if (slot->m_state != ssAvailable) {
+                    ERR_POST(Error << "CCassQueryList::CheckSlots: exception [" << index << "]: " << ex_msg <<  " -- unexpected state: " << slot->m_state << "\nquery: " << slot->m_qry->ToString().c_str());
+                    m_has_error = true;
+                    if (slot->m_consumer)
+                        slot->m_consumer->Failed(slot->m_qry, *this, slot->m_index, nullptr);
+                    DetachSlot(slot);
+                    m_query_arr[index].m_qry->Close();
+                }
+            }
         }
         if (slot->m_state == ssAvailable) {
             if (discard) {
