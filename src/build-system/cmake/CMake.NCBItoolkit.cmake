@@ -74,7 +74,6 @@ endif()
         set(CMAKE_INSTALL_PREFIX "${NCBI_PTBCFG_INSTALL_PATH}" CACHE STRING "Reset the installation destination" FORCE)
         set(NCBI_PTBCFG_INSTALL_TAGS "*;-test;-demo")
     endif()
-    set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
 
 else()
 
@@ -85,6 +84,7 @@ else()
     set(NCBI_PTBCFG_ENABLE_COLLECTOR       OFF)
     set(NCBI_PTBCFG_DOINSTALL              OFF)
 endif()
+set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
 
 macro(NCBI_util_load_file _file _result)
     get_filename_component(_path ${_file} DIRECTORY)
