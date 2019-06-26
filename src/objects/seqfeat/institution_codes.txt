@@ -199,7 +199,7 @@ AMP<GBR>	s	Ampleforth College
 AMS	s	Australian Museum	AM		
 AMS:R	s	Australian Museum, Reptile collection	
 AMUZ	s	Aligarh Muslim University			
-AMWH	s	Amway Herbarium,			
+AMWH	s	Amway Herbarium			
 ANA	s	Orange County Department of Agriculture			
 ANACC<AUS>	c	Australian National Algae Culture Collection	CS		
 ANC	s	Universita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali			
@@ -422,13 +422,13 @@ BCB	s	Universitat Autonoma de Barcelona, Unitat de Botanica
 BCC<ESP>	s	Universitat de Barcelona, Departament de Biologia Vegetal (Unitat de Botanica)			
 BCC<THA>	c	BIOTEC Culture Collection			
 BCCDC	c	BC Centre for Disease Control			
-BCCM/DCG	c	Belgian Co-ordinated Collections of Micro-organisms / DCG Diatoms Collection	DCG		
+BCCM/DCG	c	Belgian Coordinated Collections of Microorganisms / DCG Diatoms Collection	DCG		
 BCCM/GENECORNER	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/LMBP,LMBP		
-BCCM/IHEM	c	Belgian Co-ordinated Collections of Micro-organisms / IHEM Fungi collection: Human & Animal Health	IHEM		
-BCCM/ITM	c	Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM		
+BCCM/IHEM	c	Belgian Coordinated Collections of Microorganisms / IHEM Fungi collection: Human & Animal Health	IHEM		
+BCCM/ITM	c	Belgian Coordinated Collections of Microorganisms / ITM Mycobacteria Collection	ITM		
 BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG	http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
-BCCM/MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
-BCCM/ULC	c	Belgian Co-ordinated Collections of Microorganisms / ULC Cyanobacteria Collection	UCL		
+BCCM/MUCL	c	Belgian Coordinated Collections of Microorganisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
+BCCM/ULC	c	Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection	UCL		
 BCCN	c	Brucella Culture Collection			
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo			
 BCF	s	Universitat de Barcelona, Laboratori de Botanica			
@@ -927,6 +927,7 @@ CCGVCC	c	China Centre for General Viruses Culture Collection
 CCH	s	University of Arizona South, Agricultural Extension Service			
 CCIAL	c	Cultures Cells for Institute Adolfo Lutz			
 CCIBSO	c	Culture Collection IBSO			
+CCIBt	c	Colecao de Cultura de Algas, Fungos e Cianobacterias do Instituto de Botanica			
 CCIBt	c	Culture Collection at the Institute of Botany, Sao Paulo			
 CCIM	c	Culture Collection of Industrial Microorganisms			
 CCM	c	Czech Collection of Microorganisms	CCM<CZE>		
@@ -1145,6 +1146,7 @@ CLCC	s	Augustana University College
 CLD	s	Cleveland Literary and Philosophical Society			
 CLE	s	Tullie House Museum			
 CLEMS	s	Clemson University, Biological Sciences Department			
+CLEP	c	Colecao de Leptospira			
 CLEV	s	Cleveland Museum of Natural History			
 CLEY	s	Coastal Ecology Research Station			
 CLF	s	Institut des Universitaires et Musee Lecoq			
@@ -1997,6 +1999,7 @@ FHK	s	Divisional Forest Office
 FHKS	s	Fort Hays State University			
 FHKSC	s	Fort Hays State University			
 FHL	s	Friday Harbor Laboratories, University of Washington			
+FHMU	s	Fungal Herbarium of Hainan Medical University			
 FHO	s	University of Oxford, Daubeny Herbarium			
 FHSM	s	Fort Hays Sternberg Museum			
 FHSM:HERP	s	Fort Hays Sternberg Museum, Herps Collection	
@@ -3470,6 +3473,7 @@ KMVC	s	Krajske Muzeum Vychodnich Cech
 KNFY	s	Klamath National Forest, Resources Department			
 KNH	s	Kongju National University			
 KNHM	s	The Educational Science Museum [=Kuwait Natural History Museum?]			
+KNHM<UKR>	s	Kharkov Natural History Museum			
 KNK	s	Northern Kentucky University, Department of Biological Sciences			
 KNL	s	Kinneil Museum			
 KNOX	s	Knox College, Department of Biology			
@@ -4572,7 +4576,7 @@ MUB:HONGOS	s	Universidad de Murcia, Departamento de Biologia Vegetal, Botanica, 
 MUBI		Museo de Biodiversidad del Peru, Cusco			
 MUCC	c	Murdoch University Culture Collection			
 MUCC<JPN>	c	Mie University Culture Collection (Culture Collection, Laboratory of Plant Pathology)			
-MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	BCCM/MUCL		
+MUCL	c	Belgian Coordinated Collections of Microorganisms / MUCL Agro-food & Environmental Fungal Collection	BCCM/MUCL		
 MUCPV	s	Museo de la Universidad Nacional del Comahue	MPCA		
 MUCR	s	Museo de Insectos			
 MUCV	s	Monash University, Biological Sciences Department			
@@ -4671,7 +4675,7 @@ MZRF	s	Museo Zangheri di Storia Naturale della Romagna
 MZRO	s	Museo Civico di Storia Naturale "P. Zangheri"			
 MZS	s	Universite de Strasbourg, Musee de Zoologie			
 MZSF	s	Universite de Strasbourg, Museum Zoologique			
-MZSP	s	Sao Paulo, Museu de Zoologia da Universidade de Sao Paulo			
+MZSP	s	Museu de Zoologia da Universidade de Sao Paulo			
 MZTG	s	Museum Zoologia	IHN		
 MZUABCS	s	Museo de Zoologia de la Universidad Automica de Baja California Sur			
 MZUB	s	Museo di Zoologia			
@@ -4764,7 +4768,7 @@ NCCPF	c	National Culture Collection of Pathogenic Fungi
 NCDC	c	National Collection of Dairy Cultures			
 NCE	s	University of Newcastle upon Tyne, School of Biological Sciences			
 NCF	s	Department of Forest Insects, Northwest College of Forestry			
-NCFB	c	National Collection of Food Bacteria			
+NCFB	c	National Collection of Food Bacteria	NCDO		
 NCH	s	Norwich Botanical Society			
 NCHU	s	National Chung Hsing University			
 NCHU:ZOOL	s	National Chung Hsing University, Department of Life Science	
@@ -4860,7 +4864,7 @@ NHMA	s	Natural History Museum, Denmark
 NHMB<CHE>	s	Naturhistorisches Museum, Basel	NMBA		
 NHMB<HUN>	s	Natural History Museum Bucharest			
 NHMBe	s	Naturhistorisches Museum Bern			
-NHMC<GRC>	s	Natural History Museum of Crete, University of Crete, Department of Botany			
+NHMC<GRC>	s	Natural History Museum of Crete, University of Crete			
 NHMC<MMR>	s	Natural History Museum, Rangoon			
 NHME	s	Natuurhistorisch Museum Maastricht			
 NHMF	s	Natural History Museum Fribourg			
@@ -5013,7 +5017,7 @@ NMNZ:S	s	National Museum of New Zealand, Fossil Vertebrates
 NMNZ:TS	s	National Museum of New Zealand, Tissue Collection		
 NMNZ:TSA	s	National Museum of New Zealand, Tissue Collection		
 NMP<CZE>	s	National Museum (Prague)			
-NMP<ZAF>	s	Natal Museum	NMSA		
+NMP<ZAF>	s	KwaZulu-Natal Museum	NMSA		
 NMPC	s	National Museum Prague	MNHP<CZE>		
 NMPC:ENT	s	National Museum Prague, Entomology Collection		
 NMPG<CHN>	s	Zhejiang Institute of Traditional Chinese Medicine			
@@ -5360,6 +5364,7 @@ P	s	Herbier National de Paris	P<FRA>
 PA	s	Universidade Federal do Oeste do Para			
 PAC	s	Pennsylvania State University, Biology Department			
 PACA	s	Instituto Anchietano de Pesquisas/UNISINOS			
+PACC	c	Plovdiv Algal Culture Collection			
 PACMA	s	Pennsylvania State University, Biology Department			
 PAD	s	Universita degli Studi di Padova, Centro Interdipartimentale Musei Scientifici			
 PADA	s	Pennsylvania Department of Agriculture			
@@ -6639,7 +6644,7 @@ TARI<IRN>	s	Research Institute of Forests and Rangelands, Botanical Department
 TARI<TUR>	s	Trakya  Agricultural Research Institute			
 TASH	s	National Academy of Science, Uzbekistan			
 TASM	s	Uzbek Academy of Sciences, Laboratory of Mycology			
-TAU<GRC>	s	Aristotle University of Thessaloniki, Biology Department			
+TAU<GRC>	sc	Aristotle University of Thessaloniki, Biology Department			
 TAU<ISR>	s	Tel-Aviv University			
 TAUF	s	Aristotle University of Thessaloniki, Laboratory of Forest Botany - Geobotany			
 TAWES	s	Maryland Department of Natural Resources			
@@ -6652,6 +6657,7 @@ TBPH	s	Iovel Kutateladze Institute of Pharmacochemistry
 TBRC	c	Thailand Bioresource Research			
 TBY	s	Tenby Museum			
 TCB	s	National Chung Hsing University, Botany Department			
+TCC	c	Thonon Culture Collection of the INRA			
 TCC/USP	c	Trypanosomatid Culture Collection, University of Sao Paulo	TRYCC		
 TCD	s	Trinity College			
 TCDL	s	Trinity College Dublin			
@@ -7912,7 +7918,7 @@ ZCA	s	Zhelimu College of Animal Husbandry, Range Science Department
 ZCM	s	Shetland Museum			
 ZCU	s	The Genetic bank of the Department of Zoology, Charles University			
 ZDC	s	Zhejiang Institute for Drug Control			
-ZDEU	s	Zoology Department, Ege University			
+ZDEU	s	Zoological collection of the Department of  Biology			
 ZDKU	s	Kharkiv National University			
 ZDM	s	Zigong dinosaur Museum			
 ZEA	s	Universidad de Guadalajara, Centro Universitario de la Costa Sur, Departamento de Ecologia y Recursos Naturales			
