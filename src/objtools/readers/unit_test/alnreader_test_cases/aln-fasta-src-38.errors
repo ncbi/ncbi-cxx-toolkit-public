@@ -3,7 +3,6 @@ Severity   : Warning
 Problem    : Mods.Duplicate
 Message    : Duplicated modifier value detected, ignoring duplicate, no action required: other=val1.
 Mod Name   : other
-Mod Value  : val1
 
 Line No    : 13
 Severity   : Error

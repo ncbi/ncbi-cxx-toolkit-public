@@ -261,7 +261,7 @@ void CModHandler::AddMods(const TModList& mods,
             }
 
             if (fReportError) {
-                fReportError(mod, msg, sev, subcode);
+                fReportError(CModData(mod.GetName()), msg, sev, subcode);
                 continue;
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
