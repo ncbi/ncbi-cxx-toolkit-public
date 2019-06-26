@@ -17,14 +17,14 @@ Problem:        Use of the following modifier in a sequence file is discouraged 
 Problem:        Duplicated modifier value detected, ignoring duplicate, no action required: topology=cirCular.
 
                 Warning:
-Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: activity, function.
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: function
 
                 Warning:
-Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: EC-number, Ec_Number.
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: Ec_Number
 
                 Warning:
-Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: protein.
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: protein
 
                 Warning:
-Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: protein-desc.
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: protein-desc
 

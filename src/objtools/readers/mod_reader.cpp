@@ -192,9 +192,6 @@ void CModHandler::SetMods(const TMods& mods)
 }
 
 
-// Replace CModValueAndAttrib class with a CModData
-// or CModifier class, which also has a name attribute. 
-// Then, AddMods will take a list<CModInfo> 
 void CModHandler::AddMods(const TModList& mods,
                           EHandleExisting handle_existing,
                           TModList& rejected_mods,
@@ -222,7 +219,7 @@ void CModHandler::AddMods(const TModList& mods,
             rejected_mods.push_back(mod);
             string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
             if (fReportError) {
-                fReportError(message, eDiag_Warning, eModSubcode_Deprecated);
+                fReportError(mod, message, eDiag_Warning, eModSubcode_Deprecated);
             } 
             continue;
         }
@@ -264,7 +261,7 @@ void CModHandler::AddMods(const TModList& mods,
             }
 
             if (fReportError) {
-                fReportError(msg, sev, subcode);
+                fReportError(mod, msg, sev, subcode);
                 continue;
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
@@ -401,25 +398,6 @@ static string s_GetNormalizedString(const string& unnormalized)
 string CModHandler::x_GetNormalizedString(const string& name)
 {
     return s_GetNormalizedString(name);
-/*
-    string normalized_name = name;
-    NStr::ToLower(normalized_name);
-    NStr::TruncateSpacesInPlace(normalized_name);
-    auto new_end = unique(normalized_name.begin(), 
-                          normalized_name.end(),
-                          //[](char a, char b) { return ((a==b) && (a=='-')); });
-                          [](char a, char b) { 
-                              return ((a=='-' || a=='_' || a==' ') &&
-                                      (b=='-' || b=='_' || b==' ')); });
-
-    normalized_name.erase(new_end, normalized_name.end());
-    for (char& c : normalized_name) {
-        if (c == '_' || c == ' ') {
-            c = '-';
-        }
-    }
-    return normalized_name;
-*/
 }
 
 
@@ -464,14 +442,19 @@ void CModAdder::Apply(const CModHandler& mod_handler,
             }
 
             // Report unrecognised modifier
-            string msg = "Unrecognized modifier: " + x_GetModName(mod_entry) + ".";
             if (fReportError) {
                 skipped_mods.insert(skipped_mods.end(),
                     mod_entry.second.begin(),
                     mod_entry.second.end());
-                fReportError(msg, eDiag_Warning, eModSubcode_Unrecognized);
+
+                for (const auto& modData : mod_entry.second) {
+                    string msg = "Unrecognized modifier: " + modData.GetName() + ".";
+                    fReportError(modData, msg, eDiag_Warning, eModSubcode_Unrecognized);
+                }
                 continue;
             }
+            string canonicalName = x_GetModName(mod_entry);
+            string msg = "Unrecognized modifier: " + canonicalName + ".";
             NCBI_THROW(CModReaderException, eUnknownModifier, msg);
         }
         catch(const CModReaderException& e) {
@@ -479,7 +462,8 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     mod_entry.second.begin(),
                     mod_entry.second.end());
             if (fReportError) {
-                fReportError(e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
+                string canonicalName = x_GetModName(mod_entry);
+                fReportError(CModData(canonicalName), e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
             } 
             else { 
                 throw; // rethrow e
@@ -499,7 +483,7 @@ void CModAdder::x_ReportInvalidValue(const CModData& mod_data,
     string msg = "Invalid value: " + mod_name + "=" + mod_value + ".";
 
     if (fReportError) {
-        fReportError(msg, eDiag_Error, eModSubcode_InvalidValue);
+        fReportError(mod_data, msg, eDiag_Error, eModSubcode_InvalidValue);
         skipped_mods.push_back(mod_data);
         return;
     }

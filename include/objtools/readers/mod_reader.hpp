@@ -76,7 +76,7 @@ public:
 
     using TMods = map<string, list<CModData>>;
     using TModEntry = TMods::value_type;
-    using FReportError = function<void(const string& message, EDiagSev severity, EModSubcode subcode)>;
+    using FReportError = function<void(const CModData& mod, const string& message, EDiagSev severity, EModSubcode subcode)>;
 
     CModHandler();
 

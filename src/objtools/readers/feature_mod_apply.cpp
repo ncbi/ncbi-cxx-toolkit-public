@@ -71,6 +71,21 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
     static unordered_set<string> protein_quals = {"protein-desc", "protein", "ec-number", "activity"};
     if (m_Bioseq.IsNa() &&
         protein_quals.find(x_GetModName(mod_entry)) != protein_quals.end()) {
+
+
+        if (m_fReportError) {
+            for (const auto& mod_data : mod_entry.second) {
+                
+                string msg = "Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: " + mod_data.GetName();
+
+                m_fReportError(mod_data, msg, eDiag_Warning, eModSubcode_ProteinModOnNucseq);
+                for (const auto& mod_data : mod_entry.second) {
+                    m_SkippedMods.push_back(mod_data);
+                }
+                return true;
+            }
+        }
+
         set<string> qual_names;
         for (const auto& mod_data : mod_entry.second) {
             qual_names.insert(mod_data.GetName());
@@ -88,14 +103,6 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
         }
         string msg = "Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: "
                    + name_string + ".";
-
-        if (m_fReportError) {
-            m_fReportError(msg, eDiag_Warning, eModSubcode_ProteinModOnNucseq);
-            for (const auto& mod_data : mod_entry.second) {
-                m_SkippedMods.push_back(mod_data);
-            }
-            return true;
-        }
 
         NCBI_THROW(CModReaderException, eInvalidModifier, msg);
     }

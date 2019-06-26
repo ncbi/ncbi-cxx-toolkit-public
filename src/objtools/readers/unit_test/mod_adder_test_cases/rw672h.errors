@@ -11,7 +11,7 @@ Problem:        Invalid value: completeness=invalid_completeness_qual.
 Problem:        Invalid value: gcode=nonintegral. Integer value expected.
 
                 Warning:
-Problem:        Unrecognized modifier: invalid-mod-name.
+Problem:        Unrecognized modifier: invalid_mod_name.
 
                 Error:
 Problem:        Invalid value: location=invalid_location.

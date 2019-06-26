@@ -933,7 +933,7 @@ void CDescrModApply::x_ReportInvalidValue(const CModData& mod_data,
     }
 
     if (m_fReportError) {
-        m_fReportError(msg, eDiag_Error, eModSubcode_InvalidValue);
+        m_fReportError(mod_data, msg, eDiag_Error, eModSubcode_InvalidValue);
         m_SkippedMods.push_back(mod_data);
         return;
     }

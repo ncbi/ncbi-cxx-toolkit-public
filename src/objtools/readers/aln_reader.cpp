@@ -732,7 +732,7 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
 
 
     auto fReportError = 
-        [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
+        [&](const CModData& mod, const string& msg, EDiagSev sev, EModSubcode subcode) {
             return sReportError(pErrorListener, 
                     sev, 
                     EReaderCode::eReader_Mods,
