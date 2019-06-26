@@ -514,7 +514,10 @@ const CSeq_data& CSeqMap::x_GetSeq_data(const CSegment& seg) const
         return static_cast<const CSeq_data&>(*seg.m_RefObject);
     }
     else if ( seg.m_SegType == eSeqGap && seg.m_ObjType == eSeqLiteral ) {
-        return static_cast<const CSeq_literal&>(*seg.m_RefObject).GetSeq_data();
+        const CSeq_literal& literal = static_cast<const CSeq_literal&>(*seg.m_RefObject);
+        if ( literal.IsSetSeq_data() ) {
+            return literal.GetSeq_data();
+        }
     }
     NCBI_THROW(CSeqMapException, eSegmentTypeError,
                "Invalid segment type");
@@ -1326,7 +1329,7 @@ void CSeqMap::x_Add(const CSeq_literal& seq)
 
     if ( !seq.IsSetSeq_data() ) {
         // No data exist - treat it like a gap
-        x_AddGap(seq.GetLength(), is_unknown_len); //???
+        x_AddGap(seq.GetLength(), is_unknown_len, seq); //???
     }
     else if ( seq.GetSeq_data().IsGap() ) {
         // Seq-data.gap
@@ -1428,6 +1431,13 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
         if ( seg.m_SegType != eSeqGap ) {
             NCBI_THROW(CSeqMapException, eDataError,
                        "split chunk covers bad SeqMap segment");
+        }
+        if ( auto literal = x_GetSeq_literal(seg) ) {
+            // reset temporary literal segment
+            if ( !literal->IsSetFuzz() && !literal->IsSetSeq_data() ) {
+                seg.m_ObjType = eSeqGap;
+                seg.m_RefObject = null;
+            }
         }
         _ASSERT(!seg.m_RefObject);
 
