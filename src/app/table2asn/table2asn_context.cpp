@@ -201,7 +201,8 @@ CTable2AsnContext::CTable2AsnContext():
     m_augustus_fix(false),
     m_make_flatfile(false),
     m_discrepancy(false),
-    m_logger(0)
+    m_logger(0),
+    m_t(false)
 {
 }
 

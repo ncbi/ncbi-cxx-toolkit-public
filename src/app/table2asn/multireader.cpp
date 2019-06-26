@@ -794,6 +794,16 @@ CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool m
         if (merge_template_descriptors) {
             m_context.MergeWithTemplate(*entry);
         }
+        else {
+            if (m_context.m_t  &&  m_context.m_logger) {
+                string msg(
+                    "Template file descriptors are ignored if input is ASN.1");
+                m_context.m_logger->PutError(
+                    *unique_ptr<CLineError>(
+                        CLineError::Create(ILineError::eProblem_Unset, 
+                            eDiag_Warning, "", 0, msg)));
+            }
+        }
     }
 
     if (submit.Empty())

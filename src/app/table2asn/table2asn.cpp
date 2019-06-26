@@ -717,6 +717,7 @@ int CTbl2AsnApp::Run(void)
     {
         if (args["t"])
         {
+            m_context.m_t = true;
             m_reader->LoadTemplate(m_context, args["t"].AsString());
         }
     }

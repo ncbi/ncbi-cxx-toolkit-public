@@ -63,6 +63,7 @@ public:
     string Q;
     bool   L;
     bool   W;
+    bool   m_t;
     bool   m_save_bioseq_set;
     string c;
     bool   m_discrepancy;
