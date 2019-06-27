@@ -7,7 +7,7 @@ connect/ext
 connect/mbedtls
 connect/daemons$
 connect/daemons/mod$
-internal/webenv2 update-only
+internal/signon3$ update-only
 app$
 app/dblb
 dbapi$

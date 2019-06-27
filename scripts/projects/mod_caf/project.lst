@@ -5,5 +5,4 @@ connect$
 connect/ext$
 connect/daemons$
 connect/daemons/mod$
-internal$ update-only
-internal/webenv2$ update-only
+internal/signon3$ update-only
