@@ -1,3 +1,8 @@
+Release 1.6.0 (2019-06-27)
+
+    * PSG -- add op stats collection (and reporting) (CXX-10722)
+    * PSG: introduce configuration alerts (CXX-10736)
+
 Release 1.5.0 (2019-06-05)
 
     * PSG -- add "server alerts" mechanism (CXX-10682)
