@@ -8589,6 +8589,8 @@ static bool IsBadSeqInstStrand(const CSeq_inst& inst, const CBioSource* bio_src)
                 ret = false;
             }
         }
+    } else if (inst.IsSetStrand() && inst.GetStrand() == CSeq_inst::eStrand_not_set) {
+        ret = true;
     }
 
     return ret;
