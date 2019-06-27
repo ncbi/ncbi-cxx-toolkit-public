@@ -54,8 +54,7 @@ public:
     enum EIndexType {
         eMainIndex,
         eSecondIndex,
-        eThirdIndex,
-        eSmallIndex = eSecondIndex
+        eThirdIndex
     };
     explicit CWGSResolver_VDB(const CVDBMgr& mgr,
                               EIndexType index_type = eMainIndex,
@@ -127,8 +126,10 @@ private:
     CVDB m_Db;
     CVDBTable m_GiIdxTable;
     CVDBTable m_AccIdxTable;
-    CVDBObjectCache<SGiIdxTableCursor> m_GiIdx;
-    CVDBObjectCache<SAccIdxTableCursor> m_AccIdx;
+    CVDBTableIndex m_AccIndex;
+    bool m_AccIndexIsPrefix;
+    CVDBObjectCache<SGiIdxTableCursor> m_GiIdxCursorCache;
+    CVDBObjectCache<SAccIdxTableCursor> m_AccIdxCursorCache;
     CRef<CWGSResolver_VDB> m_NextResolver;
 };
 
@@ -224,198 +225,6 @@ protected:
     CRef<CID2Client> m_ID2Client;
 };
 #endif
-
-
-class NCBI_SRAREAD_EXPORT CWGSResolver_GiRangeFile : public CObject
-{
-public:
-    CWGSResolver_GiRangeFile(void);
-    explicit CWGSResolver_GiRangeFile(const string& index_path);
-    ~CWGSResolver_GiRangeFile(void);
-
-    static string GetDefaultIndexPath(void);
-
-    const string& GetIndexPath(void) const {
-        return m_IndexPath;
-    }
-
-    bool IsValid(void) const;
-
-    const CTime& GetTimestamp(void) const {
-        return m_Index.m_Timestamp;
-    }
-
-    // return all WGS accessions that could contain gi
-    typedef CWGSResolver::TWGSPrefixes TWGSPrefixes;
-    TWGSPrefixes GetPrefixes(TGi gi) const;
-
-    void SetNonWGS(TGi gi);
-
-    struct SSeqInfo {
-        string wgs_acc;
-        char type;
-        TVDBRowId row;
-    };
-    typedef vector<SSeqInfo> TSeqInfoList;
-    TSeqInfoList FindAll(TGi gi, const CVDBMgr& mgr) const;
-
-    // return unordered list of WGS accessions and GI ranges
-    typedef pair<TIntId, TIntId> TIdRange;
-    typedef pair<string, TIdRange> TIdRangePair;
-    typedef vector<TIdRangePair> TIdRanges;
-    TIdRanges GetIdRanges(void) const;
-
-    struct SWGSAccession {
-        enum {
-            kMinWGSAccessionLength = 6, // AAAA01
-            kMaxWGSAccessionLength = 9  // AAAA01.11
-        };
-
-        SWGSAccession(void) {
-            acc[0] = '\0';
-        }
-        explicit SWGSAccession(CTempString str) {
-            size_t len = str.size();
-            for ( size_t i = 0; i < len; ++i ) {
-                acc[i] = str[i];
-            }
-            acc[len] = '\0';
-        }
-
-        char acc[kMaxWGSAccessionLength+1];
-    };
-
-    void LoadFirst(const string& index_path);
-    bool Update(void);
-
-private:
-    typedef CRangeMultimap<SWGSAccession, TIntId> TIndex;
-    struct SIndexInfo
-    {
-        TIndex m_Index;
-        CTime  m_Timestamp;
-    };
-
-    bool x_Load(SIndexInfo& index, const CTime* old_timestamp = 0) const;
-
-    string m_IndexPath;
-    mutable CMutex m_Mutex;
-    SIndexInfo m_Index;
-    set<TGi> m_NonWGS;
-};
-
-
-class NCBI_SRAREAD_EXPORT CWGSResolver_AccRangeFile : public CObject
-{
-public:
-    CWGSResolver_AccRangeFile(void);
-    explicit CWGSResolver_AccRangeFile(const string& index_path);
-    ~CWGSResolver_AccRangeFile(void);
-
-    static string GetDefaultIndexPath(void);
-
-    const string& GetIndexPath(void) const {
-        return m_IndexPath;
-    }
-
-    bool IsValid(void) const;
-
-    const CTime& GetTimestamp(void) const {
-        return m_Index.m_Timestamp;
-    }
-
-    struct NCBI_SRAREAD_EXPORT SAccInfo
-    {
-        SAccInfo(void)
-            : m_IdLength(0)
-            {
-            }
-        SAccInfo(CTempString acc, Uint4& id);
-        
-        string GetAcc(Uint4 id) const;
-
-        DECLARE_OPERATOR_BOOL(m_IdLength != 0);
-
-        bool operator<(const SAccInfo& b) const {
-            if ( m_IdLength != b.m_IdLength ) {
-                return m_IdLength < b.m_IdLength;
-            }
-            return m_AccPrefix < b.m_AccPrefix;
-        }
-
-        bool operator==(const SAccInfo& b) const {
-            return m_IdLength == b.m_IdLength &&
-                m_AccPrefix == b.m_AccPrefix;
-        }
-        bool operator!=(const SAccInfo& b) const {
-            return !(*this == b);
-        }
-
-        string m_AccPrefix;
-        Uint4  m_IdLength;
-    };
-
-    // return all WGS accessions that could contain protein accession
-    typedef CWGSResolver::TWGSPrefixes TWGSPrefixes;
-    TWGSPrefixes GetPrefixes(const string& acc) const;
-
-    void SetNonWGS(const string& acc);
-
-    // return unordered list of WGS accessions and GI ranges
-    typedef pair<string, string> TIdRange;
-    typedef pair<string, TIdRange> TIdRangePair;
-    typedef vector<TIdRangePair> TIdRanges;
-    TIdRanges GetIdRanges(void) const;
-
-    typedef CWGSResolver_GiRangeFile::SWGSAccession SWGSAccession;
-
-    void LoadFirst(const string& index_path);
-    bool Update(void);
-
-private:
-    typedef CRangeMultimap<SWGSAccession, Uint4> TRangeIndex;
-    typedef map<SAccInfo, TRangeIndex> TIndex; // by acc prefix
-    struct SIndexInfo
-    {
-        TIndex m_Index;
-        CTime  m_Timestamp;
-    };
-
-    bool x_Load(SIndexInfo& index, const CTime* old_timestamp = 0) const;
-
-    string m_IndexPath;
-    mutable CMutex m_Mutex;
-    SIndexInfo m_Index;
-    set<string> m_NonWGS;
-};
-
-    
-class NCBI_SRAREAD_EXPORT CWGSResolver_RangeFiles : public CWGSResolver
-{
-public:
-    CWGSResolver_RangeFiles(void);
-    ~CWGSResolver_RangeFiles(void);
-
-    static CRef<CWGSResolver> CreateResolver(void);
-    
-    // return all WGS accessions that could contain gi or accession
-    virtual TWGSPrefixes GetPrefixes(TGi gi);
-    virtual TWGSPrefixes GetPrefixes(const string& acc);
-
-    // remember that the id finally happened to be non-WGS
-    // the info can be used to return empty candidates set in the future
-    virtual void SetNonWGS(TGi gi,
-                           const TWGSPrefixes& prefixes);
-    virtual void SetNonWGS(const string& acc,
-                           const TWGSPrefixes& prefixes);
-
-    // force update of indexes from files
-    virtual bool Update(void);
-
-protected:
-    CRef<CWGSResolver_GiRangeFile> m_GiResolver;
-    CRef<CWGSResolver_AccRangeFile> m_AccResolver;
-};
 
 
 END_NAMESPACE(objects);

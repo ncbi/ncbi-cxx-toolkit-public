@@ -71,9 +71,6 @@ CWGSResolver::CreateResolver(const CVDBMgr& mgr)
         ret = CWGSResolver_ID2::CreateResolver();
     }
 #endif
-    if ( !ret ) {
-        ret = CWGSResolver_RangeFiles::CreateResolver();
-    }
     return ret;
 }
 

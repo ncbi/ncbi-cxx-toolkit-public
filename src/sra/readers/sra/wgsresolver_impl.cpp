@@ -68,11 +68,12 @@ BEGIN_NAMESPACE(objects);
 #define DEFAULT_WGS_INDEX3_PATH1 NCBI_TRACES04_PATH "/wgs03/WGS/ZZ/ZZ/ZZZZ97"
 #define DEFAULT_WGS_INDEX3_PATH2 NCBI_TRACES04_PATH "/wgs03/WGS/WGS_INDEX_V3"
 
-#define DEFAULT_GI_INDEX_PATH                                   \
-    NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
-
-#define DEFAULT_PROT_ACC_INDEX_PATH                             \
-    NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_acc_ranges"
+#define DEFAULT_WGS_RANGE_INDEX_ACC "ZZZZ79"
+#define DEFAULT_WGS_RANGE_INDEX2_ACC "ZZZZ78"
+#define DEFAULT_WGS_RANGE_INDEX_PATH1 NCBI_TRACES04_PATH "/wgs03/WGS/ZZ/ZZ/ZZZZ79"
+#define DEFAULT_WGS_RANGE_INDEX_PATH2 NCBI_TRACES04_PATH "/wgs03/WGS/WGS_RANGE_INDEX_1"
+#define DEFAULT_WGS_RANGE_INDEX2_PATH1 NCBI_TRACES04_PATH "/wgs03/WGS/ZZ/ZZ/ZZZZ78"
+#define DEFAULT_WGS_RANGE_INDEX2_PATH2 NCBI_TRACES04_PATH "/wgs03/WGS/WGS_RANGE_INDEX_2"
 
 
 NCBI_PARAM_DECL(bool, WGS, RESOLVER_DIRECT_WGS_INDEX);
@@ -81,9 +82,14 @@ NCBI_PARAM_DEF(bool, WGS, RESOLVER_DIRECT_WGS_INDEX, true);
 NCBI_PARAM_DECL(bool, WGS, RESOLVER_GENBANK);
 NCBI_PARAM_DEF(bool, WGS, RESOLVER_GENBANK, true);
 
-NCBI_PARAM_DECL(bool, WGS, RESOLVER_RANGEFILES);
-NCBI_PARAM_DEF(bool, WGS, RESOLVER_RANGEFILES, false);
+NCBI_PARAM_DECL(bool, WGS, RESOLVER_WGS_RANGE_INDEX);
+NCBI_PARAM_DEF(bool, WGS, RESOLVER_WGS_RANGE_INDEX, false);
 
+static inline bool s_UseWGSRangeIndex(void)
+{
+    static bool value = NCBI_PARAM_TYPE(WGS, RESOLVER_WGS_RANGE_INDEX)::GetDefault();
+    return value;
+}
 
 NCBI_PARAM_DECL(string, WGS, WGS_INDEX);
 NCBI_PARAM_DEF(string, WGS, WGS_INDEX, "");
@@ -109,12 +115,20 @@ NCBI_PARAM_DECL(string, WGS, WGS_INDEX3_ACC);
 NCBI_PARAM_DEF(string, WGS, WGS_INDEX3_ACC, DEFAULT_WGS_INDEX3_ACC);
 
 
-NCBI_PARAM_DECL(string, WGS, GI_INDEX);
-NCBI_PARAM_DEF(string, WGS, GI_INDEX, DEFAULT_GI_INDEX_PATH);
+NCBI_PARAM_DECL(string, WGS, WGS_RANGE_INDEX);
+NCBI_PARAM_DEF(string, WGS, WGS_RANGE_INDEX, "");
 
 
-NCBI_PARAM_DECL(string, WGS, PROT_ACC_INDEX);
-NCBI_PARAM_DEF(string, WGS, PROT_ACC_INDEX, DEFAULT_PROT_ACC_INDEX_PATH);
+NCBI_PARAM_DECL(string, WGS, WGS_RANGE_INDEX2);
+NCBI_PARAM_DEF(string, WGS, WGS_RANGE_INDEX2, "");
+
+
+NCBI_PARAM_DECL(string, WGS, WGS_RANGE_INDEX_ACC);
+NCBI_PARAM_DEF(string, WGS, WGS_RANGE_INDEX_ACC, DEFAULT_WGS_RANGE_INDEX_ACC);
+
+
+NCBI_PARAM_DECL(string, WGS, WGS_RANGE_INDEX2_ACC);
+NCBI_PARAM_DEF(string, WGS, WGS_RANGE_INDEX2_ACC, DEFAULT_WGS_RANGE_INDEX2_ACC);
 
 
 // debug levels
@@ -145,6 +159,44 @@ static inline bool s_DebugEnabled(EDebugLevel level)
     return s_DebugLevel() >= level;
 }
 
+
+//#define COLLECT_PROFILE
+#ifdef COLLECT_PROFILE
+struct SProfiler
+{
+    const char* name;
+    size_t count;
+    CStopWatch sw;
+    SProfiler() : name(0), count(0) {}
+    ~SProfiler() {
+        if ( name )
+            cout << name<<" calls: "<<count<<" time: "<<sw.Elapsed()<<endl;
+    }
+};
+struct SProfilerGuard
+{
+    SProfiler& sw;
+    SProfilerGuard(SProfiler& sw, const char* name)
+        : sw(sw)
+        {
+            sw.name = name;
+            sw.count += 1;
+            sw.sw.Start();
+        }
+    ~SProfilerGuard()
+        {
+            sw.sw.Stop();
+        }
+};
+
+static SProfiler sw_AccFind;
+static SProfiler sw_AccRange;
+static SProfiler sw_WGSPrefix;
+
+# define PROFILE(var) SProfilerGuard guard(var, #var)
+#else
+# define PROFILE(var)
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // CWGSResolver_VDB
@@ -177,8 +229,8 @@ struct CWGSResolver_VDB::SAccIdxTableCursor : public CObject {
     CVDBTable m_Table;
     CVDBCursor m_Cursor;
 
-    typedef pair<TVDBRowId, TVDBRowId> row_range_t;
-    DECLARE_VDB_COLUMN_AS(row_range_t, ACCESSION_ROW_RANGE);
+    typedef Uint2 acc_range_number_t;
+    DECLARE_VDB_COLUMN_AS(acc_range_number_t, ACCESSION_RANGE);
     DECLARE_VDB_COLUMN_AS_STRING(WGS_PREFIX);
 };
 
@@ -186,7 +238,7 @@ struct CWGSResolver_VDB::SAccIdxTableCursor : public CObject {
 CWGSResolver_VDB::SAccIdxTableCursor::SAccIdxTableCursor(const CVDBTable& table)
     : m_Table(table),
       m_Cursor(table),
-      INIT_VDB_COLUMN(ACCESSION_ROW_RANGE),
+      INIT_OPTIONAL_VDB_COLUMN(ACCESSION_RANGE),
       INIT_VDB_COLUMN(WGS_PREFIX)
 {
 }
@@ -194,35 +246,51 @@ CWGSResolver_VDB::SAccIdxTableCursor::SAccIdxTableCursor(const CVDBTable& table)
 
 string CWGSResolver_VDB::GetDefaultWGSIndexPath(EIndexType index_type)
 {
-    if ( index_type == eMainIndex ) {
-        return NCBI_PARAM_TYPE(WGS, WGS_INDEX)::GetDefault();
-    }
-    else if ( index_type == eSecondIndex ) {
-        return NCBI_PARAM_TYPE(WGS, WGS_INDEX2)::GetDefault();
-    }
-    else if ( index_type == eThirdIndex ) {
-        return NCBI_PARAM_TYPE(WGS, WGS_INDEX3)::GetDefault();
+    if ( s_UseWGSRangeIndex() ) {
+        if ( index_type == eMainIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_RANGE_INDEX)::GetDefault();
+        }
+        else if ( index_type == eSecondIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_RANGE_INDEX2)::GetDefault();
+        }
     }
     else {
-        return string();
+        if ( index_type == eMainIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_INDEX)::GetDefault();
+        }
+        else if ( index_type == eSecondIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_INDEX2)::GetDefault();
+        }
+        else if ( index_type == eThirdIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_INDEX3)::GetDefault();
+        }
     }
+    return string();
 }
 
 
 string CWGSResolver_VDB::GetDefaultWGSIndexAcc(EIndexType index_type)
 {
-    if ( index_type == eMainIndex ) {
-        return NCBI_PARAM_TYPE(WGS, WGS_INDEX_ACC)::GetDefault();
-    }
-    else if ( index_type == eSecondIndex ) {
-        return NCBI_PARAM_TYPE(WGS, WGS_INDEX2_ACC)::GetDefault();
-    }
-    else if ( index_type == eThirdIndex ) {
-        return NCBI_PARAM_TYPE(WGS, WGS_INDEX3_ACC)::GetDefault();
+    if ( s_UseWGSRangeIndex() ) {
+        if ( index_type == eMainIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_RANGE_INDEX_ACC)::GetDefault();
+        }
+        else if ( index_type == eSecondIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_RANGE_INDEX2_ACC)::GetDefault();
+        }
     }
     else {
-        return string();
+        if ( index_type == eMainIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_INDEX_ACC)::GetDefault();
+        }
+        else if ( index_type == eSecondIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_INDEX2_ACC)::GetDefault();
+        }
+        else if ( index_type == eThirdIndex ) {
+            return NCBI_PARAM_TYPE(WGS, WGS_INDEX3_ACC)::GetDefault();
+        }
     }
+    return string();
 }
 
 
@@ -231,20 +299,36 @@ string GetDirectWGSIndexPath(CWGSResolver_VDB::EIndexType index_type)
 {
     string path;
     if ( NCBI_PARAM_TYPE(WGS, RESOLVER_DIRECT_WGS_INDEX)::GetDefault() ) {
-        const char* path1 = DEFAULT_WGS_INDEX_PATH1;
-        const char* path2 = DEFAULT_WGS_INDEX_PATH2;
-        if ( index_type == CWGSResolver_VDB::eSecondIndex ) {
-            path1 = DEFAULT_WGS_INDEX2_PATH1;
-            path2 = DEFAULT_WGS_INDEX2_PATH2;
+        const char* path1 = 0;
+        const char* path2 = 0;
+        if ( s_UseWGSRangeIndex() ) {
+            if ( index_type == CWGSResolver_VDB::eMainIndex ) {
+                path1 = DEFAULT_WGS_RANGE_INDEX_PATH1;
+                path2 = DEFAULT_WGS_RANGE_INDEX_PATH2;
+            }
+            else if ( index_type == CWGSResolver_VDB::eSecondIndex ) {
+                path1 = DEFAULT_WGS_RANGE_INDEX2_PATH1;
+                path2 = DEFAULT_WGS_RANGE_INDEX2_PATH2;
+            }
         }
-        else if ( index_type == CWGSResolver_VDB::eThirdIndex ) {
-            path1 = DEFAULT_WGS_INDEX3_PATH1;
-            path2 = DEFAULT_WGS_INDEX3_PATH2;
+        else {
+            if ( index_type == CWGSResolver_VDB::eMainIndex ) {
+                path1 = DEFAULT_WGS_INDEX_PATH1;
+                path2 = DEFAULT_WGS_INDEX_PATH2;
+            }
+            else if ( index_type == CWGSResolver_VDB::eSecondIndex ) {
+                path1 = DEFAULT_WGS_INDEX2_PATH1;
+                path2 = DEFAULT_WGS_INDEX2_PATH2;
+            }
+            else if ( index_type == CWGSResolver_VDB::eThirdIndex ) {
+                path1 = DEFAULT_WGS_INDEX3_PATH1;
+                path2 = DEFAULT_WGS_INDEX3_PATH2;
+            }
         }
-        if ( CDirEntry(path1).Exists() ) {
+        if ( path1 && CDirEntry(path1).Exists() ) {
             path = path1;
         }
-        else if ( CDirEntry(path2).Exists() ) {
+        else if ( path2 && CDirEntry(path2).Exists() ) {
             path = path2;
         }
     }
@@ -310,9 +394,11 @@ CRef<CWGSResolver> CWGSResolver_VDB::CreateResolver(const CVDBMgr& mgr)
     if ( ret2->IsValid() ) {
         ret = ret2;
     }
-    CRef<CWGSResolver_VDB> ret3(new CWGSResolver_VDB(mgr, eThirdIndex, ret));
-    if ( ret3->IsValid() ) {
-        ret = ret3;
+    if ( !ret->m_AccIndexIsPrefix ) {
+        CRef<CWGSResolver_VDB> ret3(new CWGSResolver_VDB(mgr, eThirdIndex, ret));
+        if ( ret3->IsValid() ) {
+            ret = ret3;
+        }
     }
     return CRef<CWGSResolver>(ret);
 }
@@ -325,8 +411,9 @@ void CWGSResolver_VDB::Close(void)
     m_Db.Close();
     m_GiIdxTable.Close();
     m_AccIdxTable.Close();
-    m_GiIdx.Clear();
-    m_AccIdx.Clear();
+    m_AccIndex.Close();
+    m_GiIdxCursorCache.Clear();
+    m_AccIdxCursorCache.Clear();
 }
 
 
@@ -338,8 +425,7 @@ static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
         try {
             path = mgr.FindAccPath(acc_or_path);
             if ( s_DebugEnabled(eDebug_open) ) {
-                LOG_POST_X(28, "CWGSResolver_VDB: "
-                           "index accession "<<acc_or_path<<" -> "<<path);
+                LOG_POST_X(28, "CWGSResolver_VDB("<<acc_or_path<<"): -> "<<path);
             }
         }
         catch ( CSraException& /*ignored*/ ) {
@@ -358,7 +444,7 @@ static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
         if ( de.GetPath() != path ) {
             path = de.GetPath();
             if ( s_DebugEnabled(eDebug_open) ) {
-                LOG_POST_X(29, "CWGSResolver_VDB: "
+                LOG_POST_X(29, "CWGSResolver_VDB("<<acc_or_path<<"): "
                            "resolved index link to "<<path);
             }
         }
@@ -393,11 +479,17 @@ void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
     }
     else {
         if ( s_DebugEnabled(eDebug_open) ) {
-            LOG_POST_X(30, "CWGSResolver_VDB: index timestamp: "<<m_Timestamp);
+            LOG_POST_X(30, "CWGSResolver_VDB("<<acc_or_path<<"): index timestamp: "<<m_Timestamp);
         }
     }
     m_GiIdxTable = CVDBTable(m_Db, "GI_IDX");
     m_AccIdxTable = CVDBTable(m_Db, "ACC_IDX");
+    m_AccIndexIsPrefix = true;
+    m_AccIndex = CVDBTableIndex(m_AccIdxTable, "accession_prefix", CVDBTableIndex::eMissing_Allow);
+    if ( !m_AccIndex ) {
+        m_AccIndexIsPrefix = false;
+        m_AccIndex = CVDBTableIndex(m_AccIdxTable, "accession");
+    }
 }
 
 
@@ -451,7 +543,7 @@ inline
 CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 {
     CMutexGuard guard(m_Mutex);
-    CRef<SGiIdxTableCursor> curs = m_GiIdx.Get(row);
+    CRef<SGiIdxTableCursor> curs = m_GiIdxCursorCache.Get(row);
     if ( !curs ) {
         curs = new SGiIdxTableCursor(GiIdxTable());
     }
@@ -463,7 +555,7 @@ inline
 CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
 {
     CMutexGuard guard(m_Mutex);
-    CRef<SAccIdxTableCursor> curs = m_AccIdx.Get();
+    CRef<SAccIdxTableCursor> curs = m_AccIdxCursorCache.Get();
     if ( !curs ) {
         curs = new SAccIdxTableCursor(AccIdxTable());
     }
@@ -476,7 +568,7 @@ void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
 {
     CMutexGuard guard(m_Mutex);
     if ( curs->m_Table == GiIdxTable() ) {
-        m_GiIdx.Put(curs, row);
+        m_GiIdxCursorCache.Put(curs, row);
     }
 }
 
@@ -486,7 +578,7 @@ void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
 {
     CMutexGuard guard(m_Mutex);
     if ( curs->m_Table == AccIdxTable() ) {
-        m_AccIdx.Put(curs);
+        m_AccIdxCursorCache.Put(curs);
     }
 }
 
@@ -513,6 +605,27 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(TGi gi)
 }
 
 
+static inline bool s_SplitAccIndex(string& uacc, Uint2& key_num)
+{
+    size_t acc_len = uacc.size();
+    if ( acc_len <= 4 ) {
+        return false;
+    }
+    size_t prefix_len = acc_len-4;
+    unsigned v = 0;
+    for ( int i = 0; i < 4; ++i ) {
+        char c = uacc[prefix_len+i];
+        if ( c < '0' || c > '9' ) {
+            return false;
+        }
+        v = v*10 + (c-'0');
+    }
+    key_num = v;
+    uacc.erase(prefix_len);
+    return true;
+}
+
+
 CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
 {
     TWGSPrefixes ret;
@@ -520,482 +633,53 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
         ERR_POST_X(26, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<acc);
     }
     string uacc = acc;
-    NStr::ToUpper(uacc);
-    CRef<SAccIdxTableCursor> cur = AccIdx();
-    SAccIdxTableCursor::row_range_t range;
-    cur->m_Cursor.SetParam("ACCESSION_QUERY", uacc);
-    CVDBValueFor<SAccIdxTableCursor::row_range_t> value =
-        cur->ACCESSION_ROW_RANGE(1, CVDBValue::eMissing_Allow);
-    if ( !value.empty() ) {
-        range = *value;
+    SAccIdxTableCursor::acc_range_number_t key_num = 0;
+    if ( m_AccIndexIsPrefix ) {
+        if ( !s_SplitAccIndex(uacc, key_num) ) {
+            if ( s_DebugEnabled(eDebug_resolve) ) {
+                ERR_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): invalid accession");
+            }
+            return ret;
+        }
     }
-    if ( range.first ) {
-        for ( TVDBRowId i = range.first; i <= range.second; ++i ) {
-            CTempString prefix = *cur->WGS_PREFIX(i);
+    NStr::ToUpper(uacc);
+    TVDBRowIdRange range;
+    {{
+        PROFILE(sw_AccFind);
+        range = m_AccIndex.Find(uacc);
+    }}
+    if ( s_DebugEnabled(eDebug_resolve) ) {
+        ERR_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): "
+                   "range "<<range.first<<"-"<<range.second);
+    }
+    if ( range.second ) {
+        CRef<SAccIdxTableCursor> cur = AccIdx();
+        for ( TVDBRowCount i = 0; i < range.second; ++i ) {
+            TVDBRowId row_id = range.first+i;
+            if ( m_AccIndexIsPrefix ) {
+                PROFILE(sw_AccRange);
+                CVDBValueFor<SAccIdxTableCursor::acc_range_number_t> v =
+                    cur->ACCESSION_RANGE(row_id);
+                if ( v[0] > key_num ) {
+                    // current range is past the requested id, end of scan
+                    break;
+                }
+                if ( v[1] < key_num ) {
+                    // current range is before the requested id, check next range
+                    continue;
+                }
+            }
+            PROFILE(sw_WGSPrefix);
+            CTempString prefix = *cur->WGS_PREFIX(row_id);
             if ( s_DebugEnabled(eDebug_resolve) ) {
                 ERR_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<prefix);
             }
             ret.push_back(prefix);
         }
+        Put(cur);
     }
-    Put(cur);
     if ( ret.empty() && m_NextResolver ) {
         ret = m_NextResolver->GetPrefixes(acc);
-    }
-    return ret;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CWGSResolver_GiRangeFile
-/////////////////////////////////////////////////////////////////////////////
-
-
-string CWGSResolver_GiRangeFile::GetDefaultIndexPath(void)
-{
-    return NCBI_PARAM_TYPE(WGS, GI_INDEX)::GetDefault();
-}
-
-
-CWGSResolver_GiRangeFile::CWGSResolver_GiRangeFile(void)
-{
-    LoadFirst(GetDefaultIndexPath());
-}
-
-
-CWGSResolver_GiRangeFile::CWGSResolver_GiRangeFile(const string& index_path)
-{
-    LoadFirst(index_path);
-}
-
-
-CWGSResolver_GiRangeFile::~CWGSResolver_GiRangeFile(void)
-{
-}
-
-
-bool CWGSResolver_GiRangeFile::IsValid(void) const
-{
-    CMutexGuard guard(m_Mutex);
-    return !m_Index.m_Index.empty();
-}
-
-
-void CWGSResolver_GiRangeFile::LoadFirst(const string& index_path)
-{
-    CMutexGuard guard(m_Mutex);
-    m_IndexPath = index_path;
-    if ( !x_Load(m_Index) ) {
-        m_Index.m_Index.clear();
-    }
-}
-
-
-bool CWGSResolver_GiRangeFile::Update(void)
-{
-    SIndexInfo index;
-    if ( !x_Load(index, &m_Index.m_Timestamp) ) {
-        return false;
-    }
-    CMutexGuard guard(m_Mutex);
-    index.m_Index.swap(m_Index.m_Index);
-    swap(index.m_Timestamp, m_Index.m_Timestamp);
-    m_NonWGS.clear();
-    return true;
-}
-
-
-bool CWGSResolver_GiRangeFile::x_Load(SIndexInfo& index,
-                            const CTime* old_timestamp) const
-{
-    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
-        // failed to get timestamp
-        return false;
-    }
-    if ( old_timestamp && index.m_Timestamp == *old_timestamp ) {
-        // same timestamp
-        return false;
-    }
-
-    CMemoryFile stream(m_IndexPath);
-    if ( !stream.GetPtr() ) {
-        // no index file
-        return false;
-    }
-
-    index.m_Index.clear();
-    vector<CTempString> tokens;
-    size_t count = 0;
-    for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
-        tokens.clear();
-        NStr::Split(*++line, " ", tokens, NStr::fSplit_Tokenize);
-        if ( tokens.size() != 3 ) {
-            if ( tokens.empty() || tokens[0][0] == '#' ) {
-                // allow empty lines and comments starting with #
-                continue;
-            }
-            if ( s_DebugEnabled(eDebug_error) ) {
-                ERR_POST_X(1, "CWGSResolver_GiRangeFile: "
-                           "bad index file format: "<<
-                           m_IndexPath<<":"<<line.GetLineNumber()<<": "<<
-                           *line);
-            }
-            return false;
-        }
-        CTempString wgs_acc = tokens[0];
-        if ( wgs_acc.size() < SWGSAccession::kMinWGSAccessionLength ||
-             wgs_acc.size() > SWGSAccession::kMaxWGSAccessionLength ) {
-            if ( s_DebugEnabled(eDebug_error) ) {
-                ERR_POST_X(2, "CWGSResolver_GiRangeFile: "
-                           "bad wgs accession length: "<<
-                           m_IndexPath<<":"<<line.GetLineNumber()<<": "<<
-                           *line);
-            }
-            return false;
-        }
-        TIntId id1 =
-            NStr::StringToNumeric<TIntId>(tokens[1], NStr::fConvErr_NoThrow);
-        TIntId id2 =
-            NStr::StringToNumeric<TIntId>(tokens[2], NStr::fConvErr_NoThrow);
-        if ( id1 <= 0 || id1 > id2 ) {
-            if ( s_DebugEnabled(eDebug_error) ) {
-                ERR_POST_X(3, "CWGSResolver_GiRangeFile: "
-                           "bad gi range: "<<
-                           m_IndexPath<<":"<<line.GetLineNumber()<<": "<<
-                           *line);
-            }
-            return false;
-        }
-        index.m_Index
-            .insert(TIndex::value_type(CRange<TIntId>(id1, id2),
-                                       SWGSAccession(wgs_acc)));
-        ++count;
-    }
-    return true;
-}
-
-
-void CWGSResolver_GiRangeFile::SetNonWGS(TGi gi)
-{
-    CMutexGuard guard(m_Mutex);
-    m_NonWGS.insert(gi);
-}
-
-
-CWGSResolver::TWGSPrefixes
-CWGSResolver_GiRangeFile::GetPrefixes(TGi gi) const
-{
-    TWGSPrefixes ret;
-    CMutexGuard guard(m_Mutex);
-    if ( m_NonWGS.find(gi) != m_NonWGS.end() ) {
-        return ret;
-    }
-    if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(19, "CWGSResolver_GiRangeFile: Resolving "<<gi);
-    }
-    for ( TIndex::const_iterator it(m_Index.m_Index.begin(CRange<TIntId>(gi, gi))); it; ++it ) {
-        if ( s_DebugEnabled(eDebug_resolve) ) {
-            ERR_POST_X(20, "CWGSResolver_GiRangeFile: "
-                       "WGS prefix: "<<it->second.acc);
-        }
-        ret.push_back(it->second.acc);
-    }
-    return ret;
-}
-
-
-CWGSResolver_GiRangeFile::TIdRanges
-CWGSResolver_GiRangeFile::GetIdRanges(void) const
-{
-    TIdRanges ret;
-    CMutexGuard guard(m_Mutex);
-    ITERATE ( TIndex, it, m_Index.m_Index ) {
-        TIdRange range(it->first.GetFrom(), it->first.GetTo());
-        ret.push_back(TIdRangePair(it->second.acc, range));
-    }
-    return ret;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CWGSResolver_AccRangeFile
-/////////////////////////////////////////////////////////////////////////////
-
-
-string CWGSResolver_AccRangeFile::GetDefaultIndexPath(void)
-{
-    return NCBI_PARAM_TYPE(WGS, PROT_ACC_INDEX)::GetDefault();
-}
-
-
-CWGSResolver_AccRangeFile::CWGSResolver_AccRangeFile(void)
-{
-    LoadFirst(GetDefaultIndexPath());
-}
-
-
-CWGSResolver_AccRangeFile::CWGSResolver_AccRangeFile(const string& index_path)
-{
-    LoadFirst(index_path);
-}
-
-
-CWGSResolver_AccRangeFile::~CWGSResolver_AccRangeFile(void)
-{
-}
-
-
-bool CWGSResolver_AccRangeFile::IsValid(void) const
-{
-    CMutexGuard guard(m_Mutex);
-    return !m_Index.m_Index.empty();
-}
-
-
-void CWGSResolver_AccRangeFile::LoadFirst(const string& index_path)
-{
-    CMutexGuard guard(m_Mutex);
-    m_IndexPath = index_path;
-    if ( !x_Load(m_Index) ) {
-        m_Index.m_Index.clear();
-    }
-}
-
-
-bool CWGSResolver_AccRangeFile::Update(void)
-{
-    SIndexInfo index;
-    if ( !x_Load(index, &m_Index.m_Timestamp) ) {
-        return false;
-    }
-    CMutexGuard guard(m_Mutex);
-    index.m_Index.swap(m_Index.m_Index);
-    swap(index.m_Timestamp, m_Index.m_Timestamp);
-    m_NonWGS.clear();
-    return true;
-}
-
-
-bool CWGSResolver_AccRangeFile::x_Load(SIndexInfo& index,
-                                 const CTime* old_timestamp) const
-{
-    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
-        // failed to get timestamp
-        return false;
-    }
-    if ( old_timestamp && index.m_Timestamp == *old_timestamp ) {
-        // same timestamp
-        return false;
-    }
-
-    CMemoryFile stream(m_IndexPath);
-    if ( !stream.GetPtr() ) {
-        // no index file
-        return false;
-    }
-
-    vector<CTempString> tokens;
-    size_t count = 0;
-    for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
-        tokens.clear();
-        NStr::Split(*++line, " ", tokens, NStr::fSplit_Tokenize);
-        if ( tokens.size() != 3 ) {
-            if ( tokens.empty() || tokens[0][0] == '#' ) {
-                // allow empty lines and comments starting with #
-                continue;
-            }
-            if ( s_DebugEnabled(eDebug_error) ) {
-                ERR_POST_X(5, "CWGSResolver_AccRangeFile: "
-                           "bad index file format: "<<
-                           m_IndexPath<<":"<<line.GetLineNumber()<<": "<<
-                           *line);
-            }
-            return false;
-        }
-        CTempString wgs_acc = tokens[0];
-        if ( wgs_acc.size() < SWGSAccession::kMinWGSAccessionLength ||
-             wgs_acc.size() > SWGSAccession::kMaxWGSAccessionLength ) {
-            if ( s_DebugEnabled(eDebug_error) ) {
-                ERR_POST_X(6, "CWGSResolver_AccRangeFile: "
-                           "bad wgs accession length: "<<
-                           m_IndexPath<<":"<<line.GetLineNumber()<<": "<<
-                           *line);
-            }
-            return false;
-        }
-        Uint4 id1;
-        SAccInfo info1(tokens[1], id1);
-        Uint4 id2;
-        SAccInfo info2(tokens[2], id2);
-        if ( !info1 || info1 != info2 || id1 > id2 ) {
-            if ( s_DebugEnabled(eDebug_error) ) {
-                ERR_POST_X(7, "CWGSResolver_AccRangeFile: "
-                           "bad accession range: "<<
-                           m_IndexPath<<":"<<line.GetLineNumber()<<": "<<
-                           *line);
-            }
-            return false;
-        }
-        index.m_Index[info1]
-            .insert(TRangeIndex::value_type(CRange<Uint4>(id1, id2),
-                                            SWGSAccession(wgs_acc)));
-        ++count;
-    }
-    return true;
-}
-
-
-CWGSResolver_AccRangeFile::SAccInfo::SAccInfo(CTempString acc, Uint4& id)
-    : m_IdLength(0)
-{
-    SIZE_TYPE prefix = 0;
-    while ( prefix < acc.size() && isalpha(acc[prefix]&0xff) ) {
-        ++prefix;
-    }
-    if ( prefix == acc.size() || prefix == 0 || acc.size()-prefix > 9 ) {
-        // no prefix, or no digits, or too many digits
-        return;
-    }
-    Uint4 v = 0;
-    for ( SIZE_TYPE i = prefix; i < acc.size(); ++i ) {
-        char c = acc[i];
-        if ( c < '0' || c > '9' ) {
-            return;
-        }
-        v = v*10 + (c-'0');
-    }
-    id = v;
-    m_AccPrefix = acc.substr(0, prefix);
-    NStr::ToUpper(m_AccPrefix);
-    m_IdLength = Uint4(acc.size());
-}
-
-
-string CWGSResolver_AccRangeFile::SAccInfo::GetAcc(Uint4 id) const
-{
-    string acc = m_AccPrefix;
-    acc.resize(m_IdLength, '0');
-    for ( SIZE_TYPE i = m_IdLength; id; id /= 10 ) {
-        acc[--i] += id % 10;
-    }
-    return acc;
-}
-
-
-void CWGSResolver_AccRangeFile::SetNonWGS(const string& acc)
-{
-    CMutexGuard guard(m_Mutex);
-    m_NonWGS.insert(acc);
-}
-
-
-CWGSResolver::TWGSPrefixes
-CWGSResolver_AccRangeFile::GetPrefixes(const string& acc) const
-{
-    TWGSPrefixes ret;
-    Uint4 id;
-    SAccInfo info(acc, id);
-    if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(21, "CWGSResolver_AccRangeFile: Resolving "<<acc);
-    }
-    if ( info ) {
-        CMutexGuard guard(m_Mutex);
-        if ( m_NonWGS.find(acc) != m_NonWGS.end() ) {
-            return ret;
-        }
-        TIndex::const_iterator it = m_Index.m_Index.find(info);
-        if ( it != m_Index.m_Index.end() ) {
-            for ( TRangeIndex::const_iterator it2(it->second.begin(CRange<Uint4>(id, id))); it2; ++it2 ) {
-                if ( s_DebugEnabled(eDebug_resolve) ) {
-                    ERR_POST_X(22, "CWGSResolver_AccRangeFile: "
-                               "WGS prefix: "<<it2->second.acc);
-                }
-                ret.push_back(it2->second.acc);
-            }
-        }
-    }
-    return ret;
-}
-
-
-CWGSResolver_AccRangeFile::TIdRanges
-CWGSResolver_AccRangeFile::GetIdRanges(void) const
-{
-    TIdRanges ret;
-    CMutexGuard guard(m_Mutex);
-    ITERATE ( TIndex, it, m_Index.m_Index ) {
-        ITERATE ( TRangeIndex, it2, it->second ) {
-            TIdRange range(it->first.GetAcc(it2->first.GetFrom()),
-                           it->first.GetAcc(it2->first.GetTo()));
-            ret.push_back(TIdRangePair(it2->second.acc, range));
-        }
-    }
-    return ret;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CWGSResolver_RangeFiles
-/////////////////////////////////////////////////////////////////////////////
-
-
-CWGSResolver_RangeFiles::CWGSResolver_RangeFiles(void)
-    : m_GiResolver(new CWGSResolver_GiRangeFile),
-      m_AccResolver(new CWGSResolver_AccRangeFile)
-{
-}
-
-
-CWGSResolver_RangeFiles::~CWGSResolver_RangeFiles(void)
-{
-}
-
-
-CRef<CWGSResolver> CWGSResolver_RangeFiles::CreateResolver(void)
-{
-    if ( !NCBI_PARAM_TYPE(WGS, RESOLVER_RANGEFILES)::GetDefault() ) {
-        return null;
-    }
-    return CRef<CWGSResolver>(new CWGSResolver_RangeFiles);
-}
-
-
-CWGSResolver::TWGSPrefixes
-CWGSResolver_RangeFiles::GetPrefixes(TGi gi)
-{
-    return m_GiResolver->GetPrefixes(gi);
-}
-
-
-CWGSResolver::TWGSPrefixes
-CWGSResolver_RangeFiles::GetPrefixes(const string& acc)
-{
-    return m_AccResolver->GetPrefixes(acc);
-}
-
-
-void CWGSResolver_RangeFiles::SetNonWGS(TGi gi,
-                                        const TWGSPrefixes& /*prefixes*/)
-{
-    m_GiResolver->SetNonWGS(gi);
-}
-
-
-void CWGSResolver_RangeFiles::SetNonWGS(const string& acc,
-                                        const TWGSPrefixes& /*prefixes*/)
-{
-    m_AccResolver->SetNonWGS(acc);
-}
-
-
-bool CWGSResolver_RangeFiles::Update(void)
-{
-    bool ret = false;
-    if ( m_GiResolver->Update() ) {
-        ret = true;
-    }
-    if ( m_AccResolver->Update() ) {
-        ret = true;
     }
     return ret;
 }
