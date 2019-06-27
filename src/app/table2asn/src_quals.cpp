@@ -286,7 +286,8 @@ void g_ApplyMods(
         TModList mods;
         CTitleParser::Apply(commandLineStr, mods, commandLineRemainder);
         auto fReportCommandLineError = 
-            [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
+            [&](const CModData& /* mod */, const string& msg, EDiagSev sev,
+                EModSubcode subcode) {
                 return sReportError(pEC, sev, subcode, "", msg);
             };
 
@@ -326,7 +327,8 @@ void g_ApplyMods(
 
             string seqId = pBioseq->GetId().front()->AsFastaString();
             auto fReportError = 
-                [&](const string& msg, EDiagSev sev, EModSubcode subcode) {
+                [&](const CModData& /* mod */, const string& msg, EDiagSev sev,
+                    EModSubcode subcode) {
                     return sReportError(pEC, sev, subcode, seqId, msg);
                 };
  
