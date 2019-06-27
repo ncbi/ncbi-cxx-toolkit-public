@@ -261,7 +261,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
                 r = CPSG_SkippedBlob::eExcluded;
             } else if (reason == "inprogress") {
                 r = CPSG_SkippedBlob::eInProgress;
-            } else if (reason == "Sent") {
+            } else if (reason == "sent") {
                 r = CPSG_SkippedBlob::eSent;
             }
 
