@@ -742,6 +742,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     case eBlastOpt_IgnoreMsaMaster:
         x_SetParam(CBlast4Field::Get(opt), v);
         return;
+
+    case eBlastOpt_SubjectBestHit:
+        x_SetParam(CBlast4Field::Get(opt), v);
+        return;
     default:
         break;
     }

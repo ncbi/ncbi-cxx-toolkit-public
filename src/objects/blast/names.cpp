@@ -229,6 +229,9 @@ CBlast4Field & CBlast4Field::Get(EBlastOptIdx opt)
         case eBlastOpt_BestHitOverhang:
             m_Fields[opt] = CBlast4Field("BestHitOverhang",       CBlast4_value::e_Real);
             break;
+        case eBlastOpt_SubjectBestHit:  // corresponds to -subject_besthit flag
+            m_Fields[opt] = CBlast4Field("UseSubjectBestHit",     CBlast4_value::e_Boolean);
+            break;
         case eBlastOpt_IgnoreMsaMaster:
             m_Fields[opt] = CBlast4Field("IgnoreMsaMaster",       CBlast4_value::e_Boolean);
             break;
