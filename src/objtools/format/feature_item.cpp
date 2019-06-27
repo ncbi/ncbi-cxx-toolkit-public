@@ -5391,8 +5391,6 @@ string CFeatureItem::x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_loca
     }
     const CSeq_id* accn = NULL;
     const CSeq_id* local = NULL;
-    const CSeq_id* patent = NULL;
-    const CSeq_id* pdb = NULL;
     const CSeq_id* general = NULL;
     const CSeq_id* gi = NULL;
 
@@ -5414,16 +5412,10 @@ string CFeatureItem::x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_loca
         case CSeq_id::e_Gpipe:
             accn = it->GetPointer();
             break;
-        case CSeq_id::e_Patent:
-            patent = it->GetPointer();
-            break;
         case CSeq_id::e_General:
             if (!(*it)->GetGeneral().IsSkippable()) {
                 general = it->GetPointer();
             }
-            break;
-        case CSeq_id::e_Pdb:
-            pdb = it->GetPointer();
             break;
         case CSeq_id::e_Gi:
             gi = it->GetPointer();
