@@ -45,7 +45,21 @@ USING_NCBI_SCOPE;
 
 enum EPSGAlertType {
     eUnknown = -1,
-    eConfig = 0
+    eConfigAuthDecrypt = 0,
+    eConfigNoSi2csiCache = 1,
+    eConfigNoBioseqInfoCache = 2,
+    eConfigNoBlobPropCache = 3,
+    eConfigHttpWorkers = 4,
+    eConfigListenerBacklog = 5,
+    eConfigMaxConnections = 6,
+    eConfigTimeout = 7,
+    eConfigRetries = 8,
+    eConfigExcludeCacheSize = 9,
+    eConfigExcludeCachePurgeSize = 10,
+    eConfigExcludeCacheInactivity = 11,
+    eConfigStatScaleType = 12,
+    eConfigStatMinMaxVal = 13,
+    eConfigStatNBins = 14
 };
 
 enum EPSGAlertAckResult {

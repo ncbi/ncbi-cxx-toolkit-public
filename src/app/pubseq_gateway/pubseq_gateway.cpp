@@ -195,7 +195,7 @@ void CPubseqGatewayApp::ParseArgs(void)
         string  msg = "Decrypting error detected while reading "
                       "[ADMIN]/auth_token value: " + string(ex.what());
         ERR_POST(msg);
-        m_Alerts.Register(eConfig, msg);
+        m_Alerts.Register(eConfigAuthDecrypt, msg);
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
@@ -204,7 +204,7 @@ void CPubseqGatewayApp::ParseArgs(void)
         string  msg = "Unknown decrypting error detected while reading "
                       "[ADMIN]/auth_token value";
         ERR_POST(msg);
-        m_Alerts.Register(eConfig, msg);
+        m_Alerts.Register(eConfigAuthDecrypt, msg);
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
@@ -501,11 +501,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     }
 
     if (m_Si2csiDbFile.empty()) {
-        PSG_WARNING("[LMDB_CACHE]/dbfile_si2csi is not found "
-                    "in the ini file. No si2csi cache will be used.");
-        // NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-        //            "[LMDB_CACHE]/dbfile_si2csi is not found. It must "
-        //            "be supplied for the server to start");
+        string  msg = "[LMDB_CACHE]/dbfile_si2csi is not found "
+                      "in the ini file. No si2csi cache will be used.";
+        PSG_WARNING(msg);
+        m_Alerts.Register(eConfigNoSi2csiCache, msg);
     } else if (!CFile(m_Si2csiDbFile).Exists()) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "dbfile_si2csi is not found on the disk. It must "
@@ -513,11 +512,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     }
 
     if (m_BioseqInfoDbFile.empty()) {
-        PSG_WARNING("[LMDB_CACHE]/dbfile_bioseq_info is not found "
-                    "in the ini file. No bioseq_info cache will be used.");
-        // NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-        //            "[LMDB_CACHE]/dbfile_bioseq_info is not found. It must "
-        //            "be supplied for the server to start");
+        string  msg = "[LMDB_CACHE]/dbfile_bioseq_info is not found "
+                      "in the ini file. No bioseq_info cache will be used.";
+        PSG_WARNING(msg);
+        m_Alerts.Register(eConfigNoBioseqInfoCache, msg);
     } else if (!CFile(m_BioseqInfoDbFile).Exists()) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "dbfile_bioseq_info is not found on the disk. It must "
@@ -525,11 +523,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     }
 
     if (m_BlobPropDbFile.empty()) {
-        PSG_WARNING("[LMDB_CACHE]/dbfile_blob_prop is not found "
-                    "in the ini file. No blob_prop cache will be used.");
-        // NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-        //            "[LMDB_CACHE]/dbfile_blob_prop is not found. It must "
-        //            "be supplied for the server to start");
+        string  msg = "[LMDB_CACHE]/dbfile_blob_prop is not found "
+                      "in the ini file. No blob_prop cache will be used.";
+        m_Alerts.Register(eConfigNoBlobPropCache, msg);
+        PSG_WARNING(msg);
     } else if (!CFile(m_BlobPropDbFile).Exists()) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "dbfile_blob_prop is not found on the disk. It must "
@@ -543,6 +540,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kWorkersMax) + ". Received: " +
             NStr::NumericToString(m_HttpWorkers) + ". Reset to "
             "default: " + NStr::NumericToString(kWorkersDefault);
+        m_Alerts.Register(eConfigHttpWorkers, err_msg);
         PSG_ERROR(err_msg);
         m_HttpWorkers = kWorkersDefault;
     }
@@ -555,6 +553,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kListenerBacklogMax) + ". Received: " +
             NStr::NumericToString(m_ListenerBacklog) + ". Reset to "
             "default: " + NStr::NumericToString(kListenerBacklogDefault);
+        m_Alerts.Register(eConfigListenerBacklog, err_msg);
         PSG_ERROR(err_msg);
         m_ListenerBacklog = kListenerBacklogDefault;
     }
@@ -566,6 +565,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kTcpMaxConnMax) + ". Received: " +
             NStr::NumericToString(m_TcpMaxConn) + ". Reset to "
             "default: " + NStr::NumericToString(kTcpMaxConnDefault);
+        m_Alerts.Register(eConfigMaxConnections, err_msg);
         PSG_ERROR(err_msg);
         m_TcpMaxConn = kTcpMaxConnDefault;
     }
@@ -577,6 +577,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kTimeoutMsMax) + ". Received: " +
             NStr::NumericToString(m_TimeoutMs) + ". Reset to "
             "default: " + NStr::NumericToString(kTimeoutDefault);
+        m_Alerts.Register(eConfigTimeout, err_msg);
         PSG_ERROR(err_msg);
         m_TimeoutMs = kTimeoutDefault;
     }
@@ -588,6 +589,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kMaxRetriesMax) + ". Received: " +
             NStr::NumericToString(m_MaxRetries) + ". Reset to "
             "default: " + NStr::NumericToString(kMaxRetriesDefault);
+        m_Alerts.Register(eConfigRetries, err_msg);
         PSG_ERROR(err_msg);
         m_MaxRetries = kMaxRetriesDefault;
     }
@@ -597,6 +599,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             "The max exclude cache size must be a positive integer. "
             "Received: " + NStr::NumericToString(m_ExcludeCacheMaxSize) + ". "
             "Reset to 0 (exclude blobs cache is disabled)";
+        m_Alerts.Register(eConfigExcludeCacheSize, err_msg);
         PSG_ERROR(err_msg);
         m_ExcludeCacheMaxSize = 0;
     }
@@ -615,6 +618,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             PSG_WARNING(err_msg);
         }
         m_ExcludeCachePurgePercentage = kDefaultExcludeCachePurgePercentage;
+        m_Alerts.Register(eConfigExcludeCachePurgeSize, err_msg);
     }
 
     if (m_ExcludeCacheInactivityPurge <= 0) {
@@ -631,6 +635,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             PSG_WARNING(err_msg);
         }
         m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
+        m_Alerts.Register(eConfigExcludeCacheInactivity, err_msg);
     }
 
     bool        stat_settings_good = true;
@@ -639,6 +644,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         string  err_msg = "Invalid [STATISTICS]/type value '" +
             m_StatScaleType + "'. Allowed values are: log, linear. "
             "The statistics parameters are reset to default.";
+        m_Alerts.Register(eConfigStatScaleType, err_msg);
         PSG_ERROR(err_msg);
         stat_settings_good = false;
 
@@ -653,6 +659,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             string  err_msg = "Invalid [STATISTICS]/min and max values. The "
                 "max cannot be less than min. "
                 "The statistics parameters are reset to default.";
+            m_Alerts.Register(eConfigStatMinMaxVal, err_msg);
             PSG_ERROR(err_msg);
             stat_settings_good = false;
 
@@ -668,6 +675,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             string  err_msg = "Invalid [STATISTICS]/n_bins value. The "
                 "number of bins must be greater than 0. "
                 "The statistics parameters are reset to default.";
+            m_Alerts.Register(eConfigStatNBins, err_msg);
             PSG_ERROR(err_msg);
             stat_settings_good = false;
 

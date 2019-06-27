@@ -43,7 +43,21 @@ struct SAlertToId
 
 
 const SAlertToId     kAlertToIdMap[] = {
-    { eConfig,       "Config" } };
+    { eConfigAuthDecrypt,               "ConfigAuthDecrypt" },
+    { eConfigNoSi2csiCache,             "ConfigNoSi2csiCache" },
+    { eConfigNoBioseqInfoCache,         "ConfigNoBioseqInfoCache" },
+    { eConfigNoBlobPropCache,           "ConfigNoBlobPropCache" },
+    { eConfigHttpWorkers,               "ConfigHttpWorkers" },
+    { eConfigListenerBacklog,           "ConfigListenerBacklog" },
+    { eConfigMaxConnections,            "ConfigMaxConnections" },
+    { eConfigTimeout,                   "ConfigTimeout" },
+    { eConfigRetries,                   "ConfigRetries" },
+    { eConfigExcludeCacheSize,          "ConfigExcludeCacheSize" },
+    { eConfigExcludeCachePurgeSize,     "ConfigExcludeCachePurgeSize" },
+    { eConfigExcludeCacheInactivity,    "ConfigExcludeCacheInactivity" },
+    { eConfigStatScaleType,             "ConfigStatScaleType" },
+    { eConfigStatMinMaxVal,             "ConfigStatMinMaxVal" },
+    { eConfigStatNBins,                 "ConfigStatNBins" } };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 
 
