@@ -53,6 +53,8 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasnb.hpp>
 
+#include <util/random_gen.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -108,9 +110,6 @@ void CWGSTestApp::Init(void)
 
     arg_desc->AddFlag("gi-check", "Check GI index");
     arg_desc->AddFlag("gi-range", "Print GI range if any");
-    arg_desc->AddFlag("gi-ranges", "Print GI ranges");
-    arg_desc->AddFlag("acc-ranges", "Print protein accession ranges");
-    arg_desc->AddFlag("make-all-ranges", "Scan all WGS files and make two files with GI/acc ranges");
     arg_desc->AddDefaultKey("max-gap", "MaxGap",
                             "max gap in a single gi range",
                             CArgDescriptions::eInteger, "10000");
@@ -489,329 +488,6 @@ int LowLevelTest(void)
 }
 #endif
 
-typedef pair<TIntId, TIntId> TGiRange;
-typedef pair<string, string> TAccRange;
-typedef vector<TGiRange> TGiRanges;
-typedef vector<TAccRange> TAccRanges;
-typedef map<string, TGiRanges> TGiRangeIndex;
-typedef map<string, TAccRanges> TAccRangeIndex;
-
-static TGiRanges PackRanges(const CWGSDb::TGiRanges& src, TIntId max_gap)
-{
-    TGiRanges dst;
-    ITERATE ( CWGSDb::TGiRanges, it, src ) {
-        TIntId gi_from = it->GetFrom();
-        TIntId gi_to = it->GetTo();
-        if ( !dst.empty() && gi_from <= dst.back().second + 1 + max_gap ) {
-            dst.back().second = gi_to;
-        }
-        else {
-            dst.push_back(TGiRange(gi_from, gi_to));
-        }
-    }
-    return dst;
-}
-
-static TGiRanges GetNucGiRanges(CWGSDb wgs_db, TIntId max_gap)
-{
-    CWGSDb::TGiRanges ranges;
-    pair<TIntId, TIntId> range = wgs_db.GetNucGiRange();
-    if ( range.second ) {
-        size_t gi_count = range.second - range.first + 1;
-        size_t seq_count = CWGSSeqIterator(wgs_db).GetSize();
-        if ( gi_count <= seq_count + max_gap ) {
-            CWGSDb::TGiRange single_range;
-            single_range.SetFrom(range.first);
-            single_range.SetTo(range.second);
-            ranges.push_back(single_range);
-        }
-        else {
-            ranges = wgs_db.GetNucGiRanges();
-        }
-    }
-    if ( 0 ) {
-        // add master gi
-        wgs_db.LoadMasterDescr();
-        if ( TGi gi = wgs_db->GetMasterGi() ) {
-            CWGSDb::TGiRange single_range;
-            single_range.SetFrom(gi);
-            single_range.SetTo(gi);
-            ranges.push_back(single_range);
-        }
-    }
-    return PackRanges(ranges, max_gap);
-}
-
-static TGiRanges GetProtGiRanges(CWGSDb wgs_db, TIntId max_gap)
-{
-    pair<TIntId, TIntId> range = wgs_db.GetProtGiRange();
-    if ( !range.second ) {
-        return TGiRanges();
-    }
-
-    size_t gi_count = range.second - range.first + 1;
-    size_t seq_count = CWGSProteinIterator(wgs_db).GetSize();
-    if ( gi_count <= seq_count + max_gap ) {
-        return TGiRanges(1, range);
-    }
-    
-    return PackRanges(wgs_db.GetProtGiRanges(), max_gap);
-}
-
-static TAccRanges GetProtAccRanges(CWGSDb wgs_db)
-{
-    TAccRanges ret;
-    TAccRange range;
-    CWGSDb::TProtAccRanges ranges = wgs_db.GetProtAccRanges();
-    ITERATE ( CWGSDb::TProtAccRanges, it, ranges ) {
-        range.first = it->first.GetAcc(it->second.GetFrom());
-        range.second = it->first.GetAcc(it->second.GetTo());
-        ret.push_back(range);
-    }
-    return ret;
-}
-
-static bool LoadGiIndex(TGiRangeIndex& index,
-                        CTime& time,
-                        const string& file_name)
-{
-    CWGSResolver_GiRangeFile resolver(file_name);
-    if ( !resolver.IsValid() ) {
-        // allow missing file
-        time = CTime(CTime::eCurrent);
-        return false;
-    }
-    time = resolver.GetTimestamp();
-
-    CWGSResolver_GiRangeFile::TIdRanges ranges = resolver.GetIdRanges();
-    sort(ranges.begin(), ranges.end());
-    ITERATE ( CWGSResolver_GiRangeFile::TIdRanges, it, ranges ) {
-        index[it->first].push_back(it->second);
-    }
-    return true;
-}
-
-static bool LoadAccIndex(TAccRangeIndex& index,
-                         CTime& time,
-                         const string& file_name)
-{
-    CWGSResolver_AccRangeFile resolver(file_name);
-    if ( !resolver.IsValid() ) {
-        // allow missing file
-        time = CTime(CTime::eCurrent);
-        return false;
-    }
-    time = resolver.GetTimestamp();
-
-    CWGSResolver_AccRangeFile::TIdRanges ranges = resolver.GetIdRanges();
-    sort(ranges.begin(), ranges.end());
-    ITERATE ( CWGSResolver_AccRangeFile::TIdRanges, it, ranges ) {
-        index[it->first].push_back(it->second);
-    }
-    return true;
-}
-
-static void SaveGiIndex(const TGiRangeIndex& index, const string& file_name)
-{
-    CNcbiOfstream out(file_name.c_str());
-    ITERATE ( TGiRangeIndex, it, index ) {
-        ITERATE ( TGiRanges, it2, it->second ) {
-            out << it->first << ' ' << it2->first << ' ' << it2->second
-                << '\n';
-        }
-    }
-}
-
-static void SaveAccIndex(const TAccRangeIndex& index, const string& file_name)
-{
-    CNcbiOfstream out(file_name.c_str());
-    ITERATE ( TAccRangeIndex, it, index ) {
-        ITERATE ( TAccRanges, it2, it->second ) {
-            out << it->first << ' ' << it2->first << ' ' << it2->second
-                << '\n';
-        }
-    }
-}
-
-static void MakeAllRanges(TIntId max_gap)
-{
-    CStopWatch sw;
-
-    const string gi_file_name = "list.wgs_gi_ranges";
-    const string acc_file_name = "list.wgs_acc_ranges";
-
-    const string wgs_root = CDirEntry::MakePath(NCBI_TRACES04_PATH, "wgs01");
-    const string vdb_root = CDirEntry::MakePath(wgs_root, "WGS");
-    const string idx_dir = CDirEntry::MakePath(wgs_root, "wgs_aux");
-
-    map<string, TGiRanges> gi_index;
-    map<string, TAccRanges> acc_index;
-
-    CTime gi_time, acc_time;
-    // load old index files
-    LoadGiIndex(gi_index, gi_time,
-                CDirEntry::MakePath(idx_dir, gi_file_name));
-    LoadAccIndex(acc_index, acc_time,
-                 CDirEntry::MakePath(idx_dir, acc_file_name));
-
-    // make the threshold modification time from files
-    CTime rescan_time = gi_time < acc_time? gi_time: acc_time;
-    rescan_time -= CTimeSpan(1, 0, 0, 0); // one day overlap
-
-    // collecting VDB directories
-    typedef pair<CDir, CTime> TVDBDir;
-    typedef map<string, TVDBDir> TVDBDirs;
-    TVDBDirs vdb_dirs;
-    sw.Restart();
-    {
-        CDir dir0(vdb_root);
-        NcbiCout << "Scanning "<<dir0.GetPath()<<NcbiEndl;
-        CDir::TEntries dirs1 = dir0.GetEntries("??");
-        ITERATE ( CDir::TEntries, it1, dirs1 ) {
-            CDir dir1(**it1);
-            if ( !isupper(Uint1(dir1.GetName()[0])) ||
-                 !isupper(Uint1(dir1.GetName()[1])) ) {
-                continue;
-            }
-            NcbiCout << "Scanning "<<dir1.GetPath()<<NcbiEndl;
-            CDir::TEntries dirs2 = dir1.GetEntries("??");
-            ITERATE ( CDir::TEntries, it2, dirs2 ) {
-                CDir dir2(**it2);
-                if ( !isupper(Uint1(dir2.GetName()[0])) ||
-                     !isupper(Uint1(dir2.GetName()[1])) ) {
-                    continue;
-                }
-                string prefix4 = dir1.GetName()+dir2.GetName();
-                TVDBDir& slot = vdb_dirs[prefix4];
-                slot.first = dir2;
-                dir2.GetTime(&slot.second);
-            }
-        }
-    }
-    NcbiCout << "Found " << vdb_dirs.size() << " VDB directories in "
-             << fixed << setprecision(3) << sw.Elapsed() << "s" << NcbiEndl;
-
-    // collecting VDB directories
-    typedef pair<CDirEntry, CTime> TVDBFile;
-    typedef map<string, TVDBFile> TVDBFiles;
-    TVDBFiles vdb_files;
-    sw.Restart();
-    size_t dir_count = 0;
-    {
-        ITERATE ( TVDBDirs, it, vdb_dirs ) {
-            if ( it->second.second < rescan_time ) {
-                continue;
-            }
-            ++dir_count;
-            const string& prefix4 = it->first;
-            const CDir dir2 = it->second.first;
-            NcbiCout << "Scanning "<<dir2.GetPath()<<NcbiEndl;
-            CDir::TEntries files = dir2.GetEntries(prefix4+"??");
-            ITERATE ( CDir::TEntries, it, files ) {
-                const CDirEntry& file = **it;
-                if ( !isdigit(Uint1(file.GetName()[4])) ||
-                     !isdigit(Uint1(file.GetName()[5])) ) {
-                    continue;
-                }
-                string wgs_acc = file.GetName();
-                TVDBFile& slot = vdb_files[wgs_acc];
-                slot.first = file;
-                file.GetTime(&slot.second);
-            }
-        }
-    }
-    NcbiCout << "Found " << vdb_files.size() << " recent VDB files in "
-             << fixed << setprecision(3) << sw.Elapsed() << "s" << NcbiEndl;
-
-    // remove obsolete entries
-    ERASE_ITERATE ( TGiRangeIndex, it, gi_index ) {
-        const string& wgs_acc = it->first;
-        string prefix4 = wgs_acc.substr(0, 4);
-        TVDBDirs::const_iterator dir_it = vdb_dirs.find(prefix4);
-        if ( dir_it == vdb_dirs.end() ) {
-            NcbiCout << "Erasing old gi VDB dir: " << it->first
-                     << NcbiEndl;
-            gi_index.erase(it);
-            continue;
-        }
-        if ( dir_it->second.second < rescan_time ) {
-            // old directory
-            continue;
-        }
-        TVDBFiles::const_iterator file_it = vdb_files.find(wgs_acc);
-        if ( file_it == vdb_files.end() ) {
-            NcbiCout << "Erasing old gi VDB file: " << it->first
-                     << NcbiEndl;
-            gi_index.erase(it);
-            continue;
-        }
-    }
-    ERASE_ITERATE ( TAccRangeIndex, it, acc_index ) {
-        const string& wgs_acc = it->first;
-        string prefix4 = wgs_acc.substr(0, 4);
-        TVDBDirs::const_iterator dir_it = vdb_dirs.find(prefix4);
-        if ( dir_it == vdb_dirs.end() ) {
-            NcbiCout << "Erasing old prot acc VDB dir: " << it->first
-                     << NcbiEndl;
-            acc_index.erase(it);
-            continue;
-        }
-        if ( dir_it->second.second < rescan_time ) {
-            // old directory
-            continue;
-        }
-        TVDBFiles::const_iterator file_it = vdb_files.find(wgs_acc);
-        if ( file_it == vdb_files.end() ) {
-            NcbiCout << "Erasing old prot acc VDB file: " << it->first
-                     << NcbiEndl;
-            acc_index.erase(it);
-            continue;
-        }
-    }
-
-    // update index for modified VDB files
-    CVDBMgr mgr;
-    ITERATE ( TVDBFiles, it, vdb_files ) {
-        if ( it->second.second < rescan_time ) {
-            continue;
-        }
-        const string& wgs_acc = it->first;
-        const CDirEntry& file = it->second.first;
-        NcbiCout << "Scanning "<<file.GetPath()<<NcbiEndl;
-        gi_index.erase(wgs_acc);
-        acc_index.erase(wgs_acc);
-        try {
-            CWGSDb wgs_db(mgr, file.GetPath());
-            {
-                TGiRanges ranges = GetNucGiRanges(wgs_db, max_gap);
-                {{
-                    TGiRanges ranges2 = GetProtGiRanges(wgs_db, max_gap);
-                    ranges.insert(ranges.end(),
-                                  ranges2.begin(),
-                                  ranges2.end());
-                }}
-                if ( !ranges.empty() ) {
-                    gi_index[wgs_acc] = ranges;
-                }
-            }
-            {
-                TAccRanges ranges = GetProtAccRanges(wgs_db);
-                if ( !ranges.empty() ) {
-                    acc_index[wgs_acc] = ranges;
-                }
-            }
-        }
-        catch ( CException& exc ) {
-            ERR_POST("Exception while processing "<<file.GetPath()
-                     <<": "<<exc);
-        }
-    }
-
-    SaveGiIndex(gi_index, gi_file_name);
-    SaveAccIndex(acc_index, acc_file_name);
-}
-
-
 int CWGSTestApp::Run(void)
 {
 #ifdef CALL
@@ -832,11 +508,6 @@ int CWGSTestApp::Run(void)
     }
 
     CNcbiOstream& out = args["o"].AsOutputFile();
-
-    if ( args["make-all-ranges"] ) {
-        MakeAllRanges(args["max-gap"].AsInteger());
-        return 0;
-    }
 
     CVDBMgr mgr;
     CStopWatch sw;
@@ -1078,36 +749,6 @@ int CWGSTestApp::Run(void)
             out << "Protein GI range is empty" << NcbiEndl;
         }
     }
-    if ( args["gi-ranges"] ) {
-        CWGSDb::TGiRanges ranges;
-        sw.Restart();
-        ranges = wgs_db.GetNucGiRanges();
-        out << "Got "<<ranges.size()<<" nuc GI ranges in "<<sw.Elapsed()<<"s:"
-            << NcbiEndl;
-        ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
-            out << " nuc GIs: "<<it->GetFrom()<<"-"<<it->GetTo()
-                << NcbiEndl;
-        }
-        sw.Restart();
-        ranges = wgs_db.GetProtGiRanges();
-        out << "Got "<<ranges.size()<<" prot GI ranges in "<<sw.Elapsed()<<"s:"
-            << NcbiEndl;
-        ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
-            out << " prot GIs: "<<it->GetFrom()<<"-"<<it->GetTo()
-                << NcbiEndl;
-        }
-    }
-    if ( args["acc-ranges"] ) {
-        sw.Restart();
-        CWGSDb::TProtAccRanges ranges = wgs_db.GetProtAccRanges();
-        out << "Got "<<ranges.size()<<" protein accession ranges in "<<sw.Elapsed()<<"s:"
-            << NcbiEndl;
-        ITERATE ( CWGSDb::TProtAccRanges, it, ranges ) {
-            out << "  Accs: "<<it->first<<": "<<it->second
-                << NcbiEndl;
-        }
-    }
-
     bool check_non_empty_lookup = args["check_non_empty_lookup"];
     if ( args["gi"] ) {
         TGi gi = TIntId(args["gi"].AsInt8());
@@ -1120,18 +761,6 @@ int CWGSTestApp::Run(void)
             else {
                 ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
                     out << "GI "<<gi<<" is found in WGS " << *it << NcbiEndl;
-                }
-            }
-        }
-        else {
-            resolver = CWGSResolver_RangeFiles::CreateResolver();
-            CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(gi);
-            if ( prefixes.empty() ) {
-                out << "No WGS accessions with gi "<<gi<<NcbiEndl;
-            }
-            else {
-                ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
-                    out << "WGS accessions with gi "<<gi<<": "<<*it<<NcbiEndl;
                 }
             }
         }
@@ -1271,55 +900,82 @@ int CWGSTestApp::Run(void)
         }
     }
     if ( args["protein_acc"] ) {
-        string name = args["protein_acc"].AsString();
+        string param = args["protein_acc"].AsString();
+        unsigned random_count = 0;
+        try {
+            random_count = NStr::StringToNumeric<unsigned>(param);
+        }
+        catch ( CStringException& /*ignored*/ ) {
+        }
+        vector<string> accs;
+        if ( random_count ) {
+            CRandom r;
+            for ( unsigned i = 0; i < random_count; ++i ) {
+                string s;
+                for ( int j = 0; j < 3; ++j ) {
+                    s += char(r.GetRand('A', 'Z'));
+                }
+                for ( int j = 0; j < 5; ++j ) {
+                    s += char(r.GetRand('0', '9'));
+                }
+                accs.push_back(s);
+            }
+        }
+        else {
+            NStr::Split(param, ",", accs);
+        }
+        unsigned found_count = 0;
+        CStopWatch sw(CStopWatch::eStart);
         CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
         if ( resolver ) {
-            CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(name);
-            if ( prefixes.empty() ) {
-                out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
-            }
-            else {
-                ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
-                    out << "Protein acc "<<name<<" is found in WGS " << *it << NcbiEndl;
+            for ( auto& name : accs ) {
+                CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(name);
+                if ( random_count ) {
+                    found_count += (prefixes.size()!=0);
+                }
+                else if ( prefixes.empty() ) {
+                    out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
+                }
+                else {
+                    ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
+                        out << "Protein acc "<<name<<" is found in WGS " << *it << NcbiEndl;
+                    }
                 }
             }
         }
-        else {
-            resolver = CWGSResolver_RangeFiles::CreateResolver();
-            CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(name);
-            if ( prefixes.empty() ) {
-                out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
-            }
-            else {
-                ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
-                    out << "WGS accessions with protein acc "<<name<<": "<<*it<<NcbiEndl;
-                }
-            }
+        out << "Resolved "<<accs.size()<<" WGS accessions in " << sw.Restart() << "s" << endl;
+        if ( random_count ) {
+            out << "Found valid WGS accessions: "<<found_count<<endl;
         }
-        uint64_t row_id = wgs_db.GetProtAccRowId(name);
-        out << "Protein acc "<<name<<" is in PROTEIN table row " << row_id
-            << NcbiEndl;
-        if ( !row_id ) {
-            if ( check_non_empty_lookup ) {
-                ++error_count;
-            }
-        }
-        else {
-            CWGSProteinIterator it(wgs_db, row_id);
-            if ( !it ) {
-                out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
-                ++error_count;
-            }
-            else {
-                out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
+        if ( !random_count ) {
+            for ( auto& name : accs ) {
+                uint64_t row_id = wgs_db.GetProtAccRowId(name);
+                out << "Protein acc "<<name<<" is in PROTEIN table row " << row_id
                     << NcbiEndl;
-                if ( print_seq ) {
-                    out << MSerial_AsnText << *it.GetBioseq();
+                if ( !row_id ) {
+                    if ( check_non_empty_lookup ) {
+                        ++error_count;
+                    }
                 }
-                if ( print_entry ) {
-                    out << MSerial_AsnText << *it.GetSeq_entry();
+                else {
+                    CWGSProteinIterator it(wgs_db, row_id);
+                    if ( !it ) {
+                        out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
+                        ++error_count;
+                    }
+                    else {
+                        out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
+                            << NcbiEndl;
+                        if ( print_seq ) {
+                            out << MSerial_AsnText << *it.GetBioseq();
+                        }
+                        if ( print_entry ) {
+                            out << MSerial_AsnText << *it.GetSeq_entry();
+                        }
+                    }
                 }
             }
+            out << "Found "<<accs.size()<<" WGS accessions in " << sw.Restart() << "s" << endl;
         }
     }
 
