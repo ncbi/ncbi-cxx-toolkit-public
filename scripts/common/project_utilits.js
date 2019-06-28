@@ -13,8 +13,8 @@ var g_branch     = "toolkit/trunk/internal/c++";
 //var g_branch     = "toolkit/trunk/c++";
 
 // valid:   "150", "150x64", "140", "140x64"
-var g_def_msvcver = "140x64";
-var g_msvcver     = "140x64";
+var g_def_msvcver = "150x64";
+var g_msvcver     = "150x64";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -518,7 +518,7 @@ function GetMsvcFolder()
     if (g_msvcver == "150" || g_msvcver == "150x64") {
         return "vs2017";
     }
-    return "vs2015";
+    return "vs2017";
 }
 
 function GetFlaggedValue(oArgs, flag, default_val)
@@ -583,7 +583,7 @@ function GetPositionalValue(oArgs, position)
 // Configuration of pre-built C++ toolkit
 function GetDefaultSuffix()
 {
-    var s = "vs2013";
+    var s = "vs2017";
     if (g_msvcver == "110" || g_msvcver == "120") {
         s = "vs2013";
     } else if (g_msvcver == "110x64" || g_msvcver == "120x64") {
@@ -623,7 +623,7 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
     } else if (g_msvcver == "150x64") {
         s = " -ide 1500 -arch x64";
     } else {
-        s = " -ide 1400 -arch x64";
+        s = " -ide 1500 -arch x64";
     }
     return s;
 }
