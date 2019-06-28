@@ -49,7 +49,7 @@ NCBI_PARAM_ENUM_ARRAY(objects::CCDDClient::EDataFormat, CDD, data_format)
 };
 
 NCBI_PARAM_ENUM_DEF(objects::CCDDClient::EDataFormat, CDD, data_format,
-                    objects::CCDDClient::eSemiBinary);
+                    objects::CCDDClient::eBinary);
 
 typedef NCBI_PARAM_TYPE(CDD, data_format) TDataFormatParam;
 
