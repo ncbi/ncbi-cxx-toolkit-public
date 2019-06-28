@@ -150,6 +150,12 @@ void CWGSTestApp::Init(void)
     arg_desc->AddOptionalKey("protein_acc", "ProteinAcc",
                              "lookup by protein accession",
                              CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("seed", "RandomSeed",
+                            "Seed for random number generator",
+                            CArgDescriptions::eInteger, "1");
+    arg_desc->AddDefaultKey("seq_acc_count", "SequentialAccCount",
+                            "size of spans of sequential accessions",
+                            CArgDescriptions::eInteger, "10");
 
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -909,16 +915,21 @@ int CWGSTestApp::Run(void)
         }
         vector<string> accs;
         if ( random_count ) {
-            CRandom r;
+            unsigned seq_count = args["seq_acc_count"].AsInteger();
+            CRandom r(args["seed"].AsInteger());
             for ( unsigned i = 0; i < random_count; ++i ) {
-                string s;
+                string prefix;
                 for ( int j = 0; j < 3; ++j ) {
-                    s += char(r.GetRand('A', 'Z'));
+                    prefix += char(r.GetRand('A', 'Z'));
                 }
-                for ( int j = 0; j < 5; ++j ) {
-                    s += char(r.GetRand('0', '9'));
+                unsigned start = r.GetRand(0, 99999);
+                unsigned count = min(min(100000-start, random_count-i), r.GetRand(1, seq_count));
+                for ( unsigned j = 0; j < count; ++j ) {
+                    string s = NStr::IntToString(start+j);
+                    s = string(5-s.size(), '0') + s;
+                    accs.push_back(prefix+s);
                 }
-                accs.push_back(s);
+                i += count-1;
             }
         }
         else {
