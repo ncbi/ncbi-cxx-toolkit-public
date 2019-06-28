@@ -168,6 +168,14 @@ bool s_DeflineCompareAA(const CRef<CBlast_def_line>& d1,
     return s_DeflineCompare(d1, d2, CSeq_id::FastaAARank);
 }
 
+inline
+bool s_DeflineBlastRankAA(const CRef<CBlast_def_line>& d1,
+                          const CRef<CBlast_def_line>& d2)
+{
+	return s_DeflineCompare(d1, d2, CSeq_id::BlastRank);
+}
+
+
 /// Ranking function for nucleotide Blast-def-lines
 inline
 bool s_DeflineCompareNA(const CRef<CBlast_def_line>& d1, 
@@ -177,12 +185,18 @@ bool s_DeflineCompareNA(const CRef<CBlast_def_line>& d1,
 }
 
 void
-CBlast_def_line_set::SortBySeqIdRank(bool is_protein)
+CBlast_def_line_set::SortBySeqIdRank(bool is_protein, bool useBlastRank)
 {
-    if (CanGet()) {
-        Set().sort(is_protein ? s_DeflineCompareAA : s_DeflineCompareNA);
+     if (CanGet()) {
+    	if(useBlastRank && is_protein){
+    		Set().sort(s_DeflineBlastRankAA);
+    	}
+    	else {
+    		Set().sort(is_protein ? s_DeflineCompareAA : s_DeflineCompareNA);
+    	}
     }
 }
+
 
 void
 CBlast_def_line_set::PutTargetGiFirst(TGi gi)

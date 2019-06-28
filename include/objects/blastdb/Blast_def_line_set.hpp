@@ -61,7 +61,7 @@ public:
 
     /// Sort the deflines according to the toolkit established ranking of
     /// Seq-ids
-    void SortBySeqIdRank(bool is_protein);
+    void SortBySeqIdRank(bool is_protein, bool useBlastRank = false);
 
     /// Place the CBlast_def_line object which contains the requested gi as the
     /// first in the list (if found)
