@@ -130,15 +130,12 @@ static int s_Run()
     {{
     size_t test_size = 1024 * 1024 * 2;
     vector<unsigned char> test_buf(test_size+10);
-    for (size_t i = 0; i < test_size; ++i) {
-        test_buf[i] = 127;
-    }
+    memset(test_buf.data(), 127, test_size);
 
     cl.Store(key2, version, subkey, test_buf.data(), test_size);
 
-    for (size_t i = 0; i < test_size; ++i) {
-        test_buf[i] = 0;
-    }
+    memset(test_buf.data(), 0, test_size);
+
     SleepMilliSec(700);
 
     size_t sz = cl.GetSize(key2, version, subkey);
@@ -148,7 +145,8 @@ static int s_Run()
     cl.Read(key2, version, subkey, test_buf.data(), test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
-        BOOST_REQUIRE(test_buf[i] == 127);
+        if (test_buf.data()[i] != 127)  // otherwise, too slow under Valgrind
+            BOOST_REQUIRE(test_buf[i] == 127);
     }
 
     sz = cl.GetSize(key2, version, subkey);
@@ -160,6 +158,8 @@ static int s_Run()
     }}
 
     char test_buf[240];
+    // Initialize buffer to avoid mem-checker "Read from uninit memory" errors
+    memset(test_buf, 125, sizeof(test_buf));
 
     NcbiCout << "stress write" << NcbiEndl;
 
@@ -252,13 +252,14 @@ static void s_SimpleTest()
     const int kIterations = 50;
     const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
     const size_t kBufSize = 100 * 1024; // 100KB
+
     vector<Uint8> src;
-    vector<char> buf;
-
     src.resize(kSrcSize / sizeof(Uint8));
-    buf.resize(kBufSize);
-
     auto random_uint8 = bind(uniform_int_distribution<Uint8>(), mt19937());
+    generate_n(src.begin(), src.size(), random_uint8);
+
+    vector<char> buf;
+    buf.resize(kBufSize);
 
     SCtx ctx;
     ctx.key = to_string(time(NULL)) + "t" + to_string(random_uint8());
@@ -270,7 +271,6 @@ static void s_SimpleTest()
 
         try {
             // Creating blob
-            generate_n(src.begin(), src.size(), random_uint8);
             auto ptr = reinterpret_cast<const char*>(src.data());
 
             api.Store(ctx.key, ctx.version, ctx.subkey, ptr, kSrcSize);
