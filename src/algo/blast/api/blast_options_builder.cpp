@@ -471,6 +471,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             opts.SetGappedMode(! v.GetBoolean());
         } else if (CBlast4Field::Get(eBlastOpt_UnifiedP).Match(p)) {
             bo.SetUnifiedP(v.GetInteger());
+        } else if (CBlast4Field::Get(eBlastOpt_SubjectBestHit).Match(p)) {
+            bo.SetSubjectBestHit();
         } else {
             found = false;
         }
