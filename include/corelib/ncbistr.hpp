@@ -3086,8 +3086,10 @@ public:
     ///   corner cases in which it may be inappropriate.
     /// @return
     ///   Encoded string with added outer single quotes
-    static CStringUTF8 SQLEncode(const CStringUTF8& str,
-                                 ESqlEncode flag = eSqlEnc_Plain);
+    static CStringUTF8 SQLEncode(const CStringUTF8& str, ESqlEncode flag);
+
+    NCBI_DEPRECATED static CStringUTF8 SQLEncode(const CStringUTF8& str)
+        { return SQLEncode(str, eSqlEnc_Plain); }
 
     /// URL-decode string
     static string URLDecode(const CTempString str,
