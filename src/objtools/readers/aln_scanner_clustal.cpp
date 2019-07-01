@@ -257,24 +257,12 @@ CAlnScannerClustal::sProcessClustalDataLine(
         }
 
         if (seqId != mSeqIds[seqCount].mData) {
-            string seqIdLower(seqId);
-            NStr::ToLower(seqIdLower);
-
             string description;
-            auto it = mSeqIds.begin();
-            bool exactCopy = false;
-            while (it != mSeqIds.end()) {
-                if (it->mData == seqId) {
-                    exactCopy = true;
-                    break;
-                }
-                auto idLower(it->mData);
-                NStr::ToLower(idLower);
-                if (idLower == seqIdLower) {
-                    break;
-                }
-                ++it;
-            }
+            const auto it = 
+                find_if(mSeqIds.begin(), mSeqIds.end(), 
+                    [&seqId](const TLineInfo& idInfo){ 
+                        return NStr::EqualNocase(seqId,idInfo.mData);
+                    });
 
             if (it == mSeqIds.end()) {
                 description = ErrorPrintf(
@@ -285,7 +273,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
                     EAlnSubcode::eAlnSubcode_BadSequenceCount,
                     description);
             }
-            
+
             auto idPos = distance(mSeqIds.begin(), it);
             if (idPos < seqCount) {
                 description = ErrorPrintf(
