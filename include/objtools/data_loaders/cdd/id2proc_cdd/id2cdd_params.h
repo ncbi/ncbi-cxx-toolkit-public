@@ -55,4 +55,8 @@
 /* Age limit on pooled CCDDClient instances (in seconds) */
 #define NCBI_ID2PROC_CDD_PARAM_POOL_AGE_LIMIT "pool_age_limit"
 
+/* Satellite(s) for which no other backends should have blobs */
+#define NCBI_ID2PROC_CDD_PARAM_AUTHORITATIVE_SATELLITES \
+    "authoritative_satellites"
+
 #endif//OBJTOOLS_DATA_LOADERS_CDD_ID2PROC_CDD__ID2CDD_PARAMS__H

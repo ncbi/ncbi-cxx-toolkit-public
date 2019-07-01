@@ -122,6 +122,7 @@ private:
     TClientPool         m_NotInUse;
     size_t              m_PoolSoftLimit;
     time_t              m_PoolAgeLimit;
+    set<int>            m_AuthoritativeSatellites;
     mutable CFastMutex  m_PoolLock;
 };
 

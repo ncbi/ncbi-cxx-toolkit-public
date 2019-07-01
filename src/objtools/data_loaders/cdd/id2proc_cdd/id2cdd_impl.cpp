@@ -124,6 +124,16 @@ CID2CDDProcessor_Impl::CID2CDDProcessor_Impl(const CConfig::TParamTree* params,
     m_PoolAgeLimit = conf.GetInt(driver_name,
                                  NCBI_ID2PROC_CDD_PARAM_POOL_AGE_LIMIT,
                                  CConfig::eErr_NoThrow, 15 * 60);
+
+    string authoritative_satellites
+        = conf.GetString(driver_name,
+                         NCBI_ID2PROC_CDD_PARAM_AUTHORITATIVE_SATELLITES,
+                         CConfig::eErr_NoThrow, NStr::IntToString(kCDD_Sat));
+    vector<CTempString> v;
+    NStr::Split(authoritative_satellites, ", ", v, NStr::fSplit_Tokenize);
+    for (const auto& x : v) {
+        m_AuthoritativeSatellites.insert(NStr::StringToNumeric<int>(x));
+    }
 }
 
 
@@ -263,6 +273,9 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
                 packet_context->m_Client->second->Ask(*cdd_packet, last_reply);
                 x_TranslateReplies(context->m_Context, *packet_context);
                 ReturnClient(packet_context->m_Client);
+            } catch (exception& e) {
+                x_DiscardClient(packet_context->m_Client);
+                ERR_POST_X(4, Warning << e.what());
             } catch (...) {
                 x_DiscardClient(packet_context->m_Client);
                 throw;
@@ -273,6 +286,22 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
                     &&  reply->second.NotEmpty()) {
                     replies.push_back(reply->second);
                     packet_context->m_Replies.erase(reply);
+                    packet.Set().erase(blob_requests[id.first]);
+                } else if (m_AuthoritativeSatellites.count(id.second->GetSat())
+                           > 0) {
+                    string msg = FORMAT("No CDD annotation found for "
+                                        << MSerial_FlatAsnText << *id.second);
+                    NStr::TrimSuffixInPlace(msg, "\n");
+                    ERR_POST_X(5, Warning << msg);
+                    CRef<CID2_Error> id2_error(new CID2_Error);
+                    id2_error->SetSeverity(CID2_Error::eSeverity_no_data);
+                    id2_error->SetMessage(msg);
+                    CRef<CID2_Reply> error_reply(new CID2_Reply);
+                    error_reply->SetSerial_number(id.first);
+                    error_reply->SetError().push_back(id2_error);
+                    error_reply->SetEnd_of_reply();
+                    error_reply->SetReply().SetEmpty();
+                    replies.push_back(error_reply);
                     packet.Set().erase(blob_requests[id.first]);
                 }
             }
