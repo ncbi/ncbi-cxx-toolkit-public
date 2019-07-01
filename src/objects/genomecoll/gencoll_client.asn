@@ -92,7 +92,8 @@ GCClient-GetAssemblyBySequenceRequest ::= SEQUENCE {
         major(2)
     } DEFAULT default,
 
-    top-assembly-only INTEGER DEFAULT 0
+    top-assembly-only INTEGER DEFAULT 0,
+    add-sequence-roles BOOLEAN OPTIONAL
 }
 
 
@@ -107,11 +108,22 @@ GCClient-AssemblyInfo ::= SEQUENCE {
     } OPTIONAL
 }
 
+GCClient-SequenceInfo ::= SEQUENCE {
+    sequence-acc VisibleString,
+    role INTEGER {
+        chromosome-top-level(3),
+        scaffold-top-level(1),
+        other(0)
+    }
+}
+
 GCClient-AssemblySequenceInfo ::= SEQUENCE {
     assembly   GCClient-AssemblyInfo,
     sequences-in-assembly SET OF VisibleString,
-    sequences-not-in-assembly SET OF VisibleString OPTIONAL
+    sequences-not-in-assembly SET OF VisibleString OPTIONAL,
+    sequence-roles-in-assembly SET OF GCClient-SequenceInfo OPTIONAL
 }
+
 
 GCClient-AssembliesForSequences ::= SEQUENCE {
     assemblies SET OF GCClient-AssemblySequenceInfo OPTIONAL,
