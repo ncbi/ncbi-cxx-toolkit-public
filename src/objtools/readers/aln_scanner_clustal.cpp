@@ -63,18 +63,6 @@ BEGIN_SCOPE(objects);
 //  ============================================================================
 
 
-//  ----------------------------------------------------------------------------
-static void 
-sResetBlockInfo(int& seqCount,
-        int& blockLineLength,
-        bool& inBlock)
-//  ----------------------------------------------------------------------------
-{
-    seqCount = 0;
-    blockLineLength = 0;
-    inBlock = false;
-}
-
 struct SBlockInfo 
 {
     int seqCount = 0;
