@@ -280,7 +280,7 @@ CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQua
     while (strain[pos] != 0 && isalpha(strain[pos])) {
         ++pos;
     }
-    if (pos < strain.length()) {
+    if (pos < strain.length() && pos >= 5) {
         m_ValuesToTry.push_back(strain.substr(0, pos));
     }
 
