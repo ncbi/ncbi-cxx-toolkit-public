@@ -83,7 +83,8 @@ public:
                   bool               parse_ids,
                   bool               long_ids,
                   bool               use_gi_mask,
-                  EBlastDbVersion dbver = eBDB_Version4);
+                  EBlastDbVersion dbver = eBDB_Version4,
+                  bool               limit_defline = false);
 
     /// Destructor.
     ~CWriteDB_Impl();
@@ -532,7 +533,8 @@ private:
                                   set<Int4>                      & tax_ids,
                                   int                              OID=-1,
                                   bool                             parse_ids=true,
-                                  bool                             long_seqid=false);
+                                  bool                             long_seqid=false,
+                                  bool							   limit_defline = false);
 
     /// Compute the hash of a (raw) sequence.
     ///
@@ -640,7 +642,7 @@ private:
     ///Current oid to use for lmdb
     int m_LmdbOid;
 
-    static const int kMaxRedundantEntries = 50000;
+    bool m_limitDefline;
 };
 
 END_NCBI_SCOPE

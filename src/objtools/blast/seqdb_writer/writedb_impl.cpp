@@ -59,7 +59,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              bool           parse_ids,
                              bool           long_ids,
                              bool           use_gi_mask,
-                             EBlastDbVersion    dbver)
+                             EBlastDbVersion    dbver,
+                             bool           limit_defline)
     : m_Dbname           (dbname),
       m_Protein          (protein),
       m_Title            (title),
@@ -76,7 +77,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_SeqLength        (0),
       m_HaveSequence     (false),
       m_LongSeqId        (long_ids),
-      m_LmdbOid          (0)
+      m_LmdbOid          (0),
+      m_limitDefline     (protein? limit_defline: false)
 {
     CTime now(CTime::eCurrent);
 
@@ -470,6 +472,63 @@ void CWriteDB_Impl::x_GetBioseqBinaryHeader(const CBioseq & bioseq,
     }
 }
 
+void
+s_LimitDeflines(CConstRef<CBlast_def_line_set> & dfs)
+{
+	static const int kGenBankLimit = 5;
+	static const int kGenBankScore = 500;
+	if (dfs->Get().size() <= kGenBankLimit){
+		return;
+	}
+
+	CBlast_def_line_set * deflines = const_cast<CBlast_def_line_set*>(dfs.GetPointer());
+	deflines->SortBySeqIdRank(true, true);
+	list<CRef<CBlast_def_line> > & df_set= deflines->Set();
+
+	if(FindBestChoice(df_set.front()->GetSeqid(), CSeq_id::BlastRank)->IsLocal()){
+		return;
+	}
+	string id =FindBestChoice(df_set.front()->GetSeqid(), CSeq_id::BlastRank)->AsFastaString();
+	CBlast_def_line::TTaxIds  tax_ids;
+	CBlast_def_line_set::Tdata::iterator itr=df_set.begin();
+	int gb_count = 0;
+	list<CRef<CBlast_def_line> > tmp_gb_list;
+	while (itr != df_set.end()){
+		CBlast_def_line & df= **itr;
+		int score = CSeq_id::BlastRank(FindBestChoice(df.GetSeqid(), CSeq_id::BlastRank));
+		CBlast_def_line::TTaxIds df_taxids= df.GetTaxIds();
+		if (score >= kGenBankScore){
+			size_t orig_size = tax_ids.size();
+			tax_ids.insert(df_taxids.begin(), df_taxids.end());
+			if (orig_size == tax_ids.size()){
+				if(gb_count < 5){
+					list<CRef<CBlast_def_line> >::iterator tmp_itr = itr;
+					itr++;
+					tmp_gb_list.splice(tmp_gb_list.end(), df_set, tmp_itr);
+				}
+				else {
+					itr = df_set.erase(itr);
+				}
+				continue;
+			}
+			else {
+				gb_count ++;
+			}
+		}
+		else {
+			tax_ids.insert(df_taxids.begin(), df_taxids.end());
+		}
+		itr++;
+	}
+
+	while ((gb_count < kGenBankLimit) && (tmp_gb_list.size() > 0)){
+		df_set.splice(df_set.end(), tmp_gb_list, tmp_gb_list.begin());
+		gb_count++;
+	}
+	tmp_gb_list.clear();
+}
+
+
 static void
 s_CheckEmptyLists(CRef<CBlast_def_line_set> & deflines, bool owner);
 
@@ -696,7 +755,8 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  set<Int4>                      & tax_ids,
                                  int                              OID,
                                  bool                             parse_ids,
-                                 bool                             long_ids)
+                                 bool                             long_ids,
+                                 bool                             limit_defline)
 {
     bool use_bin = (deflines.Empty() && pig == 0);
 
@@ -792,18 +852,22 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
         deflines.Reset(&* bdls);
     }
 
+    if (deflines.Empty() && (! bin_hdr.empty())) {
+        // Uncompress the deflines from binary.
+        x_SetDeflinesFromBinary(bin_hdr, deflines);
+    }
+
+    if (limit_defline) {
+    	s_LimitDeflines(deflines);
+    	bin_hdr.clear();
+    }
+
     if (bin_hdr.empty() || OID>=0) {
         // Compress the deflines to binary.
 
         CNcbiOstrstream oss;
         oss << MSerial_AsnBinary << *deflines;
         bin_hdr = CNcbiOstrstreamToString(oss);
-    }
-
-    if (deflines.Empty() && (! bin_hdr.empty())) {
-        // Uncompress the deflines from binary.
-
-        x_SetDeflinesFromBinary(bin_hdr, deflines);
     }
 
     if ((! deflines.Empty()) && deflines->CanGet()) {
@@ -829,12 +893,10 @@ void CWriteDB_Impl::x_CookHeader()
                       m_TaxIds,
                       OID,
                       m_ParseIDs,
-                      m_LongSeqId);
+                      m_LongSeqId,
+                      m_limitDefline);
 
-    if (m_Deflines->CanGet() && (m_Deflines->Get().size() > kMaxRedundantEntries)) {
-            NCBI_THROW(CWriteDBException, eArgErr,
-                       "Error: Exceeded the limit of redundant entries.");
-    }
+    x_CookIds();
 }
 
 void CWriteDB_Impl::x_CookIds()
@@ -1007,7 +1069,6 @@ void CWriteDB_Impl::x_CookData()
     // non-binary case is slightly more complex.
 
     x_CookHeader();
-    x_CookIds();
     x_CookSequence();
     x_CookColumns();
 
@@ -1126,7 +1187,6 @@ void CWriteDB_Impl::x_Publish()
 
         // need to reset OID,  hense recalculate the header and id
         x_CookHeader();
-        x_CookIds();
 
         done = m_Volume->WriteSequence(m_Sequence,
                                        m_Ambig,

@@ -160,7 +160,8 @@ public:
                    bool                   use_gi_mask,
                    ostream              * logfile,
                    bool                   long_seqids = false,
-                   EBlastDbVersion        dbver = eBDB_Version4);
+                   EBlastDbVersion        dbver = eBDB_Version4,
+                   bool                   limit_defline = false);
 
     // Note -- should deprecate (or just remove) the following one:
     // - sparse does nothing
@@ -191,7 +192,8 @@ public:
                    bool                   use_gi_mask,
                    ostream              * logfil,
                    bool                   long_seqids = false,
-                   EBlastDbVersion dbver = eBDB_Version4);
+                   EBlastDbVersion dbver = eBDB_Version4,
+                   bool                   limit_defline = false);
 
     ~CBuildDatabase();
 

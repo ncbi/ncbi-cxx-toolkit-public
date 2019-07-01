@@ -52,7 +52,8 @@ CWriteDB::CWriteDB(const string       & dbname,
                    bool                 parse_ids,
                    bool                 long_ids,
                    bool                 use_gi_mask,
-                   EBlastDbVersion      dbver)
+                   EBlastDbVersion      dbver,
+                   bool                 limit_defline)
     : m_Impl(0)
 {
     m_Impl = new CWriteDB_Impl(dbname,
@@ -62,7 +63,8 @@ CWriteDB::CWriteDB(const string       & dbname,
                                parse_ids,
                                long_ids,
                                use_gi_mask,
-                               dbver);
+                               dbver,
+                               limit_defline);
 }
 
 CWriteDB::~CWriteDB()

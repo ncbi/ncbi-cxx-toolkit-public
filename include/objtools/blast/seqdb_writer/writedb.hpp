@@ -159,7 +159,8 @@ public:
              bool           parse_ids = true,
              bool           long_ids = false,
              bool           use_gi_mask = false,
-             EBlastDbVersion    dbver = eBDB_Version4);
+             EBlastDbVersion    dbver = eBDB_Version4,
+             bool			limit_defline = false);
 
     /// Destructor.
     ///
