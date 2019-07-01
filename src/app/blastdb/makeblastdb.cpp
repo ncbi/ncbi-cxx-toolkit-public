@@ -291,6 +291,7 @@ void CMakeBlastDBApp::Init()
                              CArgDescriptions::fAppend);
 #if _BLAST_DEBUG
     arg_desc->AddFlag("verbose", "Produce verbose output", true);
+    arg_desc->AddFlag("limit_defline", "limit_defline", true);
 #endif /* _BLAST_DEBUG */
 
     arg_desc->SetCurrentGroup("Taxonomy options");
@@ -1126,6 +1127,12 @@ void CMakeBlastDBApp::x_BuildDatabase()
     const EBlastDbVersion dbver =
         static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
 
+    bool limit_defline = false;
+#if _BLAST_DEBUG
+    if(args["limit_defline"]) {
+    	limit_defline = true;
+    }
+#endif
     m_DB.Reset(new CBuildDatabase(dbname,
                                   title,
                                   is_protein,
@@ -1133,7 +1140,8 @@ void CMakeBlastDBApp::x_BuildDatabase()
                                   use_gi_mask,
                                   m_LogFile,
                                   long_seqids,
-                                  dbver));
+                                  dbver,
+                                  limit_defline));
 
 #if _BLAST_DEBUG
     if (args["verbose"]) {
