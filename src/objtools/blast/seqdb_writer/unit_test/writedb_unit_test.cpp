@@ -3553,6 +3553,45 @@ BOOST_AUTO_TEST_CASE(ReadPDBAsn1)
 
 }
 
+BOOST_AUTO_TEST_CASE(LimitProteinDeflines)
+{
+	const int kNumOfDeflines=4;
+	string dbname="limit_df";
+	{
+	CNcbiIfstream istr("data/redundant_deflines.asn");
+	CWriteDB writedb(dbname, CWriteDB::eProtein, "Redundant Deflines", eDefault, true, false,
+            		 false, eBDB_Version4,true);
+	char  seq[9]={1,2,3,4,1,2,3,4,'\0'};
+	for(unsigned int i=0; i < kNumOfDeflines; i++){
+		set<int> taxids;
+		CRef<CBlast_def_line_set>  df_line_set(new CBlast_def_line_set());
+		istr >> MSerial_AsnText >> *df_line_set;
+		writedb.AddSequence(seq);
+		writedb.SetDeflines(*df_line_set);
+	}
+	writedb.Close();
+	}
+
+	static const int num_taxids[kNumOfDeflines] = {14, 107, 1, 45};
+	static const int num_deflines[kNumOfDeflines] = {11, 107, 6, 43};
+	CSeqDB readdb(dbname, CSeqDB::eProtein);
+	for(unsigned int i=0; i < kNumOfDeflines; i++){
+		CRef<CBlast_def_line_set> new_set = readdb.GetHdr(i);
+		set<int> t;
+		readdb.GetAllTaxIDs(i, t);
+		BOOST_REQUIRE_EQUAL(num_taxids[i], t.size());
+		BOOST_REQUIRE_EQUAL(num_deflines[i], new_set->Set().size());
+	}
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+}
+
+
 
 
 BOOST_AUTO_TEST_SUITE_END()
