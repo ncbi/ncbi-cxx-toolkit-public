@@ -154,10 +154,13 @@ CAlnScannerClustal::xImportAlignmentData(
         NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
         const auto num_tokens = tokens.size();
         if (num_tokens < 2 || num_tokens > 3) {
+            string description =
+                "Date line does not follow the expected pattern of sequence_ID followed by sequence data and (optionally) data count. " 
+                "Each data line should conform to the same expected pattern.";
             throw SShowStopper(
                 lineCount,
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                "Date line does not follow the expected pattern of sequence_ID followed by sequence data and (optionally) data count. Each data line should conform to the same expected pattern."); 
+                description);
         }
 
         int seqLength = 0;
@@ -231,7 +234,9 @@ CAlnScannerClustal::sProcessClustalDataLine(
             }
             else { // ESeqIdComparison::eDifferByCase
                 description = ErrorPrintf(
-                "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.", seqId.c_str(), existingInfo.mData.c_str(), existingInfo.mNumLine);
+                "Conflicting IDs: \"%s\" differs only in case from \"%s\", " 
+                "which has already appeared in this block, on line %d.", 
+                seqId.c_str(), existingInfo.mData.c_str(), existingInfo.mNumLine);
             }
             throw SShowStopper(
                 lineNum,
@@ -243,7 +248,8 @@ CAlnScannerClustal::sProcessClustalDataLine(
     }
     else {
         if (seqCount >= numSeqs) {
-            string description = "Inconsistent sequence_IDs in the data blocks. Each data block must contain the same set of sequence_IDs.";
+            string description = "Inconsistent sequence_IDs in the data blocks. " 
+                "Each data block must contain the same set of sequence_IDs.";
             throw SShowStopper(
                 lineNum,
                 EAlnSubcode::eAlnSubcode_BadSequenceCount,
@@ -288,7 +294,8 @@ CAlnScannerClustal::sProcessClustalDataLine(
                     it->mNumLine);
             }
             else {
-                description = "Sequence_IDs are in different orders in the data blocks in your file. The sequences and sequence_IDs are expected to be in the same order in each block.";
+                description = "Sequence_IDs are in different orders in the data blocks in your file. " 
+                    "The sequences and sequence_IDs are expected to be in the same order in each block.";
             }
             throw SShowStopper(
                 lineNum,
