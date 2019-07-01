@@ -429,11 +429,12 @@ CAlnScannerNexus::xProcessMatrix(
             sequenceCharCount += dataSize;
             if (sequenceCharCount > mSequenceSize) {
                 string description = 
-                    "The expected number of characters per sequence specified by nChar in the Nexus file is " 
-                    + NStr::NumericToString(mSequenceSize) +
-                    ". The actual number of characters counted for the first sequence is "
-                    + NStr::NumericToString(sequenceCharCount) +
-                    ". The expected number of characters must equal the actual number of characters.";
+                    ErrorPrintf(
+                        "The expected number of characters per sequence specified by nChar in the Nexus file is %d." 
+                        "The actual number of characters counted for the first sequence is %d."
+                        "The expected number of characters must equal the actual number of characters.",
+                        mSequenceSize,
+                        sequenceCharCount);
                 throw SShowStopper(
                     lineNum,
                     EAlnSubcode::eAlnSubcode_BadDataCount,
@@ -458,10 +459,12 @@ CAlnScannerNexus::xProcessMatrix(
 
     if (maxSeqCount != mNumSequences-1) {
         string description = 
-            "The expected number of sequences specified by nTax in the Nexus file is " + 
-            NStr::NumericToString(mNumSequences) +
-            ". The actual number of sequences encountered is " + NStr::NumericToString(maxSeqCount+1) +
-            ". The number of sequences in the file must equal the expected number of sequences.";
+            ErrorPrintf(
+                "The expected number of sequences specified by nTax in the Nexus file is %d."
+                "The actual number of sequences encountered is %d." 
+                "The number of sequences in the file must equal the expected number of sequences.",
+                mNumSequences,
+                maxSeqCount+1);
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadSequenceCount,
@@ -471,7 +474,8 @@ CAlnScannerNexus::xProcessMatrix(
     if (seqCount != maxSeqCount) {
         string description =
             ErrorPrintf(
-                "The final sequence block in the Nexus file is incomplete. It contains data for just %d sequences, but %d sequences are expected.",
+                "The final sequence block in the Nexus file is incomplete. " 
+                "It contains data for just %d sequences, but %d sequences are expected.",
                 seqCount+1, mNumSequences);
         throw SShowStopper(
             -1,
@@ -481,11 +485,12 @@ CAlnScannerNexus::xProcessMatrix(
 
     if (sequenceCharCount != mSequenceSize) {
         string description = 
-            "The expected number of characters per sequence specified by nChar in the Nexus file is " +
-            NStr::NumericToString(mSequenceSize) +
-            ". The actual number of characters counted for the first sequence is "
-            + NStr::NumericToString(sequenceCharCount) +
-            ". The expected number of characters must equal the actual number of characters.";
+            ErrorPrintf(
+                "The expected number of characters per sequence specified by nChar in the Nexus file is %d." 
+                "The actual number of characters counted for the first sequence is %d."
+                "The expected number of characters must equal the actual number of characters.",
+                mSequenceSize,
+                sequenceCharCount);
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadDataCount,

@@ -79,25 +79,27 @@ struct SBlockInfo
 {
     int seqCount = 0;
     int lineLength = 0;
+    bool first = true;
 };
 
 //  ----------------------------------------------------------------------------
 static void sTerminateBlock(
         int lineCount,
-        int blockCount,
         int& numSeqs,
         SBlockInfo& blockInfo)
 //  ----------------------------------------------------------------------------
 {
-    if (blockCount == 1) {
+    if (blockInfo.first) {
         numSeqs = blockInfo.seqCount;
+        blockInfo.first = false;
     }
     else 
     if (numSeqs != blockInfo.seqCount) {
-        string description =
-            "Inconsistent number of sequences in the data blocks. " +
-            ("Each data block must contain the same number of sequences. " + 
-            ErrorPrintf("The first block contains %d sequences. This block contains %d sequences.", numSeqs, blockInfo.seqCount));
+        string description = 
+            ErrorPrintf("Inconsistent number of sequences in the data blocks. " 
+                        "Each data block must contain the same number of sequences. "
+                        "The first block contains %d sequences. This block contains %d sequences.", 
+                        numSeqs, blockInfo.seqCount);
 
         throw SShowStopper(
             lineCount,
@@ -120,19 +122,18 @@ CAlnScannerClustal::xImportAlignmentData(
     bool inBlock = false;
     int  blockLineLength = 0;
     int  blockCount = 0;
+    bool firstBlock = true;
     int  numSeqs = 0;
     int  seqCount = 0;
     int  maxSeqCount = 0;
 
     string line;
-    int lineCount(0);
+    int lineCount = 0;
     SBlockInfo blockInfo;
 
     while (iStr.ReadLine(line, lineCount)) {
         if (lineCount == 1) {
-            string toLower(line);
-            NStr::ToLower(toLower);
-            if (NStr::StartsWith(toLower, "clustal")) {
+            if (NStr::StartsWith(line, "clustal", NStr::eNocase)) {
                 continue;
             }
         }
@@ -140,7 +141,7 @@ CAlnScannerClustal::xImportAlignmentData(
         NStr::TruncateSpacesInPlace(line);
         if (line.empty()) {
             if (inBlock) {
-                sTerminateBlock(lineCount, blockCount, numSeqs, blockInfo);
+                sTerminateBlock(lineCount, numSeqs, blockInfo);
                 inBlock = false;
             }
             continue;
@@ -148,13 +149,15 @@ CAlnScannerClustal::xImportAlignmentData(
 
         if (sIsConservationLine(line)) {
             if (!inBlock) {
-                string description = "Clustal conservation characters (e.g. *.: characters) were detected in the alignment file, but are out of the expected order. Conservation characters, if included, must appear after sequence data lines.";
+                string description = "Clustal conservation characters (e.g. *.: characters) were detected in the alignment file, "
+                    "but are out of the expected order. " 
+                    "Conservation characters, if included, must appear after sequence data lines.";
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
                     description); 
             }
-            sTerminateBlock(lineCount, blockCount, numSeqs, blockInfo);
+            sTerminateBlock(lineCount, numSeqs, blockInfo);
             inBlock = false;
             continue;
         }
@@ -182,18 +185,14 @@ CAlnScannerClustal::xImportAlignmentData(
 
         if (!inBlock) {
             inBlock = true;
-            ++blockCount;
         }
 
-        if (!sProcessClustalDataLine(
+        sProcessClustalDataLine(
              tokens, lineCount,
              blockInfo.seqCount,
              numSeqs, 
-             seqLength,
-             blockCount, 
-             blockInfo.lineLength)) {
-            return;
-        }
+             blockInfo.first,
+             blockInfo.lineLength);
 
         mSequences[blockInfo.seqCount].push_back({tokens[1], lineCount});
         ++(blockInfo.seqCount);
@@ -201,8 +200,8 @@ CAlnScannerClustal::xImportAlignmentData(
 
     if (inBlock) { 
         string description = 
-            string("The final data block does not end with a conservation line. ") +
-            "Each Clustal data block must end with a line that can contain a mix of *.: characters and white space, " +
+            "The final data block does not end with a conservation line. "
+            "Each Clustal data block must end with a line that can contain a mix of *.: characters and white space, " 
             "which shows the degree of conservation for the segment of the alignment in the block.";
         throw SShowStopper(
                 lineCount,
@@ -217,31 +216,22 @@ CAlnScannerClustal::sIsConservationLine(
     const string& line)
 //  ----------------------------------------------------------------------------
 {
-    for (const auto& c : line) {
-        if (!isspace(c) &&
-            c != ':' &&
-            c != '.' &&
-            c != '*') {
-            return false;
-        }
-    }
-    return true;
+    return line.find_first_not_of(":.* \t\r\n");
 };
 
 //  ----------------------------------------------------------------------------
-bool
+void
 CAlnScannerClustal::sProcessClustalDataLine(
     const vector<string>& tokens,
-    const int lineNum,
-    const int seqCount,
-    const int numSeqs,
-    const int seqLength,
-    const int blockCount,
+    int lineNum,
+    int seqCount,
+    int numSeqs,
+    bool firstBlock,
     int& blockLineLength)
 //  ----------------------------------------------------------------------------
 {
     auto seqId = tokens[0];
-    if (blockCount == 1) {
+    if (firstBlock) {
         TLineInfo existingInfo;
         auto idComparison = xGetExistingSeqIdInfo(seqId, existingInfo);
         if (idComparison != ESeqIdComparison::eDifferentChars) {
@@ -321,7 +311,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
     
     if (seqCount==0) {
         blockLineLength = tokens[1].size();
-        return true;
+        return;
     }
 
     auto currentLineLength = tokens[1].size();
@@ -333,7 +323,6 @@ CAlnScannerClustal::sProcessClustalDataLine(
             EAlnSubcode::eAlnSubcode_BadDataCount,
             description);
     }
-    return true;
 };
 
 END_SCOPE(objects)

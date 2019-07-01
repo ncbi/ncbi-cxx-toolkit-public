@@ -44,11 +44,8 @@ class CAlnScannerClustal:
     public CAlnScanner
 //  ============================================================================
 {
-public:
-    CAlnScannerClustal() {};
-    ~CAlnScannerClustal() {};
 
-protected:
+private:
     void
     xImportAlignmentData(
         CSequenceInfo&,
@@ -57,24 +54,14 @@ protected:
     static bool 
     sIsConservationLine(
         const string& line);
-/*
-    static void 
-    sResetBlockInfo(int& seqCount,
-        int& blockLineLength,
-        bool& inBlock) {
-        seqCount = 0;
-        blockLineLength = 0;
-        inBlock = false;
-    }
-*/
-    bool
+
+    void
     sProcessClustalDataLine(
         const vector<string>& tokens,
-        const int lineNum,
-        const int seqCount,
-        const int numSeqs,
-        const int seqLength,
-        const int blockCount,
+        int lineNum,
+        int seqCount,
+        int numSeqs,
+        bool firstBlock,
         int& blockLineLength);
 };
 
