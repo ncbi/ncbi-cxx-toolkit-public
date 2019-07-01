@@ -1181,7 +1181,6 @@ CMC<NZ>	s	Canterbury Museum	CMNZ
 CMC<USA-MI>	s	Central Michigan University, Department of Biology			
 CMCC	c	National Center for Medical Culture Collections			
 CMCNA	s	Museo de Ciencias Naturales y Antropologicas "Prof. A. Serrano"			
-CMDM-PUJ	c	Coleccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)	CMDM-PUJ		
 CMEI	s	Clements' Museum of Exotic Insects			
 CMFRI	s	Central Marine Fisheries Research Institute	FMRI		
 CMGP	s	Central Museum of Geological Prospecting			
@@ -1218,6 +1217,7 @@ CMNS	s	Museum of Natural History, Shanghai
 CMNZ	s	Canterbury Museum			
 CMPH	s	Colegio de Postgraduados			
 CMPR	s	Centre for Medicinal Plants Research			
+CMPUJ	c	Coleccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)	CMDM-PUJ		
 CMS	s	Christian Missionary Society College			
 CMSK	s	City Museum, Sheffield			
 CMSU	s	Central Missouri State University			
