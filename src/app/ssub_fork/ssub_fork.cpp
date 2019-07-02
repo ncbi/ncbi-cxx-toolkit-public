@@ -195,7 +195,7 @@ int CSeqSubSplitter::Run()
     if (!xTryReadInputFile(args, input_sub)) {
         string err_msg = "Could not read input Seq-submit";
         ERR_POST(err_msg);
-        return 0;
+        return 1;
     }
 
     list<CRef<CSeq_submit> > output_array;
@@ -210,7 +210,7 @@ int CSeqSubSplitter::Run()
                              output_array)) {
         string err_msg = "Could not process input Seq-submit";
         ERR_POST(err_msg);
-        return 0;
+        return 1;
     }
 
     const string output_stub = args["o"].AsString();
@@ -226,17 +226,25 @@ int CSeqSubSplitter::Run()
     auto_ptr<CObjectOStream> ostr;
     bool binary = args["s"].AsBoolean();
 
-    const TSeqPos pad_width = log10(output_array.size()) + 1;
+    const TSeqPos pad_width = static_cast<TSeqPos>(log10(output_array.size())) + 1;
 
-    NON_CONST_ITERATE(list<CRef<CSeq_submit> >, it, output_array) {
-        ++output_index;
-        ostr.reset(xInitOutputStream(output_stub, 
-                    output_index, 
-                    pad_width, 
-                    output_extension,
-                    binary
-                    ));
-        *ostr << **it;
+    try {
+        NON_CONST_ITERATE(list<CRef<CSeq_submit> >, it, output_array) {
+            ++output_index;
+            ostr.reset(xInitOutputStream(output_stub, 
+                        output_index, 
+                        pad_width, 
+                        output_extension,
+                        binary
+                        ));
+            *ostr << **it;
+        }
+    }
+    catch (const CException& e) {
+        string err_msg = "Error while output results. ";
+        err_msg += e.what();
+        ERR_POST(err_msg);
+        return 1;
     }
 
     return 0;
@@ -463,7 +471,6 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
 
     TSeqEntryArray seq_entry_array;
 
-    CRef<CSeq_descr> seq_descr = Ref(new CSeq_descr());
     xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_entry_array);
 
     switch(sort_order) {
