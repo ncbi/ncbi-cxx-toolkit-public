@@ -134,6 +134,10 @@ CID2CDDProcessor_Impl::CID2CDDProcessor_Impl(const CConfig::TParamTree* params,
     for (const auto& x : v) {
         m_AuthoritativeSatellites.insert(NStr::StringToNumeric<int>(x));
     }
+
+    m_ExcludeNucleotides = conf.GetBool
+        (driver_name, NCBI_ID2PROC_CDD_PARAM_EXCLUDE_NUCLEOTIDES,
+         CConfig::eErr_NoThrow, true);
 }
 
 
@@ -179,6 +183,7 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
     CRef<CID2CDDProcessorPacketContext> packet_context;
     CRef<CCDD_Request_Packet>           cdd_packet;
     map<int, CID2_Request_Packet::Tdata::iterator> blob_requests;
+    unique_ptr<CDiagContext_Extra>      extra;
     ERASE_ITERATE(CID2_Request_Packet::Tdata, it, packet.Set()) {
         const CID2_Request& req = **it;
 
@@ -228,6 +233,16 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
         }
         if ( req_id ) {
             CConstRef<CSeq_id> id = ID2_id_To_Seq_id(*req_id);
+            if (m_ExcludeNucleotides
+                &&  (id->IdentifyAccession() & CSeq_id::fAcc_nuc) != 0) {
+                if (extra.get() == NULL) {
+                    extra.reset(new CDiagContext_Extra
+                                (GetDiagContext().Extra()));
+                }
+                extra->Print(FORMAT(serial_number << ".cdd-filtered-out"),
+                             id->AsFastaString());
+                continue;
+            }
             packet_context->m_SeqIDs[serial_number] = id;
             cdd_request->SetRequest().SetGet_blob_id().Assign(*id);
             _TRACE("Queuing request (#" << serial_number
@@ -243,7 +258,7 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
         }
         cdd_packet->Set().push_back(cdd_request);
     }
-    if (cdd_packet.NotEmpty()) {
+    if (cdd_packet.NotEmpty()  &&  !cdd_packet->Get().empty()) {
         _TRACE("Sending queued CDD requests.");
         {{
             time_t now;

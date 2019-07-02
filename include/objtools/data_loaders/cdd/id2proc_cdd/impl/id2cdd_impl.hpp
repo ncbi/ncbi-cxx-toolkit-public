@@ -123,6 +123,7 @@ private:
     size_t              m_PoolSoftLimit;
     time_t              m_PoolAgeLimit;
     set<int>            m_AuthoritativeSatellites;
+    bool                m_ExcludeNucleotides;
     mutable CFastMutex  m_PoolLock;
 };
 

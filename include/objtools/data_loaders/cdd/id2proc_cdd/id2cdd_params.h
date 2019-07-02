@@ -59,4 +59,7 @@
 #define NCBI_ID2PROC_CDD_PARAM_AUTHORITATIVE_SATELLITES \
     "authoritative_satellites"
 
+/* Whether to bother trying to resolve obvious nucleotide IDs */
+#define NCBI_ID2PROC_CDD_PARAM_EXCLUDE_NUCLEOTIDES "exclude_nucleotides"
+
 #endif//OBJTOOLS_DATA_LOADERS_CDD_ID2PROC_CDD__ID2CDD_PARAMS__H
