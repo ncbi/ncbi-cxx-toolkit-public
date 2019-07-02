@@ -8,6 +8,11 @@ if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
     endif()
 endif()
 
+if (NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND NOT ${CMAKE_CURRENT_LIST_DIR} MATCHES ${CMAKE_CURRENT_SOURCE_DIR})
+    get_filename_component(NCBI_EXTERNAL_TREE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../.."   ABSOLUTE)
+    message(STATUS "Found NCBI C++ Toolkit: ${NCBI_EXTERNAL_TREE_ROOT}")
+endif()
+
 ###############################################################################
 # must be set to OFF on trunk
 if(NOT DEFINED NCBI_EXPERIMENTAL)
