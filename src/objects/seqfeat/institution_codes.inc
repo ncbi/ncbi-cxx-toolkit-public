@@ -5234,6 +5234,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NYA\ts\tNanyue Arboretum\t\t\t",
 "NYAS\ts\tSilvicultural Research Station\t\t\t",
 "NYBG\ts\tNew York Botanical Garden\t\t\t",
+"NYNU\tc\tMicrobiology Lab, Nanyang Normal University\t\t\t",
 "NYS\ts\tNew York State Museum\t\t\t",
 "NYSM\ts\tNew York State Museum\t\t\t",
 "NYSM:ZM\ts\tNew York State Museum, Mammal collection\t",

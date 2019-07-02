@@ -5201,6 +5201,7 @@ NY	s	New York Botanical Garden
 NYA	s	Nanyue Arboretum			
 NYAS	s	Silvicultural Research Station			
 NYBG	s	New York Botanical Garden			
+NYNU	c	Microbiology Lab, Nanyang Normal University			
 NYS	s	New York State Museum			
 NYSM	s	New York State Museum			
 NYSM:ZM	s	New York State Museum, Mammal collection	
