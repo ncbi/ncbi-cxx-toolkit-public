@@ -19,7 +19,7 @@ set rep_src=src
 set rep_sample=sample
 set prj_tmp=CMakeLists.tmp
 set prj_prj=CMakeLists.txt
-set prj_cfg=configure.bat
+set cfg_cfg=configure.bat
 goto :RUN
 
 REM #########################################################################
@@ -137,10 +137,11 @@ del /S /Q Makefile.* >NUL
 REM create configure script
 (
     echo @echo off
-    echo set srcdir=%%CD%%
+    echo set script_dir=%%~dp0?
+    echo set script_dir=%%script_dir:\?=%%
     echo set script_name=%%~nx0
-    echo "%toolkit%\src\build-system\cmake\cmake-cfg-vs.bat" --rootdir="%%srcdir%%" --caller=%%script_name%% %%*
-) > %prj_cfg%
+    echo "%toolkit%\src\build-system\cmake\cmake-cfg-vs.bat" --rootdir="%%script_dir%%" --caller=%%script_name%% %%*
+) >%cfg_cfg%
 
 REM modify CMakeLists.txt
 cd %rep_src%
@@ -149,8 +150,7 @@ cd %rep_src%
     echo:
     echo project^(%prj_name%^)
     echo:
-    echo set^(NCBI_EXTERNAL_TREE_ROOT   "%toolkit:\=/%"^)
-    echo include^(${NCBI_EXTERNAL_TREE_ROOT}/src/build-system/cmake/CMake.NCBItoolkit.cmake^)
+    echo include^(%toolkit:\=/%/src/build-system/cmake/CMake.NCBItoolkit.cmake^)
     echo:
     type %prj_prj%
 ) >%prj_tmp%
@@ -159,8 +159,8 @@ move /Y %prj_tmp% %prj_prj% >NUL
 REM #########################################################################
 
 echo Created project %prj_name%
-echo To configure:  cd %prj_name%; %prj_cfg% ^<arguments^>
-echo For help:      cd %prj_name%; %prj_cfg% --help
+echo To configure:  cd %prj_name%^& %cfg_cfg% ^<arguments^>
+echo For help:      cd %prj_name%^& %cfg_cfg% --help
 :DONE
 cd %initial_dir%
 endlocal
