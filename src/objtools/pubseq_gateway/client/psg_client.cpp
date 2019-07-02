@@ -576,9 +576,7 @@ EPSG_Status s_GetStatus(TTsPtr ts, CDeadline deadline)
     assert(ts);
 
     for (;;) {
-        auto& unsafe = ts->GetUnsafe();
-
-        switch (unsafe.state.GetState()) {
+        switch (ts->GetUnsafe().state.GetState()) {
             case SPSG_Reply::SState::eCanceled: return EPSG_Status::eCanceled;
             case SPSG_Reply::SState::eNotFound: return EPSG_Status::eNotFound;
             case SPSG_Reply::SState::eError:    return EPSG_Status::eError;
@@ -586,9 +584,10 @@ EPSG_Status s_GetStatus(TTsPtr ts, CDeadline deadline)
             case SPSG_Reply::SState::eSuccess:
                 if (auto locked = ts->GetLock()) {
                     if (locked->expected.template Cmp<equal_to>(locked->received)) return EPSG_Status::eSuccess;
+
+                    locked->state.AddError("Protocol error: received less than expected");
                 }
 
-                unsafe.state.AddError("Protocol error: received less than expected");
                 return EPSG_Status::eError;
 
             default: // SPSG_Reply::SState::eInProgress;
@@ -612,7 +611,7 @@ string CPSG_ReplyItem::GetNextMessage() const
     assert(m_Impl);
     assert(m_Impl->item);
 
-    return m_Impl->item->GetUnsafe().state.GetError();
+    return m_Impl->item->GetLock()->state.GetError();
 }
 
 CPSG_ReplyItem::~CPSG_ReplyItem()
@@ -1087,7 +1086,7 @@ string CPSG_Reply::GetNextMessage() const
     assert(m_Impl);
     assert(m_Impl->reply);
 
-    return m_Impl->reply->reply_item.GetUnsafe().state.GetError();
+    return m_Impl->reply->reply_item.GetLock()->state.GetError();
 }
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
