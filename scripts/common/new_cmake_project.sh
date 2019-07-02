@@ -17,7 +17,7 @@ rep_src="src"
 rep_sample="sample"
 prj_tmp="CMakeLists.tmp"
 prj_prj="CMakeLists.txt"
-prj_cfg="configure.sh"
+cfg_cfg="configure.sh"
 ############################################################################# 
 Usage()
 {
@@ -133,12 +133,12 @@ else
 fi
 {
   echo "#!/bin/sh"
-  echo "srcdir=\`pwd\`"
+  echo "script_dir=\`dirname \$0\`"
   echo "script_name=\`basename \$0\`"
-  echo "exec $toolkit/src/build-system/cmake/$cmake_cfg --rootdir=\$srcdir --caller=\$script_name \"\$@\""
+  echo "exec $toolkit/src/build-system/cmake/$cmake_cfg --rootdir=\$script_dir --caller=\$script_name \"\$@\""
 
-} > $prj_cfg
-chmod a+x $prj_cfg
+} > $cfg_cfg
+chmod a+x $cfg_cfg
 
 # modify CMakeLists.txt
 cd $rep_src
@@ -147,8 +147,7 @@ cd $rep_src
   echo " "
   echo "project($prj_name)"
   echo " "
-  echo "set(NCBI_EXTERNAL_TREE_ROOT   $toolkit)"
-  echo "include(\${NCBI_EXTERNAL_TREE_ROOT}/src/build-system/cmake/CMake.NCBItoolkit.cmake)"
+  echo "include($toolkit/src/build-system/cmake/CMake.NCBItoolkit.cmake)"
   echo " "
   cat $prj_prj
 } > $prj_tmp
@@ -156,6 +155,6 @@ rm -f $prj_prj
 mv $prj_tmp $prj_prj
 
 echo "Created project $prj_name"
-echo "To configure:  cd $prj_name; ./$prj_cfg <arguments>"
-echo "For help:      cd $prj_name; ./$prj_cfg --help"
+echo "To configure:  cd $prj_name; ./$cfg_cfg <arguments>"
+echo "For help:      cd $prj_name; ./$cfg_cfg --help"
 cd "$initial_dir"
