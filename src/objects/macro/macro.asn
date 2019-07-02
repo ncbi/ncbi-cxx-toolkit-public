@@ -564,7 +564,7 @@ Completedness-type ::= ENUMERATED {
   no-ends (5) ,
   has-left (6) ,
   has-right (7) ,
-  other (6) }
+  other (8) }
 
 Molecule-class-type ::= ENUMERATED {
   unknown (0) ,
