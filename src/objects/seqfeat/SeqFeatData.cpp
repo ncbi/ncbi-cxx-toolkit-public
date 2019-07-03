@@ -721,6 +721,7 @@ bool CSeqFeatData::CanHaveGene(CSeqFeatData::ESubtype subtype)
     case eSubtype_tmRNA:
     case eSubtype_exon:
     case eSubtype_intron:
+    case eSubtype_stem_loop:
         return true;
     default:
         break;
