@@ -49,6 +49,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
 
     static const string  s_acbr_base("http://www.acbr-database.at/BioloMICS.aspx?Link=T&DB=0&Table=0&Descr=");
     static const string  s_atcc_base("http://www.atcc.org/Products/All/");
+    static const string  s_bccm_base("http://bccm.belspo.be/catalogues/ulc-strain-details?ACCESSION_NUMBER=UCL");
     static const string  s_bcrc_base("https://catalog.bcrc.firdi.org.tw/BSAS_cart/controller?event=SEARCH&bcrc_no=");
     static const string  s_cas_base("http://collections.calacademy.org/herp/specimen/");
     static const string  s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
@@ -59,6 +60,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_cori_base("http://ccr.coriell.org/Sections/Search/Search.aspx?q=");
     static const string  s_dsm_base("https://www.dsmz.de/catalogues/details/culture/DSM-");
     static const string  s_dsmz_base("https://www.dsmz.de/catalogues/details/culture/PV-");
+    static const string  s_emec_base("https://essigdb.berkeley.edu/cgi/eme_query?table=eme&one=T&bnhm_id=");
     static const string  s_frr_base("http://www.foodscience.csiro.au/cgi-bin/rilax/search.pl?stpos=0&stype=AND&query=");
     static const string  s_fsu_base("http://www.prz.uni-jena.de/data.php?fsu=");
     static const string  s_jcm_base("http://www.jcm.riken.jp/cgi-bin/jcm/jcm_number?JCM=");
@@ -113,6 +115,8 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const TVoucherInfoElem sc_voucher_info_map[] = {
         { "ACBR",             TVoucherInfoRef(new SVoucherInfo(&s_acbr_base,  false, false, 0, NULL,   NULL,          &s_acbr_sfx, "Austrian Center of Biological Resources and Applied Mycology") ) },
         { "ATCC",             TVoucherInfoRef(new SVoucherInfo(&s_atcc_base,  false, false, 0, NULL,   NULL,          &s_atcc_sfx, "American Type Culture Collection") ) },
+        { "BCCM",             TVoucherInfoRef(new SVoucherInfo(&s_bccm_base,  false, false, 0, NULL,   NULL,          NULL,        "Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection") ) },
+        { "BCCM/ULC",         TVoucherInfoRef(new SVoucherInfo(&s_bccm_base,  false, false, 0, NULL,   NULL,          NULL,        "Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection") ) },
         { "BCRC",             TVoucherInfoRef(new SVoucherInfo(&s_bcrc_base,  false, false, 0, NULL,   NULL,          &s_bcrc_sfx, "Bioresource Collection and Research Center") ) },
         { "CAS:HERP",         TVoucherInfoRef(new SVoucherInfo(&s_cas_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "California Academy of Sciences, Herpetology collection") ) },
         { "CBS",              TVoucherInfoRef(new SVoucherInfo(&s_cbs_base,   false, false, 0, NULL,   NULL,          NULL,        "Westerdijk Fungal Biodiversity Institute") ) },
@@ -134,6 +138,9 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "DMNS:Para",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Parasite Collection") ) },
         { "DSM",              TVoucherInfoRef(new SVoucherInfo(&s_dsm_base,   false, false, 0, NULL,   NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) },
         { "DSMZ",             TVoucherInfoRef(new SVoucherInfo(&s_dsmz_base,  false, false, 0, NULL,   NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen") ) },
+        { "EMEC",             TVoucherInfoRef(new SVoucherInfo(&s_emec_base,  true,  false, 0, NULL,   NULL,          NULL,        "Essig Museum") ) },
+        { "EMEC:EMEC",        TVoucherInfoRef(new SVoucherInfo(&s_emec_base,  false, true,  0, NULL,   NULL,          NULL,        "Essig Museum") ) },
+        { "EMEC:UCIS",        TVoucherInfoRef(new SVoucherInfo(&s_emec_base,  false, true,  0, NULL,   NULL,          NULL,        "Essig Museum") ) },
         { "FRR",              TVoucherInfoRef(new SVoucherInfo(&s_frr_base,   false, false, 0, NULL,   NULL,          NULL,        "Food Science Australia, Ryde") ) },
         { "FSU<DEU>",         TVoucherInfoRef(new SVoucherInfo(&s_fsu_base,   false, false, 0, NULL,   NULL,          NULL,        "Jena Microbial Resource Collection") ) },
         { "ICMP",             TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  false, 0, NULL,   &s_uscr_pfx,   NULL,        "International Collection of Microorganisms from Plants") ) },
@@ -198,6 +205,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "UAM:Paleo",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, paleontology collection") ) },
         { "UAMH",             TVoucherInfoRef(new SVoucherInfo(&s_uamh_base,  false, false, 0, NULL,   NULL,          NULL,        "Centre for Global Microfungal Biodiversity") ) },
         { "UAMObs:Mamm",      TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Mammal Collection") ) },
+        { "ULC",              TVoucherInfoRef(new SVoucherInfo(&s_bccm_base,  false, false, 0, NULL,   NULL,          NULL,        "Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection") ) },
         { "USNM:Birds",       TVoucherInfoRef(new SVoucherInfo(&s_usnm_base,  false, true,  0, NULL,   &s_colon_pfx,  NULL,        "National Museum of Natural History, Smithsonian Institution, Division of Birds") ) },
         { "USNM:ENT",         TVoucherInfoRef(new SVoucherInfo(&s_usnm_base,  false, true,  0, NULL,   &s_colon_pfx,  NULL,        "National Museum of Natural History, Smithsonian Institution, Entomology Collection") ) },
         { "USNM:Fish",        TVoucherInfoRef(new SVoucherInfo(&s_usnm_base,  false, true,  0, NULL,   &s_colon_pfx,  NULL,        "National Museum of Natural History, Smithsonian Institution, National Fish Collection") ) },
