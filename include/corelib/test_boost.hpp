@@ -106,7 +106,7 @@ do {                                                                    \
                               " expected but not raised",               \
                               TL, CHECK_MSG, _ );                       \
     } catch( E const& ex ) {                                            \
-        ::boost::unit_test::ut_detail::ignore_unused_variable_warning( ex ); \
+        ::boost::ignore_unused( ex );                                   \
         BOOST_TEST_TOOL_IMPL( 2, P,                                     \
                               "exception \"" BOOST_STRINGIZE( E )       \
                               "\" raised as expected" postfix,          \
@@ -205,8 +205,17 @@ catch( ... ) {                                                               \
 #endif
 
 #ifdef BOOST_FIXTURE_TEST_CASE_NO_DECOR
+#  if BOOST_VERSION < 106900
+BEGIN_SCOPE(boost)
+BEGIN_SCOPE(unit_test)
+BEGIN_SCOPE(decorator)
+typedef collector collector_t;
+END_SCOPE(decorator)
+END_SCOPE(unit_test)
+END_SCOPE(boost)
+#  endif
 #  define NCBI_BOOST_DECORATOR_ARG \
-    , boost::unit_test::decorator::collector::instance()
+    , boost::unit_test::decorator::collector_t::instance()
 #else
 #  define NCBI_BOOST_DECORATOR_ARG
 #endif
@@ -783,9 +792,9 @@ struct SNcbiTestRegistrar
     }
 
 #ifdef BOOST_FIXTURE_TEST_CASE_WITH_DECOR
-    SNcbiTestRegistrar(boost::unit_test::test_case*            tc,
-                       unsigned int                            timeout,
-                       boost::unit_test::decorator::collector& decorator)
+    SNcbiTestRegistrar(boost::unit_test::test_case*              tc,
+                       unsigned int                              timeout,
+                       boost::unit_test::decorator::collector_t& decorator)
         : TParent(tc, decorator)
     {
         tc->p_timeout.set(timeout);

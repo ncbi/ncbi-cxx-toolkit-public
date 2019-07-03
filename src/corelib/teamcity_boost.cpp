@@ -55,7 +55,11 @@ public:
 
     virtual void log_start(std::ostream&, boost::unit_test::counter_t test_cases_amount);
     virtual void log_finish(std::ostream&);
+#if BOOST_VERSION >= 107000
+    virtual void log_build_info(std::ostream&, bool = true);
+#else
     virtual void log_build_info(std::ostream&);
+#endif
 
     virtual void test_unit_start(std::ostream&, boost::unit_test::test_unit const& tu);
     virtual void test_unit_finish(std::ostream&,
@@ -135,8 +139,14 @@ void TeamcityBoostLogFormatter::log_start(std::ostream &/*out*/, boost::unit_tes
 void TeamcityBoostLogFormatter::log_finish(std::ostream &/*out*/)
 {}
 
+#if BOOST_VERSION >= 107000
+void TeamcityBoostLogFormatter::log_build_info(std::ostream &/*out*/,
+                                               bool /*log_build_info*/)
+{}
+#else
 void TeamcityBoostLogFormatter::log_build_info(std::ostream &/*out*/)
 {}
+#endif
 
 void TeamcityBoostLogFormatter::test_unit_start(std::ostream &out, boost::unit_test::test_unit const& tu) {
     messages.setOutput(out);

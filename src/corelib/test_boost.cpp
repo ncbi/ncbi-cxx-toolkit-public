@@ -247,8 +247,13 @@ public:
     void log_start        (ostream& ostr, but::counter_t test_cases_amount);
     virtual
     void log_finish       (ostream& ostr);
+#if BOOST_VERSION >= 107000
+    virtual
+    void log_build_info   (ostream& ostr, bool log_build_info = true);
+#else
     virtual
     void log_build_info   (ostream& ostr);
+#endif
     virtual
     void test_unit_start  (ostream& ostr, but::test_unit const& tu);
     virtual
@@ -2085,11 +2090,19 @@ CNcbiBoostLogger::log_finish(ostream& ostr)
     }
 }
 
+#if BOOST_VERSION >= 107000
+void
+CNcbiBoostLogger::log_build_info(ostream& ostr, bool log_build_info)
+{
+    m_Upper->log_build_info(ostr, log_build_info);
+}
+#else
 void
 CNcbiBoostLogger::log_build_info(ostream& ostr)
 {
     m_Upper->log_build_info(ostr);
 }
+#endif
 
 void
 CNcbiBoostLogger::test_unit_start(ostream& ostr, but::test_unit const& tu)
