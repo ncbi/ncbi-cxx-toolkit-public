@@ -143,7 +143,7 @@ string s_PutBlob(
 
     info.connection_time = sw.Elapsed();
     sw.Restart();
-    info.key = nc_client.PutData(buf, size, nc_blob_ttl = 60 * 8);
+    info.key = nc_client.PutData(buf, size, nc_blob_ttl = 60 * 60);
     info.transaction_time = sw.Elapsed();
 
     log.push_back(info);
