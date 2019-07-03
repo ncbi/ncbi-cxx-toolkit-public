@@ -201,7 +201,8 @@ public:
                      const string& key_col_name,
                      const string& num_col_name,
                      const string blob_column[],
-                     bool is_text= false);
+                     bool is_text= false,
+                     const CTempString& table_hint = kEmptyStr);
     void SetKey(const string& key) {
         if(!key.empty())
             m_Key= key;
@@ -215,6 +216,7 @@ protected:
     string m_TableName;
     string m_KeyColName;
     string m_NumColName;
+    string m_TableHint;
     string m_sCMD;
     string* m_DataColName;
     CDB_Connection* m_Con;
@@ -254,8 +256,16 @@ public:
     ///   A pointer to an input stream for the caller to delete when done.
     istream* OpenForRead(const string& blob_id,
                          const CTempString& table_hint = kEmptyStr);
-    // user has to delete ostream
-    ostream* OpenForWrite(const string& blob_id);
+    /// Obtain an output stream for a specific BLOB.
+    /// @param blob_id
+    ///   The BLOB's identifier (name).
+    /// @param table_hint
+    ///   Optional table hint, such as ROWLOCK, to be applied when
+    ///   working with MS SQL.
+    /// @return
+    ///   A pointer to an output stream for the caller to delete when done.
+    ostream* OpenForWrite(const string& blob_id,
+                          const CTempString& table_hint = kEmptyStr);
     void Delete(const string& blob_id);
 
     size_t GetImageLimit() const { return m_Limit; }

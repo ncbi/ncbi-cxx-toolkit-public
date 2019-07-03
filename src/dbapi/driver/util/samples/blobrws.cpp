@@ -207,7 +207,8 @@ int main(int argc, char* argv[])
             {
                 blobrw.Delete(blob_key);
             }
-            AutoPtr<ostream> pStream(blobrw.OpenForWrite(blob_key));
+            AutoPtr<ostream> pStream(blobrw.OpenForWrite
+                                     (blob_key, table_hint));
             if(!pStream.get())
             {
                 cerr << "Can't open blob for write." << endl;

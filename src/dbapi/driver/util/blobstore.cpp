@@ -314,9 +314,11 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
                                    const string& key_col_name,
                                    const string& num_col_name,
                                    const string blob_column[],
-                                   bool is_text) :
+                                   bool is_text,
+                                   const CTempString& table_hint) :
     m_TableName(table_name), m_KeyColName(key_col_name),
-    m_NumColName(num_col_name), m_RowNum(0), m_Desc(table_name, kEmptyStr, kEmptyStr)
+    m_NumColName(num_col_name), m_TableHint(table_hint),
+    m_RowNum(0), m_Desc(table_name, kEmptyStr, kEmptyStr)
 {
     m_Con= 0;
     m_Cmd= 0;
@@ -418,19 +420,29 @@ bool CSimpleBlobStore::Fini(void)
 {
     if(m_nofDataCols > 0) {
         delete m_Cmd;
+        string table_and_hint = m_TableName;
+        if ( !m_TableHint.empty() ) {
+            impl::CConnection* conn_impl
+                = dynamic_cast<impl::CConnection*>(&m_Con->GetExtraFeatures());
+            if (conn_impl != NULL
+                && conn_impl->GetServerType() == CDBConnParams::eMSSqlServer) {
+                table_and_hint += " WITH(" + m_TableHint + ')';
+            }
+        }
+
         int i= m_ImageNum % m_nofDataCols;
         if(i || m_ImageNum == 0) { // we need to clean-up the current row
-            string s= "update " + m_TableName + " set";
+            string s= "update " + table_and_hint + " set";
             for(int j= i; j < m_nofDataCols; j++) {
                 s+= ((i != j)? ", ":" ") + m_DataColName[j] + " = NULL";
             }
             s+= " where " + m_KeyColName + " = @key AND " + m_NumColName +
-                " = @n delete " + m_TableName + " where " + m_KeyColName +
+                " = @n delete " + table_and_hint + " where " + m_KeyColName +
                 " = @key AND " + m_NumColName + " > @n";
             m_Cmd= m_Con->LangCmd(s);
         }
         else {
-            string s= "delete " + m_TableName + " where " + m_KeyColName +
+            string s= "delete " + table_and_hint + " where " + m_KeyColName +
                 " = @key AND " + m_NumColName + " > @n";
             m_Cmd= m_Con->LangCmd(s);
         }
@@ -752,7 +764,8 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id,
     return 0;
 }
 
-ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
+ostream* CBlobStoreBase::OpenForWrite(const string& blob_id,
+                                      const CTempString& table_hint)
 {
     CDB_Connection* con = GetConn();
 
@@ -760,7 +773,8 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
                                                  m_KeyColName,
                                                  m_NumColName,
                                                  m_BlobColumn,
-                                                 m_IsText);
+                                                 m_IsText,
+                                                 table_hint);
     sbs->SetKey(blob_id);
     // CBlobLoader* bload= new CBlobLoader(my_context, server_name, user_name, passwd, &sbs);
     if(sbs->Init(con)) {
