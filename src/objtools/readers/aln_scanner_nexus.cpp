@@ -430,8 +430,8 @@ CAlnScannerNexus::xProcessMatrix(
             if (sequenceCharCount > mSequenceSize) {
                 string description = 
                     ErrorPrintf(
-                        "The expected number of characters per sequence specified by nChar in the Nexus file is %d." 
-                        "The actual number of characters counted for the first sequence is %d."
+                        "The expected number of characters per sequence specified by nChar in the Nexus file is %d. " 
+                        "The actual number of characters counted for the first sequence is %d. "
                         "The expected number of characters must equal the actual number of characters.",
                         mSequenceSize,
                         sequenceCharCount);
@@ -460,8 +460,8 @@ CAlnScannerNexus::xProcessMatrix(
     if (maxSeqCount != mNumSequences-1) {
         string description = 
             ErrorPrintf(
-                "The expected number of sequences specified by nTax in the Nexus file is %d."
-                "The actual number of sequences encountered is %d." 
+                "The expected number of sequences specified by nTax in the Nexus file is %d. "
+                "The actual number of sequences encountered is %d. " 
                 "The number of sequences in the file must equal the expected number of sequences.",
                 mNumSequences,
                 maxSeqCount+1);
@@ -486,8 +486,8 @@ CAlnScannerNexus::xProcessMatrix(
     if (sequenceCharCount != mSequenceSize) {
         string description = 
             ErrorPrintf(
-                "The expected number of characters per sequence specified by nChar in the Nexus file is %d." 
-                "The actual number of characters counted for the first sequence is %d."
+                "The expected number of characters per sequence specified by nChar in the Nexus file is %d. " 
+                "The actual number of characters counted for the first sequence is %d. "
                 "The expected number of characters must equal the actual number of characters.",
                 mSequenceSize,
                 sequenceCharCount);

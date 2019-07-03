@@ -233,7 +233,6 @@ void CModHandler::AddMods(const TModList& mods,
             EModSubcode subcode;
 
             auto it = accepted_mods.find(canonical_name);
-
             if (it != accepted_mods.end() && 
                 NStr::EqualNocase(it->second.front().GetValue(),
                        mod.GetValue())) {
@@ -260,8 +259,13 @@ void CModHandler::AddMods(const TModList& mods,
                 continue;
             }
 
+            CModData reportMod = 
+                (subcode == eModSubcode_Duplicate) ?  
+                mod :
+                CModData(mod.GetName());
+            
             if (fReportError) {
-                fReportError(CModData(mod.GetName()), msg, sev, subcode);
+                fReportError(reportMod, msg, sev, subcode);
                 continue;
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
