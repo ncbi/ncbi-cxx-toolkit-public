@@ -72,6 +72,10 @@
 #include <boost/test/execution_monitor.hpp>
 #include <boost/test/parameterized_test.hpp>
 
+#if BOOST_VERSION >= 105600
+#  include <boost/core/ignore_unused.hpp>
+#endif
+
 #include <boost/preprocessor/tuple/rem.hpp>
 #include <boost/preprocessor/repeat.hpp>
 #include <boost/preprocessor/array/elem.hpp>
