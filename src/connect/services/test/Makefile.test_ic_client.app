@@ -12,6 +12,6 @@ REQUIRES = Boost.Test.Included
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_ic_client
-CHECK_TIMEOUT = 400
+CHECK_TIMEOUT = 800
 
 WATCHERS = sadyrovr gouriano fukanchi
