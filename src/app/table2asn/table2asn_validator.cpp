@@ -196,18 +196,13 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::InitDisrepancyReport(objects::CScope& scope)
-{
-    if (m_discrepancy.NotEmpty())
-        return;
-
-    m_discrepancy = NDiscrepancy::CDiscrepancySet::New(scope);
-    vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
-    m_discrepancy->AddTests(names);
-}
-
 void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage)
 {
+    m_discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_context->m_scope);
+    auto kind = m_context->m_discrepancy == eTriState_True ? NDiscrepancy::eSubmitter : NDiscrepancy::eTSA;
+    vector<string> names = NDiscrepancy::GetDiscrepancyNames(kind);
+    m_discrepancy->AddTests(names);
+
     CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));
     m_discrepancy->SetFile(nm.GetName());
     m_discrepancy->SetLineage(lineage);
@@ -217,7 +212,8 @@ void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariot
 
 void CTable2AsnValidator::ReportDiscrepancies()
 {
-    if (m_context->m_discrepancy) {
+    if (m_discrepancy.NotEmpty())
+    {
         m_discrepancy->Summarize();        
         bool print_fatal = !m_context->m_master_genome_flag.empty();
         m_discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_base_name), print_fatal, false, true);

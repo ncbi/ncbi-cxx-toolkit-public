@@ -30,7 +30,6 @@ public:
     size_t TotalErrors() const; 
 
     void CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage);
-    void InitDisrepancyReport(objects::CScope& scope);
     void ReportDiscrepancies();
 
 protected:

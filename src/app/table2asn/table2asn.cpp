@@ -109,7 +109,6 @@ public:
 
     virtual bool PutError(const ILineError& err) override
     {
-        const ILineError* converted = &err;
         if (err.Problem() == ILineError::eProblem_Missing && NStr::EndsWith(err.ErrorMessage(), "feature is missing locus tag."))
         {
             NCBI_THROW(CArgException, eNoArg,
@@ -168,7 +167,7 @@ private:
 
 CTbl2AsnApp::CTbl2AsnApp(void)
 {
-    SetVersionByBuild(1);
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 
@@ -282,12 +281,6 @@ void CTbl2AsnApp::Init(void)
       t Validate with TSA Check", CArgDescriptions::eString);
 
     arg_desc->AddFlag("q", "Seq ID from File Name");      // done
-
-//    RW-733 -G doesn't actually work right now
-//    arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
-      n Nucleotide or p Protein,\n\
-      Begin, Middle, End Gap Characters,\n\
-      Missing Characters, Match Characters", CArgDescriptions::eString);
 
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
@@ -434,7 +427,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_cleanup = args["c"].AsString();
     }
     else
-       m_context.m_cleanup = "b"; // always cleanup
+        m_context.m_cleanup = "b"; // always cleanup
 
     if (args["M"])
     {
@@ -443,7 +436,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_GenomicProductSet = false;
         m_context.m_HandleAsSet = true;
         m_context.m_cleanup += "fU";
-        m_context.m_validate = "v";       
+        m_context.m_validate = "v";
     }
 
     m_reader.reset(new CMultiReader(m_context));
@@ -464,26 +457,26 @@ int CTbl2AsnApp::Run(void)
     }
 #endif
 
-   // if (args["n"])
-   //     m_context.m_OrganismName = args["n"].AsString();
+    // if (args["n"])
+    //     m_context.m_OrganismName = args["n"].AsString();
 
     if (args["y"])
         m_context.m_Comment = args["y"].AsString();
     else
-    if (args["Y"])
-    {
-        CRef<ILineReader> reader(ILineReader::New(args["Y"].AsInputFile()));
-        while (!reader->AtEOF())
+        if (args["Y"])
         {
-            reader->ReadLine();
-            m_context.m_Comment += reader->GetCurrentLine();
-            m_context.m_Comment += " ";
+            CRef<ILineReader> reader(ILineReader::New(args["Y"].AsInputFile()));
+            while (!reader->AtEOF())
+            {
+                reader->ReadLine();
+                m_context.m_Comment += reader->GetCurrentLine();
+                m_context.m_Comment += " ";
+            }
         }
-    }
     NStr::TruncateSpacesInPlace(m_context.m_Comment);
 
     if (args["U"] && args["U"].AsBoolean())
-      m_context.m_cleanup += 'U';
+        m_context.m_cleanup += 'U';
 
     if (args["X"])
     {
@@ -507,10 +500,10 @@ int CTbl2AsnApp::Run(void)
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
     m_context.m_augustus_fix = args["augustus-fix"].AsBoolean();
 
- //   if (args["taxname"])
- //       m_context.m_OrganismName = args["taxname"].AsString();
- //   if (args["taxid"])
- //       m_context.m_taxid = args["taxid"].AsInteger();
+    //   if (args["taxname"])
+    //       m_context.m_OrganismName = args["taxname"].AsString();
+    //   if (args["taxid"])
+    //       m_context.m_taxid = args["taxid"].AsInteger();
     if (args["ft-url"])
         m_context.m_ft_url = args["ft-url"].AsString();
     if (args["ft-url-mod"])
@@ -518,7 +511,7 @@ int CTbl2AsnApp::Run(void)
     if (args["A"])
         m_context.m_accession.Reset(new CSeq_id(args["A"].AsString()));
     if (args["j"])
-    {       
+    {
         m_context.mCommandLineMods = args["j"].AsString();
     }
     if (args["src-file"])
@@ -542,27 +535,32 @@ int CTbl2AsnApp::Run(void)
         if (a_arg == "s" || a_arg == "z")
         {
             m_context.m_HandleAsSet = true;
-        } else if (a_arg == "s1") {
+        }
+        else if (a_arg == "s1") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_pop_set;
-        } else if (a_arg == "s2") {
+        }
+        else if (a_arg == "s2") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_phy_set;
-        } else if (a_arg == "s3") {
+        }
+        else if (a_arg == "s3") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_mut_set;
-        } else if (a_arg == "s4") {
+        }
+        else if (a_arg == "s4") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_eco_set;
-        } else if (a_arg == "s9") {
+        }
+        else if (a_arg == "s9") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_small_genome_set;
         }
         else
-        if (a_arg == "di")
-        {
-            m_context.m_di_fasta = true;
-        }
+            if (a_arg == "di")
+            {
+                m_context.m_di_fasta = true;
+            }
     }
     if (args["gaps-min"]) {
         int gaps_min = args["gaps-min"].AsInteger();
@@ -583,55 +581,54 @@ int CTbl2AsnApp::Run(void)
 
     if (args["l"])
     {
-        const CEnumeratedTypeValues::TNameToValue&
-            linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
+        auto linkage_evidence_to_value = CLinkage_evidence::GetTypeInfo_enum_EType();
 
         ITERATE(CArgValue::TStringArray, arg_it, args["l"].GetStringList())
         {
-            CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(*arg_it);
-            if (it == linkage_evidence_to_value_map.end())
+            try
+            {
+                auto value = linkage_evidence_to_value->FindValue(*arg_it);
+                m_context.m_gap_evidences.insert(value);
+                m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
+            }
+            catch (...)
             {
                 NCBI_THROW(CArgException, eConvert,
                     "Unrecognized linkage evidence " + *arg_it);
-            }
-            else
-            {
-                m_context.m_gap_evidences.insert(it->second);
-                m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
             }
         }
     }
 
     if (args["gap-type"])
     {
-        const CEnumeratedTypeValues::TNameToValue&
-            linkage_evidence_to_value_map = CSeq_gap::GetTypeInfo_enum_EType()->NameToValue();
+        auto gaptype_to_value = CSeq_gap::GetTypeInfo_enum_EType();
 
-        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(args["gap-type"].AsString());
-        if (it == linkage_evidence_to_value_map.end())
+        try
+        {
+            auto value = gaptype_to_value->FindValue(args["gap-type"].AsString());
+            m_context.m_gap_type = value;
+        }
+        catch (...)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized gap type " + args["gap-type"].AsString());
         }
-        else
-        {
-            m_context.m_gap_type = it->second;
-        }
 
     }
 
-    if (m_context.m_gap_Unknown_length > 0  &&  m_context.m_gapNmin == 0) {
+    if (m_context.m_gap_Unknown_length > 0 && m_context.m_gapNmin == 0) {
         m_context.m_gapNmin = m_context.m_gap_Unknown_length;
     }
 
     if (args["H"])
     {
-	string sdate = args["H"].AsString();
-        if (sdate=="Y" || sdate=="y") {
+        string sdate = args["H"].AsString();
+        if (sdate == "Y" || sdate == "y") {
             m_context.m_HoldUntilPublish.SetCurrent();
             m_context.m_HoldUntilPublish.SetYear(m_context.m_HoldUntilPublish.Year() + 1);
-        } else 
-        try
+        }
+        else
+            try
         {
             if (sdate[0] == '\'' && sdate.length() > 0 && sdate[sdate.length() - 1] == '\'')
             {
@@ -668,6 +665,16 @@ int CTbl2AsnApp::Run(void)
             m_context.m_validate.erase(p, 1);
             m_context.m_make_flatfile = true;
         }
+        while ((p = m_context.m_validate.find("t")) != string::npos)
+        {
+            m_context.m_discrepancy = eTriState_False;
+            m_context.m_validate.erase(p, 1);
+        }
+    }
+
+    if (args["Z"] && m_context.m_discrepancy == eTriState_Unknown)
+    {
+        m_context.m_discrepancy = eTriState_True;
     }
 
     if (args["locus-tag-prefix"])
@@ -697,12 +704,6 @@ int CTbl2AsnApp::Run(void)
                 if (!outputdir.Exists())
                     outputdir.Create();
         }
-    }
-
-    if (args["Z"])
-    {
-        m_context.m_discrepancy = true;
-        m_validator->InitDisrepancyReport(*m_context.m_scope);
     }
 
     m_context.m_eukariote = args["euk"].AsBoolean();
@@ -1012,7 +1013,7 @@ void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRe
             m_validator->Validate(submit, entry, m_context.m_validate);
         }
 
-        if (m_context.m_discrepancy)
+        if (m_context.m_discrepancy != eTriState_Unknown)
         {
             m_validator->CollectDiscrepancies(*obj, m_context.m_disc_eucariote, m_context.m_disc_lineage);
         }
@@ -1030,7 +1031,7 @@ void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRe
             else
                 ffgenerator.Generate(*submit, *m_context.m_scope, m_context.GetOstream(".gbf"));
         }
-    }
+	}
 }
 
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment)

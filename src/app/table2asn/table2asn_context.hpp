@@ -34,6 +34,42 @@ namespace edit
 
 #include <objects/seq/Seqdesc.hpp>
 
+template<typename _Stream, size_t _bufsize=8192*2>
+class CBufferedStream
+{
+public:
+	CBufferedStream()
+	{
+	}
+	operator bool() const
+	{
+		return m_buffer.get() != nullptr;
+	}
+	operator _Stream&()
+	{
+		return get();
+	}
+	_Stream& get()
+	{
+		if (m_buffer.get() == nullptr)
+		{
+			m_buffer.reset(new char[bufsize]);
+			m_stream.rdbuf()->pubsetbuf(m_buffer.get(), bufsize);
+		}
+		return m_stream;
+	}
+	~CBufferedStream()
+	{
+	}
+private:
+	static constexpr size_t bufsize = _bufsize;
+	unique_ptr<char> m_buffer;
+	_Stream m_stream;
+};
+
+using CBufferedOutput = CBufferedStream<CNcbiOfstream>;
+using CBufferedInput  = CBufferedStream<CNcbiIfstream>;
+
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
 class CTable2AsnContext
@@ -66,7 +102,6 @@ public:
     bool   m_t;
     bool   m_save_bioseq_set;
     string c;
-    bool   m_discrepancy;
     string zOufFile;
     string X;
     string m_master_genome_flag;
@@ -100,6 +135,7 @@ public:
     bool   m_verbose;
     bool   m_augustus_fix;
     bool   m_make_flatfile;
+    ETriState m_discrepancy;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;

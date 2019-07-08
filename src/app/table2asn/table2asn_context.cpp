@@ -177,6 +177,7 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, _T& seq_or_set)
 CTable2AsnContext::CTable2AsnContext():
     m_output(0),
     m_delay_genprodset(false),
+    m_t(false),
     m_save_bioseq_set(false),
     m_disc_eucariote(false),
     m_RemoteTaxonomyLookup(false),
@@ -200,9 +201,8 @@ CTable2AsnContext::CTable2AsnContext():
     m_verbose(false),
     m_augustus_fix(false),
     m_make_flatfile(false),
-    m_discrepancy(false),
-    m_logger(0),
-    m_t(false)
+    m_discrepancy(eTriState_Unknown),
+    m_logger(0)
 {
 }
 
@@ -623,7 +623,6 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
         if (qual.CanGetVal())
         {
             const auto& qual_name = qual.GetQual();
-            const auto& qual_value = qual.GetVal();
             //discussion of rw-451: always rename, never delete, regardless of 
             // whether in original data or not
             //
