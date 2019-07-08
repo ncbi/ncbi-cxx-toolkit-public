@@ -1257,16 +1257,42 @@ void CValidError_align::x_ValidateSeqId(const CSeq_align& align)
     vector< CRef< CSeq_id > > ids;
     x_GetIds(align, ids);
 
+    int num_nucs = 0;
+    int num_prts = 0;
+
     ITERATE( vector< CRef< CSeq_id > >, id_iter, ids ) {
         const CSeq_id& id = **id_iter;
         if ( id.IsLocal() ) {
-            if ( !m_Scope->GetBioseqHandle(id) ) {
+            CBioseq_Handle hdl = m_Scope->GetBioseqHandle(id);
+            if ( hdl ) {
+                if ( hdl.IsNa() ) {
+                    num_nucs++;
+                }
+                if ( hdl.IsAa() ) {
+                    num_prts++;
+                }
+            }
+            if ( !hdl ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_SeqIdProblem,
                     "SeqId: The sequence corresponding to SeqId " + 
                     id.AsFastaString() + " could not be found.",
                     align);
             }
+        } else {
+            CBioseq_Handle hdl = m_Scope->GetBioseqHandle(id);
+            if ( hdl ) {
+                if ( hdl.IsNa() ) {
+                    num_nucs++;
+                }
+                if ( hdl.IsAa() ) {
+                    num_prts++;
+                }
+            }
         }
+    }
+    if ( num_nucs > 0 && num_prts > 0 ) {
+        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SeqIdProblem,
+                "MIXTURE OF NUCS AND PROTS", align);
     }
 }
 
