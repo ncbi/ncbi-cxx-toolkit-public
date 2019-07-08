@@ -170,7 +170,7 @@ private:
 
 
 class ILineErrorListener;
-class CDefaultModErrorReporter
+class NCBI_XOBJREAD_EXPORT CDefaultModErrorReporter
 {
 public:
     CDefaultModErrorReporter(
