@@ -1291,7 +1291,7 @@ void CValidError_align::x_ValidateSeqId(const CSeq_align& align)
         }
     }
     if ( num_nucs > 0 && num_prts > 0 ) {
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SeqIdProblem,
+        PostErr(eDiag_Error, eErr_SEQ_ALIGN_NucProtMixture,
                 "MIXTURE OF NUCS AND PROTS", align);
     }
 }
