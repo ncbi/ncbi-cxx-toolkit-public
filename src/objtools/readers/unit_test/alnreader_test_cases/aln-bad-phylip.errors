@@ -1,0 +1,5 @@
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Problem    : Alignment.BadDataCount
+Message    : Phylip sequence length from first line (81) does not agree with the actual sequence length (61).
+

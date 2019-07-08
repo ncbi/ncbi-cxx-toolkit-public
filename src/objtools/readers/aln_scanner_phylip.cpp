@@ -228,7 +228,7 @@ CAlnScannerPhylip::xVerifyAlignmentData(
             mSequenceLength, actualSequenceLength);
         throw SShowStopper(
             -1,
-            EAlnSubcode::eAlnSubcode_BadSequenceCount,
+            EAlnSubcode::eAlnSubcode_BadDataCount,
             description);
     }
     return CAlnScanner::xVerifyAlignmentData(sequenceInfo);
