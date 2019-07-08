@@ -338,13 +338,19 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
     if (fix_initials &&
         name.IsSetInitials() && !NStr::IsBlank(name.GetInitials()) &&
         (!name.IsSetFirst() || NStr::IsBlank(name.GetFirst()))) {
-        size_t pos = NStr::Find(name.GetInitials(), ".");
-        if (pos == NPOS) {
-            if (name.GetInitials().length() == 1) {
-                name.SetFirst(name.GetInitials());
+        string temp = name.GetInitials();
+        size_t pos = NStr::Find(temp, "-");
+        if (pos == 2 && temp.length() >= 5 && temp[1] == '.' && temp [4] == '.') {
+            name.SetFirst(temp.substr(0, 1) + '-' + temp.substr(3, 1));
+        } else {
+            pos = NStr::Find(temp, ".");
+            if (pos == NPOS) {
+                if (temp.length() == 1) {
+                    name.SetFirst(temp);
+                }
+            } else if (pos == 1 && temp.length() >= 2) {
+                name.SetFirst(temp.substr(0, 1));
             }
-        } else if (pos == 1 && name.GetInitials().length() == 2) {
-            name.SetFirst(name.GetInitials().substr(0, 1));
         }
     }
 

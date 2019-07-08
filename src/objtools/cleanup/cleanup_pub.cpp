@@ -277,7 +277,8 @@ bool CPubEquivCleaner::ShouldWeFixInitials(const CPub_equiv& equiv)
             has_art = true;
         }
     }
-    return !(has_art  &&  has_id);
+    // return !(has_art  &&  has_id);
+    return true;
 }
 
 
