@@ -744,6 +744,7 @@ enum EErrType {
     eErr_SEQ_ALIGN_SegsPresentMismatch,
     eErr_SEQ_ALIGN_SegsPresentStartsMismatch,
     eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
+    eErr_SEQ_ALIGN_NucProtMixture,
     
     ERR_CODE_END(SEQ_ALIGN),
 

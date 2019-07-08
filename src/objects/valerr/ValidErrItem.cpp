@@ -2281,6 +2281,9 @@ same id type" } },
     { eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
     { "SegsPresentStrandsMismatch",
 "Please contact the sequence database for further help with this error." } },
+   { eErr_SEQ_ALIGN_NucProtMixture,
+   { "NucProtMixture",
+"The alignment refers to a mixture of nucleotides and proteins." } },
 
 
 /* SEQ_GRAPH */
