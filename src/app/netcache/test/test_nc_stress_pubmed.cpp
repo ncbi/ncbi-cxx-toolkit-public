@@ -31,7 +31,7 @@ USING_NCBI_SCOPE;
 static void PrintAllStat();
 static bool need_conf_reload = false;
 static CAtomicCounter s_BlobId;
-static CRandom s_Rnd((CRandom::TValue)CProcess::GetCurrentPid());
+static CRandom s_Rnd((CRandom::TValue)CCurrentProcess::GetPid());
 
 #ifdef USE_SIGNAL
 /*******************************************************
@@ -64,7 +64,7 @@ TSigHandler old_SIGBUS;
 static void /* RETSIGTYPE */
 on_SIGNAL(int OnDatr)
 {
-    cerr << "PID : " << CProcess::GetCurrentPid() << " : signal caught : "
+    cerr << "PID : " << CCurrentProcess::GetPid() << " : signal caught : "
          << OnDatr << endl;
     PrintAllStat();
 
