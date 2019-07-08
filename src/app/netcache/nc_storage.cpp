@@ -701,7 +701,7 @@ s_LockInstanceGuard(void)
         CFileIO writer;
         writer.SetFileHandle(s_GuardLock->GetFileHandle());
         writer.SetFileSize(0, CFileIO::eBegin);
-        string pid(NStr::UInt8ToString(CProcess::GetCurrentPid()));
+        string pid(NStr::UInt8ToString(CCurrentProcess::GetPid()));
         writer.Write(pid.c_str(), pid.size());
     }
     catch (CFileErrnoException& ex) {

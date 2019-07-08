@@ -161,7 +161,7 @@ string GetSoftFatalAction(void)
 static void
 s_InitConstants(void)
 {
-    Int8 pid = CProcess::GetCurrentPid();
+    Int8 pid = CCurrentProcess::GetPid();
     time_t t = time(0);
     const string& host = CTaskServer::GetHostName();
     Int8 h = 212;

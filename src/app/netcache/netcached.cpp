@@ -905,7 +905,7 @@ void CNCServer::WriteEnvInfo(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("workdir"     ).WriteText(iss).WriteText(   CDir::GetCwd()).WriteText(eos);
     task.WriteText(eol).WriteText("logfile"     ).WriteText(iss).WriteText(   GetLogFileName()).WriteText(eos);
     task.WriteText(eol).WriteText("pidfile"     ).WriteText(iss).WriteText(   s_PidFile).WriteText(eos);
-    task.WriteText(eol).WriteText("pid"         ).WriteText(is ).WriteNumber( CProcess::GetCurrentPid());
+    task.WriteText(eol).WriteText("pid"         ).WriteText(is ).WriteNumber( CCurrentProcess::GetPid());
     Int8 len = CFile(GetLogFileName()).GetLength();
     task.WriteText(eol).WriteText("logfile_size").WriteText(iss).WriteText(
         NStr::UInt8ToString_DataSize(len > 0 ? len : 0)).WriteText(eos);
@@ -1021,7 +1021,7 @@ bool s_ReportPid(const string& pid_file)
     if (!ofs.is_open()) {
         return false;
     }
-    ofs << CProcess::GetCurrentPid() << endl;
+    ofs << CCurrentProcess::GetPid() << endl;
     return true;
 }
 
