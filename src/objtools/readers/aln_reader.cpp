@@ -730,29 +730,8 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
         return;
     }
 
-
-    auto fReportError = 
-        [&](const CModData& mod, const string& msg, EDiagSev sev, EModSubcode subcode) {
-        if (!pErrorListener) {
-            NCBI_THROW2(CObjReaderParseException, eFormat, msg, 0);
-        }
-
-        AutoPtr<CLineErrorEx> pErr(
-            CLineErrorEx::Create(
-            ILineError::eProblem_GeneralParsingError,
-            sev,
-            EReaderCode::eReader_Mods,
-            subcode,
-            "",
-            defline_info.mNumLine,
-            msg,
-            "",
-            mod.GetName(),
-            mod.GetValue()));
-
-        pErrorListener->PutError(*pErr);
-    };
-
+    CDefaultModErrorReporter 
+        errorReporter(defline_info.mNumLine, pErrorListener);
         
     CModHandler::TModList mod_list;
     string remainder;
@@ -765,11 +744,11 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
 
     CModHandler mod_handler;
     CModHandler::TModList rejected_mods;
-    mod_handler.AddMods(mod_list, CModHandler::eAppendReplace, rejected_mods, fReportError);
+    mod_handler.AddMods(mod_list, CModHandler::eAppendReplace, rejected_mods, errorReporter);
 
     // Apply modifiers to the bioseq
     CModHandler::TModList skipped_mods;
-    CModAdder::Apply(mod_handler, bioseq, skipped_mods, fReportError);
+    CModAdder::Apply(mod_handler, bioseq, skipped_mods, errorReporter);
 
     s_AppendMods(rejected_mods, remainder);
     s_AppendMods(skipped_mods, remainder);

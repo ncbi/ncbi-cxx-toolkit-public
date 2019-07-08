@@ -2132,13 +2132,16 @@ void CFastaReader::x_ApplyMods(
         CModHandler::TModList mods;
         CTitleParser::Apply(processed_title, mods, remainder);
 
+        CDefaultModErrorReporter 
+            errorReporter(line_number, pMessageListener);
+
         CModHandler mod_handler;
         CModHandler::TModList rejected_mods;
-        mod_handler.AddMods(mods, CModHandler::eReplace, rejected_mods);
+        mod_handler.AddMods(mods, CModHandler::eReplace, rejected_mods, errorReporter);
         s_AppendMods(rejected_mods, remainder);
 
         CModHandler::TModList skipped_mods;
-        CModAdder::Apply(mod_handler, bioseq, skipped_mods); // Need to add an error reporter here
+        CModAdder::Apply(mod_handler, bioseq, skipped_mods, errorReporter);
         s_AppendMods(skipped_mods, remainder);
 
         processed_title = remainder;

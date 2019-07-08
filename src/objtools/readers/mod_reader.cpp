@@ -42,6 +42,7 @@
 #include <objtools/logging/listener.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include <objtools/readers/mod_error.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -634,6 +635,42 @@ void CModAdder::x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst)
     seq_inst.SetHist().SetReplaces().SetIds() = move(secondary_ids);
 }
 
+
+CDefaultModErrorReporter::CDefaultModErrorReporter(
+        int lineNum,
+        ILineErrorListener* pErrorListener)
+    : m_LineNum(lineNum),
+      m_pErrorListener(pErrorListener) 
+    {}
+
+
+void CDefaultModErrorReporter::operator()(
+    const CModData& mod,
+    const string& msg,
+    EDiagSev sev,
+    EModSubcode subcode)
+{
+    if (!m_pErrorListener) {
+        NCBI_THROW2(CObjReaderParseException, eFormat, msg, 0);
+    }
+
+    cout << "Reporting error" << endl;
+
+    AutoPtr<CLineErrorEx> pErr(
+        CLineErrorEx::Create(
+            ILineError::eProblem_GeneralParsingError,
+            sev,
+            EReaderCode::eReader_Mods,
+            subcode,
+            "",
+            m_LineNum,
+            msg,
+            "",
+            mod.GetName(),
+            mod.GetValue()));
+
+    m_pErrorListener->PutError(*pErr);
+}
 
 
 void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remainder)

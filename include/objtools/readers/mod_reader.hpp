@@ -169,6 +169,25 @@ private:
 };
 
 
+class ILineErrorListener;
+class CDefaultModErrorReporter
+{
+public:
+    CDefaultModErrorReporter(
+            int lineNum,
+            ILineErrorListener* pErrorListener);
+
+    void operator()(
+            const CModData& mod,
+            const string& msg,
+            EDiagSev sev,
+            EModSubcode subcode);
+private:
+    int m_LineNum;
+    ILineErrorListener* m_pErrorListener;
+};
+
+
 class NCBI_XOBJREAD_EXPORT CTitleParser 
 {
 public:
