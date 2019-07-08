@@ -2342,8 +2342,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4536)
     CheckAuthNameSingleInitialFix("B", "A", "B", "B.A.");
     CheckAuthNameSingleInitialFix("B", "A.", "B", "B.A.");
 
-    // do not fix if more than one initial
-    CheckAuthNameSingleInitialFix("", "M.E.", "", "M.E.");
+    // now fixing even if more than one initial
+    CheckAuthNameSingleInitialFix("", "M.E.", "M", "M.E.");
     
 }
 
