@@ -231,7 +231,7 @@ static vector< CRef<CReplayThread> >* s_Threads;
 
 static CAtomicCounter s_BlobId;
 static CFastMutex s_RndLock;
-static CRandom s_Rnd((CRandom::TValue)CProcess::GetCurrentPid());
+static CRandom s_Rnd((CRandom::TValue)CCurrentProcess::GetPid());
 
 
 static Uint4
