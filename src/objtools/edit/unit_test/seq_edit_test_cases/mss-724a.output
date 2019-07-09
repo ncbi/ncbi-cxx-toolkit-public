@@ -1,0 +1,471 @@
+Bioseq ::= {
+  id {
+    genbank {
+      accession "CM010253",
+      version 1
+    },
+    general {
+      db "WGS:PQWN",
+      tag str "chr1"
+    },
+    gi 1431168167
+  },
+  descr {
+    title "Sparus aurata isolate M197-DHL199-FB linkage group LG01",
+    source {
+      genome chromosome,
+      org {
+        taxname "Sparus aurata",
+        common "gilthead seabream",
+        db {
+          {
+            db "taxon",
+            tag id 8175
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Sparus",
+            species "aurata"
+          },
+          attrib "specified",
+          mod {
+            {
+              subtype isolate,
+              subname "M197-DHL199-FB"
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;        
+               Euteleostomi; Actinopterygii; Neopterygii; Teleostei;
+ Neoteleostei;                       Acanthomorphata; Eupercaria; Spariformes;
+ Sparidae; Sparus",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype tissue-type,
+          name "whole larva/fin"
+        },
+        {
+          subtype dev-stage,
+          name "larva39dph/adult/adult"
+        },
+        {
+          subtype linkage-group,
+          name "LG01"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic,
+      tech wgs
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+                               {
+                                   name name {
+                                       last "Bargelloni",
+                                       first "Luca",
+                                       initials "L."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Tsigenoploulos",
+                                       first "Costas",
+                                       initials "C."
+                                   }
+                               }
+                           },
+            affil std {
+              affil "University of Padova",
+              div "Comparative Biomedicine and Food Science",
+              city "Legnaro (PD)",
+              country "Italy",
+              street "viale dell'Universita 16",
+              postal-code "35020"
+            }
+          },
+          date std {
+            year 2018,
+            month 2,
+            day 2
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 30271999,
+        article {
+          title {
+            name "Genomic analysis of Sparus aurata reveals the evolutionary  
+                             dynamics of sex-biased genes in a sequential
+ hermaphrodite fish."
+          },
+          authors {
+            names std {
+                               {
+                                   name name {
+                                       last "Pauletto",
+                                       first "M",
+                                       initials "M."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Manousaki",
+                                       first "T",
+                                       initials "T."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Ferraresso",
+                                       first "S",
+                                       initials "S."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Babbucci",
+                                       first "M",
+                                       initials "M."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Tsakogiannis",
+                                       first "A",
+                                       initials "A."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Louro",
+                                       first "B",
+                                       initials "B."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Vitulo",
+                                       first "N",
+                                       initials "N."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Quoc",
+                                       first "V",
+                                       initials "V.H."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Carraro",
+                                       first "R",
+                                       initials "R."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Bertotto",
+                                       first "D",
+                                       initials "D."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Franch",
+                                       first "R",
+                                       initials "R."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Maroso",
+                                       first "F",
+                                       initials "F."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Aslam",
+                                       first "M",
+                                       initials "M.L."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Sonesson",
+                                       first "A",
+                                       initials "A.K."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Simionati",
+                                       first "B",
+                                       initials "B."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Malacrida",
+                                       first "G",
+                                       initials "G."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Cestaro",
+                                       first "A",
+                                       initials "A."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Caberlotto",
+                                       first "S",
+                                       initials "S."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Sarropoulou",
+                                       first "E",
+                                       initials "E."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Mylonas",
+                                       first "C",
+                                       initials "C.C."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Power",
+                                       first "D",
+                                       initials "D.M."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Patarnello",
+                                       first "T",
+                                       initials "T."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Canario",
+                                       first "A",
+                                       initials "A.V."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Tsigenopoulos",
+                                       first "C",
+                                       initials "C."
+                                   }
+                               },
+                               {
+                                   name name {
+                                       last "Bargelloni",
+                                       first "L",
+                                       initials "L."
+                                   }
+                               }
+                           }
+          },
+          from journal {
+            title {
+              iso-jta "Commun Biol",
+              ml-jta "Commun Biol",
+              issn "2399-3642",
+              name "Communications biology"
+            },
+            imp {
+              date std {
+                year 2018,
+                month 8,
+                day 17
+              },
+              volume "1",
+              pages "119",
+              language "eng",
+              pubstatus epublish,
+              history {
+                {
+                  pubstatus received,
+                  date std {
+                    year 2018,
+                    month 1,
+                    day 12
+                  }
+                },
+                {
+                  pubstatus accepted,
+                  date std {
+                    year 2018,
+                    month 7,
+                    day 27
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2018,
+                    month 10,
+                    day 2,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2018,
+                    month 10,
+                    day 3,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2018,
+                    month 10,
+                    day 3,
+                    hour 6,
+                    minute 1
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 30271999,
+            doi "10.1038/s42003-018-0122-7",
+            pii "122",
+            other {
+              db "pmc",
+              tag str "PMC6123679"
+            },
+            other {
+              db "ELocationID doi",
+              tag str "10.1038/s42003-018-0122-7"
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Assembly-Data-START##"
+        },
+        {
+          label str "Assembly Method",
+          data str "CLC Genomics Workbench v. v 10.1.1; PbJelly2 v.           
+                JANUARY-2016; SSPACE v. APRIL-2017; ALLMAPS v. APRIL-2017"
+        },
+        {
+          label str "Genome Representation",
+          data str "Full"
+        },
+        {
+          label str "Expected Final Version",
+          data str "Yes"
+        },
+        {
+          label str "Genome Coverage",
+          data str "60.0x"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Illumina HiSeq; Illumina MiSeq; PacBio"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA416845"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN09603368"
+          }
+        }
+      }
+    },
+    user {
+      type str "FeatureFetchPolicy",
+      data {
+        {
+          label str "Policy",
+          data str "OnlyNearFeatures"
+        }
+      }
+    },
+    user {
+      type str "OriginalID",
+      data {
+        {
+          label str "GenBank",
+          data str "gb|CM010253.1|"
+        },
+        {
+          label str "General",
+          data str "gnl|WGS:PQWN|chr1"
+        }
+      }
+    },
+    genbank {
+      extra-accessions {
+        "PQWN01000000"
+      }
+    },
+    create-date std {
+      year 2018,
+      month 7,
+      day 19
+    },
+    update-date std {
+      year 2018,
+      month 10,
+      day 10
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 100,
+    seq-data ncbi2na '3A0E811FFF5EB8DF8D34D30224511448D1D06175AD8013761B'H
+  }
+}

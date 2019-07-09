@@ -8,6 +8,7 @@ NCBI_add_app(
   unit_test_cds_fix unit_test_loc_edit unit_test_mail_report
   unit_test_source_edit unit_test_rna_edit unit_test_parse_text
   unit_test_pub_edit unit_test_gap_trim unit_test_feature_propagate
+  unit_test_seq_edit
 )
 
 
@@ -23,4 +24,5 @@ include(CMakeLists.unit_test_source_edit.app.txt)
 include(CMakeLists.unit_test_rna_edit.app.txt)
 include(CMakeLists.unit_test_parse_text.app.txt)
 include(CMakeLists.unit_test_pub_edit.app.txt)
+include(CMakeLists.unit_test_seq_edit.app.txt)
 endif()

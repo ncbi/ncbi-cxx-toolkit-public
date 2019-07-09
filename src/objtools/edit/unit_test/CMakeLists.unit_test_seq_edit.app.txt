@@ -1,0 +1,31 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_seq_edit)
+  NCBI_sources(unit_test_seq_edit)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjedit)
+  NCBI_project_watchers(foleyjp)
+
+  NCBI_set_test_assets(seq_edit_test_cases)
+  NCBI_set_test_timeout(3000)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
+#
+#
+#
+add_executable(unit_test_seq_edit-app
+    unit_test_seq_edit
+)
+
+set_target_properties(unit_test_seq_edit-app PROPERTIES OUTPUT_NAME unit_test_seq_edit)
+
+
+
+target_link_libraries(unit_test_seq_edit-app
+    test_boost xobjedit
+)
+endif()

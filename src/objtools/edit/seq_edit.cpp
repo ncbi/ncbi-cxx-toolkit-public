@@ -39,13 +39,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+// Change this so that it also handles proteins
+// Test on both nucleotide and protein delta sequences
+// What should I do if the bioseq length is not set
 void g_ConvertDeltaToRawSeq(CBioseq& bioseq, CScope* pScope)
 {
     _ASSERT(bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta);
-
-    if (bioseq.IsSetLength()) {
-        //NCBI_THROW();
-    }
+    _ASSERT(bioseq.IsSetLength());
 
     CSeqVector seq_vec(bioseq, pScope);
     seq_vec.SetCoding(CSeq_data::e_Iupacna);
@@ -54,6 +54,7 @@ void g_ConvertDeltaToRawSeq(CBioseq& bioseq, CScope* pScope)
 
     bioseq.SetInst().ResetExt();
     bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    // Iupacna
     bioseq.SetInst().SetSeq_data().SetIupacna().Set(seqdata);
 
     CSeqportUtil::Pack(&bioseq.SetInst().SetSeq_data());
