@@ -733,18 +733,23 @@ namespace
 
 CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& obj)
 {
-    unique_ptr<istream> istream(new CNcbiIfstream(filename.c_str()));
-    CFormatGuess::EFormat format = xGetFormat(*istream);
+	CFormatGuess::EFormat format;
+	{
+		unique_ptr<istream> istream(new CNcbiIfstream(filename.c_str()));
+		format = xGetFormat(*istream);
+	}
 
     if (format == CFormatGuess::eTextASN) {
-        m_obj_stream = xCreateASNStream(format, istream);
+		m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
         obj = xReadASN1(*m_obj_stream);
     }
     else { // RW-616 - Assume FASTA
         m_iFlags = 0;
         m_iFlags |= CFastaReader::fNoUserObjs;
 
-        obj = xReadFasta(*istream);
+		CBufferedInput istream;
+		istream.get().open(filename.c_str());
+		obj = xReadFasta(istream);
     }
     if (obj.Empty())
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -950,7 +955,8 @@ public:
                     CFeature_table_reader::fReportBadKey |
                     CFeature_table_reader::fLeaveProteinIds |
                     CFeature_table_reader::fCreateGenesFromCDSs |
-                    CFeature_table_reader::fAllIdsAsLocal,
+                    CFeature_table_reader::fAllIdsAsLocal | 
+                    CFeature_table_reader::fPreferGenbankId,
                     m_logger, 0/*filter*/, m_seqid_prefix);
 
                 if (annot.NotEmpty() && annot->IsSetData() && annot->GetData().IsFtable() &&

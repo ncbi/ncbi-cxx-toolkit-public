@@ -71,6 +71,7 @@ public:
         fReportDiscouragedKey   = (1<<6), ///< = 0x40 (Report discouraged keys into the error container)
         fLeaveProteinIds        = (1<<7), ///< = 0x80 (Leave all protein_id as a qualifiers)
         fAllIdsAsLocal          = (1<<8), ///< = 0xA0 (Do not attempt to parse accessions)
+        fPreferGenbankId        = (1<<9), ///< = 0xB0 (Prefer Genbank accession ids)
     };
     typedef int TFlags;
 
@@ -166,13 +167,13 @@ public:
     ///   True if it is a feature line and false if it's not.
     static bool ParseInitialFeatureLine (
         const CTempString& line_arg,
-        string & out_seqid,
-        string & out_annotname );
+        CTempStringEx& out_seqid,
+        CTempStringEx& out_annotname );
 
 private:
     static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader, 
-                                               const string& seqid,
-                                               const string& annot_name,
+                                               const CTempString& seqid,
+                                               const CTempString& annot_name,
                                                const TFlags flags, 
                                                ITableFilter* filter);
 

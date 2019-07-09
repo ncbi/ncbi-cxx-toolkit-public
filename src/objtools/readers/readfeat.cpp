@@ -302,8 +302,8 @@ public:
     ~CFeatureTableReader_Imp(void);
 
     // read 5-column feature table and return Seq-annot
-    CRef<CSeq_annot> ReadSequinFeatureTable (const string& seqid,
-                                             const string& annotname,
+    CRef<CSeq_annot> ReadSequinFeatureTable (const CTempString& seqid,
+                                             const CTempString& annotname,
                                              const TFlags flags, 
                                              ITableFilter *filter);
 
@@ -324,10 +324,10 @@ public:
 
     static bool ParseInitialFeatureLine (
         const CTempString& line_arg,
-        string & out_seqid,
-        string & out_annotname );
+        CTempStringEx& out_seqid,
+        CTempStringEx& out_annotname );
 
-    static void PutProgress(const string& seq_id,
+    static void PutProgress(const CTempString& seq_id,
         const unsigned int line_number,
         ILineErrorListener* pListener);
 
@@ -345,11 +345,11 @@ private:
     CFeatureTableReader_Imp(const CFeatureTableReader_Imp& value);
     CFeatureTableReader_Imp& operator=(const CFeatureTableReader_Imp& value);
 
-    void x_InitId(const string& seq_id, const TFlags flags);
+    void x_InitId(const CTempString& seq_id, const TFlags flags);
     // returns true if parsed (otherwise, out_offset is left unchanged)
     bool x_TryToParseOffset(const CTempString & sLine, Int4 & out_offset );
 
-    bool x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
+    bool x_ParseFeatureTableLine (const CTempString& line, Int4* startP, Int4* stopP,
                                   bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
                                   string& featP, string& qualP, string& valP, Int4 offset);
 
@@ -470,8 +470,8 @@ private:
         const ILineError::TVecOfLines & vecOfOtherLines =
         ILineError::TVecOfLines());
 
-    void x_TokenizeStrict( const string &line, vector<string> &out_tokens );
-    void x_TokenizeLenient( const string &line, vector<string> &out_tokens );
+    void x_TokenizeStrict( const CTempString &line, vector<string> &out_tokens );
+    void x_TokenizeLenient( const CTempString &line, vector<string> &out_tokens );
     void x_FinishFeature(CRef<CSeq_feat>& feat, TFtable& ftable);
     void x_ResetFeat(CRef<CSeq_feat>& feat, bool & curr_feat_intervals_done);
     void x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const;
@@ -894,7 +894,7 @@ bool CFeatureTableReader_Imp::x_TryToParseOffset(
 }
 
 bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
-    const string& line,
+    const CTempString& line,
     Int4* startP,
     Int4* stopP,
     bool* partial5P,
@@ -1028,7 +1028,7 @@ bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
 }
 
 void CFeatureTableReader_Imp::x_TokenizeStrict( 
-    const string &line, 
+    const CTempString &line,
     vector<string> &out_tokens )
 {
     out_tokens.clear();
@@ -1036,7 +1036,7 @@ void CFeatureTableReader_Imp::x_TokenizeStrict(
     // each token has spaces before it and a tab or end-of-line after it
     string::size_type startPosOfNextRoundOfTokenization = 0;
     while ( startPosOfNextRoundOfTokenization < line.size() ) {
-        const string::size_type posAfterSpaces = line.find_first_not_of( ' ', startPosOfNextRoundOfTokenization );
+        auto posAfterSpaces = line.find_first_not_of( " ", startPosOfNextRoundOfTokenization );
         if( posAfterSpaces == string::npos ) {
             return;
         }
@@ -1068,7 +1068,7 @@ public:
 };
 
 void CFeatureTableReader_Imp::x_TokenizeLenient( 
-    const string &line, 
+    const CTempString &line,
     vector<string> &out_tokens )
 {
     out_tokens.clear();
@@ -1082,12 +1082,12 @@ void CFeatureTableReader_Imp::x_TokenizeLenient(
         // In regex form, we're doing something like this:
         // \s+(\S+)(\s+(\S.*))?
         // Where the first is the qual, and the rest is the val
-        const string::const_iterator start_of_qual = find_if( line.begin(), line.end(), CIsNotSpace() );
+        auto start_of_qual = find_if( line.begin(), line.end(), CIsNotSpace() );
         if( start_of_qual == line.end() ) {
             return;
         }
-        const string::const_iterator start_of_whitespace_after_qual = find_if( start_of_qual, line.end(), CIsSpace() );
-        const string::const_iterator start_of_val = find_if( start_of_whitespace_after_qual, line.end(), CIsNotSpace() );
+        auto start_of_whitespace_after_qual = find_if( start_of_qual, line.end(), CIsSpace() );
+        auto start_of_val = find_if( start_of_whitespace_after_qual, line.end(), CIsNotSpace() );
 
         // first 3 are empty
         out_tokens.push_back(kEmptyStr);
@@ -1111,15 +1111,15 @@ void CFeatureTableReader_Imp::x_TokenizeLenient(
         // parse a feature line
 
         // Since we're being lenient, we consider it to be 3 ( or 6 ) parts separated by whitespace
-        const string::const_iterator first_column_start = line.begin();
-        const string::const_iterator first_whitespace = find_if( first_column_start, line.end(), CIsSpace() );
-        const string::const_iterator second_column_start = find_if( first_whitespace, line.end(), CIsNotSpace() );
-        const string::const_iterator second_whitespace = find_if( second_column_start, line.end(), CIsSpace() );
-        const string::const_iterator third_column_start = find_if( second_whitespace, line.end(), CIsNotSpace() );
-        const string::const_iterator third_whitespace = find_if( third_column_start, line.end(), CIsSpace() );
+        auto first_column_start = line.begin();
+        auto first_whitespace = find_if( first_column_start, line.end(), CIsSpace() );
+        auto second_column_start = find_if( first_whitespace, line.end(), CIsNotSpace() );
+        auto second_whitespace = find_if( second_column_start, line.end(), CIsSpace() );
+        auto third_column_start = find_if( second_whitespace, line.end(), CIsNotSpace() );
+        auto third_whitespace = find_if( third_column_start, line.end(), CIsSpace() );
         // columns 4 and 5 are unused on feature lines
-        const string::const_iterator sixth_column_start = find_if( third_whitespace, line.end(), CIsNotSpace() );
-        const string::const_iterator sixth_whitespace = find_if( sixth_column_start, line.end(), CIsSpace() );
+        auto sixth_column_start = find_if( third_whitespace, line.end(), CIsNotSpace() );
+        auto sixth_whitespace = find_if( sixth_column_start, line.end(), CIsSpace() );
 
         out_tokens.push_back(kEmptyStr);
         string &first = out_tokens.back();
@@ -1296,7 +1296,7 @@ bool CFeatureTableReader_Imp::x_StringIsJustQuotes (
 }
 
 static bool
-s_LineIndicatesOrder( const string & line )
+s_LineIndicatesOrder( const CTempString & line )
 {
     // basically, this is true if the line starts with "order" (whitespaces disregarded)
 
@@ -2909,7 +2909,7 @@ void CFeatureTableReader_Imp::x_ProcessMsg(
 
 
 void CFeatureTableReader_Imp::PutProgress(
-    const string& seq_id,
+    const CTempString& seq_id,
     const unsigned int line_number,
     ILineErrorListener* pListener) 
 {
@@ -3060,13 +3060,13 @@ void CFeatureTableReader_Imp::x_ProcessQualifier(const string& qual_name,
 
 
 CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
-    const string& seqid,
-    const string& annotname,
+    const CTempString& in_seqid,
+    const CTempString& in_annotname,
     const TFlags flags,
     ITableFilter *filter
 )
 {
-    string feat, qual, val;
+    string feat, qual, qual_value;
     string curr_feat_name;
     Int4 start, stop;
     bool partial5, partial3, ispoint, isminus, ignore_until_next_feature_key = false;
@@ -3079,7 +3079,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
         ( (flags & CFeature_table_reader::fIgnoreWebComments) != 0 );
 
     // if sequence ID is a list, use just one sequence ID string    
-    x_InitId(seqid, flags);
+    x_InitId(in_seqid, flags);
 
     // Use this to efficiently find the best CDS for a prot feature
     // (only add CDS's for it to work right)
@@ -3101,10 +3101,10 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     //			product THE_GENE_PRODUCT
     bool curr_feat_intervals_done = false;
 
-    if (! annotname.empty ()) {
+    if (! in_annotname.empty ()) {
       CAnnot_descr& descr = sap->SetDesc ();
       CRef<CAnnotdesc> annot(new CAnnotdesc);
-      annot->SetName (annotname);
+      annot->SetName (in_annotname);
       descr.Set().push_back (annot);
     }
 
@@ -3133,7 +3133,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
         }
 
         // if next line is a new feature table, return current sap
-        string dummy1, dummy2;
+        CTempStringEx dummy1, dummy2;
         if( ParseInitialFeatureLine(line, dummy1, dummy2) ) {
             m_reader->UngetLine(); // we'll get this feature line the next time around
             break;
@@ -3161,11 +3161,11 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
             }
 
         } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
-                                            &ispoint, &isminus, feat, qual, val, offset)) {
+                                            &ispoint, &isminus, feat, qual, qual_value, offset)) {
 
             // process line in feature table
 
-            replace( val.begin(), val.end(), '\"', '\'' );
+            replace( qual_value.begin(), qual_value.end(), '\"', '\'' );
 
             if ((! feat.empty ()) && start >= 0 && stop >= 0) {
 
@@ -3211,7 +3211,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                 // bad feature was found before, so ignore 
                 // qualifiers until next feature key
 
-            } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && val.empty ()) {
+            } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && qual_value.empty ()) {
 
                 if( curr_feat_intervals_done ) {
                     // the feat intervals were done, so it's an error for there to be more intervals
@@ -3232,7 +3232,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 
             } else if (!NStr::IsBlank(qual)) {
               curr_feat_intervals_done = true;
-              x_ProcessQualifier(qual, val, curr_feat_name, sfp, flags);
+              x_ProcessQualifier(qual, qual_value, curr_feat_name, sfp, flags);
             }   
             else if (!feat.empty()) {
                 
@@ -3288,15 +3288,28 @@ CRef<CSeq_feat> CFeatureTableReader_Imp::CreateSeqFeat (
     return sfp;
 }
 
-void CFeatureTableReader_Imp::x_InitId(const string& seq_id, const TFlags flags)
+void CFeatureTableReader_Imp::x_InitId(const CTempString& seq_id, const TFlags flags)
 {
     if (!NStr::IsBlank(seq_id)) {
         CBioseq::TId ids;
         CSeq_id::ParseIDs(ids, seq_id, 
             (flags && CFeature_table_reader::fAllIdsAsLocal) ? CSeq_id::fParse_AnyLocal:CSeq_id::fParse_Default);
+
+        m_seq_id.Reset();
+        if (flags & CFeature_table_reader::fPreferGenbankId)
+        {
+            for (auto id : ids)
+            {
+                if (id->IsGenbank())
+                    m_seq_id = id;
+            }
+        };
+
+        if (m_seq_id.Empty())
+            m_seq_id = ids.front();
+
         m_real_seqid.clear();
-        ids.front()->GetLabel(&m_real_seqid, CSeq_id::eFasta);
-        m_seq_id = ids.front();
+        m_seq_id->GetLabel(&m_real_seqid, CSeq_id::eFasta);
     }
 }
 
@@ -3338,8 +3351,8 @@ void CFeatureTableReader_Imp::AddFeatQual (
 // static
 bool CFeatureTableReader_Imp::ParseInitialFeatureLine (
     const CTempString& line_arg,
-    string & out_seqid,
-    string & out_annotname )
+    CTempStringEx& out_seqid,
+    CTempStringEx& out_annotname )
 {
     out_seqid.clear();
     out_annotname.clear();
@@ -3370,13 +3383,8 @@ bool CFeatureTableReader_Imp::ParseInitialFeatureLine (
 
     // extract seqid and annotname
     NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
-    string seqid;
-    string annotname;
-    NStr::SplitInTwo(line, " \t", seqid, annotname, NStr::fSplit_Tokenize);
+    NStr::SplitInTwo(line, " \t", out_seqid, out_annotname, NStr::fSplit_Tokenize);
 
-    // swap is faster than assignment
-    out_seqid.swap(seqid);
-    out_annotname.swap(annotname);
     return true;
 }
 
@@ -3443,8 +3451,8 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
 CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
     CFeatureTableReader_Imp& reader,
-    const string& seqid,
-    const string& annot_name, 
+    const CTempString& seqid,
+    const CTempString& annot_name,
     TFlags flags,
     ITableFilter* filter) {
     return reader.ReadSequinFeatureTable(seqid, annot_name, flags, filter);
@@ -3475,29 +3483,31 @@ CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
     }
 
 
-    string fst, scd, seqid, annotname;
+    CTempStringEx orig_seqid, annotname;
     // first look for >Feature line, extract seqid and optional annotname
-    while (seqid.empty () && !pLineReader->AtEOF() ) {
+    while (orig_seqid.empty () && !pLineReader->AtEOF() ) {
         CTempString line = *++(*pLineReader);
-        if( ParseInitialFeatureLine(line, seqid, annotname) ) {
-            CFeatureTableReader_Imp::PutProgress(seqid, 
+        if( ParseInitialFeatureLine(line, orig_seqid, annotname) ) {
+            CFeatureTableReader_Imp::PutProgress(orig_seqid, 
                                                  pLineReader->GetLineNumber(), 
                                                  reader.GetErrorListenerPtr());
         }
     }
 
-    if (!seqid_prefix.empty())
-    {
-        if (seqid.find('|') == string::npos)
-           seqid.insert(0, seqid_prefix);
+    string temp_seqid;
+    if (seqid_prefix.empty()) {
+        //seqid = orig_seqid;
+    } else {
+        if (orig_seqid.find('|') == string::npos)
+            temp_seqid = seqid_prefix + orig_seqid;
         else
-        if (NStr::StartsWith(seqid, "lcl|"))
+        if (NStr::StartsWith(orig_seqid, "lcl|"))
         {
-            seqid.erase(0, 4);
-            seqid.insert(0, seqid_prefix);
+            temp_seqid = seqid_prefix + orig_seqid.substr(4);
         }
+        orig_seqid = temp_seqid;
     }
-    return x_ReadFeatureTable(reader, seqid, annotname, flags, filter);
+    return x_ReadFeatureTable(reader, orig_seqid, annotname, flags, filter);
 }
 
 
@@ -3626,8 +3636,8 @@ void CFeature_table_reader::AddFeatQual (
 bool
 CFeature_table_reader::ParseInitialFeatureLine (
     const CTempString& line_arg,
-    string & out_seqid,
-    string & out_annotname )
+    CTempStringEx& out_seqid,
+    CTempStringEx& out_annotname )
 {
      return CFeatureTableReader_Imp::ParseInitialFeatureLine(line_arg, out_seqid, out_annotname);
 }

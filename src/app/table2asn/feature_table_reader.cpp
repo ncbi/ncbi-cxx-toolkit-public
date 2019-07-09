@@ -476,7 +476,6 @@ void CFeatureTableReader::_AddFeatures()
 
             bool ismrna = feat->GetData().IsRna() && feat->GetData().GetRna().IsSetType() &&
                 feat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA;
-            bool iscds = feat->GetData().IsCdregion();
             bool isgene = feat->GetData().IsGene();
 
             if (feat->IsSetQual())
