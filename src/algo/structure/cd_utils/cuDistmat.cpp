@@ -25,7 +25,7 @@
 *
 * Author:  Chris Lanczycki
 *
-* File Description:  cdt_distmat.cpp
+* File Description:
 *
 *      Representation of a distance matrix for phylogenetic calculations.
 *      Note that the base class AMatrix is explicitly a matrix of doubles;
@@ -263,9 +263,9 @@ void DistanceMatrix::writeMat(ostream& os, bool triangular) const {
     
     int nrows = GetNumRows();
     int prec  = os.precision();
-    string seqId, notFound = "<not found>";
+    string seqId, cdAcc, notFound = "<not found>";
 
-    //cout << "precision to start:  " << prec << endl;
+    //  To do:  add options object to define what want in row descriptor (CD accession, seq ID, row, start/stop, ...)
 
     os << nrows << endl;
     IOS_BASE::fmtflags initFlags = os.setf(IOS_BASE::scientific,
@@ -274,6 +274,12 @@ void DistanceMatrix::writeMat(ostream& os, bool triangular) const {
     os.precision(OUTPUT_PRECISION);
     if (triangular) {  //  symmetric matrix with zero diagonal elements
         for (int row=0; row<nrows; ++row) {
+
+            const RowSource& rowRS = m_aligns->GetRowSource(row);
+            cdAcc = (rowRS.cd == 0) ? notFound : rowRS.cd->GetAccession();
+            os.setf(IOS_BASE::left, IOS_BASE::adjustfield);
+            os << setw(12) << cdAcc << " ";
+            
             seqId.erase();
             if (!m_aligns->Get_GI_or_PDB_String_FromAlignment(row, seqId)) seqId = notFound;
             os.setf(IOS_BASE::left, IOS_BASE::adjustfield);
@@ -287,6 +293,12 @@ void DistanceMatrix::writeMat(ostream& os, bool triangular) const {
 
     } else {      //  full matrix 
         for (int row=0; row<nrows; ++row) {
+
+            const RowSource& rowRS = m_aligns->GetRowSource(row);
+            cdAcc = (rowRS.cd == 0) ? notFound : rowRS.cd->GetAccession();
+            os.setf(IOS_BASE::left, IOS_BASE::adjustfield);
+            os << setw(12) << cdAcc << " ";
+            
             seqId.erase();
             if (!m_aligns->Get_GI_or_PDB_String_FromAlignment(row, seqId)) seqId = notFound;
             os.setf(IOS_BASE::left, IOS_BASE::adjustfield);
