@@ -35,14 +35,10 @@
 #ifndef CU_UTILS_HPP
 #define CU_UTILS_HPP
 
-// include ncbistd.hpp, ncbiobj.hpp, ncbi_limits.h, various stl containers
 #include <corelib/ncbiargs.hpp>   
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbistre.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
-
-#define i2s(i)  NStr::IntToString(i)
-#define I2S(i)  NStr::IntToString(i)
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -52,11 +48,13 @@ extern const int  CDTreeColorCycle[];
 extern const int  kNumColorsInCDTreeColorCycle;
 
 NCBI_CDUTILS_EXPORT 
-string GetSeqIDStr(const CSeq_id& SeqID);
-NCBI_CDUTILS_EXPORT 
 string GetSeqIDStr(const CRef< CSeq_id >& SeqID);
+
+// uses a space to delimit molecule and chain ids
 NCBI_CDUTILS_EXPORT 
 string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len);
+
+// uses an underscore to delimit molecule and chain ids
 NCBI_CDUTILS_EXPORT 
 void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str);
 

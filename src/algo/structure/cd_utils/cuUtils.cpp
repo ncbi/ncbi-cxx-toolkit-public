@@ -49,7 +49,6 @@
 //  comma is now allowed (4/15/04)
 //  single-quote is now allowed (4/28/04)
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
@@ -76,11 +75,9 @@ const int kNumColorsInCDTreeColorCycle = sizeof(CDTreeColorCycle)/sizeof(CDTreeC
 
 void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 //-------------------------------------------------------------------
-// make a string for a seq-id
+// make a string for a seq-id (underscore delimiter for PDBs)
 //-------------------------------------------------------------------
   TGi   GI;
-  const CPDB_seq_id*  pPDB_ID;
-  char buf[1024];
 
   if (SeqID.Empty()) {
       Str += "<Empty Sequence>";
@@ -92,28 +89,34 @@ void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 
   if (SeqID->IsGi()) {
     GI = SeqID->GetGi();
-    sprintf(buf,"gi %d", GI_TO(int, GI));
-  }
-  if (SeqID->IsPdb()) {
-    pPDB_ID = &(SeqID->GetPdb());
-	char chain=pPDB_ID->GetChain();
-    sprintf(buf,"pdb %s_%c",pPDB_ID->GetMol().Get().c_str(),chain);
-	int len=strlen(buf);
-	if(chain==' ')buf[len-2]=0; // if there is no chain info
-  }
+    Str += NStr::NumericToString<TGi>(GI);
+  } else if (SeqID->IsPdb()) {
 
-  Str += string(buf);
+      const CPDB_seq_id&  pPDB_ID = SeqID->GetPdb();
+      
+#ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
+
+      char buf[1024];
+      char chain=pPDB_ID.GetChain();
+      sprintf(buf,"pdb %s_%c",pPDB_ID.GetMol().Get().c_str(),chain);
+      int len=strlen(buf);
+      if(chain==' ')buf[len-2]=0; // if there is no chain info (i.e., uses the default chain value)
+
+      Str += string(buf);
+#else
+      Str += pPDB_ID.GetMol().Get() + "_" + pPDB_ID.GetChain_id_unified();
+#endif
+      
+  }
 
 }
 
 string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
 //-------------------------------------------------------------------
-// make a string for a seq-id
+// make a string for a seq-id (space delimiter for PDBs)
 //-------------------------------------------------------------------
   TGi   GI;
-  const CPDB_seq_id*  pPDB_ID;
-  char buf[1024];
-  string Str;
+  string Str = kEmptyStr;
 
   if (SeqID.Empty()) {
       return "<Empty Sequence>";
@@ -124,26 +127,25 @@ string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
   //  Custom string construction for Gi, PDB, Other, or Local types
   if (SeqID->IsGi()) {
       GI = SeqID->GetGi();
-      sprintf(buf,"%d", GI_TO(int, GI));
-  }
-  if (SeqID->IsPdb()) {
-      pPDB_ID = &(SeqID->GetPdb());
-      sprintf(buf,"%s %c",pPDB_ID->GetMol().Get().c_str(),pPDB_ID->GetChain());
-  }
-  if (SeqID->IsOther()) {
-      sprintf(buf,"%s",SeqID->GetOther().GetAccession().c_str());
-  }
-  if (SeqID->IsLocal()) {
-	  if (SeqID->GetLocal().IsId()) {
-		  sprintf(buf,"%d",SeqID->GetLocal().GetId());
-	  }
-	  if (SeqID->GetLocal().IsStr()) {
-		  string test = SeqID->GetLocal().GetStr();
-		  sprintf(buf,"%s",test.c_str());
-	  }
-  }
+      Str = NStr::NumericToString<TGi>(GI);
+  } else if (SeqID->IsPdb()) {
+      const CPDB_seq_id&  pPDB_ID = SeqID->GetPdb();
 
-  Str = string(buf);
+#ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
+      Str = pPDB_ID.GetMol().Get() + " " + string(1, (char) pPDB_ID.GetChain());;
+#else
+      Str = pPDB_ID.GetMol().Get() + " " + pPDB_ID.GetChain_id_unified();;
+#endif
+      
+  } else if (SeqID->IsOther()) {
+      Str = SeqID->GetOther().GetAccession();
+  } else if (SeqID->IsLocal()) {
+	  if (SeqID->GetLocal().IsId()) {
+          Str = SeqID->GetLocal().GetId();
+	  } else if (SeqID->GetLocal().IsStr()) {
+		  Str = SeqID->GetLocal().GetStr();
+	  }
+  }
 
   // pad with spaces to length of Len
   if (Pad) {
@@ -152,16 +154,6 @@ string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
       }
   }
   return Str;
-}
-
-
-
-string GetSeqIDStr(const CSeq_id& SeqID) 
-{
-    CRef< CSeq_id > cRefSeqID(new CSeq_id);
-    cRefSeqID->Assign(SeqID);
-    string Str = Make_SeqID_String(cRefSeqID, false, 0);
-    return Str;
 }
 
 string GetSeqIDStr(const CRef< CSeq_id >& SeqID) 
@@ -191,7 +183,7 @@ string CddIdString(const CCdd_id& id) {
 
     CCdd_id::E_Choice e = id.Which();
     if (e == CCdd_id::e_Uid) {
-        return "UID " + I2S(id.GetUid());
+        return "UID " + NStr::IntToString(id.GetUid());
     } else if (e == CCdd_id::e_Gid) {
         string s = "Accession " + id.GetGid().GetAccession();
         if (id.GetGid().IsSetDatabase()) {
@@ -201,7 +193,7 @@ string CddIdString(const CCdd_id& id) {
             s.append(" Release " + id.GetGid().GetRelease());
         }
         if (id.GetGid().IsSetVersion()) {
-            s.append(" Version " + I2S(id.GetGid().GetVersion()));
+            s.append(" Version " + NStr::IntToString(id.GetGid().GetVersion()));
         }
         return s;
     } else {
