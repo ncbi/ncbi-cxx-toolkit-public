@@ -68,9 +68,13 @@ CJsonNode CPSGTimingBase::Serialize(void) const
     }
     ret.SetByKey(kBins, bins);
 
-    ret.SetInteger(kLowerAnomaly, m_PSGTiming->GetLowerAnomalyCount());
-    ret.SetInteger(kUpperAnomaly, m_PSGTiming->GetUpperAnomalyCount());
-    ret.SetInteger(kTotalCount, m_PSGTiming->GetCount());
+    // GetCount() does not include anomalies!
+    auto    lower_anomalies = m_PSGTiming->GetLowerAnomalyCount();
+    auto    upper_anomalies = m_PSGTiming->GetUpperAnomalyCount();
+    ret.SetInteger(kLowerAnomaly, lower_anomalies);
+    ret.SetInteger(kUpperAnomaly, upper_anomalies);
+    ret.SetInteger(kTotalCount, m_PSGTiming->GetCount() +
+                                lower_anomalies + upper_anomalies);
     return ret;
 }
 
