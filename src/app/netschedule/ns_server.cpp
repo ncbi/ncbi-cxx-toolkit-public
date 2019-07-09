@@ -732,7 +732,7 @@ void CNetScheduleServer::Exit()
 string  CNetScheduleServer::x_GenerateGUID(void) const
 {
     // Naive implementation of the unique identifier.
-    Int8        pid = CProcess::GetCurrentPid();
+    Int8        pid = CCurrentProcess::GetPid();
     Int8        current_time = time(0);
 
     return NStr::NumericToString((pid << 32) | current_time);
