@@ -654,8 +654,6 @@ void CDefaultModErrorReporter::operator()(
         NCBI_THROW2(CObjReaderParseException, eFormat, msg, 0);
     }
 
-    cout << "Reporting error" << endl;
-
     AutoPtr<CLineErrorEx> pErr(
         CLineErrorEx::Create(
             ILineError::eProblem_GeneralParsingError,
