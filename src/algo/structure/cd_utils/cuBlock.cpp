@@ -576,13 +576,12 @@ CRef<CSeq_align> BlockModel::toSeqAlign(const BlockModel& master) const
 		dd->SetDim(2);
 		vector< CRef< CSeq_id > >& seqIds = dd->SetIds();
 
-		//master seqId
-        CRef< CSeq_id > seqIdMaster = CopySeqId(master.getSeqId());
-		seqIds.push_back(seqIdMaster);
-	
-		//slave seqId
-		CRef< CSeq_id > seqIdSlave = CopySeqId(getSeqId());
-		seqIds.push_back(seqIdSlave);
+        CRef< CSeq_id > masterCopy, slaveCopy;
+        masterCopy->Assign(*(master.getSeqId()));
+        slaveCopy->Assign(*getSeqId());
+		seqIds.push_back(masterCopy);
+		seqIds.push_back(slaveCopy);
+
         CDense_diag::TStarts& starts = dd->SetStarts();
 		starts.push_back(master.m_blocks[i].getStart());
 		starts.push_back(m_blocks[i].getStart());

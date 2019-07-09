@@ -724,12 +724,13 @@ bool  CSeqAnnotFromFasta::BuildMasterSlaveSeqAlign(const CRef<CSeq_id>& masterSe
     for (j = 0; j < nBlocks; ++j) {
 
         CRef< CDense_diag > dd(new CDense_diag());
+        CDense_diag::TIds& ids = dd->SetIds();
+
         dd->SetDim(2);
 
-        //  Fill in the Seq-ids.
-        CRef< CSeq_id > masterCopy = CopySeqId(masterSeqid);
-        CRef< CSeq_id > slaveCopy = CopySeqId(slaveSeqid);
-        CDense_diag::TIds& ids = dd->SetIds();
+        CRef< CSeq_id > masterCopy, slaveCopy;
+        masterCopy->Assign(*masterSeqid);
+        slaveCopy->Assign(*slaveSeqid);
         ids.push_back(masterCopy);
         ids.push_back(slaveCopy);
 

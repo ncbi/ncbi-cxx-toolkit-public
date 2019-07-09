@@ -52,9 +52,6 @@ BEGIN_SCOPE(cd_utils)
 // the taxid for environmental sequences
 const  int ENVIRONMENTAL_SEQUENCE_TAX_ID = 256318;
 
-NCBI_CDUTILS_EXPORT 
-CRef< CSeq_id > CopySeqId(const CRef< CSeq_id >& seqId);
-
 //  Wraps the CSeq_id.Match(id) method:  id1.Match(id2).
 NCBI_CDUTILS_EXPORT 
 bool SeqIdsMatch(const CRef< CSeq_id>& id1, const CRef< CSeq_id>& id2);  

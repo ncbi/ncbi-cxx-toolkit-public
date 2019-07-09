@@ -93,6 +93,10 @@ bool SeqIdHasMatchInBioseq(const CRef< CSeq_id>& id, const CBioseq& bioseq)
     return result;
 }
 
+//  In the few places this is used, replace it with a simple
+//  CRef< CSeq_id > x(seqId)
+//  https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/ident?i=CopySeqId
+//  (the CDTree version isn't even used...)
 CRef< CSeq_id > CopySeqId(const CRef< CSeq_id >& seqId)
 {
 	CRef< CSeq_id > seqIdCopy(new CSeq_id());
