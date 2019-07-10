@@ -6124,7 +6124,7 @@ if test "$with_opengl" != "no"; then
          OPENGL_LIBS="-framework AGL -framework OpenGL"
          # ... and its proprietary successor
          OPENGL_LIBS="$OPENGL_LIBS -framework Metal -framework MetalKit"
-	 OPENGL_LIBS="$OPENGL_LIBS -framework QuartzCore"
+         OPENGL_LIBS="$OPENGL_LIBS -framework QuartzCore"
          ;;
       # cygwin) ... ;;
       *) # Default -- assume X-based
