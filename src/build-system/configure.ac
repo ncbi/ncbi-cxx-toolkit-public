@@ -905,10 +905,6 @@ if test -n "$with_experimental"; then
             CPPFLAGS="$CPPFLAGS -DNCBI_MONKEY"
             NCBI_FEATURE(ChaosMonkey)
             ;;
-         GenBankPSG )
-            CPPFLAGS="$CPPFLAGS -DNCBI_GENBANK_PSG"
-            NCBI_FEATURE(GenBankPSG)
-            ;;
          Int8GI )
             CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
@@ -919,6 +915,10 @@ if test -n "$with_experimental"; then
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             NCBI_FEATURE(StrictGI)
+            ;;
+         PSGClient )
+            CPPFLAGS="$CPPFLAGS -DHAVE_PSG_CLIENT"
+            NCBI_FEATURE(PSGClient)
             ;;
          * )
             AC_MSG_ERROR([unrecognized experimental feature "$x".])
