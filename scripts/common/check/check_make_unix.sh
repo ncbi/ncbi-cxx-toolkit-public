@@ -9,7 +9,7 @@
 # UNIX build tree.
 #
 # Usage:
-#    check_make_unix.sh <test_list> <build_dir> <target_dir> <check_script>
+#    check_make_unix.sh <test_list> <signature> <build_dir> <top_srcdir> <target_dir> <check_script>
 #
 #    test_list       - a list of tests (it build with "make check_r")
 #                      (default: "<build_dir>/check.sh.list")
@@ -352,7 +352,7 @@ if test -z "\$NCBI_EXPORT_PROJECT"; then
 fi
 
 # Add additional necessary directories to PATH: current, build, scripts, utility and $HOME/bin (for Ubuntu).
-PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:\${PATH}"
+PATH=".:\${build_dir}:\${bin_dir}:\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:\${PATH}"
 export PATH
 
 # Export bin and lib pathes
@@ -552,7 +552,7 @@ RunTest()
             cd "\$x_work_dir"
 
             # Run test if it exist
-            if test -f "\$x_app"; then
+            if test -f "\$x_app" -o -f "\$bin_dir/\$x_app"; then
 
                 _RLD_ARGS="-log \$x_log"
                 export _RLD_ARGS
