@@ -1196,7 +1196,7 @@ set(NCBI_COMPONENT_PYTHON_FOUND NO)
 ##############################################################################
 # GRPC/PROTOBUF
 
-set(NCBI_ThirdParty_GRPC "/netopt/ncbi_tools64/grpc-1.14.1-ncbi1/${NCBI_BUILD_TYPE}")
+set(NCBI_ThirdParty_GRPC "/netopt/ncbi_tools64/grpc-1.21.1-ncbi1/${NCBI_BUILD_TYPE}")
 
 if(OFF)
 set(Protobuf_SRC_ROOT_FOLDER ${NCBI_ThirdParty_GRPC})
@@ -1220,7 +1220,7 @@ else()
   set(_suffix ".a")
 endif()
 
-set(NCBI_ThirdParty_GRPC_LIBS "/netopt/ncbi_tools64/grpc-1.14.1-ncbi1/${NCBI_BUILD_TYPE}/lib64/lib")
+set(NCBI_ThirdParty_GRPC_LIBS "/netopt/ncbi_tools64/grpc-1.21.1-ncbi1/${NCBI_BUILD_TYPE}/lib64/lib")
 if (EXISTS "${NCBI_ThirdParty_GRPC}/include" AND EXISTS "${NCBI_ThirdParty_GRPC_LIBS}protobuf${_suffix}")
   set(NCBI_COMPONENT_PROTOBUF_FOUND YES)
   set(NCBI_COMPONENT_PROTOBUF_INCLUDE ${NCBI_ThirdParty_GRPC}/include)
