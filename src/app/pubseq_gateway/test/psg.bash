@@ -56,7 +56,7 @@ PORT=${PORTCFG:=2180}
 # full_url="http://nctest21:2180/${url}"
 full_url="http://localhost:${PORT}/${url}"
 if [[ $url == ADMIN* ]] && [[ $obasename != admin_ack_alert* ]]; then
-    curl -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | ${cdir}/printable_string -z > $ofile
+    curl -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
     exit 0
 fi
 
@@ -73,5 +73,5 @@ if [[ $obasename == "get_AC052670__5" ]] || [[ $obasename == "get_AC052670" ]] |
 fi
 
 # The most common case
-curl -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | ${cdir}/printable_string -z > $ofile
+curl -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
 exit 0
