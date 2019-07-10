@@ -1,0 +1,417 @@
+Bioseq ::= {
+    id { 
+        local str "dummy_id"
+    },
+    inst {
+        repr delta,
+        mol aa,
+        length 100,
+        ext delta {
+        loc int {
+                   from 0,
+                   to 99,
+                   strand plus,
+                   id gi 1482418537
+               }
+           }
+       }
+}
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 6
+        },
+        {
+          label str "day",
+          data int 18
+        },
+        {
+          label str "year",
+          data int 2019
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Viral hemorrhagic septicemia virus",
+            db {
+              {
+                db "taxon",
+                tag id 11287
+              }
+            },
+            orgname {
+              name virus "Viral hemorrhagic septicemia virus",
+              mod {
+                {
+                  subtype isolate,
+                  subname "IRVHSV-CH-15"
+                },
+                {
+                  subtype nat-host,
+                  subname "Oncorhynchus mykiss; voucher: VHS-G-125"
+                }
+              },
+              lineage "Viruses; Riboviria; Negarnaviricota; Haploviricotina;
+ Monjiviricetes; Mononegavirales; Rhabdoviridae; Novirhabdovirus",
+              gcode 1,
+              div "VRL"
+            }
+          },
+          subtype {
+            {
+              subtype country,
+              name "Iran"
+            },
+            {
+              subtype isolation-source,
+              name "Chaharmahal & Bakhtiari"
+            },
+            {
+              subtype collection-date,
+              name "17-Apr-2015"
+            },
+            {
+              subtype collected-by,
+              name "A. Jalali"
+            }
+          }
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Mohammadian Manesh",
+                      first "Marziyeh",
+                      initials "M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Jalali",
+                      first "Seyed Amirhossein",
+                      initials "S.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Mohammadinezhad",
+                      first "Rezvan",
+                      initials "R."
+                    }
+                  }
+                }
+              },
+              title "Viral hemorrhagic septicemia virus glycoprotein gene (G)
+ of Iranian isolates"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Mohammadian Manesh",
+                      first "Marziyeh",
+                      initials "M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Jalali",
+                      first "Seyed Amirhossein",
+                      initials "S.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Mohammadinezhad",
+                      first "Rezvan",
+                      initials "R."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Isfahan University of Technology",
+                  div "Research Institute for Biotechnology and Bioengineering",
+                  city "Isfahan",
+                  country "Iran",
+                  street "Immam Khomeini Street",
+                  postal-code "8415683111"
+                }
+              },
+              medium email,
+              date std {
+                year 2018,
+                month 1,
+                day 4
+              }
+            }
+          }
+        },
+        user {
+          type str "NcbiAutofix",
+          data {
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 8
+            }
+          }
+        },
+        update-date std {
+          year 2019,
+          month 6,
+          day 18
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            genbank {
+              accession "MG753786",
+              version 1
+            },
+            gi 1482418536
+          },
+          descr {
+            title "Viral hemorrhagic septicemia virus isolate IRVHSV-CH-15
+ glycoprotein (G) gene, complete cds.",
+            molinfo {
+              biomol cRNA
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "isolate"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "GenBank",
+                  data str "gb|MG753786.1|"
+                }
+              }
+            },
+            create-date std {
+              year 2019,
+              month 2,
+              day 10
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 1524,
+            strand ss,
+            seq-data ncbi2na '3A0E811FFF5EB8DF8D34D30224511448D1D06175AD801376
+1B14E487A84759CC474D5D41E4A863D7FB563D85A741D2BB5D383D8211010A87AFD6D50528DB53
+7567B6B4526DD64B262E947179122E1F362D17BD85A7DFE8A9014D80214DFA29807B56D28A5D21
+8A42428D18B15BDF57815D7937A380843B530A1307471C42154005B36BA377124A03F7415E3F4C
+8AAB79105D95ED01D1E92A2DCFAB6B844540953E55194804720A117BD14A1518D12AEB4290FBA4
+A514D5EA87743A4E44B84F79AA89BA3C21E17AA85E352B84A168E918A01E1D4042EED0450ED48E
+2AA924861F77CDD05374D1413A7408162E5C8E54CB8CD167DEA02CD54FDD7740BF6D52515EA5E9
+0A44737DD86940D398AE1EE1CE292CB49341C43267431086B81044E80D3A01ABA1041123AB18EA
+38CFEA840F8D35684D802CD22EDCE12E839DBD02017EE82D5D37893EEF6DD4113785FD450D1351
+14170D5768FAD3D07A2DFE94D3CDAA3AABEEA2A95D7DC7AC779EF9E429B55D53D40F1A8F58E492
+F7520B48EB70'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "G"
+                  },
+                  location int {
+                    from 0,
+                    to 1523,
+                    strand plus,
+                    id gi 1482418536
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            genbank {
+              accession "AYC44627",
+              version 1
+            },
+            gi 1482418537
+          },
+          descr {
+            title "glycoprotein [Viral hemorrhagic septicemia virus]",
+            molinfo {
+              biomol peptide
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "GenBank",
+                  data str "gb|AYC44627.1|"
+                }
+              }
+            },
+            create-date std {
+              year 2019,
+              month 2,
+              day 10
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 507,
+            seq-data ncbieaa "MEWNTFFLVILIIIIKSTTPQITQRPPVENISTYHADWDTPLYTHPSN
+CRDDSFVPIRPAQLRCPHEFEDTNKGLVSVPTRIVHLPLSVTSVSAVASGHYLHRVTYRVTCSTGFFGGQTIEKTILE
+AKLSRQEASDEASKDHEYPFFPEPSCIWMKDNVHKDITHYYKTPKTVSVDLYSRKFLNPDFIEGVCTTSPCQTHWQGV
+YWVGDTPKAHCPTPETLEGHLFTRTHDHRVVKAIVAGHHPWGLSMACTVTFCGGAWIKTDLGDLIQVTGPDGTRKLTP
+NKCVNTNVQMRGAADDFSYLNHLITNMAQRTECLDAHSDITASGKVSPFLLSKFRPSHPGPGKAHYLLDGQIMRGDCD
+YEAVVSINYNSAQYKTVNNTWKSWKRVDNNTDGYDGMIFGDKLIIPDIEKYQSVYDSGMLVQRNLVEVPHLSIVFVSN
+TSDLSTNHIHTNLIPSDWSFNWSLWPSLSGMGVVGGALLLLVLCCCCKASPPIPNYGIPMQQFSRSQMV"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "glycoprotein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 506,
+                    id genbank {
+                      accession "AYC44627",
+                      version 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole genbank {
+                accession "AYC44627",
+                version 1
+              },
+              location int {
+                from 0,
+                to 1523,
+                strand plus,
+                id gi 1482418536
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

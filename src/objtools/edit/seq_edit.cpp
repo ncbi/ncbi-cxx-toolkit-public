@@ -31,6 +31,9 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objmgr/seq_vector.hpp>
+
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/seqport_util.hpp>
 
 #include <objtools/edit/seq_edit.hpp>
@@ -39,27 +42,28 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-// Change this so that it also handles proteins
-// Test on both nucleotide and protein delta sequences
-// What should I do if the bioseq length is not set
 void g_ConvertDeltaToRawSeq(CBioseq& bioseq, CScope* pScope)
 {
-    _ASSERT(bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta);
-    _ASSERT(bioseq.IsSetLength());
+    auto& seq_inst = bioseq.SetInst();
 
-    CSeqVector seq_vec(bioseq, pScope);
-    seq_vec.SetCoding(CSeq_data::e_Iupacna);
+    _ASSERT(seq_inst.GetRepr() == CSeq_inst::eRepr_delta);
+    _ASSERT(seq_inst.IsSetLength());
+
+    CSeqVector seq_vec(bioseq, pScope, CBioseq_Handle::eCoding_Iupac);
     string seqdata;
-    seq_vec.GetSeqData(0, bioseq.GetLength(), seqdata);
+    seq_vec.GetSeqData(0, seq_inst.GetLength(), seqdata);
+    auto pSeqData  = 
+        Ref(new CSeq_data(seqdata, 
+                    seq_inst.IsAa() ?
+                    CSeq_data::e_Iupacaa :
+                    CSeq_data::e_Iupacna));
+    CSeqportUtil::Pack(pSeqData.GetPointer());
 
-    bioseq.SetInst().ResetExt();
-    bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-    // Iupacna
-    bioseq.SetInst().SetSeq_data().SetIupacna().Set(seqdata);
 
-    CSeqportUtil::Pack(&bioseq.SetInst().SetSeq_data());
+    seq_inst.SetRepr(CSeq_inst::eRepr_raw);
+    seq_inst.SetSeq_data(*pSeqData);
+    seq_inst.ResetExt();
 }
-
 
 END_SCOPE(edit)
 END_SCOPE(objects)

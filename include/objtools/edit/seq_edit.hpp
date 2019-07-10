@@ -34,6 +34,7 @@ class CBioseq;
 class CScope;
 BEGIN_SCOPE(edit)
 
+
 NCBI_XOBJEDIT_EXPORT void g_ConvertDeltaToRawSeq(
                                 CBioseq& bioseq, 
                                 CScope* pScope=nullptr);
