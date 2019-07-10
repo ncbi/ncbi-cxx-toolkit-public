@@ -405,7 +405,8 @@ const CSeq_entry *ctx)
 
     // look at uncultured required modifiers
     if (orgref.IsSetTaxname()) {
-        if (NStr::StartsWith(orgref.GetTaxname(), "uncultured ", NStr::eNocase)) {
+        const string & taxname = orgref.GetTaxname();
+        if (NStr::StartsWith(taxname, "uncultured ", NStr::eNocase)) {
             bool is_env_sample = false;
             FOR_EACH_SUBSOURCE_ON_BIOSOURCE(it, bsrc)
             {
@@ -419,6 +420,10 @@ const CSeq_entry *ctx)
                     "Uncultured should also have /environmental_sample",
                     obj, ctx);
             }
+        } else if (NStr::EqualNocase(taxname, "blank sample")) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyBlankSample,
+                "Blank sample should not be associated with any sequences",
+                obj, ctx);
         }
     }
 

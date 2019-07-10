@@ -347,6 +347,7 @@ enum EErrType {
     eErr_SEQ_DESCR_TaxonomyNoValidTaxids,
     eErr_SEQ_DESCR_TaxonomyEmptyInput,
     eErr_SEQ_DESCR_ChromosomeWithoutLocation,
+    eErr_SEQ_DESCR_TaxonomyBlankSample,
     ERR_CODE_END(SEQ_DESCR),
 
 

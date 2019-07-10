@@ -959,6 +959,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_ChromosomeWithoutLocation,
     {"ChromosomeWithoutLocation",
      "Location should be chromosome if chromosome name is present" } },
+    { eErr_SEQ_DESCR_TaxonomyBlankSample,
+    { "TaxonomyBlankSample", 
+      "Blank sample taxonomy should not coexist with sequence records" } },
 
 
     /* SEQ_GENERIC */
