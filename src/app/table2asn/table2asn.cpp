@@ -160,7 +160,7 @@ private:
     CRef<CSeq_entry> m_possible_proteins;
     CRef<CTable2AsnValidator> m_validator;
     CRef<CTable2AsnLogger> m_logger;
-    auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
+    unique_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
     CTable2AsnContext    m_context;
 };
 
@@ -207,7 +207,7 @@ void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc)
 void CTbl2AsnApp::Init(void)
 {
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
 
@@ -880,22 +880,6 @@ void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRe
 
    // m_reader->ApplyAdditionalProperties(*entry);
 
-    {
-        string  dir, base, ext;
-        CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
-        string name = dir + base;
-        string defaultSrcFile = name + ".src";
-        string namedSrcFile = m_context.m_single_source_qual_file;
-
-        g_ApplyMods(m_context.mCommandLineMods,
-                namedSrcFile,
-                defaultSrcFile,
-                m_context.m_allow_accession,
-                m_context.m_verbose,
-                m_logger,
-                *entry);
-    }
-
     ProcessSecretFiles1Phase(*entry);
 
     CFeatureTableReader fr(m_context);
@@ -1247,6 +1231,16 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(CSeq_entry& result)
     CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
 
     string name = dir + base;
+
+    g_ApplyMods(
+        m_context.mp_named_src_map,
+        m_context.m_single_source_qual_file,
+        name + ".src",
+        m_context.mCommandLineMods,
+        m_context.m_allow_accession,
+        m_context.m_verbose,
+        m_logger,
+        result);
 
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);

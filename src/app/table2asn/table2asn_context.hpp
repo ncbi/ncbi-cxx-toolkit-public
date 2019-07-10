@@ -31,6 +31,7 @@ namespace edit
 };
 
 };
+class CMemorySrcFileMap;
 
 #include <objects/seq/Seqdesc.hpp>
 
@@ -138,7 +139,8 @@ public:
     ETriState m_discrepancy;
 
     CRef<objects::CSeq_descr>  m_descriptors;
-    auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
+    unique_ptr<objects::edit::CRemoteUpdater>  m_remote_updater;
+    unique_ptr<CMemorySrcFileMap>     mp_named_src_map;
 
     objects::CFixSuspectProductName m_suspect_rules;
 

@@ -82,6 +82,7 @@
 
 #include "table2asn_context.hpp"
 #include "descr_apply.hpp"
+#include "src_quals.hpp"
 
 
 #include "visitors.hpp"

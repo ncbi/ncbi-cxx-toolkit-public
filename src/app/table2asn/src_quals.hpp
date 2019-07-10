@@ -16,14 +16,17 @@ class CMemoryFileMap;
 
 USING_SCOPE(objects);
 
+class CMemorySrcFileMap;
+
 void g_ApplyMods(
-        const string& commandLineStr,
-        const string& namedSrcFile,
-        const string& defaultSrcFile,
-        bool allowAcc,
-        bool isVerbose,
-        ILineErrorListener* pEC,
-        CSeq_entry& entry);
+    unique_ptr<CMemorySrcFileMap>& namedSrcFileMap,
+    const string& namedSrcFile,
+    const string& defaultSrcFile,
+    const string& commandLineStr,
+    bool allowAcc,
+    bool isVerbose,
+    ILineErrorListener* pEC,
+    CSeq_entry& entry);
 
 
 class CMemorySrcFileMap

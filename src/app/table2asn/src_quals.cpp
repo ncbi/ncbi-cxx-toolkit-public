@@ -267,13 +267,14 @@ static void sReportUnusedMods(
 
 
 void g_ApplyMods(
-        const string& commandLineStr,
-        const string& namedSrcFile,
-        const string& defaultSrcFile,
-        bool allowAcc,
-        bool isVerbose,
-        ILineErrorListener* pEC,
-        CSeq_entry& entry) 
+    unique_ptr<CMemorySrcFileMap>& namedSrcFileMap,
+    const string& namedSrcFile,
+    const string& defaultSrcFile,
+    const string& commandLineStr,
+    bool allowAcc,
+    bool isVerbose,
+    ILineErrorListener* pEC,
+    CSeq_entry& entry)
 {
     using TModList = CModHandler::TModList;
     using TMods = CModHandler::TMods;
@@ -301,9 +302,10 @@ void g_ApplyMods(
     }
 
 
-    CMemorySrcFileMap namedSrcFileMap;
+    if (!namedSrcFileMap)
+        namedSrcFileMap.reset(new CMemorySrcFileMap);
     if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
-        namedSrcFileMap.MapFile(namedSrcFile, allowAcc);
+        namedSrcFileMap->MapFile(namedSrcFile, allowAcc);
     }
 
     CMemorySrcFileMap defaultSrcFileMap;
@@ -332,9 +334,9 @@ void g_ApplyMods(
                     return sReportError(pEC, sev, subcode, seqId, msg);
                 };
  
-            if (!namedSrcFileMap.Empty()) {
+            if (!namedSrcFileMap->Empty()) {
                 TModList mods;
-                if (namedSrcFileMap.GetMods(*pBioseq, mods)) {
+                if (namedSrcFileMap->GetMods(*pBioseq, mods)) {
                     mod_handler.AddMods(mods, 
                             CModHandler::ePreserve, 
                             rejectedMods, 
@@ -411,8 +413,8 @@ void g_ApplyMods(
         }
     }
 
-    if (isVerbose && !namedSrcFileMap.Empty()) {
-        const auto& lineMap = namedSrcFileMap.GetLineMap();
+    if (isVerbose && !namedSrcFileMap->Empty()) {
+        const auto& lineMap = namedSrcFileMap->GetLineMap();
         for (const auto& entry : lineMap) {
             CTempString seqId, remainder; 
             NStr::SplitInTwo(entry.second, "\t", seqId, remainder);

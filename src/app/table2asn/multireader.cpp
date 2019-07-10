@@ -303,19 +303,11 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
 
     CStreamLineReader lr( instream );
-#ifdef NEW_VERSION
-    auto_ptr<CBaseFastaReader> pReader(new CBaseFastaReader(m_iFlags));
-//    auto_ptr<CBaseFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
-#else
-    auto_ptr<CFastaReaderEx> pReader(new CFastaReaderEx(m_context, lr, m_iFlags));
-#endif
+    unique_ptr<CFastaReaderEx> pReader(new CFastaReaderEx(m_context, lr, m_iFlags));
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-#ifdef NEW_VERSION
-    CRef<CSeq_entry> result = pReader->ReadSeqEntry(lr , m_context.m_logger);
-#else
     if (m_context.m_gapNmin > 0)
     {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
@@ -342,7 +334,6 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
         result->SetSet().SetClass(m_context.m_ClassValue);
     }
 
-#endif
     return result;
 
 }
