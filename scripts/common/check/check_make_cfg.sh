@@ -26,6 +26,10 @@
 #
 ###########################################################################
 
+# Load configuration options
+x_check_scripts_dir=`dirname "$0"`
+. ${x_check_scripts_dir}/check_setup.cfg
+
 
 # Field delimiters in the list (this symbols used directly in the "sed" command)
 x_tmp="/tmp"
@@ -686,6 +690,9 @@ for x_row in $x_tests; do
    x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    ###x_requires=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
+
+   # Default timeout
+   test -z "$x_timeout"  &&  x_timeout=$NCBI_CHECK_TIMEOUT_DEFAULT
 
    # Check application requirements
    # TODO:

@@ -32,6 +32,12 @@
 #
 ###########################################################################
 
+# Load configuration options
+x_check_scripts_dir=`dirname "$0"`
+x_scripts_dir=`dirname "$x_check_scripts_dir"`
+. ${x_check_scripts_dir}/check_setup.cfg
+
+
 # Parameters
 
 res_out="check.sh"
@@ -85,8 +91,6 @@ if test ! -z "$x_top_srcdir"; then
    x_root_dir=`(cd "$x_top_srcdir"; pwd | sed -e 's/\/$//g')`
 else
    # Get top src dir name from the script directory
-   x_check_scripts_dir=`dirname "$0"`
-   x_scripts_dir=`dirname "$x_check_scripts_dir"`
    x_root_dir=`dirname "$x_scripts_dir"`
 fi
 
@@ -900,6 +904,9 @@ for x_row in $x_tests; do
    x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_requires=" `echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'` "
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
+
+   # Default timeout
+   test -z "$x_timeout"  &&  x_timeout=$NCBI_CHECK_TIMEOUT_DEFAULT
 
    # Application base build directory
    x_work_dir_tail="`echo \"$x_row\" | sed -e 's/~.*$//'`"

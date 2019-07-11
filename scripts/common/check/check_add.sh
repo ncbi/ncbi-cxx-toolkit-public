@@ -31,8 +31,11 @@ x_signature=$3
 x_srcdir_rel=$4
 x_use_ignore_list=${CHECK_USE_IGNORE_LIST-Y}
 x_delim=" ____ "
-# Default timeout for check (in seconds)
-x_timeout_default=200
+
+
+# Load configuration options
+x_check_scripts_dir=`dirname "$0"`
+. ${x_check_scripts_dir}/check_setup.cfg
 
 
 # Attempt to determine the relative source directory if necessary.
@@ -95,7 +98,7 @@ x_run=`echo "$x_run" | sed -e 's/ /%gj_s4%/g'`
 x_files=`grep '^ *CHECK_COPY' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 # Get application's check timeout
 x_timeout=`grep '^ *CHECK_TIMEOUT' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
-x_timeout="${x_timeout:-$x_timeout_default}"
+x_timeout="${x_timeout:-$NCBI_CHECK_TIMEOUT_DEFAULT}"
 # Get check requirements
 x_requires=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 
