@@ -335,7 +335,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
             }
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
-            mods.emplace_back(mod_info.name, mod_info.value);
+            mods.emplace_back(CModData{mod_info.name, mod_info.value});
         }
 
         mod_handler.AddMods(mods, handle_existing, rejected_mods, fReportError);
@@ -440,7 +440,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
             }
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
-            mods.emplace_back(mod_info.name, mod_info.value);
+            mods.emplace_back(CModData {mod_info.name, mod_info.value});
         }
 
         mod_handler.AddMods(mods, handle_existing, rejected_mods, fReportError);
