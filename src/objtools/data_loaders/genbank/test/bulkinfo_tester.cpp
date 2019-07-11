@@ -37,6 +37,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <util/checksum.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -159,7 +160,8 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return data[i] == data_verify[i];
+            return (data[i] == data_verify[i]) ||
+                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -231,6 +233,9 @@ public:
     bool Correct(size_t i) const
         {
             if ( data[i] == data_verify[i] ) {
+                return true;
+            }
+            if (CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId())) {
                 return true;
             }
             if ( report_all_errors ) {
@@ -337,8 +342,9 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return data[i] == data_verify[i];
-        }
+            return (data[i] == data_verify[i]) ||
+                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+    }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
             out << data[i];
@@ -421,7 +427,8 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return data[i] == data_verify[i];
+            return (data[i] == data_verify[i]) ||
+                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -493,6 +500,9 @@ public:
             if ( data[i] == data_verify[i] ) {
                 return true;
             }
+            if (CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId())) {
+                return true;
+            }
             if ( report_all_errors ) {
                 return false;
             }
@@ -522,58 +532,59 @@ public:
     TDataSet data, data_verify;
 
     const char* GetType(void) const
-        {
-            return "taxid";
-        }
+    {
+        return "taxid";
+    }
     void LoadBulk(CScope& scope)
-        {
-            data = scope.GetTaxIds(ids, get_flags);
-        }
+    {
+        data = scope.GetTaxIds(ids, get_flags);
+    }
     void LoadSingle(CScope& scope)
-        {
-            data.resize(ids.size());
-            for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetTaxId(ids[i], get_flags);
-            }
+    {
+        data.resize(ids.size());
+        for (size_t i = 0; i < ids.size(); ++i) {
+            data[i] = scope.GetTaxId(ids[i], get_flags);
         }
+    }
     void LoadVerify(CScope& scope)
-        {
-            data_verify.resize(ids.size(), -1);
-            for ( size_t i = 0; i < ids.size(); ++i ) {
-                CBioseq_Handle h = scope.GetBioseqHandle(ids[i]);
-                if ( h ) {
-                    data_verify[i] = GetTaxId(h);
-                    scope.RemoveFromHistory(h);
-                }
+    {
+        data_verify.resize(ids.size(), -1);
+        for (size_t i = 0; i < ids.size(); ++i) {
+            CBioseq_Handle h = scope.GetBioseqHandle(ids[i]);
+            if (h) {
+                data_verify[i] = GetTaxId(h);
+                scope.RemoveFromHistory(h);
             }
         }
+    }
     void LoadVerify(const vector<string>& lines)
-        {
-            data_verify.resize(ids.size(), -1);
-            for ( size_t i = 0; i < ids.size(); ++i ) {
-                const string& line = lines[i];
-                if ( !line.empty() ) {
-                    data_verify[i] = NStr::StringToNumeric<int>(line);
-                }
+    {
+        data_verify.resize(ids.size(), -1);
+        for (size_t i = 0; i < ids.size(); ++i) {
+            const string& line = lines[i];
+            if (!line.empty()) {
+                data_verify[i] = NStr::StringToNumeric<int>(line);
             }
         }
+    }
     void SaveResults(CNcbiOstream& out) const
-        {
-            for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( Valid(i) ) {
-                    out << data[i];
-                }
-                out << NcbiEndl;
+    {
+        for (size_t i = 0; i < ids.size(); ++i) {
+            if (Valid(i)) {
+                out << data[i];
             }
+            out << NcbiEndl;
         }
+    }
     bool Valid(size_t i) const
-        {
-            return data[i] != -1;
-        }
+    {
+        return data[i] != -1;
+    }
     bool Correct(size_t i) const
-        {
-            return data[i] == data_verify[i];
-        }
+    {
+        return (data[i] == data_verify[i]) ||
+            CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+    }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
             out << data[i];
@@ -649,7 +660,8 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return data[i] == data_verify[i] || !data[i];
+            return (data[i] == data_verify[i]) || !data[i] ||
+                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -720,7 +732,8 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return data[i] == data_verify[i];
+            return (data[i] == data_verify[i]) ||
+                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -791,7 +804,8 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return data[i] == data_verify[i];
+            return (data[i] == data_verify[i]) ||
+                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -862,7 +876,8 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return data[i] == data_verify[i];
+            return (data[i] == data_verify[i]) ||
+                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {

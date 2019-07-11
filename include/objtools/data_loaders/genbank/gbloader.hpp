@@ -61,54 +61,15 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
 
-class CReadDispatcher;
-class CReader;
-class CWriter;
-class CSeqref;
-class CBlob_id;
-class CHandleRange;
-class CSeq_entry;
-class CLoadInfoBlob;
-
-#if !defined(NDEBUG) && defined(DEBUG_SYNC)
-#  if defined(NCBI_THREADS)
-#    define GBLOG_POST(x) LOG_POST(setw(3) << CThread::GetSelf() << ":: " << x)
-#    define GBLOG_POST_X(err_subcode, x)   \
-         LOG_POST_X(err_subcode, setw(3) << CThread::GetSelf() << ":: " << x)
-#  else
-#    define GBLOG_POST(x) LOG_POST("0:: " << x)
-#    define GBLOG_POST_X(err_subcode, x) LOG_POST_X(err_subcode, "0:: " << x)
-#  endif
-#else
-#  ifdef DEBUG_SYNC
-#    undef DEBUG_SYNC
-#  endif
-#  define GBLOG_POST(x)
-#  define GBLOG_POST_X(err_subcode, x)
-#endif
-
 /////////////////////////////////////////////////////////////////////////////////
 //
 // GBDataLoader
 //
 
-class CGBReaderRequestResult;
+class CReader;
+class CSeqref;
+class CReadDispatcher;
 class CGBInfoManager;
-
-
-class NCBI_XLOADER_GENBANK_EXPORT CGBReaderCacheManager : public CReaderCacheManager
-{
-public:
-    CGBReaderCacheManager(void) {}
-
-    virtual void RegisterCache(ICache& cache, ECacheType cache_type);
-    virtual TCaches& GetCaches(void) { return m_Caches; }
-    virtual ICache* FindCache(ECacheType cache_type,
-                              const TCacheParams* params);
-private:
-    TCaches m_Caches;
-};
-
 
 // Parameter names used by loader factory
 
@@ -191,6 +152,26 @@ public:
             return m_WebCookie;
         }
 
+    const string& GetPSGServiceName(void) const
+    {
+        return m_PSGServiceName;
+    }
+
+    void SetPSGServiceName(const string& service_name)
+    {
+        m_PSGServiceName = service_name;
+    }
+
+    bool GetPSGNoSplit(void) const
+    {
+        return m_PSGNoSplit;
+    }
+
+    void SetPSGNoSplit(bool no_split)
+    {
+        m_PSGNoSplit = no_split;
+    }
+
 private:
     string m_ReaderName;
     CRef<CReader> m_ReaderPtr;
@@ -199,6 +180,8 @@ private:
     bool m_HasHUPIncluded;
     string m_WebCookie;
     string m_LoaderName;
+    string m_PSGServiceName;
+    bool m_PSGNoSplit;
 };
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
@@ -211,60 +194,9 @@ public:
 
     virtual ~CGBDataLoader(void);
 
-    virtual void DropTSE(CRef<CTSE_Info> tse_info) override;
-
-    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids) override;
-    virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh) override;
-    virtual SGiFound GetGiFound(const CSeq_id_Handle& idh) override;
-    virtual string GetLabel(const CSeq_id_Handle& idh) override;
-    virtual int GetTaxId(const CSeq_id_Handle& idh) override;
-    virtual int GetSequenceState(const CSeq_id_Handle& idh) override;
-    virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh) override;
-    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih) override;
-    virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& sih) override;
-
-    virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret) override;
-    virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret) override;
-    virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret) override;
-    virtual void GetTaxIds(const TIds& ids, TLoaded& loader, TTaxIds& ret) override;
-    virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
-                                   TSequenceStates& ret) override;
-    virtual void GetSequenceHashes(const TIds& ids, TLoaded& loader,
-                                   TSequenceHashes& ret, THashKnown& known) override;
-    virtual void GetSequenceLengths(const TIds& ids, TLoaded& loader,
-                                    TSequenceLengths& ret) override;
-    virtual void GetSequenceTypes(const TIds& ids, TLoaded& loader,
-                                  TSequenceTypes& ret) override;
-
-    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
-                                    EChoice choice) override;
-    virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,
-                                            const SRequestDetails& details) override;
-    virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq) override;
-    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
-                                                   const SAnnotSelector* sel,
-                                                   TProcessedNAs* processed_nas) override;
-    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
-                                                   const SAnnotSelector* sel,
-                                                   TProcessedNAs* processed_nas) override;
-    virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
-                                                 const SAnnotSelector* sel,
-                                                 TProcessedNAs* processed_nas) override;
-
-    virtual void GetChunk(TChunk chunk) override;
-    virtual void GetChunks(const TChunkSet& chunks) override;
-
-    virtual void GetBlobs(TTSE_LockSets& tse_sets) override;
-
-    virtual TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
-    virtual TBlobId GetBlobIdFromString(const string& str) const override;
     TBlobId GetBlobIdFromSatSatKey(int sat,
-                                   int sat_key,
-                                   int sub_sat = 0) const;
-
-    virtual TBlobVersion GetBlobVersion(const TBlobId& id) override;
-    virtual bool CanGetBlobById(void) const override;
-    virtual TTSE_Lock GetBlobById(const TBlobId& id) override;
+        int sat_key,
+        int sub_sat = 0) const;
 
     // Create GB loader and register in the object manager if
     // no loader with the same name is registered yet.
@@ -348,20 +280,12 @@ public:
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const CGBLoaderParams& params);
 
-    virtual CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
+    CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
     CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
 
-    //bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
-    //string BlobIdToString(const TBlobId& id) const;
-
-    virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& handle,
-                                      const TTSE_LockSet& tse_set) override;
-
-    virtual void GC(void) override;
-
-    virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh);
+    virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh) = 0;
     virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
-                                                     const string& named_acc);
+        const string& named_acc) = 0;
 
     const TRealBlobId& GetRealBlobId(const TBlobId& blob_id) const;
     const TRealBlobId& GetRealBlobId(const CTSE_Info& tse_info) const;
@@ -389,33 +313,23 @@ public:
     static string GetParam(const TParamTree* params,
                            const string& param_name);
 
-    CReadDispatcher& GetDispatcher(void)
-        {
-            return *m_Dispatcher;
-        }
-    CGBInfoManager& GetInfoManager(void)
-        {
-            return *m_InfoManager;
-        }
-
     enum ECacheType {
-        fCache_Id   = CGBReaderCacheManager::fCache_Id,
-        fCache_Blob = CGBReaderCacheManager::fCache_Blob,
-        fCache_Any  = CGBReaderCacheManager::fCache_Any
+        fCache_Id   = CReaderCacheManager::fCache_Id,
+        fCache_Blob = CReaderCacheManager::fCache_Blob,
+        fCache_Any  = CReaderCacheManager::fCache_Any
     };
-    typedef CGBReaderCacheManager::TCacheType TCacheType;
-    bool HaveCache(TCacheType cache_type = fCache_Any);
+    typedef CReaderCacheManager::TCacheType TCacheType;
+    virtual bool HaveCache(TCacheType cache_type = fCache_Any) = 0;
 
     // This overload with EKeepVersions parameter (which is no-op)
     // is deprecated and to be removed, please switch to use the other.
     NCBI_DEPRECATED
-    void PurgeCache(TCacheType            cache_type,
-                    time_t                access_timeout,
-                    ICache::EKeepVersions)
-        { PurgeCache(cache_type, access_timeout); }
-    void PurgeCache(TCacheType            cache_type,
-                    time_t                access_timeout = 0);
-    void CloseCache(void);
+        virtual void PurgeCache(TCacheType            cache_type,
+            time_t                access_timeout,
+            ICache::EKeepVersions) = 0;
+    virtual void PurgeCache(TCacheType            cache_type,
+        time_t                access_timeout = 0) = 0;
+    virtual void CloseCache(void) = 0;
 
     // expiration timout in seconds, must be positive
     typedef Uint4 TExpirationTimeout;
@@ -471,23 +385,7 @@ public:
             m_PTISErrorAction = action;
         }
 
-    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
-
 protected:
-    friend class CGBReaderRequestResult;
-
-    TBlobContentsMask x_MakeContentMask(EChoice choice) const;
-    TBlobContentsMask x_MakeContentMask(const SRequestDetails& details) const;
-
-    TTSE_LockSet x_GetRecords(const CSeq_id_Handle& idh,
-                              TBlobContentsMask sr_mask,
-                              const SAnnotSelector* sel,
-                              TProcessedNAs* processed_nas = 0);
-
-private:
-    typedef CParamLoaderMaker<CGBDataLoader, const CGBLoaderParams&> TGBMaker;
-    friend class CParamLoaderMaker<CGBDataLoader, const CGBLoaderParams&>;
-
     CGBDataLoader(const string&     loader_name,
                   const CGBLoaderParams& params);
 
@@ -495,14 +393,6 @@ private:
     const TParamTree* x_GetLoaderParams(const TParamTree* params) const;
     // Get reader name from the GB loader params.
     string x_GetReaderName(const TParamTree* params) const;
-
-    CInitMutexPool          m_MutexPool;
-
-    CRef<CReadDispatcher>   m_Dispatcher;
-    CRef<CGBInfoManager>    m_InfoManager;
-
-    // Information about all available caches
-    CGBReaderCacheManager   m_CacheManager;
 
     TExpirationTimeout      m_IdExpirationTimeout;
 
@@ -513,29 +403,15 @@ private:
     EGBErrorAction          m_PTISErrorAction;
     string                  m_WebCookie;
 
-    //
-    // private code
-    //
-
-    void x_CreateDriver(const CGBLoaderParams& params);
-
-    pair<string, string> GetReaderWriterName(const TParamTree* params) const;
-    bool x_CreateReaders(const string& str,
-                         const TParamTree* params,
-                         CGBLoaderParams::EPreopenConnection preopen);
-    void x_CreateWriters(const string& str, const TParamTree* params);
-    CReader* x_CreateReader(const string& names, const TParamTree* params = 0);
-    CWriter* x_CreateWriter(const string& names, const TParamTree* params = 0);
-
-    typedef CPluginManager<CReader> TReaderManager;
-    typedef CPluginManager<CWriter> TWriterManager;
-
-    static CRef<TReaderManager> x_GetReaderManager(void);
-    static CRef<TWriterManager> x_GetWriterManager(void);
-
 private:
     CGBDataLoader(const CGBDataLoader&);
     CGBDataLoader& operator=(const CGBDataLoader&);
+
+public:
+    // Ids which should be ignored by tests when PSG loader is used.
+    static bool IsIgnoredGi(TGi gi);
+    static bool IsIgnoredAcc(const string& acc);
+    static bool IsIgnoredId(const CSeq_id& id);
 };
 
 

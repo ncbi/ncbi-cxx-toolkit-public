@@ -47,6 +47,8 @@ public:
         {
         }
     
+    explicit CBlob_id(CTempString str_id);
+
     int GetSat() const
         {
             return m_Sat;
@@ -62,6 +64,7 @@ public:
 
     CNcbiOstream& Dump(CNcbiOstream& ostr) const;
     string ToString(void) const;
+    string ToPsgId(void) const;
     static CBlob_id* CreateFromString(const string& str);
 
     bool operator<(const CBlobId& blob_id) const;

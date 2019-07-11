@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = gbloader gbload_util
+SRC = gbloader gbnative gbload_util psg_loader psg_loader_impl
 
 LIB = ncbi_xloader_genbank
 
@@ -10,7 +10,11 @@ ASN_DEP = seqsplit
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = ncbi_xreader$(DLL)
+DLL_LIB = ncbi_xreader$(DLL) psg_client$(DLL)
+
+LIBS = $(PSG_CLIENT_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE) $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE)
 
 WATCHERS = vasilche
 

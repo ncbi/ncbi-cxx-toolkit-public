@@ -36,7 +36,21 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CBlob_id;
+
+CBlob_id::CBlob_id(CTempString str_id)
+    : m_Sat(-1), m_SubSat(0), m_SatKey(0)
+{
+    string ssat, ssatkey;
+    if (!NStr::SplitInTwo(str_id, ".", ssat, ssatkey)) return;
+    try {
+        Uint8 sat = NStr::StringToNumeric<Uint8>(ssat);
+        Uint8 satkey = NStr::StringToNumeric<Uint8>(ssatkey);
+        SetSat(sat);
+        SetSatKey(satkey);
+    }
+    catch (CStringException) {
+    }
+}
 
 
 CNcbiOstream& CBlob_id::Dump(CNcbiOstream& ostr) const
@@ -56,6 +70,15 @@ string CBlob_id::ToString(void) const
     Dump(ostr);
     return CNcbiOstrstreamToString(ostr);
 }
+
+
+string CBlob_id::ToPsgId(void) const
+{
+    CNcbiOstrstream ostr;
+    ostr << GetSat() << '.' << GetSatKey();
+    return CNcbiOstrstreamToString(ostr);
+}
+
 
 /* static */
 CBlob_id* CBlob_id::CreateFromString(const string& str)
