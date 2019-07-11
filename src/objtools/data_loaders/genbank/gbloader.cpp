@@ -30,7 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <ncbi_source_ver.h>
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbi_param.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/gbnative.hpp>
@@ -568,11 +568,11 @@ CGBDataLoader::GetRealBlobId(const CTSE_Info& tse_info) const
 
 static set<TGi> s_IgnoreGis = {
     // Missing in PSG database
-    156205, 156206, 156208, 156232, 156323,
+    GI_CONST(156205), GI_CONST(156206), GI_CONST(156208), GI_CONST(156232), GI_CONST(156323),
     // Wrong state
-    377650155,
+    GI_CONST(377650155),
     // test_objmgr_data errors
-    156514, 156515, 156592, 156610, 156613
+    GI_CONST(156514), GI_CONST(156515), GI_CONST(156592), GI_CONST(156610), GI_CONST(156613)
 };
 
 static set<string> s_IgnoreAcc = {
