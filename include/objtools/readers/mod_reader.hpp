@@ -44,38 +44,38 @@ public:
     template<typename _T>
     void SetName(_T&& name)
     {
-        get<0>(m_this) = forward<_T>(name);
+        m_name = forward<_T>(name);
     }
 
     template<typename _T>
     void SetValue(_T&& value)
     {
-        get<1>(m_this) = forward<_T>(value);
+        m_value = forward<_T>(value);
     }
     template<typename _T>
     void SetAttrib(_T&& attrib)
     {
-        get<2>(m_this) = forward<_T>(attrib);
+        m_attrib = forward<_T>(attrib);
     }
     bool IsSetAttrib(void) const
     {
-        return !get<2>(m_this).empty();
+        return !m_attrib.empty();
     }
 
     const string& GetName(void) const
     {
-        return get<0>(m_this);
+        return m_name;
     }
     const string& GetValue(void) const
     {
-        return get<1>(m_this);
+        return m_value;
     }
     const string& GetAttrib(void) const
     {
-        return get<2>(m_this);
+        return m_attrib;
     }
 
-    array<string, 3> m_this;
+    string m_name, m_value, m_attrib;
 };
 
 
