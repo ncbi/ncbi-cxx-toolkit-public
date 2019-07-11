@@ -77,7 +77,7 @@ void CCassNAnnotTaskDelete::Wait1()
                 auto query = m_QueryArr[0].query;
                 string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
                     "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
-                    "IF sat_key = ? AND modified = ?";
+                    "IF sat_key = ? AND last_modified = ?";
                 query->SetSQL(sql, 6);
                 query->SetSerialConsistency(CASS_CONSISTENCY_LOCAL_SERIAL);
                 query->BindStr(0, m_Annot->GetAccession());
@@ -100,12 +100,23 @@ void CCassNAnnotTaskDelete::Wait1()
                 }
                 query->NextRow();
                 bool applied = query->FieldGetBoolValue(0);
-                m_State = applied ? eDeleteBlobRecord : eDone;
-                b_need_repeat = true;
+                // m_State = applied ? eDeleteBlobRecord : eDone;
+                // b_need_repeat = true;
+                // We do not need to delete blob_prop and blob_chunk records information here
+                // It will be deleted while matching blob_prop table with Sybase
+                if (!applied) {
+                    ERR_POST(Warning << "LWT was not able to delete 'bioseq_na' record key="
+                             << m_Keyspace << "." << m_Annot->GetSatKey()
+                             << ", last_modified = " << m_Annot->GetModified()
+                             << " seqid: " << m_Annot->GetAccession() << "."
+                             << m_Annot->GetVersion() << "|" << m_Annot->GetSeqIdType()
+                    );
+                }
+                m_State = eDone;
                 break;
             }
 
-            case eDeleteBlobRecord: {
+            /*case eDeleteBlobRecord: {
                 m_BlobDeleteTask = unique_ptr<CCassBlobTaskDelete>(
                     new CCassBlobTaskDelete(
                          m_OpTimeoutMs, m_Conn, m_Keyspace,
@@ -115,6 +126,7 @@ void CCassNAnnotTaskDelete::Wait1()
                          {this->m_ErrorCb(status, code, severity, message);}
                     )
                 );
+                m_State = eWaitingDeleteBlobRecord;
                 break;
             }
 
@@ -129,11 +141,11 @@ void CCassNAnnotTaskDelete::Wait1()
                     }
                     m_BlobDeleteTask.reset();
                 }
-                break;
+                break;*/
 
             default: {
                 char msg[1024];
-                snprintf(msg, sizeof(msg), "Failed to insert named annot (key=%s.%d) unexpected state (%d)",
+                snprintf(msg, sizeof(msg), "Failed to delete named annot (key=%s.%d) unexpected state (%d)",
                     m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
