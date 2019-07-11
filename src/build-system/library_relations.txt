@@ -43,6 +43,7 @@ Xpm needs3party $(ORIG_LIBS)
 Xpm needs3party X11
 access needs xser
 accnmap needs dbapi
+address_sorting needs3party $(ORIG_LIBS)
 ads needs $(SEQ_LIBS)
 ads needs pub
 affy needs $(Z_LIB)
@@ -606,6 +607,7 @@ grid_wrapper needs3party $(SGE_LIBS)
 grpc needs $(Z_LIB)
 grpc needs3party $(ORIG_LIBS)
 grpc needs3party $(Z_LIBS)
+grpc needs3party address_sorting
 grpc needs3party boringcrypto
 grpc needs3party boringssl
 grpc needs3party cares
@@ -613,6 +615,7 @@ grpc needs3party gpr
 grpc++ needs $(Z_LIB)
 grpc++ needs3party $(ORIG_LIBS)
 grpc++ needs3party $(Z_LIBS)
+grpc++ needs3party address_sorting
 grpc++ needs3party boringcrypto
 grpc++ needs3party boringssl
 grpc++ needs3party cares
@@ -1005,14 +1008,9 @@ notary needs xid_utils
 notary needs3party $(KRB5_LIBS)
 notary needs3party $(OPENSSL_LIBS)
 nsl needs3party $(ORIG_LIBS)
-objannotation needs objspdi
 objcoords needs xser
 objmmail needs3party $(NCBI_C_ncbi)
 objprt needs xser
-objspdi needs $(Z_LIB)
-objspdi needs xser
-objspdi needs3party $(PROTOBUF_LIBS)
-objspdi needs3party $(Z_LIBS)
 objtax1 needs3party ncbiobj
 odbc_ftds100 needs tds_ftds100
 odbc_ftds95 needs tds_ftds95
@@ -1337,15 +1335,10 @@ validation_details needs xmlwrapp
 validation_results needs $(SEQ_LIBS)
 validation_results needs pub
 validation_results needs xmlwrapp
-var_unit_test_lib needs variation_lib
+var_unit_test_lib needs $(OBJMGR_LIBS)
+var_unit_test_lib needs xconnserv
 variation needs $(SEQ_LIBS)
 variation needs pub
-variation_lib needs intvarutil
-variation_lib needs ncbi_xloader_blastdb
-variation_lib needs objannotation
-variation_lib needs refseq_aln_source
-variation_lib needs variation_utils
-variation_lib needs xconnserv
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
