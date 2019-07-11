@@ -1113,6 +1113,7 @@ class CDescriptorUpdater
 {
 public:
     virtual bool NeedToProcess(const CSeqdesc& ) const = 0;
+    virtual bool UpdateIfNeeded(const string& , CSeq_descr::Tdata& ) const = 0;
     virtual bool IsSame(const CSeqdesc&, const string& ) const = 0;
     virtual void AddDescriptor(CSeq_descr&, const string& ) const = 0;
     virtual string DescrToString(const CSeqdesc& descr) const = 0;
@@ -1124,6 +1125,11 @@ public:
     virtual bool NeedToProcess(const CSeqdesc& descr) const
     {
         return descr.IsComment();
+    }
+
+    virtual bool UpdateIfNeeded(const string&, CSeq_descr::Tdata& ) const
+    {
+        return false;
     }
 
     virtual bool IsSame(const CSeqdesc& descr, const string& comment) const
@@ -1152,6 +1158,57 @@ public:
     virtual bool NeedToProcess(const CSeqdesc& descr) const
     {
         return IsUserObjectOfType(descr, "StructuredComment");
+    }
+
+    virtual bool UpdateIfNeeded(const string& comment, CSeq_descr::Tdata& descrs) const
+    {
+        bool ret = false;
+        CRef<CSeqdesc> descr = BuildStructuredComment(comment);
+        if (descr->GetUser().IsSetData() && !descr->GetUser().GetData().empty()) {
+            
+            static const set<string> COMMENTS_TO_UPDATE = {
+                "##Genome-Assembly-Data-START##",
+                "##Assembly-Data-START##",
+                "##MIGS-Data-START##",
+                "##MIMS-Data-START##",
+                "##MIMARKS:3.0-Data-START##"
+            };
+
+            const string& first_value = descr->GetUser().GetData().front()->GetString();
+            if (COMMENTS_TO_UPDATE.find(first_value) != COMMENTS_TO_UPDATE.end()) {
+
+                auto StructuredCommentNeedsUpdate = [&first_value](const CRef<CSeqdesc>& cur_descr)
+                {
+                    if (IsUserObjectOfType(*cur_descr, "StructuredComment") &&
+                        cur_descr->GetUser().IsSetData() && !cur_descr->GetUser().GetData().empty()) {
+
+                        return cur_descr->GetUser().GetData().front()->GetString() == first_value;
+                    }
+
+                    return false;
+
+                };
+
+                auto descr_iter = find_if(descrs.begin(), descrs.end(), StructuredCommentNeedsUpdate);
+                if (descr_iter != descrs.end()) {
+
+                    // Updatre the first comment, remove all others with the same first tag
+                    ret = true;
+                    (*descr_iter)->Assign(*descr);
+                    for (++descr_iter; descr_iter != descrs.end(); )
+                    {
+                        if (StructuredCommentNeedsUpdate(*descr_iter)) {
+                            descr_iter = descrs.erase(descr_iter);
+                        }
+                        else {
+                            ++descr_iter;
+                        }
+                    }
+                }
+            }
+        }
+
+        return ret;
     }
 
     virtual bool IsSame(const CSeqdesc& descr, const string& comment) const
@@ -1188,9 +1245,11 @@ static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comme
             auto& descrs = id_entry->SetSeq().SetDescr().Set();
             for (auto& comment : comments) {
 
-                auto same_comment = find_if(descrs.begin(), descrs.end(), [&comment, &updater](const CRef<CSeqdesc>& descr) { return updater.NeedToProcess(*descr) && updater.IsSame(*descr, comment); });
-                if (same_comment == descrs.end()) {
-                    comments_to_add.push_back(&comment);
+                if (!updater.UpdateIfNeeded(comment, descrs)) {
+                    auto same_comment = find_if(descrs.begin(), descrs.end(), [&comment, &updater](const CRef<CSeqdesc>& descr) { return updater.NeedToProcess(*descr) && updater.IsSame(*descr, comment); });
+                    if (same_comment == descrs.end()) {
+                        comments_to_add.push_back(&comment);
+                    }
                 }
             }
         }
