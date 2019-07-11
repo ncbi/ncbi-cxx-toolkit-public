@@ -175,35 +175,7 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, _T& seq_or_set)
 };
 
 
-CTable2AsnContext::CTable2AsnContext():
-    m_output(0),
-    m_delay_genprodset(false),
-    m_t(false),
-    m_save_bioseq_set(false),
-    m_disc_eucariote(false),
-    m_RemoteTaxonomyLookup(false),
-    m_RemotePubLookup(false),
-    m_HandleAsSet(false),
-    m_ClassValue(CBioseq_set::eClass_genbank),
-    m_GenomicProductSet(false),
-    m_SetIDFromFile(false),
-    m_taxid(0),
-    m_gapNmin(0),
-    m_gap_Unknown_length(0),
-    m_minimal_sequence_length(0),
-    m_gap_type(-1),
-    m_fcs_trim(false),
-    m_split_log_files(false),
-    m_postprocess_pubs(false),
-    m_use_hypothetic_protein(false),
-    m_eukariote(false),
-    m_di_fasta(false),
-    m_allow_accession(false),
-    m_verbose(false),
-    m_augustus_fix(false),
-    m_make_flatfile(false),
-    m_discrepancy(eTriState_Unknown),
-    m_logger(0)
+CTable2AsnContext::CTable2AsnContext()
 {
 }
 
