@@ -38,10 +38,15 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-#if defined(NCBI_THREADS) && defined(HAVE_LIBNGHTTP2) && defined(HAVE_LIBUV)
 
-#define HAVE_PSG_CLIENT 1
+#if defined(HAVE_PSG_CLIENT)
+#  if !defined(NCBI_THREADS) || !defined(HAVE_LIBNGHTTP2) || !defined(HAVE_LIBUV)
+#    undef HAVE_PSG_CLIENT
+#  endif
+#endif
 
+
+#if defined(HAVE_PSG_CLIENT)
 BEGIN_NCBI_SCOPE
 
 
@@ -63,7 +68,7 @@ public:
 
 
 
-/// Request to the PSG server (one of: CPSG_Request_Biodata, CPSG_Request_Blob)
+/// Request to the PSG server (see "CPSG_Request_*" below)
 ///
 
 class CPSG_Request
@@ -776,5 +781,5 @@ DECLARE_SAFE_FLAGS(CPSG_Request_Resolve::EIncludeInfo);
 END_NCBI_SCOPE
 
 
-#endif
+#endif  /* HAVE_PSG_CLIENT */
 #endif  /* OBJTOOLS__PUBSEQ_GATEWAY__PSG_CLIENT_HPP */
