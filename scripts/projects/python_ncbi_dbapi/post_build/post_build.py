@@ -5,10 +5,10 @@ import glob, os, shutil, subprocess, sys
 
 (bin_dir, lib_dir, install_dir, src_dir) = sys.argv[1:]
 common_stems  = ('python_ncbi_dbapi', 'ncbi_xdbapi_*')
-unix_stems    = ('dbapi', 'dbapi_driver', 'ct_ftds64', 'tds_ftds64',
+unix_stems    = ('dbapi', 'dbapi_driver', 'ct_ftds*', 'tds_ftds*',
                  'xconne?t', 'xutil', 'xncbi')
 windows_stems = ('ncbi_core', 'ncbi_dbapi', 'ncbi_dbapi_driver')
-installations = ('2.7env', '3.4')
+installations = ('2.7env', '3.6', '3.7')
 
 os.mkdir(install_dir + '/lib')
 if os.path.exists(lib_dir + '/python_ncbi_dbapi.so'):
