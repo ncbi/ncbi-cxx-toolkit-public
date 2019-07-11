@@ -86,7 +86,7 @@ ext = Extension('python_ncbi_dbapi', ['python_ncbi_dbapi.cpp'],
 
 # Arrange to incorporate needed shared libraries and drivers.
 lib_files = []
-for x in libs + ['ncbi_xdbapi_*' + mfv('DLL'), '*_ftds??']:
+for x in libs + ['ncbi_xdbapi_*' + mfv('DLL'), '*_ftds??*']:
     for y in glob.glob(mfv('libdir') + '/lib' + x + '.??*'):
         lib_files.append(os.path.basename(y))
 
