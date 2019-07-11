@@ -39,6 +39,7 @@ public:
     void MapFile(const string& fileName, bool allowAcc);
     bool Empty(void) const;
     const TLineMap& GetLineMap(void) const;
+    void ReportUnusedIds(ILineErrorListener* pEC);
 private:
     bool m_FileMapped = false;
     unique_ptr<CMemoryFileMap> m_pFileMap;

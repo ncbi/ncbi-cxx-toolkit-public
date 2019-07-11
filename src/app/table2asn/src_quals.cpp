@@ -171,6 +171,43 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
     m_FileMapped = true;
 }
 
+static void sReportUnusedMods(
+    ILineErrorListener* pEC,
+    const string& fileName,
+    const CTempString& seqId)
+{
+    if (!pEC) {
+        // throw an exception
+    }
+
+    string message =
+        fileName +
+        " contains qualifiers for sequence id " +
+        seqId +
+        " , but no sequence with that id was found.";
+
+    AutoPtr<CLineErrorEx> pErr(
+        CLineErrorEx::Create(
+            ILineError::eProblem_GeneralParsingError,
+            eDiag_Error,
+            0, 0, // code and subcode
+            seqId,
+            0, // lineNumber,
+            message));
+
+    pEC->PutError(*pErr);
+}
+
+void CMemorySrcFileMap::ReportUnusedIds(ILineErrorListener* pEC)
+{
+    if (!Empty()) {
+        for (const auto& entry : m_LineMap) {
+            CTempString seqId, remainder;
+            NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
+            sReportUnusedMods(pEC, m_pFileMap->GetFileName(), NStr::TruncateSpaces_Unsafe(seqId));
+        }
+    }
+}
 
 static void s_AppendMods(
     const CModHandler::TModList& mods,
@@ -242,35 +279,6 @@ static void sReportMissingMods(
     pEC->PutError(*pErr);
 }
 
-
-static void sReportUnusedMods(
-        ILineErrorListener* pEC,
-        const string& fileName,
-        const string& seqId)
-{
-    if (!pEC) {
-        // throw an exception
-    }
-
-    string message =
-    fileName + 
-    " contains qualifiers for sequence id " +
-    seqId +
-    " , but no sequence with that id was found.";
-
-    AutoPtr<CLineErrorEx> pErr(
-            CLineErrorEx::Create(
-                ILineError::eProblem_GeneralParsingError,
-                eDiag_Error,
-                0, 0, // code and subcode
-                seqId,
-                0, // lineNumber,
-                message));
-
-    pEC->PutError(*pErr);
-}
-
-
 void g_ApplyMods(
     unique_ptr<CMemorySrcFileMap>& namedSrcFileMap,
     const string& namedSrcFile,
@@ -307,9 +315,9 @@ void g_ApplyMods(
     }
 
 
-    if (!namedSrcFileMap)
-        namedSrcFileMap.reset(new CMemorySrcFileMap);
     if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
+        if (!namedSrcFileMap)
+            namedSrcFileMap.reset(new CMemorySrcFileMap);
         namedSrcFileMap->MapFile(namedSrcFile, allowAcc);
     }
 
@@ -339,7 +347,7 @@ void g_ApplyMods(
                     return sReportError(pEC, sev, subcode, seqId, msg);
                 };
  
-            if (!namedSrcFileMap->Empty()) {
+            if (namedSrcFileMap && !namedSrcFileMap->Empty()) {
                 TModList mods;
                 if (namedSrcFileMap->GetMods(*pBioseq, mods)) {
                     mod_handler.AddMods(mods, 
@@ -418,23 +426,8 @@ void g_ApplyMods(
         }
     }
 
-    if (isVerbose && !namedSrcFileMap->Empty()) {
-        const auto& lineMap = namedSrcFileMap->GetLineMap();
-        for (const auto& entry : lineMap) {
-            CTempString seqId, remainder; 
-            NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
-            sReportUnusedMods(pEC, namedSrcFile, NStr::TruncateSpaces_Unsafe(seqId));
-        }
-    }
-
-
-    if (isVerbose && !defaultSrcFileMap.Empty()) {
-        const auto& lineMap = defaultSrcFileMap.GetLineMap();
-        for (const auto& entry : lineMap) {
-            CTempString seqId, remainder;
-            NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
-            sReportUnusedMods(pEC, defaultSrcFile, NStr::TruncateSpaces_Unsafe(seqId));
-        }
+    if (isVerbose) {
+        defaultSrcFileMap.ReportUnusedIds(pEC);
     }
 }
 
