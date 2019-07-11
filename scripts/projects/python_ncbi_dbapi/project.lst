@@ -1,6 +1,7 @@
 corelib$
 util$
 util/bitset$
+util/cache update-only
 util/checksum
 connect$
 connect/ext$
