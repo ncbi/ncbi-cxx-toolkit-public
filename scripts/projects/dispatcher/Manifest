@@ -23,7 +23,7 @@ COPY: $srcdir/include/connect/daemons/*.h								$installdir/include/connect/dae
 COPY: $srcdir/include/internal/signon3/id.h								$installdir/include/internal/signon3/
 
 POSTBUILD: [ "$platform" != "Cygwin64" ]  ||  { cp -vp /bin/cygrunsrv.exe				$installdir/bin/; }
-POSTBUILD: [ "$platform" != "Cygwin64" ]  ||  { cp -vp /bin/cyg{bz2-1,iconv2-1,win1,z}.dll		$installdir/bin/; }
+POSTBUILD: [ "$platform" != "Cygwin64" ]  ||  { cp -vp /bin/cyg{bz2-1,iconv-2,win1,z}.dll		$installdir/bin/; }
 POSTBUILD: [ "$platform" != "Cygwin64" ]  ||  { cp -vp /usr/{bin/cygcheck,bin/ipcs,sbin/cygserver}.exe	$installdir/bin/; }
 
 # Each line describes a single configuration
