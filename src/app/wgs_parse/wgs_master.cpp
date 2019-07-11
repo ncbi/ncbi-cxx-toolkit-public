@@ -1812,11 +1812,6 @@ static void BuildSortOrderMap(const list<CEntryOrderInfo>& seq_order, map<string
     }
 }
 
-static bool IsSubmitBlockSet(const CSeq_submit& seq_submit)
-{
-    return seq_submit.IsSetSub() && seq_submit.GetSub().IsSetContact() && seq_submit.GetSub().GetContact().IsSetContact();
-}
-
 static void ReportVersionProblem(int master_accession_ver, int current_master_accession_ver, bool& reject)
 {
     if (master_accession_ver < current_master_accession_ver) {
@@ -2436,7 +2431,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 }
             }
 
-            if (!IsSubmitBlockSet(*seq_submit)) {
+            if (!seq_submit->IsSetSub()) {
                 if (master_info.m_input_type == eSeqSubmit) {
                     ERR_POST_EX(ERR_MASTER, ERR_MASTER_MissingSubmitBlock, Error << "Submission \"" << file << "\" is missing Submit-block.");
                 }
