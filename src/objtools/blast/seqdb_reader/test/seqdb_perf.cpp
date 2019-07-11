@@ -137,8 +137,13 @@ CSeqDBPerfApp::x_ScanDatabase()
     }
     LOG_POST(Info << "Will go over " << oids2iterate.size() << " sequences");
 
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION >= 900)
+    #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
+                         shared(oids2iterate,kScanUncompressed) if(m_DbHandles.size() > 1)
+#else
     #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
                          shared(oids2iterate) if(m_DbHandles.size() > 1)
+#endif
     {
         int thread_id = 0;
 #ifdef _OPENMP
@@ -203,7 +208,11 @@ CSeqDBPerfApp::x_InitApplicationData()
 
 
     if (args["multi_threaded_creation"]) {
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION >= 900)
+        #pragma omp parallel default(none) shared(kDbName, kNumThreads, kSeqType) num_threads(kNumThreads)
+#else
         #pragma omp parallel default(none) shared(kDbName, kNumThreads) num_threads(kNumThreads)
+#endif
         for (int i = 0; i < kNumThreads; i++)
             CSeqDBExpert(kDbName, kSeqType);
         
