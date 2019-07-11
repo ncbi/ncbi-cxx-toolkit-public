@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Dmitri Dmitrienko
+ * Author: Rafael Sadyrov
  *
  */
 
@@ -35,6 +35,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -174,7 +175,7 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
 void SPSG_BlobReader::CheckForNewChunks()
 {
-    if (m_Src->GetUnsafe().state.Empty()) return;
+    if (m_Src->GetMTSafe().state.Empty()) return;
 
     auto src_locked = m_Src->GetLock();
     auto& src = *src_locked;
@@ -294,10 +295,10 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 
 
 CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_request,
-        shared_ptr<HCT::http2_request> http_request,
+        shared_ptr<SPSG_Request> request,
         shared_ptr<SPSG_Reply> reply) :
     m_UserRequest(user_request),
-    m_HttpRequest(http_request),
+    m_Request(request),
     m_Reply(reply)
 {
 }
@@ -305,7 +306,7 @@ CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_reques
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 {
     // A reply has already been returned
-    if (!m_Reply->reply_item.GetUnsafe().state.SetReturned()) return {};
+    if (!m_Reply->reply_item.GetMTSafe().state.SetReturned()) return {};
 
     shared_ptr<CPSG_Reply> rv(new CPSG_Reply);
     rv->m_Impl->reply = m_Reply;
@@ -317,20 +318,20 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 
 void CPSG_Queue::SImpl::SRequest::Reset()
 {
-    assert(m_HttpRequest);
+    assert(m_Request);
 
-    m_HttpRequest->send_cancel();
+    m_Request->reply->SetCanceled();
 }
 
 bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
 {
-    const auto& state = m_Reply->reply_item.GetUnsafe().state;
+    const auto& state = m_Reply->reply_item.GetMTSafe().state;
 
     if (state.InProgress() || !state.Returned()) return false;
 
     auto items_locked = m_Reply->items.GetLock();
     auto& items = *items_locked;
-    auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetUnsafe().state.Returned(); };
+    auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetMTSafe().state.Returned(); };
 
     return all_of(items.begin(), items.end(), returned);
 }
@@ -338,7 +339,7 @@ bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
 
 pair<mutex, weak_ptr<CPSG_Queue::SImpl::CService::TMap>> CPSG_Queue::SImpl::CService::sm_Instance;
 
-CPSG_Queue::SImpl::CService::TIoC& CPSG_Queue::SImpl::CService::GetIoC(const string& service)
+SPSG_IoCoordinator& CPSG_Queue::SImpl::CService::GetIoC(const string& service)
 {
     if (service.empty()) {
         NCBI_THROW(CPSG_Exception, eParameterMissing, "Service name is empty");
@@ -352,7 +353,7 @@ CPSG_Queue::SImpl::CService::TIoC& CPSG_Queue::SImpl::CService::GetIoC(const str
         return *found->second;
     }
 
-    auto created = m_Map->emplace(service, unique_ptr<TIoC>(new TIoC(service)));
+    auto created = m_Map->emplace(service, unique_ptr<SPSG_IoCoordinator>(new SPSG_IoCoordinator(service)));
     return *created.first->second;
 }
 
@@ -505,15 +506,15 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
     chrono::milliseconds wait_ms{};
     auto user_context = TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eOff ?
         nullptr : user_request->GetUserContext<string>();
-    const auto request_id = user_context ? *user_context : ioc.get_new_request_id();
-    auto reply = make_shared<SPSG_Reply>(request_id);
-    auto abs_path_ref = user_request->x_GetAbsPathRef() + ioc.get_client_id();
-    auto http_request = make_shared<HCT::http2_request>(reply, m_Requests, move(abs_path_ref));
+    const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
+    auto reply = make_shared<SPSG_Reply>(request_id, m_Requests);
+    auto abs_path_ref = user_request->x_GetAbsPathRef() + ioc.GetClientId();
+    auto request = make_shared<SPSG_Request>(reply, move(abs_path_ref));
 
     for (;;) {
-        if (ioc.add_request(http_request, wait_ms)) {
+        if (ioc.AddRequest(request, wait_ms)) {
             auto requests_locked = m_Requests->GetLock();
-            requests_locked->emplace_back(user_request, http_request, move(reply));
+            requests_locked->emplace_back(user_request, request, move(reply));
             return true;
         }
 
@@ -570,25 +571,16 @@ bool CPSG_Queue::SImpl::IsEmpty() const
 }
 
 
-template <class TTsPtr>
-EPSG_Status s_GetStatus(TTsPtr ts, CDeadline deadline)
+EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS* ts, CDeadline deadline)
 {
     assert(ts);
 
     for (;;) {
-        switch (ts->GetUnsafe().state.GetState()) {
+        switch (ts->GetMTSafe().state.GetState()) {
             case SPSG_Reply::SState::eCanceled: return EPSG_Status::eCanceled;
             case SPSG_Reply::SState::eNotFound: return EPSG_Status::eNotFound;
             case SPSG_Reply::SState::eError:    return EPSG_Status::eError;
-
-            case SPSG_Reply::SState::eSuccess:
-                if (auto locked = ts->GetLock()) {
-                    if (locked->expected.template Cmp<equal_to>(locked->received)) return EPSG_Status::eSuccess;
-
-                    locked->state.AddError("Protocol error: received less than expected");
-                }
-
-                return EPSG_Status::eError;
+            case SPSG_Reply::SState::eSuccess:  return EPSG_Status::eSuccess;
 
             default: // SPSG_Reply::SState::eInProgress;
                 if (deadline.IsExpired()) return EPSG_Status::eInProgress;
@@ -1075,10 +1067,8 @@ CPSG_Reply::CPSG_Reply() :
 EPSG_Status CPSG_Reply::GetStatus(CDeadline deadline) const
 {
     assert(m_Impl);
-    auto reply_item = &m_Impl->reply->reply_item;
 
-    // Do not hold lock on reply around this call!
-    return s_GetStatus(reply_item, deadline);
+    return s_GetStatus(&m_Impl->reply->reply_item, deadline);
 }
 
 string CPSG_Reply::GetNextMessage() const
@@ -1097,13 +1087,13 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     auto& reply_item = m_Impl->reply->reply_item;
 
     for (;;) {
-        bool was_in_progress = reply_item.GetUnsafe().state.InProgress();
+        bool was_in_progress = reply_item.GetMTSafe().state.InProgress();
 
         if (auto items_locked = m_Impl->reply->items.GetLock()) {
             auto& items = *items_locked;
 
             for (auto& item_ts : items) {
-                const auto& state = item_ts.GetUnsafe().state;
+                const auto& state = item_ts.GetMTSafe().state;
 
                 if (state.Returned()) continue;
 

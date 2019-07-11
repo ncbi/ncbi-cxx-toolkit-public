@@ -42,7 +42,7 @@
 #include "uv.h"
 #include "uv_extra.h"
 
-#include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
+#include "UvHelper.hpp"
 
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"

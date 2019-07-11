@@ -26,9 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors: Dmitri Dmitrienko
- *
- * File Description:
+ * Authors: Dmitri Dmitrienko, Rafael Sadyrov
  *
  */
 
@@ -38,6 +36,7 @@
 
 #define __STDC_FORMAT_MACROS
 
+#include <array>
 #include <memory>
 #include <string>
 #include <cassert>
@@ -60,7 +59,6 @@
 #include <uv.h>
 
 #include "mpmc_nw.hpp"
-#include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 #include <connect/services/netservice_api.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_url.hpp>
@@ -70,9 +68,6 @@ BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DECL(unsigned, PSG, rd_buf_size);
 typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;
-
-NCBI_PARAM_DECL(unsigned, PSG, write_buf_size);
-typedef NCBI_PARAM_TYPE(PSG, write_buf_size) TPSG_WriteBufSize;
 
 NCBI_PARAM_DECL(unsigned, PSG, write_hiwater);
 typedef NCBI_PARAM_TYPE(PSG, write_hiwater) TPSG_WriteHiwater;
@@ -136,17 +131,17 @@ template <class TType>
 struct SPSG_ThreadSafe : SPSG_Future
 {
     template <class T>
-    struct SLock : private unique_lock<mutex>
+    struct SLock : private unique_lock<std::mutex>
     {
-        T& operator*()  { assert(m_Object); return *m_Object; }
-        T* operator->() { assert(m_Object); return m_Object; }
+        T& operator*()  { return *m_Object; }
+        T* operator->() { return  m_Object; }
 
         // A safe and elegant RAII alternative to explicit scopes or 'unlock' method.
         // It allows locks to be declared inside 'if' condition.
         using unique_lock<std::mutex>::operator bool;
 
     private:
-        SLock(T* c, std::mutex& m) : unique_lock(m), m_Object(c) {}
+        SLock(T* c, std::mutex& m) : unique_lock(m), m_Object(c) { _ASSERT(m_Object); }
 
         T* m_Object;
 
@@ -154,32 +149,35 @@ struct SPSG_ThreadSafe : SPSG_Future
     };
 
     template <class... TArgs>
-    SPSG_ThreadSafe(TArgs&&... args) : m_Object(std::forward<TArgs>(args)...) {}
+    SPSG_ThreadSafe(TArgs&&... args) : m_Object(forward<TArgs>(args)...) {}
 
     SLock<      TType> GetLock()       { return { &m_Object, m_Mutex }; }
     SLock<const TType> GetLock() const { return { &m_Object, m_Mutex }; }
 
-    // E.g. to access atomic members
-          TType& GetUnsafe()       { return m_Object; }
-    const TType& GetUnsafe() const { return m_Object; }
+    // Direct access to the protected object (e.g. to access atomic members).
+    // All thread-safe members must be explicitly marked volatile to be available.
+          volatile TType& GetMTSafe()       { return m_Object; }
+    const volatile TType& GetMTSafe() const { return m_Object; }
 
 private:
     TType m_Object;
 };
 
-struct SPSG_Error
+struct SPSG_Error : string
 {
-    enum {
-        eHttpCb = 1,
-        eUnexpCb,
-        eOverlap,
+    enum EError{
+        eNgHttp2Cb = 1,
         eShutdown,
-        eExcept,
+        eException,
     };
 
-    static std::string Generic(int errc, const char* details);
-    static std::string NgHttp2(int errc);
-    static std::string LibUv(int errc, const char* details);
+    template <class ...TArgs>
+    SPSG_Error(TArgs... args) : string(Build(forward<TArgs>(args)...)) {}
+
+private:
+    static string Build(EError error, const char* details);
+    static string Build(int error);
+    static string Build(int error, const char* details);
 };
 
 struct SPSG_Args : CUrlArgs
@@ -235,9 +233,11 @@ private:
 
 struct SDebugPrintout
 {
-    SDebugPrintout(string id) :
-        m_DebugOutput(SDebugOutput::GetInstance()),
-        m_Id(move(id))
+    const string id;
+
+    SDebugPrintout(string i) :
+        id(move(i)),
+        m_DebugOutput(SDebugOutput::GetInstance())
     {
         if (m_DebugOutput.perf) m_Events.reserve(20);
     }
@@ -273,7 +273,6 @@ private:
     void Print(uint32_t error_code);
 
     SDebugOutput& m_DebugOutput;
-    const string m_Id;
     vector<tuple<double, EType, thread::id>> m_Events;
 };
 
@@ -291,18 +290,18 @@ struct SPSG_Reply
 
         SState() : m_State(eInProgress), m_Returned(false), m_Empty(true) {}
 
-        EState GetState() const { return m_State; }
+        EState GetState() const volatile { return m_State; }
         string GetError();
 
-        bool InProgress() const { return m_State == eInProgress; }
-        bool Returned() const { return m_Returned; }
-        bool Empty() const { return m_Empty; }
+        bool InProgress() const volatile { return m_State == eInProgress; }
+        bool Returned() const volatile { return m_Returned; }
+        bool Empty() const volatile { return m_Empty; }
 
-        void SetState(EState state) { auto expected = eInProgress; m_State.compare_exchange_strong(expected, state); }
+        void SetState(EState state) volatile { auto expected = eInProgress; m_State.compare_exchange_strong(expected, state); }
 
         void AddError(const string& message);
-        bool SetReturned() { bool expected = false; return m_Returned.compare_exchange_strong(expected, true); }
-        void SetNotEmpty() { bool expected = true; m_Empty.compare_exchange_strong(expected, false); }
+        bool SetReturned() volatile { bool expected = false; return m_Returned.compare_exchange_strong(expected, true); }
+        void SetNotEmpty() volatile { bool expected = true; m_Empty.compare_exchange_strong(expected, false); }
 
     private:
         atomic<EState> m_State;
@@ -332,20 +331,31 @@ struct SPSG_Reply
     SItemsTS items;
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
+    weak_ptr<SPSG_Future> queue;
 
-    SPSG_Reply(string id) : debug_printout(move(id)) {}
-    void SetSuccess()  { SetState(SState::eSuccess);  }
-    void SetCanceled() { SetState(SState::eCanceled); }
-
-private:
-    void SetState(SState::EState state);
+    SPSG_Reply(string id, weak_ptr<SPSG_Future> q) : debug_printout(move(id)), queue(q) {}
+    void SetSuccess();
+    void SetCanceled();
 };
 
-struct SPSG_Receiver
+struct SPSG_Request
 {
-    SPSG_Receiver(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
+    const string full_path;
+    shared_ptr<SPSG_Reply> reply;
 
-    void operator()(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
+    SPSG_Request(shared_ptr<SPSG_Reply> reply, string p);
+
+    ~SPSG_Request()
+    {
+        _ASSERT(!reply->reply_item.GetMTSafe().state.InProgress());
+    }
+
+    void OnReplyData(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
+
+    bool CanRetry()
+    {
+        return reply->reply_item.GetMTSafe().state.InProgress() && (m_Retries-- > 0);
+    }
 
     static const string& Prefix() { static const string kPrefix = "\n\nPSG-Reply-Chunk: "; return kPrefix; }
 
@@ -355,17 +365,18 @@ private:
     void StateData(const char*& data, size_t& len);
     void StateIo(const char*& data, size_t& len) { data += len; len = 0; }
 
-    void SetStatePrefix()  { Add(); m_State = &SPSG_Receiver::StatePrefix; }
-    void SetStateArgs()           { m_State = &SPSG_Receiver::StateArgs;   }
-    void SetStateData(size_t dtr) { m_State = &SPSG_Receiver::StateData;   m_Buffer.data_to_read = dtr; }
+    void SetStatePrefix()  { Add(); m_State = &SPSG_Request::StatePrefix; }
+    void SetStateArgs()           { m_State = &SPSG_Request::StateArgs;   }
+    void SetStateData(size_t dtr) { m_State = &SPSG_Request::StateData;   m_Buffer.data_to_read = dtr; }
 
     void Add();
     void AddIo();
 
-    using TState = void (SPSG_Receiver::*)(const char*& data, size_t& len);
+    using TState = void (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;
 
-    struct SBuffer {
+    struct SBuffer
+    {
         size_t prefix_index = 0;
         string args;
         SPSG_Chunk chunk;
@@ -373,376 +384,438 @@ private:
     };
 
     SBuffer m_Buffer;
-    shared_ptr<SPSG_Reply> m_Reply;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
-    weak_ptr<SPSG_Future> m_Queue;
+    int m_Retries;
+};
+
+template <typename THandle>
+struct SPSG_UvHandle : protected THandle
+{
+    SPSG_UvHandle(uv_close_cb cb = nullptr) : m_Cb(cb) {}
+
+    void Close()
+    {
+        uv_close(reinterpret_cast<uv_handle_t*>(this), m_Cb);
+    }
+
+private:
+    uv_close_cb m_Cb;
+};
+
+struct SPSG_UvWrite : protected uv_write_t
+{
+    SPSG_UvWrite(void* user_data);
+
+    vector<char>& GetBuffer() { return m_Buffers[m_Index]; }
+    bool IsBufferFull() const { return m_Buffers[m_Index].size() >= TPSG_WriteHiwater::GetDefault(); }
+
+    int operator()(uv_stream_t* handle, uv_write_cb cb);
+
+    void Done()
+    {
+        m_Buffers[!m_Index].clear();
+        m_InProgress = false;
+    }
+
+    void Reset()
+    {
+        m_Buffers[0].clear();
+        m_Buffers[1].clear();
+        m_InProgress = false;
+    }
+
+private:
+    uv_write_t m_Request;
+    array<vector<char>, 2> m_Buffers;
+    bool m_Index = false;
+    bool m_InProgress = false;
+};
+
+struct SPSG_UvConnect : protected uv_connect_t
+{
+    SPSG_UvConnect(void* user_data, const CNetServer::SAddress& address);
+
+    int operator()(uv_tcp_t* handle, uv_connect_cb cb);
+
+private:
+    struct sockaddr_in m_Address;
+    uv_connect_t m_Request;
+};
+
+struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
+{
+    using TConnectCb = function<void(int)>;
+    using TReadCb = function<void(const char*, ssize_t)>;
+    using TWriteCb = function<void(int)>;
+
+    SPSG_UvTcp(uv_loop_t *loop, const CNetServer::SAddress& address,
+            TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
+
+    int Write();
+    void Stop();
+    void Close();
+
+    vector<char>& GetWriteBuffer() { return m_Write.GetBuffer(); }
+    bool IsWriteBufferFull() const { return m_Write.IsBufferFull(); }
+
+private:
+    enum EState {
+        eClosed,
+        eInitialized,
+        eConnecting,
+        eConnected,
+        eClosing,
+    };
+
+    void OnConnect(uv_connect_t* req, int status);
+    void OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf);
+    void OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf);
+    void OnWrite(uv_write_t*, int status);
+    void OnClose(uv_handle_t*);
+
+    template <class THandle, class ...TArgs>
+    static void OnCallback(void (SPSG_UvTcp::*member)(THandle*, TArgs...), THandle* handle, TArgs... args)
+    {
+        auto that = static_cast<SPSG_UvTcp*>(handle->data);
+        (that->*member)(handle, forward<TArgs>(args)...);
+    }
+
+    static void s_OnAlloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) { OnCallback(&SPSG_UvTcp::OnAlloc, handle, suggested_size, buf); }
+    static void s_OnRead(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) { OnCallback(&SPSG_UvTcp::OnRead, stream, nread, buf); }
+    static void s_OnWrite(uv_write_t* req, int status) { OnCallback(&SPSG_UvTcp::OnWrite, req, status); }
+    static void s_OnConnect(uv_connect_t* req, int status) { OnCallback(&SPSG_UvTcp::OnConnect, req, status); }
+    static void s_OnClose(uv_handle_t* handle) { OnCallback(&SPSG_UvTcp::OnClose, handle); }
+
+    uv_loop_t* m_Loop;
+    EState m_State = eClosed;
+    vector<char> m_ReadBuffer;
+    SPSG_UvConnect m_Connect;
+    SPSG_UvWrite m_Write;
+    TConnectCb m_ConnectCb;
+    TReadCb m_ReadCb;
+    TWriteCb m_WriteCb;
+};
+
+struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
+{
+    void Init(void* d, uv_loop_t* loop, uv_async_cb cb)
+    {
+        if (auto rc = uv_async_init(loop, this, cb)) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_async_init failed " << uv_strerror(rc));
+        }
+
+        data = d;
+    }
+
+    void Send()
+    {
+        if (auto rc = uv_async_send(this)) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_async_send failed " << uv_strerror(rc));
+        }
+    }
+};
+
+struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
+{
+    void Init(void* d, uv_loop_t* loop, uv_timer_cb cb)
+    {
+        if (auto rc = uv_timer_init(loop, this)) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_init failed " << uv_strerror(rc));
+        }
+
+        data = d;
+
+        if (auto rc = uv_timer_start(this, cb, 0, 10000)) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_start failed " << uv_strerror(rc));
+        }
+    }
+
+    void Close()
+    {
+        if (auto rc = uv_timer_stop(this)) {
+            ERR_POST("uv_timer_stop failed " << uv_strerror(rc));
+        }
+
+        SPSG_UvHandle<uv_timer_t>::Close();
+    }
+};
+
+struct SPSG_UvBarrier
+{
+    SPSG_UvBarrier(unsigned count)
+    {
+        if (auto rc = uv_barrier_init(&m_Barrier, count)) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_barrier_init failed " << uv_strerror(rc));
+        }
+    }
+
+    void Wait()
+    {
+        auto rc = uv_barrier_wait(&m_Barrier);
+
+        if (rc > 0) {
+            uv_barrier_destroy(&m_Barrier);
+        } else if (rc < 0) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_barrier_wait failed " << uv_strerror(rc));
+        }
+    }
+
+private:
+    uv_barrier_t m_Barrier;
+};
+
+struct SPSG_UvLoop : uv_loop_t
+{
+    SPSG_UvLoop()
+    {
+        if (auto rc = uv_loop_init(this)) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_loop_init failed " << uv_strerror(rc));
+        }
+    }
+
+    void Run()
+    {
+        if (auto rc = uv_run(this, UV_RUN_DEFAULT)) {
+            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_run failed " << uv_strerror(rc));
+        }
+    }
+
+    ~SPSG_UvLoop()
+    {
+        if (auto rc = uv_loop_close(this)) {
+            ERR_POST("uv_loop_close failed " << uv_strerror(rc));
+        }
+    }
+};
+
+struct SPSG_NgHttp2Session
+{
+    SPSG_NgHttp2Session(const string& authority, void* user_data,
+            nghttp2_on_data_chunk_recv_callback on_data,
+            nghttp2_on_stream_close_callback    on_stream_close,
+            nghttp2_on_header_callback          on_header,
+            nghttp2_error_callback              on_error);
+
+    void Del();
+
+    int32_t Submit(const string& path, void* user_data);
+    ssize_t Send(vector<char>& buffer);
+    ssize_t Recv(const uint8_t* buffer, size_t size);
+
+    uint32_t GetMaxStreams() const { return m_MaxStreams; }
+
+private:
+    ssize_t Init();
+    ssize_t x_DelOnError(ssize_t rv)
+    {
+        if (rv < 0) {
+            nghttp2_session_del(m_Session);
+            m_Session = nullptr;
+        }
+
+        return rv;
+    }
+
+    nghttp2_session* m_Session = nullptr;
+    array<nghttp2_nv, 4> m_Headers;
+    void* m_UserData;
+    nghttp2_on_data_chunk_recv_callback m_OnData;
+    nghttp2_on_stream_close_callback    m_OnStreamClose;
+    nghttp2_on_header_callback          m_OnHeader;
+    nghttp2_error_callback              m_OnError;
+    uint32_t m_MaxStreams;
+};
+
+struct SPSG_IoThread;
+
+struct SPSG_IoSession
+{
+    const CNetServer::SAddress address;
+    atomic_bool discovered;
+
+    SPSG_IoSession(SPSG_IoSession&&) = default;
+    SPSG_IoSession& operator =(SPSG_IoSession&&) = default;
+    SPSG_IoSession(SPSG_IoThread* aio, uv_loop_t* loop, CNetServer::SAddress address);
+
+    void StartClose();
+
+    void AddToCompletion(shared_ptr<SPSG_Reply>& reply);
+
+    void ProcessRequests();
+
+    bool Retry(shared_ptr<SPSG_Request> req, uint32_t error_code);
+
+    template <typename TReturn, class ...TArgs>
+    TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs...), TArgs... args)
+    {
+        try {
+            return (this->*member)(forward<TArgs>(args)...);
+        }
+        catch(const std::exception& e) {
+            Reset(SPSG_Error::eException, e.what());
+        }
+        catch(...) {
+            Reset(SPSG_Error::eException, "Unexpected exception");
+        }
+
+        // This template only makes sense for void and int return types (due to the return statement below)
+        static_assert(is_void<TReturn>::value || is_same<TReturn, int>::value, "Forbidden TReturn");
+        return static_cast<TReturn>(NGHTTP2_ERR_CALLBACK_FAILURE);
+    }
+
+private:
+    void OnConnect(int status);
+    void OnWrite(int status);
+    void OnRead(const char* buf, ssize_t nread);
+
+    void Send();
+    void ProcessCompletionList();
+
+    void Reset(SPSG_Error err);
+
+    template <class ...TArgs>
+    void Reset(TArgs... args)
+    {
+        Reset(SPSG_Error(forward<TArgs>(args)...));
+    }
+
+    int OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len);
+    int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
+    int OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
+            const uint8_t* value, size_t valuelen, uint8_t flags);
+    int OnError(nghttp2_session* session, const char* msg, size_t len);
+
+    template <class ...TArgs>
+    static int OnNgHttp2(void* user_data, int (SPSG_IoSession::*member)(TArgs...), TArgs... args)
+    {
+        auto that = static_cast<SPSG_IoSession*>(user_data);
+        return that->TryCatch(member, forward<TArgs>(args)...);
+    }
+
+    static int s_OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data,
+            size_t len, void* user_data)
+    {
+        return OnNgHttp2(user_data, &SPSG_IoSession::OnData, session, flags, stream_id, data, len);
+    }
+
+    static int s_OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code, void* user_data)
+    {
+        return OnNgHttp2(user_data, &SPSG_IoSession::OnStreamClose, session, stream_id, error_code);
+    }
+
+    static int s_OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
+            const uint8_t* value, size_t valuelen, uint8_t flags, void* user_data)
+    {
+        return OnNgHttp2(user_data, &SPSG_IoSession::OnHeader, session, frame, name, namelen, value, valuelen, flags);
+    }
+
+    static int s_OnError(nghttp2_session*, const char* msg, size_t, void* user_data)
+    {
+        auto that = static_cast<SPSG_IoSession*>(user_data);
+        that->Reset(SPSG_Error::eNgHttp2Cb, msg);
+        return 0;
+    }
+
+    SPSG_IoThread* m_Io;
+    SPSG_UvTcp m_Tcp;
+
+    SPSG_NgHttp2Session m_Session;
+
+    unordered_map<int32_t, shared_ptr<SPSG_Request>> m_Requests;
+
+    vector<shared_ptr<SPSG_Reply>> m_CompletionList;
+};
+
+struct SPSG_AsyncQueue : SPSG_UvAsync
+{
+    using TRequest = shared_ptr<SPSG_Request>;
+
+    bool Pop(TRequest& request)
+    {
+        return m_Queue.PopMove(request);
+    }
+
+    bool Push(TRequest&& request)
+    {
+        if (m_Queue.PushMove(request)) {
+            Send();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+private:
+    using SPSG_UvAsync::Send;
+
+    CMPMCQueue<TRequest> m_Queue;
+};
+
+struct SPSG_IoThread
+{
+    SPSG_AsyncQueue queue;
+
+    SPSG_IoThread(CNetService service, SPSG_UvBarrier& barrier) :
+        m_Service(service),
+        m_Thread(s_Execute, this, ref(barrier))
+    {}
+
+    ~SPSG_IoThread();
+
+    bool AddRequestMove(shared_ptr<SPSG_Request>& req);
+
+private:
+    void OnShutdown(uv_async_t* handle);
+    void OnQueue(uv_async_t* handle);
+    void OnTimer(uv_timer_t* handle);
+    void Execute(SPSG_UvBarrier& barrier);
+
+    static void s_OnShutdown(uv_async_t* handle)
+    {
+        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
+        io->OnShutdown(handle);
+    }
+
+    static void s_OnQueue(uv_async_t* handle)
+    {
+        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
+        io->OnQueue(handle);
+    }
+
+    static void s_OnTimer(uv_timer_t* handle)
+    {
+        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
+        io->OnTimer(handle);
+    }
+
+    static void s_Execute(SPSG_IoThread* io, SPSG_UvBarrier& barrier)
+    {
+        io->Execute(barrier);
+    }
+
+    list<SPSG_IoSession> m_Sessions;
+    SPSG_UvAsync m_Shutdown;
+    SPSG_UvTimer m_Timer;
+    CNetService m_Service;
+    thread m_Thread;
+};
+
+struct SPSG_IoCoordinator
+{
+    SPSG_IoCoordinator(const string& service_name);
+    bool AddRequest(shared_ptr<SPSG_Request> req, chrono::milliseconds timeout);
+    string GetNewRequestId() { return to_string(m_RequestId++); }
+    const string& GetClientId() const { return m_ClientId; }
+
+private:
+    vector<unique_ptr<SPSG_IoThread>> m_Io;
+    atomic<size_t> m_RequestCounter;
+    atomic<size_t> m_RequestId;
+    SPSG_UvBarrier m_Barrier;
+    const string m_ClientId;
 };
 
 END_NCBI_SCOPE
-
-USING_NCBI_SCOPE;
-
-namespace HCT {
-
-class io_thread;
-class http2_session;
-
-class http2_reply final
-{
-private:
-    shared_ptr<SPSG_Reply> m_Reply;
-    SPSG_Receiver m_Receiver;
-    mutable weak_ptr<SPSG_Future> m_Queue;
-    std::atomic<http2_session*> m_session_data;
-public:
-    http2_reply(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue);
-
-    ~http2_reply()
-    {
-        assert(m_Reply);
-        assert(!m_session_data || !m_Reply->reply_item.GetUnsafe().state.InProgress());
-    }
-    void set_session(http2_session* session_data)
-    {
-        assert(m_Reply);
-        assert(m_Reply->reply_item.GetUnsafe().state.InProgress());
-
-        http2_session* previous_session_data = m_session_data;
-        assert((previous_session_data == nullptr) != (session_data == nullptr));
-        _VERIFY(m_session_data.compare_exchange_strong(previous_session_data, session_data));
-    }
-    void send_cancel();
-    bool get_canceled() const
-    {
-        assert(m_Reply);
-        return m_Reply->reply_item.GetUnsafe().state.GetState() == SPSG_Reply::SState::eCanceled;
-    }
-    void append_data(const char* data, size_t len)
-    {
-        assert(m_Reply);
-
-        if (m_Reply->reply_item.GetUnsafe().state.GetState() != SPSG_Reply::SState::eInProgress) return;
-
-        m_Receiver(data, len);
-    }
-    void on_status(int status);
-    void on_complete();
-    void error(const std::string& err)
-    {
-        assert(m_Reply);
-        m_Reply->reply_item.GetUnsafe().state.AddError(err);
-    }
-
-    SDebugPrintout& get_debug_printout() { return m_Reply->debug_printout; }
-};
-
-enum class http2_request_state {
-    rs_initial,
-    rs_sent,
-    rs_wait,
-    rs_headers,
-    rs_body,
-    rs_done
-};
-
-class http2_request
-{
-private:
-    http2_session *m_session_data;
-    http2_request_state m_state;
-    /* The stream ID of this stream */
-    int32_t m_stream_id;
-    std::string m_full_path;
-    void do_complete();
-    http2_reply m_reply;
-    size_t m_retries;
-public:
-    http2_request(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path);
-
-    ~http2_request()
-    {
-        assert(m_stream_id <= 0);
-    }
-    const std::string& get_full_path() const
-    {
-        return m_full_path;
-    }
-    http2_request_state get_state() const
-    {
-        return m_state;
-    }
-    int32_t get_stream_id() const
-    {
-        return m_stream_id;
-    }
-    void drop_stream_id()
-    {
-        m_stream_id = -1;
-    }
-    const http2_reply& get_result_data() const
-    {
-        return m_reply;
-    }
-    void send_cancel()
-    {
-        m_reply.send_cancel();
-    }
-    bool get_canceled() const
-    {
-        return m_reply.get_canceled();
-    }
-    void on_queue(http2_session* session_data)
-    {
-        m_reply.set_session(session_data);
-    }
-    void on_fetched(http2_session* session_data, int32_t stream_id)
-    {
-        m_stream_id = stream_id;
-        m_session_data = session_data;
-        m_state = http2_request_state::rs_sent;
-    }
-    void on_sent()
-    {
-        if (m_state == http2_request_state::rs_sent)
-            m_state = http2_request_state::rs_wait;
-    }
-    void on_header(const nghttp2_frame*)
-    {
-        m_state = http2_request_state::rs_headers;
-    }
-    void on_reply_data(const char* data, size_t len)
-    {
-        m_state = http2_request_state::rs_body;
-        m_reply.append_data(data, len);
-    }
-    void on_status(int status)
-    {
-        m_reply.on_status(status);
-    }
-    void on_complete(uint32_t error_code);
-    void error(const std::string& err)
-    {
-        m_reply.error(err);
-        do_complete();
-    }
-    bool retry() { return (m_state <= http2_request_state::rs_wait) && (m_retries-- > 0); }
-
-    SDebugPrintout& get_debug_printout() { return m_reply.get_debug_printout(); }
-};
-
-enum class connection_state_t {
-    cs_initial,
-    cs_connecting,
-    cs_connected,
-    cs_closing,
-};
-
-enum class session_state_t {
-    ss_initial,
-    ss_work,
-    ss_closing,
-    ss_closed
-};
-
-struct http2_write
-{
-    uv_write_t wr_req;
-    bool is_pending_wr;
-    std::string write_buf;
-    http2_write() :
-        wr_req({0}),
-        is_pending_wr(false)
-    {}
-    void clear()
-    {
-        is_pending_wr = false;
-        write_buf.clear();
-    }
-};
-
-class http2_session
-{
-public:
-    atomic_bool discovered;
-
-private:
-    io_thread* m_io;
-    CUvTcp m_tcp;
-    connection_state_t m_connection_state;
-    session_state_t m_session_state;
-    std::atomic<bool> m_wake_enabled;
-
-    http2_write m_wr;
-
-    uv_getaddrinfo_t m_ai_req;
-    uv_connect_t m_conn_req;
-    nghttp2_session *m_session;
-    size_t m_requests_at_once;
-    std::atomic<size_t> m_num_requests;
-    uint32_t m_max_streams;
-
-    std::unordered_map<int32_t, std::shared_ptr<http2_request>> m_requests;
-
-    const CNetServer::SAddress m_Address;
-    std::vector<char> m_read_buf;
-    std::atomic<bool> m_cancel_requested;
-    vector<pair<shared_ptr<SPSG_Reply>, weak_ptr<SPSG_Future>>> m_completion_list;
-
-    void dump_requests();
-
-    static ssize_t s_ng_send_cb(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data);
-    static int s_ng_frame_recv_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data);
-    static int s_ng_data_chunk_recv_cb(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data);
-    static int s_ng_stream_close_cb(nghttp2_session *session, int32_t stream_id, uint32_t error_code, void *user_data);
-    int ng_stream_close_cb(int32_t stream_id, uint32_t error_code);
-    static int s_ng_header_cb(nghttp2_session *session, const nghttp2_frame *frame, const uint8_t *name, size_t namelen, const uint8_t *value,
-                              size_t valuelen, uint8_t flags, void *user_data);
-    static int s_ng_error_cb(nghttp2_session *session, const char *msg, size_t len, void *user_data);
-
-    static void s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
-    static void s_connect_cb(uv_connect_t *req, int status);
-    void connect_cb(uv_connect_t *req, int status);
-    static void s_write_cb(uv_write_t* req, int status);
-    void write_cb(uv_write_t* req, int status);
-    static void s_read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf);
-    void read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf);
-    static void s_on_close_cb(uv_handle_t *handle);
-    void close_tcp();
-    void close_session();
-
-    int write_ng_data();
-    bool fetch_ng_data(bool commit = true);
-    void check_next_request();
-    bool try_connect(const struct sockaddr *addr);
-    bool initiate_connection();
-    void initialize_nghttp2_session();
-    bool send_client_connection_header();
-    bool check_connection();
-    void process_completion_list();
-
-public:
-    http2_session(const http2_session&) = delete;
-    http2_session& operator =(const http2_session&) = delete;
-    http2_session(http2_session&&) = default;
-    http2_session& operator =(http2_session&&) = default;
-    http2_session(io_thread* aio, CNetServer::SAddress address) noexcept;
-
-    ~http2_session()
-    {
-        close_session();
-        assert(!m_io);
-    }
-    void start_close();
-    void finalize_close();
-    void notify_cancel();
-
-    void request_complete(http2_request* req);
-    void add_to_completion(shared_ptr<SPSG_Reply>& reply, weak_ptr<SPSG_Future>& queue);
-
-    size_t get_num_requests() const
-    {
-        return m_num_requests.load();
-    }
-    size_t get_requests_at_once() const
-    {
-        return m_requests_at_once;
-    }
-    bool get_wake_enabled() const
-    {
-        return m_wake_enabled.load();
-    }
-    void debug_print_counts();
-
-    void process_requests();
-    void on_timer();
-
-    void purge_pending_requests(const std::string& err);
-
-    const CNetServer::SAddress& GetAddress() const { return m_Address; }
-};
-
-enum class io_thread_state_t {
-    initialized,
-    started,
-    stopped,
-};
-
-class io_thread
-{
-private:
-    std::atomic<io_thread_state_t> m_state;
-    std::atomic_int m_shutdown_req;
-    list<http2_session> m_Sessions;
-    CUvLoop *m_loop;
-    uv_async_t m_wake;
-    uv_timer_t m_timer;
-    CNetService m_Service;
-    std::thread m_thrd;
-
-    static void s_on_wake(uv_async_t* handle)
-    {
-        io_thread* io = static_cast<io_thread*>(handle->data);
-        io->on_wake(handle);
-    }
-
-    void on_wake(uv_async_t* handle);
-    static void s_on_timer(uv_timer_t* handle)
-    {
-        io_thread* io = static_cast<io_thread*>(handle->data);
-        io->on_timer(handle);
-    }
-    void on_timer(uv_timer_t* handle);
-    void run();
-    static void s_execute(io_thread* thrd, uv_sem_t* sem)
-    {
-        thrd->execute(sem);
-    }
-    void execute(uv_sem_t* sem);
-public:
-    mpmc_bounded_queue<std::shared_ptr<http2_request>> m_req_queue;
-
-    io_thread(uv_sem_t &sem, CNetService service) :
-        m_state(io_thread_state_t::initialized),
-        m_shutdown_req(0),
-        m_loop(nullptr),
-        m_wake({0}),
-        m_timer({0}),
-        m_Service(service),
-        m_thrd(s_execute, this, &sem)
-    {}
-    ~io_thread();
-    uv_loop_t* loop_handle()
-    {
-        return m_loop ? m_loop->Handle() : nullptr;
-    }
-    io_thread_state_t get_state() const
-    {
-        return m_state;
-    }
-    uv_loop_t* get_loop_handle()
-    {
-        return m_loop->Handle();
-    }
-    void wake();
-    bool add_request_move(std::shared_ptr<http2_request>& req);
-};
-
-class io_coordinator
-{
-private:
-    std::vector<std::unique_ptr<io_thread>> m_io;
-    std::atomic<std::size_t> m_request_counter;
-    std::atomic<std::size_t> m_request_id;
-    const string m_client_id;
-public:
-    io_coordinator(const string& service_name);
-    void create_io(CNetService service);
-    bool add_request(std::shared_ptr<http2_request> req, chrono::milliseconds timeout);
-    string get_new_request_id() { return to_string(m_request_id++); }
-    const string& get_client_id() const { return m_client_id; }
-};
-
-};
 
 #endif
 #endif

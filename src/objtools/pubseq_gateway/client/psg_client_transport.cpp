@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Dmitri Dmitrienko
+ * Authors: Dmitri Dmitrienko, Rafael Sadyrov
  *
  */
 
@@ -53,8 +53,6 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
-#include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
-
 #include <corelib/request_status.hpp>
 
 #include "psg_client_transport.hpp"
@@ -62,7 +60,6 @@
 BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
-NCBI_PARAM_DEF(unsigned, PSG, write_buf_size,         64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, write_hiwater,          64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
@@ -92,7 +89,7 @@ NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgC
 
 void SDebugPrintout::Print(pair<const string*, const string*> url)
 {
-    ERR_POST(Warning << m_Id << ": Host '" << *url.first << "' to get request '" << *url.second << '\'');
+    ERR_POST(Warning << id << ": Host '" << *url.first << "' to get request '" << *url.second << '\'');
 }
 
 void SDebugPrintout::Print(const SPSG_Chunk& chunk)
@@ -112,7 +109,7 @@ void SDebugPrintout::Print(const SPSG_Chunk& chunk)
         os << "<BINARY DATA OF " << accumulate(chunk.data.begin(), chunk.data.end(), 0ul, l) << " BYTES>";
     }
 
-    ERR_POST(Warning << m_Id << ": " << NStr::PrintableString(os.str()));
+    ERR_POST(Warning << id << ": " << NStr::PrintableString(os.str()));
 }
 
 const char* s_NgHttp2Error(int error_code)
@@ -126,7 +123,7 @@ const char* s_NgHttp2Error(int error_code)
 
 void SDebugPrintout::Print(uint32_t error_code)
 {
-    ERR_POST(Warning << m_Id << ": Closed with status " << s_NgHttp2Error(error_code));
+    ERR_POST(Warning << id << ": Closed with status " << s_NgHttp2Error(error_code));
 }
 
 SDebugPrintout::~SDebugPrintout()
@@ -138,7 +135,7 @@ SDebugPrintout::~SDebugPrintout()
             auto ms = get<0>(event);
             auto type = get<1>(event);
             auto thread_id = get<2>(event);
-            os << fixed << m_Id << '\t' << ms << '\t' << type << '\t' << thread_id << '\n';
+            os << fixed << id << '\t' << ms << '\t' << type << '\t' << thread_id << '\n';
         }
 
         lock_guard<mutex> lock(m_DebugOutput.cout_mutex);
@@ -172,38 +169,32 @@ SDebugOutput::ELevel SDebugOutput::GetLevel()
     return NStr::CompareNocase(value, "some") == 0 ? eSome : eNone;
 }
 
-string SPSG_Error::Generic(int errc, const char* details)
+string SPSG_Error::Build(EError error, const char* details)
 {
-    std::stringstream ss;
-    ss << "error: " << details << " (" << errc << ")";
+    stringstream ss;
+    ss << "error: " << details << " (" << error << ")";
     return ss.str();
 }
 
-string SPSG_Error::NgHttp2(int errc)
+string SPSG_Error::Build(int error)
 {
-    std::stringstream ss;
-    ss << "nghttp2 error: " << s_NgHttp2Error(errc) << " (" << errc << ")";
+    stringstream ss;
+    ss << "nghttp2 error: " << s_NgHttp2Error(error) << " (" << error << ")";
     return ss.str();
 }
 
-string SPSG_Error::LibUv(int errc, const char* details)
+string SPSG_Error::Build(int error, const char* details)
 {
-    std::stringstream ss;
-    ss << "libuv error: " << details << " - ";
-
-    try {
-        ss << uv_strerror(errc);
-    } catch (...) {
-        ss << "Unknown error";
-    }
-
-    ss << " (" << errc << ")";
+    stringstream ss;
+    ss << "libuv error: " << details << " - " << uv_strerror(error) << " (" << error << ")";
     return ss.str();
 }
 
 void SPSG_Reply::SState::AddError(const string& message)
 {
-    switch (m_State.load()) {
+    const auto state = m_State.load();
+
+    switch (state) {
         case eInProgress:
             SetState(eError);
             /* FALL THROUGH */
@@ -213,6 +204,7 @@ void SPSG_Reply::SState::AddError(const string& message)
             return;
 
         default:
+            ERR_POST("Unexpected state " << state << " for error '" << message << '\'');
             return;
     }
 }
@@ -226,28 +218,60 @@ string SPSG_Reply::SState::GetError()
     return rv;
 }
 
-void SPSG_Reply::SetState(SState::EState state)
+void s_SetSuccessIfReceived(SPSG_Reply::SItem::TTS& ts)
 {
-    reply_item.GetUnsafe().state.SetState(state);
+    auto locked = ts.GetLock();
+
+    if (locked->expected.template Cmp<equal_to>(locked->received)) {
+        locked->state.SetState(SPSG_Reply::SState::eSuccess);
+
+    } else if (locked->state.InProgress()) {
+        // If it were 'more' (instead of 'less'), it would not be in progress then
+        locked->state.AddError("Protocol error: received less than expected");
+    }
+}
+
+void SPSG_Reply::SetSuccess()
+{
+    s_SetSuccessIfReceived(reply_item);
+
     auto items_locked = items.GetLock();
     auto& items = *items_locked;
 
     for (auto& item : items) {
-        item.GetUnsafe().state.SetState(state);
+        s_SetSuccessIfReceived(item);
     }
 }
 
-SPSG_Receiver::SPSG_Receiver(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
-    m_State(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo ?
-            &SPSG_Receiver::StateIo : &SPSG_Receiver::StatePrefix),
-    m_Reply(reply),
-    m_Queue(queue)
+void SPSG_Reply::SetCanceled()
 {
+    reply_item.GetMTSafe().state.SetState(SState::eCanceled);
+
+    auto items_locked = items.GetLock();
+    auto& items = *items_locked;
+
+    for (auto& item : items) {
+        item.GetMTSafe().state.SetState(SState::eCanceled);
+    }
+}
+
+SPSG_Request::SPSG_Request(shared_ptr<SPSG_Reply> r, string p) :
+    full_path(move(p)),
+    reply(r),
+    m_State(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo ?
+            &SPSG_Request::StateIo : &SPSG_Request::StatePrefix),
+    m_Retries(TPSG_RequestRetries::GetDefault())
+{
+    _ASSERT(reply);
+
     if (TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo) AddIo();
 }
 
-void SPSG_Receiver::StatePrefix(const char*& data, size_t& len)
+void SPSG_Request::StatePrefix(const char*& data, size_t& len)
 {
+    // No retries after receiving any data
+    m_Retries = 0;
+
     const auto& prefix = Prefix();
 
     // Checking prefix
@@ -268,7 +292,7 @@ void SPSG_Receiver::StatePrefix(const char*& data, size_t& len)
     }
 }
 
-void SPSG_Receiver::StateArgs(const char*& data, size_t& len)
+void SPSG_Request::StateArgs(const char*& data, size_t& len)
 {
     // Accumulating args
     while (*data != '\n') {
@@ -292,7 +316,7 @@ void SPSG_Receiver::StateArgs(const char*& data, size_t& len)
     }
 }
 
-void SPSG_Receiver::StateData(const char*& data, size_t& len)
+void SPSG_Request::StateData(const char*& data, size_t& len)
 {
     // Accumulating data
     const auto data_size = min(m_Buffer.data_to_read, len);
@@ -311,16 +335,16 @@ void SPSG_Receiver::StateData(const char*& data, size_t& len)
     }
 }
 
-void SPSG_Receiver::AddIo()
+void SPSG_Request::AddIo()
 {
     SPSG_Chunk chunk;
     chunk.args = SPSG_Args("item_id=1&item_type=blob&chunk_type=data&size=1&blob_id=0&blob_chunk=0");
     chunk.data.emplace_back(1, ' ');
 
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
-    auto reply_item_ts = &m_Reply->reply_item;
+    auto reply_item_ts = &reply->reply_item;
 
-    if (auto items_locked = m_Reply->items.GetLock()) {
+    if (auto items_locked = reply->items.GetLock()) {
         auto& items = *items_locked;
         items.emplace_back();
         item_ts = &items.back();
@@ -341,15 +365,13 @@ void SPSG_Receiver::AddIo()
     }
 
     reply_item_ts->NotifyOne();
-    if (auto queue = m_Queue.lock()) queue->NotifyOne();
+    if (auto queue = reply->queue.lock()) queue->NotifyOne();
     item_ts->NotifyOne();
 }
 
-void SPSG_Receiver::Add()
+void SPSG_Request::Add()
 {
-    assert(m_Reply);
-
-    m_Reply->debug_printout << m_Buffer.chunk;
+    reply->debug_printout << m_Buffer.chunk;
 
     auto& chunk = m_Buffer.chunk;
     auto& args = chunk.args;
@@ -358,10 +380,10 @@ void SPSG_Receiver::Add()
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
 
     if (item_type.empty() || (item_type == "reply")) {
-        item_ts = &m_Reply->reply_item;
+        item_ts = &reply->reply_item;
 
     } else {
-        if (auto reply_item_locked = m_Reply->reply_item.GetLock()) {
+        if (auto reply_item_locked = reply->reply_item.GetLock()) {
             auto& reply_item = *reply_item_locked;
             ++reply_item.received;
 
@@ -374,16 +396,16 @@ void SPSG_Receiver::Add()
         auto& item_by_id = m_ItemsByID[item_id];
 
         if (!item_by_id) {
-            if (auto items_locked = m_Reply->items.GetLock()) {
+            if (auto items_locked = reply->items.GetLock()) {
                 auto& items = *items_locked;
                 items.emplace_back();
                 item_by_id = &items.back();
             }
 
             item_by_id->GetLock()->args = args;
-            auto reply_item_ts = &m_Reply->reply_item;
+            auto reply_item_ts = &reply->reply_item;
             reply_item_ts->NotifyOne();
-            if (auto queue = m_Queue.lock()) queue->NotifyOne();
+            if (auto queue = reply->queue.lock()) queue->NotifyOne();
         }
 
         item_ts = item_by_id;
@@ -449,975 +471,541 @@ void SPSG_Receiver::Add()
 }
 
 
-END_NCBI_SCOPE
+SPSG_UvWrite::SPSG_UvWrite(void* user_data)
+{
+    m_Request.data = user_data;
 
-USING_NCBI_SCOPE;
+    const auto kSize = TPSG_WriteHiwater::GetDefault();
+    m_Buffers[0].reserve(kSize);
+    m_Buffers[1].reserve(kSize);
+}
 
-namespace HCT {
+int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
+{
+    if (m_InProgress) return 0;
+
+    auto& write_buffer = m_Buffers[m_Index];
+    if (write_buffer.empty()) return 0;
+
+    uv_buf_t buf;
+    buf.base = write_buffer.data();
+    buf.len = write_buffer.size();
+
+    auto rv = uv_write(&m_Request, handle, &buf, 1, cb);
+
+    if (rv < 0) return rv;
+
+    m_Index = !m_Index;
+    m_InProgress = true;
+    return 0;
+}
+
+
+SPSG_UvConnect::SPSG_UvConnect(void* user_data, const CNetServer::SAddress& address)
+{
+    m_Request.data = user_data;
+
+    m_Address.sin_family = AF_INET;
+    m_Address.sin_addr.s_addr = address.host;
+    m_Address.sin_port = CSocketAPI::HostToNetShort(address.port);
+#ifdef HAVE_SIN_LEN
+    m_Address.sin_len = sizeof(m_Address);
+#endif
+}
+
+int SPSG_UvConnect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
+{
+    return uv_tcp_connect(&m_Request, handle, reinterpret_cast<sockaddr*>(&m_Address), cb);
+}
+
+
+SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *loop, const CNetServer::SAddress& address,
+        TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb) :
+    SPSG_UvHandle<uv_tcp_t>(s_OnClose),
+    m_Loop(loop),
+    m_Connect(this, address),
+    m_Write(this),
+    m_ConnectCb(connect_cb),
+    m_ReadCb(read_cb),
+    m_WriteCb(write_cb)
+{
+    data = this;
+    m_ReadBuffer.reserve(TPSG_RdBufSize::GetDefault());
+}
+
+int SPSG_UvTcp::Write()
+{
+    if (m_State == eClosed) {
+        auto rv = uv_tcp_init(m_Loop, this);
+
+        if (rv < 0) return rv;
+
+        m_State = eInitialized;
+    }
+
+    if (m_State == eInitialized) {
+        auto rv = m_Connect(this, s_OnConnect);
+
+        if (rv < 0) {
+            Close();
+            return rv;
+        }
+
+        m_State = eConnecting;
+    }
+
+    if (m_State == eConnected) {
+        auto rv = m_Write((uv_stream_t*)this, s_OnWrite);
+
+        if (rv < 0) {
+            Stop();
+            return rv;
+        }
+    }
+
+    return 0;
+}
+
+void SPSG_UvTcp::Stop()
+{
+    if (m_State != eConnected) return;
+
+    auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
+
+    if (rv < 0) {
+        Close();
+    } else {
+        m_State = eInitialized;
+    }
+
+    m_Write.Reset();
+}
+
+void SPSG_UvTcp::Close()
+{
+    if ((m_State != eClosing) && (m_State != eClosed)) {
+        m_State = eClosing;
+        SPSG_UvHandle<uv_tcp_t>::Close();
+    }
+}
+
+void SPSG_UvTcp::OnConnect(uv_connect_t* req, int status)
+{
+    if (status >= 0) {
+        status = uv_tcp_nodelay(this, 1);
+
+        if (status >= 0) {
+            status = uv_read_start((uv_stream_t*)this, s_OnAlloc, s_OnRead);
+
+            if (status >= 0) {
+                m_State = eConnected;
+                m_ConnectCb(status);
+                return;
+            }
+        }
+    }
+
+    m_State = eInitialized;
+    m_Write.Reset();
+    m_ConnectCb(status);
+}
+
+void SPSG_UvTcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
+{
+    m_ReadBuffer.resize(suggested_size);
+    buf->base = m_ReadBuffer.data();
+    buf->len = m_ReadBuffer.size();
+}
+
+void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
+{
+    if (nread < 0) {
+        Stop();
+    }
+
+    m_ReadCb(buf->base, nread);
+}
+
+void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
+{
+    if (status < 0) {
+        Stop();
+    } else {
+        m_Write.Done();
+    }
+
+    m_WriteCb(status);
+}
+
+void SPSG_UvTcp::OnClose(uv_handle_t*)
+{
+    m_State = eClosed;
+}
+
+
+#define MAKE_NV(NAME, VALUE, VALUELEN)                                         \
+  {                                                                            \
+    (uint8_t*)NAME, (uint8_t*)VALUE, sizeof(NAME) - 1, VALUELEN,               \
+        NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE           \
+  }
+#define MAKE_NV2(NAME, VALUE) MAKE_NV(NAME, VALUE, sizeof(VALUE) - 1)
+SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_data,
+        nghttp2_on_data_chunk_recv_callback on_data,
+        nghttp2_on_stream_close_callback    on_stream_close,
+        nghttp2_on_header_callback          on_header,
+        nghttp2_error_callback              on_error) :
+    m_Headers{{
+        MAKE_NV2(":method",    "GET"),
+        MAKE_NV2(":scheme",    "http"),
+        MAKE_NV (":authority", authority.c_str(), authority.length()),
+        MAKE_NV (":path",      "", 0)
+    }},
+    m_UserData(user_data),
+    m_OnData(on_data),
+    m_OnStreamClose(on_stream_close),
+    m_OnHeader(on_header),
+    m_OnError(on_error),
+    m_MaxStreams(TPSG_MaxConcurrentStreams::GetDefault())
+{
+}
+#undef MAKE_NV
+#undef MAKE_NV2
+
+ssize_t SPSG_NgHttp2Session::Init()
+{
+    if (m_Session) return 0;
+
+    nghttp2_session_callbacks* callbacks;
+    nghttp2_session_callbacks_new(&callbacks);
+
+    nghttp2_session_callbacks_set_on_data_chunk_recv_callback(callbacks, m_OnData);
+    nghttp2_session_callbacks_set_on_stream_close_callback(   callbacks, m_OnStreamClose);
+    nghttp2_session_callbacks_set_on_header_callback(         callbacks, m_OnHeader);
+    nghttp2_session_callbacks_set_error_callback(             callbacks, m_OnError);
+
+    nghttp2_session_client_new(&m_Session, callbacks, m_UserData);
+    nghttp2_session_callbacks_del(callbacks);
+
+    nghttp2_settings_entry iv[1] = {
+        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, TPSG_MaxConcurrentStreams::GetDefault()}
+    };
+
+    /* client 24 bytes magic string will be sent by nghttp2 library */
+    if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]))) {
+        return x_DelOnError(rv);
+    }
+
+    auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
+    m_MaxStreams = min(max_streams, TPSG_MaxConcurrentStreams::GetDefault());
+    return 0;
+}
+
+void SPSG_NgHttp2Session::Del()
+{
+    if (!m_Session) return;
+
+    nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
+    x_DelOnError(-1);
+}
+
+int32_t SPSG_NgHttp2Session::Submit(const string& path, void* user_data)
+{
+    if (auto rv = Init()) return rv;
+
+    const auto kPathIndex = m_Headers.size() - 1;
+
+    m_Headers[kPathIndex].value = (uint8_t*)path.c_str();
+    m_Headers[kPathIndex].valuelen = path.size();
+
+    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), m_Headers.size(), nullptr, user_data);
+    return x_DelOnError(rv);
+}
+
+ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
+{
+    if (auto rv = Init()) return rv;
+
+    if (nghttp2_session_want_write(m_Session) == 0) return 0;
+
+    for (;;) {
+        const uint8_t* data;
+        auto rv = nghttp2_session_mem_send(m_Session, &data);
+
+        if (rv > 0) {
+            buffer.insert(buffer.end(), data, data + rv);
+        } else {
+            return x_DelOnError(rv);
+        }
+    }
+}
+
+ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
+{
+    if (auto rv = Init()) return rv;
+
+    for (;;) {
+        auto rv = nghttp2_session_mem_recv(m_Session, buffer, size);
+
+        if (rv > 0) {
+            size -= rv;
+
+            if (size > 0) continue;
+        }
+
+        return x_DelOnError(rv);
+    }
+}
+
 
 #define HTTP_STATUS_HEADER ":status"
 
 
-/** http2_request */
+/** SPSG_IoSession */
 
-http2_request::http2_request(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue, string full_path) :
-    m_session_data(nullptr),
-    m_state(http2_request_state::rs_initial),
-    m_stream_id(-1),
-    m_full_path(move(full_path)),
-    m_reply(move(reply), move(queue)),
-    m_retries(TPSG_RequestRetries::GetDefault())
-{
-}
-
-void http2_request::on_complete(uint32_t error_code)
-{
-    m_reply.get_debug_printout() << error_code;
-    ERR_POST(Trace << m_session_data << ": on_complete: stream " << m_stream_id << ": result: " << error_code);
-    if (error_code)
-        error(SPSG_Error::NgHttp2(error_code));
-    else
-        do_complete();
-}
-
-void http2_request::do_complete()
-{
-    assert(m_state < http2_request_state::rs_done);
-    m_state = http2_request_state::rs_done;
-    m_reply.on_complete();
-    if (m_session_data) {
-        http2_session *lsession_data = m_session_data;
-        m_session_data = nullptr;
-        lsession_data->request_complete(this);
-    }
-}
-
-
-/** http2_reply */
-
-http2_reply::http2_reply(shared_ptr<SPSG_Reply> reply, weak_ptr<SPSG_Future> queue) :
-    m_Reply(reply),
-    m_Receiver(reply, queue),
-    m_Queue(queue),
-    m_session_data(nullptr)
-{
-    assert(reply);
-}
-
-void http2_reply::send_cancel()
-{
-    assert(m_Reply);
-    http2_session* session_data = m_session_data;
-    m_Reply->SetCanceled();
-    if (session_data)
-        session_data->notify_cancel();
-}
-
-void http2_reply::on_status(int status)
-{
-    assert(m_Reply);
-
-    if (status == CRequestStatus::e200_Ok) return;
-
-    auto& state = m_Reply->reply_item.GetUnsafe().state;
-
-    if (status == CRequestStatus::e404_NotFound) {
-        state.SetState(SPSG_Reply::SState::eNotFound);
-    } else {
-        state.AddError(to_string(status) + ' ' +
-                CRequestStatus::GetStdStatusMessage((CRequestStatus::ECode)status));
-    }
-}
-
-void http2_reply::on_complete()
-{
-    assert(m_Reply);
-
-    m_Reply->SetSuccess();
-    http2_session* session_data = m_session_data;
-    if (session_data && TPSG_DelayedCompletion::GetDefault())
-        session_data->add_to_completion(m_Reply, m_Queue);
-    else {
-        m_Reply->reply_item.NotifyOne();
-        if (auto queue = m_Queue.lock()) queue->NotifyOne();
-    }
-}
-
-
-/** http2_session */
-
-http2_session::http2_session(io_thread* aio, CNetServer::SAddress address) noexcept :
+SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* aio, uv_loop_t* loop, CNetServer::SAddress a) :
+    address(move(a)),
     discovered(true),
-    m_io(aio),
-    m_tcp(aio->get_loop_handle()),
-    m_connection_state(connection_state_t::cs_initial),
-    m_session_state(session_state_t::ss_initial),
-    m_wake_enabled(true),
-    m_ai_req({0}),
-    m_conn_req({0}),
-    m_session(nullptr),
-    m_requests_at_once(0),
-    m_num_requests(0),
-    m_max_streams(TPSG_MaxConcurrentStreams::GetDefault()),
-    m_Address(move(address)),
-    m_read_buf(TPSG_RdBufSize::GetDefault(), '\0'),
-    m_cancel_requested(false)
+    m_Io(aio),
+    m_Tcp(loop, address,
+            bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
+            bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
+            bind(&SPSG_IoSession::OnWrite, this, placeholders::_1)),
+    m_Session(address.AsString(), this, s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
 {
-    ERR_POST(Trace << this << ": created");
-    m_tcp.Handle()->data = this;
-    m_wr.wr_req.data = this;
-    m_ai_req.data = this;
-    m_conn_req.data = this;
-    m_wr.write_buf.reserve(TPSG_WriteBufSize::GetDefault());
-    m_session_state = session_state_t::ss_work;
 }
 
-void http2_session::dump_requests()
+int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const uint8_t* data, size_t len)
 {
-    ERR_POST(Trace << "DUMP REQ: [" << m_requests.size() << "]");
-    for (const auto& it : m_requests) {
-        ERR_POST(Trace << it.first << " => " << it.second->get_full_path().c_str());
-    }
-}
+    auto it = m_Requests.find(stream_id);
 
-/* s_ng_send_cb. Here the |data|, |length| bytes would be transmitted to the network.
-     we don't use this mechanism, so the callback is not expected at all */
-ssize_t http2_session::s_ng_send_cb(nghttp2_session*, const uint8_t*, size_t, int, void *user_data)
-{
-    http2_session *session_data = (http2_session *)user_data;
-    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "failed to send request, unexpected callback"));
-    ERR_POST("!ERROR: s_ng_send_cb");
-    return NGHTTP2_ERR_WOULDBLOCK;
-}
-
-/* s_ng_frame_recv_cb: Called when nghttp2 library
-   received a complete frame from the remote peer. */
-int http2_session::s_ng_frame_recv_cb(nghttp2_session*, const nghttp2_frame *frame, void *user_data)
-{
-    http2_session *session_data = (http2_session *)user_data;
-    switch (frame->hd.type) {
-        case NGHTTP2_HEADERS:
-            if (frame->headers.cat == NGHTTP2_HCAT_RESPONSE) {
-                try {
-                    auto it = session_data->m_requests.find(frame->hd.stream_id);
-                    if (it != session_data->m_requests.end())
-                        it->second->on_header(frame);
-                }
-                catch(const std::exception& e) {
-                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-                    return NGHTTP2_ERR_CALLBACK_FAILURE;
-                }
-                catch(...) {
-                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-                    return NGHTTP2_ERR_CALLBACK_FAILURE;
-                }
-            }
-            break;
-    }
-    return 0;
-}
-
-/* s_ng_data_chunk_recv_cb: Called when DATA frame is
-   received from the remote peer. In this implementation, if the frame
-   is meant to the stream we initiated, print the received data in
-   stdout, so that the user can redirect its output to the file
-   easily. */
-int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session*, uint8_t, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
-{
-    http2_session *session_data = (http2_session *)user_data;
-    try {
-        auto it = session_data->m_requests.find(stream_id);
-        if (it != session_data->m_requests.end()) {
-            it->second->on_reply_data((const char*)data, len);
-        }
-        else
-            ERR_POST(session_data << ": s_ng_data_chunk_recv_cb: stream_id: " << stream_id << " not found");
-    }
-    catch(const std::exception& e) {
-        session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-        return NGHTTP2_ERR_CALLBACK_FAILURE;
-    }
-    catch(...) {
-        session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-        return NGHTTP2_ERR_CALLBACK_FAILURE;
-    }
-    return 0;
-}
-
-/* s_ng_stream_close_cb: Called when a stream is about to closed */
-int http2_session::s_ng_stream_close_cb(nghttp2_session*, int32_t stream_id, uint32_t error_code, void *user_data)
-{
-    http2_session *session_data = (http2_session *)user_data;
-    return session_data->ng_stream_close_cb(stream_id, error_code);
-}
-
-int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
-{
-    ERR_POST(Trace << this << ": ng_stream_close_cb: id: " << stream_id << ", code " << error_code);
-
-    try {
-        auto it = m_requests.find(stream_id);
-        if (it != m_requests.end()) {
-            auto& req = it->second;
-
-            // If there is an error and the request is allowed to retry
-            if (error_code && req->retry()) {
-                if (error_code != NGHTTP2_REFUSED_STREAM) {
-                    ERR_POST(Warning << "Retrying after stream closed with error " << s_NgHttp2Error(error_code));
-                }
-
-                req->on_queue(nullptr);
-
-                // Return to queue for a re-send
-                if (m_io->m_req_queue.push_move(req)) {
-                    m_requests.erase(it);
-                    return 0;
-                }
-
-                req->on_queue(this);
-            }
-
-            req->on_complete(error_code);
-        }
-    }
-    catch(const std::exception& e) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-        return NGHTTP2_ERR_CALLBACK_FAILURE;
-    }
-    catch(...) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-        return NGHTTP2_ERR_CALLBACK_FAILURE;
+    if (it != m_Requests.end()) {
+        it->second->OnReplyData((const char*)data, len);
+    } else {
+        ERR_POST(this << ": OnData: stream_id: " << stream_id << " not found");
     }
 
     return 0;
 }
 
-/* s_ng_header_cb: Called when nghttp2 library emits
-   single header name/value pair. */
-int http2_session::s_ng_header_cb(nghttp2_session*, const nghttp2_frame *frame, const uint8_t *name, size_t namelen, const uint8_t *value,
-                              size_t, uint8_t, void *user_data)
+bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, uint32_t error_code)
 {
-    http2_session *session_data = (http2_session *)user_data;
-    switch (frame->hd.type) {
-        case NGHTTP2_HEADERS:
-            if (frame->headers.cat == NGHTTP2_HCAT_RESPONSE && namelen == sizeof(HTTP_STATUS_HEADER) - 1 && strcmp((const char*)name, HTTP_STATUS_HEADER) == 0) {
-                try {
-                    auto it = session_data->m_requests.find(frame->hd.stream_id);
-                    if (it != session_data->m_requests.end()) {
-                        auto status = atoi((const char*)value);
-                        it->second->on_status(status);
-                    }
-                }
-                catch(const std::exception& e) {
-                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-                    return NGHTTP2_ERR_CALLBACK_FAILURE;
-                }
-                catch(...) {
-                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-                    return NGHTTP2_ERR_CALLBACK_FAILURE;
-                }
-            }
-            break;
+    if (req->CanRetry()) {
+        if (error_code != NGHTTP2_REFUSED_STREAM) {
+            ERR_POST(Warning << "retrying after stream closed with error " << s_NgHttp2Error(error_code));
+        }
+
+        // Return to queue for a re-send
+        if (m_Io->queue.Push(move(req))) {
+            return true;
+        }
     }
+
+    req->reply->reply_item.GetLock()->state.AddError(SPSG_Error(error_code));
+    AddToCompletion(req->reply);
+    return false;
+}
+
+int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
+{
+    auto it = m_Requests.find(stream_id);
+
+    if (it != m_Requests.end()) {
+        auto& req = it->second;
+
+        req->reply->debug_printout << error_code;
+
+        // If there is an error and the request is allowed to Retry
+        if (error_code) {
+            Retry(req, error_code);
+        } else {
+            req->reply->SetSuccess();
+            AddToCompletion(req->reply);
+        }
+
+        m_Requests.erase(it);
+    }
+
     return 0;
 }
 
-int http2_session::s_ng_error_cb(nghttp2_session*, const char *msg, size_t, void *user_data)
+int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const uint8_t* name,
+        size_t namelen, const uint8_t* value, size_t, uint8_t)
 {
-    http2_session *session_data = (http2_session *)user_data;
-    ERR_POST(session_data << ": !ERROR: " << msg);
-    for (auto it = session_data->m_requests.begin(); it != session_data->m_requests.end();) {
-        auto cur = it++;
-        if (cur->second->get_state() >= http2_request_state::rs_sent && cur->second->get_state() < http2_request_state::rs_done)
-            cur->second->error(SPSG_Error::Generic(SPSG_Error::eHttpCb, msg));
+    if ((frame->hd.type == NGHTTP2_HEADERS) && (frame->headers.cat == NGHTTP2_HCAT_RESPONSE) &&
+            (namelen == sizeof(HTTP_STATUS_HEADER) - 1) && (strcmp((const char*)name, HTTP_STATUS_HEADER) == 0)) {
+
+        auto it = m_Requests.find(frame->hd.stream_id);
+
+        if (it != m_Requests.end()) {
+            auto status = atoi((const char*)value);
+
+            if (status == CRequestStatus::e404_NotFound) {
+                it->second->reply->reply_item.GetMTSafe().state.SetState(SPSG_Reply::SState::eNotFound);
+
+            } else if (status != CRequestStatus::e200_Ok) {
+                it->second->reply->reply_item.GetLock()->state.AddError(to_string(status) + ' ' +
+                        CRequestStatus::GetStdStatusMessage((CRequestStatus::ECode)status));
+            }
+        }
     }
+
     return 0;
 }
 
-void http2_session::s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
+void SPSG_IoSession::StartClose()
 {
-    http2_session *session_data = (http2_session*)handle->data;
-    session_data->m_read_buf.resize(suggested_size);
-    buf->base = session_data->m_read_buf.data();
-    buf->len = session_data->m_read_buf.size();
+    Reset(SPSG_Error::eShutdown, "Shutdown is in process");
+    m_Tcp.Close();
 }
 
-void http2_session::s_on_close_cb(uv_handle_t *handle)
+void SPSG_IoSession::Send()
 {
-    http2_session *session_data = static_cast<http2_session*>(handle->data);
-    ERR_POST(Trace << session_data << ": on_close_cb" << session_data);
-    if (session_data->m_connection_state == connection_state_t::cs_closing)
-        session_data->m_connection_state = connection_state_t::cs_initial;
-}
+    if (auto rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
+        Reset(rv);
 
-const char* s_GetStateName(connection_state_t state)
-{
-    switch (state) {
-    case connection_state_t::cs_initial:    return "cs_initial";
-    case connection_state_t::cs_connecting: return "cs_connecting";
-    case connection_state_t::cs_connected:  return "cs_connected";
-    case connection_state_t::cs_closing:    return "cs_closing";
-    }
-    return "unknown state";
-}
-
-void http2_session::close_tcp()
-{
-    ERR_POST(Trace << this << ": close_tcp, state: " << s_GetStateName(m_connection_state));
-    close_session();
-    m_tcp.StopRead();
-    m_connection_state = connection_state_t::cs_initial;
-    m_wr.clear();
-}
-
-void http2_session::close_session()
-{
-    if (m_session) {
-        nghttp2_session *_session = m_session;
-        m_session = nullptr;
-        if (m_session_state != session_state_t::ss_closing) {
-            nghttp2_session_terminate_session(_session, NGHTTP2_NO_ERROR);
-        }
-        try {
-            for (auto it = m_requests.begin(); it != m_requests.end(); ) {
-                auto cur = it++;
-                if (cur->second->get_state() < http2_request_state::rs_done)
-                    cur->second->error(SPSG_Error::NgHttp2(NGHTTP2_ERR_SESSION_CLOSING));
-            }
-        }
-        catch(const std::exception& e) {
-            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-        }
-        catch(...) {
-            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-        }
-
-        nghttp2_session_del(_session);
-        if (m_num_requests.load() != 0) {
-            size_t sz = m_requests.size();
-            ERR_POST("unexpected m_num_requests=" << m_num_requests.load() << ", requests=" << sz);
-            assert(m_num_requests.load() == 0);
-        }
-
+    } else if (auto rv = m_Tcp.Write()) {
+        Reset(rv, "Failed to write");
     }
 }
 
-void http2_session::start_close()
+void SPSG_IoSession::OnConnect(int status)
 {
-    ERR_POST(Trace << this << ": start_close");
-    if (m_session_state < session_state_t::ss_closing) {
-        close_tcp();
-        m_session_state = session_state_t::ss_closing;
-        m_connection_state = connection_state_t::cs_closing;
-        m_tcp.Close(s_on_close_cb);
-        process_completion_list();
+    if (status < 0) {
+        Reset(status, "Failed to connect/start read");
+    } else {
+        Send();
     }
 }
 
-void http2_session::finalize_close()
+void SPSG_IoSession::OnWrite(int status)
 {
-    ERR_POST(Trace << this << ": finalize_close");
-    assert(m_session_state == session_state_t::ss_closing);
-    assert(m_connection_state == connection_state_t::cs_initial);
-    m_session_state = session_state_t::ss_closed;
-    m_io = nullptr;
-}
-
-void http2_session::notify_cancel()
-{
-    if (!m_cancel_requested) {
-        m_cancel_requested = true;
-        m_io->wake();
+    if (status < 0) {
+        Reset(status, "Failed to submit request");
+    } else {
+        Send();
     }
 }
 
-void http2_session::initialize_nghttp2_session()
+void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
 {
-
-    nghttp2_session_callbacks* _callbacks;
-    nghttp2_session_callbacks_new(&_callbacks);
-    auto callbacks = make_c_unique(_callbacks, nghttp2_session_callbacks_del);
-
-    nghttp2_session_callbacks_set_send_callback(              callbacks.get(), s_ng_send_cb);
-    nghttp2_session_callbacks_set_on_frame_recv_callback(     callbacks.get(), s_ng_frame_recv_cb);
-    nghttp2_session_callbacks_set_on_data_chunk_recv_callback(callbacks.get(), s_ng_data_chunk_recv_cb);
-    nghttp2_session_callbacks_set_on_stream_close_callback(   callbacks.get(), s_ng_stream_close_cb);
-    nghttp2_session_callbacks_set_on_header_callback(         callbacks.get(), s_ng_header_cb);
-    nghttp2_session_callbacks_set_error_callback(             callbacks.get(), s_ng_error_cb);
-
-    nghttp2_session_client_new(&m_session, callbacks.get(), this);
-}
-
-/* Send HTTP request to the remote peer */
-int http2_session::write_ng_data()
-{
-    int rv = 0;
-
-    if (m_connection_state != connection_state_t::cs_connected) {
-        ERR_POST(this << ": write_ng_data: connection is not open");
-        return 0;
-    }
-
-    if (m_wr.is_pending_wr) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eOverlap, "failed to send request, overlapped write requests"));
-abort();
-        return SPSG_Error::eOverlap;
-    }
-
-    if (!m_wr.is_pending_wr) {
-        uv_buf_t buf;
-        buf.len = m_wr.write_buf.length();
-        if (buf.len) {
-            buf.base = (char*)m_wr.write_buf.c_str();
-            m_wr.is_pending_wr = true;
-
-            rv = uv_write(&m_wr.wr_req, (uv_stream_t*)m_tcp.Handle(), &buf, 1, s_write_cb);
-            ERR_POST(Trace << this << ": write " << buf.len);
-            if (rv != 0) {
-                m_wr.is_pending_wr = false;
-                purge_pending_requests(SPSG_Error::LibUv(rv, "failed to send request"));
-            }
-        }
-    }
-    return rv;
-}
-
-/* Serialize the frame and send (or buffer) the data to libuv. */
-bool http2_session::fetch_ng_data(bool commit)
-{
-    int rv = 0;
-    size_t tot_len = 0;
-
-    if (!m_session)
-        return true;
-
-    if (!m_wr.is_pending_wr) {
-        while (true) {
-            ssize_t bytes;
-            const uint8_t *data;
-            bytes = nghttp2_session_mem_send(m_session, &data);
-            if (bytes < 0) {
-                ERR_POST(this << ": fetch_ng_data: nghttp2_session_mem_send returned error " << bytes);
-                purge_pending_requests(SPSG_Error::NgHttp2(bytes));
-                rv = bytes;
-                break;
-            }
-            else if (bytes > 0) {
-                ERR_POST(Trace << this << ": fetch_ng_data: nghttp2_session_mem_send returned " << bytes << " to write");
-                rv = 0;
-                m_wr.write_buf.append((const char*)data, bytes);
-                tot_len += bytes;
-            }
-            else {
-                if (tot_len == 0)
-                    ERR_POST(Trace << this << ": fetch_ng_data: nothing fetched, buffered: " << m_wr.write_buf.size());
-                break;
-            }
-        }
-    }
-    if (commit && !m_wr.is_pending_wr) {
-        rv = write_ng_data();
-    }
-    return rv == 0;
-}
-
-void http2_session::check_next_request()
-{
-    if (m_session) {
-        bool want_read = nghttp2_session_want_read(m_session) != 0;
-        bool want_write = nghttp2_session_want_write(m_session) != 0;
-        bool write_pending = m_wr.is_pending_wr;
-        if (!want_read && !want_write && !write_pending && m_session_state == session_state_t::ss_closing && m_wr.write_buf.empty()) {
-            ERR_POST(Trace << "CLOSE");
-            close_tcp();
-            process_completion_list();
-        }
-        else if (!write_pending) {
-            ERR_POST(Trace << this << ": check_next_request: check if we need write");
-            fetch_ng_data();
-        }
-        else {
-            ERR_POST(Trace << this << ": check_next_request: want_read: " << want_read << ", want_write: " << want_write << ", write_pending: " << write_pending);
-        }
-    }
-    else {
-        ERR_POST(Trace << this << ": check_next_request: session has been closed");
-    }
-}
-
-void http2_session::debug_print_counts()
-{
-    size_t counts[6] = {0};
-    for (auto & it : m_requests) {
-        auto v = (int)it.second->get_state();
-        if (v >= 0 && v < 6)
-            counts[v]++;
-    }
-    ERR_POST(Trace << this << ": process_requests list=" << m_requests.size() << " (" << counts[0] << ", " << counts[1] << ", " << counts[2] << ", " << counts[3] << ", " << counts[4] << ", " << counts[5] << ")");
-}
-
-/* s_connect_cb for libuv.
-   Initialize nghttp2 library session, and send client connection header. Then
-   send HTTP request. */
-void http2_session::s_connect_cb(uv_connect_t *req, int status)
-{
-    http2_session *session_data = (http2_session*)req->data;
-    session_data->connect_cb(req, status);
-}
-
-void http2_session::connect_cb(uv_connect_t *req, int status)
-{
-    assert(req == &m_conn_req);
-    assert(req->handle == (uv_stream_t*)m_tcp.Handle());
-    ERR_POST(Trace << this << ": connect_cb " << status);
-    try {
-        if (status < 0) {
-            m_connection_state = connection_state_t::cs_initial;
-            auto error = SPSG_Error::LibUv(status, "failed to connect");
-            purge_pending_requests(error);
-
-            close_tcp();
-            process_completion_list();
-            return;
-        }
-
-        // Successfully connected
-        if (m_connection_state == connection_state_t::cs_connecting)
-            m_connection_state = connection_state_t::cs_connected;
-        else {
-            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "connection is interrupted"));
-            return;
-        }
-        m_tcp.NoDelay(true);
-
-        int rv = uv_read_start((uv_stream_t*)m_tcp.Handle(), s_alloc_cb, s_read_cb);
-        if (rv < 0) {
-            purge_pending_requests(SPSG_Error::LibUv(rv, "failed to start read"));
-            return;
-        }
-
-        ERR_POST(Trace << this << ": connected");
-        process_requests();
-    }
-    catch(const std::exception& e) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-    }
-    catch(...) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-    }
-    return;
-}
-
-/* s_write_cb for libuv. To greaceful shutdown after sending or
-   receiving GOAWAY, we check the some conditions on the nghttp2
-   library and output buffer of libuv. If it indicates we have
-   no business to this session, tear down the connection. */
-void http2_session::s_write_cb(uv_write_t* req, int status)
-{
-    http2_session *session_data = (http2_session*)req->data;
-    session_data->write_cb(req, status);
-}
-
-void http2_session::write_cb(uv_write_t* req, int status)
-{
-    assert(req == &m_wr.wr_req);
-    assert(req->handle == (uv_stream_t*)m_tcp.Handle());
-    assert(m_wr.is_pending_wr || (status < 0 && m_connection_state == connection_state_t::cs_closing));
-
-    try {
-        if (req != &m_wr.wr_req) {
-            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "Unexpected write_cb call"));
-            return;
-        }
-        ERR_POST(Trace << this << ": write_cb (" << status << "), " << m_wr.write_buf.size());
-        m_wr.is_pending_wr = false;
-        m_wr.write_buf.resize(0);
-
-        if (status < 0) {
-            if (m_connection_state != connection_state_t::cs_closing) {
-                purge_pending_requests(SPSG_Error::LibUv(status, "failed to submit request"));
-                close_tcp();
-                process_completion_list();
-            }
-            return;
-        }
-
-        for (auto & it : m_requests)
-            it.second->on_sent();
-        check_next_request();
-    }
-    catch(const std::exception& e) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-    }
-    catch(...) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-    }
-}
-
-/* s_read_cb for libuv. Here we get the data from the input buffer
-   of libuv and feed them to nghttp2 library. This may invoke
-   nghttp2 callbacks. It may also queues the frame in nghttp2 session
-   context. To send them, we call fetch_ng_data() in the end. */
-void http2_session::s_read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf)
-{
-    http2_session *session_data = (http2_session*)strm->data;
-    session_data->read_cb(strm, nread, buf);
-}
-
-void http2_session::read_cb(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
-{
-    try {
-        ERR_POST(Trace << this << ": read_cb " << nread);
-        ssize_t readlen;
-
-        if (nread < 0) {
-            purge_pending_requests(SPSG_Error::LibUv(nread, nread == UV_EOF ? "server disconnected" : "failed to receive server reply"));
-            close_tcp();
-        }
-        else {
-            const unsigned char* lbuf = (const unsigned char*)buf->base;
-            while (nread > 0) {
-                readlen = nghttp2_session_mem_recv(m_session, lbuf, nread);
-                if (readlen < 0) {
-                    for (auto it = m_requests.begin(); it != m_requests.end(); ) {
-                        auto cur = it++;
-                        auto state = cur->second->get_state();
-                        if (state >= http2_request_state::rs_wait && state < http2_request_state::rs_done)
-                            cur->second->error(SPSG_Error::NgHttp2((int)readlen));
-                    }
-                    purge_pending_requests(SPSG_Error::NgHttp2((int)readlen));
-                    break;
-                }
-                else {
-                    nread -= readlen;
-                    lbuf += readlen;
-                }
-            }
-        }
-
-        process_completion_list();
-        process_requests();
-    }
-    catch(const std::exception& e) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-    }
-    catch(...) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-    }
-}
-
-
-bool http2_session::try_connect(const struct sockaddr *addr)
-{
-    if (m_session_state >= session_state_t::ss_closing)
-        return false;
-    if (m_connection_state != connection_state_t::cs_connecting) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "connection is interrupted"));
-        return false;
-    }
-
-    if (!m_tcp.Initialized())
-        m_tcp.Init(m_io->loop_handle());
-
-    int rv = uv_tcp_connect(&m_conn_req, m_tcp.Handle(), addr, s_connect_cb);
-    if (rv != 0) {
-        if (m_connection_state <= connection_state_t::cs_connected)
-            m_connection_state = connection_state_t::cs_initial;
-        purge_pending_requests(SPSG_Error::LibUv(rv, "failed to connect to server"));
-        return false;
-    }
-    return true;
-}
-
-/* Start resolving the remote peer |host| */
-bool http2_session::initiate_connection()
-{
-    assert(m_connection_state == connection_state_t::cs_initial && m_session_state == session_state_t::ss_work);
-
-    m_connection_state = connection_state_t::cs_connecting;
-
-    if (!m_session) {
-        m_wr.clear();
-        initialize_nghttp2_session();
-    }
-
-    struct sockaddr_in addr;
-
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = m_Address.host;
-    addr.sin_port = CSocketAPI::HostToNetShort(m_Address.port);
-#ifdef HAVE_SIN_LEN
-    addr.sin_len = sizeof(addr);
-#endif
- 
-    return try_connect(reinterpret_cast<sockaddr*>(&addr));
-}
-
-bool http2_session::send_client_connection_header()
-{
-    nghttp2_settings_entry iv[1] = {
-        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, TPSG_MaxConcurrentStreams::GetDefault()}
-    };
-    int rv;
-
-    /* client 24 bytes magic string will be sent by nghttp2 library */
-    rv = nghttp2_submit_settings(m_session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]));
-    if (rv == 0) {
-        m_max_streams = nghttp2_session_get_remote_settings(m_session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
-        if (m_max_streams > TPSG_MaxConcurrentStreams::GetDefault())
-            m_max_streams = TPSG_MaxConcurrentStreams::GetDefault();
-    }
-    if (rv != 0)
-        purge_pending_requests(SPSG_Error::NgHttp2(rv));
-
-    return rv == 0;
-}
-
-bool http2_session::check_connection()
-{
-    if (m_connection_state == connection_state_t::cs_initial && m_session_state == session_state_t::ss_work) {
-        if (!initiate_connection())
-            return false;
-        if (!send_client_connection_header())
-            return false;
-    }
-    else if ((m_connection_state != connection_state_t::cs_connected && m_connection_state != connection_state_t::cs_connecting) || m_session_state != session_state_t::ss_work)
-        return false;
-    return true;
-}
-
-void http2_session::process_completion_list()
-{
-    for (auto& it : m_completion_list) {
-        it.first->reply_item.NotifyOne();
-        if (auto queue = it.second.lock()) queue->NotifyOne();
-    }
-    m_completion_list.clear();
-}
-
-void http2_session::request_complete(http2_request* req)
-{
-    auto stream_id = req->get_stream_id();
-    if (stream_id > 0) {
-        req->drop_stream_id();
-        m_requests.erase(stream_id);
-        if (m_num_requests <= 0)
-            assert(false);
-        --m_num_requests;
-    }
-}
-void http2_session::add_to_completion(shared_ptr<SPSG_Reply>& reply, weak_ptr<SPSG_Future>& queue)
-{
-    assert(reply.use_count() > 1);
-    m_completion_list.emplace_back(reply, queue);
-}
-
-#define MAKE_NV(NAME, VALUE, VALUELEN)                                         \
-  {                                                                            \
-    (uint8_t *)NAME, (uint8_t *)VALUE, sizeof(NAME) - 1, VALUELEN,             \
-        NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE           \
-  }
-
-#define MAKE_NV2(NAME, VALUE)                                                  \
-  {                                                                            \
-    (uint8_t *)NAME, (uint8_t *)VALUE, sizeof(NAME) - 1, sizeof(VALUE) - 1,    \
-        NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE           \
-  }
-
-
-void http2_session::process_requests()
-{
-    if (m_cancel_requested) {
-        m_cancel_requested = false;
-    }
-    if (m_session_state >= session_state_t::ss_closing) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
-        return;
-    }
-    if (m_connection_state != connection_state_t::cs_initial && m_connection_state != connection_state_t::cs_connected) { // transition state
-        ERR_POST(Trace << this << ": process_requests: leaving out");
+    if (nread < 0) {
+        Reset(nread, nread == UV_EOF ? "Server disconnected" : "Failed to receive server reply");
         return;
     }
 
-    if (m_num_requests > 0) {
-        if (!check_connection()) {
-            ERR_POST(this << ": process_requests: not connected");
+    auto readlen = m_Session.Recv((const uint8_t*)buf, nread);
+
+    if (readlen < 0) {
+        Reset(readlen);
+    } else {
+        ProcessCompletionList();
+        Send();
+    }
+}
+
+void SPSG_IoSession::ProcessCompletionList()
+{
+    for (auto& reply : m_CompletionList) {
+        reply->reply_item.NotifyOne();
+
+        if (auto queue = reply->queue.lock()) queue->NotifyOne();
+    }
+
+    m_CompletionList.clear();
+}
+
+void SPSG_IoSession::AddToCompletion(shared_ptr<SPSG_Reply>& reply)
+{
+    if (TPSG_DelayedCompletion::GetDefault())
+        m_CompletionList.emplace_back(reply);
+    else {
+        reply->reply_item.NotifyOne();
+
+        if (auto queue = reply->queue.lock()) queue->NotifyOne();
+    }
+}
+
+void SPSG_IoSession::ProcessRequests()
+{
+    while (m_Requests.size() < m_Session.GetMaxStreams() && !m_Tcp.IsWriteBufferFull()) {
+        shared_ptr<SPSG_Request> req;
+
+        if (!m_Io->queue.Pop(req)) {
+            break;
+        }
+
+        if (req->reply->reply_item.GetMTSafe().state.GetState() == SPSG_Reply::SState::eCanceled) {
+            continue;
+        }
+
+        const auto& authority = address.AsString();
+        const auto& path = req->full_path;
+
+        req->reply->debug_printout << make_pair(&authority, &path);
+        auto stream_id = m_Session.Submit(path, req.get());
+
+        if (stream_id < 0) {
+            Retry(req, stream_id);
+            break;
+        }
+
+        m_Requests.emplace(stream_id, move(req));
+
+        if (auto rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
+            Reset(rv);
             return;
         }
     }
 
-    size_t count = 0;
-    size_t unsent_count = 0;
-    if (m_num_requests < m_max_streams && m_wr.write_buf.size() < TPSG_WriteHiwater::GetDefault()) {
-        shared_ptr<http2_request> req;
-        ERR_POST(Trace << this << ": process_requests: fetch loop>>");
-        while (m_num_requests < m_max_streams + 16) {
-            req = nullptr;
-            try {
-                if (!m_io->m_req_queue.pop_move(req)) {
-                    ERR_POST(Trace << this << ": process_requests: no more req in queue");
-                    break;
-                }
-
-                if (req->get_canceled())
-                    continue;
-
-                if (m_connection_state != connection_state_t::cs_connected) {
-                    if (m_session_state >= session_state_t::ss_closing) {
-                        req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
-                        req->on_queue(this);
-                        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
-                        return;
-                    }
-                    if (!check_connection()) {
-                        if (!m_io->m_req_queue.push_move(req)) {
-                            req->on_queue(this);
-                            req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "connection is not established"));
-                        }
-                        return;
-                    }
-                }
-                if (!m_session) {
-                    if (!m_io->m_req_queue.push_move(req)) {
-                        req->on_queue(this);
-                        req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "http2 session is not established"));
-                    }
-                    return;
-                }
-
-                req->on_queue(this);
-
-                const auto& authority = m_Address.AsString();
-                const auto& path = req->get_full_path();
-                nghttp2_nv hdrs[] = {
-                    MAKE_NV2(":method",    "GET"),
-                    MAKE_NV2(":scheme",    "http"),
-                    MAKE_NV (":authority", authority.c_str(), authority.length()),
-                    MAKE_NV (":path",      path.c_str(), path.length())
-                };
-
-                req->get_debug_printout() << make_pair(&authority, &path);
-
-                int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, sizeof(hdrs) / sizeof(hdrs[0]), NULL, req.get());
-                if (stream_id == NGHTTP2_ERR_STREAM_ID_NOT_AVAILABLE) {
-                    req->error(SPSG_Error::NgHttp2(stream_id));
-                    ERR_POST(this << ": max_requests reached");
-                    break;
-                }
-                else if (stream_id < 0) {
-                    ERR_POST(this << ": failed: " << stream_id);
-                    req->error(SPSG_Error::NgHttp2(stream_id));
-                    break;
-                }
-                else {
-                    ERR_POST(Trace << this << ": req: " << req.get() << ", stream_id: " << stream_id << " (" << req->get_full_path().c_str() << ")");
-
-                    req->on_fetched(this, stream_id);
-                    m_requests.emplace(stream_id, std::move(req));
-
-                    ++m_num_requests;
-
-                    ++count;
-                    ++unsent_count;
-
-                    bool want_write = nghttp2_session_want_write(m_session) != 0;
-                    if (!want_write) {
-                        ERR_POST(Trace << "reached max_requests " << m_num_requests.load());
-                        break;
-                    }
-                    if (!fetch_ng_data(false)) {
-                        break;
-                    }
-
-                    if (m_wr.write_buf.size() >= TPSG_WriteHiwater::GetDefault()) {
-                        ERR_POST(Warning << "reached hiwater " << m_wr.write_buf.size());
-                        break;
-                    }
-
-                }
-            }
-            catch(const exception& e) {
-                if (req) req->error(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-                NCBI_THROW(CPSG_Exception, eInternalError, e.what());
-            }
-            catch(...) {
-                if (req) req->error(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-                NCBI_THROW(CPSG_Exception, eInternalError, "unexpected exception");
-            }
-        }
-        ERR_POST(Trace << this << ": submitted " << count);
-
-        m_requests_at_once = count;
-    }
-    m_wake_enabled = (m_num_requests < m_max_streams);
-
-
-    if (m_connection_state == connection_state_t::cs_connected) {
-        check_next_request();
+    if (auto rv = m_Tcp.Write()) {
+        Reset(rv, "Failed to write");
     }
 }
 
-void http2_session::on_timer()
+void SPSG_IoSession::Reset(SPSG_Error err)
 {
-    if ((m_connection_state == connection_state_t::cs_connected || m_connection_state == connection_state_t::cs_initial) && m_session_state == session_state_t::ss_work)
-        process_requests();
+    m_Session.Del();
+    m_Tcp.Stop();
+
+    for (auto& pair : m_Requests) {
+        pair.second->reply->reply_item.GetLock()->state.AddError(err);
+        AddToCompletion(pair.second->reply);
+    }
+
+    m_Requests.clear();
+    ProcessCompletionList();
 }
 
-void http2_session::purge_pending_requests(const string& error)
+
+/** SPSG_IoThread */
+
+SPSG_IoThread::~SPSG_IoThread()
 {
-    for (auto it = m_requests.begin(); it != m_requests.end(); ) {
-        auto cur = it++;
-        if (cur->second->get_state() >= http2_request_state::rs_initial && cur->second->get_state() < http2_request_state::rs_done)
-            cur->second->error(error);
+    if (m_Thread.joinable()) {
+        m_Shutdown.Send();
+        m_Thread.join();
     }
 }
 
-
-/** io_thread */
-
-io_thread::~io_thread()
+void SPSG_IoThread::OnShutdown(uv_async_t*)
 {
-    if (m_thrd.joinable() && m_state > io_thread_state_t::initialized) {
-        m_shutdown_req++;
-        uv_async_send(&m_wake);
-        m_shutdown_req++;
-        m_thrd.join();
+    queue.Close();
+    m_Shutdown.Close();
+    m_Timer.Close();
+
+    for (auto& session : m_Sessions) {
+        session.StartClose();
     }
 }
 
-void io_thread::wake()
+void SPSG_IoThread::OnQueue(uv_async_t*)
 {
-    for (const auto& session : m_Sessions) {
-        if (session.get_wake_enabled()) {
-            uv_async_send(&m_wake);
-            break;
-        }
+    for (auto& session : m_Sessions) {
+        if (session.discovered) session.TryCatch(&SPSG_IoSession::ProcessRequests);
     }
 }
 
-void io_thread::on_wake(uv_async_t*)
-{
-    if (m_shutdown_req) {
-        m_loop->Stop();
-    }
-    else {
-        for (auto& session : m_Sessions) {
-            if (m_state != io_thread_state_t::started) break;
-
-            try {
-                if (session.discovered) session.process_requests();
-            }
-            catch(const std::exception& e) {
-                session.purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-            }
-            catch(...) {
-                session.purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-            }
-        }
-    }
-}
-
-void io_thread::on_timer(uv_timer_t*)
+void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 {
     try {
         const auto& service_name = m_Service.GetServiceName();
@@ -1430,7 +1018,7 @@ void io_thread::on_timer(uv_timer_t*)
 
         // Update existing sessions
         for (auto& session : m_Sessions) {
-            const auto& address = session.GetAddress();
+            const auto& address = session.address;
             auto in_service = discovered.erase(address) == 1;
 
             if (session.discovered != in_service) {
@@ -1442,14 +1030,8 @@ void io_thread::on_timer(uv_timer_t*)
 
         // Add sessions for newly discovered addresses
         for (auto& address : discovered) {
-            m_Sessions.emplace_back(this, address);
+            m_Sessions.emplace_back(this, handle->loop, address);
             ERR_POST(Trace << "Host '" << address.AsString() << "' added to service '" << service_name << '\'');
-        }
-
-        for (auto& session : m_Sessions) {
-            if (m_state != io_thread_state_t::started) break;
-
-            if (session.discovered) session.on_timer();
         }
     }
     catch(...) {
@@ -1458,156 +1040,80 @@ void io_thread::on_timer(uv_timer_t*)
 
 }
 
-bool io_thread::add_request_move(shared_ptr<http2_request>& req)
+void SPSG_IoThread::Execute(SPSG_UvBarrier& barrier)
 {
-    if (m_state != io_thread_state_t::started) {
-        NCBI_THROW_FMT(CPSG_Exception, eInternalError, "IO thread is dead: " << static_cast<int>(m_state.load()));
-    }
+    SPSG_UvLoop loop;
 
-    auto rv = m_req_queue.push_move(req);
+    queue.Init(this, &loop, s_OnQueue);
+    m_Shutdown.Init(this, &loop, s_OnShutdown);
+    m_Timer.Init(this, &loop, s_OnTimer);
+    barrier.Wait();
 
-    if (rv) {
-        wake();
-    } else {
-        uv_async_send(&m_wake);
-    }
+    loop.Run();
 
-    return rv;
-}
-
-void io_thread::run()
-{
-    uv_timer_start(&m_timer, s_on_timer, 1000, 1000);
-
-    while (!m_shutdown_req) {
-        uv_run(m_loop->Handle(), UV_RUN_DEFAULT);
-    }
-
-    // Wait for the destructor to complete uv_async_send
-    while (m_shutdown_req < 2);
-
-    uv_timer_stop(&m_timer);
-}
-
-void io_thread::execute(uv_sem_t* sem)
-{
-    CUvLoop loop;
-    m_loop = &loop;
-    uv_async_init(m_loop->Handle(), &m_wake, s_on_wake);
-    m_wake.data = this;
-    uv_timer_init(m_loop->Handle(), &m_timer);
-    m_timer.data = this;
-
-    auto usem = make_c_unique(sem, uv_sem_post);
-
-    try {
-        for (auto it = m_Service.Iterate(CNetService::eRoundRobin); it; ++it) {
-            m_Sessions.emplace_back(this, (*it).GetAddress());
-        }
-    }
-    catch(...) {
-        io_thread_state_t st = io_thread_state_t::initialized;
-        m_state.compare_exchange_weak(st, io_thread_state_t::stopped,  memory_order_release, memory_order_relaxed);
-    }
-
-    io_thread_state_t st = io_thread_state_t::initialized;
-    if (m_state.compare_exchange_weak(st, io_thread_state_t::started,  memory_order_release, memory_order_relaxed)) {
-        usem = nullptr; // release semaphore before run in case of success, otherwise release it at the exit using unique_ptr
-        run();
-    }
-    m_loop->Walk([this](uv_handle_t* handle){
-        ERR_POST(Trace << "walk handle: " << handle << ", type: " << handle->type);
-    });
-    st = io_thread_state_t::started;
-    m_state.compare_exchange_weak(st, io_thread_state_t::stopped,  memory_order_release, memory_order_relaxed);
-
-    for (auto& session : m_Sessions) {
-        session.start_close();
-    }
-
-    uv_close((uv_handle_t*)&m_wake, nullptr);
-    uv_close((uv_handle_t*)&m_timer, nullptr);
-
-    uv_run(m_loop->Handle(), UV_RUN_DEFAULT);
-
-    for (auto& session : m_Sessions) {
-        session.finalize_close();
-    }
-
-    m_loop->Close();
     m_Sessions.clear();
-    m_loop = nullptr;
 }
 
 
-/** io_coordinator */
+/** SPSG_IoCoordinator */
 
-io_coordinator::io_coordinator(const string& service_name) : m_request_counter(0), m_request_id(1),
-    m_client_id("&client_id=" + GetDiagContext().GetStringUID())
+SPSG_IoCoordinator::SPSG_IoCoordinator(const string& service_name) : m_RequestCounter(0), m_RequestId(1),
+    m_Barrier(TPSG_NumIo::GetDefault() + 1),
+    m_ClientId("&client_id=" + GetDiagContext().GetStringUID())
 {
     auto service = CNetService::Create("psg", service_name, kEmptyStr);
 
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
-        create_io(service);
+        m_Io.emplace_back(new SPSG_IoThread(service, m_Barrier));
     }
+
+    m_Barrier.Wait();
 }
 
-void io_coordinator::create_io(CNetService service)
-{
-    uv_sem_t sem;
-    int rv;
-    rv = uv_sem_init(&sem, 0);
-    if (rv != 0)
-        NCBI_THROW2(CUvException, eUvSemInitFailure, "Failed to init semaphore", rv);
-    m_io.emplace_back(new io_thread(sem, service));
-    uv_sem_wait(&sem);
-    uv_sem_destroy(&sem);
-    auto & it = m_io.back();
-    auto state = it->get_state();
-    if (state != io_thread_state_t::started)
-        NCBI_THROW_FMT(CPSG_Exception, eInternalError, "Failed to run IO thread: " << static_cast<int>(state));
-}
-
-bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::milliseconds timeout)
+bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, chrono::milliseconds timeout)
 {
     auto deadline = chrono::system_clock::now() + timeout;
-    if (m_io.size() == 0)
+
+    if (m_Io.size() == 0)
         NCBI_THROW(CPSG_Exception, eInternalError, "IO is not open");
 
     const auto requests_per_io = TPSG_RequestsPerIo::GetDefault();
-    auto counter = m_request_counter++;
-    const auto first = (counter++ / requests_per_io) % m_io.size();
+    auto counter = m_RequestCounter++;
+    const auto first = (counter++ / requests_per_io) % m_Io.size();
     auto idx = first;
 
     while(true) {
-        if (m_io[idx]->add_request_move(req)) return true;
+        if (m_Io[idx]->queue.Push(move(req))) return true;
 
         // No room for the request
 
         // Try to update request counter once so the next IO thread would be tried for new requests
         if (idx == first) {
-            m_request_counter.compare_exchange_weak(counter, counter + requests_per_io);
+            m_RequestCounter.compare_exchange_weak(counter, counter + requests_per_io);
         }
 
         // Try next IO thread for this request, too
-        idx = (idx + 1) % m_io.size();
+        idx = (idx + 1) % m_Io.size();
 
         if (idx == first) {
             auto wait_ms = deadline - chrono::system_clock::now();
+
             if (wait_ms <= chrono::milliseconds::zero()) {
                 return false;
             }
 
-            ERR_POST(Trace << "SLEEP");
             chrono::milliseconds max_wait_ms(10);
+
             if (wait_ms > max_wait_ms) wait_ms = max_wait_ms;
+
             this_thread::sleep_for(wait_ms);
         }
     };
+
     return false;
 }
 
 
-};
+END_NCBI_SCOPE
 
 #endif

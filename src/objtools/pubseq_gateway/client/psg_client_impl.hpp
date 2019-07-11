@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors: Rafael Sadyrov
+ * Author: Rafael Sadyrov
  *
  */
 
@@ -99,19 +99,17 @@ struct CPSG_Queue::SImpl
 private:
     class CService
     {
-        using TIoC = HCT::io_coordinator;
+        // Have to use unique_ptr as some old compilers do not use move ctor of SPSG_IoCoordinator
+        using TMap = unordered_map<string, unique_ptr<SPSG_IoCoordinator>>;
 
-        // Have to use unique_ptr as some old compilers do not use move ctor of TIoC
-        using TMap = unordered_map<string, unique_ptr<TIoC>>;
-
-        TIoC& GetIoC(const string& service);
+        SPSG_IoCoordinator& GetIoC(const string& service);
         static shared_ptr<TMap> GetMap();
 
         shared_ptr<TMap> m_Map;
         static pair<mutex, weak_ptr<TMap>> sm_Instance;
 
     public:
-        TIoC& ioc;
+        SPSG_IoCoordinator& ioc;
 
         CService(const string& service) : m_Map(GetMap()), ioc(GetIoC(service)) {}
     };
@@ -126,7 +124,7 @@ private:
 struct CPSG_Queue::SImpl::SRequest
 {
     SRequest(shared_ptr<const CPSG_Request> user_request,
-            shared_ptr<HCT::http2_request> http_request,
+            shared_ptr<SPSG_Request> request,
             shared_ptr<SPSG_Reply> reply);
 
     shared_ptr<CPSG_Reply> GetNextReply();
@@ -135,7 +133,7 @@ struct CPSG_Queue::SImpl::SRequest
 
 private:
     shared_ptr<const CPSG_Request> m_UserRequest;
-    shared_ptr<HCT::http2_request> m_HttpRequest;
+    shared_ptr<SPSG_Request> m_Request;
     shared_ptr<SPSG_Reply> m_Reply;
 };
 

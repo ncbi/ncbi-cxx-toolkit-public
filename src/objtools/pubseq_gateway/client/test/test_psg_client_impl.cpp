@@ -121,7 +121,7 @@ void s_OutputArgs(ostream& os, SRandom& r, vector<string> args)
 {
     r.Shuffle(args.begin(), args.end());
 
-    const char* delim = SPSG_Receiver::Prefix().c_str();
+    const char* delim = SPSG_Request::Prefix().c_str();
 
     for (auto& arg : args) {
         os << delim << arg;
@@ -266,7 +266,8 @@ void SFixture::MtReading()
     const size_t kSleepMax = 13;
     const unsigned kReadingDeadline = 300;
 
-    auto reply = make_shared<SPSG_Reply>("");
+    auto queue = make_shared<SPSG_Future>();
+    auto reply = make_shared<SPSG_Reply>("", queue);
     map<SPSG_Reply::SItem::TTS*, thread> readers;
 
 
@@ -366,21 +367,22 @@ void SFixture::MtReading()
     // Sending
 
     vector<char> buf(kSizeMax);
-    auto queue = make_shared<SPSG_Future>();
-    SPSG_Receiver receiver(reply, queue);
+    SPSG_Request request(reply, string());
 
     for (auto& chunk_stream : src_chunks) {
         do {
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
             if (auto read = chunk_stream.gcount()) {
-                receiver(buf.data(), read);
+                request.OnReplyData(buf.data(), read);
             }
 
             auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
             this_thread::sleep_for(ms);
         } while (chunk_stream);
     }
+
+    reply->SetSuccess();
 
 
     // Waiting
@@ -390,31 +392,33 @@ void SFixture::MtReading()
 
 BOOST_FIXTURE_TEST_SUITE(PSG, SFixture)
 
-BOOST_AUTO_TEST_CASE(Receiver)
+BOOST_AUTO_TEST_CASE(Request)
 {
     Reset();
 
     const size_t kSizeMin = 100 * 1024;
     const size_t kSizeMax = 1024 * 1024;
 
-    auto reply = make_shared<SPSG_Reply>("");
+    auto queue = make_shared<SPSG_Future>();
+    auto reply = make_shared<SPSG_Reply>("", queue);
 
 
     // Reading
 
     vector<char> buf(kSizeMax);
-    auto queue = make_shared<SPSG_Future>();
-    SPSG_Receiver receiver(reply, queue);
+    SPSG_Request request(reply, string());
 
     for (auto& chunk_stream : src_chunks) {
         do {
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
             if (auto read = chunk_stream.gcount()) {
-                receiver(buf.data(), read);
+                request.OnReplyData(buf.data(), read);
             }
         } while (chunk_stream);
     }
+
+    reply->SetSuccess();
 
 
     // Checking
