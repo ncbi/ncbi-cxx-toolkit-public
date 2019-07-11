@@ -266,7 +266,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
 
             if (it == mSeqIds.end()) {
                 description = ErrorPrintf(
-                    "Expected %d sequences, but finding data for for another.",
+                    "Expected %d sequences, but finding data for another.",
                     numSeqs);
                 throw SShowStopper(
                     lineNum,
