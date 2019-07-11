@@ -55,55 +55,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-CModData::CModData(const string& name) : mName(name) {}
-
-
-CModData::CModData(const string& name, const string& value) : mName(name), mValue(value) {}
-
-
-void CModData::SetName(const string& name) 
-{
-    mValue = name;
-}
-
-
-void CModData::SetValue(const string& value) 
-{
-    mValue = value;
-}
-
-
-void CModData::SetAttrib(const string& attrib)
-{
-    mAttrib = attrib;
-}
-
-
-bool CModData::IsSetAttrib(void) const
-{
-    return !(mAttrib.empty());
-}
-
-
-const string& CModData::GetName(void) const
-{
-    return mName;
-}
-
-
-const string& CModData::GetValue(void) const
-{
-    return mValue;
-}
-
-
-const string& CModData::GetAttrib(void) const
-{
-    return mAttrib;
-}
-
-
 const CModHandler::TNameMap CModHandler::sm_NameMap = 
 {{"top","topology"},
  {"mol","molecule"},
@@ -263,7 +214,7 @@ void CModHandler::AddMods(const TModList& mods,
             CModData reportMod = 
                 (subcode == eModSubcode_Duplicate) ?  
                 mod :
-                CModData(mod.GetName());
+                CModData{ mod.GetName() };
             
             if (fReportError) {
                 fReportError(reportMod, msg, sev, subcode);
@@ -468,7 +419,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     mod_entry.second.end());
             if (fReportError) {
                 string canonicalName = x_GetModName(mod_entry);
-                fReportError(CModData(canonicalName), e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
+                fReportError(CModData{ canonicalName }, e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
             } 
             else { 
                 throw; // rethrow e
@@ -692,7 +643,7 @@ void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remai
                 }
                 auto name = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
                 auto value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos+1, end_pos-(eq_pos+1)));
-                mods.emplace_back(name, value);
+                mods.emplace_back(CModData{ name, value });
             }
             start_pos = end_pos+1;
         }

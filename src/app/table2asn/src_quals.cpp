@@ -23,8 +23,8 @@
 *
 * ===========================================================================
 *
-* Author:  Sergiy Gotvyanskyy, NCBI
 *
+* Author:  Sergiy Gotvyanskyy, NCBI
 * File Description:
 *   High level reader for source qualifiers 
 *
@@ -68,17 +68,20 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
         return false;
     }
 
+    vector<CTempString> tokens;
+    string id;
     bool retval = false;
     for (const auto& pId : bioseq.GetId()) {
-        string id = pId->AsFastaString();
+        id.clear();
+        pId->GetLabel(&id, nullptr, CSeq_id::eContent);
         NStr::ToLower(id);
         auto it = m_LineMap.find(id);
         if (it != m_LineMap.end()) {
-            vector<CTempString> tokens;
+            tokens.clear();
             NStr::Split(it->second, "\t", tokens, 0);
             for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
                 if (!NStr::IsBlank(tokens[i])) {
-                    mods.push_back(CModData(m_ColumnNames[i], tokens[i]));
+                    mods.push_back(CModData{ m_ColumnNames[i], tokens[i] });
                 }
             }
             m_LineMap.erase(it);
@@ -103,6 +106,8 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
     size_t fileSize = m_pFileMap->GetFileSize();
     const char* ptr = (const char*)m_pFileMap->Map(0, fileSize);
     const char* end = ptr + fileSize;
+
+    string idKey;
 
     while (ptr < end)
     {
@@ -136,7 +141,6 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
             if (m_ColumnNames.empty()) {
                 NStr::Split(line, "\t", m_ColumnNames, 0);
             }
-    
             else 
             // parse regular line
             {
@@ -147,12 +151,13 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
                         allowAcc ?
                         CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal :
                         CSeq_id::fParse_AnyLocal;
-                    auto pSeqId = 
-                        Ref(new CSeq_id(idString, parseFlags));
-                    string idKey = pSeqId->AsFastaString();
-                    NStr::ToLower(idKey);
-                    m_LineMap[idKey] = line;
+                    auto pSeqId = Ref(new CSeq_id(idString, parseFlags));
 
+			        idKey.clear();
+                    pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eContent);
+
+                    NStr::ToLower(idKey);
+                    m_LineMap.emplace(move(idKey), move(line));
                 }
             }
         }
@@ -418,7 +423,7 @@ void g_ApplyMods(
         for (const auto& entry : lineMap) {
             CTempString seqId, remainder; 
             NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
-            sReportUnusedMods(pEC, namedSrcFile, seqId);
+            sReportUnusedMods(pEC, namedSrcFile, NStr::TruncateSpaces_Unsafe(seqId));
         }
     }
 
@@ -428,7 +433,7 @@ void g_ApplyMods(
         for (const auto& entry : lineMap) {
             CTempString seqId, remainder;
             NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
-            sReportUnusedMods(pEC, defaultSrcFile, seqId);
+            sReportUnusedMods(pEC, defaultSrcFile, NStr::TruncateSpaces_Unsafe(seqId));
         }
     }
 }

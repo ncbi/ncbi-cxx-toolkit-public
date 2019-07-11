@@ -41,22 +41,41 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJREAD_EXPORT CModData
 {
 public:
-    CModData(const string& name);
-    CModData(const string& name, const string& value);
+    template<typename _T>
+    void SetName(_T&& name)
+    {
+        get<0>(m_this) = forward<_T>(name);
+    }
 
-    void SetName(const string& name);
-    void SetValue(const string& value);
-    void SetAttrib(const string& attrib);
-    bool IsSetAttrib(void) const;
+    template<typename _T>
+    void SetValue(_T&& value)
+    {
+        get<1>(m_this) = forward<_T>(value);
+    }
+    template<typename _T>
+    void SetAttrib(_T&& attrib)
+    {
+        get<2>(m_this) = forward<_T>(attrib);
+    }
+    bool IsSetAttrib(void) const
+    {
+        return !get<2>(m_this).empty();
+    }
 
-    const string& GetName(void) const;
-    const string& GetValue(void) const;
-    const string& GetAttrib(void) const;
+    const string& GetName(void) const
+    {
+        return get<0>(m_this);
+    }
+    const string& GetValue(void) const
+    {
+        return get<1>(m_this);
+    }
+    const string& GetAttrib(void) const
+    {
+        return get<2>(m_this);
+    }
 
-private:
-    string mName;
-    string mValue;
-    string mAttrib;    
+    array<string, 3> m_this;
 };
 
 
