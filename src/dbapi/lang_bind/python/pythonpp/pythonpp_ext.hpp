@@ -54,6 +54,7 @@ PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)
             return PyCFunction_New(table + i, ob);
         }
     }
+    CAttributeError error(name);
     return NULL;
 }
 #endif
