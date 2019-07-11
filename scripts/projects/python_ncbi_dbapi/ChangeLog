@@ -1,3 +1,9 @@
+Version 1.20.0 (2019-07-11):
+* Advance to version 22.0 of the stable C++ Toolkit components and GCC 7.3.
+* Modernize Python version coverage, substituting 3.6 and 3.7 for 3.4
+  (and keeping 2.7 for now).
+* Fix AttributeError reporting under Python 3.
+
 Version 1.19.4 (2018-02-05):
 * Work around a Python limitation that could lead to crashes at exit.
 
