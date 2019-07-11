@@ -588,9 +588,11 @@ void CModAdder::x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 
 
 CDefaultModErrorReporter::CDefaultModErrorReporter(
+        const string& seqId,
         int lineNum,
         ILineErrorListener* pErrorListener)
-    : m_LineNum(lineNum),
+    : m_SeqId(seqId),
+      m_LineNum(lineNum),
       m_pErrorListener(pErrorListener) 
     {}
 
@@ -611,7 +613,7 @@ void CDefaultModErrorReporter::operator()(
             sev,
             EReaderCode::eReader_Mods,
             subcode,
-            "",
+            m_SeqId,
             m_LineNum,
             msg,
             "",

@@ -196,6 +196,7 @@ sReportError(
     EDiagSev severity,
     int code,
     int subcode,
+    const string& seqId,
     int lineNumber,
     const string& message,
     ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
@@ -209,7 +210,7 @@ sReportError(
         severity,
         code,
         subcode,
-        "",
+        seqId,
         lineNumber,
         message));
     pEC->PutError(*pErr);
@@ -220,11 +221,12 @@ static void
 sReportError(
     ILineErrorListener* pEC,
     EDiagSev severity,
+    const string& seqId,
     int lineNumber,
     const string& message,
     ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
 {
-    sReportError(pEC, severity, eReader_Alignment, 0, lineNumber, message, problemType);
+    sReportError(pEC, severity, eReader_Alignment, 0, seqId, lineNumber, message, problemType);
 }
 
 void CAlnReader::Read(
@@ -449,142 +451,154 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
         if (i < m_DeflineInfo.size() && !m_DeflineInfo[i].mData.empty()) {
             fasta_defline += " " + m_DeflineInfo[i].mData;
         }
-        ids[i] = GenerateID(fasta_defline, i, fasta_flags);
-    }
-    return;
-}
-
-
-CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
-        ILineErrorListener* pErrorListener)
-{
-    if (m_Aln) {
-        return m_Aln;
-    } else if ( !m_ReadDone ) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-                   "CAlnReader::GetSeqAlign(): "
-                   "Seq_align is not available until after Read()", 0);
-    }
-
-    if (!m_ReadSucceeded) {
-        return CRef<CSeq_align>();
-    }
-
-    typedef CDense_seg::TNumseg TNumseg;
-
-    m_Aln = new CSeq_align();
-    m_Aln->SetType(CSeq_align::eType_not_set);
-    m_Aln->SetDim(m_Dim);
-
-    CDense_seg& ds = m_Aln->SetSegs().SetDenseg();
-    ds.SetDim(m_Dim);
-    
-    CDense_seg::TStarts&  starts  = ds.SetStarts();
-    //CDense_seg::TStrands& strands = ds.SetStrands();
-    CDense_seg::TLens&    lens    = ds.SetLens();
-
-    x_AssignDensegIds(fasta_flags, ds);
-
-    // get the length of the alignment
-    TSeqPos aln_stop = m_Seqs[0].size();
-    for (TNumrow row_i = 1; row_i < m_Dim; row_i++) {
-        if (m_Seqs[row_i].size() > aln_stop) {
-            aln_stop = m_Seqs[row_i].size();
+            ids[i] = GenerateID(fasta_defline, i, fasta_flags);
         }
+        return;
     }
 
 
-    m_SeqVec.resize(m_Dim);
-    for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        m_SeqVec[row_i].resize(m_Seqs[row_i].length(), 0);
-    }
-    m_SeqLen.resize(m_Dim, 0);
-    vector<bool> is_gap;  is_gap.resize(m_Dim, true);
-    vector<bool> prev_is_gap;  prev_is_gap.resize(m_Dim, true);
-    vector<TSignedSeqPos> next_start; next_start.resize(m_Dim, 0);
-    int starts_i = 0;
-    TSeqPos prev_aln_pos = 0, prev_len = 0;
-    bool new_seg = true;
-    TNumseg numseg = 0;
-    
-    for (TSeqPos aln_pos = 0; aln_pos < aln_stop; aln_pos++) {
+    CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
+            ILineErrorListener* pErrorListener)
+    {
+        if (m_Aln) {
+            return m_Aln;
+        } else if ( !m_ReadDone ) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                       "CAlnReader::GetSeqAlign(): "
+                       "Seq_align is not available until after Read()", 0);
+        }
+
+        if (!m_ReadSucceeded) {
+            return CRef<CSeq_align>();
+        }
+
+        typedef CDense_seg::TNumseg TNumseg;
+
+        m_Aln = new CSeq_align();
+        m_Aln->SetType(CSeq_align::eType_not_set);
+        m_Aln->SetDim(m_Dim);
+
+        CDense_seg& ds = m_Aln->SetSegs().SetDenseg();
+        ds.SetDim(m_Dim);
+        
+        CDense_seg::TStarts&  starts  = ds.SetStarts();
+        //CDense_seg::TStrands& strands = ds.SetStrands();
+        CDense_seg::TLens&    lens    = ds.SetLens();
+
+        x_AssignDensegIds(fasta_flags, ds);
+
+        // get the length of the alignment
+        TSeqPos aln_stop = m_Seqs[0].size();
+        for (TNumrow row_i = 1; row_i < m_Dim; row_i++) {
+            if (m_Seqs[row_i].size() > aln_stop) {
+                aln_stop = m_Seqs[row_i].size();
+            }
+        }
+
+
+        m_SeqVec.resize(m_Dim);
         for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-            if (aln_pos >= m_Seqs[row_i].length()) {
-                if (!is_gap[row_i]) {
-                    is_gap[row_i] = true;
-                    new_seg = true;
-                }
-            } else {
-                string residue = m_Seqs[row_i].substr(aln_pos, 1);
-                NStr::ToUpper(residue);
-                if (!x_IsGap(row_i, aln_pos, residue)) {
-
-                    if (is_gap[row_i]) {
-                        is_gap[row_i] = false;
-                        new_seg = true;
-                    }
-
-                    // add to the sequence vector
-                    m_SeqVec[row_i][m_SeqLen[row_i]++] = residue[0];
-
-                } else {
-  
-                    if ( !is_gap[row_i] ) {
+            m_SeqVec[row_i].resize(m_Seqs[row_i].length(), 0);
+        }
+        m_SeqLen.resize(m_Dim, 0);
+        vector<bool> is_gap;  is_gap.resize(m_Dim, true);
+        vector<bool> prev_is_gap;  prev_is_gap.resize(m_Dim, true);
+        vector<TSignedSeqPos> next_start; next_start.resize(m_Dim, 0);
+        int starts_i = 0;
+        TSeqPos prev_aln_pos = 0, prev_len = 0;
+        bool new_seg = true;
+        TNumseg numseg = 0;
+        
+        for (TSeqPos aln_pos = 0; aln_pos < aln_stop; aln_pos++) {
+            for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+                if (aln_pos >= m_Seqs[row_i].length()) {
+                    if (!is_gap[row_i]) {
                         is_gap[row_i] = true;
                         new_seg = true;
                     }
+                } else {
+                    string residue = m_Seqs[row_i].substr(aln_pos, 1);
+                    NStr::ToUpper(residue);
+                    if (!x_IsGap(row_i, aln_pos, residue)) {
+
+                        if (is_gap[row_i]) {
+                            is_gap[row_i] = false;
+                            new_seg = true;
+                        }
+
+                        // add to the sequence vector
+                        m_SeqVec[row_i][m_SeqLen[row_i]++] = residue[0];
+
+                    } else {
+      
+                        if ( !is_gap[row_i] ) {
+                            is_gap[row_i] = true;
+                            new_seg = true;
+                        }
+                    }
+
                 }
-
             }
-        }
 
-        if (new_seg) {
-            if (numseg) { // if not the first seg
-                lens.push_back(prev_len = aln_pos - prev_aln_pos);
-                for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-                    if ( !prev_is_gap[row_i] ) {
-                        next_start[row_i] += prev_len;
+            if (new_seg) {
+                if (numseg) { // if not the first seg
+                    lens.push_back(prev_len = aln_pos - prev_aln_pos);
+                    for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+                        if ( !prev_is_gap[row_i] ) {
+                            next_start[row_i] += prev_len;
+                        }
                     }
                 }
-            }
 
-            starts.resize(starts_i + m_Dim);
-            for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-                if (is_gap[row_i]) {
-                    starts[starts_i++] = -1;
-                } else {
-                    starts[starts_i++] = next_start[row_i];;
+                starts.resize(starts_i + m_Dim);
+                for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+                    if (is_gap[row_i]) {
+                        starts[starts_i++] = -1;
+                    } else {
+                        starts[starts_i++] = next_start[row_i];;
+                    }
+                    prev_is_gap[row_i] = is_gap[row_i];
                 }
-                prev_is_gap[row_i] = is_gap[row_i];
+
+                prev_aln_pos = aln_pos;
+
+                numseg++;
+                new_seg = false;
             }
-
-            prev_aln_pos = aln_pos;
-
-            numseg++;
-            new_seg = false;
         }
-    }
 
-    for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        m_SeqVec[row_i].resize(m_SeqLen[row_i]); // resize down to actual size
-    }
+        for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+            m_SeqVec[row_i].resize(m_SeqLen[row_i]); // resize down to actual size
+        }
 
-    lens.push_back(aln_stop - prev_aln_pos);
-    //strands.resize(numseg * m_Dim, eNa_strand_plus);
-    _ASSERT(lens.size() == numseg);
-    ds.SetNumseg(numseg);
+        lens.push_back(aln_stop - prev_aln_pos);
+        //strands.resize(numseg * m_Dim, eNa_strand_plus);
+        _ASSERT(lens.size() == numseg);
+        ds.SetNumseg(numseg);
 
 #if _DEBUG
-    m_Aln->Validate(true);
+        m_Aln->Validate(true);
 #endif    
-    return m_Aln;
-}
+        return m_Aln;
+    }
 
 
 CSeq_inst::EMol
 CAlnReader::GetSequenceMolType(
     const string& alphabet,
     const string& seqData,
+    ILineErrorListener* pErrorListener
+    )
+{
+    return x_GetSequenceMolType(alphabet, seqData, "", pErrorListener);
+}
+
+
+CSeq_inst::EMol
+CAlnReader::x_GetSequenceMolType(
+    const string& alphabet,
+    const string& seqData,
+    const string& seqId, // used in error message 
     ILineErrorListener* pErrorListener
     )
 {
@@ -604,7 +618,7 @@ CAlnReader::GetSequenceMolType(
                      eDiag_Error,
                      eReader_Alignment,
                      eAlnSubcode_InconsistentMolType,
-                     0, msg);
+                     seqId, 0, msg);
 
 
         //imposible NA- can't contain both
@@ -612,6 +626,7 @@ CAlnReader::GetSequenceMolType(
     }
     return (posFirstU == string::npos  ?  CSeq_inst::eMol_dna : CSeq_inst::eMol_rna);
 }
+
 
 
 CRef<CSeq_inst> CAlnReader::x_GetSeqInst(
@@ -680,7 +695,8 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         } else if (ai & CSeq_id::fAcc_prot) {
             mol = CSeq_inst::eMol_aa;
         } else {
-            mol = GetSequenceMolType(GetAlphabet(), seq_str, pErrorListener);
+            const string seqId = ids.front()->AsFastaString();
+            mol = x_GetSequenceMolType(GetAlphabet(), seq_str, seqId, pErrorListener);
         }
         // seq-inst
         auto pSeqInst = x_GetSeqInst(mol, seq_str);
@@ -730,8 +746,12 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
         return;
     }
 
+    auto pFirstID = bioseq.GetFirstId();
+    _ASSERT(pFirstID != nullptr);
+    const auto idString = pFirstID->AsFastaString();
+
     CDefaultModErrorReporter 
-        errorReporter(defline_info.mNumLine, pErrorListener);
+        errorReporter(idString, defline_info.mNumLine, pErrorListener);
         
     CModHandler::TModList mod_list;
     string remainder;

@@ -1,3 +1,4 @@
+SeqID      : lcl|seq2
 Line No    : 5
 Severity   : Error
 Problem    : Mods.InvalidValue
@@ -5,6 +6,7 @@ Message    : Invalid value: germline=val1.
 Mod Name   : germline
 Mod Value  : val1
 
+SeqID      : lcl|seq3
 Line No    : 9
 Severity   : Error
 Problem    : Mods.InvalidValue

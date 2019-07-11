@@ -86,6 +86,10 @@ public:
             break;
         }
 
+        if (!err.SeqId().empty()) {  
+            mStream << "SeqID      : " << err.SeqId() << endl;
+        }   
+
         if (err.Line() == 0) { 
             mStream << "Line No    : " 
                     << "None (Encountered during pre or post processing)" << endl;

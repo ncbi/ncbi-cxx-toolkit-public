@@ -254,6 +254,11 @@ private:
     CRef<objects::CSeq_inst> x_GetSeqInst(objects::CSeq_inst::EMol mol,
             const string& seqData) const;
 
+    objects::CSeq_inst::EMol x_GetSequenceMolType(
+        const string& alphabet,
+        const string& seqData,
+        const string& seqId="", // Used in error message
+        objects::ILineErrorListener* pErrorListener=nullptr);
 
     ncbi::objects::CSequenceInfo mSequenceInfo;
 

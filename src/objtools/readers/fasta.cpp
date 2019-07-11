@@ -2132,8 +2132,12 @@ void CFastaReader::x_ApplyMods(
         CModHandler::TModList mods;
         CTitleParser::Apply(processed_title, mods, remainder);
 
+        const auto pFirstID = bioseq.GetFirstId();
+        _ASSERT(pFirstID != nullptr);
+        const auto idString = pFirstID->AsFastaString();
+
         CDefaultModErrorReporter 
-            errorReporter(line_number, pMessageListener);
+            errorReporter(idString, line_number, pMessageListener);
 
         CModHandler mod_handler;
         CModHandler::TModList rejected_mods;

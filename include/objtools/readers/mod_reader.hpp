@@ -193,6 +193,7 @@ class NCBI_XOBJREAD_EXPORT CDefaultModErrorReporter
 {
 public:
     CDefaultModErrorReporter(
+            const string& seqId,
             int lineNum,
             ILineErrorListener* pErrorListener);
 
@@ -202,6 +203,7 @@ public:
             EDiagSev sev,
             EModSubcode subcode);
 private:
+    string m_SeqId;
     int m_LineNum;
     ILineErrorListener* m_pErrorListener;
 };
