@@ -325,7 +325,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
     if (result->IsSet() && !m_context.m_HandleAsSet)
     {
-        m_context.m_logger->PutError(*auto_ptr<CLineError>(
+        m_context.m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
             "File " + m_context.m_current_file + " contains multiple sequences")));
     }

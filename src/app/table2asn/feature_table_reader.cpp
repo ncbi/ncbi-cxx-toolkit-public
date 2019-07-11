@@ -1552,7 +1552,7 @@ bool CFeatureTableReader::_AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_
         string label = "";        
         protein->GetSeq().GetId().front()->GetLabel(&label, CSeq_id::eContent);
         string error = "Unable to find coding region location for protein sequence " + label + ".";
-        m_context.m_logger->PutError(*auto_ptr<CLineError>(
+        m_context.m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
             error)));
         return false;
@@ -1666,7 +1666,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                 CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(CFastaReader::CanonicalizeString((**sLE_qual).GetVal()));
                 if (it == linkage_evidence_to_value_map.end())
                 {
-                    m_context.m_logger->PutError(*auto_ptr<CLineError>(
+                    m_context.m_logger->PutError(*unique_ptr<CLineError>(
                         CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                         string("Unrecognized linkage evidence ") + (**sLE_qual).GetVal())));
                     return CRef<CDelta_seq>(0);
@@ -1682,7 +1682,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                 case CSeq_gap::eLinkEvid_UnspecifiedOnly:
                     if (evidence != CLinkage_evidence::eType_unspecified)
                     {
-                        m_context.m_logger->PutError(*auto_ptr<CLineError>(
+                        m_context.m_logger->PutError(*unique_ptr<CLineError>(
                             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                             string("Linkage evidence must not be specified for ") + sGT)));
                         return CRef<CDelta_seq>(0);
@@ -1692,7 +1692,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                 case CSeq_gap::eLinkEvid_Forbidden:
                     if (evidence == CLinkage_evidence::eType_unspecified)
                     {
-                        m_context.m_logger->PutError(*auto_ptr<CLineError>(
+                        m_context.m_logger->PutError(*unique_ptr<CLineError>(
                             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                             string("Linkage evidence must be specified for ") + sGT)));
                         return CRef<CDelta_seq>(0);
@@ -1710,7 +1710,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
         }
         else
         {
-            m_context.m_logger->PutError(*auto_ptr<CLineError>(
+            m_context.m_logger->PutError(*unique_ptr<CLineError>(
                 CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                 string("Unrecognized gap type ") + sGT)));
             return CRef<CDelta_seq>(0);
@@ -1751,7 +1751,7 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
                             CRef<CDelta_seq> gap = MakeGap(*bioseq_it, feature_gap);
                             if (gap.Empty())
                             {
-                                m_context.m_logger->PutError(*auto_ptr<CLineError>(
+                                m_context.m_logger->PutError(*unique_ptr<CLineError>(
                                     CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                                     "Failed to convert feature gap into a gap")));
                             }
@@ -1762,7 +1762,7 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
                         }
                         catch(const CException& ex)
                         {
-                            m_context.m_logger->PutError(*auto_ptr<CLineError>(
+                            m_context.m_logger->PutError(*unique_ptr<CLineError>(
                                 CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                                 ex.GetMsg())));
                         }

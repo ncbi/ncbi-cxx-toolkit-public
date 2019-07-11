@@ -724,7 +724,7 @@ int CTbl2AsnApp::Run(void)
     }
     catch (const CException&)
     {
-        m_logger->PutError(*auto_ptr<CLineError>(
+        m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
             "", 0, "", "", "",
             "Error loading template file")));
@@ -739,7 +739,7 @@ int CTbl2AsnApp::Run(void)
     }
     catch (const CException&)
     {
-        m_logger->PutError(*auto_ptr<CLineError>(
+        m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
             "", 0, "", "", "",
             "Error loading descriptors file")));
@@ -802,7 +802,7 @@ int CTbl2AsnApp::Run(void)
                 lines.push_back(it->first);
             }
         }
-        auto_ptr<CLineError> le(
+        unique_ptr<CLineError> le(
             CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
             e.GetBadResiduePositions().m_SeqId->AsFastaString(),
             line, "", "", "", e.GetMsg(), lines));
@@ -810,7 +810,7 @@ int CTbl2AsnApp::Run(void)
     }
     catch (const CException& e)
     {
-        m_logger->PutError(*auto_ptr<CLineError>(
+        m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
             "", 0, "", "", "",
             e.GetMsg())));
@@ -1026,7 +1026,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
     CFile file(m_context.m_current_file);
     if (!file.Exists())
     {
-        m_logger->PutError(*auto_ptr<CLineError>(
+        m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                 "File " + m_context.m_current_file + " does not exists")));
             return;
@@ -1172,7 +1172,7 @@ void CTbl2AsnApp::ProcessAlignmentFile()
 bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse)
 {
     CDir::TEntries* e = directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive);
-    auto_ptr<CDir::TEntries> entries(e);
+    unique_ptr<CDir::TEntries> entries(e);
 
     for (CDir::TEntries::const_iterator it = e->begin(); it != e->end(); it++)
     {
@@ -1352,7 +1352,7 @@ void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
     CFile file(pathname);
     if (!file.Exists()) return;
     if (file.GetLength() == 0) {
-        m_logger->PutError(*auto_ptr<CLineError>(
+        m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
             "Empty file: " + pathname)));
         return;
