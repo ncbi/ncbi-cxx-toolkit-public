@@ -2785,6 +2785,15 @@ public:
     ///   EMemMapAdvise, MemMapAdviseAddr
     bool MemMapAdvise(void* ptr, EMemMapAdvise advise) const;
 
+    /// Shows filename of memory mapped file
+    ///
+    /// @return
+    ///   Reference to a file name of memory mapped file
+    const string& GetFileName() const noexcept
+    {
+        return m_FileName;
+    }
+
 protected:
     /// Open file mapping for file with name m_FileName.
     void x_Open(void);
