@@ -214,7 +214,7 @@ void CModHandler::AddMods(const TModList& mods,
             CModData reportMod = 
                 (subcode == eModSubcode_Duplicate) ?  
                 mod :
-                CModData{ mod.GetName() };
+                CModData( mod.GetName(), kEmptyStr);
             
             if (fReportError) {
                 fReportError(reportMod, msg, sev, subcode);
@@ -419,7 +419,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     mod_entry.second.end());
             if (fReportError) {
                 string canonicalName = x_GetModName(mod_entry);
-                fReportError(CModData{ canonicalName }, e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
+                fReportError(CModData( canonicalName, kEmptyStr), e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
             } 
             else { 
                 throw; // rethrow e
@@ -645,7 +645,7 @@ void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remai
                 }
                 auto name = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
                 auto value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos+1, end_pos-(eq_pos+1)));
-                mods.emplace_back(CModData{ name, value });
+                mods.emplace_back(name, value);
             }
             start_pos = end_pos+1;
         }

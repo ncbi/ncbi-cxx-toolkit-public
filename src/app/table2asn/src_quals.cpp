@@ -81,7 +81,7 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
             NStr::Split(it->second, "\t", tokens, 0);
             for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
                 if (!NStr::IsBlank(tokens[i])) {
-                    mods.push_back(CModData{ m_ColumnNames[i], tokens[i] });
+                    mods.emplace_back(m_ColumnNames[i], tokens[i]);
                 }
             }
             m_LineMap.erase(it);

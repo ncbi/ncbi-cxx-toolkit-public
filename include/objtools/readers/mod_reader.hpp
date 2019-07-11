@@ -41,6 +41,13 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJREAD_EXPORT CModData
 {
 public:
+    CModData() = default;
+
+    template<typename _T1, typename _T2>
+    CModData(_T1&& name, _T2&& value): m_name{forward<_T1>(name)}, m_value{forward<_T2>(value)}
+    {
+    }
+
     template<typename _T>
     void SetName(_T&& name)
     {
