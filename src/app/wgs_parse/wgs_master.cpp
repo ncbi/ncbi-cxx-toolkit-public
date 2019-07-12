@@ -1781,6 +1781,11 @@ static void SortSequences(list<CEntryOrderInfo>& seq_order)
         typedef bool (*TSortPredicat)(const CEntryOrderInfo& , const CEntryOrderInfo& );
 
         TSortPredicat sort_predicat = nullptr;
+
+        if (GetParams().IsAccessionAssigned()) {
+            sort_order = eByAccession;
+        }
+
         switch (sort_order) {
             case eByAccession:
                 sort_predicat = [](const CEntryOrderInfo& a, const CEntryOrderInfo& b) { return a.m_accession < b.m_accession; };
