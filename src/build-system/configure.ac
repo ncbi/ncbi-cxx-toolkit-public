@@ -5715,13 +5715,15 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          AC_MSG_RESULT([$BOOST_TAG (by explicit request)])
          ;;
    esac
+   BOOST_STATIC_TAG=`echo "_$BOOST_TAG-s" \
+     | sed -e 's/^_//; s/-d-s$/-sd/; s/-\(d-.*\)-s$/-s\1/; s/\(-[[1-9]].*\)-s$/-s\1/'`
 
    test "$with_mt" = yes  || \
       BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS"
 
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_regex${BOOST_TAG}-static.a"; then
-       BOOST_REGEX_STATIC_LIBS=-lboost_regex${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_regex$BOOST_STATIC_TAG.a"; then
+       BOOST_REGEX_STATIC_LIBS=-lboost_regex$BOOST_STATIC_TAG
    else
        BOOST_REGEX_STATIC_LIBS=$BOOST_REGEX_LIBS
    fi
@@ -5759,8 +5761,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           [ncbi_cv_lib_boost_spirit=yes], [ncbi_cv_lib_boost_spirit=no])])
 
    BOOST_SYSTEM_LIBS=-lboost_system${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_system${BOOST_TAG}-static.a"; then
-       BOOST_SYSTEM_STATIC_LIBS=-lboost_system${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_system$BOOST_STATIC_TAG.a"; then
+       BOOST_SYSTEM_STATIC_LIBS=-lboost_system$BOOST_STATIC_TAG
    else
        BOOST_SYSTEM_STATIC_LIBS=$BOOST_SYSTEM_LIBS
    fi
@@ -5777,8 +5779,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
            BOOST_SYSTEM_STATIC_LIBS=])])
 
    boost_chrono_lib=-lboost_chrono${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_chrono${BOOST_TAG}-static.a"; then
-       boost_chrono_static_lib=-lboost_chrono${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_chrono$BOOST_STATIC_TAG.a"; then
+       boost_chrono_static_lib=-lboost_chrono$BOOST_STATIC_TAG
    else
        boost_chrono_static_lib=$boost_chrono_lib
    fi
@@ -5795,8 +5797,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           [ncbi_cv_lib_boost_chrono=no])])
 
    boost_fs_lib=-lboost_filesystem${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_filesystem${BOOST_TAG}-static.a"; then
-       boost_fs_static_lib=-lboost_filesystem${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_filesystem$BOOST_STATIC_TAG.a"; then
+       boost_fs_static_lib=-lboost_filesystem$BOOST_STATIC_TAG
    else
        boost_fs_static_lib=$boost_fs_lib
    fi
@@ -5813,8 +5815,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           [ncbi_cv_lib_boost_filesystem=no])])
 
    BOOST_IOSTREAMS_LIBS=-lboost_iostreams${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_iostreams${BOOST_TAG}-static.a"; then
-       BOOST_IOSTREAMS_STATIC_LIBS=-lboost_iostreams${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_iostreams$BOOST_STATIC_TAG.a"; then
+       BOOST_IOSTREAMS_STATIC_LIBS=-lboost_iostreams$BOOST_STATIC_TAG
    else
        BOOST_IOSTREAMS_STATIC_LIBS=$BOOST_IOSTREAMS_LIBS
    fi
@@ -5829,8 +5831,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           [ncbi_cv_lib_boost_iostreams=no])])
 
    BOOST_PROGRAM_OPTIONS_LIBS=-lboost_program_options${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_program_options${BOOST_TAG}-static.a"; then
-       BOOST_PROGRAM_OPTIONS_STATIC_LIBS=-lboost_program_options${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_program_options$BOOST_STATIC_TAG.a"; then
+       BOOST_PROGRAM_OPTIONS_STATIC_LIBS=-lboost_program_options$BOOST_STATIC_TAG
    else
        BOOST_PROGRAM_OPTIONS_STATIC_LIBS=$BOOST_PROGRAM_OPTIONS_LIBS
    fi
@@ -5846,27 +5848,27 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           [ncbi_cv_lib_boost_program_options=no])])
 
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
-       BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor$BOOST_STATIC_TAG.a"; then
+       BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor$BOOST_STATIC_TAG
    else
        BOOST_TEST_PEM_STATIC_LIBS=$BOOST_TEST_PEM_LIBS
    fi
 
    BOOST_TEST_TEM_LIBS=-lboost_test_exec_monitor${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_test_exec_monitor${BOOST_TAG}-static.a"; then
-       BOOST_TEST_TEM_STATIC_LIBS=-lboost_test_exec_monitor${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_test_exec_monitor$BOOST_STATIC_TAG.a"; then
+       BOOST_TEST_TEM_STATIC_LIBS=-lboost_test_exec_monitor$BOOST_STATIC_TAG
    else
        BOOST_TEST_TEM_STATIC_LIBS=$BOOST_TEST_TEM_LIBS
    fi
 
    BOOST_TEST_UTF_LIBS=-lboost_unit_test_framework${BOOST_TAG}
-   if test -f "$BOOST_LIBPATH_/libboost_unit_test_framework${BOOST_TAG}-static.a"; then
-       BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
+   if test -f "$BOOST_LIBPATH_/libboost_unit_test_framework$BOOST_STATIC_TAG.a"; then
+       BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework$BOOST_STATIC_TAG
    else
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
    dnl AC_DEFINE([NCBI_BOOST_TEST_DLL], 1,
    dnl   [Define to 1 if unable to locate an appropriate
-   dnl    libboost_unit_test_framework${BOOST_TAG}-static.a.])
+   dnl    libboost_unit_test_framework$BOOST_STATIC_TAG.a.])
    fi
 
    BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
@@ -5907,8 +5909,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       esac])
 
    BOOST_THREAD_LIBS="-lboost_thread${BOOST_TAG} $BOOST_SYSTEM_LIBS"
-   if test -f "$BOOST_LIBPATH_/libboost_thread${BOOST_TAG}-static.a"; then
-       BOOST_THREAD_STATIC_LIBS="-lboost_thread${BOOST_TAG}-static $BOOST_SYSTEM_STATIC_LIBS"
+   if test -f "$BOOST_LIBPATH_/libboost_thread$BOOST_STATIC_TAG.a"; then
+       BOOST_THREAD_STATIC_LIBS="-lboost_thread$BOOST_STATIC_TAG $BOOST_SYSTEM_STATIC_LIBS"
    else
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
