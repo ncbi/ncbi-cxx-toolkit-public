@@ -1,4 +1,5 @@
-#!/opt/python-all/bin/python
+#!/opt/python-all/bin/python3
+from __future__ import print_function
 #
 # Authors: Sergey Satskiy
 #
@@ -9,12 +10,24 @@
 Netschedule server health check script
 """
 
-import sys, os, cgi, datetime, socket, re
+import sys, os, datetime, socket, re
+import urllib.parse
 from distutils.version import StrictVersion
 from optparse import OptionParser
 from random import randrange
 from time import sleep
 
+if sys.version_info < (3,):
+    def b(x):
+        return x
+    def s(x):
+        return x
+else:
+    import codecs
+    def b(x):
+        return codecs.latin_1_encode(x)[0]
+    def s(x):
+        return codecs.latin_1_decode(x)[0]
 
 # Defines three script modes
 class ScriptMode:
@@ -73,13 +86,18 @@ def printVerbose( msg ):
             pass
 
     if VERBOSE:
-        print timestamp + " " + msg
+        print (timestamp + " " + msg)
     return
 
 def printStderr( msg ):
     " Prints onto stderr with a prefix "
     timestamp = datetime.datetime.now().strftime( '%m-%d-%y %H:%M:%S' )
-    print >> sys.stderr, timestamp + " NetSchedule check script. " + msg
+    import traceback
+    try:
+        raise Exception()
+    except:
+        traceback.print_exception(*sys.exc_info())
+    print (timestamp + " NetSchedule check script. " + msg, file=sys.stderr)
     return
 
 class UnexpectedNSResponse( Exception ):
@@ -141,13 +159,13 @@ class NSDirectConnect:
 
     def login( self ):
         " Performs a direct login to NS "
-        self.__sock.send( "netschedule_admin client_node=" + CLIENT_NODE +
-                          " client_session=check_session client_type=admin\n\n" )
+        cmd = "netschedule_admin client_node=" + CLIENT_NODE + " client_session=check_session client_type=admin\n\n"
+        self.__sock.send( b(cmd) )
         return
 
     def execute( self, cmd, multiline = False):
         " Sends the given command to NS "
-        self.__sock.sendall( cmd + "\n" )
+        self.__sock.sendall( b(cmd + "\n") )
         if multiline:
             return self.readMultiLineReply()
         return self.readSingleLineReply()
@@ -161,7 +179,7 @@ class NSDirectConnect:
                 self.__readBuf = parts[ 1 ]
                 break
 
-            buf = self.__sock.recv( 8192 )
+            buf = s( self.__sock.recv( 8192 ) )
             if not buf:
                 if self.__readBuf:
                     return self.__readBuf.strip()
@@ -269,7 +287,7 @@ def main():
         printVerbose( "Last check exit code: " + str( lastCheckExitCode ) )
         printVerbose( "Last check repeat count: " + str( lastCheckRepeatCount ) )
         printVerbose( "Seconds since last check: " + str( secondsSinceLastCheck ) )
-    except Exception, exc:
+    except Exception as exc:
         return log( BASE_NO_ACTION_ALERT_CODE + 2,
                     "Error processing command line arguments: " + str( exc ) )
 
@@ -282,11 +300,13 @@ def main():
         nsConnect = NSDirectConnect( connectionPoint )
         nsConnect.connect( COMMUNICATION_TIMEOUT )
         nsConnect.login()
-    except socket.timeout, exc:
+    except socket.timeout as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 1,
                      "Error connecting to server: timeout" ) )
-    except Exception, exc:
+    except Exception as exc:
+        import traceback
+        traceback.print_exception(*sys.exc_info())
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 2,
                      "Error connecting to server: " + str( exc ) ) )
@@ -362,33 +382,35 @@ def main():
         operationTest( nsConnect, serviceName )
         end = datetime.datetime.now()
 
-    except socket.timeout, exc:
+    except socket.timeout as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 4,
                      "(service " + serviceName + ") communication timeout" ) )
-    except UnexpectedNSResponse, exc:
+    except UnexpectedNSResponse as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 5,
                      "(service " + serviceName + ") " + str( exc ) ) )
-    except NSError, exc:
+    except NSError as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 6,
                      "(service " + serviceName + ") " + str( exc ) ) )
-    except NSShuttingDown, exc:
+    except NSShuttingDown as exc:
         return log( BASE_DOWN_CODE,
                     "(service " + serviceName + ") " + str( exc ) )
-    except NSAccessDenied, exc:
+    except NSAccessDenied as exc:
         return log( BASE_NO_ACTION_ALERT_CODE + 5,
                     "(service " + serviceName + ") " + str( exc ) )
-    except NSStaticCheckError, exc:
+    except NSStaticCheckError as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 7,
                      "(service " + serviceName + ") " + str( exc ) ) )
-    except Exception, exc:
+    except Exception as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_NO_ACTION_ALERT_CODE + 6,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except:
+        import traceback
+        traceback.print_exception(*sys.exc_info())
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_NO_ACTION_ALERT_CODE + 6,
                      "(service " + serviceName + ") Unknown check script error" ) )
@@ -467,7 +489,7 @@ def getServerVersion( nsConnect ):
     " Retrieves the server version "
     printVerbose( "Getting Netschedule version" )
     output = nsConnect.execute( "VERSION" )
-    values = cgi.parse_qs( output )
+    values = urllib.parse.parse_qs( output )
     return StrictVersion( values[ 'server_version' ][ 0 ] )
 
 
@@ -555,7 +577,7 @@ def testQueueAcceptSubmit( nsConnect ):
     " True id the LBSMD test queue is not in the refuse submits state "
     printVerbose( "Testing if " + DYNAMIC_QUEUE_TO_TEST + " queue accepts submits" )
     output = nsConnect.execute( "QINF2 " + DYNAMIC_QUEUE_TO_TEST )
-    values = cgi.parse_qs( output )
+    values = urllib.parse.parse_qs( output )
     if 'refuse_submits' in values:
         return values[ 'refuse_submits' ][ 0 ] == 'false'
     return True
@@ -575,7 +597,7 @@ def createTestQueue( nsConnect ):
     printVerbose( "Creating " + DYNAMIC_QUEUE_TO_TEST + " queue" )
     try:
         nsConnect.execute( "QCRE " + DYNAMIC_QUEUE_TO_TEST + " default" )
-    except Exception, exc:
+    except Exception as exc:
         # If many scripts try to create the same queue simultaneously
         # then an error 'already exists' is generated. Choke it if so.
         if 'already exists' in str( exc ).lower():
@@ -597,7 +619,7 @@ def operationTest( nsConnect, serviceName ):
     jobKey = nsConnect.execute( "SUBMIT NoInput aff=" + affinity )
     printVerbose( "Getting job status (WST2)" )
     output = nsConnect.execute( "WST2 " + jobKey )
-    values = cgi.parse_qs( output )
+    values = urllib.parse.parse_qs( output )
     if values[ 'job_status' ][ 0 ] != "Pending":
         raise NSError( "Unexpected job status after submitting a job. "
                        "Expected: Pending Received: " +
@@ -605,14 +627,14 @@ def operationTest( nsConnect, serviceName ):
     printVerbose( "Getting a job" )
     output = nsConnect.execute( "GET2 wnode_aff=0 any_aff=0 "
                                 "exclusive_new_aff=0 aff=" + affinity )
-    values = cgi.parse_qs( output )
+    values = urllib.parse.parse_qs( output )
     if 'job_key' not in values:
         raise NSError( "Could not get submitted job" )
     jobKey = values[ 'job_key' ][ 0 ]
     authToken = values[ 'auth_token' ][ 0 ]
     printVerbose( "Getting job status (WST2)" )
     output = nsConnect.execute( "WST2 " + jobKey )
-    values = cgi.parse_qs( output )
+    values = urllib.parse.parse_qs( output )
     if values[ 'job_status' ][ 0 ] != "Running":
         raise NSError( "Unexpected job status after getting it for "
                        "execution. Expected: Running Received: " +
@@ -621,14 +643,14 @@ def operationTest( nsConnect, serviceName ):
     nsConnect.execute( "PUT2 " + jobKey + " " + authToken + " 0 NoOutput" )
     printVerbose( "Getting job status (WST2)" )
     output = nsConnect.execute( "WST2 " + jobKey )
-    values = cgi.parse_qs( output )
+    values = urllib.parse.parse_qs( output )
     if values[ 'job_status' ][ 0 ] != "Done":
         raise NSError( "Unexpected job status after submitting a job. "
                        "Expected: Done Received: " +
                        values[ 'job_status' ][ 0 ] )
     printVerbose( "Getting job status (SST2)" )
     output = nsConnect.execute( "SST2 " + jobKey )
-    values = cgi.parse_qs( output )
+    values = urllib.parse.parse_qs( output )
     if values[ 'job_status' ][ 0 ] != "Done":
         raise NSError( "Unexpected job status after submitting a job. "
                        "Expected: Done Received: " +
@@ -646,7 +668,7 @@ class StaticHealthChecker:
     def check( self ):
         " Checks the limits "
         output = self.__nsConnect.execute( "HEALTH" )
-        values = cgi.parse_qs( output )
+        values = urllib.parse.parse_qs( output )
         self.__checkMemory( values )
         self.__checkFD( values )
         return
@@ -698,10 +720,14 @@ if __name__ == "__main__":
         # Ctrl+C
         printStderr( "Ctrl + C received" )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 7
-    except Exception, excpt:
+    except Exception as excpt:
+        import traceback
+        traceback.print_exception(*sys.exc_info())
         printStderr( str( excpt ) )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 8
     except:
+        import traceback
+        traceback.print_exception(*sys.exc_info())
         printStderr( "Generic unknown script error" )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 9
 
