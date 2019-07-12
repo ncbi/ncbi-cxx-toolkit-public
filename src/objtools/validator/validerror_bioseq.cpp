@@ -7622,6 +7622,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
     }
 }
 
+/*
 void CValidError_bioseq::ValidateTwintrons(
     const CBioseq& bioseq)
 {
@@ -7679,6 +7680,158 @@ void CValidError_bioseq::ValidateTwintrons(
                    }
                }
             }
+            EDiagSev sev = eDiag_Error;
+            if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+                sev = eDiag_Warning;
+            }
+            if (twintron) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultiIntervalIntron,
+                         "Multi-interval intron contains possible twintron",
+                          const_feat);
+            } else {
+                PostErr (sev, eErr_SEQ_FEAT_MultiIntervalIntron,
+                         "An intron should not have multiple intervals",
+                          const_feat);
+            }
+        }
+    }
+    catch (CException& e) {
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            if (! IsSelfReferential(bioseq)) {
+                LOG_POST(Error << "ValidateTwintrons error: " << e.what());
+            }
+        }
+    }
+}
+*/
+
+
+static vector<int> s_LocationToStartStopPairs(const CSeq_loc& loc) {
+
+    vector<int> intervalpoints;
+
+    CSeq_loc_CI curr(loc);
+    while (curr) {
+        const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
+        if (part.IsInt()) {
+            const CSeq_interval& ivl = part.GetInt();
+            intervalpoints.push_back(ivl.GetFrom());
+            intervalpoints.push_back(ivl.GetTo());
+        } else if (part.IsPacked_int()) {
+            ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
+                const CSeq_interval& ivl = **it;
+                intervalpoints.push_back(ivl.GetFrom());
+                intervalpoints.push_back(ivl.GetTo());
+                ++curr;
+            }
+            continue;
+        } else if (part.IsPnt()) {
+            const CSeq_point& pnt = part.GetPnt();
+            intervalpoints.push_back(pnt.GetPoint());
+            intervalpoints.push_back(pnt.GetPoint());
+        }
+        ++curr;
+    }
+
+    return intervalpoints;
+}
+
+
+static bool s_SubsequentIntron(CFeat_CI feat_ci_dup, Int4 start, Int4 stop)
+{
+    ++feat_ci_dup;
+
+    while (feat_ci_dup) {
+
+        const CSeq_feat& const_feat_dup = feat_ci_dup->GetOriginalFeature();
+        const CSeq_loc& loc_dup = const_feat_dup.GetLocation();
+        for (CSeq_loc_CI curr(loc_dup); curr; ++curr) {
+            Int4 fr = 0;
+            Int4 to = 0;
+            const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
+            if (part.IsInt()) {
+                const CSeq_interval& ivl = part.GetInt();
+                fr = ivl.GetFrom();
+                to = ivl.GetTo();
+            } else if (part.IsPnt()) {
+                const CSeq_point& pnt = part.GetPnt();
+                fr = pnt.GetPoint();
+                to = pnt.GetPoint();
+            } else {
+                continue;
+            }
+            if (start + 1 == fr && stop - 1 == to) {
+                return true;
+            }
+            if (to > stop) {
+                return false;
+            }
+        }
+
+        ++feat_ci_dup;
+    }
+
+    return false;
+}
+
+void CValidError_bioseq::ValidateTwintrons(
+    const CBioseq& bioseq)
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+    if (!bsh) return;
+    SAnnotSelector sel(CSeqFeatData::eSubtype_intron);
+    try {
+        for (CFeat_CI feat_ci(bsh, sel); feat_ci;  ++feat_ci) {
+
+            const CSeq_feat& const_feat = feat_ci->GetOriginalFeature();
+            const CSeq_loc& loc = const_feat.GetLocation();
+
+            vector<int> intervalpoints = s_LocationToStartStopPairs(loc);
+
+            /*
+            CSeq_loc_CI curr(loc);
+            while (curr) {
+                const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
+                if (part.IsInt()) {
+                    const CSeq_interval& ivl = part.GetInt();
+                    intervalpoints.push_back(ivl.GetFrom());
+                    intervalpoints.push_back(ivl.GetTo());
+                } else if (part.IsPacked_int()) {
+                    ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
+                        const CSeq_interval& ivl = **it;
+                        intervalpoints.push_back(ivl.GetFrom());
+                        intervalpoints.push_back(ivl.GetTo());
+                        ++curr;
+                    }
+                    continue;
+                } else if (part.IsPnt()) {
+                    const CSeq_point& pnt = part.GetPnt();
+                    intervalpoints.push_back(pnt.GetPoint());
+                    intervalpoints.push_back(pnt.GetPoint());
+                }
+                ++curr;
+            }
+            */
+
+            int len = intervalpoints.size();
+            if (len < 4) {
+              continue;
+            }
+            int max = len - 1;
+
+            bool twintron = true;
+
+            for (int pos = 1; pos < max; pos += 2) {
+                Int4 intL = intervalpoints[pos];
+                Int4 intR = intervalpoints[pos + 1];
+
+                CFeat_CI feat_ci_dup = feat_ci;
+                if (! s_SubsequentIntron(feat_ci_dup, intL, intR)) {
+                    twintron = false;
+                    break;
+                }
+            }
+
             EDiagSev sev = eDiag_Error;
             if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
                 sev = eDiag_Warning;
