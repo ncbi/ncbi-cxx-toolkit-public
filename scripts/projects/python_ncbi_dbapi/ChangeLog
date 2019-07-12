@@ -1,3 +1,6 @@
+Version 1.20.1 (2019-07-12):
+* Clean up a stray dependency on libconnect.so.
+
 Version 1.20.0 (2019-07-11):
 * Advance to version 22.0 of the stable C++ Toolkit components and GCC 7.3,
   with FreeTDS 1.0 (ftds100) available by explicit request.
