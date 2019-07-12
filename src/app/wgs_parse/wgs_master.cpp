@@ -2431,7 +2431,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 }
             }
 
-            if (!seq_submit->IsSetSub()) {
+            if (!seq_submit->IsSetSub() || master_info.m_input_type != eSeqSubmit) {
                 if (master_info.m_input_type == eSeqSubmit) {
                     ERR_POST_EX(ERR_MASTER, ERR_MASTER_MissingSubmitBlock, Error << "Submission \"" << file << "\" is missing Submit-block.");
                 }
