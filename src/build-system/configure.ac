@@ -902,22 +902,26 @@ if test -n "$with_experimental"; then
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
          ChaosMonkey )
-            CPPFLAGS="$CPPFLAGS -DNCBI_MONKEY"
+            AC_DEFINE(NCBI_MONKEY, 1,
+               [Define to 1 to enable "ChaosMonkey" failure testing.])
             NCBI_FEATURE(ChaosMonkey)
             ;;
          Int8GI )
-            CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
+            AC_DEFINE(NCBI_INT8_GI, 1,
+               [Define to 1 to use a simple 64-bit type for GI numbers.])
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             ;;
          StrictGI )
-            CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+            AC_DEFINE(NCBI_STRICT_GI, 1,
+               [Define to 1 to use a strict 64-bit type for GI numbers.])
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             NCBI_FEATURE(StrictGI)
             ;;
          PSGClient )
-            CPPFLAGS="$CPPFLAGS -DHAVE_PSG_CLIENT"
+            AC_DEFINE(HAVE_PSG_CLIENT, 1,
+               [Define to 1 to let the GenBank data loader use PubSeq Gateway.])
             NCBI_FEATURE(PSGClient)
             ;;
          * )

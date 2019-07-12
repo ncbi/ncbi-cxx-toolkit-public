@@ -608,6 +608,9 @@
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
 
+/* Define to 1 to let the GenBank data loader use PubSeq Gateway. */
+#undef HAVE_PSG_CLIENT
+
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
 
@@ -1007,11 +1010,14 @@
 /* Define to 1 if stdio supports locking. */
 #undef NCBI_HAVE_STDIO_LOCKED
 
+/* Define to 1 to use a simple 64-bit type for GI numbers. */
+#undef NCBI_INT8_GI
+
 /* Define to 1 if building Java Native Interface bindings. */
 #undef NCBI_JNI
 
-#undef NCBI_INT8_GI
-#undef HAVE_PSG_CLIENT
+/* Define to 1 to enable "ChaosMonkey" failure testing. */
+#undef NCBI_MONKEY
 
 /* Define to whatever syntax, if any, your compiler supports for marking
    functions that never return. */
@@ -1074,6 +1080,9 @@
 
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 #undef NCBI_SQLCOLATTRIBUTE_SQLLEN
+
+/* Define to 1 to use a strict 64-bit type for GI numbers. */
+#undef NCBI_STRICT_GI
 
 /* Define to whatever syntax your compiler supports for declaring thread-local
    variables, or leave undefined if it doesn't. */

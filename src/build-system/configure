@@ -4866,22 +4866,38 @@ if test -n "$with_experimental"; then
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
          ChaosMonkey )
-            CPPFLAGS="$CPPFLAGS -DNCBI_MONKEY"
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_MONKEY 1
+_ACEOF
+
                       WithFeatures="$WithFeatures${WithFeaturesSep}ChaosMonkey"; WithFeaturesSep=" "
             ;;
          Int8GI )
-            CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_INT8_GI 1
+_ACEOF
+
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
             ;;
          StrictGI )
-            CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_STRICT_GI 1
+_ACEOF
+
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
                       WithFeatures="$WithFeatures${WithFeaturesSep}StrictGI"; WithFeaturesSep=" "
             ;;
          PSGClient )
-            CPPFLAGS="$CPPFLAGS -DHAVE_PSG_CLIENT"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PSG_CLIENT 1
+_ACEOF
+
                       WithFeatures="$WithFeatures${WithFeaturesSep}PSGClient"; WithFeaturesSep=" "
             ;;
          * )
