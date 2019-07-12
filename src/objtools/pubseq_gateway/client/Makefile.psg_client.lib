@@ -7,6 +7,9 @@ ASN_DEP = id2
 
 REQUIRES = MT LIBUV NGHTTP2
 
+# Build shared version when possible
+LIB_OR_DLL = both
+
 DLL_LIB = xconnserv
 
 LIBS = $(PSG_CLIENT_LIBS)
