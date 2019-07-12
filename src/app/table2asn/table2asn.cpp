@@ -578,6 +578,10 @@ int CTbl2AsnApp::Run(void)
         }
         m_context.m_gap_Unknown_length = static_cast<TSeqPos>(gaps_unknown);
     }
+    if (m_context.m_gap_Unknown_length > 0 && m_context.m_gapNmin == 0) {
+        m_context.m_gapNmin = m_context.m_gap_Unknown_length;
+    }
+
 
     if (args["l"])
     {
@@ -614,10 +618,6 @@ int CTbl2AsnApp::Run(void)
                 "Unrecognized gap type " + args["gap-type"].AsString());
         }
 
-    }
-
-    if (m_context.m_gap_Unknown_length > 0 && m_context.m_gapNmin == 0) {
-        m_context.m_gapNmin = m_context.m_gap_Unknown_length;
     }
 
     if (args["H"])
