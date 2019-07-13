@@ -927,7 +927,6 @@ CCGVCC	c	China Centre for General Viruses Culture Collection
 CCH	s	University of Arizona South, Agricultural Extension Service			
 CCIAL	c	Cultures Cells for Institute Adolfo Lutz			
 CCIBSO	c	Culture Collection IBSO			
-CCIBt	c	Colecao de Cultura de Algas, Fungos e Cianobacterias do Instituto de Botanica			
 CCIBt	c	Culture Collection at the Institute of Botany, Sao Paulo			
 CCIM	c	Culture Collection of Industrial Microorganisms			
 CCM	c	Czech Collection of Microorganisms	CCM<CZE>		
@@ -3002,7 +3001,6 @@ IMMH	c	Collection of Animal Viruses
 IMMIB	c	Culture Collection of the Institute of Medical Microbiology and Immunology of the University of Bonn			
 IMPC	s	Sichuan Academy of Traditional Chinese Medicine and Pharmacy	IMC		
 IMPH	s	Institute of Medicinal Plants, ACECR			
-IMPH	s	Institute of Medicinal Plants, ACECR			
 IMRU	c	Waksman Institute of Microbiology			
 IMS<TZA>	s	Institute of Marine Sciences			
 IMS<USA-NC>	s	University of North Carolina at Chapel Hill			
@@ -4019,7 +4017,7 @@ MCC-UPLB	c	Microbial Culture Collection
 MCCA	s	Universidade Federal de Minas Gerais			
 MCCB	s	Museo Civico "Craveri"			
 MCCC	c	Marine Culture Collection of China			
-MCCC	s	Mendocino College Coast Center			
+MCCC<USA>	s	Mendocino College Coast Center			
 MCCI	s	Museo Civico di Storia Natural de Carmognola			
 MCCM<DEU>	c	Medical Culture Collection Marburg			
 MCCM<IND>	s	Madras Christian College			
