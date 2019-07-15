@@ -427,7 +427,7 @@ void CFlatGatherer::x_GatherBioseq(
     if ( s_IsSegmented(seq)  &&  s_HasSegments(seq)       &&
          (cfg.IsStyleNormal()  ||  cfg.IsStyleSegment())  &&
          (m_Context->GetLocation() == 0)                  &&
-         !cfg.IsFormatFTable() ) {
+         ( !cfg.IsFormatFTable()  ||  cfg.ShowFtablePeptides() ) ) {
          x_DoMultipleSections(seq);
     } else {
 
@@ -2974,7 +2974,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
-                    if (!ctx.Config().IsFormatFTable()) {
+                    if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                         x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, slice_mapper);
                     }
                 }
@@ -3028,7 +3028,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 case CSeqFeatData::eSubtype_cdregion:
                     {{  
                         // map features from protein
-                        if (!ctx.Config().IsFormatFTable()) {
+                        if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                             x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, 
                                 slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
@@ -3158,7 +3158,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
-                    if (!ctx.Config().IsFormatFTable()) {
+                    if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                         x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
                     }
                 }
@@ -3207,7 +3207,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
                 case CSeqFeatData::eSubtype_cdregion:
                     {{  
                         // map features from protein
-                        if (!ctx.Config().IsFormatFTable()) {
+                        if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                             x_GetFeatsOnCdsProduct(original_feat, ctx, 
                                 slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
@@ -3439,7 +3439,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
-                    if (!ctx.Config().IsFormatFTable()) {
+                    if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                         x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, slice_mapper);
                     }
                 }
@@ -3473,7 +3473,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 case CSeqFeatData::eSubtype_cdregion:
                     {{  
                         // map features from protein
-                        if (!ctx.Config().IsFormatFTable()) {
+                        if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                             x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, 
                                 slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
@@ -3612,7 +3612,7 @@ void CFlatGatherer::x_GatherFeaturesOnRange
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
-                    if (!ctx.Config().IsFormatFTable()) {
+                    if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                         x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
                     }
                 }
@@ -3636,7 +3636,7 @@ void CFlatGatherer::x_GatherFeaturesOnRange
                 case CSeqFeatData::eSubtype_cdregion:
                     {{  
                         // map features from protein
-                        if (!ctx.Config().IsFormatFTable()) {
+                        if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
                             x_GetFeatsOnCdsProduct(original_feat, ctx, 
                                 slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
