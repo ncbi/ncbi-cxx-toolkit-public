@@ -787,20 +787,16 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     return 0;
 }
 
-bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, uint32_t error_code)
+bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error)
 {
     if (req->CanRetry()) {
-        if (error_code != NGHTTP2_REFUSED_STREAM) {
-            ERR_POST(Warning << "retrying after stream closed with error " << s_NgHttp2Error(error_code));
-        }
-
         // Return to queue for a re-send
         if (m_Io->queue.Push(move(req))) {
             return true;
         }
     }
 
-    req->reply->reply_item.GetLock()->state.AddError(SPSG_Error(error_code));
+    req->reply->reply_item.GetLock()->state.AddError(error);
     AddToCompletion(req->reply);
     return false;
 }
@@ -816,7 +812,11 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
 
         // If there is an error and the request is allowed to Retry
         if (error_code) {
-            Retry(req, error_code);
+            SPSG_Error error(error_code);
+
+            if (!Retry(req, error)) {
+                ERR_POST("Request failed with " << error);
+            }
         } else {
             req->reply->SetSuccess();
             AddToCompletion(req->reply);
@@ -945,8 +945,8 @@ void SPSG_IoSession::ProcessRequests()
         auto stream_id = m_Session.Submit(path, req.get());
 
         if (stream_id < 0) {
-            Retry(req, stream_id);
-            break;
+            Reset(stream_id);
+            return;
         }
 
         m_Requests.emplace(stream_id, move(req));
@@ -962,14 +962,21 @@ void SPSG_IoSession::ProcessRequests()
     }
 }
 
-void SPSG_IoSession::Reset(SPSG_Error err)
+void SPSG_IoSession::Reset(const SPSG_Error& error)
 {
     m_Session.Del();
     m_Tcp.Stop();
 
+    bool some_requests_failed = false;
+
     for (auto& pair : m_Requests) {
-        pair.second->reply->reply_item.GetLock()->state.AddError(err);
-        AddToCompletion(pair.second->reply);
+        if (!Retry(pair.second, error)) {
+            some_requests_failed = true;
+        }
+    }
+
+    if (some_requests_failed) {
+        ERR_POST("Some requests failed with " << error);
     }
 
     m_Requests.clear();

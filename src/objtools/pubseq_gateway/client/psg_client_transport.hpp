@@ -643,7 +643,7 @@ struct SPSG_IoSession
 
     void ProcessRequests();
 
-    bool Retry(shared_ptr<SPSG_Request> req, uint32_t error_code);
+    bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
 
     template <typename TReturn, class ...TArgs>
     TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs...), TArgs... args)
@@ -671,7 +671,7 @@ private:
     void Send();
     void ProcessCompletionList();
 
-    void Reset(SPSG_Error err);
+    void Reset(const SPSG_Error& error);
 
     template <class ...TArgs>
     void Reset(TArgs... args)
