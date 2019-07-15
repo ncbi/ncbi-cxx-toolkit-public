@@ -1656,7 +1656,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
             }
         }
 
-        if (!GetParams().IsVDBMode()) {
+        if (!GetParams().IsVDBMode() && GetParams().GetSortOrder() != eUnsorted && GetParams().IsAccessionAssigned()) {
 
             auto sort_by_accessions_func = [&master_info](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
                 {
