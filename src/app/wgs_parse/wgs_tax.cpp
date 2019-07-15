@@ -39,6 +39,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include <objects/taxon1/taxon1.hpp>
 
@@ -104,6 +105,12 @@ void CollectOrgRefs(const CSeq_entry& entry, list<COrgRefInfo>& org_refs)
                     }
                 }
             }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            CollectOrgRefs(*cur_entry, org_refs);
         }
     }
 }
