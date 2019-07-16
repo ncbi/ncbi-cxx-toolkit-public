@@ -346,15 +346,32 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
 
     string tc_ver   = GetApp().GetEnvironment().Get("TEAMCITY_VERSION");
     string tc_build = GetApp().GetEnvironment().Get("BUILD_NUMBER");
+    string tc_build_id;
     string tc_prj   = GetApp().GetEnvironment().Get("TEAMCITY_PROJECT_NAME");
     string tc_conf  = GetApp().GetEnvironment().Get("TEAMCITY_BUILDCONF_NAME");
     string sc_ver;
     string sc_rev;
 
+    // Get content of the Teamcity property file, if any
+    string prop_file_name = GetApp().GetEnvironment().Get("TEAMCITY_BUILD_PROPERTIES_FILE");
+    string prop_file_info;
+    if (!prop_file_name.empty()) {
+        CNcbiIfstream is(prop_file_name.c_str(), IOS_BASE::in);
+        if (is.good()) {
+            NcbiStreamToString(&prop_file_info, is);
+            // teamcity.build.id
+            if (!prop_file_info.empty()) {
+                CRegexp re("teamcity.build.id=(\\d+)");
+                tc_build_id = re.GetMatch(prop_file_info, 0, 1);
+            }
+        }
+    }
+
     string prefix("#define NCBI_");
 
     if (!tc_ver.empty()  &&  !tc_build.empty()) {
         ofs << prefix << "TEAMCITY_BUILD_NUMBER    " << tc_build << endl;
+        ofs << prefix << "TEAMCITY_BUILD_ID        " << tc_build_id << endl;
         ofs << prefix << "TEAMCITY_PROJECT_NAME    " << "\"" << tc_prj  << "\"" << endl;
         ofs << prefix << "TEAMCITY_BUILDCONF_NAME  " << "\"" << tc_conf << "\"" << endl;
     }
@@ -384,15 +401,9 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
             // Fallback
             sc_ver = GetApp().GetEnvironment().Get("NCBI_SC_VERSION");
             // try to get revision bumber from teamcity property file
-            string prop_file = GetApp().GetEnvironment().Get("TEAMCITY_BUILD_PROPERTIES_FILE");
-            if (!prop_file.empty() && CFile(prop_file).Exists()) {
-                string info;
-                CNcbiIfstream is(prop_file.c_str(), IOS_BASE::in);
-                NcbiStreamToString(&info, is);
-                if (!info.empty()) {
-                    CRegexp re("build.vcs.number=(\\d+)");
-                    sc_rev = re.GetMatch(info, 0, 1);
-                }
+            if (!prop_file_info.empty()) {
+                CRegexp re("build.vcs.number=(\\d+)");
+                sc_rev = re.GetMatch(prop_file_info, 0, 1);
             }
         }
         if (!sc_rev.empty()) {
