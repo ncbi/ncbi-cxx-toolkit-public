@@ -1656,38 +1656,43 @@ bool ParseSubmissions(CMasterInfo& master_info)
             }
         }
 
-        if (!GetParams().IsVDBMode() && GetParams().GetSortOrder() != eUnsorted && GetParams().IsAccessionAssigned()) {
+        if (!GetParams().IsVDBMode()) {
 
-            auto sort_by_accessions_func = [&master_info](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
-                {
-                    if (!a->IsSeq() || !b->IsSeq()) {
-                        return false;
-                    }
+            if (GetParams().GetSortOrder() != eUnsorted && GetParams().IsAccessionAssigned()) {
 
-                    string sa = GetSeqIdKey(a->GetSeq()),
-                           sb = GetSeqIdKey(b->GetSeq());
+                auto sort_by_accessions_func = [&master_info](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
+                    {
+                        if (!a->IsSeq() || !b->IsSeq()) {
+                            return false;
+                        }
 
-                    auto it_a = master_info.m_order_of_entries.find(sa);
-                    if (it_a == master_info.m_order_of_entries.end()) {
-                        sa = GetSeqIdLocalOrGeneral(a->GetSeq());
-                        it_a = master_info.m_order_of_entries.find(sa);
-                    }
+                        string sa = GetSeqIdKey(a->GetSeq()),
+                               sb = GetSeqIdKey(b->GetSeq());
 
-                    auto it_b = master_info.m_order_of_entries.find(sb);
-                    if (it_b == master_info.m_order_of_entries.end()) {
-                        sb = GetSeqIdLocalOrGeneral(b->GetSeq());
-                        it_b = master_info.m_order_of_entries.find(sb);
-                    }
+                        auto it_a = master_info.m_order_of_entries.find(sa);
+                        if (it_a == master_info.m_order_of_entries.end()) {
+                            sa = GetSeqIdLocalOrGeneral(a->GetSeq());
+                            it_a = master_info.m_order_of_entries.find(sa);
+                        }
 
-                    if (it_a == master_info.m_order_of_entries.end() ||
-                        it_b == master_info.m_order_of_entries.end()) {
-                        return false;
-                    }
+                        auto it_b = master_info.m_order_of_entries.find(sb);
+                        if (it_b == master_info.m_order_of_entries.end()) {
+                            sb = GetSeqIdLocalOrGeneral(b->GetSeq());
+                            it_b = master_info.m_order_of_entries.find(sb);
+                        }
 
-                    return it_a->second < it_b->second;
-                };
+                        if (it_a == master_info.m_order_of_entries.end() ||
+                            it_b == master_info.m_order_of_entries.end()) {
+                            return false;
+                        }
 
-            bioseq_set->SetSeq_set().sort(sort_by_accessions_func);
+                        return it_a->second < it_b->second;
+                    };
+
+                bioseq_set->SetSeq_set().sort(sort_by_accessions_func);
+
+            }
+
             bioseq_set->SetSeq_set().reverse();
         }
 
