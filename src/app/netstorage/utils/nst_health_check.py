@@ -1,4 +1,4 @@
-#!/opt/python-2.7/bin/python
+#!/opt/python-all/bin/python3
 #
 # Authors: Sergey Satskiy
 #
@@ -11,7 +11,8 @@ NetStorage server health check script
 
 import sys, datetime, socket, os
 from optparse import OptionParser
-from ncbi_grid_1_1.ncbi import json_over_uttp, uttp
+import json_over_uttp
+import uttp
 import pprint
 import random
 
@@ -106,13 +107,13 @@ def printVerbose( msg ):
             pass
 
     if VERBOSE:
-        print timestamp + " " + msg
+        print(timestamp + " " + msg)
     return
 
 def printStderr( msg ):
     " Prints onto stderr with a prefix "
     timestamp = datetime.datetime.now().strftime( '%m-%d-%y %H:%M:%S' )
-    print >> sys.stderr, timestamp + " NetStorage check script. " + msg
+    print(timestamp + " NetStorage check script. " + msg, file=sys.stderr)
     printVerbose( msg )
     return
 
@@ -152,6 +153,30 @@ def log( code, message ):
 
 
 
+# A wrapper around a socket to reduce the adjustments in the
+# uttp/json_over_uttp modules
+# Basically the meaningful change is adding decode() to recv()
+class SockWrapper:
+
+    def __init__(self, host, port, timeout):
+
+        self.__s = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+        self.__s.settimeout( timeout )
+        self.__s.connect( (host, port) )
+
+    def flush(self):
+        pass
+
+    def send(self, data):
+        self.__s.send(data)
+
+    def write(self, data):
+        self.send(data)
+
+    def recv(self, bufsize):
+        return self.__s.recv(bufsize).decode()
+
+
 class NetStorage:
     " Implements communications with a NetStorage server "
 
@@ -165,12 +190,7 @@ class NetStorage:
 
     def connect( self, timeout ):
         " Establishes a connection to the server "
-        socket.socket.write = socket.socket.send
-        socket.socket.flush = lambda ignore: ignore
-
-        self.__sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-        self.__sock.settimeout( timeout )
-        self.__sock.connect( ( self.__host, self.__port ) )
+        self.__sock = SockWrapper(self.__host, self.__port, timeout)
 
         self.__nst = json_over_uttp.MessageExchange( self.__sock, self.__sock )
         return
@@ -196,7 +216,7 @@ class NetStorage:
     def printMessage( prefix, msg ):
         " Prints the message "
         if VERBOSE:
-            print prefix + ":"
+            print(prefix + ":")
             prettyPrinter = pprint.PrettyPrinter( indent = 4 )
             prettyPrinter.pprint( msg )
         return
@@ -412,7 +432,7 @@ def main():
         printVerbose( "Last check exit code: " + str( lastCheckExitCode ) )
         printVerbose( "Last check repeat count: " + str( lastCheckRepeatCount ) )
         printVerbose( "Seconds since last check: " + str( secondsSinceLastCheck ) )
-    except Exception, exc:
+    except Exception as exc:
         return log( BASE_NO_ACTION_ALERT_CODE + 2,
                     "Error processing command line arguments: " + str( exc ) )
 
@@ -425,11 +445,11 @@ def main():
         parts = connectionPoint.split( ":" )
         nst = NetStorage( parts[ 0 ], int( parts[ 1 ] ) )
         nst.connect( COMMUNICATION_TIMEOUT )
-    except socket.timeout, exc:
+    except socket.timeout as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 1,
                      "Error connecting to server: socket timeout" ) )
-    except Exception, exc:
+    except Exception as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 2,
                      "Error connecting to server: " + str( exc ) ) )
@@ -456,28 +476,28 @@ def main():
         # Everything is fine here
         penaltyValue = pickPenaltyValue( lastCheckExitCode, 0 )
         return penaltyValue
-    except socket.timeout, exc:
+    except socket.timeout as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_STANDBY_CODE + 0,
                      "Error communicating to server (with metadata): socket timeout" ) )
 
-    except NSTProtocolError, exc:
+    except NSTProtocolError as exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 2,
              "NetStorage protocol error (with metadata): " + str( exc ) )
-    except NSTResponseError, exc:
+    except NSTResponseError as exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 3,
              "NetStorage response error (with metadata): " + str( exc ) )
-    except NSTObjectContentError, exc:
+    except NSTObjectContentError as exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 4,
              "NetStorage object read/write error (with metadata): " + str( exc ) )
-    except NSTAttrValueError, exc:
+    except NSTAttrValueError as exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 5,
              "NetStorage attribute read/write error (with metadata): " + str( exc ) )
-    except Exception, exc:
+    except Exception as exc:
         safeDelete( nst, objectLoc )
         log( BASE_NO_ACTION_ALERT_CODE + 3,
              "Object life cycle error (with metadata): " + str( exc ) )
@@ -494,26 +514,26 @@ def main():
         nst.sendHello( LBSMD_SERVICE_NAME, 'disabled' )
         objectLoc = writeReadObject( nst )
         nst.delete( objectLoc )
-    except socket.timeout, exc:
+    except socket.timeout as exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 1,
                      "Error communicating to server (without metadata): socket timeout" ) )
-    except NSTProtocolError, exc:
+    except NSTProtocolError as exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 2,
                      "NetStorage protocol error (without metadata): " + str( exc ) ) )
-    except NSTResponseError, exc:
+    except NSTResponseError as exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 3,
                      "NetStorage response error (without metadata): " + str( exc ) ) )
-    except NSTObjectContentError, exc:
+    except NSTObjectContentError as exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 4,
                      "NetStorage object read/write error (without metadata): " + str( exc ) ) )
-    except Exception, exc:
+    except Exception as exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_NO_ACTION_ALERT_CODE + 3,
@@ -570,7 +590,7 @@ if __name__ == "__main__":
         # Ctrl+C
         printStderr( "Ctrl + C received" )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 7
-    except Exception, excpt:
+    except Exception as excpt:
         printStderr( str( excpt ) )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 8
     except:
