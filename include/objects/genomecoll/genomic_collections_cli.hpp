@@ -160,7 +160,8 @@ public:
     CRef<CGCClient_AssemblySequenceInfo> FindOneAssemblyBySequences
         (const list<string>& sequence_acc,
          int filter,
-         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default);
+         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default,
+         bool with_roles = false);
 
     /// Find assemblies by sequence accession
     ///
@@ -183,7 +184,8 @@ public:
     CRef<CGCClient_AssembliesForSequences> FindAssembliesBySequences
         (const string& sequence_acc,
          int filter,
-         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default);
+         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default,
+         bool with_roles = false);
 
     /// Find assemblies by sequence accessions
     ///
@@ -206,7 +208,8 @@ public:
     CRef<CGCClient_AssembliesForSequences> FindAssembliesBySequences
         (const list<string>& sequence_acc,
          int filter,
-         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default);
+         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default,
+         bool with_roles = false);
 
 
 
@@ -218,7 +221,12 @@ private:
     CGenomicCollectionsService(const CGenomicCollectionsService& value);
     CGenomicCollectionsService& operator=(const CGenomicCollectionsService& value);
 
-    CRef<CGCClient_AssembliesForSequences> FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool top_only);
+    CRef<CGCClient_AssembliesForSequences> x_FindAssembliesBySequences(
+            const list<string>& sequence_acc, 
+            int filter, 
+            CGCClient_GetAssemblyBySequenceRequest::ESort sort, 
+            bool top_only, 
+            bool with_roles);
 };
 
 END_objects_SCOPE
