@@ -193,6 +193,7 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
         arg_desc->AddKey("acc", "ACC_VER", "Comma-separated list of sequences", CArgDescriptions::eString);
         arg_desc->AddKey("acc_file", "acc_file", "File with list of sequences - one per line", CArgDescriptions::eInputFile);
         arg_desc->SetDependency("acc_file", arg_desc->eExcludes, "acc");
+        arg_desc->AddFlag("roles", "Add sequence role data to output");
     };
 
     auto AddAccRelId = [&](CArgDescriptions* arg_desc)
@@ -355,11 +356,12 @@ int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsS
                                    return acc | ENUM_METHOD_NAME(EGCClient_GetAssemblyBySequenceFilter)()->FindValue(f);
                                });
             const int sort = args["sort"] ? CGCClient_GetAssemblyBySequenceRequest::ENUM_METHOD_NAME(ESort)()->FindValue(args["sort"].AsString()) : CGCClient_GetAssemblyBySequenceRequest::eSort_default;
+            const bool with_roles = args["roles"];
 
             if (args["top_asm"].HasValue())
-                ostr << *service.FindOneAssemblyBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort));
+                ostr << *service.FindOneAssemblyBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort), with_roles);
             else
-                ostr << *service.FindAssembliesBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort));
+                ostr << *service.FindAssembliesBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort), with_roles);
         }
         else if(args.GetCommand() == "get-equivalent-assemblies")
         {

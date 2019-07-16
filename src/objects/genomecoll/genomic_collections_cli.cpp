@@ -58,8 +58,8 @@ BEGIN_objects_SCOPE
 
 
 CGCServiceException::CGCServiceException(const CDiagCompileInfo& diag, const objects::CGCClient_Error& srv_error)
-    : CGCServiceException(diag, nullptr, 
-                          CGCServiceException::EErrCode(srv_error.CanGetError_id() ? srv_error.GetError_id() : CException::eInvalid), 
+    : CGCServiceException(diag, nullptr,
+                          CGCServiceException::EErrCode(srv_error.CanGetError_id() ? srv_error.GetError_id() : CException::eInvalid),
                           srv_error.GetDescription())
 {}
 
@@ -163,7 +163,7 @@ string CGenomicCollectionsService::ValidateChrType(const string& chrType, const 
 {
     CGCClient_ValidateChrTypeLocRequest req;
     CGCClientResponse reply;
-    
+
     req.SetType(chrType);
     req.SetLocation(chrLoc);
 
@@ -185,25 +185,25 @@ CRef<CGCClient_AssemblyInfo> CGenomicCollectionsService::FindOneAssemblyBySequen
     return asmseq_info ? CRef<CGCClient_AssemblyInfo>(&asmseq_info->SetAssembly()) : CRef<CGCClient_AssemblyInfo>();
 }
 
-CRef<CGCClient_AssemblySequenceInfo> CGenomicCollectionsService::FindOneAssemblyBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
+CRef<CGCClient_AssemblySequenceInfo> CGenomicCollectionsService::FindOneAssemblyBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool with_roles)
 {
-    CRef<CGCClient_AssembliesForSequences> assm(FindAssembliesBySequences(sequence_acc, filter, sort, true));
+    CRef<CGCClient_AssembliesForSequences> assm(x_FindAssembliesBySequences(sequence_acc, filter, sort, true, with_roles));
 
     return assm->CanGetAssemblies() && !assm->GetAssemblies().empty() ?
            CRef<CGCClient_AssemblySequenceInfo>(assm->SetAssemblies().front()) :
            CRef<CGCClient_AssemblySequenceInfo>();
 }
 
-CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const string& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
+CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const string& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool with_roles)
 {
-    return FindAssembliesBySequences(list<string>(1, sequence_acc), filter, sort);
+    return FindAssembliesBySequences(list<string>(1, sequence_acc), filter, sort, with_roles);
 }
 
-CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
+CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool with_roles)
 {
-    return FindAssembliesBySequences(sequence_acc, filter, sort, false);
+    return x_FindAssembliesBySequences(sequence_acc, filter, sort, false, with_roles);
 }
-CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool top_only)
+CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::x_FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool top_only, bool with_roles)
 
 {
     CGCClient_GetAssemblyBySequenceRequest req;
@@ -218,6 +218,9 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssemblie
     req.SetFilter(filter);
     req.SetSort(sort);
     req.SetTop_assembly_only(top_only ? 1 : 0);
+    if (with_roles) {
+        req.SetAdd_sequence_roles(true);
+    }
 
     LogRequest(req);
 
