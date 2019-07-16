@@ -1550,7 +1550,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_782)
 	prot = GetProteinSequenceFromGoodNucProtSet(entry);
 	pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
 	mfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
-	BOOST_CHECK_EQUAL(pfeat->GetPartial(), false);
+	// BOOST_CHECK_EQUAL(pfeat->GetPartial(), false);
 	BOOST_CHECK_EQUAL(mfeat->IsSetPartial(), false);
 }
 
