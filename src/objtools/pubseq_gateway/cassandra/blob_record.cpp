@@ -116,12 +116,23 @@ CBlobRecord& CBlobRecord::SetId2Info(string const & value)
     return *this;
 }
 
-CBlobRecord& CBlobRecord::SetId2Info(int16_t sat, int32_t info, int32_t chunks)
+CBlobRecord& CBlobRecord::SetId2Info(int16_t sat, int32_t info, int32_t chunks, int32_t version)
 {
     if (sat > 0) {
-        m_Id2Info = NStr::NumericToString(sat) + "." +
-            NStr::NumericToString(info) + "." +
-            NStr::NumericToString(chunks);
+        m_Id2Info = to_string(sat);
+        string info_str = to_string(info);
+        string chunks_str = to_string(chunks);
+        string version_str;
+        size_t reserve = m_Id2Info.size() + info_str.size() + chunks_str.size() + 2;
+        if (version > 0) {
+            version_str = to_string(version);
+            reserve += version_str.size() + 1;
+        }
+        m_Id2Info.reserve(reserve);
+        m_Id2Info.append(1, '.').append(info_str).append(1, '.').append(chunks_str);
+        if (version > 0) {
+            m_Id2Info.append(1, '.').append(version_str);
+        }
     }
     return *this;
 }

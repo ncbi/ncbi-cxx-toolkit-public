@@ -48,6 +48,18 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+static int32_t ExtractNth(string const& str, char separator, size_t n)
+{
+    const char * current = str.c_str();
+    while (*current && n) {
+        n -= (*current++ == separator);
+    }
+    if (n == 0 && *current && *current >= '0' && *current <= '9') {
+        return atoi(current);
+    }
+    return 0;
+}
+
 CCassBlobTaskInsertExtended::CCassBlobTaskInsertExtended(
     unsigned int op_timeout_ms, shared_ptr<CCassConnection>  conn,
     const string & keyspace, CBlobRecord * blob,
@@ -129,23 +141,37 @@ void CCassBlobTaskInsertExtended::Wait1()
                 m_QueryArr[0].restart_count = 0;
                 auto qry = m_QueryArr[0].query;
                 string sql = "INSERT INTO " + GetKeySpace() + ".blob_prop "
-                      "("
-                      " sat_key,"
-                      " last_modified,"
-                      " class,"
-                      " date_asn1,"
-                      " div,"
-                      " flags,"
-                      " hup_date,"
-                      " id2_info,"
-                      " n_chunks,"
-                      " owner,"
-                      " size,"
-                      " size_unpacked,"
-                      " username"
-                      ")"
-                      "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "("
+                    " sat_key,"
+                    " last_modified,"
+                    " class,"
+                    " date_asn1,"
+                    " div,"
+                    " flags,"
+                    " hup_date,"
+                    " id2_info,"
+                    " n_chunks,"
+                    " owner,"
+                    " size,"
+                    " size_unpacked,"
+                    " username"
+                    ")"
+                    "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 qry->NewBatch();
+
+                int32_t split_version = ExtractNth(m_Blob->GetId2Info(), '.', 3);
+                if (split_version > 0) {
+                    string history_sql = "INSERT INTO " + GetKeySpace() + ".blob_split_history "
+                        "(sat_key, split_version, last_modified, id2_info) VALUES(?, ?, ?, ?)";
+                    qry->SetSQL(history_sql, 4);
+                    qry->BindInt32(0, m_Blob->GetKey());
+                    qry->BindInt32(1, split_version);
+                    qry->BindInt64(2, m_Blob->GetModified());
+                    qry->BindStr(3, m_Blob->GetId2Info());
+                    UpdateLastActivity();
+                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                }
+
                 qry->SetSQL(sql, 13);
                 qry->BindInt32(0, m_Blob->GetKey());
                 qry->BindInt64(1, m_Blob->GetModified());
@@ -160,7 +186,6 @@ void CCassBlobTaskInsertExtended::Wait1()
                 qry->BindInt64(10, m_Blob->GetSize());
                 qry->BindInt64(11, m_Blob->GetSizeUnpacked());
                 qry->BindStr(12, m_Blob->GetUserName());
-
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 

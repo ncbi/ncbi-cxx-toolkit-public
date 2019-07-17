@@ -76,7 +76,7 @@ class CBlobRecord {
 
     CBlobRecord& SetDiv(string value);
     CBlobRecord& SetId2Info(string const & value);
-    CBlobRecord& SetId2Info(int16_t sat, int32_t info, int32_t chunks);
+    CBlobRecord& SetId2Info(int16_t sat, int32_t info, int32_t chunks, int32_t version = 0);
     CBlobRecord& SetUserName(string value);
 
     CBlobRecord& SetNChunks(int32_t value);
