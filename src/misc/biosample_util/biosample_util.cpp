@@ -893,9 +893,11 @@ GetBioseqDiffs(CBioseq_Handle bh,
         }
         ++comm_desc_ci;
     }
-    if (!src_desc_ci && user_labels.size() == 0) {
-        return diffs;
-    }
+
+    // disabled because we want to consider *all* bioseqs, not just the ones with weird user objects:
+    //if (!src_desc_ci && user_labels.size() == 0) {
+    //    return diffs;
+    //}
 
     vector<string> biosample_ids = GetBiosampleIDs(bh);
 
