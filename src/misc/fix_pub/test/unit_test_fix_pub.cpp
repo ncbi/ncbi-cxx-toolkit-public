@@ -256,11 +256,13 @@ BOOST_AUTO_TEST_CASE(Test_MedlineToISO)
 
     CRef<CAuthor> author(new CAuthor);
     author->SetName().SetName().SetLast("Doe");
+    author->SetName().SetName().SetFirst("J");
     author->SetName().SetName().SetInitials("J.");
     expected_art.SetAuthors().SetNames().SetStd().push_back(author);
 
     author.Reset(new CAuthor);
     author->SetName().SetName().SetLast("Author");
+    author->SetName().SetName().SetFirst("S");
     author->SetName().SetName().SetInitials("S.");
     expected_art.SetAuthors().SetNames().SetStd().push_back(author);
 
@@ -341,6 +343,7 @@ BOOST_AUTO_TEST_CASE(Test_SplitMedlineEntry)
 
         CRef<CAuthor> author(new CAuthor);
         author->SetName().SetName().SetLast("Doe");
+        author->SetName().SetName().SetFirst("J");
         author->SetName().SetName().SetInitials("J.");
         pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
         BOOST_CHECK_EQUAL((*it)->Equals(*pub), true);
