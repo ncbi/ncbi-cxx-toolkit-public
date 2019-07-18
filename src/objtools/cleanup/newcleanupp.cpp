@@ -12285,9 +12285,6 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntry (
     CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(seq_entry);
     x_ExtendedCleanupExtra(seh);
     // TODO: implement more of ExtendedCleanup
-
-    // extended cleanup calls basic cleanup again at the very end
-    BasicCleanupSeqEntry( seq_entry );
 }
 
 //LCOV_EXCL_START
@@ -12318,9 +12315,6 @@ void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
     }
 
     // TODO: implement more of ExtendedCleanup
-
-    // extended cleanup calls basic cleanup again at the very end
-    BasicCleanupSeqSubmit( ss );
 }
 //LCOV_EXCL_STOP
 
@@ -12336,9 +12330,6 @@ void CNewCleanup_imp::ExtendedCleanupSeqAnnot (
     auto_ext_cleanup.ExtendedCleanupSeqAnnot( sa );
 
     // TODO: implement more of ExtendedCleanup
-
-    // extended cleanup calls basic cleanup again at the very end
-    BasicCleanupSeqAnnot( sa );
 }
 
 void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
