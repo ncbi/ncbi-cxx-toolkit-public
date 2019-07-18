@@ -558,12 +558,7 @@ int SPSG_UvTcp::Write()
             return rv;
         }
 
-        ERR_POST(Trace << this << " initialized");
-        m_State = eInitialized;
-    }
-
-    if (m_State == eInitialized) {
-        auto rv = m_Connect(this, s_OnConnect);
+        rv = m_Connect(this, s_OnConnect);
 
         if (rv < 0) {
             ERR_POST(Trace << this << " pre-connect failed: " << uv_strerror(rv));
@@ -580,7 +575,7 @@ int SPSG_UvTcp::Write()
 
         if (rv < 0) {
             ERR_POST(Trace << this << "  pre-write failed: " << uv_strerror(rv));
-            Stop();
+            Close();
             return rv;
         }
 
@@ -590,28 +585,20 @@ int SPSG_UvTcp::Write()
     return 0;
 }
 
-void SPSG_UvTcp::Stop()
-{
-    if (m_State != eConnected) {
-        ERR_POST(Trace << this << " already not connected");
-        return;
-    }
-
-    auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
-
-    if (rv < 0) {
-        ERR_POST(Trace << this << " read stop failed: " << uv_strerror(rv));
-        Close();
-    } else {
-        ERR_POST(Trace << this << " read stopped");
-        m_State = eInitialized;
-    }
-
-    m_Write.Reset();
-}
-
 void SPSG_UvTcp::Close()
 {
+    if (m_State == eConnected) {
+        auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
+
+        if (rv < 0) {
+            ERR_POST(Trace << this << " read stop failed: " << uv_strerror(rv));
+        } else {
+            ERR_POST(Trace << this << " read stopped");
+        }
+
+        m_Write.Reset();
+    }
+
     if ((m_State != eClosing) && (m_State != eClosed)) {
         ERR_POST(Trace << this << " closing");
         m_State = eClosing;
@@ -644,8 +631,7 @@ void SPSG_UvTcp::OnConnect(uv_connect_t* req, int status)
         ERR_POST(Trace << this << " connect failed: " << uv_strerror(status));
     }
 
-    m_State = eInitialized;
-    m_Write.Reset();
+    Close();
     m_ConnectCb(status);
 }
 
@@ -660,7 +646,7 @@ void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
         ERR_POST(Trace << this << " read failed: " << uv_strerror(nread));
-        Stop();
+        Close();
     } else {
         ERR_POST(Trace << this << " read: " << nread);
     }
@@ -672,7 +658,7 @@ void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
 {
     if (status < 0) {
         ERR_POST(Trace << this << " write failed: " << uv_strerror(status));
-        Stop();
+        Close();
     } else {
         ERR_POST(Trace << this << " wrote");
         m_Write.Done();
@@ -1050,7 +1036,7 @@ void SPSG_IoSession::ProcessRequests()
 void SPSG_IoSession::Reset(const SPSG_Error& error)
 {
     m_Session.Del();
-    m_Tcp.Stop();
+    m_Tcp.Close();
 
     bool some_requests_failed = false;
 

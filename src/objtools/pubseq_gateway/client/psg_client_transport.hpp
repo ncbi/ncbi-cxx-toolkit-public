@@ -454,7 +454,6 @@ struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
             TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
 
     int Write();
-    void Stop();
     void Close();
 
     vector<char>& GetWriteBuffer() { return m_Write.GetBuffer(); }
@@ -463,7 +462,6 @@ struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
 private:
     enum EState {
         eClosed,
-        eInitialized,
         eConnecting,
         eConnected,
         eClosing,
