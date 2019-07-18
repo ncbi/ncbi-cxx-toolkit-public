@@ -1049,3 +1049,6 @@
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
 
+#cmakedefine HAVE_LIBNGHTTP2 1
+#cmakedefine HAVE_LIBUV      1
+

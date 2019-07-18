@@ -81,6 +81,8 @@ set(NCBI_ThirdParty_MSGSL        ${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94)
 set(NCBI_ThirdParty_SGE          "/netmnt/gridengine/current")
 set(NCBI_ThirdParty_LEVELDB      ${NCBI_TOOLS_ROOT}/leveldb-1.21)
 set(NCBI_ThirdParty_wxWidgets    ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2)
+set(NCBI_ThirdParty_UV           ${NCBI_TOOLS_ROOT}/libuv-1.25.0)
+set(NCBI_ThirdParty_NGHTTP2      ${NCBI_TOOLS_ROOT}/nghttp2-1.29.0)
 
 #############################################################################
 #############################################################################
@@ -714,4 +716,11 @@ if(GLPK_FOUND)
     list(APPEND NCBI_ALL_COMPONENTS GLPK)
 endif()
 
+#############################################################################
+# UV
+NCBI_define_component(UV uv)
+
+#############################################################################
+# NGHTTP2
+NCBI_define_component(NGHTTP2 nghttp2)
 
