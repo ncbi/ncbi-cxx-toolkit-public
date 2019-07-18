@@ -478,14 +478,23 @@ SPSG_UvWrite::SPSG_UvWrite(void* user_data)
     const auto kSize = TPSG_WriteHiwater::GetDefault();
     m_Buffers[0].reserve(kSize);
     m_Buffers[1].reserve(kSize);
+
+    ERR_POST(Trace << this << " created");
 }
 
 int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
 {
-    if (m_InProgress) return 0;
+    if (m_InProgress) {
+        ERR_POST(Trace << this << " already writing");
+        return 0;
+    }
 
     auto& write_buffer = m_Buffers[m_Index];
-    if (write_buffer.empty()) return 0;
+
+    if (write_buffer.empty()) {
+        ERR_POST(Trace << this << " empty write");
+        return 0;
+    }
 
     uv_buf_t buf;
     buf.base = write_buffer.data();
@@ -493,8 +502,12 @@ int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
 
     auto rv = uv_write(&m_Request, handle, &buf, 1, cb);
 
-    if (rv < 0) return rv;
+    if (rv < 0) {
+        ERR_POST(Trace << this << " pre-write failed");
+        return rv;
+    }
 
+    ERR_POST(Trace << this << " writing: " << write_buffer.size());
     m_Index = !m_Index;
     m_InProgress = true;
     return 0;
@@ -649,7 +662,7 @@ void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
         ERR_POST(Trace << this << " read failed: " << uv_strerror(nread));
         Stop();
     } else {
-        ERR_POST(Trace << this << " read");
+        ERR_POST(Trace << this << " read: " << nread);
     }
 
     m_ReadCb(buf->base, nread);

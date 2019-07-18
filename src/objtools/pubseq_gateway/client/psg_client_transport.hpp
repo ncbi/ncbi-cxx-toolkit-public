@@ -413,12 +413,14 @@ struct SPSG_UvWrite : protected uv_write_t
 
     void Done()
     {
+        ERR_POST(Trace << this << " done");
         m_Buffers[!m_Index].clear();
         m_InProgress = false;
     }
 
     void Reset()
     {
+        ERR_POST(Trace << this << " reset");
         m_Buffers[0].clear();
         m_Buffers[1].clear();
         m_InProgress = false;
