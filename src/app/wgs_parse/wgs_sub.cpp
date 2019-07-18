@@ -1482,6 +1482,26 @@ static void RepTitles(CSeq_entry& entry, CTitleInfo& title_info)
     }
 }
 
+static string GetSeqIdKeyFromEntry(const CSeq_entry& entry)
+{
+    if (entry.IsSeq()) {
+        return GetSeqIdKey(entry.GetSeq());
+    }
+
+    string ret;
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            ret = GetSeqIdKeyFromEntry(*cur_entry);
+            if (!ret.empty()) {
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1658,35 +1678,15 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
         if (!GetParams().IsVDBMode()) {
 
-            if (GetParams().GetSortOrder() != eUnsorted && GetParams().IsAccessionAssigned()) {
+            // by this time accessions should have been assigned
+            if (GetParams().GetSortOrder() != eUnsorted) {
 
                 auto sort_by_accessions_func = [&master_info](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
                     {
-                        if (!a->IsSeq() || !b->IsSeq()) {
-                            return false;
-                        }
+                        string sa = GetSeqIdKeyFromEntry(*a),
+                               sb = GetSeqIdKeyFromEntry(*b);
 
-                        string sa = GetSeqIdKey(a->GetSeq()),
-                               sb = GetSeqIdKey(b->GetSeq());
-
-                        auto it_a = master_info.m_order_of_entries.find(sa);
-                        if (it_a == master_info.m_order_of_entries.end()) {
-                            sa = GetSeqIdLocalOrGeneral(a->GetSeq());
-                            it_a = master_info.m_order_of_entries.find(sa);
-                        }
-
-                        auto it_b = master_info.m_order_of_entries.find(sb);
-                        if (it_b == master_info.m_order_of_entries.end()) {
-                            sb = GetSeqIdLocalOrGeneral(b->GetSeq());
-                            it_b = master_info.m_order_of_entries.find(sb);
-                        }
-
-                        if (it_a == master_info.m_order_of_entries.end() ||
-                            it_b == master_info.m_order_of_entries.end()) {
-                            return false;
-                        }
-
-                        return it_a->second < it_b->second;
+                        return sa < sb;
                     };
 
                 bioseq_set->SetSeq_set().sort(sort_by_accessions_func);
