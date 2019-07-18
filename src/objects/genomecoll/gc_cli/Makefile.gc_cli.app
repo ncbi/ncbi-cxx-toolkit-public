@@ -12,7 +12,7 @@ SRC = gc_cli
 # OBJ =
 
 LIB_ =  gencoll_client genome_collection $(SEQ_LIBS) pub medline biblio \
-           general xser xconnect $(COMPRESS_LIBS) xutil xncbi
+           general sqlitewrapp xser xconnect $(COMPRESS_LIBS) xutil xncbi
 
 
 LIB = $(LIB_:%=%$(STATIC))
@@ -25,7 +25,7 @@ LIB = $(LIB_:%=%$(STATIC))
 # LIB_OR_DLL = dll
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = gc_cli get-assembly -acc GCF_000001405.27 --mode AssemblyOnly /CHECK_NAME=test_gencoll_svc_ASSM
 CHECK_CMD = gc_cli get-assembly-by-sequence -acc NC_002008.4 /CHECK_NAME=test_gencoll_svc_ASSM_BY_SEQ

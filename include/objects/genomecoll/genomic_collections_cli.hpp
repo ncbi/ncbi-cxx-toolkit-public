@@ -46,11 +46,14 @@
 
 BEGIN_NCBI_SCOPE
 
+class CSQLITE_Connection;
+
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CGCClient_AssemblyInfo;
 class CGCClient_AssemblySequenceInfo;
 class CGCClient_EquivalentAssemblies;
+
 
 class CGCServiceException : public CException
 {
@@ -68,7 +71,8 @@ public:
 class CGenomicCollectionsService : public CGenomicCollectionsService_Base
 {
 public:
-    CGenomicCollectionsService();
+    CGenomicCollectionsService(const string& cache_file="");
+    ~CGenomicCollectionsService();
 
     CRef<CGC_Assembly> GetAssembly(const string& acc, const string& mode);
     CRef<CGC_Assembly> GetAssembly(int releaseId,     const string& mode);
@@ -227,6 +231,10 @@ private:
             CGCClient_GetAssemblyBySequenceRequest::ESort sort, 
             bool top_only, 
             bool with_roles);
+
+
+    string m_CacheFile;
+    auto_ptr<CSQLITE_Connection> m_CacheConn;
 };
 
 END_objects_SCOPE

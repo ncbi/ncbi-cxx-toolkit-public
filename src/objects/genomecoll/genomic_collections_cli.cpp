@@ -50,6 +50,7 @@
 #include <objects/genomecoll/GCClient_GetAssemblyBlobRe.hpp>
 #include <objects/genomecoll/cached_assembly.hpp>
 #include <sstream>
+#include <db/sqlite/sqlitewrapp.hpp>
 
 // generated classes
 
@@ -70,7 +71,7 @@ const char* CGCServiceException::GetErrCodeString(void) const
 
 static const STimeout kTimeout = {600, 0};
 
-CGenomicCollectionsService::CGenomicCollectionsService()
+CGenomicCollectionsService::CGenomicCollectionsService(const string& cache_file)
 {
     SetTimeout(&kTimeout);
     SetRetryLimit(20);
@@ -82,7 +83,25 @@ CGenomicCollectionsService::CGenomicCollectionsService()
     SetFormat(eSerial_AsnText);
     // SetFormat() - sets both Request and Response encoding, so we put "fo=text" as well (though not needed now it may be usefull in the future for the client back-compatibility)
     SetArgs("fi=text&fo=text");
+
+
+
+    if(!cache_file.empty() && CFile(cache_file).Exists()) {
+        m_CacheFile = cache_file;
+        CSQLITE_Global::Initialize();
+        m_CacheConn.reset(new CSQLITE_Connection(m_CacheFile,
+                CSQLITE_Connection::fReadOnly|CSQLITE_Connection::eAllMT));
+    }
 }
+
+CGenomicCollectionsService::~CGenomicCollectionsService()
+{
+    if(!m_CacheFile.empty()) {
+        m_CacheConn.reset(NULL);
+        CSQLITE_Global::Finalize();
+    }
+} 
+
 
 template<typename TReq>
 void LogRequest(const TReq& req)
@@ -104,6 +123,21 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, c
 {
     string acc = NStr::TruncateSpaces(acc_);
     ValidateAsmAccession(acc);
+
+
+    if(!m_CacheFile.empty()) {
+        const string SltSql = "SELECT gc_blob FROM GetAssemblyBlob "
+                              "WHERE acc_ver = ? AND mode = ?";
+        CSQLITE_Statement Stmt(m_CacheConn.get(), SltSql);
+        Stmt.Bind(1, acc);
+        Stmt.Bind(2, mode);
+        while(Stmt.Step()) {
+            const string Blob = Stmt.GetString(0);
+            CRef<CCachedAssembly> CAsm(new CCachedAssembly(Blob));
+            return CAsm->Assembly();
+        }
+    }
+
 
     CGCClient_GetAssemblyBlobRequest req;
     CGCClientResponse reply;
@@ -135,7 +169,20 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const 
 {
     CGCClient_GetAssemblyBlobRequest req;
     CGCClientResponse reply;
-
+    
+    if(!m_CacheFile.empty()) {
+        const string SltSql = "SELECT gc_blob FROM GetAssemblyBlob "
+                              "WHERE release_id = ? AND mode = ?";
+        CSQLITE_Statement Stmt(m_CacheConn.get(), SltSql);
+        Stmt.Bind(1, releaseId);
+        Stmt.Bind(2, mode);
+        while(Stmt.Step()) {
+            const string Blob = Stmt.GetString(0);
+            CRef<CCachedAssembly> CAsm(new CCachedAssembly(Blob));
+            return CAsm->Assembly();
+        }
+    }
+    
     req.SetRelease_id(releaseId);
     req.SetMode(mode);
 
