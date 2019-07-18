@@ -3382,6 +3382,87 @@ bool CCleanup::AreBioSourcesMergeable(const CBioSource& src1, const CBioSource& 
 }
 
 
+static bool s_SubsourceCompareC (
+    const CRef<CSubSource>& st1,
+    const CRef<CSubSource>& st2
+)
+
+{
+    const CSubSource& sbs1 = *(st1);
+    const CSubSource& sbs2 = *(st2);
+
+    TSUBSOURCE_SUBTYPE chs1 = GET_FIELD (sbs1, Subtype);
+    TSUBSOURCE_SUBTYPE chs2 = GET_FIELD (sbs2, Subtype);
+
+    if (chs1 < chs2) return true;
+    if (chs1 > chs2) return false;
+
+    if (FIELD_IS_SET (sbs2, Name)) {
+        if (! FIELD_IS_SET (sbs1, Name)) return true;
+        if (NStr::CompareNocase(GET_FIELD (sbs1, Name), GET_FIELD (sbs2, Name)) < 0) return true;
+    }
+
+    return false;
+}
+
+static bool s_SameSubtypeC(const CSubSource& s1, const CSubSource& s2)
+{
+    if (!s1.IsSetSubtype() && !s2.IsSetSubtype()) {
+        return true;
+    } else if (!s1.IsSetSubtype() || !s2.IsSetSubtype()) {
+        return false;
+    } else {
+        return s1.GetSubtype() == s2.GetSubtype();
+    }
+}
+
+// close enough if second name contains the first
+static bool s_NameCloseEnoughC(const CSubSource& s1, const CSubSource& s2)
+{
+    if (!s1.IsSetName() && !s2.IsSetName()) {
+        return true;
+    } else if (!s1.IsSetName() || !s2.IsSetName()) {
+        return false;
+    }
+    const string& n1 = s1.GetName();
+    const string& n2 = s2.GetName();
+
+    if (NStr::Equal(n1, n2)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool s_SubSourceListUniqued(CBioSource& biosrc)
+{
+    bool res = false;
+
+    // sort and remove duplicates.
+    if (biosrc.IsSetSubtype() && biosrc.GetSubtype().size() > 1) {
+        if (!SUBSOURCE_ON_BIOSOURCE_IS_SORTED(biosrc, s_SubsourceCompareC)) {
+            SORT_SUBSOURCE_ON_BIOSOURCE(biosrc, s_SubsourceCompareC);
+        }
+
+        // remove duplicates and subsources that contain previous values
+        CBioSource::TSubtype::iterator s = biosrc.SetSubtype().begin();
+        CBioSource::TSubtype::iterator s_next = s;
+        ++s_next;
+        while (s_next != biosrc.SetSubtype().end()) {
+            if (s_SameSubtypeC(**s, **s_next) && s_NameCloseEnoughC(**s, **s_next)) {
+                s = biosrc.SetSubtype().erase(s);
+                res = true;
+            } else {
+                ++s;
+            }
+            ++s_next;
+        }
+    }
+
+    return res;
+}
+
 bool CCleanup::MergeDupBioSources(CBioSource& src1, const CBioSource& add)
 {
     bool any_change = false;
@@ -3414,6 +3495,10 @@ bool CCleanup::MergeDupBioSources(CBioSource& src1, const CBioSource& add)
     }
 
     x_MergeDupOrgRefs(src1.SetOrg(), add.GetOrg());
+
+    if (s_SubSourceListUniqued(src1)) {
+        any_change = true;
+    }
 
     return any_change;
 }
