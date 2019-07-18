@@ -531,6 +531,8 @@ SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *loop, const CNetServer::SAddress& address,
 {
     data = this;
     m_ReadBuffer.reserve(TPSG_RdBufSize::GetDefault());
+
+    ERR_POST(Trace << this << " created");
 }
 
 int SPSG_UvTcp::Write()
@@ -538,8 +540,12 @@ int SPSG_UvTcp::Write()
     if (m_State == eClosed) {
         auto rv = uv_tcp_init(m_Loop, this);
 
-        if (rv < 0) return rv;
+        if (rv < 0) {
+            ERR_POST(Trace << this << " init failed: " << uv_strerror(rv));
+            return rv;
+        }
 
+        ERR_POST(Trace << this << " initialized");
         m_State = eInitialized;
     }
 
@@ -547,10 +553,12 @@ int SPSG_UvTcp::Write()
         auto rv = m_Connect(this, s_OnConnect);
 
         if (rv < 0) {
+            ERR_POST(Trace << this << " pre-connect failed: " << uv_strerror(rv));
             Close();
             return rv;
         }
 
+        ERR_POST(Trace << this << " connecting");
         m_State = eConnecting;
     }
 
@@ -558,9 +566,12 @@ int SPSG_UvTcp::Write()
         auto rv = m_Write((uv_stream_t*)this, s_OnWrite);
 
         if (rv < 0) {
+            ERR_POST(Trace << this << "  pre-write failed: " << uv_strerror(rv));
             Stop();
             return rv;
         }
+
+        ERR_POST(Trace << this << " writing");
     }
 
     return 0;
@@ -568,13 +579,18 @@ int SPSG_UvTcp::Write()
 
 void SPSG_UvTcp::Stop()
 {
-    if (m_State != eConnected) return;
+    if (m_State != eConnected) {
+        ERR_POST(Trace << this << " already not connected");
+        return;
+    }
 
     auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
 
     if (rv < 0) {
+        ERR_POST(Trace << this << " read stop failed: " << uv_strerror(rv));
         Close();
     } else {
+        ERR_POST(Trace << this << " read stopped");
         m_State = eInitialized;
     }
 
@@ -584,8 +600,11 @@ void SPSG_UvTcp::Stop()
 void SPSG_UvTcp::Close()
 {
     if ((m_State != eClosing) && (m_State != eClosed)) {
+        ERR_POST(Trace << this << " closing");
         m_State = eClosing;
         SPSG_UvHandle<uv_tcp_t>::Close();
+    } else {
+        ERR_POST(Trace << this << " already closing/closed");
     }
 }
 
@@ -598,11 +617,18 @@ void SPSG_UvTcp::OnConnect(uv_connect_t* req, int status)
             status = uv_read_start((uv_stream_t*)this, s_OnAlloc, s_OnRead);
 
             if (status >= 0) {
+                ERR_POST(Trace << this << " connected");
                 m_State = eConnected;
                 m_ConnectCb(status);
                 return;
+            } else {
+                ERR_POST(Trace << this << " read start failed: " << uv_strerror(status));
             }
+        } else {
+            ERR_POST(Trace << this << " nodelay failed: " << uv_strerror(status));
         }
+    } else {
+        ERR_POST(Trace << this << " connect failed: " << uv_strerror(status));
     }
 
     m_State = eInitialized;
@@ -620,7 +646,10 @@ void SPSG_UvTcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
+        ERR_POST(Trace << this << " read failed: " << uv_strerror(nread));
         Stop();
+    } else {
+        ERR_POST(Trace << this << " read");
     }
 
     m_ReadCb(buf->base, nread);
@@ -629,8 +658,10 @@ void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
 {
     if (status < 0) {
+        ERR_POST(Trace << this << " write failed: " << uv_strerror(status));
         Stop();
     } else {
+        ERR_POST(Trace << this << " wrote");
         m_Write.Done();
     }
 
@@ -639,6 +670,7 @@ void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
 
 void SPSG_UvTcp::OnClose(uv_handle_t*)
 {
+    ERR_POST(Trace << this << " closed");
     m_State = eClosed;
 }
 
