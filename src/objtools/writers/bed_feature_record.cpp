@@ -249,7 +249,7 @@ bool CBedFeatureRecord::SetLocation(
 {
     if (loc.IsInt()) {
         const CSeq_interval& chromInt = loc.GetInt();
-        m_strChrom = chromInt.GetId().GetSeqIdString();
+        m_strChrom = chromInt.GetId().GetSeqIdString(true);
         m_strChromStart = NStr::IntToString(chromInt.GetFrom());
         m_strChromEnd = NStr::IntToString(chromInt.GetTo()+1);
         m_strStrand = "+";
@@ -264,7 +264,7 @@ bool CBedFeatureRecord::SetLocation(
 
     if (loc.IsPnt()) {
         const CSeq_point& chromPt = loc.GetPnt();
-        m_strChrom = chromPt.GetId().GetSeqIdString();
+        m_strChrom = chromPt.GetId().GetSeqIdString(true);
         m_strChromStart = NStr::IntToString(chromPt.GetPoint());
         m_strChromEnd = NStr::IntToString(chromPt.GetPoint()+1);
         m_strStrand = "+";
