@@ -856,17 +856,20 @@ int CProcessing::Interactive(bool echo)
 
             if (method == "next_reply") {
                 m_Reporter.Add(id);
-                continue;
 
             } else if (method == "status") {
                 m_JsonOut << CJsonResponse(id, m_RequestsCounter);
-                continue;
-            }
 
-            auto user_context = make_shared<SUserContext>(id, m_RequestsCounter);
+            } else if (method == "sleep") {
+                auto seconds = params.GetObject()["seconds"].GetValue().GetDouble();
+                this_thread::sleep_for(chrono::duration<double>(seconds));
 
-            if (auto request = CreateRequest(method, move(user_context), params.GetObject())) {
-                m_Sender.Add(move(request));
+            } else {
+                auto user_context = make_shared<SUserContext>(id, m_RequestsCounter);
+
+                if (auto request = CreateRequest(method, move(user_context), params.GetObject())) {
+                    m_Sender.Add(move(request));
+                }
             }
         }
     }
@@ -1415,6 +1418,21 @@ CJson_Schema& CProcessing::RequestSchema()
                 "id": { "$ref": "#id" }
             },
             "required": [ "jsonrpc", "method", "id" ]
+        },
+        {
+            "properties": {
+                "jsonrpc": { "$rev": "#jsonrpc" },
+                "method": { "enum": [ "sleep" ] },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "seconds": { "type": "number" }
+                    },
+                    "required": [ "seconds" ]
+                },
+                "id": { "$ref": "#id" }
+            },
+            "required": [ "jsonrpc", "method", "params", "id" ]
         }
     ]
 }
