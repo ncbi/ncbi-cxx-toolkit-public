@@ -712,6 +712,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
     m_OnError(on_error),
     m_MaxStreams(TPSG_MaxConcurrentStreams::GetDefault())
 {
+    ERR_POST(Trace << this << " created");
 }
 #undef MAKE_NV
 #undef MAKE_NV2
@@ -737,9 +738,11 @@ ssize_t SPSG_NgHttp2Session::Init()
 
     /* client 24 bytes magic string will be sent by nghttp2 library */
     if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]))) {
+        ERR_POST(Trace << this << " submit settings failed: " << s_NgHttp2Error(rv));
         return x_DelOnError(rv);
     }
 
+    ERR_POST(Trace << this << " initialized");
     auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
     m_MaxStreams = min(max_streams, TPSG_MaxConcurrentStreams::GetDefault());
     return 0;
@@ -747,9 +750,19 @@ ssize_t SPSG_NgHttp2Session::Init()
 
 void SPSG_NgHttp2Session::Del()
 {
-    if (!m_Session) return;
+    if (!m_Session) {
+        ERR_POST(Trace << this << " already terminated");
+        return;
+    }
 
-    nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
+    auto rv = nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
+
+    if (rv) {
+        ERR_POST(Trace << this << " terminate failed: " << s_NgHttp2Error(rv));
+    } else {
+        ERR_POST(Trace << this << " terminated");
+    }
+
     x_DelOnError(-1);
 }
 
@@ -763,6 +776,13 @@ int32_t SPSG_NgHttp2Session::Submit(const string& path, void* user_data)
     m_Headers[kPathIndex].valuelen = path.size();
 
     auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), m_Headers.size(), nullptr, user_data);
+
+    if (rv < 0) {
+        ERR_POST(Trace << this << " submit failed: " << s_NgHttp2Error(rv));
+    } else {
+        ERR_POST(Trace << this << " submitted");
+    }
+
     return x_DelOnError(rv);
 }
 
@@ -770,7 +790,12 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
 {
     if (auto rv = Init()) return rv;
 
-    if (nghttp2_session_want_write(m_Session) == 0) return 0;
+    if (nghttp2_session_want_write(m_Session) == 0) {
+        ERR_POST(Trace << this << " does not want to write");
+        return 0;
+    }
+
+    ssize_t total = 0;
 
     for (;;) {
         const uint8_t* data;
@@ -778,7 +803,14 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
 
         if (rv > 0) {
             buffer.insert(buffer.end(), data, data + rv);
+            total += rv;
         } else {
+            if (rv) {
+                ERR_POST(Trace << this << " send failed: " << s_NgHttp2Error(rv));
+            } else {
+                ERR_POST(Trace << this << " sended: " << total);
+            }
+
             return x_DelOnError(rv);
         }
     }
@@ -788,6 +820,8 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 {
     if (auto rv = Init()) return rv;
 
+    const size_t total = size;
+
     for (;;) {
         auto rv = nghttp2_session_mem_recv(m_Session, buffer, size);
 
@@ -795,6 +829,12 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
             size -= rv;
 
             if (size > 0) continue;
+        }
+
+        if (rv < 0) {
+            ERR_POST(Trace << this << " receive failed: " << s_NgHttp2Error(rv));
+        } else {
+            ERR_POST(Trace << this << " received: " << total);
         }
 
         return x_DelOnError(rv);
