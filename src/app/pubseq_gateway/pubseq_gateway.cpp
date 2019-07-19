@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 
 #include <math.h>
+#include <thread>
 
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbidiag.hpp>
@@ -48,6 +49,7 @@
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "shutdown_data.hpp"
+#include "cass_monitor.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -99,10 +101,12 @@ CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 
 CPubseqGatewayApp::CPubseqGatewayApp() :
+    m_MappingIndex(0),
     m_HttpPort(0),
     m_HttpWorkers(kWorkersDefault),
     m_ListenerBacklog(kListenerBacklogDefault),
     m_TcpMaxConn(kTcpMaxConnDefault),
+    m_CassConnection(nullptr),
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
     m_TimeoutMs(kTimeoutDefault),
     m_MaxRetries(kMaxRetriesDefault),
@@ -117,7 +121,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_StartTime(GetFastLocalTime()),
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
-    m_ExcludeBlobCache(nullptr)
+    m_ExcludeBlobCache(nullptr),
+    m_StartupDataState(eNoCassConnection)
 {
     sm_PubseqApp = this;
 }
@@ -229,19 +234,72 @@ void CPubseqGatewayApp::ParseArgs(void)
 
 void CPubseqGatewayApp::OpenCache(void)
 {
-    // NB. It was decided that the configuration may ommit the cache file paths.
-    // In this case the server should not use the corresponding cache at all.
-    m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile,
-                                                m_Si2csiDbFile,
-                                                m_BlobPropDbFile));
-    m_LookupCache->Open(m_SatNames);
+    static bool need_logging = true;
+
+    try {
+        // NB. It was decided that the configuration may ommit the cache file
+        // paths. In this case the server should not use the corresponding
+        // cache at all. This is covered in the CPubseqGatewayCache class.
+        m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile,
+                                                    m_Si2csiDbFile,
+                                                    m_BlobPropDbFile));
+        m_LookupCache->Open(m_SatNames);
+
+        // All is good
+        m_StartupDataState = eStartupDataOK;
+        need_logging = false;
+        return;
+    } catch (const exception &  exc) {
+        string      msg = "Error initializing the LMDB cache: " +
+                          string(exc.what());
+        if (need_logging)
+            PSG_CRITICAL(exc);
+        m_Alerts.Register(eOpenCache, msg);
+    } catch (...) {
+        string      msg = "Unknown initializing LMDB cache error";
+        if (need_logging)
+            PSG_CRITICAL(msg);
+        m_Alerts.Register(eOpenCache, msg);
+    }
+
+    // Here: there was an exception
+    m_LookupCache.reset(nullptr);
+    need_logging = true;
 }
 
 
-void CPubseqGatewayApp::OpenCass(void)
+bool CPubseqGatewayApp::OpenCass(void)
 {
-    m_CassConnection = m_CassConnectionFactory->CreateInstance();
-    m_CassConnection->Connect();
+    static bool need_logging = true;
+
+    try {
+        if (!m_CassConnection)
+            m_CassConnection = m_CassConnectionFactory->CreateInstance();
+        m_CassConnection->Connect();
+
+        // Next step in the startup data initialization
+        m_StartupDataState = eNoValidCassMapping;
+    } catch (const exception &  exc) {
+        string      msg = "Error connecting to Cassandra: " +
+                          string(exc.what());
+        if (need_logging)
+            PSG_CRITICAL(exc);
+
+        need_logging = false;
+        m_Alerts.Register(eOpenCassandra, msg);
+        return false;
+    } catch (...) {
+        string      msg = "Unknown Cassandra connecting error";
+        if (need_logging)
+            PSG_CRITICAL(msg);
+
+        need_logging = false;
+        m_Alerts.Register(eOpenCassandra, msg);
+        return false;
+    }
+
+    need_logging = false;
+    return true;
 }
 
 
@@ -284,29 +342,14 @@ int CPubseqGatewayApp::Run(void)
                        "Error during daemonization");
     }
 
-    try {
-        OpenCass();
-    } catch (const exception &  exc) {
-        PSG_CRITICAL(exc.what());
-        return 1;
-    } catch (...) {
-        PSG_CRITICAL("Unknown opening Cassandra error");
-        return 1;
-    }
+    bool    connected = OpenCass();
+    bool    populated = false;
+    if (connected)
+        populated = PopulateCassandraMapping();
 
-    int     ret = x_PopulateSatToKeyspaceMap();
-    if (ret != 0)
-        return ret;
-
-    try {
+    if (populated)
         OpenCache();
-    } catch (const exception &  exc) {
-        PSG_CRITICAL(exc.what());
-        return 1;
-    } catch (...) {
-        PSG_CRITICAL("Unknown opening LMDB cache error");
-        return 1;
-    }
+
 
     auto purge_size = round(float(m_ExcludeCacheMaxSize) *
                             float(m_ExcludeCachePurgePercentage) / 100.0);
@@ -447,6 +490,10 @@ int CPubseqGatewayApp::Run(void)
                                                     m_TcpMaxConn));
 
 
+    // Run the monitoring thread
+    std::thread     monitoring_thread(CassMonitorThreadedFunction);
+
+
     m_TcpDaemon->Run([this](TSL::CTcpDaemon<HST::CHttpProto<CPendingOperation>,
                        HST::CHttpConnection<CPendingOperation>,
                        HST::CHttpDaemon<CPendingOperation>> &  tcp_daemon)
@@ -454,6 +501,8 @@ int CPubseqGatewayApp::Run(void)
                 // This lambda is called once per second.
                 // Earlier implementations printed counters on stdout.
             });
+
+    monitoring_thread.join();
     CloseCass();
     return 0;
 }
@@ -919,51 +968,145 @@ CPubseqGatewayApp::x_GetDataSize(const IRegistry &  reg,
 }
 
 
-int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
+bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
 {
+    static bool need_logging = true;
+
+    size_t      vacant_index = m_MappingIndex + 1;
+    if (vacant_index >= 2)
+        vacant_index = 0;
+    m_CassMapping[vacant_index].clear();
+
     try {
         string      err_msg;
-        if (!FetchSatToKeyspaceMapping(m_RootKeyspace, m_CassConnection,
-                                       m_SatNames, eBlobVer2Schema,
-                                       m_BioseqKeyspace, eResolverSchema,
-                                       m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
-                                       err_msg)) {
+        if (!FetchSatToKeyspaceMapping(
+                    m_RootKeyspace, m_CassConnection,
+                    m_SatNames, eBlobVer2Schema,
+                    m_CassMapping[vacant_index].m_BioseqKeyspace, eResolverSchema,
+                    m_CassMapping[vacant_index].m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
+                    err_msg)) {
+            err_msg = "Error populating cassandra mapping: " + err_msg;
+            if (need_logging)
+                PSG_CRITICAL(err_msg);
+            need_logging = false;
+            m_Alerts.Register(eNoValidCassandraMapping, err_msg);
+            return false;
+        }
+    } catch (const exception &  exc) {
+        string      err_msg = "Cannot populate keyspace mapping from Cassandra.";
+        if (need_logging) {
+            PSG_CRITICAL(exc);
             PSG_CRITICAL(err_msg);
-            return 1;
+        }
+        need_logging = false;
+        m_Alerts.Register(eNoValidCassandraMapping, err_msg + " " + exc.what());
+        return false;
+    } catch (...) {
+        string      err_msg = "Unknown error while populating "
+                              "keyspace mapping from Cassandra.";
+        if (need_logging)
+            PSG_CRITICAL(err_msg);
+        need_logging = false;
+        m_Alerts.Register(eNoValidCassandraMapping, err_msg);
+        return false;
+    }
+
+    auto    errors = m_CassMapping[vacant_index].validate(m_RootKeyspace);
+    if (m_SatNames.empty())
+        errors.push_back("No sat to keyspace resolutions found in the " +
+                         m_RootKeyspace + " keyspace.");
+
+    if (errors.empty()) {
+        m_MappingIndex = vacant_index;
+
+        // Next step in the startup data initialization
+        m_StartupDataState = eNoCassCache;
+
+        if (need_accept_alert) {
+            // We are not the first time here; It means that the alert about
+            // the bad mapping has been set before. So now we accepted the
+            // configuration so a change config alert is needed for the UI
+            // visibility
+            m_Alerts.Register(eNewCassandraMappingAccepted,
+                              "Keyspace mapping (sat names, bioseq info and named "
+                              "annotations) has been populated");
+        }
+    } else {
+        string      combined_error("Invalid Cassandra mapping:");
+        for (const auto &  err : errors) {
+            combined_error += "\n" + err;
+        }
+        if (need_logging)
+            PSG_CRITICAL(combined_error);
+
+        m_Alerts.Register(eNoValidCassandraMapping, combined_error);
+    }
+
+    need_logging = false;
+    return errors.empty();
+}
+
+
+void CPubseqGatewayApp::CheckCassMapping(void)
+{
+    size_t      vacant_index = m_MappingIndex + 1;
+    if (vacant_index >= 2)
+        vacant_index = 0;
+    m_CassMapping[vacant_index].clear();
+
+    vector<string>      sat_names;
+    try {
+        string      err_msg;
+        if (!FetchSatToKeyspaceMapping(
+                    m_RootKeyspace, m_CassConnection,
+                    sat_names, eBlobVer2Schema,
+                    m_CassMapping[vacant_index].m_BioseqKeyspace, eResolverSchema,
+                    m_CassMapping[vacant_index].m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
+                    err_msg)) {
+            m_Alerts.Register(eInvalidCassandraMapping,
+                              "Error checking cassandra mapping: " + err_msg);
+            return;
         }
 
     } catch (const exception &  exc) {
-        PSG_CRITICAL(exc);
-        PSG_CRITICAL("Cannot populate the sat to keyspace mapping. "
-                     "PSG server cannot start.");
-        return 1;
+        m_Alerts.Register(eInvalidCassandraMapping,
+                          "Cannot check keyspace mapping from Cassandra. " +
+                          string(exc.what()));
+        return;
     } catch (...) {
-        PSG_CRITICAL("Unknown error while populating the sat to "
-                     "keyspace mapping. PSG server cannot start.");
-        return 1;
+        m_Alerts.Register(eInvalidCassandraMapping,
+                          "Unknown error while checking "
+                          "keyspace mapping from Cassandra.");
+        return;
     }
 
-    if (m_BioseqKeyspace.empty()) {
-        PSG_CRITICAL("Cannot find the resolver keyspace "
-                     "(where SI2CSI and BIOSEQ_INFO tables reside) "
-                     "in the " + m_RootKeyspace + ".SAT2KEYSPACE table. "
-                     "PSG server cannot start.");
-        return 1;
-    }
+    auto    errors = m_CassMapping[vacant_index].validate(m_RootKeyspace);
+    if (sat_names.empty())
+        errors.push_back("No sat to keyspace resolutions found in the " +
+                         m_RootKeyspace + " keyspace.");
 
-    if (m_SatNames.empty()) {
-        PSG_CRITICAL("No sat to keyspace resolutions found in the " +
-                     m_RootKeyspace + " keyspace. PSG server cannot start.");
-        return 1;
-    }
+    if (errors.empty()) {
+        // No errors detected in the DB; let's compare with what we use now
+        if (sat_names != m_SatNames)
+            m_Alerts.Register(eNewCassandraSatNamesMapping,
+                              "Cassandra has new sat names mapping in  the " +
+                              m_RootKeyspace + " keyspace. The server needs "
+                              "to restart to use it.");
 
-    if (m_BioseqNAKeyspaces.empty()) {
-        PSG_CRITICAL("No bioseq named annotation keyspaces found in the " +
-                     m_RootKeyspace + " keyspace. PSG server cannot start.");
-        return 1;
+        if (m_CassMapping[0] != m_CassMapping[1]) {
+            m_MappingIndex = vacant_index;
+            m_Alerts.Register(eNewCassandraMappingAccepted,
+                              "Keyspace mapping (bioseq info and named "
+                              "annotations) has been updated");
+        }
+    } else {
+        string      combined_error("Invalid Cassandra mapping detected "
+                                   "during the periodic check:");
+        for (const auto &  err : errors) {
+            combined_error += "\n" + err;
+        }
+        m_Alerts.Register(eInvalidCassandraMapping, combined_error);
     }
-
-    return 0;
 }
 
 

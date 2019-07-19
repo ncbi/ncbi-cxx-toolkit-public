@@ -124,6 +124,9 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     if (x_IsShuttingDown(req, resp))
         return 0;
 
+    if (!x_IsDBOK(req, resp))
+        return 0;
+
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -197,6 +200,9 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                                  HST::CHttpReply<CPendingOperation> &  resp)
 {
     if (x_IsShuttingDown(req, resp))
+        return 0;
+
+    if (!x_IsDBOK(req, resp))
         return 0;
 
     CRequestContextResetter context_resetter;
@@ -305,6 +311,9 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
                                  HST::CHttpReply<CPendingOperation> &  resp)
 {
     if (x_IsShuttingDown(req, resp))
+        return 0;
+
+    if (!x_IsDBOK(req, resp))
         return 0;
 
     CRequestContextResetter context_resetter;
@@ -434,6 +443,9 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
                                HST::CHttpReply<CPendingOperation> &  resp)
 {
     if (x_IsShuttingDown(req, resp))
+        return 0;
+
+    if (!x_IsDBOK(req, resp))
         return 0;
 
     CRequestContextResetter context_resetter;
@@ -592,6 +604,7 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
+    auto                    app = CPubseqGatewayApp::GetInstance();
     try {
         m_RequestCounters.IncAdmin();
 
@@ -600,6 +613,8 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
         reply.SetInteger("PID", CDiagContext::GetPID());
         reply.SetString("ExecutablePath", GetProgramExecutablePath());
         reply.SetString("CommandLineArguments", x_GetCmdLineArguments());
+        reply.SetString("StartupDataState",
+                        GetCassStartupDataStateMessage(app->GetStartupDataState()));
 
 
         double      real_time;
@@ -724,7 +739,7 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
         reply.SetString("StartedAt", m_StartTime.AsString());
 
         reply.SetInteger("ExcludeBlobCacheUserCount",
-                        CPubseqGatewayApp::GetInstance()->GetExcludeBlobCache()->Size());
+                         app->GetExcludeBlobCache()->Size());
 
         string      content = reply.Repr(CJsonNode::fStandardJson);
 
@@ -1292,5 +1307,18 @@ bool CPubseqGatewayApp::x_IsShuttingDown(HST::CHttpRequest &  /* req */,
         return true;
     }
     return false;
+}
+
+
+bool CPubseqGatewayApp::x_IsDBOK(HST::CHttpRequest &  /* req */,
+                                 HST::CHttpReply<CPendingOperation> &  resp)
+{
+    auto    startup_data_state = GetStartupDataState();
+    if (startup_data_state != eStartupDataOK) {
+        resp.Send502("Bad Gateway",
+                     GetCassStartupDataStateMessage(startup_data_state).c_str());
+        return false;
+    }
+    return true;
 }
 

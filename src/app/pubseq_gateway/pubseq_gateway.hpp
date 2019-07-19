@@ -57,6 +57,46 @@ USING_NCBI_SCOPE;
 const long  kMaxTestIOSize = 1000000000;
 
 
+// Cassandra mapping needs to be switched atomically so it is first read into
+// the corresponding structure and then switched.
+struct SCassMapping
+{
+    string                              m_BioseqKeyspace;
+    vector<pair<string, int32_t>>       m_BioseqNAKeyspaces;
+
+    bool operator==(const SCassMapping &  rhs) const
+    {
+        return m_BioseqKeyspace == rhs.m_BioseqKeyspace &&
+               m_BioseqNAKeyspaces == rhs.m_BioseqNAKeyspaces;
+    }
+
+    bool operator!=(const SCassMapping &  rhs) const
+    { return !this->operator==(rhs); }
+
+    vector<string> validate(const string &  root_keyspace) const
+    {
+        vector<string>      errors;
+
+        if (m_BioseqKeyspace.empty())
+            errors.push_back("Cannot find the resolver keyspace (where SI2CSI "
+                             "and BIOSEQ_INFO tables reside) in the " +
+                             root_keyspace + ".SAT2KEYSPACE table.");
+
+        if (m_BioseqNAKeyspaces.empty())
+            errors.push_back("No bioseq named annotation keyspaces found "
+                             "in the " + root_keyspace + " keyspace.");
+
+        return errors;
+    }
+
+    void clear(void)
+    {
+        m_BioseqKeyspace.clear();
+        m_BioseqNAKeyspaces.clear();
+    }
+};
+
+
 class CPubseqGatewayApp: public CNcbiApplication
 {
 public:
@@ -66,18 +106,20 @@ public:
     virtual void Init(void);
     void ParseArgs(void);
     void OpenCache(void);
-    void OpenCass(void);
+    bool OpenCass(void);
+    bool PopulateCassandraMapping(bool  need_accept_alert=false);
+    void CheckCassMapping(void);
     void CloseCass(void);
     bool SatToSatName(size_t  sat, string &  sat_name);
 
     string GetBioseqKeyspace(void) const
     {
-        return m_BioseqKeyspace;
+        return m_CassMapping[m_MappingIndex].m_BioseqKeyspace;
     }
 
     vector<pair<string, int32_t>> GetBioseqNAKeyspaces(void) const
     {
-        return m_BioseqNAKeyspaces;
+        return m_CassMapping[m_MappingIndex].m_BioseqNAKeyspaces;
     }
 
     CPubseqGatewayCache *  GetLookupCache(void)
@@ -147,6 +189,11 @@ public:
         return *m_Timing.get();
     }
 
+    EStartupDataState GetStartupDataState(void) const
+    {
+        return m_StartupDataState;
+    }
+
 private:
     struct SRequestParameter
     {
@@ -203,7 +250,6 @@ private:
                                 const string &  section,
                                 const string &  entry,
                                 unsigned long  default_val);
-    int x_PopulateSatToKeyspaceMap(void);
 
 private:
     void x_MalformedArguments(HST::CHttpReply<CPendingOperation> &  resp,
@@ -211,14 +257,20 @@ private:
                               const string &  err_msg);
     bool x_IsShuttingDown(HST::CHttpRequest &  req,
                           HST::CHttpReply<CPendingOperation> &  resp);
-
+    bool x_IsDBOK(HST::CHttpRequest &  req,
+                  HST::CHttpReply<CPendingOperation> &  resp);
 
 private:
     string                              m_Si2csiDbFile;
     string                              m_BioseqInfoDbFile;
     string                              m_BlobPropDbFile;
+
+    // Bioseq and named annotations keyspaces can be updated dynamically.
+    // The index controls the active set.
+    // The sat names cannot be updated dynamically - they are read once.
+    size_t                              m_MappingIndex;
+    SCassMapping                        m_CassMapping[2];
     vector<string>                      m_SatNames;
-    vector<pair<string, int32_t>>       m_BioseqNAKeyspaces;
 
     unsigned short                      m_HttpPort;
     unsigned short                      m_HttpWorkers;
@@ -241,7 +293,6 @@ private:
 
     CTime                               m_StartTime;
     string                              m_RootKeyspace;
-    string                              m_BioseqKeyspace;
     string                              m_AuthToken;
 
     bool                                m_AllowIOTest;
@@ -263,6 +314,8 @@ private:
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;
+
+    EStartupDataState                   m_StartupDataState;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

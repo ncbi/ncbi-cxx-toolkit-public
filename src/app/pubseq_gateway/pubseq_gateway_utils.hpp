@@ -186,6 +186,7 @@ public:
 
 
 string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
+string GetCassStartupDataStateMessage(EStartupDataState  state);
 
 
 #endif

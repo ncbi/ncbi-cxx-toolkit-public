@@ -59,7 +59,15 @@ enum EPSGAlertType {
     eConfigExcludeCacheInactivity = 11,
     eConfigStatScaleType = 12,
     eConfigStatMinMaxVal = 13,
-    eConfigStatNBins = 14
+    eConfigStatNBins = 14,
+    eOpenCassandra = 15,
+    eNoValidCassandraMapping = 16,      // PSG has no valid cassandra mapping at hand
+    eInvalidCassandraMapping = 17,      // PSG has detected an invalid mapping in cassandra
+    eNewCassandraMappingAccepted = 18,  // PSG accepted an updated mapping from cassandra
+    eNewCassandraSatNamesMapping = 19,  // PSG has detected new sat names mapping in cassandra
+                                        // however it can be accepted only
+                                        // after restart
+    eOpenCache = 20                     // PSG cannot create or open the LMDB cache
 };
 
 enum EPSGAlertAckResult {

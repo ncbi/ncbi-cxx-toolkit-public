@@ -162,4 +162,18 @@ enum EBlobSkipReason {
     eSent
 };
 
+
+// At startup time the server does the following:
+// - opens a database connection
+// - reads mapping from the root keyspace
+// - creates a cache for si2csi, bioseqinfo and blobprop
+// If there is an error on any of these stages the server tries to recover
+// periodically
+enum EStartupDataState {
+    eNoCassConnection,
+    eNoValidCassMapping,
+    eNoCassCache,
+    eStartupDataOK
+};
+
 #endif

@@ -569,3 +569,15 @@ string FormatPreciseTime(const chrono::system_clock::time_point &  t_point)
     return buffer;
 }
 
+
+
+static map<EStartupDataState, string> s_CassStartupDataStateMsg =
+    { {eNoCassConnection, "Cassandra DB connection is not established"},
+      {eNoValidCassMapping, "Cassanda DB mapping configuration is invalid"},
+      {eNoCassCache, "LMDB cache is not initialized"},
+      {eStartupDataOK, "Cassandra DB mapping data are OK"} };
+string GetCassStartupDataStateMessage(EStartupDataState  state)
+{
+    return s_CassStartupDataStateMsg[state];
+}
+

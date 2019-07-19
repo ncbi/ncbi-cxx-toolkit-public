@@ -57,7 +57,14 @@ const SAlertToId     kAlertToIdMap[] = {
     { eConfigExcludeCacheInactivity,    "ConfigExcludeCacheInactivity" },
     { eConfigStatScaleType,             "ConfigStatScaleType" },
     { eConfigStatMinMaxVal,             "ConfigStatMinMaxVal" },
-    { eConfigStatNBins,                 "ConfigStatNBins" } };
+    { eConfigStatNBins,                 "ConfigStatNBins" },
+    { eOpenCassandra,                   "OpenCassandra" },
+    { eNoValidCassandraMapping,         "NoValidCassandraMapping" },
+    { eInvalidCassandraMapping,         "InvalidCassandraMapping" },
+    { eNewCassandraMappingAccepted,     "NewCassandraMappingAccepted"},
+    { eNewCassandraSatNamesMapping,     "NewCassandraSatNamesMapping" },
+    { eOpenCache,                       "OpenCache" }
+};
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 
 
