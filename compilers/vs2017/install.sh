@@ -127,13 +127,13 @@ cp -p "$builddir"/src/app/blast/legacy_blast.pl "$bindir"
 
 
 # Gbench public installation
-echo "[`basename $script`] Installing Gbench..."
-for i in ReleaseDLL DebugDLL; do
-  if test -d "$builddir"/compilers/$compiler/dll/bin/"$i" ; then
-    cp -pr "$builddir"/compilers/$compiler/dll/bin/$i/gbench "$bindir"
-    break
-  fi
-done
+#echo "[`basename $script`] Installing Gbench..."
+#for i in ReleaseDLL DebugDLL; do
+#  if test -d "$builddir"/compilers/$compiler/dll/bin/"$i" ; then
+#    cp -pr "$builddir"/compilers/$compiler/dll/bin/$i/gbench "$bindir"
+#    break
+#  fi
+#done
 
 
 # Compiler dir (copy all .pdb and configurable files files for debug purposes)
