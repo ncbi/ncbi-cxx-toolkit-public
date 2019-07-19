@@ -11,13 +11,14 @@ LDFLAGS  = $(ORIG_LDFLAGS)
 
 LIB = hgvs \
       $(OBJREAD_LIBS) xobjutil taxon1 \
-      gencoll_client \
+      gencoll_client sqlitewrapp \
       entrez2cli entrezgene entrez2 xregexp $(PCRE_LIB) \
       test_boost $(OBJMGR_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) \
+       $(ORIG_LIBS)
 
-REQUIRES = Boost.Test.Included
+REQUIRES = Boost.Test.Included SQLITE3
 
 CHECK_CMD = test_hgvs_reader
 

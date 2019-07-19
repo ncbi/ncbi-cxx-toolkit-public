@@ -32,3 +32,5 @@ CHECK_CMD = gc_cli get-assembly-by-sequence -acc NC_002008.4 /CHECK_NAME=test_ge
 CHECK_CMD = gc_cli get-chrtype-valid -type eChromosome -loc eMacronuclear /CHECK_NAME=test_gencoll_svc_TYPELOC
 
 WATCHERS = akimchi smithrg
+
+REQUIRES = SQLITE3
