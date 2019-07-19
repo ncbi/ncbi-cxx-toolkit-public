@@ -55,6 +55,8 @@ struct SMetricType
         eSend = 1000,
         eReceive,
         eClose,
+        eRetry,
+        eFail,
 
         // Should always be the last
         eLastType

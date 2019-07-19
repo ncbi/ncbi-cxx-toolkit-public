@@ -126,6 +126,16 @@ void SDebugPrintout::Print(uint32_t error_code)
     ERR_POST(Warning << id << ": Closed with status " << s_NgHttp2Error(error_code));
 }
 
+void SDebugPrintout::Print(unsigned retries, const SPSG_Error& error)
+{
+    ERR_POST(Warning << id << ": Retrying (" << retries << " retries remaining) after " << error);
+}
+
+void SDebugPrintout::Print(const SPSG_Error& error)
+{
+    ERR_POST(Warning << id << ": Gave up after " << error);
+}
+
 SDebugPrintout::~SDebugPrintout()
 {
     if (m_DebugOutput.perf) {
@@ -860,13 +870,18 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 
 bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error)
 {
-    if (req->CanRetry()) {
+    auto& debug_printout = req->reply->debug_printout;
+    auto retries = req->GetRetries();
+
+    if (retries) {
         // Return to queue for a re-send
         if (m_Io->queue.Push(move(req))) {
+            debug_printout << retries << error << endl;
             return true;
         }
     }
 
+    debug_printout << error << endl;
     req->reply->reply_item.GetLock()->state.AddError(error);
     AddToCompletion(req->reply);
     return false;

@@ -74,6 +74,8 @@ const char* SMetricType::Name(EType t)
         case eSend:    return "Send";
         case eReceive: return "Receive";
         case eClose:   return "Close";
+        case eRetry:   return "Retry";
+        case eFail:    return "Fail";
 
         case eLastType:
         case eError:   break;

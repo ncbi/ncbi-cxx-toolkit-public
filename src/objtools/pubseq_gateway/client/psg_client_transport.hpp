@@ -261,11 +261,13 @@ private:
         Print(forward<TArgs>(args)...);
     }
 
-    enum EType { eSend = 1000, eReceive, eClose };
+    enum EType { eSend = 1000, eReceive, eClose, eRetry, eFail };
 
     void Event(const string&, const string&)       { Event(eSend);    }
     void Event(const SPSG_Chunk&)                  { Event(eReceive); }
     void Event(uint32_t)                           { Event(eClose);   }
+    void Event(unsigned, const SPSG_Error&)        { Event(eRetry);   }
+    void Event(const SPSG_Error&)                  { Event(eFail);    }
 
     void Event(EType type)
     {
@@ -277,6 +279,8 @@ private:
     void Print(const string&, const string& url);
     void Print(const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
+    void Print(unsigned retries, const SPSG_Error& error);
+    void Print(const SPSG_Error& error);
 
     SDebugOutput& m_DebugOutput;
     vector<tuple<double, EType, thread::id>> m_Events;
@@ -413,9 +417,9 @@ struct SPSG_Request
 
     void OnReplyData(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
 
-    bool CanRetry()
+    unsigned GetRetries()
     {
-        return reply->reply_item.GetMTSafe().state.InProgress() && (m_Retries-- > 0);
+        return reply->reply_item.GetMTSafe().state.InProgress() && (m_Retries > 0) ? m_Retries-- : 0;
     }
 
     static const string& Prefix() { static const string kPrefix = "\n\nPSG-Reply-Chunk: "; return kPrefix; }
@@ -446,7 +450,7 @@ private:
 
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
-    int m_Retries;
+    unsigned m_Retries;
 };
 
 template <typename THandle>
