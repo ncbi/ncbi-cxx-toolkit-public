@@ -95,10 +95,7 @@ static void s_GBSeqStringCleanup(string& str, bool location = false)
 /////////////////////////////////////////////////////////////////////////////
 // Public
 
-
-// constructor
-CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
-    : m_IsInsd(isInsd)
+void CGBSeqFormatter::Reset()
 {
     m_DidFeatStart = false;
     m_DidJourStart = false;
@@ -120,6 +117,13 @@ CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     m_Primary.clear();
     m_Dbsource.clear();
     m_Xrefs.clear();
+}
+
+// constructor
+CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
+    : m_IsInsd(isInsd)
+{
+    Reset();
 }
 
 // detructor
@@ -179,6 +183,8 @@ void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
 
 void CGBSeqFormatter::StartSection(const CStartSectionItem&, IFlatTextOStream& text_os)
 {
+    // ID-5736 : Reset internal variables before starting a new report
+    Reset();
     m_GBSeq.Reset(new CGBSeq);
     // _ASSERT(m_GBSeq);
     string str;

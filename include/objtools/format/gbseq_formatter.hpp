@@ -88,6 +88,7 @@ public:
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
     virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
     virtual void FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os);
+    virtual void Reset(void);
 
 private:
     void x_WriteFileHeader(IFlatTextOStream& text_os);
