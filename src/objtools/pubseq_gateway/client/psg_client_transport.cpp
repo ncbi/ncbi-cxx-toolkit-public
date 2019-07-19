@@ -87,9 +87,9 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
 
-void SDebugPrintout::Print(pair<const string*, const string*> url)
+void SDebugPrintout::Print(const string& authority, const string& path)
 {
-    ERR_POST(Warning << id << ": Host '" << *url.first << "' to get request '" << *url.second << '\'');
+    ERR_POST(Warning << id << ": " << authority << path);
 }
 
 void SDebugPrintout::Print(const SPSG_Chunk& chunk)
@@ -371,7 +371,7 @@ void SPSG_Request::AddIo()
 
 void SPSG_Request::Add()
 {
-    reply->debug_printout << m_Buffer.chunk;
+    reply->debug_printout << m_Buffer.chunk << endl;
 
     auto& chunk = m_Buffer.chunk;
     auto& args = chunk.args;
@@ -879,7 +879,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
     if (it != m_Requests.end()) {
         auto& req = it->second;
 
-        req->reply->debug_printout << error_code;
+        req->reply->debug_printout << error_code << endl;
 
         // If there is an error and the request is allowed to Retry
         if (error_code) {
@@ -1012,7 +1012,7 @@ void SPSG_IoSession::ProcessRequests()
         const auto& authority = address.AsString();
         const auto& path = req->full_path;
 
-        req->reply->debug_printout << make_pair(&authority, &path);
+        req->reply->debug_printout << authority << path << endl;
         auto stream_id = m_Session.Submit(path, req.get());
 
         if (stream_id < 0) {

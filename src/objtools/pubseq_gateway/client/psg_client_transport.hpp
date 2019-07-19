@@ -244,8 +244,15 @@ struct SDebugPrintout
 
     ~SDebugPrintout();
 
+    template <class TArg, class ...TRest>
+    struct SPack;
+
+    template <class TArg>
+    SPack<TArg> operator<<(const TArg& arg) { return { this, &arg }; }
+
+private:
     template <class ...TArgs>
-    void operator<<(TArgs... args)
+    void Process(TArgs... args)
     {
         if (m_DebugOutput.level == SDebugOutput::eNone) return;
 
@@ -254,10 +261,9 @@ struct SDebugPrintout
         Print(forward<TArgs>(args)...);
     }
 
-private:
     enum EType { eSend = 1000, eReceive, eClose };
 
-    void Event(pair<const string*, const string*>) { Event(eSend);    }
+    void Event(const string&, const string&)       { Event(eSend);    }
     void Event(const SPSG_Chunk&)                  { Event(eReceive); }
     void Event(uint32_t)                           { Event(eClose);   }
 
@@ -268,12 +274,67 @@ private:
         m_Events.emplace_back(ms, type, thread_id);
     }
 
-    void Print(pair<const string*, const string*> url);
+    void Print(const string&, const string& url);
     void Print(const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
 
     SDebugOutput& m_DebugOutput;
     vector<tuple<double, EType, thread::id>> m_Events;
+};
+
+template <class TArg, class ...TRest>
+struct SDebugPrintout::SPack : SPack<TRest...>
+{
+    SPack(SPack<TRest...>&& base, const TArg* arg) :
+        SPack<TRest...>(move(base)),
+        m_Arg(arg)
+    {}
+
+    template <class TNextArg>
+    SPack<TNextArg, TArg, TRest...> operator<<(const TNextArg& next_arg)
+    {
+        return { move(*this), &next_arg };
+    }
+
+    void operator<<(ostream& (*)(ostream&)) { Process(); }
+
+protected:
+    template <class ...TArgs>
+    void Process(TArgs... args)
+    {
+        SPack<TRest...>::Process(*m_Arg, forward<TArgs>(args)...);
+    }
+
+private:
+    const TArg* m_Arg;
+};
+
+template <class TArg>
+struct SDebugPrintout::SPack<TArg>
+{
+    SPack(SDebugPrintout* debug_printout, const TArg* arg) :
+        m_DebugPrintout(debug_printout),
+        m_Arg(arg)
+    {}
+
+    template <class TNextArg>
+    SPack<TNextArg, TArg> operator<<(const TNextArg& next_arg)
+    {
+        return { move(*this), &next_arg };
+    }
+
+    void operator<<(ostream& (*)(ostream&)) { Process(); }
+
+protected:
+    template <class ...TArgs>
+    void Process(TArgs... args)
+    {
+        m_DebugPrintout->Process(*m_Arg, forward<TArgs>(args)...);
+    }
+
+private:
+    SDebugPrintout* m_DebugPrintout;
+    const TArg* m_Arg;
 };
 
 struct SPSG_Reply
