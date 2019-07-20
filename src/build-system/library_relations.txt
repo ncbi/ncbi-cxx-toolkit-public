@@ -405,8 +405,10 @@ gcedit needs gc_load_utils
 gcedit needs idload_utils
 gcrypt needs3party $(ORIG_LIBS)
 gencoll_client needs $(COMPRESS_LIBS)
+gencoll_client needs $(SQLITE3_WRAPPER)
 gencoll_client needs genome_collection
 gencoll_client needs xconnect
+gencoll_client needs3party $(SQLITE3_LIBS)
 gencoll_load needs xser
 gencoll_release_report needs genome_collection
 gencoll_stats needs genome_collection
