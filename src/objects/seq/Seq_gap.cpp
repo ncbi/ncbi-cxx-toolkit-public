@@ -180,6 +180,7 @@ CSeq_gap::GetNameToGapTypeInfoMap(void)
     static const TGapTypeElem sc_gap_type_map[] = {
         { "between-scaffolds", { CSeq_gap::eType_contig, eLinkEvid_Required } },
         { "centromere", { CSeq_gap::eType_centromere, eLinkEvid_Forbidden } },
+        { "contamination", { eType_contamination, eLinkEvid_Required } },
         { "heterochromatin", { CSeq_gap::eType_heterochromatin, eLinkEvid_Forbidden } },
         { "repeat-between-scaffolds", { CSeq_gap::eType_repeat, eLinkEvid_Forbidden } },
         { "repeat-within-scaffold", { CSeq_gap::eType_repeat, eLinkEvid_Required } },
