@@ -65,7 +65,7 @@ CComment_set::~CComment_set(void)
 {
 }
 
-const CComment_rule& CComment_set::FindCommentRule (const string& prefix) const
+CConstRef<CComment_rule> CComment_set::FindCommentRuleEx (const string& prefix) const
 {
     string search = prefix;
     CComment_rule::NormalizePrefix(search);
@@ -74,13 +74,24 @@ const CComment_rule& CComment_set::FindCommentRule (const string& prefix) const
         string this_prefix = rule.GetPrefix();
         CComment_rule::NormalizePrefix(this_prefix);
         if (NStr::EqualNocase(this_prefix, search)) {
-            return **it;
+            return *it;
         }
     }
 
-    NCBI_THROW (CCoreException, eNullPtr, "FindCommentRule failed");
+    // NCBI_THROW (CCoreException, eNullPtr, "FindCommentRuleEx failed");
 
-    return *CConstRef<CComment_rule>();
+    return CConstRef<CComment_rule>();
+}
+
+
+const CComment_rule& CComment_set::FindCommentRule (const string& prefix) const
+{
+    auto rule = FindCommentRuleEx(prefix);
+    if ( rule.Empty() ) {
+        NCBI_THROW (CCoreException, eNullPtr, "FindCommentRule failed");
+    } else {
+        return *rule;
+    }
 }
 
 
@@ -155,7 +166,8 @@ vector<string> CComment_set::GetFieldNames(const string& prefix)
 
     if (rules) {
         try {
-            const CComment_rule& rule = rules->FindCommentRule(prefix_to_use);
+            CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(prefix_to_use);
+            const CComment_rule& rule = *ruler;
             ITERATE(CComment_rule::TFields::Tdata, it, rule.GetFields().Get()) {
                 options.push_back((*it)->GetField_name());
             }
@@ -180,7 +192,8 @@ list<string> CComment_set::GetKeywords(const CUser_object& user)
 
     if (rules) {
         try {
-            const CComment_rule& rule = rules->FindCommentRule(prefix_to_use);
+            CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(prefix_to_use);
+            const CComment_rule& rule = *ruler;
             CComment_rule::TErrorList errors = rule.IsValid(user);
             if (errors.size() == 0) {
                 string kywd = CComment_rule::KeywordForPrefix( prefix );

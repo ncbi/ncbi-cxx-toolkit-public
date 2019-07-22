@@ -245,19 +245,21 @@ DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspici
         string prefix = CComment_rule::GetStructuredCommentPrefix(user);
         if (!prefix.empty()) {
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-            const CComment_rule* rule;
+            CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
             try {
-                rule = &comment_rules->FindCommentRule(prefix);
+                if (ruler) {
+                    const CComment_rule& rule = *ruler;
+                    CComment_rule::TErrorList errors = rule.IsValid(user);
+                    if (!errors.empty()) {
+                        const CComment_rule* new_rule = FindAppropriateRule(*comment_rules, user);
+                        if (new_rule) {
+                            m_Objs[kBadStructCommentPrefix].Add(*context.SeqdescObj(obj, true, const_cast<CComment_rule*>(new_rule)));
+                        }
+                    }
+                }
             }
             catch(...) {
                 return;
-            }
-            CComment_rule::TErrorList errors = rule->IsValid(user);
-            if (!errors.empty()) {
-                const CComment_rule* new_rule = FindAppropriateRule(*comment_rules, user);
-                if (new_rule) {
-                    m_Objs[kBadStructCommentPrefix].Add(*context.SeqdescObj(obj, true, const_cast<CComment_rule*>(new_rule)));
-                }
             }
         }
     }

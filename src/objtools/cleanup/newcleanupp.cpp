@@ -8811,12 +8811,15 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
             string prefix = CComment_rule::GetStructuredCommentPrefix (usr);
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
             try {
-                const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
-                CComment_rule::TErrorList errors = rule.IsValid(usr);
-                if (errors.size() == 0) {
-                    string kywd = CComment_rule::KeywordForPrefix( prefix );
-                    if (! kywd.empty()) {
-                        new_keywords.push_back(kywd);
+                CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
+                if (ruler) {
+                    const CComment_rule& rule = *ruler;
+                    CComment_rule::TErrorList errors = rule.IsValid(usr);
+                    if (errors.size() == 0) {
+                        string kywd = CComment_rule::KeywordForPrefix( prefix );
+                        if (! kywd.empty()) {
+                            new_keywords.push_back(kywd);
+                        }
                     }
                 }
             } catch (CException) {

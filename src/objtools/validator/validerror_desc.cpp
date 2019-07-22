@@ -479,16 +479,19 @@ bool CValidError_desc::ValidateStructuredComment
         CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
         if (comment_rules) {
             try {
-                const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+                CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
+                if (ruler) {
+                    const CComment_rule& rule = *ruler;
 
-                if (rule.GetRequire_order()) {
-                    is_valid = ValidateStructuredComment (usr, desc, rule, report);
-                } else {
-                    CUser_object tmp;
-                    tmp.Assign(usr);
-                    CUser_object::TData& fields = tmp.SetData();
-                    stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
-                    is_valid = ValidateStructuredComment (tmp, desc, rule, report);
+                    if (rule.GetRequire_order()) {
+                        is_valid = ValidateStructuredComment (usr, desc, rule, report);
+                    } else {
+                        CUser_object tmp;
+                        tmp.Assign(usr);
+                        CUser_object::TData& fields = tmp.SetData();
+                        stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
+                        is_valid = ValidateStructuredComment (tmp, desc, rule, report);
+                    }
                 }
             } catch (CException&) {
                 // no rule for this prefix

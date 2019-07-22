@@ -61,6 +61,7 @@ public:
     ~CComment_set(void);
 
     const CComment_rule& FindCommentRule (const string& prefix) const;
+    CConstRef<CComment_rule> FindCommentRuleEx (const string& prefix) const;
     static CConstRef<CComment_set> GetCommentRules();
     static vector<string> GetFieldNames(const string& prefix);
     static list<string> GetKeywords(const CUser_object& user);
