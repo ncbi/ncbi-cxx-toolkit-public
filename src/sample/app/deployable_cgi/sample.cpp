@@ -127,3 +127,4 @@ int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CCgiSampleApplication().AppMain(argc, argv);
 }
+
