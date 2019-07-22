@@ -66,7 +66,7 @@ NCBI_add_subdirectory(
   prot_match
   pub_report
   rmblastn
-  split_cache
+#  split_cache
   sub_fuse
   tls
   wgs_parse
