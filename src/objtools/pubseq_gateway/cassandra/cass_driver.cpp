@@ -331,7 +331,7 @@ void CCassConnection::Connect()
 
     try {
         Reconnect();
-    } catch (CCassandraException & ex) {
+    } catch (CCassandraException const &) {
         Close();
         throw;
     }
