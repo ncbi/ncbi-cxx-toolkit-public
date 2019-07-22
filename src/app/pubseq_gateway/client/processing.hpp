@@ -124,7 +124,10 @@ protected:
 class CReporter : public CProcessor
 {
 public:
-    CReporter(SJsonOut& json_out) : m_JsonOut(json_out) {}
+    CReporter(SJsonOut& json_out, bool batch_resolve = false) :
+        m_JsonOut(json_out),
+        m_BatchResolve(batch_resolve)
+    {}
 
     void Start()
     {
@@ -150,6 +153,7 @@ private:
     queue<string> m_Requests;
     queue<shared_ptr<CPSG_Reply>> m_Replies;
     queue<shared_ptr<CPSG_ReplyItem>> m_Items;
+    const bool m_BatchResolve;
 };
 
 class CRetriever : public CProcessor
@@ -180,7 +184,11 @@ private:
 class CSender : public CProcessor
 {
 public:
-    CSender(CPSG_Queue& queue, SJsonOut& json_out) : m_Queue(queue), m_JsonOut(json_out) {}
+    CSender(CPSG_Queue& queue, SJsonOut& json_out, bool batch_resolve = false) :
+        m_Queue(queue),
+        m_JsonOut(json_out),
+        m_BatchResolve(batch_resolve)
+    {}
 
     void Start()
     {
@@ -200,6 +208,7 @@ private:
     CPSG_Queue& m_Queue;
     SJsonOut& m_JsonOut;
     queue<shared_ptr<CPSG_Request>> m_Requests;
+    const bool m_BatchResolve;
 };
 
 class CProcessing
@@ -207,22 +216,22 @@ class CProcessing
 public:
     CProcessing() :
         m_RequestsCounter(0),
-        m_JsonOut(false),
         m_Reporter(m_JsonOut),
         m_Retriever(m_Queue, m_Reporter),
         m_Sender(m_Queue, m_JsonOut)
     {}
 
-    CProcessing(string service, bool interactive = false) :
+    CProcessing(string service, bool interactive = false, bool batch_resolve = false) :
         m_Queue(service),
         m_RequestsCounter(0),
         m_JsonOut(interactive),
-        m_Reporter(m_JsonOut),
+        m_Reporter(m_JsonOut, batch_resolve),
         m_Retriever(m_Queue, m_Reporter),
-        m_Sender(m_Queue, m_JsonOut)
+        m_Sender(m_Queue, m_JsonOut, batch_resolve)
     {}
 
     int OneRequest(shared_ptr<CPSG_Request> request);
+    int BatchResolve(const CArgs& input, istream& is);
     int Interactive(bool echo);
     int Performance(size_t user_threads, bool raw_metrics, const string& service);
     int Testing();
@@ -235,7 +244,7 @@ private:
 
     void PerformanceReply();
 
-    static bool ReadRequest(string& request);
+    static bool ReadRequest(string& request, istream& is = cin);
     static CJson_Schema& RequestSchema();
 
     static shared_ptr<CPSG_Request> CreateRequest(const string& method, shared_ptr<void> user_context,
@@ -251,6 +260,8 @@ private:
 
 struct SRequestBuilder
 {
+    struct SBatchResolve;
+
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
 
@@ -291,10 +302,21 @@ private:
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
 
-    static void IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified);
+    static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
 
     static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input);
     static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CJson_ConstObject& input);
+};
+
+struct SRequestBuilder::SBatchResolve
+{
+    SBatchResolve(const CArgs& input);
+
+    shared_ptr<CPSG_Request_Resolve> operator()(string id);
+
+private:
+    const CPSG_BioId::TType m_Type;
+    const CPSG_Request_Resolve::TIncludeInfo m_IncludeInfo;
 };
 
 template <class TRequest>
@@ -341,7 +363,8 @@ inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>&
     auto bio_id = GetBioId(input);
     request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
     auto specified = GetSpecified<CPSG_Request_Resolve>(input);
-    IncludeInfo(request, specified);
+    const auto include_info = GetIncludeInfo(specified);
+    request->IncludeInfo(include_info);
 }
 
 template <class TInput>

@@ -156,12 +156,19 @@ template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
-    arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
-    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
+    arg_desc.AddOptionalPositional("ID", "Bio ID", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("id-file", "FILENAME", "File containing bio IDs to resolve (one per line)", CArgDescriptions::eInputFile);
+    arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
 
     for (const auto& f : SRequestBuilder::GetInfoFlags()) {
         arg_desc.AddFlag(f.name, f.desc);
     }
+
+    auto id_group = CArgDependencyGroup::Create("ID GROUP", "The group consists of arguments to specify bio ID(s)");
+    id_group->Add("ID");
+    id_group->Add("id-file");
+    id_group->SetMinMembers(1).SetMaxMembers(1);
+    arg_desc.AddDependencyGroup(id_group);
 }
 
 template <>
@@ -226,6 +233,24 @@ int CPsgClientApp::RunRequest(const CArgs& args)
     auto request = SRequestBuilder::CreateRequest<TRequest>(nullptr, args);
 
     return processing.OneRequest(request);
+}
+
+template<>
+int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
+{
+    const auto service = args["service"].AsString();
+    const auto single_request = args["ID"].HasValue();
+    const auto regular_file = args["id-file"].HasValue() && (args["id-file"].AsString() != "-");
+    const auto interactive = !single_request && !regular_file;
+    CProcessing processing(service, interactive, true);
+
+    if (single_request) {
+        auto request = SRequestBuilder::CreateRequest<CPSG_Request_Resolve>(nullptr, args);
+        return processing.OneRequest(request);
+    } else {
+        auto& is = regular_file ? args["id-file"].AsInputFile() : cin;
+        return processing.BatchResolve(args, is);
+    }
 }
 
 template<>

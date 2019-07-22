@@ -352,6 +352,44 @@ int CProcessing::OneRequest(shared_ptr<CPSG_Request> request)
     return 0;
 }
 
+SRequestBuilder::SBatchResolve::SBatchResolve(const CArgs& input) :
+    m_Type(input["type"].HasValue() ? GetBioIdType(input["type"].AsString()) : CPSG_BioId::TType()),
+    m_IncludeInfo(GetIncludeInfo(GetSpecified<CPSG_Request_Resolve>(input)))
+{
+}
+
+shared_ptr<CPSG_Request_Resolve> SRequestBuilder::SBatchResolve::operator()(string id)
+{
+    auto bio_id = CPSG_BioId(id, m_Type);
+    auto user_context = make_shared<string>(move(id));
+    auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
+
+    request->IncludeInfo(m_IncludeInfo);
+    return request;
+}
+
+int CProcessing::BatchResolve(const CArgs& input, istream& is)
+{
+    SRequestBuilder::SBatchResolve batch_resolve(input);
+
+    m_Reporter.Start();
+    m_Retriever.Start();
+    m_Sender.Start();
+
+    string id;
+
+    while (ReadRequest(id, is)) {
+        auto request = batch_resolve(id);
+        m_Sender.Add(move(request));
+        m_Reporter.Add(move(id));
+    }
+
+    m_Sender.Stop();
+    m_Retriever.Stop();
+    m_Reporter.Stop();
+    return 0;
+}
+
 shared_ptr<CPSG_Reply> s_GetReply(shared_ptr<CPSG_ReplyItem>& item)
 {
     return item->GetReply();
@@ -379,7 +417,10 @@ void CSender::Run()
         lock.unlock();
 
         if (m_Queue.SendRequest(request, kTryTimeout)) {
-            m_JsonOut << CJsonResponse(*id, true);
+            if (!m_BatchResolve) {
+                m_JsonOut << CJsonResponse(*id, true);
+            }
+
         } else {
             m_JsonOut << CJsonResponse(*id, -32000, "Timeout on sending a request");
         }
@@ -470,7 +511,12 @@ void CReporter::Run()
             result_doc.ResetObject();
         }
 
-        m_JsonOut << CJsonResponse(m_Requests.front(), result_doc);
+        if (m_BatchResolve) {
+            result_doc.SetObject().erase("reply");
+            m_JsonOut << result_doc;
+        } else {
+            m_JsonOut << CJsonResponse(m_Requests.front(), result_doc);
+        }
 
         m_Requests.pop();
     }
@@ -820,10 +866,10 @@ int CProcessing::Testing()
     return rv;
 }
 
-bool CProcessing::ReadRequest(string& request)
+bool CProcessing::ReadRequest(string& request, istream& is)
 {
     for (;;) {
-        if (!getline(cin, request)) {
+        if (!getline(is, request)) {
             return false;
         } else if (!request.empty()) {
             return true;
@@ -1191,7 +1237,7 @@ vector<string> SRequestBuilder::GetNamedAnnots(const CJson_ConstObject& input)
     return names;
 }
 
-void SRequestBuilder::IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified)
+CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(TSpecified specified)
 {
     const auto& info_flags = GetInfoFlags();
 
@@ -1209,7 +1255,8 @@ void SRequestBuilder::IncludeInfo(shared_ptr<CPSG_Request_Resolve> request, TSpe
         }
     }
 
-    request->IncludeInfo(include_info);
+    // Provide all info if nothing is specified explicitly
+    return include_info ? include_info : CPSG_Request_Resolve::fAllInfo;
 }
 
 void SRequestBuilder::ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input)
@@ -1250,7 +1297,7 @@ const initializer_list<SDataFlag>& SRequestBuilder::GetDataFlags()
 
 const initializer_list<SInfoFlag> kInfoFlags =
 {
-    { "all-info-except", "Return all info except explicitly specified", CPSG_Request_Resolve::fAllInfo      },
+    { "all-info-except", "Return all info except explicitly specified by other flags", CPSG_Request_Resolve::fAllInfo },
     { "canonical-id",    "Return canonical ID info",                    CPSG_Request_Resolve::fCanonicalId  },
     { "other-ids",       "Return other IDs info",                       CPSG_Request_Resolve::fOtherIds     },
     { "molecule-type",   "Return molecule type info",                   CPSG_Request_Resolve::fMoleculeType },
