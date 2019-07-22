@@ -48,11 +48,24 @@
 #include "splitter_exception.hpp"
 #include <math.h>
 
-
-
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+namespace seqsubmit_split
+{
+
+typedef vector<CRef<CSeq_entry> > TSeqEntryArray;
+typedef list<CRef<CSeq_entry> > TSeqEntryList;
+
+class CObjectHelper
+{
+public:
+    virtual CRef<CSerialObject> BuildObject() const = 0;
+    virtual TSeqEntryList& GetListOfEntries(CSerialObject& obj) const = 0;
+};
 
 class CSeqSubSplitter : public CNcbiApplication
 {
@@ -61,10 +74,8 @@ public:
     void Init();
     int Run();
 
-    typedef vector<CRef<CSeq_entry> > TSeqEntryArray;
-
 private:
-    CObjectIStream* xInitInputStream(const CArgs& args) const; // Why CObjectIStream instead of NcbiIstream here?
+    CObjectIStream* xInitInputStream() const; // Why CObjectIStream instead of NcbiIstream here?
 
     CObjectOStream* xInitOutputStream(const string& output_stub, 
                                       const TSeqPos output_index,
@@ -73,15 +84,18 @@ private:
                                       const bool binary) const;
 
 
-    bool xTryReadInputFile(const CArgs& args, 
-                           CRef<CSeq_submit>& seq_sub) const;
+    CRef<CSerialObject> xGetInputObject() const;
+
+    bool xTryReadInputFile(CRef<CSerialObject>& obj) const;
     
-    bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub,
-                              TSeqPos sort_order,
-                              TSeqPos bundle_size,
-                              bool wrap_entries,
-                              list<CRef<CSeq_submit> >& output_array) const;
+    bool xTryProcessSeqEntries(const CObjectHelper& builder, TSeqEntryArray& seq_entry_array,
+                               list<CRef<CSerialObject>>& output_array) const;
    
+    bool xTryProcessSeqSubmit(CRef<CSerialObject>& obj,
+                              list<CRef<CSerialObject>>& output_array) const;
+    bool xTryProcessSeqEntry(CRef<CSerialObject>& obj,
+                             list<CRef<CSerialObject>>& output_array) const;
+
     void xWrapSeqEntries(TSeqEntryArray& seq_entry_array, 
                          const TSeqPos& bundle_size,
                          TSeqEntryArray& wrapped_entry_array) const;
@@ -181,34 +195,33 @@ void CSeqSubSplitter::Init()
                                  "0", "1", "2", "3"));
     }
     
+    // treat input as Seq-entry
+    {
+        arg_desc->AddFlag("e", "Treat input as Seq-entry");
+    }
+
     SetupArgDescriptions(arg_desc.release());
 }
 
 
 int CSeqSubSplitter::Run()
 {
-    const CArgs& args = GetArgs();
-    const TSeqPos bundle_size = args["n"].AsInteger();
-    const TSeqPos sort_order = args["r"].AsInteger();
-
-    CRef<CSeq_submit> input_sub;
-    if (!xTryReadInputFile(args, input_sub)) {
-        string err_msg = "Could not read input Seq-submit";
+    CRef<CSerialObject> input_obj;
+    if (!xTryReadInputFile(input_obj)) {
+        string err_msg = "Could not read input file";
         ERR_POST(err_msg);
         return 1;
     }
 
-    list<CRef<CSeq_submit> > output_array;
+    const CArgs& args = GetArgs();
 
-    const bool wrap_entries = args["w"].AsBoolean(); // Wrap the output Seq-entries 
-                                                     // within a Seq-submit in a Genbank set
+    bool input_as_seq_entry = args["e"].AsBoolean();
+    list<CRef<CSerialObject>> output_array;
 
-    if(!xTryProcessSeqSubmit(input_sub, 
-                             sort_order, 
-                             bundle_size,
-                             wrap_entries,
-                             output_array)) {
-        string err_msg = "Could not process input Seq-submit";
+    bool good = input_as_seq_entry ? xTryProcessSeqEntry(input_obj, output_array) : xTryProcessSeqSubmit(input_obj, output_array);
+
+    if (!good) {
+        string err_msg = "Could not process input file";
         ERR_POST(err_msg);
         return 1;
     }
@@ -229,7 +242,7 @@ int CSeqSubSplitter::Run()
     const TSeqPos pad_width = static_cast<TSeqPos>(log10(output_array.size())) + 1;
 
     try {
-        NON_CONST_ITERATE(list<CRef<CSeq_submit> >, it, output_array) {
+        for (auto& it: output_array) {
             ++output_index;
             ostr.reset(xInitOutputStream(output_stub, 
                         output_index, 
@@ -237,7 +250,7 @@ int CSeqSubSplitter::Run()
                         output_extension,
                         binary
                         ));
-            *ostr << **it;
+            *ostr << *it;
         }
     }
     catch (const CException& e) {
@@ -303,24 +316,36 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
     return pOstr;
 }
 
+CRef<CSerialObject> CSeqSubSplitter::xGetInputObject() const
+{
+    CRef<CSerialObject> ret;
+    if (GetArgs()["e"].AsBoolean()) {
+        ret.Reset(new CSeq_entry);
+    }
+    else {
+        ret.Reset(new CSeq_submit);
+    }
 
+    return ret;
+}
 
-bool CSeqSubSplitter::xTryReadInputFile(const CArgs& args,
-                                        CRef<CSeq_submit>& seq_sub) const
+bool CSeqSubSplitter::xTryReadInputFile(CRef<CSerialObject>& obj) const
 {
     auto_ptr<CObjectIStream> istr;
-    istr.reset(xInitInputStream(args));
+    istr.reset(xInitInputStream());
     
-    CRef<CSeq_submit> input_sub = Ref(new CSeq_submit());
+    CRef<CSerialObject> input_obj = xGetInputObject();
+
+    bool ret = true;
     try {
-        istr->Read(ObjectInfo(*input_sub));
+        istr->Read( { input_obj, input_obj->GetThisTypeInfo() } );
+        obj = input_obj;
     }
     catch (CException&) {
-        return false;
+        ret = false;
     }
 
-    seq_sub = input_sub;
-    return true;
+    return ret;
 }
 
 
@@ -457,21 +482,15 @@ void CSeqSubSplitter::xWrapSeqEntries(TSeqEntryArray& seq_entry_array,
 }
 
 
-
-bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
-                                           const TSeqPos sort_order,
-                                           const TSeqPos bundle_size,
-                                           bool wrap_entries,
-                                           list<CRef<CSeq_submit> >& output_array) const
+bool CSeqSubSplitter::xTryProcessSeqEntries(const CObjectHelper& helper, TSeqEntryArray& seq_entry_array,
+                                           list<CRef<CSerialObject>>& output_array) const
 {
-    if (!input_sub->IsEntrys()) {
-        ERR_POST("Seq-submit does not contain any entries");
-        return false;
-    }
+    const CArgs& args = GetArgs();
 
-    TSeqEntryArray seq_entry_array;
-
-    xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_entry_array);
+    TSeqPos bundle_size = args["n"].AsInteger();
+    TSeqPos sort_order = args["r"].AsInteger();
+    bool wrap_entries = args["w"].AsBoolean(); // Wrap the output Seq-entries 
+                                               // within a Seq-submit in a Genbank set
 
     switch(sort_order) {
         default:
@@ -495,18 +514,17 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
         TSeqEntryArray wrapped_entry_array;
         xWrapSeqEntries(seq_entry_array, bundle_size, wrapped_entry_array);
         for(size_t i=0; i<wrapped_entry_array.size(); ++i) {
-            CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
-            seqsub->SetSub(input_sub->SetSub());
-            seqsub->SetData().SetEntrys().push_back(wrapped_entry_array[i]);
+            CRef<CSerialObject> seqsub = helper.BuildObject();
+            helper.GetListOfEntries(*seqsub).push_back(wrapped_entry_array[i]);
             output_array.push_back(seqsub);
         }
     } else {
         TSeqEntryArray::iterator seq_entry_it = seq_entry_array.begin();
         while (seq_entry_it != seq_entry_array.end()) {
-            CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
-            seqsub->SetSub(input_sub->SetSub());
+
+            CRef<CSerialObject> seqsub = helper.BuildObject();
             for(TSeqPos i=0; i<bundle_size; ++i) {
-                seqsub->SetData().SetEntrys().push_back(*seq_entry_it);
+                helper.GetListOfEntries(*seqsub).push_back(*seq_entry_it);
                 ++seq_entry_it;
                 if (seq_entry_it == seq_entry_array.end()) {
                     break;
@@ -519,9 +537,92 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
 }
 
 
-
-CObjectIStream* CSeqSubSplitter::xInitInputStream(const CArgs& args) const
+class CSeqSubmitHelper : public CObjectHelper
 {
+public:
+    CSeqSubmitHelper(CSeq_submit& seq_submit) :
+        m_seq_submit(seq_submit)
+    {}
+
+    virtual CRef<CSerialObject> BuildObject() const
+    {
+        CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
+        seqsub->SetSub(m_seq_submit.SetSub());
+
+        return seqsub;
+    }
+
+    virtual TSeqEntryList& GetListOfEntries(CSerialObject& obj) const
+    {
+        CSeq_submit& sub = dynamic_cast<CSeq_submit&>(obj);
+        return sub.SetData().SetEntrys();
+    }
+
+private:
+    CSeq_submit& m_seq_submit;
+};
+
+
+bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSerialObject>& obj, list<CRef<CSerialObject>>& output_array) const
+{
+    CSeq_submit* input_sub = dynamic_cast<CSeq_submit*>(obj.GetPointer());
+    if (input_sub == nullptr || !input_sub->IsEntrys()) {
+        ERR_POST("Seq-submit does not contain any entries");
+        return false;
+    }
+
+    TSeqEntryArray seq_entry_array;
+
+    xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_entry_array);
+    return xTryProcessSeqEntries(CSeqSubmitHelper(*input_sub), seq_entry_array, output_array);
+}
+
+
+class CSeqEntryHelper : public CObjectHelper
+{
+public:
+    CSeqEntryHelper(CSeq_entry& seq_entry) :
+        m_seq_entry(seq_entry)
+    {}
+
+    virtual CRef<CSerialObject> BuildObject() const
+    {
+        CRef<CSeq_entry> seqentry = Ref(new CSeq_entry());
+        seqentry->SetSet().SetClass(m_seq_entry.GetSet().GetClass());
+
+        return seqentry;
+    }
+
+    virtual TSeqEntryList& GetListOfEntries(CSerialObject& obj) const
+    {
+        CSeq_entry& entry = dynamic_cast<CSeq_entry&>(obj);
+        return entry.SetSet().SetSeq_set();
+    }
+
+private:
+    CSeq_entry& m_seq_entry;
+};
+
+
+bool CSeqSubSplitter::xTryProcessSeqEntry(CRef<CSerialObject>& obj, list<CRef<CSerialObject>>& output_array) const
+{
+    CSeq_entry* input_entry = dynamic_cast<CSeq_entry*>(obj.GetPointer());
+    if (input_entry == nullptr || !input_entry->IsSet()) {
+        ERR_POST("Seq-entry does not contain any entries");
+        return false;
+    }
+
+    TSeqEntryArray seq_entry_array;
+    CSeq_descr seq_descr;
+
+    xFlattenSeqEntry(*input_entry, seq_descr, seq_entry_array);
+    return xTryProcessSeqEntries(CSeqEntryHelper(*input_entry), seq_entry_array, output_array);
+}
+
+
+CObjectIStream* CSeqSubSplitter::xInitInputStream() const
+{
+    const CArgs& args = GetArgs();
     if (!args["i"]) {
         NCBI_THROW(CSeqSubSplitException, 
                    eInputError,
@@ -558,6 +659,44 @@ CObjectIStream* CSeqSubSplitter::xInitInputStream(const CArgs& args) const
     return p_istream;
 }
 
+static bool MultipleAllowed(CSeqdesc::E_Choice choice)
+{
+    static constexpr CSeqdesc::E_Choice MULTIPLE_ALLOWED[] = {
+        CSeqdesc::e_Name,
+        CSeqdesc::e_Comment,
+        CSeqdesc::e_Num,
+        CSeqdesc::e_Maploc,
+        CSeqdesc::e_Pub,
+        CSeqdesc::e_Region,
+        CSeqdesc::e_User,
+        CSeqdesc::e_Dbxref,
+        CSeqdesc::e_Het,
+        CSeqdesc::e_Modelev
+    };
+
+    return find(begin(MULTIPLE_ALLOWED), end(MULTIPLE_ALLOWED), choice) != end(MULTIPLE_ALLOWED);
+}
+
+static bool NeedToInclude(const CSeqdesc& descr, const CSeq_descr& dst)
+{
+    bool ret = true;
+
+    if (dst.IsSet()) {
+
+        CSeqdesc::E_Choice choice = descr.Which();
+
+        for (auto& dst_descr: dst.Get()) {
+            if (dst_descr->Which() == choice) {
+
+                if (dst_descr->Equals(descr)) {
+                    ret = false;
+                    break;
+                }
+            }
+        }
+    }
+    return ret;
+}
 
 void CSeqSubSplitter::xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const
 {
@@ -565,19 +704,22 @@ void CSeqSubSplitter::xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) con
         return;
     }
 
-    ITERATE(CSeq_descr::Tdata, it, src.Get()) 
+    for (auto& descr: src.Get()) 
     {
-        // Need to insert a check to make sure there aren't conflicting entries in the 
-        // src and destination.
-        CRef<CSeqdesc> desc = CAutoAddDesc::LocateDesc(dst, (**it).Which());
-        if (desc.Empty()) { 
-            desc.Reset(new CSeqdesc());
-            desc->Assign(**it);
-            dst.Set().push_back(desc);
+        CSeqdesc::E_Choice choice = descr->Which();
+        if (MultipleAllowed(choice)) {
+
+            if (NeedToInclude(*descr, dst)) {
+                dst.Set().push_back(descr);
+            }
+        }
+        else {
+
+            if (find_if(dst.Set().begin(), dst.Set().end(), [choice](const CRef<CSeqdesc>& cur_descr) { return cur_descr->Which() == choice; } ) == dst.Set().end()) {
+                dst.Set().push_back(descr);
+            }
         }
     }
-
-    return;
 }
 
 
@@ -648,13 +790,15 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
     }
 }
 
+} // namespace
 
 END_NCBI_SCOPE
 
 
 USING_NCBI_SCOPE;
+
 int main(int argc, const char** argv)
 {
-    return CSeqSubSplitter().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return seqsubmit_split::CSeqSubSplitter().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
 
