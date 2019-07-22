@@ -257,42 +257,41 @@ atomic<CassUuidGen*>    CCassConnection::m_CassUuidGen(nullptr);
 
 string CCassConnection::NewTimeUUID()
 {
-    char        buf[CASS_UUID_STRING_LENGTH];
-
+    char buf[CASS_UUID_STRING_LENGTH];
     if (!m_CassUuidGen.load()) {
         CassUuidGen *gen, *nothing = nullptr;
         gen = cass_uuid_gen_new();
-        if (!m_CassUuidGen.compare_exchange_weak(nothing, gen))
+        if (!m_CassUuidGen.compare_exchange_weak(nothing, gen)) {
             cass_uuid_gen_free(gen);
+        }
     }
 
-    CassUuid    uuid;
+    CassUuid uuid;
     cass_uuid_gen_time(static_cast<CassUuidGen*>(m_CassUuidGen.load()), &uuid);
     cass_uuid_string(uuid, buf);
     return string(buf);
 }
 
-
 void CCassConnection::Connect()
 {
-    if (IsConnected())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "cassandra driver has already been connected");
-    if (m_host.empty())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "cassandra host list is empty");
+    if (IsConnected()) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "cassandra driver has already been connected");
+    }
+    if (m_host.empty()) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "cassandra host list is empty");
+    }
 
     UpdateLogging();
     m_cluster = cass_cluster_new();
 
-//  cass_cluster_set_max_requests_per_flush(m_cluster, CORE_MAX_REQ_PER_FLUSH);
-
     cass_cluster_set_connect_timeout(m_cluster, m_ctimeoutms);
     cass_cluster_set_contact_points(m_cluster, m_host.c_str());
-    if (m_port > 0)
+    if (m_port > 0) {
         cass_cluster_set_port(m_cluster, m_port);
-    if (m_qtimeoutms > 0)
+    }
+    if (m_qtimeoutms > 0) {
         cass_cluster_set_request_timeout(m_cluster, m_qtimeoutms);
+    }
 
     if (!m_user.empty())
         cass_cluster_set_credentials(m_cluster, m_user.c_str(), m_pwd.c_str());
@@ -303,22 +302,19 @@ void CCassConnection::Connect()
         }
     }
 
-    cass_cluster_set_token_aware_routing(
-            m_cluster, m_tokenaware ? cass_true : cass_false);
-    cass_cluster_set_latency_aware_routing(
-            m_cluster, m_latencyaware ? cass_true : cass_false);
+    cass_cluster_set_token_aware_routing(m_cluster, m_tokenaware ? cass_true : cass_false);
+    cass_cluster_set_latency_aware_routing(m_cluster, m_latencyaware ? cass_true : cass_false);
 
-    if (m_numThreadsIo)
+    if (m_numThreadsIo) {
         cass_cluster_set_num_threads_io(m_cluster, m_numThreadsIo);
-    else
+    } else {
         cass_cluster_set_num_threads_io(m_cluster, IO_THREADS);
+    }
 
     if (m_maxConnPerHost) {
         cass_cluster_set_max_connections_per_host(m_cluster, m_maxConnPerHost);
-        cass_cluster_set_pending_requests_low_water_mark(
-                m_cluster, 64 * m_maxConnPerHost);
-        cass_cluster_set_pending_requests_high_water_mark(
-                m_cluster, 128 * m_maxConnPerHost);
+        cass_cluster_set_pending_requests_low_water_mark(m_cluster, 64 * m_maxConnPerHost);
+        cass_cluster_set_pending_requests_high_water_mark(m_cluster, 128 * m_maxConnPerHost);
     }
 
     if (m_numConnPerHost) {
@@ -329,10 +325,16 @@ void CCassConnection::Connect()
         cass_cluster_set_tcp_keepalive(m_cluster, cass_true, m_keepalive);
     }
 
-    if (!m_blacklist.empty())
+    if (!m_blacklist.empty()) {
         cass_cluster_set_blacklist_filtering(m_cluster, m_blacklist.c_str());
+    }
 
-    Reconnect();
+    try {
+        Reconnect();
+    } catch (CCassandraException & ex) {
+        Close();
+        throw;
+    }
 }
 
 
@@ -368,35 +370,39 @@ void CCassConnection::CloseSession()
 
 void CCassConnection::Reconnect()
 {
-    if (!m_cluster)
+    if (!m_cluster) {
         NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, "
-                   "driver is not connected, can't re-connect");
+                   "invalid sequence of operations, driver is not connected, can't re-connect");
+    }
 
-    if (m_session)
+    if (m_session) {
         CloseSession();
+    }
 
     m_session = cass_session_new();
-    if (!m_session)
+    if (!m_session) {
         RAISE_DB_ERROR(eRsrcFailed, "failed to get cassandra session handle");
+    }
 
-    CassFuture *    __future = cass_session_connect(m_session, m_cluster);
-    if (!__future)
+    CassFuture * __future = cass_session_connect(m_session, m_cluster);
+    if (!__future) {
         RAISE_DB_ERROR(eRsrcFailed, "failed to obtain cassandra connection future");
+    }
 
-    unique_ptr<CassFuture,
-               function<void(CassFuture*)> >    future(
-            __future,
-            [](CassFuture* future)
-            {
-                cass_future_free(future);
-            });
+    unique_ptr<CassFuture, function<void(CassFuture*)>> future(
+        __future,
+        [](CassFuture* future)
+        {
+            cass_future_free(future);
+        }
+    );
 
-    CassError       rc = CASS_OK;
+    CassError rc = CASS_OK;
     cass_future_wait(future.get());
     rc = cass_future_error_code(future.get());
-    if (rc != CASS_OK)
+    if (rc != CASS_OK) {
         RAISE_CASS_CONN_ERROR(future.get(), string(""));
+    }
 
     if (!m_keyspace.empty()) {
         string _sav = m_keyspace;

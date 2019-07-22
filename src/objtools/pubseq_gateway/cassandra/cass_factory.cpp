@@ -217,9 +217,9 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
         NCBI_THROW(CCassandraException, eGeneric, "Cassandra connection point is not specified");
     }
 
-    bool    is_lbsm = (m_CassHosts.find(':') == string::npos) &&
-                      (m_CassHosts.find(' ') == string::npos) &&
-                      (m_CassHosts.find(',') == string::npos);
+    bool is_lbsm = (m_CassHosts.find(':') == string::npos)
+        && (m_CassHosts.find(' ') == string::npos)
+        && (m_CassHosts.find(',') == string::npos);
 
     if (is_lbsm) {
         hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
@@ -232,15 +232,13 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
     //       from a config file or from an LBSM resolver.
     vector<string> items;
     NStr::Split(hosts, ", ", items, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-
     cass_port = 0;
     for (const auto & item : items) {
-        string      item_host;
-        string      item_port;
-
+        string item_host;
+        string item_port;
         if (NStr::SplitInTwo(item, ":", item_host, item_port)) {
             // Delimiter was found, i.e. there is a port number
-            short   item_port_number = NStr::StringToNumeric<short>(item_port);
+            short item_port_number = NStr::StringToNumeric<short>(item_port);
             if (cass_port == 0) {
                 cass_port = item_port_number;
             } else {
@@ -252,10 +250,21 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
             }
         }
 
-        if (!cass_hosts.empty())
+        if (!cass_hosts.empty()) {
             cass_hosts += ",";
+        }
         cass_hosts += item_host;
     }
+}
+
+string CCassConnectionFactory::GetUserName() const
+{
+    return m_CassUserName;
+}
+
+string CCassConnectionFactory::GetPassword() const
+{
+    return m_CassPassword;
 }
 
 

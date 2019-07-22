@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 
 class CCassandraException: public CException
 {
-public:
+ public:
     enum EErrCode {
         eUnknown = 2000,
         eRsrcFailed,
@@ -71,6 +71,23 @@ public:
         eMemory,
         eUserCancelled
     };
+
+    static CCassandraException s_ProduceException(CassFuture * future, CCassandraException::EErrCode error_code) {
+        const char *message;
+        size_t message_length;
+        CassError rc = cass_future_error_code(future);
+        cass_future_error_message(future, &message, &message_length);
+        string msg(message, message_length);
+        msg.append(": ").append(NStr::NumericToString(static_cast<int>(rc), 0, 16));
+        CCassandraException result = NCBI_EXCEPTION(CCassandraException, eUnknown, msg);
+        result.SetErrorCode(error_code);
+        return result;
+    }
+
+    void SetErrorCode(EErrCode error_code)
+    {
+        x_InitErrCode(static_cast<CException::EErrCode>(error_code));
+    }
 
     virtual const char* GetErrCodeString(void) const
     {
@@ -116,9 +133,7 @@ public:
 
     NCBI_EXCEPTION_DEFAULT(CCassandraException, CException);
 
-protected:
-    int64_t     m_OpTimeMs;
-
+ protected:
     virtual void x_Init(const CDiagCompileInfo &  info,
                         const string &  message,
                         const CException *  prev_exception,
@@ -137,6 +152,8 @@ protected:
         }
         CException::x_Assign(src);
     }
+
+    int64_t m_OpTimeMs{0};
 };
 
 

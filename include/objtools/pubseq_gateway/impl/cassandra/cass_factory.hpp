@@ -1,6 +1,3 @@
-#ifndef CASSFACTORY__HPP
-#define CASSFACTORY__HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -34,10 +31,16 @@
  *
  */
 
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASS_FACTORY_HPP
+#define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASS_FACTORY_HPP
+
 #include "cass_driver.hpp"
 #include "IdCassScope.hpp"
 
 #include <corelib/ncbiargs.hpp>
+
+#include <memory>
+#include <string>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -45,16 +48,12 @@ USING_NCBI_SCOPE;
 class CCassConnectionFactory:
     public enable_shared_from_this<CCassConnectionFactory>
 {
-protected:
-    void ProcessParams(void);
-    void GetHostPort(string &  cass_hosts, short &  cass_port);
-
-public:
+ public:
     CCassConnectionFactory(const CCassConnectionFactory&) = delete;
     CCassConnectionFactory& operator=(const CCassConnectionFactory&) = delete;
     CCassConnectionFactory(CCassConnectionFactory&&) = delete;
     CCassConnectionFactory& operator=(CCassConnectionFactory&&) = delete;
-    
+
     CCassConnectionFactory();
     ~CCassConnectionFactory();
     void AppParseArgs(const CArgs &  args);
@@ -63,6 +62,10 @@ public:
     void ReloadConfig(void);
     void ReloadConfig(const CNcbiRegistry &  registry);
     shared_ptr<CCassConnection> CreateInstance(void);
+
+    void GetHostPort(string & cass_hosts, short & cass_port);
+    string GetUserName() const;
+    string GetPassword() const;
 
     static shared_ptr<CCassConnectionFactory> s_Create(void)
     {
@@ -74,7 +77,10 @@ public:
         m_LogSeverity = severity;
     }
 
-private:
+ protected:
+    void ProcessParams(void);
+
+ private:
     void x_ValidateArgs(void);
 
 
@@ -107,4 +113,4 @@ private:
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASS_FACTORY_HPP
