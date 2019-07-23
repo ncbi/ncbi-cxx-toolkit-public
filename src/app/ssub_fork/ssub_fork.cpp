@@ -590,6 +590,9 @@ public:
         CRef<CSeq_entry> seqentry = Ref(new CSeq_entry());
         seqentry->SetSet().SetClass(m_seq_entry.GetSet().GetClass());
 
+        if (m_seq_entry.IsSetDescr()) {
+            seqentry->SetDescr().Assign(m_seq_entry.GetDescr());
+        }
         return seqentry;
     }
 
@@ -615,7 +618,19 @@ bool CSeqSubSplitter::xTryProcessSeqEntry(CRef<CSerialObject>& obj, list<CRef<CS
     TSeqEntryArray seq_entry_array;
     CSeq_descr seq_descr;
 
+    CRef<CSeq_descr> upper_level_descr;
+    if (input_entry->IsSetDescr()) {
+        upper_level_descr.Reset(new CSeq_descr);
+        upper_level_descr->Assign(input_entry->GetDescr());
+        input_entry->SetDescr().Reset();
+    }
+
     xFlattenSeqEntry(*input_entry, seq_descr, seq_entry_array);
+    if (upper_level_descr.NotEmpty()) {
+        input_entry->SetDescr().Assign(*upper_level_descr);
+        upper_level_descr.Reset();
+    }
+
     return xTryProcessSeqEntries(CSeqEntryHelper(*input_entry), seq_entry_array, output_array);
 }
 
