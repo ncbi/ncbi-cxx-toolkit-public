@@ -51,6 +51,7 @@
 #include <objects/genomecoll/cached_assembly.hpp>
 #include <sstream>
 #include <db/sqlite/sqlitewrapp.hpp>
+#include <corelib/ncbiargs.hpp>
 
 // generated classes
 
@@ -85,13 +86,7 @@ CGenomicCollectionsService::CGenomicCollectionsService(const string& cache_file)
     SetArgs("fi=text&fo=text");
 
 
-
-    if(!cache_file.empty() && CFile(cache_file).Exists()) {
-        m_CacheFile = cache_file;
-        CSQLITE_Global::Initialize();
-        m_CacheConn.reset(new CSQLITE_Connection(m_CacheFile,
-                CSQLITE_Connection::fReadOnly|CSQLITE_Connection::eAllMT));
-    }
+    x_ConfigureCache(cache_file);
 }
 
 CGenomicCollectionsService::~CGenomicCollectionsService()
@@ -297,6 +292,49 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
         if (reply.IsSrvr_error())
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
+    }
+}
+
+
+void CGenomicCollectionsService::AddArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Assembly cache options");
+    arg_desc.AddOptionalKey(s_GcCacheParamStr, "gc_cache_file",
+                            "Full path for local gencoll assembly cache", CArgDescriptions::eString);
+}
+
+const string CGenomicCollectionsService::s_GcCacheParamStr = "gc-cache";
+void CGenomicCollectionsService::x_ConfigureCache(const string& cache_file_param) 
+{
+    string local_cache_file;
+   
+    // priority order
+    //  local parameter
+    //  argument
+    //  no env 
+    //  no reg
+
+    if(CNcbiApplication::Instance()) {
+        const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+        if (args.Exist(s_GcCacheParamStr) && 
+            args[s_GcCacheParamStr].HasValue()) {
+            const string arg_cache_file = args[s_GcCacheParamStr].AsString();
+            if(!arg_cache_file.empty()) {
+                local_cache_file = arg_cache_file;
+            }
+        }
+    }
+
+    if(!cache_file_param.empty()) {
+        local_cache_file = cache_file_param;
+    }
+   
+    if(!local_cache_file.empty() && CFile(local_cache_file).Exists()) {
+        m_CacheFile = local_cache_file;
+        cerr<<__LINE__<<" : "<<m_CacheFile<<endl;
+        CSQLITE_Global::Initialize();
+        m_CacheConn.reset(new CSQLITE_Connection(m_CacheFile,
+                CSQLITE_Connection::fReadOnly|CSQLITE_Connection::eAllMT));
     }
 }
 
