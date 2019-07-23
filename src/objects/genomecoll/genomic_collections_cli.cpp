@@ -296,7 +296,7 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
 }
 
 
-void CGenomicCollectionsService::AddArgumentDescriptions(CArgDescriptions& arg_desc)
+void CGenomicCollectionsService::AddArguments(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Assembly cache options");
     arg_desc.AddOptionalKey(s_GcCacheParamStr, "gc_cache_file",
@@ -331,7 +331,6 @@ void CGenomicCollectionsService::x_ConfigureCache(const string& cache_file_param
    
     if(!local_cache_file.empty() && CFile(local_cache_file).Exists()) {
         m_CacheFile = local_cache_file;
-        cerr<<__LINE__<<" : "<<m_CacheFile<<endl;
         CSQLITE_Global::Initialize();
         m_CacheConn.reset(new CSQLITE_Connection(m_CacheFile,
                 CSQLITE_Connection::fReadOnly|CSQLITE_Connection::eAllMT));
