@@ -68,6 +68,8 @@ public:
     /// @param gi gi to be placed first [in]
     void PutTargetGiFirst(TGi gi);
 
+    /// Removes all SeqIDs with GIs in this defline set
+    void RemoveGIs();
 private:
     // Prohibit copy constructor and assignment operator
     CBlast_def_line_set(const CBlast_def_line_set& value);

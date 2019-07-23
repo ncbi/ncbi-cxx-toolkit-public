@@ -384,6 +384,10 @@ public:
         m_Verbose = v;
     }
 
+    void SetSkipCopyingGis(bool v) { 
+        m_SkipCopyingGis = v;
+    }
+
     /// Set the maximum size of database component files.
     ///
     /// This will specify the maximum size of file that will be
@@ -643,6 +647,9 @@ private:
     /// masking locations (via SetMaskDataSource). Used to display a warning in
     /// case this didn't happen
     bool m_FoundMatchingMasks;
+
+    /// If set to true, when copying BLASTDBs, skip the GIs
+    bool m_SkipCopyingGis;
 };
 
 END_NCBI_SCOPE

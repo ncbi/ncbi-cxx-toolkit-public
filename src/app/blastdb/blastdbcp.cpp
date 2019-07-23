@@ -151,6 +151,19 @@ void BlastdbCopyApplication::Init(void)
             CArgDescriptions::eString
     );
 
+    arg_desc->AddFlag(
+            "skip_gis",
+            "Do not copy GI data",
+            true
+    );
+
+    arg_desc->AddDefaultKey("blastdb_version", "version",
+                             "Version of BLAST database to be created",
+                             CArgDescriptions::eInteger,
+                             NStr::NumericToString(static_cast<int>(eBDB_Version4)));
+    arg_desc->SetConstraint("blastdb_version",
+                            new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
+
     const string kSwissprot("swissprot");
     const string kPdb("pdb");
     const string kRefseq("refseq");
@@ -199,6 +212,7 @@ public:
                 // not found on source BLASTDB, skip
                 continue;
             }
+            //const CSeqDBGiList::SSiOid& elem = gilist->GetSiOid(i);
             if (m_Oids2Copy.insert(oid).second == false) {
                 // don't add the same OID twice, to avoid duplicates
                 continue;
@@ -418,14 +432,16 @@ int BlastdbCopyApplication::Run(void)
 
 
         const bool kUseGiMask = false;
+        const EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
         CStopWatch timer;
         timer.Start();
         CBuildDatabase destdb(args[kArgOutput].AsString(), title,
                               static_cast<bool>(seq_type == CSeqDB::eProtein),
                               kIsSparse, kParseSeqids, kUseGiMask,
                               &(args["logfile"].HasValue()
-                               ? args["logfile"].AsOutputFile() : cerr));
+                               ? args["logfile"].AsOutputFile() : cerr), false, dbver);
         destdb.SetUseRemote(false);
+        destdb.SetSkipCopyingGis(args["skip_gis"]);
         //destdb.SetVerbosity(true);
         destdb.SetSourceDb(sourcedb);
         destdb.StartBuild();

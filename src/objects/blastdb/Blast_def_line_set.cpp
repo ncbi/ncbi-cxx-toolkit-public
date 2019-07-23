@@ -197,6 +197,16 @@ CBlast_def_line_set::SortBySeqIdRank(bool is_protein, bool useBlastRank)
     }
 }
 
+void CBlast_def_line_set::RemoveGIs()
+{
+    for (auto& defline: Set()) {
+        defline->SetSeqid().remove_if([] (const CRef<CSeq_id>& id) { 
+            if (id && id->IsGi()) return true;
+            return false;
+        });
+    }
+}
+
 
 void
 CBlast_def_line_set::PutTargetGiFirst(TGi gi)

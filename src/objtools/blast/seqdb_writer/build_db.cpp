@@ -432,6 +432,10 @@ void CBuildDatabase::x_EditHeaders(CRef<objects::CBlast_def_line_set> headers)
 
     m_Taxids->FixTaxId(headers);
 
+    /// Use case: for transition to GI-less BLASTDBs
+    if (m_SkipCopyingGis)
+        headers->RemoveGIs();
+
     // Edit the linkouts
 
     x_SetLinkAndMbit(headers);
@@ -1043,7 +1047,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_Verbose      (false),
       m_ParseIDs     (((indexing & CWriteDB::eFullIndex) != 0 ? true : false)),
       m_LongIDs      (long_seqids),
-      m_FoundMatchingMasks(false)
+      m_FoundMatchingMasks(false),
+      m_SkipCopyingGis(false)
 {
     CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
@@ -1099,7 +1104,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_Verbose      (false),
       m_ParseIDs     (parse_seqids),
       m_LongIDs      (long_seqids),
-      m_FoundMatchingMasks(false)
+      m_FoundMatchingMasks(false),
+      m_SkipCopyingGis(false)
 {
     CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
