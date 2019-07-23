@@ -63,6 +63,8 @@ public:
 
     CRef<CSeq_feat> Propagate(const objects::CSeq_feat& orig_feat);
     vector<CRef<CSeq_feat> > PropagateAll();
+    vector<CRef<CSeq_feat> > PropagateAllReportFailures(
+        vector<CConstRef<CSeq_feat> >&);
 
     CRef<CSeq_feat> ConstructProteinFeatureForPropagatedCodingRegion(const CSeq_feat& orig_cds, const CSeq_feat& new_cds);
 

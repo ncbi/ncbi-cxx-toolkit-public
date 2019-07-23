@@ -1446,6 +1446,57 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAll)
     
 }
 
+BOOST_AUTO_TEST_CASE(Test_PropagateAllReportFailures)
+{
+    size_t front_insert = 10;
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+    // make a better alignment, with some sequences in the gap at the front
+    ImproveAlignment(*align, front_insert);
+
+    CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
+    
+    // will not be able to propagate the first feature to either of the
+    // other sequences.
+    // second feature can only be propagated to the middle sequence.
+    // third feature can be propagated to all.
+
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(last, front_insert - 1);
+    CRef<CSeq_feat> misc2 = unit_test_util::AddMiscFeature(last, (2 * front_insert) - 1);
+    CRef<CSeq_feat> misc3 = unit_test_util::AddMiscFeature(last, 4 * front_insert);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+
+    CBioseq_CI b1(seh);
+    ++b1;
+    ++b1;
+    CBioseq_Handle src = *b1;
+
+    CBioseq_CI b(seh);
+
+    CMessageListener_Basic listener;
+    edit::CFeaturePropagator propagator1(src, *b, *align, false, false, true, true, &listener);
+    vector<CConstRef<CSeq_feat> > failures1;
+    vector<CRef<CSeq_feat> > first_feats = propagator1.PropagateAllReportFailures(failures1);
+    BOOST_CHECK_EQUAL(first_feats.size(), 1);
+    BOOST_CHECK_EQUAL(listener.Count(), 2);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature lcl|good3:1-20 to lcl|good1");
+    BOOST_CHECK_EQUAL(listener.GetMessage(1).GetText(), "Unable to propagate location of feature lcl|good3:1-10 to lcl|good1");
+    listener.Clear();
+
+    ++b;
+    edit::CFeaturePropagator propagator2(src, *b, *align, false, false, true, true, &listener);
+    vector<CConstRef<CSeq_feat> > failures2;
+    vector<CRef<CSeq_feat> > second_feats = propagator2.PropagateAllReportFailures(failures2);
+    BOOST_CHECK_EQUAL(second_feats.size(), 2);
+    BOOST_CHECK_EQUAL(listener.Count(), 1);
+    BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature lcl|good3:1-10 to lcl|good2");
+    
+}
+
 CObject_id::TId s_FindHighestFeatId(const CSeq_entry_Handle entry)
 {
     CObject_id::TId id = 0;

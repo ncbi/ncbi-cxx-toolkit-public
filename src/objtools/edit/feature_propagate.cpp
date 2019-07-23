@@ -195,6 +195,24 @@ vector<CRef<CSeq_feat> > CFeaturePropagator::PropagateAll()
     return rval;
 }
 
+vector<CRef<CSeq_feat> > CFeaturePropagator::PropagateAllReportFailures(vector<CConstRef<CSeq_feat> >& failures)
+{
+    vector<CRef<CSeq_feat> > rval;
+    CFeat_CI fi(m_Src);
+    while (fi) {
+        auto old_feat = fi->GetOriginalSeq_feat();
+        CRef<CSeq_feat> new_feat = Propagate(*old_feat);
+        if (new_feat) {
+            rval.push_back(new_feat);
+        }
+        else {
+            failures.push_back(old_feat);
+        }
+        ++fi;
+    }
+    return rval;
+}
+
 vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CConstRef<CSeq_feat>>& orig_feats)
 {
     vector<CRef<CSeq_feat>> propagated_feats;
