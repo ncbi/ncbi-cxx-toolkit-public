@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Authors: Sergey Satskiy, Aaron Ucko
@@ -11,11 +11,8 @@
 import sys
 
 # Check the python version explicitly
-if sys.version_info[ 0 ] < 2 or \
-   (sys.version_info[ 0 ] == 2 and sys.version_info[ 1 ] < 4):
-    print >> sys.stderr, \
-            "Python version 2.4 or higher is required. You have " + \
-            str( sys.version_info[ 0 ] ) + "." + str( sys.version_info[ 1 ] )
+if sys.version_info.major < 3:
+    sys.stderr.write( "Python 3 is required.\n" )
     sys.exit( 1 )
 
 import unittest, os.path, tempfile, os
@@ -59,7 +56,7 @@ class NCBIDBLBTest( unittest.TestCase ):
 
             count -= 1
 
-        lines = stdout.rstrip().split('\n')
+        lines = stdout.decode("utf-8").rstrip().split('\n')
         for x in lines:
             x = x[0:x.index('\t')]
             errorMsg = "The output must not match the service name"
@@ -102,7 +99,7 @@ class NCBIDBLBTest( unittest.TestCase ):
             errorMsg = "The output must not match the service name"
             self.failIf( stdout == EXISTING_SERVICE, errorMsg )
 
-            if not stdout in resolved:
+            if stdout not in resolved:
                 resolved.append( stdout )
             count -= 1
 
@@ -153,7 +150,8 @@ class NCBIDBLBTest( unittest.TestCase ):
             self.failIf( retCode != 1, errorMsg )
 
             errorMsg = "The output must match the service name"
-            self.failIf( not stdout.startswith(NONEXISTENT_SERVICE
+            result = stdout.decode("utf-8")
+            self.failIf( not result.startswith(NONEXISTENT_SERVICE
                                                + " is unknown"),
                          errorMsg )
 
@@ -195,7 +193,8 @@ class NCBIDBLBTest( unittest.TestCase ):
             self.failIf( retCode != 0, errorMsg )
 
             errorMsg = "The output must report type STANDALONE"
-            self.failIf( stdout.find('STANDALONE') < 0, errorMsg )
+            self.failIf( stdout.decode("utf-8").find('STANDALONE') < 0,
+                         errorMsg )
 
             count -= 1
         return
@@ -227,7 +226,7 @@ def parserError( parser, message ):
     " Prints the message and help on stderr "
 
     sys.stdout = sys.stderr
-    print message
+    print( message )
     parser.print_help()
     return
 
@@ -242,19 +241,19 @@ def checkServiceAvailability():
 
     errors = 0
     for name in servicesToBeAlive:
-        if os.system( "/opt/machine/lbsm/bin/ncbi_mghbn -du1 " + \
+        if os.system( "/opt/machine/lbsm/bin/ncbi_mghbn -du1 " +
                       name + " > /dev/null" ) != 0:
-            print >> sys.stderr, "The service " + name + \
-                                 " is not known to LBSMD. " \
-                                 "Unit tests cannot be executed."
+            sys.stderr.write( "The service " + name +
+                              " is not known to LBSMD. "
+                              "Unit tests cannot be executed.\n" )
             errors += 1
 
     for name in servicesToBeDead:
-        if os.system( "/opt/machine/lbsm/bin/ncbi_mghbn -du1 " + \
+        if os.system( "/opt/machine/lbsm/bin/ncbi_mghbn -du1 " +
                       name + " > /dev/null" ) == 0:
-            print >> sys.stderr, "The service " + name + \
-                                 " is known to LBSMD while it must not be. " \
-                                 "Unit tests cannot be executed."
+            sys.stderr.write( "The service " + name +
+                              " is known to LBSMD while it must not be. "
+                              "Unit tests cannot be executed.\n" )
             errors += 1
 
     return errors
@@ -280,7 +279,7 @@ def main():
         return 2
     TRIES = options.tries
     if TRIES <= 0:
-        print >> sys.stderr, "Tries counter cannot be <= 0"
+        sys.stderr.write( "Tries counter cannot be <= 0\n" )
         return 2
 
     # Check that lbsmc is aware of all the required services
@@ -295,8 +294,8 @@ def main():
         NCBI_DBLB_CLI = os.path.dirname( os.path.abspath( sys.argv[0] ) ) + \
                                           "/ncbi_dblb_cli"
     if not os.path.exists( NCBI_DBLB_CLI ):
-        print >> sys.stderr, "Cannot find ncbi_dblb_cli. Expected here: " + \
-                             NCBI_DBLB_CLI
+        sys.stderr.write( "Cannot find ncbi_dblb_cli. Expected here: " +
+                          NCBI_DBLB_CLI + "\n" )
         return 2
 
     unittest.main()
@@ -305,4 +304,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit( main() )
-
