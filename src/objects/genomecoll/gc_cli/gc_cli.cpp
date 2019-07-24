@@ -265,10 +265,11 @@ int CClientGenomicCollectionsSvcApplication::Run(void)
 
     CRef<CGenomicCollectionsService> service;
 
-    if(args["cgi"])           service.Reset(new CDirectCGIExec(args["cgi"].AsString(), args["nocache"]));
-    else if(args["url"])      service.Reset(new CGencollService(args["url"].AsString(), args["nocache"]));
-    else if(args["gc-cache"]) service.Reset(new CGencollService(args));
-    else                      service.Reset(new CGencollService(args["nocache"]));
+    if(args["cgi"])         service.Reset(new CDirectCGIExec(args["cgi"].AsString(), args["nocache"]));
+    else if(args["url"])    service.Reset(new CGencollService(args["url"].AsString(), args["nocache"]));
+    else if(args.Exist("gc-cache") && args["gc-cache"])  
+                            service.Reset(new CGencollService(args));
+    else                    service.Reset(new CGencollService(args["nocache"]));
 
     if (args["retries"]) service->SetRetryLimit(args["retries"].AsInteger());
 
