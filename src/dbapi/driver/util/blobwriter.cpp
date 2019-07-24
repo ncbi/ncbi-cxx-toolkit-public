@@ -72,6 +72,7 @@ int main(int argc, char* argv[])
     string table_name;
     string key_col_name;
     string num_col_name;
+    string table_hint;
 
     size_t imagesize= 0;
 
@@ -79,7 +80,7 @@ int main(int argc, char* argv[])
         cerr << argv[0]
              << " -K<blob_id> [-d<driver_name>] [-S<server_name>]"
              << " [-U<user_name>] [-P<password>] [-L<image size>] [-Z<compress_method>]"
-             << " [-T<table_name>]"
+             << " [-T<table_name>] [-H<table_hint>]"
              << endl;
         return 0;
     }
@@ -135,6 +136,9 @@ int main(int argc, char* argv[])
         p= getenv("DATA_TABLE");
     }
     table_name= p? p : "MyDataTable";
+
+    p= getParam('H', argc, argv);
+    if(p) table_hint= p;
 
     string *blob_column = NULL;
 
@@ -212,7 +216,8 @@ int main(int argc, char* argv[])
         delete lcmd;
         delete con;
 
-        CSimpleBlobStore sbs(table_name, key_col_name, num_col_name, blob_column, is_text);
+        CSimpleBlobStore sbs(table_name, key_col_name, num_col_name,
+                             blob_column, is_text, table_hint);
 
         CBlobLoader bload(my_context.get(), server_name, user_name, passwd, &sbs);
 
