@@ -682,7 +682,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
         }
     }
 
-    size_t min_num_names = min(num_names, new_num_names);
+    size_t min_num_names = min(num_names, new_author_names.size());
     if (min_num_names > MAX_MATCH_COEFF * match) {
         return false;
     }
