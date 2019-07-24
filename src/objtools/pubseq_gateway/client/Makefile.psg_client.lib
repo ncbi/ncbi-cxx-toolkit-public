@@ -3,7 +3,7 @@
 SRC = psg_client psg_client_transport
 LIB = psg_client
 
-ASN_DEP = id2
+ASN_DEP = seq
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE)
 
