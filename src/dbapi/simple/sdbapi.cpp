@@ -888,6 +888,20 @@ static ECompressMethod s_CheckCompressionFlags(TNewBlobStoreFlags flags)
 }
 
 
+static
+CSimpleBlobStore::TFlags s_TranslateBlobStoreFlags(TNewBlobStoreFlags flags)
+{
+    CSimpleBlobStore::TFlags result = CSimpleBlobStore::kDefaults;
+    if ((flags & fNBS_LogIt) != 0) {
+        result |= CSimpleBlobStore::fLogBlobs;
+    }
+    if ((flags & fNBS_IsText) != 0) {
+        result |= CSimpleBlobStore::fIsText;
+    }
+    return result;
+}
+
+
 static const char kDefaultDriverName[] = "ftds";
 static AutoPtr<char, CDeleter<char> > s_DriverName;
 
@@ -1708,7 +1722,7 @@ CBlobStoreDynamic* CSDBAPI::NewBlobStore(const CSDB_ConnectionParam& param,
                                  param.Get(CSDB_ConnectionParam::eUsername),
                                  param.Get(CSDB_ConnectionParam::ePassword),
                                  table_name, cm, image_limit,
-                                 (flags & fNBS_LogIt) != 0);
+                                 s_TranslateBlobStoreFlags(flags));
 }
 
 
@@ -2086,7 +2100,7 @@ CBlobStoreStatic* CDatabase::NewBlobStore(const string& table_name,
     CONNECT_AS_NEEDED();
     return new CBlobStoreStatic(m_Impl->GetConnection()->GetCDB_Connection(),
                                 table_name, cm, image_limit,
-                                (flags & fNBS_LogIt) != 0);
+                                s_TranslateBlobStoreFlags(flags));
 }
 
 
@@ -2102,8 +2116,8 @@ CBlobStoreStatic* CDatabase::NewBlobStore(const string& table_name,
     return new CBlobStoreStatic(m_Impl->GetConnection()->GetCDB_Connection(),
                                 table_name, key_col_name, num_col_name,
                                 &blob_col_names[0], blob_col_names.size(),
-                                (flags & fNBS_IsText) != 0, cm, image_limit,
-                                (flags & fNBS_LogIt) != 0);
+                                s_TranslateBlobStoreFlags(flags), cm,
+                                image_limit);
 }
 
 

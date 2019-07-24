@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 
         unsigned int n;
         int k= 0;
-        bool is_text= false;
+        CSimpleBlobStore::TFlags flags = CSimpleBlobStore::kDefaults;
 
         while (lcmd->HasMoreResults()) {
             CDB_Result* r = lcmd->Result();
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
 
                     case eDB_Text:
                     case eDB_VarCharMax:
-                        is_text = true;
+                        flags |= CSimpleBlobStore::fIsText;
                         // fall through
                     case eDB_Image:
                     case eDB_VarBinaryMax:
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
         delete con;
 
         CSimpleBlobStore sbs(table_name, key_col_name, num_col_name,
-                             blob_column, is_text, table_hint);
+                             blob_column, flags, table_hint);
 
         CBlobLoader bload(my_context.get(), server_name, user_name, passwd, &sbs);
 

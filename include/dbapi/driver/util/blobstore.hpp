@@ -197,11 +197,25 @@ class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CSimpleBlobStore
     : public IBlobDescriptorMaker
 {
 public:
+    enum EFlags {
+        fIsText       = 1 << 0, ///< (N)TEXT or (N)VARCHAR(MAX)
+        fLogBlobs     = 1 << 1  ///< Enable server-side logging
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
+    static const TFlags kDefaults { 0 };
+
     CSimpleBlobStore(const string& table_name,
                      const string& key_col_name,
                      const string& num_col_name,
                      const string blob_column[],
-                     bool is_text= false,
+                     TFlags flags = kDefaults,
+                     const CTempString& table_hint = kEmptyStr);
+
+    CSimpleBlobStore(const string& table_name,
+                     const string& key_col_name,
+                     const string& num_col_name,
+                     const string blob_column[],
+                     bool is_text,
                      const CTempString& table_hint = kEmptyStr);
     void SetKey(const string& key) {
         if(!key.empty())
@@ -226,7 +240,10 @@ protected:
     CDB_VarChar m_Key;
     CDB_Int m_RowNum;
     CDB_BlobDescriptor m_Desc;
+    TFlags m_Flags;
 };
+
+DECLARE_SAFE_FLAGS(CSimpleBlobStore::EFlags);
 
 
 /***************************************************************************************
@@ -281,9 +298,15 @@ public:
 
 protected:
     CBlobStoreBase(const string& table_name,
+                   ECompressMethod cm,
+                   size_t image_limit,
+                   bool log_it);
+
+    CBlobStoreBase(const string& table_name,
                    ECompressMethod cm = eNone,
                    size_t image_limit = IMAGE_LIMIT_16MB,
-                   bool log_it = false);
+                   CSimpleBlobStore::TFlags flags
+                   = CSimpleBlobStore::kDefaults);
 
     void ReadTableDescr();
     void SetTableDescr(const string& tableName,
@@ -303,8 +326,7 @@ private:
     string m_Table;
     ECompressMethod m_Cm;
     size_t m_Limit;
-    bool m_LogIt;
-    bool m_IsText;
+    CSimpleBlobStore::TFlags m_Flags;
     string m_KeyColName;
     string m_NumColName;
     string m_ReadQuery;
@@ -327,7 +349,14 @@ public:
                      const string& table_name,
                      ECompressMethod cm = eNone,
                      size_t image_limit = IMAGE_LIMIT_16MB,
-                     bool log_it = false);
+                     CSimpleBlobStore::TFlags flags
+                     = CSimpleBlobStore::kDefaults);
+
+    CBlobStoreStatic(CDB_Connection* pConn,
+                     const string& table_name,
+                     ECompressMethod cm,
+                     size_t image_limit,
+                     bool log_it);
 
     CBlobStoreStatic(CDB_Connection* pConn,
                      const string& tableName,
@@ -335,7 +364,18 @@ public:
                      const string& numColName,
                      const string* blobColNames,
                      unsigned nofBC,
-                     bool isText = false,
+                     CSimpleBlobStore::TFlags flags
+                     = CSimpleBlobStore::kDefaults,
+                     ECompressMethod cm = eNone,
+                     size_t image_limit = IMAGE_LIMIT_16MB);
+
+    CBlobStoreStatic(CDB_Connection* pConn,
+                     const string& tableName,
+                     const string& keyColName,
+                     const string& numColName,
+                     const string* blobColNames,
+                     unsigned nofBC,
+                     bool isText,
                      ECompressMethod cm = eNone,
                      size_t image_limit = IMAGE_LIMIT_16MB,
                      bool log_it = false);
@@ -369,7 +409,17 @@ public:
                       const string& table_name,
                       ECompressMethod cm = eNone,
                       size_t image_limit = IMAGE_LIMIT_16MB,
-                      bool log_it = false);
+                      CSimpleBlobStore::TFlags flags
+                      = CSimpleBlobStore::kDefaults);
+
+    CBlobStoreDynamic(I_DriverContext* pCntxt,
+                      const string& server,
+                      const string& user,
+                      const string& passwd,
+                      const string& table_name,
+                      ECompressMethod cm,
+                      size_t image_limit,
+                      bool log_it);
 
     virtual ~CBlobStoreDynamic();
 

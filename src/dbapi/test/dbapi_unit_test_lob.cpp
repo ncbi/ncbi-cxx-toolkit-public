@@ -1261,10 +1261,9 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
                 "blob_num",     // numColName
                 blob_cols,      // blobColNames
                 BLOB_COL_COUNT, // nofBC - number of blob columns
-                false,          // bool isText
+                CSimpleBlobStore::kDefaults, // flags
                 eNone, //eZLib, // ECompressMethod cm
-                IMAGE_BUFFER_SIZE,
-                false
+                IMAGE_BUFFER_SIZE
             );
 
             // Write blob to the row ...

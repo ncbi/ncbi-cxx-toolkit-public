@@ -79,6 +79,7 @@ int main(int argc, char* argv[])
 
     bool readmode = false;
     bool logmode = false;
+    CSimpleBlobStore::TFlags flags = CSimpleBlobStore::kDefaults;
 
     if(argc < 2)
     {
@@ -100,6 +101,9 @@ int main(int argc, char* argv[])
 
     getParam('r', argc, argv, &readmode);
     getParam('l', argc, argv, &logmode);
+    if (logmode) {
+        flags |= CSimpleBlobStore::fLogBlobs;
+    }
 
     p= getParam('S', argc, argv);
     if(p == 0)
@@ -176,7 +180,7 @@ int main(int argc, char* argv[])
 
         CBlobStoreDynamic blobrw(my_context.get(), server_name,
                                  user_name, passwd,
-                                 table_name, cm, imagesize, logmode);
+                                 table_name, cm, imagesize, flags);
 
         if(readmode)
         {

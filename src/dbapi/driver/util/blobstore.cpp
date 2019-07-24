@@ -316,16 +316,27 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
                                    const string blob_column[],
                                    bool is_text,
                                    const CTempString& table_hint) :
+    CSimpleBlobStore(table_name, key_col_name, num_col_name, blob_column,
+                     TFlags(is_text ? fIsText : kDefaults), table_hint)
+{
+}
+
+CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
+                                   const string& key_col_name,
+                                   const string& num_col_name,
+                                   const string blob_column[],
+                                   TFlags flags,
+                                   const CTempString& table_hint) :
     m_TableName(table_name), m_KeyColName(key_col_name),
     m_NumColName(num_col_name), m_TableHint(table_hint),
-    m_RowNum(0), m_Desc(table_name, kEmptyStr, kEmptyStr)
+    m_RowNum(0), m_Desc(table_name, kEmptyStr, kEmptyStr), m_Flags(flags)
 {
     m_Con= 0;
     m_Cmd= 0;
     for(m_nofDataCols= 0; !blob_column[m_nofDataCols].empty(); m_nofDataCols++);
     if(m_nofDataCols) {
         int i;
-        string init_val(is_text? "' '" : "0x0");
+        string init_val((flags & fIsText) != 0 ? "' '" : "0x0");
         string data_names, data_values, updates;
         const char* delim = kEmptyCStr;
         m_DataColName= new string[m_nofDataCols];
@@ -467,8 +478,18 @@ CBlobStoreBase::CBlobStoreBase(const string& table_name,
                                ECompressMethod cm,
                                size_t image_limit,
                                bool log_it)
-    :m_Table(table_name), m_Cm(cm), m_Limit(image_limit),
-     m_LogIt(log_it), m_IsText(false),
+    : CBlobStoreBase(table_name, cm, image_limit,
+                     CSimpleBlobStore::TFlags(
+                         log_it ? CSimpleBlobStore::fLogBlobs
+                         : CSimpleBlobStore::kDefaults))
+{
+}
+
+CBlobStoreBase::CBlobStoreBase(const string& table_name,
+                               ECompressMethod cm,
+                               size_t image_limit,
+                               CSimpleBlobStore::TFlags flags)
+    :m_Table(table_name), m_Cm(cm), m_Limit(image_limit), m_Flags(flags),
      m_KeyColName(kEmptyStr), m_NumColName(kEmptyStr), m_ReadQuery(kEmptyStr),
      m_BlobColumn(NULL), m_NofBC(0)
 {
@@ -529,10 +550,13 @@ CBlobStoreBase::ReadTableDescr()
 
                 case eDB_Text:
                 case eDB_VarCharMax:
-                    m_IsText= true;
-                    // fall through
+                    m_Flags |= CSimpleBlobStore::fIsText;
+                    m_BlobColumn[m_NofBC++] = r->ItemName(j);
+                    break;
+
                 case eDB_Image:
                 case eDB_VarBinaryMax:
+                    m_Flags &= ~CSimpleBlobStore::fIsText;
                     m_BlobColumn[m_NofBC++]= r->ItemName(j);
                     break;
                 default:;
@@ -572,7 +596,11 @@ CBlobStoreBase::SetTableDescr(const string& tableName,
     m_KeyColName = keyColName;
     m_NumColName = numColName;
     m_NofBC = nofBC;
-    m_IsText = isText;
+    if (isText) {
+        m_Flags |= CSimpleBlobStore::fIsText;
+    } else {
+        m_Flags &= ~CSimpleBlobStore::fIsText;
+    }
 
     if((m_NofBC < 1) || m_KeyColName.empty())
     {
@@ -773,15 +801,19 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id,
                                                  m_KeyColName,
                                                  m_NumColName,
                                                  m_BlobColumn,
-                                                 m_IsText,
+                                                 m_Flags,
                                                  table_hint);
     sbs->SetKey(blob_id);
     // CBlobLoader* bload= new CBlobLoader(my_context, server_name, user_name, passwd, &sbs);
     if(sbs->Init(con)) {
-        CBlobWriter* bWriter = new CBlobWriter(con, sbs, m_Limit,
-                                               CBlobWriter::fOwnDescr |
-                                               (m_LogIt? CBlobWriter::fLogBlobs : 0) |
-                                              ( ReleaseConn(0) ? CBlobWriter::fOwnCon : 0));
+        CBlobWriter::TFlags bwflags = CBlobWriter::fOwnDescr;
+        if ((m_Flags & CSimpleBlobStore::fLogBlobs) != 0) {
+            bwflags |= CBlobWriter::fLogBlobs;
+        }
+        if (ReleaseConn(0)) {
+            bwflags |= CBlobWriter::fOwnCon;
+        }
+        CBlobWriter* bWriter = new CBlobWriter(con, sbs, m_Limit, bwflags);
         unique_ptr<CWStream> oStream(new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter));
         unique_ptr<CCompressionStreamProcessor> zProc;
 
@@ -821,7 +853,19 @@ CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
                                    ECompressMethod cm,
                                    size_t image_limit,
                                    bool log_it)
-    : CBlobStoreBase(table_name, cm, image_limit, log_it),
+    : CBlobStoreStatic(pConn, table_name, cm, image_limit,
+                       CSimpleBlobStore::TFlags(
+                           log_it ? CSimpleBlobStore::fLogBlobs
+                           : CSimpleBlobStore::kDefaults))
+{
+}
+
+CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
+                                   const string& table_name,
+                                   ECompressMethod cm,
+                                   size_t image_limit,
+                                   CSimpleBlobStore::TFlags flags)
+    : CBlobStoreBase(table_name, cm, image_limit, flags),
       m_pConn(pConn)
 {
     ReadTableDescr();
@@ -838,11 +882,31 @@ CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
                                    ECompressMethod cm,
                                    size_t image_limit,
                                    bool log_it)
-    :CBlobStoreBase("", cm, image_limit, log_it),
+    : CBlobStoreStatic(pConn, tableName, keyColName, numColName, blobColNames,
+                       nofBC,
+                       CSimpleBlobStore::TFlags(
+                           (isText ? CSimpleBlobStore::fIsText
+                            : CSimpleBlobStore::kDefaults) |
+                           (log_it ? CSimpleBlobStore::fLogBlobs
+                            : CSimpleBlobStore::kDefaults)),
+                       cm, image_limit)
+{
+}
+
+CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
+                                   const string& tableName,
+                                   const string& keyColName,
+                                   const string& numColName,
+                                   const string* blobColNames,
+                                   unsigned nofBC,
+                                   CSimpleBlobStore::TFlags flags,
+                                   ECompressMethod cm,
+                                   size_t image_limit)
+    :CBlobStoreBase("", cm, image_limit, flags),
      m_pConn(pConn)
 {
-    SetTableDescr(tableName, keyColName, numColName,
-                  blobColNames, nofBC, isText);
+    SetTableDescr(tableName, keyColName, numColName, blobColNames, nofBC,
+                  (flags & CSimpleBlobStore::fIsText) != 0);
     SetTextSizeServerSide(m_pConn);
 }
 
@@ -877,7 +941,23 @@ CBlobStoreDynamic::CBlobStoreDynamic(I_DriverContext* pCntxt,
                                      ECompressMethod cm,
                                      size_t image_limit,
                                      bool log_it)
-    :CBlobStoreBase(table_name, cm, image_limit, log_it),
+    : CBlobStoreDynamic(pCntxt, server, user, passwd, table_name, cm,
+                        image_limit,
+                        CSimpleBlobStore::TFlags(
+                            log_it ? CSimpleBlobStore::fLogBlobs
+                            : CSimpleBlobStore::kDefaults))
+{
+}
+
+CBlobStoreDynamic::CBlobStoreDynamic(I_DriverContext* pCntxt,
+                                     const string& server,
+                                     const string& user,
+                                     const string& passwd,
+                                     const string& table_name,
+                                     ECompressMethod cm,
+                                     size_t image_limit,
+                                     CSimpleBlobStore::TFlags flags)
+    :CBlobStoreBase(table_name, cm, image_limit, flags),
      m_Cntxt(pCntxt), m_Server(server), m_User(user), m_Passwd(passwd),
      m_Pool(server+user+table_name)
 {
