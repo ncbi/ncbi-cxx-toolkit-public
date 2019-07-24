@@ -1418,3 +1418,113 @@ set(NCBI_COMPONENT_GCRYPT_LIBS
     /netopt/ncbi_tools64/libgpg-error-1.6/lib64/libgpg-error.a
 )
 
+##############################################################################
+##############################################################################
+set(NCBI_ThirdParty_UV           ${NCBI_TOOLS_ROOT}/libuv-1.25.0)
+set(NCBI_ThirdParty_NGHTTP2      ${NCBI_TOOLS_ROOT}/nghttp2-1.29.0)
+
+function(NCBI_define_component _name)
+
+    if(DEFINED NCBI_COMPONENT_${_name}_FOUND)
+        message("Already defined ${_name}")
+        return()
+    endif()
+# root
+    set(_root "")
+    if (DEFINED NCBI_ThirdParty_${_name})
+        set(_root ${NCBI_ThirdParty_${_name}})
+    else()
+        string(FIND ${_name} "." dotfound)
+        string(SUBSTRING ${_name} 0 ${dotfound} _dotname)
+        if (DEFINED NCBI_ThirdParty_${_dotname})
+            set(_root ${NCBI_ThirdParty_${_dotname}})
+        else()
+            message("NOT FOUND ${_name}: NCBI_ThirdParty_${_name} not found")
+            return()
+        endif()
+    endif()
+
+    if (EXISTS ${_root}/${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${NCBI_BUILD_TYPE}/include)
+        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${NCBI_BUILD_TYPE}/include PARENT_SCOPE)
+    elseif (EXISTS ${_root}/${NCBI_BUILD_TYPE}/include)
+        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/${NCBI_BUILD_TYPE}/include PARENT_SCOPE)
+    elseif (EXISTS ${_root}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/include)
+        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/include PARENT_SCOPE)
+    elseif (EXISTS ${_root}/include)
+        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/include PARENT_SCOPE)
+    else()
+        message("NOT FOUND ${_name}: ${_root}/include not found")
+        return()
+    endif()
+
+# libraries
+    set(_args ${ARGN})
+    if(BUILD_SHARED_LIBS)
+        set(_suffixes .so .a)
+    else()
+        set(_suffixes .a .so)
+    endif()
+    set(_roots ${_root})
+    set(_subdirs ${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${NCBI_BUILD_TYPE}/lib ${NCBI_BUILD_TYPE}/lib ${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/lib lib64 lib)
+    if (BUILD_SHARED_LIBS AND DEFINED NCBI_ThirdParty_${_name}_SHLIB)
+        set(_roots ${NCBI_ThirdParty_${_name}_SHLIB} ${_roots})
+        set(_subdirs shlib64 shlib lib64 lib)
+    endif()
+
+    set(_all_found YES)
+    set(_all_libs "")
+    foreach(_root IN LISTS _roots)
+        foreach(_libdir IN LISTS _subdirs)
+            set(_all_found YES)
+            set(_all_libs "")
+            foreach(_lib IN LISTS _args)
+                set(_this_found NO)
+                foreach(_sfx IN LISTS _suffixes)
+                    if(EXISTS ${_root}/${_libdir}/lib${_lib}${_sfx})
+                        list(APPEND _all_libs ${_root}/${_libdir}/lib${_lib}${_sfx})
+                        set(_this_found YES)
+                        break()
+                    endif()
+                endforeach()
+                if(NOT _this_found)
+                    set(_all_found NO)
+                    break()
+                endif()
+            endforeach()
+            if(_all_found)
+                break()
+            endif()
+        endforeach()
+        if(_all_found)
+            break()
+        endif()
+    endforeach()
+
+    if(_all_found)
+        message(STATUS "Found ${_name}: ${_root}")
+        set(NCBI_COMPONENT_${_name}_FOUND YES PARENT_SCOPE)
+#        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/include)
+        set(NCBI_COMPONENT_${_name}_LIBS ${_all_libs} PARENT_SCOPE)
+
+        string(TOUPPER ${_name} _upname)
+        set(HAVE_LIB${_upname} 1 PARENT_SCOPE)
+        string(REPLACE "." "_" _altname ${_upname})
+        set(HAVE_${_altname} 1 PARENT_SCOPE)
+
+        list(APPEND NCBI_ALL_COMPONENTS ${_name})
+        set(NCBI_ALL_COMPONENTS ${NCBI_ALL_COMPONENTS} PARENT_SCOPE)
+    else()
+        set(NCBI_COMPONENT_${_name}_FOUND NO)
+        message("NOT FOUND ${_name}: some libraries not found at ${_root}")
+    endif()
+
+endfunction()
+
+#############################################################################
+# UV
+NCBI_define_component(UV uv)
+
+#############################################################################
+# NGHTTP2
+NCBI_define_component(NGHTTP2 nghttp2)
+
