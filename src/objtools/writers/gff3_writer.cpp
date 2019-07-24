@@ -1959,7 +1959,8 @@ bool CGff3Writer::xAssignFeatureAttributeID(
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
 {
-    record.SetRecordId(m_idGenerator.GetGffId(mf, &fc.FeatTree()));
+    auto rawId = m_idGenerator.GetGffId(mf, &fc.FeatTree());
+    record.SetRecordId(CWriteUtil::UrlEncode(rawId));
     return true;
 }
 
