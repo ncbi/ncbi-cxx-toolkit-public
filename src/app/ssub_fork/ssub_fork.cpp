@@ -206,6 +206,13 @@ void CSeqSubSplitter::Init()
 
 int CSeqSubSplitter::Run()
 {
+    const CArgs& args = GetArgs();
+    if (args["e"].AsBoolean() && args["w"].AsBoolean()) {
+        string err_msg = "Incompatible parameters: do not use -w when -e is used";
+        ERR_POST(err_msg);
+        return 1;
+    }
+
     CRef<CSerialObject> input_obj;
     if (!xTryReadInputFile(input_obj)) {
         string err_msg = "Could not read input file";
@@ -213,7 +220,6 @@ int CSeqSubSplitter::Run()
         return 1;
     }
 
-    const CArgs& args = GetArgs();
 
     bool input_as_seq_entry = args["e"].AsBoolean();
     list<CRef<CSerialObject>> output_array;
