@@ -2318,7 +2318,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_7485)
 {
     CheckInfluenzaDefline("Influenza A virus", "", "", "", "", "Influenza A virus sequence.");
     CheckInfluenzaDefline("Influenza B virus", "", "", "", "", "Influenza B virus sequence.");
-    CheckInfluenzaDefline("Influenza A virus", "x", "", "", "", "Influenza A virus (x()) sequence.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "", "", "", "Influenza A virus (x) sequence.");
     CheckInfluenzaDefline("Influenza B virus", "x", "", "", "", "Influenza B virus (x) sequence.");
     CheckInfluenzaDefline("Influenza A virus", "x", "y", "", "", "Influenza A virus (x(y)) sequence.");
     CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "", "Influenza B virus (x) sequence.");
@@ -2523,6 +2523,18 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4612)
     CheckRegulatoryFeatures("Sebaea microphylla mannose-specific adhesin (msa) gene, promoter region.", true, false);
     CheckRegulatoryFeatures("Sebaea microphylla mannose-specific adhesin (msa) gene, promoter region and ribosome_binding_site.", true, true);
 
+}
+
+BOOST_AUTO_TEST_CASE(Test_GB_8547)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Influenza A virus");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "A/Florida/57/2019");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_segment, "5");
+ 
+    AddTitle(entry, "Influenza A virus (A/Florida/57/2019) segment 5 sequence.");
+
+    CheckDeflineMatches(entry);
 }
 
 END_SCOPE(objects)

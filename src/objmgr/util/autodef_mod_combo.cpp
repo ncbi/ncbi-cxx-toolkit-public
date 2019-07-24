@@ -864,15 +864,17 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
                 }
             }
             if (influenza_type == eInfluenzaA) {
-                paren += "(";
+                string serotype = kEmptyStr;
                 for (auto& it : bsrc.GetOrg().GetOrgname().GetMod()) {
                     if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype &&
                         it->IsSetSubname() && !NStr::IsBlank(it->GetSubname())) {
-                        paren += it->GetSubname();
+                        serotype = it->GetSubname();
                         break;
                     }
                 }
-                paren += ")";
+                if (!NStr::IsBlank(serotype)) {
+                    paren += "(" + serotype + ")";
+                }
             }
             paren += ")";
             if (!NStr::EndsWith(source_description, paren)) {
