@@ -492,6 +492,9 @@ bool CValidError_desc::ValidateStructuredComment
                         stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
                         is_valid = ValidateStructuredComment (tmp, desc, rule, report);
                     }
+                } else {
+                    // no rule for this prefix
+                    ValidateStructuredCommentGeneric(usr, desc, true);
                 }
             } catch (CException&) {
                 // no rule for this prefix
