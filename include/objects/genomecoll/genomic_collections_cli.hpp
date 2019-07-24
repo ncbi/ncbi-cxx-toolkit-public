@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 
 class CSQLITE_Connection;
 class CArgDescriptions;
+class CArgs;
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
@@ -76,6 +77,7 @@ public:
     static void AddArguments(CArgDescriptions& arg_desc); 
     
     CGenomicCollectionsService(const string& cache_file="");
+    CGenomicCollectionsService(const CArgs& args);
     ~CGenomicCollectionsService();
 
     CRef<CGC_Assembly> GetAssembly(const string& acc, const string& mode);
@@ -236,8 +238,10 @@ private:
             bool top_only, 
             bool with_roles);
 
+    void x_ConfigureConnection();
+
     static const string s_GcCacheParamStr; // "gc-cache" 
-    void x_ConfigureCache(const string& cache_file_param);
+    void x_ConfigureCache(const string& cache_file);
     string m_CacheFile;
     auto_ptr<CSQLITE_Connection> m_CacheConn;
 };

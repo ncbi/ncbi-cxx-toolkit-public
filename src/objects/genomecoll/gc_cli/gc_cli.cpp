@@ -62,21 +62,25 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace std;
 
-class CGenollService : public CGenomicCollectionsService
+class CGencollService : public CGenomicCollectionsService
 {
 public:
-    CGenollService(const string& cgi_url, bool nocache)
+    CGencollService(const string& cgi_url, bool nocache)
     : cgiUrl(cgi_url + (nocache ? "?nocache=true" :""))
     {
     }
 
-    CGenollService(bool nocache)
+    CGencollService(bool nocache)
     {
         if(nocache)
         {
             string service_name(GetService());
             CNcbiApplication::Instance()->SetEnvironment().Set((NStr::ToUpper(service_name) + "_CONN_ARGS").c_str(), "nocache=true");
         }
+    }
+    
+    CGencollService(const CArgs& args) : CGenomicCollectionsService(args)
+    {
     }
 
 private:
@@ -261,9 +265,10 @@ int CClientGenomicCollectionsSvcApplication::Run(void)
 
     CRef<CGenomicCollectionsService> service;
 
-    if(args["cgi"])      service.Reset(new CDirectCGIExec(args["cgi"].AsString(), args["nocache"]));
-    else if(args["url"]) service.Reset(new CGenollService(args["url"].AsString(), args["nocache"]));
-    else                 service.Reset(new CGenollService(args["nocache"]));
+    if(args["cgi"])           service.Reset(new CDirectCGIExec(args["cgi"].AsString(), args["nocache"]));
+    else if(args["url"])      service.Reset(new CGencollService(args["url"].AsString(), args["nocache"]));
+    else if(args["gc-cache"]) service.Reset(new CGencollService(args));
+    else                      service.Reset(new CGencollService(args["nocache"]));
 
     if (args["retries"]) service->SetRetryLimit(args["retries"].AsInteger());
 

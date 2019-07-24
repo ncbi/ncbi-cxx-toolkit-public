@@ -74,6 +74,25 @@ static const STimeout kTimeout = {600, 0};
 
 CGenomicCollectionsService::CGenomicCollectionsService(const string& cache_file)
 {
+    x_ConfigureConnection();
+    
+    if(!cache_file.empty()) {
+        x_ConfigureCache(cache_file);
+    }
+}
+
+CGenomicCollectionsService::CGenomicCollectionsService(const CArgs& args)
+{
+    x_ConfigureConnection();
+    
+    if (args.Exist(s_GcCacheParamStr) && 
+        args[s_GcCacheParamStr].HasValue()) {
+        x_ConfigureCache(args[s_GcCacheParamStr].AsString());
+    }
+}
+
+void CGenomicCollectionsService::x_ConfigureConnection()
+{
     SetTimeout(&kTimeout);
     SetRetryLimit(20);
 
@@ -84,10 +103,8 @@ CGenomicCollectionsService::CGenomicCollectionsService(const string& cache_file)
     SetFormat(eSerial_AsnText);
     // SetFormat() - sets both Request and Response encoding, so we put "fo=text" as well (though not needed now it may be usefull in the future for the client back-compatibility)
     SetArgs("fi=text&fo=text");
-
-
-    x_ConfigureCache(cache_file);
 }
+
 
 CGenomicCollectionsService::~CGenomicCollectionsService()
 {
@@ -119,7 +136,6 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, c
     string acc = NStr::TruncateSpaces(acc_);
     ValidateAsmAccession(acc);
 
-
     if(!m_CacheFile.empty()) {
         const string SltSql = "SELECT gc_blob FROM GetAssemblyBlob "
                               "WHERE acc_ver = ? AND mode = ?";
@@ -131,6 +147,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, c
             CRef<CCachedAssembly> CAsm(new CCachedAssembly(Blob));
             return CAsm->Assembly();
         }
+        ERR_POST(Info << "Cache query for " << acc << " and " << mode << " found nothing, fallback to remote service.");
     }
 
 
@@ -304,33 +321,10 @@ void CGenomicCollectionsService::AddArguments(CArgDescriptions& arg_desc)
 }
 
 const string CGenomicCollectionsService::s_GcCacheParamStr = "gc-cache";
-void CGenomicCollectionsService::x_ConfigureCache(const string& cache_file_param) 
+void CGenomicCollectionsService::x_ConfigureCache(const string& cache_file) 
 {
-    string local_cache_file;
-   
-    // priority order
-    //  local parameter
-    //  argument
-    //  no env 
-    //  no reg
-
-    if(CNcbiApplication::Instance()) {
-        const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-        if (args.Exist(s_GcCacheParamStr) && 
-            args[s_GcCacheParamStr].HasValue()) {
-            const string arg_cache_file = args[s_GcCacheParamStr].AsString();
-            if(!arg_cache_file.empty()) {
-                local_cache_file = arg_cache_file;
-            }
-        }
-    }
-
-    if(!cache_file_param.empty()) {
-        local_cache_file = cache_file_param;
-    }
-   
-    if(!local_cache_file.empty() && CFile(local_cache_file).Exists()) {
-        m_CacheFile = local_cache_file;
+    if(!cache_file.empty() && CFile(cache_file).Exists()) {
+        m_CacheFile = cache_file;
         CSQLITE_Global::Initialize();
         m_CacheConn.reset(new CSQLITE_Connection(m_CacheFile,
                 CSQLITE_Connection::fReadOnly|CSQLITE_Connection::eAllMT));
