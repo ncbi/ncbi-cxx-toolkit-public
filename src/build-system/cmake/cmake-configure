@@ -44,7 +44,8 @@ BUILD_TYPE="Debug"
 BUILD_SHARED_LIBS= # NOTE: By default, not set and neither ON nor OFF!
 PREFIX=/usr/local
 LIBDIR=
-CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
+CMAKE_ARGS=
+#CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
 
 if [ -e "${TOP_SRCDIR}/configure-custom.sh" ]; then
     . "${TOP_SRCDIR}/configure-custom.sh"
@@ -414,7 +415,7 @@ while [ $# != 0 ]; do
             ;;
 
         "--with-experimental-cmake")
-            CMAKE_ARGS="$CMAKE_ARGS -DNCBI_EXPERIMENTAL_CFG=Yes"
+            CMAKE_ARGS="$CMAKE_ARGS -DNCBI_EXPERIMENTAL=Yes"
             ;;
 
         "--with-experimental="*)
