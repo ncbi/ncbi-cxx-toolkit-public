@@ -1,0 +1,40 @@
+corelib$
+corelib/impl$ update-only
+util$
+util/checksum
+util/bitset$
+util/cache$
+util/sequtil$
+connect$
+connect/ext$
+connect/impl$ update-only
+connect/mbedtls
+connect/services$
+connect/services/impl$
+misc$
+misc/jsonwrapp$
+misc/jsonwrapp/rapidjson11
+serial$
+serial/datatool$
+serial/impl$ update-only
+objects$
+objects/misc$ update-only
+objects/biblio$
+objects/general$
+objects/medline$
+objects/pub$
+objects/seq$
+objects/seqcode$
+objects/seqset$
+objects/seqalign$
+objects/seqblock$
+objects/seqfeat$
+objects/seqloc$
+objects/seqres$
+objects/seqtable
+objtools$
+objtools/pubseq_gateway$
+objtools/pubseq_gateway/client$
+app$
+app/pubseq_gateway$
+app/pubseq_gateway/client$
