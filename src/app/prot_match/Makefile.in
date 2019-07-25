@@ -1,3 +1,0 @@
-APP_PROJ = prot_match update_prot_id
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

@@ -63,7 +63,6 @@ NCBI_add_subdirectory(
   gff_deconcat
   magicblast
   netcache
-  prot_match
   pub_report
   rmblastn
 #  split_cache
