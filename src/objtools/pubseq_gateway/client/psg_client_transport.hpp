@@ -84,7 +84,8 @@ typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
 NCBI_PARAM_DECL(unsigned, PSG, reader_timeout);
 typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 
-NCBI_PARAM_DECL(string, PSG, debug_printout);
+enum class EPSG_DebugPrintout { eNone, eSome, eAll };
+NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
 typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
 
 NCBI_PARAM_DECL(unsigned, PSG, requests_per_io);
@@ -213,9 +214,7 @@ struct SPSG_Chunk
 
 struct SDebugOutput
 {
-    enum ELevel { eNone, eSome, eAll };
-
-    const ELevel level;
+    const EPSG_DebugPrintout level;
     const bool perf;
     mutex cout_mutex;
 
@@ -227,7 +226,7 @@ struct SDebugOutput
     static SDebugOutput& GetInstance() { static SDebugOutput instance; return instance; }
 
 private:
-    static ELevel GetLevel();
+    static EPSG_DebugPrintout GetLevel();
     static bool IsPerf();
 };
 
@@ -254,7 +253,7 @@ private:
     template <class ...TArgs>
     void Process(TArgs... args)
     {
-        if (m_DebugOutput.level == SDebugOutput::eNone) return;
+        if (m_DebugOutput.level == EPSG_DebugPrintout::eNone) return;
 
         if (m_DebugOutput.perf) return Event(forward<TArgs>(args)...);
 

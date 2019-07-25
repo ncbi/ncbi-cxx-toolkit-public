@@ -65,7 +65,15 @@ NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
-NCBI_PARAM_DEF(string,   PSG, debug_printout,         "none");
+
+NCBI_PARAM_ENUM_ARRAY(EPSG_DebugPrintout, PSG, debug_printout)
+{
+    { "none", EPSG_DebugPrintout::eNone },
+    { "some", EPSG_DebugPrintout::eSome },
+    { "all",  EPSG_DebugPrintout::eAll  }
+};
+NCBI_PARAM_ENUM_DEF(EPSG_DebugPrintout, PSG, debug_printout, EPSG_DebugPrintout::eNone);
+
 NCBI_PARAM_DEF(unsigned, PSG, requests_per_io,        1);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 
@@ -99,7 +107,7 @@ void SDebugPrintout::Print(const SPSG_Chunk& chunk)
 
     os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
 
-    if ((m_DebugOutput.level == SDebugOutput::eAll) ||
+    if ((m_DebugOutput.level == EPSG_DebugPrintout::eAll) ||
             (args.GetValue("item_type") != "blob") || (args.GetValue("chunk_type") != "data")) {
         for (auto& v : chunk.data) {
             os.write(v.data(), v.size());
@@ -166,17 +174,9 @@ bool SDebugOutput::IsPerf()
     return false;
 }
 
-SDebugOutput::ELevel SDebugOutput::GetLevel()
+EPSG_DebugPrintout SDebugOutput::GetLevel()
 {
-    if (IsPerf()) return eSome;
-
-    const auto& value = TPSG_DebugPrintout::GetDefault();
-
-    for (auto all : { "all", "data" }) {
-        if (NStr::CompareNocase(value, all) == 0) return eAll;
-    }
-
-    return NStr::CompareNocase(value, "some") == 0 ? eSome : eNone;
+    return IsPerf() ? EPSG_DebugPrintout::eSome : TPSG_DebugPrintout::GetDefault();
 }
 
 string SPSG_Error::Build(EError error, const char* details)
