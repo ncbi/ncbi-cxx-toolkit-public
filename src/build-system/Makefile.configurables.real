@@ -61,6 +61,8 @@ $(builddir)/Makefile.meta: $(build_sys_dir)/Makefile.meta.in $(config_status)
 $(config_status): $(config_status_deps)
 	$(abs_top_srcdir)/scripts/common/impl/maybe_reconfigure.sh $(builddir)
 
+-include $(builddir)/Makefile.mk.d
+
 .PHONY: configurables
 .PRECIOUS: $(CONFIGURABLES) $(SUB_MF_IN)
 # .SUFFIXES: .in
