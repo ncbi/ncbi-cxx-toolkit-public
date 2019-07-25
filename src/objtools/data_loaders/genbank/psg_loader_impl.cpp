@@ -898,7 +898,6 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
 
     shared_ptr<CPSG_BioseqInfo> bioseq_info;
     for (;;) {
-        CStopWatch sw(CStopWatch::eStart);
         auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
         if (!reply_item) {
             _TRACE("Request failed: null reply item");

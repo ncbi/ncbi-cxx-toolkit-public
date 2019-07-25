@@ -90,8 +90,6 @@ public:
     STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh) override;
     int GetSequenceState(const CSeq_id_Handle& idh) override;
 
-    CObjectManager::TPriority GetDefaultPriority(void) const override;
-
     void DropTSE(CRef<CTSE_Info> tse_info) override;
 
     TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh) override;

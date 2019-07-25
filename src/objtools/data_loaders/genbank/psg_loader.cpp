@@ -55,32 +55,6 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
-
-BEGIN_LOCAL_NAMESPACE;
-
-class CLoaderFilter : public CObjectManager::IDataLoaderFilter {
-public:
-    bool IsDataLoaderMatches(CDataLoader& loader) const {
-        return dynamic_cast<CPSGDataLoader*>(&loader) != 0;
-    }
-};
-
-
-class CRevoker {
-public:
-    ~CRevoker() {
-        CLoaderFilter filter;
-        CObjectManager::GetInstance()->RevokeDataLoaders(filter);
-    }
-};
-CSafeStatic<CRevoker> s_Revoker(
-    CSafeStaticLifeSpan(
-        CSafeStaticLifeSpan::eLifeLevel_AppMain,
-        CSafeStaticLifeSpan::eLifeSpan_Longest));
-
-END_LOCAL_NAMESPACE;
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CPSGDataLoader
 /////////////////////////////////////////////////////////////////////////////
@@ -133,9 +107,6 @@ CPSGDataLoader::CPSGDataLoader(const string& loader_name,
     : CGBDataLoader(loader_name, params)
 {
     m_Impl.Reset(new CPSGDataLoader_Impl(params));
-
-    // Register this safe static (it would be destroyed too late otherwise)
-    s_Revoker.Get();
 }
 
 
@@ -262,12 +233,6 @@ CPSGDataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
 int CPSGDataLoader::GetSequenceState(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetSequenceState(idh);
-}
-
-
-CObjectManager::TPriority CPSGDataLoader::GetDefaultPriority(void) const
-{
-    return CObjectManager::kPriority_Replace;
 }
 
 
