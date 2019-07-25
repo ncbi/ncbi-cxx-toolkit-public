@@ -9110,17 +9110,7 @@ dnl This is a stopgap measure, and fails for installations in non-system dirs.
 #    touch -t 197001010000 $status_dir/.bz2.dep
 
 dnl Incorporate any Makefile.*.mk and ncbiconf.*.h files found in the tree.
-find "$srcdir"/src/* -name .svn -prune -o -name build-system -prune \
-   -o -name 'Makefile.*.mk' -print \
-   | while read x; do
-      echo
-      echo "### Extra macro definitions from $x"
-      echo
-      echo "#line 1 \"$x\""
-      cat "$x"
-   done >> "$builddir/Makefile.mk"
-$srcdir/scripts/common/impl/report_duplicates.awk \
-   src="$srcdir/src/build-system/Makefile.mk.in" "$builddir/Makefile.mk"
+"$srcdir"/scripts/common/impl/supplement_makefile_mk.sh "$srcdir" "$builddir"
 find "$srcdir"/src/* -name .svn -prune -o -name 'ncbiconf.*.h' -print \
    | while read x; do
       echo

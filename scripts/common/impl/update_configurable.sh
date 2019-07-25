@@ -74,17 +74,7 @@ status=$?
 
 case $output in
     */Makefile.mk)
-        find src/* -name .svn -prune -o -name build-system -prune \
-            -o -name 'Makefile.*.mk' -print \
-            | while read x; do
-            echo
-            echo "### Extra macro definitions from $x"
-            echo
-            echo "#line 1 \"$x\""
-            cat "$x"
-        done >> "$builddir/Makefile.mk"
-        scripts/common/impl/report_duplicates.awk \
-            src=./src/build-system/Makefile.mk.in "$builddir/Makefile.mk"
+        scripts/common/impl/supplement_makefile_mk.sh . "$builddir"
         ;;
 
     *.sh | *.py )
