@@ -557,10 +557,15 @@ int CTbl2AsnApp::Run(void)
             m_context.m_ClassValue = CBioseq_set::eClass_small_genome_set;
         }
         else
-            if (a_arg == "di")
-            {
-                m_context.m_di_fasta = true;
-            }
+        if (a_arg == "di")
+        {
+            m_context.m_di_fasta = true;
+        }
+        else
+        if (a_arg == "d")
+        {
+            m_context.m_d_fasta = true;
+        }
     }
     if (args["gaps-min"]) {
         int gaps_min = args["gaps-min"].AsInteger();
@@ -1369,3 +1374,4 @@ int main(int argc, const char* argv[])
     return CTbl2AsnApp().AppMain(argc, argv, 0, eDS_Default, "table2asn.conf");
 }
 
+    

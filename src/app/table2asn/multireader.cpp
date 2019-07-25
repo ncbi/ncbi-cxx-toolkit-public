@@ -289,6 +289,11 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 //                 |  CFastaReader::fLeaveAsText;
     }
 
+    if (m_context.m_d_fasta)
+    {
+        m_iFlags |= CFastaReader::fParseGaps;
+    }
+
     m_iFlags |= CFastaReader::fIgnoreMods
              |  CFastaReader::fValidate
              |  CFastaReader::fHyphensIgnoreAndWarn;
@@ -300,8 +305,6 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     m_iFlags |= CFastaReader::fAssumeNuc
              |  CFastaReader::fForceType;
 
-
-
     CStreamLineReader lr( instream );
     unique_ptr<CFastaReaderEx> pReader(new CFastaReaderEx(m_context, lr, m_iFlags));
     if (!pReader.get()) {
@@ -311,12 +314,18 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     if (m_context.m_gapNmin > 0)
     {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
-        if (m_context.m_gap_evidences.size() >0 || m_context.m_gap_type>=0)
-            pReader->SetGapLinkageEvidences((CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences);
     }
+    if (m_context.m_gap_evidences.size() > 0 || m_context.m_gap_type >= 0)
+        pReader->SetGapLinkageEvidences((CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences);
 
     int max_seqs = kMax_Int;
-    CRef<CSeq_entry> result = m_context.m_di_fasta ? pReader->ReadDIFasta(m_context.m_logger) : pReader->ReadSet(max_seqs, m_context.m_logger);
+    CRef<CSeq_entry> result;
+    if (m_context.m_di_fasta)
+        result = pReader->ReadDeltaFasta(m_context.m_logger);
+    else if (m_context.m_d_fasta)
+        result = pReader->ReadDeltaFasta(m_context.m_logger);
+    else
+        result = pReader->ReadSet(max_seqs, m_context.m_logger);
 
     if (result.NotEmpty())
     {

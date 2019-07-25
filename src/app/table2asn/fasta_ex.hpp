@@ -28,7 +28,7 @@ public:
     CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags);
     virtual void AssignMolType(objects::ILineErrorListener * pMessageListener) override;
     virtual void AssembleSeq(objects::ILineErrorListener * pMessageListener) override;
-    virtual CRef<objects::CSeq_entry> ReadDIFasta(objects::ILineErrorListener * pMessageListener);
+    virtual CRef<objects::CSeq_entry> ReadDeltaFasta(objects::ILineErrorListener * pMessageListener);
 protected:
     CTable2AsnContext& m_context;
     objects::CGapsEditor m_gap_editor;

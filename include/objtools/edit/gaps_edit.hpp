@@ -64,7 +64,7 @@ public:
 
     void ConvertBioseqToDelta(CBioseq& bioseq);
     void AppendGap(CBioseq& bioseq);
-    void AddBioseqAsLiteral(CBioseq& parent, CBioseq& bioseq);
+    void AddBioseqAsLiteral(CBioseq& parent, CBioseq& seqset);
 
 private:
     void x_SetGapParameters(CDelta_seq& gap);

@@ -79,7 +79,8 @@ void CFastaReaderEx::AssignMolType(objects::ILineErrorListener * pMessageListene
     if (!inst.IsSetMol() || inst.GetMol() == CSeq_inst::eMol_na)
         inst.SetMol(CSeq_inst::eMol_dna);
 }
-CRef<objects::CSeq_entry> CFastaReaderEx::ReadDIFasta(objects::ILineErrorListener * pMessageListener)
+
+CRef<objects::CSeq_entry> CFastaReaderEx::ReadDeltaFasta(objects::ILineErrorListener * pMessageListener)
 {
     CRef<CSeq_entry> entry;
     while (!GetLineReader().AtEOF())
@@ -92,14 +93,15 @@ CRef<objects::CSeq_entry> CFastaReaderEx::ReadDIFasta(objects::ILineErrorListene
             if (entry.Empty()) {
                 entry = single;
             }
-
             else {
                 if (!entry->GetSeq().GetInst().IsSetExt())
                 {   //convert bioseq into delta
                     m_gap_editor.ConvertBioseqToDelta(entry->SetSeq());
                 }
-                m_gap_editor.AppendGap(entry->SetSeq());
-                m_gap_editor.AddBioseqAsLiteral(entry->SetSeq(), single->SetSeq());
+                if (single->IsSeq() && single->GetSeq().IsSetInst())
+                {
+                    m_gap_editor.AddBioseqAsLiteral(entry->SetSeq(), single->SetSeq());
+                }
             }
         }
         catch (CObjReaderParseException& e) {

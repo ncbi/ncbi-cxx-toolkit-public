@@ -132,6 +132,7 @@ public:
     bool   m_use_hypothetic_protein{ false };
     bool   m_eukariote{ false };
     bool   m_di_fasta{ false };
+    bool   m_d_fasta{ false };
     bool   m_allow_accession{ false };
     bool   m_verbose{ false };
     bool   m_augustus_fix{ false };

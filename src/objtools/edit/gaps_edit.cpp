@@ -403,15 +403,23 @@ void CGapsEditor::AppendGap(CBioseq& bioseq)
 
 void CGapsEditor::AddBioseqAsLiteral(CBioseq& parent, CBioseq& bioseq)
 {
-    CDelta_ext& delta_ext = parent.SetInst().SetExt().SetDelta();
-
-    CRef<CDelta_seq> delta_seq(new CDelta_seq);
-    delta_seq->SetLiteral().SetSeq_data(bioseq.SetInst().SetSeq_data());
-    delta_seq->SetLiteral().SetLength(bioseq.GetInst().GetLength());
-    delta_ext.Set().push_back(delta_seq);
-    parent.SetInst().SetLength(parent.GetInst().GetLength() + bioseq.GetInst().GetLength());
+    auto& delta_set = parent.SetInst().SetExt().SetDelta().Set();
+    if (!delta_set.empty() && delta_set.back()->GetLiteral().IsSetSeq_data())
+    {
+        AppendGap(parent);
+    }
+    if (bioseq.GetInst().IsSetExt())
+    {
+        delta_set.splice(delta_set.end(), bioseq.SetInst().SetExt().SetDelta().Set());
+    }
+    else {
+        CRef<CDelta_seq> delta_seq(new CDelta_seq);
+        delta_seq->SetLiteral().SetSeq_data(bioseq.SetInst().SetSeq_data());
+        delta_seq->SetLiteral().SetLength(bioseq.GetInst().GetLength());
+        delta_set.push_back(delta_seq);
+    }
+    parent.SetInst().SetLength() += bioseq.GetLength();
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
