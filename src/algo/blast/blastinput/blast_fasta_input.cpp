@@ -289,7 +289,7 @@ void
 CBlastFastaInputSource::x_InitInputReader()
 {
     CFastaReader::TFlags flags = m_Config.GetBelieveDeflines() ? 
-                                    CFastaReader::fAllSeqIds :
+                                    CFastaReader::fAllSeqIds | CFastaReader::fParseRawID:
                                     (CFastaReader::fNoParseID |
                                      CFastaReader::fDLOptional);
 
