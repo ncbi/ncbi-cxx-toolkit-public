@@ -290,9 +290,14 @@ CSQLITE_Global::SetAsyncWritesFileLocking(bool lock_files)
 
 #endif  // HAVE_SQLITE3ASYNC_H
 
+DEFINE_STATIC_FAST_MUTEX(s_SQLITE3_Init_Mutex);
+static bool s_SQLITE3_Initialized = false;
+
 void
 CSQLITE_Global::Finalize(void)
 {
+    CFastMutexGuard guard(s_SQLITE3_Init_Mutex);
+    if (!s_SQLITE3_Initialized) return;
 #ifdef HAVE_SQLITE3ASYNC_H
     _VERIFY(sqlite3async_control(SQLITEASYNC_HALT, SQLITEASYNC_HALT_IDLE)
                                                                 == SQLITE_OK);
@@ -307,11 +312,14 @@ CSQLITE_Global::Finalize(void)
 #endif
 
     _VERIFY(sqlite3_shutdown() == SQLITE_OK);
+    s_SQLITE3_Initialized = false;
 }
 
 void
 CSQLITE_Global::Initialize(void)
 {
+    CFastMutexGuard guard(s_SQLITE3_Init_Mutex);
+    if (s_SQLITE3_Initialized) return;
     _VERIFY(sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK);
     _VERIFY(sqlite3_initialize()                       == SQLITE_OK);
 #ifdef HAVE_SQLITE3ASYNC_H
@@ -319,6 +327,7 @@ CSQLITE_Global::Initialize(void)
     _VERIFY(sqlite3async_control(SQLITEASYNC_HALT, SQLITEASYNC_HALT_NEVER)
                                                        == SQLITE_OK);
 #endif
+    s_SQLITE3_Initialized = true;
 }
 
 void
