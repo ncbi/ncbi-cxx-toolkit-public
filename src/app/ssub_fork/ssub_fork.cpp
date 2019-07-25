@@ -105,7 +105,8 @@ private:
 
     void xFlattenSeqEntry(CSeq_entry& seq_entry, 
                           const CSeq_descr& seq_descr,
-                          TSeqEntryArray& seq_entry_array) const;
+                          TSeqEntryArray& seq_entry_array,
+                          bool process_set_of_any_type = false) const;
 
     void xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const; 
 
@@ -631,7 +632,7 @@ bool CSeqSubSplitter::xTryProcessSeqEntry(CRef<CSerialObject>& obj, list<CRef<CS
         input_entry->SetDescr().Reset();
     }
 
-    xFlattenSeqEntry(*input_entry, seq_descr, seq_entry_array);
+    xFlattenSeqEntry(*input_entry, seq_descr, seq_entry_array, true);
     if (upper_level_descr.NotEmpty()) {
         input_entry->SetDescr().Assign(*upper_level_descr);
         upper_level_descr.Reset();
@@ -754,60 +755,69 @@ void CSeqSubSplitter::xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
     }
 }
 
+static bool NeedToProcess(const CSeq_entry& entry, bool set_of_any_type_allowed)
+{
+    if (entry.IsSeq()) {
+        return false;
+    }
+
+    bool set_of_allowed_type = set_of_any_type_allowed;
+    if (!set_of_any_type_allowed) {
+        set_of_allowed_type = entry.GetSet().IsSetClass() &&
+            (entry.GetSet().GetClass() == CBioseq_set::eClass_genbank || entry.GetSet().GetClass() == CBioseq_set::eClass_pub_set);
+    }
+
+    return set_of_allowed_type;
+}
 
 void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
                                        const CSeq_descr& seq_descr,
-                                       TSeqEntryArray& seq_entry_array) const 
+                                       TSeqEntryArray& seq_entry_array,
+                                       bool process_set_of_any_type) const
 {
-    if (entry.IsSeq() ||
-        (entry.IsSet() &&
-         (!entry.GetSet().IsSetClass() ||
-          (entry.GetSet().IsSetClass() && 
-           (entry.GetSet().GetClass() != CBioseq_set::eClass_genbank) &&
-           (entry.GetSet().GetClass() != CBioseq_set::eClass_pub_set))
-          ))) 
-    {
+    if (NeedToProcess(entry, process_set_of_any_type)) {
 
+        // Class has to be either genbank or pub_set,
+        // or it can be a top level Seq-entry containing set of any type.
+        // These sets should not have annotations
+        const CBioseq_set& seq_set = entry.GetSet();
+
+        if (seq_set.IsSetAnnot()) {
+
+            string class_string = (seq_set.GetClass() == CBioseq_set::eClass_genbank) 
+                                ? "Genbank set" : "Pub-set";
+
+            string err_msg = "Wrapper " + class_string + "has non-empty annotation.";
+
+            NCBI_THROW(CSeqSubSplitException, eInvalidAnnot, err_msg);
+        }
+
+        CSeq_descr new_descr;
+        ITERATE(CSeq_descr::Tdata, it, seq_descr.Get()) {
+            new_descr.Set().push_back(*it);
+        }
+
+        if (entry.GetSet().IsSetDescr()) {
+            xMergeSeqDescr(entry.GetSet().GetDescr(), new_descr); 
+        }
+
+        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set()) {
+            xFlattenSeqEntry(**it, new_descr, seq_entry_array);
+        }
+    }
+    else {
         CRef<CSeq_entry> new_entry = Ref(&entry);
 
         if (seq_descr.IsSet()) {
-            CSeq_descr&  entry_descr = (entry.IsSeq()) 
-                                ? entry.SetSeq().SetDescr() 
-                                : entry.SetSet().SetDescr();
+            CSeq_descr&  entry_descr = (entry.IsSeq())
+                ? entry.SetSeq().SetDescr()
+                : entry.SetSet().SetDescr();
 
 
             xMergeSeqDescr(seq_descr, entry_descr);
         }
 
         seq_entry_array.push_back(new_entry);
-        return;
-    }
-
-    // Class has to be either genbank or pub_set
-    // These sets should not have annotations
-    const CBioseq_set& seq_set = entry.GetSet();
-
-    if (seq_set.IsSetAnnot()) {
-
-        string class_string = (seq_set.GetClass() == CBioseq_set::eClass_genbank) 
-                            ? "Genbank set" : "Pub-set";
-
-        string err_msg = "Wrapper " + class_string + "has non-empty annotation.";
-
-        NCBI_THROW(CSeqSubSplitException, eInvalidAnnot, err_msg);
-    }
-
-    CSeq_descr new_descr;
-    ITERATE(CSeq_descr::Tdata, it, seq_descr.Get()) {
-        new_descr.Set().push_back(*it);
-    }
-
-    if (entry.GetSet().IsSetDescr()) {
-        xMergeSeqDescr(entry.GetSet().GetDescr(), new_descr); 
-    }
-
-    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set()) {
-        xFlattenSeqEntry(**it, new_descr, seq_entry_array);
     }
 }
 
