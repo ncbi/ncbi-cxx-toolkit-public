@@ -262,8 +262,7 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
                     x_ReadObject(input, it->type_info);
                     found = true;
                     last_cand = it;
-                    LOG_POST_X(2, Info 
-                               << format_name << " top level object found:" 
+                    _TRACE_X(2,   format_name << " top level object found:" 
                                << it->type_info.GetName());
                     break;
                 }
@@ -285,7 +284,7 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
     }
     catch ( exception& e ) {
         input.SetStreamPos(m_StreamPos);
-        LOG_POST_X(3, Info << "Exception reading "
+        _TRACE_X(3,  "Exception reading "
                    << format_name << " " << e.what());
     }
 }
@@ -318,8 +317,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
                 if ( x_TryReadObject(input, it->type_info) ) {
                     found = true;
                     last_cand = it;
-                    LOG_POST_X(2, Info 
-                               << "ASN.1 binary top level object found:" 
+                    _TRACE_X( 2,  "ASN.1 binary top level object found:" 
                                << it->type_info.GetName());
                     break;
                 }
@@ -367,8 +365,7 @@ void CObjectsSniffer::ProbeAny(CObjectIStream& input)
                 found = (report && x_ReadObject(input, type_info)) ||
                                 x_TryReadObject(input, type_info);
                 if ( found ) {
-                    LOG_POST_X(2, Info 
-                                << format_name << " top level object found: "
+                    _TRACE_X(2,    format_name << " top level object found: "
                                 << type_info->GetName());
                     break;
                 }
@@ -390,7 +387,7 @@ void CObjectsSniffer::ProbeAny(CObjectIStream& input)
     }
     catch ( exception& e ) {
         input.SetStreamPos(m_StreamPos);
-        LOG_POST_X(3, Info << "Exception reading "
+        _TRACE_X(3,  "Exception reading "
                    << format_name << " " << e.what());
         throw;
     }
