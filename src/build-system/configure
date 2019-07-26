@@ -55545,7 +55545,8 @@ done
 # test -f "$status_dir"/LocalBZ2.enabled  ||  \
 #    touch -t 197001010000 $status_dir/.bz2.dep
 
-"$srcdir"/scripts/common/impl/supplement_makefile_mk.sh "$srcdir" "$builddir"
+"$srcdir"/scripts/common/impl/supplement_makefile_mk.sh "$real_srcdir" \
+   "$builddir"
 find "$srcdir"/src/* -name .svn -prune -o -name 'ncbiconf.*.h' -print \
    | while read x; do
       echo
