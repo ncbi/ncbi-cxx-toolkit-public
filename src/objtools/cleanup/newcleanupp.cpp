@@ -8807,10 +8807,10 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
     for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
         const CUser_object& usr = di->GetUser();
         if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
-        try {
-            string prefix = CComment_rule::GetStructuredCommentPrefix (usr);
+        string prefix = CComment_rule::GetStructuredCommentPrefix (usr);
+        if (!prefix.empty()) {
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-            try {
+            if (comment_rules) {
                 CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
                 if (ruler) {
                     const CComment_rule& rule = *ruler;
@@ -8822,9 +8822,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
                         }
                     }
                 }
-            } catch (CException) {
             }
-        } catch (CException) {
         }
     }
     vector<string> final_keywords;

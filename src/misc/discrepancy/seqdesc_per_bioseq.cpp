@@ -245,8 +245,8 @@ DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspici
         string prefix = CComment_rule::GetStructuredCommentPrefix(user);
         if (!prefix.empty()) {
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-            CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
-            try {
+            if (comment_rules) {
+                CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
                 if (ruler) {
                     const CComment_rule& rule = *ruler;
                     CComment_rule::TErrorList errors = rule.IsValid(user);
@@ -257,9 +257,6 @@ DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspici
                         }
                     }
                 }
-            }
-            catch(...) {
-                return;
             }
         }
     }

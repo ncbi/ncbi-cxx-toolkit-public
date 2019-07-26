@@ -286,17 +286,13 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         bool is_valid = false;
         CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
         if (comment_rules) {
-            try {
-                CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(pfx);
-                if (ruler) {
-                    const CComment_rule& rule = *ruler;
-                    CComment_rule::TErrorList errors = rule.IsValid(usr);
-                    if(errors.size() == 0) {
-                        is_valid = true;
-                    }
+            CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(pfx);
+            if (ruler) {
+                const CComment_rule& rule = *ruler;
+                CComment_rule::TErrorList errors = rule.IsValid(usr);
+                if(errors.size() == 0) {
+                    is_valid = true;
                 }
-            } catch (CException&) {
-                // no rule for this prefix, mark invalid because we were expecting there to be one
             }
         }
         if ( is_valid ) {

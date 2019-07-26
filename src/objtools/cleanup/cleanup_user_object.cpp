@@ -223,13 +223,10 @@ bool CCleanup::s_CleanupStructuredComment( CUser_object &obj )
     if( ibol_data ) {
         CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
         if (rules) {
-            try {
-                CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(kBarcode);
-                if (ruler) {
-                    const CComment_rule& rule = *ruler;
-                    any_change |= rule.ReorderFields(obj);
-                }
-            } catch (CException& ex) {
+            CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(kBarcode);
+            if (ruler) {
+                const CComment_rule& rule = *ruler;
+                any_change |= rule.ReorderFields(obj);
             }
         }
     }

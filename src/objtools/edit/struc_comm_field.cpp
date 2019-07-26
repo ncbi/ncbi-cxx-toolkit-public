@@ -471,34 +471,29 @@ bool CStructuredCommentField::IsValid(const CUser_object& obj, const string& des
         return false;
     }
 
-    try {
-        CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
-        if (ruler) {
-            const CComment_rule& rule = *ruler;
+    CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
+    if (ruler) {
+        const CComment_rule& rule = *ruler;
 
-            if (rule.GetRequire_order()) {
-                CComment_rule::TErrorList errors = rule.IsValid(obj);
-                if (errors.size() == 0) {
-                    return true;
-                } else {
-                    return false;
-                }
+        if (rule.GetRequire_order()) {
+            CComment_rule::TErrorList errors = rule.IsValid(obj);
+            if (errors.size() == 0) {
+                return true;
             } else {
-                CUser_object tmp;
-                tmp.Assign(obj);
-                CUser_object::TData& fields = tmp.SetData();
-                stable_sort(fields.begin(), fields.end(), s_UserFieldCompare);
-                CComment_rule::TErrorList errors = rule.IsValid(obj);
-                if (errors.size() == 0) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return false;
+            }
+        } else {
+            CUser_object tmp;
+            tmp.Assign(obj);
+            CUser_object::TData& fields = tmp.SetData();
+            stable_sort(fields.begin(), fields.end(), s_UserFieldCompare);
+            CComment_rule::TErrorList errors = rule.IsValid(obj);
+            if (errors.size() == 0) {
+                return true;
+            } else {
+                return false;
             }
         }
-    } catch (CException) {
-        // no rule for this prefix
-        return false;
     }
     return false;
 }
@@ -513,14 +508,10 @@ void CStructuredCommentField::ReorderFields(CUser_object& obj)
         return;
     }
 
-    try {
-        CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
-        if (ruler) {
-            const CComment_rule& rule = *ruler;
-            rule.ReorderFields(obj);
-        }
-    } catch (CException) {
-        // no rule for this prefix
+    CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
+    if (ruler) {
+        const CComment_rule& rule = *ruler;
+        rule.ReorderFields(obj);
     }
 }
 
