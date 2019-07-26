@@ -14,4 +14,4 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG
 
 REQUIRES = objects -Cygwin
 
-WATCHERS = rackerst camacho madden fongah2
+WATCHERS = camacho madden fongah2

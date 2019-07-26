@@ -16,4 +16,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD = writedb_lmdb_unit_test
 CHECK_COPY = data
 
-WATCHERS = madden camacho fongah2 boratyng rackerst
+WATCHERS = madden camacho fongah2 boratyng
