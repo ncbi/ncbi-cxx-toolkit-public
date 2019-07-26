@@ -2750,8 +2750,24 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
             fileloc = CDirEntry::ConcatPath(CDirEntry(GetApp().m_Solution).GetDir(),*p);
         }
         if (CDirEntry(fileloc).Exists()) {
-            LOG_POST(Info << "Resolve macros using rules from " << fileloc);
-	        resolver.Append( CSymResolver(fileloc), true);;
+            CSymResolver sym(fileloc);
+            bool is_good = true;
+            string requires;
+            if (sym.GetValue("REQUIRES", requires)) {
+                list<string> items;
+                NStr::Split(requires, LIST_SEPARATOR, items, NStr::fSplit_Tokenize);
+                for(const string& i : items) {
+                    if (!GetApp().GetSite().IsProvided(i)) {
+                        LOG_POST(Info << "Custom metadata " << fileloc << " rejected because of unmet requirement: " << i);
+                        is_good = false;
+                        break;
+                    }
+                }
+            }
+            if (is_good) {
+                LOG_POST(Info << "Resolve macros using rules from " << fileloc);
+	            resolver.Append( sym, true);;
+            }
         }
 	}
     ResolveDefs(resolver, subtree_makefiles);
