@@ -1059,7 +1059,7 @@ prok_cluster_data needs bacterial_pipeline_proc
 prok_cluster_data needs gpipe_sqlite
 prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
-protein_match needs xobjutil
+protein_match needs $(SOBJMGR_LIBS)
 proteinkmer needs xalgoblastdbindex
 proteinkmer needs xalgodustmask
 proteinkmer needs xalgowinmask
