@@ -165,14 +165,12 @@ vector<string> CComment_set::GetFieldNames(const string& prefix)
     CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
 
     if (rules) {
-        try {
-            CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(prefix_to_use);
+        CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(prefix_to_use);
+        if (ruler) {
             const CComment_rule& rule = *ruler;
             ITERATE(CComment_rule::TFields::Tdata, it, rule.GetFields().Get()) {
                 options.push_back((*it)->GetField_name());
             }
-        } catch (CException ) {
-            // no rule for this prefix, can't list fields
         }
     }
 
@@ -191,16 +189,14 @@ list<string> CComment_set::GetKeywords(const CUser_object& user)
     CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
 
     if (rules) {
-        try {
-            CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(prefix_to_use);
+        CConstRef<CComment_rule> ruler = rules->FindCommentRuleEx(prefix_to_use);
+        if (ruler) {
             const CComment_rule& rule = *ruler;
             CComment_rule::TErrorList errors = rule.IsValid(user);
             if (errors.size() == 0) {
                 string kywd = CComment_rule::KeywordForPrefix( prefix );
                 NStr::Split(kywd, ";", keywords, NStr::fSplit_Tokenize);
             }
-        } catch (CException& ) {
-            // no rule for this prefix, can't list fields
         }
     }
 
