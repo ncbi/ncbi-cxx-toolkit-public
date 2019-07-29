@@ -81,6 +81,13 @@
 ##      NCBI_custom_target_dependencies(list of toolkit libraries or apps)
 ##      NCBI_custom_target_definition( xxx_definition) - function name defined above
 ##    NCBI_end_custom_target(result) - argument 'result' is optional
+##
+##---------------------------------------------------------------------------
+##  extensions
+##    NCBI_register_hook(event callback_function)
+##      events:
+##        TARGETDONE - build target is added
+##        CFGDONE    - all targets are added
 ##  
 #############################################################################
 function(NCBI_add_root_subdirectory)
@@ -99,7 +106,7 @@ function(NCBI_add_root_subdirectory)
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS "")
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS "")
 
-        NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV} ${NCBI_PTBCFG_CHECK})
+        NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
 
         set(NCBI_PTBMODE_COLLECT_DEPS OFF)
         get_property(_allprojects     GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS)
@@ -163,14 +170,9 @@ endif()
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_${_type} 0)
     endforeach()
 
-    NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV} ${NCBI_PTBCFG_CHECK})
+    NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
 
-    if(NCBI_PTBCFG_ADDCHECK)
-        NCBI_internal_create_checklist()
-    endif()
-    if (NCBI_PTBCFG_DOINSTALL)
-        NCBI_internal_install_root(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
-    endif()
+    set(NCBI_PTB_CFGDONE_CALLBACK TRUE)
 
     set(_report "")
     foreach( _type IN LISTS _known_types)
@@ -626,6 +628,47 @@ macro(NCBI_add_test)
     NCBI_begin_test()
     NCBI_set_test_command(${_cmd})
     NCBI_end_test()
+endmacro()
+
+##############################################################################
+function(NCBI_import_hostinfo _file)
+    if(NOT EXISTS ${_file})
+        return()
+    endif()
+    file(STRINGS ${_file} _hostinfo)
+    if (NOT "${_hostinfo}" STREQUAL "")
+        foreach( _item IN LISTS _hostinfo)
+            string(REPLACE " " ";" _item ${_item})
+            if (NOT "${_item}" STREQUAL "")
+                list(GET _item 0 _prj)
+                list(GET _item 1 _host)
+                set_property(GLOBAL PROPERTY NCBI_PTBPROP_HOST_${_prj} ${_host})
+            endif()
+        endforeach()
+    endif()
+endfunction()
+
+##############################################################################
+function(NCBI_register_hook _event _callback)
+    if("${_event}" STREQUAL "TARGETDONE")
+        variable_watch(NCBI_PTB_TARGETDONE_CALLBACK ${_callback})
+    elseif("${_event}" STREQUAL "CFGDONE")
+        variable_watch(NCBI_PTB_CFGDONE_CALLBACK ${_callback})
+    else()
+        message(SEND_ERROR "An attempt to register hook for an unknown event: ${_event} (${_callback})")
+    endif()
+endfunction()
+
+##############################################################################
+macro(NCBI_util_parse_sign _input _value _negative)
+    string(SUBSTRING ${_input} 0 1 _sign)
+    if ("${_sign}" STREQUAL "-")
+        string(SUBSTRING ${_input} 1 -1 ${_value})
+        set(${_negative} ON)
+    else()
+        set(${_value} ${_input})
+        set(${_negative} OFF)
+    endif()
 endmacro()
 
 
@@ -1113,18 +1156,6 @@ function(NCBI_internal_install_component_files _comp)
 endfunction()
 
 ##############################################################################
-macro(NCBI_internal_parse_sign _input _value _negative)
-    string(SUBSTRING ${_input} 0 1 _sign)
-    if ("${_sign}" STREQUAL "-")
-        string(SUBSTRING ${_input} 1 -1 ${_value})
-        set(${_negative} ON)
-    else()
-        set(${_value} ${_input})
-        set(${_negative} OFF)
-    endif()
-endmacro()
-
-##############################################################################
 macro(NCBI_internal_process_project_requires)
     set(NCBITMP_REQUIRE_NOTFOUND "")
     if(NCBI_PTBMODE_PARTS)
@@ -1142,7 +1173,7 @@ macro(NCBI_internal_process_project_requires)
     endif()
 
     foreach(_req IN LISTS _all)
-        NCBI_internal_parse_sign(${_req} _value _negate)
+        NCBI_util_parse_sign(${_req} _value _negate)
         if (NCBI_REQUIRE_${_value}_FOUND OR NCBI_COMPONENT_${_value}_FOUND)
             if (_negate)
                 set(NCBITMP_REQUIRE_NOTFOUND ${NCBITMP_REQUIRE_NOTFOUND} ${_req})
@@ -1174,7 +1205,7 @@ macro(NCBI_internal_process_project_requires)
     if (NOT NCBI_PTBMODE_COLLECT_DEPS AND NOT ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
         get_property(_all GLOBAL PROPERTY NCBI_PTBPROP_IMPLREQ_${NCBI_PROJECT})
         foreach(_req IN LISTS _all)
-            NCBI_internal_parse_sign(${_req} _value _negate)
+            NCBI_util_parse_sign(${_req} _value _negate)
             if (NCBI_REQUIRE_${_value}_FOUND OR NCBI_COMPONENT_${_value}_FOUND)
                 if (_negate)
                     set(NCBITMP_REQUIRE_NOTFOUND ${NCBITMP_REQUIRE_NOTFOUND} ${_req})
@@ -1328,7 +1359,7 @@ function(NCBI_internal_verify_ncbilibs)
     set(_res "")
     set(_exclude "")
     foreach(_prj IN LISTS NCBITMP_NCBILIB)
-        NCBI_internal_parse_sign(${_prj} _value _negate)
+        NCBI_util_parse_sign(${_prj} _value _negate)
         list(APPEND _res ${_value})
         if (_negate)
             list(APPEND _exclude ${_value})
@@ -1423,12 +1454,6 @@ endfunction()
 ##############################################################################
 function(NCBI_internal_process_project_filters _result)
 
-    if (NCBI_PTBCFG_ADDCHECK)
-        if(${NCBI_CURRENT_SOURCE_DIR} MATCHES ${NCBI_SRC_ROOT}/${NCBI_PTBCFG_CHECK})
-            set(${_result} TRUE PARENT_SCOPE)
-            return()
-        endif()
-    endif()
     if("${NCBI_PROJECT}" STREQUAL "${NCBI_DATATOOL}")
         set(${_result} TRUE PARENT_SCOPE)
         return()
@@ -1437,7 +1462,7 @@ function(NCBI_internal_process_project_filters _result)
     if(NOT "${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL "")
         set(_is_good FALSE)
         foreach(_dir IN LISTS NCBI_PTBCFG_PROJECT_LIST)
-            NCBI_internal_parse_sign( ${_dir} _value _negate)
+            NCBI_util_parse_sign( ${_dir} _value _negate)
             if(${NCBI_CURRENT_SOURCE_DIR} MATCHES ${NCBI_SRC_ROOT}/${_value})
                 if(_negate)
                     set(${_result} FALSE PARENT_SCOPE)
@@ -1457,7 +1482,7 @@ function(NCBI_internal_process_project_filters _result)
         set(_is_good FALSE)
         set(_found FALSE)
         foreach(_prj IN LISTS NCBI_PTBCFG_PROJECT_TARGETS)
-            NCBI_internal_parse_sign( ${_prj} _value _negate)
+            NCBI_util_parse_sign( ${_prj} _value _negate)
             if (${_value} STREQUAL "*")
                 set(_is_good TRUE)
                 continue()
@@ -1500,7 +1525,7 @@ function(NCBI_internal_process_project_filters _result)
         set(_res FALSE)
         set(_hasp FALSE)
         foreach(_tag IN LISTS NCBI_PTBCFG_PROJECT_TAGS)
-            NCBI_internal_parse_sign( ${_tag} _value _negate)
+            NCBI_util_parse_sign( ${_tag} _value _negate)
             if(_negate)
                 if( ${_value} IN_LIST _alltags)
                     set(${_result} FALSE PARENT_SCOPE)
@@ -1519,335 +1544,6 @@ function(NCBI_internal_process_project_filters _result)
         endif()
     endif()
     set(${_result} TRUE PARENT_SCOPE)
-endfunction()
-
-##############################################################################
-macro(NCBI_internal_process_test_requires _test)
-    set(NCBITEST_REQUIRE_NOTFOUND "")
-    set(_all ${NCBITEST__REQUIRES} ${NCBITEST_${_test}_REQUIRES})
-    if (NOT "${_all}" STREQUAL "")
-        list(REMOVE_DUPLICATES _all)
-    endif()
-
-    foreach(_req IN LISTS _all)
-        NCBI_internal_parse_sign( ${_req} _value _negate)
-        if (NCBI_REQUIRE_${_value}_FOUND OR NCBI_COMPONENT_${_value}_FOUND)
-            if (_negate)
-                set(NCBITEST_REQUIRE_NOTFOUND ${NCBITEST_REQUIRE_NOTFOUND} ${_req})
-            endif()
-        else()
-            if (NOT _negate)
-                set(NCBITEST_REQUIRE_NOTFOUND ${NCBITEST_REQUIRE_NOTFOUND} ${_req})
-            endif()
-        endif()     
-    endforeach()
-endmacro()
-
-##############################################################################
-function(NCBI_internal_add_test _test)
-    if( NOT DEFINED NCBITEST_${_test}_CMD)
-        set(NCBITEST_${_test}_CMD ${NCBI_${NCBI_PROJECT}_OUTPUT})
-    endif()
-    get_filename_component(_ext ${NCBITEST_${_test}_CMD} EXT)
-    set(_xrequires ${NCBITEST_${_test}_REQUIRES})
-    if("${_ext}" STREQUAL ".sh")
-        set(NCBITEST_${_test}_REQUIRES ${NCBITEST_${_test}_REQUIRES} -MSWin)
-        set(NCBITEST_${_test}_ASSETS ${NCBITEST__ASSETS} ${NCBITEST_${_test}_ASSETS} ${NCBITEST_${_test}_CMD})
-    endif()
-
-    if (DEFINED NCBITEST_${_test}_ASSETS)
-        set(_assets ${NCBITEST_${_test}_ASSETS})
-    elseif(DEFINED NCBITEST__ASSETS)
-        set(_assets ${NCBITEST__ASSETS})
-    endif()
-    if (DEFINED NCBITEST_${_test}_TIMEOUT)
-        set(_timeout ${NCBITEST_${_test}_TIMEOUT})
-        set(_xtimeout ${NCBITEST_${_test}_TIMEOUT})
-    elseif(DEFINED NCBITEST__TIMEOUT)
-        set(_timeout ${NCBITEST__TIMEOUT})
-        set(_xtimeout ${NCBITEST__TIMEOUT})
-    else()
-        set(_timeout 86400)
-    endif()
-    string(REPLACE ";" " " _args    "${NCBITEST_${_test}_ARG}")
-    string(REPLACE ";" " " _assets   "${_assets}")
-
-    if (XCODE)
-        set(_extra -DXCODE=TRUE)
-    endif()
-
-    file(RELATIVE_PATH _xoutdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-    if (WIN32 OR XCODE)
-        set(_outdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/$<CONFIG>/${_xoutdir})
-    else()
-        set(_outdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/${_xoutdir})
-    endif()
-
-    if(NCBI_PTBCFG_ADDCHECK)
-        string(REPLACE ";" " " _xrequires   "${_xrequires}")
-        string(REPLACE ";" " " _xwatcher   "${NCBI_${NCBI_PROJECT}_WATCHER}")
-        set(_s "____")
-        string(APPEND _t "${_xoutdir} ${_s} ${NCBI_PROJECT} ${_s} ${NCBI_${NCBI_PROJECT}_OUTPUT} ${_s} ")
-        string(APPEND _t "${NCBITEST_${_test}_CMD} ${_args} ${_s} ")
-        string(APPEND _t "${_test} ${_s} ${_assets} ${_s} ${_xtimeout} ${_s} ")
-        string(APPEND _t "${_xrequires} ${_s} ${_xwatcher}")
-        get_property(_checklist GLOBAL PROPERTY NCBI_PTBPROP_CHECKLIST)
-        LIST(APPEND _checklist "${_t}\n")
-        set_property(GLOBAL PROPERTY NCBI_PTBPROP_CHECKLIST ${_checklist})
-    endif()
-
-    NCBI_internal_process_test_requires(${_test})
-    if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
-        if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
-            message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} of project ${NCBI_PROJECT} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
-        endif()
-        return()
-    endif()
-
-    add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
-        -DNCBITEST_NAME=${_test}
-        -DNCBITEST_CONFIG=$<CONFIG>
-        -DNCBITEST_COMMAND=${NCBITEST_${_test}_CMD}
-        -DNCBITEST_ARGS=${_args}
-        -DNCBITEST_TIMEOUT=${_timeout}
-        -DNCBITEST_BINDIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        -DNCBITEST_SOURCEDIR=${NCBI_CURRENT_SOURCE_DIR}
-        -DNCBITEST_OUTDIR=${_outdir}
-        -DNCBITEST_ASSETS=${_assets}
-        ${_extra}
-        -P "${NCBITEST_DRIVER}")
-endfunction()
-
-##############################################################################
-function(NCBI_internal_export_hostinfo _file)
-    if(EXISTS ${_file})
-        file(REMOVE ${_file})
-    endif()
-    get_property(_allprojects     GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS)
-    if (NOT "${_allprojects}" STREQUAL "")
-        set(_hostinfo)
-        foreach(_prj IN LISTS _allprojects)
-            get_property(_prjhost GLOBAL PROPERTY NCBI_PTBPROP_HOST_${_prj})
-            if (NOT "${_prjhost}" STREQUAL "")
-                list(APPEND _hostinfo "${_prj} ${_prjhost}\n")
-            endif()
-        endforeach()
-        if (NOT "${_hostinfo}" STREQUAL "")
-            file(WRITE ${_file} ${_hostinfo})
-        endif()
-    endif()
-endfunction()
-
-##############################################################################
-function(NCBI_internal_import_hostinfo _file)
-    if(NOT EXISTS ${_file})
-        return()
-    endif()
-    file(STRINGS ${_file} _hostinfo)
-    if (NOT "${_hostinfo}" STREQUAL "")
-        foreach( _item IN LISTS _hostinfo)
-            string(REPLACE " " ";" _item ${_item})
-            if (NOT "${_item}" STREQUAL "")
-                list(GET _item 0 _prj)
-                list(GET _item 1 _host)
-                set_property(GLOBAL PROPERTY NCBI_PTBPROP_HOST_${_prj} ${_host})
-            endif()
-        endforeach()
-    endif()
-endfunction()
-
-##############################################################################
-function(NCBI_internal_create_checklist)
-    get_property(_checklist GLOBAL PROPERTY NCBI_PTBPROP_CHECKLIST)
-    if(NOT "${_checklist}" STREQUAL "")
-        list(SORT _checklist)
-        if (WIN32 OR XCODE)
-            set(_listdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.check)
-            foreach(_cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
-                file(WRITE ${_listdir}/${_cfg}/check.sh.list ${_checklist})
-            endforeach()
-        else()
-            set(_listdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD})
-            file(WRITE ${_listdir}/check.sh.list ${_checklist})
-
-            file(REMOVE_RECURSE ${NCBI_BUILD_ROOT}/status)
-            foreach( _comp IN LISTS NCBI_ALL_COMPONENTS)
-                file(WRITE ${NCBI_BUILD_ROOT}/status/${_comp}.enabled "")
-            endforeach()
-
-            if (EXISTS "${NCBI_TREE_BUILDCFG}/check.cfg.in")
-                set(CHECK_TIMEOUT_MULT 1)
-                set(VALGRIND_PATH "valgrind")
-                set(CHECK_OS_NAME "${CMAKE_HOST_SYSTEM}")
-                configure_file(${NCBI_TREE_BUILDCFG}/check.cfg.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/check.cfg @ONLY)
-            endif()
-            if (EXISTS "${NCBI_TREE_BUILDCFG}/sysdep.sh.in")
-                set(script_shell "#! /bin/sh")
-                set(TAIL_N "tail -n ")
-                configure_file(${NCBI_TREE_BUILDCFG}/sysdep.sh.in ${NCBI_BUILD_ROOT}/sysdep.sh @ONLY)
-                file(COPY ${NCBI_BUILD_ROOT}/sysdep.sh
-                     DESTINATION ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}
-                     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-                file(REMOVE ${NCBI_BUILD_ROOT}/sysdep.sh)
-            endif()
-
-        endif()
-    endif()
-endfunction()
-
-##############################################################################
-function(NCBI_internal_install_root)
-
-    file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
-
-    set(_hostinfo ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.hostinfo)
-    NCBI_internal_export_hostinfo(${_hostinfo})
-    if (EXISTS ${_hostinfo})
-        install( FILES ${_hostinfo} DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
-    endif()
-
-    if (WIN32 OR XCODE)
-        foreach(_cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
-            install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
-                CONFIGURATIONS ${_cfg}
-                DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT}
-                FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
-            )
-        endforeach()
-    else()
-        install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
-            DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT}
-            FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
-        )
-    endif()
-
-# install headers
-    get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
-    list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
-    foreach(_dir IN LISTS _all_subdirs)
-        if (EXISTS ${NCBI_INC_ROOT}/${_dir})
-            install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
-                REGEX "/[.].*$" EXCLUDE)
-        endif()
-    endforeach()
-    file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
-    install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_INCLUDE})
-
-# install sources?
-    # TODO
-
-    file(GLOB _files LIST_DIRECTORIES false "${NCBI_TREE_BUILDCFG}/*")
-    install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
-    install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG}
-            USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
-
-    install( DIRECTORY ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS} DESTINATION ${NCBI_DIRNAME_SCRIPTS}
-            USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
-
-    file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
-    install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
-            REGEX "/[.].*$" EXCLUDE)
-endfunction()
-
-##############################################################################
-function(NCBI_internal_install_target)
-
-    if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
-        set(_haspdb NO)
-        file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-    elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
-        set(_haspdb YES)
-        if (WIN32)
-            file(RELATIVE_PATH _dest    "${NCBI_TREE_ROOT}" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
-            file(RELATIVE_PATH _dest_ar "${NCBI_TREE_ROOT}" "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-        else()
-            file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-        endif()
-    elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP" OR ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "GUIAPP")
-        set(_haspdb YES)
-        file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-        if (NOT "${NCBI_PTBCFG_INSTALL_TAGS}" STREQUAL "")
-            set(_alltags ${NCBI__PROJTAG} ${NCBI_${NCBI_PROJECT}_PROJTAG})
-            set(_res FALSE)
-            set(_hasp FALSE)
-            foreach(_tag IN LISTS NCBI_PTBCFG_INSTALL_TAGS)
-                NCBI_internal_parse_sign( ${_tag} _value _negate)
-                if(_negate)
-                    if( ${_value} IN_LIST _alltags)
-                        if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
-                            message("${NCBI_PROJECT} will not be installed because of tag ${_value}")
-                        endif()
-                        return()
-                    endif()
-                else()
-                    set(_hasp TRUE)
-                    if( ${_value} IN_LIST _alltags OR ${_value} STREQUAL "*")
-                        set(_res TRUE)
-                    endif()
-                endif()
-            endforeach()
-            if(_hasp AND NOT _res)
-                if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
-                    message("${NCBI_PROJECT} will not be installed because of tags ${_alltags}")
-                endif()
-                return()
-            endif()
-        endif()
-    else()
-        return()
-    endif()
-    if ("${_dest}" STREQUAL "")
-        return()
-    endif()
-
-# not sure about this part
-    file(RELATIVE_PATH _rel "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-    string(REPLACE "/" ";" _rel ${_rel})
-    list(GET _rel 0 _dir)
-    get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
-    list(APPEND _all_subdirs ${_dir})
-    if (DEFINED NCBI_${NCBI_PROJECT}_PARTS)
-        foreach(_rel IN LISTS NCBI_${NCBI_PROJECT}_PARTS)
-            string(REPLACE "/" ";" _rel ${_rel})
-            list(GET _rel 0 _dir)
-            list(APPEND _all_subdirs ${_dir})
-        endforeach()
-    endif()
-    list(REMOVE_DUPLICATES _all_subdirs)
-    set_property(GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR ${_all_subdirs})
-
-    if (WIN32 OR XCODE)
-        foreach(_cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
-            if (DEFINED _dest_ar)
-                install(
-                    TARGETS ${NCBI_PROJECT}
-                    EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
-                    RUNTIME DESTINATION ${_dest}/${_cfg}
-                    CONFIGURATIONS ${_cfg}
-                    ARCHIVE DESTINATION ${_dest_ar}/${_cfg}
-                    CONFIGURATIONS ${_cfg}
-                )
-            else()
-                install(
-                    TARGETS ${NCBI_PROJECT}
-                    EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
-                    DESTINATION ${_dest}/${_cfg}
-                    CONFIGURATIONS ${_cfg}
-                )
-            endif()
-            if (WIN32 AND _haspdb)
-                install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
-                        DESTINATION ${_dest}/${_cfg} OPTIONAL
-                        CONFIGURATIONS ${_cfg})
-            endif()
-        endforeach()
-    else()
-        install(
-            TARGETS ${NCBI_PROJECT}
-            EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
-            DESTINATION ${_dest}
-        )
-    endif()
 endfunction()
 
 ##############################################################################
@@ -2209,16 +1905,7 @@ endif()
         NCBI_internal_define_precompiled_header_usage()
     endif()
 
-    if (DEFINED NCBI_${NCBI_PROJECT}_ALLTESTS)
-        foreach(_test IN LISTS NCBI_${NCBI_PROJECT}_ALLTESTS)
-            NCBI_internal_add_test(${_test})
-        endforeach()
-        unset(NCBI_${NCBI_PROJECT}_ALLTESTS PARENT_SCOPE)
-    endif()
-
-    if (NCBI_PTBCFG_DOINSTALL)
-        NCBI_internal_install_target()
-    endif()
+    set(NCBI_PTB_TARGETDONE_CALLBACK ${NCBI_PROJECT})
 
 if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
 message("-----------------------------------")
@@ -2227,95 +1914,4 @@ endif()
     if ("${ARGC}" GREATER "0")
         set(${ARGV0} TRUE PARENT_SCOPE)
     endif()
-endfunction()
-
-##############################################################################
-##############################################################################
-function(NCBI_generate_by_asntool)
-    cmake_parse_arguments(PARSE_ARGV 0 ASNTOOL "LOCAL" "DATASPEC;BASENAME;HEADER" "EXTERNAL;GENFLAGS")
-
-    file(RELATIVE_PATH _rel "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-    set(_inc_dir ${NCBI_INC_ROOT}/${_rel})
-    if(IS_ABSOLUTE ${ASNTOOL_DATASPEC})
-        set(_specpath ${ASNTOOL_DATASPEC})
-    else()
-        set(_specpath ${NCBI_CURRENT_SOURCE_DIR}/${ASNTOOL_DATASPEC})
-    endif()
-    get_filename_component(_specname ${_specpath} NAME_WE)
-    get_filename_component(_specext ${_specpath} EXT)
-    set(_dataspec ${_specname}${_specext})
-    set(_basename ${ASNTOOL_BASENAME})
-    if (DEFINED ASNTOOL_HEADER)
-        set(_header ${ASNTOOL_HEADER})
-    else()
-        set(_header ${_specname}.h)
-    endif()
-    set(_externals "")
-    foreach(_module IN LISTS ASNTOOL_EXTERNAL)
-        if (NOT "${_externals}" STREQUAL "")
-            set(_externals "${_externals},")
-        endif()
-        if(EXISTS ${NCBI_CURRENT_SOURCE_DIR}/${_module} OR IS_ABSOLUTE ${_module})
-            set(_externals "${_externals}${_module}")
-        else()
-            set(_externals "${_externals}${NCBI_ASNDIR}/${_module}")
-        endif()
-    endforeach()
-    if (NOT "${_externals}" STREQUAL "")
-        set(_externals -M ${_externals})
-    endif()
-    if (ASNTOOL_LOCAL)
-        add_custom_command(
-            OUTPUT  ${NCBI_CURRENT_SOURCE_DIR}/${_basename}.c ${NCBI_CURRENT_SOURCE_DIR}/${_basename}.h ${NCBI_CURRENT_SOURCE_DIR}/${_header}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_specpath} ${NCBI_CURRENT_SOURCE_DIR}
-            COMMAND ${NCBI_ASNTOOL} -w 100 -m ${_dataspec} -o ${_header}
-            COMMAND ${NCBI_ASNTOOL} -w 100 -G -m ${_dataspec} -B ${_basename} ${_externals} -K ${_header} ${ASNTOOL_GENFLAGS}
-            WORKING_DIRECTORY ${NCBI_CURRENT_SOURCE_DIR}
-            COMMENT "Generate C object loader from ${_dataspec}"
-            DEPENDS ${_specpath}
-        )
-    else()
-        add_custom_command(
-            OUTPUT  ${NCBI_CURRENT_SOURCE_DIR}/${_basename}.c ${_inc_dir}/${_basename}.h ${_inc_dir}/${_header}
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${_inc_dir}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_specpath} ${NCBI_CURRENT_SOURCE_DIR}
-            COMMAND ${NCBI_ASNTOOL} -w 100 -m ${_dataspec} -o ${_inc_dir}/${_header}
-            COMMAND ${NCBI_ASNTOOL} -w 100 -G -m ${_dataspec} -B ${_basename} ${_externals} -K ${_header} ${ASNTOOL_GENFLAGS}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_basename}.h ${_inc_dir}
-            COMMAND ${CMAKE_COMMAND} -E remove -f ${_basename}.h
-            WORKING_DIRECTORY ${NCBI_CURRENT_SOURCE_DIR}
-            COMMENT "Generate C object loader from ${_dataspec}"
-            DEPENDS ${_specpath}
-        )
-    endif()
-endfunction()
-
-##############################################################################
-function(NCBI_target_export)
-    cmake_parse_arguments(PARSE_ARGV 0 EXPORT "" "TARGET;DESTINATION" "HEADERS")
-    if(WIN32 OR XCODE)
-        set(_dest ${NCBI_CFGINC_ROOT}/$<CONFIG>/${EXPORT_DESTINATION})
-    else()
-        set(_dest ${NCBI_CFGINC_ROOT}/${EXPORT_DESTINATION})
-    endif()
-    file(RELATIVE_PATH _rel "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-    set(_inc_dir ${NCBI_INC_ROOT}/${_rel})
-if(OFF)
-    foreach(_header IN LISTS EXPORT_HEADERS)
-        if (EXISTS "${NCBI_CURRENT_SOURCE_DIR}/${_header}")
-            set(_headers ${_headers} ${_header})
-        else()
-            set(_headers ${_headers} ${_inc_dir}/${_header})
-        endif()
-    endforeach()
-else()
-    set(_headers ${_headers} ${EXPORT_HEADERS})
-endif()
-    add_custom_command(
-        TARGET ${EXPORT_TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${_dest}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_headers} ${_dest}
-        WORKING_DIRECTORY ${NCBI_CURRENT_SOURCE_DIR}
-        COMMENT "Exporting ${EXPORT_TARGET} headers into ${NCBI_CFGINC_ROOT}"
-    )
 endfunction()
