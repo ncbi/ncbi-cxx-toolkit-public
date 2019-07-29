@@ -49,53 +49,9 @@ typedef CSeq_align::C_Segs::TDendiag TDendiag;
 typedef TDendiag::iterator TDendiag_it;
 typedef TDendiag::const_iterator TDendiag_cit;
 
-enum {
-	DD_NOFLAG=0,
-	DD_FOLLOWGUIDE=0x01,// use block structure of guide for remapping
-	DD_FOLLOWSEQ=0x02 // use block structure of sequence for remapping
-};
-
-
-//   Both of these assume a typical CD-style seq_align with one master & one slave row.
+//   Assumes a typical CD-style seq_align with one master & one slave row.
 NCBI_CDUTILS_EXPORT 
 bool GetSeqID(const CRef< CSeq_align >& seqAlign, CRef< CSeq_id >& SeqID, bool getSlave=true);
-NCBI_CDUTILS_EXPORT 
-bool HasSeqID(const CRef< CSeq_align >& seqAlign, const CRef< CSeq_id >& SeqID, bool& isMaster);
-
-//   A wrapper for ddRemap using CSeq_aligns vs. dense diags.
-//   Using an intermediate sequence present in both 'source' and 'guide' to generate a remapped 'mappedAlign'
-//   iSeq:    is the non-intermediate sequence index in 'source' 
-//   iMaster: is the index of non-intermediate sequence in the 'guide'
-//
-//   Adds intervals to 'mappedAlign' where the master and child sequences are choseable:
-//   iMasterNew, iSeqNew:  0 corresponds to intermediate sequence, 
-//                         the 'guide'  master is 1,
-//                         the 'source' slave sequence is 2
-//
-//   Flags:   this defines how to create blocks (if for example 'guide' has one continous block where 'source' has two glued DDs). 
-//   	DD_NOFLAG     =0
-//      DD_FOLLOWGUIDE=0x01:   use block structure of guide for remapping
-//      DD_FOLLOWSEQ  =0x02:   use block structure of sequence for remapping
-NCBI_CDUTILS_EXPORT 
-int  SeqAlignRemap(CRef< CSeq_align >& source, int iSeq, CRef< CSeq_align >& guide, int iMaster, CRef< CSeq_align >& mappedAlign, int iMasterNew, int iSeqNew, int flags, string& err);
-
-//   Apply the mask to the original pairwise alignment, creating a new CSeq_align from all
-//   of the overlapping residues.  Use the master of the mask by default (useMaskMaster = true).
-//   If invertMask = true, the 'maskedAlign' contains all of those aligned residues *NOT*
-//   also aligned in the mask.  If the specified seqId is not present in originalAlign, 
-//   an empty cref is returned.
-NCBI_CDUTILS_EXPORT 
-void MakeMaskedSeqAlign(const CRef< CSeq_align >& originalAlign, const CRef< CSeq_align >& maskAlign, CRef< CSeq_align >& maskedAlign, bool useMaskMaster = true, bool invertMask = false);
-
-//   Look at sequence ids, block lengths, and starts for master & slave.  True if
-//   everything is the same if checkMasters=true; if checkMaster=false, skip check
-//   that the masters of the two alignments are the same (as per ddAreEquivalent).
-NCBI_CDUTILS_EXPORT 
-bool SeqAlignsAreEquivalent(const CRef< CSeq_align >& align1, const CRef< CSeq_align >& align2, bool checkMasters);
-
-//   Create a CSeq_align from seqAlign, swapping the master/slave positions.
-NCBI_CDUTILS_EXPORT 
-void SeqAlignSwapMasterSlave(CRef< CSeq_align >& seqAlign, CRef< CSeq_align >& swappedSeqAlign);
 
 //   Replace the indicated seq-id in the CSeq_align with newSeqId.
 NCBI_CDUTILS_EXPORT 
@@ -164,15 +120,6 @@ bool GetDenDiagSet(const CRef< CSeq_annot >& seqAnnot, int row, const TDendiag*&
 NCBI_CDUTILS_EXPORT 
 bool SetDenDiagSet(CRef< CSeq_annot >& seqAnnot, int row, TDendiag*& pddSet);
 
-//  Go through a dense_diags list and identify all adjacent blocks,
-//  namely those with no unaligned residues between them.  In the third
-//  argument 'adj', fill the dense list with only non-adjacent dense_diags,
-//  merging any adjacent ones found in the original list.  Pass in iterators so
-//  this can be used for any consecutive set of blocks.  
-//  Moved from the validator code.
-NCBI_CDUTILS_EXPORT 
-void BuildAdjacentDiags(const TDendiag_cit& begin_orig, const TDendiag_cit& end_orig, TDendiag* adj);
-
 NCBI_CDUTILS_EXPORT 
 bool EraseRow(CRef< CSeq_annot >& seqAnnot, int row);
 
@@ -183,45 +130,6 @@ bool EraseRow(CRef< CSeq_annot >& seqAnnot, int row);
 //  Was 'extractOneSeqAlign' from cuBlast2Seq and cuSimpleB2SWrapper.
 NCBI_CDUTILS_EXPORT
 CRef< CSeq_align > ExtractFirstSeqAlign(CRef< CSeq_align > seqAlign);
-
-//  Functions moved from algDD  
-
-NCBI_CDUTILS_EXPORT 
-int    ddLen(TDendiag * pDD);  
-NCBI_CDUTILS_EXPORT 
-string ddAlignInfo(TDendiag * pGuideDD);
-NCBI_CDUTILS_EXPORT 
-int ddRecompose(TDendiag * pGuideDD,int iMaster, int iSeq,TDendiag * pResultDD);
-//  Doesn't check the sequence ID of the master sequences by default.
-NCBI_CDUTILS_EXPORT 
-bool   ddAreEquivalent(const TDendiag * pDD1,const TDendiag * pDD2, bool checkMasters=false);
-//int    ddFindBySeqId(CCd * pCD,CRef<CSeq_id>& SeqID,TDendiag * & ResultDD,TDendiag * pNeedOverlapDD, int isSelf,int istart);
-
-//  See description of arguments above in SeqAlignRemap.
-NCBI_CDUTILS_EXPORT 
-int    ddRemap(TDendiag * pSrcDD,int iSeq,TDendiag * pGuideDD, int iMaster,TDendiag * newDDlist,int iMasterNew, int iSeqNew,int flags,string err);
-string ddDifferenceResidues(TDendiag * pSrcDD,TDendiag * pGuideDD,TDendiag * newDDlist);
-NCBI_CDUTILS_EXPORT 
-int ddRenameSeqID(TDendiag * pGuideDD,int iNum, CRef< CSeq_id > & seqID);
-
-// functions to sscanf/sprintf alignment info
-NCBI_CDUTILS_EXPORT 
-bool sscanSeqId (const char * & ptr,CSeq_id & seqid);
-NCBI_CDUTILS_EXPORT 
-const char * sscanSeqLocIntervals(const char * ptr, CSeq_loc & sq);
-
-//  Query a SeqAlign for e-Values, raw scores, bit scores and # identical residues.
-//  Logical OR flags to get multiple score types.
-//  Invalid value left in corresponding vector element if not present or flag not set.
-NCBI_CDUTILS_EXPORT 
-void ExtractScoreFromSeqAlign(const CRef< CSeq_align >& seqAlign, int flags, vector<double>& values);
-NCBI_CDUTILS_EXPORT 
-void ExtractScoreFromSeqAlign(const CSeq_align* seqAlign, int flags, vector<double>& values);
-//  Set scores to E_VAL_NOT_FOUND, SCORE_NOT_FOUND if errors or score type wasn't found.
-//  Return value is the number of scores requested in flags (expect to be in (0,4]).
-NCBI_CDUTILS_EXPORT 
-int  ExtractScoreFromScoreList(const CSeq_align::TScore& scores, int flags, vector<double>& values);
-
 
 //  Functions that manipulate or assume Dense_segs
 
@@ -253,10 +161,6 @@ TGi GetMasterGIFromSeqAlign(const CRef< CSeq_align >& seqAlign, string& err);
 //class CCd;
 NCBI_CDUTILS_EXPORT 
 bool GetPendingSeqId(CCdCore * pCD,int irow,CRef <CSeq_id> & seqID);
-NCBI_CDUTILS_EXPORT 
-bool GetPendingDD(CCdCore * pCD,int irow,TDendiag* & pDenDiagSet);
-NCBI_CDUTILS_EXPORT 
-bool GetPendingFootPrint(CCdCore * pCD,int irow,int * from, int * to);
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
