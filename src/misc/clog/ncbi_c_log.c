@@ -515,17 +515,20 @@ static const char* s_ConcatPath(
 
 
 /** Get host name.
- *  The order is: cached host name, uname() or COMPUTERNAME, empty string.
+ *  The order is: cached host name, $NCBI_HOST, uname() or COMPUTERNAME, empty string.
  */
 const char* NcbiLog_GetHostName(void)
 {
     static const char* host = NULL;
+    const char* p;
 #if defined(NCBI_OS_UNIX)
     struct utsname buf;
-#elif defined(NCBI_OS_MSWIN)
-    char* compname;
 #endif
     if ( host ) {
+        return host;
+    }
+    if ( (p = getenv("NCBI_HOST")) != NULL  &&  *p ) {
+        host = s_StrDup(p);
         return host;
     }
 #if defined(NCBI_OS_UNIX)
@@ -534,9 +537,8 @@ const char* NcbiLog_GetHostName(void)
     }
 #elif defined(NCBI_OS_MSWIN)
     /* MSWIN - use COMPUTERNAME */
-    compname = getenv("COMPUTERNAME");
-    if ( compname  &&  *compname ) {
-        host = s_StrDup(compname);
+    if ( (p = getenv("COMPUTERNAME")) != NULL  &&  *p ) {
+        host = s_StrDup(p);
     }
 #endif
     return host;
@@ -575,7 +577,12 @@ static const char* s_ReadFileString(const char* filename)
 const char* NcbiLog_GetHostRole(void)
 {
     static const char* role = NULL;
+    const char* p = NULL;
     if ( role ) {
+        return role;
+    }
+    if ( (p = getenv("NCBI_ROLE")) != NULL  &&  *p ) {
+        role = s_StrDup(p);
         return role;
     }
     role = s_ReadFileString("/etc/ncbi/role");
@@ -588,7 +595,12 @@ const char* NcbiLog_GetHostRole(void)
 const char* NcbiLog_GetHostLocation(void)
 {
     static const char* location = NULL;
+    const char* p = NULL;
     if ( location ) {
+        return location;
+    }
+    if ( (p = getenv("NCBI_LOCATION")) != NULL  &&  *p ) {
+        location = s_StrDup(p);
         return location;
     }
     location = s_ReadFileString("/etc/ncbi/location");

@@ -464,16 +464,22 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags /* 0 */);
 
 
 /** Get host name.
+ *  If $NCBI_HOST environment variable is defined, use its value.
+ *  Otherwise, try to detect host name.
  */
 extern const char* NcbiLog_GetHostName(void);
 
 
-/** Get host role from /etc/ncbi/role.
+/** Get host role.
+ *  If $NCBI_ROLE environment variable is defined, use its value.
+ *  Otherwise, read it from /etc/ncbi/role.
  */
 extern const char* NcbiLog_GetHostRole(void);
 
 
-/** Get host location from /etc/ncbi/location.
+/** Get host location.
+ *  If $NCBI_LOCATION environment variable is defined, use its value.
+ *  Otherwise, read it from /etc/ncbi/location
  */
 extern const char* NcbiLog_GetHostLocation(void);
 
