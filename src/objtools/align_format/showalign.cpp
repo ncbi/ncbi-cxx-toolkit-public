@@ -2146,15 +2146,16 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID,CSeq_id::eContent);//Just accession without db part like ref| or pdbd|
 
-		if(m_AlignOption&eHtml){
-			int taxid = 0;
-			string type_temp = m_BlastType;
-			type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
-			if(bdl->IsSetTaxid() &&  bdl->CanGetTaxid()){
-				taxid = bdl->GetTaxid();
-			}
+		
+		int taxid = 0;
+		string type_temp = m_BlastType;
+		type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
+		if(bdl->IsSetTaxid() &&  bdl->CanGetTaxid()){
+			taxid = bdl->GetTaxid();
+		}
 
-            alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,taxid,ids);
+        alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,taxid,ids);
+        if(m_AlignOption&eHtml){
             alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);
 		}
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){
