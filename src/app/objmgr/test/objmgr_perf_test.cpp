@@ -233,6 +233,7 @@ int CPerfTestApp::Run(void)
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     m_Scope.Reset(new CScope(*om));
 
+    putenv("GENBANK_LOADER_PSG=");
     string loader = args["loader"].AsString();
     if (loader == "gb") {
         string reader;
@@ -263,13 +264,13 @@ int CPerfTestApp::Run(void)
             }
         }
         CGBDataLoader::RegisterInObjectManager(*om, reader);
-        m_Scope->AddDefaults();
     }
     else if (loader == "psg") {
+        GetRWConfig().Set("genbank", "loader_psg", "t");
         GetRWConfig().Set("psg_loader", "no_split", args["no_split"] ? "t" : "f");
-        string loader_name = om->RegisterDataLoader(0, loader)->GetName();
-        m_Scope->AddDataLoader(loader_name);
+        CGBDataLoader::RegisterInObjectManager(*om);
     }
+    m_Scope->AddDefaults();
 
     cout << loader;
     if (loader == "gb") cout << (args["pubseqos"] ? " / pubseqos" : " / id");
