@@ -435,7 +435,6 @@ A7. Reattaching in new place.
 CScopeInfo_Base::CScopeInfo_Base(void)
     : m_TSE_ScopeInfo(0)
 {
-    _ASSERT(x_Check(fForceZero | fForbidInfo));
 }
 
 
@@ -445,7 +444,6 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
       m_TSE_Handle(tse),
       m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
 {
-    _ASSERT(x_Check(fForceZero | fForceInfo));
 }
 
 
@@ -455,13 +453,11 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse,
       m_TSE_Handle(tse),
       m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
 {
-    _ASSERT(x_Check(fForceZero | fForceInfo));
 }
 
 
 CScopeInfo_Base::~CScopeInfo_Base(void)
 {
-    _ASSERT(x_Check(fForceZero | fForbidInfo));
 }
 
 
@@ -477,72 +473,49 @@ const CScopeInfo_Base::TIndexIds* CScopeInfo_Base::GetIndexIds(void) const
 }
 
 
-bool CScopeInfo_Base::x_Check(TCheckFlags /*zero_counter_mode*/) const
+DEFINE_STATIC_FAST_MUTEX(s_Info_TSE_HandleMutex);
+
+
+void CScopeInfo_Base::x_SetTSE_Handle(const CTSE_Handle& tse)
 {
-    return true;
-/*
-    if ( IsRemoved() ) {
-        return !m_TSE_Handle;
+    _ASSERT(IsAttached());
+    _ASSERT(HasObject());
+    _ASSERT(GetObjectInfo_Base().BelongsToTSE_Info(tse.x_GetTSE_Info()));
+    _ASSERT(m_LockCounter.Get() > 0);
+    CFastMutexGuard guard(s_Info_TSE_HandleMutex);
+    if ( !m_TSE_Handle.m_TSE ) {
+        _ASSERT(tse);
+        m_TSE_Handle = tse;
     }
-    if ( m_LockCounter.Get() <= 0 ) {
-        if ( zero_counter_mode & fForbidZero ) {
-            return false;
-        }
-        if ( m_ObjectInfo ) {
-            if ( zero_counter_mode & fForbidInfo ) {
-                return false;
-            }
-            return m_TSE_Handle;
-        }
-        else {
-            if ( zero_counter_mode & fForceInfo ) {
-                return false;
-            }
-            return !m_TSE_Handle;
-        }
-    }
-    else {
-        if ( zero_counter_mode & fForceZero ) {
-            return false;
-        }
-        return m_TSE_Handle && m_ObjectInfo ||
-            !m_TSE_Handle && !m_ObjectInfo;
-    }
-*/
+    _ASSERT(m_TSE_Handle == tse);
 }
 
 
-void CScopeInfo_Base::x_SetLock(const CTSE_ScopeUserLock& tse,
-                                const CTSE_Info_Object& info)
+void CScopeInfo_Base::x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
+                                    const CTSE_Info_Object& info)
 {
-    _ASSERT(x_Check(fAllowZero|fAllowInfo));
     _ASSERT(!IsDetached());
     _ASSERT(tse);
     _ASSERT(&*tse == m_TSE_ScopeInfo);
-    _ASSERT(!m_TSE_Handle || &m_TSE_Handle.x_GetScopeInfo() == &*tse);
+    _ASSERT(m_LockCounter.Get() > 0);
+    if ( !m_TSE_Handle.m_TSE || !m_ObjectInfo ) {
+        CFastMutexGuard guard(s_Info_TSE_HandleMutex);
+        m_TSE_Handle = tse;
+        m_ObjectInfo = &reinterpret_cast<const CObject&>(info);
+    }
+    _ASSERT(&m_TSE_Handle.x_GetScopeInfo() == &*tse);
     _ASSERT(!m_ObjectInfo || &GetObjectInfo_Base() == &info);
-    m_TSE_Handle = tse;
-    m_ObjectInfo = &reinterpret_cast<const CObject&>(info);
-    _ASSERT(x_Check(fAllowZero|fForceInfo));
 }
 
 
-void CScopeInfo_Base::x_ResetLock(void)
+void CScopeInfo_Base::x_ResetTSE_Lock()
 {
-    //_ASSERT(x_Check(fForceZero|fAllowInfo));
-    _ASSERT(!IsDetached());
-    m_ObjectInfo.Reset();
-    m_TSE_Handle.Reset();
-    //_ASSERT(x_Check(fForceZero|fForbidInfo));
-}
-
-
-// Action A1
-void CScopeInfo_Base::x_RemoveLastInfoLock(void)
-{
-    CTSE_ScopeInfo* tse = m_TSE_ScopeInfo;
-    if ( tse ) {
-        tse->RemoveLastInfoLock(*this);
+    if ( m_TSE_Handle.m_TSE ) {
+        CTSE_Handle tse; // prevent deletion of handle and scope under mutex
+        CFastMutexGuard guard(s_Info_TSE_HandleMutex);
+        if ( m_TSE_Handle.m_TSE && m_LockCounter.Get() == 0 ) {
+            tse.Swap(m_TSE_Handle);
+        }
     }
 }
 
@@ -552,9 +525,7 @@ void CScopeInfo_Base::x_AttachTSE(CTSE_ScopeInfo* tse)
     _ASSERT(tse);
     _ASSERT(!m_TSE_ScopeInfo);
     _ASSERT(IsDetached());
-    _ASSERT(x_Check(fAllowZero|fForbidInfo));
     m_TSE_ScopeInfo = tse;
-    _ASSERT(x_Check(fAllowZero|fForbidInfo));
 }
 
 
@@ -563,24 +534,10 @@ void CScopeInfo_Base::x_DetachTSE(CTSE_ScopeInfo* tse)
     _ASSERT(tse);
     _ASSERT(!IsDetached());
     _ASSERT(m_TSE_ScopeInfo == tse);
-    //_ASSERT(x_Check(fForceZero|fForbidInfo));
     _ASSERT(!m_TSE_Handle);
     m_TSE_ScopeInfo = 0;
-    //_ASSERT(x_Check(fForceZero|fForbidInfo));
 }
 
-
-void CScopeInfo_Base::x_ForgetTSE(CTSE_ScopeInfo* tse)
-{
-    _ASSERT(tse);
-    _ASSERT(!IsDetached());
-    _ASSERT(m_TSE_ScopeInfo == tse);
-    _ASSERT(x_Check(fAllowZero));
-    m_ObjectInfo.Reset();
-    m_TSE_Handle.Reset();
-    m_TSE_ScopeInfo = 0;
-    _ASSERT(x_Check(fForceZero|fForbidInfo));
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // FeatId support

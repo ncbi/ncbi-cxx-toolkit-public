@@ -466,7 +466,7 @@ void CScope_Impl::RemoveDataLoader(const string& name,
         ITERATE( CDataSource_ScopeInfo::TTSE_InfoMap, tse_it, tse_map ) {
             {{
                 CClearCacheOnRemoveGuard guard2(this);
-                tse_it->second.GetNCObject().RemoveFromHistory(CScope::eThrowIfLocked);
+                tse_it->second.GetNCObject().RemoveFromHistory(0, CScope::eThrowIfLocked);
                 guard2.Done();
             }}
         }
@@ -503,7 +503,7 @@ void CScope_Impl::RemoveTopLevelSeqEntry(const CTSE_Handle& tse)
     }
     x_ClearCacheOnRemoveData(&*tse_lock);
     tse_lock.Reset();
-    tse_info->RemoveFromHistory(CScope::eRemoveIfLocked, true);//drop_from_ds
+    CTSE_ScopeInfo::RemoveFromHistory(tse, CScope::eRemoveIfLocked, true);//drop_from_ds
     _ASSERT(!tse_info->IsAttached());
     _ASSERT(!tse);
     if ( !ds_info->CanBeEdited() ) { // shared -> remove whole DS
@@ -2557,25 +2557,20 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
 
 void CScope_Impl::RemoveFromHistory(const CTSE_Handle& tse, int action)
 {
-    TConfWriteLockGuard guard(m_ConfLock);
-    x_RemoveFromHistory(Ref(&tse.x_GetScopeInfo()), action);
     if ( !tse ) {
-        const_cast<CTSE_Handle&>(tse).Reset();
+        return;
+    }
+    TConfWriteLockGuard guard(m_ConfLock);
+    if ( !tse ) {
+        return;
+    }
+    CTSE_ScopeInfo::RemoveFromHistory(tse, action);
+    if ( !tse ) {
+        // removed
+        x_ClearCacheOnRemoveData();
     }
     else {
         _ASSERT(action == CScope::eKeepIfLocked);
-    }
-}
-
-
-void CScope_Impl::x_RemoveFromHistory(CRef<CTSE_ScopeInfo> tse_info,
-                                      int action)
-{
-    _ASSERT(tse_info->IsAttached());
-    tse_info->RemoveFromHistory(action);
-    if ( !tse_info->IsAttached() ) {
-        // removed
-        x_ClearCacheOnRemoveData();
     }
 }
 

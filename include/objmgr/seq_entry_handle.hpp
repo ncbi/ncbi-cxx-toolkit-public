@@ -200,6 +200,9 @@ public:
     /// Reset handle and make it not to point to any seq-entry
     void Reset(void);
 
+    /// Reset handle and make it not to point to any seq-entry
+    void Swap(CSeq_entry_Handle& h);
+
     /// Check if handles point to the same seq-entry
     ///
     /// @sa
@@ -228,7 +231,6 @@ protected:
     typedef CScopeInfo_Ref<TScopeInfo> TLock;
 
     CSeq_entry_Handle(const CSeq_entry_Info& info, const CTSE_Handle& tse);
-    CSeq_entry_Handle(const TLock& lock);
 
     CScope_Impl& x_GetScopeImpl(void) const;
 

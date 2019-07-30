@@ -214,10 +214,12 @@ public:
     CSeq_feat_Handle GetGeneByRef(const CGene_ref& ref) const;
     TSeq_feat_Handles GetGenesByRef(const CGene_ref& ref) const;
 
+    void Swap(CTSE_Handle& tse);
 
 protected:
     friend class CScope_Impl;
     friend class CTSE_ScopeInfo;
+    friend class CScopeInfo_Base;
 
     typedef CTSE_ScopeInfo TScopeInfo;
 
@@ -307,6 +309,14 @@ inline
 CConstRef<CSeq_entry> CTSE_Handle::GetObjectCore(void) const
 {
     return GetTSECore();
+}
+
+
+inline
+void CTSE_Handle::Swap(CTSE_Handle& tse)
+{
+    m_Scope.Swap(tse.m_Scope);
+    m_TSE.Swap(tse.m_TSE);
 }
 
 
@@ -466,15 +476,9 @@ protected:
     friend class CTSE_ScopeInfo;
     friend class CScopeInfoLocker;
 
-    // attached new tse and object info
-    virtual NCBI_XOBJMGR_EXPORT void x_SetLock(const CTSE_ScopeUserLock& tse,
-                                               const CTSE_Info_Object& info);
-    virtual NCBI_XOBJMGR_EXPORT void x_ResetLock(void);
-
     // disconnect from TSE
     virtual NCBI_XOBJMGR_EXPORT void x_AttachTSE(CTSE_ScopeInfo* tse);
     virtual NCBI_XOBJMGR_EXPORT void x_DetachTSE(CTSE_ScopeInfo* tse);
-    virtual NCBI_XOBJMGR_EXPORT void x_ForgetTSE(CTSE_ScopeInfo* tse);
 
     enum ECheckFlags {
         fAllowZero  = 0x00,
@@ -486,20 +490,20 @@ protected:
     };
     typedef int TCheckFlags;
 
-    bool NCBI_XOBJMGR_EXPORT x_Check(TCheckFlags zero_counter_mode) const;
-    void NCBI_XOBJMGR_EXPORT x_RemoveLastInfoLock(void);
+    // attached new tse and object info
+    void NCBI_XOBJMGR_EXPORT x_ResetTSE_Lock(void);
+    void NCBI_XOBJMGR_EXPORT x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
+                                           const CTSE_Info_Object& info);
+    void NCBI_XOBJMGR_EXPORT x_SetTSE_Handle(const CTSE_Handle& tse);
 
     void AddInfoLock(void)
         {
-            _ASSERT(x_Check(fForceInfo));
             m_LockCounter.Add(1);
-            _ASSERT(x_Check(fForbidZero));
         }
     void RemoveInfoLock(void)
         {
-            _ASSERT(x_Check(fForbidZero));
             if ( m_LockCounter.Add(-1) <= 0 ) {
-                x_RemoveLastInfoLock();
+                x_ResetTSE_Lock();
             }
         }
 

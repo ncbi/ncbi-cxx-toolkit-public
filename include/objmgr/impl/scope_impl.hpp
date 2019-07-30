@@ -421,8 +421,6 @@ private:
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
-    void x_RemoveFromHistory(CRef<CTSE_ScopeInfo> tse_info,
-                             int action); // CScope::EActionIfLocked
 
     // clean some cache entries when new data source is added
     void x_ReportNewDataConflict(const CSeq_id_Handle* conflict_id = 0);

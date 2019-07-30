@@ -269,9 +269,33 @@ void CDataSource_ScopeInfo::AddTSE_Lock(const CTSE_Lock& lock)
     _VERIFY(m_TSE_LockSet.AddLock(lock));
 }
 
+//
+// CDataSource_ScopeInfo fields:
+//   m_TSE_InfoMap - history TSEs by their Blob-id, they may be unlocked with possibility to reload
+//   m_TSE_LockSet - all CTSE_Lock objects for lookup by CDataSource
+//   m_TSE_UnlockQueue - queue of CTSE_ScopeInternalLock ready to release their CTSE_Lock
+//   m_EditDS, m_ReplacedTSEs - edited entries support
+//
+// CTSE_ScopeInfo fields:
+//   m_ScopeInfoMap keeps track of sub-object ScopeInfo that's used in CSeq_entry_Handle and such.
+//     When new handle is created the ScopeInfo object is reused or created
+//     ScopeInfo objects are kept until m_TSE_Lock is being held
+//     Then m_TSE_Lock is released all ScopeInfo object are detached and released
+//   m_UsedTSE_Set rooted tree of dependent TSEs
+//   m_UsedByTSE parent pointer in the dependent TSEs tree
+//     The tree is cleared when internal lock is released,
+//     possibly causing release of internal locks of dependent TSEs.
+//
+// CScopeInfo<> fields:
+//   m_TSE_ScopeInfo - pointer to its TSE
+//   m_LockCounter - track count of corresponding handles
+//   m_TSE_Handle - holds TSE handle when m_LockCounter > 0
+//   m_ObjectInfo - pointer to CDataSource object
+//   m_DetachedInfo - mapping of sub-objects to CScopeInfo when object is removed from TSE (edit)
+//   
 /////////////////////////////////////////////////////////////////////////////
 // CScope TSE locking scheme.
-
+//
 // CTSE_ScopeUserLock is a link from user handles, it's also an internal lock.
 //
 // User lock maintains m_UserLockCounter, and when the last handle is deleted
@@ -290,13 +314,14 @@ void CDataSource_ScopeInfo::AddTSE_Lock(const CTSE_Lock& lock)
 // Internal locks are either links from user handles,
 // links from another TSE (master to segments, sequence to external annots),
 // or entries in m_TSE_UnlockQueue.
-// When the last internal lock is deleted the m_TSE_lock can be released if
-// the TSE can be reloaded later.
+// Internal lock maintains m_TSE_LockCounter, and when the last internal lock
+// is deleted the m_TSE_lock will be released if it's possible to reload
+// the TSE later.
 // When an internal lock is obtained it will be assigned with proper CTSE_Lock
 // if necessary, which could involve reloading of entry from CDataLoader.
 
 // So, possible states of CTSE_ScopeInfo are:
-//   0. detached:
+//   0 = Detached: detached from DS & Scope, can be only deleted
 //     m_DS_Info == null
 //     m_TSE_LockCounter >= 0
 //     m_UserLockCounter >= 0
@@ -306,7 +331,7 @@ void CDataSource_ScopeInfo::AddTSE_Lock(const CTSE_Lock& lock)
 //     m_ReplacedTSE == null
 //     m_BioseqById, m_ScopeInfoMap: empty
 //     not in m_TSE_UnlockQueue
-//   1. attached, unlocked
+//   1 = Unlocked: attached, unlocked, can be locked again
 //     m_DS_Info != null
 //     m_TSE_LockCounter == 0
 //     m_UserLockCounter == 0
@@ -315,7 +340,7 @@ void CDataSource_ScopeInfo::AddTSE_Lock(const CTSE_Lock& lock)
 //     m_ReplacedTSE
 //     m_BioseqById, m_ScopeInfoMap
 //     not in m_TSE_UnlockQueue
-//   2. attached, locked, no user handle locks
+//   2 = InternalLocked: attached, locked, no user handle locks
 //     m_DS_Info != null
 //     m_TSE_LockCounter > 0
 //     m_UserLockCounter == 0
@@ -326,7 +351,7 @@ void CDataSource_ScopeInfo::AddTSE_Lock(const CTSE_Lock& lock)
 //     m_BioseqById: any
 //     m_ScopeInfoMap: any
 //     may be m_TSE_UnlockQueue
-//   3. attached, locked, with user handle locks
+//   3 = UserLocked: attached, locked, with user handle locks
 //     m_DS_Info != null
 //     m_TSE_LockCounter > 0
 //     m_UserLockCounter > 0
@@ -337,6 +362,76 @@ void CDataSource_ScopeInfo::AddTSE_Lock(const CTSE_Lock& lock)
 //     m_BioseqById: any
 //     m_ScopeInfoMap: any
 //     not in m_TSE_UnlockQueue
+//
+// Notable conditions:
+//     (m_TSE_LockCounter == 0) => (not in m_TSE_UnlockQueue && not in UsedByTSE tree)
+//     (m_TSE_LockCounter > 0) => (m_TSE_Lock != null)
+//     (m_UserLockCounter > 0) => (not in m_TSE_UnlockQueue)
+//
+// TSE state changes:
+//   3 -> 2 when last user handle is destroyed (m_UserLockCounter becomes zero).
+//     method - CTSE_ScopeUserLock -> CTSE_ScopeInternalLock
+//     : put it in unlock queue
+//     : possibly release TSE pushed out from unlock queue (via InternalLock mechanics)
+//   2 -> 1 when last internal lock is released (e.g. pushed out of unlock queue).
+//     method - CTSE_ScopeInternalLock -> CRef<CTSE_ScopeInfo>(?)
+//     : release internal locks of used TSEs
+//   1 -> 2 when internal lock is obtained (user handle or TSE dependency).
+//     method - CRef<CTSE_ScopeInfo> -> CTSE_ScopeInternalLock
+//     : aquire TSE lock if necessary
+//   2 -> 3 when user handle is created
+//     method - CTSE_ScopeInternalLock -> CTSE_ScopeUserLock
+//     : remove from unlock queue
+//   1,2,3 -> 0 when TSE is forcely released (RemoveFromHistory() or similar).
+//     method - CTSE_ScopeUserLock -> null
+//   0 -> nothing
+//
+// CScopeObject states:
+//   0 = Detached completely: detached from Scope, DS, and TSE
+//     m_TSE_ScopeInfo == null
+//     m_LockCounter: any (number of existing handles)
+//     m_TSE_Handle == null
+//     m_ObjectInfo == null
+//     m_DetachedInfo == null
+//   1 = Detached: detached from Scope, DS, and TSE, can be reattached by user API
+//     m_TSE_ScopeInfo == null
+//     m_LockCounter: any (number of existing handles)
+//     m_TSE_Handle == null
+//     m_ObjectInfo != null
+//     m_DetachedInfo != null
+//   2 = Unlocked: CScopeObject is allocated but not used in any handle
+//     m_TSE_ScopeInfo != null
+//     m_LockCounter == 0
+//     m_TSE_Handle == null
+//     m_ObjectInfo != null
+//     m_DetachedInfo == null
+//   3 = UserLocked: there are handles to this object
+//     m_TSE_ScopeInfo != null
+//     m_LockCounter > 0
+//     m_TSE_Handle != null
+//     m_ObjectInfo != null
+//     m_DetachedInfo == null
+//
+// CScopeObject state changes:
+//   3 -> 2 when last user handle is destroyed (m_LockCounter becomes zero).
+//     method - x_LastReferenceReleased()
+//     : clear m_TSE_Handle
+//     : release old TSE_Handle out of mutex lock
+//   2 -> 3 when user handle is obtained
+//     methods - GetAnnotLock() etc
+//     : set m_TSE_Handle
+//   3,2 -> 0 when TSE is removed from history
+//     method - RemoveFromHistory(tse)
+//     : clear m_TSE_Handle, m_TSE_ScopeInfo, m_ObjectInfo
+//   3 -> 1 when the object is deleted from TSE (edit API)
+//     methods - RemoveAnnot() etc
+//     : information about all sub-objects is stored into m_DetachedInfo
+//     : clear m_TSE_Handle
+//   1 -> 3 when the object is attached to a TSE (edit API)
+//     methods - AddAnnot() etc
+//     : set m_TSE_Handle
+//     : m_DetachedInfo is used to restore CScopeObject of sub-objects
+//   0 -> nothing
 
 // get user lock for a CTSE_Lock (in CDataSource)
 // create CTSE_ScopeInfo if necessary
@@ -478,8 +573,11 @@ void CDataSource_ScopeInfo::ReleaseTSEUserLock(CTSE_ScopeInfo& tse)
 // Called when lock counter becomes non-zero
 void CDataSource_ScopeInfo::AcquireTSEUserLock(CTSE_ScopeInfo& tse)
 {
-    TTSE_LockSetMutex::TWriteLockGuard tse_guard(m_TSE_UnlockQueueMutex);
-    m_TSE_UnlockQueue.Erase(&tse);
+    {{
+        // TODO: possible deadlock (1), m_TSE_UnlockQueueMutex is taken before m_TSE_LockMutex
+        TTSE_LockSetMutex::TWriteLockGuard tse_guard(m_TSE_UnlockQueueMutex);
+        m_TSE_UnlockQueue.Erase(&tse);
+    }}
     if ( !tse.m_TSE_Lock ) {
         CDataSource_ScopeInfo* ds = tse.m_DS_Info;
         if ( !ds ) {
@@ -1033,6 +1131,10 @@ void CTSE_ScopeInfo::x_UserLockTSE(void)
     if ( m_UserLockCounter.Add(1) == 1 || !GetTSE_Lock() ) {
         //_ASSERT(CanBeUnloaded());
         if ( IsAttached() ) {
+            // TODO: possible race - if the TSE becomes detached after the above check
+            // scenario - in several threads:
+            //   1. get new TSE handle
+            //   2. call RemoveFromHistory()
             GetDSInfo().AcquireTSEUserLock(*this);
         }
     }
@@ -1201,6 +1303,7 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
     CTSE_Lock old_tse_lock = m_TSE_Lock;
     
     TScopeInfoMap old_map; // save old scope info map
+    CMutexGuard guard2(m_ScopeInfoMapMutex);
     old_map.swap(m_ScopeInfoMap);
     TBioseqById old_bioseq_map; // save old bioseq info map
     old_bioseq_map.swap(m_BioseqById);
@@ -1289,14 +1392,17 @@ void CTSE_ScopeInfo::ForgetTSE_Lock(void)
     if ( !m_TSE_Lock ) {
         return;
     }
-    NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
-        _ASSERT(!it->second->m_TSE_Handle.m_TSE);
-        it->second->m_ObjectInfo.Reset();
-        if ( it->second->IsTemporary() ) {
-            it->second->x_DetachTSE(this);
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
+            _ASSERT(!it->second->m_TSE_Handle.m_TSE);
+            it->second->m_ObjectInfo.Reset();
+            if ( it->second->IsTemporary() ) {
+                it->second->x_DetachTSE(this);
+            }
         }
-    }
-    m_ScopeInfoMap.clear();
+        m_ScopeInfoMap.clear();
+    }}
     x_ResetTSE_Lock();
 }
 
@@ -1308,12 +1414,16 @@ void CTSE_ScopeInfo::x_DetachDS(void)
     }
     ReleaseUsedTSEs();
     CMutexGuard guard(m_TSE_LockMutex);
-    NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
-        it->second->m_TSE_Handle.Reset();
-        it->second->m_ObjectInfo.Reset();
-        it->second->x_DetachTSE(this);
-    }
-    m_ScopeInfoMap.clear();
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
+            //_ASSERT(!it->second->m_TSE_Handle.m_TSE);
+            it->second->m_TSE_Handle.Reset();
+            it->second->m_ObjectInfo.Reset();
+            it->second->x_DetachTSE(this);
+        }
+        m_ScopeInfoMap.clear();
+    }}
     m_TSE_Lock.Reset();
     while ( !m_BioseqById.empty() ) {
         CRef<CBioseq_ScopeInfo> bioseq = m_BioseqById.begin()->second;
@@ -1335,21 +1445,43 @@ int CTSE_ScopeInfo::x_GetDSLocksCount(void) const
 }
 
 
-bool CTSE_ScopeInfo::IsUserLocked(void) const
+pair<bool, CScopeInfo_Base*> CTSE_ScopeInfo::GetUserLockState(const CTSE_Handle* tseh) const
 {
-    return int(m_UserLockCounter.Get()) > 0;
+    pair<bool, CScopeInfo_Base*> ret;
+    if ( !tseh ) {
+        // no request handle, use simple handle lock count
+        ret.first = IsUserLocked();
+        return ret;
+    }
+    // now we have one handle already
+    _ASSERT(&tseh->x_GetScopeInfo() == this);
+    _ASSERT(m_UserLockCounter.Get() >= 1);
+    if ( m_UserLockCounter.Get() > 1 ) {
+        // there are more sub-object handles
+        ret.first = true;
+        return ret;
+    }
+    // now we may have several sub-object handles pointing to the same object
+    // scan m_ScopeInfoMap for a possible handle having tseh inside
+    CMutexGuard guard(m_ScopeInfoMapMutex);
+    for ( auto& s : m_ScopeInfoMap ) {
+        if ( &s.second->m_TSE_Handle == tseh ) {
+            _ASSERT(s.second->m_LockCounter.Get() >= 1);
+            ret.second = s.second.GetNCPointer();
+            ret.first = s.second->m_LockCounter.Get() > 1;
+            return ret;
+        }
+    }
+    return ret;
 }
 
 
-bool CTSE_ScopeInfo::IsUserLockedMoreThanOnce(void) const
+void CTSE_ScopeInfo::RemoveFromHistory(const CTSE_Handle* tseh,
+                                       int action_if_locked,
+                                       bool drop_from_ds)
 {
-    return int(m_UserLockCounter.Get()) > 1;
-}
-
-
-void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked, bool drop_from_ds)
-{
-    if ( IsUserLockedMoreThanOnce() ) {
+    auto locked = GetUserLockState(tseh);
+    if ( locked.first ) {
         switch ( action_if_locked ) {
         case CScope::eKeepIfLocked:
             return;
@@ -1361,8 +1493,21 @@ void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked, bool drop_from_ds)
             break;
         }
     }
+    CTSE_Handle tse;
+    if ( locked.second ) {
+        tse.Swap(locked.second->m_TSE_Handle);
+        _ASSERT(&tse.x_GetScopeInfo() == this);
+    }
     CUnlockedTSEsGuard guard;
     GetDSInfo().RemoveFromHistory(*this, drop_from_ds);
+}
+
+
+void CTSE_ScopeInfo::RemoveFromHistory(const CTSE_Handle& tseh,
+                                       int action_if_locked,
+                                       bool drop_from_ds)
+{
+    tseh.x_GetScopeInfo().RemoveFromHistory(&tseh, action_if_locked, drop_from_ds);
 }
 
 
@@ -1410,64 +1555,52 @@ CTSE_ScopeInfo::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
     }
 }
 
+
+// Action A5.
+template<class TScopeInfo>
+CScopeInfo_Ref<TScopeInfo>
+CTSE_ScopeInfo::x_GetScopeLock(const CTSE_Handle& tse,
+                               const typename TScopeInfo::TObjectInfo& info)
+{
+    CRef<TScopeInfo> scope_info;
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        _ASSERT(x_SameTSE(tse.x_GetTSE_Info()));
+        TScopeInfoMapKey key(&info);
+        TScopeInfoMap::iterator iter = m_ScopeInfoMap.lower_bound(key);
+        if ( iter == m_ScopeInfoMap.end() || iter->first != key ) {
+            scope_info = new TScopeInfo(tse, info);
+            TScopeInfoMapValue value(scope_info);
+            m_ScopeInfoMap.insert(iter, TScopeInfoMap::value_type(key, value));
+            value->m_ObjectInfo = &info;
+        }
+        else {
+            _ASSERT(iter->second->HasObject());
+            _ASSERT(&iter->second->GetObjectInfo_Base() == &info);
+            scope_info = &dynamic_cast<TScopeInfo&>(*iter->second);
+        }
+    }}
+    CScopeInfo_Ref<TScopeInfo> ret(*scope_info);
+    ret->x_SetTSE_Handle(tse);
+    return ret;
+}
+
+
 // Action A5.
 CTSE_ScopeInfo::TSeq_entry_Lock
 CTSE_ScopeInfo::GetScopeLock(const CTSE_Handle& tse,
                              const CSeq_entry_Info& info)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
-    _ASSERT(x_SameTSE(tse.x_GetTSE_Info()));
-    CRef<CSeq_entry_ScopeInfo> scope_info;
-    TScopeInfoMapKey key(&info);
-    TScopeInfoMap::iterator iter = m_ScopeInfoMap.lower_bound(key);
-    if ( iter == m_ScopeInfoMap.end() || iter->first != key ) {
-        scope_info = new CSeq_entry_ScopeInfo(tse, info);
-        TScopeInfoMapValue value(scope_info);
-        m_ScopeInfoMap.insert(iter, TScopeInfoMap::value_type(key, value));
-        value->m_ObjectInfo = &info;
-    }
-    else {
-        _ASSERT(iter->second->HasObject());
-        _ASSERT(&iter->second->GetObjectInfo_Base() == &info);
-        scope_info = &dynamic_cast<CSeq_entry_ScopeInfo&>(*iter->second);
-    }
-    if ( !scope_info->m_TSE_Handle.m_TSE ) {
-        scope_info->m_TSE_Handle = tse.m_TSE;
-    }
-    _ASSERT(scope_info->IsAttached());
-    _ASSERT(scope_info->m_TSE_Handle.m_TSE);
-    _ASSERT(scope_info->HasObject());
-    return TSeq_entry_Lock(*scope_info);
+    return x_GetScopeLock<CSeq_entry_ScopeInfo>(tse, info);
 }
+
 
 // Action A5.
 CTSE_ScopeInfo::TSeq_annot_Lock
 CTSE_ScopeInfo::GetScopeLock(const CTSE_Handle& tse,
                              const CSeq_annot_Info& info)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
-    _ASSERT(x_SameTSE(tse.x_GetTSE_Info()));
-    CRef<CSeq_annot_ScopeInfo> scope_info;
-    TScopeInfoMapKey key(&info);
-    TScopeInfoMap::iterator iter = m_ScopeInfoMap.lower_bound(key);
-    if ( iter == m_ScopeInfoMap.end() || iter->first != key ) {
-        scope_info = new CSeq_annot_ScopeInfo(tse, info);
-        TScopeInfoMapValue value(scope_info);
-        m_ScopeInfoMap.insert(iter, TScopeInfoMap::value_type(key, value));
-        value->m_ObjectInfo = &info;
-    }
-    else {
-        _ASSERT(iter->second->HasObject());
-        _ASSERT(&iter->second->GetObjectInfo_Base() == &info);
-        scope_info = &dynamic_cast<CSeq_annot_ScopeInfo&>(*iter->second);
-    }
-    if ( !scope_info->m_TSE_Handle.m_TSE ) {
-        scope_info->m_TSE_Handle = tse.m_TSE;
-    }
-    _ASSERT(scope_info->IsAttached());
-    _ASSERT(scope_info->m_TSE_Handle.m_TSE);
-    _ASSERT(scope_info->HasObject());
-    return TSeq_annot_Lock(*scope_info);
+    return x_GetScopeLock<CSeq_annot_ScopeInfo>(tse, info);
 }
 
 // Action A5.
@@ -1475,29 +1608,7 @@ CTSE_ScopeInfo::TBioseq_set_Lock
 CTSE_ScopeInfo::GetScopeLock(const CTSE_Handle& tse,
                              const CBioseq_set_Info& info)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
-    _ASSERT(x_SameTSE(tse.x_GetTSE_Info()));
-    CRef<CBioseq_set_ScopeInfo> scope_info;
-    TScopeInfoMapKey key(&info);
-    TScopeInfoMap::iterator iter = m_ScopeInfoMap.lower_bound(key);
-    if ( iter == m_ScopeInfoMap.end() || iter->first != key ) {
-        scope_info = new CBioseq_set_ScopeInfo(tse, info);
-        TScopeInfoMapValue value(scope_info);
-        m_ScopeInfoMap.insert(iter, TScopeInfoMap::value_type(key, value));
-        value->m_ObjectInfo = &info;
-    }
-    else {
-        _ASSERT(iter->second->HasObject());
-        _ASSERT(&iter->second->GetObjectInfo_Base() == &info);
-        scope_info = &dynamic_cast<CBioseq_set_ScopeInfo&>(*iter->second);
-    }
-    if ( !scope_info->m_TSE_Handle.m_TSE ) {
-        scope_info->m_TSE_Handle = tse.m_TSE;
-    }
-    _ASSERT(scope_info->IsAttached());
-    _ASSERT(scope_info->m_TSE_Handle.m_TSE);
-    _ASSERT(scope_info->HasObject());
-    return TBioseq_set_Lock(*scope_info);
+    return x_GetScopeLock<CBioseq_set_ScopeInfo>(tse, info);
 }
 
 // Action A5.
@@ -1505,6 +1616,8 @@ CTSE_ScopeInfo::TBioseq_Lock
 CTSE_ScopeInfo::GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
                               CConstRef<CBioseq_Info> bioseq)
 {
+    // TODO: possible deadlock (1), m_TSE_LockMutex is taken before m_TSE_UnlockQueueMutex
+    // this thread calls GetBioseqHandle()
     CMutexGuard guard(m_TSE_LockMutex);
     CTSE_ScopeUserLock tse(this);
     _ASSERT(m_TSE_Lock);
@@ -1522,27 +1635,26 @@ CTSE_ScopeInfo::GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
         }
         else {
             // unnamed bioseq, look in object map, create if necessary
-            TScopeInfoMapKey key(bioseq);
-            TScopeInfoMap::iterator iter = m_ScopeInfoMap.lower_bound(key);
-            if ( iter == m_ScopeInfoMap.end() || iter->first != key ) {
-                info = new CBioseq_ScopeInfo(*this);
-                TScopeInfoMapValue value(info);
-                iter = m_ScopeInfoMap
-                    .insert(iter, TScopeInfoMap::value_type(key, value));
-                value->m_ObjectInfo = &*bioseq;
-            }
-            else {
-                _ASSERT(iter->second->HasObject());
-                _ASSERT(&iter->second->GetObjectInfo_Base() == &*bioseq);
-                info.Reset(&dynamic_cast<CBioseq_ScopeInfo&>(*iter->second));
-            }
-            if ( !info->m_TSE_Handle.m_TSE ) {
-                info->m_TSE_Handle = tse;
-            }
-            _ASSERT(info->IsAttached());
-            _ASSERT(info->m_TSE_Handle.m_TSE);
-            _ASSERT(info->HasObject());
-            return TBioseq_Lock(*info);
+            {{
+                CMutexGuard guard2(m_ScopeInfoMapMutex);
+                TScopeInfoMapKey key(bioseq);
+                TScopeInfoMap::iterator iter = m_ScopeInfoMap.lower_bound(key);
+                if ( iter == m_ScopeInfoMap.end() || iter->first != key ) {
+                    info = new CBioseq_ScopeInfo(*this);
+                    TScopeInfoMapValue value(info);
+                    iter = m_ScopeInfoMap
+                        .insert(iter, TScopeInfoMap::value_type(key, value));
+                    value->m_ObjectInfo = &*bioseq;
+                }
+                else {
+                    _ASSERT(iter->second->HasObject());
+                    _ASSERT(&iter->second->GetObjectInfo_Base() == &*bioseq);
+                    info.Reset(&dynamic_cast<CBioseq_ScopeInfo&>(*iter->second));
+                }
+            }}
+            TBioseq_Lock ret(*info);
+            ret->x_SetTSE_Handle(tse);
+            return ret;
         }
     }
     _ASSERT(info);
@@ -1564,50 +1676,20 @@ CTSE_ScopeInfo::GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
         }
         _ASSERT(bioseq);
         _ASSERT(bioseq->GetId() == info->GetIds());
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
         TScopeInfoMapKey key(bioseq);
         TScopeInfoMapValue value(info);
         _VERIFY(m_ScopeInfoMap
                 .insert(TScopeInfoMap::value_type(key, value)).second);
-        info->m_ObjectInfo = &*bioseq;
-        info->x_SetLock(tse, *bioseq);
     }
-    if ( !info->m_TSE_Handle.m_TSE ) {
-        info->m_TSE_Handle = tse;
+    TBioseq_Lock ret(*info);
+    if ( bioseq ) {
+        ret->x_SetTSE_Lock(tse, *bioseq);
     }
-    _ASSERT(info->HasObject());
-    _ASSERT(info->GetObjectInfo().BelongsToTSE_Info(*m_TSE_Lock));
-    _ASSERT(m_ScopeInfoMap.find(TScopeInfoMapKey(&info->GetObjectInfo()))->second == info);
-    _ASSERT(info->IsAttached());
-    _ASSERT(info->m_TSE_Handle.m_TSE);
-    _ASSERT(info->HasObject());
-    return TBioseq_Lock(*info);
-}
-
-
-// Action A1
-void CTSE_ScopeInfo::RemoveLastInfoLock(CScopeInfo_Base& info)
-{
-    if ( !info.m_TSE_Handle.m_TSE ) {
-        // already unlocked
-        return;
+    else {
+        ret->x_SetTSE_Handle(tse);
     }
-    CRef<CScope_Impl> scope;
-    CRef<CTSE_ScopeInfo> self;
-    CUnlockedTSEsGuard guard;
-    {{
-        CMutexGuard guard_mtx(m_TSE_LockMutex);
-        if (!info.m_TSE_Handle.m_TSE) {
-            // already unlocked
-            return;
-        }
-        if ( info.m_LockCounter.Get() > 0 ) {
-            // already locked again
-            return;
-        }
-        scope = m_DS_Info->m_Scope; // to prevent premature deletion of scope
-        self = this; // to prevent deletion of this while mutex is locked.
-        info.m_TSE_Handle.Reset();
-    }}
+    return ret;
 }
 
 
@@ -1717,10 +1799,12 @@ void CTSE_ScopeInfo::RemoveAnnot(CSeq_annot_ScopeInfo& info)
 {
     CMutexGuard guard(m_TSE_LockMutex);
     _ASSERT(info.IsAttached());
+    _ASSERT(info.GetObjectInfo().BelongsToTSE_Info(*m_TSE_Lock));
     CSeq_annot_Info& annot = info.GetNCObjectInfo();
     annot.GetParentBioseq_Base_Info().RemoveAnnot(Ref(&annot));
     x_SaveRemoved(info);
     _ASSERT(info.IsDetached());
+    _ASSERT(!info.GetObjectInfo().HasTSE_Info());
 }
 
 
@@ -1764,10 +1848,12 @@ void CTSE_ScopeInfo::AddAnnot(CSeq_entry_ScopeInfo& parent,
                               CSeq_annot_ScopeInfo& child)
 {
     CMutexGuard guard(m_TSE_LockMutex);
+    _ASSERT(!child.GetObjectInfo().HasTSE_Info());
     x_CheckAdded(parent, child);
     parent.GetNCObjectInfo().AddAnnot(Ref(&child.GetNCObjectInfo()));
     x_RestoreAdded(parent, child);
     _ASSERT(child.IsAttached());
+    _ASSERT(child.GetObjectInfo().BelongsToTSE_Info(*m_TSE_Lock));
 }
 
 
@@ -1814,23 +1900,25 @@ void CTSE_ScopeInfo::x_SaveRemoved(CScopeInfo_Base& info)
     _ASSERT(!m_UnloadedInfo); // this TSE cannot be unloaded
     _ASSERT(m_TSE_Lock); // and TSE is locked
     _TRACE("x_SaveRemoved("<<&info<<") TSE: "<<this);
-    for ( TScopeInfoMap::iterator it = m_ScopeInfoMap.begin();
-          it != m_ScopeInfoMap.end(); ) {
-        if ( !it->first->BelongsToTSE_Info(*m_TSE_Lock) ) {
-            _TRACE(" "<<it->second<<" " << it->first);
-            it->second->m_TSE_Handle.Reset();
-            it->second->x_DetachTSE(this);
-            if ( &*it->second != &info ) {
-                _ASSERT(it->first->HasParent_Info());
-                save->GetData().push_back(TDetachedInfoElement(it->first,
-                                                               it->second));
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        for ( TScopeInfoMap::iterator it = m_ScopeInfoMap.begin(); it != m_ScopeInfoMap.end(); ) {
+            if ( !it->first->BelongsToTSE_Info(*m_TSE_Lock) ) {
+                _TRACE(" "<<it->second<<" " << it->first);
+                it->second->m_TSE_Handle.Reset();
+                it->second->x_DetachTSE(this);
+                if ( &*it->second != &info ) {
+                    _ASSERT(it->first->HasParent_Info());
+                    save->GetData().push_back(TDetachedInfoElement(it->first,
+                                                                   it->second));
+                }
+                m_ScopeInfoMap.erase(it++);
             }
-            m_ScopeInfoMap.erase(it++);
+            else {
+                ++it;
+            }
         }
-        else {
-            ++it;
-        }
-    }
+    }}
     _ASSERT(info.IsDetached()); // info is already detached
     _ASSERT(m_TSE_Lock);
     info.m_DetachedInfo.Reset(save); // save m_DetachedInfo
@@ -1869,17 +1957,20 @@ void CTSE_ScopeInfo::x_RestoreAdded(CScopeInfo_Base& parent,
     infos->GetData().push_back
         (TDetachedInfoElement(ConstRef(&child.GetObjectInfo_Base()),
                               Ref(&child)));
-    
-    ITERATE ( TDetachedInfo, it, infos->GetData() ) {
-        _TRACE(" "<<it->second<<" " << it->first);
-        CScopeInfo_Base& info = it->second.GetNCObject();
-        if ( info.m_LockCounter.Get() > 0 ) {
-            info.x_AttachTSE(this);
-            _VERIFY(m_ScopeInfoMap.insert
-                    (TScopeInfoMap::value_type(it->first, it->second)).second);
-            info.m_TSE_Handle = parent.m_TSE_Handle;
+
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        ITERATE ( TDetachedInfo, it, infos->GetData() ) {
+            _TRACE(" "<<it->second<<" " << it->first);
+            CScopeInfo_Base& info = it->second.GetNCObject();
+            if ( info.m_LockCounter.Get() > 0 ) {
+                info.x_AttachTSE(this);
+                _VERIFY(m_ScopeInfoMap.insert
+                        (TScopeInfoMap::value_type(it->first, it->second)).second);
+                info.x_SetTSE_Handle(parent.m_TSE_Handle);
+            }
         }
-    }
+    }}
     _ASSERT(child.IsAttached());
     _ASSERT(child.m_TSE_Handle.m_TSE);
     _ASSERT(child.HasObject());
@@ -2002,16 +2093,6 @@ void CBioseq_ScopeInfo::x_DetachTSE(CTSE_ScopeInfo* tse)
     }
     CScopeInfo_Base::x_DetachTSE(tse);
     BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_DetachTSE "<<tse<<" DONE");
-}
-
-
-void CBioseq_ScopeInfo::x_ForgetTSE(CTSE_ScopeInfo* tse)
-{
-    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_ForgetTSE "<<tse);
-    m_SynCache.Reset();
-    m_BioseqAnnotRef_Info.Reset();
-    CScopeInfo_Base::x_ForgetTSE(tse);
-    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_ForgetTSE "<<tse<<" DONE");
 }
 
 

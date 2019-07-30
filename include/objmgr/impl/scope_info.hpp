@@ -363,7 +363,12 @@ public:
     CDataSource_ScopeInfo& GetDSInfo(void) const;
 
     bool IsAttached(void) const;
-    void RemoveFromHistory(int action_if_locked, bool drop_from_ds = false);//CScope_Impl::EActionIfLocked
+    void RemoveFromHistory(const CTSE_Handle* tseh,
+                           int action_if_locked,//CScope_Impl::EActionIfLocked
+                           bool drop_from_ds = false);
+    static void RemoveFromHistory(const CTSE_Handle& tseh,
+                                  int action_if_locked,//CScope_Impl::EActionIfLocked
+                                  bool drop_from_ds = false);
 
     bool HasResolvedBioseq(const CSeq_id_Handle& id) const;
 
@@ -372,8 +377,8 @@ public:
 
     // True if the TSE is referenced
     bool IsUserLocked(void) const;
-    // True if the TSE is referenced by more than one handle
-    bool IsUserLockedMoreThanOnce(void) const;
+    // True if the TSE is referenced by more than by one handle
+    pair<bool, CScopeInfo_Base*> GetUserLockState(const CTSE_Handle* tseh) const;
 
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
     // returns matching Seq-id handle
@@ -428,8 +433,6 @@ public:
     void x_CheckAdded(CScopeInfo_Base& parent, CScopeInfo_Base& child);
     void x_RestoreAdded(CScopeInfo_Base& parent, CScopeInfo_Base& child);
 
-    void RemoveLastInfoLock(CScopeInfo_Base& info);
-
     friend class CTSE_ScopeInfo_Base;
 
     void ForgetTSE_Lock(void);
@@ -442,6 +445,9 @@ public:
     SSeqMatch_Scope Resolve(const CSeq_id_Handle& id);
 
 protected:
+    template<class TScopeInfo>
+    CScopeInfo_Ref<TScopeInfo> x_GetScopeLock(const CTSE_Handle& tse,
+                                              const typename TScopeInfo::TObjectInfo& info);
     void x_SetTSE_Lock(const CTSE_Lock& lock);
     void x_ResetTSE_Lock(void);
     void x_DetachDS(void);
@@ -499,6 +505,7 @@ private: // members
 
     TBlobId                     m_ReplacedTSE;
 
+    mutable CMutex              m_ScopeInfoMapMutex;
     TScopeInfoMap               m_ScopeInfoMap;
 
 private: // to prevent copying
@@ -572,10 +579,8 @@ protected: // protected object manager interface
     friend class CTSE_ScopeInfo;
     friend class CSeq_id_ScopeInfo;
 
-    //void x_ResetLock(void);
     void x_AttachTSE(CTSE_ScopeInfo* tse);
     void x_DetachTSE(CTSE_ScopeInfo* tse);
-    void x_ForgetTSE(CTSE_ScopeInfo* tse);
 
 private: // members
     // Real Seq-ids of the bioseq.
@@ -725,6 +730,13 @@ inline
 const CTSE_Lock& CTSE_ScopeInfo::GetTSE_Lock(void) const
 {
     return m_TSE_Lock;
+}
+
+
+inline
+bool CTSE_ScopeInfo::IsUserLocked(void) const
+{
+    return int(m_UserLockCounter.Get()) > 0;
 }
 
 

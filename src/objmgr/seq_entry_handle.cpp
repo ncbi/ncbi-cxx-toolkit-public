@@ -68,9 +68,9 @@ CSeq_entry_Handle::CSeq_entry_Handle(const CSeq_entry_Info& info,
 }
 
 
-CSeq_entry_Handle::CSeq_entry_Handle(const TLock& lock)
-    : m_Info(lock)
+void CSeq_entry_Handle::Swap(CSeq_entry_Handle& h)
 {
+    m_Info.Swap(h.m_Info);
 }
 
 

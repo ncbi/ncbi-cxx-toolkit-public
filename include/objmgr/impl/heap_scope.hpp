@@ -125,6 +125,11 @@ public:
             m_Scope.Reset();
         }
 
+    void Swap(CHeapScope& scope)
+        {
+            m_Scope.Swap(scope.m_Scope);
+        }
+
 private:
     // the reference has to be CObject* to avoid circular header dep.
     CRef<CObject> m_Scope;
