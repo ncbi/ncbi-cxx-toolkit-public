@@ -569,8 +569,6 @@ CGBDataLoader::GetRealBlobId(const CTSE_Info& tse_info) const
 static set<TGi> s_IgnoreGis = {
     // Missing in PSG database
     GI_CONST(156205), GI_CONST(156206), GI_CONST(156208), GI_CONST(156232), GI_CONST(156323),
-    // Wrong state
-    GI_CONST(377650155),
     // test_objmgr_data errors
     GI_CONST(156514), GI_CONST(156515), GI_CONST(156592), GI_CONST(156610), GI_CONST(156613)
 };

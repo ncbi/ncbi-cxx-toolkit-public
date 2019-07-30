@@ -270,7 +270,7 @@ SPsgBlobInfo::SPsgBlobInfo(const CPSG_BlobInfo& blob_info)
     blob_id_split = blob_info.GetSplitInfoBlobId().Get();
 
     if (blob_info.IsDead()) blob_state |= CBioseq_Handle::fState_dead;
-    if (blob_info.IsSuppressed()) blob_state |= CBioseq_Handle::fState_suppress;
+    if (blob_info.IsSuppressed()) blob_state |= CBioseq_Handle::fState_suppress_perm;
     if (blob_info.IsWithdrawn()) blob_state |= CBioseq_Handle::fState_withdrawn;
 
     blob_version = blob_info.GetVersion() / 60000;
