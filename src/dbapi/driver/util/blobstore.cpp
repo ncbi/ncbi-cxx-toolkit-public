@@ -74,7 +74,12 @@ ERW_Result CBlobWriter::Write(const void* buf,
     if(bytes_written) *bytes_written= n;
     if(m_Blob.Size() > m_Limit) {
         // blob is off limit
-        if(!storeBlob()) return eRW_Error;
+        if( !storeBlob() ) {
+            if (bytes_written != NULL) {
+                *bytes_written = 0;
+            }
+            return eRW_Error;
+        }
     }
     return eRW_Success;
 }
