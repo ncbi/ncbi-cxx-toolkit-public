@@ -35,6 +35,7 @@
 # Load configuration options
 x_check_scripts_dir=`dirname "$0"`
 x_scripts_dir=`dirname "$x_check_scripts_dir"`
+x_scripts_dir=`dirname "$x_scripts_dir"`
 . ${x_check_scripts_dir}/check_setup.cfg
 
 
@@ -160,6 +161,7 @@ build_dir="$x_build_dir"
 conf_dir="$x_conf_dir"
 compile_dir="$x_compile_dir"
 bin_dir="$x_bin_dir"
+script_dir="$x_scripts_dir"
 script="$x_out"
 cygwin=$cygwin
 signature="$x_signature"
@@ -180,7 +182,7 @@ no_report_err=true
 
 
 # Include COMMON.SH
-. \${root_dir}/scripts/common/common.sh
+. \${script_dir}/common/common.sh
 
 
 # Printout USAGE info and exit
@@ -328,7 +330,7 @@ if test -z "\$NCBI_TEST_DATA_PATH"; then
 fi
 
 # Valgrind/Helgrind configurations
-VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"
+VALGRIND_SUP="\${script_dir}/common/check/valgrind.supp"
 VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"
 HELGRIND_CMD="--tool=helgrind --suppressions=\$VALGRIND_SUP"
 if (valgrind --ncbi --help) >/dev/null 2>&1; then
@@ -337,9 +339,9 @@ if (valgrind --ncbi --help) >/dev/null 2>&1; then
 fi
 
 # Leak- and Thread- Sanitizers (GCC 7.3, -fsanitize= flags)
-LSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/lsan.supp:exitcode=0"
+LSAN_OPTIONS="suppressions=\${script_dir}/common/check/lsan.supp:exitcode=0"
 export LSAN_OPTIONS
-TSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/tsan.supp"
+TSAN_OPTIONS="suppressions=\${script_dir}/common/check/tsan.supp"
 export TSAN_OPTIONS
 
 # Export some global vars
@@ -356,7 +358,7 @@ if test -z "\$NCBI_EXPORT_PROJECT"; then
 fi
 
 # Add additional necessary directories to PATH: current, build, scripts, utility and $HOME/bin (for Ubuntu).
-PATH=".:\${build_dir}:\${bin_dir}:\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:\${PATH}"
+PATH=".:\${build_dir}:\${bin_dir}:\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:\${PATH}"
 export PATH
 
 # Export bin and lib pathes
@@ -365,8 +367,8 @@ CFG_LIB="\${conf_dir}/lib"
 export CFG_BIN CFG_LIB
 
 # Define time-guard script to run tests from other scripts
-check_exec="\$root_dir/scripts/common/check/check_exec.sh"
-CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
+check_exec="\${script_dir}/common/check/check_exec.sh"
+CHECK_EXEC="\${script_dir}/common/check/check_exec_test.sh"
 CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 CHECK_SIGNATURE="\$signature"
 export CHECK_EXEC
@@ -413,7 +415,7 @@ EOF
 if test -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib";  then
    cat >> $x_out <<EOF
 # Add a library path for running tests
-. \$root_dir/scripts/common/common.sh
+. \${script_dir}/common/common.sh
 COMMON_AddRunpath "\$conf_dir/lib"
 EOF
 else
