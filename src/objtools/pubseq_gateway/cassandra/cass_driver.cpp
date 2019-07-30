@@ -1619,6 +1619,21 @@ const CassValue * CCassQuery::GetColumn(const char * name) const
     return clm;
 }
 
+template<>
+string CCassQuery::GetColumnDef(int ifld) const {
+    return ToString() + "\ncolumn: " + NStr::NumericToString(ifld);
+}
+
+template<>
+string CCassQuery::GetColumnDef(const string& name) const {
+    return ToString() + "\ncolumn: " + name;
+}
+
+template<>
+string CCassQuery::GetColumnDef(const char* name) const {
+    return ToString() + "\ncolumn: " + string(name);
+}
+
 string CCassQuery::ToString() const
 {
     string params;
