@@ -86,10 +86,16 @@
 ##  extensions
 ##    NCBI_register_hook(event callback_function)
 ##      events:
-##        TARGETDONE - build target is added
-##        CFGDONE    - all targets are added
+##        TARGET_PARSED - a project is parsed
+##        ALL_PARSED    - all projects in the source tree are parsed
+##        COLLECTED     - all build targets are collected
+##        TARGET_ADDED  - build target is added
+##        ALL_ADDED     - all targets are added
+##        DATASPEC      - process data specification
 ##  
 #############################################################################
+
+
 function(NCBI_add_root_subdirectory)
 
     set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -107,6 +113,7 @@ function(NCBI_add_root_subdirectory)
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS "")
 
         NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
+        set(NCBI_PTB_CALLBACK_ALL_PARSED TRUE)
 
         set(NCBI_PTBMODE_COLLECT_DEPS OFF)
         get_property(_allprojects     GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS)
@@ -157,6 +164,7 @@ endif()
         foreach(_prj IN LISTS NCBI_PTB_ALLOWED_PROJECTS)
             NCBI_internal_collect_requires(${_prj})
         endforeach()
+        set(NCBI_PTB_CALLBACK_COLLECTED TRUE)
         foreach(_prj IN LISTS NCBI_PTB_ALLOWED_PROJECTS)
             if (NCBI_VERBOSE_PROJECT_${_prj})
                 NCBI_internal_print_project_info(${_prj})
@@ -171,8 +179,7 @@ endif()
     endforeach()
 
     NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
-
-    set(NCBI_PTB_CFGDONE_CALLBACK TRUE)
+    set(NCBI_PTB_CALLBACK_ALL_ADDED TRUE)
 
     set(_report "")
     foreach( _type IN LISTS _known_types)
@@ -650,10 +657,23 @@ endfunction()
 
 ##############################################################################
 function(NCBI_register_hook _event _callback)
-    if("${_event}" STREQUAL "TARGETDONE")
-        variable_watch(NCBI_PTB_TARGETDONE_CALLBACK ${_callback})
-    elseif("${_event}" STREQUAL "CFGDONE")
-        variable_watch(NCBI_PTB_CFGDONE_CALLBACK ${_callback})
+    if("${_event}" STREQUAL "TARGET_PARSED")
+        variable_watch(NCBI_PTB_CALLBACK_TARGET_PARSED ${_callback})
+    elseif("${_event}" STREQUAL "ALL_PARSED")
+        variable_watch(NCBI_PTB_CALLBACK_ALL_PARSED ${_callback})
+    elseif("${_event}" STREQUAL "COLLECTED")
+        variable_watch(NCBI_PTB_CALLBACK_COLLECTED ${_callback})
+    elseif("${_event}" STREQUAL "TARGET_ADDED")
+        variable_watch(NCBI_PTB_CALLBACK_TARGET_ADDED ${_callback})
+    elseif("${_event}" STREQUAL "ALL_ADDED")
+        variable_watch(NCBI_PTB_CALLBACK_ALL_ADDED ${_callback})
+    elseif("${_event}" STREQUAL "DATASPEC")
+        if ("${ARGC}" LESS "3")
+            message(FATAL_ERROR "DATASPEC hook requires a list of file extensions (${_callback})")
+        endif()
+        foreach( _ext IN LISTS ARGV2)
+            variable_watch(NCBI_PTB_CALLBACK_DATASPEC${_ext} ${_callback})
+        endforeach()
     else()
         message(SEND_ERROR "An attempt to register hook for an unknown event: ${_event} (${_callback})")
     endif()
@@ -916,7 +936,7 @@ function(NCBI_internal_add_resources)
 endfunction()
 
 ##############################################################################
-function(NCBI_internal_collect_dataspec) 
+function(NCBI_internal_collect_dataspec)
     if (NOT DEFINED NCBI_${NCBI_PROJECT}_DATASPEC)
         return()
     endif()
@@ -929,114 +949,39 @@ function(NCBI_internal_collect_dataspec)
 
     foreach(_dataspec IN LISTS NCBI_${NCBI_PROJECT}_DATASPEC)
         if (EXISTS ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec})
-            get_filename_component(_basename ${_dataspec} NAME_WE)
             get_filename_component(_ext ${_dataspec} EXT)
-            get_filename_component(_path ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec} DIRECTORY)
-            set(_specfiles ${_specfiles}  ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec})
-            if ("${_ext}" STREQUAL ".proto")
-                if ("PROTOBUF" IN_LIST NCBITMP_REQUIRE)
-                    set_source_files_properties(${_path}/${_basename}.pb.cc PROPERTIES GENERATED TRUE)
-                    set(_srcfiles ${_srcfiles}  ${_path}/${_basename}.pb.cc)
-                endif()
-                if ("GRPC" IN_LIST NCBITMP_REQUIRE)
-                    set_source_files_properties(${_path}/${_basename}.grpc.pb.cc PROPERTIES GENERATED TRUE)
-                    set(_srcfiles ${_srcfiles}  ${_path}/${_basename}.grpc.pb.cc)
-                endif()
-            else()
-                set_source_files_properties(${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp PROPERTIES GENERATED TRUE)
-                set(_srcfiles ${_srcfiles}  ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp)
-            endif()
+            set(_input DATASPEC ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec} REQUIRES ${NCBITMP_REQUIRE} RETURN _output)
+            set( NCBI_PTB_CALLBACK_DATASPEC${_ext} ${_input})
+            cmake_parse_arguments(DT "" "DATASPEC;SOURCES;HEADERS;INCLUDE" "" ${_output})
+            set(_specfiles ${_specfiles} ${DT_DATASPEC})
+            set(_srcfiles ${_srcfiles} ${DT_SOURCES})
+            set(_incfiles ${_incfiles} ${DT_HEADERS})
         else()
             message(WARNING "ERROR: file not found: ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec}")
         endif()
     endforeach()
 
+    set_source_files_properties(${_srcfiles} ${_incfiles} PROPERTIES GENERATED TRUE)
     source_group("${_prefix}Source Files"   FILES ${_srcfiles})
     set(NCBITMP_PROJECT_SOURCES ${NCBITMP_PROJECT_SOURCES} ${_srcfiles} PARENT_SCOPE)
+    source_group("${_prefix}Header Files"   FILES ${_incfiles})
+    set(NCBITMP_PROJECT_HEADERS ${NCBITMP_PROJECT_HEADERS} ${_incfiles} PARENT_SCOPE)
     source_group("${_prefix}DataSpec Files" FILES ${_specfiles})
     set(NCBITMP_PROJECT_DATASPEC ${NCBITMP_PROJECT_DATASPEC} ${_specfiles} PARENT_SCOPE)
 endfunction()
 
 ##############################################################################
-function(NCBI_internal_add_dataspec) 
+function(NCBI_internal_add_dataspec)
     if (NOT DEFINED NCBITMP_PROJECT_DATASPEC)
         return()
     endif()
-
     foreach(_dataspec IN LISTS NCBITMP_PROJECT_DATASPEC)
-        get_filename_component(_basename ${_dataspec} NAME_WE)
         get_filename_component(_ext ${_dataspec} EXT)
-        set(_filepath ${_dataspec})
-        get_filename_component(_path ${_filepath} DIRECTORY)
-        file(RELATIVE_PATH _relpath ${NCBI_SRC_ROOT} ${_path})
-
-        if ("${_ext}" STREQUAL ".proto")
-            if ("PROTOBUF" IN_LIST NCBITMP_REQUIRE)
-                set(_cmd ${NCBI_PROTOC_APP} --cpp_out=${NCBI_SRC_ROOT} --proto_path=${NCBI_SRC_ROOT} ${_filepath})
-                add_custom_command(
-                    OUTPUT ${_path}/${_basename}.pb.cc
-                    COMMAND ${_cmd} VERBATIM
-                    COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-                    COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
-                    WORKING_DIRECTORY ${top_src_dir}
-                    COMMENT "Generate PROTOC C++ classes from ${_filepath}"
-                    DEPENDS ${_filepath}
-                    VERBATIM
-                )
-            endif()
-            if ("GRPC" IN_LIST NCBITMP_REQUIRE)
-                set(_cmd ${NCBI_PROTOC_APP} --grpc_out=${NCBI_SRC_ROOT} --proto_path=${NCBI_SRC_ROOT} --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN}  ${_filepath})
-                add_custom_command(
-                    OUTPUT ${_path}/${_basename}.grpc.pb.cc
-                    COMMAND ${_cmd} VERBATIM
-                    COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-                    COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
-                    WORKING_DIRECTORY ${top_src_dir}
-                    COMMENT "Generate GRPC C++ classes from ${_filepath}"
-                    DEPENDS ${_filepath}
-                    VERBATIM
-                )
-            endif()
-            set(NCBITMP_INCLUDES ${NCBITMP_INCLUDES} ${NCBI_INC_ROOT}/${_relpath} PARENT_SCOPE)
-        else()
-            set(_module_imports "")
-            set(_imports "")
-            if(EXISTS "${_path}/${_basename}.module")
-                FILE(READ "${_path}/${_basename}.module" _module_contents)
-                STRING(REGEX MATCH "MODULE_IMPORT *=[^\n]*[^ \n]" _tmp "${_module_contents}")
-                STRING(REGEX REPLACE "MODULE_IMPORT *= *" "" _tmp "${_tmp}")
-                STRING(REGEX REPLACE "  *$" "" _imp_list "${_tmp}")
-                STRING(REGEX REPLACE " " ";" _imp_list "${_imp_list}")
-
-                foreach(_module IN LISTS _imp_list)
-                    set(_module_imports "${_module_imports} ${_module}${_ext}")
-                endforeach()
-                if (NOT "${_module_imports}" STREQUAL "")
-                    set(_imports -M ${_module_imports})
-                endif()
-            endif()
-
-            set(_oc ${_basename})
-            if (NOT "${NCBI_DEFAULT_PCH}" STREQUAL "")
-                set(_pch -pch ${NCBI_DEFAULT_PCH})
-            endif()
-            set(_od ${_path}/${_basename}.def)
-            set(_oex -oex " ")
-            set(_cmd ${NCBI_DATATOOL} ${_oex} ${_pch} -m ${_filepath} -oA -oc ${_oc} -od ${_od} -odi -ocvs -or ${_relpath} -oR ${top_src_dir} ${_imports})
-            set(_depends ${NCBI_DATATOOL} ${_filepath})
-            if(EXISTS ${_od})
-                set(_depends ${_depends} ${_od})
-            endif()
-            add_custom_command(
-                OUTPUT ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp
-                COMMAND ${_cmd} VERBATIM
-                WORKING_DIRECTORY ${top_src_dir}
-                COMMENT "Generate C++ classes from ${_filepath}"
-                DEPENDS ${_depends}
-                VERBATIM
-            )
+        set(_input GENERATE DATASPEC ${_dataspec} REQUIRES ${NCBITMP_REQUIRE} RETURN _output)
+        set( NCBI_PTB_CALLBACK_DATASPEC${_ext} ${_input})
+        cmake_parse_arguments(DT "" "DATASPEC;SOURCES;HEADERS;INCLUDE" "" ${_output})
+        if(NOT "${DT_INCLUDE}" STREQUAL "")
+            set(NCBITMP_INCLUDES ${NCBITMP_INCLUDES} ${DT_INCLUDE} PARENT_SCOPE)
         endif()
     endforeach()
 endfunction()
@@ -1751,6 +1696,7 @@ endif()
                 set(_allowedprojects ${_allowedprojects} ${NCBI_PROJECT})
                 set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS ${_allowedprojects})
             endif()
+            set(NCBI_PTB_CALLBACK_TARGET_PARSED ${NCBI_PROJECT})
             if ("${ARGC}" GREATER "0")
                 set(${ARGV0} FALSE PARENT_SCOPE)
             endif()
@@ -1905,7 +1851,7 @@ endif()
         NCBI_internal_define_precompiled_header_usage()
     endif()
 
-    set(NCBI_PTB_TARGETDONE_CALLBACK ${NCBI_PROJECT})
+    set(NCBI_PTB_CALLBACK_TARGET_ADDED ${NCBI_PROJECT})
 
 if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
 message("-----------------------------------")
@@ -1915,3 +1861,68 @@ endif()
         set(${ARGV0} TRUE PARENT_SCOPE)
     endif()
 endfunction()
+
+##############################################################################
+##############################################################################
+
+macro(NCBI_util_load_file _file _result)
+    get_filename_component(_path ${_file} DIRECTORY)
+    if (EXISTS "${_file}" AND NOT IS_DIRECTORY "${_file}")
+        file(STRINGS "${_file}" _list)
+        foreach( _item IN LISTS _list)
+            if ("${_item}" STREQUAL "")
+                continue()
+            endif()
+            if ("${_item}" MATCHES "#")
+                if ("${_item}" MATCHES "#include")
+                    string(REPLACE "#include" "" _item ${_item})
+                    string(REPLACE " " "" _item ${_item})
+                    string(REPLACE "\"" "" _item ${_item})
+                    NCBI_util_load_file(${_path}/${_item} ${_result})
+                endif()
+                continue()
+            endif()
+            list(APPEND ${_result} ${_item})
+        endforeach()
+    else()
+        message("WARNING: unable to load ${_file}")
+    endif()
+endmacro()
+
+
+if("${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL "")
+    unset(NCBI_PTBCFG_PROJECT_LIST)
+endif()
+if("${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL "")
+    unset(NCBI_PTBCFG_PROJECT_TAGS)
+endif()
+if("${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "")
+    unset(NCBI_PTBCFG_PROJECT_TARGETS)
+endif()
+
+if(DEFINED NCBI_PTBCFG_PROJECT_LIST AND EXISTS "${NCBI_PTBCFG_PROJECT_LIST}")
+    if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_LIST}")
+        string(REPLACE "\\" "/" NCBI_PTBCFG_PROJECT_LIST ${NCBI_PTBCFG_PROJECT_LIST})
+        NCBI_util_load_file("${NCBI_PTBCFG_PROJECT_LIST}" NCBI_PTBCFG_PROJECT_LIST)
+        list(REMOVE_AT NCBI_PTBCFG_PROJECT_LIST 0) 
+        list(REMOVE_DUPLICATES NCBI_PTBCFG_PROJECT_LIST) 
+    endif()
+endif()
+
+if(DEFINED NCBI_PTBCFG_PROJECT_TAGS AND EXISTS "${NCBI_PTBCFG_PROJECT_TAGS}")
+    if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_TAGS}")
+        file(STRINGS "${NCBI_PTBCFG_PROJECT_TAGS}" NCBI_PTBCFG_PROJECT_TAGS)
+    endif()
+endif()
+
+if(DEFINED NCBI_PTBCFG_PROJECT_TARGETS AND EXISTS "${NCBI_PTBCFG_PROJECT_TARGETS}")
+    if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_TARGETS}")
+        file(STRINGS "${NCBI_PTBCFG_PROJECT_TARGETS}" NCBI_PTBCFG_PROJECT_TARGETS)
+    endif()
+endif()
+
+if(DEFINED NCBI_VERBOSE_PROJECTS)
+    foreach(_prj IN LISTS NCBI_VERBOSE_PROJECTS)
+        set(NCBI_VERBOSE_PROJECT_${_prj}   ON)
+    endforeach()
+endif()

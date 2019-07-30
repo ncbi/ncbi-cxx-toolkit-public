@@ -170,7 +170,7 @@ endif()
 if (EXISTS "${NCBI_TREE_BUILDCFG}/datatool_version.txt")
     FILE(STRINGS "${NCBI_TREE_BUILDCFG}/datatool_version.txt" _datatool_version)
 else()
-    set(_datatool_version "2.18.2")
+    set(_datatool_version "2.20.0")
     message(WARNING "Failed to find datatool_version.txt, defaulting to version ${_datatool_version})")
 endif()
 message(STATUS "Datatool version required by software: ${_datatool_version}")
@@ -191,15 +191,6 @@ else()
         set (NCBI_DATATOOL $<TARGET_FILE:datatool-app>)
     endif()
     message(STATUS "Datatool location: <locally compiled>")
-endif()
-
-##############################################################################
-# asntool app
-if (NOT WIN32)
-    set(NCBI_ASNTOOL $ENV{NCBI}/bin/asntool)
-    set(NCBI_ASNDIR  /am/ncbiapdata/asn)
-else()
-    set(NCBI_ASNTOOL //snowman/win-coremake/Lib/Ncbi/C_Toolkit/vs2017.64/c.current/bin/asntool.exe)
 endif()
 
 #############################################################################

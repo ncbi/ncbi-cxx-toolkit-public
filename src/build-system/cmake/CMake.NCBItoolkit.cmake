@@ -13,8 +13,10 @@ if (NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND NOT ${CMAKE_CURRENT_LIST_DIR} MATCHE
     message(STATUS "Found NCBI C++ Toolkit: ${NCBI_EXTERNAL_TREE_ROOT}")
 endif()
 
+set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
+
 ###############################################################################
-# must be set to OFF on trunk
+
 if(NOT DEFINED NCBI_EXPERIMENTAL)
     if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
         set(NCBI_EXPERIMENTAL ON)
@@ -23,64 +25,27 @@ if(NOT DEFINED NCBI_EXPERIMENTAL)
     endif()
 endif()
 
-if("${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL "")
-    unset(NCBI_PTBCFG_PROJECT_LIST)
-endif()
-if("${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL "")
-    unset(NCBI_PTBCFG_PROJECT_TAGS)
-endif()
-if("${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "")
-    unset(NCBI_PTBCFG_PROJECT_TARGETS)
-endif()
-
-#  set(NCBI_PTBCFG_PROJECT_TAGS    *;-test)
-#  set(NCBI_PTBCFG_PROJECT_TARGETS   datatool;xcgi$)
-#  set(NCBI_PTBCFG_PROJECT_LIST     corelib serial build-system)
-#  set(NCBI_VERBOSE_ALLPROJECTS OFF)
-#  set(NCBI_VERBOSE_PROJECTS xncbi variation_utils)
-
-if(DEFINED NCBI_VERBOSE_PROJECTS)
-    foreach(_prj IN LISTS NCBI_VERBOSE_PROJECTS)
-        set(NCBI_VERBOSE_PROJECT_${_prj}   ON)
-    endforeach()
-endif()
-
-cmake_policy(SET CMP0057 NEW)
 cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0057 NEW)
+
 if(NCBI_EXPERIMENTAL)
 
     set(NCBI_EXPERIMENTAL_CFG              ON)
     set(NCBI_EXPERIMENTAL_SUBDIRS          ON)
     set(NCBI_EXPERIMENTAL_DISABLE_HUNTER   ON)
     set(NCBI_VERBOSE_ALLPROJECTS           OFF)
+    set(NCBI_PTBCFG_ENABLE_COLLECTOR       ON)
 
     if(BUILD_SHARED_LIBS)
         if(WIN32 OR XCODE)
             set(NCBI_PTBCFG_COMPOSITE_DLL dll)
         endif()
     endif()
+
     set(NCBI_PTBCFG_ADDCHECK               ON)
-
-if(OFF)
-    if (DEFINED NCBI_PTBCFG_COMPOSITE_DLL
-        OR DEFINED NCBI_EXTERNAL_TREE_ROOT
-        OR DEFINED NCBI_VERBOSE_PROJECTS
-        OR NOT "${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL ""
-        OR NOT "${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL ""
-        OR NOT "${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "")
-        set(NCBI_PTBCFG_ENABLE_COLLECTOR ON)
-    endif()
-else()
-    set(NCBI_PTBCFG_ENABLE_COLLECTOR ON)
-endif()
-
     if (NOT "${NCBI_PTBCFG_INSTALL_PATH}" STREQUAL "")
         set(NCBI_PTBCFG_DOINSTALL              ON)
-        string(REPLACE "\\" "/" NCBI_PTBCFG_INSTALL_PATH ${NCBI_PTBCFG_INSTALL_PATH})
-        set(CMAKE_INSTALL_PREFIX "${NCBI_PTBCFG_INSTALL_PATH}" CACHE STRING "Reset the installation destination" FORCE)
-        set(NCBI_PTBCFG_INSTALL_TAGS "*;-test;-demo")
     endif()
-
 else()
 
     set(NCBI_EXPERIMENTAL_CFG              OFF)
@@ -91,101 +56,7 @@ else()
     set(NCBI_PTBCFG_DOINSTALL              OFF)
     set(NCBI_PTBCFG_ADDCHECK               OFF)
 endif()
-set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
 
-macro(NCBI_util_load_file _file _result)
-    get_filename_component(_path ${_file} DIRECTORY)
-    if (EXISTS "${_file}" AND NOT IS_DIRECTORY "${_file}")
-        file(STRINGS "${_file}" _list)
-        foreach( _item IN LISTS _list)
-            if ("${_item}" STREQUAL "")
-                continue()
-            endif()
-            if ("${_item}" MATCHES "#")
-                if ("${_item}" MATCHES "#include")
-                    string(REPLACE "#include" "" _item ${_item})
-                    string(REPLACE " " "" _item ${_item})
-                    string(REPLACE "\"" "" _item ${_item})
-                    NCBI_util_load_file(${_path}/${_item} ${_result})
-                endif()
-                continue()
-            endif()
-            list(APPEND ${_result} ${_item})
-        endforeach()
-    else()
-        message("WARNING: unable to load ${_file}")
-    endif()
-endmacro()
-
-if(DEFINED NCBI_PTBCFG_PROJECT_LIST AND EXISTS "${NCBI_PTBCFG_PROJECT_LIST}")
-    if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_LIST}")
-        string(REPLACE "\\" "/" NCBI_PTBCFG_PROJECT_LIST ${NCBI_PTBCFG_PROJECT_LIST})
-        NCBI_util_load_file("${NCBI_PTBCFG_PROJECT_LIST}" NCBI_PTBCFG_PROJECT_LIST)
-        list(REMOVE_AT NCBI_PTBCFG_PROJECT_LIST 0) 
-        list(REMOVE_DUPLICATES NCBI_PTBCFG_PROJECT_LIST) 
-    endif()
-endif()
-
-if(DEFINED NCBI_PTBCFG_PROJECT_TAGS AND EXISTS "${NCBI_PTBCFG_PROJECT_TAGS}")
-    if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_TAGS}")
-        file(STRINGS "${NCBI_PTBCFG_PROJECT_TAGS}" NCBI_PTBCFG_PROJECT_TAGS)
-    endif()
-endif()
-
-if(DEFINED NCBI_PTBCFG_PROJECT_TARGETS AND EXISTS "${NCBI_PTBCFG_PROJECT_TARGETS}")
-    if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_TARGETS}")
-        file(STRINGS "${NCBI_PTBCFG_PROJECT_TARGETS}" NCBI_PTBCFG_PROJECT_TARGETS)
-    endif()
-endif()
-
-###############################################################################
-if (OFF)
-message("CMAKE_CONFIGURATION_TYPES: ${CMAKE_CONFIGURATION_TYPES}")
-set(_cfg_types Debug Release MinSizeRel RelWithDebInfo)
-
-message("")
-message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_C_FLAGS_${_upname}: ${CMAKE_C_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_CXX_FLAGS_${_upname}: ${CMAKE_CXX_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_STATIC_LINKER_FLAGS: ${CMAKE_STATIC_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_STATIC_LINKER_FLAGS_${_upname}: ${CMAKE_STATIC_LINKER_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_EXE_LINKER_FLAGS_${_upname}: ${CMAKE_EXE_LINKER_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_MODULE_LINKER_FLAGS_${_upname}: ${CMAKE_MODULE_LINKER_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_SHARED_LINKER_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_SHARED_LINKER_FLAGS_${_upname}: ${CMAKE_SHARED_LINKER_FLAGS_${_upname}}")
-endforeach()
-#return()
-endif()
 
 ###############################################################################
 ## Initialize Hunter
@@ -212,6 +83,8 @@ endif()
 include(${_prefix}build-system/cmake/CMakeMacros.cmake)
 include(${_prefix}build-system/cmake/CMakeChecks.cmake)
 include(${_prefix}build-system/cmake/CMake.NCBIptb.cmake)
+include(${_prefix}build-system/cmake/CMake.NCBIptb.datatool.cmake)
+include(${_prefix}build-system/cmake/CMake.NCBIptb.grpc.cmake)
 include(${_prefix}build-system/cmake/CMake.NCBIptb.ctest.cmake)
 if(NCBI_PTBCFG_ADDCHECK)
     include(${_prefix}build-system/cmake/CMake.NCBIptb.ntest.cmake)

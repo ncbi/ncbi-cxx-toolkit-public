@@ -190,5 +190,10 @@ function(NCBI_internal_install_root _variable _access)
 endfunction()
 
 #############################################################################
-NCBI_register_hook(TARGETDONE  NCBI_internal_install_target)
-NCBI_register_hook(CFGDONE     NCBI_internal_install_root)
+if (NOT "${NCBI_PTBCFG_INSTALL_PATH}" STREQUAL "")
+    string(REPLACE "\\" "/" NCBI_PTBCFG_INSTALL_PATH ${NCBI_PTBCFG_INSTALL_PATH})
+    set(CMAKE_INSTALL_PREFIX "${NCBI_PTBCFG_INSTALL_PATH}" CACHE STRING "Reset the installation destination" FORCE)
+endif()
+set(NCBI_PTBCFG_INSTALL_TAGS "*;-test;-demo")
+NCBI_register_hook(TARGET_ADDED NCBI_internal_install_target)
+NCBI_register_hook(ALL_ADDED    NCBI_internal_install_root)

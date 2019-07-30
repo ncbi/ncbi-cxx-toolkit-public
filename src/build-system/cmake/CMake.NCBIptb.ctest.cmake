@@ -95,4 +95,4 @@ function(NCBI_internal_AddCMakeTest _variable _access)
 endfunction()
 
 #############################################################################
-NCBI_register_hook(TARGETDONE NCBI_internal_AddCMakeTest)
+NCBI_register_hook(TARGET_ADDED NCBI_internal_AddCMakeTest)

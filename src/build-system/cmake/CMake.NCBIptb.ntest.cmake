@@ -108,8 +108,8 @@ function(NCBI_internal_add_ncbi_checktarget)
 endfunction()
 
 #############################################################################
-NCBI_register_hook(TARGETDONE  NCBI_internal_AddNCBITest)
-NCBI_register_hook(CFGDONE     NCBI_internal_create_ncbi_checklist)
+NCBI_register_hook(TARGET_ADDED  NCBI_internal_AddNCBITest)
+NCBI_register_hook(ALL_ADDED     NCBI_internal_create_ncbi_checklist)
 
 if(NOT WIN32 AND NOT XCODE)
     NCBI_internal_add_ncbi_checktarget()
