@@ -1140,6 +1140,7 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 	TDSRET tdsret;
 	CS_INT res_type;
 	CS_INT done_flags;
+	TDS_INT8 rows_affected;
 
 	tdsdump_log(TDS_DBG_FUNC, "ct_results(%p, %p)\n", cmd, result_type);
 
@@ -1182,10 +1183,16 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 		return CS_SUCCEED;
 	case _CS_RES_NONE:				/* first time in after ct_send */
 		cmd->results_state = _CS_RES_INIT;
+		tds->rows_affected = TDS_NO_COUNT;
+		break;
+	case _CS_RES_INIT:
+		tds->rows_affected = TDS_NO_COUNT;
 		break;
 	default:
 		break;
 	}
+
+	rows_affected = tds->rows_affected;
 
 	/*
 	 * see what "result" tokens we have. a "result" in ct-lib terms also
@@ -1210,7 +1217,6 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 			switch (res_type) {
 
 			case CS_COMPUTEFMT_RESULT:
-			case CS_ROWFMT_RESULT:
 
 				/*
 				 * set results state to indicate that we
@@ -1228,6 +1234,11 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 					return CS_SUCCEED;
 				}
 				break;
+
+			case CS_ROWFMT_RESULT:
+				if (cmd->command_type == CS_CUR_CMD ||
+				    cmd->command_type == CS_DYNAMIC_CMD)
+					break;
 
 			case CS_ROW_RESULT:
 
@@ -1315,6 +1326,10 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 					return CS_SUCCEED;
 				}
 
+				if (tds->rows_affected != TDS_NO_COUNT)
+					rows_affected = tds->rows_affected;
+				tds->rows_affected = rows_affected;
+
 				switch (cmd->results_state) {
 
 				case _CS_RES_INIT:
@@ -1353,6 +1368,10 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 				 * set. Otherwise it is ignored....
 				 */
 
+				if (tds->rows_affected != TDS_NO_COUNT)
+					rows_affected = tds->rows_affected;
+				tds->rows_affected = rows_affected;
+
 				switch (cmd->results_state) {
 				case _CS_RES_INIT:   /* command had no result set */
 					break;
@@ -1383,6 +1402,10 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 				 * if this is the case if a STATUS_RESULT was
 				 * received immediately prior to the DONE_PROC
 				 */
+
+				if (tds->rows_affected != TDS_NO_COUNT)
+					rows_affected = tds->rows_affected;
+				tds->rows_affected = rows_affected;
 
 				if (done_flags & TDS_DONE_ERROR)
 					*result_type = CS_CMD_FAIL;
@@ -2399,6 +2422,8 @@ ct_res_info(CS_COMMAND * cmd, CS_INT type, CS_VOID * buffer, CS_INT buflen, CS_I
 		memcpy(buffer, &int_val, sizeof(CS_INT));
 		break;
 	case CS_ROW_COUNT:
+		if (cmd->results_state == _CS_RES_STATUS)
+			return CS_FAIL;
 		/* 64 -> 32 bit conversion saturate to the maximum */
 		int_val = tds->rows_affected > 0x7fffffff ? 0x7fffffff : (CS_INT) tds->rows_affected;
 		tdsdump_log(TDS_DBG_FUNC, "ct_res_info(): Number of rows is %d\n", int_val);
