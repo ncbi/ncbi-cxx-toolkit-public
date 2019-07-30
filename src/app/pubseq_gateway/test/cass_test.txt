@@ -5,6 +5,7 @@
 - Run tests
 
 FAILED: ID-5739
+Fixed and retested on Jul 30: PASSED
 
 2.
 - No quorum in the claster
