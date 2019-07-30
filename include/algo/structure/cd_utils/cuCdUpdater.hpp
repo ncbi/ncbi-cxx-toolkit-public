@@ -59,7 +59,6 @@ public:
 
 	//return the gi that's replaced; return -1 if none is replaced
 	TGi refresh(CRef< CSeq_align> seqAlign, CRef< CSeq_entry > seqEntry);
-	//bool hasBioseq(CRef< CBioseq > bioseq);
 	bool hasOlderVersion(CRef< CBioseq > bioseq);
 
 private:
@@ -69,7 +68,6 @@ private:
 
 	void addSequences(CSeq_entry& seqEntry);
 	void addSequence(CRef< CBioseq > bioseq);
-	//cd_utils::SequenceTable m_seqTable;
 };
 
 struct NCBI_CDUTILS_EXPORT CDUpdateStats
@@ -93,7 +91,6 @@ public:
 private:
 	string toString(vector<TGi>& gis, string type);
 	string toString(vector<TGi>& gis);
-	string toString(int num);
 	string toString(vector<OldNewGiPair>& giPairs, string type);
 };
 
@@ -181,8 +178,6 @@ public:
 	//replace ftable with mmdb-id
 	static bool reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEntry, CEntrez2Client& client);
 
-	//static unsigned int removeRedundantPending(CCdCore* cd);   //  uses original non-redundifier
-	//static unsigned int removeRedundantPending2(CCdCore* cd, bool keepNormalRows);  //  uses new non-redundifier
 	//copied from objtools/alnmgr/util/showalign.cpp
 	static CRef<CBlast_def_line_set>  GetBlastDefline (const CBioseq& handle);
 	static void RemoveBlastDefline (CBioseq& handle);

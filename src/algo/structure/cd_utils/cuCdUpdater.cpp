@@ -52,14 +52,12 @@
 #include <algo/structure/cd_utils/cuUtils.hpp>
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
 #include <algo/structure/cd_utils/cuHitsDistributor.hpp>
-//#include <algo/structure/cd_utils/cuBlastUtils.hpp>
 #include <algo/structure/cd_utils/cuSequenceTable.hpp>
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
 #include <algo/structure/cd_utils/cuBlockIntersector.hpp>
 #include <algo/structure/cd_utils/cuBlockFormater.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
-//#include <objects/seq/seqlocinfo.hpp>
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
@@ -91,7 +89,7 @@ string CDUpdateStats::toString(bool detailed)
 	if (numRedundant > 0)
 	{
 		result += "Alignments removed due to redundancy:";
-		result += toString(numRedundant);
+		result += NStr::IntToString(numRedundant);
 		result += ". ";
 	}
 	result += toString(oldNewPairs, "New sequences that can replace old sequences (in  parentheses) already in CD");
@@ -99,7 +97,7 @@ string CDUpdateStats::toString(bool detailed)
 	if (numObsolete > 0)
 	{
 		result += "Numer of obsolete sequences removed:";
-		result += toString(numObsolete);
+		result += NStr::IntToString(numObsolete);
 		result += ". ";
 	}
 	return result;
@@ -110,7 +108,7 @@ string CDUpdateStats::toString(vector<TGi>& gis, string type)
 	if (gis.size() <= 0)
 		return "";
 	string result = "Number of " + type + " =";
-	result += toString((int)gis.size()); 
+	result += NStr::UIntToString((unsigned)gis.size()); 
 	result += ":\n";
 	result += toString(gis);
 	result += "\n";
@@ -122,17 +120,10 @@ string CDUpdateStats::toString(vector<TGi>& gis)
 	string result;
 	for(unsigned int i = 0; i < gis.size(); i++)
 	{
-		result += toString(GI_TO(int, gis[i]));
+		result += NStr::NumericToString<TGi>( gis[i] );
 		result += ",";
 	}
 	return result;
-}
-
-string CDUpdateStats::toString(int num)
-{
-	char buf[100];
-	sprintf(buf, "%d", num);
-	return string(buf);
 }
 
 string CDUpdateStats::toString(vector<OldNewGiPair>& giPairs, string type)
@@ -140,13 +131,13 @@ string CDUpdateStats::toString(vector<OldNewGiPair>& giPairs, string type)
 	if (giPairs.size() <= 0)
 		return "";
 	string result = "Number of " + type + " =";
-	result += toString((int)giPairs.size()); 
+	result += NStr::UIntToString((unsigned)giPairs.size()); 
 	result += ":\n";
 	for (unsigned int i = 0 ; i < giPairs.size(); i++)
 	{
-		result += toString(GI_TO(int, giPairs[i].second));
+		result += NStr::NumericToString<TGi>(giPairs[i].second);
 		result += "(";
-		result += toString(GI_TO(int, giPairs[i].first));
+		result += NStr::NumericToString<TGi>(giPairs[i].first);
 		result += ")";
 		result += ",";
 	}
@@ -394,34 +385,6 @@ bool CDUpdater::processBlastHits()
 	{
 		LOG_POST("Found no BLAST hits to process for CD " << m_cd->GetAccession() << ". Will try again to retrieve the hits.\n");
 	}
-	//write update date and stats to scrapbook
-	/*
-	string updateStr("This CD is updated on ");
-	CTime cur(CTime::eCurrent);
-	CDate curDate(cur, CDate::ePrecision_day);
-	string dateStr;
-    curDate.GetDate(&dateStr);
-	updateStr += dateStr;
-	updateStr += ". ";
-	updateStr += getStats().toString(false);
-	updateStr += " ";
-	updateStr += m_config.toString();
-	list< CRef< CCdd_descr > > & descList = m_cd->SetDescription().Set();
-	list< CRef< CCdd_descr > >::iterator it = descList.begin();
-	for(; it != descList.end(); it++)
-	{
-	    if((*it)->IsScrapbook())
-		    break;
-	}
-	CRef< CCdd_descr > scrapbook;
-	if (it != descList.end())
-		scrapbook = *it;
-	else
-	{
-		scrapbook = new CCdd_descr;
-		descList.push_back(scrapbook);
-	}
-	scrapbook->SetScrapbook().push_back(updateStr);*/
 	return updated;
 }
 
@@ -521,27 +484,13 @@ bool CDUpdater::blast(bool wait, int row)
 		pm.setOptions(config);
 		CRef<CPssmWithParameters> pssm = pm.make();
 
-		// debugging *** ***
-//		string err;
-//		WriteASNToFile("pssm_debug", *pssm, false, &err);
-		// debugging *** ***
-
 		m_guideAlignment = new BlockModelPair(pm.getGuideAlignment());
 		m_guideAlignment->degap();
 		m_guideAlignment->reverse(); //keep con::master
 		m_consensus = pm.getConsensus();
-		//pssm->SetMatrix().SetIdentifier().SetStr("BLOSUM62");
-		//debug
+
 		psiopt->SetPseudoCount(pm.getPseudoCount());
-		/*
-		string err;
-		string fname = m_cd->GetAccession();
-		fname += ".pssm";
-		if (!WriteASNToFile(fname.c_str(), *pssm, false,&err))
-			LOG_POST("Failed to write to %s because of %s\n", fname.c_str(), err.c_str());
-		else
-			LOG_POST("PSSM is written to %s\n", fname.c_str());
-		*/
+
 		rblast->SetQueries(pssm);
 	}
 
@@ -780,10 +729,8 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 			seqID = denseg.GetIds()[1];
 		else
 			break; //should not be here
+
         TGi gi  = seqID->GetGi();
-		//if (gi == 50302132)
-		//	int ttt = 1;
-		//if(retrieveSeq(id1Client, seqID, seqEntry)) 
 		vector< CRef< CBioseq > > bioseqVec;
 		if(seqTable.findSequencesInTheGroup(seqID, bioseqVec) > 0)
 		{
@@ -855,9 +802,8 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 				else
 				{
 					cd->AddPendingSeqAlign(*(it));
-					//just add sequence now.  redundanticy will be removed later
-					//if (cd->GetSeqIndex(seqID) < 0)
-						cd->AddSequence(seqEntry);
+					//just add sequence now.  redundancy will be removed later
+                    cd->AddSequence(seqEntry);
 				}
 			}
 		}
@@ -875,60 +821,7 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 
     //  always keep normal rows w/ automatic NR
     LOG_POST("Finishing processing hits for "<<cd->GetAccession());
-	/*
-	if(m_config.nonRedundify)
-	{
-		progbar.Update(0, "Remove redundant and obsolete sequences");
-		LOG_POST("Non-redundify pending in ", cd->GetAccession().c_str());
-		m_stats.numRedundant = removeRedundantPending2(cd, true);
-		LOG_POST("Finish non-redundifying pending in %s \n", cd->GetAccession().c_str());
-	}
-	progbar.Update(50);*/
-	/*
-	if (m_config.refresh)
-	{
-		vector<int> obsoleted;
-		cdWorkshop::getRowsWithObsoleteGIs(cd->GetAccession(), obsoleted);
-		vector<int> oldNonMaster;
-		if (obsoleted.size() > 0)
-		{
-			//check if master is obsolete
-			
-			//collect child cd masters
-			vector<cd_utils::BlockModel> masters;
-			CDFamily* cdFamily = cdWorkshop::getSubFamily(cd->GetAccession());
-			CDFamilyIterator famit;
-			for (famit = cdFamily->begin(); famit != cdFamily->end(); ++famit) 
-			{
-				masters.push_back( cd_utils::BlockModel(*(famit->cd->GetSeqAligns().begin()),false) );
-			}
-			for(int i = 0; i < obsoleted.size();i++)
-			{
-				if (obsoleted[i] > 0)
-				{
-					BlockModel oldBm(cd->GetSeqAlign(obsoleted[i]));
-					bool found = false;
-					for (int k = 0; k < masters.size(); k++)
-					{
-						if (oldBm.overlap(masters[k]))
-						{
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-						oldNonMaster.push_back(obsoleted[i]);
-				}
-			}
-		}
-		if (oldNonMaster.size() < obsoleted.size())
-			cdLog::WarningPrintf("The master sequence of %s or its descendant CD is obsolete.  It is not deleted at this time.\n", cd->GetAccession().c_str());
-		m_stats.numObsolete = oldNonMaster.size();
-		if ((m_stats.numObsolete > 0) && ((cd->GetNumRows() - m_stats.numObsolete) >= 2) )
-			cd->EraseTheseRows(oldNonMaster);
-	}*/
-	//progbar.Update(100);
-	//cd->EraseSequences(); 
+
 	if (m_processPendingThreshold > 0)
 	{
 		m_stats.numFilteredByOverlap = mergePending(cd, m_processPendingThreshold,true);
@@ -1017,10 +910,7 @@ int CDUpdater::pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef
 		}
 		if (foundPDB)
 		{
-			//debug
-			//LOG_POST("seqId before =%s\n",seqIdVec[1]->AsFastaString().c_str()); 
 			seqIdVec[1] = giId; //replace id in SeqAlign
-			//LOG_POST("seqId After =%s\n",seqIdVec[1]->AsFastaString().c_str()); 
 			return i;
 		}
 	}
@@ -1049,56 +939,8 @@ int CDUpdater::pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef
 	return index;
 }
 
-/*
-unsigned int CDUpdater::removeRedundantPending2(CCdCore* cd, bool keepNormalRows)
-{
-    if (!cd) return 0;
-    //  Make sure the CD updates its internal list of alignments and sequences
-    cd->GetSeqAlignsIntoVector(true);
-    cd->GetSeqEntriesIntoVector(true);
-
-    string errs, msgs;
-    int row;
-    set<int> redundantPendingRows, redundantPendingRowsReindexed;
-
-    //  Do not want the non-redundifier to silently toss structures.  Ask for verification,
-    //  temporarily changing cfgNonRedundifier.keepFilters to keep all structures if so
-    //  directed by the user.
-    int tmpKeepFilters = cfgNonRedundifier.keepFilters;
-    if (! (tmpKeepFilters & CCdCoreTreeNRCriteria::eKeep3dStructure)) {
-
-        int answer = cdLog::Question("Yes|No", "Override Removal of Redundant Structures?", "The 'Keep All Structures' non-redundifier preference is not\nset, and new recruited structures may not be kept.\n\nDo you want to temporarily override your preference,\nand keep all recruited structures?");
-        if (answer == 0) {
-            cfgNonRedundifier.keepFilters |= CCdCoreTreeNRCriteria::eKeep3dStructure;
-        }
-    }
-
-    NonRedundifier2* nr2 = cdWorkshop::DoNonredundifyCD(cd, redundantPendingRows, errs, CCdCore::USE_ALL_ALIGNMENT, keepNormalRows, &msgs);
-
-    //  Return preference to original state.
-    cfgNonRedundifier.keepFilters = tmpKeepFilters;
-
-    for (set<int>::const_iterator sit = redundantPendingRows.begin(); sit != redundantPendingRows.end(); sit++) {
-        row = (*sit >= CCdCore::PENDING_ROW_START) ? *sit - CCdCore::PENDING_ROW_START : *sit;
-        redundantPendingRowsReindexed.insert(row);
-	}
-
-    delete nr2;
-
-    //  this calls cd->EraseSequences() after removing rows
-	cd->ErasePendingRows(redundantPendingRowsReindexed);
-	return redundantPendingRowsReindexed.size();
-}*/
-
 bool CDUpdater::findRowsWithOldSeq(CCdCore* cd, CBioseq& bioseq)
 {
-	/*
-	int gi  = bioseq.GetFirstId()->GetGi();
-	if (gi == 45645177)
-	{
-		string err;
-		WriteASNToFile("bioseq.dat", bioseq, false,&err);
-	}*/
 	CRef< CBioseq > bioseqRef(&bioseq);
 	TGi giNew = getGi(bioseqRef);
 	int num = cd->GetNumRows();
@@ -1144,6 +986,7 @@ bool CDUpdater::passedFilters(CCdCore* cd, CRef< CSeq_align > seqAlign,
 		m_stats.envSeq.push_back(gi);
 		return false;
 	}*/
+
 	//filter fragmented
 	if (m_config.missingResidueThreshold > 0 && isFragmentedSeq(cd, seqAlign, seqEntry))
 	{
@@ -1214,12 +1057,14 @@ bool CDUpdater::isFragmentedSeq(CCdCore* cd, CRef< CSeq_align > seqAlign,
 		return false;
 	BlockModel master(seqAlign, false);
 	int mGapToN = master.getGapToNTerminal(0);
+
 	//master is consensus at this point
 	int mGapToC = master.getGapToCTerminal(master.getBlocks().size() -1, m_consensus.size());
 	BlockModel slave(seqAlign);
 	CRef< CBioseq > bioseq;
 	if (!GetOneBioseqFromSeqEntry(seqEntry, bioseq))
 		return true; //no seq is a fragmented seq
+
 	int seqLen = GetSeqLength(*bioseq);
 	int sGapToN = slave.getGapToNTerminal(0);
 	int sGapToC = slave.getGapToCTerminal(slave.getBlocks().size() - 1, seqLen);
@@ -1233,16 +1078,6 @@ bool CDUpdater::isFragmentedSeq(CCdCore* cd, CRef< CSeq_align > seqAlign,
 
 bool CDUpdater::retrieveSeq(CID1Client& client, CRef<CSeq_id> seqID, CRef<CSeq_entry>& seqEntry)
 {
-	/*int gi = 0;
-	if (seqID->IsGi())
-		gi = seqID->GetGi();
-	else
-		gi = client.AskGetgi(seqID.GetObject());
-	if (gi == 0)
-		return false;
-	CID1server_maxcomplex maxplex;
-	maxplex.SetMaxplex(eEntry_complexities_entry);
-	maxplex.SetGi(gi);*/
 	try {
 		//seqEntry = client.AskGetsefromgi(maxplex);
 		seqEntry = client.FetchEntry(*seqID, 1);
@@ -1267,15 +1102,6 @@ bool CDUpdater::findSeq(CRef<CSeq_id> seqID, vector< CRef< CBioseq > >& bioseqs,
 			    return true;
 		    }
         }
-		/*
-		int gi1 = seqID->GetGi();
-		int gi2 = getGi(bioseqs[i]);
-		if (gi1 == gi2)
-		{
-			seqEntry = new CSeq_entry;
-			seqEntry->SetSeq(*bioseqs[i]);
-			return true;
-		}*/
 	}
 	return false;
 }
@@ -1694,7 +1520,7 @@ void CDUpdater::reformatBioseqByBlastDefline(CRef<CBioseq> bioseq, CRef< CBlast_
 	bioseq->SetId().assign(blastDefline->GetSeqid().begin(), blastDefline->GetSeqid().end());
 }
 
-//  IMPORTANT:  This code is being forked from src/objtools/align_format/align_format_util.cpp.
+//  IMPORTANT:  This code was forked from src/objtools/align_format/align_format_util.cpp.
 //  Check for changes in original source if this forked version misbehaves in the future.
 /// Efficiently decode a Blast-def-line-set from binary ASN.1.
 /// @param oss Octet string sequence of binary ASN.1 data.
@@ -1736,7 +1562,7 @@ void CDUpdater::OssToDefline(const CUser_field::TData::TOss & oss, CBlast_def_li
 
 
 
-//  IMPORTANT:  This code is being forked from src/objtools/align_format/align_format_util.cpp.
+//  IMPORTANT:  This code was forked from src/objtools/align_format/align_format_util.cpp.
 //  That method uses the object manager, however, so we're not calling the function directly.
 //  Check for changes in original source if this forked version misbehaves in the future.
 CRef<CBlast_def_line_set>  CDUpdater::GetBlastDefline (const CBioseq& bioseq)
@@ -1860,19 +1686,6 @@ void CDRefresher::addSequence(CRef< CBioseq > bioseq)
 	if (GetAccAndVersion(bioseq, acc, ver, textId))
 		m_accSeqMap.insert(AccessionBioseqMap::value_type(acc, bioseq));
 }
-
-/*
-bool CDRefresher::hasBioseq(CRef< CBioseq > bioseq)
-{
-	CRef< CBioseq > bioseqTmp;
-	list< CRef< CSeq_id > >& seqIds = bioseq->SetId();
-	for (list< CRef< CSeq_id > >::iterator it= seqIds.begin(); it != seqIds.end(); it++)
-	{
-		if (m_seqTable.findSequence(*it, bioseqTmp))
-			return true;
-	}
-	return false;
-}*/
 
 bool CDRefresher::hasOlderVersion(CRef< CBioseq > bioseq)
 {
