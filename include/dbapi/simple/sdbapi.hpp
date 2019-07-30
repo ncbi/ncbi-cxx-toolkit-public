@@ -198,10 +198,11 @@ enum ESP_ParamType {
 
 /// Flags for NewBlobStore methods
 enum ENewBlobStoreFlags {
-    fNBS_ZLib   = 1 << 0, ///< Use zlib (gzip) compression
-    fNBS_BZLib  = 1 << 1, ///< Use bzlib (bzip2) compression
-    fNBS_LogIt  = 1 << 2, ///< Enable transaction logs
-    fNBS_IsText = 1 << 3  ///< Blob columns have type TEXT or [N]VARCHAR(MAX)
+    fNBS_ZLib         = 1 << 0, ///< Use zlib (gzip) compression
+    fNBS_BZLib        = 1 << 1, ///< Use bzlib (bzip2) compression
+    fNBS_LogIt        = 1 << 2, ///< Enable transaction logs
+    fNBS_IsText       = 1 << 3, ///< Blobs have type TEXT or [N]VARCHAR(MAX)
+    fNBS_Preallocated = 1 << 4  ///< Don't create rows or clean up any excess
 };
 DECLARE_SAFE_FLAGS_TYPE(ENewBlobStoreFlags, TNewBlobStoreFlags);
 DECLARE_SAFE_FLAGS(ENewBlobStoreFlags);

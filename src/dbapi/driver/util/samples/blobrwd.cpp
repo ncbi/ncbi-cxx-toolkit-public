@@ -79,6 +79,7 @@ int main(int argc, char* argv[])
 
     bool readmode = false;
     bool logmode = false;
+    bool preallocated = false;
     CSimpleBlobStore::TFlags flags = CSimpleBlobStore::kDefaults;
 
     if(argc < 2)
@@ -86,7 +87,7 @@ int main(int argc, char* argv[])
         cerr << argv[0]
              << " -K<blob_id> [-r] [-d<driver_name>] [-S<server_name>] [-T<table_name>]"
              << " [-U<user_name>] [-P<password>] [-L<image size>] [-Z<compress_method>]"
-             << " [-H<table_hint>] [-l]"
+             << " [-H<table_hint>] [-l] [-a]"
              << endl;
         return 0;
     }
@@ -103,6 +104,10 @@ int main(int argc, char* argv[])
     getParam('l', argc, argv, &logmode);
     if (logmode) {
         flags |= CSimpleBlobStore::fLogBlobs;
+    }
+    getParam('a', argc, argv, &preallocated);
+    if (preallocated) {
+        flags |= CSimpleBlobStore::fPreallocated;
     }
 
     p= getParam('S', argc, argv);

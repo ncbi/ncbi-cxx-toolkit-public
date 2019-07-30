@@ -362,21 +362,25 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
         m_sCMD += "  ON t." + m_KeyColName + " = @key\n";
         m_sCMD += "    AND t." + m_NumColName + " = @n\n";
         m_sCMD += "  WHEN MATCHED THEN UPDATE SET" + updates;
-        m_sCMD += "  WHEN NOT MATCHED THEN\n";
-        m_sCMD += "    INSERT (" + m_KeyColName + ", " + m_NumColName + ", ";
-        m_sCMD += data_names + ")\n";
-        m_sCMD += "    VALUES (@key, @n, " + data_values + ");";
+        if ((flags & fPreallocated) == 0) {
+            m_sCMD += "  WHEN NOT MATCHED THEN\n";
+            m_sCMD += "    INSERT (" + m_KeyColName + ", " + m_NumColName;
+            m_sCMD += ", " + data_names + ")\n";
+            m_sCMD += "    VALUES (@key, @n, " + data_values + ")";
+        }
 #else
         m_sCMD  = "UPDATE " + m_TableName + " SET " + updates;
         m_sCMD += "  WHERE " + m_KeyColName + " = @key\n";
         m_sCMD += "    AND " + m_NumColName + " = @n\n";
-        m_sCMD += "IF @@ROWCOUNT = 0\n";
-        m_sCMD += "  INSERT INTO " + m_TableName + " (" + m_KeyColName + ", ";
-        m_sCMD += m_NumColName + ", " + data_names + ")\n";
-        m_sCMD += "    SELECT @key, @n, " + data_values + "\n";
-        m_sCMD += "      WHERE NOT EXISTS (SELECT " + m_NumColName + " FROM ";
-        m_sCMD += m_TableName + " WHERE " + m_KeyColName + " = @key AND ";
-        m_sCMD += m_NumColName + " = @n)";
+        if ((flags & fPreallocated) == 0) {
+            m_sCMD += "IF @@ROWCOUNT = 0\n";
+            m_sCMD += "  INSERT INTO " + m_TableName + " (" + m_KeyColName;
+            m_sCMD += ", " + m_NumColName + ", " + data_names + ")\n";
+            m_sCMD += "    SELECT @key, @n, " + data_values + "\n";
+            m_sCMD += "      WHERE NOT EXISTS (SELECT " + m_NumColName;
+            m_sCMD += " FROM " + m_TableName + " WHERE ";
+            m_sCMD += m_KeyColName + " = @key AND " + m_NumColName + " = @n)";
+        }
 #endif
     }
     else m_DataColName= 0;
@@ -398,6 +402,10 @@ bool CSimpleBlobStore::Init(CDB_Connection* con)
     m_Cmd->BindParam("@n", &m_RowNum);
     m_Cmd->Send(); // sending command to update/insert row
     m_Cmd->DumpResults(); // we don't expect any useful results
+    CHECK_DRIVER_ERROR(m_Cmd->RowCount() != 1,
+                       "No rows preallocated for key " + m_Key.AsString()
+                       + " in table " + m_TableName,
+                       1000030);
     return true;
 }
 
@@ -416,6 +424,10 @@ I_BlobDescriptor& CSimpleBlobStore::BlobDescriptor(void)
         if(m_RowNum.Value() > 0) {
             m_Cmd->Send(); // sending command to update/insert row
             m_Cmd->DumpResults(); // we don't expect any useful results
+            CHECK_DRIVER_ERROR(m_Cmd->RowCount() != 1,
+                               "No more rows preallocated for key "
+                               + m_Key.AsString() + " in table " + m_TableName,
+                               1000040);
         }
 
         string s = m_KeyColName + "= '";
@@ -447,20 +459,28 @@ bool CSimpleBlobStore::Fini(void)
         }
 
         int i= m_ImageNum % m_nofDataCols;
+        string clear_extras;
+        if ((m_Flags & fPreallocated) == 0) {
+            clear_extras = "DELETE " + table_and_hint;
+        } else {
+            clear_extras = "UPDATE " + table_and_hint + " SET";
+            for (int j = 0;  j < m_nofDataCols;  ++j) {
+                clear_extras += (j ? ", " : " ") + m_DataColName[j] + "=NULL";
+            }
+        }
+        clear_extras += (" WHERE " + m_KeyColName + " = @key AND "
+                         + m_NumColName + " > @n");
         if(i || m_ImageNum == 0) { // we need to clean-up the current row
             string s= "update " + table_and_hint + " set";
             for(int j= i; j < m_nofDataCols; j++) {
                 s+= ((i != j)? ", ":" ") + m_DataColName[j] + " = NULL";
             }
             s+= " where " + m_KeyColName + " = @key AND " + m_NumColName +
-                " = @n delete " + table_and_hint + " where " + m_KeyColName +
-                " = @key AND " + m_NumColName + " > @n";
+                " = @n " + clear_extras;
             m_Cmd= m_Con->LangCmd(s);
         }
         else {
-            string s= "delete " + table_and_hint + " where " + m_KeyColName +
-                " = @key AND " + m_NumColName + " > @n";
-            m_Cmd= m_Con->LangCmd(s);
+            m_Cmd= m_Con->LangCmd(clear_extras);
         }
         m_Cmd->SetParam("@key", &m_Key);
         m_Cmd->BindParam("@n", &m_RowNum);

@@ -199,7 +199,8 @@ class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CSimpleBlobStore
 public:
     enum EFlags {
         fIsText       = 1 << 0, ///< (N)TEXT or (N)VARCHAR(MAX)
-        fLogBlobs     = 1 << 1  ///< Enable server-side logging
+        fLogBlobs     = 1 << 1, ///< Enable server-side logging
+        fPreallocated = 1 << 2  ///< Don't create rows or clean up excess rows
     };
     DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
     static const TFlags kDefaults { 0 };

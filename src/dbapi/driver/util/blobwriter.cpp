@@ -76,11 +76,14 @@ int main(int argc, char* argv[])
 
     size_t imagesize= 0;
 
+    bool preallocated = false;
+    CSimpleBlobStore::TFlags flags = CSimpleBlobStore::kDefaults;
+
     if(argc < 2) {
         cerr << argv[0]
              << " -K<blob_id> [-d<driver_name>] [-S<server_name>]"
              << " [-U<user_name>] [-P<password>] [-L<image size>] [-Z<compress_method>]"
-             << " [-T<table_name>] [-H<table_hint>]"
+             << " [-T<table_name>] [-H<table_hint>] [-a]"
              << endl;
         return 0;
     }
@@ -140,6 +143,11 @@ int main(int argc, char* argv[])
     p= getParam('H', argc, argv);
     if(p) table_hint= p;
 
+    getParam('a', argc, argv, &preallocated);
+    if (preallocated) {
+        flags |= CSimpleBlobStore::fPreallocated;
+    }
+
     string *blob_column = NULL;
 
     try {
@@ -165,7 +173,6 @@ int main(int argc, char* argv[])
 
         unsigned int n;
         int k= 0;
-        CSimpleBlobStore::TFlags flags = CSimpleBlobStore::kDefaults;
 
         while (lcmd->HasMoreResults()) {
             CDB_Result* r = lcmd->Result();

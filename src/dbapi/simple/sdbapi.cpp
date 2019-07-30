@@ -898,6 +898,9 @@ CSimpleBlobStore::TFlags s_TranslateBlobStoreFlags(TNewBlobStoreFlags flags)
     if ((flags & fNBS_IsText) != 0) {
         result |= CSimpleBlobStore::fIsText;
     }
+    if ((flags & fNBS_Preallocated) != 0) {
+        result |= CSimpleBlobStore::fPreallocated;
+    }
     return result;
 }
 
