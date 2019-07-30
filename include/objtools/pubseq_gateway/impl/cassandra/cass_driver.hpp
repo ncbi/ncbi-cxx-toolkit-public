@@ -660,6 +660,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         return CNotImplemented<F>::GetColumn_works_by_name_and_by_index();
     }
 
+    template<typename F>
+    string GetColumnDef(F ifld) const
+    {
+        static_assert(sizeof(F) == 0, "Columns can be accessed by either index or name");
+        return CNotImplemented<F>::GetColumn_works_by_name_and_by_index();
+    }
+    
     void GetFuture();
     void ProcessFutureResult();
     void SetupOnDataCallback();
@@ -864,7 +871,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     bool FieldGetBoolValue(F ifld) const
     {
         bool rv;
-        Convert::CassValueConvert<bool>(GetColumn(ifld), rv);
+        try {
+            Convert::CassValueConvert<bool>(GetColumn(ifld), rv);
+        }
+        catch (CCassandraException& ex) {
+            ex.AddToMessage(GetColumnDef(ifld));
+            throw;
+        }
         return rv;
     }
 
@@ -880,7 +893,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     int8_t FieldGetInt8Value(F ifld) const
     {
         int8_t rv;
-        Convert::CassValueConvert<int8_t>(GetColumn(ifld), rv);
+        try {
+            Convert::CassValueConvert<int8_t>(GetColumn(ifld), rv);
+        }
+        catch (CCassandraException& ex) {
+            ex.AddToMessage(GetColumnDef(ifld));
+            throw;
+        }
         return rv;
     }
 
@@ -896,7 +915,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     int16_t FieldGetInt16Value(F ifld) const
     {
         int16_t rv;
-        Convert::CassValueConvert<int16_t>(GetColumn(ifld), rv);
+        try {
+            Convert::CassValueConvert<int16_t>(GetColumn(ifld), rv);
+        }
+        catch (CCassandraException& ex) {
+            ex.AddToMessage(GetColumnDef(ifld));
+            throw;
+        }
         return rv;
     }
 
@@ -912,7 +937,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     int32_t FieldGetInt32Value(F ifld) const
     {
         int32_t rv;
-        Convert::CassValueConvert<int32_t>(GetColumn(ifld), rv);
+        try {
+            Convert::CassValueConvert<int32_t>(GetColumn(ifld), rv);
+        }
+        catch (CCassandraException& ex) {
+            ex.AddToMessage(GetColumnDef(ifld));
+            throw;
+        }
         return rv;
     }
 
@@ -928,7 +959,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     int64_t FieldGetInt64Value(F ifld) const
     {
         int64_t rv;
-        Convert::CassValueConvert<int64_t>(GetColumn(ifld), rv);
+        try {
+            Convert::CassValueConvert<int64_t>(GetColumn(ifld), rv);
+        }
+        catch (CCassandraException& ex) {
+            ex.AddToMessage(GetColumnDef(ifld));
+            throw;
+        }
         return rv;
     }
 
@@ -944,7 +981,14 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     double FieldGetFloatValue(F ifld) const
     {
         double rv;
-        Convert::CassValueConvert<double>(GetColumn(ifld), rv);
+        try {
+            Convert::CassValueConvert<double>(GetColumn(ifld), rv);
+        }
+        catch (CCassandraException& ex) {
+            ex.AddToMessage(GetColumnDef(ifld));
+            throw;
+        }
+
         return rv;
     }
 
@@ -960,7 +1004,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     string FieldGetStrValue(F ifld) const
     {
         string rv;
-        Convert::CassValueConvert<string>(GetColumn(ifld), rv);
+        try {
+            Convert::CassValueConvert<string>(GetColumn(ifld), rv);
+        }
+        catch (CCassandraException& ex) {
+            ex.AddToMessage(GetColumnDef(ifld));
+            throw;
+        }
         return rv;
     }
 
@@ -997,7 +1047,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                         }
 
                         TValueType v;
-                        Convert::CassValueConvert(value, v);
+                        try {
+                            Convert::CassValueConvert(value, v);
+                        }
+                        catch (CCassandraException& ex) {
+                            ex.AddToMessage(GetColumnDef(ifld));
+                            throw;
+                        }
                         insert_iterator++ = move(v);
                     }
                 }
@@ -1031,7 +1087,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         const CassValue * clm = GetColumn(ifld);
         if (!cass_value_is_null(clm)) {
             T t;
-            Convert::CassValueConvert(clm, t);
+            try {
+                Convert::CassValueConvert(clm, t);
+            }
+            catch (CCassandraException& ex) {
+                ex.AddToMessage(GetColumnDef(ifld));
+                throw;
+            }
             return t;
         }
         return T();
@@ -1056,7 +1118,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                     const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
                     if (!value)
                         NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
-                    Convert::CassValueConvert(value, v);
+                    try {
+                        Convert::CassValueConvert(value, v);
+                    }
+                    catch (CCassandraException& ex) {
+                        ex.AddToMessage(GetColumnDef(ifld));
+                        throw;
+                    }
                     values.push_back(move(v));
                 }
                 break;
@@ -1090,7 +1158,13 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                         if (!value) {
                             NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
                         }
-                        Convert::CassValueConvert(value, v);
+                        try {
+                            Convert::CassValueConvert(value, v);
+                        }
+                        catch (CCassandraException& ex) {
+                            ex.AddToMessage(GetColumnDef(ifld));
+                            throw;
+                        }
                         values.insert(move(v));
                     }
                 }
@@ -1124,9 +1198,21 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                         const CassValue* key = cass_iterator_get_map_key(items_iterator.get());
                         const CassValue* val = cass_iterator_get_map_value(items_iterator.get());
                         K k;
-                        Convert::CassValueConvert(key, k);
+                        try {
+                            Convert::CassValueConvert(key, k);
+                        }
+                        catch (CCassandraException& ex) {
+                            ex.AddToMessage(GetColumnDef(ifld));
+                            throw;
+                        }
                         V v;
-                        Convert::CassValueConvert(val, v);
+                        try {
+                            Convert::CassValueConvert(val, v);
+                        }
+                        catch (CCassandraException& ex) {
+                            ex.AddToMessage(GetColumnDef(ifld));
+                            throw;
+                        }
                         result.emplace(move(k), move(v));
                     }
                 }
@@ -1285,6 +1371,12 @@ template<>
 const CassValue* CCassQuery::GetColumn(const string& name) const;
 template<>
 const CassValue* CCassQuery::GetColumn(const char* name) const;
+template<>
+string CCassQuery::GetColumnDef(int ifld) const;
+template<>
+string CCassQuery::GetColumnDef(const string& name) const;
+template<>
+string CCassQuery::GetColumnDef(const char* name) const;
 
 END_IDBLOB_SCOPE
 
