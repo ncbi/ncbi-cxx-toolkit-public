@@ -168,7 +168,7 @@ CNetService g_DiscoverService(const string& s, const string& c) { return CNetSer
 
 /// @internal
 extern NCBI_XCONNECT_EXPORT
-void g_AppendClientIPSessionIDHitID(string& cmd, bool = false);
+void g_AppendClientIPSessionIDHitID(string& cmd);
 
 END_NCBI_SCOPE
 

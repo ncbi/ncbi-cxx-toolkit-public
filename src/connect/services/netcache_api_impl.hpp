@@ -136,7 +136,6 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     CCompoundIDPool m_CompoundIDPool;
 
-    SUseNextSubHitID m_UseNextSubHitID;
     size_t m_FlagsOnWrite = 0;
 };
 

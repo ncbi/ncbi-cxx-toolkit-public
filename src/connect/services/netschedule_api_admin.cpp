@@ -133,7 +133,7 @@ void CNetScheduleAdmin::CancelAllJobs(const string& job_statuses)
         cmd.assign("CANCEL status=");
         cmd.append(job_statuses);
     }
-    g_AppendClientIPSessionIDHitID(cmd, true);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 

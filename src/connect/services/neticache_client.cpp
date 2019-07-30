@@ -203,7 +203,6 @@ CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
     cmd.append(nc_writer->GetBlobID());
     if (nc_writer->GetResponseType() == eNetCache_Wait)
         cmd.append(" confirm=1");
-    m_UseNextSubHitID.ProperCommand();
     AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
     if (m_FlagsOnWrite) cmd.append(" flags=").append(to_string(m_FlagsOnWrite));
 
@@ -634,7 +633,6 @@ void CNetICacheClient::RemoveBlob(const string& key,
 
     parameters.LoadNamedParameters(optional);
 
-    m_Impl->m_UseNextSubHitID.ProperCommand();
     m_Impl->ExecStdCmd("REMO", key, version, subkey, &parameters);
 }
 

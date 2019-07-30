@@ -261,10 +261,7 @@ public:
     size_t GetMaxServerInputSize();
 
 private:
-    friend class CGridJobBatchSubmitter;
-
     void RemoveDataBlob(const string&);
-    void UseNextSubHitID();
 
     CNetScheduleSubmitter m_NetScheduleSubmitter;
     CNetCacheAPI m_NetCacheAPI;

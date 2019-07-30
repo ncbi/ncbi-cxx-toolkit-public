@@ -396,34 +396,11 @@ private:
     set<string, PNocase> m_Allowed;
 };
 
-struct SUseNextSubHitID
-{
-    void ProperCommand() { m_ProperCommand = true; }
-    void DoNot() { m_Allowed = false; }
-
-    operator bool()
-    {
-        if (!m_ProperCommand) return false;
-
-        m_ProperCommand = false;
-
-        if (m_Allowed) return true;
-
-        m_Allowed = true;
-        return false;
-    }
-
-private:
-    bool m_ProperCommand = false;
-    bool m_Allowed = true;
-};
-
 inline
-void g_AppendHitID(string& cmd, CRequestContext& req, bool use_next_sub_hit_id)
+void g_AppendHitID(string& cmd, CRequestContext& req)
 {
-    auto sub_hit_id = use_next_sub_hit_id ? req.GetNextSubHitID() : req.GetCurrentSubHitID();
     cmd += " ncbi_phid=\"";
-    cmd += sub_hit_id;
+    cmd += req.GetNextSubHitID();
     cmd += '"';
 }
 

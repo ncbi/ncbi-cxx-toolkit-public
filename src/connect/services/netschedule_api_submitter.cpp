@@ -101,8 +101,7 @@ void SNetScheduleSubmitterImpl::AppendClientIPSessionIDHitID(string& cmd, const 
         cmd.append(job_group);
     }
 
-    m_UseNextSubHitID.ProperCommand();
-    g_AppendHitID(cmd, req, m_UseNextSubHitID);
+    g_AppendHitID(cmd, req);
 }
 
 string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleNewJob& job,
@@ -592,7 +591,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
     string cmd(g_MakeBaseCmd("CANCEL", job_key));
-    g_AppendClientIPSessionIDHitID(cmd, true);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     CNetServer::SExecResult exec_result;
     m_Impl->m_API->GetServer(job_key)->ConnectAndExec(cmd, false, exec_result);
@@ -607,7 +606,7 @@ void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
         cmd.append(" status=");
         cmd.append(job_statuses);
     }
-    g_AppendClientIPSessionIDHitID(cmd, true);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 

@@ -439,8 +439,6 @@ struct SNetScheduleSubmitterImpl : public CObject
     void AppendClientIPSessionIDHitID(string& cmd, const string& job_group);
 
     CNetScheduleAPI m_API;
-
-    SUseNextSubHitID m_UseNextSubHitID;
 };
 
 inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(

@@ -284,7 +284,7 @@ void SNetCacheAPIImpl::AppendHitID(string* cmd, CRequestContext& req)
 {
     _ASSERT(cmd);
 
-    g_AppendHitID(*cmd, req, m_UseNextSubHitID);
+    g_AppendHitID(*cmd, req);
 }
 
 void SNetCacheAPIImpl::AppendClientIPSessionIDHitID(string* cmd)
@@ -527,7 +527,6 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
         cmd.append(stripped_blob_id);
     }
 
-    m_UseNextSubHitID.ProperCommand();
     AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
     if (m_FlagsOnWrite) cmd.append(" flags=").append(to_string(m_FlagsOnWrite));
 
@@ -697,7 +696,6 @@ void CNetCacheAPI::Remove(const string& blob_id,
     CNetCacheKey key(blob_id, m_Impl->m_CompoundIDPool);
 
     try {
-        m_Impl->m_UseNextSubHitID.ProperCommand();
         m_Impl->ExecMirrorAware(key,
                 m_Impl->MakeCmd("RMV2 ", key, &parameters),
                 false,

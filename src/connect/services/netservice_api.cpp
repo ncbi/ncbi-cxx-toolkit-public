@@ -1503,11 +1503,11 @@ CNetService CNetService::Create(const string& api_name, const string& service_na
             registry_builder, sections);
 }
 
-void g_AppendClientIPSessionIDHitID(string& cmd, bool use_next_sub_hit_id)
+void g_AppendClientIPSessionIDHitID(string& cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
     g_AppendClientIPAndSessionID(cmd, req);
-    g_AppendHitID(cmd, req, use_next_sub_hit_id);
+    g_AppendHitID(cmd, req);
 }
 
 END_NCBI_SCOPE

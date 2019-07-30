@@ -814,8 +814,6 @@ SNetStorageObjectImpl* SNetStorageRPC::Create(TNetStorageFlags flags)
                 "Object creation is disabled.");
     }
 
-    m_UseNextSubHitID.ProperCommand();
-
     auto request = MkStdRequest("CREATE");
     s_SetStorageFlags(request, GetFlags(flags));
 
@@ -844,7 +842,6 @@ SNetStorageObjectImpl* SNetStorageRPC::Open(const string& object_loc)
 
 string SNetStorageObjectRPC::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
-    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     MkRequest("RELOCATE");
 
     CJsonNode new_location(CJsonNode::NewObjectNode());
@@ -897,7 +894,6 @@ bool SNetStorageObjectRPC::Exists()
 
 ENetStorageRemoveResult SNetStorageObjectRPC::Remove()
 {
-    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     MkRequest("DELETE");
 
     try {
@@ -950,11 +946,7 @@ CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type) const
         new_request.SetString("SessionID", req.GetSessionID());
     }
 
-    if (m_UseNextSubHitID) {
-        req.GetNextSubHitID();
-    } else {
-        req.GetCurrentSubHitID();
-    }
+    req.GetNextSubHitID();
 
     const auto format = CRequestContext_PassThrough::eFormat_UrlEncoded;
     const CRequestContext_PassThrough context;
@@ -1164,7 +1156,6 @@ bool SNetStorageObjectRPC::SIState::Eof()
 ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
         size_t* bytes_written)
 {
-    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     MkRequest("WRITE");
 
     m_Context.locator = Exchange().GetString("ObjectLoc");

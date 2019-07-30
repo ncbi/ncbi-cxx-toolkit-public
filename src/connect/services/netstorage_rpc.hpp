@@ -81,8 +81,6 @@ public:
 
     CNetCacheAPI m_NetCacheAPI;
 
-    mutable SUseNextSubHitID m_UseNextSubHitID;
-
 private:
     map<string, CNetService> m_ServiceMap;
 };

@@ -85,22 +85,13 @@ size_t CGridClient::GetMaxServerInputSize()
 
 //////////////////////////////////////////////////////////////////////////////
 //
-void CGridClient::UseNextSubHitID()
-{
-    CDiagContext::GetRequestContext().GetNextSubHitID();
-    m_NetCacheAPI->m_UseNextSubHitID.DoNot();
-    m_NetScheduleSubmitter->m_UseNextSubHitID.DoNot();
-}
-
 void CGridClient::SetJobInput(const string& input)
 {
-    UseNextSubHitID();
     m_Job.input = input;
 }
 
 CNcbiOstream& CGridClient::GetOStream()
 {
-    UseNextSubHitID();
     return m_GridWrite(GetNetCacheAPI(), GetMaxServerInputSize(), m_Job.input);
 }
 
@@ -192,7 +183,6 @@ void CGridJobBatchSubmitter::PrepareNextJob()
     if (!m_Jobs.empty())
         ++m_JobIndex;
     m_Jobs.push_back(CNetScheduleJob());
-    m_GridClient.GetNetCacheAPI()->m_UseNextSubHitID.DoNot();
 }
 
 void CGridJobBatchSubmitter::Submit(const string& job_group)
@@ -212,7 +202,6 @@ void CGridJobBatchSubmitter::Reset()
     m_HasBeenSubmitted = false;
     m_JobIndex = 0;
     m_Jobs.clear();
-    m_GridClient.UseNextSubHitID();
 }
 
 CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client)
