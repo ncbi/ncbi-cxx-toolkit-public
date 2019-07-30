@@ -2626,7 +2626,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HNH\ts\tDartmouth College, Biological Sciences Department\t\t\t",
 "HNHH\ts\tHeilongjiang Natural History Museum\t\t\t",
 "HNHM<HUN>\ts\tHungarian Natural History Museum (Termeszettudomanyi Muzeum)\t\t\t",
-"HNHM<HUN>:Moll\tc\tHungarian Natural History Museum (Termeszettudomanyi Muzeum), Mollusca Collection\t\t",
+"HNHM<HUN>:Moll\ts\tHungarian Natural History Museum (Termeszettudomanyi Muzeum), Mollusca Collection\t",
 "HNHM<KOR>\ts\tHannam University, Department of Biology\t\t\t",
 "HNHPS\ts\tHunan Hupingshan National Nature Reserve\t\t\t",
 "HNHR\ts\tUniversity of California, Hastings Natural History Reservation\t\t\t",

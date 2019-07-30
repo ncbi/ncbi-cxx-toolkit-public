@@ -2593,7 +2593,7 @@ HNG	s	Universite. Gamal Abdel Nasser de Conakry
 HNH	s	Dartmouth College, Biological Sciences Department			
 HNHH	s	Heilongjiang Natural History Museum			
 HNHM<HUN>	s	Hungarian Natural History Museum (Termeszettudomanyi Muzeum)			
-HNHM<HUN>:Moll	c	Hungarian Natural History Museum (Termeszettudomanyi Muzeum), Mollusca Collection		
+HNHM<HUN>:Moll	s	Hungarian Natural History Museum (Termeszettudomanyi Muzeum), Mollusca Collection	
 HNHM<KOR>	s	Hannam University, Department of Biology			
 HNHPS	s	Hunan Hupingshan National Nature Reserve			
 HNHR	s	University of California, Hastings Natural History Reservation			
