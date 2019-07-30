@@ -14,7 +14,7 @@ function(NCBI_internal_process_dataspec _variable _access _value)
     if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS" OR "${_value}" STREQUAL "")
         return()
     endif()
-    cmake_parse_arguments(DT "GENERATE" "DATASPEC;REQUIRES;RETURN" "" ${_value})
+    cmake_parse_arguments(DT "GENERATE" "DATASPEC;RETURN" "REQUIRES" ${_value})
 
     get_filename_component(_path     ${DT_DATASPEC} DIRECTORY)
     get_filename_component(_basename ${DT_DATASPEC} NAME_WE)
