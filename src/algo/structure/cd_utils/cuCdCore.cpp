@@ -27,10 +27,8 @@
  *
  * File Description:
  *
- *       Subclass of CCdCored for use by CDTree
- *		 As compared to CCdCore in CDTree
- *			Remove TaxServer -related methods
- *			Remove any methods using BLASTMatrix
+ *		 Subclass of CCdd object.
+ *       Originally forked from the CDTree3 CCd class.
  *
  * ===========================================================================
  */
@@ -160,13 +158,10 @@ int CCdCore::GetUID() const
 }
 
 
-/* ADDED */
-// is 'id' an identifier for this CD?
 bool CCdCore::HasCddId(const CCdd_id& id) const{
-//formerly ... bool isIdInSet(const CRef<CCdCore>& cd, const CCdd_id& id)
 
     bool isHere = false;
-    CCdd_id_set::Tdata idSet = GetId().Get();  // list<CRef<CCdd_id>>
+    CCdd_id_set::Tdata idSet = GetId().Get();
     for (CCdd_id_set::Tdata::const_iterator ci=idSet.begin(); ci!=idSet.end(); ++ci) {
         if ((**ci).Equals(id)) {
             isHere = true;
@@ -223,6 +218,7 @@ int CCdCore::GetNumRows() const {
 //-------------------------------------------------------------------------
 
     const CRef< CSeq_annot >& alignment = GetAlignment();
+
     //  Be sure GetAlign() is not an empty container -> no such thing as a CD blob with one row.
     if (alignment.NotEmpty() && alignment->GetData().IsAlign() && alignment->GetData().GetAlign().size() > 0) {
         // number pairs + 1 == num rows
@@ -281,7 +277,6 @@ int CCdCore::GetPSSMLength() const{
 }
 
 
-/*  ADDED  */
 // return number of blocks in alignment (0 if no alignment, or not a Dense_diag)
 int CCdCore::GetNumBlocks() const {
     if (IsSeqAligns()) {
@@ -293,7 +288,6 @@ int CCdCore::GetNumBlocks() const {
     return 0;
 }
 
-/* ADDED */ 
 bool   CCdCore::GetCDBlockLengths(vector<int>& lengths) const {
     if (IsSeqAligns()) {
         const CRef< CSeq_align >& seqAlign = GetSeqAlign(0);
@@ -304,7 +298,6 @@ bool   CCdCore::GetCDBlockLengths(vector<int>& lengths) const {
     return false;
 }
 
-/* ADDED */ 
 bool   CCdCore::GetBlockStartsForRow(int rowIndex, vector<int>& starts) const {
     bool onMaster = (rowIndex) ? false : true;
     bool result = false;
@@ -354,26 +347,13 @@ int CCdCore::GetSeqIndex(const CRef< CSeq_id >& SeqID) const{
     int  i, NumSequences = GetNumSequences();
     CRef< CSeq_id > TrialSeqID;
 
-    //  don't need this vector of seq entries; can just loop directly over the list - w/ getseqidforindex
-    //  it was slow because that implied another search through the list to find
-    //  the specified index.
-    //  vector< CRef< CSeq_entry > > VectorOfSeqEntries;
-    //for (ii=GetSequences().GetSet().GetSeq_set().begin(); ii!=GetSequences().GetSet().GetSeq_set().end(); ii++) {
-    //    VectorOfSeqEntries.push_back(*ii);
-    // }
-
-
-    //  CBioseq_set::TSeq_set == list< CRef< CSeq_entry > >
     CBioseq_set::TSeq_set::const_iterator seCit = GetSequences().GetSet().GetSeq_set().begin();
     CBioseq_set::TSeq_set::const_iterator seCend = GetSequences().GetSet().GetSeq_set().end();
 
     if (SeqID.NotEmpty()) {
         for (i=0; seCit != seCend && i<NumSequences; ++seCit, i++) {
-            //  Stopped using GetSeqIDForIndex (or variants) as it selected only one of the possible Seq_ids -- and
-            //  even in that case, the Seq_id is returned according to a ranking of the possible results 
-            //  of Seq_id::Which().  Should be comparing against all Seq_ids in all bioseqs.
-            //const CBioseq& bioseq = VectorOfSeqEntries[i]->GetSeq();
-            //if (GetSeqIDForIndex(i, TrialSeqID) && SeqIdsMatch(SeqID, TrialSeqID)) {
+            //  Stopped using GetSeqIDForIndex (or variants) as it selected only one of the possible Seq_ids
+            //  -- potentially not the desired one for a given use case.
             if ((*seCit)->IsSeq() && SeqIdHasMatchInBioseq(SeqID, (*seCit)->GetSeq())) {
                 return i;
             }
@@ -404,7 +384,6 @@ int CCdCore::GetNthMatchFor(CRef< CSeq_id >& ID, int N) {
   return(-1);
 }
 
-/* ADDED */
 // convenience method to return a vector vs. a list
 // find all row indices for a seqID, irrespective of the footprint (return # found)
 int CCdCore::GetAllRowIndicesForSeqId(const CRef<CSeq_id>& SeqID, vector<int>& rows) const
@@ -423,7 +402,6 @@ int CCdCore::GetAllRowIndicesForSeqId(const CRef<CSeq_id>& SeqID, vector<int>& r
     return numMatches;
 }
 
-/* ADDED */
 // find all row indices for a seqID, irrespective of the footprint (return # found)
 int CCdCore::GetAllRowIndicesForSeqId(const CRef<CSeq_id>& SeqID, list<int>& rows) const
 {
@@ -465,7 +443,7 @@ bool CCdCore::GetGI(int Row, TGi& GI, bool ignorePDBs) {
   if (SeqID->IsGi()) {
     GI = SeqID->GetGi();
     return(true);
-  } else if (SeqID->IsPdb() && !ignorePDBs) {   //  cjl; 1/09/04; to match AlignmentCollection
+  } else if (SeqID->IsPdb() && !ignorePDBs) {   //  to match AlignmentCollection behavior
     GI = GetGIFromSequenceList(GetSeqIndex(SeqID));
     return true;
   }
@@ -543,7 +521,7 @@ bool CCdCore::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str,
   } else {
     Str += "<Non-gi/pdb Sequence Types Unsupported>";
   }
-//  Make_GI_or_PDB_String(SeqID, Str, Pad, Len);
+
   return(true);
 }
 
@@ -579,8 +557,6 @@ bool CCdCore::GetSeqEntryForRow(int rowId, CRef< CSeq_entry >& seqEntry) const {
 }
 
 
-
-/* ADDED */
 //  get the bioseq for the designated alignment row (for editing)
 bool   CCdCore::GetBioseqForRow(int rowId, CRef< CBioseq >& bioseq)  {
 
@@ -588,7 +564,6 @@ bool   CCdCore::GetBioseqForRow(int rowId, CRef< CBioseq >& bioseq)  {
     return GetBioseqForIndex(seqIndex, bioseq);
 }
 
-/* ADDED */
 // find the species string for alignment row
 string CCdCore::GetSpeciesForRow(int Row) {
     CRef< CBioseq > bioseq;  // = GetBioseqForRow(Row);
@@ -599,7 +574,6 @@ string CCdCore::GetSpeciesForRow(int Row) {
 }
 
 
-/* ADDED */
 // get the sequence for specified row
 string CCdCore::GetSequenceStringByRow(int rowId) {
     int seqIndex = GetSeqIndexForRowIndex(rowId);
@@ -692,7 +666,6 @@ string CCdCore::GetDefline(int SeqIndex) const {
 }
 
 
-/* ADDED */
 // find the species string for sequence list index
 string CCdCore::GetSpeciesForIndex(int SeqIndex) {
     CRef< CBioseq > bioseq;  // = GetBioseqForIndex(SeqIndex);
@@ -703,8 +676,6 @@ string CCdCore::GetSpeciesForIndex(int SeqIndex) {
 }
 
 
-
-/*  MOVED  */   //  was in cdt_manipcd as CD_GetSeq
 bool CCdCore::GetSeqEntryForIndex(int seqIndex, CRef< CSeq_entry > & seqEntry) const
 {
     list< CRef< CSeq_entry > >::const_iterator i, iend;
@@ -727,7 +698,6 @@ bool CCdCore::GetSeqEntryForIndex(int seqIndex, CRef< CSeq_entry > & seqEntry) c
 
 }
 
-/* ADDED */
 //  get the bioseq for the designated sequence index
 bool CCdCore::GetBioseqForIndex(int seqIndex, CRef< CBioseq >& bioseq) {
     list< CRef< CSeq_entry > >::iterator i, iend;
@@ -750,7 +720,6 @@ bool CCdCore::GetBioseqForIndex(int seqIndex, CRef< CBioseq >& bioseq) {
 }
 
 
-/* ADDED */
 // get the sequence for specified sequence index
 string CCdCore::GetSequenceStringByIndex(int seqIndex) {
     string s = kEmptyStr;
@@ -810,23 +779,6 @@ bool CCdCore::HasSeqId(const CRef< CSeq_id >& ID, int& RowIndex) const {
 }
 
 
-int CCdCore::GetNumMatches(const CRef< CSeq_id >& ID) const {
-//-------------------------------------------------------------------------
-// count the number of rows that have a matching ID
-//-------------------------------------------------------------------------
-  int  k, Count, NumRows=GetNumRows();
-  CRef< CSeq_id > TestID;
-
-  Count = 0;
-  for (k=0; k<NumRows; k++) {
-    GetSeqIDFromAlignment(k, TestID);
-    if (SeqIdsMatch(ID, TestID)) {
-      Count++;
-    }
-  }
-  return(Count);
-}
-
 /* ====================================== */
 /*  SeqID getters ... from alignment info */
 /* ====================================== */
@@ -843,7 +795,7 @@ bool CCdCore::GetSeqIDForRow(int Pair, int DenDiagRow, CRef< CSeq_id >& SeqID) c
   int  Row;
 
   Row = (Pair == 0) ? DenDiagRow : Pair+1;
-//  GetDenDiag(Row, true, DenDiag);
+
   const CRef< CSeq_align >& seqAlign = GetSeqAlign(Row);
   if (seqAlign.NotEmpty() && GetFirstOrLastDenDiag(seqAlign, true, DenDiag)) {
     IdsSet = DenDiag->GetIds();
@@ -1020,16 +972,17 @@ bool CCdCore::EraseTheseRows(const std::vector<int>& TossRows) {
 
   int * ind=new int[3*TossRows.size()];
   algSortQuickCallbackIndex((void * )&TossRows,TossRows.size(),ind+TossRows.size(),ind,intSortRowsFunction);
-  /*
-  for(int i=0;i<TossRows.size(); i++){
-	  int iii=TossRows[ind[i]];
-	  iii++;
-  }*/
   
   for (i=TossRows.size()-1; i>=0; i--) {
-    if (TossRows[ind[i]] == 0) return(false);  // return false if master row is to be deleted
-    if (!EraseRow(alignment, TossRows[ind[i]])) return(false);  // return false if problem deleting a row
-    Count++;
+      if (TossRows[ind[i]] == 0) {
+          delete [] ind;
+          return(false);  // return false if master row is to be deleted
+      }
+      if (!EraseRow(alignment, TossRows[ind[i]])) {
+          delete [] ind;
+          return(false);  // return false if problem deleting a row
+      }
+      Count++;
   }
 
   delete [] ind;
@@ -1045,7 +998,7 @@ bool CCdCore::EraseOtherRows(const std::vector<int>& KeepRows) {
 // KeepRows won't contain the master (0 index) row.
 // return of true means successful completion.
 //-------------------------------------------------------------------------
-//  list< CRef< CSeq_annot > >::iterator i;
+
     int   j, k, NumRows;
     bool  FoundIt;
 
@@ -1071,7 +1024,7 @@ bool CCdCore::EraseOtherRows(const std::vector<int>& KeepRows) {
             }
         }
     }
-//  }
+
     return(true);
 }
 
@@ -1086,8 +1039,6 @@ void CCdCore::EraseSequences() {
     set<int> indicesToErase;
     set<int>::reverse_iterator rit, ritEnd;
 
-    //  CBioseq_set::TSeq_set == list< CRef< CSeq_entry > >
-    //  CBioseq::TId == list< CRef< CSeq_id > >
     CBioseq::TId::const_iterator idCit, idCend;
     CBioseq_set::TSeq_set::const_iterator seCit = GetSequences().GetSet().GetSeq_set().begin();
     CBioseq_set::TSeq_set::const_iterator seCend = GetSequences().GetSet().GetSeq_set().end();
@@ -1112,24 +1063,14 @@ void CCdCore::EraseSequences() {
         }
     }
 
-    //  Need to erase in order of decreasing indices so that they don't get invalidated.
+    //  Erase in reverse order so iterators don't get invalidated.
     if (indicesToErase.size() > 0) {
         ritEnd = indicesToErase.rend();
         for (rit = indicesToErase.rbegin(); rit != ritEnd; ++rit) {
             EraseSequence(*rit);
         }
     }
-/*
-    for (i=NumSequences-1; i>=0; i--) {
-//  GetSeqIDForIndex this only checks one of the IDs; make sure to look through all of them  
-        GetSeqIDForIndex(i, ID);  
-        if (!HasSeqId(ID)) {
-            EraseSequence(i);
-        }
-    }
-*/
-  // testing
-  NumSequences = GetNumSequences();
+
 }
 
 
@@ -1226,83 +1167,6 @@ void CCdCore::Clear()
 /*  Methods for structures, structure alignments, MMDB identifiers  */
 /* ================================================================ */
 
-bool CCdCore::SynchronizeMaster3D(bool checkRow1WhenConsensusMaster)
-{
-    bool result = false;
-    CRef< CSeq_id > masterPdbId(new CSeq_id);
-
-    ResetMaster3d();
-    if (Has3DMaster()) {
-
-        //  this should *always* be true but just in case...) {
-        if (GetSeqIDForRow(0, 0, masterPdbId) && masterPdbId->IsPdb()) {       
-            SetMaster3d().push_back(masterPdbId);
-            result = true;
-        }
-
-    } else if (checkRow1WhenConsensusMaster && UsesConsensusSequenceAsMaster()) {
-
-        //  If the first row is a structure, then this will be the master3d entry
-        //  after the consensus has been removed.
-        if (GetSeqIDForRow(0, 1, masterPdbId) && masterPdbId->IsPdb()) {       
-            SetMaster3d().push_back(masterPdbId);
-            result = true;
-        }
-    }
-
-    return result;
-}
-
-bool CCdCore::IsMaster3DOK() const
-{
-    bool result = false;
-    CRef< CSeq_id > masterPdbId;
-
-    //  If master is a structure, master3d field should only contain that structure.
-    if (Has3DMaster()) {
-
-        //  this should *always* be true but just in case...) {
-        if (GetSeqIDFromAlignment(0, masterPdbId) && masterPdbId->IsPdb()) {       
-            if (GetMaster3d().size() == 1 && SeqIdsMatch(GetMaster3d().front(), masterPdbId)) {
-                result = true;
-            } 
-        }
-
-    //  If master is not a structure, master3d field should be empty...
-    //  unless we have a consensus master and master3d corresponds to the first row.
-    } else if (UsesConsensusSequenceAsMaster()) {
-        
-        if (GetSeqIDFromAlignment(1, masterPdbId) && masterPdbId->IsPdb()) {       
-            if (GetMaster3d().size() == 1 && SeqIdsMatch(GetMaster3d().front(), masterPdbId)) {
-                result = true;
-            } 
-        }
-
-    } else if (GetMaster3d().size() == 0) {
-        result = true;
-    }
-
-    return result;
-}
-
-bool CCdCore::HasStructure() const {
-//-------------------------------------------------------------------------
-// return true if any Bioseq in the CD has a PDB-type Seq-id
-//-------------------------------------------------------------------------
-    bool result = false;
-    list< CRef< CSeq_entry > >::const_iterator  it, itEnd;
-
-    if (IsSetSequences() && GetSequences().IsSet()) {
-        // look through each sequence in set for a structured sequence
-        itEnd = GetSequences().GetSet().GetSeq_set().end();
-        for (it = GetSequences().GetSet().GetSeq_set().begin(); !result && it != itEnd; ++it) {
-            result = HasSeqIdOfType(*it, CSeq_id::e_Pdb);
-        }
-    }
-    return result;
-}
-
-
 bool CCdCore::Has3DMaster() const {
 //-------------------------------------------------------------------------
 // confirm if this CD has a structure as its master
@@ -1374,108 +1238,6 @@ int CCdCore::Num3DAlignments() const {
 }
 
 
-bool CCdCore::Has3DSuperpos(list<int>& MMDBId_vec) const {
-//-------------------------------------------------------------------------
-//  confirm that all bioseqs with MMDB ids have a structural alignment
-//-------------------------------------------------------------------------
-	int nstruct = 0;
-	int mmdbid;
-
-	int featBiostrucId;
-	//CChem_graph_alignment* cgap;
-	list< CRef< CBiostruc_feature > >     biostrucFeatList;
-	list< CRef< CBiostruc_feature_set > > biostrucFeatSetList;
-	list< CRef< CBiostruc_id > >::const_iterator bidit;
-	list<int>::iterator iit;
-
-	list< CRef< CBiostruc_feature > >::const_iterator bfcit;
-	list< CRef< CBiostruc_feature_set > >::const_iterator bfscit;
-	list< CRef< CSeq_annot > >::const_iterator sannotcit;
-	list< CRef< CSeq_align > >::const_iterator saligncit;
-	CRef< CDense_diag > dd;
-	CRef< CSeq_id > sid1, sid2;
-	const CBioseq* bs = NULL;
-	const CBioseq_set* bsSet = NULL;
-
-	if (!IsSetFeatures()) {
-		return false;
-	}
-	biostrucFeatSetList = GetFeatures().GetFeatures();
-
-	if (IsSetSequences()) {
-		if (GetSequences().IsSet()) {
-			bsSet = &(GetSequences().GetSet());
-		}
-	}
-	if (!bsSet) {
-		return false;
-	}
-
-	MMDBId_vec.clear();
-	if (IsSetSeqannot()) {
-		for (sannotcit=GetSeqannot().begin(); sannotcit != GetSeqannot().end(); ++sannotcit) {
-			if ((*sannotcit)->GetData().IsAlign()) {
-				for (saligncit = (*sannotcit)->GetData().GetAlign().begin(); \
-					saligncit != (*sannotcit)->GetData().GetAlign().end(); ++saligncit) {
-                    if ((*saligncit)->GetSegs().IsDendiag()) {
-                        dd = (*saligncit)->GetSegs().GetDendiag().front();
-                        bs = NULL;
-                        sid1 = dd->GetIds().front();
-                        sid2 = dd->GetIds().back();
-                        if (nstruct == 0 && sid1->IsPdb()) {
-                            if (GetBioseqWithSeqid(sid1, (*bsSet).GetSeq_set(), bs)) {
-                                mmdbid = GetMMDBId(*bs);
-                                MMDBId_vec.push_back(mmdbid);
-                                nstruct++;
-                            }
-                        }
-                        if (sid2->IsPdb()) {
-                            if (GetBioseqWithSeqid(sid2, (*bsSet).GetSeq_set(), bs)) {
-                                mmdbid = GetMMDBId(*bs);
-                                MMDBId_vec.push_back(mmdbid);
-                                nstruct++;
-                            }
-                        }
-                    }
-				}
-			}
-		}
-	}  //  end if (IsSetSeqannot())
-
-	//check features now ... mark any mmdb_id found.  if any leftover --> error.
-	//if an MMDBId is in the list more than once the extra copies are also removed.
-
-	for (bfscit = biostrucFeatSetList.begin(); bfscit != biostrucFeatSetList.end(); ++bfscit) {
-		biostrucFeatList = (*bfscit)->GetFeatures();
-		for (bfcit = biostrucFeatList.begin(); bfcit != biostrucFeatList.end(); ++bfcit) {
-			if ((*bfcit)->IsSetLocation() && (*bfcit)->GetLocation().IsAlignment()) {
-				const CChem_graph_alignment& cgap = (*bfcit)->GetLocation().GetAlignment();
-				for (bidit = cgap.GetBiostruc_ids().begin(); bidit != cgap.GetBiostruc_ids().end(); ++bidit) {
-					if ((*bidit)->IsMmdb_id()) {
-						featBiostrucId = (*bidit)->GetMmdb_id().Get();
-						//  don't remove the master MMDB_id
-						iit = MMDBId_vec.begin();
-						while(iit != MMDBId_vec.end()) {
-							if (*iit == featBiostrucId && iit != MMDBId_vec.begin()) {
-								*iit = 0;
-							}
-							++iit;
-						}
-					}
-				}
-			}
-		}
-	}
-	MMDBId_vec.remove(0);
-	if (MMDBId_vec.size() > 1) {
-		return false;
-	} else {
-		return true;
-	}
-
-	return true;
-}
-
 bool CCdCore::GetRowsForMmdbId(int mmdbId, list<int>& rows) const {
 
 	int rowMmdbId= -1;
@@ -1522,23 +1284,6 @@ bool CCdCore::GetRowsWithMmdbId(vector<int>& rows) const {
 	return false;
 }
 
-int	CCdCore::GetStructuralRowsWithEvidence(vector<int>& rows) const
-{
-	set<int> mmdbIds;
-	GetMmdbIdWithEvidence(mmdbIds);
-	for (set<int>::const_iterator sit = mmdbIds.begin(); sit != mmdbIds.end(); sit++)
-	{
-		list<int> mRows;
-		GetRowsForMmdbId(*sit, mRows);
-		for (list<int>::iterator lit = mRows.begin();
-			lit != mRows.end(); lit++)
-		{
-			rows.push_back(*lit);
-		}
-	}
-	return rows.size();
-}
-
 bool CCdCore::GetMmdbId(int SeqIndex, int& id) const{
 //-------------------------------------------------------------------------
 // get mmdb-id from sequence list
@@ -1577,10 +1322,7 @@ bool CCdCore::GetMmdbId(int SeqIndex, int& id) const{
 /*  CD alignment methods  */
 /* ====================== */
 
-
-
-
-//  Return the first seqAnnot that is of type 'align'
+//  Return the first seqAnnot of type 'align'
 const CRef< CSeq_annot >& CCdCore::GetAlignment() const {
 	list< CRef< CSeq_annot > >::const_iterator sancit;
     if (IsSetSeqannot()) {
@@ -1593,7 +1335,7 @@ const CRef< CSeq_annot >& CCdCore::GetAlignment() const {
     return EMPTY_CREF_SEQANNOT;
 }
 
-//  Return the first seqAnnot that is of type 'align'
+//  Return the first seqAnnot of type 'align'
 bool CCdCore::GetAlignment(CRef< CSeq_annot >& seqAnnot) {
 	list< CRef< CSeq_annot > >::iterator sanit;
     int count = 0;
@@ -1626,8 +1368,6 @@ bool CCdCore::IsSeqAligns() const {
   return(false);
 }
 
-
-
 const list< CRef< CSeq_align > >& CCdCore::GetSeqAligns() const {
 //-------------------------------------------------------------------------
 // get the seq-aligns.  Must know they're present (call IsSeqAligns() first)
@@ -1640,17 +1380,14 @@ const list< CRef< CSeq_align > >& CCdCore::GetSeqAligns() const {
 }
 
 
-/*  ADDED  */
-// get the list of Seq-aligns for editing
 list< CRef< CSeq_align > >& CCdCore::GetSeqAligns() {
 //-------------------------------------------------------------------------
-// get the seq-aligns.  Must know they're present (call IsSeqAligns() first)
-// Assumes the first seq_annot is the alignment.
+// get the list of Seq-aligns for editing
+// Empty list returned when none are present.
 //-------------------------------------------------------------------------
     return SetSeqannot().front()->SetData().SetAlign();
 }
 
-/*  ADDED  */
 // get the Row-th Seq-align
 bool CCdCore::GetSeqAlign(int Row, CRef< CSeq_align >& seqAlign) {
 
@@ -1698,7 +1435,6 @@ const CRef< CSeq_align >& CCdCore::GetSeqAlign(int Row) const {
 }
 
 
-/*  ADDED  */
 //  Returns coordinate on 'otherRow' that is mapped to 'thisPos' on 'thisRow'.
 //  Returns INVALID_MAPPED_POSITION on failure.
 int    CCdCore::MapPositionToOtherRow(int thisRow, int thisPos, int otherRow) const {
@@ -1732,7 +1468,6 @@ int    CCdCore::MapPositionToOtherRow(int thisRow, int thisPos, int otherRow) co
     return otherPos;
 }
 
-/*  RENAMING  */  //  (was GetSeqPosition)
 //  mapDir controls direction of mapping  
 int    CCdCore::MapPositionToOtherRow(const CRef< CSeq_align >& seqAlign, int thisPos, CoordMapDir mapDir) const {
     int otherPos = INVALID_POSITION;
@@ -1827,43 +1562,6 @@ int  CCdCore::GetRowsWithConsensus(vector<int>& consensusRows) const {
 }
 
 
-bool CCdCore::IsInPendingList(const CRef< CSeq_id >& ID, vector<int>& listIndex) const {
-//-------------------------------------------------------------------------
-// look through each row of the pending list for a matching ID; return list Index if found
-//-------------------------------------------------------------------------
-    int  foundIndex = 0;
-    list< CRef< CUpdate_align > >::const_iterator luaci;
-    list< CRef< CSeq_align> >::const_iterator lsaci;
-    vector< CRef< CSeq_id> >::const_iterator vsici;
-
-    listIndex.clear();
-    if ((IsSetPending() && GetPending().size() == 0) || !IsSetPending()) {
-        return false;
-    }
-
-    for (luaci = GetPending().begin(); luaci != GetPending().end(); ++luaci) {
-        if ((*luaci)->IsSetSeqannot()) {
-            if ((*luaci)->GetSeqannot().GetData().IsAlign()) {
-                for (lsaci = (*luaci)->GetSeqannot().GetData().GetAlign().begin();
-                     lsaci!= (*luaci)->GetSeqannot().GetData().GetAlign().end(); ++lsaci) {
-                         if ((*lsaci)->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag) {
-                            const CRef< CDense_diag> denDiag = (*lsaci)->GetSegs().GetDendiag().front();
-                            for (vsici = denDiag->GetIds().begin(); vsici != denDiag->GetIds().end(); ++vsici) {
-                                //  skip the master and only look at the slaves
-                                if (vsici != denDiag->GetIds().begin() && ID->Match(**vsici)) {
-                                    listIndex.push_back(foundIndex);
-//                                    return true;
-                                }
-                            }
-                         }
-                     }
-            }
-        }
-        ++foundIndex;
-    }
-    return (listIndex.size() != 0);
-}
-
 void CCdCore::SetComment(CCdd_descr::TComment oldComment, CCdd_descr::TComment newComment) {
 //-------------------------------------------------------------------------
 // set comment of CD
@@ -1883,107 +1581,6 @@ void CCdCore::SetComment(CCdd_descr::TComment oldComment, CCdd_descr::TComment n
     Comment->SetComment(newComment);
     SetDescription().Set().push_back(Comment);
   }
-}
-
-/* ================== */
-/*  Old root methods  */
-/* ================== */
-
-bool CCdCore::IsOldRoot() {
-//-------------------------------------------------------------------------
-// indicate if old-root field is populated
-//-------------------------------------------------------------------------
-  CCdd_descr_set::Tdata::const_iterator i;
-
-  if (IsSetDescription()) {
-    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
-      if ((*i)->IsOld_root()) {
-        return(true);
-      }
-    }
-  }
-  return(false);
-}
-
-
-void CCdCore::SetOldRoot(string Accession, int Version) {
-//-------------------------------------------------------------------------
-// set accession and version of old-root
-//-------------------------------------------------------------------------
-  CCdd_descr_set::Tdata::iterator i;
-
-  // make a new old-root
-  CRef< CCdd_id > ID(new CCdd_id);
-  CRef< CGlobal_id > GID(new CGlobal_id);
-  GID->SetAccession(Accession);
-  GID->SetVersion(Version);
-  ID->SetGid(*GID);
-
-  // look through the descriptions
-  if (IsSetDescription()) {
-    // if there is an old-root
-    for (i=SetDescription().Set().begin(); i!=SetDescription().Set().end(); i++) {
-      if ((*i)->IsOld_root()) {
-        // reset it, and set the new one
-        (*i)->SetOld_root().Reset();
-        (*i)->SetOld_root().Set().push_back(ID);
-        return;
-      }
-    }
-    // otherwise add another description, this one with a new old-root
-    CRef < CCdd_descr > Description(new CCdd_descr);
-    CRef < CCdd_id_set> SetOfIds(new CCdd_id_set);
-    SetOfIds->Set().push_back(ID);
-    Description->SetOld_root(*SetOfIds);
-    SetDescription().Set().push_back(Description);
-  }
-}
-
-bool CCdCore::GetOldRoot(int Index, string& Accession, int& Version) {
-//-------------------------------------------------------------------------
-// get accession and version of Index-th old-root
-//-------------------------------------------------------------------------
-  CCdd_descr_set::Tdata::const_iterator i;
-  CCdd_id_set::Tdata  SetOfIds;
-  CCdd_id_set::Tdata::const_iterator j;
-  int IdIndex=0;
-
-  // look through the descriptions
-  if (IsSetDescription()) {
-    // if there is an old-root
-    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
-      if ((*i)->IsOld_root()) {
-        SetOfIds = (*i)->GetOld_root().Get();
-        for (j=SetOfIds.begin(); j!=SetOfIds.end(); j++) {
-          if (IdIndex == Index) {
-            Accession = (*j)->GetGid().GetAccession();
-            Version = (*j)->GetGid().GetVersion();
-            return(true);
-          }
-        }
-      }
-    }
-  }
-  return(false);
-}
-
-int CCdCore::GetNumIdsInOldRoot() {
-//-------------------------------------------------------------------------
-// get size of list of ids
-//-------------------------------------------------------------------------
-  CCdd_descr_set::Tdata::const_iterator i;
-  CCdd_id_set::Tdata  SetOfIds;
-
-  // look through the descriptions
-  if (IsSetDescription()) {
-    // if there is an old-root
-    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
-      if ((*i)->IsOld_root()) {
-        return((*i)->GetOld_root().Get().size());
-      }
-    }
-  }
-  return(0);
 }
 
 /* ========================================== */
@@ -2032,7 +1629,6 @@ bool CCdCore::AlignAnnotsValid(string* err) const{
     int intNumber;
     int  From, To, NewFrom, NewTo;
 
-//  const TDendiag*  pDenDiagSet;
   list< CRef< CAlign_annot > >::const_iterator  m;
   list< CRef< CSeq_interval > >::const_iterator  n;
 
@@ -2048,6 +1644,7 @@ bool CCdCore::AlignAnnotsValid(string* err) const{
     for (m=GetAlignannot().Get().begin(); m!=GetAlignannot().Get().end(); m++) {
       // if it's a from-to
       if ((*m)->GetLocation().IsInt()) {
+
         // All coordinates of alignannots are given for the master.
         // If the end coordinates do not map to valid blocks in the
         // slave/child row, there is a problem.
@@ -2139,172 +1736,6 @@ string CCdCore::GetAlignmentAnnotationDescription(int Index) {
   }
   return("");
 }
-
-
-bool CCdCore::DeleteAlignAnnot(int Index) {
-//-------------------------------------------------------------------------
-// delete the Index alignment annotation
-//-------------------------------------------------------------------------
-  list< CRef< CAlign_annot > >::iterator  i;
-
-  int Count=0;
-  for (i=SetAlignannot().Set().begin(); i!=SetAlignannot().Set().end(); i++) {
-    if (Count == Index) {
-      SetAlignannot().Set().erase(i);
-      return(true);
-    }
-    Count++;
-  }
-  return(false);
-}
-
-
-void CCdCore::EraseStructureEvidence() {
-//-------------------------------------------------------------------------
-// erase structure evidence for sequences that are no longer present
-//-------------------------------------------------------------------------
-  list< CRef< CFeature_evidence > >::iterator  FeatureIterator;
-
-  // make list of current mmdb id's
-  int  id;
-  list<int> MmdbIds;
-  for (int SeqIndex=0; SeqIndex<GetNumSequences(); SeqIndex++) {
-    if (GetMmdbId(SeqIndex, id)) {
-      MmdbIds.push_back(id);
-    }
-  }
-
-  // delete structure evidence for mmdb-id's not in the list
-  while (IsNoEvidenceFor(MmdbIds, FeatureIterator)) {
-    GetFeatureSet(MmdbIds).erase(FeatureIterator);
-  }
-}
-
-
-// private
-bool CCdCore::IsNoEvidenceFor(list<int>& MmdbIds,
-                           list< CRef< CFeature_evidence > >::iterator& FeatureIterator) {
-//------------------------------------------------------------------------------------
-// look through the feature-evidence of each align-annot-set.
-// return true if there's an id that needs to be deleted from a structure-evidence.
-//------------------------------------------------------------------------------------
-  list< CRef< CAlign_annot > >::iterator  i;
-  list< CRef< CFeature_evidence > >::iterator j;
-  list< CRef< CBiostruc_id > >::iterator k;
-  list<int>::iterator  m;
-  bool  FoundIt;
-
-  // look through each align-annot in the align-annot-set
-  if (IsSetAlignannot()) {
-    for (i=SetAlignannot().Set().begin(); i!=SetAlignannot().Set().end(); i++) {
-      // look through each feature-evidence in the feature-evidence-set
-      if ((*i)->IsSetEvidence()) {
-        for (j=(*i)->SetEvidence().begin(); j!=(*i)->SetEvidence().end(); j++) {
-          // look through each biostruc-id in the biostruc-id-set
-          if ((*j)->IsBsannot()) {
-            if ((*j)->SetBsannot().IsSetId()) {
-              for (k=(*j)->SetBsannot().SetId().begin(); k!=(*j)->SetBsannot().SetId().end(); k++) {
-                if ((*k)->IsMmdb_id()) {
-                  // if biostruc id is NOT in the list return true
-                  FoundIt = false;
-                  for (m=MmdbIds.begin(); m!=MmdbIds.end(); m++) {
-                    if ((*m) == (*k)->GetMmdb_id().Get()) {
-                      FoundIt = true;
-                    }
-                  }
-                  if (!FoundIt) {
-                    FeatureIterator = j;
-                    return(true);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return(false);
-}
-
-
-// private
-list< CRef< CFeature_evidence > >& CCdCore::GetFeatureSet(list<int>& MmdbIds) {
-//-------------------------------------------------------------------------
-// this function mirrors IsNoEvidenceFor.  It returns the list of features
-// that is modified.
-//-------------------------------------------------------------------------
-  list< CRef< CAlign_annot > >::iterator  i;
-  list< CRef< CFeature_evidence > >::iterator j;
-  list< CRef< CBiostruc_id > >::iterator k;
-  list< int >::iterator  m;
-  bool  FoundIt;
-
-  // look through each align-annot in the align-annot-set
-  if (IsSetAlignannot()) {
-    for (i=SetAlignannot().Set().begin(); i!=SetAlignannot().Set().end(); i++) {
-      // look through each feature-evidence in the feature-evidence-set
-      if ((*i)->IsSetEvidence()) {
-        for (j=(*i)->SetEvidence().begin(); j!=(*i)->SetEvidence().end(); j++) {
-          // look through each biostruc-id in the biostruc-id-set
-          if ((*j)->IsBsannot()) {
-            if ((*j)->SetBsannot().IsSetId()) {
-              for (k=(*j)->SetBsannot().SetId().begin(); k!=(*j)->SetBsannot().SetId().end(); k++) {
-                if ((*k)->IsMmdb_id()) {
-                  // if biostruc id is NOT in the list return list to delete id from
-                  FoundIt = false;
-                  for (m=MmdbIds.begin(); m!=MmdbIds.end(); m++) {
-                    if ((*m) == (*k)->GetMmdb_id().Get()) {
-                      FoundIt = true;
-                    }
-                  }
-                  if (!FoundIt) {
-                    return((*i)->SetEvidence());
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-//  assert(false);   // should never get here
-  return((*i)->SetEvidence());
-}
-
-int CCdCore::GetMmdbIdWithEvidence(set<int>& MmdbIds) const {
-//-------------------------------------------------------------------------
-// this function mirrors IsNoEvidenceFor.  It returns the list of features
-// that is modified.
-//-------------------------------------------------------------------------
-  list< CRef< CAlign_annot > >::const_iterator  i;
-  list< CRef< CFeature_evidence > >::const_iterator j;
-  list< CRef< CBiostruc_id > >::const_iterator k;
-
-  // look through each align-annot in the align-annot-set
-  if (IsSetAlignannot()) {
-    for (i=GetAlignannot().Get().begin(); i!=GetAlignannot().Get().end(); i++) {
-      // look through each feature-evidence in the feature-evidence-set
-      if ((*i)->IsSetEvidence()) {
-        for (j=(*i)->GetEvidence().begin(); j!=(*i)->GetEvidence().end(); j++) {
-          // look through each biostruc-id in the biostruc-id-set
-          if ((*j)->IsBsannot()) {
-            if ((*j)->GetBsannot().IsSetId()) {
-              for (k=(*j)->GetBsannot().GetId().begin(); k!=(*j)->GetBsannot().GetId().end(); k++) {
-                if ((*k)->IsMmdb_id()) {
-                   MmdbIds.insert((*k)->GetMmdb_id().Get()); 
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return MmdbIds.size();
-}
-
 
 bool  CCdCore::CopyBioseqForSeqId(const CRef< CSeq_id>& seqId, CRef< CBioseq >& bioseq) const
 {
@@ -2438,22 +1869,6 @@ bool CCdCore::GetClassicalParentId(const CCdd_id*& parentId) const {
 	return result;
 }
 
-bool CCdCore::GetComponentParentIds(vector< const CCdd_id* >& parentIds) const {
-    bool result = HasParentType(eComponentParent);
-
-    parentIds.clear();
-    if (result) {
-        if (IsSetAncestors()) {
-			const list< CRef< CDomain_parent > >& parents = GetAncestors();
-            list< CRef< CDomain_parent > >::const_iterator pit, pit_end = parents.end();
-            for (pit = parents.begin(); pit != pit_end; ++pit) {
-                parentIds.push_back(&(*pit)->GetParentid());
-            }
-        }
-    }
-	return result;
-}
-
 string CCdCore::GetClassicalParentAccession() const {
     int Dummy;
     return(GetClassicalParentAccession(Dummy));
@@ -2479,53 +1894,6 @@ string CCdCore::GetClassicalParentAccession(int& Version) const{
       }
   }
   return(Str);
-}
-
-
-bool CCdCore::SetClassicalParentAccessionNew(string Parent, int Version) {
-//-------------------------------------------------------------------------
-// set accession name and version of parent
-//-------------------------------------------------------------------------
-    bool result = !HasParentType(eComponentParent);  //  allow there to be *no* parent defined!
-
-    if (result) {
-        ResetParent();  //  just in case its set...
-    
-        CCdd_id* pID = new CCdd_id;
-        CGlobal_id* pGID = new CGlobal_id;
-        pGID->SetAccession(Parent);
-        pGID->SetVersion(Version);
-        pID->SetGid(*pGID);
-
-        CRef< CDomain_parent > classicalParent(new CDomain_parent());
-        if (classicalParent.NotEmpty()) {
-            classicalParent->SetParentid(*pID);
-            classicalParent->SetParent_type(CDomain_parent::eParent_type_classical);
-            list< CRef< CDomain_parent > >& fus = SetAncestors();
-	        fus.push_back(classicalParent);
-        } else {
-            result = false;
-        }
-    }
-    return result;
-}
-
-void CCdCore::SetClassicalParentAccession(string Parent, int Version) {
-//-------------------------------------------------------------------------
-// set accession name and version of parent
-//-------------------------------------------------------------------------
-    SetClassicalParentAccessionNew(Parent, Version);
-
-/*
-    ResetParent();
-
-    CCdd_id* pID = new CCdd_id;
-    CGlobal_id* pGID = new CGlobal_id;
-    pGID->SetAccession(Parent);
-    pGID->SetVersion(Version);
-    pID->SetGid(*pGID);
-    SetParent(*pID);
-    */
 }
 
 bool CCdCore::AddComment(const string& comment)
@@ -2711,23 +2079,6 @@ bool CCdCore::RemoveCddDescrsOfType(int cddDescrChoice)
         }
     }
     return (count > 0);
-}
-
-unsigned int CCdCore::GetPmidReferences(set<unsigned int>& pmids) const
-{
-    list< CRef< CCdd_descr > >::const_iterator descCit, descEnd;
-
-    pmids.clear();
-    if (IsSetDescription()) {
-        descEnd = GetDescription().Get().end();
-        for (descCit = GetDescription().Get().begin(); descCit != descEnd; ++descCit) {
-            if ((*descCit)->IsReference()) {
-                if ((*descCit)->GetReference().IsPmid())
-                    pmids.insert((*descCit)->GetReference().GetPmid().Get());
-            }
-        }
-    }
-    return pmids.size();
 }
 
 END_SCOPE(cd_utils)

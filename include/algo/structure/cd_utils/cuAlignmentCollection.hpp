@@ -129,8 +129,6 @@ public:
 	const cd_utils::BlockModel& getBlockModel(int row) const;
 	void copyRowSource(int currentRow, const AlignmentCollection& malign, int rowInAc);
 	bool transferToCD(CCdCore* cd =0);  //transfer to the first/root cd;
-	bool transferOnlyMastersToCD(bool onlyKeepStructureWithEvidence);  //transfer to the first/root cd;
-	int getNonEssentialRows(vector<int>& neRows);
 	bool extractAlignedSubset(const AlignmentCollection& ac, const set<int>& normalRows, 
 		int master);
 	

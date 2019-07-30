@@ -41,8 +41,6 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
-#include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <algo/structure/cd_utils/cuSequence.hpp>
