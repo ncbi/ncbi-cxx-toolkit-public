@@ -117,8 +117,8 @@
     typedef struct _fstat64 TNcbiSys_fstat;
     typedef struct _stat64  TNcbiSys_stat;
 #else
-    typedef struct fstat   TNcbiSys_fstat;
-    typedef struct stat    TNcbiSys_stat;
+    typedef struct stat     TNcbiSys_fstat;
+    typedef struct stat     TNcbiSys_stat;
 #endif
 
 
