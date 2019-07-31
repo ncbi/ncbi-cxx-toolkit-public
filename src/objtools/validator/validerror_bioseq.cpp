@@ -3830,9 +3830,9 @@ bool HasExcludedAnnotation(const CSeq_loc& loc, CBioseq_Handle far_bsh)
     TSeqPos stop = loc.GetStop(eExtreme_Positional);
     TSeqPos start = loc.GetStart(eExtreme_Positional);
 
-    if (start > 0) {
+    if (start > 1) {
         CRef<CSeq_loc> far_loc(new CSeq_loc());
-        far_loc->SetInt().SetFrom(0);
+        far_loc->SetInt().SetFrom(start - 2);
         far_loc->SetInt().SetTo(start - 1);
         far_loc->SetInt().SetId().Assign(loc.GetInt().GetId());
         CFeat_CI f(far_bsh.GetScope(), *far_loc);
@@ -3840,10 +3840,10 @@ bool HasExcludedAnnotation(const CSeq_loc& loc, CBioseq_Handle far_bsh)
             return true;
         }
     }
-    if (stop < far_bsh.GetBioseqLength() - 1) {
+    if (stop < far_bsh.GetBioseqLength() - 2) {
         CRef<CSeq_loc> far_loc(new CSeq_loc());
         far_loc->SetInt().SetFrom(stop + 1);
-        far_loc->SetInt().SetTo(far_bsh.GetBioseqLength() - 1);
+        far_loc->SetInt().SetTo(stop + 2);
         far_loc->SetInt().SetId().Assign(loc.GetInt().GetId());
         CFeat_CI f(far_bsh.GetScope(), *far_loc);
         if (f) {
