@@ -15,9 +15,9 @@ INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
 SPEC = $(MODULE_ASN) # sic
 FILES = $(MODULE).files
 IMPDIRS = $(dir $(IMPFILES))
-PROTOC_FLAGS = $(IMPDIRS:%=-I%)
 comma = ,
 PROTO_PATH = .:$(subst $(comma),:,$(MODULE_SEARCH))
+PROTOC_FLAGS = $(IMPDIRS:%=-I%) --proto_path=$(PROTO_PATH)
 
 PROTOBUF_BIN = @PROTOBUF_BIN@
 GRPC_BIN = @GRPC_BIN@
@@ -62,7 +62,7 @@ $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
 	$(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
 
 $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
-	$(PROTOC) $(PROTOC_FLAGS) --grpc_out=. --proto_path=$(PROTO_PATH) \
+	$(PROTOC) $(PROTOC_FLAGS) --grpc_out=. \
 	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
 
 $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
