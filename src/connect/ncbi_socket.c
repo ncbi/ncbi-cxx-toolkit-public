@@ -147,22 +147,22 @@
 
 
 /* Minimal size of the data buffer chunk in the socket internal buffer(s) */
-#define SOCK_BUF_CHUNK_SIZE  16384
+#define SOCK_BUF_CHUNK_SIZE   16384
 
 /* Macros for platform-dependent constants, error codes and functions
  */
 #if   defined(NCBI_OS_MSWIN)
 
-#  define SOCK_GHBX_MT_SAFE     1  /* for gethostby...() */
-#  define SOCK_SEND_SLICE       (1 << 10)  /* 1M */
-#  define SOCK_INVALID          INVALID_SOCKET
-#  define SOCK_ERRNO            WSAGetLastError()
-#  define SOCK_NFDS(s)          0
-#  define SOCK_CLOSE(s)         closesocket(s)
-#  define SOCK_EVENTS           (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
-#  define WIN_INT_CAST          (int)
+#  define SOCK_GHBX_MT_SAFE   1  /* for gethostby...() */
+#  define SOCK_SEND_SLICE     (1 << 10)  /* 1M */
+#  define SOCK_INVALID        INVALID_SOCKET
+#  define SOCK_ERRNO          WSAGetLastError()
+#  define SOCK_NFDS(s)        0
+#  define SOCK_CLOSE(s)       closesocket(s)
+#  define SOCK_EVENTS         (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
+#  define WIN_INT_CAST        (int)
 #  ifndef   WSA_INVALID_EVENT
-#    define WSA_INVALID_EVENT   ((WSAEVENT) 0)
+#    define WSA_INVALID_EVENT ((WSAEVENT) 0)
 #  endif /*!WSA_INVALID_EVENT*/
 /* NCBI_OS_MSWIN */
 
@@ -178,23 +178,23 @@
 #    endif /*SOCK_CLOEXEC*/
 #  endif /*NCBI_OS_CYGWIN*/
 
-#  define SOCK_INVALID          (-1)
-#  define SOCK_ERRNO            errno
-#  define SOCK_NFDS(s)          ((s) + 1)
-#  define WIN_INT_CAST          /* no cast */
+#  define SOCK_INVALID        (-1)
+#  define SOCK_ERRNO          errno
+#  define SOCK_NFDS(s)        ((s) + 1)
+#  define WIN_INT_CAST        /* no cast */
 #  ifdef NCBI_OS_BEOS
-#    define SOCK_CLOSE(s)       closesocket(s)
+#    define SOCK_CLOSE(s)     closesocket(s)
 #  else
-#    define SOCK_CLOSE(s)       close(s)
+#    define SOCK_CLOSE(s)     close(s)
 #  endif /*NCBI_OS_BEOS*/
 #  ifndef   INADDR_NONE
-#    define INADDR_NONE         ((unsigned int)(~0UL))
+#    define INADDR_NONE       ((unsigned int)(~0UL))
 #  endif  /*INADDR_NONE*/
 /* NCBI_OS_UNIX */
 
-#  if defined(TCP_NOPUSH)  &&  !defined(TCP_CORK)
-#    define TCP_CORK            TCP_NOPUSH /* BSDism */
-#  endif /*TCP_NOPUSH && !TCP_CORK*/
+#  if defined(TCP_NOPUSH)  &&  !defined(TCP_CORK)  &&  !defined(NCBI_OS_CYGWIN)
+#    define TCP_CORK          TCP_NOPUSH  /* BSDism */
+#  endif /*TCP_NOPUSH && !TCP_CORK && !NCBI_OS_CYGWIN*/
 
 #endif /*NCBI_OS*/
 
