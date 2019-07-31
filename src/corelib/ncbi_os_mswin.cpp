@@ -86,10 +86,12 @@ static PSID x_GetAccountSidByName(const string& account, SID_NAME_USE type = (SI
     TXString name(_T_XSTRING(account));
 
     // First call to LookupAccountName() to get the buffer sizes
-    if ( !LookupAccountName(NULL, name.c_str(), sid, &sid_size, domain, &domain_size, &use) 
-          &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
-        CNcbiError::SetFromWindowsError();
-        return NULL;
+    if ( !::LookupAccountName(NULL, name.c_str(), sid, &sid_size, domain, &domain_size, &use) ) {
+        DWORD err = ::GetLastError();
+        if (err != ERROR_INSUFFICIENT_BUFFER) {
+            CNcbiError::SetWindowsError(err);
+            return NULL;
+        }
     }
     try {
         // Allocate buffers
@@ -110,7 +112,7 @@ static PSID x_GetAccountSidByName(const string& account, SID_NAME_USE type = (SI
         }
     }
     catch (int) {
-        LocalFree(sid);
+        ::LocalFree(sid);
         sid = NULL;
     }
     // Clean up
@@ -140,9 +142,9 @@ static bool x_GetAccountNameBySid(PSID sid, string* account, int* domatch = 0)
     // Always get both account & domain name, even we don't need last.
     // Because if domain name is NULL, this function can throw unhandled
     // exception in Unicode builds on some platforms.
-    if ( !LookupAccountSid(NULL, sid, 
-                           account_name, &account_size,
-                           domain_name,  &domain_size, &use) ) {
+    if ( !::LookupAccountSid(NULL, sid, 
+                             account_name, &account_size,
+                             domain_name,  &domain_size, &use) ) {
         CNcbiError::SetFromWindowsError();
         return false;
     }
@@ -190,7 +192,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID owner_sid, PSID group_sid,
             *uid = match ? CYGWIN_PRIMARY_ID_OFFSET : 0;
         }
         owner_name = NULL;
-        *uid += *GetSidSubAuthority(owner_sid, *GetSidSubAuthorityCount(owner_sid) - 1);
+        *uid += *::GetSidSubAuthority(owner_sid, *::GetSidSubAuthorityCount(owner_sid) - 1);
     }
     // Get numeric group
     if ( gid ) {
@@ -201,7 +203,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID owner_sid, PSID group_sid,
             *gid = match ? CYGWIN_PRIMARY_ID_OFFSET : 0;
         }
         group_name = NULL;
-        *gid += *GetSidSubAuthority(group_sid, *GetSidSubAuthorityCount(group_sid) - 1);
+        *gid += *::GetSidSubAuthority(group_sid, *::GetSidSubAuthorityCount(group_sid) - 1);
     }
     if ( !success ) {
         return false;
@@ -232,14 +234,14 @@ bool CWinSecurity::GetObjectOwner(HANDLE         obj_handle,
     PSID sid_group;
     PSECURITY_DESCRIPTOR sd;
 
-    DWORD res = GetSecurityInfo(obj_handle, obj_type, ACCOUNT_SECURITY_INFO,
-                                &sid_owner, &sid_group, NULL, NULL, &sd );
+    DWORD res = ::GetSecurityInfo(obj_handle, obj_type, ACCOUNT_SECURITY_INFO,
+                                  &sid_owner, &sid_group, NULL, NULL, &sd );
     if ( res != ERROR_SUCCESS ) {
         CNcbiError::SetWindowsError(res);
         return false;
     }
     bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group, owner, group, uid, gid);
-    LocalFree(sd);
+    ::LocalFree(sd);
     return retval;
 }
 
@@ -271,20 +273,20 @@ bool CWinSecurity::GetObjectOwner(const string&  obj_name,
 static HANDLE s_GetCurrentThreadToken(DWORD access)
 {
     HANDLE token;
-    if ( !OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
+    if ( !::OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
         DWORD res = GetLastError();
         if ( res == ERROR_NO_TOKEN ) {
-            if ( !ImpersonateSelf(SecurityImpersonation) ) {
+            if ( !::ImpersonateSelf(SecurityImpersonation) ) {
                 // Failed to obtain a token for the current thread and user
                 CNcbiError::SetFromWindowsError();
                 return INVALID_HANDLE_VALUE;
             }
-            if ( !OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
+            if ( !::OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
                 // Failed to open the current threads token with the required access rights
                 CNcbiError::SetFromWindowsError();
                 token = INVALID_HANDLE_VALUE;
             }
-            RevertToSelf();
+            ::RevertToSelf();
         } else {
             // Failed to open the current threads token with the required access rights
             CNcbiError::SetWindowsError(res);
@@ -361,9 +363,9 @@ bool CWinSecurity::SetFileOwner(const string& filename,
          !SetTokenPrivilege(token, SE_RESTORE_NAME, true, &prev_restore_name) ) {
         goto cleanup;
     }
-    if ( SetNamedSecurityInfo((TXChar*)_T_XCSTRING(filename),
-                              SE_FILE_OBJECT, security_info,
-                              owner_sid, group_sid, NULL, NULL) == ERROR_SUCCESS ) {
+    if ( ::SetNamedSecurityInfo((TXChar*)_T_XCSTRING(filename),
+                                SE_FILE_OBJECT, security_info,
+                                owner_sid, group_sid, NULL, NULL) == ERROR_SUCCESS ) {
         success = true;
     }
     // Restore privileges
@@ -374,7 +376,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
 cleanup:
     if ( owner_sid ) LocalFree(owner_sid);
     if ( group_sid ) LocalFree(group_sid);
-    if ( token != INVALID_HANDLE_VALUE) CloseHandle(token);
+    if ( token != INVALID_HANDLE_VALUE) ::CloseHandle(token);
 
     return success;
 }
@@ -385,7 +387,7 @@ bool CWinSecurity::SetTokenPrivilege(HANDLE token, LPCTSTR privilege,
 {
     // Get privilege unique identifier
     LUID luid;
-    if ( !LookupPrivilegeValue(NULL, privilege, &luid) ) {
+    if ( !::LookupPrivilegeValue(NULL, privilege, &luid) ) {
         CNcbiError::SetFromWindowsError();
         return false;
     }
@@ -400,7 +402,7 @@ bool CWinSecurity::SetTokenPrivilege(HANDLE token, LPCTSTR privilege,
     tp.Privileges[0].Luid = luid;
     tp.Privileges[0].Attributes = 0;
 
-    AdjustTokenPrivileges(token, FALSE, &tp, tp_size, &tp_prev, &tp_size);
+    ::AdjustTokenPrivileges(token, FALSE, &tp, tp_size, &tp_prev, &tp_size);
     DWORD res = GetLastError();
     if ( res != ERROR_SUCCESS ) {
         // Failed to obtain the current token's privileges
@@ -417,7 +419,7 @@ bool CWinSecurity::SetTokenPrivilege(HANDLE token, LPCTSTR privilege,
     }
     tp.Privileges[0].Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
 
-    AdjustTokenPrivileges(token, FALSE, &tp, tp_size, NULL, NULL);
+    ::AdjustTokenPrivileges(token, FALSE, &tp, tp_size, NULL, NULL);
     res = GetLastError();
     if ( res != ERROR_SUCCESS ) {
         // Failed to change privileges
@@ -453,22 +455,22 @@ static PSECURITY_DESCRIPTOR s_GetFileSecurityDescriptor(const string& path)
     DWORD size              = 0;
     DWORD size_need         = 0;
 
-    if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO, sd, size, &size_need) ) {
-        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-            CNcbiError::SetFromWindowsError();
+    if ( !::GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO, sd, size, &size_need) ) {
+        DWORD err = ::GetLastError();
+        if (err != ERROR_INSUFFICIENT_BUFFER) {
+            CNcbiError::SetWindowsError(err);
             return NULL;
         }
         // Allocate memory for the buffer
-        sd = (PSECURITY_DESCRIPTOR) LocalAlloc(LMEM_FIXED, size_need);
+        sd = (PSECURITY_DESCRIPTOR) ::LocalAlloc(LMEM_FIXED, size_need);
         if ( !sd ) {
             CNcbiError::SetFromWindowsError();
             return NULL;
         }
         size = size_need;
-        if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
-                              sd, size, &size_need) ) {
+        if ( !::GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO, sd, size, &size_need) ) {
             CNcbiError::SetFromWindowsError();
-            LocalFree((HLOCAL) sd);
+            ::LocalFree((HLOCAL) sd);
             return NULL;
         }
     }
@@ -480,8 +482,7 @@ static PSECURITY_DESCRIPTOR s_GetFileSecurityDescriptor(const string& path)
 // and very often works incorrectly.  Microsoft doesn't recommend to use it.
 // So, permissions can be taken for the current process thread owner only :(
 
-bool CWinSecurity::GetFilePermissions(const string& path,
-                                      ACCESS_MASK*  permissions)
+bool CWinSecurity::GetFilePermissions(const string& path, ACCESS_MASK* permissions)
 {
     if ( !permissions ) {
         CNcbiError::Set(CNcbiError::eBadAddress);
@@ -514,9 +515,9 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         DWORD         privileges_size = sizeof(privileges);
         BOOL          status;
 
-        if ( !AccessCheck(sd, token, MAXIMUM_ALLOWED, &mapping,
-                          &privileges, &privileges_size, permissions,
-                          &status)  ||  !status ) {
+        if ( !::AccessCheck(sd, token, MAXIMUM_ALLOWED, &mapping,
+                            &privileges, &privileges_size, permissions,
+                            &status)  ||  !status ) {
             CNcbiError::SetFromWindowsError();
             throw(0);
         }
@@ -526,8 +527,8 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         success = false;
     }
     // Clean up
-    CloseHandle(token);
-    LocalFree(sd);
+    ::CloseHandle(token);
+    ::LocalFree(sd);
 
     return success;
 }
