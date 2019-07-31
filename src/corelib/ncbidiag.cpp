@@ -1631,6 +1631,13 @@ const string& CDiagContext::GetHost(void) const
         return m_HostIP;
     }
 
+    // All platforms - check NCBI_HOST first.
+    const TXChar* ncbi_host = NcbiSys_getenv(_TX("NCBI_HOST"));
+    if (ncbi_host  &&  *ncbi_host) {
+        m_Host->SetString(_T_STDSTRING(ncbi_host));
+        return m_Host->GetOriginalString();
+    }
+
 #if defined(NCBI_OS_UNIX)
     // UNIX - use uname()
     {{
@@ -3002,7 +3009,13 @@ const string& CDiagContext::GetHostRole(void)
         CDiagLock lock(CDiagLock::eWrite);
         if ( !s_HostRole->get() ) {
             unique_ptr<string> role(new string);
-            *role = s_ReadString("/etc/ncbi/role");
+            const TXChar* env_role = NcbiSys_getenv(_TX("NCBI_ROLE"));
+            if (env_role && *env_role) {
+                *role = string(_T_CSTRING(env_role));
+            }
+            else {
+                *role = s_ReadString("/etc/ncbi/role");
+            }
             s_HostRole->reset(role.release());
         }
     }
@@ -3016,7 +3029,13 @@ const string& CDiagContext::GetHostLocation(void)
         CDiagLock lock(CDiagLock::eWrite);
         if ( !s_HostLocation->get() ) {
             unique_ptr<string> loc(new string);
-            *loc = s_ReadString("/etc/ncbi/location");
+            const TXChar* env_loc = NcbiSys_getenv(_TX("NCBI_LOCATION"));
+            if (env_loc && *env_loc) {
+                *loc = string(_T_CSTRING(env_loc));
+            }
+            else {
+                *loc = s_ReadString("/etc/ncbi/location");
+            }
             s_HostLocation->reset(loc.release());
         }
     }
