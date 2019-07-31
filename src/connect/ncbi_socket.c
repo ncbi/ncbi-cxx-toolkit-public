@@ -192,9 +192,9 @@
 #  endif  /*INADDR_NONE*/
 /* NCBI_OS_UNIX */
 
-#  if defined(TCP_NOPUSH)  &&  !defined(TCP_CORK)  &&  !defined(NCBI_OS_CYGWIN)
+#  if defined(TCP_NOPUSH)  &&  !defined(TCP_CORK)
 #    define TCP_CORK          TCP_NOPUSH  /* BSDism */
-#  endif /*TCP_NOPUSH && !TCP_CORK && !NCBI_OS_CYGWIN*/
+#  endif /*TCP_NOPUSH && !TCP_CORK*/
 
 #endif /*NCBI_OS*/
 
@@ -7428,7 +7428,7 @@ extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
         return;
     }
 
-#ifdef TCP_CORK
+#if defined(TCP_CORK)  &&  !defined(NCBI_OS_CYGWIN)
     if (setsockopt(sock->sock, IPPROTO_TCP, TCP_CORK,
                    (char*) &on_off, sizeof(on_off)) != 0) {
         int error = SOCK_ERRNO;
@@ -7440,7 +7440,7 @@ extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
                              s_ID(sock, _id), on_off ? "" : "!"));
         UTIL_ReleaseBuffer(strerr);
     }
-#endif /*TCP_CORK*/
+#endif /*TCP_CORK && !NCBI_OS_CYGWIN*/
 }
 
 
