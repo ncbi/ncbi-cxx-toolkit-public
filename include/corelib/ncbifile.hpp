@@ -42,10 +42,18 @@
 ///   CFileReader, CFileWriter, CFileReaderWriter,
 ///   CFileException.
 ///   Defines different file finding algorithms.
+///
+/// @attention
+///   The parts of API that returns bool usually set CNcbiError (ncbierror.hpp).
+///   It can be used to get an error code and get a reason why some method
+///   returns FALSE. PLEASE dont't rely on a regular 'errno' value.
+///   It is still set there for some legacy code, but please avoid.
+
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/ncbisys.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
 
@@ -116,13 +124,6 @@ BEGIN_NCBI_SCOPE
 
 // Forward declaration of struct containing OS-specific lock storage.
 struct SLock;
-
-// TNcbiSys_stat type
-#if defined(NCBI_OS_MSWIN)
-typedef struct _stat64 TNcbiSys_stat;
-#else
-typedef struct stat    TNcbiSys_stat;
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
