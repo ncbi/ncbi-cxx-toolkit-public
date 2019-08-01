@@ -1987,9 +1987,9 @@ void TestStartGapSeg(CMolInfo::TTech tech)
     if (tech == CMolInfo::eTech_wgs) {
         AddChromosomeNoLocation(expected_errors, "lcl|good");
     }
-    expected_errors.push_back(new CExpectedError("lcl|good", tech == CMolInfo::eTech_wgs ? eDiag_Warning : eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
+    // expected_errors.push_back(new CExpectedError("lcl|good", tech == CMolInfo::eTech_wgs ? eDiag_Warning : eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadDeltaSeq", "There is 1 adjacent gap in delta seq"));
-    expected_errors.push_back(new CExpectedError("lcl|good", tech == CMolInfo::eTech_wgs ? eDiag_Warning : eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
+    // expected_errors.push_back(new CExpectedError("lcl|good", tech == CMolInfo::eTech_wgs ? eDiag_Warning : eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at end of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
@@ -3454,7 +3454,7 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "SeqLitGapLength0", "Gap of length 0 in delta chain"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
+    // expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3849,8 +3849,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "First delta seq component is a gap"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
+    // expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "First delta seq component is a gap"));
+    // expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at end of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
