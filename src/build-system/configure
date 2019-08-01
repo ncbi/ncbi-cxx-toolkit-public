@@ -1008,6 +1008,8 @@ BOOST_PROGRAM_OPTIONS_LIBS
 BOOST_PROGRAM_OPTIONS_STATIC_LIBS
 BOOST_REGEX_LIBS
 BOOST_REGEX_STATIC_LIBS
+BOOST_SERIALIZATION_LIBS
+BOOST_SERIALIZATION_STATIC_LIBS
 BOOST_SYSTEM_LIBS
 BOOST_SYSTEM_STATIC_LIBS
 BOOST_TEST_PEM_LIBS
@@ -37073,6 +37075,7 @@ if test "$with_boost" != "no"; then
          $as_unset ncbi_cv_lib_boost_filesystem || test "${ncbi_cv_lib_boost_filesystem+set}" != set || { ncbi_cv_lib_boost_filesystem=; export ncbi_cv_lib_boost_filesystem; }
          $as_unset ncbi_cv_lib_boost_iostreams || test "${ncbi_cv_lib_boost_iostreams+set}" != set || { ncbi_cv_lib_boost_iostreams=; export ncbi_cv_lib_boost_iostreams; }
          $as_unset ncbi_cv_lib_boost_program_options || test "${ncbi_cv_lib_boost_program_options+set}" != set || { ncbi_cv_lib_boost_program_options=; export ncbi_cv_lib_boost_program_options; }
+         $as_unset ncbi_cv_lib_boost_serialization || test "${ncbi_cv_lib_boost_serialization+set}" != set || { ncbi_cv_lib_boost_serialization=; export ncbi_cv_lib_boost_serialization; }
          $as_unset ncbi_cv_lib_boost_test || test "${ncbi_cv_lib_boost_test+set}" != set || { ncbi_cv_lib_boost_test=; export ncbi_cv_lib_boost_test; }
          $as_unset ncbi_cv_lib_boost_thread || test "${ncbi_cv_lib_boost_thread+set}" != set || { ncbi_cv_lib_boost_thread=; export ncbi_cv_lib_boost_thread; }
       elif test -z "$ncbi_cv_lib_boost_version_num"; then
@@ -37810,6 +37813,84 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_program_options" >&5
 echo "${ECHO_T}$ncbi_cv_lib_boost_program_options" >&6; }
 
+   BOOST_SERIALIZATION_LIBS=-lboost_serialization${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_serialization$BOOST_STATIC_TAG.a"; then
+       BOOST_SERIALIZATION_STATIC_LIBS=-lboost_serialization$BOOST_STATIC_TAG
+   else
+       BOOST_SERIALIZATION_STATIC_LIBS=$BOOST_SERIALIZATION_LIBS
+   fi
+
+   { echo "$as_me:$LINENO: checking for Boost.Serialization$in_path" >&5
+echo $ECHO_N "checking for Boost.Serialization$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_boost_serialization+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_SERIALIZATION_LIBS $orig_LIBS"
+      cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <boost/archive/text_oarchive.hpp>
+	                     #include <iostream>
+int
+main ()
+{
+boost::archive::text_oarchive oa(std::cout);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_boost_serialization=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_boost_serialization=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_serialization" >&5
+echo "${ECHO_T}$ncbi_cv_lib_boost_serialization" >&6; }
+
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor$BOOST_STATIC_TAG.a"; then
        BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor$BOOST_STATIC_TAG
@@ -38008,6 +38089,7 @@ else
    ncbi_cv_lib_boost_iostreams=no
    ncbi_cv_lib_boost_program_options=no
    ncbi_cv_lib_boost_regex=no
+   ncbi_cv_lib_boost_serialization=no
    ncbi_cv_lib_boost_spirit=no
    ncbi_cv_lib_boost_system=no
    ncbi_cv_lib_boost_test=no
@@ -38076,6 +38158,18 @@ _ACEOF
 else
    BOOST_REGEX_LIBS=
    BOOST_REGEX_STATIC_LIBS=
+fi
+
+if test "$ncbi_cv_lib_boost_serialization" != "no"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOST_SERIALIZATION 1
+_ACEOF
+
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Serialization"; WithPackagesSep=" "
+else
+   BOOST_SERIALIZATION_LIBS=
+   BOOST_SERIALIZATION_STATIC_LIBS=
 fi
 
 if test "$ncbi_cv_lib_boost_spirit" != "no"; then
@@ -53242,7 +53336,7 @@ for x in ChaosMonkey Int8GI StrictGI PSGClient GCC KCC ICC VisualAge CompaqCompi
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -53335,6 +53429,8 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 
@@ -54887,6 +54983,8 @@ BOOST_PROGRAM_OPTIONS_LIBS!$BOOST_PROGRAM_OPTIONS_LIBS$ac_delim
 BOOST_PROGRAM_OPTIONS_STATIC_LIBS!$BOOST_PROGRAM_OPTIONS_STATIC_LIBS$ac_delim
 BOOST_REGEX_LIBS!$BOOST_REGEX_LIBS$ac_delim
 BOOST_REGEX_STATIC_LIBS!$BOOST_REGEX_STATIC_LIBS$ac_delim
+BOOST_SERIALIZATION_LIBS!$BOOST_SERIALIZATION_LIBS$ac_delim
+BOOST_SERIALIZATION_STATIC_LIBS!$BOOST_SERIALIZATION_STATIC_LIBS$ac_delim
 BOOST_SYSTEM_LIBS!$BOOST_SYSTEM_LIBS$ac_delim
 BOOST_SYSTEM_STATIC_LIBS!$BOOST_SYSTEM_STATIC_LIBS$ac_delim
 BOOST_TEST_PEM_LIBS!$BOOST_TEST_PEM_LIBS$ac_delim
@@ -54970,8 +55068,6 @@ FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
 AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
 CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
-MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
-MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -55013,6 +55109,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
+MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
 LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
@@ -55074,7 +55172,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 59; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

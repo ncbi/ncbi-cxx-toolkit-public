@@ -5559,6 +5559,7 @@ if test "$with_boost" != "no"; then
          AS_UNSET(ncbi_cv_lib_boost_filesystem)
          AS_UNSET(ncbi_cv_lib_boost_iostreams)
          AS_UNSET(ncbi_cv_lib_boost_program_options)
+         AS_UNSET(ncbi_cv_lib_boost_serialization)
          AS_UNSET(ncbi_cv_lib_boost_test)
          AS_UNSET(ncbi_cv_lib_boost_thread)
       elif test -z "$ncbi_cv_lib_boost_version_num"; then
@@ -5847,6 +5848,24 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           [ncbi_cv_lib_boost_program_options=yes],
           [ncbi_cv_lib_boost_program_options=no])])
 
+   BOOST_SERIALIZATION_LIBS=-lboost_serialization${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_serialization$BOOST_STATIC_TAG.a"; then
+       BOOST_SERIALIZATION_STATIC_LIBS=-lboost_serialization$BOOST_STATIC_TAG
+   else
+       BOOST_SERIALIZATION_STATIC_LIBS=$BOOST_SERIALIZATION_LIBS
+   fi
+
+   AC_CACHE_CHECK([for Boost.Serialization$in_path],
+      ncbi_cv_lib_boost_serialization,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_SERIALIZATION_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/archive/text_oarchive.hpp>
+	                     #include <iostream>]],
+              [[boost::archive::text_oarchive oa(std::cout);]])],
+          [ncbi_cv_lib_boost_serialization=yes],
+          [ncbi_cv_lib_boost_serialization=no])])
+
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor$BOOST_STATIC_TAG.a"; then
        BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor$BOOST_STATIC_TAG
@@ -5931,6 +5950,7 @@ else
    ncbi_cv_lib_boost_iostreams=no
    ncbi_cv_lib_boost_program_options=no
    ncbi_cv_lib_boost_regex=no
+   ncbi_cv_lib_boost_serialization=no
    ncbi_cv_lib_boost_spirit=no
    ncbi_cv_lib_boost_system=no
    ncbi_cv_lib_boost_test=no
@@ -5984,6 +6004,15 @@ if test "$ncbi_cv_lib_boost_regex" != "no"; then
 else
    BOOST_REGEX_LIBS=
    BOOST_REGEX_STATIC_LIBS=
+fi
+
+if test "$ncbi_cv_lib_boost_serialization" != "no"; then
+   AC_DEFINE(HAVE_BOOST_SERIALIZATION, 1,
+             [Define to 1 if the `Boost.Serialization' library is available.])
+   NCBI_PACKAGE(Boost.Serialization)
+else
+   BOOST_SERIALIZATION_LIBS=
+   BOOST_SERIALIZATION_STATIC_LIBS=
 fi
 
 if test "$ncbi_cv_lib_boost_spirit" != "no"; then
@@ -8890,6 +8919,8 @@ AC_SUBST(BOOST_PROGRAM_OPTIONS_LIBS)
 AC_SUBST(BOOST_PROGRAM_OPTIONS_STATIC_LIBS)
 AC_SUBST(BOOST_REGEX_LIBS)
 AC_SUBST(BOOST_REGEX_STATIC_LIBS)
+AC_SUBST(BOOST_SERIALIZATION_LIBS)
+AC_SUBST(BOOST_SERIALIZATION_STATIC_LIBS)
 AC_SUBST(BOOST_SYSTEM_LIBS)
 AC_SUBST(BOOST_SYSTEM_STATIC_LIBS)
 AC_SUBST(BOOST_TEST_PEM_LIBS)
