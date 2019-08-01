@@ -138,6 +138,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
         m_BindItem = AutoArray<CS_VOID*>(m_BindedCols);
         m_Copied = AutoArray<CS_INT>(m_BindedCols);
         m_Indicator = AutoArray<CS_SMALLINT>(m_BindedCols);
+        memset(m_Copied.get(),    0, m_BindedCols * sizeof(m_Copied[0]));
         memset(m_Indicator.get(), 0, m_BindedCols * sizeof(m_Indicator[0]));
 
         for(int i= 0; i < m_BindedCols; i++) {
