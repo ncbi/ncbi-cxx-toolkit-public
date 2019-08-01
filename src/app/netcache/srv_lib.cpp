@@ -104,6 +104,7 @@ void  ncbi::CNcbiError::SetFromErrno( const ncbi::CTempString& )                
 #else
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode )                          {}
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const ncbi::CTempString ) {}
+void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const char* )             {}
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, std::string&& )           {}
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const std::string& )      {}
 void  ncbi::CNcbiError::SetFromErrno( const ncbi::CTempString )                 {}
