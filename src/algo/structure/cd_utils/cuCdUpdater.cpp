@@ -68,17 +68,17 @@ string CDUpdateStats::toString(bool detailed)
 {
 	int added = numBlastHits - envSeq.size() - fragmented.size() - overlap.size() 
 		- noSeq.size() - badAlign.size() - numRedundant - oldNewPairs.size();
-	string result = "Total number of sequences added to the pending list of the Cd:" + toString(added)
+	string result = "Total number of sequences added to the pending list of the Cd:" + NStr::IntToString(added)
 		+". ";
 	if (numFilteredByOverlap > 0)
 	{
 		result += "Total number of pending sequences  that are not moved to normal alignment because of insufficient overlapping:"
-			+ toString(numFilteredByOverlap) + ". ";
+			+ NStr::IntToString(numFilteredByOverlap) + ". ";
 	}
 	if (!detailed)
 		return result;
 	result += "Number of Blast Hits = ";
-	result += toString(numBlastHits); 
+	result += NStr::IntToString(numBlastHits); 
 	result += ". ";
 	
 	result += toString(envSeq, "Environmental Sequences");
