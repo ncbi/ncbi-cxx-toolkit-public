@@ -4019,7 +4019,8 @@ bool CValidError_bioseq::x_IgnoreEndGap(CBioseq_Handle bsh, CSeq_gap::TType gap_
     if (gap_type != CSeq_gap::eType_centromere &&
         gap_type != CSeq_gap::eType_telomere &&
         gap_type != CSeq_gap::eType_heterochromatin &&
-        gap_type != CSeq_gap::eType_short_arm) {
+        gap_type != CSeq_gap::eType_short_arm &&
+        gap_type != CSeq_gap::eType_contamination) {
         return false;
     }
 
@@ -4029,6 +4030,36 @@ bool CValidError_bioseq::x_IgnoreEndGap(CBioseq_Handle bsh, CSeq_gap::TType gap_
     } else {
         return false;
     }
+}
+
+
+static bool WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
+{
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
+        return false;
+    }
+    if (!seq.GetInst().IsSetMol() || seq.GetInst().GetMol() == CSeq_inst::eMol_aa) {
+        return false;
+    }
+    CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
+
+    if (repr != CSeq_inst::eRepr_delta) {
+        return false;
+    }
+
+    if ( !bsh ) {
+        return false;
+    }    
+
+    if (!seq.GetInst().IsSetLength() || seq.GetInst().GetLength() < 10) {
+        return false;
+    }
+
+    if (!ShouldCheckForNsAndGap(bsh)) {
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -4212,7 +4243,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                             gap_linkage = gap.GetLinkage();
                     }
                 }
-                if (first  && !x_IgnoreEndGap(bsh, gap_type)) {
+                if (first  && !x_IgnoreEndGap(bsh, gap_type) && !WillReportTerminalGap(seq, bsh)) {
                     EDiagSev sev = eDiag_Error;
                     if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
                         && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
@@ -4303,7 +4334,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             " adjacent gaps in delta seq";
         PostErr(m_Imp.IsRefSeq() ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
     }
-    if (last_is_gap && !x_IgnoreEndGap(bsh, gap_type)) {
+    if (last_is_gap && !x_IgnoreEndGap(bsh, gap_type) && !WillReportTerminalGap(seq, bsh)) {
         EDiagSev sev = eDiag_Error;
         if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
             && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
