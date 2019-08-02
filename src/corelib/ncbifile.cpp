@@ -5987,9 +5987,13 @@ void CMemoryFileMap::x_Create(Uint8 size)
     int errcode = s_FExtend(fd, size);
     close(fd);
     if (errcode) {
+#if defined(NCBI_OS_MSWIN)
+        string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
+#elif defined(NCBI_OS_UNIX)
+        string errmsg = NcbiSys_strerror(errcode);
+#endif
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
-                   " Cannot create file with specified size: " +
-			       _T_STDSTRING(NcbiSys_strerror(errcode)));
+                   " Cannot create file with specified size: " + errmsg);
     }
 }
 
@@ -6013,9 +6017,13 @@ void CMemoryFileMap::x_Extend(Uint8 size, Uint8 new_size)
     int errcode = s_FExtend(fd, new_size);
     close(fd);
     if (errcode) {
+#if defined(NCBI_OS_MSWIN)
+        string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
+#elif defined(NCBI_OS_UNIX)
+        string errmsg = NcbiSys_strerror(errcode);
+#endif
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
-                   " Cannot extend file size: " +
-			       _T_STDSTRING(NcbiSys_strerror(errcode)));
+                   " Cannot extend file size: " + errmsg);
     }
 }
 
