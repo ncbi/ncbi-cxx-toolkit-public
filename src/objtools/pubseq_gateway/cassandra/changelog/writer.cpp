@@ -49,12 +49,23 @@ void CBlobChangelogWriter::WriteChangelogEvent(
         "(updated_time, sat_key, last_modified, op) VALUES (?,?,?,?) USING TTL "
         + NStr::NumericToString(CBlobChangelogRecord::GetTTL());
     query->SetSQL(sql, 4);
-    query->BindInt64(0,
-                     record.GetUpdatedTimePartition(CBlobChangelogRecord::GetPartitionSize()).GetTimeT() * 1000);
+    int64_t updated_time_partition =
+        record.GetUpdatedTimePartition(CBlobChangelogRecord::GetPartitionSize()).GetTimeT() * 1000;
+    query->BindInt64(0, updated_time_partition);
     query->BindInt32(1, record.GetSatKey());
     query->BindInt64(2, record.GetLastModified());
     query->BindInt8(3, record.GetOperationBase());
     query->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, true);
+
+    // Special record - one per partition sat_key = 0, last_modified = 0, op = eChangeLogPartitionUpdated
+    // to track changelog partition changes writetime(op) == last change timestamp for changelog partition
+    query->SetSQL(sql, 4);
+    query->BindInt64(0, updated_time_partition);
+    query->BindInt32(1, 0);
+    query->BindInt64(2, 0);
+    query->BindInt8(3, static_cast<TChangelogOperationBase>(TChangelogOperation::eChangeLogPartitionUpdated));
+    query->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, true);
+
 }
 
 END_IDBLOB_SCOPE

@@ -46,6 +46,7 @@ enum class TChangelogOperation : TChangelogOperationBase {
     eUndefined = 0,
     eUpdated = 1,
     eDeleted = 2,
+    eChangeLogPartitionUpdated = 3,
 };
 
 class CBlobChangelogRecord {
