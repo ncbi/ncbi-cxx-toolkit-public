@@ -2996,7 +2996,7 @@ fstream* CDirEntry::CreateTmpFile(const string& filename,
         return 0;
     }
     // Create FILE* based fstream.
-    fstream* stream = new CTmpStream(_T_XCSTRING(tmpname), file);
+    fstream* stream = new CTmpStream(tmpname.c_str(), file);
     // We dont need to close FILE*, it will be closed in the fstream
 
 #else
@@ -3008,7 +3008,7 @@ fstream* CDirEntry::CreateTmpFile(const string& filename,
     if ( allow_read == eAllowRead ) {
         mode = mode | ios::in;
     }
-    fstream* stream = new CTmpStream(_T_XCSTRING(tmpname), mode);
+    fstream* stream = new CTmpStream(tmpname.c_str(), mode);
 #endif
 
     if ( !stream->good() ) {
@@ -5989,7 +5989,7 @@ void CMemoryFileMap::x_Create(Uint8 size)
     if (errcode) {
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " Cannot create file with specified size: " +
-                   string(NcbiSys_strerror(errcode)));
+			       _T_STDSTRING(NcbiSys_strerror(errcode)));
     }
 }
 
@@ -6007,7 +6007,7 @@ void CMemoryFileMap::x_Extend(Uint8 size, Uint8 new_size)
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " Cannot open file '" + m_FileName +
                    "' to change its size: " +
-                   string(NcbiSys_strerror(errcode)));
+			       _T_STDSTRING(NcbiSys_strerror(errcode)));
     }
     // and extend it with zeros
     int errcode = s_FExtend(fd, new_size);
@@ -6015,7 +6015,7 @@ void CMemoryFileMap::x_Extend(Uint8 size, Uint8 new_size)
     if (errcode) {
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " Cannot extend file size: " +
-                   string(NcbiSys_strerror(errcode)));
+			       _T_STDSTRING(NcbiSys_strerror(errcode)));
     }
 }
 
