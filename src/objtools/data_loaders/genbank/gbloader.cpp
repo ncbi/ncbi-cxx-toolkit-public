@@ -579,8 +579,8 @@ static set<string> s_IgnoreAcc = {
 bool CGBDataLoader::IsIgnoredGi(TGi gi)
 {
     if (!TGenbankLoaderPsg::GetDefault()) return false;
-#if NCBI_DEVELOPMENT_VER > 20190801
-    NCBI_THROW(CLoaderException, eOtherError, "GI not supported by PSG data loader: " + to_string(gi));
+#if NCBI_DEVELOPMENT_VER > 20190901
+    NCBI_THROW(CLoaderException, eOtherError, "GI not supported by PSG data loader: " + NStr::NumericToString(gi));
 #endif
     return s_IgnoreGis.find(gi) != s_IgnoreGis.end();
 }
@@ -588,7 +588,7 @@ bool CGBDataLoader::IsIgnoredGi(TGi gi)
 bool CGBDataLoader::IsIgnoredAcc(const string& acc)
 {
     if (!TGenbankLoaderPsg::GetDefault()) return false;
-#if NCBI_DEVELOPMENT_VER > 20190801
+#if NCBI_DEVELOPMENT_VER > 20190901
     NCBI_THROW(CLoaderException, eOtherError, "Accession not supported by PSG data loader: " + acc);
 #endif
     return s_IgnoreAcc.find(acc) != s_IgnoreAcc.end();
@@ -597,7 +597,7 @@ bool CGBDataLoader::IsIgnoredAcc(const string& acc)
 bool CGBDataLoader::IsIgnoredId(const CSeq_id& id)
 {
     if (!TGenbankLoaderPsg::GetDefault()) return false;
-#if NCBI_DEVELOPMENT_VER > 20190801
+#if NCBI_DEVELOPMENT_VER > 20190901
     NCBI_THROW(CLoaderException, eOtherError, "Seq-id not supported by PSG data loader: " + id.AsFastaString());
 #endif
     if (id.IsGi()) return IsIgnoredGi(id.GetGi());
