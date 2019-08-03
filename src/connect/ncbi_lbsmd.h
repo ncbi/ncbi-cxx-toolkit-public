@@ -50,16 +50,15 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
 
 
 /* Get configuration file name.  Returned '\0'-terminated string is to be
- * free()'d by the caller when no longer needed.  Return NULL if no
- * configuration file name is available.
- * If LBSMD_FastHeapAccess() was set to "eOff" and there is a cached copy of
- * LBSM heap kept in-core, it will be released by this call.
+ * free()'d by the caller when no longer needed.  Return NULL if no config file
+ * name is available.  If LBSMD_FastHeapAccess() was set to "eOff" and there is
+ * a cached copy of LBSM heap kept in-core, it will be released by this call.
  */
 NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
 
 
 /* Get a (perhaps cached) copy of LBSM heap, which is guaranteed to be current
- * for the given time "time".  If "time" passed as 0, the heap (if present as
+ * for the given time "time".  If "time" passed as 0, the heap (if present in
  * shmem) will be returned regardless of its freshness.  Return NULL if the
  * copy operation cannot be performed (due to various reasons, including the
  * original LBSM shmem to be stale).  Returned heap (if non-NULL) has a serial
