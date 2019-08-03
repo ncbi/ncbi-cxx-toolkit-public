@@ -61,13 +61,12 @@
 #include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
 #ifdef NCBI_MONKEY
-#  if defined(NCBI_OS_MSWIN)
+#  ifdef NCBI_OS_MSWIN
 #    include <WinSock2.h>
 #  else
 #    include <sys/socket.h>
-#    define SOCKET int
 #  endif /*NCBI_OS_MSWIN*/
-#endif /* NCBI_MONKEY */
+#endif /*NCBI_MONKEY*/
 
 
 #ifdef __cplusplus
@@ -101,7 +100,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  13);
 NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,     306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  24);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  308,  10);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  309,  33);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  309,  34);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,     310, 600); /*safe upper bound*/
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,    311,  16);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,    312,   5);
@@ -414,26 +413,26 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
  *  Socket functions via Crazy Monkey
  */
 typedef MONKEY_RETTYPE
-            (MONKEY_STDCALL  *FMonkeyRecv)  (MONKEY_SOCKTYPE       sock,
-                                             MONKEY_DATATYPE       buf,
-                                             MONKEY_LENTYPE        size,
-                                             int                   flags,
-                                             void* /* SOCK* */     sock_ptr);
+           (MONKEY_STDCALL *FMonkeyRecv)   (MONKEY_SOCKTYPE        socket,
+                                            MONKEY_DATATYPE        buf,
+                                            MONKEY_LENTYPE         size,
+                                            int                    flags,
+                                            void* /* SOCK* */      sock_ptr);
 typedef MONKEY_RETTYPE
-            (MONKEY_STDCALL *FMonkeySend)  (MONKEY_SOCKTYPE        sock,
+           (MONKEY_STDCALL *FMonkeySend)   (MONKEY_SOCKTYPE        socket,
                                             const MONKEY_DATATYPE  data,
                                             MONKEY_LENTYPE         size,
                                             int                    flags,
                                             void* /* SOCK* */      sock_ptr);
-typedef int(MONKEY_STDCALL *FMonkeyConnect)(MONKEY_SOCKTYPE        sock,
+typedef int(MONKEY_STDCALL *FMonkeyConnect)(MONKEY_SOCKTYPE        socket,
                                             const struct sockaddr* name,
                                             MONKEY_SOCKLENTYPE     namelen);
 
 typedef int /*bool*/      (*FMonkeyPoll)   (size_t*                n,
                                             void* /*SSOCK_Poll[]**/polls,
                                             EIO_Status*            ret_status);
-typedef void              (*FMonkeyClose)  (SOCKET sock); 
-typedef void              (*FSockHasSocket)(void* /* SOCK* */      sock, 
+typedef void              (*FMonkeyClose)  (MONKEY_SOCKTYPE        socket); 
+typedef void              (*FSockHasSocket)(void* /* SOCK */       sock, 
                                             MONKEY_SOCKTYPE        socket); 
 
 
