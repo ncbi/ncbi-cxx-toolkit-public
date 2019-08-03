@@ -1823,4 +1823,3 @@ int CMonkey::GetRand(const CMonkeySeedKey& /* key */)
 END_NCBI_SCOPE
 
 #endif /* #ifdef NCBI_MONKEY */
-
