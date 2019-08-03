@@ -113,8 +113,8 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_AttachFast
  );
 
 
-/* Allocate a new block of memory in the heap toward either the base or the
- * end of the heap, depending on the "hint" parameter:
+/* Allocate a new block of memory in the heap toward either the base or the end
+ * of the heap, depending on the "hint" parameter:
  * "hint" == 0 for base;
  * "hint" != 0 for end.
  * Return NULL if allocation has failed.
@@ -171,21 +171,20 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Next
  );
 
 
-/* Trim the heap, making garbage collection first.  Returned is
- * the resultant heap, which has its last block (if any) trimmed to the
- * size of the heap chunk size as specified at the time of the heap creation.
- * No change in size is made if the last block is not free or large
- * enough to allow the trimming.  NULL gets returned on NULL or read-only
- * heaps, or if a resize error has occurred.
- * Note that trimming can cause the entire heap extent (of an empty heap)
- * to deallocate (so that HEAP_Base() and HEAP_Size() will both return 0).
+/* Trim the heap, making garbage collection first.  Returned is the resultant
+ * heap, which has its last block (if any) trimmed to the size of the heap
+ * chunk size as specified at the time of the heap creation.  No change in size
+ * is made if the last block is not free or large enough to allow the trimming.
+ * NULL gets returned on NULL or read-only heaps, or on a resize error.
+ * Note that trimming may cause the entire heap extent (of an empty heap) to
+ * deallocate (so that HEAP_Base() and HEAP_Size() will both return 0).
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Trim(HEAP heap);
 
 
-/* Make a snapshot of a given heap.  Return a read-only heap
- * (like the one after HEAP_Attach[Fast]()), which must be freed by a call
- * to either HEAP_Detach() or HEAP_Destroy() when no longer needed.
+/* Make a snapshot of a given heap.  Return a read-only heap (like the one
+ * after HEAP_Attach[Fast]()), which must be freed by a call to either
+ * HEAP_Detach() or HEAP_Destroy() when no longer needed.
  * A copy is created reference-counted (with the initial ref.count set to 1).
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Copy
@@ -195,46 +194,46 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Copy
  );
 
 
-/* Add reference counter to the given copy heap (no effect on
- * a heap, which has been HEAP_Create()'d or HEAP_Attach[Fast]()'d).
- * The heap handle then will be destroyed only when the internal
- * reference counter reaches 0.  No internal locking is provided.
+/* Add reference counter to the given copy heap (no effect on a heap, which has
+ * been HEAP_Create()'d or HEAP_Attach[Fast]()'d).  The heap handle then will
+ * be destroyed only when the internal reference counter reaches 0.
+ * @warning No internal locking is provided.
  * Return the resultant value of the reference counter.
  */
 extern NCBI_XCONNECT_EXPORT unsigned int HEAP_AddRef(HEAP heap);
 
 
-/* Detach heap (previously attached by HEAP_Attach[Fast]).
- * For copy heap, it decrements an internal ref. counter by one, and
- * destroys the heap handle if and only if the counter has reached 0.
- * No internal locking of the reference counter is provided.
- * For heaps that are results of the HEAP_Copy() call,
- * both HEAP_Detach() and HEAP_Destroy() can be used interchangeably.
+/* Detach a heap (previously attached by HEAP_Attach[Fast]).  For a copy heap,
+ * it decrements an internal ref. counter by one, and actually destroys the
+ * heap handle if and only if the counter has reached 0.
+ * @warning No internal locking of the reference counter is provided.
+ * For heaps that are results of the HEAP_Copy() call, both HEAP_Detach() and
+ * HEAP_Destroy() can be used interchangeably.
  * Return the remaining value of the reference counter (0 if the heap is gone).
  */
 extern NCBI_XCONNECT_EXPORT unsigned int HEAP_Detach(HEAP heap);
 
 
-/* Destroy heap (previously created by HEAP_Create()).
+/* Destroy the heap (previously created by HEAP_Create()).
  * For copy heaps -- see comments for HEAP_Detach() above.
  * Return the remaining value of the reference counter (0 if the heap is gone).
  */
 extern NCBI_XCONNECT_EXPORT unsigned int HEAP_Destroy(HEAP heap);
 
 
-/* Get base address of the heap.
- * Return NULL if heap is passed as NULL, or when the heap is completely empty.
+/* Get the base address of the heap.  Return NULL if heap is passed as NULL, or
+ * when the heap is completely empty.
  */
 extern NCBI_XCONNECT_EXPORT void* HEAP_Base(const HEAP heap);
 
 
-/* Get the extent of the heap.  This is a very fast routine.
- * Return 0 if heap is passed as NULL, or when the heap is completely empty.
+/* Get the extent of the heap.  This is a very fast routine.  Return 0 if heap
+ * is passed as NULL, or when the heap is completely empty.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Size(const HEAP heap);
 
 
-/* Return total used space on the heap.  This is a very fast routine.
+/* Return the total used space on the heap.  This is a very fast routine.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Used(const HEAP heap);
 
@@ -254,7 +253,7 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
  * fast == eOn  turns on fast heap operations (default);
  * fast == eOff turns off fast heap operations (more checks, slower);
  * fast == eDefault does not change the current setting.
- * This call is intended for internal uses; and default settings (fast ops
+ * This call is intended for internal uses;  and default settings (fast ops
  * w/o structure integrity checks) should suffice for most users.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch unused);

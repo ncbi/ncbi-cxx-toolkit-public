@@ -30,7 +30,7 @@
  * This is a simple heap manager with a primitive garbage collection.
  *
  * The heap contains blocks of data, stored in a common contiguous pool, each
- * block preceded with a SHEAP_Block structure.  The value of 'flag' is is odd
+ * block preceded with a SHEAP_Block structure.  The value of 'flag' is odd
  * (LSB is set), when the block is in use, or even (LSB is 0), when the block
  * is vacant.  'Size' shows the length of the block in bytes, (uninterpreted)
  * data field of which is extended past the header (the header size IS counted
@@ -366,7 +366,7 @@ extern HEAP HEAP_Attach(const void* base, TNCBI_Size maxsize, int serial)
             if (HEAP_ISLAST(b))
                 break;
             p = b;
-            b = HEAP_NEXT(b);
+            b = HEAP_NEXT(p);
         }
     }
     return HEAP_AttachFast(base, size, serial);
@@ -494,14 +494,7 @@ static void s_HEAP_Link(HEAP heap, SHEAP_HeapBlock* f, SHEAP_HeapBlock* hint)
 
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-/*ARGSUSED*/
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
-static void s_HEAP_Unlink(SHEAP_HeapBlock* b)
-{
-    b->prevfree = b->nextfree = ~((TNCBI_Size) 0);
-}
+#  define s_HEAP_Unlink(b)  { b->prevfree = b->nextfree = ~((TNCBI_Size) 0); }
 #else
 #  define s_HEAP_Unlink(b)  /*void*/
 #endif /*_DEBUG && !NDEBUG*/
@@ -1015,7 +1008,7 @@ extern HEAP HEAP_Trim(HEAP heap)
 }
 
 
-static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
+static SHEAP_HeapBlock* x_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 {
     SHEAP_HeapBlock *n, *b, *p = (SHEAP_HeapBlock*) ptr;
     const SHEAP_HeapBlock* e = heap->base + heap->size;
@@ -1026,8 +1019,7 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     if (p) {
         if (p < heap->base  ||  e <= p
             ||  p->head.size <= sizeof(SHEAP_Block)
-            ||  HEAP_ALIGN(p->head.size) != p->head.size
-            /*FIXME  ||  (!HEAP_ISFREE(p)  &&  !HEAP_ISUSED(p))*/) {
+            ||  HEAP_ALIGN(p->head.size) != p->head.size) {
             CORE_LOGF_X(28, eLOG_Error,
                         ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
             return 0;
@@ -1039,23 +1031,25 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     if (e <= b  ||  b <= p
         ||  b->head.size <= sizeof(SHEAP_Block)
         ||  HEAP_ALIGN(b->head.size) != b->head.size
-        /*FIXME  ||  (!HEAP_ISFREE(b)  &&  !HEAP_ISUSED(b))*/
         ||  e < (n = HEAP_NEXT(b))  ||  n <= b) {
         if (b != e  ||  (b  &&  !p)) {
             CORE_LOGF_X(26, eLOG_Error,
                         ("Heap Walk%s: Heap corrupt", s_HEAP_Id(_id, heap)));
         } else if (b/*== e*/  &&  !HEAP_ISLAST(p)) {
             CORE_LOGF_X(27, eLOG_Error,
-                        ("Heap Walk%s: Last block lost",s_HEAP_Id(_id, heap)));
+                        ("Heap Walk%s: No last block @%u",s_HEAP_Id(_id, heap),
+                         HEAP_INDEX(p, heap->base)));
         }
         return 0;
     }
 
     if (HEAP_ISLAST(b)  &&
         (n < e  ||  (heap->chunk/*RW heap*/ && b < heap->base + heap->last))) {
-        if (heap->chunk/*RW heap*/)
-            sprintf(msg, " expected @%u", heap->last);
-        else
+        if (heap->chunk/*RW heap*/) {
+            const SHEAP_HeapBlock* l = heap->base + heap->last;
+            sprintf(msg, " %s @%u", l < e  &&  HEAP_NEXT(l) == e
+                    ? "expected" : "invalid", heap->last);
+        } else
             *msg = '\0';
         CORE_LOGF_X(23, eLOG_Error,
                     ("Heap Walk%s: Last block @%u%s", s_HEAP_Id(_id, heap),
@@ -1153,7 +1147,7 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 
     if (HEAP_ISUSED(b)  &&  heap->chunk/*RW heap*/) {
         const SHEAP_HeapBlock* c = heap->base + heap->free;
-        /* check that a used block is not within the chain of free
+        /* Check that a used block is not within the chain of free
            blocks but ignore any inconsistencies in the chain */
         for (i = 0;  c < e  &&  i < heap->size;  ++i) {
             if (HEAP_ISUSED(c))
@@ -1197,7 +1191,28 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
         }
     }
 
-    return &b->head;
+    return b;
+}
+
+
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static SHEAP_HeapBlock* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
+{
+    assert(heap);
+    if (likely(s_HEAP_fast)) {
+        SHEAP_HeapBlock* b;
+        if (unlikely(!ptr))
+            return heap->base;
+        b = (SHEAP_HeapBlock*) ptr;
+        if (HEAP_ISLAST(b))
+            return 0;
+        b = HEAP_NEXT(b);
+        return likely(ptr < &b->head)  &&  likely(b < heap->base + heap->size)
+            ? b : 0;
+    }
+    return x_HEAP_Walk(heap, ptr);
 }
 
 
@@ -1209,26 +1224,24 @@ extern SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     }
     HEAP_CHECK(heap);
 
-    if (likely(s_HEAP_fast)) {
-        SHEAP_HeapBlock* b;
-        if (unlikely(!ptr))
-            return &heap->base->head;
-        b = HEAP_NEXT((SHEAP_HeapBlock*) ptr);
-        return likely(ptr < &b->head)  &&  likely(b < heap->base + heap->size)
-            ? &b->head : 0;
-    }
-    return s_HEAP_Walk(heap, ptr);
+    return &s_HEAP_Walk(heap, ptr)->head;
 }
 
 
 extern SHEAP_Block* HEAP_Next(const HEAP heap, const SHEAP_Block* ptr)
 {
-    SHEAP_Block* next;
-    for (next = HEAP_Walk(heap, ptr);  next;  next = HEAP_Walk(heap, next)) {
-        if ((short) next->flag) /*FIXME; now for compatibility*/
+    SHEAP_HeapBlock* n;
+    if (unlikely(!heap)) {
+        CORE_LOG_X(34, eLOG_Warning, "Heap Next: NULL heap");
+        return 0;
+    }
+    HEAP_CHECK(heap);
+
+    for (n = s_HEAP_Walk(heap, ptr);  n;  n = s_HEAP_Walk(heap, &n->head)) {
+        if (HEAP_ISUSED(n))
             break;
     }
-    return next;
+    return &n->head;
 }
 
 
