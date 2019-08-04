@@ -11,7 +11,7 @@ SRC = bam_test bam_test_common
 
 LIB =   bamread $(BAM_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil xobjsimple \
         $(OBJMGR_LIBS)
-LIBS =  $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS =  $(GENBANK_THIRD_PARTY_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects

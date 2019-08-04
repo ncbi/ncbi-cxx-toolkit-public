@@ -8,7 +8,7 @@ LIB = xunittestutil xobjwrite variation_utils $(OBJREAD_LIBS) xalnmgr \
 #LIB = xunittestutil xobjwrite $(OBJREAD_LIBS) xobjutil gbseq xalnmgr entrez2cli entrez2 \
 #	tables test_boost $(OBJMGR_LIBS)  variation_utils variation xutil xncbi
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 

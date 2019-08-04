@@ -8,7 +8,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIB = xalgoalignutil xalgoseq $(BLAST_LIBS) xqueryparse \
       taxon1 xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included objects
 

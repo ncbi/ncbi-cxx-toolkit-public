@@ -13,7 +13,7 @@ LIB_ = hgvs $(OBJREAD_LIBS) test_boost xregexp $(PCRE_LIB) xobjutil \
 
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Spirit Boost.Test.Included
 

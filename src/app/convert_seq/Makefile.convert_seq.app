@@ -6,7 +6,8 @@ LIB = $(ncbi_xloader_wgs) $(SRAREAD_LIBS) xobjwrite variation_utils \
       $(OBJREAD_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil tables xregexp \
       $(PCRE_LIB) $(OBJMGR_LIBS)
 
-LIBS = $(SRA_SDK_SYSLIBS) $(PCRE_LIBS) $(CMPRS_LIBS) \
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
+       $(SRA_SDK_SYSLIBS) $(PCRE_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)

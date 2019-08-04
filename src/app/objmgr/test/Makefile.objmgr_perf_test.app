@@ -13,7 +13,7 @@ SRC = objmgr_perf_test
 LIB = $(ncbi_xreader_pubseqos2) \
       ncbi_xdbapi_ftds $(FTDS_LIB) xobjutil $(OBJMGR_LIBS)
 
-LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 
 #CHECK_COPY = all_readers.sh

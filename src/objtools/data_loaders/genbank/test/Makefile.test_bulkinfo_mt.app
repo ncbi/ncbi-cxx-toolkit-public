@@ -6,7 +6,7 @@ APP = test_bulkinfo_mt
 SRC = test_bulkinfo_mt bulkinfo_tester
 LIB = xobjutil test_mt ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
 
-LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = bad_len.ids wgs.ids all_readers.sh
 

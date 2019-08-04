@@ -5,7 +5,7 @@ SRC = id1_fetch
 LIB = $(XFORMAT_LIBS) xalnmgr xobjutil id1cli entrez2cli entrez2 tables \
       xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 

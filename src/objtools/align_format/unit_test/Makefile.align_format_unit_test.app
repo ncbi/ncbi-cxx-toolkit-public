@@ -13,7 +13,7 @@ LIB_ = test_boost $(BLAST_DB_DATA_LOADER_LIBS) align_format taxon1 blastdb_forma
 	$(OBJREAD_LIBS) xnetblastcli xnetblast blastdb scoremat tables $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC)) $(LMDB_LIB)
-LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = align_format_unit_test
 CHECK_COPY = data align_format_unit_test.ini

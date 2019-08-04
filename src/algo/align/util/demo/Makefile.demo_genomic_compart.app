@@ -14,7 +14,7 @@ SRC = demo_genomic_compart
 
 LIB = xalgoalignutil xalgoseq $(BLAST_LIBS) xqueryparse xregexp \
           taxon1 $(PCRE_LIB) $(OBJMGR_LIBS)
-LIBS = $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
 

@@ -15,7 +15,8 @@ LIB = hgvs \
       entrez2cli entrezgene entrez2 xregexp $(PCRE_LIB) \
       test_boost $(OBJMGR_LIBS)
 
-LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) \
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
+       $(SQLITE3_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) \
        $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included SQLITE3

@@ -16,7 +16,8 @@ LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
       $(BLAST_LIBS:%=%$(STATIC)) \
       $(OBJMGR_LIBS:%=%$(STATIC))
 
-LIBS = $(SQLITE3_LIBS) \
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
+       $(SQLITE3_LIBS) \
        $(PCRE_LIBS) \
        $(CMPRS_LIBS) \
        $(NETWORK_LIBS) \

@@ -13,7 +13,8 @@ LIB =  xvalidate $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
 	  ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \
       $(ncbi_xloader_wgs) $(SRAREAD_LIBS) $(OBJMGR_LIBS) $(PCRE_LIB)
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(FTDS_LIBS) \
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
+       $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(FTDS_LIBS) \
        $(SRA_SDK_SYSLIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
