@@ -930,7 +930,7 @@ private:
     CSeq_id_Resolver::TResolvers m_seq_id_resolvers;
 };
 
-};
+}
 
 END_NCBI_SCOPE
 
