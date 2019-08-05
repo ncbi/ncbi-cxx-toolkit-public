@@ -274,59 +274,78 @@ int NStr::CompareNocase(const CTempString s1, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
-// NOTE: This code is used also in the CDirEntry::MatchesMask.
-bool NStr::MatchesMask(CTempString str, CTempString mask, ECase use_case)
+// MatchesMask() tri-state result 
+enum EMatchesMaskResult {
+    eMatch    =  1,   // match
+    eNoMatch  =  0,   // no match
+    eMismatch = -1    // mismatch, stop search
+};
+
+// Implements the same logic as UTIL_MatchesMask() from 'include/connect/ncbi_util.h',
+// but for CTempString instead of char*.
+
+static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool ignore_case)
 {
-    char c;
-    for ( size_t str_pos = 0, mask_pos = 0; ; ) {
-        // Analyze symbol in mask
-        switch ( c = mask[mask_pos++] ) {
-        case '\0':
-            return str[str_pos] == '\0';
+    char s, m;
+    size_t str_pos = 0, mask_pos = 0;
 
+    for ( ; (m = mask[mask_pos]); ++str_pos, ++mask_pos) {
+
+        s = str[str_pos];
+
+        if (!s  &&  m != '*') {
+            return eMismatch;
+        }
+        // Analyze mask symbol
+        switch ( m ) {
         case '?':
-            if (str[str_pos] == '\0') {
-                return false;
-            }
-            ++str_pos;
-            break;
-
+            _ASSERT(s);
+            continue;
         case '*':
-            c = mask[mask_pos];
             // Collapse multiple stars
-            while ( c == '*' ) {
-                c = mask[++mask_pos];
-            }
-            if (c == '\0') {
-                return true;
+            while ( (m = mask[mask_pos]) == '*' ) mask_pos++;
+            if ( !m ) {
+                // only stars left in the mask
+                return eMatch;
             }
             // General case, use recursion
-            while ( str[str_pos] ) {
-                if ( MatchesMask(str.substr(str_pos),
-                                 mask.substr(mask_pos),
-                                 use_case) ) {
-                    return true;
+            while ( s ) {
+                EMatchesMaskResult res = s_MatchesMask(str.substr(str_pos), mask.substr(mask_pos), ignore_case);
+                if ( res != eNoMatch ) {
+                    // match or mismatch
+                    return res;
                 }
-                ++str_pos;
+                // continue search
+                s = str[str_pos++];
             }
-            return false;
+            return eMismatch;
 
         default:
             // Compare non pattern character in mask and name
-            char s = str[str_pos++];
-            if (use_case == NStr::eNocase) {
-                if (c != s  &&  tolower((unsigned char)c) != tolower((unsigned char)s)) {
-                    return false;
-                }
+            _ASSERT(s  &&  m);
+            if (ignore_case) {
+                if (s != m  &&  tolower((unsigned char)s) != tolower((unsigned char)m))
+                    return eNoMatch;
             } else {
-                if (c != s) {
-                    return false;
-                }
+                if (s != m)
+                    return eNoMatch;
             }
-            break;
+            continue;
         }
     }
-    return false;
+    // Matches if we reach the end of the string and mask at the same time only
+    if ( str[str_pos] ) {
+        return eNoMatch;
+    }
+    return eMatch;
+}
+
+
+// NOTE: This code is also used in CDirEntry::MatchesMask().
+//
+bool NStr::MatchesMask(CTempString str, CTempString mask, ECase use_case)
+{
+    return s_MatchesMask(str, mask, use_case == NStr::eNocase) == eMatch;
 }
 
 

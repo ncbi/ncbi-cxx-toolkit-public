@@ -406,16 +406,19 @@ static void s_TEST_MatchesMask(void)
 {
     CDirEntry d;
     
-    assert( d.MatchesMask(""        , ""));
+    assert( d.MatchesMask(""        , "") );
     assert( d.MatchesMask("file"    , "*"));
+    assert( d.MatchesMask("file"    , "**"));
     assert(!d.MatchesMask("file"    , "*.*"));
     assert( d.MatchesMask("file.cpp", "*.cpp"));
+    assert( d.MatchesMask("file.cpp", "**.cpp"));
     assert(!d.MatchesMask("file.cpp", "*.CPP"));
     assert( d.MatchesMask("file.cpp", "*.CPP", NStr::eNocase));
     assert( d.MatchesMask("file.cpp", "*.c*"));
     assert( d.MatchesMask("file"    , "file*"));
     assert( d.MatchesMask("file"    , "f*"));
     assert( d.MatchesMask("file"    , "f*le"));
+    assert( d.MatchesMask("file"    , "f*e"));
     assert( d.MatchesMask("file"    , "f**l*e"));
     assert(!d.MatchesMask("file"    , "???"));
     assert( d.MatchesMask("file"    , "????"));
@@ -430,8 +433,8 @@ static void s_TEST_MatchesMask(void)
     assert( d.MatchesMask("file"    , "********?"));
 
     CMaskFileName mask;
-    assert( d.MatchesMask(""        , mask));
-    assert( d.MatchesMask("file"    , mask));
+    assert( d.MatchesMask(""     , mask));
+    assert( d.MatchesMask("file" , mask));
 
     mask.Add("*.c");
     mask.Add("*.cpp");
@@ -846,7 +849,7 @@ static void s_TEST_Dir(void)
 
         FindFiles(files, paths.begin(), paths.end(), 
                          masks.begin(), masks.end());
-        assert(contents.size() == contents2.size());
+        assert( contents.size() == contents2.size() );
         assert( files.size() == contents2.size() );
         for (unsigned int i = 0; i < files.size(); ++i) {
             const CDirEntry& entry1 = *contents.front();
@@ -1065,10 +1068,10 @@ static void s_TEST_Link(void)
 
 static void s_TEST_MemoryFile(void)
 {
-    static const char   s_FileName[] = "test.tmp";
-    static const char   s_Data[]     = "test data";
-    static const char   s_DataTest[] = "teen data";
-    static const size_t s_DataLen    = sizeof(s_Data) - 1;
+    const char   s_FileName[] = "test.tmp";
+    const char   s_Data[]     = "test data";
+    const char   s_DataTest[] = "teen data";
+    const size_t s_DataLen    = sizeof(s_Data) - 1;
 
     CFile f(s_FileName);
     f.Remove();
@@ -1157,8 +1160,7 @@ static void s_TEST_MemoryFile(void)
     // eMMP_ReadWrite + eMMS_Shared
     {{
         // Map file into memory
-        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
-                       CMemoryFile::eMMS_Shared);
+        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite, CMemoryFile::eMMS_Shared);
         assert( m1.GetSize() == s_DataLen );
         assert( memcmp(m1.GetPtr(), s_Data, s_DataLen) == 0 );
         char* ptr = (char*)m1.GetPtr();
@@ -1166,8 +1168,7 @@ static void s_TEST_MemoryFile(void)
         assert( m1.Flush() );
 
         // Map second copy of the file into the memory
-        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read,
-                       CMemoryFile::eMMS_Shared);
+        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read, CMemoryFile::eMMS_Shared);
         assert( m1.GetSize() == m2.GetSize() );
         // m2 must contain changes made via m1 
         assert( memcmp(m2.GetPtr(), ptr, s_DataLen) == 0 );
@@ -1186,8 +1187,7 @@ static void s_TEST_MemoryFile(void)
     // eMMP_ReadWrite + eMMS_Private
     {{
         // Map file into memory
-        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
-                       CMemoryFile::eMMS_Private);
+        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite, CMemoryFile::eMMS_Private);
         assert( m1.GetSize() == s_DataLen );
         assert( memcmp(m1.GetPtr(), s_Data, s_DataLen) == 0 );
         char* ptr = (char*)m1.GetPtr();
@@ -1195,8 +1195,7 @@ static void s_TEST_MemoryFile(void)
         assert( m1.Flush() );
 
         // Map second copy of the file into the memory
-        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read,
-                       CMemoryFile::eMMS_Shared);
+        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read, CMemoryFile::eMMS_Shared);
         assert( m1.GetSize() == m2.GetSize() );
         // m2 must contain the original data
         assert( memcmp(m2.GetPtr(), s_Data, s_DataLen) == 0 );
@@ -1205,15 +1204,13 @@ static void s_TEST_MemoryFile(void)
     // Length and offset test
     {{
         // Map file into memory
-        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
-                       CMemoryFile::eMMS_Shared, 2, 3);
+        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite, CMemoryFile::eMMS_Shared, 2, 3);
         assert( m1.GetFileSize() == (Int8)s_DataLen );
         assert( m1.GetSize() == 3 );
         assert( m1.GetOffset() == 2 );
 
         // Map second copy of the file into the memory
-        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read,
-                       CMemoryFile::eMMS_Shared);
+        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read, CMemoryFile::eMMS_Shared);
 
         // Change something in first copy
         char* ptr = (char*)m1.GetPtr();
@@ -1232,8 +1229,7 @@ static void s_TEST_MemoryFile(void)
     // Extend() test
     {{
         off_t offset = 2;
-        CMemoryFile m(s_FileName, CMemoryFile::eMMP_ReadWrite,
-                      CMemoryFile::eMMS_Shared, offset, 3);
+        CMemoryFile m(s_FileName, CMemoryFile::eMMP_ReadWrite, CMemoryFile::eMMS_Shared, offset, 3);
         assert( m.GetFileSize() == (Int8)s_DataLen );
         assert( m.GetSize() == 3 );
         assert( m.GetOffset() == offset );
@@ -1258,8 +1254,8 @@ static void s_TEST_MemoryFile(void)
   
     // CMemoryFileMap test  
     {{
-        static const size_t s_PartCount  = 10;
-        static const size_t s_BufLen     = s_PartCount * 1024;
+        const size_t s_PartCount  = 10;
+        const size_t s_BufLen     = s_PartCount * 1024;
 
         // Generate random file with size s_FileLen;
         char* buf = new char[s_BufLen];
