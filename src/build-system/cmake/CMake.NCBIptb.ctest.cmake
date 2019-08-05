@@ -71,6 +71,23 @@ function(NCBI_internal_add_cmake_test _test)
         return()
     endif()
 
+    set(_auto $ENV{NCBI_AUTOMATED_BUILD})
+    if(_auto)
+    add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
+        -DNCBITEST_NAME=${_test}
+        -DNCBITEST_CONFIG=$<CONFIG>
+        -DNCBITEST_COMMAND=${NCBITEST_${_test}_CMD}
+        -DNCBITEST_ARGS=${_args}
+        -DNCBITEST_TIMEOUT=${_timeout}
+        -DNCBITEST_BINDIR=../${NCBI_DIRNAME_RUNTIME}
+        -DNCBITEST_SOURCEDIR=../../${NCBI_DIRNAME_SRC}/${_xoutdir}
+        -DNCBITEST_OUTDIR=../${NCBI_DIRNAME_TESTING}/${_xoutdir}
+        -DNCBITEST_ASSETS=${_assets}
+        ${_extra}
+        -P "../../${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake"
+        WORKING_DIRECTORY .
+    )
+    else()
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}
         -DNCBITEST_CONFIG=$<CONFIG>
@@ -83,6 +100,7 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_ASSETS=${_assets}
         ${_extra}
         -P "${NCBITEST_DRIVER}")
+    endif()
 endfunction()
 
 ##############################################################################
