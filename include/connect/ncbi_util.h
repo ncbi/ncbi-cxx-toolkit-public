@@ -621,7 +621,9 @@ extern NCBI_XCONNECT_EXPORT void* UTIL_GenerateHMAC
  *  a range that can be used for contraction to include all characters in
  *  between:  "[A-F]" is equivalent to "[ABCDEF]".  For its literal meaning,
  *  the minus sign '-' can be used either at the very first position, or the
- *  last position before the closing bracket ']'.
+ *  last position before the closing bracket ']'.  To have a range that begins
+ *  with an exclamation point, one has to use a dummy empty range followed
+ *  by that range with '!'.
  *  Examples:
  *  "!"        matches a single '!' (note that just "[!]" is invalid);
  *  "[!!]"     matches any character, which is not an exclamation point '!';
@@ -629,12 +631,13 @@ extern NCBI_XCONNECT_EXPORT void* UTIL_GenerateHMAC
  *  "[!][-]"   matches any character except for ']', '[', and '-';
  *  "[-]"      matches a minus sign '-' (same as '-' just by itself);
  *  "[?*\\]"   matches either '?', or '*', or a backslash '\\';
- *  "[]-\\]"   matches nothing as it defines an empty range;
- *  "\\[a]\\*" matches a substring "[a]*";
+ *  "[]-\\]"   matches nothing as it defines an empty range (from ']' to '\\');
+ *  "\\[a]\\*" matches a literal substring "[a]*";
  *  "[![a-]"   matches any char but '[', 'a' or '-' (same as "[!-[a]"; but not
- *             "[![-a]", which defines an empty range thus matches any char!);
- *  "[]A]"     matches either ']' or 'A' ("[A]]" matches a substring "A]");
- *  "[0-9-]"   matches any decimal digit or a minus sign '-' (same: "[-0-9]").
+ *             "[![-a]", which defines an empty range, thus matches any char!);
+ *  "[]A]"     matches either ']' or 'A' (NB: "[A]]" matches a substring "A]");
+ *  "[0-9-]"   matches any decimal digit or a minus sign '-' (same: "[-0-9]");
+ *  "[9-0!-$]" matches '!', '"', '#', and '$' (as first range matches nothing).
  * @note
  *  In the above, each double backslash denotes a single graphical backslash
  *  character (C string notation is used).
@@ -644,7 +647,7 @@ extern NCBI_XCONNECT_EXPORT void* UTIL_GenerateHMAC
  * @param ignore_case
  *  Whether to ignore the case of the letters (a-z) in comparisons
  * @return
- *  Non-zero if "text" matches "mask";  otherwise (including patter errors),
+ *  Non-zero if "text" matches "mask";  otherwise (including pattern errors),
  *  return zero
  * @sa
  *  UTIL_MatchesMask

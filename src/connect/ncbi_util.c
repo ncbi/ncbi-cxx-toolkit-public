@@ -1314,7 +1314,7 @@ static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
             } while (*mask != ']');
             if (p == !c)
                 return 0/*mismatch*/;
-            ++mask;
+            ++mask/*skip ']'*/;
             continue;
         case '\\':
             if (!(p = *mask++))
