@@ -491,7 +491,7 @@ private:
     CCdregionIndex m_cdregion_index;
 };
 
-};
+}
 
 END_NCBI_SCOPE
 #endif
