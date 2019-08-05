@@ -72,7 +72,7 @@ public:
             m_Args[i] = CUtf8::AsBasicString<wchar_t>(argv[i]);
             m_Argv[i] = const_cast<wchar_t*>(m_Args[i].c_str());
         }
-        PySys_SetArgv(argc, m_Argv);
+        PySys_SetArgv(argc, m_Argv.data());
 #else
 	    PySys_SetArgv(argc, argv);
 #endif
@@ -105,7 +105,7 @@ public:
     }
 
 private:
-    static void x_SetProgramName(const char* prog_name)
+    void x_SetProgramName(const char* prog_name)
     {
         if ( prog_name ) {
 #if PY_MAJOR_VERSION >= 3
@@ -120,7 +120,7 @@ private:
 #if PY_MAJOR_VERSION >= 3
     wstring         m_ProgName;
     vector<wstring> m_Args;
-    vector<wchar*>  m_Argv;
+    vector<wchar_t*> m_Argv;
 #endif
 };
 
