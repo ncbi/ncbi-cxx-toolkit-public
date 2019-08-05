@@ -442,7 +442,7 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
                                  const CTSE_Info_Object& info)
     : m_TSE_ScopeInfo(tse.GetNonNullNCPointer()),
       m_TSE_Handle(tse),
-      m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
+      m_ObjectInfo(&info)
 {
 }
 
@@ -451,7 +451,7 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse,
                                  const CTSE_Info_Object& info)
     : m_TSE_ScopeInfo(&tse.x_GetScopeInfo()),
       m_TSE_Handle(tse),
-      m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
+      m_ObjectInfo(&info)
 {
 }
 
@@ -479,12 +479,13 @@ DEFINE_STATIC_FAST_MUTEX(s_Info_TSE_HandleMutex);
 void CScopeInfo_Base::x_SetTSE_Handle(const CTSE_Handle& tse)
 {
     _ASSERT(IsAttached());
-    _ASSERT(HasObject());
-    _ASSERT(GetObjectInfo_Base().BelongsToTSE_Info(tse.x_GetTSE_Info()));
+    _ASSERT(!HasObject() || GetObjectInfo_Base().BelongsToTSE_Info(tse.x_GetTSE_Info()));
     _ASSERT(m_LockCounter.Get() > 0);
+    CTSE_Handle save_tse;
     CFastMutexGuard guard(s_Info_TSE_HandleMutex);
     if ( !m_TSE_Handle.m_TSE ) {
         _ASSERT(tse);
+        save_tse.Swap(m_TSE_Handle);
         m_TSE_Handle = tse;
     }
     _ASSERT(m_TSE_Handle == tse);
@@ -498,10 +499,12 @@ void CScopeInfo_Base::x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
     _ASSERT(tse);
     _ASSERT(&*tse == m_TSE_ScopeInfo);
     _ASSERT(m_LockCounter.Get() > 0);
+    CTSE_Handle save_tse;
+    CFastMutexGuard guard(s_Info_TSE_HandleMutex);
     if ( !m_TSE_Handle.m_TSE || !m_ObjectInfo ) {
-        CFastMutexGuard guard(s_Info_TSE_HandleMutex);
+        save_tse.Swap(m_TSE_Handle);
         m_TSE_Handle = tse;
-        m_ObjectInfo = &reinterpret_cast<const CObject&>(info);
+        m_ObjectInfo = &info;
     }
     _ASSERT(&m_TSE_Handle.x_GetScopeInfo() == &*tse);
     _ASSERT(!m_ObjectInfo || &GetObjectInfo_Base() == &info);
@@ -510,11 +513,11 @@ void CScopeInfo_Base::x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
 
 void CScopeInfo_Base::x_ResetTSE_Lock()
 {
-    if ( m_TSE_Handle.m_TSE ) {
-        CTSE_Handle tse; // prevent deletion of handle and scope under mutex
+    if ( m_TSE_Handle.m_TSE && m_LockCounter.Get() == 0 ) {
+        CTSE_Handle save_tse; // prevent deletion of handle and scope under mutex
         CFastMutexGuard guard(s_Info_TSE_HandleMutex);
         if ( m_TSE_Handle.m_TSE && m_LockCounter.Get() == 0 ) {
-            tse.Swap(m_TSE_Handle);
+            save_tse.Swap(m_TSE_Handle);
         }
     }
 }
