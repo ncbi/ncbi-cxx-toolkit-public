@@ -98,7 +98,7 @@ private:
 ///  List of servers (ordered according to their rates)
 extern NCBI_XCONNECT_EXPORT
 vector<CSERV_Info> SERV_GetServers(const string& service,
-                                   TSERV_Type    types    = fSERV_Http,
+                                   TSERV_Type    types    = fSERV_Any,
                                    TSERV_Mapper  mappers  = fSERV_Namerd);
 
 
