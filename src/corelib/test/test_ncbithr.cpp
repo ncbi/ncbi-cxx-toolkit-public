@@ -284,10 +284,10 @@ private:
 #ifdef USE_NATIVE_THREADS
     friend void NativeWrapperCallerImpl(TWrapperArg arg);
 
-    CAtomicCounter_WithAutoInit m_IsFinished;
     CAtomicCounter_WithAutoInit m_IsValid;
     TThreadHandle    m_Handle;
 
+    CRef<CTestThread> m_SelfRef;
 public:
     bool Run(CThread::TRunMode flags = CThread::fRunDefault);
     void Join(void** result = 0);
@@ -323,10 +323,12 @@ CTestThread::CTestThread(int index,
       m_Res(res)
 #ifdef USE_NATIVE_THREADS
       ,
-      m_IsFinished(0),
       m_IsValid(0)
 #endif
 {
+#ifdef USE_NATIVE_THREADS
+    m_SelfRef.Reset(this);
+#endif
     CFastMutexGuard guard(s_GlobalLock);
     states[m_Index] = eCreated;
 }
@@ -636,17 +638,13 @@ void CTestThread::Join(void** result)
     if (result) {
         *result = this;
     }
-    delete this;
+    m_SelfRef.Reset();
 }
 
 
 void CTestThread::Detach(void)
 {
     // The second who increments this can delete the object
-    if (m_IsFinished.Add(1) == 2) {
-        delete this;
-        return;
-    }
     bool valid = m_IsValid.Add(-1) == 0;
     if (valid) {
 #if defined(NCBI_WIN32_THREADS)
@@ -655,26 +653,23 @@ void CTestThread::Detach(void)
         _ASSERT(pthread_detach(m_Handle) == 0);
 #endif
     }
+    m_SelfRef.Reset();
 }
 
 
 void CTestThread::Discard(void)
 {
-    delete this;
+    m_SelfRef.Reset();
     return;
 }
 
 
 void NativeWrapperCallerImpl(TWrapperArg arg)
 {
-    CTestThread* thread_obj = static_cast<CTestThread*>(arg);
+    CRef<CTestThread> thread_obj(static_cast<CTestThread*>(arg));
     thread_obj->Main();
     thread_obj->OnExit();
     CUsedTlsBases::GetUsedTlsBases().ClearAll();
-    // The first who increments this can delete the object
-    if (thread_obj->m_IsFinished.Add(1) == 2) {
-        delete thread_obj;
-    }
 }
 
 
