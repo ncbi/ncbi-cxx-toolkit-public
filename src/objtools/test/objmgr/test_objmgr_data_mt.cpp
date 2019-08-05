@@ -124,6 +124,7 @@ protected:
     bool m_adaptive;
     int  m_pass_count;
     bool m_no_reset;
+    bool m_reset_tse;
     bool m_keep_handles;
     bool m_verbose;
     bool m_release_all_memory;
@@ -269,7 +270,6 @@ bool CTestOM::Thread_Run(int idx)
         scope_ref = CreateScope();
     }
     CScope& scope = *scope_ref;
-    scope.AddDefaults();
 
     vector<CSeq_id_Handle> ids = m_Ids;
     
@@ -327,8 +327,7 @@ bool CTestOM::Thread_Run(int idx)
             CSeq_id_Handle sih = ids[i];
             CNcbiOstrstream out;
             if ( m_verbose ) {
-                out << CTime(CTime::eCurrent).AsString() << " T" << idx
-                    << ": " << i << ": " << sih;
+                out << i << ": " << sih;
             }
             TMapKey key(sih, order);
             try {
@@ -394,7 +393,13 @@ bool CTestOM::Thread_Run(int idx)
                     }
                 }
 
-                if ( !m_load_only ) {
+                if ( m_load_only ) {
+                    if ( m_verbose ) {
+                        string msg = CNcbiOstrstreamToString(out);
+                        LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
+                    }
+                }
+                else {
                     // check CSeqMap_CI
                     if ( !m_no_seq_map ) {
                         SSeqMapSelector sel(CSeqMap::fFindRef, kMax_UInt);
@@ -507,6 +512,9 @@ bool CTestOM::Thread_Run(int idx)
                 if ( m_no_reset && m_keep_handles ) {
                     handles.insert(handle);
                 }
+                if ( m_reset_tse ) {
+                    scope.RemoveFromHistory(handle.GetTSE_Handle());
+                }
             }
             catch (CLoaderException& e) {
                 if ( m_verbose ) {
@@ -553,7 +561,7 @@ bool CTestOM::Thread_Run(int idx)
                     break;
                 }
             }
-            if ( !m_no_reset ) {
+            if ( !m_no_reset && !m_reset_tse ) {
                 scope.ResetHistory();
             }
         }
@@ -591,6 +599,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                        "Run test several times",
                        CArgDescriptions::eInteger, "1");
     args.AddFlag("no_reset", "Do not reset scope history after each id");
+    args.AddFlag("reset_tse", "Reset TSE from scope history after each id");
     args.AddFlag("keep_handles",
                  "Remember bioseq handles if not resetting scope history");
     args.AddFlag("verbose", "Print each Seq-id before processing");
@@ -690,7 +699,13 @@ bool CTestOM::TestApp_Init(void)
     m_named_acc = args["named_acc"].AsString();
     m_adaptive = args["adaptive"];
     m_pass_count = args["pass_count"].AsInteger();
-    m_no_reset = args["no_reset"];
+    m_reset_tse = args["reset_tse"];
+    if ( m_reset_tse ) {
+        m_no_reset = false;
+    }
+    else {
+        m_no_reset = args["no_reset"];
+    }
     m_keep_handles = args["keep_handles"];
     m_verbose = args["verbose"];
     m_release_all_memory = args["release_all_memory"];
