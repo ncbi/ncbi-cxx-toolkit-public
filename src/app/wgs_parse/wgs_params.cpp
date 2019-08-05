@@ -1059,6 +1059,12 @@ bool SetParams(const CArgs& args)
     string input_mask;
     if (args["i"].HasValue()) {
         input_mask = args["i"].AsString();
+
+#ifndef WIN32
+        if (!input_mask.empty() && input_mask.front() != '/' && input_mask.front() != '~') {
+            input_mask = "./" + input_mask;
+        }
+#endif
     }
 
     string file_list;

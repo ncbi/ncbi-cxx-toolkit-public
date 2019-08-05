@@ -88,8 +88,6 @@ void CWGSParseApp::Init(void)
     arg_desc->AddDefaultKey("b", "Binary", "All input files are binary.", CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("p", "BinaryButMaster", "ALL output files are binary (except Master).", CArgDescriptions::eBoolean, "F");
 
-    //arg_desc->AddOptionalKey("l", "LogFile", "Name of log file.", CArgDescriptions::eString); // -logfile instead
-
     arg_desc->AddDefaultKey("u", "ParsingMode", "Parsing mode:\n        1 - PARTIAL UPDATE, i.e. only members of project will be updated;\n        2 - ASSEMBLY UPDATE, the whole new assembly will be updated;\n        3 - SCAFFOLDS, parse brand new scaffolds for already existing\n            project;\n        4 - FULL UPDATE WITHIN CURRENT ASSEMBLY, all contigs are getting\n            updated with master record being generated;\n        5 - SCAFFOLDS UPDATE, parse already existing scaffolds,\n            no accessions assignment;\n        6 - EXTRA CONTIGS, add extra contigs to already existing project;\n        0 - Brand new project.", CArgDescriptions::eInteger, "0");
     arg_desc->AddKey("a", "Accession", "Prefix+version for accessions (4+2 or 7+2). Like \"AAAA55\" or \"NZ_AAAA55\".", CArgDescriptions::eString);
 
@@ -159,6 +157,8 @@ void CWGSParseApp::Init(void)
     arg_desc->AddDefaultKey("D", "DiffBioSamples", "For brand new TLS projects only: allows DBLinks with different BioSamples among contigs. DBLinks won't be removed from contigs.", CArgDescriptions::eBoolean, "F");
 
     arg_desc->AddDefaultKey("J", "IsTpaTsa", "Is this TPA-TSA project? Set to TRUE then.", CArgDescriptions::eBoolean, "F");
+
+    arg_desc->AddOptionalKey("l", "LogFile", "The log-file name (for backward compatibility, use -logfile instead).", CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
@@ -1569,6 +1569,10 @@ int CWGSParseApp::Run(void)
     const CArgs& args = GetArgs();
     string logfile;
     
+    if (args["l"].HasValue()) {
+        logfile = args["l"].AsString();
+    }
+
     if (args["logfile"].HasValue()) {
         logfile = args["logfile"].AsString();
     }
