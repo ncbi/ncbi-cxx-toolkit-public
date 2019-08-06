@@ -358,8 +358,10 @@ void CWgsParseDiagHandler::Post(const SDiagMessage& mess)
         error_id = GetCodeStr(mess.m_ErrCode, mess.m_ErrSubCode);
     }
 
-    CNcbiOstream& out = m_out.is_open() ? m_out : cerr;
-    out << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << endl;
+    if (m_out.is_open()) {
+        m_out << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << endl;
+    }
+    cerr << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << endl;
 }
 
 }
