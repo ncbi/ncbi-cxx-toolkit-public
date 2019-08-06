@@ -3578,6 +3578,40 @@ BOOST_AUTO_TEST_CASE(s_Equal)
 
 
 //----------------------------------------------------------------------------
+// NStr::MatchesMask()
+//----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(s_MatchesMask)
+{
+    BOOST_CHECK(   NStr::MatchesMask( "aaa", "*a"                            ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "bbb", "*a"                            ) );
+    BOOST_CHECK(   NStr::MatchesMask( "bba", "*a"                            ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "aab", "*a"                            ) );
+    BOOST_CHECK(   NStr::MatchesMask( "aaa", "*a*"                           ) );
+    BOOST_CHECK(   NStr::MatchesMask( "AAA", "*a",             NStr::eNocase ) );
+    BOOST_CHECK(   NStr::MatchesMask( "aaa", "*"                             ) );
+    BOOST_CHECK(   NStr::MatchesMask( "aaa", "[a-z][a]a"                     ) );
+    BOOST_CHECK(   NStr::MatchesMask( "aaa", "[!b][!b-c]a"                   ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "aaa", "a[]"                           ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "aaa", "a[a-a][a-"                     ) );
+    BOOST_CHECK(   NStr::MatchesMask( "aaa", "a[a-a][a-]"                    ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "a\\", "a\\"                           ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a\\", "a\\\\"                         ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a\\", "a[\\]"                         ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a\\", "a[\\\\]"                       ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "aaa", "[a-b][a-b][a-b"                ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a*a", "a\\*a"                         ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a[]", "[a-z][[][]]"                   ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "a[]", "[a-z][[][[\\]]"                ) );
+    BOOST_CHECK( ! NStr::MatchesMask( "a!b", "[a-z][!][A-Z]",  NStr::eNocase ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a!b", "[a-z][!A-Z]b",   NStr::eNocase ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a!b", "[a-z][!][A-Z]b", NStr::eNocase ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a-b", "[a-z][0-][A-Z]", NStr::eNocase ) );
+    BOOST_CHECK(   NStr::MatchesMask( "a-b", "[a-z][-9][A-Z]", NStr::eNocase ) );
+}
+
+
+//----------------------------------------------------------------------------
 // Reference counting
 //----------------------------------------------------------------------------
 

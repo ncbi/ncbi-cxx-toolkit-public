@@ -320,6 +320,45 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             }
             return eMismatch;
 
+        case '[':
+            if (!(m = mask[++mask_pos]))
+                return eMismatch; // mismatch, pattern error
+            if (m == '!') {
+                m = 1 /*complement*/;
+                ++mask_pos;
+            } else
+                m = 0;
+            if (ignore_case)
+                s = (char) tolower((unsigned char) s);
+            _ASSERT(s);
+            char a, b; // range for [a-b]
+            do {
+                if (!(a = mask[mask_pos++]))
+                    return eMismatch; // mismatch, pattern error
+                if (mask[mask_pos] == '-'  &&  mask[mask_pos+1] != ']') {
+                    ++mask_pos;
+                    if (!(b = mask[mask_pos++]))
+                        return eMismatch; // mismatch, pattern error
+                } else
+                    b = a;
+                if (s) {
+                    if (ignore_case) {
+                        a = (char) tolower((unsigned char) a);
+                        b = (char) tolower((unsigned char) b);
+                    }
+                    if (a <= s  &&  s <= b)
+                        s = 0 /*mark as found*/;
+                }
+            } while (mask[mask_pos] != ']');
+            if (m == !s)
+                return eNoMatch; // mismatch
+            continue;
+
+        case '\\':
+            if (!(m = mask[++mask_pos]))
+                return eMismatch; // mismatch, pattern error
+            /*FALLTHRU*/
+
         default:
             // Compare non pattern character in mask and name
             _ASSERT(s  &&  m);

@@ -1704,22 +1704,65 @@ public:
     /// Match "str" against the "mask".
     ///
     /// This function does not use regular expressions.
+    /// Very similar to fnmatch(3), but there are differences (see also glob(7)).
+    /// There's no special treatment for a slash character '/' in this call.
+    ///
     /// @param str
     ///   String to match.
     /// @param mask
-    ///   Mask used to match string "str". And can contains next
-    ///   wildcard characters: \n
-    ///     ? - matches to any one symbol in the string. \n
-    ///     * - matches to any number of symbols in the string. \n
+    ///   Mask used to match string "str".
+    ///   This is a text pattern, which, along ordinary characters that must match
+    ///   literally corresponding symbols in the string "str", can contains also
+    ///   mext wildcard characters: \n
+    ///     ? - matches to any single character in the string. \n
+    ///     * - matches to any number of characters in the string (including none). \n
+    ///
+    ///   Mask also support POSIX character classes in the forms of "[...]" or "[!...]"
+    ///   that must MATCH or NOT MATCH, respectively, a single character in "str".
+    ///   To cancel the special meaning of '*', '?' or '[', they can be prepended with
+    ///   a backslash '\\' (the backslash in front of other characters does not change
+    ///   their meaning, so "\\\\" matches one graphical backslash in the "str").
+    ///   Within a character class, to have its literal meaning a closing square bracket ']'
+    ///   must be used at the first position, whereas '?', '*', '[, and '\\' stand
+    ///   just for themselves. Two characters separated by a minus sign '-' denote
+    ///   a range that can be used for contraction to include all characters in
+    ///   between:  "[A-F]" is equivalent to "[ABCDEF]". 
+    ///   For its literal meaning, the minus sign '-' can be used either at the very
+    ///   first position, or the last position before the closing bracket ']'.
+    ///   To have a range that begins with an exclamation point, one has to use 
+    ///   a dummy empty range followed by that range with '!'.
+    ///
+    ///   Examples:
+    ///     "!"        matches a single '!' (note that just "[!]" is invalid);
+    ///     "[!!]"     matches any character, which is not an exclamation point '!';
+    ///     "[][!]"    matches ']', '[', and '!';
+    ///     "[!][-]"   matches any character except for ']', '[', and '-';
+    ///     "[-]"      matches a minus sign '-' (same as '-' just by itself);
+    ///     "[?*\\]"   matches either '?', or '*', or a backslash '\\';
+    ///     "[]-\\]"   matches nothing as it defines an empty range (from ']' to '\\');
+    ///     "\\[a]\\*" matches a literal substring "[a]*";
+    ///     "[![a-]"   matches any char but '[', 'a' or '-' (same as "[!-[a]"; but not
+    ///                "[![-a]", which defines an empty range, thus matches any char!);
+    ///     "[]A]"     matches either ']' or 'A' (NB: "[A]]" matches a substring "A]");
+    ///     "[0-9-]"   matches any decimal digit or a minus sign '-' (same: "[-0-9]");
+    ///     "[9-0!-$]" matches '!', '"', '#', and '$' (as first range matches nothing).
+    ///
+    /// @note
+    ///   In the above, each double backslash denotes a single graphical backslash
+    ///   character (C string notation is used).
+    /// @note
+    ///   Unlike shell globbing, "[--0]" *does* match the slash character '/'
+    ///  (along with '-', '.', and '0' that all fall within the range).
     /// @param use_case
-    ///   Whether to do a case sensitive compare(eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
+    ///   Whether to do a case sensitive compare for letters (eCase -- default),
+    ///   or a case-insensitive compare (eNocase).
     /// @return
-    ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
+    ///   Return TRUE if "str" matches "mask", and FALSE otherwise 
+    ///  (including patter errors).
     /// @sa
     ///    CRegexp, CRegexpUtil
-    static bool MatchesMask(CTempString str, 
-                            CTempString mask, ECase use_case = eCase);
+    ///
+    static bool MatchesMask(CTempString str, CTempString mask, ECase use_case = eCase);
 
     /// Check if a string is blank (has no text).
     ///
