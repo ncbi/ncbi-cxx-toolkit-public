@@ -82,7 +82,7 @@ static const char* const kBuiltInGuide[] = {
     "3+9  J??  gb_prot",
     "3+11 J??  gb_prot",
     "3+5  K??  gb_wgs_prot",
-    "3+7  K??  gb_prot",
+    "3+7  K??  gb_wgs_prot",
     "3+9  K??  gb_prot",
     "3+11 K??  gb_prot",
     "3+5  L??  ddbj_prot # mixed TSA and TLS",
