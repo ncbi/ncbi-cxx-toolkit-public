@@ -77,7 +77,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbnative.hpp>
 #include <objtools/data_loaders/genbank/cache/writer_cache.hpp>
 #include <objtools/data_loaders/genbank/impl/standalone_result.hpp>
 #include <objtools/data_loaders/genbank/impl/processors.hpp>
@@ -289,6 +289,16 @@ void CSplitCacheApp::Init(void)
 }
 
 
+static CReadDispatcher& x_GetDispatcher(CDataLoader* loader_arg)
+{
+    CGBDataLoader_Native* loader = dynamic_cast<CGBDataLoader_Native*>(loader_arg);
+    if ( !loader ) {
+        ERR_POST(Fatal<<"CSplitCacheApp can only work with ID1/ID2 based GenBank data loader");
+    }
+    return loader->GetDispatcher();
+}
+
+
 int CSplitCacheApp::Run(void)
 {
     SetDiagPostLevel(eDiag_Info);
@@ -406,7 +416,7 @@ void CSplitCacheApp::SetupCache(void)
         m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
             *m_ObjMgr, readers).GetLoader());
         if ( !cache_dir.empty() ) {
-            CReadDispatcher& disp = m_Loader->GetDispatcher();
+            CReadDispatcher& disp = x_GetDispatcher(m_Loader);
             CSeq_id_Handle idh;
             CStandaloneRequestResult result(idh);
             result.SetLevel(1);
@@ -820,9 +830,12 @@ static void x_InitBlob(CReaderRequestResult& result,
                        CDataLoader::TBlobVersion version)
 {
     result.SetLevel(1);
-    result.SetLoadedBlobVersion(blob_id, version);
-    CLoadLockSetter(result, blob_id)
-        .GetSplitInfo().SetSplitVersion(kSplitVersion);
+    result.SetAndSaveBlobVersion(blob_id, version);
+    if ( 1 ) {
+        CLoadLockSetter setter(result, blob_id);
+        setter.GetSplitInfo().SetSplitVersion(kSplitVersion);
+        setter.SetLoaded();
+    }
 }
 
 
@@ -963,12 +976,9 @@ void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
         content_index->SetSeqDescCount(desc_counts.first);
         content_index->SetSetDescCount(desc_counts.second);
 
-        CReadDispatcher& disp = m_Loader->GetDispatcher();
+        CReadDispatcher& disp = x_GetDispatcher(m_Loader);
         CStandaloneRequestResult result(idh);
-        result.SetLevel(1);
-        result.SetLoadedBlobVersion(blob_id, version);
-        CLoadLockBlob blob_lock(result, blob_id);
-        CLoadLockSetter(blob_lock).GetSplitInfo().SetSplitVersion(1);
+        x_InitBlob(result, blob_id, version);
         {{
             const CProcessor_ID2AndSkel& proc_skel =
                 dynamic_cast<const CProcessor_ID2AndSkel&>(
@@ -986,7 +996,7 @@ void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
                                       kMain_ChunkId,
                                       disp.GetWriter(result,
                                                      CWriter::eBlobWriter),
-                                      1,
+                                      kSplitVersion,
                                       split_data.GetData(),
                                       skel_data.GetData());
         }}
@@ -1114,7 +1124,7 @@ void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry, const string& key)
         content_index->SetSeqDescCount(desc_counts.first);
         content_index->SetSetDescCount(desc_counts.second);
 
-        CReadDispatcher& disp = m_Loader->GetDispatcher();
+        CReadDispatcher& disp = x_GetDispatcher(m_Loader);
         CStandaloneRequestResult result(idh);
         x_InitBlob(result, blob_id, version);
         {{
@@ -1134,7 +1144,7 @@ void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry, const string& key)
                                       kMain_ChunkId,
                                       disp.GetWriter(result,
                                                      CWriter::eBlobWriter),
-                                      1,
+                                      kSplitVersion,
                                       split_data.GetData(),
                                       skel_data.GetData());
         }}
