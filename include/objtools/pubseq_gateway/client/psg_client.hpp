@@ -39,10 +39,8 @@
 #include <objects/seq/Seq_annot.hpp>
 
 
-#if defined(HAVE_PSG_CLIENT)
-#  if !defined(NCBI_THREADS) || !defined(HAVE_LIBNGHTTP2) || !defined(HAVE_LIBUV)
-#    undef HAVE_PSG_CLIENT
-#  endif
+#if defined(NCBI_THREADS) && defined(HAVE_LIBNGHTTP2) && defined(HAVE_LIBUV)
+#  define HAVE_PSG_CLIENT 1
 #endif
 
 

@@ -37,7 +37,12 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
-#if defined(HAVE_PSG_CLIENT)
+
+#if defined(HAVE_PSG_LOADER) && !defined(HAVE_PSG_CLIENT)
+#  undef HAVE_PSG_LOADER
+#endif
+
+#if defined(HAVE_PSG_LOADER)
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -126,6 +131,6 @@ END_SCOPE(objects)
 
 END_NCBI_SCOPE
 
-#endif // HAVE_PSG_CLIENT
+#endif // HAVE_PSG_LOADER
 
 #endif  // OBJTOOLS_DATA_LOADERS_PSG___PSG_LOADER__HPP

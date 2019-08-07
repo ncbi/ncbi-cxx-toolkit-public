@@ -39,7 +39,7 @@
 #include <memory>
 #include <vector>
 
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -205,6 +205,6 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // HAVE_PSG_CLIENT
+#endif // HAVE_PSG_LOADER
 
 #endif  // OBJTOOLS_DATA_LOADERS_PSG___PSG_LOADER_IMPL__HPP
