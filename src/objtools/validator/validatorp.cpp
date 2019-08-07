@@ -2033,13 +2033,24 @@ void CValidError_imp::x_CheckForStrandChange(SLocCheck& lc)
 
 }
 
-void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc)
+void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc, bool lowerSev)
 {
     try {
         switch (loc.Which()) {
             case CSeq_loc::e_Int:
                 lc.int_cur = &loc.GetInt();
                 lc.chk = x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur, obj);
+                if ((!lc.chk) && lowerSev) {
+                    TSeqPos length = GetLength(loc.GetInt().GetId(), m_Scope);
+                    TSeqPos fr = loc.GetInt().GetFrom();
+                    TSeqPos to = loc.GetInt().GetTo();
+                    if (fr < length && to >= length) {
+                        // RefSeq variation feature with dbSNP xref and interval flanking the length is ERROR
+                    } else {
+                        // otherwise keep severity at REJECT
+                        lowerSev = false;
+                    }
+                }
                 break;
             case CSeq_loc::e_Pnt:
                 lc.strand_cur = loc.GetPnt().IsSetStrand() ?
@@ -2062,7 +2073,7 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
                 break;
             case CSeq_loc::e_Mix:
                 for (auto l : loc.GetMix().Get()) {
-                    x_CheckLoc(*l, obj, lc);
+                    x_CheckLoc(*l, obj, lc, lowerSev);
                     x_CheckForStrandChange(lc);
                 }
                 break;
@@ -2074,7 +2085,11 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
         }
         if (!lc.chk) {
             string lbl = GetValidatorLocationLabel (loc, *m_Scope);
-            PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
+            EDiagSev sev = eDiag_Critical;
+            if (lowerSev) {
+                sev = eDiag_Error;
+            }
+            PostErr(sev, eErr_SEQ_FEAT_Range,
                 lc.prefix + ": SeqLoc [" + lbl + "] out of range", obj);
         }
 
@@ -2103,13 +2118,14 @@ void CValidError_imp::ValidateSeqLoc
  const CBioseq_Handle&  seq,
  bool  report_abutting,
  const string&   prefix,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ bool lowerSev)
 {
     SLocCheck lc;
 
     x_InitLocCheck(lc, prefix);
 
-    x_CheckLoc(loc, obj, lc);
+    x_CheckLoc(loc, obj, lc, lowerSev);
 
     if (lc.has_other && lc.has_not_other) {
         string label = GetValidatorLocationLabel(loc, *m_Scope);

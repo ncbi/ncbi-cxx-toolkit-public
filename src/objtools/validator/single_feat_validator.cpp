@@ -69,9 +69,20 @@ void CSingleFeatValidator::Validate()
     }
 
     m_LocationBioseq = x_GetBioseqByLocation(m_Feat.GetLocation());
+    bool lowerSev = false;
+    if (m_Imp.IsRefSeq() && m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_variation) {
+        if ( m_Feat.IsSetDbxref() ) {
+            ITERATE( CSeq_feat::TDbxref, it, m_Feat.GetDbxref() ) {
+                const CDbtag& dbtag = **it;
+                if ( dbtag.GetDb() == "dbSNP" ) {
+                    lowerSev = true;
+                }
+            }
+        }
+    }
     m_Imp.ValidateSeqLoc(m_Feat.GetLocation(), m_LocationBioseq,
         (m_Feat.GetData().IsGene() || !m_Imp.IsGpipe()),
-        "Location", m_Feat);
+        "Location", m_Feat, lowerSev);
 
     x_ValidateSeqFeatLoc();
     x_ValidateImpFeatLoc();

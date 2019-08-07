@@ -235,7 +235,7 @@ public:
     bool IsArtificial (const CBioSource& src);
     bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq, bool report_abutting,
-                        const string& prefix, const CSerialObject& obj);
+                        const string& prefix, const CSerialObject& obj, bool lowerSev = false);
 
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     static bool IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope);
@@ -468,7 +468,7 @@ private:
 
     void x_InitLocCheck(SLocCheck& lc, const string& prefix);
     void x_CheckForStrandChange(SLocCheck& lc);
-    void x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc);
+    void x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc, bool lowerSev = false);
     void x_CheckPackedInt(const CPacked_seqint& packed_int,
                           SLocCheck& lc,
                           const CSerialObject& obj);
