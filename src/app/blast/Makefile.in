@@ -21,7 +21,7 @@ blast_report \
 deltablast \
 seedtop 
 
-USR_PROJ = legacy_blast update_blastdb get_species_taxids
+USR_PROJ = legacy_blast update_blastdb get_species_taxids cleanup-blastdb-volumes
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
