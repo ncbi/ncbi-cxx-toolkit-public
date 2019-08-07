@@ -397,6 +397,17 @@ bool CSimpleBlobStore::Init(CDB_Connection* con)
     m_Con= con;
     m_ImageNum= 0;
     if(m_Key.IsNULL() || (m_nofDataCols < 1)) return false;
+
+    if ( !m_TableHint.empty()  &&  NStr::StartsWith(m_sCMD, "UPDATE ")) {
+        impl::CConnection* conn_impl
+            = dynamic_cast<impl::CConnection*>(&con->GetExtraFeatures());
+        if (conn_impl != NULL
+            && conn_impl->GetServerType() == CDBConnParams::eMSSqlServer) {
+            string repl = ' ' + m_TableName + " WITH(" + m_TableHint + ") ";
+            NStr::ReplaceInPlace(m_sCMD, ' ' + m_TableName + ' ', repl, 0, 2);
+        }
+    }
+
     m_Cmd= m_Con->LangCmd(m_sCMD);
     m_Cmd->SetParam("@key", &m_Key);
     m_Cmd->BindParam("@n", &m_RowNum);
