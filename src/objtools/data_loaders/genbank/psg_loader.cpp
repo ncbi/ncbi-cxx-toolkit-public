@@ -48,7 +48,7 @@
 #include <objtools/data_loaders/genbank/psg_loader.hpp>
 #include <objtools/data_loaders/genbank/impl/psg_loader_impl.hpp>
 
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -375,4 +375,4 @@ CDataLoader* CPSG_DataLoaderCF::CreateAndRegister(
 
 END_NCBI_SCOPE
 
-#endif // HAVE_PSG_CLIENT
+#endif // HAVE_PSG_LOADER

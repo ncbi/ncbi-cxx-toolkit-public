@@ -609,7 +609,7 @@
 #undef HAVE_POLL_H
 
 /* Define to 1 to let the GenBank data loader use PubSeq Gateway. */
-#undef HAVE_PSG_CLIENT
+#undef HAVE_PSG_LOADER
 
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK

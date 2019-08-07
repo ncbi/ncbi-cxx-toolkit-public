@@ -199,7 +199,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
     }
@@ -224,7 +224,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
     }
@@ -261,7 +261,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
     }
@@ -298,7 +298,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
     }
@@ -324,7 +324,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
         return CPSGDataLoader::RegisterInObjectManager(om, param_tree, is_default, priority);
     }
@@ -349,7 +349,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
         return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
     }

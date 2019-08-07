@@ -5,6 +5,9 @@ LIB = psg_client
 
 ASN_DEP = seq seqset
 
+DLL_LIB = xconnserv   
+LIBS = $(PSG_CLIENT_LIBS) 
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE)
 
 WATCHERS = sadyrovr dmitrie1

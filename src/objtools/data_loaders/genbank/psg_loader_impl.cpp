@@ -52,7 +52,7 @@
 #include <serial/serial.hpp>
 
 
-#if defined(HAVE_PSG_CLIENT)
+#if defined(HAVE_PSG_LOADER)
 
 BEGIN_NCBI_SCOPE
 
@@ -1096,4 +1096,4 @@ CObjectIStream* CPSGDataLoader_Impl::x_GetBlobDataStream(
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // HAVE_PSG_CLIENT
+#endif // HAVE_PSG_LOADER

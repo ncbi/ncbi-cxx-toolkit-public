@@ -1919,7 +1919,7 @@ Optional Packages:
  --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH
  --with-lfs              enable large file support to the extent possible
  --with-limited-linker   don't attempt to build especially large projects
- --with-experimental=... enable named experimental feature(s)
+ --with-experimental=... enable named experimental feature(s): Int8GI,StrictGI,PSGLoader
  --with-skew-guard       catch incomplete rebuilds
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
@@ -4894,13 +4894,13 @@ _ACEOF
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
                       WithFeatures="$WithFeatures${WithFeaturesSep}StrictGI"; WithFeaturesSep=" "
             ;;
-         PSGClient )
+         PSGLoader )
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_PSG_CLIENT 1
+#define HAVE_PSG_LOADER 1
 _ACEOF
 
-                      WithFeatures="$WithFeatures${WithFeaturesSep}PSGClient"; WithFeaturesSep=" "
+                      WithFeatures="$WithFeatures${WithFeaturesSep}PSGLoader"; WithFeaturesSep=" "
             ;;
          * )
             { { echo "$as_me:$LINENO: error: unrecognized experimental feature \"$x\"." >&5
@@ -53327,7 +53327,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in ChaosMonkey Int8GI StrictGI PSGClient GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
+for x in ChaosMonkey Int8GI StrictGI PSGLoader GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
