@@ -244,6 +244,7 @@ private:
         eStrandedMoltype_dsDNA = 8
     } EStrandedMoltype;
     static EStrandedMoltype s_GetStrandedMolTypeFromLineage(const string& lineage);
+    static string s_GetStrandedMolStringFromLineage(const string& lineage);
     static string s_GetStrandedMoltype(EStrandedMoltype smol);
     static CSeq_inst::EMol s_ExpectedMoltypeForStrandedMol(EStrandedMoltype smol);
 

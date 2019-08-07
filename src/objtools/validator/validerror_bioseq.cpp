@@ -9250,7 +9250,7 @@ static volatile bool s_ViralMapInitialized;
 DEFINE_STATIC_FAST_MUTEX(s_ViralMapMutex);
 
 
-CValidError_bioseq::EStrandedMoltype CValidError_bioseq::s_GetStrandedMolTypeFromLineage(const string& lineage)
+string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& lineage)
 {
     EStrandedMoltype smol = eStrandedMoltype_unknown;
 
@@ -9282,22 +9282,32 @@ CValidError_bioseq::EStrandedMoltype CValidError_bioseq::s_GetStrandedMolTypeFro
 
     for (const auto & x : *s_ViralMap) {
         if (NStr::Find(lineage, x.first) != NPOS) {
-            if (NStr::Find(x.second, "ssRNA") != NPOS) {
-                return eStrandedMoltype_ssRNA;
-            }
-            if (NStr::Find(x.second, "dsRNA") != NPOS) {
-                return eStrandedMoltype_dsRNA;
-            }
-            if (NStr::Find(x.second, "ssDNA") != NPOS) {
-                return eStrandedMoltype_ssDNA;
-            }
-            if (NStr::Find(x.second, "dsDNA") != NPOS) {
-                return eStrandedMoltype_dsDNA;
-            }
+            return x.second;
         }
     }
 
-    return smol;
+    return "";
+}
+
+
+CValidError_bioseq::EStrandedMoltype CValidError_bioseq::s_GetStrandedMolTypeFromLineage(const string& lineage)
+{
+    string str = s_GetStrandedMolStringFromLineage(lineage);
+
+    if (NStr::Find(str, "ssRNA") != NPOS) {
+        return eStrandedMoltype_ssRNA;
+    }
+    if (NStr::Find(str, "dsRNA") != NPOS) {
+        return eStrandedMoltype_dsRNA;
+    }
+    if (NStr::Find(str, "ssDNA") != NPOS) {
+        return eStrandedMoltype_ssDNA;
+    }
+    if (NStr::Find(str, "dsDNA") != NPOS) {
+        return eStrandedMoltype_dsDNA;
+    }
+
+    return eStrandedMoltype_unknown;
 }
 
 
