@@ -743,7 +743,7 @@ shared_ptr<STestingContext> STestingContext::CreateContext(CJson_Document& json_
 
 NCBI_PARAM_DECL(string, PSG, service_name);
 typedef NCBI_PARAM_TYPE(PSG, service_name) TPSG_ServiceName;
-NCBI_PARAM_DEF(string, PSG, service_name, "nctest11:2180");
+NCBI_PARAM_DEF(string, PSG, service_name, "PSG");
 
 void s_ReportErrors(const string& request_id, shared_ptr<CPSG_Reply> reply)
 {
