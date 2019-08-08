@@ -12,12 +12,14 @@
 SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
 INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
 
-SPEC = $(MODULE_ASN) # sic
+SPEC = $(MODULE_PATH)/$(MODULE_ASN) # sic
 FILES = $(MODULE).files
-IMPDIRS = $(dir $(IMPFILES))
 comma = ,
-PROTO_PATH = .:$(subst $(comma),:,$(MODULE_SEARCH))
-PROTOC_FLAGS = $(IMPDIRS:%=-I%) --proto_path=$(PROTO_PATH)
+# empty =
+# space = $(empty) $(empty)
+# IMPDIRS = $(subst $(space),:,$(dir $(IMPDEPS)))
+# PROTOC_FLAGS = -I$(SRCDIR):$(IMPDIRS):$(subst $(comma),:,$(MODULE_SEARCH))
+PROTOC_FLAGS = -I$(subst $(comma),:,$(MODULE_SEARCH))
 
 PROTOBUF_BIN = @PROTOBUF_BIN@
 GRPC_BIN = @GRPC_BIN@
@@ -32,7 +34,7 @@ ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
   GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.h
 endif
 
-DEPS = $(SPEC) $(PROTOC) $(MODULE).module $(IMPDEPS) $(VERSION_MARKER)
+DEPS = $(MODULE_ASN) $(PROTOC) $(MODULE).module $(IMPDEPS) $(VERSION_MARKER)
 
 all: sources
 
@@ -59,10 +61,10 @@ $(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
 	@$(TOUCH) $@
 
 $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
-	$(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
+	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
 
 $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
-	$(PROTOC) $(PROTOC_FLAGS) --grpc_out=. \
+	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) --grpc_out=. \
 	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
 
 $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
@@ -72,6 +74,6 @@ $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
 $(MODULE).module:
 	@$(TOUCH) $@
 
-$(VERSION_MARKER):
+$(VERSION_MARKER): $(builddir)/Makefile.protobuf
 	@-$(RM) $(VERSION_MARKER_BASE)*
 	@$(TOUCH) $@

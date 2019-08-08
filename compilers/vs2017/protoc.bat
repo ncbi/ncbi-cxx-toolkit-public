@@ -90,9 +90,10 @@ set input_spec_dir=%CD%
 cd %initial_dir%
 for %%i in ("%input_spec_path%") do set input_spec_spec=%%~nxi
 
+cd %TREE_ROOT%\src
 %PROTOC_EXE% --version
-%PROTOC_EXE% --cpp_out="%input_spec_dir%" --proto_path="%input_spec_dir%" %input_spec_spec%
-%PROTOC_EXE% --grpc_out="%input_spec_dir%" --proto_path="%input_spec_dir%" --plugin=protoc-gen-grpc="%GRPC_PLUGIN%" %input_spec_spec%
+%PROTOC_EXE% --cpp_out=. %subtree%%input_spec_spec%
+%PROTOC_EXE% --grpc_out=. --plugin=protoc-gen-grpc="%GRPC_PLUGIN%" %subtree%%input_spec_spec%
 if not exist "%TREE_ROOT%\include\%subtree%" (
   mkdir "%TREE_ROOT%\include\%subtree%"
 )

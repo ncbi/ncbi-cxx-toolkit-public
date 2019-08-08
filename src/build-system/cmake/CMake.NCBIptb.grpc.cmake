@@ -44,28 +44,28 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
     endif()
 
     if ("PROTOBUF" IN_LIST DT_REQUIRES)
-        set(_cmd ${NCBI_PROTOC_APP} --cpp_out=${NCBI_SRC_ROOT} --proto_path=${NCBI_SRC_ROOT} ${DT_DATASPEC})
+        set(_cmd ${NCBI_PROTOC_APP} --cpp_out=. ${_relpath}/${_basename}${_ext})
         add_custom_command(
             OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
             COMMAND ${_cmd} VERBATIM
             COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
             COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
-            WORKING_DIRECTORY ${NCBI_TREE_ROOT}
+            WORKING_DIRECTORY ${NCBI_SRC_ROOT}
             COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
             DEPENDS ${DT_DATASPEC}
             VERBATIM
         )
     endif()
     if ("GRPC" IN_LIST DT_REQUIRES)
-        set(_cmd ${NCBI_PROTOC_APP} --grpc_out=${NCBI_SRC_ROOT} --proto_path=${NCBI_SRC_ROOT} --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN}  ${DT_DATASPEC})
+        set(_cmd ${NCBI_PROTOC_APP} --grpc_out=. --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN} ${_relpath}/${_basename}${_ext})
         add_custom_command(
             OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
             COMMAND ${_cmd} VERBATIM
             COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
             COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
-            WORKING_DIRECTORY ${NCBI_TREE_ROOT}
+            WORKING_DIRECTORY ${NCBI_SRC_ROOT}
             COMMENT "Generate GRPC C++ classes from ${DT_DATASPEC}"
             DEPENDS ${DT_DATASPEC}
             VERBATIM
