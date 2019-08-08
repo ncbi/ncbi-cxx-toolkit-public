@@ -4602,11 +4602,29 @@ void CImpFeatValidator::Validate()
         break;
     case CSeqFeatData::eSubtype_repeat_region:
         if ((!m_Feat.IsSetComment() || NStr::IsBlank (m_Feat.GetComment()))
-            && (!m_Feat.IsSetQual() || m_Feat.GetQual().empty())
             && (!m_Feat.IsSetDbxref() || m_Feat.GetDbxref().empty())) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_RepeatRegionNeedsNote,
-                    "repeat_region has no qualifiers");
-        }
+            if (!m_Feat.IsSetQual() || m_Feat.GetQual().empty()) {
+               PostErr(eDiag_Warning, eErr_SEQ_FEAT_RepeatRegionNeedsNote,
+                        "repeat_region has no qualifiers");
+            } else if ( ! m_Imp.IsGenomeSubmission() ) {
+                bool okay = false;
+                FOR_EACH_GBQUAL_ON_FEATURE (gbqual, m_Feat) {
+                    if ( ! NStr::EqualNocase((*gbqual)->GetQual(), "rpt_type") ) {
+                        okay = true;
+                        break;
+                    }
+                    const string& val = (*gbqual)->GetVal();
+                    if ( ! NStr::Equal (val, "other") ) {
+                        okay = true;
+                        break;
+                    }
+                }
+                if ( ! okay ) {
+                   PostErr(eDiag_Warning, eErr_SEQ_FEAT_RepeatRegionNeedsNote,
+                            "repeat_region has no qualifiers except rpt_type other");
+                }
+            }
+         }
         break;
     case CSeqFeatData::eSubtype_regulatory:
         {
