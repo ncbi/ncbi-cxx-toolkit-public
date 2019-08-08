@@ -1001,6 +1001,7 @@ netentr needs3party netcli
 netstorage needs ncbi_xcache_netcache
 ngalign_app needs bdb
 ngalign_app needs xngalign
+nghttp2 needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
 notary needs xid_utils
 notary needs3party $(KRB5_LIBS)
@@ -1081,7 +1082,11 @@ psg_cassandra needs3party $(CASSANDRA_LIBS)
 psg_cassandra needs3party $(KRB5_LIBS)
 psg_cassandra needs3party $(OPENSSL_LIBS)
 psg_cassandra needs3party $(Z_LIBS)
-psg_client needs xncbi
+psg_client needs $(SEQ_LIBS)
+psg_client needs pub
+psg_client needs xconnserv
+psg_client needs3party $(LIBUV_LIBS)
+psg_client needs3party $(NGHTTP2_LIBS)
 psg_diag needs xncbi
 psg_protobuf needs3party $(ORIG_LIBS)
 psloader-internal needs $(Z_LIB)
