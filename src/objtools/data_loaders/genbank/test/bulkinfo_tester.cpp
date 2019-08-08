@@ -876,8 +876,11 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]) ||
-                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+            if (CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId())) return true;
+            int data_sup = data[i] & CBioseq_Handle::fState_suppress;
+            int verify_sup = data_verify[i] & CBioseq_Handle::fState_suppress;
+            if ((data_sup == 0) != (verify_sup == 0)) return false;
+            return ((data[i] & ~CBioseq_Handle::fState_suppress ) == (data_verify[i] & ~CBioseq_Handle::fState_suppress));
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
