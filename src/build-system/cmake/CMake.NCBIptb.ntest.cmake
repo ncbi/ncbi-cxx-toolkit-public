@@ -102,7 +102,8 @@ function(NCBI_internal_add_ncbi_checktarget)
         set(SCRIPT_NAME "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix.sh")
     endif()
     set(WORKDIR ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD})
-    get_filename_component(_build ${NCBI_BUILD_ROOT} NAME)
+#    get_filename_component(_build ${NCBI_BUILD_ROOT} NAME)
+    set(_build ${NCBI_SIGNATURE})
 
     add_custom_target(check
         COMMAND ${SCRIPT_NAME} check.sh.list ${_build} ${WORKDIR} ${NCBI_TREE_ROOT} ${WORKDIR} check.sh
