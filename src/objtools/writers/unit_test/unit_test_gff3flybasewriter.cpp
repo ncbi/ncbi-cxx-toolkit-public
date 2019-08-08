@@ -319,6 +319,9 @@ NCBITEST_AUTO_FINI()
 
 BOOST_AUTO_TEST_CASE(RunTests)
 {
+    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
+        "The test is known to fail with PSG data loader.");
+
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );

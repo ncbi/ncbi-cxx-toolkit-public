@@ -987,8 +987,50 @@ BOOST_AUTO_TEST_CASE(MTCrash1)
 }
 #endif
 
+BOOST_AUTO_TEST_CASE(CheckPSGLoader)
+{
+    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
+        "The test is known to fail with PSG data loader.");
+}
+
 NCBITEST_INIT_TREE()
 {
+    NCBITEST_DEPENDS_ON(CheckIds, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckSequence, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckAll, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Seq_feat, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_SeqFeatData, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Imp_feat, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Seq_loc, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Seq_id, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Seq_point, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Seq_interval, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Gb_qual, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Dbtag, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_Object_id, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_User_object, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNP_User_field, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSNPGraph, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtCDD, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtMGC, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtHPRD, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtSTS, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtTRNA, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtTRNAEdit, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtMicroRNA, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckExtExon, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckNAZoom, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckNAZoom10, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Test_DeltaSAnnot, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Test_HUP, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TestHistory, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TestGBLoaderName, CheckPSGLoader);
+
+#if defined(RUN_MT_TESTS) && defined(NCBI_THREADS)
+    NCBITEST_DEPENDS_ON(MTCrash1, CheckPSGLoader);
+#endif
+
     NCBITEST_DISABLE(CheckAll);
     NCBITEST_DISABLE(CheckExtHPRD);
     NCBITEST_DISABLE(CheckExtMGC);

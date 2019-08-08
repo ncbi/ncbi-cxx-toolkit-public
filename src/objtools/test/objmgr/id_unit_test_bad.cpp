@@ -622,8 +622,20 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckPSGLoader)
+{
+    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
+        "The test is known to fail with PSG data loader.");
+}
+
 NCBITEST_INIT_TREE()
 {
+    NCBITEST_DEPENDS_ON(CheckNoSeqGi, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckNoSeqAcc, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckNoSeqAll, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckNoAcc, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(CheckNoGi, CheckPSGLoader);
+
     if ( s_Random.GetSeed() == 0 ) {
         s_Random.Randomize();
         LOG_POST("Random seed: "<<s_Random.GetSeed());

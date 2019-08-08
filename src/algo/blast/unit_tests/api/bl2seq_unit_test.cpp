@@ -61,6 +61,7 @@
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/api/windowmask_filter.hpp>
 
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/simple/simple_om.hpp>        // for CSimpleOM
 #include <objtools/readers/fasta.hpp>           // for CFastaReader
 #include <objmgr/util/seq_loc_util.hpp>
@@ -879,6 +880,9 @@ BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
 // In the case of multiple queries and one being masked, only emit a warning
 // N.B.: this doesn't test the MT case as MT unit tests aren't supported
 BOOST_AUTO_TEST_CASE(MultipleQueries1FullyMasked) {
+    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
+        "The test is known to fail with PSG data loader.");
+
     const bool kHasProteinQuery(true);
     CBlastInputSourceConfig iconfig(kHasProteinQuery);
     const CSearchDatabase dbinfo("data/nt.41646578", CSearchDatabase::eBlastDbIsNucleotide);
@@ -3608,6 +3612,116 @@ BOOST_AUTO_TEST_CASE(QueryMaskIgnoredInMiniExtension) {
     TSeqAlignVector sav(blaster.Run());
     CRef<CSeq_align_set> sas = sav.front();
     BOOST_REQUIRE(sas->Get().empty());
+}
+
+BOOST_AUTO_TEST_CASE(CheckPSGLoader)
+{
+    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
+        "The test is known to fail with PSG data loader.");
+}
+
+NCBITEST_INIT_TREE()
+{
+    NCBITEST_DEPENDS_ON(NucleotideMultipleSeqLocs1, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlastInvalidSeqIdSelfHit, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlastSelfHit, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastn2Seqs, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastn2SeqsRevStrand1, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastn2SeqsRevStrand2, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastn2SeqsCompBasedStats, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastn2SeqsLargeWord, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(IdenticalProteins, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(UnsupportedOption, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(PositiveMismatchOption, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(FullyMaskedSequence, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(MultipleQueries1FullyMasked, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastpExitImmediately, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Tblastn2Seqs_PlusStrandOnly, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastSetup, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastnExitImmediately, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastxExitImmediately, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptTblastxExitImmediately, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptTblastnExitImmediately, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastpExitAtRandom, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastnExitAtRandom, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastxExitAtRandom, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptTblastnExitAtRandom, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptTblastxExitAtRandom, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastpExitAfter3Callbacks, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptBlastxExitOnTraceback, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptTblastxExitOnTraceback, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlastMultipleQueriesWithInvalidSeqId, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlastMultipleQueriesWithBadQuery, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideBlastMultipleQueriesWithInvalidSeqId, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinSelfHitWithMask, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideMaskedLocation, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideMaskedLocation_FromFile, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(InvalidMaskingAlgorithm, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinCompBasedStats, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastx2Seqs_QueryBothStrands, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideSelfHitWithSubjectMask, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideBlastSelfHit, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(MegablastGreedyTraceback, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(MegablastGreedyTraceback2, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(MegablastGreedyTracebackSelfHits, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastx2Seqs_QueryPlusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastx2Seqs_QueryMinusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastx2Seqs_QueryBothStrands, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastx2Seqs_QueryPlusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TBlastx2Seqs_QueryMinusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TblastxManyHits, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlast2Seqs, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnWithRepeatFiltering_InvalidDB, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnWithRepeatFiltering, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnWithWindowMasker_Db, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnWithWindowMasker_Taxid, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnWithWindowMasker_InvalidDb, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnWithWindowMasker_InvalidTaxid, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(WindowMaskerPathInitInvalid, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(WindowMaskerPathInitValid, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnWithWindowMasker_DbAndTaxid, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ConvertTaxIdToWindowMaskerDb, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Alex, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideBlast2Seqs, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlastChangeQuery, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlastChangeSubject, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideBlastChangeQuery, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideBlastChangeSubject, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(ProteinBlastMultipleQueries, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(NucleotideBlastMultipleQueries, CheckPSGLoader);
+    //NCBITEST_DEPENDS_ON(NucleotideBlastWordSize4, CheckPSGLoader);
+    //NCBITEST_DEPENDS_ON(NucleotideBlastWordSize4_EOS, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TblastnOutOfFrame, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(TblastnOutOfFrame2, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastxOutOfFrame, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastxOutOfFrame_DifferentFrames, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryBothStrands_SubjBothStrands, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryBothStrands_SubjPlusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryBothStrands_SubjMinusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryPlusStrand_SubjPlusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryPlusStrand_SubjMinusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryPlusStrand_SubjBothStrands, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryMinusStrand_SubjMinusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryMinusStrand_SubjPlusStrand, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryMinusStrand_SubjBothStrands, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryWhole_SubjInterval, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastn_QueryInterval_SubjWhole, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastpMultipleQueries_MultipleSubjs, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastpMultipleQueries_MultipleSubjs_RunEx, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastpMultipleQueries_MultipleSubjs_CLocalBlast, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(Blastp_MultipleSubjs_SearchAsSet, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastOptionsEquality, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastOptionsInequality, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(DiscontiguousMB, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(BlastnHumanChrom_MRNA, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testOneSubjectResults2CSeqAlign, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testMultiSeqSearchSymmetry, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptCallbackWithNull, CheckPSGLoader);
+    NCBITEST_DEPENDS_ON(testInterruptCallbackDoNotInterrupt, CheckPSGLoader);
+#if SEQLOC_MIX_QUERY_OK
+    NCBITEST_DEPENDS_ON(MultiIntervalLoc, CheckPSGLoader);
+#endif
+    NCBITEST_DEPENDS_ON(QueryMaskIgnoredInMiniExtension, CheckPSGLoader);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

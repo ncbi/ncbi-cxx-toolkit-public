@@ -409,6 +409,7 @@ private:
 
 public:
     // Ids which should be ignored by tests when PSG loader is used.
+    static bool IsUsingPSGLoader(void);
     static bool IsIgnoredGi(TGi gi);
     static bool IsIgnoredAcc(const string& acc);
     static bool IsIgnoredId(const CSeq_id& id);

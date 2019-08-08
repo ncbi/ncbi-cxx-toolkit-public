@@ -576,6 +576,11 @@ static set<TGi> s_IgnoreGis = {
 static set<string> s_IgnoreAcc = {
 };
 
+bool CGBDataLoader::IsUsingPSGLoader(void)
+{
+    return TGenbankLoaderPsg::GetDefault();
+}
+
 bool CGBDataLoader::IsIgnoredGi(TGi gi)
 {
     if (!TGenbankLoaderPsg::GetDefault()) return false;
