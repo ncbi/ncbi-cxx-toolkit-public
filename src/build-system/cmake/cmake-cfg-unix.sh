@@ -48,8 +48,8 @@ fi
 # defaults
 BUILD_TYPE="Debug"
 BUILD_SHARED_LIBS="OFF"
-USE_CCACHE="OFF"
-USE_DISTCC="OFF"
+USE_CCACHE="ON"
+USE_DISTCC="ON"
 NCBI_EXPERIMENTAL=ON
 
 ############################################################################# 
@@ -77,11 +77,10 @@ OPTIONS:
                     examples:   --with-targets="datatool;xcgi$"
   --with-details="names"     -- print detailed information about projects
                     examples:   --with-details="datatool;test_hash"
-  --with-ccache              -- use ccache if available
-  --with-distcc              -- use distcc if available
   --with-install="DIR"       -- generate rules for installation into DIR directory
                     examples:   --with-install="/usr/CPP_toolkit"
-  --without-experimental     -- disable experimental configuration
+  --without-ccache           -- do not use ccache
+  --without-distcc           -- do not use distcc
   --with-generator="X"       -- use generator X
 EOF
 
@@ -148,9 +147,6 @@ while [ $# != 0 ]; do
       ;; 
     --without-distcc)
       USE_DISTCC="OFF"
-      ;;
-    --without-experimental)
-      NCBI_EXPERIMENTAL=OFF
       ;;
     --with-generator=*)
       generator=${1#*=}
