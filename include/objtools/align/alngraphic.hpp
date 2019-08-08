@@ -100,7 +100,7 @@ public:
     
     
     void SetOnClickFunctionName(string onClickFunction) { 
-        m_onClickFunction = m_onClickFunction;
+        m_onClickFunction = onClickFunction;
     }
     // Display top num seqalign
     void SetNumAlignToShow(int num) {  //internal default = 1000
