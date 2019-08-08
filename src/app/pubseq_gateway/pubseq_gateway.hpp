@@ -149,6 +149,9 @@ public:
     int OnResolve(HST::CHttpRequest &  req,
                   HST::CHttpReply<CPendingOperation> &  resp);
 
+    int OnGetTSEChunk(HST::CHttpRequest &  req,
+                      HST::CHttpReply<CPendingOperation> &  resp);
+
     int OnGetNA(HST::CHttpRequest &  req,
                 HST::CHttpReply<CPendingOperation> &  resp);
 
@@ -252,6 +255,9 @@ private:
                                 unsigned long  default_val);
 
 private:
+    void x_InsufficientArguments(HST::CHttpReply<CPendingOperation> &  resp,
+                                 CRef<CRequestContext> &  context,
+                                 const string &  err_msg);
     void x_MalformedArguments(HST::CHttpReply<CPendingOperation> &  resp,
                               CRef<CRequestContext> &  context,
                               const string &  err_msg);

@@ -54,6 +54,7 @@ USING_SCOPE(objects);
 #include "protocol_utils.hpp"
 #include "async_seq_id_resolver.hpp"
 #include "async_bioseq_query.hpp"
+#include "id2info.hpp"
 
 
 
@@ -82,6 +83,12 @@ public:
                       unsigned int  max_retries,
                       CRef<CRequestContext>  request_context);
     CPendingOperation(const SAnnotRequest &  annot_request,
+                      size_t  initial_reply_chunks,
+                      shared_ptr<CCassConnection>  conn,
+                      unsigned int  timeout,
+                      unsigned int  max_retries,
+                      CRef<CRequestContext>  request_context);
+    CPendingOperation(const STSEChunkRequest &  tse_chunk_request,
                       size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,
@@ -140,15 +147,20 @@ private:
     void x_ProcessAnnotRequest(void);
     void x_ProcessAnnotRequest(SResolveInputSeqIdError &  err,
                                SBioseqResolution &  bioseq_resolution);
+    void x_ProcessTSEChunkRequest(void);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
     void x_PrintRequestStop(int  status);
     bool x_SatToSatName(const SBlobRequest &  blob_request,
                         SBlobId &  blob_id);
-    void x_SendUnknownServerSatelliteError(size_t  item_id,
-                                           const string &  message,
-                                           int  error_code);
+    bool x_TSEChunkSatToSatName(SBlobId &  blob_id);
+    void x_SendBlobPropError(size_t  item_id,
+                             const string &  message,
+                             int  error_code);
+    void x_SendReplyError(const string &  msg,
+                          CRequestStatus::ECode  status,
+                          int  code);
     void x_SendBioseqInfo(const string &  protobuf_bioseq_info,
                           CBioseqInfoRecord &  bioseq_info,
                           EOutputFormat  output_format);
@@ -158,6 +170,8 @@ private:
 
     bool x_UsePsgProtocol(void) const;
     void x_InitUrlIndentification(void);
+    bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
+                                  CPSGId2Info::TChunks  total_chunks);
 
 private:
     bool x_ComposeOSLT(CSeq_id &  parsed_seq_id, int16_t &  effective_seq_id_type,
@@ -212,6 +226,13 @@ public:
                         CRequestStatus::ECode  status, int  code,
                         EDiagSev  severity, const string &  message);
 
+public:
+    void OnGetSplitHistory(CCassSplitHistoryFetch *  fetch_details,
+                           vector<SSplitHistoryRecord> && result);
+    void OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_details,
+                                CRequestStatus::ECode  status, int  code,
+                                EDiagSev  severity, const string &  message);
+
 private:
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
     void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
@@ -229,11 +250,13 @@ private:
                                 CBlobRecord const &  blob, bool  info_blob_only);
     void x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details, const string &  sat_name);
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details, CBlobRecord const &  blob);
-    void x_OnBadId2Info(CCassBlobFetch *  fetch_details, const string &  msg);
+    bool x_ParseTSEChunkId2Info(const string &  info,
+                                unique_ptr<CPSGId2Info> &  id2_info,
+                                const SBlobId &  blob_id);
+    void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
+                           CCassSplitHistoryFetch *  fetch_details);
 
-    int                                     m_Id2InfoSat;
-    int                                     m_Id2InfoInfo;
-    int                                     m_Id2InfoChunks;
+    unique_ptr<CPSGId2Info>     m_Id2Info;
 
 public:
     unsigned int GetTimeout(void) const                   { return m_Timeout; }
@@ -257,6 +280,7 @@ private:
     SBlobRequest                            m_BlobRequest;
     SResolveRequest                         m_ResolveRequest;
     SAnnotRequest                           m_AnnotRequest;
+    STSEChunkRequest                        m_TSEChunkRequest;
     CTempString                             m_UrlSeqId;
     int16_t                                 m_UrlSeqIdType;
     ECacheAndCassandraUse                   m_UrlUseCache;

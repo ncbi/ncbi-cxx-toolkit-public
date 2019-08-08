@@ -389,6 +389,13 @@ int CPubseqGatewayApp::Run(void)
                 return OnResolve(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/ID/get_tse_chunk",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnGetTSEChunk(req, resp);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/ID/get_na",
             [this](HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp)->int
@@ -1203,6 +1210,20 @@ void CPubseqGatewayApp::x_MalformedArguments(
     x_SendMessageAndCompletionChunks(resp, err_msg,
                                      CRequestStatus::e400_BadRequest,
                                      eMalformedParameter, eDiag_Error);
+    PSG_WARNING(err_msg);
+    x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+}
+
+
+void CPubseqGatewayApp::x_InsufficientArguments(
+                                HST::CHttpReply<CPendingOperation> &  resp,
+                                CRef<CRequestContext> &  context,
+                                const string &  err_msg)
+{
+    m_ErrorCounters.IncInsufficientArguments();
+    x_SendMessageAndCompletionChunks(resp, err_msg,
+                                     CRequestStatus::e400_BadRequest,
+                                     eInsufficientArguments, eDiag_Error);
     PSG_WARNING(err_msg);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
 }

@@ -38,6 +38,7 @@
 #include "pubseq_gateway_cache_utils.hpp"
 #include "named_annot_callback.hpp"
 #include "get_blob_callback.hpp"
+#include "split_history_callback.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -71,8 +72,7 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     } else {
         PSG_TRACE("CPendingOperation::CPendingOperation: blob "
                  "requested by sat/sat_key: " <<
-                 m_BlobRequest.m_BlobId.m_Sat << "." <<
-                 m_BlobRequest.m_BlobId.m_SatKey <<
+                 m_BlobRequest.m_BlobId.ToString() <<
                  ", this: " << this);
     }
 }
@@ -124,6 +124,29 @@ CPendingOperation::CPendingOperation(const SAnnotRequest &  annot_request,
 }
 
 
+CPendingOperation::CPendingOperation(const STSEChunkRequest &  tse_chunk_request,
+                                     size_t  initial_reply_chunks,
+                                     shared_ptr<CCassConnection>  conn,
+                                     unsigned int  timeout,
+                                     unsigned int  max_retries,
+                                     CRef<CRequestContext>  request_context) :
+    m_Conn(conn),
+    m_Timeout(timeout),
+    m_MaxRetries(max_retries),
+    m_OverallStatus(CRequestStatus::e200_Ok),
+    m_RequestType(eTSEChunkRequest),
+    m_TSEChunkRequest(tse_chunk_request),
+    m_Cancelled(false),
+    m_RequestContext(request_context),
+    m_ProtocolSupport(initial_reply_chunks)
+{
+    PSG_TRACE("CPendingOperation::CPendingOperation: TSE chunk "
+              "request by sat/sat_key: " <<
+              m_TSEChunkRequest.m_TSEId.ToString() <<
+              ", this: " << this);
+}
+
+
 CPendingOperation::~CPendingOperation()
 {
     CRequestContextResetter     context_resetter;
@@ -140,8 +163,7 @@ CPendingOperation::~CPendingOperation()
             } else {
                 PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
                           "requested by sat/sat_key: " <<
-                          m_BlobRequest.m_BlobId.m_Sat << "." <<
-                          m_BlobRequest.m_BlobId.m_SatKey <<
+                          m_BlobRequest.m_BlobId.ToString() <<
                           ", this: " << this);
             }
             break;
@@ -158,6 +180,12 @@ CPendingOperation::~CPendingOperation()
                       "requested by seq_id/seq_id_type: " <<
                       m_AnnotRequest.m_SeqId << "." <<
                       m_AnnotRequest.m_SeqIdType <<
+                      ", this: " << this);
+            break;
+        case eTSEChunkRequest:
+            PSG_TRACE("CPendingOperation::~CPendingOperation: TSE chunk "
+                      " requested by sat/sat_key: " <<
+                      m_TSEChunkRequest.m_TSEId.ToString() <<
                       ", this: " << this);
             break;
         default:
@@ -194,8 +222,7 @@ void CPendingOperation::Clear()
             } else {
                 PSG_TRACE("CPendingOperation::Clear: blob "
                           "requested by sat/sat_key: " <<
-                          m_BlobRequest.m_BlobId.m_Sat << "." <<
-                          m_BlobRequest.m_BlobId.m_SatKey <<
+                          m_BlobRequest.m_BlobId.ToString() <<
                           ", this: " << this);
             }
             break;
@@ -212,6 +239,12 @@ void CPendingOperation::Clear()
                       "requested by seq_id/seq_id_type: " <<
                       m_AnnotRequest.m_SeqId << "." <<
                       m_AnnotRequest.m_SeqIdType <<
+                      ", this: " << this);
+            break;
+        case eTSEChunkRequest:
+            PSG_TRACE("CPendingOperation::Clear: TSE chunk "
+                      " requested by sat/sat_key: " <<
+                      m_TSEChunkRequest.m_TSEId.ToString() <<
                       ", this: " << this);
             break;
         default:
@@ -251,6 +284,10 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         case eAnnotationRequest:
             m_UrlUseCache = m_AnnotRequest.m_UseCache;
             x_ProcessAnnotRequest();
+            break;
+        case eTSEChunkRequest:
+            m_UrlUseCache = m_TSEChunkRequest.m_UseCache;
+            x_ProcessTSEChunkRequest();
             break;
         default:
             NCBI_THROW(CPubseqGatewayException, eLogic,
@@ -659,6 +696,118 @@ void CPendingOperation::x_ProcessAnnotRequest(void)
 }
 
 
+void CPendingOperation::x_ProcessTSEChunkRequest(void)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    string  err_msg;
+
+    // First, check the blob prop cache, may be the requested version matches
+    // the requested one
+    unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+    CPSGCache                   psg_cache(m_UrlUseCache != eCassandraOnly);
+    int64_t                     last_modified = INT64_MIN;  // last modified is unknown
+    ECacheLookupResult          blob_prop_cache_lookup_result =
+        psg_cache.LookupBlobProp(m_TSEChunkRequest.m_TSEId.m_Sat,
+                                 m_TSEChunkRequest.m_TSEId.m_SatKey,
+                                 last_modified, *blob_record.get());
+    if (blob_prop_cache_lookup_result == eFound) {
+        // Compare the version
+        unique_ptr<CPSGId2Info>     id2_info;
+        if (!x_ParseTSEChunkId2Info(blob_record->GetId2Info(),
+                                    id2_info, m_TSEChunkRequest.m_TSEId))
+            return;
+
+        if (id2_info->GetSplitVersion() == m_TSEChunkRequest.m_SplitVersion) {
+            // Form the new blob id for the chunk and look for it in the
+            // blob_prop cache. But first, sanity check for the chunk number
+            if (!x_ValidateTSEChunkNumber(m_TSEChunkRequest.m_Chunk,
+                                          id2_info->GetChunks()))
+                return;
+
+            // Chunk's blob id
+            int64_t     sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 + m_TSEChunkRequest.m_Chunk;
+            SBlobId     chunk_blob_id(id2_info->GetSat(), sat_key);
+            if (!x_TSEChunkSatToSatName(chunk_blob_id))
+                return;
+
+            last_modified = INT64_MIN;
+            blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
+                    chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
+                    last_modified, *blob_record.get());
+            if (blob_prop_cache_lookup_result != eFound) {
+                err_msg = "Blob " + chunk_blob_id.ToString() +
+                          " properties are not found";
+                x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
+                                 eBlobPropsNotFound);
+                x_SendReplyCompletion();
+                return;
+            }
+
+            // Initiate the chunk request
+            app->GetRequestCounters().IncTSEChunkSplitVersionCacheMatched();
+
+            SBlobRequest        chunk_request(chunk_blob_id, INT64_MIN,
+                                              eUnknownTSE, eUnknownUseCache, "");
+
+            unique_ptr<CCassBlobFetch>  fetch_details;
+            fetch_details.reset(new CCassBlobFetch(chunk_request));
+            CCassBlobTaskLoadBlob *         load_task =
+                new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+                                          chunk_blob_id.m_SatName,
+                                          std::move(blob_record),
+                                          true, nullptr);
+            fetch_details->SetLoader(load_task);
+            load_task->SetDataReadyCB(GetDataReadyCB());
+            load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
+            load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(), false));
+            load_task->SetChunkCallback(CBlobChunkCallback(this, fetch_details.get()));
+
+            m_FetchDetails.push_back(std::move(fetch_details));
+            load_task->Wait();  // Initiate cassandra request
+            return;
+        }
+
+        app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
+    } else {
+        // Not found in the blob_prop cache
+        if (m_UrlUseCache == eCacheOnly) {
+            // No need to continue; it is forbidded to look for blob props in
+            // the Cassandra DB
+            if (blob_prop_cache_lookup_result == eNotFound) {
+                err_msg = "Blob properties are not found";
+            } else {
+                err_msg = "Blob properties are not found due to LMDB cache error";
+            }
+            x_SendReplyError(err_msg, CRequestStatus::e404_NotFound, eBlobPropsNotFound);
+            x_SendReplyCompletion();
+            return;
+        }
+    }
+
+    // Here:
+    // - not found in the cache
+    // - cache is not allowed
+    // - found in cache but the version is not the last
+
+    // Initiate async the history request
+    unique_ptr<CCassSplitHistoryFetch>      fetch_details;
+    fetch_details.reset(new CCassSplitHistoryFetch(m_TSEChunkRequest));
+    CCassBlobTaskFetchSplitHistory *   load_task =
+        new  CCassBlobTaskFetchSplitHistory(m_Timeout, m_MaxRetries, m_Conn,
+                                            m_TSEChunkRequest.m_TSEId.m_SatName,
+                                            m_TSEChunkRequest.m_TSEId.m_SatKey,
+                                            m_TSEChunkRequest.m_SplitVersion,
+                                            nullptr, nullptr);
+    fetch_details->SetLoader(load_task);
+    load_task->SetDataReadyCB(GetDataReadyCB());
+    load_task->SetErrorCB(CSplitHistoryErrorCallback(this, fetch_details.get()));
+    load_task->SetConsumeCallback(CSplitHistoryConsumeCallback(this, fetch_details.get()));
+
+    m_FetchDetails.push_back(std::move(fetch_details));
+    load_task->Wait();  // Initiate cassandra request
+}
+
+
 // Could be called by:
 // - sync processing (resolved via cache)
 // - async processing (resolved via DB)
@@ -714,7 +863,7 @@ void CPendingOperation::x_ProcessAnnotRequest(SResolveInputSeqIdError &  err,
         fetch_task->SetConsumeCallback(
             CNamedAnnotationCallback(this, details.get(), bioseq_na_keyspace.second));
         fetch_task->SetErrorCB(CNamedAnnotationErrorCallback(this, details.get()));
-        fetch_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
+        fetch_task->SetDataReadyCB(GetDataReadyCB());
 
         m_FetchDetails.push_back(std::move(details));
     }
@@ -834,7 +983,7 @@ void CPendingOperation::x_StartMainBlobRequest(void)
         }
     }
 
-    load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(GetDataReadyCB());
     load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
     load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(),
                                                   blob_prop_cache_lookup_result != eFound));
@@ -922,7 +1071,7 @@ void CPendingOperation::x_Peek(HST::CHttpReply<CPendingOperation>& resp,
         PSG_ERROR(error);
 
         EPendingRequestType     request_type = fetch_details->GetRequestType();
-        if (request_type == eBlobRequest) {
+        if (request_type == eBlobRequest || request_type == eTSEChunkRequest) {
             CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
             if (blob_fetch->IsBlobPropStage()) {
                 m_ProtocolSupport.PrepareBlobPropMessage(blob_fetch, error,
@@ -1061,6 +1210,23 @@ void CPendingOperation::x_InitUrlIndentification(void)
                        "Not handled request type " +
                        NStr::NumericToString(static_cast<int>(m_RequestType)));
     }
+}
+
+
+bool CPendingOperation::x_ValidateTSEChunkNumber(int64_t  requested_chunk,
+                                                 CPSGId2Info::TChunks  total_chunks)
+{
+    if (requested_chunk > total_chunks) {
+        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncMalformedArguments();
+        x_SendReplyError(
+                "Invalid chunk requested. The number of available chunks: " +
+                NStr::NumericToString(total_chunks) + ", requested number: " +
+                NStr::NumericToString(requested_chunk),
+                CRequestStatus::e400_BadRequest, eMalformedParameter);
+        x_SendReplyCompletion();
+        return false;
+    }
+    return true;
 }
 
 
@@ -1455,39 +1621,63 @@ bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
                                        SBlobId &  blob_id)
 {
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-
     if (app->SatToSatName(blob_id.m_Sat, blob_id.m_SatName))
         return true;
 
-    // Cannot resolve
-    string      msg = string("Unknown satellite number ") +
+    app->GetErrorCounters().IncServerSatToSatName();
+
+    string      msg = "Unknown satellite number " +
                       NStr::NumericToString(blob_id.m_Sat);
     if (blob_request.m_BlobIdType == eBySeqId)
         msg += " for bioseq info with seq_id '" +
                blob_request.m_SeqId + "'";
     else
-        msg += " for the blob " + GetBlobId(blob_id);
+        msg += " for the blob " + blob_id.ToString();
 
     // It is a server error - data inconsistency
-    PSG_ERROR(msg);
-
-    x_SendUnknownServerSatelliteError(m_ProtocolSupport.GetItemId(), msg,
-                                      eUnknownResolvedSatellite);
-
-    app->GetErrorCounters().IncServerSatToSatName();
+    x_SendBlobPropError(m_ProtocolSupport.GetItemId(), msg,
+                        eUnknownResolvedSatellite);
     return false;
 }
 
 
-void CPendingOperation::x_SendUnknownServerSatelliteError(
-                                size_t  item_id,
-                                const string &  msg,
-                                int  err_code)
+bool CPendingOperation::x_TSEChunkSatToSatName(SBlobId &  blob_id)
 {
-    m_ProtocolSupport.PrepareBlobPropMessage(item_id, msg,
-                                             CRequestStatus::e500_InternalServerError,
-                                             err_code, eDiag_Error);
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    if (app->SatToSatName(blob_id.m_Sat, blob_id.m_SatName))
+        return true;
+
+    app->GetErrorCounters().IncServerSatToSatName();
+
+    string  msg = "Unknown satellite number " +
+                  NStr::NumericToString(blob_id.m_Sat) +
+                  " for the blob " + blob_id.ToString();
+    x_SendReplyError(msg, CRequestStatus::e500_InternalServerError,
+                     eUnknownResolvedSatellite);
+    x_SendReplyCompletion();
+    return false;
+}
+
+
+void CPendingOperation::x_SendBlobPropError(size_t  item_id,
+                                            const string &  msg,
+                                            int  err_code)
+{
+    m_ProtocolSupport.PrepareBlobPropMessage(
+        item_id, msg, CRequestStatus::e500_InternalServerError, err_code, eDiag_Error);
     m_ProtocolSupport.PrepareBlobPropCompletion(item_id, 2);
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    PSG_ERROR(msg);
+}
+
+
+void CPendingOperation::x_SendReplyError(const string &  msg,
+                                         CRequestStatus::ECode  status,
+                                         int  code)
+{
+    m_ProtocolSupport.PrepareReplyMessage(msg, status, code, eDiag_Error);
+    UpdateOverallStatus(status);
+    PSG_ERROR(msg);
 }
 
 
@@ -1915,6 +2105,144 @@ void CPendingOperation::OnGetBlobError(
 }
 
 
+void CPendingOperation::OnGetSplitHistory(CCassSplitHistoryFetch *  fetch_details,
+                                          vector<SSplitHistoryRecord> && result)
+{
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
+    fetch_details->SetReadFinished();
+
+    if (m_Cancelled) {
+        fetch_details->GetLoader()->Cancel();
+        return;
+    }
+
+    CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
+    if (result.empty()) {
+        // Split history is not found
+        app->GetErrorCounters().IncSplitHistoryNotFoundError();
+
+        string      message = "Split history version " +
+                              NStr::NumericToString(fetch_details->GetSplitVersion()) +
+                              " is not found for the TSE id " +
+                              fetch_details->GetTSEId().ToString();
+        PSG_WARNING(message);
+        UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        m_ProtocolSupport.PrepareReplyMessage(message,
+                                              CRequestStatus::e404_NotFound,
+                                              eSplitHistoryNotFound, eDiag_Error);
+        x_SendReplyCompletion();
+    } else {
+        // Split history found.
+        // Note: the request was issued so that there could be exactly one
+        // split history record or none at all. So it is not checked that
+        // there are more than one record.
+        x_RequestTSEChunk(result[0], fetch_details);
+    }
+
+    x_PeekIfNeeded();
+}
+
+
+void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
+                                          CCassSplitHistoryFetch *  fetch_details)
+{
+    // Parse id2info
+    unique_ptr<CPSGId2Info>     id2_info;
+    if (!x_ParseTSEChunkId2Info(split_record.id2_info,
+                                id2_info, fetch_details->GetTSEId()))
+        return;
+
+    // Check the requested chunk
+    if (!x_ValidateTSEChunkNumber(fetch_details->GetChunk(),
+                                  id2_info->GetChunks()))
+        return;
+
+    // Resolve sat to satkey
+    int64_t     sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 + fetch_details->GetChunk();
+    SBlobId     chunk_blob_id(id2_info->GetSat(), sat_key);
+    if (!x_TSEChunkSatToSatName(chunk_blob_id))
+        return;
+
+    // Look for the blob props
+    // Form the chunk request with/without blob props
+    unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+    CPSGCache                   psg_cache(fetch_details->GetUseCache() != eCassandraOnly);
+    int64_t                     last_modified = INT64_MIN;  // last modified is unknown
+    ECacheLookupResult          blob_prop_cache_lookup_result =
+        psg_cache.LookupBlobProp(chunk_blob_id.m_Sat,
+                                 chunk_blob_id.m_SatKey,
+                                 last_modified, *blob_record.get());
+
+    SBlobRequest                chunk_request(chunk_blob_id, INT64_MIN,
+                                              eUnknownTSE, eUnknownUseCache, "");
+    unique_ptr<CCassBlobFetch>  cass_blob_fetch;
+    cass_blob_fetch.reset(new CCassBlobFetch(chunk_request));
+
+    CCassBlobTaskLoadBlob *     load_task = nullptr;
+
+    if (blob_prop_cache_lookup_result == eFound) {
+        load_task = new CCassBlobTaskLoadBlob(
+                            m_Timeout, m_MaxRetries, m_Conn,
+                            chunk_request.m_BlobId.m_SatName,
+                            std::move(blob_record),
+                            true, nullptr);
+    } else {
+        load_task = new CCassBlobTaskLoadBlob(
+                            m_Timeout, m_MaxRetries, m_Conn,
+                            chunk_request.m_BlobId.m_SatName,
+                            chunk_request.m_BlobId.m_SatKey,
+                            true, nullptr);
+    }
+    cass_blob_fetch->SetLoader(load_task);
+
+    load_task->SetDataReadyCB(GetDataReadyCB());
+    load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
+    load_task->SetPropsCallback(CBlobPropCallback(this, cass_blob_fetch.get(),
+                                                  blob_prop_cache_lookup_result != eFound));
+    load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
+
+    m_FetchDetails.push_back(std::move(cass_blob_fetch));
+    load_task->Wait();
+}
+
+
+void CPendingOperation::OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_details,
+                                               CRequestStatus::ECode  status, int  code,
+                                               EDiagSev  severity, const string &  message)
+{
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
+
+    // It could be a message or an error
+    bool    is_error = (severity == eDiag_Error ||
+                        severity == eDiag_Critical ||
+                        severity == eDiag_Fatal);
+
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    PSG_ERROR(message);
+
+    m_ProtocolSupport.PrepareReplyMessage(message, status, code, severity);
+
+    if (is_error) {
+        if (code == CCassandraException::eQueryTimeout)
+            app->GetErrorCounters().IncCassQueryTimeoutError();
+        else
+            app->GetErrorCounters().IncUnknownError();
+
+        // If it is an error then there will be no more activity
+        fetch_details->SetReadFinished();
+    }
+
+    x_SendReplyCompletion();
+    x_PeekIfNeeded();
+}
+
+
 void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                                     CBlobRecord const &  blob)
 {
@@ -1940,7 +2268,7 @@ void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_deta
     // Blob props have already been rceived
     cass_blob_fetch->SetBlobPropSent();
 
-    load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(GetDataReadyCB());
     load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
     load_task->SetPropsCallback(nullptr);
     load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
@@ -1961,14 +2289,14 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
 
     // Translate sat to keyspace
-    SBlobId     info_blob_id(m_Id2InfoSat, m_Id2InfoInfo);    // mandatory
+    SBlobId     info_blob_id(m_Id2Info->GetSat(), m_Id2Info->GetInfo());    // mandatory
 
-    if (!app->SatToSatName(m_Id2InfoSat, info_blob_id.m_SatName)) {
+    if (!app->SatToSatName(m_Id2Info->GetSat(), info_blob_id.m_SatName)) {
         // Error: send it in the context of the blob props
         string      message = "Error mapping id2 info sat (" +
-                              NStr::NumericToString(m_Id2InfoSat) +
+                              NStr::NumericToString(m_Id2Info->GetSat()) +
                               ") to a cassandra keyspace for the blob " +
-                              GetBlobId(fetch_details->GetBlobId());
+                              fetch_details->GetBlobId().ToString();
         m_ProtocolSupport.PrepareBlobPropMessage(
                                 fetch_details, message,
                                 CRequestStatus::e500_InternalServerError,
@@ -2042,7 +2370,7 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     }
     cass_blob_fetch->SetLoader(load_task);
 
-    load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(GetDataReadyCB());
     load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
     load_task->SetPropsCallback(CBlobPropCallback(this, cass_blob_fetch.get(),
                                                   blob_prop_cache_lookup_result != eFound));
@@ -2070,9 +2398,9 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
                                                const string &  sat_name)
 {
-    for (int  chunk_no = 1; chunk_no <= m_Id2InfoChunks; ++chunk_no) {
-        SBlobId     chunks_blob_id(m_Id2InfoSat,
-                                   m_Id2InfoInfo - m_Id2InfoChunks - 1 + chunk_no);
+    for (int  chunk_no = 1; chunk_no <= m_Id2Info->GetChunks(); ++chunk_no) {
+        SBlobId     chunks_blob_id(m_Id2Info->GetSat(),
+                                   m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
         chunks_blob_id.m_SatName = sat_name;
 
         // eUnknownTSE is treated in the blob prop handler as to do nothing (no
@@ -2137,7 +2465,7 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
             details->SetLoader(load_task);
         }
 
-        load_task->SetDataReadyCB(m_ProtocolSupport.GetReply()->GetDataReadyCB());
+        load_task->SetDataReadyCB(GetDataReadyCB());
         load_task->SetErrorCB(CGetBlobErrorCallback(this, details.get()));
         load_task->SetPropsCallback(CBlobPropCallback(this, details.get(),
                                                       blob_prop_cache_lookup_result != eFound));
@@ -2151,73 +2479,49 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
 bool CPendingOperation::x_ParseId2Info(CCassBlobFetch *  fetch_details,
                                        CBlobRecord const &  blob)
 {
-    // id2_info: "sat.info[.chunks]"
-    vector<string>          parts;
-    NStr::Split(blob.GetId2Info(), ".", parts);
-
-    if (parts.size() < 3) {
-        // Error: send it in the context of the blob props
-        x_OnBadId2Info(fetch_details,
-                       "Error extracting id2 info for the blob " +
-                       GetBlobId(fetch_details->GetBlobId()) +
-                       ". Expected 'sat.info.nchunks', found " +
-                       NStr::NumericToString(parts.size()) + " parts.");
-        return false;
-    }
-
+    string      err_msg;
     try {
-        m_Id2InfoSat = NStr::StringToInt(parts[0]);
-        m_Id2InfoInfo = NStr::StringToInt(parts[1]);
-        m_Id2InfoChunks = NStr::StringToInt(parts[2]);
+        m_Id2Info.reset(new CPSGId2Info(blob.GetId2Info()));
+        return true;
+    } catch (const exception &  exc) {
+        err_msg = "Error extracting id2 info for the blob " +
+            fetch_details->GetBlobId().ToString() + ": " + exc.what();
     } catch (...) {
-        // Error: send it in the context of the blob props
-        x_OnBadId2Info(fetch_details,
-                       "Error converting id2 info into integers for the blob " +
-                       GetBlobId(fetch_details->GetBlobId()));
-        return false;
+        err_msg = "Unknown error extracting id2 info for the blob " +
+            fetch_details->GetBlobId().ToString() + ".";
     }
 
-    // Validate the values
-    string      validate_message;
-    if (m_Id2InfoSat <= 0)
-        validate_message = "Invalid id2_info SAT value. Expected to be > 0. Received: " +
-            NStr::NumericToString(m_Id2InfoSat) + ".";
-    if (m_Id2InfoInfo <= 0) {
-        if (!validate_message.empty())
-            validate_message += " ";
-        validate_message += "Invalid id2_info INFO value. Expected to be > 0. Received: " +
-            NStr::NumericToString(m_Id2InfoInfo) + ".";
-    }
-    if (m_Id2InfoChunks <= 0) {
-        if (!validate_message.empty())
-            validate_message += " ";
-        validate_message += "Invalid id2_info NCHUNKS value. Expected to be > 0. Received: " +
-            NStr::NumericToString(m_Id2InfoChunks) + ".";
-    }
-
-
-    if (!validate_message.empty()) {
-        // Error: send it in the context of the blob props
-        validate_message += " Blob: " + GetBlobId(fetch_details->GetBlobId());
-        x_OnBadId2Info(fetch_details, validate_message);
-        return false;
-    }
-
-    return true;
+    CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncInvalidId2InfoError();
+    m_ProtocolSupport.PrepareBlobPropMessage(
+        fetch_details, err_msg, CRequestStatus::e500_InternalServerError,
+        eBadID2Info, eDiag_Error);
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    PSG_ERROR(err_msg);
+    return false;
 }
 
 
-void CPendingOperation::x_OnBadId2Info(CCassBlobFetch *  fetch_details,
-                                       const string &  msg)
+bool CPendingOperation::x_ParseTSEChunkId2Info(const string &  info,
+                                               unique_ptr<CPSGId2Info> &  id2_info,
+                                               const SBlobId &  blob_id)
 {
-    CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+    string      err_msg;
+    try {
+        id2_info.reset(new CPSGId2Info(info));
+        return true;
+    } catch (const exception &  exc) {
+        err_msg = "Error extracting id2 info for blob " +
+            blob_id.ToString() + ": " + exc.what();
+    } catch (...) {
+        err_msg = "Unknown error while extracting id2 info for blob " +
+            blob_id.ToString();
+    }
 
-    m_ProtocolSupport.PrepareBlobPropMessage(fetch_details, msg,
-                                             CRequestStatus::e500_InternalServerError,
-                                             eBadID2Info, eDiag_Error);
-    app->GetErrorCounters().IncBioseqID2Info();
-    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-    PSG_ERROR(msg);
+    CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncInvalidId2InfoError();
+    x_SendReplyError(err_msg, CRequestStatus::e500_InternalServerError,
+                     eInvalidId2Info);
+    x_SendReplyCompletion();
+    return false;
 }
 
 

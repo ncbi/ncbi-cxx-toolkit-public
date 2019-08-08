@@ -84,6 +84,13 @@ bool SBlobId::IsValid(void) const
     return m_Sat >= 0 && m_SatKey >= 0;
 }
 
+static string   s_BlobIdSeparator = ".";
+string SBlobId::ToString(void) const
+{
+    return NStr::NumericToString(m_Sat) + s_BlobIdSeparator +
+           NStr::NumericToString(m_SatKey);
+}
+
 
 bool SBlobId::operator < (const SBlobId &  other) const
 {
@@ -96,19 +103,6 @@ bool SBlobId::operator < (const SBlobId &  other) const
 bool SBlobId::operator == (const SBlobId &  other) const
 {
     return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
-}
-
-
-string  GetBlobId(const SBlobId &  blob_id)
-{
-    return NStr::NumericToString(blob_id.m_Sat) + "." +
-           NStr::NumericToString(blob_id.m_SatKey);
-}
-
-
-SBlobId ParseBlobId(const string &  blob_id)
-{
-    return SBlobId(blob_id);
 }
 
 
@@ -259,7 +253,7 @@ string  GetBlobPropHeader(size_t  item_id,
                 .append(NStr::NumericToString(blob_prop_size))
                 .append(1, '&')
                 .append(s_BlobId)
-                .append(GetBlobId(blob_id))
+                .append(blob_id.ToString())
                 .append(1, '\n');
 }
 
@@ -325,7 +319,7 @@ string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
                 .append(NStr::NumericToString(chunk_size))
                 .append(1, '&')
                 .append(s_BlobId)
-                .append(GetBlobId(blob_id))
+                .append(blob_id.ToString())
                 .append(1, '&')
                 .append(s_BlobChunk)
                 .append(NStr::NumericToString(chunk_number))
@@ -359,7 +353,7 @@ string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
                 .append(s_MetaChunk)
                 .append(1, '&')
                 .append(s_BlobId)
-                .append(GetBlobId(blob_id))
+                .append(blob_id.ToString())
                 .append(1, '&')
                 .append(s_NChunksOne)
                 .append(1, '&')
@@ -381,7 +375,7 @@ string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
                 .append(s_MetaChunk)
                 .append(1, '&')
                 .append(s_BlobId)
-                .append(GetBlobId(blob_id))
+                .append(blob_id.ToString())
                 .append(1, '&')
                 .append(s_NChunks)
                 .append(NStr::NumericToString(chunk_count))
@@ -407,7 +401,7 @@ string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
                 .append(NStr::NumericToString(msg_size))
                 .append(1, '&')
                 .append(s_BlobId)
-                .append(GetBlobId(blob_id))
+                .append(blob_id.ToString())
                 .append(1, '&')
                 .append(s_Status)
                 .append(NStr::NumericToString(static_cast<int>(status)))

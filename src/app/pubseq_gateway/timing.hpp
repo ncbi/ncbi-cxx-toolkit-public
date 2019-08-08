@@ -66,7 +66,9 @@ enum EPSGOperation {
     eResolutionCass,
 
     eBlobRetrieve,
-    eNARetrieve
+    eNARetrieve,
+
+    eSplitHistoryRetrieve
 };
 
 
@@ -219,6 +221,18 @@ class CNARetrieveTiming : public CPSGTimingBase
 };
 
 
+// Split history retrieval
+class CSplitHistoryRetrieveTiming : public CPSGTimingBase
+{
+    public:
+        CSplitHistoryRetrieveTiming(unsigned long  min_stat_value,
+                                    unsigned long  max_stat_value,
+                                    unsigned long  n_bins,
+                                    TPSGTiming::EScaleType  stat_type,
+                                    bool &  reset_to_default);
+};
+
+
 
 class COperationTiming
 {
@@ -254,24 +268,25 @@ class COperationTiming
         chrono::system_clock::time_point    m_StartTime;
 
         // Note: 2 items, found and not found
-        vector<unique_ptr<CLmdbCacheTiming>>        m_LookupLmdbSi2csiTiming;
-        vector<unique_ptr<CLmdbCacheTiming>>        m_LookupLmdbBioseqInfoTiming;
-        vector<unique_ptr<CLmdbCacheTiming>>        m_LookupLmdbBlobPropTiming;
-        vector<unique_ptr<CCassTiming>>             m_LookupCassSi2csiTiming;
-        vector<unique_ptr<CCassTiming>>             m_LookupCassBioseqInfoTiming;
-        vector<unique_ptr<CCassTiming>>             m_LookupCassBlobPropTiming;
+        vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbSi2csiTiming;
+        vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbBioseqInfoTiming;
+        vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbBlobPropTiming;
+        vector<unique_ptr<CCassTiming>>                     m_LookupCassSi2csiTiming;
+        vector<unique_ptr<CCassTiming>>                     m_LookupCassBioseqInfoTiming;
+        vector<unique_ptr<CCassTiming>>                     m_LookupCassBlobPropTiming;
 
-        vector<unique_ptr<CLmdbResolutionTiming>>   m_ResolutionLmdbTiming;
-        vector<unique_ptr<CCassResolutionTiming>>   m_ResolutionCassTiming;
+        vector<unique_ptr<CLmdbResolutionTiming>>           m_ResolutionLmdbTiming;
+        vector<unique_ptr<CCassResolutionTiming>>           m_ResolutionCassTiming;
 
-        vector<unique_ptr<CNARetrieveTiming>>       m_NARetrieveTiming;
+        vector<unique_ptr<CNARetrieveTiming>>               m_NARetrieveTiming;
+        vector<unique_ptr<CSplitHistoryRetrieveTiming>>     m_SplitHistoryRetrieveTiming;
 
         // The index is calculated basing on the blob size
-        vector<unique_ptr<CBlobRetrieveTiming>>     m_BlobRetrieveTiming;
-        vector<unsigned long>                       m_Ends;
-        unique_ptr<CHugeBlobRetrieveTiming>         m_HugeBlobRetrievalTiming;
-        unique_ptr<CNotFoundBlobRetrieveTiming>     m_NotFoundBlobRetrievalTiming;
+        vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;
+        vector<unsigned long>                               m_Ends;
+        unique_ptr<CHugeBlobRetrieveTiming>                 m_HugeBlobRetrievalTiming;
+        unique_ptr<CNotFoundBlobRetrieveTiming>             m_NotFoundBlobRetrievalTiming;
 };
 
-#endif /* PUBSEQ_GATEWAY_ALERTS__HPP */
+#endif /* PUBSEQ_GATEWAY_TIMING__HPP */
 

@@ -264,6 +264,27 @@ CNARetrieveTiming::CNARetrieveTiming(unsigned long  min_stat_value,
 }
 
 
+CSplitHistoryRetrieveTiming::CSplitHistoryRetrieveTiming(unsigned long  min_stat_value,
+                                                         unsigned long  max_stat_value,
+                                                         unsigned long  n_bins,
+                                                         TPSGTiming::EScaleType  stat_type,
+                                                         bool &  reset_to_default)
+{
+    reset_to_default = false;
+
+    try {
+        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
+                                         n_bins, stat_type));
+    } catch (...) {
+        reset_to_default = true;
+        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
+                                         kMaxStatValue,
+                                         kNStatBins,
+                                         TPSGTiming::eLog2));
+    }
+}
+
+
 
 COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    unsigned long  max_stat_value,
@@ -316,6 +337,11 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             unique_ptr<CNARetrieveTiming>(
                 new CNARetrieveTiming(min_stat_value, max_stat_value,
                                       n_bins, scale_type, reset_to_default)));
+
+        m_SplitHistoryRetrieveTiming.push_back(
+            unique_ptr<CSplitHistoryRetrieveTiming>(
+                new CSplitHistoryRetrieveTiming(min_stat_value, max_stat_value,
+                                                n_bins, scale_type, reset_to_default)));
     }
 
     m_HugeBlobRetrievalTiming.reset(
@@ -444,6 +470,9 @@ void COperationTiming::Register(EPSGOperation  operation,
         case eNARetrieve:
             m_NARetrieveTiming[index]->Add(mks);
             break;
+        case eSplitHistoryRetrieve:
+            m_SplitHistoryRetrieveTiming[index]->Add(mks);
+            break;
     }
 }
 
@@ -462,6 +491,7 @@ void COperationTiming::Reset(void)
         m_ResolutionLmdbTiming[k]->Reset();
         m_ResolutionCassTiming[k]->Reset();
         m_NARetrieveTiming[k]->Reset();
+        m_SplitHistoryRetrieveTiming[k]->Reset();
     }
 
     m_HugeBlobRetrievalTiming->Reset();
@@ -493,6 +523,8 @@ CJsonNode COperationTiming::Serialize(void) const
     static string   kResolutionCassNotFound("ResolutionCassNotFound");
     static string   kNARetrieveFound("NARetrieveFound");
     static string   kNARetrieveNotFound("NARetrieveNotFound");
+    static string   kSplitHistoryRetrieveFound("SplitHistoryRetrieveFound");
+    static string   kSplitHistoryRetrieveNotFound("SplitHistoryRetrieveNotFound");
     static string   kHugeBlobRetrieval("HugeBlobRetrieval");
     static string   kBlobRetrievalNotFound("BlobRetrievalNotFound");
     static string   kBlobRetrieval("BlobRetrieval");
@@ -518,6 +550,8 @@ CJsonNode COperationTiming::Serialize(void) const
     ret.SetByKey(kResolutionCassNotFound, m_ResolutionCassTiming[1]->Serialize());
     ret.SetByKey(kNARetrieveFound, m_NARetrieveTiming[0]->Serialize());
     ret.SetByKey(kNARetrieveNotFound, m_NARetrieveTiming[1]->Serialize());
+    ret.SetByKey(kSplitHistoryRetrieveFound, m_SplitHistoryRetrieveTiming[0]->Serialize());
+    ret.SetByKey(kSplitHistoryRetrieveNotFound, m_SplitHistoryRetrieveTiming[1]->Serialize());
     ret.SetByKey(kHugeBlobRetrieval, m_HugeBlobRetrievalTiming->Serialize());
     ret.SetByKey(kBlobRetrievalNotFound, m_NotFoundBlobRetrievalTiming->Serialize());
 

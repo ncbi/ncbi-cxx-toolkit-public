@@ -36,31 +36,6 @@
 #include "protocol_utils.hpp"
 
 
-
-CCassBlobWaiter * CCassFetch::GetLoader(void)
-{
-    return m_Loader.get();
-}
-
-
-void CCassFetch::SetReadFinished(void)
-{
-    m_FinishedRead = true;
-}
-
-
-EPendingRequestType CCassFetch::GetRequestType(void) const
-{
-    return m_RequestType;
-}
-
-
-bool CCassFetch::ReadFinished(void) const
-{
-    return m_FinishedRead;
-}
-
-
 void CCassNamedAnnotFetch::ResetCallbacks(void)
 {
     if (m_Loader) {
@@ -69,26 +44,6 @@ void CCassNamedAnnotFetch::ResetCallbacks(void)
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
     }
-}
-
-
-void CCassNamedAnnotFetch::SetLoader(CCassNAnnotTaskFetch *  fetch)
-{
-    m_Loader.reset(fetch);
-}
-
-
-CCassNAnnotTaskFetch * CCassNamedAnnotFetch::GetLoader(void)
-{
-    return static_cast<CCassNAnnotTaskFetch *>(m_Loader.get());
-}
-
-
-bool CCassBlobFetch::IsBlobPropStage(void) const
-{
-    // At the time of an error report it needs to be known to what the
-    // error message is associated - to blob properties or to blob chunks
-    return !m_BlobPropSent;
 }
 
 
@@ -105,60 +60,6 @@ size_t CCassBlobFetch::GetBlobChunkItemId(CProtocolUtils *  protocol_utils)
     if (m_BlobChunkItemId == 0)
         m_BlobChunkItemId = protocol_utils->GetItemId();
     return m_BlobChunkItemId;
-}
-
-
-void CCassBlobFetch::SetLoader(CCassBlobTaskLoadBlob *  fetch)
-{
-    m_Loader.reset(fetch);
-}
-
-
-CCassBlobTaskLoadBlob *  CCassBlobFetch::GetLoader(void)
-{
-    return static_cast<CCassBlobTaskLoadBlob *>(m_Loader.get());
-}
-
-
-ETSEOption CCassBlobFetch::GetTSEOption(void) const
-{
-    return m_TSEOption;
-}
-
-
-EBlobIdentificationType CCassBlobFetch::GetBlobIdType(void) const
-{
-    return m_BlobIdType;
-}
-
-
-SBlobId CCassBlobFetch::GetBlobId(void) const
-{
-    return m_BlobId;
-}
-
-
-int32_t CCassBlobFetch::GetTotalSentBlobChunks(void) const
-{
-    return m_TotalSentBlobChunks;
-}
-
-
-void CCassBlobFetch::IncrementTotalSentBlobChunks(void)
-{
-    ++m_TotalSentBlobChunks;
-}
-
-
-void CCassBlobFetch::ResetTotalSentBlobChunks(void)
-{
-    m_TotalSentBlobChunks = 0;
-}
-
-
-void CCassBlobFetch::SetBlobPropSent(void)
-{
-    m_BlobPropSent = true;
 }
 
 
@@ -185,18 +86,6 @@ void CCassBioseqInfoFetch::ResetCallbacks(void)
 }
 
 
-void CCassBioseqInfoFetch::SetLoader(CCassBioseqInfoTaskFetch *  fetch)
-{
-    m_Loader.reset(fetch);
-}
-
-
-CCassBioseqInfoTaskFetch * CCassBioseqInfoFetch::GetLoader(void)
-{
-    return static_cast<CCassBioseqInfoTaskFetch *>(m_Loader.get());
-}
-
-
 void CCassSi2csiFetch::ResetCallbacks(void)
 {
     if (m_Loader) {
@@ -208,14 +97,13 @@ void CCassSi2csiFetch::ResetCallbacks(void)
 }
 
 
-void CCassSi2csiFetch::SetLoader(CCassSI2CSITaskFetch *  fetch)
+void CCassSplitHistoryFetch::ResetCallbacks(void)
 {
-    m_Loader.reset(fetch);
-}
-
-
-CCassSI2CSITaskFetch * CCassSi2csiFetch::GetLoader(void)
-{
-    return static_cast<CCassSI2CSITaskFetch *>(m_Loader.get());
+    if (m_Loader) {
+        CCassBlobTaskFetchSplitHistory *    loader =
+            static_cast<CCassBlobTaskFetchSplitHistory *>(m_Loader.get());
+        loader->SetConsumeCallback(nullptr);
+        loader->SetErrorCB(nullptr);
+    }
 }
 

@@ -44,7 +44,10 @@ enum EPubseqGatewayErrorCode {
     eUnpackingError,
     eUnknownError,
     eBlobPropsNotFound,
-    eUnresolvedSeqId
+    eUnresolvedSeqId,
+    eInsufficientArguments,
+    eInvalidId2Info,
+    eSplitHistoryNotFound
 };
 
 
@@ -52,7 +55,15 @@ enum EPubseqGatewayErrorCode {
 // The requests are counted separately so the enumeration distinguish them.
 enum EBlobIdentificationType {
     eBySeqId,
-    eBySatAndSatKey
+    eBySatAndSatKey,
+
+    eUnknownBlobIdentification  // Used for TSE chunk requests;
+                                // These requests reuse the blob retrieval
+                                // infrastructure. However in case of not found
+                                // blobs the TSE chunk request should report a
+                                // server inconsistency error (in opposite to
+                                // the user bad data). So the eBySatAndSatKey
+                                // cannot be used for TSE chunk requests.
 };
 
 
@@ -131,9 +142,12 @@ enum EPendingRequestType {
     eBlobRequest,
     eResolveRequest,
     eAnnotationRequest,
+    eTSEChunkRequest,
 
     eBioseqInfoRequest,         // Internally generated pending request type
     eSi2csiRequest,             // Internally generated pending request type
+
+    eSplitHistoryRequest,       // Internally generated
 
     eUnknownRequest
 };

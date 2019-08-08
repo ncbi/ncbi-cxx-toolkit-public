@@ -40,6 +40,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/si2csi_task/fetch.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
 USING_IDBLOB_SCOPE;
 
 
@@ -61,10 +62,17 @@ public:
     virtual void ResetCallbacks(void) = 0;
 
 public:
-    CCassBlobWaiter * GetLoader(void);
-    void SetReadFinished(void);
-    EPendingRequestType GetRequestType(void) const;
-    bool ReadFinished(void) const;
+    CCassBlobWaiter * GetLoader(void)
+    { return m_Loader.get(); }
+
+    void SetReadFinished(void)
+    { m_FinishedRead = true; }
+
+    EPendingRequestType GetRequestType(void) const
+    { return m_RequestType; }
+
+    bool ReadFinished(void) const
+    { return m_FinishedRead; }
 
 protected:
     // There are multiple types of the loaders stored here:
@@ -101,9 +109,14 @@ public:
     {}
 
 public:
+    void SetLoader(CCassNAnnotTaskFetch *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CCassNAnnotTaskFetch * GetLoader(void)
+    { return static_cast<CCassNAnnotTaskFetch *>(m_Loader.get()); }
+
+public:
     virtual void ResetCallbacks(void);
-    void SetLoader(CCassNAnnotTaskFetch *  fetch);
-    CCassNAnnotTaskFetch *  GetLoader(void);
 };
 
 
@@ -123,6 +136,24 @@ public:
         m_RequestType = eBlobRequest;
     }
 
+    // The TSE chunk request is pretty much the same as a blob request
+    // - eUnknownTSE is used to skip the blob prop analysis logic
+    // - client id is empty so the cache of blobs sent to the user is not used
+    // - eUnknownBlobIdentification is used to report a server error 500 in
+    //   case the blob props are not found.
+    CCassBlobFetch(const STSEChunkRequest &  chunk_request) :
+        m_BlobId(chunk_request.m_TSEId),
+        m_TSEOption(eUnknownTSE),
+        m_ClientId(""),
+        m_BlobPropSent(false),
+        m_BlobIdType(eUnknownBlobIdentification),
+        m_TotalSentBlobChunks(0),
+        m_BlobPropItemId(0),
+        m_BlobChunkItemId(0)
+    {
+        m_RequestType = eTSEChunkRequest;
+    }
+
     CCassBlobFetch() :
         m_TSEOption(eUnknownTSE),
         m_BlobPropSent(false),
@@ -132,27 +163,48 @@ public:
         m_BlobChunkItemId(0)
     {}
 
-    string GetClientId(void) const
-    {
-        return m_ClientId;
-    }
-
     virtual ~CCassBlobFetch()
     {}
 
 public:
-    bool IsBlobPropStage(void) const;
+    string GetClientId(void) const
+    { return m_ClientId; }
+
+    ETSEOption GetTSEOption(void) const
+    { return m_TSEOption; }
+
+    EBlobIdentificationType GetBlobIdType(void) const
+    { return m_BlobIdType; }
+
+    SBlobId GetBlobId(void) const
+    { return m_BlobId; }
+
+    int32_t GetTotalSentBlobChunks(void) const
+    { return m_TotalSentBlobChunks; }
+
+    void IncrementTotalSentBlobChunks(void)
+    { ++m_TotalSentBlobChunks; }
+
+    void ResetTotalSentBlobChunks(void)
+    { m_TotalSentBlobChunks = 0; }
+
+    void SetBlobPropSent(void)
+    { m_BlobPropSent = true; }
+
+    // At the time of an error report it needs to be known to what the
+    // error message is associated - to blob properties or to blob chunks
+    bool IsBlobPropStage(void) const
+    { return !m_BlobPropSent; }
+
+    void SetLoader(CCassBlobTaskLoadBlob *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CCassBlobTaskLoadBlob *  GetLoader(void)
+    { return static_cast<CCassBlobTaskLoadBlob *>(m_Loader.get()); }
+
+public:
     size_t GetBlobPropItemId(CProtocolUtils *  protocol_utils);
     size_t GetBlobChunkItemId(CProtocolUtils *  protocol_utils);
-    void SetLoader(CCassBlobTaskLoadBlob *  fetch);
-    CCassBlobTaskLoadBlob *  GetLoader(void);
-    ETSEOption GetTSEOption(void) const;
-    EBlobIdentificationType GetBlobIdType(void) const;
-    SBlobId GetBlobId(void) const;
-    int32_t GetTotalSentBlobChunks(void) const;
-    void IncrementTotalSentBlobChunks(void);
-    void ResetTotalSentBlobChunks(void);
-    void SetBlobPropSent(void);
 
     virtual void ResetCallbacks(void);
 
@@ -183,9 +235,14 @@ public:
     {}
 
 public:
+    void SetLoader(CCassBioseqInfoTaskFetch *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CCassBioseqInfoTaskFetch * GetLoader(void)
+    { return static_cast<CCassBioseqInfoTaskFetch *>(m_Loader.get()); }
+
+public:
     virtual void ResetCallbacks(void);
-    void SetLoader(CCassBioseqInfoTaskFetch *  fetch);
-    CCassBioseqInfoTaskFetch *  GetLoader(void);
 };
 
 
@@ -201,9 +258,59 @@ public:
     {}
 
 public:
+    void SetLoader(CCassSI2CSITaskFetch *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CCassSI2CSITaskFetch * GetLoader(void)
+    { return static_cast<CCassSI2CSITaskFetch *>(m_Loader.get()); }
+
+public:
     virtual void ResetCallbacks(void);
-    void SetLoader(CCassSI2CSITaskFetch *  fetch);
-    CCassSI2CSITaskFetch *  GetLoader(void);
+};
+
+
+class CCassSplitHistoryFetch : public CCassFetch
+{
+public:
+    CCassSplitHistoryFetch(const STSEChunkRequest &  chunk_request) :
+        m_TSEId(chunk_request.m_TSEId),
+        m_Chunk(chunk_request.m_Chunk),
+        m_SplitVersion(chunk_request.m_SplitVersion),
+        m_UseCache(chunk_request.m_UseCache)
+    {
+        m_RequestType = eSplitHistoryRequest;
+    }
+
+    virtual ~CCassSplitHistoryFetch()
+    {}
+
+public:
+    SBlobId  GetTSEId(void) const
+    { return m_TSEId; }
+
+    int64_t  GetChunk(void) const
+    { return m_Chunk; }
+
+    int64_t  GetSplitVersion(void) const
+    { return m_SplitVersion; }
+
+    ECacheAndCassandraUse  GetUseCache(void) const
+    { return m_UseCache; }
+
+    void SetLoader(CCassBlobTaskFetchSplitHistory *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CCassBlobTaskFetchSplitHistory * GetLoader(void)
+    { return static_cast<CCassBlobTaskFetchSplitHistory *>(m_Loader.get()); }
+
+public:
+    virtual void ResetCallbacks(void);
+
+private:
+    SBlobId                     m_TSEId;
+    int64_t                     m_Chunk;
+    int64_t                     m_SplitVersion;
+    ECacheAndCassandraUse       m_UseCache;
 };
 
 #endif

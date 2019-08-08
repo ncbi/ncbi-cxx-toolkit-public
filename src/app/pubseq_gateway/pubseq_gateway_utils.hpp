@@ -69,14 +69,13 @@ struct SBlobId
         m_SatName = name;
     }
 
+    string ToString(void) const;
+
     bool IsValid(void) const;
     bool operator < (const SBlobId &  other) const;
     bool operator == (const SBlobId &  other) const;
 };
 
-
-string  GetBlobId(const SBlobId &  blob_id);
-SBlobId ParseBlobId(const string &  blob_id);
 
 
 

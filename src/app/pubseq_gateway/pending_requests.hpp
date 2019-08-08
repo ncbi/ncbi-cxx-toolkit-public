@@ -166,4 +166,26 @@ public:
 };
 
 
+struct STSEChunkRequest
+{
+    STSEChunkRequest(const SBlobId &  tse_id,
+                     int64_t  chunk,
+                     int64_t  split_version,
+                     ECacheAndCassandraUse  use_cache) :
+        m_TSEId(tse_id),
+        m_Chunk(chunk),
+        m_SplitVersion(split_version),
+        m_UseCache(use_cache)
+    {}
+
+    STSEChunkRequest() = default;
+
+public:
+    SBlobId                     m_TSEId;
+    int64_t                     m_Chunk;
+    int64_t                     m_SplitVersion;
+    ECacheAndCassandraUse       m_UseCache;
+};
+
+
 #endif

@@ -61,9 +61,6 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     value = m_ServerSatToSatNameError;
     err_sum += value;
     dict.SetInteger("ServerSatToSatNameErrorCount", value);
-    value = m_BioseqID2InfoError;
-    err_sum += value;
-    dict.SetInteger("BioseqID2InfoErrorCount", value);
     value = m_BlobPropsNotFoundError;
     err_sum += value;
     dict.SetInteger("BlobPropsNotFoundErrorCount", value);
@@ -73,6 +70,12 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     value = m_CassQueryTimeoutError;
     err_sum += value;
     dict.SetInteger("CassQueryTimeoutErrorCount", value);
+    value = m_InvalidId2InfoError;
+    err_sum += value;
+    dict.SetInteger("InvalidId2InfoErrorCount", value);
+    value = m_SplitHistoryNotFoundError;
+    err_sum += value;
+    dict.SetInteger("SplitHistoryNotFoundErrorCount", value);
 
     dict.SetInteger("TotalErrorCount", err_sum);
 }
@@ -81,6 +84,10 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
 void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
 {
     dict.SetInteger("InputSeqIdNotResolved", m_NotResolved);
+    dict.SetInteger("TSEChunkSplitVersionCacheMatched",
+                    m_TSEChunkSplitVersionCacheMatched);
+    dict.SetInteger("TSEChunkSplitVersionCacheNotMatched",
+                    m_TSEChunkSplitVersionCacheNotMatched);
 
     uint64_t    req_sum(0);
     uint64_t    value(0);
@@ -103,6 +110,9 @@ void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
     value = m_TestIO;
     req_sum += value;
     dict.SetInteger("TestIORequestCount", value);
+    value = m_GetTSEChunk;
+    req_sum += value;
+    dict.SetInteger("GetTSEChunkCount", value);
 
     dict.SetInteger("TotalRequestCount", req_sum);
 }

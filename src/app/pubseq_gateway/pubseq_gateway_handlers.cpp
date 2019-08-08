@@ -64,6 +64,9 @@ static string  kLogParam = "log";
 static string  kUsernameParam = "username";
 static string  kAlertParam = "alert";
 static string  kResetParam = "reset";
+static string  kTSEIdParam = "tse_id";
+static string  kChunkParam = "chunk";
+static string  kSplitVersionParam = "split_version";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -282,13 +285,8 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             return 0;
         }
 
-        string  message = "Mandatory parameter 'blob_id' is not found.";
-        m_ErrorCounters.IncInsufficientArguments();
-        x_SendMessageAndCompletionChunks(resp, message,
-                                         CRequestStatus::e400_BadRequest,
-                                         eMalformedParameter, eDiag_Error);
-        PSG_WARNING(message);
-        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+        x_InsufficientArguments(resp, context, "Mandatory parameter "
+                                "'blob_id' is not found.");
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a getblob request: " +
                           string(exc.what());
@@ -433,6 +431,125 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             resp.SetContentType(ePlainTextMime);
             resp.Send500("Internal Server Error", msg.c_str());
         }
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    }
+    return 0;
+}
+
+
+int CPubseqGatewayApp::OnGetTSEChunk(HST::CHttpRequest &  req,
+                                     HST::CHttpReply<CPendingOperation> &  resp)
+{
+    if (x_IsShuttingDown(req, resp))
+        return 0;
+
+    if (!x_IsDBOK(req, resp))
+        return 0;
+
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    try {
+        // Reply should use PSG protocol
+        resp.SetContentType(ePSGMime);
+
+        // tse_id is in fact a blob_id...
+        SRequestParameter   tse_id_param = x_GetParam(req, kTSEIdParam);
+        if (!tse_id_param.m_Found)
+        {
+            x_InsufficientArguments(resp, context, "Mandatory parameter "
+                                    "'tse_id' is not found.");
+            return 0;
+        }
+
+        SBlobId     tse_id(tse_id_param.m_Value);
+        if (!tse_id.IsValid()) {
+            x_MalformedArguments(resp, context,
+                                 "Malformed 'tse_id' parameter. "
+                                 "Expected format 'sat.sat_key' where both "
+                                 "'sat' and 'sat_key' are integers.");
+            return 0;
+        }
+
+        if (!SatToSatName(tse_id.m_Sat, tse_id.m_SatName)) {
+            m_ErrorCounters.IncClientSatToSatName();
+            string      message = string("Unknown satellite number ") +
+                                  NStr::NumericToString(tse_id.m_Sat);
+            x_SendUnknownClientSatelliteError(resp, tse_id, message);
+            PSG_WARNING(message);
+            x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
+            return 0;
+        }
+
+        SRequestParameter   chunk_param = x_GetParam(req, kChunkParam);
+        int64_t             chunk_value = INT64_MIN;
+        if (!chunk_param.m_Found)
+        {
+            x_InsufficientArguments(resp, context, "Mandatory parameter "
+                                    "'chunk' is not found.");
+            return 0;
+        }
+
+        try {
+            chunk_value = NStr::StringToLong(chunk_param.m_Value);
+            if (chunk_value <= 0) {
+                x_MalformedArguments(resp, context,
+                                     "Invalid 'chunk' parameter. "
+                                     "Expected > 0");
+                return 0;
+            }
+        } catch (...) {
+            x_MalformedArguments(resp, context,
+                                 "Malformed 'chunk' parameter. "
+                                 "Expected an integer");
+            return 0;
+        }
+
+        SRequestParameter   split_version_param = x_GetParam(req, kSplitVersionParam);
+        int64_t             split_version_value = INT64_MIN;
+        if (!split_version_param.m_Found)
+        {
+            x_InsufficientArguments(resp, context, "Mandatory parameter "
+                                    "'split_version' is not found.");
+            return 0;
+        }
+
+        try {
+            split_version_value = NStr::StringToLong(split_version_param.m_Value);
+        } catch (...) {
+            x_MalformedArguments(resp, context,
+                                 "Malformed 'split_version' parameter. "
+                                 "Expected an integer");
+            return 0;
+        }
+
+        string                  err_msg;
+        ECacheAndCassandraUse   use_cache = x_GetUseCacheParameter(req, err_msg);
+        if (!err_msg.empty()) {
+            x_MalformedArguments(resp, context, err_msg);
+            return 0;
+        }
+
+        // All parameters are good
+        m_RequestCounters.IncGetTSEChunk();
+        resp.Postpone(
+                CPendingOperation(
+                    STSEChunkRequest(tse_id, chunk_value,
+                                     split_version_value, use_cache),
+                    0, m_CassConnection, m_TimeoutMs,
+                    m_MaxRetries, context));
+    } catch (const exception &  exc) {
+        string      msg = "Exception when handling a get_tse_chunk request: " +
+                          string(exc.what());
+        x_SendMessageAndCompletionChunks(resp, msg,
+                                         CRequestStatus::e500_InternalServerError,
+                                         eUnknownError, eDiag_Error);
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    } catch (...) {
+        string      msg = "Unknown exception when handling a get_tse_chunk request";
+        x_SendMessageAndCompletionChunks(resp, msg,
+                                         CRequestStatus::e500_InternalServerError,
+                                         eUnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     }
     return 0;

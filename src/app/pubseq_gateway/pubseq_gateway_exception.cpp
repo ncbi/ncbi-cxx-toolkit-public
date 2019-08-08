@@ -100,6 +100,8 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eInvalidRequest";
         case eUnknownTSEOption:
             return "eUnknownTSEOption";
+        case eInvalidId2Info:
+            return "eInvalidId2Info";
         case eLogic:
             return "eLogic";
         case eAccessionMismatch:
