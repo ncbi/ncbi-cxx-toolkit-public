@@ -835,6 +835,7 @@ EOF_launch
               * )
                 test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
             esac
+           echo >> "$x_build_dir/test_stat_load.log" 2>&1
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then
             rm -f \$saved_phid* > /dev/null 2>&1
