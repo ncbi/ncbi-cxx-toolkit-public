@@ -34,6 +34,12 @@
 #ifndef CN3D_ASN_READER__HPP
 #define CN3D_ASN_READER__HPP
 
+#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbiexpt.hpp>
+
+#include <corelib/ncbi_system.hpp>
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
@@ -57,6 +63,7 @@
 #endif
 #endif
 
+USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
@@ -181,8 +188,8 @@ bool GetAsnDataViaHTTP(
 // for loading ASN data via HTTPS connection
 template < class ASNClass >
 bool GetAsnDataViaHTTPS(
-    const string& host, const string& path, const string& args,
-    ASNClass *asnObject, string *err,
+    const std::string& host, const std::string& path, const std::string& args,
+    ASNClass *asnObject, std::string *err,
     bool binaryData = true)
 
     //
@@ -194,11 +201,11 @@ bool GetAsnDataViaHTTPS(
     // b)  if 'host' starts with non-secure 'http://', change to 'https://'
     //
     // for loading ASN data via HTTPS connection
-    // 
+    //
 {
     err->erase();
     bool okay = false;
-    string hostCopy(host), url;
+    std::string hostCopy(host), url;
 
     if (NStr::StartsWith(host, "http://"))
         hostCopy = "https://" + host.substr(7);

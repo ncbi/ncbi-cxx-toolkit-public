@@ -131,7 +131,8 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
     for (l=lines.begin(); l!=le; ++l) {
 
         vector < string > toks;
-        NStr::Tokenize(*l, "\t", toks);
+        //NStr::Tokenize(*l, "\t", toks);
+        NStr::Split(*l, "\t", toks);
         if (toks.size() != 2) {
             ADD_REPLY_ERROR(string("invalid line, expected 'id' + tab + 'ranges': ") + *l);
             continue;

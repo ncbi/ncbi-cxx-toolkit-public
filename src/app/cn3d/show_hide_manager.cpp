@@ -92,10 +92,18 @@ public:
     ShowHideMolecule(const Molecule *m) : molecule(m)
     {
         label = indent + m->identifier->pdbID;
-        if (m->identifier->pdbChain != ' ') {
-            label += '_';
-            label += (char) m->identifier->pdbChain;
-        }
+
+		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+			if (m->identifier->pdbChain != " ") {
+				label += '_';
+				label += m->identifier->pdbChain;
+			}
+		#else
+			if (m->identifier->pdbChain != ' ') {
+				label += '_';
+				label += (char) m->identifier->pdbChain;
+			}
+		#endif
     }
     virtual ~ShowHideMolecule(void) { }
     bool IsVisible(const ShowHideManager *shm) const { return shm->IsVisible(molecule); }
@@ -112,7 +120,13 @@ public:
     {
         CNcbiOstrstream oss;
         oss << indent << indent << m->identifier->pdbID;
-        if (m->identifier->pdbChain != ' ') oss << '_' << (char) m->identifier->pdbChain;
+
+		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+			if (m->identifier->pdbChain != " ") oss << '_' << m->identifier->pdbChain.c_str();
+		#else
+			if (m->identifier->pdbChain != ' ') oss << '_' << (char) m->identifier->pdbChain;
+		#endif
+
         oss << " d" << labelNum;
         label = (string) CNcbiOstrstreamToString(oss);
     }
@@ -428,7 +442,7 @@ void ShowHideManager::ShowAlignedOrAnnotatedDomains(const StructureSet *set)
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
         for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
 
-            if (!(m->second->IsProtein() || m->second->IsNucleotide())) 
+            if (!(m->second->IsProtein() || m->second->IsNucleotide()))
                 continue;  // but leave all hets/solvents visible
 
             if (!(set->alignmentManager->IsInAlignment(m->second->sequence) || set->styleManager->MoleculeHasUserStyle(*o, m->second->id))) {

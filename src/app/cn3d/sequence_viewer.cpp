@@ -345,8 +345,14 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                 if (sequence->identifier->pdbID != "query" &&
                     sequence->identifier->pdbID != "consensus") {
                     uids[row] = sequence->identifier->pdbID;
-                    if (sequence->identifier->pdbChain != ' ')
-                        uids[row] += string("_")  + (char) sequence->identifier->pdbChain;
+
+					#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+						if (sequence->identifier->pdbChain != " ")
+							uids[row] += string("_")  + sequence->identifier->pdbChain;
+					#else
+						if (sequence->identifier->pdbChain != ' ')
+							uids[row] += string("_")  + (char) sequence->identifier->pdbChain;
+					#endif
                 }
             } else {
                 uids[row] = sequence->identifier->GetLabel();

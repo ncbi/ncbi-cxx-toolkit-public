@@ -52,7 +52,6 @@
 
 USING_NCBI_SCOPE;
 
-
 BEGIN_SCOPE(Cn3D)
 USING_SCOPE(objects);
 
@@ -91,12 +90,21 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
         ERRORMSG("# residue mismatch in molecule identifier for " << identifier->ToString());
 
     // check/assign pdb id
-    int name = ((molecule->name.size() == 1) ? molecule->name[0] : MoleculeIdentifier::VALUE_NOT_SET);
-    if (identifier->pdbID.size() == 0 && identifier->pdbChain == MoleculeIdentifier::VALUE_NOT_SET) {
-        identifier->pdbID = object->GetPDBID();
-        identifier->pdbChain = name;
-    } else if (identifier->pdbID != object->GetPDBID() || identifier->pdbChain != name)
-        ERRORMSG("PDB ID mismatch in molecule identifier for " << identifier->ToString());
+	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+		string name = molecule->name;
+		if (identifier->pdbID.size() == 0 && identifier->pdbChain.empty()) {
+			identifier->pdbID = object->GetPDBID();
+			identifier->pdbChain = name;
+		} else if (identifier->pdbID != object->GetPDBID() || identifier->pdbChain != name)
+			ERRORMSG("PDB ID mismatch in molecule identifier for " << identifier->ToString());
+	#else
+		int name = ((molecule->name.size() == 1) ? molecule->name[0] : MoleculeIdentifier::VALUE_NOT_SET);
+		if (identifier->pdbID.size() == 0 && identifier->pdbChain == MoleculeIdentifier::VALUE_NOT_SET) {
+			identifier->pdbID = object->GetPDBID();
+			identifier->pdbChain = name;
+		} else if (identifier->pdbID != object->GetPDBID() || identifier->pdbChain != name)
+			ERRORMSG("PDB ID mismatch in molecule identifier for " << identifier->ToString());
+	#endif
 
     return identifier;
 }
@@ -228,22 +236,42 @@ void MoleculeIdentifier::AddFields(const SeqIdList& ids)
     // save these ids (should already know that the new ids don't overlap any existing ones)
     seqIDs.insert(seqIDs.end(), ids.begin(), ids.end());
 
+	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+	  bool bPdbChainNotSet = pdbChain.empty();
+	#else
+	  bool bPdbChainNotSet = (pdbChain == VALUE_NOT_SET);
+	#endif
+
     SeqIdList::const_iterator n, ne = ids.end();
     for (n=ids.begin(); n!=ne; ++n) {
 
         // pdb
         if ((*n)->IsPdb()) {
             string newID = (*n)->GetPdb().GetMol();
-            if (pdbID.size() == 0 && pdbChain == VALUE_NOT_SET) {
-                pdbID = newID;
-                pdbChain = (*n)->GetPdb().GetChain();
-            } else if (pdbID != newID || pdbChain != (*n)->GetPdb().GetChain()) {
-                // special case: for merged structures with multiple pdb ids, allow match to a sequence from a single specific pdb id
-                if (pdbID.size() > 4 && pdbChain == (*n)->GetPdb().GetChain() && NStr::Find(pdbID, newID) != NPOS)
-                        pdbID = newID;
-                else
-                    ERRORMSG("AddFields(): identifier conflict, already has pdb ID '" << pdbID << "_" << ((char) pdbChain) << "'");
-            }
+
+			#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+				if (pdbID.size() == 0 && pdbChain.empty()) {
+					pdbID = newID;
+					pdbChain = (*n)->GetPdb().GetChain_id_unified();
+				} else if (pdbID != newID || pdbChain != (*n)->GetPdb().GetChain_id_unified()) {
+					// special case: for merged structures with multiple pdb ids, allow match to a sequence from a single specific pdb id
+					if (pdbID.size() > 4 && pdbChain == (*n)->GetPdb().GetChain_id_unified() && NStr::Find(pdbID, newID) != NPOS)
+							pdbID = newID;
+					else
+						ERRORMSG("AddFields(): identifier conflict, already has pdb ID '" << pdbID << "_" << pdbChain << "'");
+				}
+			#else
+				if (pdbID.size() == 0 && pdbChain == VALUE_NOT_SET) {
+					pdbID = newID;
+					pdbChain = (*n)->GetPdb().GetChain();
+				} else if (pdbID != newID || pdbChain != (*n)->GetPdb().GetChain()) {
+					// special case: for merged structures with multiple pdb ids, allow match to a sequence from a single specific pdb id
+					if (pdbID.size() > 4 && pdbChain == (*n)->GetPdb().GetChain() && NStr::Find(pdbID, newID) != NPOS)
+							pdbID = newID;
+					else
+						ERRORMSG("AddFields(): identifier conflict, already has pdb ID '" << pdbID << "_" << ((char) pdbChain) << "'");
+				}
+			#endif
         }
 
         // gi
@@ -256,14 +284,20 @@ void MoleculeIdentifier::AddFields(const SeqIdList& ids)
 
         // special case where local accession is actually a PDB identifier + chain + extra stuff,
         // separated by spaces: of the format '1ABC X ...' where X can be a chain alphanum character or space
-        else if (pdbID.size() == 0 && pdbChain == VALUE_NOT_SET &&
+        //else if (pdbID.size() == 0 && pdbChain == VALUE_NOT_SET &&
+        else if (pdbID.size() == 0 && bPdbChainNotSet &&
             (*n)->IsLocal() && (*n)->GetLocal().IsStr() &&
             (*n)->GetLocal().GetStr().size() >= 7 && (*n)->GetLocal().GetStr()[4] == ' ' &&
             (*n)->GetLocal().GetStr()[6] == ' ' &&
             (isalnum((unsigned char) (*n)->GetLocal().GetStr()[5]) || (*n)->GetLocal().GetStr()[5] == ' '))
         {
             pdbID = (*n)->GetLocal().GetStr().substr(0, 4);
-            pdbChain = (*n)->GetLocal().GetStr()[5];
+			#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+			  string tmpStr(1, (*n)->GetLocal().GetStr()[5]);
+			  pdbChain = tmpStr;
+			#else
+			  pdbChain = (*n)->GetLocal().GetStr()[5];
+			#endif
         }
     }
 }
@@ -305,8 +339,13 @@ bool MoleculeIdentifier::CompareIdentifiers(const MoleculeIdentifier *a, const M
                 return true;
             else if (a->pdbID > b->pdbID)
                 return false;
-            else
-                return (a->pdbChain < b->pdbChain);
+            else {
+				#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+				  return (a->pdbChain.compare(b->pdbChain) < 0);
+				#else
+				  return (a->pdbChain < b->pdbChain);
+				#endif
+			}
         } else
             return true;
     }
@@ -333,11 +372,25 @@ bool MoleculeIdentifier::CompareIdentifiers(const MoleculeIdentifier *a, const M
 string MoleculeIdentifier::ToString(void) const
 {
     CNcbiOstrstream oss;
-    if (pdbID.size() == 4 && pdbChain != VALUE_NOT_SET) {
+
+	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+	  bool bPdbChainNotSet = pdbChain.empty();
+	#else
+	  bool bPdbChainNotSet = (pdbChain == VALUE_NOT_SET);
+	#endif
+
+    if (pdbID.size() == 4 && !bPdbChainNotSet) {
         oss << pdbID;
-        if (pdbChain != ' ') {
-            oss <<  '_' << (char) pdbChain;
-        }
+
+		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+			if (pdbChain != " ") {
+				oss <<  '_' << pdbChain;
+			}
+		#else
+			if (pdbChain != ' ') {
+				oss <<  '_' << (char) pdbChain;
+			}
+		#endif
     } else if (gi != VALUE_NOT_SET) {
         oss << "gi " << gi;
     } else if (mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) {
