@@ -340,6 +340,7 @@ private:
     string m_ElapsedTimeFormat;
     bool m_InterceptJQueryCallback;
     bool m_AddJobIdToHeader;
+    bool m_DisplayDonePage;
 
     unique_ptr<CHTMLPage> m_Page;
     unique_ptr<CHTMLPage> m_CustomHTTPHeader;
@@ -514,6 +515,7 @@ void CCgi2RCgiApp::Init()
     m_AddJobIdToHeader = config.GetBool(cgi2rcgi_section, "add_job_id_to_response",
         false, IRegistry::eReturn);
 
+    m_DisplayDonePage = config.GetValue(cgi2rcgi_section, "display_done_page", false);
     m_PortAdded = false;
 }
 
@@ -1354,6 +1356,17 @@ void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
 
 void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
 {
+    if (m_DisplayDonePage) {
+        string get_results;
+        ctx.PullUpPersistentEntry("get_results", get_results);
+
+        if (get_results.empty()) {
+            ctx.SelectView("JOB_DONE");
+            DefineRefreshTags(ctx, ctx.GetSelfURL() + "&get_results=true", m_RefreshDelay);
+            return;
+        }
+    }
+
     CNcbiIstream& is = m_GridClient->GetIStream();
 
     // This must be after m_GridClient->GetIStream(), otherwise size would be empty
