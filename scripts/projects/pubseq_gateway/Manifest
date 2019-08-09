@@ -15,7 +15,7 @@
 # The ETC: statement describes configuration files
 # It is allowed to have more than one of each statements
 APP: pubseq_gateway
-ETC: src/app/pubseq_gateway/pubseq_gateway.ini
+ETC: src/app/pubseq_gateway/server/pubseq_gateway.ini
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:O2g
 

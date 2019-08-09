@@ -15,6 +15,7 @@ misc/third_party_static
 
 app$
 app/pubseq_gateway$
+app/pubseq_gateway/server$
 
 objtools$
 objtools/pubseq_gateway$
