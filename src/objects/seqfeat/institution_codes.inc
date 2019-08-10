@@ -5382,6 +5382,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "OTT\ts\tUniversity of Ottawa, Biology Department\t\t\t",
 "OU\ts\tFossil Catalgoue in the Geology Museum\t\t\t",
 "OUA\ts\tUniversite de Ouagadougou\t\t\t",
+"OUFE\ts\tEskisehir Osmangazi University Faculty of Education and Science\t\t\t",
 "OULU\ts\tUniversity of Oulu, Biology Department\t\t\t",
 "OUM\ts\tOxford University Museum of Natural History\tOUMNH\t\t",
 "OUPR\ts\tUniversidade Federal de Ouro Preto, Campus Universitario\t\t\t",
