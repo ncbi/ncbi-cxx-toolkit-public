@@ -209,13 +209,14 @@ void CRequestContext::SetClientIP(const string& client)
     x_SetProp(eProp_ClientIP);
 
     // Verify IP
-    if ( !NStr::IsIPAddress(client) ) {
+    string ip = NStr::TruncateSpaces(client);
+    if ( !NStr::IsIPAddress(ip) ) {
         m_ClientIP = kBadIP;
-        ERR_POST_X(25, "Bad client IP value: " << client);
+        ERR_POST_X(25, "Bad client IP value: " << ip);
         return;
     }
 
-    m_ClientIP = client;
+    m_ClientIP = ip;
 }
 
 
