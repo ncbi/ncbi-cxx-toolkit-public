@@ -201,7 +201,8 @@ enum EGroup {
     eSmart = 8,
     eBig = 16,
     eTSA = 32,
-    eAutofix = 64
+    eFatal = 64,
+    eAutofix = 128
 };
 typedef unsigned short TGroup;
 
