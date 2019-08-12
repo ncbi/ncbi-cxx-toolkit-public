@@ -32,6 +32,7 @@
 #include <corelib/ncbi_system.hpp>
 
 #include <connect/services/netschedule_api.hpp>
+#include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/bmalgo.h>
 
 #include "job_status.hpp"
