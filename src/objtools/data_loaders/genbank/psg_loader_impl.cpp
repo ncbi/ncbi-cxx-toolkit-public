@@ -161,31 +161,40 @@ CSeq_id_Handle PsgIdToHandle(const CPSG_BioId& id)
 }
 
 
+const int kMaxCacheLifespanSeconds = 300;
+const size_t kMaxCacheSize = 10000;
+
+
 class CBioseqCache
 {
 public:
     CBioseqCache(void) {};
     ~CBioseqCache(void) {};
 
-    shared_ptr<SPsgBioseqInfo> Get(const CSeq_id_Handle& idh) const;
+    shared_ptr<SPsgBioseqInfo> Get(const CSeq_id_Handle& idh);
     shared_ptr<SPsgBioseqInfo> Add(const CPSG_BioseqInfo& info, CSeq_id_Handle req_idh);
 
 private:
     typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TIdMap;
-    typedef queue<shared_ptr<SPsgBioseqInfo> > TInfoQueue;
+    typedef list<shared_ptr<SPsgBioseqInfo> > TInfoQueue;
 
     mutable CFastMutex m_Mutex;
-    size_t m_MaxSize = 10000;
+    size_t m_MaxSize = kMaxCacheSize;
     TIdMap m_Ids;
     TInfoQueue m_Infos;
 };
 
 
-shared_ptr<SPsgBioseqInfo> CBioseqCache::Get(const CSeq_id_Handle& idh) const
+shared_ptr<SPsgBioseqInfo> CBioseqCache::Get(const CSeq_id_Handle& idh)
 {
     CFastMutexGuard guard(m_Mutex);
     auto found = m_Ids.find(idh);
-    return found != m_Ids.end() ? found->second : nullptr;
+    if (found == m_Ids.end()) return nullptr;
+    shared_ptr<SPsgBioseqInfo> ret = found->second;
+    m_Infos.remove(ret);
+    ret->deadline = CDeadline(kMaxCacheLifespanSeconds);
+    m_Infos.push_back(ret);
+    return ret;
 }
 
 
@@ -201,12 +210,12 @@ shared_ptr<SPsgBioseqInfo> CBioseqCache::Add(const CPSG_BioseqInfo& info, CSeq_i
     shared_ptr<SPsgBioseqInfo> ret = make_shared<SPsgBioseqInfo>(info);
     while (!m_Infos.empty() && (m_Infos.size() > m_MaxSize || m_Infos.front()->deadline.IsExpired())) {
         auto rm = m_Infos.front();
-        m_Infos.pop();
+        m_Infos.pop_front();
         ITERATE(SPsgBioseqInfo::TIds, id, rm->ids) {
             m_Ids.erase(*id);
         }
     }
-    m_Infos.push(ret);
+    m_Infos.push_back(ret);
     if (req_idh) {
         m_Ids[req_idh] = ret;
     }
@@ -228,7 +237,7 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info)
       state(0),
       tax_id(0),
       hash(0),
-      deadline(300, 0)
+      deadline(kMaxCacheLifespanSeconds)
 {
     if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fMoleculeType)
         molecule_type = bioseq_info.GetMoleculeType();
