@@ -421,7 +421,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgTaxIdListFile;
 NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeTaxIdListFile;
 
 
-// Mapper arguments
+// Magic-BLAST arguments
 /// Argument to specify whether mapped reads are paired
 NCBI_BLASTINPUT_EXPORT extern const string kArgPaired;
 /// Argument to specify cutoff score for accepting a spliced alignment
@@ -457,6 +457,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgMaxEditDist;
 /// Argument to specify a maximum number of times a word can be repeated in a
 /// database
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaxDbWordCount;
+/// Argument to specify printing SAN MD tag
+NCBI_BLASTINPUT_EXPORT extern const string kArgPrintMdTag;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -57,7 +57,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
                        bool print_unaligned,
                        bool no_discordant,
                        E_StrandSpecificity strand_specific,
-                       bool only_specific);
+                       bool only_specific,
+                       bool print_md_tag);
 
 CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
                                  const string& cmd_line_args);

@@ -1193,7 +1193,8 @@ public:
         m_RevFwd(false),
         m_FwdOnly(false),
         m_RevOnly(false),
-        m_OnlyStrandSpecific(false) {}
+        m_OnlyStrandSpecific(false),
+        m_PrintMdTag(false) {}
 
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
 
@@ -1228,6 +1229,9 @@ public:
     /// Specify only-strand-specific
     bool SelectOnlyStrandSpecific(void) const {return m_OnlyStrandSpecific;}
 
+    /// Should MD tag be included in SAM report
+    bool PrintMdTag(void) const {return m_PrintMdTag;}
+
 private:
     bool m_TrimReadIds;
     bool m_PrintUnaligned;
@@ -1237,6 +1241,7 @@ private:
     bool m_FwdOnly;
     bool m_RevOnly;
     bool m_OnlyStrandSpecific;
+    bool m_PrintMdTag;
 
 };
 

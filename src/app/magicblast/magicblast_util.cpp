@@ -797,6 +797,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        bool& last_secondary, bool trim_read_ids,
                        E_StrandSpecificity strand_specific,
                        bool only_specific,
+                       bool print_md_tag,
                        bool other = false,
                        const CSeq_align* mate = NULL)
 {
@@ -827,14 +828,14 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         PrintSAM(ostr, **first, queries, query_info, is_spliced,
                  batch_number, first_secondary, last_secondary,
                  trim_read_ids, strand_specific, only_specific,
-                 false,
+                 print_md_tag, false,
                  second->GetNonNullPointer());
         ostr << endl;
 
         PrintSAM(ostr, **second, queries, query_info, is_spliced,
                  batch_number, first_secondary, last_secondary,
                  trim_read_ids, strand_specific, only_specific,
-                 true,
+                 print_md_tag, true,
                  first->GetNonNullPointer());
 
         return ostr;
@@ -1244,7 +1245,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     }
 
     // FIXME: the MD tag misses long deletions
-    if (0 /*!md_tag.empty()*/) {
+    if (print_md_tag && !md_tag.empty()) {
         ostr << sep << "MD:Z:" << md_tag;
     }
 
@@ -1350,7 +1351,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
                        bool is_spliced, int batch_number,
                        bool trim_read_id, bool print_unaligned,
                        bool no_discordant, E_StrandSpecificity strand_specific,
-                       bool only_specific)
+                       bool only_specific,
+                       bool print_md_tag)
 {
     bool first_secondary = false;
     bool last_secondary = false;
@@ -1369,7 +1371,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
         for (auto it: results.GetSeqAlign()->Get()) {
             PrintSAM(ostr, *it, queries, query_info, is_spliced, batch_number,
                      first_secondary, last_secondary, trim_read_id,
-                     strand_specific, only_specific);
+                     strand_specific, only_specific, print_md_tag);
             ostr << endl;
         }
     }
@@ -1405,7 +1407,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
                        bool print_unaligned,
                        bool no_discordant,
                        E_StrandSpecificity strand_specific,
-                       bool only_specific)
+                       bool only_specific,
+                       bool print_md_tag)
 {
     TQueryMap bioseqs;
     s_CreateQueryMap(query_batch, bioseqs);
@@ -1413,7 +1416,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
     for (auto it: results) {
         PrintSAM(ostr, *it, bioseqs, query_info, is_spliced, batch_number,
                  trim_read_id, print_unaligned, no_discordant, strand_specific,
-                 only_specific);
+                 only_specific, print_md_tag);
     }
 
     return ostr;

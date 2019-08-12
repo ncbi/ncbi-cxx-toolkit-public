@@ -67,6 +67,7 @@ void* CMagicBlastThread::Main(void)
 
     const bool kPrintUnaligned = m_FormattingArgs->PrintUnaligned();
     const bool kNoDiscordant = m_FormattingArgs->NoDiscordant();
+    const bool kPrintMdTag = m_FormattingArgs->PrintMdTag();
 
     // Is either strand-specificity flag set? (mutually exclusive)
     const bool only_specific = m_FormattingArgs->SelectOnlyStrandSpecific();
@@ -203,7 +204,8 @@ void* CMagicBlastThread::Main(void)
                          kPrintUnaligned,
                          kNoDiscordant,
                          kStrandSpecific,
-                         only_specific);
+                         only_specific,
+                         kPrintMdTag);
             }
 
 

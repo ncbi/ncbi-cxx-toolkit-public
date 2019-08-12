@@ -2839,6 +2839,7 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(align_format::kArgOutputFormat,
                            new CArgAllowStringSet(allowed_formats));
 
+    arg_desc.AddFlag(kArgPrintMdTag, "Include MD tag in SAM report");
     arg_desc.AddFlag(kArgNoReadIdTrim, "Do not trim '.1', '/1', '.2', " \
                      "or '/2' at the end of read ids for SAM format and" \
                      "paired runs");
@@ -2906,6 +2907,10 @@ void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     if (args.Exist(kArgOnlyStrandSpecific) && args[kArgOnlyStrandSpecific]) {
         m_OnlyStrandSpecific = true;
+    }
+
+    if (args.Exist(kArgPrintMdTag) && args[kArgPrintMdTag]) {
+        m_PrintMdTag = true;
     }
 
    // only the fast tabular format is able to show merged HSPs with

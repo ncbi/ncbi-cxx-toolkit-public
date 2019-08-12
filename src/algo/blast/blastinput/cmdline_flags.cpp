@@ -261,6 +261,7 @@ const string kArgNoUnaligned("no_unaligned");
 const string kArgEnableSraCache("sra_cache");
 const string kArgMaxEditDist("max_edit_dist");
 const string kArgMaxDbWordCount("max_db_word_count");
+const string kArgPrintMdTag("md_tag");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
