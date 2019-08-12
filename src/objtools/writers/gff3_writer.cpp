@@ -1960,7 +1960,7 @@ bool CGff3Writer::xAssignFeatureAttributeID(
     //  ----------------------------------------------------------------------------
 {
     auto rawId = m_idGenerator.GetGffId(mf, &fc.FeatTree());
-    record.SetRecordId(CWriteUtil::UrlEncode(rawId));
+    record.SetRecordId(rawId);
     return true;
 }
 
@@ -2723,7 +2723,7 @@ bool CGff3Writer::xWriteRecord(
             "    SeqStop : " + record.StrSeqStop() + "\n"
             "    Gff3Type: " + record.StrType() + "\n\n");    
     }
-    m_Os << id << '\t';
+    m_Os << id  << '\t';
     m_Os << record.StrMethod() << '\t';
     m_Os << record.StrType() << '\t';
     m_Os << record.StrSeqStart() << '\t';

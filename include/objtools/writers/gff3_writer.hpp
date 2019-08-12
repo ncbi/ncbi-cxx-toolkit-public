@@ -111,14 +111,14 @@ public:
 
         if (!mRecordId.empty()) {
             attributes += "ID=";
-            attributes += mRecordId;
+            attributes += xEscapedString(mRecordId);
         }
         if (!mParent.empty()) {
             if (!attributes.empty()) {
                 attributes += ATTR_SEPARATOR;
             }
             attributes += "Parent=";
-            attributes += mParent;
+            attributes += xEscapedString(mParent);
         }
         auto baseAttributes = CGffBaseRecord::StrAttributes();
         if (!baseAttributes.empty()) {
