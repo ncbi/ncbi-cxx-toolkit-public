@@ -760,6 +760,9 @@ string CPubseqGatewayApp::x_GetCmdLineArguments(void) const
 }
 
 
+static string   kNcbiSidHeader = "HTTP_NCBI_SID";
+static string   kNcbiPhidHeader = "HTTP_NCBI_PHID";
+static string   kXForwardedForHeader = "X-Forwarded-For";
 CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
                                                 HST::CHttpRequest &  req) const
 {
@@ -769,27 +772,40 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
         context->SetRequestID();
 
         // NCBI SID may come from the header
-        string      sid = req.GetHeaderValue("HTTP_NCBI_SID");
+        string      sid = req.GetHeaderValue(kNcbiSidHeader);
         if (!sid.empty())
             context->SetSessionID(sid);
         else
             context->SetSessionID();
 
         // NCBI PHID may come from the header
-        string      phid = req.GetHeaderValue("HTTP_NCBI_PHID");
+        string      phid = req.GetHeaderValue(kNcbiPhidHeader);
         if (!phid.empty())
             context->SetHitID(phid);
         else
             context->SetHitID();
 
         // Client IP may come from the headers
-        TNCBI_IPv6Addr  client_address = req.GetClientIP();
-        if (!NcbiIsEmptyIPv6(&client_address)) {
-            char        buf[256];
-            if (NcbiIPv6ToString(buf, sizeof(buf), &client_address) != 0) {
-                context->SetClientIP(buf);
+        string      client_ip = req.GetHeaderValue(kXForwardedForHeader);
+        if (!client_ip.empty()) {
+            vector<string>      ip_addrs;
+            NStr::Split(client_ip, ",", ip_addrs);
+            if (!ip_addrs.empty()) {
+                // Take the first one, there could be many...
+                context->SetClientIP(ip_addrs[0]);
             }
         }
+
+        // It was decided not to use the standard C++ Toolkit function because
+        // it searches in the CGI environment and does quite a bit of
+        // unnecessary things. The PSG server only needs X-Forwarded-For
+        // TNCBI_IPv6Addr  client_address = req.GetClientIP();
+        // if (!NcbiIsEmptyIPv6(&client_address)) {
+        //     char        buf[256];
+        //     if (NcbiIPv6ToString(buf, sizeof(buf), &client_address) != 0) {
+        //         context->SetClientIP(buf);
+        //     }
+        // }
 
         CDiagContext::SetRequestContext(context);
         CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
