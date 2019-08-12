@@ -273,10 +273,10 @@ public:
     NCBI_DEPRECATED
     void PurgeCache(TCacheType            cache_type,
                     time_t                access_timeout,
-                    ICache::EKeepVersions)
+                    ICache::EKeepVersions) override
         { PurgeCache(cache_type, access_timeout); }
     void PurgeCache(TCacheType            cache_type,
-                    time_t                access_timeout = 0);
+                    time_t                access_timeout = 0) override;
     void CloseCache(void);
 
     virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
