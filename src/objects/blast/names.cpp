@@ -285,6 +285,12 @@ CBlast4Field & CBlast4Field::Get(EBlastOptIdx opt)
         case eBlastOpt_UseRealDbSize:
             m_Fields[opt] = CBlast4Field("UseRealDbSize",         CBlast4_value::e_Boolean);
             break;
+        case eBlastOpt_TaxidList:
+            m_Fields[opt] = CBlast4Field("TaxidList",             CBlast4_value::e_Integer_list);
+            break;
+        case eBlastOpt_NegativeTaxidList:
+            m_Fields[opt] = CBlast4Field("NegativeTaxidList",     CBlast4_value::e_Integer_list);
+            break;
 
 // List of web-related options
         case eBlastOpt_Web_BlastSpecialPage:

@@ -164,10 +164,17 @@ public:
         return *m_OptionsBuilder.get();
     }
 
+    // Get Tax IDs for filterting, set size 0 if no tax id found
+    set<int> GetTaxidList();
+
+    // Get Negative Tax IDs for filterting, set size 0 if no negative tax id found
+    set<int> GetNegativeTaxidList();
+
 private:
     /// Fills in CImportStrategyData and m_OptionsBuilder
     void FetchData();
 
+   void  x_GetProgramOptionIntegerList(EBlastOptIdx idx, list<int> & list);
     auto_ptr<CImportStrategyData> m_Data;
     CRef<objects::CBlast4_request> m_Request;
     string m_Service;

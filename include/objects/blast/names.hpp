@@ -139,6 +139,9 @@ enum EBlastOptIdx {
     eBlastOpt_RequiredEnd,
     eBlastOpt_RequiredStart,
     eBlastOpt_UseRealDbSize,
+    eBlastOpt_TaxidList,
+    eBlastOpt_NegativeTaxidList,
+
     eBlastOpt_Web_BlastSpecialPage,
     eBlastOpt_Web_EntrezQuery,
     eBlastOpt_Web_JobTitle,

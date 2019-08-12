@@ -126,6 +126,7 @@ public:
     /// Returns true if this is not a database but is database scanning mode
     bool IsDbScanMode() const { return m_DbScanMode; }
 
+    CRef<CSearchDatabase> GetSearchDatabase() {return m_DbInfo;}
 private:
     /// Pointer to the BlastSeqSrc this object owns and manages
     BlastSeqSrc* m_SeqSrc;

@@ -58,20 +58,17 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
-
-
-
 /// Returns a blast archive object.
 /// @param queries factory to provide queries
 /// @param options_handle BLAST options
 /// @param results set of BLAST results
-/// @param dbname name of the database
+/// @param CSearchDatabase  search database
 /// @param num_iters psi iteration number
 NCBI_XBLASTFORMAT_EXPORT
-CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries, 
+CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries,
                           blast::CBlastOptionsHandle& options_handle,
                           const CSearchResultSet& results,
-                          const string& dbname,
+                          CRef<CSearchDatabase> search_db,
                           unsigned int num_iters = 0);
 
 /// Returns a blast archive object.
@@ -89,13 +86,13 @@ CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries,
 /// @param queries factory to provide queries
 /// @param options_handle BLAST options
 /// @param results set of BLAST results
-/// @param dbname name of the database
+/// @param CSearchDatabase  search database
 /// @param num_iters psi iteration number
 NCBI_XBLASTFORMAT_EXPORT
 CRef<objects::CBlast4_archive> BlastBuildArchive(objects::CPssmWithParameters & pssm,
                   	  	  	  	  	  	  	     blast::CBlastOptionsHandle& options_handle,
                   	  	  	  	  	  	  	     const CSearchResultSet& results,
-                  	  	  	  	  	  	  	     const string& dbname,
+                  	  	  	  	  	  	  	     CRef<CSearchDatabase>  search_db,
                   	  	  	  	  	  	  	     unsigned int num_iters = 0);
 
 END_SCOPE(blast)

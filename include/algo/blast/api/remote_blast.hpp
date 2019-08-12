@@ -487,6 +487,9 @@ public:
 
     bool IsErrMsgArchive(void);
 
+    set<int> & GetTaxidList() { return m_TaxidList; };
+    set<int> & GetNegativeTaxidList() { return m_NegativeTaxidList; };
+
 private:
 
     bool x_HasRetrievedSubjects() const {
@@ -836,6 +839,8 @@ private:
     bool m_disk_cache_error_flag;
     /// disk cache error message
     string m_disk_cache_error_msg;
+    set<int> m_TaxidList;
+    set<int> m_NegativeTaxidList;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the

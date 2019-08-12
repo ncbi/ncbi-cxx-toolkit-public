@@ -282,6 +282,18 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
         CRef<CSearchDatabase> search_db(new CSearchDatabase(db->GetName(), db->IsProtein()
                               ? CSearchDatabase::eBlastDbIsProtein
                               : CSearchDatabase::eBlastDbIsNucleotide));
+
+        if(m_RmtBlast->GetTaxidList().size() > 0) {
+        	 CSeqDBGiList *gilist = new CSeqDBGiList();
+        	 gilist->AddTaxIds(m_RmtBlast->GetTaxidList());
+        	 search_db->SetGiList(gilist);
+        }
+
+        if(m_RmtBlast->GetNegativeTaxidList().size() > 0) {
+        	 CSeqDBGiList *gilist = new CSeqDBGiList();
+        	 gilist->AddTaxIds(m_RmtBlast->GetTaxidList());
+        	 search_db->SetNegativeGiList(gilist);
+        }
         db_args->SetSearchDatabase(search_db);
     }
     else

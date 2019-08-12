@@ -156,20 +156,11 @@ CRef<objects::CBlast4_archive>
 BlastBuildArchive(blast::IQueryFactory& queries,
                      blast::CBlastOptionsHandle& options_handle,
                      const CSearchResultSet& results,
-                     const string& dbname,
+                     CRef<CSearchDatabase>  search_db,
                      unsigned int num_iters)
 {
-        CSearchDatabase::EMoleculeType mol_type = CSearchDatabase::eBlastDbIsNucleotide;
-        if (Blast_SubjectIsNucleotide(options_handle.GetOptions().GetProgramType()))
-        	mol_type = CSearchDatabase::eBlastDbIsNucleotide;
-	else
-        	mol_type = CSearchDatabase::eBlastDbIsProtein;
-
-       	CSearchDatabase db(dbname, mol_type);
-
         CRef<blast::IQueryFactory> iquery_ref(&queries);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
-        CRef<blast::CSearchDatabase> search_db(&db);
        	CRef<CExportStrategy> export_strategy;
         if(num_iters != 0)
         	export_strategy.Reset(new CExportStrategy(iquery_ref, options_ref, search_db, kEmptyStr, num_iters));
@@ -199,20 +190,18 @@ CRef<objects::CBlast4_archive>
 BlastBuildArchive(objects::CPssmWithParameters & pssm,
                   blast::CBlastOptionsHandle& options_handle,
                   const CSearchResultSet& results,
-                  const string& dbname,
+                  CRef<CSearchDatabase>  search_db,
                   unsigned int num_iters)
 {
-       	CSearchDatabase db(dbname, CSearchDatabase::eBlastDbIsProtein);
-
         CRef<objects::CPssmWithParameters> pssm_ref(&pssm);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
-        CRef<blast::CSearchDatabase> search_db(&db);
         CRef<CExportStrategy> export_strategy(new CExportStrategy(pssm_ref, options_ref, search_db, kEmptyStr, num_iters));
 
         CRef<objects::CBlast4_archive> archive = s_BuildArchiveAll(export_strategy, options_handle, results);
         return archive;
 
 }
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

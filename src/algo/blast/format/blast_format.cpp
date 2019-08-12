@@ -123,6 +123,9 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (m_IsBl2Seq) {
         m_SeqInfoSrc.Reset(db_adapter.MakeSeqInfoSrc());
     }
+    else {
+    	m_SearchDb = db_adapter.GetSearchDatabase();
+    }
     if(m_IsDbScan) {
 	int num_seqs=0;
         int total_length=0;
@@ -1064,10 +1067,12 @@ CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
     else
     {
     	// Use only by psi blast
-    	if(num_iters != 0)
-    		archive = BlastBuildArchive(queries, options_handle, results,  m_DbName, num_iters);
-    	else
-    		archive = BlastBuildArchive(queries, options_handle, results,  m_DbName);
+    	if(num_iters != 0) {
+    		archive = BlastBuildArchive(queries, options_handle, results, m_SearchDb , num_iters);
+    	}
+    	else {
+    		archive = BlastBuildArchive(queries, options_handle, results, m_SearchDb );
+    	}
     }
 
     if(msg.size() > 0) {
@@ -1083,7 +1088,7 @@ CBlastFormat::WriteArchive(objects::CPssmWithParameters & pssm,
                            unsigned int num_iters,
                            const list<CRef<CBlast4_error> > & msg)
 {
-    CRef<objects::CBlast4_archive> archive(BlastBuildArchive(pssm, options_handle, results,  m_DbName, num_iters));
+    CRef<objects::CBlast4_archive> archive(BlastBuildArchive(pssm, options_handle, results,  m_SearchDb, num_iters));
 
     if(msg.size() > 0) {
     	archive->SetMessages() = msg;

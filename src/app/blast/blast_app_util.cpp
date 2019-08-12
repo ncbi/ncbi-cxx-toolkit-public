@@ -193,9 +193,6 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             Blast_SubjectIsProtein(opts_hndl->GetOptions().GetProgramType())
 			? true : false;
         SDataLoaderConfig config(is_protein);
-        if (search_db.NotEmpty() && search_db->GetDatabaseName() != "n/a") {
-            config.m_BlastDbName = search_db->GetDatabaseName();
-        }
         CBlastScopeSource scope_src(config);
         // configure scope to fetch sequences remotely for formatting
         if (scope.NotEmpty()) {
@@ -477,12 +474,34 @@ s_ImportDatabase(const CBlast4_subject& subj,
         }
     }
 
-    if (opts_builder.HaveGiList()) {
+    if (opts_builder.HaveGiList() || opts_builder.HaveTaxidList()) {
         CSeqDBGiList *gilist = new CSeqDBGiList();
-        ITERATE(list<TGi>, gi, opts_builder.GetGiList()) {
-            gilist->AddGi(*gi);
+        if (opts_builder.HaveGiList()) {
+        	ITERATE(list<TGi>, gi, opts_builder.GetGiList()) {
+        		gilist->AddGi(*gi);
+        	}
+        }
+        if (opts_builder.HaveTaxidList()) {
+        	list<int>  list = opts_builder.GetTaxidList();
+           	set<int> taxids(list.begin(), list.end());
+        	gilist->AddTaxIds(taxids);
         }
         search_db->SetGiList(gilist);
+    }
+
+    if (opts_builder.HaveNegativeGiList() || opts_builder.HaveNegativeTaxidList()) {
+    	CSeqDBGiList *gilist = new CSeqDBGiList();
+        if (opts_builder.HaveNegativeGiList()) {
+          	ITERATE(list<TGi>, gi, opts_builder.GetNegativeGiList()) {
+      		gilist->AddGi(*gi);
+       	    }
+        }
+        if (opts_builder.HaveNegativeTaxidList()) {
+        	list<int>  list = opts_builder.GetNegativeTaxidList();
+           	set<int> taxids(list.begin(), list.end());
+           	gilist->AddTaxIds(taxids);
+        }
+        search_db->SetNegativeGiList(gilist);
     }
 
     if (opts_builder.HasDbFilteringAlgorithmKey()) {

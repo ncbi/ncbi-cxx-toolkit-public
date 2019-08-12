@@ -367,6 +367,8 @@ private:
     /// internal representation of database information
     vector<CBlastFormatUtil::SDbInfo> m_DbInfo;
 
+    CRef<blast::CSearchDatabase> m_SearchDb;
+
     /// Queries are required for XML format only
     CRef<blast::CBlastQueryVector> m_AccumulatedQueries;
     /// Accumulated results to display in XML format 

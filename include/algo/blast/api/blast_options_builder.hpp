@@ -122,6 +122,18 @@ public:
     /// Get the negative GI list.
     list<TGi> GetNegativeGiList();
 
+    // Check whether a Tax id list is specified.
+    bool HaveTaxidList();
+
+    /// Get the Tax list.
+    list<int> GetTaxidList();
+
+    /// Check whether a negative tax id list is specified.
+    bool HaveNegativeTaxidList();
+
+    /// Get the negative tax id list.
+    list<int> GetNegativeTaxidList();
+
     /// Check whether a database filtering algorithm ID is specified
     bool HasDbFilteringAlgorithmId();
     /// Get the database filtering algorithm ID
@@ -314,6 +326,12 @@ private:
     bool m_ForceMbIndex;
     /// Which megablast BLAST DB index name to load
     string m_MbIndexName;
+
+    /// The tax id list (or none).
+    SOptional< list<int> > m_TaxidList;
+
+    /// The negative tax id list (or none).
+    SOptional< list<int> > m_NegativeTaxidList;
 };
 
 END_SCOPE(blast)

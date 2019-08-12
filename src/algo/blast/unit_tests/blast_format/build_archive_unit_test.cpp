@@ -81,11 +81,12 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithDB)
     CBlastNucleotideOptionsHandle nucl_opts(CBlastOptions::eBoth);
     Int8 effective_search_space = nucl_opts.GetEffectiveSearchSpace();
 
+    CRef<CSearchDatabase> search_db(new CSearchDatabase("nt", CSearchDatabase::eBlastDbIsNucleotide));
     CRef<objects::CBlast4_archive> archive = 
 		BlastBuildArchive(*query_factory,
 				nucl_opts,
 				*(rb.GetResultSet()),
-				"nr");
+				search_db);
    
     BOOST_REQUIRE(effective_search_space == nucl_opts.GetEffectiveSearchSpace());
 
@@ -95,7 +96,7 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithDB)
     
     BOOST_REQUIRE(queue_search.GetService() == "megablast");
     BOOST_REQUIRE(queue_search.GetProgram() == "blastn");
-    BOOST_REQUIRE(queue_search.GetSubject().GetDatabase() == "nr");
+    BOOST_REQUIRE(queue_search.GetSubject().GetDatabase() == "nt");
 
     const CBlast4_get_search_results_reply& reply = archive->GetResults();
 
@@ -132,6 +133,57 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithBl2seq)
     BOOST_REQUIRE(queue_search.GetService() == "megablast");
     BOOST_REQUIRE(queue_search.GetProgram() == "blastn");
     BOOST_REQUIRE(queue_search.GetSubject().IsSequences() == true);
+
+    const CBlast4_get_search_results_reply& reply = archive->GetResults();
+
+    BOOST_REQUIRE(reply.CanGetAlignments() == true);
+
+}
+
+BOOST_AUTO_TEST_CASE(BuildArchiveWithTaxidList)
+{
+    // First read in the data to use.
+    const char* fname = "data/archive.asn";
+    ifstream in(fname);
+    CRemoteBlast rb(in);
+
+    rb.LoadFromArchive();
+
+    CRef<objects::CBlast4_queries> queries = rb.GetQueries();
+
+    CConstRef<objects::CBioseq_set> bss_ref(&(queries->SetBioseq_set()));
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bss_ref));
+
+    CBlastNucleotideOptionsHandle nucl_opts(CBlastOptions::eBoth);
+    Int8 effective_search_space = nucl_opts.GetEffectiveSearchSpace();
+
+    CRef<CSearchDatabase> search_db(new CSearchDatabase("nt", CSearchDatabase::eBlastDbIsNucleotide));
+    CRef<CSeqDBGiList> gilist(new CSeqDBGiList());
+    set<int> taxids;
+    taxids.insert(9606);
+    taxids.insert(9479);
+    gilist->AddTaxIds(taxids);
+    search_db->SetGiList(gilist.GetPointer());
+    CRef<objects::CBlast4_archive> archive =
+		BlastBuildArchive(*query_factory,
+				nucl_opts,
+				*(rb.GetResultSet()),
+				search_db);
+
+    BOOST_REQUIRE(effective_search_space == nucl_opts.GetEffectiveSearchSpace());
+
+    const CBlast4_request& request = archive->GetRequest();
+    const CBlast4_request_body& body = request.GetBody();
+    const CBlast4_queue_search_request& queue_search = body.GetQueue_search();
+
+    BOOST_REQUIRE(queue_search.GetService() == "megablast");
+    BOOST_REQUIRE(queue_search.GetProgram() == "blastn");
+    BOOST_REQUIRE(queue_search.GetSubject().GetDatabase() == "nt");
+    CRef<CBlast4_parameter> b4_param = queue_search.GetProgram_options().GetParamByName(CBlast4Field::GetName(eBlastOpt_TaxidList));
+    const list<int> id_list = b4_param->GetValue().GetInteger_list();
+    BOOST_REQUIRE(id_list.size() == 2);
+    BOOST_REQUIRE(id_list.front() == 9479);
+    BOOST_REQUIRE(id_list.back() == 9606);
 
     const CBlast4_get_search_results_reply& reply = archive->GetResults();
 

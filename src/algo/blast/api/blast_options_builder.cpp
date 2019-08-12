@@ -394,6 +394,9 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
 	    #else
             m_NegativeGiList = v.GetInteger_list();
 	    #endif
+        }
+        else if (CBlast4Field::Get(eBlastOpt_NegativeTaxidList).Match(p)) {
+    		m_NegativeTaxidList = v.GetInteger_list();
         } else {
             found = false;
         }
@@ -462,6 +465,13 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         }
         break;
         
+    case 'T':
+    	if (CBlast4Field::Get(eBlastOpt_TaxidList).Match(p)) {
+    		m_TaxidList = v.GetInteger_list();
+    	} else {
+    		found = false;
+    	}
+    	break;
     case 'U':
         if (CBlast4Field::Get(eBlastOpt_GappedMode).Match(p)) {
             // Notes: (1) this is the inverse of the corresponding
@@ -757,6 +767,27 @@ void CBlastOptionsBuilder::SetIgnoreUnsupportedOptions(bool ignore)
 {
     m_IgnoreUnsupportedOptions = ignore;
 }
+
+bool CBlastOptionsBuilder::HaveTaxidList()
+{
+	return m_TaxidList.Have();
+}
+
+list<int> CBlastOptionsBuilder::GetTaxidList()
+{
+	return m_TaxidList.Get();
+}
+
+bool CBlastOptionsBuilder::HaveNegativeTaxidList()
+{
+	return m_NegativeTaxidList.Have();
+}
+
+list<int> CBlastOptionsBuilder::GetNegativeTaxidList()
+{
+ return m_NegativeTaxidList.Get();
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -2036,6 +2036,18 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
             m_GiList = bob.GetGiList();
         }
 
+        if(bob.HaveTaxidList()){
+        	list<int> list = bob.GetTaxidList();
+        	m_TaxidList.clear();
+        	m_TaxidList.insert(list.begin(), list.end());
+        }
+
+        if(bob.HaveNegativeTaxidList()){
+        	list<int> list = bob.GetNegativeTaxidList();
+        	m_NegativeTaxidList.clear();
+        	m_NegativeTaxidList.insert(list.begin(), list.end());
+        }
+
         if (bob.HasDbFilteringAlgorithmId() &&
             bob.GetDbFilteringAlgorithmId() != -1) {
             m_DbFilteringAlgorithmId = bob.GetDbFilteringAlgorithmId();
