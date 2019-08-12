@@ -93,27 +93,6 @@ bool SeqIdHasMatchInBioseq(const CRef< CSeq_id>& id, const CBioseq& bioseq)
     return result;
 }
 
-//  In the few places this is used, replace it with a simple
-//  CRef< CSeq_id > x(seqId)
-//  https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/ident?i=CopySeqId
-//  (the CDTree version isn't even used...)
-CRef< CSeq_id > CopySeqId(const CRef< CSeq_id >& seqId)
-{
-	CRef< CSeq_id > seqIdCopy(new CSeq_id());
-	if (seqId->IsPdb())
-	{
-		seqIdCopy->Reset();
-		seqIdCopy->SetPdb().SetMol(seqId->GetPdb().GetMol());
-		if (seqId->GetPdb().IsSetChain())
-			seqIdCopy->SetPdb().SetChain(seqId->GetPdb().GetChain());
-		if (seqId->GetPdb().IsSetRel())
-			seqIdCopy->SetPdb().SetRel(const_cast <CDate&> (seqId->GetPdb().GetRel()));
-	}
-	else
-		seqIdCopy->Assign(*seqId);
-	return seqIdCopy;
-}
-
 //   Return 0 if Seq_id is not of proper type (e_General and database 'CDD')
 int  GetCDDPssmIdFromSeqId(const CRef< CSeq_id >& id) {
     int pssmId = 0;
@@ -614,8 +593,13 @@ bool ExtractPdbMolChain(const CRef<CBioseq>& bioseq, string& pdbMol, string& pdb
     pdbChain = "";
     if (CopyPdbSeqId(bioseq, pdbSeqId, nth)) {
         pdbMol = pdbSeqId->GetPdb().GetMol().Get();
+#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+        if (pdbSeqId->GetPdb().IsSetChain_id_unified()) {
+            pdbChain = pdbSeqId->GetPdb().GetChain_id_unified();
+#else            
         if (pdbSeqId->GetPdb().IsSetChain()) {
             pdbChain = string(1, pdbSeqId->GetPdb().GetChain());
+#endif            
         }
         result = true;
     }
@@ -886,7 +870,11 @@ void GetAccessionAndDatabaseSource(const CRef< CSeq_id >& seqID, string& accessi
 	} 
     else if (seqID->IsPdb()) {
 		const CPDB_seq_id& pPDB_ID = seqID->GetPdb();
+#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+        accession =  pPDB_ID.GetMol().Get() + " " + pPDB_ID.GetChain_id_unified();
+#else
         accession =  pPDB_ID.GetMol().Get() + " " + (char) pPDB_ID.GetChain();
+#endif
 	}
 	else if (seqID->IsLocal()) {
 		const CObject_id& pLocal = seqID->GetLocal();

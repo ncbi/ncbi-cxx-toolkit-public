@@ -164,7 +164,17 @@ public:
 	bool   GetRowsWithMmdbId(vector<int>& rows) const;     // find all rows with a mmdbid
     bool   GetMmdbId(int SeqIndex, int& id) const;         // get mmdb-id from sequence list
 
-    /*  CD alignment methods  */
+
+    //  If the master is a structure, fill in the master3d field with its PDB SeqId.
+    //  Return true if the field is populated at exit (whether or not it was correctly set
+    //  to begin with), or false if master is not a structure or otherwise failed.
+    //  If checkRow1WhenConsensusMaster is true and the master is a consensus sequence,
+    //  then synchronize master3d based on row 1, as above; otherwise, master3d is always emptied.
+    //  ***  NOTE:  this method *always* resets master3d first.  So, when false is returned,
+    //  master3d will be empty.
+    bool   SynchronizeMaster3D(bool checkRow1WhenConsensusMaster = true);
+
+/*  CD alignment methods  */
 
     //  Returns coordinate on 'otherRow' that is mapped to 'thisPos' on 'thisRow'.
     //  Returns INVALID_MAPPED_POSITION on failure.

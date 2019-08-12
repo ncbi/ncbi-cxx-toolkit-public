@@ -1167,6 +1167,33 @@ void CCdCore::Clear()
 /*  Methods for structures, structure alignments, MMDB identifiers  */
 /* ================================================================ */
 
+bool CCdCore::SynchronizeMaster3D(bool checkRow1WhenConsensusMaster)
+{
+    bool result = false;
+    CRef< CSeq_id > masterPdbId(new CSeq_id);
+
+    ResetMaster3d();
+    if (Has3DMaster()) {
+
+        //  this should *always* be true but just in case...) {
+        if (GetSeqIDForRow(0, 0, masterPdbId) && masterPdbId->IsPdb()) {
+            SetMaster3d().push_back(masterPdbId);
+            result = true;
+        }
+
+    } else if (checkRow1WhenConsensusMaster && UsesConsensusSequenceAsMaster()) {
+
+        //  If the first row is a structure, then this will be the master3d entry
+        //  after the consensus has been removed.
+        if (GetSeqIDForRow(0, 1, masterPdbId) && masterPdbId->IsPdb()) {
+            SetMaster3d().push_back(masterPdbId);
+            result = true;
+        }
+    }
+
+    return result;
+}
+
 bool CCdCore::Has3DMaster() const {
 //-------------------------------------------------------------------------
 // confirm if this CD has a structure as its master
