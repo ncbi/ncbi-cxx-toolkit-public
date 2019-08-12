@@ -190,7 +190,7 @@ public:
     size_t capacity() const { return capacity_; }
 
     /// adjust current size (buffer content preserved)
-    void resize(size_t new_size)
+    void resize(size_t new_size, bool copy_content = true)
     {
         if (new_size <= capacity_)
         {
@@ -198,7 +198,8 @@ public:
             return;
         }
         byte_buffer tmp_buffer(new_size); // temp with new capacity
-        tmp_buffer = *this;
+        if (copy_content)
+            tmp_buffer = *this;
         this->swap(tmp_buffer);
         
         this->size_ = new_size;
@@ -336,10 +337,8 @@ public:
             unsigned char *p = data + (i * v_size);
             new(p) value_type(hv[i]);
         }
-
         return *this;
     }
-
    
     ~heap_vector()
     {
@@ -352,6 +351,8 @@ public:
             reinterpret_cast<value_type*>(p)->~Val();
         }
     }
+    
+    value_type* data() { return (value_type*) buffer_.data(); }
 
     void swap(heap_vector<Val, BVAlloc>& other) BMNOEXEPT
     {
@@ -360,6 +361,7 @@ public:
 
     const value_type& operator[](std::size_t pos) const
     {
+        BM_ASSERT(pos < size());
         size_type v_size = value_size();
         const unsigned char *p = buffer_.buf() + (pos * v_size);
         return *reinterpret_cast<const value_type*>(p);
@@ -367,6 +369,7 @@ public:
 
     value_type& operator[](std::size_t pos)
     {
+        BM_ASSERT(pos < size());
         size_type v_size = value_size();
         unsigned char *p = buffer_.data() + (pos * v_size);
         return *reinterpret_cast<value_type*>(p);
@@ -382,7 +385,11 @@ public:
         unsigned char *p = buffer_.data() + (pos * v_size);
         return *reinterpret_cast<value_type*>(p);
     }
-
+    
+    const value_type* begin() const
+    {
+        return (const value_type*) buffer_.buf();
+    }
 
     size_type size() const
     {
@@ -438,12 +445,6 @@ public:
 
     value_type& add()
     {
-/*
-        size_type old_size = buffer_.size();
-        size_type v_size = value_size();
-        
-        buffer_.resize(old_size + v_size);
-*/
         size_type v_size = value_size();
         size_type sz = size();
         resize_internal(sz + 1);
@@ -454,11 +455,6 @@ public:
 
     void push_back(const value_type& v)
     {
-        /*
-        size_type old_size = buffer_.size();
-        size_type v_size = value_size();
-        buffer_.resize(old_size + v_size);
-        */
         size_type v_size = value_size();
         size_type sz = size();
         resize_internal(sz + 1);
@@ -480,20 +476,6 @@ protected:
     static size_type value_size()
     {
         size_type size_of = sizeof(value_type);
-        /*
-        #if defined(BM_ALLOC_ALIGN)
-        size_type align = BM_ALLOC_ALIGN;
-        #else
-        size_type align = 4;
-        #endif
-
-        size_type size_of = sizeof(value_type);
-        if (size_of % align)
-        {
-            size_of += size_of % align;
-        }
-        BM_ASSERT(size_of % align == 0);
-        */
         return size_of;
     }
 
@@ -518,14 +500,14 @@ protected:
 
     @internal
 */
-template<typename Val, unsigned ROWS, unsigned COLS, typename BVAlloc>
+template<typename Val, size_t ROWS, size_t COLS, typename BVAlloc>
 class heap_matrix
 {
 public:
     typedef BVAlloc                                          bv_allocator_type;
     typedef bm::byte_buffer<bv_allocator_type>               buffer_type;
     typedef Val                                              value_type;
-    typedef unsigned                                         size_type;
+    typedef size_t                                           size_type;
 
     enum params
     {
@@ -535,8 +517,8 @@ public:
         row_size_in_bytes = sizeof(value_type) * COLS
     };
 
-    static unsigned rows() { return ROWS; }
-    static unsigned cols() { return COLS; }
+    static size_t rows() { return ROWS; }
+    static size_t cols() { return COLS; }
 
     /**
         By default object is constructed NOT allocated.
@@ -545,10 +527,13 @@ public:
         : buffer_()
     {}
 
-    heap_matrix(bool init_in)
-        : buffer_(init_in ? size_in_bytes : 0)
+    /**
+        @param init_buf - when true - perform heap buffer allocation
+    */
+    heap_matrix(bool init_buf)
+        : buffer_(init_buf ? size_in_bytes : 0)
     {
-        if (init_in)
+        if (init_buf)
             buffer_.resize(size_in_bytes);
     }
 
@@ -559,8 +544,13 @@ public:
     {
         buffer_.resize(size_in_bytes);
     }
+    
+    bool is_init() const
+    {
+        return buffer_.size();
+    }
 
-    value_type get(unsigned row_idx, unsigned col_idx) const
+    value_type get(size_t row_idx, size_t col_idx) const
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(col_idx < COLS);
@@ -569,7 +559,7 @@ public:
         return ((const value_type*)buf)[col_idx];
     }
 
-    const value_type* row(unsigned row_idx) const
+    const value_type* row(size_t row_idx) const
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(buffer_.size());
@@ -577,7 +567,7 @@ public:
         return (const value_type*) buf;
     }
 
-    value_type* row(unsigned row_idx)
+    value_type* row(size_t row_idx)
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(buffer_.size());
@@ -616,7 +606,7 @@ public:
     template<typename VECT_TYPE>
     void remap(VECT_TYPE* vect, size_type size) const
     {
-        BM_ASSERT(size < ROWS);
+        BM_ASSERT(size <= ROWS);
         const unsigned char* buf = buffer_.buf();
         for (size_type i = 0; i < size; ++i)
         {
@@ -627,10 +617,140 @@ public:
             vect[i] = VECT_TYPE(remap_v);
         } // for i
     }
+    
+    /*! zero-terminated remap: vect[idx] = matrix[idx, vect[idx] ]
+    */
+    template<typename VECT_TYPE>
+    void remapz(VECT_TYPE* vect) const
+    {
+        const unsigned char* buf = buffer_.buf();
+        for (size_type i = 0; i < ROWS; ++i)
+        {
+            const value_type* this_row = buf + i * row_size_in_bytes;
+            VECT_TYPE v0 = vect[i];
+            if (!v0)
+                break;
+            BM_ASSERT(size_type(v0) < COLS);
+            value_type remap_v = this_row[unsigned(v0)];
+            vect[i] = VECT_TYPE(remap_v);
+        } // for i
+    }
 
 protected:
     buffer_type     buffer_;
 };
+
+
+
+/**
+    Heap allocated dynamic resizable scalar-type matrix
+
+    @internal
+*/
+template<typename Val, typename BVAlloc>
+class dynamic_heap_matrix
+{
+public:
+    typedef BVAlloc                                          bv_allocator_type;
+    typedef bm::byte_buffer<bv_allocator_type>               buffer_type;
+    typedef Val                                              value_type;
+    typedef size_t                                           size_type;
+
+public:
+
+    /**
+        By default object is constructed but NOT allocated.
+    */
+    dynamic_heap_matrix(size_type rows=0, size_type cols=0)
+        : rows_(rows), cols_(cols),
+        buffer_()
+    {}
+
+
+    /**
+        Post construction allocation, initialization
+    */
+    void init()
+    {
+        buffer_.resize(size_in_bytes());
+    }
+
+    size_type rows() const { return rows_; }
+    size_type cols() const { return cols_; }
+
+    void resize(size_type rows, size_type cols)
+    {
+        rows_ = rows; cols_ = cols;
+        buffer_.resize(size_in_bytes());
+    }
+    
+    bool is_init() const
+    {
+        return buffer_.size();
+    }
+
+    const value_type* row(size_type row_idx) const
+    {
+        BM_ASSERT(row_idx < rows_);
+        BM_ASSERT(buffer_.size());
+        const unsigned char* buf = buffer_.buf() + row_idx * row_size_in_bytes();
+        return (const value_type*) buf;
+    }
+
+    value_type* row(size_type row_idx)
+    {
+        BM_ASSERT(row_idx < rows_);
+        BM_ASSERT(buffer_.size());
+
+        unsigned char* buf = buffer_.data() + row_idx * row_size_in_bytes();
+        return (value_type*)buf;
+    }
+
+    /** memset all buffer to all zeroes */
+    void set_zero()
+    {
+        ::memset(buffer_.data(), 0, size_in_bytes());
+    }
+    
+    /*!  swap content
+    */
+    void swap(dynamic_heap_matrix& other) BMNOEXEPT
+    {
+        bm::xor_swap(rows_, other.rows_);
+        bm::xor_swap(cols_, other.cols_);
+        buffer_.swap(other.buffer_);
+    }
+    
+    /*!  move content from another matrix
+    */
+    void move_from(dynamic_heap_matrix& other) BMNOEXEPT
+    {
+        rows_ = other.rows_;
+        cols_ = other.cols_;
+        buffer_.move_from(other.buffer_);
+    }
+
+    /** Get low-level buffer access */
+    buffer_type& get_buffer() { return buffer_; }
+    /** Get low-level buffer access */
+    const buffer_type& get_buffer() const { return buffer_; }
+
+protected:
+    size_type size_in_bytes() const
+    {
+        return sizeof(value_type) * cols_ * rows_;
+    }
+    size_type row_size_in_bytes() const
+    {
+        return sizeof(value_type) * cols_;
+    }
+
+protected:
+    size_type       rows_;
+    size_type       cols_;
+    buffer_type     buffer_;
+};
+
 
 } // namespace bm
 

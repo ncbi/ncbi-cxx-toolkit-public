@@ -369,14 +369,14 @@ public:
 
     /*! @brief Allocates block of pointers.
     */
-    void* alloc_ptr(unsigned size = bm::set_array_size)
+    void* alloc_ptr(size_t size)
     {
         return ptr_alloc_.allocate(size, 0);
     }
 
     /*! @brief Frees block of pointers.
     */
-    void free_ptr(void* p, unsigned size = bm::set_array_size)
+    void free_ptr(void* p, size_t size)
     {
         if (p)
             ptr_alloc_.deallocate(p, size);

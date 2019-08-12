@@ -22,7 +22,14 @@ For more information please visit:  http://bitmagic.io
     \brief Algorithms for fast aggregation of N bvectors
 */
 
-#include "bm.h"
+
+#ifndef BM__H__INCLUDED__
+// BitMagic utility headers do not include main "bm.h" declaration 
+// #include "bm.h" or "bm64.h" explicitly 
+# error missing include (bm.h or bm64.h)
+#endif
+
+
 #include "bmfunc.h"
 #include "bmdef.h"
 
@@ -52,6 +59,7 @@ class aggregator
 {
 public:
     typedef BV                         bvector_type;
+    typedef typename BV::size_type     size_type;
     typedef const bvector_type*        bvector_type_const_ptr;
     typedef bm::id64_t                 digest_type;
     
@@ -168,7 +176,7 @@ public:
     */
     bool combine_and_sub(bvector_type& bv_target, bool any);
     
-    bool find_first_and_sub(bm::id_t& idx);
+    bool find_first_and_sub(size_type& idx);
 
 
     /**
@@ -187,7 +195,7 @@ public:
         Set search hint for the range, where results needs to be searched
         (experimental for internal use).
     */
-    void set_range_hint(bm::id_t from, bm::id_t to);
+    void set_range_hint(size_type from, size_type to);
     
     //@}
     
@@ -231,7 +239,7 @@ public:
                      const bvector_type_const_ptr* bv_src_sub, unsigned src_sub_size,
                      bool any);
     
-    bool find_first_and_sub(bm::id_t& idx,
+    bool find_first_and_sub(size_type& idx,
                      const bvector_type_const_ptr* bv_src_and, unsigned src_and_size,
                      const bvector_type_const_ptr* bv_src_sub, unsigned src_sub_size);
 
@@ -323,7 +331,8 @@ public:
 
 protected:
     typedef typename bvector_type::blocks_manager_type blocks_manager_type;
-    
+    typedef typename BV::block_idx_type                block_idx_type;
+
 
     void combine_or(unsigned i, unsigned j,
                     bvector_type& bv_target,
@@ -335,7 +344,8 @@ protected:
     
     digest_type combine_and_sub(unsigned i, unsigned j,
                          const bvector_type_const_ptr* bv_src_and, unsigned src_and_size,
-                         const bvector_type_const_ptr* bv_src_sub, unsigned src_sub_size);
+                         const bvector_type_const_ptr* bv_src_sub, unsigned src_sub_size,
+                         int* is_result_full);
     
     void prepare_shift_right_and(bvector_type& bv_target,
                                  const bvector_type_const_ptr* bv_src, unsigned src_size);
@@ -385,7 +395,8 @@ protected:
     static
     unsigned find_effective_sub_block_size(unsigned i,
                                            const bvector_type_const_ptr* bv_src,
-                                           unsigned src_size);
+                                           unsigned src_size,
+                                           bool     top_null_as_zero);
     
     bool any_carry_overs(unsigned co_size) const;
     
@@ -436,8 +447,8 @@ private:
     
     // search range setting (hint) [from, to]
     bool                 range_set_ = false; ///< range flag
-    bm::id_t             range_from_ = bm::id_max; ///< search from
-    bm::id_t             range_to_   = bm::id_max; ///< search to
+    size_type            range_from_ = bm::id_max; ///< search from
+    size_type            range_to_   = bm::id_max; ///< search to
     
     typename bvector_type::optmode opt_mode_;
 
@@ -471,7 +482,7 @@ void aggregator_pipeline_execute(It  first, It last)
         Agg& agg = *(*it);
         agg.stage(tb);
     }
-    for (unsigned i = 0; i < bm::set_array_size; ++i)
+    for (unsigned i = 0; i < bm::set_sub_array_size; ++i)
     {
         unsigned j = 0;
         do
@@ -491,7 +502,7 @@ void aggregator_pipeline_execute(It  first, It last)
             if (pipeline_size <= 0)
                 return;
 
-        } while (++j < bm::set_array_size);
+        } while (++j < bm::set_sub_array_size);
 
     } // for i
 }
@@ -533,7 +544,7 @@ void aggregator<BV>::reset()
 // ------------------------------------------------------------------------
 
 template<typename BV>
-void aggregator<BV>::set_range_hint(bm::id_t from, bm::id_t to)
+void aggregator<BV>::set_range_hint(size_type from, size_type to)
 {
     range_from_ = from; range_to_ = to;
     range_set_ = true;
@@ -623,7 +634,7 @@ bool aggregator<BV>::combine_and_sub(bvector_type& bv_target, bool any)
 // ------------------------------------------------------------------------
 
 template<typename BV>
-bool aggregator<BV>::find_first_and_sub(bm::id_t& idx)
+bool aggregator<BV>::find_first_and_sub(size_type& idx)
 {
     return find_first_and_sub(idx,
                         ar_->arg_bv0, arg_group0_size,
@@ -650,43 +661,48 @@ void aggregator<BV>::combine_or(bvector_type& bv_target,
         bv_target.clear();
         return;
     }
-
     unsigned top_blocks = resize_target(bv_target, bv_src, src_size);
     for (unsigned i = 0; i < top_blocks; ++i)
     {
-        unsigned set_array_max = find_effective_sub_block_size(i, bv_src, src_size);
-        unsigned j = 0;
-        do
+        unsigned set_array_max = 
+            find_effective_sub_block_size(i, bv_src, src_size, false);
+        for (unsigned j = 0; j < set_array_max; ++j)
         {
             combine_or(i, j, bv_target, bv_src, src_size);
-        } while (++j < set_array_max);
+        } // for j
     } // for i
 }
 
 // ------------------------------------------------------------------------
 
 template<typename BV>
-void aggregator<BV>::combine_and(bvector_type& bv_target,
-                        const bvector_type_const_ptr* bv_src, unsigned src_size)
+void aggregator<BV>::combine_and(bvector_type&                 bv_target,
+                                 const bvector_type_const_ptr* bv_src, 
+                                 unsigned                      src_size)
 {
     BM_ASSERT_THROW(src_size < max_aggregator_cap, BM_ERR_RANGE);
-
+    if (src_size == 1)
+    {
+        const bvector_type* bv = bv_src[0];
+        bv_target = *bv;
+        return;
+    }
     if (!src_size)
     {
         bv_target.clear();
         return;
     }
-
     unsigned top_blocks = resize_target(bv_target, bv_src, src_size);
-    
     for (unsigned i = 0; i < top_blocks; ++i)
     {
-        unsigned set_array_max = find_effective_sub_block_size(i, bv_src, src_size);
-        unsigned j = 0;
-        do
+        // TODO: find range, not just size
+        unsigned set_array_max = 
+            find_effective_sub_block_size(i, bv_src, src_size, true);
+        for (unsigned j = 0; j < set_array_max; ++j)
         {
+            // TODO: use block_managers not bvectors to avoid extra indirect
             combine_and(i, j, bv_target, bv_src, src_size);
-        } while (++j < set_array_max);
+        } // for j 
     } // for i
 }
 
@@ -708,6 +724,8 @@ bool aggregator<BV>::combine_and_sub(bvector_type& bv_target,
         bv_target.clear();
         return false;
     }
+    
+    blocks_manager_type& bman_target = bv_target.get_blocks_manager();
 
     unsigned top_blocks = resize_target(bv_target, bv_src_and, src_and_size);
     unsigned top_blocks2 = resize_target(bv_target, bv_src_sub, src_sub_size, false);
@@ -717,31 +735,47 @@ bool aggregator<BV>::combine_and_sub(bvector_type& bv_target,
 
     for (unsigned i = 0; i < top_blocks; ++i)
     {
-        unsigned set_array_max = find_effective_sub_block_size(i, bv_src_and, src_and_size);
+        unsigned set_array_max = find_effective_sub_block_size(i, bv_src_and, src_and_size, true);
+        if (!set_array_max)
+            continue;
         if (src_sub_size)
         {
             unsigned set_array_max2 =
-                    find_effective_sub_block_size(i, bv_src_sub, src_sub_size);
-            if (set_array_max2 > set_array_max)
+                    find_effective_sub_block_size(i, bv_src_sub, src_sub_size, false);
+            if (set_array_max2 > set_array_max) // TODO: use range intersect
                 set_array_max = set_array_max2;
         }
-        unsigned j = 0;
-        do
+        for (unsigned j = 0; j < set_array_max; ++j)
         {
+            int is_res_full;
             digest_type digest = combine_and_sub(i, j,
                                                 bv_src_and, src_and_size,
-                                                bv_src_sub, src_sub_size);
-            bool found = digest;
-            if (found)
+                                                bv_src_sub, src_sub_size,
+                                                &is_res_full);
+            if (is_res_full)
             {
-                blocks_manager_type& bman_target = bv_target.get_blocks_manager();
-                bman_target.opt_copy_bit_block(i, j, ar_->tb1,
-                                               opt_mode_, ar_->tb_opt);
+                bman_target.check_alloc_top_subblock(i);
+                bman_target.set_block_ptr(i, j, (bm::word_t*)FULL_BLOCK_FAKE_ADDR);
+                if (j == bm::set_sub_array_size-1)
+                {
+                    bman_target.validate_top_full(i);
+                }
                 if (any)
-                    return found;
+                    return any;
             }
-            global_found |= found;
-        } while (++j < set_array_max);
+            else
+            {
+                bool found = digest;
+                if (found)
+                {
+                    bman_target.opt_copy_bit_block(i, j, ar_->tb1,
+                                                   opt_mode_, ar_->tb_opt);
+                    if (any)
+                        return found;
+                }
+                global_found |= found;
+            }
+        } // for j
     } // for i
     return global_found;
 }
@@ -749,7 +783,7 @@ bool aggregator<BV>::combine_and_sub(bvector_type& bv_target,
 // ------------------------------------------------------------------------
 
 template<typename BV>
-bool aggregator<BV>::find_first_and_sub(bm::id_t& idx,
+bool aggregator<BV>::find_first_and_sub(size_type& idx,
                  const bvector_type_const_ptr* bv_src_and, unsigned src_and_size,
                  const bvector_type_const_ptr* bv_src_sub, unsigned src_sub_size)
 {
@@ -759,28 +793,31 @@ bool aggregator<BV>::find_first_and_sub(bm::id_t& idx,
     if (!bv_src_and || !src_and_size)
         return false;
 
-    unsigned top_blocks = max_top_blocks(bv_src_sub, src_sub_size);
+    unsigned top_blocks = max_top_blocks(bv_src_and, src_and_size);
     unsigned top_blocks2 = max_top_blocks(bv_src_sub, src_sub_size);
     
     if (top_blocks2 > top_blocks)
         top_blocks = top_blocks2;
-    
+
     // compute range blocks coordinates
     //
-    unsigned nblock_from = unsigned(range_from_ >> bm::set_block_shift);
-    unsigned nblock_to = unsigned(range_to_ >> bm::set_block_shift);
-    unsigned top_from = nblock_from >> bm::set_array_shift;
-    unsigned top_to = nblock_to >> bm::set_array_shift;
+    block_idx_type nblock_from = (range_from_ >> bm::set_block_shift);
+    block_idx_type nblock_to = (range_to_ >> bm::set_block_shift);
+    unsigned top_from = unsigned(nblock_from >> bm::set_array_shift);
+    unsigned top_to = unsigned(nblock_to >> bm::set_array_shift);
     
     if (range_set_)
     {
         if (nblock_from == nblock_to) // one block search
         {
+            int is_res_full;
             unsigned i = top_from;
-            unsigned j = nblock_from & bm::set_array_mask;
+            unsigned j = unsigned(nblock_from & bm::set_array_mask);
             digest_type digest = combine_and_sub(i, j,
                                                  bv_src_and, src_and_size,
-                                                 bv_src_sub, src_sub_size);
+                                                 bv_src_sub, src_sub_size,
+                                                 &is_res_full);
+            // is_res_full is not needed here, since it is just 1 block
             if (digest)
             {
                 unsigned block_bit_idx = 0;
@@ -802,9 +839,8 @@ bool aggregator<BV>::find_first_and_sub(bm::id_t& idx,
     
     for (unsigned i = top_from; i < top_blocks; ++i)
     {
-        unsigned set_array_max = bm::set_array_size;
+        unsigned set_array_max = bm::set_sub_array_size;
         unsigned j = 0;
-        
         if (range_set_)
         {
             if (i == top_from)
@@ -813,25 +849,29 @@ bool aggregator<BV>::find_first_and_sub(bm::id_t& idx,
             }
             if (i == top_to)
             {
-                set_array_max = 1 + (nblock_to & bm::set_array_mask);
+                set_array_max = 1 + unsigned(nblock_to & bm::set_array_mask);
             }
         }
         else
         {
-            set_array_max = find_effective_sub_block_size(i, bv_src_and, src_and_size);
+            set_array_max = find_effective_sub_block_size(i, bv_src_and, src_and_size, true);
+            if (!set_array_max)
+                continue;
             if (src_sub_size)
             {
                 unsigned set_array_max2 =
-                        find_effective_sub_block_size(i, bv_src_sub, src_sub_size);
+                        find_effective_sub_block_size(i, bv_src_sub, src_sub_size, false);
                 if (set_array_max2 > set_array_max)
                     set_array_max = set_array_max2;
             }
         }
-        do
+        for (; j < set_array_max; ++j)
         {
+            int is_res_full;
             digest_type digest = combine_and_sub(i, j,
                                                 bv_src_and, src_and_size,
-                                                bv_src_sub, src_sub_size);
+                                                bv_src_sub, src_sub_size,
+                                                &is_res_full);
             if (digest)
             {
                 unsigned block_bit_idx = 0;
@@ -840,7 +880,8 @@ bool aggregator<BV>::find_first_and_sub(bm::id_t& idx,
                 idx = bm::block_to_global_index(i, j, block_bit_idx);
                 return found;
             }
-        } while (++j < set_array_max);
+        } // for j
+        //while (++j < set_array_max);
     } // for i
     return false;
 }
@@ -851,12 +892,13 @@ template<typename BV>
 unsigned
 aggregator<BV>::find_effective_sub_block_size(unsigned i,
                                               const bvector_type_const_ptr* bv_src,
-                                              unsigned src_size) 
+                                              unsigned src_size,
+                                              bool     top_null_as_zero) 
 {
     // quick hack to avoid scanning large, arrays, where such scan can be quite
     // expensive by itself (this makes this function approximate)
     if (src_size > 32)
-        return bm::set_array_size;
+        return bm::set_sub_array_size;
 
     unsigned max_size = 1;
     for (unsigned k = 0; k < src_size; ++k)
@@ -867,9 +909,15 @@ aggregator<BV>::find_effective_sub_block_size(unsigned i,
                                                     bv->get_blocks_manager();
         const bm::word_t* const* blk_blk_arg = bman_arg.get_topblock(i);
         if (!blk_blk_arg)
+        {
+            if (top_null_as_zero)
+                return 0;
             continue;
+        }
+        if ((bm::word_t*)blk_blk_arg == FULL_BLOCK_FAKE_ADDR)
+            return bm::set_sub_array_size;
 
-        for (unsigned j = bm::set_array_size - 1; j > max_size; --j)
+        for (unsigned j = bm::set_sub_array_size - 1; j > max_size; --j)
         {
             if (blk_blk_arg[j])
             {
@@ -877,9 +925,11 @@ aggregator<BV>::find_effective_sub_block_size(unsigned i,
                 break;
             }
         }
+        if (max_size == bm::set_sub_array_size - 1)
+            break;
     } // for k
     ++max_size;
-    BM_ASSERT(max_size <= bm::set_array_size);
+    BM_ASSERT(max_size <= bm::set_sub_array_size);
     
     return max_size;
 }
@@ -906,6 +956,10 @@ void aggregator<BV>::combine_or(unsigned i, unsigned j,
     {
         bman_target.check_alloc_top_subblock(i);
         bman_target.set_block_ptr(i, j, blk);
+        if (++j == bm::set_sub_array_size)
+        {
+            bman_target.validate_top_full(i);
+        }
     }
     else
     {
@@ -953,6 +1007,20 @@ void aggregator<BV>::combine_and(unsigned i, unsigned j,
         return;
     if (arg_blk_count || arg_blk_gap_count)
     {
+        if (!arg_blk_gap_count && (arg_blk_count == 1))
+        {
+            if (ar_->v_arg_and_blk[0] == FULL_BLOCK_REAL_ADDR)
+            {
+                // another nothing to do: one FULL block
+                bman_target.check_alloc_top_subblock(i);
+                bman_target.set_block_ptr(i, j, blk);
+                if (++j == bm::set_sub_array_size)
+                {
+                    bman_target.validate_top_full(i);
+                }
+                return;
+            }
+        }
         // AND bit-blocks
         //
         bm::id64_t digest = ~0ull;
@@ -982,14 +1050,18 @@ template<typename BV>
 typename aggregator<BV>::digest_type
 aggregator<BV>::combine_and_sub(unsigned i, unsigned j,
              const bvector_type_const_ptr* bv_src_and, unsigned src_and_size,
-             const bvector_type_const_ptr* bv_src_sub, unsigned src_sub_size)
+             const bvector_type_const_ptr* bv_src_sub, unsigned src_sub_size,
+             int* is_result_full)
 {
     BM_ASSERT(src_and_size);
+    BM_ASSERT(is_result_full);
+    
     unsigned arg_blk_and_count = 0;
     unsigned arg_blk_and_gap_count = 0;
     unsigned arg_blk_sub_count = 0;
     unsigned arg_blk_sub_gap_count = 0;
 
+    *is_result_full = 0;
     bm::word_t* blk = sort_input_blocks_and(bv_src_and, src_and_size,
                                               i, j,
                                    &arg_blk_and_count, &arg_blk_and_gap_count);
@@ -1006,8 +1078,19 @@ aggregator<BV>::combine_and_sub(unsigned i, unsigned j,
         if (blk == FULL_BLOCK_FAKE_ADDR)
             return 0; // nothing to do - golden block(!)
     }
+    else
+    {
+        if (!arg_blk_and_gap_count && (arg_blk_and_count == 1))
+        {
+            if (ar_->v_arg_and_blk[0] == FULL_BLOCK_REAL_ADDR)
+            {
+                *is_result_full = 1;
+                return ~0ull;
+            }
+        }
+    }
+    
     digest_type digest = ~0ull;
-
     
     // AND-SUB bit-blocks
     //
@@ -1222,8 +1305,8 @@ aggregator<BV>::process_bit_blocks_and(unsigned   arg_blk_count,
     bm::word_t* blk = ar_->tb1;
     unsigned k = 0;
     
-    unsigned nb_from = unsigned(range_from_ >> bm::set_block_shift);
-    unsigned nb_to = unsigned(range_to_ >> bm::set_block_shift);
+    block_idx_type nb_from = (range_from_ >> bm::set_block_shift);
+    block_idx_type nb_to = (range_to_ >> bm::set_block_shift);
     if (range_set_ && (nb_from == nb_to))
     {
         unsigned nbit_from = unsigned(range_from_ & bm::set_block_mask);
@@ -1351,7 +1434,7 @@ unsigned aggregator<BV>::resize_target(bvector_type& bv_target,
     }
     
     unsigned top_blocks = bman_target.top_block_size();
-    bm::id_t size = bv_target.size();
+    size_type size = bv_target.size();
     bool need_realloc = false;
 
     // pre-scan to do target size harmonization
@@ -1367,7 +1450,7 @@ unsigned aggregator<BV>::resize_target(bvector_type& bv_target,
             need_realloc = true;
             top_blocks = arg_top_blocks;
         }
-        bm::id_t arg_size = bv->size();
+        size_type arg_size = bv->size();
         if (arg_size > size)
             size = arg_size;
     } // for i
@@ -1387,7 +1470,8 @@ unsigned aggregator<BV>::resize_target(bvector_type& bv_target,
 // ------------------------------------------------------------------------
 
 template<typename BV>
-unsigned aggregator<BV>::max_top_blocks(const bvector_type_const_ptr* bv_src, unsigned src_size)
+unsigned
+aggregator<BV>::max_top_blocks(const bvector_type_const_ptr* bv_src, unsigned src_size)
 {
     unsigned top_blocks = 1;
 
@@ -1451,12 +1535,13 @@ bm::word_t* aggregator<BV>::sort_input_blocks_and(const bvector_type_const_ptr* 
                                                   unsigned* arg_blk_count,
                                                   unsigned* arg_blk_gap_count)
 {
+    unsigned full_blk_cnt = 0;
     bm::word_t* blk = FULL_BLOCK_FAKE_ADDR;
     for (unsigned k = 0; k < src_size; ++k)
     {
         const bvector_type* bv = bv_src[k];
         BM_ASSERT(bv);
-        const typename bvector_type::blocks_manager_type& bman_arg = bv->get_blocks_manager();
+        const blocks_manager_type& bman_arg = bv->get_blocks_manager();
         const bm::word_t* arg_blk = bman_arg.get_block_ptr(i, j);
         if (!arg_blk)
         {
@@ -1471,9 +1556,25 @@ bm::word_t* aggregator<BV>::sort_input_blocks_and(const bvector_type_const_ptr* 
         }
         else // FULL or bit block
         {
+            if (IS_FULL_BLOCK(arg_blk))
+            {
+                // add only first FULL encounter, others ignore
+                if (!full_blk_cnt) // first 0xFFF....
+                {
+                    ar_->v_arg_and_blk[*arg_blk_count] = FULL_BLOCK_REAL_ADDR;
+                    ++full_blk_cnt;
+                    (*arg_blk_count)++;
+                }
+            }
+            else
+            {
+                ar_->v_arg_and_blk[*arg_blk_count] = arg_blk;
+                (*arg_blk_count)++;
+            }
+            /*
             ar_->v_arg_and_blk[*arg_blk_count] =
                     IS_FULL_BLOCK(arg_blk) ? FULL_BLOCK_REAL_ADDR: arg_blk;
-            (*arg_blk_count)++;
+            (*arg_blk_count)++; */
         }
     } // for k
     return blk;
@@ -1578,7 +1679,7 @@ bool aggregator<BV>::combine_shift_right_and(
     }
     prepare_shift_right_and(bv_target, bv_src_and, src_and_size);
 
-    for (unsigned i = 0; i < bm::set_array_size; ++i)
+    for (unsigned i = 0; i < bm::set_top_array_size; ++i)
     {
         if (i > top_block_size_)
         {
@@ -1592,7 +1693,7 @@ bool aggregator<BV>::combine_shift_right_and(
             bool found = combine_shift_right_and(i, j, bv_target, bv_src_and, src_and_size);
             if (found && any)
                 return found;
-        } while (++j < bm::set_array_size);
+        } while (++j < bm::set_sub_array_size);
 
     } // for i
 
@@ -1607,13 +1708,13 @@ bool aggregator<BV>::combine_shift_right_and(unsigned i, unsigned j,
                                         const bvector_type_const_ptr* bv_src,
                                         unsigned src_size)
 {
-    typename bvector_type::blocks_manager_type& bman_target =
-                                                bv_target.get_blocks_manager();
+    blocks_manager_type& bman_target = bv_target.get_blocks_manager();
     bm::word_t* blk = temp_blk_ ? temp_blk_ : ar_->tb1;
     unsigned char* carry_overs = &(ar_->carry_overs_[0]);
 
     bm::id64_t digest = ~0ull; // start with a full content digest
 
+    bool blk_zero = false;
     // first initial block is just copied over from the first AND
     {
         const blocks_manager_type& bman_arg = bv_src[0]->get_blocks_manager();
@@ -1627,24 +1728,27 @@ bool aggregator<BV>::combine_shift_right_and(unsigned i, unsigned j,
         else
         {
             if (arg_blk)
+            {
                 bm::bit_block_copy(blk, arg_blk);
+            }
             else
             {
-                bm::bit_block_set(blk, 0);
+                blk_zero = true; // set flag for delayed block init
                 digest = 0;
             }
         }
         carry_overs[0] = 0;
     }
 
-    unsigned k = 1;
-    for (; k < src_size; ++k)
+    for (unsigned k = 1; k < src_size; ++k)
     {
         unsigned carry_over = carry_overs[k];
         if (!digest && !carry_over) // 0 into "00000" block >> 0
-        {
-            BM_ASSERT(bm::bit_is_all_zero(blk));
             continue;
+        if (blk_zero) // delayed temp block 0-init requested
+        {
+            bm::bit_block_set(blk, 0);
+            blk_zero = false;
         }
         const bm::word_t* arg_blk = get_arg_block(bv_src, k, i, j);
         carry_overs[k] = process_shift_right_and(arg_blk, digest, carry_over);
@@ -1773,7 +1877,7 @@ typename aggregator<BV>::operation_status
 aggregator<BV>::run_step(unsigned i, unsigned j)
 {
     BM_ASSERT(operation_status_ == op_prepared || operation_status_ == op_in_progress);
-    BM_ASSERT(j < bm::set_array_size);
+    BM_ASSERT(j < bm::set_sub_array_size);
     
     switch (operation_)
     {

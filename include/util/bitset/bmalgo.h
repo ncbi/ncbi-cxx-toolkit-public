@@ -22,7 +22,12 @@ For more information please visit:  http://bitmagic.io
     \brief Algorithms for bvector<> (main include)
 */
 
-#include "bm.h"
+#ifndef BM__H__INCLUDED__
+// BitMagic utility headers do not include main "bm.h" declaration 
+// #include "bm.h" or "bm64.h" explicitly 
+# error missing include (bm.h or bm64.h)
+#endif
+
 #include "bmfunc.h"
 #include "bmdef.h"
 
@@ -43,7 +48,6 @@ namespace bm
         } \
         else \
         { \
-            block = BLOCK_ADDR_SAN(block);\
             bm::for_each_bit_blk(block, (r+j+x)*bm::bits_in_block,bit_functor); \
         } \
     }
@@ -61,6 +65,8 @@ template<class BV, class Func>
 void for_each_bit(const BV&    bv,
                   Func&        bit_functor)
 {
+    typedef typename BV::size_type size_type;
+
     const typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
     bm::word_t*** blk_root = bman.top_blocks_root();
     
@@ -72,11 +78,13 @@ void for_each_bit(const BV&    bv,
     {
         bm::word_t** blk_blk = blk_root[i];
         if (!blk_blk)
-        {
             continue;
-        }
+
+        if ((bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR)
+            blk_blk = FULL_SUB_BLOCK_REAL_ADDR;
+        
         const bm::word_t* block;
-        unsigned r = i * bm::set_array_size;
+        size_type r = size_type(i) * bm::set_sub_array_size;
         unsigned j = 0;
         do
         {
@@ -101,7 +109,7 @@ void for_each_bit(const BV&    bv,
             ++j;
         #endif
         
-        } while (j < bm::set_array_size);
+        } while (j < bm::set_sub_array_size);
         
     }  // for i
 }
@@ -124,6 +132,7 @@ void visit_each_bit(const BV&                 bv,
                     void*                     handle_ptr,
                     bit_visitor_callback_type callback_ptr)
 {
+    typedef typename BV::size_type size_type;
     // private adaptor for C-style callbacks
     struct callback_adaptor
     {
@@ -131,12 +140,12 @@ void visit_each_bit(const BV&                 bv,
         : handle_(h), func_(cb_func)
         {}
         
-        void add_bits(bm::id_t offset, const unsigned char* bits, unsigned size)
+        void add_bits(size_type offset, const unsigned char* bits, unsigned size)
         {
             for (unsigned i = 0; i < size; ++i)
                 func_(handle_, offset + bits[i]);
         }
-        void add_range(bm::id_t offset, unsigned size)
+        void add_range(size_type offset, unsigned size)
         {
             for (unsigned i = 0; i < size; ++i)
                 func_(handle_, offset + i);
@@ -167,6 +176,7 @@ class rank_compressor
 {
 public:
     typedef BV                         bvector_type;
+    typedef typename BV::size_type     size_type;
     typedef typename BV::rs_index_type rs_index_type;
     enum buffer_cap
     {
@@ -219,15 +229,15 @@ void rank_compressor<BV>::compress(BV& bv_target,
         bv_target = bv_src;
         return;
     }
-    bm::id_t ibuffer[n_buffer_cap];
-    bm::id_t b_size;
+    size_type ibuffer[n_buffer_cap];
+    size_type b_size;
     
     typedef typename BV::enumerator enumerator_t;
     enumerator_t en_s = bv_src.first();
     enumerator_t en_i = bv_idx.first();
 
-    bm::id_t r_idx = b_size = 0;
-    bm::id_t i, s;
+    size_type r_idx = b_size = 0;
+    size_type i, s;
     
     for (; en_i.valid(); )
     {
@@ -251,10 +261,10 @@ void rank_compressor<BV>::compress(BV& bv_target,
         }
         BM_ASSERT(s > i);
         
-        bm::id_t dist = s - i;
+        size_type dist = s - i;
         if (dist >= 64) // sufficiently far away, jump
         {
-            bm::id_t r_dist = bv_idx.count_range(i + 1, s);
+            size_type r_dist = bv_idx.count_range(i + 1, s);
             r_idx += r_dist;
             en_i.go_to(s);
             BM_ASSERT(en_i.valid());
@@ -294,8 +304,8 @@ void rank_compressor<BV>::decompress(BV& bv_target,
         return;
     }
     
-    bm::id_t r_idx, i, s, b_size;
-    bm::id_t ibuffer[n_buffer_cap];
+    size_type r_idx, i, s, b_size;
+    size_type ibuffer[n_buffer_cap];
     
     b_size = r_idx = 0;
 
@@ -321,8 +331,8 @@ void rank_compressor<BV>::decompress(BV& bv_target,
         }
         // source is "faster" than index, need to re-align
         BM_ASSERT(s > r_idx);
-        unsigned rank = s - r_idx + 1u;
-        unsigned new_pos = 0;
+        size_type rank = s - r_idx + 1u;
+        size_type new_pos = 0;
         
         if (rank < 256)
         {
@@ -375,25 +385,25 @@ void rank_compressor<BV>::compress_by_source(BV& bv_target,
           bc_index_(bc_index)
         {}
         
-        void add_bits(bm::id_t arr_offset, const unsigned char* bits, unsigned bits_size)
+        void add_bits(size_type arr_offset, const unsigned char* bits, unsigned bits_size)
         {
             for (unsigned i = 0; i < bits_size; ++i)
             {
-                bm::id_t idx = arr_offset + bits[i];
+                size_type idx = arr_offset + bits[i];
                 BM_ASSERT(bv_index_.test(idx));
 
-                bm::id_t r_idx = bv_index_.count_to(idx, bc_index_) - 1;
+                size_type r_idx = bv_index_.count_to(idx, bc_index_) - 1;
                 bv_target_.set_bit_no_check(r_idx);
             }
         }
-        void add_range(bm::id_t arr_offset, unsigned sz)
+        void add_range(size_type arr_offset, size_type sz)
         {
-            for (unsigned i = 0; i < sz; ++i)
+            for (size_type i = 0; i < sz; ++i)
             {
-                bm::id_t idx = i + arr_offset;
+                size_type idx = i + arr_offset;
                 BM_ASSERT(bv_index_.test(idx));
 
-                bm::id_t r_idx = bv_index_.count_to(idx, bc_index_) - 1;
+                size_type r_idx = bv_index_.count_to(idx, bc_index_) - 1;
                 bv_target_.set_bit_no_check(r_idx);
             }
         }

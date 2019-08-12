@@ -86,8 +86,14 @@ distance_metric operation2metric(set_operation op)
 
 struct distance_metric_descriptor
 {
+#ifdef BM64ADDR
+    typedef bm::id64_t   size_type;
+#else
+    typedef bm::id_t     size_type;
+#endif
+
      distance_metric   metric;
-     bm::id_t          result;
+     size_type          result;
      
      distance_metric_descriptor(distance_metric m)
      : metric(m),
@@ -619,15 +625,16 @@ void combine_any_operation_with_block(const bm::word_t* blk,
     \ingroup  distance
 */
 inline
-unsigned combine_count_operation_with_block(const bm::word_t* blk,
-                                            const bm::word_t* arg_blk,
-                                            distance_metric metric)
+unsigned
+combine_count_operation_with_block(const bm::word_t* blk,
+                                   const bm::word_t* arg_blk,
+                                   distance_metric metric)
 {
     distance_metric_descriptor dmd(metric);
     combine_count_operation_with_block(blk, //gap, 
                                        arg_blk, //arg_gap, 
                                        &dmd, &dmd+1);
-    return dmd.result;
+    return unsigned(dmd.result);
 }
 
 
@@ -637,7 +644,8 @@ unsigned combine_count_operation_with_block(const bm::word_t* blk,
     \ingroup  distance
 */
 inline
-unsigned combine_any_operation_with_block(const bm::word_t* blk,
+bm::distance_metric_descriptor::size_type
+combine_any_operation_with_block(const bm::word_t* blk,
                                           unsigned gap,
                                           const bm::word_t* arg_blk,
                                           unsigned arg_gap,
@@ -703,40 +711,40 @@ void distance_operation(const BV& bv1,
     distance_stage(dmit, dmit_end, &is_all_and);
 
     bm::word_t*** blk_root = bman1.top_blocks_root();
-    unsigned block_idx = 0;
+    typename BV::size_type block_idx = 0;
     unsigned i, j;
     
     const bm::word_t* blk;
     const bm::word_t* arg_blk;
 
-    BM_SET_MMX_GUARD
-
     unsigned top_block_size = bman1.top_block_size();
     unsigned ebs2 = bman2.top_block_size();
+    unsigned top_size;
     if (ebs2 > top_block_size)
-        top_block_size = ebs2;
+        top_size = ebs2;
+    else
+        top_size = top_block_size;
 
-    for (i = 0; i < top_block_size; ++i)
+    for (i = 0; i < top_size; ++i)
     {
-        bm::word_t** blk_blk = blk_root ? blk_root[i] : 0;
-
-        if (blk_blk == 0) // not allocated
+        bm::word_t** blk_blk = (blk_root && (i < top_block_size)) ? blk_root[i] : 0;
+        if (!blk_blk) 
         {
             // AND operation requested - we can skip this portion here 
             if (is_all_and)
             {
-                block_idx += bm::set_array_size;
+                block_idx += bm::set_sub_array_size;
                 continue;
             }
             const bm::word_t* const* bvbb = bman2.get_topblock(i);
             if (bvbb == 0) 
             {
-                block_idx += bm::set_array_size;
+                block_idx += bm::set_sub_array_size;
                 continue;
             }
 
             blk = 0;
-            for (j = 0; j < bm::set_array_size; ++j,++block_idx)
+            for (j = 0; j < bm::set_sub_array_size; ++j,++block_idx)
             {                
                 arg_blk = bman2.get_block(i, j);
                 if (!arg_blk) 
@@ -748,7 +756,7 @@ void distance_operation(const BV& bv1,
             continue;
         }
 
-        for (j = 0; j < bm::set_array_size; ++j, ++block_idx)
+        for (j = 0; j < bm::set_sub_array_size; ++j, ++block_idx)
         {
             blk = bman1.get_block(i, j);
             if (blk == 0 && is_all_and)
@@ -778,8 +786,8 @@ void distance_operation(const BV& bv1,
 
 */
 template<class BV>
-unsigned distance_and_operation(const BV& bv1, 
-                                const BV& bv2)
+typename BV::size_type distance_and_operation(const BV& bv1,
+                                              const BV& bv2)
 {
     const typename BV::blocks_manager_type& bman1 = bv1.get_blocks_manager();
     const typename BV::blocks_manager_type& bman2 = bv2.get_blocks_manager();
@@ -789,7 +797,7 @@ unsigned distance_and_operation(const BV& bv1,
 
     bm::word_t*** blk_root     = bman1.top_blocks_root();
     bm::word_t*** blk_root_arg = bman2.top_blocks_root();
-    unsigned count = 0;
+    typename BV::size_type count = 0;
 
     unsigned top_block_size =
         bm::min_value(bman1.top_block_size(),bman2.top_block_size());
@@ -799,10 +807,14 @@ unsigned distance_and_operation(const BV& bv1,
         bm::word_t** blk_blk;
         bm::word_t** blk_blk_arg;
         if ((blk_blk = blk_root[i]) == 0 || (blk_blk_arg= blk_root_arg[i]) == 0)
-        {
             continue;
-        }
-        for (unsigned j = 0; j < bm::set_array_size; j+=4)
+
+        if ((bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR)
+            blk_blk = FULL_SUB_BLOCK_REAL_ADDR;
+        if ((bm::word_t*)blk_blk_arg == FULL_BLOCK_FAKE_ADDR)
+            blk_blk_arg = FULL_SUB_BLOCK_REAL_ADDR;
+
+        for (unsigned j = 0; j < bm::set_sub_array_size; j+=4)
         {
             (blk_blk[j] && blk_blk_arg[j]) ? 
                 count += combine_count_and_operation_with_block(BLOCK_ADDR_SAN(blk_blk[j]), BLOCK_ADDR_SAN(blk_blk_arg[j]))
@@ -821,8 +833,6 @@ unsigned distance_and_operation(const BV& bv1,
     } // for i
     return count;
 }
-
-
 
 
 /*!
@@ -867,33 +877,35 @@ void distance_operation_any(const BV& bv1,
 
     unsigned top_block_size = bman1.top_block_size();
     unsigned ebs2 = bman2.top_block_size();
+    unsigned top_size;
     if (ebs2 > top_block_size)
-        top_block_size = ebs2;
+        top_size = ebs2;
+    else
+        top_size = top_block_size;
 
-    for (i = 0; i < top_block_size; ++i)
+    for (i = 0; i < top_size; ++i)
     {
-        bm::word_t** blk_blk = blk_root ? blk_root[i] : 0;
-
+        bm::word_t** blk_blk = (blk_root && (i < top_block_size)) ? blk_root[i] : 0;
         if (blk_blk == 0) // not allocated
         {
             // AND operation requested - we can skip this portion here 
             if (is_all_and)
             {
-                block_idx += bm::set_array_size;
+                block_idx += bm::set_sub_array_size;
                 continue;
             }
 
             const bm::word_t* const* bvbb = bman2.get_topblock(i);
             if (bvbb == 0) 
             {
-                block_idx += bm::set_array_size;
+                block_idx += bm::set_sub_array_size;
                 continue;
             }
 
             blk = 0;
             blk_gap = false;
 
-            for (j = 0; j < bm::set_array_size; ++j,++block_idx)
+            for (j = 0; j < bm::set_sub_array_size; ++j,++block_idx)
             {                
                 arg_blk = bman2.get_block(i, j);
                 if (!arg_blk) 
@@ -923,10 +935,9 @@ void distance_operation_any(const BV& bv1,
             continue;
         }
 
-        for (j = 0; j < bm::set_array_size; ++j, ++block_idx)
+        for (j = 0; j < bm::set_sub_array_size; ++j, ++block_idx)
         {
             blk = bman1.get_block(i, j);
-            //BLOCK_ADDR_SAN(blk_blk[j]);
             if (blk == 0 && is_all_and)
                 continue;
 
@@ -943,7 +954,7 @@ void distance_operation_any(const BV& bv1,
                                              dmit, dmit_end);
             
             // check if all distance requests alredy resolved
-            bool all_resolved = false;
+            bool all_resolved = true;
             distance_metric_descriptor* it=dmit;
             do
             {
@@ -972,7 +983,7 @@ void distance_operation_any(const BV& bv1,
    \ingroup  distance
 */
 template<class BV>
-bm::id_t count_and(const BV& bv1, const BV& bv2)
+typename BV::size_type count_and(const BV& bv1, const BV& bv2)
 {
     return distance_and_operation(bv1, bv2);
 }
@@ -985,7 +996,7 @@ bm::id_t count_and(const BV& bv1, const BV& bv2)
    \ingroup  distance
 */
 template<class BV>
-bm::id_t any_and(const BV& bv1, const BV& bv2)
+typename BV::size_type any_and(const BV& bv1, const BV& bv2)
 {
     distance_metric_descriptor dmd(bm::COUNT_AND);
     
@@ -1003,7 +1014,8 @@ bm::id_t any_and(const BV& bv1, const BV& bv2)
    \ingroup  distance
 */
 template<class BV>
-bm::id_t count_xor(const BV& bv1, const BV& bv2)
+bm::distance_metric_descriptor::size_type
+count_xor(const BV& bv1, const BV& bv2)
 {
     distance_metric_descriptor dmd(bm::COUNT_XOR);
     
@@ -1019,7 +1031,7 @@ bm::id_t count_xor(const BV& bv1, const BV& bv2)
    \ingroup  distance
 */
 template<class BV>
-bm::id_t any_xor(const BV& bv1, const BV& bv2)
+typename BV::size_type any_xor(const BV& bv1, const BV& bv2)
 {
     distance_metric_descriptor dmd(bm::COUNT_XOR);
     
@@ -1037,7 +1049,7 @@ bm::id_t any_xor(const BV& bv1, const BV& bv2)
    \ingroup  distance
 */
 template<class BV>
-bm::id_t count_sub(const BV& bv1, const BV& bv2)
+typename BV::size_type count_sub(const BV& bv1, const BV& bv2)
 {
     distance_metric_descriptor dmd(bm::COUNT_SUB_AB);
     
@@ -1054,7 +1066,7 @@ bm::id_t count_sub(const BV& bv1, const BV& bv2)
    \ingroup  distance
 */
 template<class BV>
-bm::id_t any_sub(const BV& bv1, const BV& bv2)
+typename BV::size_type any_sub(const BV& bv1, const BV& bv2)
 {
     distance_metric_descriptor dmd(bm::COUNT_SUB_AB);
     
@@ -1071,7 +1083,7 @@ bm::id_t any_sub(const BV& bv1, const BV& bv2)
    \ingroup  distance
 */
 template<class BV>
-bm::id_t count_or(const BV& bv1, const BV& bv2)
+typename BV::size_type count_or(const BV& bv1, const BV& bv2)
 {
     distance_metric_descriptor dmd(bm::COUNT_OR);
     
@@ -1087,7 +1099,7 @@ bm::id_t count_or(const BV& bv1, const BV& bv2)
    \ingroup  distance
 */
 template<class BV>
-bm::id_t any_or(const BV& bv1, const BV& bv2)
+typename BV::size_type any_or(const BV& bv1, const BV& bv2)
 {
     distance_metric_descriptor dmd(bm::COUNT_OR);
     
@@ -1100,20 +1112,22 @@ bm::id_t any_or(const BV& bv1, const BV& bv2)
     \brief Internal algorithms scans the input for the block range limit
     \internal
 */
-template<class It>
-It block_range_scan(It  first, It last, unsigned nblock, unsigned* max_id)
+template<typename It, typename SIZE_TYPE>
+It block_range_scan(It  first, It last, SIZE_TYPE nblock, SIZE_TYPE* max_id)
 {
+    SIZE_TYPE m = *max_id;
     It right;
     for (right = first; right != last; ++right)
     {
-        unsigned v = unsigned(*right);
+        SIZE_TYPE v = SIZE_TYPE(*right);
         BM_ASSERT(v < bm::id_max);
-        if (v >= *max_id)
-            *max_id = v;
-        unsigned nb = v >> bm::set_block_shift;
+        if (v >= m)
+            m = v;
+        SIZE_TYPE nb = v >> bm::set_block_shift;
         if (nb != nblock)
             break;
     }
+    *max_id = m;
     return right;
 }
 
@@ -1133,17 +1147,17 @@ It block_range_scan(It  first, It last, unsigned nblock, unsigned* max_id)
 template<class BV, class It>
 void combine_or(BV& bv, It  first, It last)
 {
+    typedef typename BV::size_type size_type;
     typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
     if (!bman.is_init())
         bman.init_tree();
     
-    unsigned max_id = 0;
+    size_type max_id = 0;
 
     while (first < last)
     {
-        unsigned nblock = unsigned((*first) >> bm::set_block_shift);     
+        typename BV::block_idx_type nblock = (*first) >> bm::set_block_shift;
         It right = bm::block_range_scan(first, last, nblock, &max_id);
-
         if (max_id >= bv.size())
         {
             BM_ASSERT(max_id < bm::id_max);
@@ -1187,15 +1201,14 @@ void combine_or(BV& bv, It  first, It last)
         {
             for (; first < right; ++first)
             {
-                unsigned nbit   = unsigned(*first & bm::set_block_mask); 
+                size_type pos = *first;
+                unsigned nbit   = unsigned(pos & bm::set_block_mask);
                 unsigned nword  = unsigned(nbit >> bm::set_word_shift); 
                 nbit &= bm::set_word_mask;
                 blk[nword] |= (1u << nbit);
             } // for
         }
     } // while
-    
-    bv.forget_count();
 }
 
 
@@ -1219,11 +1232,11 @@ void combine_xor(BV& bv, It  first, It last)
     if (!bman.is_init())
         bman.init_tree();
     
-    unsigned max_id = 0;
+    typename BV::size_type max_id = 0;
 
     while (first < last)
     {
-        unsigned nblock = unsigned((*first) >> bm::set_block_shift);     
+        typename BV::block_idx_type nblock = ((*first) >> bm::set_block_shift);
         It right = block_range_scan(first, last, nblock, &max_id);
 
         if (max_id >= bv.size())
@@ -1306,12 +1319,12 @@ void combine_sub(BV& bv, It  first, It last)
     if (!bman.is_init())
         bman.init_tree();
     
-    unsigned max_id = 0;
+    typename BV::size_type max_id = 0;
 
     while (first < last)
     {
-        unsigned nblock = unsigned((*first) >> bm::set_block_shift);     
-        It right = block_range_scan(first, last, nblock, &max_id);
+        typename BV::block_idx_type nblock = (*first) >> bm::set_block_shift;     
+        It right = bm::block_range_scan(first, last, nblock, &max_id);
 
         if (max_id >= bv.size())
         {
@@ -1387,10 +1400,10 @@ void combine_sub(BV& bv, It  first, It last)
 template<class BV, class It>
 void combine_and_sorted(BV& bv, It  first, It last)
 {
-    bm::id_t prev = 0;
+    typename BV::size_type prev = 0;
     for ( ;first < last; ++first)
     {
-        bm::id_t id = *first;
+        typename BV::size_type id = *first;
         BM_ASSERT(id >= prev); // make sure it's sorted
         bv.set_bit_and(id, true);
         if (++prev < id) 
@@ -1441,7 +1454,7 @@ void combine_and(BV& bv, It  first, It last)
     \ingroup setalgo
 */
 template<class BV>
-bm::id_t count_intervals(const BV& bv)
+typename BV::size_type count_intervals(const BV& bv)
 {
     const typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
     
@@ -1450,7 +1463,8 @@ bm::id_t count_intervals(const BV& bv)
 
     bm::word_t*** blk_root = bman.top_blocks_root();
     typename BV::blocks_manager_type::block_count_change_func func(bman);
-    for_each_block(blk_root, bman.top_block_size(), func);
+    typename BV::blocks_manager_type::block_idx_type st = 0;
+    bm::for_each_block(blk_root, bman.top_block_size(), func, st);
 
     return func.count();        
 }
@@ -1485,15 +1499,14 @@ void export_array(BV& bv, It first, It last)
 
     if (bit_cnt >= bv.size())
         bv.resize((bm::id_t)bit_cnt + 1);
-    else 
-        bv.set_range((bm::id_t)bit_cnt, bv.size() - 1, false);
-    
+    else
+        bv.set_range((typename BV::size_type)bit_cnt, bv.size() - 1, false);
     switch (inp_word_size)
     {
     case 1:
         {
             size_t word_cnt = array_size / 4;
-            for (unsigned i = 0; i < bm::set_total_blocks; ++i)
+            for (typename BV::block_idx_type i = 0; i < bm::set_total_blocks; ++i)
             {
                 bm::word_t* blk =
                     bman.check_allocate_block(i, 
@@ -1547,7 +1560,7 @@ void export_array(BV& bv, It first, It last)
     case 2:
         {
             size_t word_cnt = array_size / 2;
-            for (unsigned i = 0; i < bm::set_total_blocks; ++i)
+            for (typename BV::block_idx_type i = 0; i < bm::set_total_blocks; ++i)
             {
                 bm::word_t* blk =
                     bman.check_allocate_block(i, 
@@ -1593,7 +1606,7 @@ void export_array(BV& bv, It first, It last)
     case 4:
         {
             size_t word_cnt = array_size;
-            for (unsigned i = 0; i < bm::set_total_blocks; ++i)
+            for (typename BV::block_idx_type i = 0; i < bm::set_total_blocks; ++i)
             {
                 bm::word_t* blk =
                     bman.check_allocate_block(i, 
@@ -1643,13 +1656,18 @@ void export_array(BV& bv, It first, It last)
    @ingroup bitfunc
    @internal
 */
-template<class Func>
-void for_each_bit_blk(const bm::word_t* block, bm::id_t offset,
+template<typename Func, typename SIZE_TYPE>
+void for_each_bit_blk(const bm::word_t* block, SIZE_TYPE offset,
                       Func&  bit_functor)
 {
+    if (IS_FULL_BLOCK(block))
+    {
+        bit_functor.add_range(offset, bm::gap_max_bits);
+        return;
+    }
     unsigned char bits[bm::set_bitscan_wave_size*32];
 
-    unsigned offs = offset;
+    SIZE_TYPE offs = offset;
     unsigned cnt;
     const word_t* block_end = block + bm::set_block_size;
     do
@@ -1673,8 +1691,8 @@ void for_each_bit_blk(const bm::word_t* block, bm::id_t offset,
    @ingroup gapfunc
    @internal
 */
-template<typename T, typename Func>
-void for_each_gap_blk(const T* buf, bm::id_t offset,
+template<typename T, typename Func, typename SIZE_TYPE>
+void for_each_gap_blk(const T* buf, SIZE_TYPE offset,
                       Func&  bit_functor)
 {
     const T* pcurr = buf + 1;

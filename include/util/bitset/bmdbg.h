@@ -138,14 +138,14 @@ int read_dump_file(const std::string& fname, VT& data)
 {
     typedef typename VT::value_type  value_type;
 
-    std::streampos fsize;
+    size_t fsize;
     std::ifstream fin(fname.c_str(), std::ios::in | std::ios::binary);
     if (!fin.good())
     {
         return -1;
     }
     fin.seekg(0, std::ios::end);
-    fsize = fin.tellg();
+    fsize = (size_t)fin.tellg();
     
     data.resize(fsize/sizeof(value_type));
 
@@ -154,7 +154,7 @@ int read_dump_file(const std::string& fname, VT& data)
         return 0; // empty input
     }
     fin.seekg(0, std::ios::beg);
-    fin.read((char*) &data[0], fsize);
+    fin.read((char*) &data[0], std::streamsize(fsize));
     if (!fin.good())
     {
         data.resize(0);
@@ -206,10 +206,10 @@ void SaveBVector(const char* fname, const TBV& bvector)
     bvector.calc_stat(&st1);
 
     unsigned char* blob = new unsigned char[st1.max_serialize_mem];
-    unsigned blob_size = bm::serialize(bvector, blob);
+    size_t blob_size = bm::serialize(bvector, blob);
 
 
-    bfile.write((char*)blob, blob_size);
+    bfile.write((char*)blob, std::streamsize(blob_size));
     bfile.close();
 
     delete [] blob;
@@ -217,7 +217,7 @@ void SaveBVector(const char* fname, const TBV& bvector)
 
 inline
 void SaveBlob(const char* name_prefix, unsigned num, const char* ext,
-              const unsigned char* blob, unsigned blob_size)
+              const unsigned char* blob, size_t blob_size)
 {
     std::stringstream fname_str;
     fname_str << name_prefix << "-" << num << ext;
@@ -230,7 +230,7 @@ void SaveBlob(const char* name_prefix, unsigned num, const char* ext,
         std::cout << "Cannot open file: " << fname << std::endl;
         exit(1);
     }
-    bfile.write((char*)blob, blob_size);
+    bfile.write((char*)blob, std::streamsize(blob_size));
     bfile.close();
 }
 
@@ -399,7 +399,7 @@ void print_bvector_stat(const BV& bvect)
 
 
 template<class BV>
-void print_stat(const BV& bv, unsigned blocks = 0)
+void print_stat(const BV& bv, typename BV::block_idx_type blocks = 0)
 {
     const typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
 
@@ -413,33 +413,35 @@ void print_stat(const BV& bv, unsigned blocks = 0)
         blocks = bm::set_total_blocks;
     }
 
-    unsigned nb;
-    unsigned nb_prev = 0;
+    typename BV::block_idx_type nb;
+    typename BV::block_idx_type nb_prev = 0;
     for (nb = 0; nb < blocks; ++nb)
     {
-        const bm::word_t* blk = bman.get_block(nb);
-        if (blk == 0)
-        {
+        unsigned i0, j0;
+        bman.get_block_coord(nb, i0, j0);
+        const bm::word_t* blk = bman.get_block(i0, j0);
+
+        if (!blk)
            continue;
-        }
 
         if (IS_FULL_BLOCK(blk))
         {
            if (BM_IS_GAP(blk)) // gap block
            {
-               printf("[Alert!%i]", nb);
+               std::cout << "[Alert!" << nb << "]";
                assert(0);
            }
            
-           unsigned start = nb; 
-           for(unsigned i = nb+1; i < bm::set_total_blocks; ++i, ++nb)
+           typename BV::block_idx_type start = nb;
+           for(auto i = nb+1; i < bm::set_total_blocks; ++i, ++nb)
            {
-               blk = bman.get_block(nb);
+               bman.get_block_coord(nb, i0, j0);
+               blk = bman.get_block(i0, j0);
                if (IS_FULL_BLOCK(blk))
                {
                  if (BM_IS_GAP(blk)) // gap block
                  {
-                     printf("[Alert!%i]", nb);
+                     std::cout << "[Alert!" << nb << "]";
                      assert(0);
                      --nb;
                      break;
@@ -453,14 +455,14 @@ void print_stat(const BV& bv, unsigned blocks = 0)
                }
            }
 
-           printf("{F.%i:%i}",start, nb);
+           std::cout << "{F." << start << ":" << nb << "}";
            ++printed;
         }
         else
         {
             if ((nb-1) != nb_prev)
             {
-                printf("..%zd..", (size_t)nb-nb_prev);
+                std::cout << ".." << (size_t)nb-nb_prev << "..";
             }
 
             if (BM_IS_GAP(blk))
@@ -477,7 +479,8 @@ void print_stat(const BV& bv, unsigned blocks = 0)
                
                unsigned i,j;
                bman.get_block_coord(nb, i, j);
-                printf(" [GAP %i(%i,%i)=%i:%i-L%i(%zd)] ", nb, i, j, bc, level, len, mem_eff);
+               std::cout << " [GAP " << nb << "(" << i << "," << j << ")"
+                         << "=" << bc << ":" << level << "-L" << len << "(" << mem_eff << ")]";
                 ++printed;
             }
             else // bitset
@@ -491,8 +494,8 @@ void print_stat(const BV& bv, unsigned blocks = 0)
                 }
 
                 count += bc;
-                printf(" (BIT %i=%i[%i]) ", nb, bc, zw);
-                ++printed;                
+                std::cout << " (BIT " << nb << "=" << bc << "[" << zw << "])";
+                ++printed;
             }
         }
         if (printed == 10)
@@ -502,8 +505,7 @@ void print_stat(const BV& bv, unsigned blocks = 0)
         }
         nb_prev = nb;
     } // for nb
-    printf("\n");
-    printf("gap_efficiency=%i\n", total_gap_eff); 
+    std::cout << std::endl << "gap_efficiency=" << total_gap_eff << std::endl;
 
 }
 
@@ -539,6 +541,7 @@ unsigned compute_serialization_size(const BV& bv)
 template<class SV>
 void print_svector_stat(const SV& svect, bool print_sim = false)
 {
+    typedef typename SV::bvector_type bvector_type;
     /// Functor to compute jaccard similarity
     /// \internal
     struct Jaccard_Func
@@ -548,10 +551,10 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
         {
             double d;
             BM_ASSERT(dmit->metric == COUNT_AND);
-            unsigned cnt_and = dmit->result;
+            typename bvector_type::size_type cnt_and = dmit->result;
             ++dmit;
             BM_ASSERT(dmit->metric == COUNT_OR);
-            unsigned cnt_or = dmit->result;
+            typename bvector_type::size_type cnt_or = dmit->result;
             if (cnt_and == 0 || cnt_or == 0)
             {
                 d = 0.0;
@@ -566,7 +569,6 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
         }
     };
 
-    typedef typename SV::bvector_type bvector_type;
     typedef  bm::similarity_descriptor<bvector_type, 2, unsigned, unsigned, Jaccard_Func> similarity_descriptor_type;
     typedef bm::similarity_batch<similarity_descriptor_type> similarity_batch_type;
     
@@ -628,7 +630,7 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
     std::cout << "Memory used:      " << st.memory_used << " "
               << (st.memory_used / (1024 * 1024))       << "MB" << std::endl;
     
-    unsigned eff_max_element = svect.effective_vector_max();
+    auto eff_max_element = svect.effective_vector_max();
     size_t std_vect_size = sizeof(typename SV::value_type) * svect.size() * eff_max_element;
     std::cout << "Projected mem usage for vector<value_type>:"
               << std_vect_size << " "
@@ -677,7 +679,7 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
     {
         std::cout << "(not) NULL plain:\n";
         print_bvector_stat(*bv_null);
-        unsigned not_null_cnt = bv_null->count();
+        typename SV::size_type not_null_cnt = bv_null->count();
         std::cout << " - Bitcount: " << not_null_cnt << std::endl;
 
         std::cout << "Projected mem usage for std::vector<pair<unsigned, value_type> >:"
@@ -696,9 +698,7 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
         size_t non_zero_mem = size_t(bv_join_cnt) * sizeof(typename SV::value_type);
         std::cout << "Projected mem usage for non-zero elements: " << non_zero_mem << " "
                   << non_zero_mem / (1024*1024) << " MB"
-                  << std::endl;
-
-        
+                  << std::endl;        
     }
 }
 
@@ -827,7 +827,7 @@ int file_save_svector(const SV& sv, const std::string& fname, size_t* sv_blob_si
         return -1;
     }
     const char* buf = (char*)sv_lay.buf();
-    fout.write(buf, sv_lay.size());
+    fout.write(buf, std::streamsize(sv_lay.size()));
     if (!fout.good())
     {
         return -1;

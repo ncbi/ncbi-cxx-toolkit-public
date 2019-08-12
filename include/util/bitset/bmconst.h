@@ -23,6 +23,8 @@ For more information please visit:  http://bitmagic.io
     @internal
 */
 
+#include <cstdint>
+
 namespace bm
 {
 
@@ -40,8 +42,12 @@ typedef unsigned short short_t;
 # define BM_DEFAULT_POOL_SIZE 4096
 #endif
 
-
-const unsigned id_max = 0xFFFFFFFF;
+#ifdef BM64ADDR
+const unsigned long long id_max32 = 0xFFFFFFFFull;
+const unsigned long long id_max48 = 0xFFFFFFFFFFFFull;
+#else
+const unsigned id_max32 = 0xFFFFFFFFu;
+#endif
 
 // Data Block parameters
 
@@ -72,20 +78,38 @@ typedef unsigned short gap_word_t;
 const unsigned gap_max_buff_len = 1280;
 const unsigned gap_max_bits = 65536;
 const unsigned gap_equiv_len = (unsigned)
-   ((sizeof(bm::word_t) * bm::set_block_size) / sizeof(gap_word_t));
+   ((sizeof(bm::word_t) * bm::set_block_size) / sizeof(bm::gap_word_t));
+const unsigned gap_max_bits_cmrz = bm::gap_max_bits / 2;
 const unsigned gap_levels = 4;
 const unsigned gap_max_level = bm::gap_levels - 1;
 
 
 // Block Array parameters
 
-const unsigned set_array_size = 256u;
+
+const unsigned set_array_size32 = 256u;
+const unsigned set_sub_array_size = set_array_size32;
 const unsigned set_array_shift = 8u;
 const unsigned set_array_mask  = 0xFFu;
-const unsigned set_total_blocks = (bm::set_array_size * bm::set_array_size);
 
-const unsigned bits_in_block = bm::set_block_size * (unsigned)(sizeof(bm::word_t) * 8);
-const unsigned bits_in_array = bm::bits_in_block * bm::set_array_size;
+const unsigned set_total_blocks32 = (bm::set_array_size32 * bm::set_array_size32);
+
+#ifdef BM64ADDR
+const unsigned set_total_blocks48 = bm::id_max48 / bm::gap_max_bits;
+const unsigned long long id_max = bm::id_max48;
+const unsigned long long set_array_size48 = 1 + (bm::id_max48 / (bm::set_sub_array_size * bm::gap_max_bits));
+const unsigned  set_top_array_size = bm::set_array_size48;
+const id64_t set_total_blocks = id64_t(bm::set_top_array_size) * set_sub_array_size;
+//bm::id_max / (bm::gap_max_bits * bm::set_sub_array_size);
+#else
+const unsigned id_max = bm::id_max32;
+const unsigned set_top_array_size = bm::set_array_size32;
+const unsigned set_total_blocks = bm::set_total_blocks32;
+#endif
+
+const unsigned bits_in_block = bm::set_block_size * unsigned((sizeof(bm::word_t) * 8));
+const unsigned bits_in_array = bm::bits_in_block * bm::set_array_size32;
+
 
 // Rank-Select parameters
 const unsigned rs3_border0 = 21824; // 682 words by 32-bits
@@ -205,8 +229,8 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.3.19.0 (c) 2002-2018 Anatoliy Kuznetsov.";
-template<bool T> const unsigned _copyright<T>::_v[3] = {3, 18, 0};
+    "BitMagic C++ Library. v.5.0.0 (c) 2002-2019 Anatoliy Kuznetsov.";
+template<bool T> const unsigned _copyright<T>::_v[3] = {3, 20, 0};
 
 
 

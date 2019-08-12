@@ -21,6 +21,12 @@ For more information please visit:  http://bitmagic.io
 #include <memory.h>
 #include <stdexcept>
 
+#ifndef BM__H__INCLUDED__
+// BitMagic utility headers do not include main "bm.h" declaration 
+// #include "bm.h" or "bm64.h" explicitly 
+# error missing include (bm.h or bm64.h)
+#endif
+
 #include "bmserial.h"
 #include "bmdef.h"
 
@@ -39,8 +45,8 @@ template<class BV>
 class bvps_addr_resolver
 {
 public:
-    typedef bm::id_t                                 size_type;
     typedef BV                                       bvector_type;
+    typedef typename BV::size_type                   size_type;
     typedef typename bvector_type::rs_index_type     rs_index_type;
 public:
     bvps_addr_resolver();
@@ -76,7 +82,7 @@ public:
      
         \return true if id is known and resolved successfully
     */
-    bool resolve(bm::id_t id_from, bm::id_t* id_to) const;
+    bool resolve(size_type id_from, size_type* id_to) const;
     
     /*!
         \brief Resolve id to integer id (address) without sync check
@@ -88,13 +94,12 @@ public:
      
         \return true if id is known and resolved successfully
     */
-    bool get(bm::id_t id_from, bm::id_t* id_to) const;
+    bool get(size_type id_from, size_type* id_to) const;
     
     /*!
         \brief Set id (bit) to address resolver
     */
-    void set(bm::id_t id_from);
-    
+    void set(size_type id_from);
     
     /*!
         \brief Re-calculate prefix sum table
@@ -142,6 +147,7 @@ public:
         \brief equality comparison
     */
     bool equal(const bvps_addr_resolver& addr_res) const;
+    
 protected:
     void construct_rs_index();
     void free_rs_index();
@@ -163,9 +169,9 @@ template<class SV>
 class sv_addr_resolver
 {
 public:
-    typedef bm::id_t                              size_type;
     typedef SV                                    sparse_vector_type;
     typedef typename SV::bvector_type             bvector_type;
+    typedef typename bvector_type::size_type      size_type;
 public:
     sv_addr_resolver();
     sv_addr_resolver(const sv_addr_resolver& addr_res);
@@ -178,7 +184,7 @@ public:
      
         \return true if id is known and resolved successfully
     */
-    bool resolve(bm::id_t id_from, bm::id_t* id_to) const;
+    bool resolve(size_type id_from, size_type* id_to) const;
     
     /*!
         \brief Resolve id to integer id (address)
@@ -188,12 +194,12 @@ public:
      
         \return true if id is known and resolved successfully
     */
-    bool get(bm::id_t id_from, bm::id_t* id_to) const;
+    bool get(size_type id_from, size_type* id_to) const;
     
     /*!
         \brief Set id (bit) to address resolver
     */
-    void set(bm::id_t id_from);
+    void set(size_type id_from);
     
     /*!
         \brief optimize underlying sparse vectors
@@ -208,7 +214,7 @@ public:
 private:
     bvector_type              set_flags_bv_;   ///< bit-vector of set flags
     sparse_vector_type        addr_sv_;     ///< sparse vector for address map
-    unsigned                  max_addr_;    ///< maximum allocated address/index
+    size_type                 max_addr_;    ///< maximum allocated address/index
 };
 
 
@@ -220,11 +226,12 @@ template<class Value, class BV>
 class compressed_collection
 {
 public:
-    typedef bm::id_t                             key_type;
-    typedef bm::id_t                             address_type;
+    typedef BV                                   bvector_type;
+    typedef typename BV::size_type               size_type;
+    typedef size_type                            key_type;
+    typedef size_type                            address_type;
     typedef Value                                value_type;
     typedef Value                                mapped_type;
-    typedef BV                                   bvector_type;
     typedef std::vector<value_type>              container_type;
     typedef bm::bvps_addr_resolver<bvector_type> address_resolver_type;
     
@@ -401,8 +408,12 @@ void bvps_addr_resolver<BV>::construct_rs_index()
 template<class BV>
 void bvps_addr_resolver<BV>::free_rs_index()
 {
-    bm::aligned_free(rs_index_);
-    rs_index_ = 0;
+    if (rs_index_)
+    {
+        rs_index_->~rs_index();
+        bm::aligned_free(rs_index_);
+        rs_index_ = 0;
+    }
 }
 
 //---------------------------------------------------------------------
@@ -448,10 +459,9 @@ void bvps_addr_resolver<BV>::move_from(bvps_addr_resolver& addr_res) BMNOEXEPT
 //---------------------------------------------------------------------
 
 template<class BV>
-bool bvps_addr_resolver<BV>::resolve(bm::id_t id_from, bm::id_t* id_to) const
+bool bvps_addr_resolver<BV>::resolve(size_type id_from, size_type* id_to) const
 {
     BM_ASSERT(id_to);
-
     if (in_sync_)
     {
         *id_to = addr_bv_.count_to_test(id_from, *rs_index_);
@@ -474,7 +484,7 @@ bool bvps_addr_resolver<BV>::resolve(bm::id_t id_from, bm::id_t* id_to) const
 //---------------------------------------------------------------------
 
 template<class BV>
-bool bvps_addr_resolver<BV>::get(bm::id_t id_from, bm::id_t* id_to) const
+bool bvps_addr_resolver<BV>::get(size_type id_from, size_type* id_to) const
 {
     BM_ASSERT(id_to);
     BM_ASSERT(in_sync_);
@@ -486,7 +496,7 @@ bool bvps_addr_resolver<BV>::get(bm::id_t id_from, bm::id_t* id_to) const
 //---------------------------------------------------------------------
 
 template<class BV>
-void bvps_addr_resolver<BV>::set(bm::id_t id_from)
+void bvps_addr_resolver<BV>::set(size_type id_from)
 {
     BM_ASSERT(!addr_bv_.test(id_from));
     
@@ -504,7 +514,7 @@ void bvps_addr_resolver<BV>::calc_prefix_sum(bool force)
     if (in_sync_ && force == false)
         return;  // nothing to do
     
-    addr_bv_.running_count_blocks(rs_index_); // compute popcount prefix list
+    addr_bv_.build_rs_index(rs_index_); // compute popcount prefix list
     in_sync_ = true;
 }
 
@@ -551,7 +561,7 @@ sv_addr_resolver<SV>::sv_addr_resolver(const sv_addr_resolver& addr_res)
 //---------------------------------------------------------------------
 
 template<class SV>
-bool sv_addr_resolver<SV>::resolve(bm::id_t id_from, bm::id_t* id_to) const
+bool sv_addr_resolver<SV>::resolve(size_type id_from, size_type* id_to) const
 {
     BM_ASSERT(id_to);
     
@@ -563,7 +573,7 @@ bool sv_addr_resolver<SV>::resolve(bm::id_t id_from, bm::id_t* id_to) const
 //---------------------------------------------------------------------
 
 template<class SV>
-void sv_addr_resolver<SV>::set(bm::id_t id_from)
+void sv_addr_resolver<SV>::set(size_type id_from)
 {
     bool found = set_flags_bv_.test(id_from);
     if (!found)
@@ -586,13 +596,11 @@ void sv_addr_resolver<SV>::optimize(bm::word_t* temp_block)
 //---------------------------------------------------------------------
 
 
-
 template<class Value, class BV>
 compressed_collection<Value, BV>::compressed_collection()
 : last_add_(0)
 {
 }
-
 
 //---------------------------------------------------------------------
 

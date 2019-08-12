@@ -90,7 +90,6 @@ For more information please visit:  http://bitmagic.io
 // Enable MSVC 8.0 (2005) specific optimization options
 //
 #if(_MSC_VER >= 1400)
-
 #  define BM_HASFORCEINLINE
 #  ifndef BMRESTRICT
 #    define BMRESTRICT __restrict
@@ -98,7 +97,6 @@ For more information please visit:  http://bitmagic.io
 #endif 
 
 #ifdef __GNUG__
-
 #  ifndef BMRESTRICT
 #    define BMRESTRICT __restrict__
 #  endif
@@ -108,9 +106,12 @@ For more information please visit:  http://bitmagic.io
 #  endif
 #endif
 
+# ifdef NDEBUG
+#    define BM_NOASSERT
+# endif
+
 
 #ifndef BM_ASSERT
-
 # ifndef BM_NOASSERT
 #  include <cassert>
 #  define BM_ASSERT assert
@@ -119,7 +120,6 @@ For more information please visit:  http://bitmagic.io
 #    define BM_ASSERT(x)
 #  endif
 # endif
-
 #endif
 
 
@@ -134,6 +134,7 @@ For more information please visit:  http://bitmagic.io
 
 #define FULL_BLOCK_REAL_ADDR bm::all_set<true>::_block._p
 #define FULL_BLOCK_FAKE_ADDR bm::all_set<true>::_block._p_fullp
+#define FULL_SUB_BLOCK_REAL_ADDR bm::all_set<true>::_block._s
 #define BLOCK_ADDR_SAN(addr) (addr == FULL_BLOCK_FAKE_ADDR) ? FULL_BLOCK_REAL_ADDR : addr
 #define IS_VALID_ADDR(addr) bm::all_set<true>::is_valid_block_addr(addr)
 #define IS_FULL_BLOCK(addr) bm::all_set<true>::is_full_block(addr)
@@ -233,61 +234,113 @@ For more information please visit:  http://bitmagic.io
 # endif
 
 
+#if (defined(BMSSE2OPT) || defined(BMSSE42OPT) || defined(BMAVX2OPT) || defined(BMAVX512OPT))
+
+    # ifndef BM_SET_MMX_GUARD
+    #  define BM_SET_MMX_GUARD  sse_empty_guard  bm_mmx_guard_;
+    # endif
+
+    #ifdef _MSC_VER
+
+    #ifndef BM_ALIGN16
+    #  define BM_ALIGN16 __declspec(align(16))
+    #  define BM_ALIGN16ATTR
+    #endif
+
+    #ifndef BM_ALIGN32
+    #  define BM_ALIGN32 __declspec(align(32))
+    #  define BM_ALIGN32ATTR
+    #endif
+
+    #ifndef BM_ALIGN64
+    #  define BM_ALIGN64 __declspec(align(64))
+    #  define BM_ALIGN64ATTR
+    #endif
+
+    # else // GCC
+
+    #ifndef BM_ALIGN16
+    #  define BM_ALIGN16
+    #  define BM_ALIGN16ATTR __attribute__((aligned(16)))
+    #endif
+
+    #ifndef BM_ALIGN32
+    #  define BM_ALIGN32
+    #  define BM_ALIGN32ATTR __attribute__((aligned(32)))
+    #endif
+
+    #ifndef BM_ALIGN64
+    #  define BM_ALIGN64
+    #  define BM_ALIGN64ATTR __attribute__((aligned(64)))
+    #endif
+    #endif
+
+#else 
+
+    #define BM_ALIGN16 
+    #define BM_ALIGN16ATTR
+    #define BM_ALIGN32
+    #define BM_ALIGN32ATTR
+    #define BM_ALIGN64
+    #define BM_ALIGN64ATTR
+
+#endif
+
+
+/*
 #if !(defined(BMSSE2OPT) || defined(BMSSE42OPT) || defined(BMAVX2OPT) || defined(BMAVX512OPT))
 
-
-#define BM_ALIGN16 
-#define BM_ALIGN16ATTR
-#define BM_ALIGN32
-#define BM_ALIGN32ATTR
-#define BM_ALIGN64
-#define BM_ALIGN64ATTR
+    #define BM_ALIGN16 
+    #define BM_ALIGN16ATTR
+    #define BM_ALIGN32
+    #define BM_ALIGN32ATTR
+    #define BM_ALIGN64
+    #define BM_ALIGN64ATTR
 
 #else  
 
-# ifndef BM_SET_MMX_GUARD
-#  define BM_SET_MMX_GUARD  sse_empty_guard  bm_mmx_guard_;
-# endif
+    # ifndef BM_SET_MMX_GUARD
+    #  define BM_SET_MMX_GUARD  sse_empty_guard  bm_mmx_guard_;
+    # endif
 
-#ifdef _MSC_VER
+    #ifdef _MSC_VER
 
-#ifndef BM_ALIGN16
-#  define BM_ALIGN16 __declspec(align(16))
-#  define BM_ALIGN16ATTR
-#endif
+        #ifndef BM_ALIGN16
+        #  define BM_ALIGN16 __declspec(align(16))
+        #  define BM_ALIGN16ATTR
+        #endif
 
-#ifndef BM_ALIGN32
-#  define BM_ALIGN32 __declspec(align(32))
-#  define BM_ALIGN32ATTR
-#endif
+        #ifndef BM_ALIGN32
+        #  define BM_ALIGN32 __declspec(align(32))
+        #  define BM_ALIGN32ATTR
+        #endif
 
-#ifndef BM_ALIGN64
-#  define BM_ALIGN64 __declspec(align(64))
-#  define BM_ALIGN64ATTR
-#endif
+        #ifndef BM_ALIGN64
+        #  define BM_ALIGN64 __declspec(align(64))
+        #  define BM_ALIGN64ATTR
+        #endif
 
+    # else // GCC
 
-# else // GCC
+        #ifndef BM_ALIGN16
+        #  define BM_ALIGN16
+        #  define BM_ALIGN16ATTR __attribute__((aligned(16)))
+        #endif
 
-#ifndef BM_ALIGN16
-#  define BM_ALIGN16
-#  define BM_ALIGN16ATTR __attribute__((aligned(16)))
-#endif
+        #ifndef BM_ALIGN32
+        #  define BM_ALIGN32
+        #  define BM_ALIGN32ATTR __attribute__((aligned(32)))
+        #endif
 
-#ifndef BM_ALIGN32
-#  define BM_ALIGN32
-#  define BM_ALIGN32ATTR __attribute__((aligned(32)))
-#endif
-
-#ifndef BM_ALIGN64
-#  define BM_ALIGN64
-#  define BM_ALIGN64ATTR __attribute__((aligned(64)))
-#endif
-
-
-#endif
+        #ifndef BM_ALIGN64
+        #  define BM_ALIGN64
+        #  define BM_ALIGN64ATTR __attribute__((aligned(64)))
+        #endif
+    #endif
 
 #endif
+*/
+
 
 #if (defined(BMSSE2OPT) || defined(BMSSE42OPT))
 #   define BM_VECT_ALIGN BM_ALIGN16

@@ -303,8 +303,8 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
         }
     }
 
-    unsigned int skip_array[bm::set_total_blocks] = {0,};
-    bitvector.count_blocks(skip_array);
+    bm::bvector<>::rs_index_type rs_index;
+    bitvector.build_rs_index(&rs_index);
 
     // Get indices of included sequences
     bm::bvector<>::counted_enumerator en = bitvector.first();
@@ -322,10 +322,10 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
             // set divergence value using bit vector storage encoding
 
             int index1 = (it->index1 == 0 ? 0 : 
-                    bitvector.count_range(0, it->index1 - 1, skip_array));
+                    bitvector.count_range(0, it->index1 - 1, rs_index));
 
             int index2 = (it->index2 == 0 ? 0 : 
-                    bitvector.count_range(0, it->index2 - 1, skip_array));
+                    bitvector.count_range(0, it->index2 - 1, rs_index));
 
             m_DivergenceMatrix(index1, index2) = it->distance;
         }

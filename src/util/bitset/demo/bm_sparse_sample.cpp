@@ -93,16 +93,16 @@ int main(int, const char**)
     // and precomputed skip list. Skip list gives faster random access.
     //
 
-    unsigned skip_array[bm::set_total_blocks]={0,};
-    bv.count_blocks(skip_array); // precompute skip list
+    bm::bvector<>::rs_index_type rs_index;
+    bv.build_rs_index(&rs_index);
 
     if (bv[100]) {
-        unsigned sparse_idx = bv.count_range(0, 100 - 1, skip_array); 
+        unsigned sparse_idx = bv.count_range(0, 100 - 1, rs_index); 
         cout << "Element " << 100 << " " << svect[sparse_idx] << endl;
     }
 
     if (bv[90001]) {
-        unsigned sparse_idx = bv.count_range(0, 90001 - 1, skip_array); 
+        unsigned sparse_idx = bv.count_range(0, 90001 - 1, rs_index); 
         cout << "Element " << 90001 << " " << svect[sparse_idx] << endl;
     }
 

@@ -45,6 +45,7 @@ For more information please visit:  http://bitmagic.io
 #include <util/bitset/bmsparsevec.h>
 #include <util/bitset/bmsparsevec_algo.h>
 #include <util/bitset/bmsparsevec_serial.h>
+#include <util/bitset/bmstrsparsevec.h>
 #include <util/bitset/bmrandom.h>
 
 //#include <util/bitset/bmdbg.h>
@@ -107,6 +108,7 @@ private:
 };
 
 typedef bm::bvector<> bvect;
+
 
 // generate pseudo-random bit-vector, mix of compressed/non-compressed blocks
 //
@@ -699,7 +701,7 @@ void BitCountSparseTest()
     }
 
     std::unique_ptr<bvect::rs_index_type> bc_arr(new bvect::rs_index_type());
-    bv->running_count_blocks(bc_arr.get());
+    bv->build_rs_index(bc_arr.get());
 
     {
         unsigned right = 65535;
@@ -1259,7 +1261,7 @@ void SerializationTest()
     bv_sparse.calc_stat(&st);
     unsigned char*  buf = new unsigned char[st.max_serialize_mem];
 
-    unsigned len, id_size;
+    size_t len, id_size;
     len = id_size = 0;
     {
     TimeTaker tt("Small bvector serialization", REPEATS*70000);
@@ -1292,7 +1294,8 @@ void SerializationTest()
     }
     
     char cbuf[256];
-    sprintf(cbuf, "%i %i %i", id_size, len, value);
+    cout << cbuf << " " << id_size << " " << len << " " << value << endl;
+    
     
     
     delete bv;
@@ -2127,6 +2130,38 @@ void BitBlockShiftTest()
             exit(1);
         }
     }
+    
+    
+    for (i = 0; i < bm::set_block_size; ++i)
+    {
+        blk0[i] = blk1[i] = unsigned(rand());
+    }
+
+    {
+        TimeTaker tt("Bit-block shift-l(1)", repeats);
+        for (i = 0; i < repeats; ++i)
+        {
+            bm::bit_block_shift_l1(blk0, &acc0, 0);
+        }
+    }
+
+    {
+        TimeTaker tt("Bit-block shift-l(1) unrolled", repeats);
+        for (i = 0; i < repeats; ++i)
+        {
+            bm::bit_block_shift_l1_unr(blk1, &acc1, 0);
+        }
+    }
+
+    for (i = 0; i < bm::set_block_size; ++i)
+    {
+        if (blk0[i] != blk1[i])
+        {
+            cerr << "Stress SHIFT-l(1) check failed" << endl;
+            exit(1);
+        }
+    }
+
 
 }
 
@@ -2534,8 +2569,27 @@ void BvectorShiftTest()
                 } // for
             } // for
         }
-
     }
+
+    {
+        std::vector<bvect> bv_coll;
+        GenerateTestCollection(&bv_coll, 25, 80000000);
+
+        if (!bv_coll.size())
+            return;
+
+        {
+            TimeTaker tt("bvector<>::shift_left() ", REPEATS);
+            for (unsigned i = 0; i < REPEATS; ++i)
+            {
+                for (unsigned k = 0; k < bv_coll.size(); ++k)
+                {
+                    bv_coll[k].shift_left();
+                } // for
+            } // for
+        }
+    }
+
 
     bvect mask_bv; // mask vector
     mask_bv.init();
@@ -2736,9 +2790,9 @@ void RankCompressionTest()
     bm::rank_compressor<bvect> rc;
 
     std::unique_ptr<bvect::rs_index_type> bc1(new bvect::rs_index_type());
-    bv_i1.running_count_blocks(bc1.get());
+    bv_i1.build_rs_index(bc1.get());
     std::unique_ptr<bvect::rs_index_type> bc2(new bvect::rs_index_type());
-    bv_i2.running_count_blocks(bc2.get());
+    bv_i2.build_rs_index(bc2.get());
 
     {
         TimeTaker tt("Rank compression test", REPEATS * 10);
@@ -2912,8 +2966,101 @@ void SparseVectorScannerTest()
         std::cerr << "2. Sparse scanner integrity check failed!" << std::endl;
         exit(1);
     }
+}
+
+typedef bm::str_sparse_vector<char, bvect, 32> str_svect_type;
+
+static
+void GenerateTestStrCollection(std::vector<string>& str_coll, unsigned max_coll)
+{
+    string prefix = "az";
+    string str;
+    for (unsigned i = 0; i < max_coll; ++i)
+    {
+        str = prefix;
+        str.append(to_string(i));
+        str_coll.emplace_back(str);
+        
+        {
+            prefix.clear();
+            unsigned prefix_len = rand() % 5;
+            for (unsigned j = 0; j < prefix_len; ++j)
+            {
+                char cch = char('a' + rand() % 26);
+                prefix.push_back(cch);
+            } // for j
+        }
+    } // for i
+    
+}
+
+
+static
+void StrSparseVectorTest()
+{
+    const unsigned max_coll = 20000000;
+    
+   std::vector<string> str_coll;
+   str_svect_type str_sv;
+
+   GenerateTestStrCollection(str_coll, max_coll);
+   
+    {
+       TimeTaker tt("bm::str_sparse_vector<>::push_back() ", 1);
+       for (auto str : str_coll)
+       {
+           str_sv.push_back(str);
+       }
+    }
+    str_sv.optimize();
+    
+    {
+       str_svect_type str_sv0;
+       TimeTaker tt("bm::str_sparse_vector<>::back_insert_iterator ", 1);
+       str_svect_type::back_insert_iterator bi = str_sv0.get_back_inserter();
+       for (auto str : str_coll)
+       {
+           bi = str;
+       }
+
+    }
+    
+    {
+    string str;
+
+        TimeTaker tt("bm::str_sparse_vector<> - random access ", 1);
+        for (unsigned i = 0; i < str_sv.size(); ++i)
+        {
+            str_sv.get(i, str);
+            const std::string& sc = str_coll[i];
+            if (str != sc)
+            {
+                cerr << "String random access check failure!" << endl;
+                exit(1);
+            }
+        }
+    }
+
+    {
+        TimeTaker tt("bm::str_sparse_vector<>::const_iterator ", 1);
+        str_svect_type::const_iterator it = str_sv.begin();
+        str_svect_type::const_iterator it_end = str_sv.end();
+
+        for (unsigned i=0; it < it_end; ++it, ++i)
+        {
+            const char* s = *it;
+            const std::string& sc = str_coll[i];
+            int cmp = ::strcmp(s, sc.c_str());
+            if (cmp != 0)
+            {
+                cerr << "String random access check failure!" << endl;
+                exit(1);
+            }
+        }
+    }
 
 }
+
 
 int main(void)
 {
@@ -2978,6 +3125,8 @@ int main(void)
     RankCompressionTest();
 
     Set2SetTransformTest();
+
+    StrSparseVectorTest();
 
     return 0;
 }
