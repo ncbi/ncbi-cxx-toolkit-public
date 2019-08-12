@@ -114,7 +114,7 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
 
 const string kTerminalNs = "[n] sequence[s] [has] terminal Ns";
 
-DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSmart | eBig, "Ns at end of sequences")
+DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSmart | eBig | eFatal, "Ns at end of sequences")
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq || seq->IsAa()) {

@@ -69,7 +69,7 @@ static const pair<const char*, const char*> rrna_name_replace[] = {
     { "Large Subunit Ribosomal RNA; lsuRNA; LSU ribosomal RNA", "large subunit ribosomal RNA" }
 };
 
-DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc | eSubmitter | eSmart, "rRNA name conflicts")
+DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc | eSubmitter | eSmart | eFatal, "rRNA name conflicts")
 {
     static const string msg = "[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\"";
     if (!obj.IsRna() || !obj.GetRna().CanGetExt() || !obj.GetRna().GetExt().IsName() || obj.GetRna().GetType() != CRNA_ref::eType_rRNA) {

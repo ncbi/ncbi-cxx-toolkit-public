@@ -252,7 +252,7 @@ const string kCDSRNAOverlapNoContainSameStrand = "[n/2] coding region[s] overlap
 const string kCDSRNAOverlapNoContainOppStrand = "[n/2] coding region[s] overlap RNA[s] on the opposite strand (no containment)";
 
 
-DISCREPANCY_CASE(RNA_CDS_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSmart, "CDS RNA Overlap")
+DISCREPANCY_CASE(RNA_CDS_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSmart | eFatal, "CDS RNA Overlap")
 {
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
     const vector<CConstRef<CSeq_feat> >& rnas = context.Feat_RNAs();
@@ -324,7 +324,7 @@ DISCREPANCY_SUMMARIZE(RNA_CDS_OVERLAP)
 }
 
 
-DISCREPANCY_CASE(OVERLAPPING_RRNAS, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Overlapping rRNAs")
+DISCREPANCY_CASE(OVERLAPPING_RRNAS, COverlappingFeatures, eDisc | eSubmitter | eSmart | eFatal, "Overlapping rRNAs")
 {
     const vector<CConstRef<CSeq_feat> >& rrnas = context.FeatRRNAs();
     for (size_t i = 0; i < rrnas.size(); i++) {

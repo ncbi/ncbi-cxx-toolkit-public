@@ -86,7 +86,7 @@ static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (
 const string kMapChromosomeConflict = "[n] source[s] on eukaryotic sequence[s] [has] map but not chromosome";
 
 
-DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "Eukaryotic sequences with a map source qualifier should also have a chromosome source qualifier")
+DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart | eFatal, "Eukaryotic sequences with a map source qualifier should also have a chromosome source qualifier")
 {
     if (!obj.IsSource() || !context.IsEukaryotic() || !obj.GetSource().IsSetSubtype()) {
         return;
@@ -305,7 +305,7 @@ static bool HasUnculturedNotes(const CBioSource& src)
 
 const string kUnculturedNotes = "[n] bio-source[s] [has] uncultured note[s]";
 
-DISCREPANCY_CASE(UNCULTURED_NOTES, CBioSource, eOncaller, "Uncultured Notes")
+DISCREPANCY_CASE(UNCULTURED_NOTES, CBioSource, eOncaller | eFatal, "Uncultured Notes")
 {
     if (HasUnculturedNotes(obj)) {
         m_Objs[kUnculturedNotes].Add(*context.FeatOrDescObj(), false).Fatal();

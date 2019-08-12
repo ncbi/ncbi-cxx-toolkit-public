@@ -217,7 +217,7 @@ void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& autho
 }
 
 
-DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "Publications with the same titles should have the same authors")
+DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart | eFatal, "Publications with the same titles should have the same authors")
 {
     if (!obj.IsPub()) {
         return;
@@ -377,7 +377,7 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
 
 const string kUnpubPubWithoutTitle = "[n] unpublished pub[s] [has] no title";
 
-DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitter | eSmart | eBig, "Unpublished pubs should have titles")
+DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Unpublished pubs should have titles")
 {
     if (HasUnpubWithoutTitle(obj)) {
         if (context.GetCurrentSeqdesc() != NULL) {
@@ -438,7 +438,7 @@ bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
 
 const string kMissingAffil = "[n] citsub[s] [is] missing affiliation";
 
-DISCREPANCY_CASE(MISSING_AFFIL, CPubdesc, eDisc | eOncaller, "Missing affiliation")
+DISCREPANCY_CASE(MISSING_AFFIL, CPubdesc, eDisc | eOncaller | eFatal, "Missing affiliation")
 {
     if (IsCitSubMissingAffiliation(obj)) {
         if (context.GetCurrentSeqdesc() != NULL) {
@@ -504,7 +504,7 @@ const string kCitSubSummary = "Citsub affiliation conflicts found";
 const string kSummaries = "summaries";
 
 
-DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CAuth_list, eDisc | eOncaller | eSmart, "All Cit-subs should have identical affiliations")
+DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CAuth_list, eDisc | eOncaller | eSmart | eFatal, "All Cit-subs should have identical affiliations")
 {
     CConstRef<CPub> pub = context.GetCurrentPub();
     if (pub && !pub->IsSub()) {

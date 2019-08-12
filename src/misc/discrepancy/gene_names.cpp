@@ -157,7 +157,7 @@ DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 
 
 // EC_NUMBER_ON_UNKNOWN_PROTEIN
-DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc | eSubmitter | eSmart, "EC number on unknown protein")
+DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc | eSubmitter | eSmart | eFatal, "EC number on unknown protein")
 {
     if (!obj.IsProt() || !obj.GetProt().CanGetName() || !obj.GetProt().CanGetEc() || obj.GetProt().GetEc().empty()) {
         return;
@@ -204,7 +204,7 @@ DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 
 
 // SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME
-DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart, "Hypothetical CDS with gene names")
+DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart | eFatal, "Hypothetical CDS with gene names")
 {
     if (!obj.IsCdregion() || !context.GetCurrentSeq_feat()->CanGetProduct()) {
         return;

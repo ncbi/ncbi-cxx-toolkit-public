@@ -105,7 +105,7 @@ DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 
 
 // MISSING_PROTEIN_ID
-DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart, "Missing Protein ID")
+DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart | eFatal, "Missing Protein ID")
 {
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
     if( ! bioseq || ! bioseq->IsAa() ) {
@@ -125,7 +125,7 @@ DISCREPANCY_SUMMARIZE(MISSING_PROTEIN_ID)
 
 
 // INCONSISTENT_PROTEIN_ID
-DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent Protein ID")
+DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart | eFatal, "Inconsistent Protein ID")
 {
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
     if( ! bioseq || ! bioseq->IsAa() ) {
@@ -241,7 +241,7 @@ void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const 
 }
 
 
-DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "More than 10 Ns in a row")
+DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc | eSubmitter | eSmart | eBig | eFatal, "More than 10 Ns in a row")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -654,7 +654,7 @@ static const char* kContainedSame = "[n] coding region[s] [is] completely contai
 static const char* kContainedOpps = "[n] coding region[s] [is] completely contained in another coding region, but on the opposite strand.";
 
 
-DISCREPANCY_CASE(CONTAINED_CDS, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Contained CDs")
+DISCREPANCY_CASE(CONTAINED_CDS, COverlappingFeatures, eDisc | eSubmitter | eSmart | eFatal, "Contained CDs")
 {
     if (!context.GetCurrentBioseq()->IsSetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || context.IsEukaryotic()) {
         return;
@@ -995,7 +995,7 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 
 // MISSING_LOCUS_TAGS
 
-DISCREPANCY_CASE(MISSING_LOCUS_TAGS, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Missing locus tags")
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, COverlappingFeatures, eDisc | eSubmitter | eSmart | eFatal, "Missing locus tags")
 {
     if (!context.GetCurrentBioseq()->IsNa()) {
         return;
@@ -1025,7 +1025,7 @@ DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 
 // NO_LOCUS_TAGS
 
-DISCREPANCY_CASE(NO_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "No locus tags at all")
+DISCREPANCY_CASE(NO_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart | eFatal, "No locus tags at all")
 {
     if (obj.IsSetData() && obj.GetData().IsGene()) {
         const CGene_ref& gene_ref = obj.GetData().GetGene();
@@ -1187,7 +1187,7 @@ DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
 
 
 // SEGSETS_PRESENT
-DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc | eSmart, "Segsets present")
+DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc | eSmart | eFatal, "Segsets present")
 {
     if( GET_FIELD_OR_DEFAULT(obj, Class, CBioseq_set::eClass_not_set) != CBioseq_set::eClass_segset ) {
         return;

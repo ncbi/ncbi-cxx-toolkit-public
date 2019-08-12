@@ -64,7 +64,7 @@ DISCREPANCY_MODULE(feature_tests);
 
 const string kPseudoMismatch = "[n] CDSs, RNAs, and genes have mismatching pseudos.";
 
-DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Pseudo Mismatch")
+DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Pseudo Mismatch")
 {
     if (obj.IsSetPseudo() && obj.GetPseudo() && 
         (obj.GetData().IsCdregion() || obj.GetData().IsRna())) {
@@ -119,7 +119,7 @@ DISCREPANCY_AUTOFIX(PSEUDO_MISMATCH)
 
 const string kShortRRNA = "[n] rRNA feature[s] [is] too short";
 
-DISCREPANCY_CASE(SHORT_RRNA, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Short rRNA Features")
+DISCREPANCY_CASE(SHORT_RRNA, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Short rRNA Features")
 {
     if (!obj.IsSetPartial() && IsShortrRNA(obj, &(context.GetScope()))) {
         m_Objs[kShortRRNA].Add(*context.DiscrObj(obj), false).Fatal();
@@ -156,7 +156,7 @@ static bool IsRBS(const CSeq_feat& f)
 }
 
 
-DISCREPANCY_CASE(RBS_WITHOUT_GENE, COverlappingFeatures, eOncaller, "RBS features should have an overlapping gene")
+DISCREPANCY_CASE(RBS_WITHOUT_GENE, COverlappingFeatures, eOncaller | eFatal, "RBS features should have an overlapping gene")
 {
     const vector<CConstRef<CSeq_feat>>& genes = context.FeatGenes();
     if (!genes.empty()) {
@@ -196,7 +196,7 @@ bool ReportGeneMissing(const CSeq_feat& f)
 }
 
 
-DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Missing Genes")
+DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart | eFatal, "Missing Genes")
 {
     if (!ReportGeneMissing(obj)) {
         return;
@@ -483,7 +483,7 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
 }
 
 
-DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote")
+DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart | eFatal, "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote")
 {
     if (context.IsEukaryotic() || context.IsOrganelle() || context.GetCurrentBioseq()->IsAa()) {
         return;
@@ -583,7 +583,7 @@ DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
 
 const string kPartialProblems = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, but could be extended by 3 or fewer nucleotides to do so";
 
-DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences, but could be extended by 3 or fewer nucleotides")
+DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Find partial feature ends on bacterial sequences, but could be extended by 3 or fewer nucleotides")
 {
     if (context.IsEukaryotic() || context.IsOrganelle() || context.GetCurrentBioseq()->IsAa()) {
         return;
@@ -738,7 +738,7 @@ DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
 const string kEukaryoteShouldHavemRNA = "no mRNA present";
 const string kEukaryoticCDSHasMrna = "Eukaryotic CDS has mRNA";
 
-DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Eukaryote should have mRNA")
+DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart | eFatal, "Eukaryote should have mRNA")
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion() || context.IsPseudo(obj)) {
         return;
@@ -1080,7 +1080,7 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND)
 
 //MICROSATELLITE_REPEAT_TYPE
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller, "Microsatellites must have repeat type of tandem")
+DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller | eFatal, "Microsatellites must have repeat type of tandem")
 //  ----------------------------------------------------------------------------
 {
     if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region || !obj.IsSetQual())
@@ -1376,7 +1376,7 @@ DISCREPANCY_SUMMARIZE(BACTERIAL_JOINED_FEATURES_NO_EXCEPTION)
 
 // RIBOSOMAL_SLIPPAGE
 
-DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, CSeq_feat_BY_BIOSEQ, eDisc | eSmart, " Only a select number of proteins undergo programmed frameshifts due to ribosomal slippage")
+DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, CSeq_feat_BY_BIOSEQ, eDisc | eSmart | eFatal, " Only a select number of proteins undergo programmed frameshifts due to ribosomal slippage")
 {
     if (context.IsEukaryotic() || context.IsOrganelle() || !obj.IsSetLocation() || !obj.CanGetData() || !obj.GetData().IsCdregion() || !obj.IsSetExcept_text()) {
         return;
@@ -2315,7 +2315,7 @@ static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
 }
 
 
-DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSubmitter | eSmart, "mRNA should have both protein_id and transcript_id")
+DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSubmitter | eSmart | eFatal, "mRNA should have both protein_id and transcript_id")
 {
     if (obj.IsSetData() && obj.GetData().IsCdregion() && !context.IsPseudo(obj) && context.IsEukaryotic() && context.IsDNA()) {
         const CBioSource* bio_src = context.GetCurrentBiosource();

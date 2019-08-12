@@ -105,7 +105,7 @@ static void AddObjToQualMap(const string& qual, const string& val, CReportObj& o
     node[qual][val].Add(obj);
 }
 
-DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSmart | eBig, "Some animals are more equal than others...")
+DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Some animals are more equal than others...")
 {
     CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
     if (desc.IsNull()) {
