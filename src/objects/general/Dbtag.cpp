@@ -124,6 +124,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "MGI", CDbtag::eDbtagType_MGI },
     { "MIM", CDbtag::eDbtagType_MIM },
     { "MaizeGDB", CDbtag::eDbtagType_MaizeGDB },
+    { "MarpolBase", CDbtag::eDbtagType_MarpolBase },
     { "MedGen", CDbtag::eDbtagType_MedGen },
     { "MycoBank", CDbtag::eDbtagType_MycoBank },
     { "NBRC", CDbtag::eDbtagType_IFO },

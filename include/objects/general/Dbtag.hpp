@@ -219,7 +219,8 @@ public:
         eDbtagType_PeptideAtlas,
         eDbtagType_EPDnew,
         eDbtagType_Ensembl,
-        eDbtagType_PseudoCAP
+        eDbtagType_PseudoCAP,
+        eDbtagType_MarpolBase
     };
 
     enum EDbtagGroup {
