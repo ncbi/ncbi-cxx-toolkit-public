@@ -389,6 +389,17 @@ For more information please visit:  http://bitmagic.io
 #endif
 
 
+#ifdef __GNUG__
+#ifndef __clang__
+#  define BM_FALLTHROUGH __attribute__ ((fallthrough))
+#else
+#  define BM_FALLTHROUGH [[clang::fallthrough]]
+#endif
+#else
+#  define BM_FALLTHROUGH
+#endif
+
+
 
 #endif
 

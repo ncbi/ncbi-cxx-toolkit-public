@@ -1217,8 +1217,11 @@ void serializer<BV>::encode_gap_block(const bm::gap_word_t* gap_block, bm::encod
     case bm::set_block_arrgap_inv:
     case bm::set_block_arrgap_egamma_inv:
         invert = true;
-        // fall through is intentional here
+        BM_FALLTHROUGH;
+        // fall through
     case bm::set_block_arrgap:
+        BM_FALLTHROUGH;
+        // fall through
     case bm::set_block_arrgap_egamma:
         arr_len = gap_convert_to_arr(gap_temp_block,
                                      gap_block,
@@ -1232,7 +1235,8 @@ void serializer<BV>::encode_gap_block(const bm::gap_word_t* gap_block, bm::encod
         break;
     case bm::set_block_arrgap_bienc_inv:
         invert = true;
-        // fall through is intentional here
+        BM_FALLTHROUGH;
+        // fall through
     case bm::set_block_arrgap_bienc:
         arr_len = gap_convert_to_arr(gap_temp_block,
                                      gap_block,
@@ -2338,7 +2342,11 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
         }
     case set_block_gap_egamma:            
         gap_head = dec.get_16();
+        BM_FALLTHROUGH;
+        // fall through
     case set_block_arrgap_egamma_inv:
+        BM_FALLTHROUGH;
+        // fall through
     case set_block_arrgap_inv:
     case set_block_arrgap_bienc_inv:
         this->read_gap_block(dec, btype, gap_temp_block, gap_head);
@@ -2935,17 +2943,34 @@ void serial_stream_iterator<DEC>::next()
         case bm::set_block_bit_digest0:
             state_ = e_bit_block;
             break;
-
         case set_block_gap:
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_gap_egamma:
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_gap_bienc:
             gap_head_ = decoder_.get_16();
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_arrgap:
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_arrgap_egamma:
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_arrgap_egamma_inv:
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_arrgap_inv:
+            BM_FALLTHROUGH;
+            // fall through
 		case set_block_bit_1bit:
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_arrgap_bienc:
+            BM_FALLTHROUGH;
+            // fall through
         case set_block_arrgap_bienc_inv:
             state_ = e_gap_block;
             break;        
@@ -4427,11 +4452,12 @@ iterator_deserializer<BV, SerialIterator>::process_id_list(
         break;
     case set_ASSIGN:
         BM_ASSERT(0);
-        //bv.clear(true);
-        // intentional case fall through here (not a bug)
+        BM_FALLTHROUGH;
+        // fall through
     case set_OR:
         set_clear = true;
-        // fall to SUB
+        BM_FALLTHROUGH;
+        // fall through
     case set_SUB:
         load_id_list(bv, sit, id_count, set_clear);
         break;
