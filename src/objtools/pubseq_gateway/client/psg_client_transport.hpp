@@ -262,7 +262,7 @@ private:
 
     enum EType { eSend = 1000, eReceive, eClose, eRetry, eFail };
 
-    void Event(const string&, const string&)       { Event(eSend);    }
+    void Event(const char*, const string&)         { Event(eSend);    }
     void Event(const SPSG_Chunk&)                  { Event(eReceive); }
     void Event(uint32_t)                           { Event(eClose);   }
     void Event(unsigned, const SPSG_Error&)        { Event(eRetry);   }
@@ -275,7 +275,7 @@ private:
         m_Events.emplace_back(ms, type, thread_id);
     }
 
-    void Print(const string&, const string& url);
+    void Print(const char* authority, const string& path);
     void Print(const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
     void Print(unsigned retries, const SPSG_Error& error);
@@ -662,13 +662,23 @@ struct SPSG_NgHttp2Session
 
     void Del();
 
-    int32_t Submit(const string& path, void* user_data);
+    int32_t Submit(shared_ptr<SPSG_Request>& req);
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
     uint32_t GetMaxStreams() const { return m_MaxStreams; }
 
 private:
+    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eSessionID, eSubHitID, eSize };
+
+    struct SHeader : nghttp2_nv
+    {
+        template <size_t N, size_t V> SHeader(const char (&n)[N], const char (&v)[V]);
+        template <size_t N>           SHeader(const char (&n)[N], const string& v);
+        template <size_t N>           SHeader(const char (&n)[N], uint8_t f = NGHTTP2_NV_FLAG_NO_COPY_VALUE);
+        void operator=(const string& v);
+    };
+
     ssize_t Init();
     ssize_t x_DelOnError(ssize_t rv)
     {
@@ -681,7 +691,7 @@ private:
     }
 
     nghttp2_session* m_Session = nullptr;
-    array<nghttp2_nv, 6> m_Headers;
+    array<SHeader, eSize> m_Headers;
     void* m_UserData;
     nghttp2_on_data_chunk_recv_callback m_OnData;
     nghttp2_on_stream_close_callback    m_OnStreamClose;

@@ -96,7 +96,7 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
 
-void SDebugPrintout::Print(const string& authority, const string& path)
+void SDebugPrintout::Print(const char* authority, const string& path)
 {
     ERR_POST(Warning << id << ": " << authority << path);
 }
@@ -685,25 +685,44 @@ void SPSG_UvTcp::OnClose(uv_handle_t*)
 }
 
 
-#define MAKE_NV1(NAME, VALUE, VALUELEN, FLAGS)                                 \
-  {                                                                            \
-    (uint8_t*)NAME, (uint8_t*)VALUE, sizeof(NAME) - 1, VALUELEN,               \
-        NGHTTP2_NV_FLAG_NO_COPY_NAME | FLAGS                                   \
-  }
-#define MAKE_NV(NAME, VALUE, VALUELEN) MAKE_NV1(NAME, VALUE, VALUELEN, NGHTTP2_NV_FLAG_NO_COPY_VALUE)
-#define MAKE_NV2(NAME, VALUE) MAKE_NV(NAME, VALUE, sizeof(VALUE) - 1)
+constexpr uint8_t kDefaultFlags = NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE;
+
+template <size_t N, size_t V>
+SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], const char (&v)[V]) :
+    nghttp2_nv{ (uint8_t*)n, (uint8_t*)v, N - 1, V - 1, kDefaultFlags }
+{
+}
+
+template <size_t N>
+SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], const string& v) :
+    nghttp2_nv{ (uint8_t*)n, (uint8_t*)v.c_str(), N - 1, v.length(), kDefaultFlags }
+{
+}
+
+template <size_t N>
+SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], uint8_t f) :
+    nghttp2_nv{ (uint8_t*)n, nullptr, N - 1, 0, uint8_t(NGHTTP2_NV_FLAG_NO_COPY_NAME | f) }
+{
+}
+
+void SPSG_NgHttp2Session::SHeader::operator=(const string& v)
+{
+    value = (uint8_t*)v.c_str();
+    valuelen = v.size();
+}
+
 SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_data,
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
         nghttp2_on_header_callback          on_header,
         nghttp2_error_callback              on_error) :
     m_Headers{{
-        MAKE_NV2(":method",    "GET"),
-        MAKE_NV2(":scheme",    "http"),
-        MAKE_NV (":authority", authority.c_str(), authority.length()),
-        MAKE_NV (":path",      "", 0),
-        MAKE_NV1("http_ncbi_sid",  "", 0, NGHTTP2_NV_FLAG_NONE),
-        MAKE_NV1("http_ncbi_phid", "", 0, NGHTTP2_NV_FLAG_NONE)
+        { ":method", "GET" },
+        { ":scheme", "http" },
+        { ":authority", authority },
+        { ":path" },
+        { "http_ncbi_sid", NGHTTP2_NV_FLAG_NONE },
+        { "http_ncbi_phid", NGHTTP2_NV_FLAG_NONE }
     }},
     m_UserData(user_data),
     m_OnData(on_data),
@@ -714,9 +733,6 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
 {
     ERR_POST(Trace << this << " created");
 }
-#undef MAKE_NV1
-#undef MAKE_NV
-#undef MAKE_NV2
 
 ssize_t SPSG_NgHttp2Session::Init()
 {
@@ -767,31 +783,27 @@ void SPSG_NgHttp2Session::Del()
     x_DelOnError(-1);
 }
 
-int32_t SPSG_NgHttp2Session::Submit(const string& path, void* user_data)
+int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
 {
     if (auto rv = Init()) return rv;
 
-    enum { ePath, eSessionID, eSubHitID, eSize };
-    const auto kStart = m_Headers.size() - eSize;
+    CRequestContext& context = CDiagContext::GetRequestContext();
 
-    m_Headers[kStart + ePath].value = (uint8_t*)path.c_str();
-    m_Headers[kStart + ePath].valuelen = path.size();
+    const auto& path = req->full_path;
+    const auto& session_id = context.GetSessionID();
+    const auto& sub_hit_id = context.GetNextSubHitID();
 
-    CRequestContext& req = CDiagContext::GetRequestContext();
+    m_Headers[ePath] = path;
+    m_Headers[eSessionID] = session_id;
+    m_Headers[eSubHitID] = sub_hit_id;
 
-    const auto& session_id = req.GetSessionID();
-    m_Headers[kStart + eSessionID].value = (uint8_t*)session_id.c_str();
-    m_Headers[kStart + eSessionID].valuelen = session_id.size();
-
-    const auto& sub_hit_id = req.GetNextSubHitID();
-    m_Headers[kStart + eSubHitID].value = (uint8_t*)sub_hit_id.c_str();
-    m_Headers[kStart + eSubHitID].valuelen = sub_hit_id.size();
-
-    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), m_Headers.size(), nullptr, user_data);
+    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), m_Headers.size(), nullptr, req.get());
 
     if (rv < 0) {
         ERR_POST(Trace << this << " submit failed: " << s_NgHttp2Error(rv));
     } else {
+        auto authority = (const char*)m_Headers[eAuthority].value;
+        req->reply->debug_printout << authority << path << endl;
         ERR_POST(Trace << this << " submitted");
     }
 
@@ -1040,11 +1052,7 @@ void SPSG_IoSession::ProcessRequests()
             continue;
         }
 
-        const auto& authority = address.AsString();
-        const auto& path = req->full_path;
-
-        req->reply->debug_printout << authority << path << endl;
-        auto stream_id = m_Session.Submit(path, req.get());
+        auto stream_id = m_Session.Submit(req);
 
         if (stream_id < 0) {
             Reset(stream_id);
