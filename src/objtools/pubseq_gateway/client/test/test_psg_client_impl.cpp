@@ -121,7 +121,7 @@ void s_OutputArgs(ostream& os, SRandom& r, vector<string> args)
 {
     r.Shuffle(args.begin(), args.end());
 
-    const char* delim = SPSG_Request::Prefix().c_str();
+    const char* delim = "\n\nPSG-Reply-Chunk: ";
 
     for (auto& arg : args) {
         os << delim << arg;

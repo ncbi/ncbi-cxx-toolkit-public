@@ -280,26 +280,35 @@ SPSG_Request::SPSG_Request(shared_ptr<SPSG_Reply> r, string p) :
 
 void SPSG_Request::StatePrefix(const char*& data, size_t& len)
 {
+    static const string kPrefix = "\n\nPSG-Reply-Chunk: ";
+
     // No retries after receiving any data
     m_Retries = 0;
 
-    const auto& prefix = Prefix();
+    auto& index = m_Buffer.prefix_index;
 
     // Checking prefix
-    while (len) {
-        // Check failed
-        if (*data != prefix[m_Buffer.prefix_index]) {
-            const auto s = min(len, prefix.size() - m_Buffer.prefix_index);
-            NCBI_THROW_FMT(CPSG_Exception, eServerError, "Unexpected prefix: " << string(data, s));
-        }
-
+    while (*data == kPrefix[index]) {
         ++data;
         --len;
 
-        if (++m_Buffer.prefix_index == prefix.size()) {
+        // Full prefix matched
+        if (++index == kPrefix.size()) {
             SetStateArgs();
             return;
         }
+
+        if (!len) return;
+    }
+
+    // Check failed
+    const auto remaining = min(len, kPrefix.size() - index);
+    const string wrong_prefix(data, remaining);
+
+    if (index) {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Prefix mismatch, offending part '" << wrong_prefix << '\'');
+    } else {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, wrong_prefix);
     }
 }
 

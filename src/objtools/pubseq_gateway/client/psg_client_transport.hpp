@@ -54,6 +54,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <chrono>
+#include <sstream>
 
 #include <nghttp2/nghttp2.h>
 #include <uv.h>
@@ -421,8 +422,6 @@ struct SPSG_Request
         return reply->reply_item.GetMTSafe().state.InProgress() && (m_Retries > 0) ? m_Retries-- : 0;
     }
 
-    static const string& Prefix() { static const string kPrefix = "\n\nPSG-Reply-Chunk: "; return kPrefix; }
-
 private:
     void StatePrefix(const char*& data, size_t& len);
     void StateArgs(const char*& data, size_t& len);
@@ -724,6 +723,11 @@ struct SPSG_IoSession
     {
         try {
             return (this->*member)(forward<TArgs>(args)...);
+        }
+        catch(const CException& e) {
+            ostringstream os;
+            os << e.GetErrCodeString() << " - " << e.GetMsg();
+            Reset(SPSG_Error::eException, os.str().c_str());
         }
         catch(const std::exception& e) {
             Reset(SPSG_Error::eException, e.what());
