@@ -91,6 +91,7 @@ struct CParams_imp
 
     mutable ESource m_source;
     bool m_tpa_tsa;
+    bool m_tpa;
 
     TIdContainer m_bioproject_ids;
     TIdContainer m_biosample_ids;
@@ -139,6 +140,7 @@ struct CParams_imp
         m_fix_tech(eNoFix),
         m_source(eNotSet),
         m_tpa_tsa(false),
+        m_tpa(false),
         m_major_version_pos(0),
         m_minor_version_pos(0)
     {}
@@ -211,10 +213,7 @@ EScaffoldType CParams::GetScaffoldType() const
 
 bool CParams::IsTpa() const
 {
-    _ASSERT(!m_imp->m_accession.empty() && "Accession should be set at this moment");
-
-    static const string TPA_FIRST_LETTER = "DE";
-    return TPA_FIRST_LETTER.find_first_of(m_imp->m_accession.front()) != string::npos;
+    return(m_imp->m_tpa);
 }
 
 bool CParams::IsTsa() const
@@ -421,8 +420,16 @@ CSeq_id::E_Choice CParams::GetIdChoice() const
     if (NStr::StartsWith(m_imp->m_accession, "NZ_")) {
         ret = CSeq_id::e_Other;
     }
-    else if (IsTpa()) {
-        ret = GetSource() == eDDBJ ? CSeq_id::e_Tpd : CSeq_id::e_Tpg;
+    else if(IsTpa())
+    {
+        if(GetSource() == eEMBL)
+        {
+            ret = CSeq_id::e_Tpe;
+        }
+        else
+        {
+            ret = GetSource() == eDDBJ ? CSeq_id::e_Tpd : CSeq_id::e_Tpg;
+        }
     }
     else {
 
@@ -912,6 +919,9 @@ bool SetParams(const CArgs& args)
         params_imp.m_tpa_keyword = args["K"].AsString();
     }
 
+    static const string TPA_FIRST_LETTER = "DE";
+    params_imp.m_tpa = TPA_FIRST_LETTER.find_first_of(params_imp.m_accession.front()) != string::npos;
+
     if (!params_imp.m_tpa_keyword.empty()) {
         if (!params->IsTpa()) {
             ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "TPA keyword may be entered with \"-K\" switch for TPA projects only.");
@@ -1292,6 +1302,12 @@ void AddSRA(const string& sra)
 {
     CParams_imp& params_imp = *params->m_imp;
     params_imp.m_sra_ids.insert(sra);
+}
+
+void SetTpa(bool tpa)
+{
+    CParams_imp& params_imp = *params->m_imp;
+    params_imp.m_tpa = tpa;
 }
 
 }
