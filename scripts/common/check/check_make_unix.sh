@@ -358,7 +358,7 @@ if test -z "\$NCBI_EXPORT_PROJECT"; then
 fi
 
 # Add additional necessary directories to PATH: current, build, scripts, utility and $HOME/bin (for Ubuntu).
-PATH=".:\${build_dir}:\${bin_dir}:\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:\${PATH}"
+PATH="\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:.:\${build_dir}:\${bin_dir}:\${PATH}"
 export PATH
 
 # Export bin and lib pathes
