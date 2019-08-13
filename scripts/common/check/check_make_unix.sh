@@ -465,7 +465,7 @@ count_total=0
 if \$is_run; then
    rm -f "\$res_journal"
    rm -f "\$res_log"
-   rm -f "$x_build_dir/test_stat_load.log"
+   #rm -f "$x_build_dir/test_stat_load.log"
 fi
 
 # Set app limits:
