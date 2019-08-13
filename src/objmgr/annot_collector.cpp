@@ -1112,6 +1112,20 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
                 }
             }
         }
+        else if ( x_feat_type == CSeqFeatData::e_Gene ) {
+            const CGene_ref& x_gene = x_info->GetFeatFast()->GetData().GetGene();
+            const CGene_ref& y_gene = y_info->GetFeatFast()->GetData().GetGene();
+            const string& x_locus = x_gene.IsSetLocus()? x_gene.GetLocus(): kEmptyStr;
+            const string& y_locus = y_gene.IsSetLocus()? y_gene.GetLocus(): kEmptyStr;
+            if ( int diff = NStr::CompareNocase(x_locus, y_locus) ) {
+                return diff < 0;
+            }
+            const string& x_desc = x_gene.IsSetDesc()? x_gene.GetDesc(): kEmptyStr;
+            const string& y_desc = y_gene.IsSetDesc()? y_gene.GetDesc(): kEmptyStr;
+            if ( int diff = NStr::CompareNocase(x_desc, y_desc) ) {
+                return diff < 0;
+            }
+        }
         
         if ( !m_ByProduct ) {
             // order by product id
