@@ -605,6 +605,64 @@ static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
     }
 }
 
+static void CheckKeywordsEMBL(const CSeq_descr& descrs, CSeqEntryInfo& info)
+{
+    const CEMBL_block* embl_block = nullptr;
+
+    if (descrs.IsSet()) {
+
+        auto embl_it = find_if(descrs.Get().begin(), descrs.Get().end(), [](const CRef<CSeqdesc>& descr) { return descr->IsEmbl(); });
+        if (embl_it != descrs.Get().end()) {
+            embl_block = &(*embl_it)->GetEmbl();
+        }
+
+        if (embl_block && embl_block->IsSetKeywords()) {
+
+            if (info.m_keywords_set) {
+
+                if (!info.m_keywords.empty()) {
+                    // removes all previously stored keywords which are not present in current CGB_block::keywords
+                    map<string, string> keywords_found;
+                    for (auto& keyword : embl_block->GetKeywords()) {
+
+                        string cur_keyword = keyword;
+                        NStr::ToLower(cur_keyword);
+
+                        if (info.m_keywords.find(cur_keyword) != info.m_keywords.end()) {
+                            keywords_found[cur_keyword] = keyword;
+                        }
+                    }
+                    info.m_keywords.swap(keywords_found);
+                }
+            }
+            else {
+                // copies all keywords for the first time
+                for (auto& keyword : embl_block->GetKeywords()) {
+                    string cur_keyword = keyword;
+                    info.m_keywords[NStr::ToLower(cur_keyword)] = keyword;
+                }
+            }
+        }
+    }
+
+    info.m_keywords_set = true;
+
+    if (embl_block && embl_block->IsSetKeywords()) {
+
+        for (auto keyword : embl_block->GetKeywords()) {
+            if (keyword == "TPA:assembly" || keyword == "TPA:reassembly") {
+                info.m_has_tpa_keyword = true;
+            }
+            else if (keyword == "Targeted") {
+                info.m_has_targeted_keyword = true;
+            }
+            else if (keyword == "GMI") {
+                info.m_has_gmi_keyword = true;
+            }
+        }
+    }
+}
+
 static bool HasGbBlock(const CSeq_descr& descrs)
 {
     bool ret = false;
@@ -1030,8 +1088,12 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
  *
  */
 
-            if (bioseq.IsNa()) {
-                CheckKeywords(bioseq.GetDescr(), info);
+            if(bioseq.IsNa())
+            {
+                if(GetParams().GetSource() == eEMBL)
+                    CheckKeywordsEMBL(bioseq.GetDescr(), info);
+                else
+                    CheckKeywords(bioseq.GetDescr(), info);
             }
             else if (!info.m_has_gb_block) {
                 info.m_has_gb_block = HasGbBlock(bioseq.GetDescr());
@@ -1087,12 +1149,23 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
 
                             ++info.m_num_of_accsessions;
 
-                            if (id->Which() != GetParams().GetIdChoice()) {
-                                ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_AccessionSeqIdMismatch, Critical << "One or more records have mismatching accession(s) and Seq-id type(s). First appearance: accession is \"" << text_id->GetAccession() <<
-                                            "\", Seq-id type = " << id->Which() << ".");
+                            if (id->Which() != GetParams().GetIdChoice())
+                            {
+                                if(info.m_seqid_type == CSeq_id::e_not_set &&
+                                   GetParams().GetSource() == eEMBL &&
+                                   GetParams().GetIdChoice() == CSeq_id::e_Embl &&
+                                   id->Which() == CSeq_id::e_Tpe)
+                                {
+                                     SetTpa(true);
+                                }
+                                else
+                                {
+                                    ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_AccessionSeqIdMismatch, Critical << "One or more records have mismatching accession(s) and Seq-id type(s). First appearance: accession is \"" << text_id->GetAccession() <<
+                                                "\", Seq-id type = " << id->Which() << ".");
 
-                                info.m_seqid_state = eSeqIdDifferent;
-                                // TODO rejection (originally ERR_POST has 'Reject' message type)
+                                    info.m_seqid_state = eSeqIdDifferent;
+                                    // TODO rejection (originally ERR_POST has 'Reject' message type)
+                                }
                             }
 
                             if (info.m_seqid_state != eSeqIdOK) {
