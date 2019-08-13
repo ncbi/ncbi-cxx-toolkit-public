@@ -681,7 +681,7 @@ private:
     }
 
     nghttp2_session* m_Session = nullptr;
-    array<nghttp2_nv, 4> m_Headers;
+    array<nghttp2_nv, 6> m_Headers;
     void* m_UserData;
     nghttp2_on_data_chunk_recv_callback m_OnData;
     nghttp2_on_stream_close_callback    m_OnStreamClose;

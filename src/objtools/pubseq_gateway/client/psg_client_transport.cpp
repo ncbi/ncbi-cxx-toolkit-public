@@ -53,6 +53,7 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
+#include <corelib/request_ctx.hpp>
 #include <corelib/request_status.hpp>
 
 #include "psg_client_transport.hpp"
@@ -684,11 +685,12 @@ void SPSG_UvTcp::OnClose(uv_handle_t*)
 }
 
 
-#define MAKE_NV(NAME, VALUE, VALUELEN)                                         \
+#define MAKE_NV1(NAME, VALUE, VALUELEN, FLAGS)                                 \
   {                                                                            \
     (uint8_t*)NAME, (uint8_t*)VALUE, sizeof(NAME) - 1, VALUELEN,               \
-        NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE           \
+        NGHTTP2_NV_FLAG_NO_COPY_NAME | FLAGS                                   \
   }
+#define MAKE_NV(NAME, VALUE, VALUELEN) MAKE_NV1(NAME, VALUE, VALUELEN, NGHTTP2_NV_FLAG_NO_COPY_VALUE)
 #define MAKE_NV2(NAME, VALUE) MAKE_NV(NAME, VALUE, sizeof(VALUE) - 1)
 SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_data,
         nghttp2_on_data_chunk_recv_callback on_data,
@@ -699,7 +701,9 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
         MAKE_NV2(":method",    "GET"),
         MAKE_NV2(":scheme",    "http"),
         MAKE_NV (":authority", authority.c_str(), authority.length()),
-        MAKE_NV (":path",      "", 0)
+        MAKE_NV (":path",      "", 0),
+        MAKE_NV1("http_ncbi_sid",  "", 0, NGHTTP2_NV_FLAG_NONE),
+        MAKE_NV1("http_ncbi_phid", "", 0, NGHTTP2_NV_FLAG_NONE)
     }},
     m_UserData(user_data),
     m_OnData(on_data),
@@ -710,6 +714,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
 {
     ERR_POST(Trace << this << " created");
 }
+#undef MAKE_NV1
 #undef MAKE_NV
 #undef MAKE_NV2
 
@@ -766,10 +771,21 @@ int32_t SPSG_NgHttp2Session::Submit(const string& path, void* user_data)
 {
     if (auto rv = Init()) return rv;
 
-    const auto kPathIndex = m_Headers.size() - 1;
+    enum { ePath, eSessionID, eSubHitID, eSize };
+    const auto kStart = m_Headers.size() - eSize;
 
-    m_Headers[kPathIndex].value = (uint8_t*)path.c_str();
-    m_Headers[kPathIndex].valuelen = path.size();
+    m_Headers[kStart + ePath].value = (uint8_t*)path.c_str();
+    m_Headers[kStart + ePath].valuelen = path.size();
+
+    CRequestContext& req = CDiagContext::GetRequestContext();
+
+    const auto& session_id = req.GetSessionID();
+    m_Headers[kStart + eSessionID].value = (uint8_t*)session_id.c_str();
+    m_Headers[kStart + eSessionID].valuelen = session_id.size();
+
+    const auto& sub_hit_id = req.GetNextSubHitID();
+    m_Headers[kStart + eSubHitID].value = (uint8_t*)sub_hit_id.c_str();
+    m_Headers[kStart + eSubHitID].valuelen = sub_hit_id.size();
 
     auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), m_Headers.size(), nullptr, user_data);
 
