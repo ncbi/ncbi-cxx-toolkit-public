@@ -244,7 +244,7 @@ private:
 
     void PerformanceReply();
 
-    static bool ReadRequest(string& request, istream& is = cin);
+    static bool ReadLine(string& line, istream& is = cin);
     static CJson_Schema& RequestSchema();
 
     static shared_ptr<CPSG_Request> CreateRequest(const string& method, shared_ptr<void> user_context,

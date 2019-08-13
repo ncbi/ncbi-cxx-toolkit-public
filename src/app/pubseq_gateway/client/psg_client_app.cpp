@@ -309,7 +309,7 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 }
 
 template <>
-int CPsgClientApp::RunRequest<STesting>(const CArgs& args)
+int CPsgClientApp::RunRequest<STesting>(const CArgs&)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
 

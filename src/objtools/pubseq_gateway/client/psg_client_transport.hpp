@@ -466,7 +466,7 @@ private:
     uv_close_cb m_Cb;
 };
 
-struct SPSG_UvWrite : protected uv_write_t
+struct SPSG_UvWrite
 {
     SPSG_UvWrite(void* user_data);
 
@@ -497,7 +497,7 @@ private:
     bool m_InProgress = false;
 };
 
-struct SPSG_UvConnect : protected uv_connect_t
+struct SPSG_UvConnect
 {
     SPSG_UvConnect(void* user_data, const CNetServer::SAddress& address);
 
@@ -562,9 +562,9 @@ private:
 
 struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
 {
-    void Init(void* d, uv_loop_t* loop, uv_async_cb cb)
+    void Init(void* d, uv_loop_t* l, uv_async_cb cb)
     {
-        if (auto rc = uv_async_init(loop, this, cb)) {
+        if (auto rc = uv_async_init(l, this, cb)) {
             NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_async_init failed " << uv_strerror(rc));
         }
 
@@ -581,9 +581,9 @@ struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
 
 struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
 {
-    void Init(void* d, uv_loop_t* loop, uv_timer_cb cb)
+    void Init(void* d, uv_loop_t* l, uv_timer_cb cb)
     {
-        if (auto rc = uv_timer_init(loop, this)) {
+        if (auto rc = uv_timer_init(l, this)) {
             NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_init failed " << uv_strerror(rc));
         }
 

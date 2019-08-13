@@ -256,9 +256,8 @@ void SPSG_Reply::SetSuccess()
     s_SetSuccessIfReceived(reply_item);
 
     auto items_locked = items.GetLock();
-    auto& items = *items_locked;
 
-    for (auto& item : items) {
+    for (auto& item : *items_locked) {
         s_SetSuccessIfReceived(item);
     }
 }
@@ -268,9 +267,8 @@ void SPSG_Reply::SetCanceled()
     reply_item.GetMTSafe().state.SetState(SState::eCanceled);
 
     auto items_locked = items.GetLock();
-    auto& items = *items_locked;
 
-    for (auto& item : items) {
+    for (auto& item : *items_locked) {
         item.GetMTSafe().state.SetState(SState::eCanceled);
     }
 }
@@ -565,14 +563,14 @@ int SPSG_UvConnect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
 }
 
 
-SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *loop, const CNetServer::SAddress& address,
-        TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb) :
+SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const CNetServer::SAddress& address,
+        TConnectCb connect_cb, TReadCb rcb, TWriteCb write_cb) :
     SPSG_UvHandle<uv_tcp_t>(s_OnClose),
-    m_Loop(loop),
+    m_Loop(l),
     m_Connect(this, address),
     m_Write(this),
     m_ConnectCb(connect_cb),
-    m_ReadCb(read_cb),
+    m_ReadCb(rcb),
     m_WriteCb(write_cb)
 {
     data = this;
@@ -641,7 +639,7 @@ void SPSG_UvTcp::Close()
     }
 }
 
-void SPSG_UvTcp::OnConnect(uv_connect_t* req, int status)
+void SPSG_UvTcp::OnConnect(uv_connect_t*, int status)
 {
     if (status >= 0) {
         status = uv_tcp_nodelay(this, 1);
@@ -1007,11 +1005,11 @@ void SPSG_IoSession::StartClose()
 
 void SPSG_IoSession::Send()
 {
-    if (auto rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
-        Reset(rv);
+    if (auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
+        Reset(send_rv);
 
-    } else if (auto rv = m_Tcp.Write()) {
-        Reset(rv, "Failed to write");
+    } else if (auto write_rv = m_Tcp.Write()) {
+        Reset(write_rv, "Failed to write");
     }
 }
 

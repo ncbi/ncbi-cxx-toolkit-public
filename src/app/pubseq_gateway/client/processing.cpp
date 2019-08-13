@@ -384,7 +384,7 @@ int CProcessing::BatchResolve(const CArgs& input, istream& is)
 
     string id;
 
-    while (ReadRequest(id, is)) {
+    while (ReadLine(id, is)) {
         auto request = batch_resolve(id);
         m_Sender.Add(move(request));
         m_Reporter.Add(move(id));
@@ -573,14 +573,14 @@ string s_GetId(const CJson_Document& req_doc)
 template <class TCreateContext>
 vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create_context) const
 {
-    string request;
+    string line;
     vector<shared_ptr<CPSG_Request>> requests;
 
     // Read requests from cin
-    while (ReadRequest(request)) {
+    while (ReadLine(line)) {
         CJson_Document json_doc;
 
-        if (!json_doc.ParseString(request)) {
+        if (!json_doc.ParseString(line)) {
             cerr << "Error in request '" << s_GetId(json_doc) << "': " << json_doc.GetReadError() << endl;
             return {};
         } else if (!RequestSchema().Validate(json_doc)) {
@@ -891,12 +891,12 @@ int CProcessing::Testing()
     return rv;
 }
 
-bool CProcessing::ReadRequest(string& request, istream& is)
+bool CProcessing::ReadLine(string& line, istream& is)
 {
     for (;;) {
-        if (!getline(is, request)) {
+        if (!getline(is, line)) {
             return false;
-        } else if (!request.empty()) {
+        } else if (!line.empty()) {
             return true;
         }
     }
@@ -1047,12 +1047,12 @@ int CProcessing::Interactive(bool echo)
     m_Retriever.Start();
     m_Sender.Start();
 
-    string request;
+    string line;
 
-    while (ReadRequest(request)) {
+    while (ReadLine(line)) {
         CJson_Document json_doc;
 
-        if (!json_doc.ParseString(request)) {
+        if (!json_doc.ParseString(line)) {
             m_JsonOut << CJsonResponse(s_GetId(json_doc), -32700, json_doc.GetReadError());
         } else if (!RequestSchema().Validate(json_doc)) {
             m_JsonOut << CJsonResponse(s_GetId(json_doc), -32600, RequestSchema().GetValidationError());
