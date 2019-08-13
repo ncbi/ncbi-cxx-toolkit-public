@@ -193,6 +193,7 @@ private:
     friend void SetUpdateMode(EUpdateMode mode);
     friend void AddBioSample(const string& biosample);
     friend void AddSRA(const string& sra);
+    friend void SetTpa(bool tpa);
 
     CParams();
     CParams(const CParams&) = delete;
@@ -205,6 +206,7 @@ void SetAssemblyVersion(int version);
 void SetUpdateMode(EUpdateMode mode);
 void AddBioSample(const string& biosample);
 void AddSRA(const string& biosample);
+void SetTpa(bool tpa);
 
 }
 
