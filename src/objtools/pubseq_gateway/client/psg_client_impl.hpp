@@ -124,8 +124,7 @@ private:
 struct CPSG_Queue::SImpl::SRequest
 {
     SRequest(shared_ptr<const CPSG_Request> user_request,
-            shared_ptr<SPSG_Request> request,
-            shared_ptr<SPSG_Reply> reply);
+            shared_ptr<SPSG_Request> request);
 
     shared_ptr<CPSG_Reply> GetNextReply();
     void Reset();
@@ -134,7 +133,6 @@ struct CPSG_Queue::SImpl::SRequest
 private:
     shared_ptr<const CPSG_Request> m_UserRequest;
     shared_ptr<SPSG_Request> m_Request;
-    shared_ptr<SPSG_Reply> m_Reply;
 };
 
 END_NCBI_SCOPE

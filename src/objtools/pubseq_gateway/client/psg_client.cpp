@@ -295,21 +295,22 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 
 
 CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_request,
-        shared_ptr<SPSG_Request> request,
-        shared_ptr<SPSG_Reply> reply) :
+        shared_ptr<SPSG_Request> request) :
     m_UserRequest(user_request),
-    m_Request(request),
-    m_Reply(reply)
+    m_Request(request)
 {
+    _ASSERT(m_Request);
 }
 
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 {
+    auto& reply = m_Request->reply;
+
     // A reply has already been returned
-    if (!m_Reply->reply_item.GetMTSafe().state.SetReturned()) return {};
+    if (!reply->reply_item.GetMTSafe().state.SetReturned()) return {};
 
     shared_ptr<CPSG_Reply> rv(new CPSG_Reply);
-    rv->m_Impl->reply = m_Reply;
+    rv->m_Impl->reply = reply;
     rv->m_Impl->user_reply = rv;
     rv->m_Request = move(m_UserRequest);
 
@@ -318,18 +319,17 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 
 void CPSG_Queue::SImpl::SRequest::Reset()
 {
-    assert(m_Request);
-
     m_Request->reply->SetCanceled();
 }
 
 bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
 {
-    const auto& state = m_Reply->reply_item.GetMTSafe().state;
+    auto& reply = m_Request->reply;
+    const auto& state = reply->reply_item.GetMTSafe().state;
 
     if (state.InProgress() || !state.Returned()) return false;
 
-    auto items_locked = m_Reply->items.GetLock();
+    auto items_locked = reply->items.GetLock();
     auto& items = *items_locked;
     auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetMTSafe().state.Returned(); };
 
@@ -509,12 +509,12 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
     auto reply = make_shared<SPSG_Reply>(request_id, m_Requests);
     auto abs_path_ref = user_request->x_GetAbsPathRef() + ioc.GetClientId();
-    auto request = make_shared<SPSG_Request>(reply, move(abs_path_ref));
+    auto request = make_shared<SPSG_Request>(move(reply), move(abs_path_ref));
 
     for (;;) {
         if (ioc.AddRequest(request, wait_ms)) {
             auto requests_locked = m_Requests->GetLock();
-            requests_locked->emplace_back(user_request, request, move(reply));
+            requests_locked->emplace_back(user_request, request);
             return true;
         }
 
