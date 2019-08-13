@@ -1244,9 +1244,27 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         ostr << sep << "XS:A:" << ori;
     }
 
-    // FIXME: the MD tag misses long deletions
+    // MD tag in Seq-align has long subject gaps (deletions) encoded as 
+    // !<gap length>!. 'x' is printed as each deletec base, because we do not
+    // have access to subject sequence.
     if (print_md_tag && !md_tag.empty()) {
-        ostr << sep << "MD:Z:" << md_tag;
+        vector<string> tokens;
+        NStr::Split(md_tag, "!", tokens);
+
+        ostr << sep << "MD:Z:";
+        size_t i = 0;
+        for (;i < tokens.size();i+=2) {
+            ostr << tokens[i];
+
+            if (i < tokens.size() - 1) {
+                int num = NStr::StringToInt(tokens[i + 1]);
+                _ASSERT(num > 0);
+                ostr << "^";
+                for (int k=0;k < num;k++) {
+                    ostr << "x";
+                }
+            }
+        }
     }
 
     return ostr;

@@ -219,9 +219,19 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
         const JumperEditsBlock* hsp_edits = hsp->map_info->edits;
 
         if (prev) {
-            int intron = hsp->subject.offset - prev->subject.end;
-            if (intron > 0) {
-                btop += (string)"^" + NStr::IntToString(intron) + "^";
+            int subject_gap = hsp->subject.offset - prev->subject.end;
+            if (subject_gap > 0 &&
+                (prev->map_info->right_edge & MAPPER_SPLICE_SIGNAL) &&
+                (hsp->map_info->left_edge & MAPPER_SPLICE_SIGNAL)) {
+
+                // intron
+                btop += (string)"^" + NStr::IntToString(subject_gap) + "^";
+            }
+            else if (subject_gap > 0) {
+                // gap in subject/reference
+                btop += (string)"%" + NStr::IntToString(subject_gap) + "%";
+
+                md_tag += (string)"!" + NStr::IntToString(subject_gap) + "!";
             }
 
             int query_gap = hsp->query.offset - prev->query.end;
