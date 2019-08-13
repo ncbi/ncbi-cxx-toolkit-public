@@ -2869,6 +2869,14 @@ void CFeatTree::x_AssignGenes(void)
 }
 
 
+struct PByFeatInfoAddIndex {
+    bool operator()(const CFeatTree::CFeatInfo* f1, const CFeatTree::CFeatInfo* f2) const
+        {
+            return f1->m_AddIndex < f2->m_AddIndex;
+        }
+};
+
+
 void CFeatTree::x_AssignParents(void)
 {
     if ( m_AssignedParents >= m_InfoArray.size() ) {
@@ -2931,6 +2939,9 @@ void CFeatTree::x_AssignParents(void)
         }
     }
 
+    for ( auto& s : m_InfoMap ) {
+        sort(s.second.m_Children.begin(), s.second.m_Children.begin(), PByFeatInfoAddIndex());
+    }
     m_AssignedParents = m_InfoArray.size();
 }
 
