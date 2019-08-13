@@ -669,7 +669,7 @@ struct SPSG_NgHttp2Session
     uint32_t GetMaxStreams() const { return m_MaxStreams; }
 
 private:
-    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eSessionID, eSubHitID, eSize };
+    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eSessionID, eSubHitID, eClientIP, eSize };
 
     struct SHeader : nghttp2_nv
     {

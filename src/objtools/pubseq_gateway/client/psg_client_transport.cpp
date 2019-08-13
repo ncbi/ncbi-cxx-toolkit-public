@@ -722,7 +722,8 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
         { ":authority", authority },
         { ":path" },
         { "http_ncbi_sid", NGHTTP2_NV_FLAG_NONE },
-        { "http_ncbi_phid", NGHTTP2_NV_FLAG_NONE }
+        { "http_ncbi_phid", NGHTTP2_NV_FLAG_NONE },
+        { "x-forwarded-for", NGHTTP2_NV_FLAG_NONE }
     }},
     m_UserData(user_data),
     m_OnData(on_data),
@@ -792,12 +793,19 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
     const auto& path = req->full_path;
     const auto& session_id = context.GetSessionID();
     const auto& sub_hit_id = context.GetNextSubHitID();
+    auto headers_size = m_Headers.size();
 
     m_Headers[ePath] = path;
     m_Headers[eSessionID] = session_id;
     m_Headers[eSubHitID] = sub_hit_id;
 
-    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), m_Headers.size(), nullptr, req.get());
+    if (context.IsSetClientIP()) {
+        m_Headers[eClientIP] = context.GetClientIP();
+    } else {
+        --headers_size;
+    }
+
+    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), headers_size, nullptr, req.get());
 
     if (rv < 0) {
         ERR_POST(Trace << this << " submit failed: " << s_NgHttp2Error(rv));
