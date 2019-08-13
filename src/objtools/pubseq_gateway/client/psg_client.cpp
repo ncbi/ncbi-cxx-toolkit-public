@@ -509,7 +509,7 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
     auto reply = make_shared<SPSG_Reply>(request_id, m_Requests);
     auto abs_path_ref = user_request->x_GetAbsPathRef() + ioc.GetClientId();
-    auto request = make_shared<SPSG_Request>(move(reply), move(abs_path_ref));
+    auto request = make_shared<SPSG_Request>(move(abs_path_ref), move(reply), user_request->m_RequestContext);
 
     for (;;) {
         if (ioc.AddRequest(request, wait_ms)) {

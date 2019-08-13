@@ -32,6 +32,7 @@
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_url.hpp>
+#include <corelib/request_ctx.hpp>
 #include <connect/services/json_over_uttp.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -77,6 +78,9 @@ public:
     shared_ptr<TUserContext> GetUserContext() const
     { return static_pointer_cast<TUserContext>(m_UserContext); }
 
+    /// Get request context
+    CRef<CRequestContext> GetRequestContext() const { return m_RequestContext; }
+
     /// Get request type
     string GetType() const { return x_GetType(); }
 
@@ -85,7 +89,8 @@ public:
 
 protected:
     CPSG_Request(shared_ptr<void> user_context = {})
-        : m_UserContext(user_context)
+        : m_UserContext(user_context),
+          m_RequestContext(CDiagContext::GetRequestContext().Clone())
     {}
 
     virtual ~CPSG_Request() = default;
@@ -98,6 +103,7 @@ private:
     virtual string x_GetAbsPathRef() const = 0;
 
     shared_ptr<void> m_UserContext;
+    CRef<CRequestContext> m_RequestContext;
 
     friend class CPSG_Queue;
 };

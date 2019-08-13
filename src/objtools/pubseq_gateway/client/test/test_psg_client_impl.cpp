@@ -367,7 +367,7 @@ void SFixture::MtReading()
     // Sending
 
     vector<char> buf(kSizeMax);
-    SPSG_Request request(reply, string());
+    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone());
 
     for (auto& chunk_stream : src_chunks) {
         do {
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(Request)
     // Reading
 
     vector<char> buf(kSizeMax);
-    SPSG_Request request(reply, string());
+    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone());
 
     for (auto& chunk_stream : src_chunks) {
         do {

@@ -53,7 +53,6 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
-#include <corelib/request_ctx.hpp>
 #include <corelib/request_status.hpp>
 
 #include "psg_client_transport.hpp"
@@ -95,6 +94,16 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
     { "io",          EPSG_PsgClientMode::eIo          }
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
+
+struct SContextSetter
+{
+    template <class TRequest>
+    SContextSetter(TRequest req) { CDiagContext::SetRequestContext(req->context); }
+    ~SContextSetter()            { CDiagContext::SetRequestContext(nullptr);      }
+
+    SContextSetter(const SContextSetter&) = delete;
+    void operator=(const SContextSetter&) = delete;
+};
 
 void SDebugPrintout::Print(const char* authority, const string& path)
 {
@@ -266,14 +275,16 @@ void SPSG_Reply::SetCanceled()
     }
 }
 
-SPSG_Request::SPSG_Request(shared_ptr<SPSG_Reply> r, string p) :
+SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c) :
     full_path(move(p)),
     reply(r),
+    context(c->Clone()),
     m_State(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo ?
             &SPSG_Request::StateIo : &SPSG_Request::StatePrefix),
     m_Retries(TPSG_RequestRetries::GetDefault())
 {
     _ASSERT(reply);
+    _ASSERT(context);
 
     if (TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo) AddIo();
 }
@@ -391,6 +402,8 @@ void SPSG_Request::AddIo()
 
 void SPSG_Request::Add()
 {
+    SContextSetter setter(this);
+
     reply->debug_printout << m_Buffer.chunk << endl;
 
     auto& chunk = m_Buffer.chunk;
@@ -797,6 +810,7 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
 {
     if (auto rv = Init()) return rv;
 
+    SContextSetter setter(req);
     CRequestContext& context = CDiagContext::GetRequestContext();
 
     const auto& path = req->full_path;
@@ -915,6 +929,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 
 bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error)
 {
+    SContextSetter setter(req);
     auto& debug_printout = req->reply->debug_printout;
     auto retries = req->GetRetries();
 
@@ -939,6 +954,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
     if (it != m_Requests.end()) {
         auto& req = it->second;
 
+        SContextSetter setter(req);
         req->reply->debug_printout << error_code << endl;
 
         // If there is an error and the request is allowed to Retry

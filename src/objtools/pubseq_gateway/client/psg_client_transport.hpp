@@ -407,8 +407,9 @@ struct SPSG_Request
 {
     const string full_path;
     shared_ptr<SPSG_Reply> reply;
+    CRef<CRequestContext> context;
 
-    SPSG_Request(shared_ptr<SPSG_Reply> reply, string p);
+    SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c);
 
     ~SPSG_Request()
     {
