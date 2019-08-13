@@ -370,6 +370,12 @@ shared_ptr<CPSG_Request_Resolve> SRequestBuilder::SBatchResolve::operator()(stri
 
 int CProcessing::BatchResolve(const CArgs& input, istream& is)
 {
+    auto& ctx = CDiagContext::GetRequestContext();
+
+    ctx.SetRequestID();
+    ctx.SetSessionID();
+    ctx.SetHitID();
+
     SRequestBuilder::SBatchResolve batch_resolve(input);
 
     m_Reporter.Start();
@@ -473,6 +479,19 @@ void CRetriever::Run()
     }
 }
 
+CRequestStatus::ECode s_PsgStatusToRequestStatus(EPSG_Status psg_status)
+{
+    switch (psg_status) {
+        case EPSG_Status::eSuccess:  return CRequestStatus::e200_Ok;
+        case EPSG_Status::eNotFound: return CRequestStatus::e404_NotFound;
+        case EPSG_Status::eCanceled: return CRequestStatus::e499_BrokenConnection;
+        case EPSG_Status::eError:    return CRequestStatus::e400_BadRequest;
+        case EPSG_Status::eInProgress: _TROUBLE; break;
+    }
+
+    return CRequestStatus::e500_InternalServerError;
+}
+
 void CReporter::Run()
 {
     const CTimeout kTryTimeout(CTimeout::eZero);
@@ -492,6 +511,12 @@ void CReporter::Run()
             m_Replies.pop();
 
             auto status = reply->GetStatus(kTryTimeout);
+            auto request = reply->GetRequest();
+
+            if (!m_BatchResolve) {
+                CRequestContextGuard_Base guard(request->GetRequestContext());
+                guard.SetStatus(s_PsgStatusToRequestStatus(status));
+            }
 
             switch (status) {
                 case EPSG_Status::eSuccess:    continue;
@@ -877,6 +902,145 @@ bool CProcessing::ReadRequest(string& request, istream& is)
     }
 }
 
+struct SNewRequestContext
+{
+    SNewRequestContext() :
+        m_RequestContext(new CRequestContext)
+    {
+        m_RequestContext->SetRequestID();
+        CDiagContext::SetRequestContext(m_RequestContext);
+    }
+
+    ~SNewRequestContext()
+    {
+        CDiagContext::SetRequestContext(nullptr);
+    }
+
+private:
+    SNewRequestContext(const SNewRequestContext&) = delete;
+    void operator=(const SNewRequestContext&) = delete;
+
+    CRef<CRequestContext> m_RequestContext;
+};
+
+struct SInteractiveNewRequestStart : SNewRequestContext
+{
+    SInteractiveNewRequestStart(CJson_ConstNode params);
+
+private:
+    struct SExtra : private CDiagContext_Extra
+    {
+        SExtra() : CDiagContext_Extra(GetDiagContext().PrintRequestStart()) {}
+
+        void Print(const string& prefix, CJson_ConstValue  json);
+        void Print(const string& prefix, CJson_ConstArray  json);
+        void Print(const string& prefix, CJson_ConstObject json);
+        void Print(const string& prefix, CJson_ConstNode   json);
+
+    private:
+        using CDiagContext_Extra::Print;
+    };
+};
+
+SInteractiveNewRequestStart::SInteractiveNewRequestStart(CJson_ConstNode params)
+{
+    // All JSON types have already been validated with the scheme
+
+    auto params_obj = params.GetObject();
+    auto context = params_obj.find("context");
+    auto& ctx = CDiagContext::GetRequestContext();
+
+    if (context != params_obj.end()) {
+        auto context_obj = context->value.GetObject();
+
+        auto sid = context_obj.find("sid");
+
+        if (sid != context_obj.end()) {
+            ctx.SetSessionID(sid->value.GetValue().GetString());
+        }
+
+        auto phid = context_obj.find("phid");
+
+        if (phid != context_obj.end()) {
+            ctx.SetHitID(phid->value.GetValue().GetString());
+        }
+
+        auto client_ip = context_obj.find("client_ip");
+
+        if (client_ip != context_obj.end()) {
+            ctx.SetClientIP(client_ip->value.GetValue().GetString());
+        }
+    }
+
+    if (!ctx.IsSetSessionID()) ctx.SetSessionID();
+    if (!ctx.IsSetHitID())     ctx.SetHitID();
+
+    SExtra extra;
+    extra.Print("params", params);
+}
+
+void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_ConstValue json)
+{
+    _ASSERT(json.IsNumber());
+
+    if (json.IsInt4()) {
+        Print(prefix, json.GetInt4());
+    } else if (json.IsUint4()) {
+        Print(prefix, json.GetUint4());
+    } else if (json.IsInt8()) {
+        Print(prefix, json.GetInt8());
+    } else if (json.IsUint8()) {
+        Print(prefix, json.GetUint8());
+    } else if (json.IsDouble()) {
+        Print(prefix, json.GetDouble());
+    } else {
+        _TROUBLE;
+    }
+}
+
+void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_ConstArray json)
+{
+    for (size_t i = 0; i < json.size(); ++i) {
+        Print(prefix + '[' + to_string(i) + ']', json[i]);
+    }
+}
+
+void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_ConstObject json)
+{
+    for (const auto& pair : json) {
+        Print(prefix + '.' + pair.name, pair.value);
+    }
+}
+
+void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_ConstNode json)
+{
+    switch (json.GetType()) {
+        case CJson_ConstNode::eNull:
+            Print(prefix, "<null>");
+            break;
+
+        case CJson_ConstNode::eBool:
+            Print(prefix, json.GetValue().GetBool() ? "true" : "false");
+            break;
+
+        case CJson_ConstNode::eString:
+            Print(prefix, json.GetValue().GetString());
+            break;
+
+        case CJson_ConstNode::eNumber:
+            Print(prefix, json.GetValue());
+            break;
+
+        case CJson_ConstNode::eArray:
+            Print(prefix, json.GetArray());
+            break;
+
+        case CJson_ConstNode::eObject:
+            Print(prefix, json.GetObject());
+            break;
+    };
+}
+
 int CProcessing::Interactive(bool echo)
 {
     m_Reporter.Start();
@@ -912,6 +1076,8 @@ int CProcessing::Interactive(bool echo)
 
             } else {
                 auto user_context = make_shared<SUserContext>(id, m_RequestsCounter);
+
+                SInteractiveNewRequestStart new_request_start(params);
 
                 if (auto request = CreateRequest(method, move(user_context), params.GetObject())) {
                     m_Sender.Add(move(request));
@@ -1381,6 +1547,15 @@ CJson_Schema& CProcessing::RequestSchema()
             "items": {
                 "type": "string"
             }
+        },
+        "context": {
+            "$id": "#context",
+            "type": "object",
+            "items": {
+                "sid": { "type": "string" },
+                "phid": { "type": "string" },
+                "client_ip": { "type": "string" }
+            }
         }
     },
     "oneOf": [
@@ -1393,7 +1568,8 @@ CJson_Schema& CProcessing::RequestSchema()
                     "properties": {
                         "bio_id" : { "$ref": "#bio_id" },
                         "include_data": { "$ref": "#include_data" },
-                        "exclude_blobs": { "$ref": "#exclude_blobs" }
+                        "exclude_blobs": { "$ref": "#exclude_blobs" },
+                        "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id" ]
                 },
@@ -1410,7 +1586,8 @@ CJson_Schema& CProcessing::RequestSchema()
                     "properties": {
                         "blob_id": { "type": "string" },
                         "last_modified": { "type": "string" },
-                        "include_data": { "$ref": "#include_data" }
+                        "include_data": { "$ref": "#include_data" },
+                        "context": { "$ref": "#context" }
                     },
                     "required": [ "blob_id" ]
                 },
@@ -1426,7 +1603,8 @@ CJson_Schema& CProcessing::RequestSchema()
                     "type": "object",
                     "properties": {
                         "bio_id" : { "$ref": "#bio_id" },
-                        "include_info": { "$ref": "#include_info" }
+                        "include_info": { "$ref": "#include_info" },
+                        "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id" ]
                 },
@@ -1442,7 +1620,8 @@ CJson_Schema& CProcessing::RequestSchema()
                     "type": "object",
                     "properties": {
                         "bio_id" : { "$ref": "#bio_id" },
-                        "named_annots": { "$ref": "#named_annots" }
+                        "named_annots": { "$ref": "#named_annots" },
+                        "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id","named_annots" ]
                 },
