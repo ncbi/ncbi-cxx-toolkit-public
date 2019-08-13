@@ -210,6 +210,7 @@ TSetSeqIdFunc FindSetTextSeqIdFunc(CSeq_id::E_Choice choice)
         { CSeq_id::e_Genbank, &CSeq_id::SetGenbank },
         { CSeq_id::e_Tpd, &CSeq_id::SetTpd },
         { CSeq_id::e_Tpg, &CSeq_id::SetTpg },
+        { CSeq_id::e_Tpe, &CSeq_id::SetTpe },
         { CSeq_id::e_Other, &CSeq_id::SetOther }
     };
 
