@@ -208,6 +208,8 @@ CCmdLineBlastXMLReportData::x_FillScoreMatrix(const char *matrix_name)
         packed_matrix = &NCBISM_Pam70;
     else if (strcmp(matrix_name, "PAM250") == 0)
         packed_matrix = &NCBISM_Pam250;
+    else if (strcmp(matrix_name, "IDENTITY") == 0)
+        	packed_matrix = &NCBISM_Identity;
     else {
         string prog_name = Blast_ProgramNameFromType(
                                            m_Options.GetProgramType());
