@@ -6,6 +6,7 @@ connect/ext$
 connect/mbedtls
 connect/services
 -connect/services/test
+db
 
 check
 dll
