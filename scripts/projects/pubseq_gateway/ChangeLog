@@ -1,3 +1,12 @@
+Release 1.7.0 (2019-08-13)
+
+    * PSG -- use client IP from X-Forwarded-For (CXX-10823)
+    * PSG - to start even if Cassandra is down (CXX-10782)
+    * Move PSG server project into a sub-dir "server/" (CXX-10807)
+    * PSG: timing statistics total count to include anomalies (CXX-10772)
+    * PSG - ID/get_tse_chunk - to get an Nth chunk (ID2-split wise) of the
+      given split ver of the blob (CXX-10638)
+
 Release 1.6.0 (2019-06-27)
 
     * PSG -- add op stats collection (and reporting) (CXX-10722)
