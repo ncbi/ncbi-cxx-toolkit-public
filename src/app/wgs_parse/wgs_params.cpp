@@ -422,13 +422,15 @@ CSeq_id::E_Choice CParams::GetIdChoice() const
     }
     else if(IsTpa())
     {
-        if(GetSource() == eEMBL)
-        {
-            ret = CSeq_id::e_Tpe;
-        }
-        else
-        {
-            ret = GetSource() == eDDBJ ? CSeq_id::e_Tpd : CSeq_id::e_Tpg;
+        switch (GetSource()) {
+            case eDDBJ:
+                ret = CSeq_id::e_Tpd;
+                break;
+            case eEMBL:
+                ret = CSeq_id::e_Tpe;
+                break;
+            default:
+                ret = CSeq_id::e_Tpg;
         }
     }
     else {

@@ -547,25 +547,102 @@ static void CheckChromosome(const CSeq_descr& descrs, EChromosomeSubtypeStatus& 
  *
  */
 
-static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
+class CBlockAdapter
 {
-    const CGB_block* genbank_block = nullptr;
+public:
 
+    typedef list<string> TKeywords;
+
+    virtual ~CBlockAdapter() {};
+    virtual bool ContainsBlockNeeded(const CSeqdesc& descr) const = 0;
+    virtual void SetBlock(const CSeqdesc& descr) = 0;
+    virtual bool IsSetKeywords() const = 0;
+    virtual const TKeywords& GetKeywords() const = 0;
+};
+
+class CGenbankBlockAdapter : public CBlockAdapter
+{
+public:
+
+    CGenbankBlockAdapter() :
+        m_genbank_block(nullptr) {};
+
+    virtual bool ContainsBlockNeeded(const CSeqdesc& descr) const
+    {
+        return descr.IsGenbank();
+    }
+
+    virtual void SetBlock(const CSeqdesc& descr)
+    {
+        _ASSERT(descr.IsGenbank() && "Should be GenBank descriptor");
+        m_genbank_block = &descr.GetGenbank();
+    }
+
+    virtual bool IsSetKeywords() const
+    {
+        return m_genbank_block != nullptr && m_genbank_block->IsSetKeywords();
+    }
+
+    virtual const CBlockAdapter::TKeywords& GetKeywords() const
+    {
+        _ASSERT(m_genbank_block && "GenBank block should be present");
+        return m_genbank_block->GetKeywords();
+    }
+
+private:
+    const CGB_block* m_genbank_block;
+};
+
+class CEmblBlockAdapter : public CBlockAdapter
+{
+public:
+
+    CEmblBlockAdapter() :
+        m_embl_block(nullptr) {};
+
+    virtual bool ContainsBlockNeeded(const CSeqdesc& descr) const
+    {
+        return descr.IsEmbl();
+    }
+
+    virtual void SetBlock(const CSeqdesc& descr)
+    {
+        _ASSERT(descr.IsEmbl() && "Should be EMBL descriptor");
+        m_embl_block = &descr.GetEmbl();
+    }
+
+    virtual bool IsSetKeywords() const
+    {
+        return m_embl_block != nullptr && m_embl_block->IsSetKeywords();
+    }
+
+    virtual const CBlockAdapter::TKeywords& GetKeywords() const
+    {
+        _ASSERT(m_embl_block && "EMBL block should be present");
+        return m_embl_block->GetKeywords();
+    }
+
+private:
+    const CEMBL_block* m_embl_block;
+};
+
+static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info, CBlockAdapter& block)
+{
     if (descrs.IsSet()) {
 
-        auto genbank_it = find_if(descrs.Get().begin(), descrs.Get().end(), [](const CRef<CSeqdesc>& descr) { return descr->IsGenbank(); });
-        if (genbank_it != descrs.Get().end()) {
-            genbank_block = &(*genbank_it)->GetGenbank();
+        auto block_it = find_if(descrs.Get().begin(), descrs.Get().end(), [&block](const CRef<CSeqdesc>& descr) { return block.ContainsBlockNeeded(*descr); });
+        if (block_it != descrs.Get().end()) {
+            block.SetBlock(**block_it);
         }
 
-        if (genbank_block && genbank_block->IsSetKeywords()) {
+        if (block.IsSetKeywords()) {
 
             if (info.m_keywords_set) {
 
                 if (!info.m_keywords.empty()) {
                     // removes all previously stored keywords which are not present in current CGB_block::keywords
                     map<string, string> keywords_found;
-                    for (auto& keyword : genbank_block->GetKeywords()) {
+                    for (auto& keyword : block.GetKeywords()) {
 
                         string cur_keyword = keyword;
                         NStr::ToLower(cur_keyword);
@@ -579,7 +656,7 @@ static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
             }
             else {
                 // copies all keywords for the first time
-                for (auto& keyword : genbank_block->GetKeywords()) {
+                for (auto& keyword : block.GetKeywords()) {
                     string cur_keyword = keyword;
                     info.m_keywords[NStr::ToLower(cur_keyword)] = keyword;
                 }
@@ -589,9 +666,9 @@ static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
 
     info.m_keywords_set = true;
 
-    if (genbank_block && genbank_block->IsSetKeywords()) {
+    if (block.IsSetKeywords()) {
 
-        for (auto keyword : genbank_block->GetKeywords()) {
+        for (auto keyword : block.GetKeywords()) {
             if (keyword == "TPA:assembly" || keyword == "TPA:reassembly") {
                 info.m_has_tpa_keyword = true;
             }
@@ -605,63 +682,6 @@ static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
     }
 }
 
-static void CheckKeywordsEMBL(const CSeq_descr& descrs, CSeqEntryInfo& info)
-{
-    const CEMBL_block* embl_block = nullptr;
-
-    if (descrs.IsSet()) {
-
-        auto embl_it = find_if(descrs.Get().begin(), descrs.Get().end(), [](const CRef<CSeqdesc>& descr) { return descr->IsEmbl(); });
-        if (embl_it != descrs.Get().end()) {
-            embl_block = &(*embl_it)->GetEmbl();
-        }
-
-        if (embl_block && embl_block->IsSetKeywords()) {
-
-            if (info.m_keywords_set) {
-
-                if (!info.m_keywords.empty()) {
-                    // removes all previously stored keywords which are not present in current CGB_block::keywords
-                    map<string, string> keywords_found;
-                    for (auto& keyword : embl_block->GetKeywords()) {
-
-                        string cur_keyword = keyword;
-                        NStr::ToLower(cur_keyword);
-
-                        if (info.m_keywords.find(cur_keyword) != info.m_keywords.end()) {
-                            keywords_found[cur_keyword] = keyword;
-                        }
-                    }
-                    info.m_keywords.swap(keywords_found);
-                }
-            }
-            else {
-                // copies all keywords for the first time
-                for (auto& keyword : embl_block->GetKeywords()) {
-                    string cur_keyword = keyword;
-                    info.m_keywords[NStr::ToLower(cur_keyword)] = keyword;
-                }
-            }
-        }
-    }
-
-    info.m_keywords_set = true;
-
-    if (embl_block && embl_block->IsSetKeywords()) {
-
-        for (auto keyword : embl_block->GetKeywords()) {
-            if (keyword == "TPA:assembly" || keyword == "TPA:reassembly") {
-                info.m_has_tpa_keyword = true;
-            }
-            else if (keyword == "Targeted") {
-                info.m_has_targeted_keyword = true;
-            }
-            else if (keyword == "GMI") {
-                info.m_has_gmi_keyword = true;
-            }
-        }
-    }
-}
 
 static bool HasGbBlock(const CSeq_descr& descrs)
 {
@@ -1088,12 +1108,12 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
  *
  */
 
-            if(bioseq.IsNa())
-            {
-                if(GetParams().GetSource() == eEMBL)
-                    CheckKeywordsEMBL(bioseq.GetDescr(), info);
-                else
-                    CheckKeywords(bioseq.GetDescr(), info);
+            if(bioseq.IsNa()) {
+
+                unique_ptr<CBlockAdapter> adapter(GetParams().GetSource() == eEMBL ? 
+                    static_cast<CBlockAdapter*>(new CEmblBlockAdapter) : new CGenbankBlockAdapter);
+
+                CheckKeywords(bioseq.GetDescr(), info, *adapter);
             }
             else if (!info.m_has_gb_block) {
                 info.m_has_gb_block = HasGbBlock(bioseq.GetDescr());
