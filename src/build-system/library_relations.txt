@@ -106,6 +106,7 @@ an_prok_pipeline needs xalgophytree
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
 an_worker_nodes needs gpipe_xmlutil
+annotationproto needs spdiproto
 asn_cache needs $(COMPRESS_LIBS)
 asn_cache needs bdb
 asn_cache needs seqset
@@ -1011,10 +1012,7 @@ objannotation needs objspdi
 objcoords needs xser
 objmmail needs3party $(NCBI_C_ncbi)
 objprt needs xser
-objspdi needs $(Z_LIB)
 objspdi needs xser
-objspdi needs3party $(PROTOBUF_LIBS)
-objspdi needs3party $(Z_LIBS)
 objtax1 needs3party ncbiobj
 odbc_ftds100 needs tds_ftds100
 odbc_ftds95 needs tds_ftds95
@@ -1172,6 +1170,10 @@ softparse needs xmlwrapp
 spcgi needs softparse
 spcgi needs xcgi
 spcgi needs xhtml
+spdiproto needs $(Z_LIB)
+spdiproto needs3party $(ORIG_LIBS)
+spdiproto needs3party $(PROTOBUF_LIBS)
+spdiproto needs3party $(Z_LIBS)
 spellsrvbase needs txserv
 splitdbasn_g needs gendefasn_g
 splitdbasn_g needs3party ncbiobj
@@ -1342,6 +1344,7 @@ validation_results needs xmlwrapp
 var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
+variation_lib needs annotationproto
 variation_lib needs intvarutil
 variation_lib needs ncbi_xloader_blastdb
 variation_lib needs objannotation
