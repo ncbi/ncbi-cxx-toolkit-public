@@ -265,6 +265,7 @@ bool CPubEquivCleaner::ShouldWeFixInitials(const CPub_equiv& equiv)
     if (!equiv.IsSet()) {
         return false;
     }
+#if 0
     bool has_id = false,
         has_art = false;
 
@@ -278,6 +279,7 @@ bool CPubEquivCleaner::ShouldWeFixInitials(const CPub_equiv& equiv)
         }
     }
     // return !(has_art  &&  has_id);
+#endif
     return true;
 }
 
