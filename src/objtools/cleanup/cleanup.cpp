@@ -4770,7 +4770,7 @@ CConstRef<CCode_break> CCleanup::GetCodeBreakForLocation(size_t pos, const CSeq_
         if (cb->IsSetLoc()) {
             TSeqPos offset = sequence::LocationOffset(cds.GetLocation(),
                             cb->GetLoc());
-            if (offset >= 0 && offset >= frame &&
+            if (offset >= frame &&
                 ((offset - frame) / 3 ) + 1 == pos) {
                 return cb;
             }
