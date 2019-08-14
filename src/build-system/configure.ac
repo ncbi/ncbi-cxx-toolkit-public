@@ -995,7 +995,9 @@ case "/$CXX" in
             *:i?86)           v=4.4.5 ;;
             ?.* | 1[[01]].* ) v=4.0.1 ;;
             1[[23]].*)        v=4.4.2 ;;
-            *)                v=4.9.3 ;;
+            1[[456]].*)       v=4.9.3 ;;
+            17.*) v=7.3.0; CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 $CPPFLAGS" ;;
+            *)                v=7.3.0 ;;
          esac
          for gcc in /opt/ncbi/gcc/$v/bin/gcc /usr/local/gcc/$v/bin/gcc; do
             if test -x $gcc; then
