@@ -457,7 +457,9 @@ void CQualLookupMap::AddOrg(const COrg_ref& org)
             string qual = (*mod_it)->GetSubname();
             string key = GetKey(qual, org);
             TQualifierRequests::iterator find = m_Map.find(key);
-            m_Map[key] = x_MakeNewRequest(qual, org);
+            if (find == m_Map.end()) {
+                m_Map[key] = x_MakeNewRequest(qual, org);
+            }
         }
     }
 }
