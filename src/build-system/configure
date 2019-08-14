@@ -9498,14 +9498,14 @@ fi
 echo "${ECHO_T}$ac_cv_have_decl__LIBCPP_VERSION" >&6; }
 
 
-{ echo "$as_me:$LINENO: checking how to enable C++ '11 features in $CXX" >&5
-echo $ECHO_N "checking how to enable C++ '11 features in $CXX... $ECHO_C" >&6; }
-if test "${ncbi_cv_prog_cxx_11+set}" = set; then
+{ echo "$as_me:$LINENO: checking how to enable C++ '14 or at least '11 features in $CXX" >&5
+echo $ECHO_N "checking how to enable C++ '14 or at least '11 features in $CXX... $ECHO_C" >&6; }
+if test "${ncbi_cv_prog_cxx_14+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   orig_CXX=$CXX
-    ncbi_cv_prog_cxx_11=no
-    for x in -std=gnu++11 -std=gnu++0x ''; do
+    ncbi_cv_prog_cxx_14=no
+    for x in -std=gnu++14 -std=gnu++11 -std=gnu++0x ''; do
        CXX="$orig_CXX $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -9556,7 +9556,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ncbi_cv_prog_cxx_11=$x
+  ncbi_cv_prog_cxx_14=$x
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -9566,18 +9566,18 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-          test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
+          test "x$ncbi_cv_prog_cxx_14" = "xno"  ||  break
        done
        CXX=$orig_CXX
 fi
-{ echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_11" >&5
-echo "${ECHO_T}$ncbi_cv_prog_cxx_11" >&6; }
-if test "$ncbi_cv_prog_cxx_11" = no; then
+{ echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_14" >&5
+echo "${ECHO_T}$ncbi_cv_prog_cxx_14" >&6; }
+if test "$ncbi_cv_prog_cxx_14" = no; then
    { { echo "$as_me:$LINENO: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&5
 echo "$as_me: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&2;}
    { (exit 1); exit 1; }; }
 else
-   CXX="$CXX $ncbi_cv_prog_cxx_11"
+   CXX="$CXX $ncbi_cv_prog_cxx_14"
 fi
 
 ac_ext=c

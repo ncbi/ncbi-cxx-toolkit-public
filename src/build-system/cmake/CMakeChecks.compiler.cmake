@@ -239,7 +239,7 @@ endmacro()
 
 # Check for appropriate C++11 flags
 if (UNIX)
-	set_cxx_compiler_flag_optional("-std=gnu++11" "-std=c++11" "-std=c++0x")
+	set_cxx_compiler_flag_optional("-std=gnu++14" "-std=gnu++11" "-std=c++11" "-std=c++0x")
 	set_c_compiler_flag_optional  ("-std=gnu11" "-std=c11" "-std=gnu99" "-std=c99")
 endif()
 
