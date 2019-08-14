@@ -105,6 +105,9 @@ public:
     CConstRef<CCleanupChange> BasicCleanup(CBioSource& src,   Uint4 options = 0);
 	// Cleanup a Submit-block
 	CConstRef<CCleanupChange> BasicCleanup(CSubmit_block& block, Uint4 options = 0);
+    // Cleanup descriptors
+    CConstRef<CCleanupChange> BasicCleanup(CSeqdesc& desc, Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_descr & desc, Uint4 options = 0);
 
     // Handle versions.
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);

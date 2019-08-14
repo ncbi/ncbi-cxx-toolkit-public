@@ -195,6 +195,8 @@ public:
 
     void BasicCleanup(CPubdesc& pd, bool strip_serial);
 
+    void BasicCleanup(CSeqdesc& desc);
+
     /// Extended Cleanup methods
 
     void ExtendedCleanupSeqEntry (
@@ -396,7 +398,7 @@ private:
     void x_AddToComment(CSeq_feat& feat, const string& comment);
 
     // publication-related cleanup
-    void x_FlattenPubEquiv(CPub_equiv& pe);
+//    void x_FlattenPubEquiv(CPub_equiv& pe);
 
     // Date-related
     void x_DateStdBC( CDate_std& date );

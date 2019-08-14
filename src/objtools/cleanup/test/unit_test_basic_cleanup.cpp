@@ -2568,3 +2568,42 @@ BOOST_AUTO_TEST_CASE(Test_StripSpaces)
     StripSpaces(input);
     BOOST_CHECK_EQUAL(input, "a b");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SingleDesc)
+{
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetComment(" a b ");
+    changes = cleanup.BasicCleanup(*desc);
+    BOOST_CHECK_EQUAL(desc->GetComment(), "a b");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MultipleDesc)
+{
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    CRef<CSeqdesc> comment(new CSeqdesc());
+    comment->SetComment(" a b ");
+    CRef<CSeqdesc> dated(new CSeqdesc());
+    auto& createdate = dated->SetCreate_date().SetStd();
+    createdate.SetYear(2019);
+    createdate.SetMonth(1);
+    createdate.SetDay(4);
+    createdate.SetHour(8);
+    createdate.SetMinute(61);
+    createdate.SetSecond(32);
+
+    CRef<CSeq_descr> descr(new CSeq_descr());
+    descr->Set().push_back(comment);
+    descr->Set().push_back(dated);
+
+    changes = cleanup.BasicCleanup(*descr);
+    BOOST_CHECK_EQUAL(comment->GetComment(), "a b");
+    BOOST_CHECK_EQUAL(createdate.IsSetMinute(), false);
+    BOOST_CHECK_EQUAL(createdate.IsSetSecond(), false);
+
+}

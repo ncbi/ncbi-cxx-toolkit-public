@@ -176,6 +176,7 @@ public:
   void BasicCleanupBioseq( CBioseq & arg0 );
   void BasicCleanupBioseqSet( CBioseq_set & arg0 );
   void BasicCleanupSeqFeat( CSeq_feat & arg0_raw );
+  void BasicCleanupSeqdesc(CSeqdesc & arg0) { x_BasicCleanupBioseq_descr_descr_E_E(arg0); }
 
 private: 
   void x_BasicCleanupSeqFeat_support_support_model_evidence_E_E_identification_identification_pdb_pdb_rel_rel_std_std_ETC( CDate_std & arg0 );

@@ -239,6 +239,24 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 o
 }
 
 
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeqdesc& desc, Uint4 options)
+{
+    CLEANUP_SETUP
+    clean_i.BasicCleanup(desc);
+    return changes;
+
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_descr & desc, Uint4 options)
+{
+    CLEANUP_SETUP
+    
+    for (auto& it : desc.Set()) {
+        clean_i.BasicCleanup(*it);
+    }
+    return changes;
+}
 
 
 // *********************** Extended Cleanup implementation ********************
