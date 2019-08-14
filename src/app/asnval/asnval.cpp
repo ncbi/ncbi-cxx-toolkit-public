@@ -90,7 +90,7 @@ using namespace ncbi;
 using namespace objects;
 using namespace validator;
 
-const char * ASNVAL_APP_VER = "10.2";
+const char * ASNVAL_APP_VER = "10.3";
 
 #define USE_XMLWRAPP_LIBS
 
@@ -136,7 +136,8 @@ private:
     CConstRef<CValidError> ValidateInput (void);
     void ValidateOneDirectory(string dir_name, bool recurse);
     void ValidateOneFile(const string& fname);
-    void ProcessReleaseFile(const CArgs& args);
+    void ProcessBSSReleaseFile(const CArgs& args);
+    void ProcessSSMReleaseFile(const CArgs& args);
 
     void ConstructOutputStreams();
     void DestroyOutputStreams();
@@ -455,11 +456,13 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
         NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
     } else {
         try {
-            if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
+            if ( NStr::Equal(args["a"].AsString(), "t")) {          // Bioseq-set release file
                 // Open File 
-                ProcessReleaseFile(args);
-            }
-            else {
+                ProcessBSSReleaseFile(args);
+            } else if ( NStr::Equal(args["a"].AsString(), "u")) {   // Seq-submit release file
+                // Open File 
+                ProcessSSMReleaseFile(args);
+            } else {
                 size_t num_validated = 0;
                 while (true) {
                    CStopWatch sw(CStopWatch::eStart);
@@ -700,7 +703,7 @@ void CAsnvalApp::ReadClassMember
 }
 
 
-void CAsnvalApp::ProcessReleaseFile
+void CAsnvalApp::ProcessBSSReleaseFile
 (const CArgs& args)
 {
     CRef<CBioseq_set> seqset(new CBioseq_set);
@@ -710,6 +713,20 @@ void CAsnvalApp::ProcessReleaseFile
     set_type.FindMember("seq-set").SetLocalReadHook(*m_In, this);
 
     // Read the CBioseq_set, it will call the hook object each time we 
+    // encounter a Seq-entry
+    *m_In >> *seqset;
+}
+
+void CAsnvalApp::ProcessSSMReleaseFile
+(const CArgs& args)
+{
+    CRef<CSeq_submit> seqset(new CSeq_submit);
+
+    // Register the Seq-entry hook
+    CObjectTypeInfo set_type = CType<CSeq_submit>();
+    (*(*(*set_type.FindMember("data")).GetPointedType().FindVariant("entrys")).GetElementType().GetPointedType().FindVariant("set")).FindMember("seq-set").SetLocalReadHook(*m_In, this);
+
+    // Read the CSeq_submit, it will call the hook object each time we 
     // encounter a Seq-entry
     *m_In >> *seqset;
 }
