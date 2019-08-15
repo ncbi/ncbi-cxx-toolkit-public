@@ -33,6 +33,21 @@
 ################################################################################
 
 
+{
+   BerkeleyDB-4.6.21.1 -- looks like an internal glitch (GCC730-ReleaseMT)
+   Memcheck:Cond
+   fun:__log_putr.isra.1
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+}
+
+
 #{
 #   NCBI VDB ver 2.5.0 -- uninit value created on stack, passed around
 #   Memcheck:Param
