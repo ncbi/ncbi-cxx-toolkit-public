@@ -1,3 +1,8 @@
+Release 1.7.1 (2019-08-15)
+
+    * CPubseqGatewayCacheBlobProp::LookupBySatKey() modifies last_modified in
+      case of an exception (ID-5791)
+
 Release 1.7.0 (2019-08-13)
 
     * PSG -- use client IP from X-Forwarded-For (CXX-10823)
