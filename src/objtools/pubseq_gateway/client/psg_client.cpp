@@ -305,9 +305,21 @@ CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_reques
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 {
     auto& reply = m_Request->reply;
+    auto& reply_item = reply->reply_item;
+    auto& state = reply_item.GetMTSafe().state;
 
     // A reply has already been returned
-    if (!reply->reply_item.GetMTSafe().state.SetReturned()) return {};
+    if (!state.SetReturned()) {
+        // The order of the checks is important, it would be a race otherwise.
+        const bool in_io_queue = m_Request.use_count() > 1;
+        const bool in_progress = state.InProgress();
+
+        if (in_progress && !in_io_queue) {
+            reply_item.GetLock()->state.AddError("Internal error, request was lost");
+        }
+
+        return {};
+    }
 
     shared_ptr<CPSG_Reply> rv(new CPSG_Reply);
     rv->m_Impl->reply = reply;

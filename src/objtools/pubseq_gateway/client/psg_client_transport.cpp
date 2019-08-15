@@ -1072,7 +1072,13 @@ void SPSG_IoSession::AddToCompletion(shared_ptr<SPSG_Reply>& reply)
 
 void SPSG_IoSession::ProcessRequests()
 {
-    while (m_Requests.size() < m_Session.GetMaxStreams() && !m_Tcp.IsWriteBufferFull()) {
+    for (;;) {
+        if ((m_Requests.size() >= m_Session.GetMaxStreams()) || m_Tcp.IsWriteBufferFull()) {
+            // Continue processing of remaining requests on the next callback
+            m_Io->queue.Send();
+            break;
+        }
+
         shared_ptr<SPSG_Request> req;
 
         if (!m_Io->queue.Pop(req)) {
@@ -1086,6 +1092,7 @@ void SPSG_IoSession::ProcessRequests()
         auto stream_id = m_Session.Submit(req);
 
         if (stream_id < 0) {
+            Retry(req, stream_id);
             Reset(stream_id);
             return;
         }

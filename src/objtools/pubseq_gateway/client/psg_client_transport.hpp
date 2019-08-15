@@ -824,9 +824,9 @@ struct SPSG_AsyncQueue : SPSG_UvAsync
         }
     }
 
-private:
     using SPSG_UvAsync::Send;
 
+private:
     CMPMCQueue<TRequest> m_Queue;
 };
 
