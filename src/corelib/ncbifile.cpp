@@ -890,15 +890,14 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
             if (last == DIR_CURRENT) {
                 if (!next.empty()) {
                     head.pop_back();
-                    _ASSERT(head.empty());
                 }
-            } else if (next == DIR_CURRENT) {
-                // Leave out, since we already have content
-                continue;
 #ifdef DISK_SEPARATOR
             } else if (!last.empty() && last[last.size()-1] == DISK_SEPARATOR) {
                 // Allow almost anything right after a volume specification
 #endif
+            } else if (next == DIR_CURRENT) {
+                // Leave out, since we already have content
+                continue;
             } else if (next.empty()) {
                 continue; // leave out empty components in most cases
             } else if (next == DIR_PARENT) {
@@ -922,9 +921,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 #ifdef NCBI_OS_UNIX
         // Is there a Windows equivalent for readlink?
         if ( follow_links ) {
-            string s(head.empty() ? next
-                     : NStr::Join(head, string(1, DIR_SEPARATOR))
-                     + DIR_SEPARATOR + next);
+            string s(head.empty() ? next : NStr::Join(head, string(1, DIR_SEPARATOR)) + DIR_SEPARATOR + next);
             char buf[PATH_MAX];
             int  length = (int)readlink(s.c_str(), buf, sizeof(buf));
             if (length > 0) {
@@ -954,6 +951,15 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
         // root dir
         return string(1, DIR_SEPARATOR);
     }
+#ifdef DISK_SEPARATOR
+    if (head.front().find(DISK_SEPARATOR) != NPOS) {
+        if ((head.size() == 2  &&  head.back() == DIR_CURRENT) || 
+            (head.size() == 3  &&  *(++head.begin()) == DIR_CURRENT  &&  head.back().empty()) ) {
+            // root dir on drive X:
+            return head.front() + DIR_SEPARATOR;
+        }
+    }
+#endif
     // Compose path
     return NStr::Join(head, string(1, DIR_SEPARATOR));
 }
@@ -4100,7 +4106,12 @@ bool CDir::CreatePath(TCreateFlags flags) const
         LOG_ERROR_NCBI(60, "CDir::CreatePath(): Cannot create absolute path from: " + path, CNcbiError::eInvalidArgument);
         return false;
     }
-    if (path[path.length()-1] == GetPathSeparator()) {
+    if (path[path.length()-1] == GetPathSeparator()
+#if defined(NCBI_OS_MSWIN)
+        &&  path.length() != 3
+        // Special case -- for path like "C:\" dont remove a last separator, it represent a root directory
+#endif
+        ) {
         path.erase(path.length() - 1);
     }
 

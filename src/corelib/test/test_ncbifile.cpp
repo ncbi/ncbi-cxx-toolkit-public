@@ -267,7 +267,12 @@ static void s_TEST_CheckPath(void)
 #if defined(NCBI_OS_MSWIN)
     assert( d.NormalizePath("")                 == "" );
     assert( d.NormalizePath("c:\\")             == "c:\\" );
+    assert( d.NormalizePath("c:\\.")            == "c:\\" );
+    assert( d.NormalizePath("c:\\.\\.")         == "c:\\" );
+    assert( d.NormalizePath("c:\\.\\.\\")       == "c:\\" );
     assert( d.NormalizePath("c:\\file")         == "c:\\file" );
+    assert( d.NormalizePath("c:\\.\\file")      == "c:\\file" );
+    assert( d.NormalizePath("c:\\.\\dir\\.")    == "c:\\dir" );
     assert( d.NormalizePath("c:/file")          == "c:\\file" );
     assert( d.NormalizePath("c:file")           == "c:file" );
     assert( d.NormalizePath("c:\\dir\\..\\file")== "c:\\file" );
