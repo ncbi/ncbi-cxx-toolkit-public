@@ -294,7 +294,7 @@ namespace compile_time_bits
 
         static constexpr pair_t make_pair(const _Input& input, size_t i)
         {
-            return { input[i].second, input[i].first };
+            return std::move(pair_t{ input[i].second, input[i].first });
         }
         static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
         {
@@ -303,7 +303,7 @@ namespace compile_time_bits
         template<class...TArgs>
         static constexpr sorted_t construct(const _Input& input, TArgs...ordered)
         {
-            return { { make_pair(input, ordered)...} };
+            return std::move(sorted_t{ { make_pair(input, ordered)...} });
         }
     };
 
@@ -600,16 +600,16 @@ namespace compile_time_bits
         template<typename...TArgs>
         static constexpr array_t set_bits(TArgs...args)
         {
-            return array_t(assemble_bitset<array_size>{}(const_input_array{ {static_cast<TIndex>(args)...} }));
+            return std::move(assemble_bitset<array_size>{}(const_input_array{ {static_cast<TIndex>(args)...} }));
         }
         static constexpr array_t set_bits(const char (&s)[bit_count+1])
         {
-            return array_t(assemble_bitset<array_size>{}(s));
+            return assemble_bitset<array_size>{}(s);
         }
         template<typename _O>
         static constexpr array_t set_bits(const std::initializer_list<_O>& args)
         {
-            return array_t(assemble_bitset<array_size>{}(args));
+            return assemble_bitset<array_size>{}(args);
         }
 
         template<typename _T>
