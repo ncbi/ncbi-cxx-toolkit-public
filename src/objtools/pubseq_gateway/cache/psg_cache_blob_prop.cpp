@@ -81,7 +81,6 @@ bool CPubseqGatewayCacheBlobProp::LookupBySatKey(int32_t sat, int32_t sat_key, i
     if (!m_Env || sat < 0 || (size_t)sat >= m_Dbis.size() || !m_Dbis[sat])
         return false;
 
-    last_modified = 0;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbis[sat]);
