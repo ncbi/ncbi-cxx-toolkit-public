@@ -65,7 +65,6 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_
     if (!m_Env)
         return false;
 
-    sec_seq_id_type = 0;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
