@@ -1422,6 +1422,7 @@ case "$host_os:$compiler" in
    case "$compiler_version" in
       1[[1-9]]?? ) MATH_LIBS=-Wl,-lm ;; # avoid static libimf in shared libs
    esac
+   ncbi_cv_prog_cxx_14=-std=gnu++11
    ;;
 
  linux*:GCC )
