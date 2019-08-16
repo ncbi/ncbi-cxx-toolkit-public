@@ -39,7 +39,6 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
 #include <util/static_map.hpp>
