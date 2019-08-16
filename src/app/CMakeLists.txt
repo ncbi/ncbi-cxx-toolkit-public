@@ -18,6 +18,7 @@ NCBI_add_subdirectory(
   biosample_chk
   blast
   blastdb
+  bsdiff
   compart
   convert_seq
   discrepancy_report
@@ -90,6 +91,7 @@ add_subdirectory_optional(bdb_env_keeper)
 add_subdirectory_optional(biosample_chk)
 add_subdirectory_optional(blast)
 add_subdirectory_optional(blastdb)
+add_subdirectory_optional(bsdiff)
 add_subdirectory_optional(compart)
 add_subdirectory_optional(convert_seq)
 add_subdirectory_optional(discrepancy_report)
