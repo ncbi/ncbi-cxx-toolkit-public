@@ -124,6 +124,13 @@ GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cach
     {
         (*cache)[accession] = response;
     }
+    static unsigned int suffix(1);
+    if (response) {
+        string filename = "biosource.asn1." + NStr::IntToString(suffix++);
+        ofstream ostr(filename);
+        ostr << MSerial_Format_AsnText() << response;
+        ostr.close();
+    }
     return response;
 }
 
@@ -1352,6 +1359,55 @@ void PrintBioseqXML(CBioseq_Handle bh,
     }
 }
 
+//  rw-905 >>
+//  ----------------------------------------------------------------------------
+void
+GenerateDiffListFromBioSource(
+    const CSeq_descr& bioSample, 
+    const CBioSource& bioSource,
+    TBiosampleFieldDiffList& diffs)
+//  ----------------------------------------------------------------------------
+{
+    diffs.clear();
+    for (auto pSampleDesc: bioSample.Get()) {
+        const CSeqdesc& sampleDesc = *pSampleDesc; 
+        if (!sampleDesc.IsSource()) {
+            continue;
+        }
+        TBiosampleFieldDiffList these_diffs = GetFieldDiffs(
+            "biosample", "descriptors", bioSource, sampleDesc.GetSource());
+        diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
+        return;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+bool
+GenerateDiffListFromBioSource(
+    const string& bioSampleAcc,
+    const CBioSource& bioSource,
+    CBioSource& bioSampleSource,
+    TBiosampleFieldDiffList& diffs)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_descr> pSampleDescrs = biosample_util::GetBiosampleData(
+        bioSampleAcc, false, nullptr);
+    for (auto pSampleDesc: pSampleDescrs->Get()) {
+        const CSeqdesc& sampleDesc = *pSampleDesc; 
+        if (!sampleDesc.IsSource()) {
+            continue;
+        }
+        const CBioSource& sampleSource = sampleDesc.GetSource();
+        diffs = GetFieldDiffs(
+            "biosample", "descriptors", bioSource, sampleSource);
+        if (!diffs.empty()) {
+            bioSampleSource.Assign(sampleSource);
+        }
+        break;
+    }
+    return !diffs.empty();
+}
+// << rw-904
 
 END_SCOPE(biosample_util)
 END_SCOPE(objects)

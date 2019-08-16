@@ -156,6 +156,21 @@ void PrintBioseqXML(CBioseq_Handle bh,
 
 string OwnerFromAffil(const CAffil& affil);
 
+//  rw-905 >>
+void
+GenerateDiffListFromBioSource(
+    const CSeq_descr& bioSample,        // as retrieved from /biosample/fetch 
+    const CBioSource& bioSource,        // as plugged from a bioseq or seq-entry
+    TBiosampleFieldDiffList& diffs);    // where to put list of "relevent" differences
+
+bool
+GenerateDiffListFromBioSource(
+    const string& bioSampleAcc,         // as retrieved from /biosample/fetch 
+    const CBioSource& bioSource,        // as plugged from a bioseq or seq-entry
+    CBioSource& bioSampleSource,        // assigned from biosample, if there are relevant diffs
+    TBiosampleFieldDiffList& diffs);    // where to put list of "relevent" diffs
+//  << rw-905
+
 END_SCOPE(biosample_util)
 END_SCOPE(objects)
 END_NCBI_SCOPE
