@@ -92,18 +92,6 @@ public:
     /// be set later.
     explicit
     CNcbiApplication(const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
-
-    /// Get the program version information.
-    const CVersion& GetFullVersion(void) const;
-
-    /// Set version data for the program.
-    ///
-    /// @note
-    ///   This function should be used from constructor of CNcbiApplicationAPI
-    ///   derived class, otherwise command-like arguments "-version" and 
-    ///   "-version-full" will not work as expected.
-    /// @sa GetVersion
-    void SetFullVersion( CRef<CVersion> version);
 };
 
 

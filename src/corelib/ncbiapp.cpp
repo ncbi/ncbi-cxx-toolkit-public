@@ -199,18 +199,6 @@ CNcbiApplication::~CNcbiApplication()
 }
 
 
-const CVersion& CNcbiApplication::GetFullVersion(void) const
-{
-    return dynamic_cast<const CVersion&>(CNcbiApplicationAPI::GetFullVersion());
-}
-
-
-void CNcbiApplication::SetFullVersion( CRef<CVersion> version)
-{
-    CNcbiApplicationAPI::SetFullVersion(CRef<CVersionAPI>(version));
-}
-
-
 void CNcbiApplicationAPI::Init(void)
 {
     return;
