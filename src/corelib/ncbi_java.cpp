@@ -36,7 +36,7 @@
 //#include <jni.h>
 #include <cstdlib>
 
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/ncbi_toolkit.hpp>
 
 BEGIN_NCBI_SCOPE

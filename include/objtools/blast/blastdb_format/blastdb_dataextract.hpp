@@ -75,7 +75,7 @@ public:
         m_Oid2Pig.first = -1;
         m_Gi2SeqIdMap.first = -1;
 
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
         if (app) {
             const CNcbiRegistry& registry = app->GetConfig();
             m_UseLongSeqIds = (registry.Get("BLAST", "LONG_SEQID") == "1");

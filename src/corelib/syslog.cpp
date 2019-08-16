@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/syslog.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/error_codes.hpp>
 

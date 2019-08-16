@@ -37,7 +37,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/env_reg.hpp>
 #include <corelib/metareg.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/resource_info.hpp>

@@ -156,7 +156,7 @@ private:
 ///@internal
 struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
 {
-    SGridWorkerNodeImpl(CNcbiApplication& app,
+    SGridWorkerNodeImpl(CNcbiApplicationAPI& app,
             IWorkerNodeJobFactory* job_factory);
 
     void AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
@@ -261,7 +261,7 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
 
     unique_ptr<IGridWorkerNodeApp_Listener> m_Listener;
 
-    CNcbiApplication& m_App;
+    CNcbiApplicationAPI& m_App;
     CSynRegistry::TPtr m_SynRegistry;
     CRef<IRegistry> m_Registry;
     bool m_SingleThreadForced;

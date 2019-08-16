@@ -38,7 +38,7 @@
 ///
 
 
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/ncbithr.hpp>
 #include <atomic>
 

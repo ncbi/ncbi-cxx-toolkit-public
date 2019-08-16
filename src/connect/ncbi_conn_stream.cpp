@@ -36,7 +36,6 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
 #include "ncbi_socketp.h"
-#include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #define NCBI_CONN_STREAM_EXPERIMENTAL_API  1  // Pick up MS-Win DLL linkage
 #include <connect/ncbi_conn_stream.hpp>

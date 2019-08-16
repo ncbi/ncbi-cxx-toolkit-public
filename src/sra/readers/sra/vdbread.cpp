@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <common/ncbi_package_ver.h>
 #include <common/ncbi_source_ver.h>
 #include <sra/readers/sra/vdbread.hpp>
@@ -455,6 +456,7 @@ void CVDBMgr::x_Init(void)
     }
     CKNSManager kns_mgr(CVFSManager(*this));
     CNcbiOstrstream str;
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     CNcbiApplication* app = CNcbiApplication::Instance();
     if ( app ) {
         str << app->GetAppName() << ": " << app->GetVersion().Print() << "; ";

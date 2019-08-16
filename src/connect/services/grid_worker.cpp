@@ -346,13 +346,13 @@ CNetCacheAPI SGridWorkerNodeImpl::GetNetCacheAPI() const
     return m_NetCacheAPI;
 }
 
-CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
+CGridWorkerNode::CGridWorkerNode(CNcbiApplicationAPI& app,
         IWorkerNodeJobFactory* job_factory) :
     m_Impl(new SGridWorkerNodeImpl(app, job_factory))
 {
 }
 
-SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
+SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplicationAPI& app,
         IWorkerNodeJobFactory* job_factory) :
     m_JobProcessorFactory(job_factory),
     m_ThreadPool(NULL),
@@ -1093,7 +1093,7 @@ string CGridWorkerNode::GetAppName() const
 
 CGridWorkerNode::TVersion CGridWorkerNode::GetAppVersion() const
 {
-    const CVersion& version(m_Impl->m_App.GetFullVersion());
+    const CVersionAPI& version(m_Impl->m_App.GetFullVersion());
     const CVersionInfo& version_info(version.GetVersionInfo());
     const SBuildInfo& build_info(version.GetBuildInfo());
 

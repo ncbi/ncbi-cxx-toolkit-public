@@ -39,7 +39,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <list>
-#include <corelib/version.hpp>
 
 /** @addtogroup MESSAGE
  *

@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/version.hpp>
+#include <corelib/version_api.hpp>
 #include <common/ncbi_package_ver.h>
 #include <common/ncbi_source_ver.h>
 
@@ -391,9 +391,9 @@ void ParseVersionString(const string&  vstr,
 }
 
 /////////////////////////////////////////////////////////////////////////////
-//  CComponentVersionInfo
+//  CComponentVersionInfoAPI
 
-CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
+CComponentVersionInfoAPI::CComponentVersionInfoAPI( const string& component_name,
                                               int  ver_major,
                                               int  ver_minor,
                                               int  patch_level,
@@ -403,7 +403,7 @@ CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
 {
 }
 
-CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
+CComponentVersionInfoAPI::CComponentVersionInfoAPI( const string& component_name,
                                               const string& version,
                                               const string& name, const SBuildInfo& build_info)
     : CVersionInfo( version, name),
@@ -412,14 +412,14 @@ CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
 {
 }
 
-string CComponentVersionInfo::Print(void) const
+string CComponentVersionInfoAPI::Print(void) const
 {
     CNcbiOstrstream os;
     os << GetComponentName() << ": " << CVersionInfo::Print() << endl << m_BuildInfo.Print(2);
     return CNcbiOstrstreamToString(os);
 }
 
-string CComponentVersionInfo::PrintXml(void) const
+string CComponentVersionInfoAPI::PrintXml(void) const
 {
     CNcbiOstrstream os;
     os << "<component name=\"" << NStr::XmlEncode(GetComponentName()) << "\">\n" <<
@@ -429,7 +429,7 @@ string CComponentVersionInfo::PrintXml(void) const
     return CNcbiOstrstreamToString(os);
 }
 
-string CComponentVersionInfo::PrintJson(void) const
+string CComponentVersionInfoAPI::PrintJson(void) const
 {
     CNcbiOstrstream os;
     os << "{ \"name\": \"" <<
@@ -597,7 +597,7 @@ string SBuildInfo::PrintJson(void) const
 /////////////////////////////////////////////////////////////////////////////
 //  CVersion
 
-CVersion::CVersion(const SBuildInfo& build_info)
+CVersionAPI::CVersionAPI(const SBuildInfo& build_info)
     : m_VersionInfo(new CVersionInfo(0,0)),
       m_BuildInfo(build_info)
 {
@@ -605,43 +605,43 @@ CVersion::CVersion(const SBuildInfo& build_info)
         NStr::StringToInt(build_info.GetExtraValue(SBuildInfo::eTeamCityBuildNumber, "0")));
 }
 
-CVersion::CVersion(const CVersionInfo& version, const SBuildInfo& build_info)
+CVersionAPI::CVersionAPI(const CVersionInfo& version, const SBuildInfo& build_info)
     : m_VersionInfo(new CVersionInfo(version)),
       m_BuildInfo(build_info)
 {
 }
 
-void CVersion::x_Copy(CVersion& to, const CVersion& from)
+void CVersionAPI::x_Copy(CVersionAPI& to, const CVersionAPI& from)
 {
     to.m_VersionInfo.reset(new CVersionInfo(*from.m_VersionInfo));
     to.m_BuildInfo = from.m_BuildInfo;
 
     for (const auto& c : from.m_Components) {
-        to.m_Components.emplace_back(new CComponentVersionInfo(*c));
+        to.m_Components.emplace_back(new CComponentVersionInfoAPI(*c));
     }
 }
 
-CVersion::CVersion(const CVersion& version)
+CVersionAPI::CVersionAPI(const CVersionAPI& version)
     : CObject(version)
 {
     x_Copy(*this, version);
 }
 
-CVersion& CVersion::operator=(const CVersion& version)
+CVersionAPI& CVersionAPI::operator=(const CVersionAPI& version)
 {
     CObject::operator=(version);
     x_Copy(*this, version);
     return *this;
 }
 
-void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
+void CVersionAPI::SetVersionInfo( int  ver_major, int  ver_minor,
                                int  patch_level, const string& ver_name)
 {
     m_VersionInfo.reset( new CVersionInfo(
         ver_major, ver_minor, patch_level, ver_name) );
 }
 
-void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
+void CVersionAPI::SetVersionInfo( int  ver_major, int  ver_minor,
                                int  patch_level, const string& ver_name,
                                const SBuildInfo& build_info)
 {
@@ -650,61 +650,61 @@ void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
     m_BuildInfo = build_info;
 }
 
-void CVersion::SetVersionInfo(CVersionInfo* version)
+void CVersionAPI::SetVersionInfo(CVersionInfo* version)
 {
     m_VersionInfo.reset( version );
 }
 
-void CVersion::SetVersionInfo(CVersionInfo* version,
+void CVersionAPI::SetVersionInfo(CVersionInfo* version,
         const SBuildInfo& build_info)
 {
     m_VersionInfo.reset( version );
     m_BuildInfo = build_info;
 }
 
-const CVersionInfo& CVersion::GetVersionInfo(void) const
+const CVersionInfo& CVersionAPI::GetVersionInfo(void) const
 {
     return *m_VersionInfo;
 }
 
-void CVersion::AddComponentVersion(
+void CVersionAPI::AddComponentVersion(
     const string& component_name, int  ver_major, int  ver_minor,
     int  patch_level, const string& ver_name, const SBuildInfo& build_info)
 {
     m_Components.emplace_back(
-        new CComponentVersionInfo(component_name, ver_major, ver_minor,
+        new CComponentVersionInfoAPI(component_name, ver_major, ver_minor,
                                   patch_level, ver_name, build_info));
 }
 
-void CVersion::AddComponentVersion( CComponentVersionInfo* component)
+void CVersionAPI::AddComponentVersion( CComponentVersionInfoAPI* component)
 {
     m_Components.emplace_back(component);
 }
 
-const SBuildInfo& CVersion::GetBuildInfo() const
+const SBuildInfo& CVersionAPI::GetBuildInfo() const
 {
     return m_BuildInfo;
 }
 
-string CVersion::GetPackageName(void)
+string CVersionAPI::GetPackageName(void)
 {
     return NCBI_PACKAGE_NAME;
 }
 
-CVersionInfo CVersion::GetPackageVersion(void)
+CVersionInfo CVersionAPI::GetPackageVersion(void)
 {
     return CVersionInfo(NCBI_PACKAGE_VERSION_MAJOR,
                         NCBI_PACKAGE_VERSION_MINOR,
                         NCBI_PACKAGE_VERSION_PATCH);
 }
 
-string CVersion::GetPackageConfig(void)
+string CVersionAPI::GetPackageConfig(void)
 {
     return NCBI_PACKAGE_CONFIG;
 }
 
 
-string CVersion::Print(const string& appname, TPrintFlags flags) const
+string CVersionAPI::Print(const string& appname, TPrintFlags flags) const
 {
     CNcbiOstrstream os;
 
@@ -743,7 +743,7 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
 }
 
 
-string CVersion::PrintXml(const string& appname, TPrintFlags flags) const
+string CVersionAPI::PrintXml(const string& appname, TPrintFlags flags) const
 {
     CNcbiOstrstream os;
 
@@ -793,7 +793,7 @@ string CVersion::PrintXml(const string& appname, TPrintFlags flags) const
 }
 
 
-string CVersion::PrintJson(const string& appname, TPrintFlags flags) const
+string CVersionAPI::PrintJson(const string& appname, TPrintFlags flags) const
 {
     CNcbiOstrstream os;
     bool need_separator = false;

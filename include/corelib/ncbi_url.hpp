@@ -38,7 +38,6 @@
 ///
 
 #include <corelib/ncbi_param.hpp>
-#include <corelib/version.hpp>
 #include <corelib/ncbistr.hpp>
 #include <map>
 #include <memory>

@@ -30,7 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>

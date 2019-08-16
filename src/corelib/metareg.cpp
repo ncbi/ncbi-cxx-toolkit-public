@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/metareg.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include "ncbisys.hpp"

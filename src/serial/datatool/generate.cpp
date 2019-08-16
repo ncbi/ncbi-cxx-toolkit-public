@@ -30,7 +30,6 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algorithm>
 #include <typeinfo>

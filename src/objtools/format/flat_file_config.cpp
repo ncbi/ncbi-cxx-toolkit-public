@@ -33,6 +33,7 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <util/static_map.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiargs.hpp>
 
 #include <objtools/format/items/accession_item.hpp>
 #include <objtools/format/items/basecount_item.hpp>

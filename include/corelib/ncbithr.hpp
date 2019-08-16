@@ -679,7 +679,7 @@ private:
     // to stop, it just waits for the number of running threads to become zero.
     // Return true if all threads have been stopped, false on timeout.
     static bool WaitForAllThreads(void);
-    friend class CNcbiApplication;
+    friend class CNcbiApplicationAPI;
 
     /// Prohibit copying and assigning
     CThread(const CThread&);

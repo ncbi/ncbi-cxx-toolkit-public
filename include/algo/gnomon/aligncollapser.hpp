@@ -33,6 +33,7 @@
  */
 
 #include <algo/gnomon/gnomon_model.hpp>
+#include <corelib/ncbiargs.hpp>
 #include <objmgr/seq_vector.hpp>
 
 BEGIN_SCOPE(ncbi)

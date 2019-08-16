@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_misc.hpp>
 #include <connect/ncbi_socket.hpp>

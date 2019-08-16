@@ -51,7 +51,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/request_control.hpp>
 #include <corelib/request_ctx.hpp>
 
@@ -541,7 +541,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNode
 
     /// Construct a worker node using class factories
     ///
-    CGridWorkerNode(CNcbiApplication& app, IWorkerNodeJobFactory* job_factory);
+    CGridWorkerNode(CNcbiApplicationAPI& app, IWorkerNodeJobFactory* job_factory);
 
     void Init();
 

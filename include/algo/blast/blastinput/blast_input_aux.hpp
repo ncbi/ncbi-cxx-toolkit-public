@@ -35,6 +35,7 @@
 #define ALGO_BLAST_BLASTINPUT__BLAST_INPUT_AUX__HPP
 
 #include <algo/blast/api/sseqloc.hpp>   /* for CBlastQueryVector */
+#include <corelib/ncbiargs.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
 BEGIN_NCBI_SCOPE

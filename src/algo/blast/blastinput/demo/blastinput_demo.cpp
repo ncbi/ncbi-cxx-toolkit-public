@@ -33,6 +33,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>

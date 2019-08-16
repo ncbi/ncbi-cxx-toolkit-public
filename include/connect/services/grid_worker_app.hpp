@@ -40,6 +40,7 @@
 
 
 #include <connect/services/grid_worker.hpp>
+#include <corelib/ncbiapp.hpp>
 
 BEGIN_NCBI_SCOPE
 

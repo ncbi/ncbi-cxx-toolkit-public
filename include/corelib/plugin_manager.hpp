@@ -68,10 +68,10 @@
 ///
 
 #include <corelib/ncbimtx.hpp>
-#include <corelib/version.hpp>
+#include <corelib/version_api.hpp>
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbi_config.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <corelib/error_codes.hpp>
 
 #include <set>

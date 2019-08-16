@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/caf.hpp>
 

@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbiargs.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>

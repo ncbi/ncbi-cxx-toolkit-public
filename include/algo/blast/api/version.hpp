@@ -35,7 +35,7 @@
  * engine.
  */
  
-#include <corelib/version.hpp>
+#include <corelib/version_api.hpp>
 #include <algo/blast/core/blast_engine.h>
 
 /** @addtogroup AlgoBlast

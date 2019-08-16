@@ -47,6 +47,7 @@
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbiapp_api.hpp>
 
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 
@@ -566,7 +567,7 @@ public:
         path += CDirEntry::NormalizePath(env.Get("BLASTDB"),eFollowLinks);
         path += splitter;
         // Finally, the config file.
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
         if (app) {
             const CNcbiRegistry& registry = app->GetConfig();
             if (registry.HasEntry("BLAST", "BLASTDB")) {

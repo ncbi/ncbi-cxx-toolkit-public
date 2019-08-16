@@ -29,7 +29,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
 
 #include <connect/services/clparser.hpp>
 

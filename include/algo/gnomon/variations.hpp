@@ -2,6 +2,7 @@
 #define ALGO_GNOMON___CONSENSUS__HPP
 
 #include <algo/gnomon/gnomon_model.hpp>
+#include <corelib/ncbiargs.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)

@@ -39,6 +39,7 @@
 #include <connect/ncbi_core_cxx.hpp>
 
 #include <util/random_gen.hpp>
+#include <corelib/ncbiapp.hpp>
 
 #include <set>
 

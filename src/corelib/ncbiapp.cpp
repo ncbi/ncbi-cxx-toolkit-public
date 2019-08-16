@@ -34,6 +34,10 @@
 #include <ncbi_pch.hpp>
 #include <common/ncbi_source_ver.h>
 #include <corelib/ncbiapp.hpp>
+#undef CNcbiApplication
+#undef CComponentVersionInfo
+#undef CVersion
+
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_param.hpp>
@@ -86,22 +90,22 @@ static bool s_IsApplicationStarted = false;
 DEFINE_STATIC_MUTEX(s_InstanceMutex);
 
 
-SSystemMutex& CNcbiApplication::GetInstanceMutex(void)
+SSystemMutex& CNcbiApplicationAPI::GetInstanceMutex(void)
 {
     return s_InstanceMutex;
 }
 
 
-CNcbiApplication* CNcbiApplication::m_Instance;
+CNcbiApplicationAPI* CNcbiApplicationAPI::m_Instance;
 
 
-CNcbiApplication* CNcbiApplication::Instance(void)
+CNcbiApplicationAPI* CNcbiApplicationAPI::Instance(void)
 {
     return m_Instance;
 }
 
 
-CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
+CNcbiApplicationAPI::CNcbiApplicationAPI(const SBuildInfo& build_info)
     : m_ConfigLoaded(false),
       m_LogFile(0),
       m_LogOptions(0)
@@ -126,7 +130,7 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
     m_Instance = this;
 
     // Create empty version info
-    m_Version.Reset(new CVersion(build_info));
+    m_Version.Reset(new CVersionAPI(build_info));
 #if NCBI_SC_VERSION_PROXY != 0
     m_Version->AddComponentVersion("NCBI C++ Toolkit",
         NCBI_SC_VERSION_PROXY, 0, NCBI_SUBVERSION_REVISION_PROXY,
@@ -145,7 +149,7 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
 }
 
 
-CNcbiApplication::~CNcbiApplication(void)
+CNcbiApplicationAPI::~CNcbiApplicationAPI(void)
 {
     CThread::sm_IsExiting = true;
     // Execute exit actions before waiting for all threads to stop.
@@ -178,26 +182,55 @@ CNcbiApplication::~CNcbiApplication(void)
 }
 
 
-void CNcbiApplication::Init(void)
+CNcbiApplication* CNcbiApplication::Instance(void)
+{
+    return dynamic_cast<CNcbiApplication*>(CNcbiApplicationAPI::Instance());
+}
+
+
+CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
+    : CNcbiApplicationAPI(build_info)
+{
+}
+
+
+CNcbiApplication::~CNcbiApplication()
+{
+}
+
+
+const CVersion& CNcbiApplication::GetFullVersion(void) const
+{
+    return dynamic_cast<const CVersion&>(CNcbiApplicationAPI::GetFullVersion());
+}
+
+
+void CNcbiApplication::SetFullVersion( CRef<CVersion> version)
+{
+    CNcbiApplicationAPI::SetFullVersion(CRef<CVersionAPI>(version));
+}
+
+
+void CNcbiApplicationAPI::Init(void)
 {
     return;
 }
 
 
-int CNcbiApplication::DryRun(void)
+int CNcbiApplicationAPI::DryRun(void)
 {
     ERR_POST_X(1, Info << "DryRun: default implementation does nothing");
     return 0;
 }
 
 
-void CNcbiApplication::Exit(void)
+void CNcbiApplicationAPI::Exit(void)
 {
     return;
 }
 
 
-const CArgs& CNcbiApplication::GetArgs(void) const
+const CArgs& CNcbiApplicationAPI::GetArgs(void) const
 {
     if ( !m_Args.get() ) {
         NCBI_THROW(CAppException, eUnsetArgs,
@@ -207,7 +240,7 @@ const CArgs& CNcbiApplication::GetArgs(void) const
 }
 
 
-SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool /*close_diag*/)
+SIZE_TYPE CNcbiApplicationAPI::FlushDiag(CNcbiOstream* os, bool /*close_diag*/)
 {
     if ( os ) {
         SetDiagStream(os, true, 0, 0, "STREAM");
@@ -219,7 +252,7 @@ SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool /*close_diag*/)
 
 
 #if defined(NCBI_OS_DARWIN)
-static void s_MacArgMunging(CNcbiApplication&   app,
+static void s_MacArgMunging(CNcbiApplicationAPI&   app,
                             int*                argcPtr,
                             const char* const** argvPtr,
                             const string&       exepath)
@@ -295,7 +328,7 @@ bool s_HandleExceptions(void)
 }
 
 
-void CNcbiApplication::x_TryInit(EAppDiagStream diag,
+void CNcbiApplicationAPI::x_TryInit(EAppDiagStream diag,
                                  const char*    conf)
 {
     // Load registry from the config file
@@ -378,7 +411,7 @@ enum ELogOptions {
 };
 
 
-void CNcbiApplication::x_ReadLogOptions()
+void CNcbiApplicationAPI::x_ReadLogOptions()
 {
     // Log all
     if ( TLogAppRunContext::GetDefault() ) {
@@ -433,7 +466,7 @@ void s_RoundResUsageSize(Uint8 value_in_bytes, string& suffix, Uint8& value)
         extra.Print(name, (Uint8)value)
 
 
-void CNcbiApplication::x_LogOptions(int /*ELogOptionsEvent*/ event)
+void CNcbiApplicationAPI::x_LogOptions(int /*ELogOptionsEvent*/ event)
 {
     const bool start = (event & eStartEvent) != 0;
     const bool stop  = (event & eStopEvent)  != 0;
@@ -521,7 +554,7 @@ void CNcbiApplication::x_LogOptions(int /*ELogOptionsEvent*/ event)
 }
 
 
-void CNcbiApplication::x_TryMain(EAppDiagStream diag,
+void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
                                  const char*    conf,
                                  int*           exit_code,
                                  bool*          got_exception)
@@ -660,7 +693,7 @@ void s_Create_ArgsOrEnvW(
     args[i] = NULL;
 }
 
-int CNcbiApplication::AppMain
+int CNcbiApplicationAPI::AppMain
 (int                  argc,
  const TXChar* const* argv,
  const TXChar* const* envp,
@@ -689,7 +722,7 @@ int CNcbiApplication::AppMain
 }
 #endif
 
-int CNcbiApplication::AppMain
+int CNcbiApplicationAPI::AppMain
 (int                argc,
  const char* const* argv,
  const char* const* envp,
@@ -808,7 +841,7 @@ int CNcbiApplication::AppMain
                 delete[] v;
                 // Print VERSION
                 cout << GetFullVersion().Print( appname,
-                    CVersion::fVersionInfo | CVersion::fPackageShort );
+                    CVersionAPI::fVersionInfo | CVersionAPI::fPackageShort );
                 diag_context.DiscardMessages();
                 return 0;
 
@@ -944,36 +977,36 @@ int CNcbiApplication::AppMain
 }
 
 
-void CNcbiApplication::SetEnvironment(const string& name, const string& value)
+void CNcbiApplicationAPI::SetEnvironment(const string& name, const string& value)
 {
     SetEnvironment().Set(name, value);
 }
 
 #if 0
-void CNcbiApplication::SetVersionByBuild(int major)
+void CNcbiApplicationAPI::SetVersionByBuild(int major)
 {
     SetVersion(major, NStr::StringToInt(m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eStableComponentsVersion, "0")));
 }
 
-void CNcbiApplication::SetVersion(int major, int minor)
+void CNcbiApplicationAPI::SetVersion(int major, int minor)
 {
     SetVersion(major, minor, NStr::StringToInt(m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eTeamCityBuildNumber, "0")));
 }
 
-void CNcbiApplication::SetVersion(int major, int minor, int patch)
+void CNcbiApplicationAPI::SetVersion(int major, int minor, int patch)
 {
     m_Version->SetVersionInfo(major, minor, patch,
         m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eTeamCityProjectName));
 }
 #else
-void CNcbiApplication::SetVersionByBuild(int major)
+void CNcbiApplicationAPI::SetVersionByBuild(int major)
 {
     m_Version->SetVersionInfo(major, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
 }
 #endif
 
 
-void CNcbiApplication::SetVersion(const CVersionInfo& version)
+void CNcbiApplicationAPI::SetVersion(const CVersionInfo& version)
 {
     if ( s_IsApplicationStarted ) {
         ERR_POST_X(19, "SetVersion() should be used from constructor of " \
@@ -982,7 +1015,7 @@ void CNcbiApplication::SetVersion(const CVersionInfo& version)
     m_Version->SetVersionInfo(new CVersionInfo(version));
 }
 
-void CNcbiApplication::SetVersion(const CVersionInfo& version,
+void CNcbiApplicationAPI::SetVersion(const CVersionInfo& version,
         const SBuildInfo& build_info)
 {
     if ( s_IsApplicationStarted ) {
@@ -992,7 +1025,7 @@ void CNcbiApplication::SetVersion(const CVersionInfo& version,
     m_Version->SetVersionInfo(new CVersionInfo(version), build_info);
 }
 
-void CNcbiApplication::SetFullVersion( CRef<CVersion> version)
+void CNcbiApplicationAPI::SetFullVersion( CRef<CVersionAPI> version)
 {
     if ( s_IsApplicationStarted ) {
         ERR_POST_X(19, "SetFullVersion() should be used from constructor of "\
@@ -1002,18 +1035,18 @@ void CNcbiApplication::SetFullVersion( CRef<CVersion> version)
 }
 
 
-CVersionInfo CNcbiApplication::GetVersion(void) const
+CVersionInfo CNcbiApplicationAPI::GetVersion(void) const
 {
     return m_Version->GetVersionInfo();
 }
 
-const CVersion& CNcbiApplication::GetFullVersion(void) const
+const CVersionAPI& CNcbiApplicationAPI::GetFullVersion(void) const
 {
     return *m_Version;
 }
 
 
-void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
+void CNcbiApplicationAPI::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
     m_ArgDesc.reset(arg_desc);
 
@@ -1048,21 +1081,21 @@ void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
 }
 
 
-bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
+bool CNcbiApplicationAPI::SetupDiag(EAppDiagStream diag)
 {
     CDiagContext::SetupDiag(diag, 0, eDCM_Flush, m_LogFile);
     return true;
 }
 
 
-bool CNcbiApplication::SetupDiag_AppSpecific(void)
+bool CNcbiApplicationAPI::SetupDiag_AppSpecific(void)
 {
     CDiagContext::SetupDiag(eDS_ToStderr, 0, eDCM_Flush, m_LogFile);
     return true;
 }
 
 
-bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
+bool CNcbiApplicationAPI::LoadConfig(CNcbiRegistry&        reg,
                                   const string*         conf,
                                   CNcbiRegistry::TFlags reg_flags)
 {
@@ -1127,34 +1160,34 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
 }
 
 
-bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg,
+bool CNcbiApplicationAPI::LoadConfig(CNcbiRegistry& reg,
                                   const string*  conf)
 {
     return LoadConfig(reg, conf, IRegistry::fWithNcbirc);
 }
 
 
-CNcbiApplication::EPreparseArgs
-CNcbiApplication::PreparseArgs(int                /*argc*/,
+CNcbiApplicationAPI::EPreparseArgs
+CNcbiApplicationAPI::PreparseArgs(int                /*argc*/,
                                const char* const* /*argv*/)
 {
     return ePreparse_Continue;
 }
 
 
-void CNcbiApplication::DisableArgDescriptions(TDisableArgDesc disable)
+void CNcbiApplicationAPI::DisableArgDescriptions(TDisableArgDesc disable)
 {
     m_DisableArgDesc = disable;
 }
 
 
-void CNcbiApplication::HideStdArgs(THideStdArgs hide_mask)
+void CNcbiApplicationAPI::HideStdArgs(THideStdArgs hide_mask)
 {
     m_HideArgs = hide_mask;
 }
 
 
-void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
+void CNcbiApplicationAPI::SetStdioFlags(TStdioSetupFlags stdio_flags)
 {
     // do not call this function more than once
     // and from places other than App constructor
@@ -1163,7 +1196,7 @@ void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
 }
 
 
-void CNcbiApplication::x_SetupStdio(void)
+void CNcbiApplicationAPI::x_SetupStdio(void)
 {
     if ((m_StdioFlags & fNoSyncWithStdio) != 0) {
         IOS_BASE::sync_with_stdio(false);
@@ -1194,7 +1227,7 @@ void CNcbiApplication::x_SetupStdio(void)
 #endif
 }
 
-void CNcbiApplication::x_AddDefaultArgs(void)
+void CNcbiApplicationAPI::x_AddDefaultArgs(void)
 {
     if ( !m_DisableArgDesc ) {
         if (m_ArgDesc->IsAutoHelpEnabled()) {
@@ -1274,7 +1307,7 @@ void CNcbiApplication::x_AddDefaultArgs(void)
     }
 }
 
-void CNcbiApplication::SetProgramDisplayName(const string& app_name)
+void CNcbiApplicationAPI::SetProgramDisplayName(const string& app_name)
 {
     if (app_name.empty()) return;
     m_ProgramDisplayName = app_name;
@@ -1285,11 +1318,11 @@ void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 }
 
 
-string CNcbiApplication::GetAppName(EAppNameType name_type, int argc,
+string CNcbiApplicationAPI::GetAppName(EAppNameType name_type, int argc,
                                     const char* const* argv)
 {
     CMutexGuard guard(GetInstanceMutex());
-    CNcbiApplication* instance = Instance();
+    CNcbiApplicationAPI* instance = Instance();
     string app_name;
 
     switch (name_type) {
@@ -1323,13 +1356,13 @@ string CNcbiApplication::GetAppName(EAppNameType name_type, int argc,
 }
 
 
-string CNcbiApplication::FindProgramExecutablePath
+string CNcbiApplicationAPI::FindProgramExecutablePath
 (int                           argc,
  const char* const*            argv,
  string*                       real_path)
 {
     CMutexGuard guard(GetInstanceMutex());
-    CNcbiApplication* instance = Instance();
+    CNcbiApplicationAPI* instance = Instance();
     string ret_val;
     _ASSERT(argc >= 0); // formally signed for historical reasons
     _ASSERT(argv != NULL  ||  argc == 0);
@@ -1478,7 +1511,7 @@ string CNcbiApplication::FindProgramExecutablePath
 }
 
 
-void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
+void CNcbiApplicationAPI::x_HonorStandardSettings( IRegistry* reg)
 {
     if (reg == 0) {
         reg = m_Config.GetPointer();
@@ -1616,7 +1649,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 }
 
 
-void CNcbiApplication::AppStart(void)
+void CNcbiApplicationAPI::AppStart(void)
 {
     string cmd_line = GetProgramExecutablePath();
     if ( m_Arguments.get() ) {
@@ -1636,7 +1669,7 @@ void CNcbiApplication::AppStart(void)
 }
 
 
-void CNcbiApplication::AppStop(int exit_code)
+void CNcbiApplicationAPI::AppStop(int exit_code)
 {
     CDiagContext& ctx = GetDiagContext();
     if ( !ctx.IsSetExitCode() ) {
@@ -1645,7 +1678,7 @@ void CNcbiApplication::AppStop(int exit_code)
 }
 
 
-void CNcbiApplication::SetExitCode(int exit_code, EExitMode when)
+void CNcbiApplicationAPI::SetExitCode(int exit_code, EExitMode when)
 {
     m_ExitCode = exit_code;
     m_ExitCodeCond = when;

@@ -471,7 +471,7 @@ string SNetScheduleAPIImpl::MakeAuthString()
 {
     string auth(m_Service->MakeAuthString());
 
-    const CVersion* version = nullptr;
+    const CVersionAPI* version = nullptr;
     string name;
 
     {{
