@@ -13316,6 +13316,12 @@ if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
    APP_LIB_SETTING='$(STATIC_LIB)'
    APP_LIBS_SETTING='$(STATIC_LIBS)'
+   if test "$with_bin_release" = "yes"; then
+      CFLAGS="$CFLAGS $CFLAGS_DLL"
+      CFLAGS_DLL=
+      CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
+      CXXFLAGS_DLL=
+   fi
 else
    FORCE_STATIC_LIB=
    APP_LIB_SETTING='$(LIB)'
