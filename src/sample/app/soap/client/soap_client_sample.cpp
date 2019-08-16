@@ -118,7 +118,7 @@ CSampleSoapClient::GetVersion(const string& client_id, CConstRef<CSoapFault>* fa
 {
     CSoapMessage request( GetDefaultNamespaceName() ), response;
 
-    CRef<ncbi::objects::CVersion> req(new ncbi::objects::CVersion);
+    CRef<CSampleVersion> req(new CSampleVersion);
     req->SetClientID(client_id);
 //    req->SetNamespaceName(GetDefaultNamespaceName());
     request.AddObject( *req, CSoapMessage::eMsgBody);

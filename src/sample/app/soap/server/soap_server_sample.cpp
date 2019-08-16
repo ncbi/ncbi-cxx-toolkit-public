@@ -64,7 +64,7 @@ void CSampleSoapServerApplication::Init()
 // Register incoming object types
 // so the SOAP message parser can recognize these objects
 // in incoming data and parse them correctly.
-    RegisterObjectType(ncbi::objects::CVersion::GetTypeInfo);
+    RegisterObjectType(CSampleVersion::GetTypeInfo);
     RegisterObjectType(CMath::GetTypeInfo);
 // Register SOAP message processors.
 // It is possible to set more than one listeners for a particular message.
@@ -95,8 +95,8 @@ bool CSampleSoapServerApplication::GetDescription2(
 bool CSampleSoapServerApplication::GetVersion(
     CSoapMessage& response, const CSoapMessage& request)
 {
-    CConstRef<ncbi::objects::CVersion> req =
-        SOAP_GetKnownObject<ncbi::objects::CVersion>(request);
+    CConstRef<CSampleVersion> req =
+        SOAP_GetKnownObject<CSampleVersion>(request);
     CRef<CVersionResponse> resp(new CVersionResponse);
     // Just bounce ClientID
     resp->SetVersionStruct().SetClientID(req ? req->GetClientID() : "unknown clientid");
