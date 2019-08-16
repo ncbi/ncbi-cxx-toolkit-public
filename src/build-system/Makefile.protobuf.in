@@ -31,7 +31,8 @@ VERSION_MARKER_BASE = $(MODULE).using-protoc-
 VERSION_MARKER = $(VERSION_MARKER_BASE)$(PROTOC_VERSION)
 
 ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
-  GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.h
+  GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.h \
+               $(INCLUDEDIR)/$(MODULE)_mock.grpc.pb.h
 endif
 
 DEPS = $(MODULE_ASN) $(PROTOC) $(MODULE).module $(IMPDEPS) $(VERSION_MARKER)
@@ -63,13 +64,18 @@ $(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
 $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
 	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
 
-$(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
-	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) --grpc_out=. \
+$(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h $(MODULE)_mock.grpc.pb.h: \
+    $(DEPS) $(GRPC_CPP_PLUGIN)
+	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) \
+            --grpc_out=generate_mock_code=true:. \
 	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
 
 $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
 	$(MKDIR) -p $(INCLUDEDIR)
 	/bin/mv -f $*.pb.h $@
+
+$(INCLUDEDIR)/%_mock.grpc.pb.h: $(INCLUDEDIR)/%.grpc.pb.h
+	/bin/mv -f $*_mock.grpc.pb.h $@
 
 $(MODULE).module:
 	@$(TOUCH) $@

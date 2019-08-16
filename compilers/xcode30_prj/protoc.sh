@@ -102,7 +102,8 @@ done
 (
     cd "$TREE_ROOT/src"
     "$PROTOC" --cpp_out=. "$subtree/$input_spec_name"
-    "$PROTOC" --grpc_out=. --plugin=protoc-gen-grpc="$GRPC_PLUGIN" \
+    "$PROTOC" --grpc_out=generate_mock_code=true:. \
+              --plugin=protoc-gen-grpc="$GRPC_PLUGIN" \
               "$subtree/$input_spec_name"
     )
 mkdir -p "$TREE_ROOT/include/$subtree"
