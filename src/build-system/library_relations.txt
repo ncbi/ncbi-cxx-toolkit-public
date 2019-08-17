@@ -144,10 +144,6 @@ bdbasncli needs xconnect
 biblio needs general
 binary_quality_profile needs xncbi
 biocollect needs ncbi_xdbapi_ftds
-biosample needs $(SDBAPI_LIB)
-biosample needs xmlwrapp
-biosample needs xregexp
-biosample needs3party $(SDBAPI_LIBS)
 biotree needs general
 biotree_db needs $(SDBAPI_LIB)
 biotree_db needs biotree
