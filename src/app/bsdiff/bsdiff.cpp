@@ -208,7 +208,7 @@ LoadBioSampleFromFile(
     const string& fileName)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(fileName, ios::binary));
+    auto_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(fileName.c_str(), ios::binary));
     CObjectIStream* pI = CObjectIStream::Open(
         eSerial_AsnText, *pInStr, eTakeOwnership);    
     CRef<CSeq_descr> pDescrs(new CSeq_descr);
@@ -274,7 +274,7 @@ LoadBioSource(
     const string& inFile)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(inFile, ios::binary));
+    auto_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(inFile.c_str(), ios::binary));
     CObjectIStream* pI = CObjectIStream::Open(
         eSerial_AsnText, *pInStr, eTakeOwnership);    
     CRef<CSeq_descr> pDescrs(new CSeq_descr);
@@ -471,7 +471,7 @@ CBsDiffApp::xCompareSeqEntryFile(
     const string& filename)
 //  ----------------------------------------------------------------------------
 {
-    CNcbiIfstream ifstr(filename);
+    CNcbiIfstream ifstr(filename.c_str());
     string accession;
     int counter = 0;
     while (!ifstr.eof()) {
