@@ -64,8 +64,8 @@ static const char kDefaultTestURL[] =
     "ftp://ftp:-none@" CONN_NCBI_FTP_HOST "/toolbox/ncbi_tools/ncbi.tar.gz";
 
 
-static bool s_Signaled  = false;
-static int  s_Throttler = 0;
+static bool s_Signaled = false;
+static int  s_Throttle = 0;
 
 
 #if   defined(NCBI_OS_MSWIN)
@@ -480,8 +480,8 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         status = dlcbdata->Timeout(false);
         update = true;
     } else if ((status = dlcbdata->Timeout(true)) == eIO_Success
-               &&  s_Throttler) {
-        int delay = s_Throttler > 0 ? s_Throttler : rand() % -s_Throttler + 1;
+               &&  s_Throttle) {
+        int delay = s_Throttle > 0 ? s_Throttle : rand() % -s_Throttle + 1;
         SleepMilliSec(delay);
     }
 
@@ -613,7 +613,7 @@ void CTestFTPDownloadApp::Init(void)
                                     "URL to test",
                                     CArgDescriptions::eString);
 
-    arg_desc->AddOptionalPositional("throttler",
+    arg_desc->AddOptionalPositional("throttle",
                                     "Delay in msec",
                                     CArgDescriptions::eString);
 
@@ -668,17 +668,18 @@ int CTestFTPDownloadApp::Run(void)
     };
     typedef unsigned int TProcessor;
 
+    const CArgs& args = GetArgs();
+
     // Process command line parameters (up to 3)
     Uint8 offset = 0;
-    const char* url = 
-        GetArguments().Size() > 1  &&  GetArguments()[1].c_str()[0]
-        ? GetArguments()[1].c_str()
+    const char* url = args["url"].HasValue()
+        ? args["url"].AsString().c_str()
         : kDefaultTestURL;
-    if (GetArguments().Size() > 2) {
-        s_Throttler = NStr::StringToInt(GetArguments()[2].c_str());
-        if (GetArguments().Size() > 3) {
-            offset = NStr::StringToUInt8(GetArguments()[3]);
-        }
+    if (args["throttle"].HasValue()) {
+        s_Throttle = NStr::StringToInt(args["throttle"].AsString());
+    }
+    if (args["offset"].HasValue()) {
+        offset = NStr::StringToUInt8(args["offset"].AsString());
     }
 
     // Initialize all connection parameters for FTP

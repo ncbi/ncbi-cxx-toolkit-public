@@ -97,6 +97,7 @@ public:
 
 CNCBITestConnStreamApp::CNCBITestConnStreamApp(void)
 {
+    DisableArgDescriptions();
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
