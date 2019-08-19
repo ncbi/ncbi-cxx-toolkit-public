@@ -285,7 +285,7 @@ int CNCBITestConnStreamApp::Run(void)
             } catch (IOS_BASE::failure& ) {
                 state = ms->rdstate();
             }
-#ifdef NCBI_COMPILER_GCC
+#if   defined(NCBI_COMPILER_GCC)
 #  if defined(NCBI_OS_CYGWIN)                                           \
     ||  (NCBI_COMPILER_VERSION > 500  &&  NCBI_COMPILER_VERSION < 600   \
          &&  (!defined(_GLIBCXX_USE_CXX11_ABI) || _GLIBCXX_USE_CXX11_ABI != 0))
@@ -298,7 +298,14 @@ int CNCBITestConnStreamApp::Run(void)
                 state = ms->rdstate();
             }
 #  endif
-#endif /*NCBI_COMPILER_GCC*/
+#elif defined(NCBI_COMPILER_ICC)
+            catch (...) {
+                // WORKAROUND:
+                // ICC 17.04 fails to catch "IOS_BASE::failure" above
+                // because we're still using old ABI libraries.
+                state = ms->rdstate();
+            }
+#endif /*NCBI_COMPILER_...*/
             _ASSERT(state & IOS_BASE::eofbit);
             SetDiagTrace(eDT_Enable);
             ms->clear();
