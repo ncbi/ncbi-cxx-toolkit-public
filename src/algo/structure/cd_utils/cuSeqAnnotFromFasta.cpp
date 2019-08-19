@@ -728,7 +728,7 @@ bool  CSeqAnnotFromFasta::BuildMasterSlaveSeqAlign(const CRef<CSeq_id>& masterSe
 
         dd->SetDim(2);
 
-        CRef< CSeq_id > masterCopy, slaveCopy;
+        CRef< CSeq_id > masterCopy(new CSeq_id), slaveCopy(new CSeq_id);
         masterCopy->Assign(*masterSeqid);
         slaveCopy->Assign(*slaveSeqid);
         ids.push_back(masterCopy);

@@ -576,7 +576,7 @@ CRef<CSeq_align> BlockModel::toSeqAlign(const BlockModel& master) const
 		dd->SetDim(2);
 		vector< CRef< CSeq_id > >& seqIds = dd->SetIds();
 
-        CRef< CSeq_id > masterCopy, slaveCopy;
+        CRef< CSeq_id > masterCopy(new CSeq_id), slaveCopy(new CSeq_id);
         masterCopy->Assign(*(master.getSeqId()));
         slaveCopy->Assign(*getSeqId());
 		seqIds.push_back(masterCopy);
