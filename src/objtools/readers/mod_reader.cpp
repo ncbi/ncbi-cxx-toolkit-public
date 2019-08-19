@@ -138,6 +138,15 @@ const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
 CModHandler::CModHandler(){}
 
 
+void CModHandler::SetExcludedMods(const vector<string>& excluded_mods)
+{
+    m_ExcludedModifiers.clear();
+    transform(excluded_mods.begin(), excluded_mods.end(),
+            inserter(m_ExcludedModifiers, m_ExcludedModifiers.end()),
+            [](const string& mod_name) { return GetCanonicalName(mod_name); });
+}
+
+
 void CModHandler::SetMods(const TMods& mods) 
 {
     m_Mods = mods;
@@ -167,12 +176,23 @@ void CModHandler::AddMods(const TModList& mods,
             }
         }
 
+        if (m_ExcludedModifiers.find(canonical_name) != 
+            m_ExcludedModifiers.end()) {
+            string message = "The following modifier is unsupported in this context and will be ignored: " + mod.GetName() + ".";
+            if (fReportError) {
+                fReportError(mod, message, eDiag_Warning, eModSubcode_Excluded);
+            }
+            rejected_mods.push_back(mod);
+            continue;
+        }
+
         if (x_IsDeprecated(canonical_name)) {
             rejected_mods.push_back(mod);
             string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
             if (fReportError) {
                 fReportError(mod, message, eDiag_Warning, eModSubcode_Deprecated);
             } 
+            rejected_mods.push_back(mod);
             continue;
         }
 

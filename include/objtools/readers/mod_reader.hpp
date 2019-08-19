@@ -105,6 +105,7 @@ public:
     using FReportError = function<void(const CModData& mod, const string& message, EDiagSev severity, EModSubcode subcode)>;
 
     CModHandler();
+    void SetExcludedMods(const vector<string>& excluded_mods);
 
     void AddMods(const TModList& mods, 
                  EHandleExisting handle_existing, 
@@ -134,7 +135,7 @@ private:
     static const TNameMap sm_NameMap;
     static const TNameSet sm_MultipleValuesForbidden;
     static const TNameSet sm_DeprecatedModifiers;
-
+    TNameSet m_ExcludedModifiers;
 };
 
 
