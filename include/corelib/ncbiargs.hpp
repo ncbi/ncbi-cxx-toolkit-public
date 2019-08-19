@@ -275,8 +275,6 @@ public:
     /// Close the file.
     virtual void CloseFile (void) const = 0;
 
-
-
     /// Some values types can contain several value lists
     ///
     /// Example: CGIs pass list selections by repeating the same name
