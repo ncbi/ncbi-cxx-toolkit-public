@@ -6300,9 +6300,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingOnNonRefSeq)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
+BOOST_AUTO_TEST_CASE(Test_OrgModMissingValue)
 {
-   // prepare entry
+    // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetTaxname(entry, "Arabidopsis thaliana");
     unit_test_util::SetTaxon(entry, 0);
@@ -6312,21 +6312,21 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrgModMissingValue",
-                              "Variety value specified is not found in taxname"));
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrgModMissingValue",
+            "Variety value specified is not found in taxname"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
         "Organism not found in taxonomy database (suggested:Arabidopsis thaliana var. foo)"));
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-   
+    CheckErrors(*eval, expected_errors);
+
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_variety, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma, "foo");
     expected_errors[0]->SetErrMsg("Forma value specified is not found in taxname");
     expected_errors[1]->SetErrMsg("Organism not found in taxonomy database (suggested:Arabidopsis thaliana f. foo)");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "foo");
@@ -6336,15 +6336,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
-    // this one does not cause taxname lookup to fail
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "");
+        // this one does not cause taxname lookup to fail
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "foo");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
-                              "OrgModMissingValue",
-                              "Forma specialis value specified is not found in taxname"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "OrgModMissingValue",
+        "Forma specialis value specified is not found in taxname"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 
@@ -6353,36 +6353,20 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_biovar, "foo");
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_biovar, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_pathovar, "foo");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
-    // HIV location problems
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_pathovar, "");
-    unit_test_util::SetTaxname(entry, "Human immunodeficiency virus");
-    unit_test_util::SetTaxon(entry, 0);
-    unit_test_util::SetTaxon(entry, 12721);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
-                              "HIV with moltype DNA should be proviral"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+}
 
-    CLEAR_ERRORS
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "InconsistentVirusMoltype",
-            "HIV with mRNA molecule type is rare"));
-    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_mRNA);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-
+BOOST_AUTO_TEST_CASE(Test_BadTextInSourceQualifier)
+{
     // descriptive text in non-text qualifiers
-    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetTaxname(entry, "Arabidopsis thaliana");
     unit_test_util::SetTaxon(entry, 0);
     unit_test_util::SetTaxon(entry, 3702);
@@ -6392,66 +6376,71 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "a");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "a");
     AddGoodSourceFeature(entry);
-    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
-                              "Germline qualifier should not have descriptive text"));
+        "Germline qualifier should not have descriptive text"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
-                              "Rearranged qualifier should not have descriptive text"));
+        "Rearranged qualifier should not have descriptive text"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
-                              "Transgenic qualifier should not have descriptive text"));
+        "Transgenic qualifier should not have descriptive text"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
-                              "Environmental_sample qualifier should not have descriptive text"));
+        "Environmental_sample qualifier should not have descriptive text"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
-                              "Metagenomic qualifier should not have descriptive text"));
+        "Metagenomic qualifier should not have descriptive text"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
-                              "Germline and rearranged should not both be present"));
+        "Germline and rearranged should not both be present"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
-                              "Transgenic and environmental sample should not both be present"));
+        "Transgenic and environmental sample should not both be present"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "EnvironSampleMissingQualifier",
-                              "Environmental sample should also have isolation source or specific host annotated"));
+        "Environmental sample should also have isolation source or specific host annotated"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
- 
-    // unexpected sex qualifier
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry = unit_test_util::BuildGoodSeq();
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidSexQualifier)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetLineage(entry, "Viruses; foo");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "a");
     unit_test_util::SetLineage(entry, "Bacteria; foo");
-    seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
+
+    // unexpected sex qualifier
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
-                              "Unexpected use of /sex qualifier"));
+        "Unexpected use of /sex qualifier"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
-                              "Unexpected use of /sex qualifier"));
+            "Unexpected use of /sex qualifier"));
     //AddChromosomeNoLocation(expected_errors, entry);
     unit_test_util::SetLineage(entry, "Archaea; foo");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     unit_test_util::SetLineage(entry, "Eukaryota; Fungi; foo");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     unit_test_util::SetLineage(entry, "");
     expected_errors[0]->SetErrMsg("Invalid value (a) for /sex qualifier");
     expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingLineage",
-                              "No lineage for this BioSource."));
+        "No lineage for this BioSource."));
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingLineage",
-                              "No lineage for this BioSource."));
+            "No lineage for this BioSource."));
     //AddChromosomeNoLocation(expected_errors, entry);
 
     // no error if acceptable value
@@ -6468,49 +6457,49 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     ok_sex_vals.push_back("diecious");
 
     for (vector<string>::iterator it = ok_sex_vals.begin();
-         it != ok_sex_vals.end();
-         ++it) {
+        it != ok_sex_vals.end();
+        ++it) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, *it);
         eval = validator.Validate(seh, options);
-        CheckErrors (*eval, expected_errors);
+        CheckErrors(*eval, expected_errors);
     }
 
     CLEAR_ERRORS
 
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
     // mating-type error for animal
     unit_test_util::SetLineage(entry, "Eukaryota; Metazoa; foo");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "a");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidMatingType",
-                              "Unexpected use of /mating_type qualifier"));
+        "Unexpected use of /mating_type qualifier"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     // mating-type error for 3 plant lineages
     unit_test_util::SetLineage(entry, "Eukaryota; Viridiplantae; Streptophyta; Embryophyta; foo");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     unit_test_util::SetLineage(entry, "Eukaryota; Rhodophyta; foo");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     unit_test_util::SetLineage(entry, "Eukaryota; stramenopiles; Phaeophyceae; foo");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     // mating-type error for virus
     unit_test_util::SetLineage(entry, "Viruses; foo");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     // for other lineages, error if sex value
     unit_test_util::SetLineage(entry, "Eukaryota; Fungi; foo");
 
     for (vector<string>::iterator it = ok_sex_vals.begin();
-         it != ok_sex_vals.end();
-         ++it) {
+        it != ok_sex_vals.end();
+        ++it) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, *it);
         eval = validator.Validate(seh, options);
-        CheckErrors (*eval, expected_errors);
+        CheckErrors(*eval, expected_errors);
     }
     CLEAR_ERRORS
 
@@ -6520,33 +6509,90 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_HIVMolType)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Human immunodeficiency virus");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 12721);
+    unit_test_util::SetLineage(entry, "Cyanobacteria");
+    //    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_variety, "foo");
+
+    STANDARD_SETUP
+
+    // HIV location problems
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_pathovar, "");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
+        "HIV with moltype DNA should be proviral"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "InconsistentVirusMoltype",
+            "HIV with mRNA molecule type is rare"));
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_MissingPlasmid)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Arabidopsis thaliana");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 3702);
+    unit_test_util::SetLineage(entry, "Cyanobacteria");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "pfoo");
+
+    STANDARD_SETUP
 
     // plasmid
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "pfoo");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MissingPlasmidLocation",
-                              "Plasmid subsource but not plasmid location"));
+        "Plasmid subsource but not plasmid location"));
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     // error goes away if plasmid genome
     CLEAR_ERRORS
 
-    unit_test_util::SetGenome (entry, CBioSource::eGenome_plasmid);
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_plasmid);
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
     // if plasmid genome, better have plasmid name
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MissingPlasmidName",
-                              "Plasmid location set but plasmid name missing. Add a plasmid source modifier with the plasmid name. Use unnamed if the name is not known."));
+        "Plasmid location set but plasmid name missing. Add a plasmid source modifier with the plasmid name. Use unnamed if the name is not known."));
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
 
+}
+
+BOOST_AUTO_TEST_CASE(Test_BadPlastidName)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Arabidopsis thaliana");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 3702);
+    unit_test_util::SetLineage(entry, "Cyanobacteria");
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_unknown);
+
+    STANDARD_SETUP
+
     // plastid-name
-    unit_test_util::SetGenome (entry, CBioSource::eGenome_unknown);
     vector<string> plastid_vals;
     plastid_vals.push_back("chloroplast");
     plastid_vals.push_back("chromoplast");
@@ -6558,46 +6604,74 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadPlastidName",
-                              "Plastid name subsource chloroplast but not chloroplast location"));
+        "Plastid name subsource chloroplast but not chloroplast location"));
     //AddChromosomeNoLocation(expected_errors, entry);
     for (vector<string>::iterator it = plastid_vals.begin();
-         it != plastid_vals.end();
-         ++it) {
+        it != plastid_vals.end();
+        ++it) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, "");
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, *it);
         expected_errors[0]->SetErrMsg("Plastid name subsource " + *it + " but not " + *it + " location");
         eval = validator.Validate(seh, options);
-        CheckErrors (*eval, expected_errors);
+        CheckErrors(*eval, expected_errors);
     }
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, "unrecognized");
     expected_errors[0]->SetErrMsg("Plastid name subsource contains unrecognized value");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, "");
-    //frequency
+    CLEAR_ERRORS
+}
+
+BOOST_AUTO_TEST_CASE(Test_BadBioSourceFrequencyValue)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Arabidopsis thaliana");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 3702);
+    unit_test_util::SetLineage(entry, "Cyanobacteria");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_frequency, "1");
-    expected_errors[0]->SetSeverity(eDiag_Info);
-    expected_errors[0]->SetErrCode("BadBioSourceFrequencyValue");
-    expected_errors[0]->SetErrMsg("bad frequency qualifier value 1");
+
+    STANDARD_SETUP
+    //frequency
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadBioSourceFrequencyValue",
+            "bad frequency qualifier value 1"));
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_frequency, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_frequency, "abc");
     expected_errors[0]->SetSeverity(eDiag_Warning);
     expected_errors[0]->SetErrMsg("bad frequency qualifier value abc");
     eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+    CheckErrors(*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_frequency, "");
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
+{
+   // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Arabidopsis thaliana");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 3702);
+    unit_test_util::SetLineage(entry, "Cyanobacteria");
+//    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_variety, "foo");
+
+    STANDARD_SETUP
+
 
     // unexpected qualifiers for viruses
     unit_test_util::SetLineage(entry, "Viruses; foo");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_unknown);
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, ok_sex_vals[0]);
-    expected_errors[0]->SetErrCode("InvalidSexQualifier");
-    expected_errors[0]->SetErrMsg("Virus has unexpected Sex qualifier");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "female");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
+        "Virus has unexpected Sex qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
@@ -6659,41 +6733,46 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_transgenic, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "true");
-    expected_errors[0]->SetErrCode("MissingEnvironmentalSample");
-    expected_errors[0]->SetErrMsg("Metagenomic should also have environmental sample annotated");
-    expected_errors[0]->SetSeverity(eDiag_Critical);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "MissingEnvironmentalSample",
+        "Metagenomic should also have environmental sample annotated"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "");
     unit_test_util::SetLineage(entry, "Eukaryota; foo");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "monecious");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "A");
-    expected_errors[0]->SetErrCode("BioSourceInconsistency");
-    expected_errors[0]->SetErrMsg("Sex and mating type should not both be present");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+        "Sex and mating type should not both be present"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
     unit_test_util::SetLineage(entry, "Eukaryota; metagenomes");
-    expected_errors[0]->SetErrCode("MissingMetagenomicQualifier");
-    expected_errors[0]->SetErrMsg("If metagenomes appears in lineage, BioSource should have metagenomic qualifier");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MissingMetagenomicQualifier",
+        "If metagenomes appears in lineage, BioSource should have metagenomic qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 
 
     unit_test_util::SetTaxname (entry, "uncultured bacterium");
     unit_test_util::SetLineage (entry, "Bacteria; foo");
     unit_test_util::SetTaxon(entry, 0);
     unit_test_util::SetTaxon(entry, 77133);
-    expected_errors[0]->SetErrCode("UnculturedNeedsEnvSample");
-    expected_errors[0]->SetErrMsg("Uncultured should also have /environmental_sample");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "UnculturedNeedsEnvSample",
+        "Uncultured should also have /environmental_sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
@@ -6710,59 +6789,73 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     unit_test_util::SetDiv(entry, "BCT");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_apicoplast);
-    expected_errors[0]->SetErrCode("BadOrganelleLocation");
-    expected_errors[0]->SetErrMsg("Bacterial or viral source should not have organelle location");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "BadOrganelleLocation",
+        "Bacterial or viral source should not have organelle location"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetDiv(entry, "VRL");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     unit_test_util::SetDiv(entry, "ENV");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_unknown);
-    expected_errors[0]->SetErrCode("MissingEnvironmentalSample");
-    expected_errors[0]->SetErrMsg("BioSource with ENV division is missing environmental sample subsource");
-    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "MissingEnvironmentalSample",
+        "BioSource with ENV division is missing environmental sample subsource"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     unit_test_util::SetDiv(entry, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "foo");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "bar");
-    expected_errors[0]->SetErrCode("StrainWithEnvironSample");
-    expected_errors[0]->SetErrMsg("Strain should not be present in an environmental sample");
-    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "StrainWithEnvironSample",
+        "Strain should not be present in an environmental sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "foo");
-    expected_errors[0]->SetErrCode("MissingMetagenomicQualifier");
-    expected_errors[0]->SetErrMsg("Metagenome source should also have metagenomic qualifier");
-    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "MissingMetagenomicQualifier",
+        "Metagenome source should also have metagenomic qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_synonym, "synonym value");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_gb_synonym, "synonym value");
-    expected_errors[0]->SetErrCode("OrgModValueInvalid");
-    expected_errors[0]->SetErrMsg("OrgMod synonym is identical to OrgMod gb_synonym");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "OrgModValueInvalid",
+        "OrgMod synonym is identical to OrgMod gb_synonym"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_synonym, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_gb_synonym, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_other, "cRNA");
-    expected_errors[0]->SetErrCode("InconsistentVirusMoltype");
-    expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InconsistentVirusMoltype",
+        "cRNA note conflicts with molecule type"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
@@ -6795,138 +6888,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
-    entry = unit_test_util::BuildGoodNucProtSet();
-    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InconsistentVirusMoltype",
-        "Negative-strand virus with plus strand CDS should be mRNA or cRNA"));
-    //AddChromosomeNoLocation(expected_errors, entry);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("lcl|nuc");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    // error goes away if mRNA or cRNA or ambisense or synthetic
-    CLEAR_ERRORS
-
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
-    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    eval = validator.Validate(seh, options);
-    //AddChromosomeNoLocation(expected_errors, entry);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Arenaviridae");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Phlebovirus");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Tospovirus");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Tenuivirus");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
-    unit_test_util::SetOrigin (entry, CBioSource::eOrigin_synthetic);
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
-    unit_test_util::SetDiv(entry, "VRL");
-    unit_test_util::SetOrigin (entry, CBioSource::eOrigin_mut);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetOrigin (entry, CBioSource::eOrigin_artificial);
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other_genetic);
-    unit_test_util::SetSynthetic_construct(entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    unit_test_util::SetOrigin (entry, CBioSource::eOrigin_synthetic);
-    unit_test_util::SetSebaea_microphylla(entry);
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_unknown);
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    unit_test_util::RevComp(entry);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    // still no error if genomic
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-
-    // error if not genomic
-    unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
-    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSonMinusStrandMRNA",
-                                                "CDS should not be on minus strand of mRNA molecule"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InconsistentVirusMoltype",
-                                                "Negative-strand virus with minus strand CDS should be genomic")); 
-    //AddChromosomeNoLocation(expected_errors, entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-
-    scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
-    CRef<CSeq_feat> misc_feat = unit_test_util::AddMiscFeature (entry);
-    misc_feat->SetComment("nonfunctional");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
-                                                "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA"));
-    //AddChromosomeNoLocation(expected_errors, entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    // error goes away if mRNA or cRNA or ambisense or synthetic
-    CLEAR_ERRORS
-
-    unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_mRNA);
-    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    //AddChromosomeNoLocation(expected_errors, entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_cRNA);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_genomic);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Arenaviridae");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Phlebovirus");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Tospovirus");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Tenuivirus");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    unit_test_util::RevComp(entry);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    // still no error if genomic
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    // error if not genomic
-    unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_mRNA);
-    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
-                                                "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic")); 
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
 
     // report missing env_sample/strain/isolate if bacterial and biosample
     unit_test_util::SetLineage (entry, "Bacteria; foo");
@@ -6975,13 +6938,17 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     CLEAR_ERRORS
 
-    // for VR-173
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry = unit_test_util::BuildGoodSeq();
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_173)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetLineage(entry, "Bacteria; foo");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_tissue_type, "X");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "Y");
-    seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
+
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidTissueType",
         "Tissue-type is inappropriate for bacteria"));
     //AddChromosomeNoLocation(expected_errors, entry);
@@ -6989,6 +6956,145 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+}
+
+BOOST_AUTO_TEST_CASE(Test_InconsistentVirusMoltype)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+
+    STANDARD_SETUP
+
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InconsistentVirusMoltype",
+        "Negative-strand virus with plus strand CDS should be mRNA or cRNA"));
+    expected_errors[0]->SetAccession("lcl|nuc");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    // error goes away if mRNA or cRNA or ambisense or synthetic
+    CLEAR_ERRORS
+
+        unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    eval = validator.Validate(seh, options);
+    //AddChromosomeNoLocation(expected_errors, entry);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Arenaviridae");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Phlebovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Tospovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Tenuivirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_synthetic);
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
+    unit_test_util::SetDiv(entry, "VRL");
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_mut);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_artificial);
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other_genetic);
+    unit_test_util::SetSynthetic_construct(entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_synthetic);
+    unit_test_util::SetSebaea_microphylla(entry);
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_unknown);
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    // still no error if genomic
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // error if not genomic
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSonMinusStrandMRNA",
+        "CDS should not be on minus strand of mRNA molecule"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InconsistentVirusMoltype",
+        "Negative-strand virus with minus strand CDS should be genomic"));
+    //AddChromosomeNoLocation(expected_errors, entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+        scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
+    CRef<CSeq_feat> misc_feat = unit_test_util::AddMiscFeature(entry);
+    misc_feat->SetComment("nonfunctional");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
+        "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA"));
+    //AddChromosomeNoLocation(expected_errors, entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // error goes away if mRNA or cRNA or ambisense or synthetic
+    CLEAR_ERRORS
+
+        unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    //AddChromosomeNoLocation(expected_errors, entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_cRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_genomic);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Arenaviridae");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Phlebovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Tospovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses; Tenuivirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    // still no error if genomic
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // error if not genomic
+    unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
+        "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+
 }
 
 
