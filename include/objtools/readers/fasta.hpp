@@ -177,7 +177,7 @@ public:
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
     void  ClearBadMods(void) { m_BadMods.clear(); }
 
-    void SetModFilter( CRef<CSourceModParser::CModFilter> pModFilter ) {
+    void SetModFilter( CRef<CSourceModParser::CModFilter> /*pModFilter*/ ) {
     }
 
     void SetModFilter(FModFilter mod_filter);
