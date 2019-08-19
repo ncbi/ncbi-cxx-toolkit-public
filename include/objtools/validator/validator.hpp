@@ -62,6 +62,7 @@ class CBioseq;
 class CSeqdesc;
 class CObjectManager;
 class CScope;
+class CDbtag;
 
 BEGIN_SCOPE(validator)
 
@@ -242,6 +243,21 @@ public:
     void SetProgressCallback(TProgressCallback callback, void* user_data = 0);
 
     static EErrType ConvertCode(CSubSource::ELatLonCountryErr errcode);
+
+    enum EDbxrefValid {
+        eValid = 0,
+        eDbHasSgml = 1,
+        eTagHasSgml = 2,        
+        eContainsSpace = 4,
+        eNotForSource = 8, 
+        eOnlyForSource = 16,
+        eOnlyForRefSeq = 32,
+        eRefSeqNotForSource = 64,
+        eBadCapitalization = 128,
+        eUnrecognized = 256
+    };
+    typedef int TDbxrefValidFlags;
+    static TDbxrefValidFlags IsValidDbxref(const CDbtag& xref, bool is_biosource, bool is_refseq_or_gps);
 
 private:
     // Prohibit copy constructor & assignment operator

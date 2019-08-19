@@ -39,6 +39,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/validator/validator.hpp>
 #include <util/static_map.hpp>
+#include <util/sgml_entity.hpp>
 #include <objects/taxon3/itaxon3.hpp>
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/taxon3/cached_taxon3.hpp>
@@ -609,6 +610,64 @@ EErrType CValidator::ConvertCode(CSubSource::ELatLonCountryErr errcode)
         break;
     }
     return rval;
+}
+
+
+CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool is_biosource, bool is_refseq_or_gps)
+{
+    TDbxrefValidFlags flags = eValid;
+
+    if (xref.IsSetTag() && xref.GetTag().IsStr()) {
+        if (ContainsSgml(xref.GetTag().GetStr())) {
+            flags |= eTagHasSgml;
+        }
+
+        if (xref.GetTag().GetStr().find(' ') != string::npos) {
+            flags |= eContainsSpace;
+        }
+    }
+
+    if (!xref.CanGetDb()) {
+        return flags;
+    }
+    const string& db = xref.GetDb();
+    string dbv = "";
+    if (xref.IsSetTag() && xref.GetTag().IsStr()) {
+        dbv = xref.GetTag().GetStr();
+    }
+    else if (xref.IsSetTag() && xref.GetTag().IsId()) {
+        dbv = NStr::NumericToString(xref.GetTag().GetId());
+    }
+
+    if (ContainsSgml(db)) {
+        flags |= eDbHasSgml;
+    }
+
+    bool src_db = false;
+    bool refseq_db = false;
+    string correct_caps = "";
+
+    if (xref.GetDBFlags(refseq_db, src_db, correct_caps)) {
+        if (!NStr::EqualCase(correct_caps, db)) {
+            // capitalization is bad
+            flags |= eBadCapitalization;
+        }
+
+        if (is_biosource && !src_db) {
+            flags |= eNotForSource;
+            if (refseq_db && is_refseq_or_gps) {
+                flags |= eRefSeqNotForSource;
+            }
+        } else if (!is_biosource && src_db && NStr::EqualNocase(db, "taxon")) {
+            flags |= eOnlyForSource;
+        }
+        if (refseq_db && !is_refseq_or_gps) {
+            flags |= eOnlyForRefSeq;
+        }
+    } else {
+        flags |= eUnrecognized;
+    }
+    return flags;
 }
 
 

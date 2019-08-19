@@ -1677,106 +1677,78 @@ void CValidError_imp::ValidateDbxref
  bool biosource,
  const CSeq_entry *ctx)
 {
-    if (xref.IsSetTag() && xref.GetTag().IsStr()) {
-        if (ContainsSgml(xref.GetTag().GetStr())) {
-            PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
-                "dbxref value " + xref.GetTag().GetStr() + " has SGML",
-                obj, ctx);
-        }
+    bool refseq_or_gps = IsRefSeq() || IsGPS();
+    CValidator::TDbxrefValidFlags flags = CValidator::IsValidDbxref(xref, biosource,
+        refseq_or_gps);
 
-        if (xref.GetTag().GetStr().find(' ') != string::npos) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                       "dbxref value " + xref.GetTag().GetStr() + " contains space character",
-                       obj, ctx);
-        }
-    }
+    const string& db = xref.IsSetDb() ? xref.GetDb() : kEmptyStr;
 
-    if ( !xref.CanGetDb() ) {
-        return;
+    if (flags & CValidator::eTagHasSgml) {
+        PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+            "dbxref value " + xref.GetTag().GetStr() + " has SGML",
+            obj, ctx);
     }
-    const string& db = xref.GetDb();
-    string dbv = "";
-    if (xref.IsSetTag() && xref.GetTag().IsStr()) {
-        dbv = xref.GetTag().GetStr();
-    } else if (xref.IsSetTag() && xref.GetTag().IsId()) {
-        dbv = NStr::NumericToString (xref.GetTag().GetId());
+    if (flags & CValidator::eContainsSpace) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                   "dbxref value " + xref.GetTag().GetStr() + " contains space character",
+                   obj, ctx);
     }
-
-    if (ContainsSgml(db)) {
+    if (flags & CValidator::eDbHasSgml) {
         PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
             "dbxref database " + db + " has SGML",
             obj, ctx);
+    }    
+
+    string dbv = kEmptyStr;
+    if (xref.IsSetTag() && xref.GetTag().IsStr()) {
+        dbv = xref.GetTag().GetStr();
+    } else if (xref.IsSetTag() && xref.GetTag().IsId()) {
+        dbv = NStr::NumericToString(xref.GetTag().GetId());
     }
 
-    bool refseq = IsRefSeq();
-
-    bool src_db = false;
-    bool refseq_db = false;
-    string correct_caps = "";
-
-    if (xref.GetDBFlags (refseq_db, src_db, correct_caps)) {
-        if ( biosource) {
-            if (NStr::EqualCase(correct_caps, db)) {
-                if (src_db) {
-                    // it's all good
-                } else if (refseq_db) {
-                    if (refseq || IsGPS()) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-                                    "RefSeq-specific db_xref type " + db + " (" + dbv + ") should not be used on an OrgRef",
-                                    obj, ctx);
-                    } else {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                                    "RefSeq-specific db_xref type " + db + " (" + dbv + ") should not be used on a non-RefSeq OrgRef",
-                                    obj, ctx);
-                    }
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                                "db_xref type " + db + " (" + dbv + ") should not be used on an OrgRef",
-                                obj, ctx);
-                }
-            } else {
-                // capitalization is bad
-                if (src_db) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-                                "Illegal db_xref type " + db + " (" + dbv + "), legal capitalization is " + correct_caps,
-                                obj, ctx);
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-                                "Illegal db_xref type " + db + " (" + dbv + "), legal capitalization is " + correct_caps + ", but should not be used on an OrgRef",
-                                obj, ctx);
-                }
-            }
-        } else {
-            if (NStr::EqualCase(correct_caps, db)) {
-                if (refseq_db) {
-                    if (refseq || IsGPS()) {
-                        // it's all good
-                    } else {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-                                    "db_xref type " + db + " (" + dbv + ") is only legal for RefSeq",
-                                    obj, ctx);
-                    }
-                } else if (src_db && NStr::EqualNocase(db, "taxon")) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                                "db_xref type " + db + " (" + dbv + ") should only be used on an OrgRef",
-                                obj, ctx);
-                }
-            } else {
-                // capitalization is bad
-                if (src_db && NStr::EqualNocase(db, "taxon")) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                                "Illegal db_xref type " + db + " (" + dbv + "), legal capitalization is " + correct_caps + ", but should only be used on an OrgRef",
-                                obj, ctx);
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                                "Illegal db_xref type " + db + " (" + dbv + "), legal capitalization is " + correct_caps,
-                                obj, ctx);
-                }
-            }
-        }
-    } else {
+    if (flags & CValidator::eUnrecognized) {
         PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
             "Illegal db_xref type " + db + " (" + dbv + ")", obj, ctx);
+    } 
+    if (flags & CValidator::eBadCapitalization) {
+        // capitalization is bad
+        bool refseq_db = false, src_db = false;
+        string correct_caps = kEmptyStr;
+        xref.GetDBFlags(refseq_db, src_db, correct_caps);
+        string message = "Illegal db_xref type " + db + " (" + dbv + "), legal capitalization is " + correct_caps;
+        if (flags & CValidator::eNotForSource) {
+            message += ", but should not be used on an OrgRef";
+        } else if (flags & CValidator::eOnlyForSource) {
+            message += ", but should only be used on an OrgRef";
+        }
+
+        PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, message, obj, ctx);
+    } else {
+        if (flags & CValidator::eOnlyForRefSeq) {
+            if (flags & CValidator::eNotForSource) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                    "RefSeq-specific db_xref type " + db + " (" + dbv + ") should not be used on a non-RefSeq OrgRef",
+                    obj, ctx);
+            } else {
+                PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                    "db_xref type " + db + " (" + dbv + ") is only legal for RefSeq",
+                    obj, ctx);
+            }
+        } else if (flags & CValidator::eNotForSource) {
+            if (flags & CValidator::eRefSeqNotForSource) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                    "RefSeq-specific db_xref type " + db + " (" + dbv + ") should not be used on an OrgRef",
+                    obj, ctx);
+            } else {
+                PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                    "db_xref type " + db + " (" + dbv + ") should not be used on an OrgRef",
+                    obj, ctx);
+            }
+        } else if (flags & CValidator::eOnlyForSource) {
+            PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                "db_xref type " + db + " (" + dbv + ") should only be used on an OrgRef",
+                obj, ctx);
+        }
     }
 
 }
