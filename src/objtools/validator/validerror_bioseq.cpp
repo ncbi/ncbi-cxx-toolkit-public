@@ -9009,22 +9009,56 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     bool negative_strand_virus = false;
     bool plus_strand_virus = false;
 
+    string str = s_GetStrandedMolStringFromLineage(lineage);
+
+    if (NStr::FindNoCase(str, "-)") != string::npos) {
+        negative_strand_virus = true;
+    }
+    if (NStr::FindNoCase(str, "ssRNA") != string::npos && NStr::FindNoCase(str, "(+") != string::npos) {
+        plus_strand_virus = true;
+    }
+
     if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
         negative_strand_virus = true;
     }
     if (NStr::FindNoCase(lineage, "ssRNA positive-strand viruses") != string::npos) {
         plus_strand_virus = true;
     }
+
     if (!negative_strand_virus && !plus_strand_virus) {
         return;
+    }
+
+    CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
+    if (molinfo.IsSetBiomol()) {
+        biomol = molinfo.GetBiomol();
     }
 
     bool is_ambisense = false;
     if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
         || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
         || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
-        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos
+        || NStr::EqualNocase(str, "ssRNA(+/-)")) {
         is_ambisense = true;
+    }
+
+    // special cases
+    if (is_ambisense) {
+        if (biomol != CMolInfo::eBiomol_genomic && biomol != CMolInfo::eBiomol_cRNA) {
+            m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Ambisense virus should be genomic RNA or cRNA",
+                    obj, ctx);
+            return;
+        }
+    }
+    if (NStr::EqualNocase(str, "ssRNA-RT") && NStr::FindNoCase(lineage, "Retroviridae") != string::npos) {
+        if (biomol != CMolInfo::eBiomol_genomic) {
+             m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Retrovirus should be genomic RNA or genomic DNA",
+                    obj, ctx);
+            return;
+        }
     }
 
     bool is_synthetic = false;
@@ -9079,7 +9113,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     }
 
     if (has_minus_cds) {
-        if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+        if (biomol != CMolInfo::eBiomol_genomic) {
             if (negative_strand_virus) {
                 m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Negative-strand virus with minus strand CDS should be genomic",
@@ -9089,15 +9123,13 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     }
     if (has_plus_cds && !is_synthetic && !is_ambisense) {
         if (negative_strand_virus &&
-            (!molinfo.IsSetBiomol() ||
-            (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA &&
-                molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+            (biomol != CMolInfo::eBiomol_cRNA && biomol != CMolInfo::eBiomol_mRNA)) {
             m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                 "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
                 obj, ctx);
         }
         if (plus_strand_virus) {
-            if (molinfo.IsSetBiomol() && molinfo.GetBiomol() == CMolInfo::eBiomol_cRNA) {
+            if (biomol == CMolInfo::eBiomol_cRNA) {
                 m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Plus-strand virus with plus strand CDS should be genomic RNA or mRNA",
                     obj, ctx);
@@ -9107,7 +9139,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
 
     if (has_minus_misc_feat) {
         if (negative_strand_virus) {
-            if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+            if (biomol != CMolInfo::eBiomol_genomic) {
                 m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
                     obj, ctx);
@@ -9117,16 +9149,13 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     if (has_plus_misc_feat) {
         if (negative_strand_virus) {
             if (!is_synthetic && !is_ambisense
-                && (!molinfo.IsSetBiomol()
-                    || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
-                        && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+                && (biomol != CMolInfo::eBiomol_cRNA && biomol != CMolInfo::eBiomol_mRNA)) {
                 m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
                     obj, ctx);
             }
         }
     }
-
 }
 
 
