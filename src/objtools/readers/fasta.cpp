@@ -511,7 +511,7 @@ void CFastaReader::SetMaxIDLength(Uint4 max_len)
 
 void CFastaReader::SetModFilter(FModFilter mod_filter)
 {
-    m_fModFilter = mod_filter;
+  //  m_fModFilter = mod_filter;
 }
 
 // For reasons of efficiency, this method does not use 
@@ -2140,6 +2140,9 @@ void CFastaReader::x_ApplyMods(
             errorReporter(idString, line_number, pMessageListener);
 
         CModHandler mod_handler;
+        if (!m_ExcludedMods.empty()) {
+            mod_handler.SetExcludedMods(m_ExcludedMods);
+        }
         CModHandler::TModList rejected_mods;
         mod_handler.AddMods(mods, CModHandler::eReplace, rejected_mods, errorReporter);
         s_AppendMods(rejected_mods, remainder);
@@ -2191,7 +2194,7 @@ void CFastaReader::x_ApplyAllMods(
     string& title = (*title_it)->SetTitle();
 
     auto_ptr<CSourceModParser> pSmp(xCreateSourceModeParser(pMessageListener));
-    pSmp->SetModFilter(m_pModFilter_DEPRECATED);
+   // pSmp->SetModFilter(m_pModFilter_DEPRECATED);
 
 
     if( TestFlag(fAddMods) ) {

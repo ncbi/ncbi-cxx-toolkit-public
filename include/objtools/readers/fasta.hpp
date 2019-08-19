@@ -178,10 +178,13 @@ public:
     void  ClearBadMods(void) { m_BadMods.clear(); }
 
     void SetModFilter( CRef<CSourceModParser::CModFilter> pModFilter ) {
-        m_pModFilter_DEPRECATED = pModFilter;
     }
 
     void SetModFilter(FModFilter mod_filter);
+
+    void SetExcludedMods(const vector<string>& excluded_mods) {
+        m_ExcludedMods = excluded_mods;
+    }
 
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length. Overrides the id lengths specified in class CSeq_id.
@@ -323,6 +326,8 @@ protected:
     std::string x_NucOrProt(void) const;
 
 private: 
+    vector<string> m_ExcludedMods;
+
     void x_ApplyMods(const string& title, 
                      TSeqPos line_number,
                      CBioseq& bioseq,
@@ -413,7 +418,6 @@ protected:
     SGap::TNullableGapType  m_gap_type;
 
     TSeqTitles m_CurrentSeqTitles;
-    CRef<CSourceModParser::CModFilter> m_pModFilter_DEPRECATED;
     std::vector<ILineError::EProblem> m_ignorable;
     FIdCheck m_fIdCheck;
     FModFilter m_fModFilter = nullptr;
