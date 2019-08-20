@@ -191,6 +191,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_TranslatedFrameForLocalSeq = eFirst;
     m_ResultPositionIndex = -1;
     m_currAlignSeqListIndex = 1;
+    m_QueryAnchoredSetIndex = -1;
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name
                                        ? matrix_name
@@ -1442,11 +1443,27 @@ void CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out
     alnRoInfo->show_seq_property_label = (m_AlignOption&eShowSequencePropertyLabel &&
                                           m_AlignOption&eMergeAlign &&
                                           m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) ? true : false;
-
+    unsigned int rowSetsCount = 1;
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
-        string rowdata = x_DisplayRowDataSet(alnRoInfo,j, prev_stop);
-        out << rowdata;
+        //Used for download query range specified by m_QueryAnchoredSetIndex
+        //Until m_QueryAnchoredSetIndex==rowSetsCount do not display alignment just calculate prev_stop, etc.
+        if(m_QueryAnchoredSetIndex != -1 && m_QueryAnchoredSetIndex != rowSetsCount) {
+            x_ProcessRowDataSet(alnRoInfo,j, prev_stop);            
+        }
+        else {
+            string rowdata = x_DisplayRowDataSet(alnRoInfo,j, prev_stop);        
+            if(m_AlignTemplates && !m_AlignTemplates->alignQueryAnchTempl.empty()) {//Templates will be used for query anchored display
+                rowdata = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alignQueryAnchTempl,"rowdata",rowdata);       
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"currQueryAnchSet",NStr::IntToString(rowSetsCount));       
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"nextQueryAnchSet",NStr::IntToString(rowSetsCount + 1));       
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"prevQueryAnchSet",NStr::IntToString(rowSetsCount - 1));                
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"fromQueryRange",NStr::IntToString(j + 1));    
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"toQueryRange",NStr::IntToString(j + alnRoInfo->currActualLineLen));    
+            }            
+            out << rowdata;            
+        }
+        rowSetsCount++;
     }//end of displaying rows
 }
 
@@ -1530,6 +1547,45 @@ string CDisplaySeqalign::x_DisplayRowDataSet(SAlnRowInfo *alnRoInfo,int aln_star
     out<<"\n";
     string formattedString = CNcbiOstrstreamToString(out);
     return formattedString;
+}
+
+void CDisplaySeqalign::x_ProcessRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start, vector<int> &prev_stop)
+{
+    size_t actualLineLen=0;
+    string master_feat_str = NcbiEmptyString;
+    size_t aln_stop=m_AV->GetAlnStop();
+
+    int rowNum = alnRoInfo->rowNum;
+    
+
+    //output according to aln coordinates
+    if(aln_stop-aln_start+1<m_LineLen) {
+        actualLineLen=aln_stop-aln_start+1;
+    } else {
+        actualLineLen=m_LineLen;
+    }
+    CAlnMap::TSignedRange curRange(aln_start, aln_start+(int)actualLineLen-1);
+    alnRoInfo->currPrintSegment = aln_start;
+    alnRoInfo->currActualLineLen = actualLineLen;
+    alnRoInfo->currRange = curRange;
+    //here is each row
+    for (int row=0; row<rowNum; row++) {
+        bool hasSequence = true;
+        if (!(m_AlignOption & eShowGapOnlyLines)) {
+            hasSequence = curRange.IntersectingWith(alnRoInfo->rowRng[row]);
+        }
+        //only output rows that have sequence
+        if (hasSequence){
+            int end = alnRoInfo->seqStops[row].front() + 1;          
+            prev_stop[row] = end;
+        }
+        if(!alnRoInfo->seqStarts[row].empty()){ //shouldn't need this check
+                alnRoInfo->seqStarts[row].pop_front();
+        }
+        if(!alnRoInfo->seqStops[row].empty()){
+                alnRoInfo->seqStops[row].pop_front();
+        }
+    }//end of displaying rows    
 }
 
 void CDisplaySeqalign::x_DisplaySequenceLine(SAlnRowInfo *alnRoInfo, int row, int prev_stop, CNcbiOstrstream &out)
