@@ -361,13 +361,13 @@ static size_t s_Length(const char* ptr, size_t maxsize)
 
 /// Round up to the nearest multiple of BLOCK_SIZE:
 //#define ALIGN_SIZE(size)   SIZE_OF(BLOCK_OF(size + (BLOCK_SIZE-1)))
-#define ALIGN_SIZE(size) (((size) + (BLOCK_SIZE-1)) & ~(BLOCK_SIZE-1))
-#define OFFSET_OF(size)  ( (size)                   &  (BLOCK_SIZE-1))
-#define BLOCK_OF(pos)    ((pos) >> 9)
-#define SIZE_OF(blk)     ((blk) << 9)
+#define ALIGN_SIZE(size)  (((size) + (BLOCK_SIZE-1)) & ~(BLOCK_SIZE-1))
+#define OFFSET_OF(size)   ( (size)                   &  (BLOCK_SIZE-1))
+#define BLOCK_OF(pos)     ((pos) >> 9)
+#define SIZE_OF(blk)      ((blk) << 9)
 
 /// Tar block size (512 bytes)
-#define BLOCK_SIZE       SIZE_OF(1)
+#define BLOCK_SIZE        SIZE_OF(1)
 
 
 /// Recognized TAR formats
@@ -724,11 +724,11 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 
 
 #if !defined(__GNUC__)  &&  !defined(offsetof)
-#  define offsetof(T, F) ((char*) &(((T*) 0)->F) - (char*) 0)
+#  define offsetof(T, F)  ((char*) &(((T*) 0)->F) - (char*) 0)
 #endif
 
 
-#define _STR(s) #s
+#define _STR(s)  #s
 
 #define TAR_PRINTABLE_EX(field, text, size)                             \
     "@" + s_OffsetAsString((size_t) offsetof(SHeader, field)) +         \
@@ -3231,6 +3231,8 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
     const NStr::ECase how = NStr::eCase;
 #endif //NCBI_OS_MSWIN
 
+    SIZE_TYPE pos = 0;
+
     bool absolute;
     // Remove leading base dir from the path
     if (!base_dir.empty()  &&  NStr::StartsWith(retval, base_dir, how)) {
@@ -3242,20 +3244,17 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
         absolute = false;
     } else {
         absolute = CDirEntry::IsAbsolutePath(retval);
-    }
-
-    SIZE_TYPE pos = 0;
-
 #ifdef NCBI_OS_MSWIN
-    if (isalpha((unsigned char) retval[0])  &&  retval[1] == ':') {
-        // Remove a disk name if present
-        pos = 2;
-    } else if (retval[0] == '/'  &&  retval[1] == '/') {
-        // Network name if present
-        pos = retval.find('/', 2);
-        absolute = true;
-    }
+        if (isalpha((unsigned char) retval[0])  &&  retval[1] == ':') {
+            // Remove a disk name if present
+            pos = 2;
+        } else if (retval[0] == '/'  &&  retval[1] == '/') {
+            // Network name if present
+            pos = retval.find('/', 2);
+            absolute = true;
+        }
 #endif //NCBI_OS_MSWIN
+    }
 
     // Remove any leading and trailing slashes
     while (pos < retval.size()  &&  retval[pos] == '/') {
@@ -3530,7 +3529,7 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
             _ASSERT(!dst->Exists());
             // Create base directory
             CDir dir(dst->GetDir());
-            if (!dir.CreatePath()) {
+            if (/*dir.GetPath() != "."  &&  */!dir.CreatePath()) {
                 int x_errno = errno;
                 TAR_THROW(this, eCreate,
                           "Cannot create directory '" + dir.GetPath() + '\''
@@ -4093,11 +4092,12 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 static string s_BaseDir(const string& dirname)
 {
     string path = s_ToFilesystemPath(kEmptyStr, dirname);
-    path += CDirEntry::GetPathSeparator();
 #ifdef NCBI_OS_MSWIN
     // Replace backslashes with forward slashes
     NStr::ReplaceInPlace(path, "\\", "/");
 #endif //NCBI_OS_MSWIN
+    if (!NStr::EndsWith(path, '/'))
+        path += '/';
     return path;
 }
 
