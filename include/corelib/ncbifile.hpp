@@ -327,7 +327,7 @@ public:
                             string* disk = 0, string* dir = 0,
                             string* base = 0, string* ext = 0);
 
-    /// What GetDir() should return if the dir entry does not contains path.
+    /// What GetDir() should return if the dir entry does not contain path.
     /// @sa GetDir
     enum EIfEmptyPath {
         eIfEmptyPath_Empty,    ///< Return empty string
@@ -407,7 +407,7 @@ public:
     /// @throws
     ///   CFileException if no existing nearest parent directory was found.
     /// @note
-    ///   For relative not-existent path it always return ".".
+    ///   For relative not-existent path it always returns ".".
     ///   To avoid this, you can always use absolute path for "path":
     ///      CDirEntry::GetNearestExistingParentDir(CDirEntry::CreateAbsolutePath(path))
     /// @note
@@ -463,9 +463,8 @@ public:
     /// @param path 
     ///   Path to resolve, in native syntax; returned as is if absolute.
     /// @param rtw
-    ///   Starting point for relative path resolution. Used as base path
-    ///   for "path" if the latter have an relative form. 
-    ///   Must be an absolute.
+    ///   Starting point for relative path resolution.  Used as a base path
+    ///   for "path" if the latter has a relative form.  Must be an absolute.
     /// @return
     ///   Corresponding absolute path.  May be the original string (if already
     ///   absolute) or concatenation of rtw and path.
@@ -529,7 +528,7 @@ public:
     /// Copy flags.
     /// Note that updating modification time for directory depends on the OS.
     /// Normally it gets updated when a new directory entry is added/removed.
-    /// On the other hand, changing contents of files of that directory
+    /// On the other hand, changing contents of files in that directory
     /// doesn't usually affect the directory modification time.
     enum ECopyFlags {
         /// The following flags define what to do when the
@@ -714,7 +713,7 @@ public:
         fDir_Self      = fEntry,    ///< Top directory entry
         fDir_Files     = (1 << 1),  ///< Non-directory entries
         fDir_Subdirs   = (1 << 2),  ///< Subdirectory entries (non recursive)
-        fDir_Recursive = (1 << 3),  ///< Add an recursion
+        fDir_Recursive = (1 << 3),  ///< Add a recursion
         
         /// Mask to check what should be processed in a directory
         fDir_All = fDir_Self + fDir_Files + fDir_Subdirs,
@@ -726,7 +725,7 @@ public:
         // --- directory processing modes ---------------------------
         // "Enums", retained for backward compatibility.
 
-        /// Directory entry only, no any files or subdirectories
+        /// Directory entry only, no other files or subdirectories
         eOnlyEmpty    = fDir_Self,
         eEntryOnly    = fDir_Self,
         
@@ -735,7 +734,7 @@ public:
         eTopDirOnly   = fDir_Self | fDir_Files,
         
         /// All files and subdirectories in the top directory,
-        /// but no any files in subdirectories
+        /// but no files in subdirectories
         eNonRecursive = fDir_All,
         
         /// Process all files and subdirectories recursively.
