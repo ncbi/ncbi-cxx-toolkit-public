@@ -6,6 +6,9 @@
 
 #include "http_server_transport.hpp"
 
+#include <h2o.h>
+
+
 using namespace std;
 
 namespace HST {
@@ -295,5 +298,32 @@ TNCBI_IPv6Addr CHttpRequest::GetClientIP(void)
     return NcbiGetCgiClientIPv6(eCgiClientIP_TryMost, tracking_env);
 }
 
+
+string CHttpRequest::GetPeerIP(void)
+{
+    struct sockaddr     sock_addr;
+    if (m_Req->conn->callbacks->get_peername(m_Req->conn, &sock_addr) == 0)
+        return kEmptyStr;
+
+    char                buf[256];
+    switch (sock_addr.sa_family) {
+        case AF_INET:
+            if (inet_ntop(AF_INET,
+                          &(((struct sockaddr_in *)&sock_addr)->sin_addr),
+                          buf, 256) == NULL)
+                return kEmptyStr;
+            break;
+        case AF_INET6:
+            if (inet_ntop(AF_INET6,
+                          &(((struct sockaddr_in6 *)&sock_addr)->sin6_addr),
+                          buf, 256) == NULL)
+                return kEmptyStr;
+            break;
+        default:
+            return kEmptyStr;
+    }
+
+    return buf;
+}
 
 };

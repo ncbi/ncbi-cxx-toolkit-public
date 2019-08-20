@@ -912,6 +912,7 @@ public:
     string GetPath(void);
     string GetHeaderValue(const string &  name);
     TNCBI_IPv6Addr GetClientIP(void);
+    string GetPeerIP(void);
 
     CTempString GetEntity(void)
     {

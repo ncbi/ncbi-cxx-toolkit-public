@@ -794,6 +794,11 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
                 // Take the first one, there could be many...
                 context->SetClientIP(ip_addrs[0]);
             }
+        } else {
+            client_ip = req.GetPeerIP();
+            if (!client_ip.empty()) {
+                context->SetClientIP(client_ip);
+            }
         }
 
         // It was decided not to use the standard C++ Toolkit function because
