@@ -1152,8 +1152,8 @@ SImplementation::ConvertAlignToAnnot(
 bool IsContinuous(const CSeq_loc& loc)
 {
     ITERATE (CSeq_loc, loc_it, loc) {
-        if ((loc_it.GetRange().GetFrom() != loc.GetTotalRange().GetFrom() && loc_it.GetRangeAsSeq_loc()->IsPartialStart(eExtreme_Positional)) ||
-            (loc_it.GetRange().GetTo() != loc.GetTotalRange().GetTo() && loc_it.GetRangeAsSeq_loc()->IsPartialStop(eExtreme_Positional))) {
+        if ((loc_it.GetRange().GetFrom() != loc.GetStart(eExtreme_Positional) && loc_it.GetRangeAsSeq_loc()->IsPartialStart(eExtreme_Positional)) ||
+            (loc_it.GetRange().GetTo() != loc.GetStop(eExtreme_Positional) && loc_it.GetRangeAsSeq_loc()->IsPartialStop(eExtreme_Positional))) {
             return false;
         }
     }

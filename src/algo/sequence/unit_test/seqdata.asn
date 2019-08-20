@@ -19097,7 +19097,7 @@ Bioseq-set ::= {
       descr {
         molinfo {
           biomol mRNA,
-          completeness partial
+          completeness unknown
         }
       },
       inst {
@@ -19209,7 +19209,7 @@ B21D2B0E39280E2B003698D9B0578EB2344BF667A4A4493C82FBA9343848C4D239F08EE1642403
       descr {
         molinfo {
           biomol peptide,
-          completeness partial
+          completeness no-right
         }
       },
       inst {
@@ -19819,7 +19819,7 @@ A51572E72FC8AF3C0C637C9C7C0A29FC93C3C29003EB9231C0895F0520BFC38929C0A1CA038EB0
       descr {
         molinfo {
           biomol peptide,
-          completeness partial
+          completeness no-left
         }
       },
       inst {
