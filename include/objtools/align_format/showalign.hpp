@@ -271,6 +271,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK         
         string alignRowTmpl;    ///<Template for displayin actual pairwise alignment - BLAST_ALIGN_ROWS
         string alignRowTmplLast; ///<Template for displayin actual last pairwise alignment - BLAST_ALIGN_ROWS_LST
+        string alignQueryAnchTempl;///<Template for displaying one set of query anchored alignment - BLAST_QUERY_ANCH_NAV
 
     };
        
@@ -419,6 +420,11 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     /// Sets usage of long sequence ids (database|accession)
     void UseLongSequenceIds(void) {m_UseLongSeqIds = true;}
 
+    ///Sets index of Query anchored alignment set to display or download. Index corresponds to cosequent query ranges
+    ///For example range 1-60 - m_QueryAnchoredSetIndex=1, range 61-120 m_QueryAnchoredSetIndex=2
+    ///@param int queryAnchoredSetIndex    
+    void SetQueryAnchoredIndex(int queryAnchoredSetIndex) {m_QueryAnchoredSetIndex = queryAnchoredSetIndex;}
+    
     /// static functions
     ///Need to call this if the seqalign is stdseg or dendiag for ungapped
     ///blast alignment display as each stdseg ro dendiag is a distinct
@@ -679,6 +685,7 @@ protected:
 
     /// print long sequence ids (with gi and accession with database source)
     bool m_UseLongSeqIds;
+    int m_QueryAnchoredSetIndex;
 
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
@@ -910,6 +917,7 @@ protected:
     virtual string x_DisplayRowData(SAlnRowInfo *alnRoInfo);
     virtual void x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out);
     string x_DisplayRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start, vector<int> &prev_stop);
+    void x_ProcessRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start, vector<int> &prev_stop);
 
     ///Display identities,positives,frames etc
     ///
