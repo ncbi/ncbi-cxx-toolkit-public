@@ -230,7 +230,7 @@ bool CBlastHitMatrix::x_RenderImage(void)
   bool success = false;
   try {
          // Clear any previously used OpenGL states
-         CGlRender& gl = GetGl();
+         IRender& gl = GetGl();
          gl.Clear();
 
          x_PreProcess();
@@ -262,7 +262,7 @@ void CBlastHitMatrix::x_InitGraphics(const string& font_path)
     try {
         m_Context.Reset(new CGlOsContext(m_Width, m_Height));
         m_Context->MakeCurrent();
-
+#ifdef GLEW_MX
         GLEWContext  glew_context;
         GLenum err = glewContextInit(&glew_context);
         if (GLEW_OK != err) {
@@ -277,7 +277,13 @@ void CBlastHitMatrix::x_InitGraphics(const string& font_path)
                 _TRACE("Error loading opengl extensions");
             }
         }
-
+#else 
+  	GLenum err = glewInit();
+  	if (GLEW_OK != err)
+  	{
+  	   _TRACE("Error initializing glew: " << glewGetErrorString(err));
+  	} 
+#endif
         // initialize OpenGL fonts
         CFtglFontManager::Instance().SetDeviceResolution(72);
         // path to find font files (they can be copied from svn
@@ -286,7 +292,7 @@ void CBlastHitMatrix::x_InitGraphics(const string& font_path)
                                                  : font_path);
         CFtglFontManager::Instance().Clear();
 
-        CRef<CGlRender>  mgr = CGlResMgr::Instance().
+        CIRef<IRender>  mgr = CGlResMgr::Instance().
             GetRenderer( CGlResMgr::Instance().GetApiLevel());
         if (mgr.IsNull()) {
             LOG_POST(Error << "CGlRender object not available.");

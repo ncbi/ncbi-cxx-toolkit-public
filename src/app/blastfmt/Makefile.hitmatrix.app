@@ -8,7 +8,7 @@ LIB_ = w_hit_matrix gui_glmesa w_gl w_data w_wx \
 	   eutils_client gencoll_client sqlitewrapp gbproj \
 	   xalgoalignutil ximage xcgi xhtml \
 	   entrez2cli entrez2 valerr gbseq entrezgene biotree \
-	   xconnserv xqueryparse snputil $(EUTILS_LIBS) xmlwrapp \
+	   xconnserv xqueryparse snputil $(EUTILS_LIBS) xmlwrapp xobjedit \
 	   $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
