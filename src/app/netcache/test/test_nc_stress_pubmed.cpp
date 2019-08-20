@@ -1,4 +1,5 @@
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_system.hpp>
