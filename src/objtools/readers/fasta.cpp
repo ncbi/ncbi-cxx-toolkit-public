@@ -509,11 +509,6 @@ void CFastaReader::SetMaxIDLength(Uint4 max_len)
 }
 
 
-void CFastaReader::SetModFilter(FModFilter mod_filter)
-{
-  //  m_fModFilter = mod_filter;
-}
-
 // For reasons of efficiency, this method does not use 
 // CRef<CSeq_interval> to access range information - RW-26
 void CFastaReader::ParseDefLine(const TStr& defLine,
@@ -2172,7 +2167,7 @@ void CFastaReader::x_ApplyMods(
 }
 
 
-
+/*
 void CFastaReader::x_ApplyAllMods( 
     CBioseq & bioseq,
     TSeqPos iLineNum,
@@ -2194,7 +2189,7 @@ void CFastaReader::x_ApplyAllMods(
     string& title = (*title_it)->SetTitle();
 
     auto_ptr<CSourceModParser> pSmp(xCreateSourceModeParser(pMessageListener));
-   // pSmp->SetModFilter(m_pModFilter_DEPRECATED);
+    pSmp->SetModFilter(m_pModFilter_DEPRECATED);
 
 
     if( TestFlag(fAddMods) ) {
@@ -2231,6 +2226,7 @@ void CFastaReader::x_ApplyAllMods(
         descriptors.erase(title_it);
     }
 }
+*/
 
 std::string CFastaReader::x_NucOrProt(void) const
 {

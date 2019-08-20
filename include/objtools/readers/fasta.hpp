@@ -173,14 +173,13 @@ public:
     //void ResetIDTracker(void) { m_IDTracker.clear(); }
     void ResetIDTracker(void) { m_IDHandler->ClearIdCache(); }
     
-    const CSourceModParser::TMods & GetUnusedMods(void) const { return m_UnusedMods; }
-    const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
-    void  ClearBadMods(void) { m_BadMods.clear(); }
+    NCBI_DEPRECATED const CSourceModParser::TMods & GetUnusedMods(void) const { return m_UnusedMods; }
+    NCBI_DEPRECATED const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
+    NCBI_DEPRECATED void  ClearBadMods(void) {}
 
-    void SetModFilter( CRef<CSourceModParser::CModFilter> /*pModFilter*/ ) {
-    }
+    NCBI_DEPRECATED void SetModFilter( CRef<CSourceModParser::CModFilter> /*pModFilter*/ ) {}
 
-    void SetModFilter(FModFilter mod_filter);
+    NCBI_DEPRECATED void SetModFilter(FModFilter mod_filter) {}
 
     void SetExcludedMods(const vector<string>& excluded_mods) {
         m_ExcludedMods = excluded_mods;
@@ -321,7 +320,7 @@ protected:
 
     NCBI_DEPRECATED void x_ApplyAllMods(CBioseq & bioseq, 
         TSeqPos iLineNum, 
-        ILineErrorListener * pMessageListener);
+        ILineErrorListener * pMessageListener) {}
 
     std::string x_NucOrProt(void) const;
 
