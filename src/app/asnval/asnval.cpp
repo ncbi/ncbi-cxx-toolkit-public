@@ -172,6 +172,7 @@ private:
     unsigned int m_Options;
     bool m_Continue;
     bool m_OnlyAnnots;
+    bool m_Quiet;
     double m_Longest;
     string m_CurrentId;
     string m_LongestId;
@@ -208,7 +209,7 @@ public:
 // constructor
 CAsnvalApp::CAsnvalApp(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
-    m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
+    m_Quiet(false), m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0)
 {
@@ -318,6 +319,8 @@ void CAsnvalApp::Init(void)
     arg_desc->AddFlag("b", "Input is in binary format");
     arg_desc->AddFlag("c", "Batch File is Compressed");
 
+    arg_desc->AddFlag("quiet", "Do not log progress");
+
     CValidatorArgUtil::SetupArgDescriptions(arg_desc.get());
     arg_desc->AddFlag("annot", "Verify Seq-annots only");
 
@@ -417,7 +420,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
 {
     const CArgs& args = GetArgs();
 
-    LOG_POST_XX(Corelib_App, 1, fname);
+    if (! args["quiet"] ) {
+        LOG_POST_XX(Corelib_App, 1, fname);
+    }
     auto_ptr<CNcbiOfstream> local_stream;
 
     bool close_error_stream = false;
@@ -569,6 +574,9 @@ int CAsnvalApp::Run(void)
     m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
     m_verbosity = static_cast<EVerbosity>(args["v"].AsInteger());
 
+
+    m_Quiet = args["quiet"] && args["quiet"].AsBoolean();
+
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
@@ -603,9 +611,11 @@ int CAsnvalApp::Run(void)
     }
 
     time_t stop_time = time(NULL);
-    LOG_POST_XX(Corelib_App, 1, "Finished in " << stop_time - start_time << " seconds");
-    LOG_POST_XX(Corelib_App, 1, "Longest processing time " << m_Longest << " seconds on " << m_LongestId);
-    LOG_POST_XX(Corelib_App, 1, "Total number of records " << m_NumRecords);
+    if (! m_Quiet ) {
+        LOG_POST_XX(Corelib_App, 1, "Finished in " << stop_time - start_time << " seconds");
+        LOG_POST_XX(Corelib_App, 1, "Longest processing time " << m_Longest << " seconds on " << m_LongestId);
+        LOG_POST_XX(Corelib_App, 1, "Total number of records " << m_NumRecords);
+    }
 
     DestroyOutputStreams();
 
@@ -651,7 +661,9 @@ void CAsnvalApp::ReadClassMember
                 if (bi) {
                     m_CurrentId = "";
                     bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
-                    LOG_POST_XX(Corelib_App, 1, m_CurrentId);
+                    if (! m_Quiet ) {
+                        LOG_POST_XX(Corelib_App, 1, m_CurrentId);
+                    }
                 }
 
                 if (m_DoCleanup) {
@@ -878,7 +890,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
     if (bi) {
         m_CurrentId = "";
         bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
-        LOG_POST_XX(Corelib_App, 1, m_CurrentId);
+        if (! m_Quiet ) {
+            LOG_POST_XX(Corelib_App, 1, m_CurrentId);
+        }
     }
 
     if ( m_OnlyAnnots ) {
