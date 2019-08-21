@@ -402,7 +402,7 @@ int main(int argc, const char* argv[])
 
     if (argc > 3) {
         int mtu = atoi(argv[3]);
-        s_MTU = 28 < mtu
+        s_MTU = mtu > 28
             ? mtu - 28/*IP(20)/UDP(8) overhead*/
             : mtu;
         CORE_LOGF(eLOG_Note, ("MTU = %d/%d/%d",
