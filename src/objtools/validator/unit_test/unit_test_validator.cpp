@@ -7085,12 +7085,15 @@ BOOST_AUTO_TEST_CASE(Test_InconsistentVirusMoltype)
     CheckErrors(*eval, expected_errors);
 
     // error if not genomic
+  
+    /*
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
         "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+    */
 
     CLEAR_ERRORS
 
