@@ -271,7 +271,7 @@ bool IsNG(const CBioseq& seq);
 bool IsTemporary(const CSeq_id& id);
 
 bool IsOrganelle(int genome);
-bool IsOrganelle(const CBioseq_Handle& seq);
+bool NCBI_VALIDATOR_EXPORT IsOrganelle(const CBioseq_Handle& seq);
 
 bool ConsistentWithA(Char ch);
 bool ConsistentWithC(Char ch);
