@@ -119,7 +119,8 @@ protected:
     virtual void Init(void);
     virtual int  Run(void);
 
-    unique_ptr<CTar::TEntries> x_Append(CTar& tar, const string& name);
+    unique_ptr<CTar::TEntries> x_Append(CTar& tar, const string& name,
+                                        bool ioexcpts = false);
 
     string x_Pos(const CTarEntryInfo& info);
 
@@ -355,7 +356,8 @@ static string x_OSReason(int x_errno)
 }
 
 
-unique_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
+unique_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name,
+                                              bool ioexcpts)
 {
     CDirEntry entry(name);
     CDirEntry::EType type = entry.GetType(eFollowLinks);
@@ -363,7 +365,8 @@ unique_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
         unique_ptr<CTar::TEntries> entries(new CTar::TEntries);
         CDir::TEntries dir = CDir(name).GetEntries("*",CDir::eIgnoreRecursive);
         ITERATE(CDir::TEntries, e, dir) {
-            unique_ptr<CTar::TEntries> add = x_Append(tar, (*e)->GetPath());
+            unique_ptr<CTar::TEntries> add = x_Append(tar, (*e)->GetPath(),
+                                                      ioexcpts);
             entries->splice(entries->end(), *add);
         }
         return entries;
@@ -371,6 +374,9 @@ unique_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
     if (type == CDirEntry::eFile) {
         Uint8 size = CFile(name).GetLength();
         CNcbiIfstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        if (ioexcpts) {
+            ifs.exceptions(~NcbiGoodbit);
+        }
         return
             tar.Append(CTarUserEntryInfo(CDirEntry::NormalizePath(name), size),
                        ifs);
@@ -423,22 +429,14 @@ int CTarTest::Run(void)
     if (args["T"].HasValue()) {
         action |= eTest;
     }
-    if (!action  ||  (action & (action - 1))) {
-        NCBI_THROW(CArgException, eInvalidArg,
-                   "You must specify exactly one of -c, -r, -u, -t, -x, -T");
-    }
-
-    bool zip = args["z"].HasValue();
-    if (zip  &&  (action == eAppend  ||  action == eUpdate)) {
-        NCBI_THROW(CArgException, eInvalidArg,
-                   "Sorry, -z is not supported with either -r or -u");
-    }
 
     bool   pipethru = args["F"].HasValue();
     bool   ioexcpts = args["e"].HasValue();
     size_t bfactor  = args["b"].AsInteger();
     bool   verbose  = args["v"].HasValue();
     bool   stream   = args["s"].HasValue();
+    bool   tocout   = args["O"].HasValue();
+    bool   zip      = args["z"].HasValue();
     size_t n        = args.GetNExtra();
 
     if (verbose) {
@@ -448,24 +446,46 @@ int CTarTest::Run(void)
 #endif /*_DEBUG && !NDEBUG*/
     }
 
-    unique_ptr<CTestTar> tar;
-    unique_ptr<CNcbiIos> zs;
-    CNcbiIstream* in = 0;
+    if (!action  ||  (action & (action - 1))) {
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "You must specify exactly one of -c, -r, -u, -t, -x, -T");
+    }
+    if (action == eCreate  &&  pipethru) {
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "Sorry, -F not supported with -c");
+    }
+    if ((action == eAppend || action == eUpdate)  &&  zip) {
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "Sorry, -z not supported with either -r or -u");
+    }
+    if ((action == eAppend || action == eUpdate || action == eCreate) && !n) {
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "Must specify file(s)");
+    }
+
+#ifdef NCBI_OS_MSWIN
+    _setmode(_fileno(stdin),  _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif // NCBI_OS_MSWIN
+
     CNcbiIfstream ifs;
     CNcbiOfstream ofs;
-    CNcbiIos* io;
+    CNcbiIstream* in = 0;
+    unique_ptr<CNcbiIos> zs;
+    unique_ptr<CNcbiIos> io;
 
 #ifdef TEST_CONN_TAR
     CCanceled canceled;
     unique_ptr<CConn_IOStream> conn;
     if (NStr::Find(CTempString(file, 3/*pos*/, 5/*len*/), "://") != NPOS) {
         if (action == eList  ||  action == eExtract  ||  action == eTest
-            ||  (pipethru  &&  action != eCreate)) {
+            ||  pipethru) {
+            _ASSERT(action != eCreate);
             conn.reset(NcbiOpenURL(file));
             file.erase();
         } else {
             NCBI_THROW(CArgException, eInvalidArg,
-                       "Sorry, URL is not supported with this action/mode");
+                       "URL not supported with this action/mode");
         }
         if (!(in = conn.get())) {
             in = &ifs;
@@ -476,6 +496,10 @@ int CTarTest::Run(void)
     } else
 #endif // TEST_CONN_TAR
         if (pipethru  &&  !file.empty()) {
+            if (action == eAppend || action == eUpdate) {
+                NCBI_THROW(CArgException, eInvalidArg,
+                           "Sorry, -F not supported with file-based -r / -u");
+            }
             ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
             file.erase();
             in = &ifs;
@@ -488,39 +512,29 @@ int CTarTest::Run(void)
         NcbiCout.exceptions(~NcbiGoodbit);
     }
 
-#ifdef NCBI_OS_MSWIN
-    _setmode(_fileno(stdin),  _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
-#endif // NCBI_OS_MSWIN
-
-    CRWStream stdio(!in  ||  in->good()
-                    ? new CStreamReader(in ? *in : NcbiCin)
-                    : 0,
-                    !in  ||  in->good()
-                    ? new CStreamWriter(           NcbiCout)
-                    : 0,
-                    0, 0, CRWStreambuf::fOwnAll | CRWStreambuf::fUntie);
-
     if (file.empty()  ||  zip) {
-        if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
-            CNcbiOstream* os;
+        CNcbiIstream* is = in       ? in        : &NcbiCin;
+        CNcbiOstream* os = pipethru ? &NcbiCout : 0;
+        if (action == eAppend  ||  action == eUpdate  ||  action == eCreate) {
             if (!file.empty()) {
+                _ASSERT(action == eCreate);
                 ofs.open(file.c_str(),
                          IOS_BASE::trunc | IOS_BASE::out | IOS_BASE::binary);
+                if (ioexcpts) {
+                    ofs.exceptions(~NcbiGoodbit);
+                }
                 os = &ofs;
+                is = 0;
             } else if (action != eUpdate  ||  n < 2) {
-                os = &stdio;
+                os = &NcbiCout;
             } else {
                 NCBI_THROW(CArgException, eInvalidArg, "2+fold pipe update");
             }
             if (!os->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
             }
-            if (ioexcpts) {
-                os->exceptions(~NcbiGoodbit);
-            }
             if (zip) {
-                // Very hairy :-)
+                // Very hairy :-) Oh, well...
                 CZipCompressor* zc = new CZipCompressor;
                 zc->SetFlags(CZipCompression::fWriteGZipFormat);
                 if (!file.empty()) {
@@ -541,22 +555,18 @@ int CTarTest::Run(void)
                     zs->exceptions(~NcbiGoodbit);
                 }
             }
-            io = os;
         } else {
             _ASSERT(action == eList || action == eExtract || action == eTest);
-            CNcbiIstream* is;
             if (!file.empty()) {
                 _ASSERT(!ifs.is_open());
                 ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
+                if (ioexcpts) {
+                    ifs.exceptions(~NcbiGoodbit);
+                }
                 is = &ifs;
-            } else {
-                is = &stdio;
             }
             if (!is->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
-            }
-            if (ioexcpts) {
-                is->exceptions(~NcbiGoodbit);
             }
             if (zip) {
                 is = new CDecompressIStream(*is, CCompressStream::eGZipFile);
@@ -565,24 +575,27 @@ int CTarTest::Run(void)
                     zs->exceptions(~NcbiGoodbit);
                 }
             }
-            io = is;
         }
-    } else {
-        io = 0;
+        io.reset(new CRWStream(is ? new CStreamReader(*is) : 0,
+                               os ? new CStreamWriter(*os) : 0,
+                               0, 0,
+                               CRWStreambuf::fOwnAll | CRWStreambuf::fUntie));
+        if (ioexcpts) {
+            io->exceptions(~NcbiGoodbit);
+        }
     }
+
+    unique_ptr<CTestTar> tar;
     if (action != eExtract  ||  !stream  ||  n != 1) {
         bool listonfly = !stream  &&  !verbose  &&  action == eList;
         if (io) {
-            if (zip  &&  pipethru) {
-                NCBI_THROW(CArgException, eInvalidArg, "Write-thru zip pipe");
-            }
             tar.reset(new CTestTar(*io,  bfactor, listonfly));
         } else {
             tar.reset(new CTestTar(file, bfactor, listonfly));
         }
         m_Flags = tar->GetFlags();
     } else {
-        m_Flags = 0;
+        m_Flags = CTar::fDefault;
     }
 
     if (verbose) {
@@ -649,11 +662,14 @@ int CTarTest::Run(void)
     }
 
     CStopWatch sw(CStopWatch::eStart);
-    if (!tar.get()) {
+    if (!tar) {
         _ASSERT(action == eExtract  &&  stream  &&  n == 1);
         if (!io) {
             _ASSERT(!file.empty()  &&  !zip  &&  !ifs.is_open());
             ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
+            if (ioexcpts) {
+                ifs.exceptions(~NcbiGoodbit);
+            }
             if (!ifs.good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
             }
@@ -666,11 +682,16 @@ int CTarTest::Run(void)
         }
         CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                CRWStreambuf::fLogExceptions));
+        if (ioexcpts) {
+            rs.exceptions(~NcbiGoodbit);
+        }
         CNcbiOfstream of;
-        bool tocout = args["O"].HasValue();
         if (!tocout  ||  pipethru) {
             of.open(!tocout ? args[1].AsString().c_str() : DEVNULL,
                     IOS_BASE::trunc | IOS_BASE::out | IOS_BASE::binary);
+            if (ioexcpts) {
+                of.exceptions(~NcbiGoodbit);
+            }
         }
         if (!NcbiStreamCopy(!tocout  ||  pipethru ? of : NcbiCout, rs)) {
             // NB: CTar would throw archive read exception
@@ -689,10 +710,7 @@ int CTarTest::Run(void)
             tar->SetBaseDir(args["C"].AsString());
         }
         tar->SetMask(exclude.get(), eNoOwnership, CTar::eExcludeMask);
-        if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
-            if (!n) {
-                NCBI_THROW(CArgException, eInvalidArg, "Must specify file(s)");
-            }
+        if (action == eAppend  ||  action == eUpdate  ||  action == eCreate) {
             if (action == eCreate) {
                 tar->Create();
             }
@@ -709,7 +727,7 @@ int CTarTest::Run(void)
                     _ASSERT(n  &&  !io);
                     add = tar->Update(name);
                 } else if (stream) {
-                    add = x_Append(*tar, name);
+                    add = x_Append(*tar, name, ioexcpts);
                 } else {
                     add = tar->Append(name);
                 }
@@ -749,7 +767,7 @@ int CTarTest::Run(void)
                 } else {
                     unique_ptr<CTar::TEntries> entries = tar->List();
                     if (m_Flags & fVerbose) {
-                        ITERATE(CTar::TEntries, it, *entries.get()) {
+                        ITERATE(CTar::TEntries, it, *entries) {
                             NcbiCerr << *it << x_Pos(*it) << NcbiEndl;
                         }
                     }
@@ -768,13 +786,18 @@ int CTarTest::Run(void)
                     _ASSERT(ir);
                     CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                            CRWStreambuf::fLogExceptions));
+                    if (ioexcpts) {
+                        rs.exceptions(~NcbiGoodbit);
+                    }
                     CNcbiOfstream of;
-                    bool tocout = args["O"].HasValue();
                     if (!tocout  ||  pipethru) {
                         of.open(!tocout ? info->GetName().c_str() : DEVNULL,
                                 IOS_BASE::trunc |
                                 IOS_BASE::out   |
                                 IOS_BASE::binary);
+                        if (ioexcpts) {
+                            of.exceptions(~NcbiGoodbit);
+                        }
                     }
                     if (!NcbiStreamCopy(!tocout || pipethru ? of:NcbiCout,rs)){
                         // NB: CTar would throw archive read exception
@@ -790,7 +813,7 @@ int CTarTest::Run(void)
             } else {
                 unique_ptr<CTar::TEntries> entries = tar->Extract();
                 if (m_Flags & fVerbose) {
-                    ITERATE(CTar::TEntries, it, *entries.get()) {
+                    ITERATE(CTar::TEntries, it, *entries) {
                         NcbiCerr << "x " << it->GetName() + x_Pos(*it)
                                  << NcbiEndl;
                     }
@@ -812,10 +835,10 @@ int CTarTest::Run(void)
             }
         }
     }
-    Uint8 pos = tar.get() ? tar->GetCurrentPosition() : 0;
+    Uint8 pos = tar ? tar->GetCurrentPosition() : 0;
 
     zs.reset(0);       // make sure zip stream gets finalized...
-    stdio.flush();
+    io.reset(0);
     if (ofs.is_open()) {
         ofs.close();   // ...before the output file gets closed
     }
