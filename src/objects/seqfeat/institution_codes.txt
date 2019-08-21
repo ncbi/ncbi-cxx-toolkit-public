@@ -4983,6 +4983,9 @@ NMI	s	National Museum of Ireland	NMID
 NMI<POL>	c	Bacteria collection of National Institute of Public Health, National Medicines Institute, Poland			
 NMID	s	National Museum of Ireland	NMD		
 NMK	s	National Museums of Kenya			
+NMK:HERP	s	National Museums of Kenya, Herpetology Collection	
+NMK:ICH	s	National Museums of Kenya, Ichthyology collection	
+NMK:ORN	s	National Museums of Kenya, Ornithology Collection	
 NMKE	s	National Museum of Kenya	MK		
 NMKL	s	National Museum of Malaysia			
 NML	c	National Microbiology Laboratory, Public Health Agency of Canada	NML-HCCC		
