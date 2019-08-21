@@ -1653,7 +1653,7 @@ const CTarEntryInfo* CTar::GetNextEntryInfo(void)
         x_Open(eInternal);
     }
     unique_ptr<TEntries> temp = x_ReadAndProcess(eInternal);
-    _ASSERT(temp.get()  &&  temp->size() < 2);
+    _ASSERT(temp  &&  temp->size() < 2);
     if (temp->size() < 1) {
         return 0;
     }
@@ -3439,7 +3439,7 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
             }
             umask(u);
 #endif //NCBI_OS_UNIX
-            if (pending.get()) {
+            if (pending) {
                 if (extract) {
                     pending->Release();
                 } else if (!pending->Restore()) {  // Undo delete
@@ -4254,7 +4254,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
     case CDirEntry::eDir:
         dir.reset(CDir(path).GetEntriesPtr(kEmptyStr, CDir::eIgnoreRecursive));
-        if (!dir.get()) {
+        if (!dir) {
             int x_errno = CNcbiError::GetLast().Code();
             string error =
                 "Cannot list directory '" + path + '\'' + s_OSReason(x_errno);
@@ -4669,7 +4669,7 @@ IReader* CTar::Extract(CNcbiIstream& is,
 
     tar->x_Open(eInternal);
     unique_ptr<TEntries> temp = tar->x_ReadAndProcess(eInternal);
-    _ASSERT(temp.get()  &&  temp->size() < 2);
+    _ASSERT(temp  &&  temp->size() < 2);
     if (temp->size() < 1) {
         return 0;
     }
