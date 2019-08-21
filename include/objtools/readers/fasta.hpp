@@ -179,7 +179,7 @@ public:
 
     NCBI_DEPRECATED void SetModFilter( CRef<CSourceModParser::CModFilter> /*pModFilter*/ ) {}
 
-    NCBI_DEPRECATED void SetModFilter(FModFilter mod_filter) {}
+    NCBI_DEPRECATED void SetModFilter(FModFilter) {}
 
     void SetExcludedMods(const vector<string>& excluded_mods) {
         m_ExcludedMods = excluded_mods;
