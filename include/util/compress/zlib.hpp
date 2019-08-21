@@ -524,10 +524,10 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CZipCompressor -- zlib based decompressor
+/// CZipDecompressor -- zlib based decompressor
 ///
-/// Used in CZipStreamCompressor.
-/// @sa CZipStreamCompressor, CZipCompression, CCompressionProcessor
+/// Used in CZipStreamDecompressor.
+/// @sa CZipStreamDecompressor, CZipCompression, CCompressionProcessor
 
 class NCBI_XUTIL_EXPORT CZipDecompressor : public CZipCompression,
                                            public CCompressionProcessor
