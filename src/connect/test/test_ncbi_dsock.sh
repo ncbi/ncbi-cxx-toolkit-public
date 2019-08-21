@@ -24,10 +24,8 @@ client_log=test_ncbi_dsock_client.log
 
 rm -f $port $server_log $client_log
 
-if [ -x /sbin/ifconfig ]; then
-  if [ "`arch`" = "x86_64" ]; then
-    mtu="`/sbin/ifconfig lo 2>&1 | grep 'MTU:' | sed 's/^.*MTU:\([0-9][0-9]*\).*$/\1/'`"
-  fi
+if [ -x /sbin/ifconfig -a "`arch`" = "x86_64" ]; then
+  mtu="`/sbin/ifconfig lo 2>&1 | grep -iw mtu | sed 's/	/ /g;s/  */ /g;s/^.*[Mm][Tt][Uu][: ]*\([0-9][0-9]*\).*$/\1/'`"
 fi
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT

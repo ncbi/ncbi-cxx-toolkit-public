@@ -402,9 +402,9 @@ int main(int argc, const char* argv[])
 
     if (argc > 3) {
         int mtu = atoi(argv[3]);
-        s_MTU = 28 < mtu  &&  mtu < s_MTU
-            ? (mtu - 28/*IP(20)/UDP(8) overhead*/)
-            :  mtu;
+        s_MTU = 28 < mtu
+            ? mtu - 28/*IP(20)/UDP(8) overhead*/
+            : mtu;
         CORE_LOGF(eLOG_Note, ("MTU = %d/%d/%d",
                               s_MTU, MAX_DGRAM_SIZE, MAX_UDP_DGRAM_SIZE));
     }
