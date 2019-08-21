@@ -161,10 +161,19 @@ ENa_strand s_IndexToStrand(size_t idx)
     s_IndexToStrand(idx)
 
 
+CSeq_loc_Mapper_Options& SetOptionsScope(CSeq_loc_Mapper_Options& options, CScope* scope)
+{
+    if (!options.GetMapperSequenceInfo()) {
+        options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope));
+    }
+    return options;
+}
+
+
 CSeq_loc_Mapper::CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
-                                 CScope*         scope)
-    : CSeq_loc_Mapper_Base(mapping_ranges,
-                           CSeq_loc_Mapper_Options(new CScope_Mapper_Sequence_Info(scope))),
+                                 CScope*         scope,
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(mapping_ranges, SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
 }
@@ -172,8 +181,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                                  EFeatMapDirection dir,
-                                 CScope*           scope)
-    : CSeq_loc_Mapper_Base(CSeq_loc_Mapper_Options(new CScope_Mapper_Sequence_Info(scope))),
+                                 CScope*           scope,
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeFeat(map_feat, dir);
@@ -182,8 +192,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
                                  const CSeq_loc& target,
-                                 CScope*         scope)
-    : CSeq_loc_Mapper_Base(CSeq_loc_Mapper_Options(new CScope_Mapper_Sequence_Info(scope))),
+                                 CScope*         scope,
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeLocs(source, target);
@@ -194,7 +205,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align&       map_align,
                                  const CSeq_id&          to_id,
                                  CScope*                 scope,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeAlign(map_align, to_id);
@@ -205,7 +216,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align&       map_align,
                                  size_t                  to_row,
                                  CScope*                 scope,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeAlign(map_align, to_row);
@@ -217,7 +228,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_id&          from_id,
                                  const CSeq_align&       map_align,
                                  CScope*                 scope,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeAlign(map_align, to_id, &from_id);
@@ -229,7 +240,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                  from_row,
                                  const CSeq_align&       map_align,
                                  CScope*                 scope,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeAlign(map_align, to_row, from_row);
@@ -239,8 +250,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                  from_row,
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                                  ESeqMapDirection direction,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(
-                           &target_seq.GetScope()))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, &target_seq.GetScope())),
       m_Scope(&target_seq.GetScope())
 {
     CConstRef<CSeq_id> top_level_id = target_seq.GetSeqId();
@@ -271,7 +281,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeSeqMap(seq_map, top_level_id, direction);
@@ -283,8 +293,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                                  ESeqMapDirection direction,
                                  SSeqMapSelector  selector,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(
-                           &target_seq.GetScope()))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, &target_seq.GetScope())),
       m_Scope(&target_seq.GetScope())
 {
     CConstRef<CSeq_id> top_id = target_seq.GetSeqId();
@@ -315,7 +324,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     x_InitializeSeqMap(seq_map,
@@ -330,8 +339,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
                                  const CBioseq_Handle&  top_level_seq,
                                  ESeqMapDirection       direction,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(
-                           &top_level_seq.GetScope()))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, &top_level_seq.GetScope())),
       m_Scope(&top_level_seq.GetScope())
 {
     if (depth > 0) {
@@ -358,7 +366,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     if (depth > 0) {
@@ -402,7 +410,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  CScope*             scope,
                                  EScopeFlag          scope_flag,
                                  CSeq_loc_Mapper_Options options)
-    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+    : CSeq_loc_Mapper_Base(SetOptionsScope(options, scope)),
       m_Scope(scope)
 {
     // While parsing GC-Assembly the mapper will need to add virtual

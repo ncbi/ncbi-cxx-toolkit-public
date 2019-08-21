@@ -94,19 +94,22 @@ public:
     ///  they must be registered using SetSeqTypeById.
     /// @sa SetSeqTypeById
     CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
-                    CScope*         scope = 0);
+                    CScope*         scope = 0,
+                    CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Mapping through a feature, both location and product must be set.
     /// If scope is set, synonyms are resolved for each source ID.
     CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                     EFeatMapDirection dir,
-                    CScope*           scope = 0);
+                    CScope*           scope = 0,
+                    CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Mapping between two seq_locs. If scope is set, synonyms are resolved
     /// for each source ID.
     CSeq_loc_Mapper(const CSeq_loc&   source,
                     const CSeq_loc&   target,
-                    CScope*           scope = 0);
+                    CScope*           scope = 0,
+                    CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Mapping through an alignment. Need to specify target ID or
     /// target row of the alignment. Any other ID is mapped to the
