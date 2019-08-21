@@ -318,9 +318,9 @@ protected:
     };
     TSeqPos GetCurrentPos(EPosType pos_type);
 
-    NCBI_DEPRECATED void x_ApplyAllMods(CBioseq & bioseq, 
-        TSeqPos iLineNum, 
-        ILineErrorListener * pMessageListener) {}
+    NCBI_DEPRECATED void x_ApplyAllMods(CBioseq & /*bioseq*/, 
+        TSeqPos /*iLineNum*/, 
+        ILineErrorListener * /*pMessageListener*/) {}
 
     std::string x_NucOrProt(void) const;
 
