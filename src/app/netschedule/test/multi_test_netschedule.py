@@ -267,7 +267,7 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
     process = Popen( cmdLine, stdin = PIPE,
                      stdout = PIPE, stderr = errStream )
     process.stdin.close()
-    processStdout = process.stdout.read()   # analysis:ignore
+    processStdout = process.stdout.read().decode('utf-8')   # analysis:ignore
     process.stdout.close()
     errStream.seek( 0 )
     err = errStream.read()
@@ -288,8 +288,7 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
 def createSandbox():
     " Creates a sandbox and provides the path to it "
 
-    basePath = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
-            os.path.sep
+    basePath = os.path.dirname(os.path.abspath(sys.argv[0])) + os.path.sep
     path = basePath + "sandbox" + os.path.sep
 
     if not os.path.exists( path ):
