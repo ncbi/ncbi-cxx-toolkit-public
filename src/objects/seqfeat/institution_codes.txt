@@ -3381,6 +3381,7 @@ KBFH	s	Kurdistan Botanical Foundation
 KBG<JPN>	b	Kyoto Botanical Garden			
 KBHG	s	H. M. Berbekov Kabardian-Balkarian State University, Department of Botany			
 KBM	s	Balaton Museum			
+KBP MSU	c	Yeast collection of the Soil Biology Department in Lomonosov Moscow State University			
 KBRYO	s	Centre College of Kentucky			
 KBSMS	s	Kellogg Biological Station, Michigan State University			
 KBT	s	Stewarty Museum			

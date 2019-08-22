@@ -3414,6 +3414,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KBG<JPN>\tb\tKyoto Botanical Garden\t\t\t",
 "KBHG\ts\tH. M. Berbekov Kabardian-Balkarian State University, Department of Botany\t\t\t",
 "KBM\ts\tBalaton Museum\t\t\t",
+"KBP MSU\tc\tYeast collection of the Soil Biology Department in Lomonosov Moscow State University\t\t\t",
 "KBRYO\ts\tCentre College of Kentucky\t\t\t",
 "KBSMS\ts\tKellogg Biological Station, Michigan State University\t\t\t",
 "KBT\ts\tStewarty Museum\t\t\t",
