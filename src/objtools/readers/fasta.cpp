@@ -2115,6 +2115,12 @@ static void s_AppendMods(
 }
 
 
+void CFastaReader::SetExcludedMods(const vector<string>& excluded_mods)
+{
+    m_ModHandler.SetExcludedMods(excluded_mods);
+}
+
+
 void CFastaReader::x_ApplyMods(     
      const string& title, 
      TSeqPos line_number, 
@@ -2134,16 +2140,13 @@ void CFastaReader::x_ApplyMods(
         CDefaultModErrorReporter 
             errorReporter(idString, line_number, pMessageListener);
 
-        CModHandler mod_handler;
-        if (!m_ExcludedMods.empty()) {
-            mod_handler.SetExcludedMods(m_ExcludedMods);
-        }
         CModHandler::TModList rejected_mods;
-        mod_handler.AddMods(mods, CModHandler::eReplace, rejected_mods, errorReporter);
+        m_ModHandler.Clear();
+        m_ModHandler.AddMods(mods, CModHandler::eReplace, rejected_mods, errorReporter);
         s_AppendMods(rejected_mods, remainder);
 
         CModHandler::TModList skipped_mods;
-        CModAdder::Apply(mod_handler, bioseq, skipped_mods, errorReporter);
+        CModAdder::Apply(m_ModHandler, bioseq, skipped_mods, errorReporter);
         s_AppendMods(skipped_mods, remainder);
 
         processed_title = remainder;

@@ -48,6 +48,7 @@
 #include <objtools/readers/source_mod_parser.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
+#include <objtools/readers/mod_reader.hpp>
 
 #include <stack>
 #include <sstream>
@@ -181,9 +182,7 @@ public:
 
     NCBI_DEPRECATED void SetModFilter(FModFilter) {}
 
-    void SetExcludedMods(const vector<string>& excluded_mods) {
-        m_ExcludedMods = excluded_mods;
-    }
+    void SetExcludedMods(const vector<string>& excluded_mods);
 
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length. Overrides the id lengths specified in class CSeq_id.
@@ -325,7 +324,7 @@ protected:
     std::string x_NucOrProt(void) const;
 
 private: 
-    vector<string> m_ExcludedMods;
+    CModHandler m_ModHandler;
 
     void x_ApplyMods(const string& title, 
                      TSeqPos line_number,
