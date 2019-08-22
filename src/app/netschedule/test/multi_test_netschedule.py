@@ -1,4 +1,4 @@
-#!/opt/python-all/bin/python2 -u
+#!/usr/bin/env python
 #
 # Authors: Sergey Satskiy
 #
@@ -57,7 +57,7 @@ def safeRunWithStderr( commandArgs ):
     process = Popen( commandArgs, stdin = PIPE,
                      stdout = PIPE, stderr = errStream )
     process.stdin.close()
-    processStdout = process.stdout.read()
+    processStdout = process.stdout.read().decode('utf-8')
     process.stdout.close()
     errStream.seek( 0 )
     err = errStream.read()
@@ -85,11 +85,10 @@ def safeRunWithStderr( commandArgs ):
                      (commandArgs[0], err) )
 
 
-def parserError( parser, message ):
+def parserError(parser, message):
     " Prints the message and help on stderr "
-
     sys.stdout = sys.stderr
-    print message
+    print(message)
     parser.print_help()
     return 1
 
@@ -132,8 +131,7 @@ def main():
     # the directory where NS is.
     nsList = buildExecutablesList( args )
     if len( nsList ) == 0:
-        print >> sys.stderr, "No netscheduled binaries are found at " + \
-                             str( args ) + ". Exiting."
+        print("No netscheduled binaries are found at " + str(args) + ". Exiting.", file=sys.stderr)
         return 0
 
     # Test all the combinations of the grid_cli components and NSs
@@ -141,9 +139,9 @@ def main():
     trimNSLogFile( tempPath )
 
     if options.verbose:
-        print "Found NS versions: " + str( nsList )
-        print "Grid locations: " + str( GRID_CLI_PATHS )
-        print "Sandbox: " + tempPath
+        print("Found NS versions: " + str(nsList))
+        print("Grid locations: " + str(GRID_CLI_PATHS))
+        print("Sandbox: " + tempPath)
 
     numberOfFailed = 0
     for oneNS in nsList:
@@ -215,14 +213,14 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
     logging.info( combination )
 
     if verbose:
-        print combination
+        print(combination)
 
     # Copy binaries to the sandbox
     if os.system( "cp -p " + nsPath + " " + \
                   sandboxPath + os.path.sep + "netscheduled" ) != 0:
-        print >> sys.stderr, combination
-        print >> sys.stderr, "Error copying binary to sandbox: " + nsPath
-        print >> sys.stderr, ""
+        print(combination, file=sys.stderr)
+        print("Error copying binary to sandbox: " + nsPath, file=sys.stderr)
+        print("", file=sys.stderr)
         logging.error( "Error copying binary to sandbox: " + nsPath )
         return 1
 
@@ -230,23 +228,23 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
         nsVersion = guessNSVersion( sandboxPath + os.path.sep + "netscheduled",
                                     nsPath, latestNetscheduleVersion )
         if verbose:
-            print "Detected NS version: " + nsVersion
+            print("Detected NS version: " + nsVersion)
     else:
         nsVersion = nsVer
 
 
     # Now, run the script which prepares the grid_cli stuff
     if verbose:
-        print "rm -rf " + sandboxPath + "ncbi_grid_1_0"
-    os.system( "rm -rf " + sandboxPath + "ncbi_grid_1_0" )
+        print("rm -rf " + sandboxPath + "ncbi_grid_1_0")
+    os.system("rm -rf " + sandboxPath + "ncbi_grid_1_0")
     if verbose:
-        print sandboxPath + "make_ncbi_grid_module_tree.sh " + gcPath + \
-                  " " + sandboxPath + "ncbi_grid_1_0"
+        print(sandboxPath + "make_ncbi_grid_module_tree.sh " + gcPath +
+              " " + sandboxPath + "ncbi_grid_1_0")
     if os.system( sandboxPath + "make_ncbi_grid_module_tree.sh " + gcPath +
                   " " + sandboxPath + "ncbi_grid_1_0" ) != 0:
-        print >> sys.stderr, combination
-        print >> sys.stderr, "Error creating grid_cli stuff in sandbox: " + gcPath
-        print >> sys.stderr, ""
+        print(combination, file=sys.stderr)
+        print("Error creating grid_cli stuff in sandbox: " + gcPath, file=sys.stderr)
+        print("", file=sys.stderr)
         logging.error( "Error creating grid_cli stuff in sandbox: " + gcPath )
         return 1
 
@@ -262,7 +260,7 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
 
     if verbose:
         cmdLine += [ "--verbose" ]
-        print "Executing command: " + " ".join( cmdLine )
+        print("Executing command: " + " ".join(cmdLine))
 
     errTmp = tempfile.mkstemp()
     errStream = os.fdopen( errTmp[ 0 ] )
@@ -278,8 +276,8 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
     os.unlink( errTmp[ 1 ] )
 
     if process.returncode != 0:
-        print >> sys.stderr, err
-        print >> sys.stderr, ""
+        print(err, file=sys.stderr)
+        print("", file=sys.stderr)
         logging.error( "Test failed" )
         return 1
 
@@ -344,7 +342,7 @@ def checkPrerequisites():
     basePath = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
                os.path.sep
 
-    if not os.environ.has_key( "NCBI" ):
+    if "NCBI" not in os.environ:
         raise Exception( "$NCBI variable must be set before running the script" )
 
     for fName in configFiles:
@@ -416,74 +414,6 @@ def buildExecutablesList( paths ):
             result.append( (path, None) )
     return result
 
-#def getCacheFileName():
-#    " provides the file name where tested cache is stored "
-#    return os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
-#           os.path.sep + "already_tested.cache"
-
-#def getTestedCache():
-#    " Reads the tested files cache "
-#    cache = {}
-#    fName = getCacheFileName()
-#
-#    if not os.path.exists( fName ):
-#        return
-#    f = open( fName, "r" )
-#    for line in f:
-#        line = line.strip()
-#        if line == "":
-#            continue
-#        if line.startswith( '#' ):
-#            continue
-#        parts = line.split()
-#        if len( parts ) != 2:
-#            raise Exception( "Cache file malformed" )
-#        cache[ parts[ 0 ] ] = parts[ 1 ]
-#    return cache
-
-#def getMD5( path ):
-#    " Provides the MD5 sum for the given file "
-#    f = open( path, "rb" )
-#    md5Sum = md5.new()
-#    while 1:
-#        block = f.read( 1024 * 1024 )
-#        if not block:
-#            break
-#        md5Sum.update( block )
-#    f.close()
-#    digest = md5Sum.digest()
-#    return ( "%02x"*len( digest ) ) % tuple( map( ord, digest ) )
-
-#def updateTestedCache( fName ):
-#    " Updates the cached MD5 for the given link "
-#    cache = getTestedCache()
-#    cache[ fName ] = getMD5( os.path.realpath( fName ) )
-#    f = open( getCacheFileName(), "w" )
-#    for key in cache:
-#        f.write( key + " " + cache[ key ] + "\n" )
-#    f.close()
-#    return
-
-#def excludeTested( files ):
-#    """ Excludes those files which have already been tested.
-#        Returns the number of excluded paths. """
-#
-#    cache = getTestedCache()
-#
-#    result = []
-#    count = 0
-#    for index in xrange( 0, len( files ) ):
-#        if cache.has_key( files[ index ] ):
-#            abspath = os.path.realpath( files[ index ] )
-#            # Check the new MD5
-#            if cache[ files[ index ] ] == getMD5( abspath ):
-#                # The same, no need
-#                count += 1
-#                continue
-#        result.append( files[ index ] )
-#    return count
-
-
 
 # The script execution entry point
 if __name__ == "__main__":
@@ -491,13 +421,13 @@ if __name__ == "__main__":
         returnValue = main()
     except KeyboardInterrupt:
         # Ctrl+C
-        print >> sys.stderr, "Ctrl + C received"
+        print("Ctrl + C received", file=sys.stderr)
         logging.error( "Tests have been interrupted (Ctrl+C)" )
         returnValue = 2
 
-    except Exception, excpt:
-        print >> sys.stderr, str( excpt )
-        logging.error( str( excpt ) )
+    except Exception as excpt:
+        print(str(excpt), file=sys.stderr)
+        logging.error(str(excpt))
         returnValue = 1
 
-    sys.exit( returnValue )
+    sys.exit(returnValue)

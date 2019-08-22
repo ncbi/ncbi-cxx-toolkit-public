@@ -22,13 +22,13 @@ COMMUNICATION_TIMEOUT = 25
 
 def printStderr( msg ):
     " Prints onto stderr with a prefix "
-    print >> sys.stderr, "NetSchedule commands script. " + msg
+    print("NetSchedule commands script. " + msg, file=sys.stderr)
     return
 
 def printVerbose( msg ):
     " Prints stdout message conditionally "
     if VERBOSE:
-        print msg
+        print(msg)
     return
 
 
@@ -237,7 +237,7 @@ class NSCommandsSender:
             printVerbose( "Sending " + command + " command..." )
             self.__commands[ command ]()
             printVerbose( "Finished" )
-        except Exception, exc:
+        except Exception as exc:
             if self.__allowExceptions:
                 raise
             printStderr( str( exc ) )
@@ -307,12 +307,14 @@ class NSCommandsSender:
 
     def __setscope( self ):
         self.__nsConnect.execute( "SETSCOPE scope=myscope", False )
-        jobKey = self.__submit()
+        # jobKey = 
+        self.__submit()
         return
 
     def __statscope( self ):
         self.__nsConnect.execute( "SETSCOPE scope=myscope", False )
-        jobKey = self.__submit()
+        # jobKey = 
+        self.__submit()
         self.__nsConnect.execute( "STAT SCOPES VERBOSE", False )
         return
 
@@ -686,7 +688,7 @@ if __name__ == "__main__":
         # Ctrl+C
         printStderr( "Ctrl + C received" )
         returnValue = 1
-    except Exception, excpt:
+    except Exception as excpt:
         printStderr( str( excpt ) )
         returnValue = 2
     except:

@@ -232,7 +232,7 @@ class Scenario102( TestBase ):
 
         try:
             self.ns.getVersion( node = "my_node", session = "" )
-        except Exception, exc:
+        except Exception as exc:
             if "client_node is provided but " \
                "client_session is not" in str( exc ):
                 return True
@@ -258,7 +258,7 @@ class Scenario103( TestBase ):
 
         try:
             self.ns.getVersion( node = "", session = "my_session" )
-        except Exception, exc:
+        except Exception as exc:
             if "client_session is provided " \
                "but client_node is not" in str( exc ):
                 return True
@@ -583,7 +583,7 @@ class Scenario113( TestBase ):
         # To touch the clients registry with another session
         self.ns.submitJob( 'TEST', 'bla2', '', '', 'mynode', 'changedsession' )
         client = getClientInfo( ns_client, 'mynode' )
-        if client.has_key( 'running_jobs' ):
+        if 'running_jobs' in client:
             raise Exception( "Running job is still there" )
 
         # Check the status
@@ -627,7 +627,7 @@ class Scenario114( TestBase ):
 
         execAny( ns_client, 'CLRN' )
         client = getClientInfo( ns_client, 'mynode' )
-        if client.has_key( 'running_jobs' ):
+        if 'running_jobs' in client:
             raise Exception( "Running job is still there" )
 
         # Check the status
@@ -671,7 +671,7 @@ class Scenario115( TestBase ):
                                                            'session1' )
 
         client = getClientInfo( ns_client, 'mynode' )
-        if client.has_key( 'running_jobs' ):
+        if 'running_jobs' in client:
             raise Exception( "Running job is still there" )
         if client[ 'number_of_jobs_given_for_reading' ] != 1:
             raise Exception( "Unexpected number of running jobs" )
@@ -721,7 +721,7 @@ class Scenario116( TestBase ):
                                                            'session1' )
 
         client = getClientInfo( ns_client, 'mynode' )
-        if not client.has_key( 'reading_jobs' ):
+        if 'reading_jobs' not in client:
             raise Exception( "Reading job is not found" )
         if client[ 'number_of_jobs_given_for_reading' ] != 1:
             raise Exception( "Unexpected number of running jobs" )
@@ -729,7 +729,7 @@ class Scenario116( TestBase ):
         execAny( ns_client, 'CLRN' )
 
         client = getClientInfo( ns_client, 'mynode' )
-        if client.has_key( 'reading_jobs' ):
+        if 'reading_jobs' in client:
             raise Exception( "Reading job is still there" )
         if client[ 'number_of_jobs_given_for_reading' ] != 1:
             raise Exception( "Unexpected number of running jobs" )
@@ -797,7 +797,7 @@ class Scenario118( TestBase ):
             except:
                 pass
             changeAffinity( ns_client, [ 'a1' ], [] )
-        except Exception, excp:
+        except Exception as excp:
             if "cannot use CHAFF command" in str( excp ):
                 return True
             raise
@@ -954,7 +954,7 @@ class Scenario123( TestBase ):
 
         execAny( ns_client, 'CLRN' )
         client = getClientInfo( ns_client, 'node' )
-        if client.has_key( 'number_of_preferred_affinities' ):
+        if 'number_of_preferred_affinities' in client:
             if client[ 'number_of_preferred_affinities' ] != 0:
                 raise Exception( "Expected no preferred affinities, got some." )
         return True
@@ -983,7 +983,7 @@ class Scenario124( TestBase ):
         self.ns.submitJob( 'TEST', 'bla', '', '', 'node', 'other_session' )
 
         client = getClientInfo( ns_client, 'node' )
-        if client.has_key( 'number_of_preferred_affinities' ):
+        if 'number_of_preferred_affinities' in client:
             if client[ 'number_of_preferred_affinities' ] != 0:
                 raise Exception( "Expected no preferred affinities, got some." )
         return True
@@ -1012,7 +1012,7 @@ class Scenario125( TestBase ):
                 pass
             output = execAny( ns_client,                       # analysis:ignore
                               'GET2 wnode_aff=1 any_aff=1' )
-        except Exception, exc:
+        except Exception as exc:
             if "Anonymous client" in str( exc ):
                 return True
             raise
@@ -1454,7 +1454,7 @@ class Scenario138( TestBase ):
         try:
             # Job is unknown, but the key format is just fine
             self.ns.returnJob( "TEST", NON_EXISTED_JOB, ANY_AUTH_TOKEN )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ) or \
                "eJobNotFound" in str( exc ):
                 return True
@@ -1535,7 +1535,7 @@ class Scenario141( TestBase ):
 
         try:
             self.ns.getServerConfiguration()
-        except Exception, exc:
+        except Exception as exc:
             if "Access denied: admin privileges required" in str( exc ):
                 return True
             raise
@@ -2183,7 +2183,7 @@ class Scenario156( TestBase ):
             self.ns.rollbackRead2( 'TEST', jobID, badPassport,
                                    'mynode', 'mysession' )
             raise Exception( "Wrong RDRB but no exception" )
-        except Exception, excpt:
+        except Exception as excpt:
             if "Authorization token does not match" not in str( excpt ):
                 raise
 
@@ -2284,7 +2284,7 @@ class Scenario158( TestBase ):
             self.ns.failRead2( 'TEST', jobID, "7" + passport, "",
                                'mynode', 'mysession' )
             raise Exception( "Wrong FRED but no exception" )
-        except Exception, excpt:
+        except Exception as excpt:
             if "authorization" not in str( excpt ).lower():
                 raise
 
@@ -2342,7 +2342,7 @@ class Scenario159( TestBase ):
             self.ns.confirmRead2( 'TEST', jobID, passport,
                                 "mynode", "mysession" )
             raise Exception( "Expected error, got nothing" )
-        except Exception, exc:
+        except Exception as exc:
             if not "Canceled" in str( exc ):
                 raise
 
@@ -2405,7 +2405,7 @@ class Scenario161( TestBase ):
         jobID = self.ns.submitJob( 'TEST', 'bla' )
         info = self.ns.getJobInfo( 'TEST', jobID )
 
-        if info.has_key( "event" ):
+        if "event" in info:
             # grid 1.5
             return info[ 'event' ] == 'Submit' and \
                    info[ "node" ] == "" and \
@@ -2544,7 +2544,7 @@ class Scenario163( TestBase ):
         self.ns.failJob( 'TEST', jobID, jobInfo[ 1 ], 4 )
         info = self.ns.getJobInfo( 'TEST', jobID )
 
-        if info.has_key( "event" ):
+        if "event" in info:
             # grid 1.5
             return info[ 'event' ] == 'Fail' and \
                    info[ "status" ] == "Failed" and \
@@ -2581,7 +2581,7 @@ class Scenario164( TestBase ):
 
         info = self.ns.getJobInfo( 'TEST', jobID )
 
-        if info.has_key( "event" ):
+        if "event" in info:
             # grid 1.5
             return info[ 'event' ] == 'Timeout' and \
                    info[ "status" ] == "Failed" and \
@@ -3060,7 +3060,7 @@ class Scenario175( TestBase ):
 
         try:
             self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
-        except Exception, excpt:
+        except Exception as excpt:
             if 'Cannot accept job results' in str( excpt ):
                 return True
             raise
@@ -3085,7 +3085,7 @@ class Scenario176( TestBase ):
         try:
             self.ns.getJobProgressMessage( 'TEST', NON_EXISTED_JOB,
                                            'mynode', 'mysession' )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3112,7 +3112,7 @@ class Scenario177( TestBase ):
         try:
             self.ns.setJobProgressMessage( 'TEST', NON_EXISTED_JOB, 'msg',
                                            'mynode', 'mysession' )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3138,7 +3138,7 @@ class Scenario178( TestBase ):
         try:
             self.ns.putJob( 'TEST', NON_EXISTED_JOB, ANY_AUTH_TOKEN, 0, "",
                             'mynode', 'mysession' )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3164,7 +3164,7 @@ class Scenario179( TestBase ):
         try:
             self.ns.returnJob( 'TEST', NON_EXISTED_JOB, ANY_AUTH_TOKEN,
                                'mynode', 'mysession' )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3190,7 +3190,7 @@ class Scenario180( TestBase ):
         try:
             self.ns.getJobInfo( 'TEST', NON_EXISTED_JOB,
                                 'mynode', 'mysession' )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3216,7 +3216,7 @@ class Scenario181( TestBase ):
         try:
             self.ns.rollbackRead2( 'TEST', NON_EXISTED_JOB, 'passport',
                                    'node', 'session' )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3241,7 +3241,7 @@ class Scenario182( TestBase ):
         try:
             self.ns.failRead2( 'TEST', NON_EXISTED_JOB, 'passport', "",
                                'node', 'session' )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3266,7 +3266,7 @@ class Scenario183( TestBase ):
         try:
             self.ns.confirmRead2( 'TEST', NON_EXISTED_JOB, 'passport',
                                   "node", "session" )
-        except Exception, exc:
+        except Exception as exc:
             if "Job not found" in str( exc ):
                 return True
             raise
@@ -3300,8 +3300,8 @@ class Scenario184( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3335,8 +3335,8 @@ class Scenario185( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3369,8 +3369,8 @@ class Scenario186( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3403,8 +3403,8 @@ class Scenario187( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3465,8 +3465,8 @@ class Scenario188( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "[valid" in processStdout:
             return True
@@ -3476,11 +3476,11 @@ class Scenario188( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -3543,8 +3543,8 @@ class Scenario189( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "[valid" in processStdout:
             raise Exception( "Expect no notifications but received one" )
@@ -3553,11 +3553,11 @@ class Scenario189( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -3617,8 +3617,8 @@ class Scenario190( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "[valid" in processStdout:
             return True
@@ -3628,11 +3628,11 @@ class Scenario190( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -3705,11 +3705,11 @@ class Scenario191( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -3790,11 +3790,11 @@ class Scenario192( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -3869,11 +3869,11 @@ class Scenario193( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -4495,7 +4495,7 @@ class Scenario221( TestBase ):
 
         try:
             execAny( ns_client, 'CWGET' )
-        except Exception, exc:
+        except Exception as exc:
             if "no client_node and client_session at handshake" in str( exc ):
                 return True
             raise
@@ -4559,8 +4559,8 @@ class Scenario223( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()       # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')       # analysis:ignore
 
         if "[valid" in processStdout:
             raise Exception( "Receive notifications when not expected: " +
@@ -5340,7 +5340,7 @@ class Scenario246( TestBase ):
         try:
             execAny( ns_client,
                      'GET2 wnode_aff=0 any_aff=1' )
-        except Exception, exc:
+        except Exception as exc:
             if "Anonymous client" in str( exc ):
                 return True
             raise
@@ -5370,7 +5370,7 @@ class Scenario247( TestBase ):
 
         try:
             execAny( ns_client, 'PUT2 ' + NON_EXISTED_JOB + ' passport 0 77' )
-        except Exception, exc:
+        except Exception as exc:
             if "Anonymous client" in str( exc ):
                 return True
             raise
@@ -5400,7 +5400,7 @@ class Scenario248( TestBase ):
 
         try:
             execAny( ns_client, 'FPUT2 ' + NON_EXISTED_JOB + ' passport err_msg out 1' )
-        except Exception, exc:
+        except Exception as exc:
             if "Anonymous client" in str( exc ):
                 return True
             raise
@@ -5430,7 +5430,7 @@ class Scenario249( TestBase ):
 
         try:
             execAny( ns_client, 'RETURN2 ' + NON_EXISTED_JOB + ' passport' )
-        except Exception, exc:
+        except Exception as exc:
             if "Anonymous client" in str( exc ):
                 return True
             raise

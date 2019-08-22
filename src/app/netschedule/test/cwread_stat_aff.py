@@ -15,9 +15,6 @@ from optparse import OptionParser
 from multiprocessing import Process
 
 
-# Works for python 2.5. Python 2.7 has it in urlparse module
-from cgi import parse_qs
-
 
 VERBOSE = False
 COMMUNICATION_TIMEOUT = 25
@@ -25,14 +22,12 @@ COMMUNICATION_TIMEOUT = 25
 
 def printStderr( msg ):
     " Prints onto stderr with a prefix "
-    print >> sys.stderr, "NetSchedule commands script. " + msg
-    return
+    print("NetSchedule commands script. " + msg, file=sys.stderr)
 
 def printVerbose( msg ):
     " Prints stdout message conditionally "
     if VERBOSE:
-        print msg
-    return
+        print(msg)
 
 
 class UnexpectedNSResponse( Exception ):
@@ -165,7 +160,7 @@ def statAffinitiesProc( connectionPoint, queueName ):
                                "aff=a1 group=g1", False )
             nsConnect.execute( "STAT AFFINITIES VERBOSE", True )
             l += 1
-        except Exception, exc:
+        except Exception as exc:
             printStderr( "STAT AFFINITIES PROC error: " + str( exc ) )
             return
         except:
@@ -189,7 +184,7 @@ def cwreadProc( connectionPoint, queueName ):
                                False )
             nsConnect.execute( "CWREAD", False )
             l += 1
-        except Exception, exc:
+        except Exception as exc:
             printStderr( "CWREAD PROC error: " + str( exc ) )
             return
         except:
@@ -255,7 +250,7 @@ if __name__ == "__main__":
         # Ctrl+C
         printStderr( "Ctrl + C received" )
         returnValue = 1
-    except Exception, excpt:
+    except Exception as excpt:
         printStderr( str( excpt ) )
         returnValue = 2
     except:

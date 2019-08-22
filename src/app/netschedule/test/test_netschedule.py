@@ -1,4 +1,4 @@
-#!/opt/python-all/bin/python2 -u
+#!/usr/bin/env python
 #
 # Authors: Sergey Satskiy
 #
@@ -317,9 +317,8 @@ def getTimestamp():
 
 def parserError( parser, message ):
     " Prints the message and help on stderr "
-
     sys.stdout = sys.stderr
-    print message
+    print(message)
     parser.print_help()
     return 1
 
@@ -412,13 +411,13 @@ def main():
     checkDBPath( options.pathDB, options.verbose )
 
     if options.verbose:
-        print "Using netschedule path: " + options.pathNetschedule
-        print "Using grid_cli path: " + options.pathGridCli
-        print "Using DB path: " + options.pathDB
-        print "Starting tests from: " + options.start_from
+        print("Using netschedule path: " + options.pathNetschedule)
+        print("Using grid_cli path: " + options.pathGridCli)
+        print("Using DB path: " + options.pathDB)
+        print("Starting tests from: " + options.start_from)
         if test_count > 0:
-            print "Number of tests to run: " + options.count
-        print "NS version to test: " + options.version
+            print("Number of tests to run: " + options.count)
+        print("NS version to test: " + options.version)
 
     netschedule = None
     if options.verbose:
@@ -825,11 +824,11 @@ def main():
     failureCount = 0
     skippedCount = 0
     excludeList = []
-    if excludeTestsMap.has_key( options.version ):
+    if options.version in excludeTestsMap:
         excludeList = excludeTestsMap[ options.version ]
 
     if options.header != "":
-        print options.header
+        print(options.header)
 
     netschedule.safeStop()
     try:
@@ -838,9 +837,9 @@ def main():
 
             testID = str( aTest.getScenarioID() )
             if aTest.getScenarioID() in excludeList:
-                print getTimestamp() + " Test ID " + \
-                      str( aTest.getScenarioID() ) + " skipped. " \
-                      "It is in the exclude list for NS v." + options.version
+                print(getTimestamp() + " Test ID " +
+                      str(aTest.getScenarioID()) + " skipped. "
+                      "It is in the exclude list for NS v." + options.version)
                 skippedCount += 1
                 continue
 
@@ -849,24 +848,22 @@ def main():
                 succeeded = aTest.execute()
                 if succeeded:
                     successCount += 1
-                    print getTimestamp() + " Test ID " + \
-                          str( aTest.getScenarioID() ) + " succeeded"
+                    print(getTimestamp() + " Test ID " +
+                          str(aTest.getScenarioID()) + " succeeded")
                     sys.stdout.flush()
                 else:
-                    print >> sys.stderr, \
-                          getTimestamp() + " Test ID " + \
-                          str( aTest.getScenarioID() ) + " failed. " \
-                          "Scenario: " + aTest.getScenario()
+                    print(getTimestamp() + " Test ID " +
+                          str( aTest.getScenarioID() ) + " failed. "
+                          "Scenario: " + aTest.getScenario(), file=sys.stderr)
                     sys.stderr.flush()
                     failureCount += 1
-            except Exception, exct:
+            except Exception as exct:
 #                raise
                 failureCount += 1
-                print >> sys.stderr, \
-                      getTimestamp() + " Test ID " + \
-                      str( aTest.getScenarioID() ) + " failed. " \
-                      "Scenario: " + aTest.getScenario() + "\n" \
-                      "Exception:\n" + str( exct )
+                print(getTimestamp() + " Test ID " +
+                      str(aTest.getScenarioID()) + " failed. "
+                      "Scenario: " + aTest.getScenario() + "\n"
+                      "Exception:\n" + str(exct))
                 sys.stderr.flush()
             netschedule.safeStop()
             if os.path.exists( "valgrind.out" ):
@@ -885,9 +882,9 @@ def main():
         os.chdir( oldcwd )
 #        raise
 
-    print getTimestamp() + " Total succeeded: " + str( successCount )
-    print getTimestamp() + " Total skipped: " + str( skippedCount )
-    print getTimestamp() + " Total failed: " + str( failureCount )
+    print(getTimestamp() + " Total succeeded: " + str(successCount))
+    print(getTimestamp() + " Total skipped: " + str(skippedCount))
+    print(getTimestamp() + " Total failed: " + str(failureCount))
 
     if failureCount > 0:
         return 1
@@ -901,11 +898,11 @@ if __name__ == "__main__":
         returnValue = main()
     except KeyboardInterrupt:
         # Ctrl+C
-        print >> sys.stderr, "Ctrl + C received"
+        print("Ctrl + C received", file=sys.stderr)
         returnValue = 2
 
-    except Exception, excpt:
-        print >> sys.stderr, str( excpt )
+    except Exception as excpt:
+        print(str(excpt), file=sys.stderr)
 #        raise
         returnValue = 1
 

@@ -45,7 +45,7 @@ class Connection:
         s = self.socket = socket.socket()
         try: s.connect((self.host, self.port))
         except:
-            print "Can't connect to %s:%d" % (self.host, self.port)
+            print("Can't connect to %s:%d" % (self.host, self.port))
             raise NSException(-1)
 
     def login(self):
@@ -60,7 +60,7 @@ class Connection:
         if parts[0] == "ERR":
             err_parts = parts[1].split(':')
             if err_parts[0] == "QUEUE_NOT_FOUND" or err_parts[0] == "eUnknownQueue":
-                print "Unknown queue: %s" % self.queue
+                print("Unknown queue: %s" % self.queue)
                 raise NSException(-2)
             elif err_parts[0] == "eProtocolSyntaxError":
                 srv_gen = 1

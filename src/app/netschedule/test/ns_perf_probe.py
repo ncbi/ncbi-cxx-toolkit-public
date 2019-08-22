@@ -1,4 +1,4 @@
-#!/opt/python-2.7/bin/python -u
+#!/usr/bin/env python
 #
 # Authors: Sergey Satskiy
 #
@@ -19,7 +19,7 @@ from datetime import datetime
 def parserError( parser_, message ):
     " Prints the message and help on stderr "
     sys.stdout = sys.stderr
-    print message
+    print(message)
     parser_.print_help()
     return
 
@@ -124,8 +124,8 @@ def main():
         runtime = str( runtime.total_seconds() ).split( '.' )[ 0 ]
 
         if lastTotalSubmits is None:
-            print "Timestamp,seconds since server started,total submits"
-        print formatTimestamp( currentDate ) + "," + runtime + "," + str( totalSubmits )
+            print("Timestamp,seconds since server started,total submits")
+        print(formatTimestamp(currentDate) + "," + runtime + "," + str(totalSubmits))
 
         if totalSubmits == lastTotalSubmits:
             break
@@ -144,11 +144,11 @@ if __name__ == "__main__":
         returnValue = main()
     except KeyboardInterrupt:
         # Ctrl+C
-        print >> sys.stderr, "Ctrl + C received"
+        print("Ctrl + C received", file=sys.stderr)
         returnValue = 2
 
-    except Exception, excpt:
-        print >> sys.stderr, str( excpt )
+    except Exception as excpt:
+        print(str(excpt), file=sys.stderr)
         returnValue = 1
 
     sys.exit( returnValue )

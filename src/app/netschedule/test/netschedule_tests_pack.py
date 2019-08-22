@@ -9,7 +9,7 @@ Netschedule server tests pack
 """
 
 import time
-from ncbi_grid_1_0.ncbi.grid import ns
+from ncbi.grid import ns
 #, ipc
 
 
@@ -45,6 +45,10 @@ class TestBase:
             raise Exception( "Unexpected test class name" )
 
         className = nameParts[ count - 1 ]
+        # Python 3 specific
+        if className.endswith("'>"):
+            className = className[:-2]
+
         if not className.startswith( 'Scenario' ):
             raise Exception( "Tests class names must follow 'ScenarioXX' " \
                              "rule where XX is an integer number." )
@@ -184,7 +188,7 @@ class Scenario03( TestBase ):
         # This should not shutdown netschedule due to the authorization
         try:
             self.ns.shutdown( 'nobody' )
-        except Exception, exc:
+        except Exception as exc:
             if "Access denied: admin privileges required" in str( exc ) or \
                "Access denied:  admin privileges required" in str( exc ):
                 return True
@@ -284,7 +288,7 @@ class Scenario08( TestBase ):
 
         try:
             self.ns.getQueueInfo( 'not_existed' )
-        except Exception, exc:
+        except Exception as exc:
             if "not found" in str( exc ):
                 return True
             raise
@@ -313,11 +317,11 @@ class Scenario09( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         qinfo = self.ns.getQueueInfo( 'TEST' )
-        if qinfo.has_key( "queue_type" ):
+        if "queue_type" in qinfo:
             return qinfo[ "queue_type" ] == "static"
-        if qinfo.has_key( "queue type" ):
+        if "queue type" in qinfo:
             return qinfo[ "queue type" ] == "static"
-        if qinfo.has_key( "kind" ):
+        if "kind" in qinfo:
             return qinfo[ "kind" ] == "static"
         raise Exception( "No queue type found" )
 
@@ -515,10 +519,10 @@ class Scenario18( TestBase ):
         info = self.ns.getJobInfo( 'TEST', jobID )
 
         # Check input
-        if info.has_key( 'input_data' ):
+        if 'input_data' in info:
             if info[ 'input_data' ] != "'D test input'":
                 raise Exception( "Unexpected input (old format)" )
-        elif info.has_key( 'embedded_input_data' ):
+        elif 'embedded_input_data' in info:
             if info[ 'embedded_input_data' ] != '"test input"':
                 raise Exception( "Unexpected input (new format)" )
         else:
@@ -531,7 +535,7 @@ class Scenario18( TestBase ):
            info[ 'input_storage' ] != "embedded, size=10":
             return False
 
-        if info.has_key( 'aff_id' ):
+        if 'aff_id' in info:
             return info[ 'aff_id' ] == "0"
 
         # NS 4.10.0 and up has different output
@@ -600,7 +604,6 @@ class Scenario23( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         if self.ns.getActiveJobsCount( 'TEST' ) != 0:
-            print "0"
             return False
 
         jobID = self.ns.submitJob( "TEST", 'bla' )
@@ -613,10 +616,10 @@ class Scenario23( TestBase ):
 
         status = self.ns.getJobBriefStatus( 'TEST', jobID )
 
-        if status.has_key( "Status" ):
+        if "Status" in status:
             if status[ "Status" ] != "Running":
                 return False
-        elif status.has_key( "status" ):
+        elif "status" in status:
             if status[ "status" ] != "Running":
                 return False
         else:
@@ -698,11 +701,11 @@ class Scenario26( TestBase ):
             return False
 
         info = self.ns.getServerInfo( 'TEST' )
-        if info.has_key( "max_output_size" ):
-            return info.has_key( "max_input_size" )
+        if "max_output_size" in info:
+            return "max_input_size" in info
         else:
-            return info.has_key( "Maximum output size" ) and \
-                   info.has_key( "Maximum input size" )
+            return "Maximum output size" in info and \
+                   "Maximum input size" in info
 
 
 class Scenario27( TestBase ):
@@ -783,7 +786,7 @@ class Scenario30( TestBase ):
             msg = self.ns.getJobProgressMessage( 'TEST',
                                                  'JSID_01_7_130.14.24.83_9101' )
             msg = msg   # pylint is happy
-        except Exception, exc:
+        except Exception as exc:
             if 'Job not found' in str( exc ) or \
                 'eJobNotFound' in str( exc ):
                 return True
@@ -818,7 +821,7 @@ class Scenario31( TestBase ):
             self.ns.setJobProgressMessage( 'TEST',
                                            'JSID_01_7_130.14.24.83_9101',
                                            'lglglg' )
-        except Exception, exc:
+        except Exception as exc:
             if 'Job not found' in str( exc ) or \
                'eJobNotFound' in str( exc ):
                 return True
@@ -1030,7 +1033,7 @@ class Scenario37( TestBase ):
                "eAffinityNotFound" in self.warning:
                 return True
             raise Exception( "Expected unknown affinity warning" )
-        except Exception, exc:
+        except Exception as exc:
             # Older NS versions generate ERR:
             if "Unknown affinity token" in str( exc ):
                 return True
@@ -1131,7 +1134,7 @@ class Scenario41( TestBase ):
 
         try:
             self.ns.getJob( 'TEST', -1, 'other_affinity' )
-        except Exception, exc:
+        except Exception as exc:
             if "NoJobsWithAffinity" in str( exc ):
                 raise Exception( "Old style NS exception answer: " \
                                  "NoJobsWithAffinity" )
@@ -1388,9 +1391,9 @@ class Scenario55( TestBase ):
 
 def findLastEventIndex( info ):
     " Searches for the last event index "
-    if info.has_key( "attempt_counter" ):
+    if "attempt_counter" in info:
         return int( info[ "attempt_counter" ] )
-    if info.has_key( "event_counter" ):
+    if "event_counter" in info:
         return int( info[ "event_counter" ] )
 
     # need to detect the index
@@ -1406,15 +1409,15 @@ def findLastEventIndex( info ):
 
 def getRetCode( info ):
     " Provides the ret code for both, old and new NS output "
-    if info.has_key( "ret_code" ):
+    if "ret_code" in info:
         # Old format
         return info[ "ret_code" ]
 
     # New format
-    if info.has_key( "attempt_counter" ):
+    if "attempt_counter" in info:
         lastAttempt = info[ "attempt_counter" ]
         attemptLine = info[ "attempt" + lastAttempt ]
-    elif info.has_key( "event_counter" ):
+    elif "event_counter" in info:
         lastAttempt = info[ "event_counter" ]
         attemptLine = info[ "event" + lastAttempt ]
     else:
@@ -1427,7 +1430,7 @@ def getRetCode( info ):
 
     parts = attemptLine.split( ' ' )
     foundIndex = -1
-    for index in xrange( len( parts ) ):
+    for index in range(len(parts)):
         if parts[ index ].startswith( "ret_code=" ):
             foundIndex = index
             break
@@ -1441,15 +1444,15 @@ def getRetCode( info ):
 
 def getErrMsg( info ):
     " Provides the error message for both, old and new NS output "
-    if info.has_key( "err_msg" ):
+    if "err_msg" in info:
         # Old format
         return info[ "err_msg" ]
 
     # New format
-    if info.has_key( "attempt_counter" ):
+    if "attempt_counter" in info:
         lastAttempt = info[ "attempt_counter" ]
         attemptLine = info[ "attempt" + lastAttempt ]
-    elif info.has_key( "event_counter" ):
+    elif "event_counter" in info:
         lastAttempt = info[ "event_counter" ]
         attemptLine = info[ "event" + lastAttempt ]
     else:

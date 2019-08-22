@@ -137,7 +137,7 @@ class Scenario2002(TestBase):
             if "queue=TEST" not in data:
                 raise Exception("Unexpected notification in socket")
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str(ex):
                 raise
         return 0
@@ -195,7 +195,7 @@ class Scenario2003(TestBase):
             if "queue=TEST" not in data:
                 raise Exception("Unexpected notification in socket")
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str(ex):
                 raise
         return 0

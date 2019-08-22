@@ -147,7 +147,7 @@ class Scenario1702( TestBase ):
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -205,7 +205,7 @@ class Scenario1703( TestBase ):
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -903,7 +903,8 @@ class Scenario1902( TestBase ):
         ns_client.on_warning = self.report_warning
 
         try:
-            output = execAny( ns_client, 'REDO ' + jobID )
+            # output = 
+            execAny( ns_client, 'REDO ' + jobID )
             raise Exception( "Expected exception, got none (case 1)" )
         except Exception as exc:
             if "Cannot redo job" not in str( exc ):
@@ -911,7 +912,8 @@ class Scenario1902( TestBase ):
 
         j = self.ns.getJob( 'TEST' )
         try:
-            output = execAny( ns_client, 'REDO ' + jobID )
+            # output = 
+            execAny( ns_client, 'REDO ' + jobID )
             raise Exception( "Expected exception, got none (case 2)" )
         except Exception as exc:
             if "Cannot redo job" not in str( exc ):
@@ -968,7 +970,8 @@ class Scenario1903( TestBase ):
         ns_client.on_warning = self.report_warning
 
         try:
-            output = execAny( ns_client, 'REDO ' + jobID )
+            # output = 
+            execAny( ns_client, 'REDO ' + jobID )
             raise Exception( "Expected exception, got none (case 1)" )
         except Exception as exc:
             if "Cannot redo job" not in str( exc ):
@@ -976,7 +979,8 @@ class Scenario1903( TestBase ):
 
         j = self.ns.getJob( 'TEST' )
         try:
-            output = execAny( ns_client, 'REDO ' + jobID )
+            # output = 
+            execAny( ns_client, 'REDO ' + jobID )
             raise Exception( "Expected exception, got none (case 2)" )
         except Exception as exc:
             if "Cannot redo job" not in str( exc ):
@@ -1035,7 +1039,8 @@ class Scenario1904( TestBase ):
         ns_client.on_warning = self.report_warning
 
         try:
-            output = execAny( ns_client, 'REREAD ' + jobID )
+            # output = 
+            execAny( ns_client, 'REREAD ' + jobID )
             raise Exception( "Expected exception, got none (case 1)" )
         except Exception as exc:
             if "Cannot reread job" not in str( exc ):
@@ -1043,7 +1048,8 @@ class Scenario1904( TestBase ):
 
         j = self.ns.getJob( 'TEST' )
         try:
-            output = execAny( ns_client, 'REREAD ' + jobID )
+            # output = 
+            execAny( ns_client, 'REREAD ' + jobID )
             raise Exception( "Expected exception, got none (case 2)" )
         except Exception as exc:
             if "Cannot reread job" not in str( exc ):
@@ -1059,7 +1065,8 @@ class Scenario1904( TestBase ):
         # reading
         execAny( ns_client, "READ" )
         try:
-            output = execAny( ns_client, 'REREAD ' + jobID )
+            # output = 
+            execAny( ns_client, 'REREAD ' + jobID )
             raise Exception( "Expected exception, got none (case 3)" )
         except Exception as exc:
             if "Cannot reread job" not in str( exc ):

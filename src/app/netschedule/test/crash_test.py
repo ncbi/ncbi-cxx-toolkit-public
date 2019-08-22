@@ -1,4 +1,4 @@
-#!/opt/python-all/bin/python2 -u
+#!/usr/bin/env python
 #
 # Authors: Sergey Satskiy
 #
@@ -19,7 +19,7 @@ def parserError( parser, message ):
     " Prints the message and help on stderr "
 
     sys.stdout = sys.stderr
-    print message
+    print(message)
     parser.print_help()
     return 1
 
@@ -134,21 +134,21 @@ def main():
             pathDB = baseDir + pathDB
 
     if options.verbose:
-        print "Parameters to use:"
-        print "Number of queues: " + str( numberOfQueues )
-        print "Number of crash tests per queue: " + str( numberOfCrashTests )
-        print "Number of jobs per crash test: " + str( jobs )
-        print "Port: " + str( port )
-        print "Dir where NS is: " + pathNetschedule
-        print "Dir where crash test is: " + pathCrashTest
-        print "Dir where NS stores DB: " + pathDB
+        print("Parameters to use:")
+        print("Number of queues: " + str(numberOfQueues))
+        print("Number of crash tests per queue: " + str(numberOfCrashTests))
+        print("Number of jobs per crash test: " + str(jobs))
+        print("Port: " + str(port))
+        print("Dir where NS is: " + pathNetschedule)
+        print("Dir where crash test is: " + pathCrashTest)
+        print("Dir where NS stores DB: " + pathDB)
 
     checkPrerequisites( baseDir, pathNetschedule, pathCrashTest, port )
     generateNSConfig( baseDir, numberOfQueues, port, pathDB )
 
     # It's time to run all the components
     if options.verbose:
-        print "Launching netschedule..."
+        print("Launching netschedule...")
 
     nsCmdLine = [ pathNetschedule + "netscheduled",
                   "-conffile", baseDir + "netscheduled.ini",
@@ -159,9 +159,9 @@ def main():
     nsProc.wait()
 
     crashProcs = []
-    for index in xrange( numberOfQueues ):
+    for index in range(numberOfQueues):
         qName = "CRASH" + str( index )
-        for crash_index in xrange( numberOfCrashTests ):
+        for crash_index in range(numberOfCrashTests):
             cmdLine = pathCrashTest + "test_netschedule_crash " + \
                       " -service localhost:" + str( port ) + \
                       " -queue " + qName + \
@@ -172,25 +172,25 @@ def main():
                       " -batch " + str( batch ) + \
                       " -nclients " + str( clients )
             if options.verbose:
-                print "Launching test_netschedule_crash #" + \
-                      str( crash_index ) + " for queue " + qName
-                print cmdLine
+                print("Launching test_netschedule_crash #" + str(crash_index) +
+                      " for queue " + qName)
+                print(cmdLine)
             DEVNULL = open( '/dev/null', 'w' )
             crashProcs.append( Popen( cmdLine, shell = True,
                                       stdout = DEVNULL, stderr = PIPE ) )
 
     if options.verbose:
-        print "Waiting for crash tests finish"
+        print("Waiting for crash tests finish")
     for proc in crashProcs:
         proc.wait()
         err = proc.stderr.read()
         if err != "":
-            print "test_netschedule_crash stderr: " + err
+            print("test_netschedule_crash stderr: " + err)
         if options.verbose:
-            print "test_netschedule_crash finished"
+            print("test_netschedule_crash finished")
 
     if options.verbose:
-        print "Please do not forget to stop netschedule before running again"
+        print("Please do not forget to stop netschedule before running again")
 
     return 0
 
@@ -203,7 +203,7 @@ def generateNSConfig( baseDir, numberOfQueues, port, pathDB ):
     content = content.replace( "$PORT", str( port ) )
     content = content.replace( "$DBPATH", pathDB )
 
-    for index in xrange( numberOfQueues ):
+    for index in range(numberOfQueues):
         content += "\n" \
                    "[queue_CRASH" + str( index ) + "]\n" \
                    "failed_retries=3\n" \
@@ -269,12 +269,12 @@ if __name__ == "__main__":
         returnValue = main()
     except KeyboardInterrupt:
         # Ctrl+C
-        print >> sys.stderr, "Ctrl + C received"
+        print("Ctrl + C received", file=sys.stderr)
         logging.error( "Tests have been interrupted (Ctrl+C)" )
         returnValue = 2
 
-    except Exception, excpt:
-        print >> sys.stderr, str( excpt )
+    except Exception as excpt:
+        print(str(excpt), file=sys.stderr)
         logging.error( str( excpt ) )
         returnValue = 1
 

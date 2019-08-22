@@ -615,7 +615,7 @@ class Scenario1312( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -669,7 +669,7 @@ class Scenario1313( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -724,7 +724,7 @@ class Scenario1314( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -775,7 +775,7 @@ class Scenario1315( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -841,7 +841,7 @@ class Scenario1316( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -910,7 +910,7 @@ class Scenario1317( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -978,7 +978,7 @@ class Scenario1318( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -1033,7 +1033,7 @@ class Scenario1319( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -1089,7 +1089,7 @@ class Scenario1320( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -1143,7 +1143,7 @@ class Scenario1321( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -1196,7 +1196,7 @@ class Scenario1322( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass
@@ -1251,7 +1251,7 @@ class Scenario1323( TestBase ):
             if "queue=TEST" not in data or "reason=read" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass

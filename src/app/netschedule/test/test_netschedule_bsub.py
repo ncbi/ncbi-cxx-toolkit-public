@@ -14,16 +14,16 @@ def test(host, port, queue, fname, size):
         line = line.strip()
         res, info = con.submit(line)
         if res:
-            print "Error submitting record %d: %s" % (i, info)
+            print("Error submitting record %d: %s" % (i, info))
             break
         i += 1
         if i % batch_size == 0:
-            print "Submitted %d jobs, elapsed %d sec" % (i, time.time() - t_begin)
+            print("Submitted %d jobs, elapsed %d sec" % (i, time.time() - t_begin))
     con.end_batch()
         
 def main(args):
     if len(args) < 4:
-        print "Usage: test_netschedule_bsub.py host port queue file [size]"
+        print("Usage: test_netschedule_bsub.py host port queue file [size]")
         return 1
     host = args[0]
     port = int(args[1])

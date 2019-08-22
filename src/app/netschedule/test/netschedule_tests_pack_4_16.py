@@ -84,7 +84,8 @@ class Scenario601( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch( 5 )
-        origJobID = self.ns.submitJob( 'TEST', 'bla' )
+        # origJobID = 
+        self.ns.submitJob( 'TEST', 'bla' )
 
         jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
                                                            "node1", "session1" )
@@ -189,7 +190,7 @@ class Scenario602( TestBase ):
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket 1" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket 1" in str( ex ):
                 raise
             pass
@@ -199,7 +200,7 @@ class Scenario602( TestBase ):
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket 2" )
             return 2
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket 2" in str( ex ):
                 raise
             pass
@@ -301,7 +302,8 @@ class Scenario701( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        # jobID = 
+        self.ns.submitJob( 'TEST', 'blah' )
         receivedJobID, authToken, \
         attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
                                           "node1", "session1" )
@@ -339,7 +341,7 @@ class Scenario702( TestBase ):
         # Try to submit a job without the queue
         try:
             output = execAny( ns_client, 'SUBMIT blah')
-        except Exception, exc:
+        except Exception as exc:
             if 'Job queue is required' in str( exc ):
                 return True
             raise
@@ -859,7 +861,7 @@ class Scenario1107( TestBase ):
             jobID = self.ns.submitJob( 'TEST', 'blah' )
             if "JSID" not in jobID:
                 raise Exception( "Unexpected job key format: " + jobID )
-        except Exception, exc:  # analysis:ignore
+        except Exception as exc:  # analysis:ignore
             self.ns.disconnect()
             raise
 
@@ -1311,7 +1313,7 @@ class Scenario1117( TestBase ):
 
         try:
             output = execAny( ns_client, 'SETCLIENTDATA data="123 456" version=1' )
-        except Exception, exc:
+        except Exception as exc:
             if 'client data version does not match' in str( exc ):
                 return True
             raise
@@ -1417,7 +1419,7 @@ class Scenario1201( TestBase ):
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification" )
             return True
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification" in str( ex ):
                 raise
             pass

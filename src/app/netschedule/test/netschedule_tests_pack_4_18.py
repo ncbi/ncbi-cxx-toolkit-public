@@ -113,7 +113,7 @@ class Scenario1502( TestBase ):
 
         try:
             execAny( ns_client, "CHRAFF add=a1" )
-        except Exception, excp:
+        except Exception as excp:
             if "cannot use CHRAFF command" in str( excp ):
                 return True
             raise
@@ -236,7 +236,7 @@ class Scenario1506( TestBase ):
 
         execAny( ns_client, 'CLRN' )
         client = getClientInfo( ns_client, 'node' )
-        if client.has_key( 'number_of_reader_preferred_affinities' ):
+        if 'number_of_reader_preferred_affinities' in client:
             if client[ 'number_of_reader_preferred_affinities' ] != 0:
                 raise Exception( "Expected no reader preferred affinities, got some." )
         return True
@@ -264,7 +264,7 @@ class Scenario1507( TestBase ):
         self.ns.submitJob( 'TEST', 'bla', '', '', 'node', 'other_session' )
 
         client = getClientInfo( ns_client, 'node' )
-        if client.has_key( 'number_of_reader_preferred_affinities' ):
+        if 'number_of_reader_preferred_affinities' in client:
             if client[ 'number_of_reader_preferred_affinities' ] != 0:
                 raise Exception( "Expected no reader preferred affinities, got some." )
         return True
@@ -292,7 +292,7 @@ class Scenario1508( TestBase ):
                 pass
 
             execAny( ns_client, 'READ2 reader_aff=1 any_aff=1' )
-        except Exception, exc:
+        except Exception as exc:
             if "Anonymous client" in str( exc ):
                 return True
             raise
@@ -797,11 +797,11 @@ class Scenario1520( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -849,11 +849,11 @@ class Scenario1521( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -901,11 +901,11 @@ class Scenario1522( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -955,11 +955,11 @@ class Scenario1523( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -1009,11 +1009,11 @@ class Scenario1524( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -1042,7 +1042,7 @@ class Scenario1525( TestBase ):
 
         try:
             execAny( ns_client, 'CWREAD' )
-        except Exception, exc:
+        except Exception as exc:
             if "no client_node and client_session at handshake" in str( exc ):
                 return True
             raise
@@ -1111,11 +1111,11 @@ class Scenario1527( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -1251,7 +1251,7 @@ class Scenario1531( TestBase ):
         try:
             execAny( ns_client,
                      'READ2 reader_aff=0 any_aff=1' )
-        except Exception, exc:
+        except Exception as exc:
             if "Anonymous client" in str( exc ):
                 return True
             raise
@@ -1315,7 +1315,7 @@ class Scenario1533( TestBase ):
         try:
             execAny( ns_client,
                      'READ2 reader_aff=1 any_aff=1 exclusive_new_aff=1' )
-        except Exception, exc:
+        except Exception as exc:
             if "forbidden" in str( exc ):
                 return True
             raise
@@ -1491,11 +1491,11 @@ class Scenario1537( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -1606,11 +1606,11 @@ class Scenario1538( TestBase ):
         time.sleep( 4 )
         try:
             # Exception is expected
-            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
-        except Exception, exc:
+        except Exception as exc:
             if "Resource temporarily unavailable" not in str( exc ):
                 notifSocket.close()
                 raise
@@ -1628,7 +1628,7 @@ class Scenario1538( TestBase ):
         execAny( ns_client1, "PUT " + jobID + " 0 nooutput" )
 
         time.sleep( 4 )
-        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
         notifSocket.close()
 
         if "queue=TEST" not in data:
@@ -1694,11 +1694,11 @@ class Scenario1539( TestBase ):
         time.sleep( 4 )
         try:
             # Exception is expected
-            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
-        except Exception, exc:
+        except Exception as exc:
             if "Resource temporarily unavailable" not in str( exc ):
                 notifSocket.close()
                 raise
@@ -1713,7 +1713,7 @@ class Scenario1539( TestBase ):
         execAny( ns_client1, "CLRN" )
 
         time.sleep( 4 )
-        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
         notifSocket.close()
 
         if "queue=TEST" not in data:
@@ -1807,7 +1807,7 @@ class Scenario1541( TestBase ):
         try:
             output = execAny( ns_client,
                               'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1' )
-        except Exception, excpt:
+        except Exception as excpt:
             if "ePrefAffExpired" in str( excpt ) or "expired" in str( excpt ):
                 return True
             raise
@@ -2010,7 +2010,7 @@ class Scenario1545( TestBase ):
         # 10 seconds till the job becomes outdated
         time.sleep( 12 )
 
-        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
         notifSocket.close()
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " + data )
@@ -2243,11 +2243,11 @@ class Scenario1604( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass
@@ -2419,11 +2419,11 @@ class Scenario1607( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
-        except Exception, ex:
+        except Exception as ex:
             if "Unexpected notification in socket" in str( ex ):
                 raise
             pass

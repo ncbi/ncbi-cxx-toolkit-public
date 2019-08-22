@@ -43,7 +43,7 @@ class Scenario300( TestBase ):
         output = execAny( ns_client, 'WST2 ' + jobID )
         values = parse_qs( output, True, True )
         if values[ 'job_status' ] != ['Pending'] or \
-           values.has_key( 'job_exptime' ) == False:
+           'job_exptime' not in values:
             raise Exception( "Unexpected WST2 output" )
 
         time1 = values[ 'job_exptime' ][ 0 ]
@@ -82,7 +82,7 @@ class Scenario301( TestBase ):
         output = execAny( ns_client, 'SST2 ' + jobID )
         values = parse_qs( output, True, True )
         if values[ 'job_status' ] != ['Pending'] or \
-           values.has_key( 'job_exptime' ) == False:
+           'job_exptime' not in values:
             raise Exception( "Unexpected SST2 output" )
 
         time1 = int( values[ 'job_exptime' ][ 0 ] )
@@ -120,7 +120,7 @@ class Scenario303( TestBase ):
         try:
             execAny( ns_client,
                      'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=1' )
-        except Exception, exc:
+        except Exception as exc:
             if "forbidden" in str( exc ):
                 return True
             raise
@@ -331,8 +331,8 @@ class Scenario307( TestBase ):
         process.wait()
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()   # analysis:ignore
+        processStdout = process.stdout.read().decode('utf-8')
+        processStderr = process.stderr.read().decode('utf-8')   # analysis:ignore
 
         if "NCBI_JSQ_TEST" in processStdout:
             raise Exception( "Expect no notifications but received one" )
@@ -382,11 +382,11 @@ class Scenario308( TestBase ):
         time.sleep( 4 )
         try:
             # Exception is expected
-            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
-        except Exception, exc:
+        except Exception as exc:
             if "Resource temporarily unavailable" not in str( exc ):
                 notifSocket.close()
                 raise
@@ -400,7 +400,7 @@ class Scenario308( TestBase ):
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )    # analysis:ignore
 
         time.sleep( 4 )
-        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
         notifSocket.close()
 
         if "queue=TEST" not in data:
@@ -463,11 +463,11 @@ class Scenario309( TestBase ):
         time.sleep( 4 )
         try:
             # Exception is expected
-            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
-        except Exception, exc:
+        except Exception as exc:
             if not "Resource temporarily unavailable" in str( exc ):
                 notifSocket.close()
                 raise
@@ -482,7 +482,7 @@ class Scenario309( TestBase ):
         execAny( ns_client1, "CLRN" )
 
         time.sleep( 4 )
-        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
         notifSocket.close()
 
         if "queue=TEST" not in data:
@@ -590,7 +590,7 @@ class Scenario311( TestBase ):
         try:
             output = execAny( ns_client,
                               'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
-        except Exception, excpt:
+        except Exception as excpt:
             if "ePrefAffExpired" in str( excpt ) or "expired" in str( excpt ):
                 return True
             raise
