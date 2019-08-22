@@ -136,7 +136,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", CArgDescriptions::eString, ".sqn");
     arg_desc->AddOptionalKey("outdir", "OutputDirectory", "Output Directory", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','", CArgDescriptions::eString); 
+    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("d", "DisableTests",  "List of disabled tests, seperated by ','", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("a", "Asn1Type", "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry", CArgDescriptions::eString);
@@ -151,9 +151,10 @@ void CDiscRepApp::Init(void)
     arg_desc->AddFlag("F", "Autofix");
     arg_desc->AddFlag("XML", "Generate XML output");
     arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
+    arg_desc->AddFlag("LIST", "List the tests without execution");
 
     //arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, u - Submitter, b - Big Sequence, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, u - Submitter, b - Big Sequence, f - FATAL, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("R", "SevCount", "Severity for Error in Return Code\n\tinfo(0)\n\twarning(1)\n\terror(2)\n\tcritical(3)\n\tfatal(4)\n\ttrace(5)", CArgDescriptions::eInteger);
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
@@ -452,7 +453,7 @@ int CDiscRepApp::Run(void)
                 m_Ext = true;
                 m_Fat = true;
             }
-            else if (s[i] == 'q' || s[i] == 'b' || s[i] == 'u') {
+            else if (s[i] == 'q' || s[i] == 'b' || s[i] == 'u' || s[i] == 'f') {
                 if (m_Group && m_Group != s[i]) {
                     ERR_POST(string("-P options are not compatible: ") + m_Group + " and " + s[i]);
                     return 1;
@@ -502,6 +503,9 @@ int CDiscRepApp::Run(void)
             case 'b':
                 AllTests = GetDiscrepancyNames(eBig);
                 break;
+            case 'f':
+                AllTests = GetDiscrepancyNames(eFatal);
+                break;
             default:
                 AllTests = GetDiscrepancyNames();
         }
@@ -549,6 +553,12 @@ int CDiscRepApp::Run(void)
         }
     }
 
+    if (args["LIST"]) {
+        for (auto& t : m_Tests) {
+            cout << t << "\n";
+        }
+        return 0;
+    }
     // input files
     string abs_input_path;
     if (args["i"]) {
