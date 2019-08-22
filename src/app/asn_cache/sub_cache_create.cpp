@@ -738,6 +738,10 @@ void CAsnSubCacheCreateApplication::Init(void)
                       "When fetching missing WGS sequences from ID, don't add "
                       "the descriptiors from the master WGS record");
 
+    arg_desc->AddFlag("overwrite-existing-cache",
+                      "If the cache already exists, overwrite its current "
+                      "contents; default action is to add to them");
+
     arg_desc->SetDependency("skip-retrieval-failures",
                             CArgDescriptions::eRequires, "fetch-missing");
     arg_desc->SetDependency("max-retrieval-failures",
@@ -834,9 +838,18 @@ int CAsnSubCacheCreateApplication::Run(void)
 
     CDir    subcache_root( args["subcache"].AsString() );
     if ( subcache_root.Exists() ) {
-        LOG_POST( Warning << "Subcache " << subcache_root.GetPath()
-                  << " already exists!" );
-    } else if ( ! subcache_root.CreatePath() ) {
+         if (args["overwrite-existing-cache"]) {
+            if (!subcache_root.Remove()) {
+                NCBI_THROW(CException, eUnknown,
+                           "Cache already exists and can't be removed");
+            }
+         } else {
+            LOG_POST( Warning << "Subcache " << subcache_root.GetPath()
+                      << " already exists!" );
+         }
+    }
+
+    if ( ! subcache_root.CreatePath() ) {
         LOG_POST( Error << "Unable to create a path to a subcache at "
                   << subcache_root.GetPath() );
     }
