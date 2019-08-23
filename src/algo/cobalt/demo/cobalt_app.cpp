@@ -503,7 +503,7 @@ int CMultiApplication::Run(void)
     scope->AddDefaults();
 
     CFastaReader::TFlags flags = CFastaReader::fAssumeProt
-        | CFastaReader::fForceType;
+        | CFastaReader::fForceType | CFastaReader::fParseRawID;
     if (!args["parse_deflines"]) {
         flags |= CFastaReader::fNoParseID;
     }
