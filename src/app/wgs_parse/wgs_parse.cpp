@@ -1834,5 +1834,5 @@ int CWGSParseApp::Run(void)
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
-    return wgsparse::CWGSParseApp().AppMain(argc, argv);
+    return wgsparse::CWGSParseApp().AppMain(argc, argv, 0, eDS_ToStderr);
 }
