@@ -11,7 +11,7 @@ SRC = sequence_istream_fasta \
 CXXFLAGS = -DDO_INLINE $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-ASN_DEP = seqset
+ASN_DEP = seqset submit
 
 WATCHERS = morgulis
 
