@@ -120,6 +120,9 @@ set(NCBI_ThirdParty_FTGL        ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPart
 set(NCBI_ThirdParty_GLEW        ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/1.5.8)
 set(NCBI_ThirdParty_FreeType    ${NCBI_ThirdPartyBasePath}/freetype/${NCBI_ThirdPartyCompiler}/2.4.10)
 set(NCBI_ThirdParty_wxWidgets   ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_ThirdPartyCompiler}/3.1.0_no28-ncbi2)
+set(NCBI_ThirdParty_UV          ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.23.0)
+set(NCBI_ThirdParty_NGHTTP2     ${NCBI_ThirdPartyBasePath}/nghttp2/${NCBI_ThirdPartyCompiler}/1.33.0)
+set(NCBI_ThirdParty_GL2PS       ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.0)
 
 #############################################################################
 #############################################################################
@@ -507,3 +510,17 @@ if(NCBI_COMPONENT_wxWidgets_FOUND)
     endif()
 endif()
 
+##############################################################################
+# UV
+NCBI_define_component(UV libuv.lib)
+if(NCBI_COMPONENT_UV_FOUND)
+    set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
+endif()
+
+##############################################################################
+# NGHTTP2
+NCBI_define_component(NGHTTP2 nghttp2.lib)
+
+##############################################################################
+# GL2PS
+NCBI_define_component(GL2PS gl2ps.lib)
