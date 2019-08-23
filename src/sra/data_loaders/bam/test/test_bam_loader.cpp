@@ -57,6 +57,11 @@ USING_SCOPE(objects);
 CRef<CObjectManager> sx_GetOM(void)
 {
     SetDiagPostLevel(eDiag_Info);
+    static bool first = 1;
+    if ( first ) {
+        CNcbiApplication::Instance()->GetConfig().Set("SRZ", "REP_PATH", string(NCBI_GetTestDataPath())+"/traces01:"+NCBI_SRZ_REP_PATH);
+        first = false;
+    }
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames names;
     om->GetRegisteredNames(names);
@@ -312,10 +317,6 @@ BOOST_AUTO_TEST_CASE(FetchSeqSRZ1)
 {
     CBAMDataLoader::SetPileupGraphsParamDefault(false);
 
-    if ( !CDirEntry("/home/vasilche/data/bam").Exists() ) {
-        return;
-    }
-
     CRef<CObjectManager> om = sx_GetOM();
 
     CBAMDataLoader::SLoaderParams params;
@@ -323,7 +324,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqSRZ1)
     TSeqPos from, to, align_count;
     CSeq_id_Handle main_idh;
     {
-        params.m_DirPath = "/home/vasilche/data/bam/tests/SRZ000200";
+        params.m_DirPath = sx_GetPath("/srz0/SRZ/000000/SRZ000200/provisional", "traces01");
         annot_name = "GSM409307_UCSD.H3K4me1.sorted";
         id = "89161185";
         main_idh = CSeq_id_Handle::GetHandle("NC_000001.9");
@@ -383,10 +384,6 @@ BOOST_AUTO_TEST_CASE(FetchSeqSRZ2)
 {
     CBAMDataLoader::SetPileupGraphsParamDefault(false);
 
-    if ( !CDirEntry("/home/vasilche/data/bam").Exists() ) {
-        return;
-    }
-
     CRef<CObjectManager> om = sx_GetOM();
 
     CBAMDataLoader::SLoaderParams params;
@@ -394,7 +391,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqSRZ2)
     TSeqPos from, to, align_count;
 
     {
-        params.m_DirPath = "/home/vasilche/data/bam/tests/SRZ000200";
+        params.m_DirPath = sx_GetPath("/srz0/SRZ/000000/SRZ000200/provisional", "traces01");
         annot_name = "GSM409307_UCSD.H3K4me1.sorted";
         id = "NC_000001.9";
         from = 1100000;
