@@ -393,7 +393,6 @@ string CBlastDBExtractor::ExtractLeafTaxIds() {
     if (taxids.empty()) {
         return ExtractTaxId();
     }
-    set<int>::iterator taxids_iter = taxids.begin();
     string retval;
     ITERATE(set<int>, taxids_iter, taxids) {
         if (retval.empty()) {
