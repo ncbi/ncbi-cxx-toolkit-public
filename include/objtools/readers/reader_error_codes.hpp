@@ -37,7 +37,7 @@
 #define _READER_ERROR_CODES_HPP_
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 enum EReaderCode
 {
