@@ -1312,4 +1312,10 @@ void SetTpa(bool tpa)
     params_imp.m_tpa = tpa;
 }
 
+void SetReplaceDBName(bool replace_db_name)
+{
+    CParams_imp& params_imp = *params->m_imp;
+    params_imp.m_replace_dbname = replace_db_name;
+}
+
 }

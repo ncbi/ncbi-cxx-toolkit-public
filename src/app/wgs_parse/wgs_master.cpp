@@ -2639,6 +2639,10 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         ReplaceDatesInCitSub(master_info.m_common_pubs, master_info.m_pubs, *the_date);
     }
 
+    if (!common_info.m_nuc_warn && !common_info.m_prot_warn) {
+        SetReplaceDBName(false);
+    }
+
     master_info.m_reject = master_info.m_reject || DBLinkProblemReport(master_info);
 
     common_info.m_acc_assigned.sort();

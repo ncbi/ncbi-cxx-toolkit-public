@@ -194,6 +194,7 @@ private:
     friend void AddBioSample(const string& biosample);
     friend void AddSRA(const string& sra);
     friend void SetTpa(bool tpa);
+    friend void SetReplaceDBName(bool replace_db_name);
 
     CParams();
     CParams(const CParams&) = delete;
@@ -207,6 +208,7 @@ void SetUpdateMode(EUpdateMode mode);
 void AddBioSample(const string& biosample);
 void AddSRA(const string& biosample);
 void SetTpa(bool tpa);
+void SetReplaceDBName(bool replace_db_name);
 
 }
 
