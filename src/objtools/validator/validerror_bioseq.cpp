@@ -9011,24 +9011,6 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
 
     string str = s_GetStrandedMolStringFromLineage(lineage);
 
-    if (NStr::FindNoCase(str, "-)") != string::npos) {
-        negative_strand_virus = true;
-    }
-    if (NStr::FindNoCase(str, "ssRNA") != string::npos && NStr::FindNoCase(str, "(+") != string::npos) {
-        plus_strand_virus = true;
-    }
-
-    if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
-        negative_strand_virus = true;
-    }
-    if (NStr::FindNoCase(lineage, "ssRNA positive-strand viruses") != string::npos) {
-        plus_strand_virus = true;
-    }
-
-    if (!negative_strand_virus && !plus_strand_virus) {
-        return;
-    }
-
     CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
     if (molinfo.IsSetBiomol()) {
         biomol = molinfo.GetBiomol();
@@ -9049,16 +9031,34 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
             m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Ambisense virus should be genomic RNA or cRNA",
                     obj, ctx);
-            return;
         }
+        return;
     }
     if (NStr::EqualNocase(str, "ssRNA-RT") && NStr::FindNoCase(lineage, "Retroviridae") != string::npos) {
         if (biomol != CMolInfo::eBiomol_genomic) {
              m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Retrovirus should be genomic RNA or genomic DNA",
                     obj, ctx);
-            return;
         }
+        return;
+    }
+
+    if (NStr::FindNoCase(str, "-)") != string::npos) {
+        negative_strand_virus = true;
+    }
+    if (NStr::FindNoCase(str, "ssRNA") != string::npos && NStr::FindNoCase(str, "(+") != string::npos) {
+        plus_strand_virus = true;
+    }
+
+    if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
+        negative_strand_virus = true;
+    }
+    if (NStr::FindNoCase(lineage, "ssRNA positive-strand viruses") != string::npos) {
+        plus_strand_virus = true;
+    }
+
+    if (!negative_strand_virus && !plus_strand_virus) {
+        return;
     }
 
     bool is_synthetic = false;
@@ -9309,6 +9309,18 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         }
     }
 
+    // special cases
+    if (NStr::FindNoCase(lineage, "Retroviridae") != string::npos) {
+        return "ssRNA-RT";
+    }
+
+    if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
+        || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
+        || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
+        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+        return "ssRNA(+/-)";
+    }
+
     for (const auto & x : *s_ViralMap) {
         if (NStr::Find(lineage, x.first) != NPOS) {
             return x.second;
@@ -9383,6 +9395,7 @@ CSeq_inst::EMol CValidError_bioseq::s_ExpectedMoltypeForStrandedMol(EStrandedMol
 
 void CValidError_bioseq::x_ReportLineageConflictWithMol(EStrandedMoltype smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx)
 {
+    /*
     if ((smol & esmol) && mol != s_ExpectedMoltypeForStrandedMol(esmol)) {
         m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
             "Taxonomy indicates " + s_GetStrandedMoltype(esmol) +
@@ -9390,9 +9403,11 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol(EStrandedMoltype smol, E
             ") is conflicting.",
             obj, ctx);
     }
+    */
 }
 
 
+/*
 void CValidError_bioseq::x_ReportLineageConflictWithMol
 (const string& lineage,
     CSeq_inst::EMol mol,
@@ -9410,6 +9425,78 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol
     x_ReportLineageConflictWithMol(smol, eStrandedMoltype_dsRNA, mol, obj, ctx);
     x_ReportLineageConflictWithMol(smol, eStrandedMoltype_ssDNA, mol, obj, ctx);
     x_ReportLineageConflictWithMol(smol, eStrandedMoltype_dsDNA, mol, obj, ctx);
+}
+*/
+
+
+void CValidError_bioseq::x_ReportLineageConflictWithMol
+(const string& lineage,
+    CSeq_inst::EMol mol,
+    const CSerialObject& obj,
+    const CSeq_entry    *ctx)
+{
+    if (! m_Imp.DoTaxLookup()) {
+        // return;
+    }
+    if (mol == CSeq_inst::eMol_aa) {
+        return;
+    }
+
+    string str = s_GetStrandedMolStringFromLineage(lineage);
+    if (str.length() < 1) {
+        return;
+    }
+
+    // special cases
+    if (NStr::FindNoCase(str, "ssRNA(+/-)") != string::npos) {
+        if (mol == CSeq_inst::eMol_rna) {
+            return;
+        }
+    } else if (NStr::FindNoCase(lineage, "Retroviridae") != string::npos && NStr::FindNoCase(str, "ssRNA-RT") != string::npos) {
+        if (mol == CSeq_inst::eMol_rna || mol == CSeq_inst::eMol_dna) {
+            return;
+        }
+    } else if (mol == CSeq_inst::eMol_dna) {
+        if (NStr::Find(str, "ssDNA") != NPOS && NStr::Find(str, "dsDNA") != NPOS) {
+            return;
+        }
+    } else if (mol == CSeq_inst::eMol_rna) {
+        if (NStr::Find(str, "ssRNA") != NPOS && NStr::Find(str, "dsRNA") != NPOS) {
+            return;
+        }
+    }
+
+    string mssg = "";
+    if (NStr::Find(str, "ssRNA") != NPOS) {
+        if (mol == CSeq_inst::eMol_rna) {
+            return;
+        }
+        mssg = "single-stranded RNA";
+    }
+    if (NStr::Find(str, "dsRNA") != NPOS) {
+        if (mol == CSeq_inst::eMol_rna) {
+            return;
+        }
+        mssg = "double-stranded RNA";
+    }
+    if (NStr::Find(str, "ssDNA") != NPOS) {
+        if (mol == CSeq_inst::eMol_dna) {
+            return;
+        }
+        mssg = "single-stranded DNA";
+    }
+    if (NStr::Find(str, "dsDNA") != NPOS) {
+        if (mol == CSeq_inst::eMol_dna) {
+            return;
+        }
+       mssg = "double-stranded DNA";
+    }
+
+    m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
+        "Taxonomy indicates " + mssg +
+        ", molecule type (" + CSeq_inst::GetMoleculeClass(mol) +
+        ") is conflicting.",
+        obj, ctx);
 }
 
 
