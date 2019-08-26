@@ -555,7 +555,7 @@ string CAutoDef::x_GetFeatureClauses(const CBioseq_Handle& bh)
     }
 
 
-    CAutoDefFeatureClause_Base main_clause;
+    CAutoDefFeatureClause_Base main_clause(m_Options);
     CRange<TSeqPos> range;
     CBioseq_Handle master_bh = bh;
     
@@ -576,7 +576,8 @@ string CAutoDef::x_GetFeatureClauses(const CBioseq_Handle& bh)
 
         main_clause.AddSubclause (CRef<CAutoDefFeatureClause>(new CAutoDefFakePromoterClause (master_bh, 
                                                                     *fake_promoter,
-                                                                    *fake_promoter_loc)));
+                                                                    *fake_promoter_loc,
+                                                                    m_Options)));
     }
 
     // now create clauses for real features

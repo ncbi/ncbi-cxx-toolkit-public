@@ -49,7 +49,7 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefFeatureClause_Base : public CObject
 public:
     typedef vector<CRef<CAutoDefFeatureClause_Base > > TClauseList;
 
-    CAutoDefFeatureClause_Base();
+    CAutoDefFeatureClause_Base(const CAutoDefOptions& opts);
     virtual ~CAutoDefFeatureClause_Base();
     
     virtual void AddSubclause (CRef<CAutoDefFeatureClause_Base> subclause);
@@ -163,10 +163,11 @@ public:
     static vector<string> GetTrnaIntergenicSpacerClausePhrases(const string& comment);
     static bool IsValidFeatureClausePhrase(const string& phrase);
     static vector<string> GetFeatureClausePhrases(string comment);
-    static CRef<CAutoDefFeatureClause> ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last);
+    static CRef<CAutoDefFeatureClause> ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last, const CAutoDefOptions& opts);
 
    
 protected:
+    const CAutoDefOptions& m_Opts;
     TClauseList  m_ClauseList;
 
     string       m_GeneName;
@@ -228,7 +229,7 @@ protected:
 class NCBI_XOBJEDIT_EXPORT CAutoDefUnknownGeneList : public CAutoDefFeatureClause_Base
 {
 public:    
-    CAutoDefUnknownGeneList();
+    CAutoDefUnknownGeneList(const CAutoDefOptions& opts);
     ~CAutoDefUnknownGeneList();
   
     virtual void Label(bool suppress_allele);
@@ -239,7 +240,7 @@ public:
 class NCBI_XOBJEDIT_EXPORT CAutoDefExonListClause : public CAutoDefFeatureClause_Base
 {
 public:
-    CAutoDefExonListClause(CBioseq_Handle bh);
+    CAutoDefExonListClause(CBioseq_Handle bh, const CAutoDefOptions& opts);
     
     virtual void AddSubclause (CRef<CAutoDefFeatureClause_Base> subclause);
     virtual void Label(bool suppress_allele);

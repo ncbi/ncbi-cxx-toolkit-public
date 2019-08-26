@@ -51,7 +51,8 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base() :
+CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base(const CAutoDefOptions& opts) :
+                              m_Opts(opts),
                               m_GeneIsPseudo(false),
                               m_IsAltSpliced(false),
                               m_HasmRNA(false),
@@ -1139,7 +1140,7 @@ void CAutoDefFeatureClause_Base::SetProductName(string product_name)
 
 void CAutoDefFeatureClause_Base::CountUnknownGenes()
 {
-    CRef<CAutoDefUnknownGeneList> unknown_list(new CAutoDefUnknownGeneList());
+    CRef<CAutoDefUnknownGeneList> unknown_list(new CAutoDefUnknownGeneList(m_Opts));
     bool any_found = false;
     
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
@@ -1198,7 +1199,7 @@ void CAutoDefFeatureClause_Base::GroupAltSplicedExons(CBioseq_Handle bh)
         if (!found_any) {
             continue;
         }
-        CAutoDefExonListClause *new_clause = new CAutoDefExonListClause (bh);
+        CAutoDefExonListClause *new_clause = new CAutoDefExonListClause (bh, m_Opts);
         
         new_clause->AddSubclause(m_ClauseList[k]);
         new_clause->AddSubclause(m_ClauseList[j]);
@@ -1308,7 +1309,7 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
                         }
                         if (next_num == seq_num + 1) {
                             if (new_clause == NULL) {
-                                new_clause = new CAutoDefExonListClause(bh);
+                                new_clause = new CAutoDefExonListClause(bh, m_Opts);
                                 new_clause->AddSubclause(m_ClauseList[k]);
                                 last_new_clause = new_clause;
                                 last_new_clause_position = k;
@@ -1543,8 +1544,8 @@ void CAutoDefFeatureClause_Base::RemoveOptionalMobileElements()
 }
 
 
-CAutoDefUnknownGeneList::CAutoDefUnknownGeneList()
-                  : CAutoDefFeatureClause_Base()
+CAutoDefUnknownGeneList::CAutoDefUnknownGeneList(const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause_Base(opts)
 {
     m_Description = "unknown";
     m_DescriptionChosen = true;
@@ -1569,8 +1570,8 @@ void CAutoDefUnknownGeneList::Label(bool suppress_allele)
 }
 
 
-CAutoDefExonListClause::CAutoDefExonListClause(CBioseq_Handle bh)
-                  : CAutoDefFeatureClause_Base(),
+CAutoDefExonListClause::CAutoDefExonListClause(CBioseq_Handle bh, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause_Base(opts),
                     m_SuppressFinalAnd(false),
                     m_BH(bh)
 {
@@ -1996,21 +1997,21 @@ vector<string> CAutoDefFeatureClause_Base::GetFeatureClausePhrases(string commen
 }
 
 
-CRef<CAutoDefFeatureClause> CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last)
+CRef<CAutoDefFeatureClause> CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last, const CAutoDefOptions& opts)
 {
     if (NStr::Equal(phrase, "control region") ||
         NStr::Equal(phrase, "D-loop")) {
         // create a clause of the appropriate type
-        CAutoDefParsedClause * other(new CAutoDefParsedClause(bh, cf, mapped_loc, first, last));
+        CAutoDefParsedClause * other(new CAutoDefParsedClause(bh, cf, mapped_loc, first, last, opts));
         other->SetTypeword(phrase);
         other->SetTypewordFirst(false);
         return CRef< CAutoDefFeatureClause> (other);
     } else if (x_GetRnaMiscWordType(phrase) != eMiscRnaWordType_Unrecognized) {
-        CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, first, last);
+        CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, first, last, opts);
         new_clause->SetMiscRNAWord(phrase);
         return CRef< CAutoDefFeatureClause>(new_clause);
     } else {
-        CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, phrase, first, last);
+        CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, phrase, first, last, opts);
         return CRef< CAutoDefFeatureClause>(trna);
     }
 }

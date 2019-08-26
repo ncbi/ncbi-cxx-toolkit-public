@@ -53,8 +53,9 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc) 
-                              : m_MainFeat(main_feat),
+CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc, const CAutoDefOptions& opts) 
+                              : CAutoDefFeatureClause_Base(opts),
+                                m_MainFeat(main_feat),
                                 m_BH(bh)
 {
     x_SetBiomol();
@@ -482,11 +483,10 @@ bool CAutoDefFeatureClause::IsNoncodingProductFeat() const
     return x_GetNoncodingProductFeatProduct(product_name);
 }
 
-CAutoDefGeneClause::CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool suppress_locus_tag)
-    : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefGeneClause::CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+    : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
-    m_SuppressLocusTag = suppress_locus_tag;
-    m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene(), suppress_locus_tag);
+    m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene(), GetSuppressLocusTag());
     if (m_MainFeat.GetData().GetGene().CanGetAllele()) {
         m_AlleleName = m_MainFeat.GetData().GetGene().GetAllele();
         if (!NStr::StartsWith(m_AlleleName, m_GeneName, NStr::eNocase)) {
@@ -592,7 +592,7 @@ bool CAutoDefParsedtRNAClause::ParseString(string comment, string& gene_name, st
 }
 
 
-CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last) 
+CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last, const CAutoDefOptions& opts)
 {
     string product_name = "";
     string gene_name = "";
@@ -600,7 +600,7 @@ CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_fea
         return NULL;
     }
          
-    return new CAutoDefParsedtRNAClause(bh, cf, mapped_loc, gene_name, product_name, is_first, is_last);
+    return new CAutoDefParsedtRNAClause(bh, cf, mapped_loc, gene_name, product_name, is_first, is_last, opts);
 }        
 
 
@@ -695,7 +695,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
     } else {
         string label;
         
-        if (subtype == CSeqFeatData::eSubtype_cdregion && m_MainFeat.IsSetProduct()) {
+        if (subtype == CSeqFeatData::eSubtype_cdregion && m_MainFeat.IsSetProduct() && !m_Opts.IsFeatureSuppressed(CSeqFeatData::eSubtype_mat_peptide_aa)) {
             const CSeq_loc& product_loc = m_MainFeat.GetProduct();
             CBioseq_Handle prot_h = m_BH.GetScope().GetBioseqHandle(product_loc);
             if (prot_h) {
@@ -1131,6 +1131,22 @@ void CAutoDefFeatureClause::AddToLocation(CRef<CSeq_loc> loc, bool also_set_part
 }
 
 
+// Match for identical strings or for match at the beginning followed by mat-peptide region
+bool CAutoDefFeatureClause::DoesmRNAProductNameMatch(const string& mrna_product) const
+{
+    if (!m_ProductNameChosen) {
+        return false;
+    }
+    if (NStr::Equal(m_ProductName, mrna_product)) {
+        return true;
+    }
+    if (NStr::StartsWith(m_ProductName, mrna_product) && m_ProductName[mrna_product.length()] == ',' && NStr::EndsWith(m_ProductName, " region,")) {
+        return true;
+    }
+    return false;
+}
+
+
 /* This function searches this list for clauses to which this mRNA should
  * apply.  This is not taken care of by the GroupAllClauses function
  * because when an mRNA is added to a CDS, the product for the clause is
@@ -1156,8 +1172,7 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
     }
     
     if (subtype == CSeqFeatData::eSubtype_cdregion
-        && m_ProductNameChosen
-        && NStr::Equal(m_ProductName, mRNAClause->GetProductName())
+        && DoesmRNAProductNameMatch(mRNAClause->GetProductName())
         && (loc_compare == sequence::eContained || loc_compare == sequence::eSame)) {
         m_HasmRNA = true;
         // when expanding "location" to include mRNA, leave partials for CDS as they were
@@ -1504,9 +1519,9 @@ bool CAutoDefFeatureClause::IsBioseqPrecursorRNA() const
 }
 
 
-CAutoDefNcRNAClause::CAutoDefNcRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool use_comment)
-                      : CAutoDefFeatureClause(bh, main_feat, mapped_loc),
-					   m_UseComment (use_comment)
+CAutoDefNcRNAClause::CAutoDefNcRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+                      : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts),
+					   m_UseComment (m_Opts.GetUseNcRNAComment())
 {
 }
 
@@ -1591,8 +1606,8 @@ static string mobile_element_keywords [] = {
 };
   
 
-CAutoDefMobileElementClause::CAutoDefMobileElementClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefMobileElementClause::CAutoDefMobileElementClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
     string mobile_element_name = m_MainFeat.GetNamedQual("mobile_element_type");
     if (NStr::StartsWith(mobile_element_name, "other:")) {
@@ -1695,8 +1710,8 @@ const char *kMinisatellite = "minisatellite";
 const char *kMicrosatellite = "microsatellite";
 const char *kSatellite = "satellite";
 
-CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
 	string comment = m_MainFeat.GetNamedQual("satellite");
     string::size_type pos = NStr::Find(comment, ";");
@@ -1740,8 +1755,8 @@ void CAutoDefSatelliteClause::Label(bool suppress_allele)
 }
 
 
-CAutoDefPromoterClause::CAutoDefPromoterClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefPromoterClause::CAutoDefPromoterClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
     m_Description = "";
     m_DescriptionChosen = true;
@@ -1824,15 +1839,15 @@ void CAutoDefIntergenicSpacerClause::InitWithString (string comment, bool suppre
 }
 
 
-CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, string comment)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, string comment, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
     InitWithString (comment, true);
 }
 
 
-CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
 
     string comment = kEmptyStr;
@@ -1862,8 +1877,8 @@ void CAutoDefIntergenicSpacerClause::Label(bool suppress_allele)
 
 
 CAutoDefParsedIntergenicSpacerClause::CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, 
-                                                                           const string& description, bool is_first, bool is_last)
-                                                                           : CAutoDefIntergenicSpacerClause(bh, main_feat, mapped_loc)
+                                                                           const string& description, bool is_first, bool is_last, const CAutoDefOptions& opts)
+                                                                           : CAutoDefIntergenicSpacerClause(bh, main_feat, mapped_loc, opts)
 {
     if (!NStr::IsBlank(description)) {
         m_Description = description;
@@ -1899,8 +1914,8 @@ CAutoDefParsedtRNAClause::~CAutoDefParsedtRNAClause()
 }
 
 
-CAutoDefParsedClause::CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool is_first, bool is_last)
-                                       : CAutoDefFeatureClause (bh, main_feat, mapped_loc)
+CAutoDefParsedClause::CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool is_first, bool is_last, const CAutoDefOptions& opts)
+                                       : CAutoDefFeatureClause (bh, main_feat, mapped_loc, opts)
 {
     // adjust partialness of location
     bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological) && is_first;
@@ -1966,8 +1981,8 @@ void CAutoDefParsedClause::SetMiscRNAWord(const string& phrase)
 
 CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, 
                                                    string gene_name, string product_name, 
-                                                   bool is_first, bool is_last)
-                                                   : CAutoDefParsedClause (bh, main_feat, mapped_loc, is_first, is_last)
+                                                   bool is_first, bool is_last, const CAutoDefOptions& opts)
+                                                   : CAutoDefParsedClause (bh, main_feat, mapped_loc, is_first, is_last, opts)
 {
     m_Typeword = "gene";
     m_TypewordChosen = true;
@@ -1980,8 +1995,8 @@ CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq
 }
 
 
-CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
     m_Pluralizable = false;
     m_ShowTypewordFirst = false;
@@ -2019,8 +2034,8 @@ void CAutoDefGeneClusterClause::Label(bool suppress_allele)
 }
 
 
-CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
     if (m_MainFeat.CanGetComment()) {
         m_Description = m_MainFeat.GetComment();
@@ -2053,8 +2068,8 @@ void CAutoDefMiscCommentClause::Label(bool suppress_allele)
 
 
 CAutoDefParsedRegionClause::CAutoDefParsedRegionClause
-(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string product)
-: CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string product, const CAutoDefOptions& opts)
+: CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
     vector<string> elements = GetMiscRNAElements(product);
     if (elements.empty()) {
@@ -2090,8 +2105,8 @@ void CAutoDefParsedRegionClause::Label(bool suppress_allele)
 {
 }
 
-CAutoDefFakePromoterClause::CAutoDefFakePromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc)
-                   : CAutoDefFeatureClause (bh, main_feat, mapped_loc)
+CAutoDefFakePromoterClause::CAutoDefFakePromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+                   : CAutoDefFeatureClause (bh, main_feat, mapped_loc, opts)
 {
     m_Description = "";
     m_DescriptionChosen = true;
@@ -2154,8 +2169,8 @@ bool CAutoDefFakePromoterClause::OkToGroupUnderByType(const CAutoDefFeatureClaus
 }
 
 
-CAutoDefPromoterAnd5UTRClause::CAutoDefPromoterAnd5UTRClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc)
-    : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+CAutoDefPromoterAnd5UTRClause::CAutoDefPromoterAnd5UTRClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
+    : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
     m_Description = "promoter region and 5' UTR";
     m_DescriptionChosen = true;
@@ -2207,7 +2222,7 @@ CAutoDefFeatureClause::EClauseType CAutoDefFeatureClause::GetClauseType() const
 // features.  These functions create a clause for each element in the
 // comment.
 
-vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc)
+vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, const CAutoDefOptions& opts)
 {
     vector<CRef<CAutoDefFeatureClause > > rval;
     string comment;
@@ -2255,13 +2270,13 @@ vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& b
     }
 
     if (is_region) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment, opts)));
     } else {
         vector<string> elements = CAutoDefFeatureClause::GetMiscRNAElements(comment);
         if (!elements.empty()) {
             for (auto s : elements) {
                 CRef<CAutoDefParsedClause> new_clause(new CAutoDefParsedClause(bh, cf, mapped_loc,
-                    (s == elements.front()), (s == elements.back())));
+                    (s == elements.front()), (s == elements.back()), opts));
                 new_clause->SetMiscRNAWord(s);
                 rval.push_back(new_clause);
             }
@@ -2276,9 +2291,9 @@ vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& b
                             mapped_loc,
                             (s),
                             (s == elements.front()),
-                            (s == elements.back()))));
+                            (s == elements.back()), opts)));
                     } else {
-                        rval.push_back(CRef<CAutoDefFeatureClause>(s_tRNAClauseFromNote(bh, cf, mapped_loc, s, (s == elements.front()), (s == elements.back()))));
+                        rval.push_back(CRef<CAutoDefFeatureClause>(s_tRNAClauseFromNote(bh, cf, mapped_loc, s, (s == elements.front()), (s == elements.back()), opts)));
                     }
                 }
             } else {
@@ -2287,7 +2302,8 @@ vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& b
                     mapped_loc,
                     comment,
                     true,
-                    true)));
+                    true, 
+                    opts)));
             }
         }
     }
@@ -2295,7 +2311,7 @@ vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& b
 }
 
 
-vector<CRef<CAutoDefFeatureClause > > AddtRNAAndOther(const CBioseq_Handle& bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc)
+vector<CRef<CAutoDefFeatureClause > > AddtRNAAndOther(const CBioseq_Handle& bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, const CAutoDefOptions& opts)
 {
     vector<CRef<CAutoDefFeatureClause> > rval;
     if (cf.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature ||
@@ -2312,10 +2328,10 @@ vector<CRef<CAutoDefFeatureClause > > AddtRNAAndOther(const CBioseq_Handle& bh, 
     string last = phrases.back();
     phrases.pop_back();
     ITERATE(vector<string>, it, phrases) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(CAutoDefFeatureClause_Base::ClauseFromPhrase(*it, bh, cf, mapped_loc, first, false)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(CAutoDefFeatureClause_Base::ClauseFromPhrase(*it, bh, cf, mapped_loc, first, false, opts)));
         first = false;
     }
-    rval.push_back(CRef<CAutoDefFeatureClause>(CAutoDefFeatureClause_Base::ClauseFromPhrase(last, bh, cf, mapped_loc, first, true)));
+    rval.push_back(CRef<CAutoDefFeatureClause>(CAutoDefFeatureClause_Base::ClauseFromPhrase(last, bh, cf, mapped_loc, first, true, opts)));
 
     return rval;
 }
@@ -2332,39 +2348,39 @@ vector<CRef<CAutoDefFeatureClause > > FeatureClauseFactory(CBioseq_Handle bh, co
     }
 
     if (subtype == CSeqFeatData::eSubtype_gene) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefGeneClause(bh, cf, mapped_loc, opts.GetSuppressLocusTags())));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefGeneClause(bh, cf, mapped_loc, opts)));
     } else if (subtype == CSeqFeatData::eSubtype_ncRNA) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefNcRNAClause(bh, cf, mapped_loc, opts.GetUseNcRNAComment())));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefNcRNAClause(bh, cf, mapped_loc, opts)));
     } else if (subtype == CSeqFeatData::eSubtype_mobile_element) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefMobileElementClause(bh, cf, mapped_loc)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefMobileElementClause(bh, cf, mapped_loc, opts)));
     } else if (CAutoDefFeatureClause::IsSatellite(cf)) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefSatelliteClause(bh, cf, mapped_loc)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefSatelliteClause(bh, cf, mapped_loc, opts)));
     } else if (subtype == CSeqFeatData::eSubtype_otherRNA
         || subtype == CSeqFeatData::eSubtype_misc_RNA
         || subtype == CSeqFeatData::eSubtype_rRNA) {
-        auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc);
+        auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc, opts);
         if (misc_rna.empty()) {
-            rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc)));
+            rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc, opts)));
         } else {
             for (auto it : misc_rna) {
                 rval.push_back(it);
             }
         }
     } else if (CAutoDefFeatureClause::IsPromoter(cf)) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefPromoterClause(bh, cf, mapped_loc)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefPromoterClause(bh, cf, mapped_loc, opts)));
     } else if (CAutoDefFeatureClause::IsGeneCluster(cf)) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefGeneClusterClause(bh, cf, mapped_loc)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefGeneClusterClause(bh, cf, mapped_loc, opts)));
     } else if (CAutoDefFeatureClause::IsControlRegion(cf)) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc, opts)));
     }
     else if (subtype == CSeqFeatData::eSubtype_otherRNA) {
-        auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc);
+        auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc, opts);
         if (misc_rna.empty()) {
             // try to make trna clauses
-            misc_rna = AddtRNAAndOther(bh, cf, mapped_loc);
+            misc_rna = AddtRNAAndOther(bh, cf, mapped_loc, opts);
         }
         if (misc_rna.empty()) {
-            rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc)));
+            rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc, opts)));
         }
         else {
             for (auto it : misc_rna) {
@@ -2373,16 +2389,16 @@ vector<CRef<CAutoDefFeatureClause > > FeatureClauseFactory(CBioseq_Handle bh, co
         }
     } else if (subtype == CSeqFeatData::eSubtype_misc_feature &&
         is_single_misc_feat && CAutoDefPromoterAnd5UTRClause::IsPromoterAnd5UTR(cf)) {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefPromoterAnd5UTRClause(bh, cf, mapped_loc)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefPromoterAnd5UTRClause(bh, cf, mapped_loc, opts)));
     } else if (subtype == CSeqFeatData::eSubtype_misc_feature) {
-        auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc);
+        auto misc_rna = AddMiscRNAFeatures(bh, cf, mapped_loc, opts);
         if (misc_rna.empty()) {
             // try to make trna clauses
-            misc_rna = AddtRNAAndOther(bh, cf, mapped_loc);
+            misc_rna = AddtRNAAndOther(bh, cf, mapped_loc, opts);
         }
         if (misc_rna.empty()) {
             // some misc-features may require more parsing
-            CRef<CAutoDefFeatureClause> new_clause(new CAutoDefFeatureClause(bh, cf, mapped_loc));
+            CRef<CAutoDefFeatureClause> new_clause(new CAutoDefFeatureClause(bh, cf, mapped_loc, opts));
             if (!is_single_misc_feat &&
                 (opts.GetMiscFeatRule() == CAutoDefOptions::eDelete
                     || (opts.GetMiscFeatRule() == CAutoDefOptions::eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat()))) {
@@ -2391,7 +2407,7 @@ vector<CRef<CAutoDefFeatureClause > > FeatureClauseFactory(CBioseq_Handle bh, co
             } else if (opts.GetMiscFeatRule() == CAutoDefOptions::eCommentFeat) {
                 new_clause.Reset(NULL);
                 if (cf.CanGetComment() && !NStr::IsBlank(cf.GetComment())) {
-                    misc_rna.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefMiscCommentClause(bh, cf, mapped_loc)));
+                    misc_rna.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefMiscCommentClause(bh, cf, mapped_loc, opts)));
                 }
             } else {
                 misc_rna.push_back(new_clause);
@@ -2404,7 +2420,7 @@ vector<CRef<CAutoDefFeatureClause > > FeatureClauseFactory(CBioseq_Handle bh, co
         }
 
     }  else {
-        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc)));
+        rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefFeatureClause(bh, cf, mapped_loc, opts)));
     }
     return rval;
 }

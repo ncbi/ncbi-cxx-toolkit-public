@@ -480,6 +480,29 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
 }
 
 
+static void CheckDeflineMatches(CRef<CSeq_entry> entry, CSeqFeatData::ESubtype feat_to_suppress)
+{
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    objects::CAutoDefWithTaxonomy autodef;
+
+    // add to autodef 
+    autodef.AddSources(seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
+
+    autodef.SuppressFeature(feat_to_suppress);
+
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDefOptions::eNoncodingProductFeat);
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
+}
+
+
 CRef<CSeq_entry> FindNucInSeqEntry(CRef<CSeq_entry> entry)
 {
     CRef<CSeq_entry> empty(NULL);
@@ -2534,6 +2557,42 @@ BOOST_AUTO_TEST_CASE(Test_GB_8547)
  
     AddTitle(entry, "Influenza A virus (A/Florida/57/2019) segment 5 sequence.");
 
+    CheckDeflineMatches(entry);
+}
+
+BOOST_AUTO_TEST_CASE(Test_GB_8604)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    CRef<CSeq_feat> pfeat = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
+    pfeat->SetData().SetProt().SetName().front() = "proannomuricatin G";
+    CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS(cds);
+    mrna->SetData().SetRna().SetExt().SetName("proannomuricatin G");
+    unit_test_util::AddFeat(mrna, nuc);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(mrna);
+    gene->SetData().SetGene().SetLocus("PamG");
+    unit_test_util::AddFeat(gene, nuc);
+
+    // check without mat-peptide first
+    AddTitle(nuc, "Sebaea microphylla proannomuricatin G (PamG) gene, partial cds.");
+
+    CheckDeflineMatches(entry);
+
+    // check with mat-peptide
+    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> mat_peptide = unit_test_util::AddMiscFeature(prot);
+    mat_peptide->ResetComment();
+    mat_peptide->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
+    mat_peptide->SetData().SetProt().SetName().push_back("annomuricatin G");
+
+    // if suppressing mat-peptide, no change
+    CheckDeflineMatches(entry, CSeqFeatData::eSubtype_mat_peptide_aa);
+
+    // show when not suppressing
+    AddTitle(entry, "Sebaea microphylla proannomuricatin G, annomuricatin G region, (PamG) gene, partial cds.");
     CheckDeflineMatches(entry);
 }
 
