@@ -33,7 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/version.hpp>
+#include <corelib/version_api.hpp>
 
 
 /** @addtogroup Compression
