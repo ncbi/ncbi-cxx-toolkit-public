@@ -144,6 +144,10 @@ bdbasncli needs xconnect
 biblio needs general
 binary_quality_profile needs xncbi
 biocollect needs ncbi_xdbapi_ftds
+biosample needs $(SDBAPI_LIB)
+biosample needs xmlwrapp
+biosample needs xregexp
+biosample needs3party $(SDBAPI_LIBS)
 biotree needs general
 biotree_db needs $(SDBAPI_LIB)
 biotree_db needs biotree
@@ -1171,6 +1175,7 @@ spdiproto needs3party $(ORIG_LIBS)
 spdiproto needs3party $(PROTOBUF_LIBS)
 spdiproto needs3party $(Z_LIBS)
 spellsrvbase needs txserv
+splines needs3party $(ORIG_LIBS)
 splitdbasn_g needs gendefasn_g
 splitdbasn_g needs3party ncbiobj
 splitdbasncpp_g needs asngendefs
@@ -1402,6 +1407,7 @@ w_seq_graphic needs genesbyloc
 w_seq_graphic needs gui_graph
 w_seq_graphic needs ncbi_xloader_bam
 w_seq_graphic needs ncbi_xloader_csra
+w_seq_graphic needs splines
 w_seq_graphic needs w_aln_score
 w_seq_graphic needs w_gl
 w_seq_graphic needs w_loaders
@@ -1619,7 +1625,7 @@ xgpsubmit needs idload_utils
 xgpsubmit needs seqgapscan
 xgpsubmit needs xasmcompare
 xgraphiccgi needs gui_glmesa
-xgraphiccgi needs w_seq_graphic
+xgraphiccgi needs gui_print
 xgraphiccgi needs xsvcgi
 xgridcgi needs xcgi
 xgridcgi needs xconnserv
@@ -1730,6 +1736,8 @@ xstruct_util needs $(BLAST_LIBS)
 xstruct_util needs xstruct_dp
 xstruct_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 xsubmit2id needs idload_utils
+xsvcgi includes $(BZ2_LIB)
+xsvcgi includes3party $(BZ2_LIBS)
 xsvcgi needs $(DBAPI_CTLIB)
 xsvcgi needs $(OBJMGR_LIBS)
 xsvcgi needs $(ncbi_xreader_pubseqos2)
