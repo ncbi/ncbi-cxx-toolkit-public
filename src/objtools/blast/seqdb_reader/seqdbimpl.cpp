@@ -808,7 +808,6 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
     if (! m_OidListSetup) {
         x_GetOidList(locked);
     }
-    m_Atlas.Unlock(locked);
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqIDs(vol_oid);
