@@ -71,7 +71,9 @@ public:
         CObjectManager::GetInstance()->RevokeDataLoaders(filter);
     }
 };
-static CRevoker s_Revoker;
+static CSafeStatic<CRevoker> s_Revoker(CSafeStaticLifeSpan(
+    CSafeStaticLifeSpan::eLifeLevel_AppMain,
+    CSafeStaticLifeSpan::eLifeSpan_Long));
 
 END_LOCAL_NAMESPACE;
 

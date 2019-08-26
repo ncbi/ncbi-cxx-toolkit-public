@@ -101,7 +101,9 @@ void s_DumpScopes(void)
 
 CRef<CObjectManager> CObjectManager::GetInstance(void)
 {
-    static CSafeStatic<CObjectManager> s_Instance;
+    static CSafeStatic<CObjectManager> s_Instance(CSafeStaticLifeSpan(
+        CSafeStaticLifeSpan::eLifeLevel_AppMain,
+        CSafeStaticLifeSpan::eLifeSpan_Longest));
     return Ref(&s_Instance.Get());
 }
 
