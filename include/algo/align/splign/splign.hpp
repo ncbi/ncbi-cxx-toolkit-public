@@ -36,7 +36,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/version.hpp>
+#include <corelib/version_api.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>

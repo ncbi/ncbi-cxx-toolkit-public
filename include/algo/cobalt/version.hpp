@@ -36,7 +36,7 @@ Contents: MultiAligner version
 
 ******************************************************************************/
 
-#include <corelib/version.hpp>
+#include <corelib/version_api.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
 
