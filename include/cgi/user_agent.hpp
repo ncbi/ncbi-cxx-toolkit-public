@@ -34,7 +34,7 @@
 /// API to parse user agent strings.
 ///
 
-#include <corelib/version.hpp>
+#include <corelib/version_api.hpp>
 
 /** @addtogroup CGI
  *
