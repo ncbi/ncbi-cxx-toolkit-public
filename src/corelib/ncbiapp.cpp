@@ -957,8 +957,10 @@ int CNcbiApplicationAPI::AppMain
     // Application stop
     AppStop(exit_code);
 
-    // Destroy short-lived statics
-    CSafeStaticGuard::Destroy(CSafeStaticLifeSpan::eLifeLevel_AppMain);
+    if ((m_AppFlags & fSkipSafeStaticDestroy) == 0) {
+        // Destroy short-lived statics
+        CSafeStaticGuard::Destroy(CSafeStaticLifeSpan::eLifeLevel_AppMain);
+    }
 
     // Exit
     return exit_code;

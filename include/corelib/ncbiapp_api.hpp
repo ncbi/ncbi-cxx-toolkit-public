@@ -569,6 +569,12 @@ protected:
     /// latter case, Run's return value will be ignored.
     void SetExitCode(int exit_code, EExitMode when = eExceptionalExits);
 
+    enum EAppFlags {
+        fSkipSafeStaticDestroy = 1 << 0
+    };
+    typedef int TAppFlags;
+    void SetAppFlags(TAppFlags flags) { m_AppFlags = flags; }
+
 private:
     /// Read standard NCBI application configuration settings.
     ///
@@ -630,6 +636,7 @@ private:
     const char*                m_LogFile;     ///< Logfile if set in the command line
     int                        m_LogOptions; ///<  logging of env, reg, args, path
     CNcbiActionGuard           m_OnExitActions; ///< Actions executed on app destruction
+    TAppFlags                  m_AppFlags = 0;
 };
 
 /// Interface for application idler.

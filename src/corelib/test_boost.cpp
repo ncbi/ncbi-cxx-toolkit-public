@@ -1581,6 +1581,7 @@ inline void
 CNcbiTestApplication::FiniTestsAfterRun(void)
 {
     x_CallUserFuncs(eTestUserFuncFini);
+    CSafeStaticGuard::Destroy(CSafeStaticLifeSpan::eLifeLevel_AppMain);
 }
 
 inline void
@@ -1849,6 +1850,7 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     }
     m_TimeMult = NCBI_GetCheckTimeoutMult();
 
+    SetAppFlags(fSkipSafeStaticDestroy);
     if (AppMain(argc, argv) == 0 && m_RunCalled) {
         x_CollectAllTests();
 
