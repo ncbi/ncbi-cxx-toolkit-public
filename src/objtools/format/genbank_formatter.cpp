@@ -1840,7 +1840,7 @@ s_FormatRegularSequencePiece
     const string& accn = seq.GetContext()->GetAccession();
 
     // format of sequence position
-    const size_t kSeqPosWidth = 9;
+    size_t kSeqPosWidth = 9;
 
     const size_t kLineBufferSize = 170;
     char line[kLineBufferSize];
@@ -1870,6 +1870,35 @@ s_FormatRegularSequencePiece
     }
 
     while ( total > 0 ) {
+        if (base_count >= 1000000000) {
+            if (kSeqPosWidth == 9) {
+                // repeat above calculation as soon as it reaches the first line with a 10 digit position count
+                kSeqPosWidth = 10;
+                // prefill the line buffer with spaces
+                fill(line, line+kLineBufferSize, ' ');
+
+                // add the span stuff
+                TSeqPos length_of_span_before_base_count = 0;
+                if( bHtml ) {
+                    string kSpan = " <span class=\"ff_line\" id=\"";
+                    kSpan += accn;
+                    kSpan += '_';
+                    copy( kSpan.begin(), kSpan.end(), line + kSeqPosWidth );
+                    length_of_span_before_base_count = kSpan.length();
+                }
+
+                // if base-count is offset, we indent the initial line
+                TSeqPos initial_indent = 0;
+                if( (base_count % s_kFullLineSize) != 1 ) {
+                    initial_indent = (base_count % s_kFullLineSize);
+                    if( 0 == initial_indent ) {
+                        initial_indent = (s_kFullLineSize - 1);
+                    } else {
+                        --initial_indent;
+                    }
+                }
+           }
+        }
         char* linep = line + kSeqPosWidth;
 
         // each seqpos is a bigger number than the last, so we
