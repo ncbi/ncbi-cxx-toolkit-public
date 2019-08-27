@@ -81,7 +81,7 @@ public:
 
     /// Retrieve the library's version object
 
-    static CVersion& s_GetVersion(void);
+    static CVersionAPI& s_GetVersion(void);
 
     /// Access the spliced aligner core object.
 
