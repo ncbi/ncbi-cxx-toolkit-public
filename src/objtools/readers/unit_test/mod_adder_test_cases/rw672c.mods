@@ -21,6 +21,6 @@ location provirus
 origin natural
 taxname taxname
 common common_name
-dbxref db1
+dbxref tag1
 db-xref db2:tag2
 DB_Xref db3:tag3

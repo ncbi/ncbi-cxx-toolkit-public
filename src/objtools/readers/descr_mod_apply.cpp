@@ -531,8 +531,8 @@ void CDescrModApply::x_SetDBxref(const TModEntry& mod_entry)
            tag = value.substr(colon_pos+1);
        }
        else {
-            database = value;
-            tag = "?";
+            database = "?";
+            tag = value;
        }
        auto pDbtag = Ref(new CDbtag());
        pDbtag->SetDb(database);

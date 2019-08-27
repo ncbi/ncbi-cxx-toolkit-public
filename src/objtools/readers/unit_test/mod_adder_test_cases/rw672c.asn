@@ -9,8 +9,8 @@ Seq-entry ::= set {
         common "common_name",
         db {
           {
-            db "db1",
-            tag str "?"
+            db "?",
+            tag str "tag1"
           },
           {
             db "db2",

@@ -17,8 +17,8 @@ Seq-entry ::= set {
       org {
         db {
           {
-            db "db1",
-            tag str "?"
+            db "?",
+            tag str "tag1"
           },
           {
             db "taxon",
