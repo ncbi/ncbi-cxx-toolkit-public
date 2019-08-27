@@ -1183,17 +1183,22 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 {
     try {
         const auto& service_name = m_Service.GetServiceName();
-        set<CNetServer::SAddress> discovered;
+        list<CNetServer::SAddress> discovered;
 
         // Gather all discovered addresses
         for (auto it = m_Service.Iterate(CNetService::eRoundRobin); it; ++it) {
-            discovered.insert((*it).GetAddress());
+            discovered.emplace_back((*it).GetAddress());
         }
 
         // Update existing sessions
         for (auto& session : m_Sessions) {
             const auto& address = session.address;
-            auto in_service = discovered.erase(address) == 1;
+            auto it = find(discovered.begin(), discovered.end(), address);
+            auto in_service = it != discovered.end();
+
+            if (in_service) {
+                discovered.erase(it);
+            }
 
             if (session.discovered != in_service) {
                 session.discovered = in_service;
