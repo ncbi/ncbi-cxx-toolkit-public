@@ -90,7 +90,7 @@ using namespace ncbi;
 using namespace objects;
 using namespace validator;
 
-const char * ASNVAL_APP_VER = "1.3.0";
+const char * ASNVAL_APP_VER = "1.4.0";
 
 #define USE_XMLWRAPP_LIBS
 
@@ -213,7 +213,7 @@ CAsnvalApp::CAsnvalApp(void) :
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0)
 {
-    const CVersionInfo vers (1,3,0);
+    const CVersionInfo vers (1,4,0);
     SetVersion (vers);
 }
 
