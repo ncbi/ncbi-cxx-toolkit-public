@@ -72,6 +72,7 @@ public:
     static string PackBlobPropKey(int32_t sat_key);
     static string PackBlobPropKey(int32_t sat_key, int64_t last_modified);
     static bool UnpackBlobPropKey(const char* key, size_t key_sz, int64_t& last_modified);
+    static bool UnpackBlobPropKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key);
 private:
     string m_BioseqInfoPath;
     string m_Si2CsiPath;
