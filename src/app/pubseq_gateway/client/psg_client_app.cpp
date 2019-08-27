@@ -204,7 +204,7 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger);
-    arg_desc.AddDefaultKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString, "yes");
+    arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString);
     arg_desc.AddFlag("no-delayed-completion", "Whether to use delayed completion", CArgDescriptions::eFlagHasValueIfMissed);
     arg_desc.AddFlag("raw-metrics", "Whether to output raw metrics");
     arg_desc.AddFlag("local-queue", "Whether user threads to use separate queues");
@@ -289,19 +289,21 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
         TPSG_MaxConcurrentStreams::SetDefault(max_streams);
     }
 
+    if (args["use-cache"].HasValue()) {
+        auto use_cache = args["use-cache"].AsString();
+        auto use_cache_value = s_GetUseCacheValue(TPSG_UseCache(), use_cache);
+        TPSG_UseCache::SetDefault(use_cache_value);
+    }
+
     auto service = args["service"].AsString();
     CProcessing processing(service, true);
 
     auto user_threads = static_cast<size_t>(args["user-threads"].AsInteger());
-    auto use_cache = args["use-cache"].AsString();
     auto delayed_completion = args["no-delayed-completion"].AsBoolean();
     auto raw_metrics = args["raw-metrics"].AsBoolean();
 
     if (!args["local-queue"].AsBoolean()) service.clear();
 
-    auto use_cache_value = s_GetUseCacheValue(TPSG_UseCache(), use_cache);
-
-    TPSG_UseCache::SetDefault(use_cache_value);
     TPSG_DelayedCompletion::SetDefault(delayed_completion);
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
 
