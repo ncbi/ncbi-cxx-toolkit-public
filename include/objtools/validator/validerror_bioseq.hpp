@@ -243,12 +243,8 @@ private:
         eStrandedMoltype_ssDNA = 4,
         eStrandedMoltype_dsDNA = 8
     } EStrandedMoltype;
-    static EStrandedMoltype s_GetStrandedMolTypeFromLineage(const string& lineage);
     static string s_GetStrandedMolStringFromLineage(const string& lineage);
-    static string s_GetStrandedMoltype(EStrandedMoltype smol);
-    static CSeq_inst::EMol s_ExpectedMoltypeForStrandedMol(EStrandedMoltype smol);
 
-    void x_ReportLineageConflictWithMol(EStrandedMoltype smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx);
     void x_ReportLineageConflictWithMol(const string& lineage, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateMolTypeContext(const EGIBB_mol& gibb, EGIBB_mol& seq_biomol,
         const CBioseq& seq, const CSeqdesc& desc);
