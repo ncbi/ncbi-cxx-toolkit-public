@@ -21,6 +21,9 @@ enum class job_t {
     jb_lookup_bi_secondary,
     jb_lookup_primary_secondary,
     jb_lookup_blob_prop,
+    jb_unpack_bi_key,
+    jb_unpack_si_key,
+    jb_unpack_bp_key,
 };
 
 class CTestPsgCache : public CNcbiApplication {
@@ -54,13 +57,44 @@ private:
     int m_force_seq_id_type;
 };
 
+bool IsHex(char ch) {
+    if (ch >= '0' && ch <= '9')
+        return true;
+    if (ch >= 'a' && ch <= 'f')
+        return true;
+    return false;
+}
+
+char HexToBin(char ch) {
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    return -1;
+}
+
+string PrintableToHext(const string& str) {
+    stringstream ss;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == '\\' && i + 2 < str.size() && IsHex(str[i + 1]) && IsHex(str[i + 2])) {
+            char ch = HexToBin(str[i + 1]) * 16 + HexToBin(str[i + 2]);
+            i += 2;
+            ss << ch;
+        }
+        else
+            ss << str[i];
+    }
+    return ss.str();
+}
+
+
 void CTestPsgCache::Init() {
 	unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
 	argdesc->SetUsageContext(GetArguments().GetProgramBasename(),
                              "test PSG cache");
 
 	argdesc->AddDefaultKey("ini", "IniFile", "File with configuration information", CArgDescriptions::eString, "test_psg_cache.ini");
-    argdesc->AddOptionalKey("j", "job", "Job type (bi_pri|bi_sec|si2csi|blob_prop)", CArgDescriptions::eString);
+    argdesc->AddOptionalKey("j", "job", "Job type (bi_pri|bi_sec|si2csi|blob_prop|unp_bi|unp_si|unp_bp)", CArgDescriptions::eString);
     argdesc->AddKey("q", "query", "Query string (depends on job type)", CArgDescriptions::eString);
     argdesc->AddDefaultKey("v", "ver", "Force version", CArgDescriptions::eInteger, to_string(INT_MIN));
     argdesc->AddDefaultKey("t", "seqidtype", "Force seq_id_type", CArgDescriptions::eInteger, to_string(INT_MIN));
@@ -72,10 +106,13 @@ void CTestPsgCache::ParseArgs() {
     const CNcbiRegistry &   registry = GetConfig();
 
     map<string, job_t> jm({
-        { "bi_pri",   job_t::jb_lookup_bi_primary },
-        { "bi_sec", job_t::jb_lookup_bi_secondary },
-        { "si2csi",       job_t::jb_lookup_primary_secondary },
-        { "blob_prop",       job_t::jb_lookup_blob_prop }
+        { "bi_pri",    job_t::jb_lookup_bi_primary },
+        { "bi_sec",    job_t::jb_lookup_bi_secondary },
+        { "si2csi",    job_t::jb_lookup_primary_secondary },
+        { "blob_prop", job_t::jb_lookup_blob_prop },
+        { "unp_bi",    job_t::jb_unpack_bi_key    },
+        { "unp_si",    job_t::jb_unpack_si_key    },
+        { "unp_bp",    job_t::jb_unpack_bp_key    },
     });
 
     m_Si2csiDbFile = registry.GetString("LMDB_CACHE", "dbfile_si2csi", "");
@@ -157,6 +194,31 @@ int CTestPsgCache::Run() {
             
             break;
         }
+        case job_t::jb_unpack_bi_key: {
+            string s = PrintableToHext(m_query);
+            int version = -1; 
+            int seq_id_type = -1;
+            string accession;
+            CPubseqGatewayCache::UnpackBioseqInfoKey(s.c_str(), s.size(), accession, version, seq_id_type);
+            cout << accession << "." << version << "/" << seq_id_type << endl;
+            break;
+        }
+        case job_t::jb_unpack_si_key: {
+            string s = PrintableToHext(m_query);
+            int seq_id_type = -1;
+            string seq_id;
+            CPubseqGatewayCache::UnpackSiKey(s.c_str(), s.size(), seq_id_type);
+            cout << seq_id << "/" << seq_id_type << endl;
+            break;
+        }
+        case job_t::jb_unpack_bp_key: {
+            string s = PrintableToHext(m_query);
+            int64_t last_modified = -1;
+            int32_t sat_key = -1;
+            CPubseqGatewayCache::UnpackBlobPropKey(s.c_str(), s.size(), last_modified, sat_key);
+            cout << sat_key << "/" << last_modified << endl;
+            break;
+        }
     }
     return 0;
 }
@@ -202,8 +264,8 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
         CSeq_id seq_id(fasta_seqid);
         seq_id_type = seq_id.Which() == CSeq_id::e_not_set  ? -1 : static_cast<int>(seq_id.Which());        
         if (seq_id_type != static_cast<int>(CSeq_id::e_Gi)) {
-            if (seq_id_type == static_cast<int>(CSeq_id::e_General)) {
 /*
+            if (seq_id_type == static_cast<int>(CSeq_id::e_General)) {
                 auto gen = seq_id.GetGeneral();
                 if (gen) {
                     if (gen->IsSetName)
@@ -215,9 +277,9 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
                     }
                     
                 }
-*/
             }
             else {
+*/
                 tx_id = seq_id.GetTextseq_Id();
                 if (tx_id) {
                     if (tx_id->IsSetAccession()) {
@@ -229,7 +291,7 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
                         seq_id_str = tx_id->GetName();
                     }
                 }
-            }
+//            }
         }
         else {
             seq_id_str = NStr::NumericToString(seq_id.GetGi());
@@ -247,6 +309,7 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
     }
 
     return true;
+
 }
 
 void CTestPsgCache::PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, const string& data) {
@@ -512,7 +575,7 @@ int main(int argc, const char* argv[]) {
     length: 330743
     date_changed: 1310747580000
     tax_id: 10506
-    seq_ids: {{12, 145309287}}
+    seq_ids: {{11, NCBI_GENOMES|14116}, {12, 145309287}}
 
 
     CPsgSi2CsiCache si_cache("/data/cassandra/NEWRETRIEVAL/si2csi.db");
