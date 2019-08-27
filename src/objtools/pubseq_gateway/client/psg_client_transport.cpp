@@ -902,7 +902,6 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 
 SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* aio, uv_loop_t* loop, CNetServer::SAddress a) :
     address(move(a)),
-    discovered(true),
     m_Io(aio),
     m_Tcp(loop, address,
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
@@ -1070,7 +1069,7 @@ void SPSG_IoSession::AddToCompletion(shared_ptr<SPSG_Reply>& reply)
     }
 }
 
-void SPSG_IoSession::ProcessRequests()
+bool SPSG_IoSession::ProcessRequest()
 {
     for (;;) {
         if ((m_Requests.size() >= m_Session.GetMaxStreams()) || m_Tcp.IsWriteBufferFull()) {
@@ -1094,20 +1093,24 @@ void SPSG_IoSession::ProcessRequests()
         if (stream_id < 0) {
             Retry(req, stream_id);
             Reset(stream_id);
-            return;
+            return false;
         }
 
         m_Requests.emplace(stream_id, move(req));
 
         if (auto rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
             Reset(rv);
-            return;
+            return false;
         }
+
+        return true;
     }
 
     if (auto rv = m_Tcp.Write()) {
         Reset(rv, "Failed to write");
     }
+
+    return false;
 }
 
 void SPSG_IoSession::Reset(const SPSG_Error& error)
@@ -1156,7 +1159,23 @@ void SPSG_IoThread::OnShutdown(uv_async_t*)
 void SPSG_IoThread::OnQueue(uv_async_t*)
 {
     for (auto& session : m_Sessions) {
-        if (session.discovered) session.TryCatch(&SPSG_IoSession::ProcessRequests);
+        session.in_progress = true;
+    }
+
+    for (;;) {
+        bool all_done = true;
+
+        for (auto& session : m_Sessions) {
+            if (session.discovered && session.in_progress) {
+                if (session.TryCatch(&SPSG_IoSession::ProcessRequest, false)) {
+                    all_done = false;
+                } else {
+                    session.in_progress = false;
+                }
+            }
+        }
+
+        if (all_done) return;
     }
 }
 

@@ -705,7 +705,6 @@ struct SPSG_IoThread;
 struct SPSG_IoSession
 {
     const CNetServer::SAddress address;
-    atomic_bool discovered;
 
     SPSG_IoSession(SPSG_IoSession&&) = default;
     SPSG_IoSession& operator =(SPSG_IoSession&&) = default;
@@ -715,12 +714,12 @@ struct SPSG_IoSession
 
     void AddToCompletion(shared_ptr<SPSG_Reply>& reply);
 
-    void ProcessRequests();
+    bool ProcessRequest();
 
     bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
 
     template <typename TReturn, class ...TArgs>
-    TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs...), TArgs... args)
+    TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs...), TReturn error, TArgs... args)
     {
         try {
             return (this->*member)(forward<TArgs>(args)...);
@@ -737,9 +736,7 @@ struct SPSG_IoSession
             Reset(SPSG_Error::eException, "Unexpected exception");
         }
 
-        // This template only makes sense for void and int return types (due to the return statement below)
-        static_assert(is_void<TReturn>::value || is_same<TReturn, int>::value, "Forbidden TReturn");
-        return static_cast<TReturn>(NGHTTP2_ERR_CALLBACK_FAILURE);
+        return error;
     }
 
 private:
@@ -768,7 +765,7 @@ private:
     static int OnNgHttp2(void* user_data, int (SPSG_IoSession::*member)(TArgs...), TArgs... args)
     {
         auto that = static_cast<SPSG_IoSession*>(user_data);
-        return that->TryCatch(member, forward<TArgs>(args)...);
+        return that->TryCatch(member, (int)NGHTTP2_ERR_CALLBACK_FAILURE, forward<TArgs>(args)...);
     }
 
     static int s_OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data,
@@ -844,6 +841,8 @@ struct SPSG_IoThread
     bool AddRequestMove(shared_ptr<SPSG_Request>& req);
 
 private:
+    struct SSession;
+
     void OnShutdown(uv_async_t* handle);
     void OnQueue(uv_async_t* handle);
     void OnTimer(uv_timer_t* handle);
@@ -872,11 +871,19 @@ private:
         io->Execute(barrier);
     }
 
-    list<SPSG_IoSession> m_Sessions;
+    list<SSession> m_Sessions;
     SPSG_UvAsync m_Shutdown;
     SPSG_UvTimer m_Timer;
     CNetService m_Service;
     thread m_Thread;
+};
+
+struct SPSG_IoThread::SSession : SPSG_IoSession
+{
+    bool discovered = true;
+    bool in_progress = false;
+
+    using SPSG_IoSession::SPSG_IoSession;
 };
 
 struct SPSG_IoCoordinator
