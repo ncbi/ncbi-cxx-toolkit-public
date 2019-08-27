@@ -9011,6 +9011,10 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
 
     string str = s_GetStrandedMolStringFromLineage(lineage);
 
+    if (NStr::Find(str, "unknown") != NPOS) {
+        return;
+    }
+
     CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
     if (molinfo.IsSetBiomol()) {
         biomol = molinfo.GetBiomol();
@@ -9444,6 +9448,10 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol
 
     string str = s_GetStrandedMolStringFromLineage(lineage);
     if (str.length() < 1) {
+        return;
+    }
+
+    if (NStr::Find(str, "unknown") != NPOS) {
         return;
     }
 
