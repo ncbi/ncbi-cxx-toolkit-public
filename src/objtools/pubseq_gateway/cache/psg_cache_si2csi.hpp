@@ -48,7 +48,7 @@ public:
     static string PackKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type);
 private:
-    unique_ptr<lmdb::dbi> m_Dbi;
+    unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };
 
 END_NCBI_SCOPE
