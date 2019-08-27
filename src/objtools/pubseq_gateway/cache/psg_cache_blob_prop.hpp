@@ -48,9 +48,10 @@ public:
     static string PackKey(int32_t sat_key);
     static string PackKey(int32_t sat_key, int64_t last_modified);
     static bool UnpackKey(const char* key, size_t key_sz, int64_t& last_modified);
+    static bool UnpackKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key);
 
 private:
-    vector<unique_ptr<lmdb::dbi>> m_Dbis;
+    vector<unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>> m_Dbis;
 };
 
 END_NCBI_SCOPE

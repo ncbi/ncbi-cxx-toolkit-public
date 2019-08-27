@@ -178,3 +178,8 @@ bool CPubseqGatewayCache::UnpackBlobPropKey(const char* key, size_t key_sz, int6
     return CPubseqGatewayCacheBlobProp::UnpackKey(key, key_sz, last_modified);
 }
 
+bool CPubseqGatewayCache::UnpackBlobPropKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key)
+{
+    return CPubseqGatewayCacheBlobProp::UnpackKey(key, key_sz, last_modified, sat_key);
+}
+

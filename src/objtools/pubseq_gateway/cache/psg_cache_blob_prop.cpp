@@ -56,20 +56,27 @@ void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names) {
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     int sat = 0;
     for (const auto & it : sat_names) {
-        lmdb::dbi dbi = 0;
+        unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> pdbi;
         if (!it.empty()) {
             string sat_dbi = string("#DATA[") + to_string(sat) + "]";
             try {
-                dbi = lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0);
+                pdbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
+                    new lmdb::dbi({lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0)}), 
+                    [this](lmdb::dbi* dbi){
+                        if (dbi && *dbi) {
+                            dbi->close(*m_Env);
+                        }
+                    }
+                );
             }
             catch (const lmdb::error& e) {
                 ERR_POST(Warning << "BlobProp cache: failed to open " << sat_dbi << " dbi: " << e.what()
                     << ", cache for sat = " << sat 
                     << " will not be used.");
-                dbi = 0;
+                pdbi = nullptr;
             }
         }
-        m_Dbis.emplace_back(dbi ? new lmdb::dbi(move(dbi)) : nullptr);
+        m_Dbis.push_back(move(pdbi));
         ++sat;
     }
     rdtxn.commit();
@@ -166,6 +173,26 @@ bool CPubseqGatewayCacheBlobProp::UnpackKey(const char* key, size_t key_sz, int6
                         (uint8_t(key[10]) << 8) |
                          uint8_t(key[11]);
         last_modified = -last_modified;
+    }
+    return rv;
+}
+
+bool CPubseqGatewayCacheBlobProp::UnpackKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key) {
+    bool rv = key_sz == kPackedKeySize;
+    if (rv) {
+        last_modified = (int64_t(uint8_t(key[4])) << 56) |
+                        (int64_t(uint8_t(key[5])) << 48) |
+                        (int64_t(uint8_t(key[6])) << 40) |
+                        (int64_t(uint8_t(key[7])) << 32) |
+                        (int64_t(uint8_t(key[8])) << 24) |
+                        (uint8_t(key[9]) << 16) |
+                        (uint8_t(key[10]) << 8) |
+                         uint8_t(key[11]);
+        last_modified = -last_modified;
+        sat_key       = (int32_t(uint8_t(key[0])) << 24) |
+                        (int32_t(uint8_t(key[1])) << 16) |
+                        (int32_t(uint8_t(key[2])) << 8) |
+                        (int32_t(uint8_t(key[3])));
     }
     return rv;
 }

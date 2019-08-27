@@ -53,7 +53,8 @@ public:
     static bool UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type);
 
 private:
-    unique_ptr<lmdb::dbi> m_Dbi;
+    void ResetDbi();
+    unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };
 
 END_NCBI_SCOPE
