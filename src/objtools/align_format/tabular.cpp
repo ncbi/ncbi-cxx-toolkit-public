@@ -640,11 +640,8 @@ void CBlastTabularInfo::x_SetTaxInfoAll(const CBioseq_Handle & handle, const CRe
 
     if (bdlRef.NotEmpty() && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
     	ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
-            if((*itr)->IsSetTaxid()) {
-                    if((*itr)->GetTaxid()) {
-                    	m_SubjectTaxIds.insert((*itr)->GetTaxid());
-                    }
-            }
+    		CBlast_def_line::TTaxIds t = (*itr)->GetTaxIds();
+    		m_SubjectTaxIds.insert(t.begin(), t.end());
     	}
     }
 
