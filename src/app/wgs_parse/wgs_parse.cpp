@@ -1444,13 +1444,16 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, CCit_sub& new_cit_sub)
     }
 
     before_cit_sub = descrs.insert(before_cit_sub, cit_sub_descr);
-    ++before_cit_sub;
-    for (auto descr = before_cit_sub; descr != descrs.end();) {
-        if ((*descr)->IsPub() && GetCitSub((*descr)->GetPub())) {
-            descr = descrs.erase(descr);
-        }
-        else {
-            ++descr;
+
+    if (GetParams().GetUpdateMode() != eUpdateFull) {
+        ++before_cit_sub;
+        for (auto descr = before_cit_sub; descr != descrs.end();) {
+            if ((*descr)->IsPub() && GetCitSub((*descr)->GetPub())) {
+                descr = descrs.erase(descr);
+            }
+            else {
+                ++descr;
+            }
         }
     }
 
