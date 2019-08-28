@@ -35,6 +35,7 @@
 
 #include <string>
 #include <fstream>
+#include <memory>
 #include <corelib/ncbidiag.hpp>
 
 #define ERR_INPUT                              1
@@ -256,6 +257,7 @@ public:
 
 private:
     std::ofstream m_out;
+    std::unique_ptr<ncbi::CDiagHandler> m_orig_handler;
 };
 
 }

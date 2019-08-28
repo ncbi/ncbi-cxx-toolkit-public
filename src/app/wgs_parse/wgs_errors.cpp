@@ -316,9 +316,7 @@ static CDiagHandler* s_old_handler;
 
 CWgsParseDiagHandler::CWgsParseDiagHandler(const string& logfile, bool overwrite)
 {
-    if (s_old_handler == nullptr) {
-        s_old_handler = GetDiagHandler(true);
-    }
+    m_orig_handler.reset(GetDiagHandler(true));
 
     if (!logfile.empty()) {
 
@@ -335,11 +333,13 @@ CWgsParseDiagHandler::CWgsParseDiagHandler(const string& logfile, bool overwrite
 
     SetDiagHandler(this, false);
     IgnoreDiagDieLevel(true);
+    SetDiagPostLevel(eDiag_Info);
+    
+    SetDiagPostFlag(eDPF_AppLog);
 }
 
 CWgsParseDiagHandler::~CWgsParseDiagHandler()
 {
-    SetDiagHandler(s_old_handler);
 }
 
 void CWgsParseDiagHandler::Post(const SDiagMessage& mess)
@@ -361,7 +361,10 @@ void CWgsParseDiagHandler::Post(const SDiagMessage& mess)
     if (m_out.is_open()) {
         m_out << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << endl;
     }
-    cerr << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << endl;
+
+    if (mess.m_Severity >= eDiag_Warning) {
+        cerr << "[wgsparse] " << sev << ": " << module_str << " [" << error_id << "] " << mess.m_Buffer << endl;
+    }
 }
 
 }

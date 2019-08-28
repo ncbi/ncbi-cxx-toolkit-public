@@ -63,7 +63,6 @@ class CWGSParseApp : public CNcbiApplication
 public:
     CWGSParseApp()
     {
-	SetDiagPostLevel(eDiag_Warning);
     }
 
 private:
@@ -1569,13 +1568,14 @@ int CWGSParseApp::Run(void)
     const CArgs& args = GetArgs();
     string logfile;
     
+    if (args["logfile"].HasValue()) {
+        logfile = args["logfile"].AsString();
+    }
+
     if (args["l"].HasValue()) {
         logfile = args["l"].AsString();
     }
 
-    if (args["logfile"].HasValue()) {
-        logfile = args["logfile"].AsString();
-    }
 
     bool overwrite = false;
     if (args["w"].HasValue()) {
