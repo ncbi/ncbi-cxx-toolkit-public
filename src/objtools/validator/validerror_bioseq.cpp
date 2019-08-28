@@ -9011,6 +9011,13 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
 
     string str = s_GetStrandedMolStringFromLineage(lineage);
 
+	// !!! this is needed - default should be dsDNA, and ignored here - but requires new unit_test_validator fixes !!!
+    /*
+    if (str.length() < 1) {
+        return;
+    }
+    */
+
     if (NStr::Find(str, "unknown") != NPOS) {
         return;
     }
@@ -9021,11 +9028,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     }
 
     bool is_ambisense = false;
-    if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
-        || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
-        || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
-        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos
-        || NStr::EqualNocase(str, "ssRNA(+/-)")) {
+    if (NStr::EqualNocase(str, "ssRNA(+/-)")) {
         is_ambisense = true;
     }
 
@@ -9314,14 +9317,12 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
     }
 
     // special cases
-    if (NStr::FindNoCase(lineage, "Retroviridae") != string::npos) {
-        return "ssRNA-RT";
+    if (NStr::FindNoCase(lineage, "Tospovirus") != string::npos) {
+        // Topsovirus not in list
+        return "ssRNA(+/-)";
     }
-
-    if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
-        || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
-        || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
-        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+    if (NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+        // Tenuivirus has several segments, most of which are ambisense
         return "ssRNA(+/-)";
     }
 
@@ -9331,6 +9332,9 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         }
     }
 
+	// !!! this is needed - default should be dsDNA - but requires new unit_test_validator fixes !!!
+	// return "dsDNA";
+ 
     return "";
 }
 
@@ -9349,6 +9353,8 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol
     }
 
     string str = s_GetStrandedMolStringFromLineage(lineage);
+
+	// !!! this should handle default dsDNA - but requires new unit_test_validator fixes !!!
     if (str.length() < 1) {
         return;
     }
