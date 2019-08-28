@@ -99,7 +99,7 @@ class Scenario401( TestBase ):
         # 10 seconds till the job becomes outdated
         time.sleep( 12 )
 
-        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
         notifSocket.close()
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " + data )

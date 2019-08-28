@@ -186,7 +186,7 @@ class Scenario602( TestBase ):
     @staticmethod
     def getNotif( s1, s2 ):
         try:
-            data = s1.recv( 8192, socket.MSG_DONTWAIT )
+            data = s1.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket 1" )
             return 1
@@ -196,7 +196,7 @@ class Scenario602( TestBase ):
             pass
 
         try:
-            data = s2.recv( 8192, socket.MSG_DONTWAIT )
+            data = s2.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket 2" )
             return 2
@@ -1415,7 +1415,7 @@ class Scenario1201( TestBase ):
     @staticmethod
     def hasNotification( s ):
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification" )
             return True

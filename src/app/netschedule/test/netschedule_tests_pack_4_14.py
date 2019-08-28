@@ -62,7 +62,7 @@ class Scenario500( TestBase ):
         notifications = ""
         while True:
             try:
-                data = sock.recv( 16384, socket.MSG_DONTWAIT )
+                data = sock.recv( 16384, socket.MSG_DONTWAIT ).decode('utf-8')
                 if not data:
                     break
                 if len( notifications ) != 0:
@@ -131,7 +131,7 @@ class Scenario501( TestBase ):
         notifications = ""
         while True:
             try:
-                data = sock.recv( 16384, socket.MSG_DONTWAIT )
+                data = sock.recv( 16384, socket.MSG_DONTWAIT ).decode('utf-8')
                 if not data:
                     break
                 if len( notifications ) != 0:
@@ -192,7 +192,7 @@ class Scenario502( TestBase ):
         notifications = ""
         while True:
             try:
-                data = sock.recv( 16384, socket.MSG_DONTWAIT )
+                data = sock.recv( 16384, socket.MSG_DONTWAIT ).decode('utf-8')
                 if not data:
                     break
                 if len( notifications ) != 0:
@@ -254,7 +254,7 @@ class Scenario503( TestBase ):
         notifications = ""
         while True:
             try:
-                data = sock.recv( 16384, socket.MSG_DONTWAIT )
+                data = sock.recv( 16384, socket.MSG_DONTWAIT ).decode('utf-8')
                 if not data:
                     break
                 if len( notifications ) != 0:
@@ -309,7 +309,7 @@ class Scenario504( TestBase ):
         notifications = ""
         while True:
             try:
-                data = sock.recv( 16384, socket.MSG_DONTWAIT )
+                data = sock.recv( 16384, socket.MSG_DONTWAIT ).decode('utf-8')
                 if not data:
                     break
                 if len( notifications ) != 0:

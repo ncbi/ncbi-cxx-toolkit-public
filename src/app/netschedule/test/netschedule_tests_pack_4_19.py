@@ -143,7 +143,7 @@ class Scenario1702( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
@@ -201,7 +201,7 @@ class Scenario1703( TestBase ):
     def getNotif( self, s ):
         " Retrieves notifications "
         try:
-            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            data = s.recv( 8192, socket.MSG_DONTWAIT ).decode('utf-8')
             if "queue=TEST" not in data:
                 raise Exception( "Unexpected notification in socket" )
             return 1
