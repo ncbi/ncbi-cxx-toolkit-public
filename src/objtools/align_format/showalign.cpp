@@ -2438,7 +2438,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                             out<<"<a name="<<alnDispParams->gi<<"></a>";
                             aln_vec_info->id_label = NStr::NumericToString(alnDispParams->gi);
                         } else {
-                            out<<"<a name="<<alnDispParams->seqID->GetSeqIdString()<<"></a>";
+                            out<<"<a name="<<alnDispParams->seqID->GetSeqIdString(true)<<"></a>";
                             aln_vec_info->id_label = alnDispParams->label;
                         }
                         if(m_AlignOption&eLinkout){
