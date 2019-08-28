@@ -289,7 +289,9 @@ void CheckErrors(const CValidError& eval,
 
         printf("Expected:\n");
         for (auto it : expected_errors) {
-            it->Print();
+            if (it) {
+                it->Print();
+            }
         }
     }
 }
