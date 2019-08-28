@@ -35,6 +35,7 @@
 /// accidental version skew.
 
 #ifdef __GNUC__
+#  pragma GCC system_header
 #  include_next <boost/config/stdlib/libstdcpp3.hpp>
 #else
 #  include <boost/test/../config/stdlib/libstdcpp3.hpp>
