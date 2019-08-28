@@ -69,9 +69,7 @@ public:
 private:
     typedef set<CSeq_id_Handle> TIds;
 
-    void x_ParseDump(CNcbiIstream& in, CNcbiOstream& prim_out, CNcbiOstream& sec_out);
-
-    void x_LoadIds(CNcbiIstream& in, TIds& ids, bool filter);
+    void x_LoadIds(CNcbiIstream& in);
 
     CSeq_id_Handle x_NextId(void) {
         CFastMutexGuard guard(m_IdsMutex);
@@ -83,7 +81,6 @@ private:
         return ret;
     }
 
-    size_t m_MaxIds = (size_t)(-1);
     bool m_GetInfo = true;
     bool m_GetData = true;
     bool m_PrintInfo = false;
@@ -92,12 +89,9 @@ private:
     bool m_AllIds = false;
 
     CFastMutex m_IdsMutex;
-    CFastMutex m_FailMutex;
     CRef<CScope> m_Scope;
     TIds m_Ids;
     TIds::const_iterator m_NextId;
-    TIds m_IgnoreIds; // Both input ignored ids and failed ids.
-    int m_Failed = 0;
 };
 
 
@@ -143,28 +137,26 @@ void CPerfTestApp::Init(void)
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    arg_desc->AddDefaultKey("ids", "IdsFile",
-        "file with seq-ids to load (fasta) or '_prim'|'_sec' to use NCBI_TEST_DATA",
-        CArgDescriptions::eInputFile,
-        "_prim");
-    // Seq-ids filtering.
-    arg_desc->AddOptionalKey("ignore", "IgnoreIdsFile",
-        "file with seq-ids to ignore (fasta)",
+    // Input: list of ids or range of GIs.
+    arg_desc->AddOptionalKey("ids", "IdsFile",
+        "file with seq-ids to load",
         CArgDescriptions::eInputFile);
-    arg_desc->AddOptionalKey("passed", "PassedIds",
-        "output file for saving successfully loaded seq-ids",
-        CArgDescriptions::eOutputFile);
-    arg_desc->AddOptionalKey("failed", "FailedIds",
-        "output file for saving failed seq-ids",
-        CArgDescriptions::eOutputFile);
-    arg_desc->AddOptionalKey("max_ids", "MaxIds",
-        "limit number of ids to MaxIds",
-        CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("gi_from", "GiFrom",
+        "starting GI",
+        CArgDescriptions::eIntId);
+    arg_desc->AddOptionalKey("gi_to", "GiTo",
+        "ending GI",
+        CArgDescriptions::eIntId);
+    arg_desc->SetDependency("ids", CArgDescriptions::eExcludes, "gi_from");
+    arg_desc->SetDependency("ids", CArgDescriptions::eExcludes, "gi_to");
+    arg_desc->SetDependency("gi_from", CArgDescriptions::eRequires, "gi_to");
+    arg_desc->SetDependency("gi_to", CArgDescriptions::eRequires, "gi_from");
+
     arg_desc->AddDefaultKey("count", "RepeatCount",
         "repeat test RepeatCount times",
         CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("threads", "Threads",
-        "number of threads to run",
+        "number of threads to run (0 to run main thread only)",
         CArgDescriptions::eInteger, "0");
 
     // Data loader: genbank vs psg
@@ -188,19 +180,6 @@ void CPerfTestApp::Init(void)
     arg_desc->AddFlag("print_data", "print TSE");
     arg_desc->AddFlag("all_ids", "fetch all seq-ids from each thread");
 
-    // Special mode - parse cassandra dump file, save ids in fasta format.
-    arg_desc->AddOptionalKey("dump", "DumpFile",
-        "cassandra si2csi table dump file",
-        CArgDescriptions::eInputFile);
-    arg_desc->AddOptionalKey("prim", "PrimaryIdsFile",
-        "file to save primary ids to",
-        CArgDescriptions::eOutputFile);
-    arg_desc->AddOptionalKey("sec", "SecondaryIdsFile",
-        "file to save secondary ids to",
-        CArgDescriptions::eOutputFile);
-    arg_desc->SetDependency("dump", CArgDescriptions::eRequires, "prim");
-    arg_desc->SetDependency("dump", CArgDescriptions::eRequires, "sec");
-
     string prog_description = "C++ object manager performance test\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               prog_description, false);
@@ -211,13 +190,6 @@ void CPerfTestApp::Init(void)
 int CPerfTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
-
-    if (args["max_ids"]) m_MaxIds = (size_t)args["max_ids"].AsInteger();
-
-    if (args["dump"]) {
-        x_ParseDump(args["dump"].AsInputFile(), args["prim"].AsOutputFile(), args["sec"].AsOutputFile());
-        return 0;
-    }
 
     int repeat_count = args["count"].AsInteger();
     if (repeat_count <= 0) repeat_count = 1;
@@ -233,7 +205,13 @@ int CPerfTestApp::Run(void)
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     m_Scope.Reset(new CScope(*om));
 
+#if defined(NCBI_OS_MSWIN)
+    // Windows does not have unsetenv(), but putting an empty value works fine.
     putenv("GENBANK_LOADER_PSG=");
+#else
+    // On Linux putting an empty value results in empty string being fetched by CParam, not NULL.
+    unsetenv("GENBANK_LOADER_PSG");
+#endif
     string loader = args["loader"].AsString();
     if (loader == "gb") {
         string reader;
@@ -272,38 +250,39 @@ int CPerfTestApp::Run(void)
     }
     m_Scope->AddDefaults();
 
-    cout << loader;
-    if (loader == "gb") cout << (args["pubseqos"] ? " / pubseqos" : " / id");
-    cout << (args["no_split"] ? " / no_split" : " / split");
-    cout << " / " << args["ids"].AsString();
-    if (m_MaxIds != (size_t)(-1)) cout << " / " << m_MaxIds << " ids";
-    if (repeat_count > 1) cout << " / " << repeat_count << " repeats";
-    if (thread_count > 0) cout << " / " << thread_count << (thread_count > 1 ? " threads" : " thread");
-    cout << endl;
-
-    // Ignored ids file may be missing.
-    if (args["ignore"]) {
-        x_LoadIds(args["ignore"].AsInputFile(), m_IgnoreIds, false);
-    }
-    string ids_file = args["ids"].AsString();
-    if (!ids_file.empty() && ids_file[0] == '_') {
-        string path = CFile::MakePath(
-            CFile::MakePath(NCBI_GetTestDataPath(), "pubseq_gateway"),
-            string("ids") + ids_file);
-        if (CDirEntry(path).Exists()) {
-            CNcbiIfstream in(path.c_str());
-            x_LoadIds(in, m_Ids, true);
+    if (args["ids"]) {
+        string ids_file = args["ids"].AsString();
+        if (!ids_file.empty() && ids_file[0] == '_') {
+            string path = CFile::MakePath(
+                CFile::MakePath(NCBI_GetTestDataPath(), "pubseq_gateway"),
+                string("ids") + ids_file);
+            if (CDirEntry(path).Exists()) {
+                CNcbiIfstream in(path.c_str());
+                x_LoadIds(in);
+            }
+            else {
+                ERR_POST("Input file does not exist: " << path);
+                return -1;
+            }
         }
         else {
-            ERR_POST("Input file does not exist: " << path);
-            return 0;
+            x_LoadIds(args["ids"].AsInputFile());
         }
     }
     else {
-        x_LoadIds(args["ids"].AsInputFile(), m_Ids, true);
+        if (!args["gi_from"] || !args["gi_to"]) {
+            ERR_POST("No input data specified. Either ids or gi_from/gi_to arguments must be provided.");
+            return -1;
+        }
+        TGi gi_from = args["gi_from"].AsIntId();
+        TGi gi_to = args["gi_to"].AsIntId();
+        for (TGi gi = gi_from; gi < gi_to; ++gi) {
+            m_Ids.insert(CSeq_id_Handle::GetGiHandle(gi));
+        }
     }
+
     m_NextId = m_Ids.begin();
-    cout << "Loaded " << m_Ids.size() << " seq-ids" << endl;
+    cout << "Testing " << m_Ids.size() << " seq-ids" << endl;
 
     CStopWatch sw;
     sw.Start();
@@ -330,63 +309,25 @@ int CPerfTestApp::Run(void)
             cout << "Cycle " << i << " finished in " << sw2.AsSmartString() << endl;
         }
     }
-    cout << "Processed " << m_Ids.size();
-    if (repeat_count > 1) cout << "x" << repeat_count;
-    cout << " ids in " << sw.AsSmartString() << endl;
-    if (m_Failed > 0) cout << "Failed to load " << m_Failed << " ids" << endl;
 
-    if (args["failed"]) {
-        CNcbiOstream& failed_out = args["failed"].AsOutputFile();
-        ITERATE(TIds, it, m_IgnoreIds) {
-            failed_out << it->GetSeqId()->AsFastaString() << endl;
-        }
+    cout << "Done: " << sw.Elapsed() << "; "
+        << m_Ids.size() << " ids; " << thread_count << " thr; " << repeat_count << " rep; ";
+    if (args["ids"]) {
+        cout << "'" << args["ids"].AsString() << "'";
     }
-
-    if (args["passed"]) {
-        CNcbiOstream& passed_out = args["passed"].AsOutputFile();
-        ITERATE(TIds, it, m_Ids) {
-            if (m_IgnoreIds.find(*it) != m_IgnoreIds.end()) continue;
-            passed_out << it->GetSeqId()->AsFastaString() << endl;
-        }
+    else {
+        cout << args["gi_from"].AsIntId() << ".." << args["gi_to"].AsIntId();
     }
-
+    cout << "; " << loader;
+    if (loader == "gb") cout << (args["pubseqos"] ? "/pubseqos" : "/id");
+    cout << (args["no_split"] ? "/no_split" : "/split");
     cout << endl;
+
     return 0;
 }
 
 
-void CPerfTestApp::x_ParseDump(CNcbiIstream& in, CNcbiOstream& prim_out, CNcbiOstream& sec_out)
-{
-    size_t count = 0;
-    while (in.good() && !in.eof()) {
-        string line;
-        getline(in, line);
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()) continue;
-        if (line.find('"') != NPOS) {
-            // Quoted values (containing comma) are not yet supported.
-            ERR_POST(Warning << "Seq-ids containing commas are not yet supported: " << NStr::PrintableString(line));
-            continue;
-        }
-        vector<string> parts;
-        NStr::Split(line, ",", parts);
-        if (parts.size() != 5) {
-            ERR_POST(Warning << "Bad id line format: " << NStr::PrintableString(line));
-            continue;
-        }
-        CSeq_id::E_Choice id_type = CSeq_id::E_Choice(NStr::StringToNumeric<int>(parts[1]));
-        CSeq_id id(CSeq_id::eFasta_AsTypeAndContent, id_type, parts[0]);
-        sec_out << id.AsFastaString() << endl;
-
-        id_type = CSeq_id::E_Choice(NStr::StringToNumeric<int>(parts[3]));
-        id.Set(id_type, parts[2], kEmptyStr, NStr::StringToNumeric<int>(parts[4]));
-        prim_out << id.AsFastaString() << endl;
-        if (++count >= m_MaxIds) break;
-    }
-}
-
-
-void CPerfTestApp::x_LoadIds(CNcbiIstream& in, TIds& ids, bool filter)
+void CPerfTestApp::x_LoadIds(CNcbiIstream& in)
 {
     CStopWatch sw;
     sw.Start();
@@ -398,9 +339,7 @@ void CPerfTestApp::x_LoadIds(CNcbiIstream& in, TIds& ids, bool filter)
         if (line.empty()) continue;
         CSeq_id id(line);
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
-        if (filter && m_IgnoreIds.find(idh) != m_IgnoreIds.end()) continue;
-        ids.insert(idh);
-        if (filter && ids.size() >= m_MaxIds) break;
+        m_Ids.insert(idh);
     }
 }
 
@@ -434,9 +373,6 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
             CScope::TIds ids = m_Scope->GetIds(idh);
             if (ids.empty()) {
                 atomic_out << "Failed to get synonyms for " << idh.AsString() << endl;
-                CFastMutexGuard guard(m_FailMutex);
-                ++m_Failed;
-                m_IgnoreIds.insert(idh);
                 return;
             }
             CSeq_inst::TMol moltype = m_Scope->GetSequenceType(idh);
@@ -461,9 +397,6 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(idh);
             if (!bh) {
                 atomic_out << "Failed to load bioseq " << idh.AsString() << endl;
-                CFastMutexGuard guard(m_FailMutex);
-                ++m_Failed;
-                m_IgnoreIds.insert(idh);
                 return;
             }
             if (m_PrintBlobId) {
@@ -477,9 +410,6 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
     }
     catch (CException& ex) {
         ERR_POST("Error testing seq-id " << idh.AsString() << " : " << ex);
-        CFastMutexGuard guard(m_FailMutex);
-        ++m_Failed;
-        m_IgnoreIds.insert(idh);
     }
     if (m_PrintInfo || m_PrintData) {
         atomic_out << endl;
