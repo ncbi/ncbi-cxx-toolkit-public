@@ -6,7 +6,7 @@
 # Build object manager performance test "objmgr_perf_test"
 #################################
 
-REQUIRES = objects
+REQUIRES = MT objects
 
 APP = objmgr_perf_test
 SRC = objmgr_perf_test
