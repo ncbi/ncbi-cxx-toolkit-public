@@ -527,6 +527,8 @@ GLEW_STATIC_LIBS   = @GLEW_STATIC_LIBS@
 GL2PS_INCLUDE      = @GL2PS_INCLUDE@
 GL2PS_LIBS         = @GL2PS_LIBS@
 GL2PS_STATIC_LIBS  = @GL2PS_STATIC_LIBS@
+# Macro indicating optional use of GL2PS, for the sake of project_tree_builder.
+GL2PS_OPT          = OpenGL
 
 # wxWidgets (2.6 or newer):  headers and libs
 WXWIDGETS_INCLUDE        = @WXWIDGETS_INCLUDE@
