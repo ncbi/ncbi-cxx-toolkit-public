@@ -1042,6 +1042,9 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
         CRef<CCit_art> new_cit_art = FetchPubPmId(oldpmid);
 
         if (new_cit_art.NotEmpty()) {
+
+            pub_list.splice(pub_list.end(), pmids);
+
             if (m_replace_cit) {
                 MedlineToISO(*new_cit_art);
                 CRef<CPub> cit_pub(new CPub);
@@ -1049,7 +1052,6 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
                 pub_list.push_back(cit_pub);
             }
 
-            pub_list.splice(pub_list.end(), pmids);
             return;
         }
         ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_No_reference,
