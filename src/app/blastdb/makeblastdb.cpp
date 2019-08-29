@@ -279,7 +279,7 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("blastdb_version", "version",
                              "Version of BLAST database to be created",
                              CArgDescriptions::eInteger,
-                             NStr::NumericToString(static_cast<int>(eBDB_Version4)));
+                             NStr::NumericToString(static_cast<int>(eBDB_Version5)));
     arg_desc->SetConstraint("blastdb_version",
                             new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
