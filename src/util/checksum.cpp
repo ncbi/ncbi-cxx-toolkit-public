@@ -273,7 +273,8 @@ void CHash::Calculate(const char* str, size_t len, EMethod method, Uint8& hash)
 
 
 CChecksum::CChecksum(EMethod method)
-    : CChecksumBase((EMethodDef)method)
+    : CChecksumBase((EMethodDef)method),
+      m_LineCount(0)
 {
 }
 
