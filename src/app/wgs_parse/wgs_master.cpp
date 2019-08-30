@@ -2055,14 +2055,14 @@ static bool CheckAccLengths(const list<string>& accs)
     for (++next; next != accs.end(); ++next) {
         if (next->size() != prev->size()) {
 
-            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_DifferentLength, Critical << "Contigs accessions have different lengths, hence different formats. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_DifferentLength, Critical << "Contigs accessions have different lengths, hence different formats. The first pair is \"" << *prev << "\" and \"" << *next << "\".");
             return false;
         }
 
         CTextAccessionContainer next_acc(*next);
         if (next_acc.GetNumber() - prev_acc.GetNumber() != 1) {
 
-            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_NotContiguous, (GetParams().IsDblinkOverride() ? Warning : Critical) << "Contigs accessions are not contiguous. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_NotContiguous, (GetParams().IsDblinkOverride() ? Warning : Critical) << "Contigs accessions are not contiguous. The first pair is \"" << *prev << "\" and \"" << *next << "\".");
             if (!GetParams().IsDblinkOverride()) {
                 return false;
             }
