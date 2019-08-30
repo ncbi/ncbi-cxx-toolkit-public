@@ -1175,7 +1175,12 @@ void SPSG_IoThread::OnQueue(uv_async_t*)
             }
         }
 
-        if (all_done) return;
+        if (all_done) break;
+    }
+
+    // Rotate left, so a different session will be used first next time
+    if (m_Sessions.size() > 1) {
+        m_Sessions.splice(m_Sessions.end(), m_Sessions, m_Sessions.begin());
     }
 }
 
