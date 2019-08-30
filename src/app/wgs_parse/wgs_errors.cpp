@@ -312,8 +312,6 @@ static string GetCodeStr(int err_code, int err_sub_code)
     return ret;
 }
 
-static CDiagHandler* s_old_handler;
-
 CWgsParseDiagHandler::CWgsParseDiagHandler(const string& logfile, bool overwrite)
 {
     m_orig_handler.reset(GetDiagHandler(true));
