@@ -731,7 +731,7 @@ struct SId2Info
     using TSatKeys = vector<CTempString>;
     using TGetSatKey = function<int(const TSatKeys&)>;
 
-    enum : size_t { eSat, eInfo, eNChunks, eSize };
+    enum : size_t { eSat, eInfo, eNChunks, eSplitVer, eSize };
 
     static CPSG_BlobId GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id);
 };
