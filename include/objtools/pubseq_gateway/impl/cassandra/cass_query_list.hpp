@@ -66,7 +66,8 @@ protected:
         m_has_error(false),
         m_max_queries(kDfltMaxQuery),
         m_yield_in_progress(false),
-        m_attached_slots(0)
+        m_attached_slots(0),
+        m_owning_thread{}
     {}
 private:
     enum SQrySlotState {
@@ -106,6 +107,7 @@ private:
     void DetachSlot(SQrySlot* slot);
     void ReadRows(SQrySlot* slot);
     void Release(SQrySlot* slot);
+    void CheckAccess();
 
     weak_ptr<CCassQueryList> m_self_weak;
     shared_ptr<CCassConnection> m_cass_conn;
@@ -120,6 +122,7 @@ private:
     atomic_bool m_yield_in_progress;
     string m_keyspace;
     atomic_size_t m_attached_slots;
+    atomic<thread::id> m_owning_thread;
 };
 
 class CCassOneExecConsumer : public ICassQueryListConsumer {
