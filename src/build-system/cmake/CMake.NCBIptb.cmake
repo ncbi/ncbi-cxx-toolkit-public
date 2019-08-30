@@ -690,6 +690,12 @@ function(NCBI_internal_collect_dependencies _project)
         endif()
         return()
     endif()
+
+    get_property(_host GLOBAL PROPERTY NCBI_PTBPROP_HOST_${_project})
+    if (NOT "${_host}" STREQUAL "" AND NOT "${_host}" STREQUAL "${_project}")
+        list(APPEND _deps ${_host})
+    endif()
+
     get_property(_prjdeps GLOBAL PROPERTY NCBI_PTBPROP_DIRECT_DEPS_${_project})
     foreach( _value IN LISTS _prjdeps)
         NCBI_internal_recur_collect_dependencies( ${_project} ${_value})
