@@ -916,7 +916,7 @@ static string GetAccessionValue(size_t val_len, int val)
 
 static const size_t LENGTH_NOT_SET = -1;
 
-static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_len)
+static CRef<CSeq_id> CreateAccession(size_t last_accession_num, size_t accession_len)
 {
     size_t max_accession_len = GetMaxAccessionLen(last_accession_num, GetParams().GetPrefixLenAfterUnderscore());
 
@@ -1359,13 +1359,39 @@ static size_t GetNumOfPubs(const CPub_equiv& pub, CPub::E_Choice type)
     return ret;
 }
 
+static const CTextAccessionContainer* GetLastAccsession(const list<TAccessionRange>& ranges)
+{
+   const CTextAccessionContainer* last = nullptr;
+    for (auto& range: ranges)
+    {
+        if (last == nullptr || *last < range.second) {
+            last = &range.second;
+        }
+    }
+    return last;
+}
+
 static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info, CMolInfo::TBiomol biomol, const list<TAccessionRange>& ranges)
 {
     CRef<CBioseq> bioseq(new CBioseq);
     CRef<CSeq_entry> ret;
 
-    int last_accession_num = info.m_num_of_entries;
-    size_t accession_len = LENGTH_NOT_SET;
+    size_t last_accession_num = info.m_num_of_entries,
+           accession_len = LENGTH_NOT_SET;
+
+    const CTextAccessionContainer* last_acc = GetLastAccsession(ranges);
+    if (last_acc) {
+        last_accession_num = last_acc->GetNumberNoVersion();
+        accession_len = last_acc->GetAccessionLength();
+
+        if (last_accession_num < 1) {
+            last_accession_num = info.m_num_of_entries;
+        }
+    }
+
+    if (GetParams().GetUpdateMode() == eUpdateExtraContigs && info.m_current_master) {
+        last_accession_num += info.m_current_master->m_last_contig;
+    }
 
     CRef<CSeq_id> id = CreateAccession(last_accession_num, accession_len);
     if (id.Empty()) {

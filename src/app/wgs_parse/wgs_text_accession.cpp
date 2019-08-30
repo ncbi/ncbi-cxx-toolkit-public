@@ -45,6 +45,7 @@ using namespace std;
 
 CTextAccessionContainer::CTextAccessionContainer() :
     m_number(0),
+    m_number_no_version(0),
     m_valid(false)
 {
 }
@@ -129,11 +130,23 @@ size_t CTextAccessionContainer::GetNumberNoVersion() const
     return m_number_no_version;
 }
 
+size_t CTextAccessionContainer::GetAccessionLength() const
+{
+    static const size_t VERSION_LENGTH = 2;
+
+    size_t ret = 0;
+    if (IsValid()) {
+        ret = GetAccession().size() - GetPrefix().size() - VERSION_LENGTH;
+    }
+    return ret;
+}
+
 void CTextAccessionContainer::swap(CTextAccessionContainer& other)
 {
     m_accession.swap(other.m_accession);
     m_prefix.swap(other.m_prefix);
     ::swap(m_number, other.m_number);
+    ::swap(m_number_no_version, other.m_number_no_version);
     ::swap(m_valid, other.m_valid);
 }
 

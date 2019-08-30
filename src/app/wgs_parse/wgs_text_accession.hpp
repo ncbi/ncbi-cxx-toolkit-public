@@ -53,6 +53,7 @@ public:
     const string& GetPrefix() const;
     size_t GetNumber() const;
     size_t GetNumberNoVersion() const;
+    size_t GetAccessionLength() const;
 
     void swap(CTextAccessionContainer& other);
 
