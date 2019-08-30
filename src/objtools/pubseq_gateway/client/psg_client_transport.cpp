@@ -900,9 +900,8 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 
 /** SPSG_IoSession */
 
-SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* aio, uv_loop_t* loop, CNetServer::SAddress a) :
-    address(move(a)),
-    m_Io(aio),
+SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* io, uv_loop_t* loop, const CNetServer::SAddress& address) :
+    m_Io(io),
     m_Tcp(loop, address,
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
             bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
@@ -1051,8 +1050,6 @@ void SPSG_IoSession::ProcessCompletionList()
 {
     for (auto& reply : m_CompletionList) {
         reply->reply_item.NotifyOne();
-
-        if (auto queue = reply->queue.lock()) queue->NotifyOne();
     }
 
     m_CompletionList.clear();
@@ -1064,8 +1061,6 @@ void SPSG_IoSession::AddToCompletion(shared_ptr<SPSG_Reply>& reply)
         m_CompletionList.emplace_back(reply);
     else {
         reply->reply_item.NotifyOne();
-
-        if (auto queue = reply->queue.lock()) queue->NotifyOne();
     }
 }
 
@@ -1188,7 +1183,7 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 {
     try {
         const auto& service_name = m_Service.GetServiceName();
-        list<CNetServer::SAddress> discovered;
+        vector<CNetServer::SAddress> discovered;
 
         // Gather all discovered addresses
         for (auto it = m_Service.Iterate(CNetService::eRoundRobin); it; ++it) {

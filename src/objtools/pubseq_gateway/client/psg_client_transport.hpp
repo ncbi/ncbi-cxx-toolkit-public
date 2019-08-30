@@ -704,19 +704,11 @@ struct SPSG_IoThread;
 
 struct SPSG_IoSession
 {
-    const CNetServer::SAddress address;
-
-    SPSG_IoSession(SPSG_IoSession&&) = default;
-    SPSG_IoSession& operator =(SPSG_IoSession&&) = default;
-    SPSG_IoSession(SPSG_IoThread* aio, uv_loop_t* loop, CNetServer::SAddress address);
+    SPSG_IoSession(SPSG_IoThread* io, uv_loop_t* loop, const CNetServer::SAddress& address);
 
     void StartClose();
 
-    void AddToCompletion(shared_ptr<SPSG_Reply>& reply);
-
     bool ProcessRequest();
-
-    bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
 
     template <typename TReturn, class ...TArgs>
     TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs...), TReturn error, TArgs... args)
@@ -745,6 +737,8 @@ private:
     void OnRead(const char* buf, ssize_t nread);
 
     void Send();
+    bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
+    void AddToCompletion(shared_ptr<SPSG_Reply>& reply);
     void ProcessCompletionList();
 
     void Reset(const SPSG_Error& error);
@@ -794,7 +788,6 @@ private:
 
     SPSG_IoThread* m_Io;
     SPSG_UvTcp m_Tcp;
-
     SPSG_NgHttp2Session m_Session;
 
     unordered_map<int32_t, shared_ptr<SPSG_Request>> m_Requests;
@@ -880,10 +873,14 @@ private:
 
 struct SPSG_IoThread::SSession : SPSG_IoSession
 {
+    const CNetServer::SAddress address;
     bool discovered = true;
     bool in_progress = false;
 
-    using SPSG_IoSession::SPSG_IoSession;
+    SSession(SPSG_IoThread* io, uv_loop_t* loop, CNetServer::SAddress a) :
+        SPSG_IoSession(io, loop, a),
+        address(move(a))
+    {}
 };
 
 struct SPSG_IoCoordinator

@@ -49,7 +49,6 @@ const vector<SRule> SRule::Rules =
     { "CloseToDone",      { SMetricType::eClose,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
 
     { "StartToSubmit",    { SMetricType::eStart,   SPoint::eFirst }, { SMetricType::eSubmit,  SPoint::eFirst } },
-    { "SubmitToReply",    { SMetricType::eSubmit,  SPoint::eFirst }, { SMetricType::eReply,   SPoint::eFirst } },
     { "ReplyToDone",      { SMetricType::eReply,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
 };
 
