@@ -731,7 +731,7 @@ struct SId2Info
     using TSatKeys = vector<CTempString>;
     using TGetSatKey = function<int(const TSatKeys&)>;
 
-    enum : size_t { eSat, eInfo, eNChunks, eSplitVer, eSize };
+    enum : size_t { eSat, eInfo, eNChunks, eSplitVer, eMinSize = eNChunks + 1 };
 
     static CPSG_BlobId GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id);
 };
@@ -747,7 +747,7 @@ CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, c
     vector<CTempString> sat_keys;
     NStr::Split(id2_info, ".", sat_keys);
 
-    if (sat_keys.size() != eSize ) {
+    if (sat_keys.size() < eMinSize ) {
         NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong id2_info format: " << id2_info <<
                 " for blob '" << id.Get() << '\'');
     }
