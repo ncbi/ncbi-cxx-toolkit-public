@@ -2196,6 +2196,9 @@ same id type" } },
    { eErr_SEQ_FEAT_BadTranssplicedInterval,
    { "BadTranssplicedInterval",
      "a trans-spliced feature should have multiple intervals" } },
+   { eErr_SEQ_FEAT_TRNAinsideTMRNA,
+   { "TRNAinsideTMRNA",
+     "tRNA should not be contained within tmRNA" } },
 
 /* SEQ_ALIGN */
 

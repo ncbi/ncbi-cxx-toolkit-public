@@ -714,6 +714,7 @@ enum EErrType {
     eErr_SEQ_FEAT_tRNArange,
     eErr_SEQ_FEAT_ExceptionRequiresLocusTag,
     eErr_SEQ_FEAT_BadTranssplicedInterval,
+    eErr_SEQ_FEAT_TRNAinsideTMRNA,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,
