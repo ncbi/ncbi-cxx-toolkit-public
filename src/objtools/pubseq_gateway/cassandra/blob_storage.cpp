@@ -35,6 +35,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 
 #define KEYSPACE_MAPPING_CONSISTENCY    CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM
+#define KEYSPACE_MAPPING_RETRY          5
 
 BEGIN_IDBLOB_SCOPE
 
@@ -57,43 +58,56 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
     bool rv = false;
     err_msg = "sat2keyspace info is empty";
 
-    shared_ptr<CCassQuery>  query = conn->NewQuery();
+    for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
+        try {
+            shared_ptr<CCassQuery>  query = conn->NewQuery();
 
-    query->SetSQL("SELECT\n"
-                  "    sat,\n"
-                  "    keyspace_name,\n"
-                  "    schema_type\n"
-                  "FROM\n"
-                  "    " + mapping_keyspace + ".sat2keyspace", 0);
-    query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
+            query->SetSQL("SELECT\n"
+                          "    sat,\n"
+                          "    keyspace_name,\n"
+                          "    schema_type\n"
+                          "FROM\n"
+                          "    " + mapping_keyspace + ".sat2keyspace", 0);
+            query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
 
-    rv = true;
-    while (query->NextRow() == ar_dataready) {
-        int32_t     sat = query->FieldGetInt32Value(0);
-        string      name = query->FieldGetStrValue(1);
-        ECassSchemaType schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
+            rv = true;
+            while (query->NextRow() == ar_dataready) {
+                int32_t     sat = query->FieldGetInt32Value(0);
+                string      name = query->FieldGetStrValue(1);
+                ECassSchemaType schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
 
-        if (schema_type <= eUnknownSchema || schema_type > eMaxSchema) {
-            // ignoring
-        }
-        else if (schema_type == resolver_schema) {
-            if (resolver_keyspace.empty()) {
-                resolver_keyspace = name;
+                if (schema_type <= eUnknownSchema || schema_type > eMaxSchema) {
+                    // ignoring
+                }
+                else if (schema_type == resolver_schema) {
+                    if (resolver_keyspace.empty()) {
+                        resolver_keyspace = name;
+                    }
+                    else {
+                        // More than one resolver keyspace
+                        err_msg = "More than one resolver keyspace in the " +
+                                  mapping_keyspace + ".sat2keyspace table";
+                        rv = false;
+                        break;
+                    }
+                }
+                else if (sat >= 0) {
+                    while (static_cast<int32_t>(mapping.size()) <= sat)
+                        mapping.push_back(make_tuple("", eUnknownSchema));
+                    mapping[sat] = make_tuple(name, schema_type);
+                }
             }
-            else {
-                // More than one resolver keyspace
-                err_msg = "More than one resolver keyspace in the " +
-                          mapping_keyspace + ".sat2keyspace table";
-                rv = false;
-                break;
+        }
+        catch (const CCassandraException& e) {
+            if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && i > 0) {
+                continue;
             }
+            throw;
+
         }
-        else if (sat >= 0) {
-            while (static_cast<int32_t>(mapping.size()) <= sat)
-                mapping.push_back(make_tuple("", eUnknownSchema));
-            mapping[sat] = make_tuple(name, schema_type);
-        }
+        break;
     }
+
     if (rv && mapping.empty()) {
         err_msg = "sat2keyspace is incomplete";
         rv = false;
