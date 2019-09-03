@@ -9044,74 +9044,116 @@ void CValidError_bioseq::ValidateMolInfoContext
 }
 
 
-void CValidError_bioseq::x_ValidateMolInfoForBioSource(const CBioSource& src, const CMolInfo& minfo, const CSeqdesc& desc)
+// refactored in VR-918
+void CValidError_bioseq::x_ValidateMolInfoForBioSource(
+    const CBioSource& src,
+    const CMolInfo& minfo,
+    const CSeqdesc& desc
+)
 {
-    const CSeq_entry* ctx = m_CurrentHandle.GetParentEntry().GetCompleteSeq_entry();
-
-    x_CheckSingleStrandedRNAViruses(src, minfo, m_CurrentHandle, desc, ctx);
-    if (src.IsSetOrg()) {
-        const COrg_ref& org = src.GetOrg();
-        if (!m_CurrentHandle.IsAa() && org.IsSetLineage()) {
-
-            x_ReportLineageConflictWithMol(org.GetOrgname().GetLineage(),
-                m_CurrentHandle.IsSetInst_Mol() ? m_CurrentHandle.GetInst_Mol() : CSeq_inst::eMol_not_set,
-                desc, ctx);
-        }
-    }
-}
-
-
-void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
-(const CBioSource& source,
- const CMolInfo& molinfo,
- const CBioseq_Handle& bsh,
- const CSerialObject& obj,
- const CSeq_entry    *ctx)
-{
-    if (bsh.IsAa()) {
+    // common reality checks before calling x_CheckSingleStrandedRNAViruses and x_ReportLineageConflictWithMol
+    if (m_CurrentHandle.IsAa()) {
         return;
     }
-    if (!source.IsSetOrg() || !source.GetOrg().IsSetLineage()) {
+    if (!src.IsSetOrg() || !src.GetOrg().IsSetLineage()) {
         return;
     }
-    /*
-    if (bsh.IsSetInst_Mol() && bsh.GetInst_Mol() != CSeq_inst::eMol_rna) {
-        return;
-    }
-    */
 
-    const string& lineage = source.GetOrg().GetLineage();
-    bool negative_strand_virus = false;
-    bool plus_strand_virus = false;
-
+    const string& lineage = src.GetOrg().GetLineage();
     if (! NStr::StartsWith(lineage, "Viruses; ")) {
         return;
     }
 
-    string str = s_GetStrandedMolStringFromLineage(lineage);
-
-    if (NStr::Find(str, "unknown") != NPOS) {
+    string stranded_mol = s_GetStrandedMolStringFromLineage(lineage);
+    if (NStr::Find(stranded_mol, "unknown") != NPOS) {
         return;
     }
 
+    const CSeq_entry* ctx = m_CurrentHandle.GetParentEntry().GetCompleteSeq_entry();
+
     CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
-    if (molinfo.IsSetBiomol()) {
-        biomol = molinfo.GetBiomol();
+    if (minfo.IsSetBiomol()) {
+        biomol = minfo.GetBiomol();
     }
 
-    if (NStr::EqualNocase(str, "dsDNA")) {
-        if (biomol != CMolInfo::eBiomol_genomic) {
-            /*
-            m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                "double stranded DNA virus should be genomic",
-                obj, ctx);
-            */
+    x_CheckSingleStrandedRNAViruses(src, lineage, stranded_mol, biomol, m_CurrentHandle, desc, ctx);
+
+    CSeq_inst::EMol mol = CSeq_inst::eMol_not_set;
+    if (m_CurrentHandle.IsSetInst_Mol()) {
+        mol = m_CurrentHandle.GetInst_Mol();
+    }
+
+    x_ReportLineageConflictWithMol(lineage, stranded_mol, mol, desc, ctx);
+}
+
+
+void CValidError_bioseq::x_ReportLineageConflictWithMol(
+    const string& lineage,
+    const string& stranded_mol,
+    CSeq_inst::EMol mol,
+    const CSerialObject& obj,
+    const CSeq_entry    *ctx
+)
+{
+    if (mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_dna)  {
+        return;
+    }
+
+    // special cases
+    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS && NStr::FindNoCase(stranded_mol, "ssRNA-RT") != NPOS) {
+        // retrovirus can be rna or dna
+        return;
+    }
+
+    // otherwise look for molecule match regardless of strandedness
+    if (mol == CSeq_inst::eMol_dna) {
+        if (NStr::Find(stranded_mol, "DNA") != NPOS) {
+            return;
         }
+    } else if (mol == CSeq_inst::eMol_rna) {
+        if (NStr::Find(stranded_mol, "RNA") != NPOS) {
+            return;
+        }
+    }
+
+    string mssg = "";
+    if (NStr::Find(stranded_mol, "ssRNA") != NPOS) {
+        mssg = "single-stranded RNA";
+    }
+    if (NStr::Find(stranded_mol, "dsRNA") != NPOS) {
+        mssg = "double-stranded RNA";
+    }
+    if (NStr::Find(stranded_mol, "ssDNA") != NPOS) {
+        mssg = "single-stranded DNA";
+    }
+    if (NStr::Find(stranded_mol, "dsDNA") != NPOS) {
+        mssg = "double-stranded DNA";
+    }
+
+    m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
+        "Taxonomy indicates " + mssg +
+        ", molecule type (" + CSeq_inst::GetMoleculeClass(mol) +
+        ") is conflicting.",
+        obj, ctx);
+}
+
+
+void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
+    const CBioSource& source,
+    const string& lineage,
+    const string& stranded_mol,
+    const CMolInfo::TBiomol biomol,
+    const CBioseq_Handle& bsh,
+    const CSerialObject& obj,
+    const CSeq_entry    *ctx
+)
+{
+    if (NStr::EqualNocase(stranded_mol, "dsDNA")) {
         return;
     }
 
     bool is_ambisense = false;
-    if (NStr::EqualNocase(str, "ssRNA(+/-)")) {
+    if (NStr::EqualNocase(stranded_mol, "ssRNA(+/-)")) {
         is_ambisense = true;
     }
 
@@ -9124,7 +9166,8 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
         }
         return;
     }
-    if (NStr::EqualNocase(str, "ssRNA-RT") && NStr::FindNoCase(lineage, "Retroviridae") != string::npos) {
+
+    if (NStr::EqualNocase(stranded_mol, "ssRNA-RT") && NStr::FindNoCase(lineage, "Retroviridae") != NPOS) {
         if (biomol != CMolInfo::eBiomol_genomic) {
              m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Retrovirus should be genomic RNA or genomic DNA",
@@ -9133,13 +9176,14 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
         return;
     }
 
-    if (NStr::FindNoCase(str, "-)") != string::npos) {
+    bool negative_strand_virus = false;
+    bool plus_strand_virus = false;
+    if (NStr::FindNoCase(stranded_mol, "-)") != NPOS) {
         negative_strand_virus = true;
     }
-    if (NStr::FindNoCase(str, "ssRNA") != string::npos && NStr::FindNoCase(str, "(+") != string::npos) {
+    if (NStr::FindNoCase(stranded_mol, "ssRNA") != NPOS && NStr::FindNoCase(stranded_mol, "(+") != NPOS) {
         plus_strand_virus = true;
     }
-
     if (!negative_strand_virus && !plus_strand_virus) {
         return;
     }
@@ -9147,12 +9191,13 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     bool is_synthetic = false;
     if (source.GetOrg().IsSetDivision() && NStr::EqualNocase(source.GetOrg().GetDivision(), "SYN")) {
         is_synthetic = true;
-    }
-    else if (source.IsSetOrigin()
-        && (source.GetOrigin() == CBioSource::eOrigin_mut
-            || source.GetOrigin() == CBioSource::eOrigin_artificial
-            || source.GetOrigin() == CBioSource::eOrigin_synthetic)) {
-        is_synthetic = true;
+    } else if (source.IsSetOrigin()) {
+        CBioSource_Base::TOrigin orig = source.GetOrigin();
+        if (orig == CBioSource::eOrigin_mut
+            || orig == CBioSource::eOrigin_artificial
+            || orig == CBioSource::eOrigin_synthetic) {
+            is_synthetic = true;
+        }
     }
 
     bool has_cds = false;
@@ -9174,13 +9219,15 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
 
         ++cds_ci;
     }
+
     bool has_minus_misc_feat = false;
     bool has_plus_misc_feat = false;
+
     if (!has_cds) {
         CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
         while (misc_ci) {
             if (misc_ci->IsSetComment()
-                && NStr::FindNoCase(misc_ci->GetComment(), "nonfunctional") != string::npos) {
+                && NStr::FindNoCase(misc_ci->GetComment(), "nonfunctional") != NPOS) {
                 if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
                     has_minus_misc_feat = true;
                 }
@@ -9204,6 +9251,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
             }
         }
     }
+
     if (has_plus_cds && !is_synthetic && !is_ambisense) {
         if (negative_strand_virus &&
             (biomol != CMolInfo::eBiomol_cRNA && biomol != CMolInfo::eBiomol_mRNA)) {
@@ -9229,6 +9277,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
             }
         }
     }
+
     if (has_plus_misc_feat) {
         if (negative_strand_virus) {
             if (!is_synthetic && !is_ambisense
@@ -9364,18 +9413,16 @@ DEFINE_STATIC_FAST_MUTEX(s_ViralMapMutex);
 
 string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& lineage)
 {
-    EStrandedMoltype smol = eStrandedMoltype_unknown;
-
     if ( !s_ViralMapInitialized ) {
         CFastMutexGuard GUARD(s_ViralMapMutex);
         if ( !s_ViralMapInitialized ) {
             try {
                 CTaxon1 tax;
                 CTaxon1::TInfoList moltypes;
-                if( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
+                if ( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
                   for (auto it: moltypes) {
                       string sName;
-                      if( tax.GetScientificName( it->GetIval1(), sName ) ) {
+                      if ( tax.GetScientificName( it->GetIval1(), sName ) ) {
                           if ( it->GetIval2() == 1 ) {
                               s_ViralTaxonMap [sName] = it->GetSval();
                           }
@@ -9393,117 +9440,43 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
     }
 
     // Topsovirus (ambisense) not in list
-    if (NStr::FindNoCase(lineage, "Tospovirus") != string::npos) {
+    if (NStr::FindNoCase(lineage, "Tospovirus") != NPOS) {
         return "ssRNA(+/-)";
     }
 
     // Tenuivirus has several segments, most of which are ambisense
-    if (NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+    if (NStr::FindNoCase(lineage, "Tenuivirus") != NPOS) {
         return "ssRNA(+/-)";
     }
 
     // Arenaviridae is ambisense, has priority over old-style checks
-    if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos) {
+    if (NStr::FindNoCase(lineage, "Arenaviridae") != NPOS) {
         return "ssRNA(+/-)";
     }
 
     // Phlebovirus is ambisense, has priority over old-style checks
-    if (NStr::FindNoCase(lineage, "Phlebovirus") != string::npos) {
+    if (NStr::FindNoCase(lineage, "Phlebovirus") != NPOS) {
         return "ssRNA(+/-)";
     }
 
     // unclassified viruses have old-style lineage
-    if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
+    if (NStr::FindNoCase(lineage, "negative-strand viruses") != NPOS) {
         return "ssRNA(-)";
     }
-
-    if (NStr::FindNoCase(lineage, "positive-strand viruses") != string::npos) {
+    if (NStr::FindNoCase(lineage, "positive-strand viruses") != NPOS) {
         return "ssRNA(+)";
     }
 
-    for (const auto & x : *s_ViralMap) {
-        if (NStr::Find(lineage, x.first) != NPOS) {
-            return x.second;
+    if (s_ViralMap) {
+        for (const auto & x : *s_ViralMap) {
+            if (NStr::Find(lineage, x.first) != NPOS) {
+                return x.second;
+            }
         }
     }
 
+    // use root value for default
     return "dsDNA";
-}
-
-
-void CValidError_bioseq::x_ReportLineageConflictWithMol
-(const string& lineage,
-    CSeq_inst::EMol mol,
-    const CSerialObject& obj,
-    const CSeq_entry    *ctx)
-{
-    if (! m_Imp.DoTaxLookup()) {
-        // return;
-    }
-    if (mol == CSeq_inst::eMol_aa) {
-        return;
-    }
-
-    if (! NStr::StartsWith(lineage, "Viruses; ")) {
-        return;
-    }
-
-    string str = s_GetStrandedMolStringFromLineage(lineage);
-
-    if (NStr::Find(str, "unknown") != NPOS) {
-        return;
-    }
-
-    // special cases
-    if (NStr::FindNoCase(str, "ssRNA(+/-)") != string::npos) {
-        if (mol == CSeq_inst::eMol_rna) {
-            return;
-        }
-    } else if (NStr::FindNoCase(lineage, "Retroviridae") != string::npos && NStr::FindNoCase(str, "ssRNA-RT") != string::npos) {
-        if (mol == CSeq_inst::eMol_rna || mol == CSeq_inst::eMol_dna) {
-            return;
-        }
-    } else if (mol == CSeq_inst::eMol_dna) {
-        if (NStr::Find(str, "ssDNA") != NPOS || NStr::Find(str, "dsDNA") != NPOS) {
-            return;
-        }
-    } else if (mol == CSeq_inst::eMol_rna) {
-        if (NStr::Find(str, "ssRNA") != NPOS || NStr::Find(str, "dsRNA") != NPOS) {
-            return;
-        }
-    }
-
-    string mssg = "";
-    if (NStr::Find(str, "ssRNA") != NPOS) {
-        if (mol == CSeq_inst::eMol_rna) {
-            return;
-        }
-        mssg = "single-stranded RNA";
-    }
-    if (NStr::Find(str, "dsRNA") != NPOS) {
-        if (mol == CSeq_inst::eMol_rna) {
-            return;
-        }
-        mssg = "double-stranded RNA";
-    }
-    if (NStr::Find(str, "ssDNA") != NPOS) {
-        if (mol == CSeq_inst::eMol_dna) {
-            return;
-        }
-        mssg = "single-stranded DNA";
-    }
-    if (NStr::Find(str, "dsDNA") != NPOS) {
-        if (mol == CSeq_inst::eMol_dna) {
-            return;
-        }
-       mssg = "double-stranded DNA";
-    }
-
-    m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-        "Taxonomy indicates " + mssg +
-        ", molecule type (" + CSeq_inst::GetMoleculeClass(mol) +
-        ") is conflicting.",
-        obj, ctx);
 }
 
 

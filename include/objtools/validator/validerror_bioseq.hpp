@@ -227,13 +227,20 @@ private:
      void ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol, int& tech, int& completeness,
         const CBioseq& seq, const CSeqdesc& desc);
-    void x_ValidateMolInfoForBioSource(const CBioSource& src, const CMolInfo& minfo, const CSeqdesc& desc);
-    void x_CheckSingleStrandedRNAViruses
-    (const CBioSource& source,
-        const CMolInfo& molinfo,
+    void x_ValidateMolInfoForBioSource(
+        const CBioSource& src,
+        const CMolInfo& minfo,
+        const CSeqdesc& desc
+    );
+    void x_CheckSingleStrandedRNAViruses(
+        const CBioSource& source,
+        const string& lineage,
+        const string& stranded_mol,
+        const CMolInfo::TBiomol biomol,
         const CBioseq_Handle& bsh,
         const CSerialObject& obj,
-        const CSeq_entry    *ctx);
+        const CSeq_entry    *ctx
+    );
 
     // for conflicts between lineage and molecule type
     typedef enum {
@@ -245,7 +252,13 @@ private:
     } EStrandedMoltype;
     static string s_GetStrandedMolStringFromLineage(const string& lineage);
 
-    void x_ReportLineageConflictWithMol(const string& lineage, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx);
+    void x_ReportLineageConflictWithMol(
+        const string& lineage,
+        const string& stranded_mol,
+        CSeq_inst::EMol mol,
+        const CSerialObject& obj,
+        const CSeq_entry *ctx
+    );
     void ValidateMolTypeContext(const EGIBB_mol& gibb, EGIBB_mol& seq_biomol,
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateUpdateDateContext(const CDate& update,const CDate& create,
