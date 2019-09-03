@@ -1333,6 +1333,9 @@ void CValidError_bioseq::ValidateBioseqContext(
             // Check for introns within introns.
             ValidateTwintrons(seq);
 
+            // check for tRNA contained in tmRNA features
+            x_ValidateOverlappingRNAFeatures (bsh);
+
             // check for equivalent source features
             x_ValidateSourceFeatures (bsh);
 
@@ -1682,6 +1685,72 @@ bool s_OverlapOrAbut(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
         return false;
     }
 }
+
+
+bool s_ContainedIn(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
+{
+    TSeqPos start1 = loc1.GetStart(eExtreme_Positional);
+    TSeqPos stop1 = loc1.GetStop(eExtreme_Positional);
+    TSeqPos start2 = loc2.GetStart(eExtreme_Positional);
+    TSeqPos stop2 = loc2.GetStop(eExtreme_Positional);
+
+    if (start1 == stop2 + 1 || start2 == stop1 + 1) {
+        // abut
+        return false;
+    } else if (TestForOverlapEx(loc1, loc2, eOverlap_Contained, scope) >= 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CValidError_bioseq::x_ValidateOverlappingRNAFeatures(
+    const CBioseq_Handle& bsh)
+{
+    // don't bother if can't build all feature iterator
+    if (!m_AllFeatIt) {
+        return;
+    }
+    try {
+        CCacheImpl::SFeatKey rna_key(
+            CSeqFeatData::e_Rna, CCacheImpl::kAnyFeatSubtype, bsh);
+        const CCacheImpl::TFeatValue & rnas = GetCache().GetFeatFromCache(rna_key);
+        CCacheImpl::TFeatValue::const_iterator feat = rnas.begin();
+        if (feat != rnas.end()) {
+ 
+            CCacheImpl::TFeatValue::const_iterator feat_prev = feat;
+            ++feat;
+            for ( ; feat != rnas.end(); ++feat_prev, ++feat) {
+
+                if (!s_OverlapOrAbut(feat_prev->GetLocation(),
+                    feat->GetLocation(), m_Scope)) {
+                    continue;
+                }
+
+                const CRNA_ref& tm = feat_prev->GetData().GetRna();
+                const CRNA_ref& tr = feat->GetData().GetRna();
+                if ( tm.IsSetType() && tm.GetType() == CRNA_ref::eType_tmRNA ) {
+                    if ( tr.IsSetType() && tr.GetType() == CRNA_ref::eType_tRNA ) {
+                        if (s_ContainedIn(feat_prev->GetLocation(),
+                            feat->GetLocation(), m_Scope)) {
+                            PostErr (eDiag_Error, eErr_SEQ_FEAT_TRNAinsideTMRNA,
+                                     "tRNA contained within tmRNA",
+                                     feat->GetOriginalFeature());
+                        }
+                    }
+                }
+            }
+        }
+    } catch ( const exception& e ) {
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exception while validating RNA features. EXCEPTION: ") +
+                e.what(), *(bsh.GetCompleteBioseq()));
+        }
+    }
+}
+
 
 
 void CValidError_bioseq::x_ValidateSourceFeatures(
@@ -9005,18 +9074,21 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     if (!source.IsSetOrg() || !source.GetOrg().IsSetLineage()) {
         return;
     }
+    /*
+    if (bsh.IsSetInst_Mol() && bsh.GetInst_Mol() != CSeq_inst::eMol_rna) {
+        return;
+    }
+    */
+
     const string& lineage = source.GetOrg().GetLineage();
     bool negative_strand_virus = false;
     bool plus_strand_virus = false;
 
-    string str = s_GetStrandedMolStringFromLineage(lineage);
-
-	// !!! this is needed - default should be dsDNA, and ignored here - but requires new unit_test_validator fixes !!!
-    /*
-    if (str.length() < 1) {
+    if (! NStr::StartsWith(lineage, "Viruses; ")) {
         return;
     }
-    */
+
+    string str = s_GetStrandedMolStringFromLineage(lineage);
 
     if (NStr::Find(str, "unknown") != NPOS) {
         return;
@@ -9025,6 +9097,17 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
     CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
     if (molinfo.IsSetBiomol()) {
         biomol = molinfo.GetBiomol();
+    }
+
+    if (NStr::EqualNocase(str, "dsDNA")) {
+        if (biomol != CMolInfo::eBiomol_genomic) {
+            /*
+            m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                "double stranded DNA virus should be genomic",
+                obj, ctx);
+            */
+        }
+        return;
     }
 
     bool is_ambisense = false;
@@ -9054,13 +9137,6 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
         negative_strand_virus = true;
     }
     if (NStr::FindNoCase(str, "ssRNA") != string::npos && NStr::FindNoCase(str, "(+") != string::npos) {
-        plus_strand_virus = true;
-    }
-
-    if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
-        negative_strand_virus = true;
-    }
-    if (NStr::FindNoCase(lineage, "ssRNA positive-strand viruses") != string::npos) {
         plus_strand_virus = true;
     }
 
@@ -9316,14 +9392,33 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         }
     }
 
-    // special cases
+    // Topsovirus (ambisense) not in list
     if (NStr::FindNoCase(lineage, "Tospovirus") != string::npos) {
-        // Topsovirus not in list
         return "ssRNA(+/-)";
     }
+
+    // Tenuivirus has several segments, most of which are ambisense
     if (NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
-        // Tenuivirus has several segments, most of which are ambisense
         return "ssRNA(+/-)";
+    }
+
+    // Arenaviridae is ambisense, has priority over old-style checks
+    if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos) {
+        return "ssRNA(+/-)";
+    }
+
+    // Phlebovirus is ambisense, has priority over old-style checks
+    if (NStr::FindNoCase(lineage, "Phlebovirus") != string::npos) {
+        return "ssRNA(+/-)";
+    }
+
+    // unclassified viruses have old-style lineage
+    if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
+        return "ssRNA(-)";
+    }
+
+    if (NStr::FindNoCase(lineage, "positive-strand viruses") != string::npos) {
+        return "ssRNA(+)";
     }
 
     for (const auto & x : *s_ViralMap) {
@@ -9332,10 +9427,7 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         }
     }
 
-	// !!! this is needed - default should be dsDNA - but requires new unit_test_validator fixes !!!
-	// return "dsDNA";
- 
-    return "";
+    return "dsDNA";
 }
 
 
@@ -9352,12 +9444,11 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol
         return;
     }
 
-    string str = s_GetStrandedMolStringFromLineage(lineage);
-
-	// !!! this should handle default dsDNA - but requires new unit_test_validator fixes !!!
-    if (str.length() < 1) {
+    if (! NStr::StartsWith(lineage, "Viruses; ")) {
         return;
     }
+
+    string str = s_GetStrandedMolStringFromLineage(lineage);
 
     if (NStr::Find(str, "unknown") != NPOS) {
         return;
@@ -9373,11 +9464,11 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol
             return;
         }
     } else if (mol == CSeq_inst::eMol_dna) {
-        if (NStr::Find(str, "ssDNA") != NPOS && NStr::Find(str, "dsDNA") != NPOS) {
+        if (NStr::Find(str, "ssDNA") != NPOS || NStr::Find(str, "dsDNA") != NPOS) {
             return;
         }
     } else if (mol == CSeq_inst::eMol_rna) {
-        if (NStr::Find(str, "ssRNA") != NPOS && NStr::Find(str, "dsRNA") != NPOS) {
+        if (NStr::Find(str, "ssRNA") != NPOS || NStr::Find(str, "dsRNA") != NPOS) {
             return;
         }
     }

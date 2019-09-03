@@ -6970,6 +6970,9 @@ BOOST_AUTO_TEST_CASE(Test_InconsistentVirusMoltype)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InconsistentVirusMoltype",
         "Negative-strand virus with plus strand CDS should be mRNA or cRNA"));
     expected_errors[0]->SetAccession("lcl|nuc");
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MolInfoConflictsWithBioSource",
+                              "Taxonomy indicates single-stranded RNA, molecule type (DNA) is conflicting."));
+    expected_errors[1]->SetAccession("lcl|nuc");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     // error goes away if mRNA or cRNA or ambisense or synthetic
@@ -7050,6 +7053,8 @@ BOOST_AUTO_TEST_CASE(Test_InconsistentVirusMoltype)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
         "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
+                              "Taxonomy indicates single-stranded RNA, molecule type (DNA) is conflicting."));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -7086,15 +7091,23 @@ BOOST_AUTO_TEST_CASE(Test_InconsistentVirusMoltype)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    /*
     // error if not genomic
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
+        "Ambisense virus should be genomic RNA or cRNA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
         "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    */
 
     CLEAR_ERRORS
 

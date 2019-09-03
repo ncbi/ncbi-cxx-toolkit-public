@@ -260,6 +260,7 @@ private:
         const CBioseq& seq, int choice);
     void ValidateIDSetAgainstDb(const CBioseq& seq);
     void x_ValidateSourceFeatures(const CBioseq_Handle& bsh);
+    void x_ValidateOverlappingRNAFeatures(const CBioseq_Handle& bsh);
     void x_ValidatePubFeatures(const CBioseq_Handle& bsh);
     void x_ReportDuplicatePubLabels (const CBioseq& seq, const vector<CTempString>& labels);
     void x_ValidateMultiplePubs(
