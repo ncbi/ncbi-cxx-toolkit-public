@@ -3399,7 +3399,7 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
                     if (!tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)) {
                         int x_errno = CNcbiError::GetLast().Code();
                         TAR_THROW(this, eBackup,
-                                  "Failed to backup '" + dst->GetPath() +'\''
+                                  "Failed to backup '" + dst->GetPath() + '\''
                                   + s_OSReason(x_errno));
                     }
                 } else {
