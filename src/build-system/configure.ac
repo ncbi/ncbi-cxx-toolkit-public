@@ -8210,7 +8210,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(protobuf, PROTOBUF, [protobuf$D_SFX],
    [], [$Z_LIBS])
 if test -n "$PROTOBUF_LIBS"; then
    AC_PATH_PROG(PROTOC, protoc, [], [$PROTOBUF_PATH/bin:$PATH])
-   if [ ! -x "$PROTOC ]; then
+   if [ ! -x "$PROTOC" ]; then
       NCBI_MISSING_PACKAGE(grpc)
       NCBI_MISSING_PACKAGE(protobuf)
    fi

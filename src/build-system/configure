@@ -52240,7 +52240,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-   if  ! -x "$PROTOC ; then
+   if  ! -x "$PROTOC" ; then
       if test "${with_grpc:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-grpc explicitly specified, but no usable version found." >&5
 echo "$as_me: error: --with-grpc explicitly specified, but no usable version found." >&2;}
