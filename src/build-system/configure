@@ -863,8 +863,10 @@ LIBXLSXWRITER_INCLUDE
 LIBXLSXWRITER_LIBS
 PROTOBUF_INCLUDE
 PROTOBUF_LIBS
+PROTOC
 GRPC_INCLUDE
 GRPC_LIBS
+GRPC_CPP_PLUGIN
 AWS_SDK_INCLUDE
 AWS_SDK_LIBS
 signature
@@ -52197,7 +52199,60 @@ _ACEOF
 
 
 if test -n "$PROTOBUF_LIBS"; then
-   PROTOBUF_BIN=$PROTOBUF_PATH/bin
+   # Extract the first word of "protoc", so it can be a program name with args.
+set dummy protoc; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PROTOC+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PROTOC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PROTOC="$PROTOC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$PROTOBUF_PATH/bin:$PATH"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PROTOC="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PROTOC=$ac_cv_path_PROTOC
+if test -n "$PROTOC"; then
+  { echo "$as_me:$LINENO: result: $PROTOC" >&5
+echo "${ECHO_T}$PROTOC" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+   if  ! -x "$PROTOC ; then
+      if test "${with_grpc:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-grpc explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-grpc explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+      if test "${with_protobuf:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-protobuf explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-protobuf explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+   fi
+   PROTOBUF_BIN=`dirname $PROTOC`
 else
    if test "${with_grpc:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-grpc explicitly specified, but no usable version found." >&5
@@ -52475,7 +52530,55 @@ fi
    GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
-   GRPC_BIN=$GRPC_PATH/bin
+   # Extract the first word of "grpc_cpp_plugin", so it can be a program name with args.
+set dummy grpc_cpp_plugin; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_GRPC_CPP_PLUGIN+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $GRPC_CPP_PLUGIN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GRPC_CPP_PLUGIN="$GRPC_CPP_PLUGIN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$GRPC_PATH/bin:$PROTOBUF_PATH/bin:$PATH"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_GRPC_CPP_PLUGIN="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GRPC_CPP_PLUGIN=$ac_cv_path_GRPC_CPP_PLUGIN
+if test -n "$GRPC_CPP_PLUGIN"; then
+  { echo "$as_me:$LINENO: result: $GRPC_CPP_PLUGIN" >&5
+echo "${ECHO_T}$GRPC_CPP_PLUGIN" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+   if  ! -x "$GRPC_CPP_PLUGIN" ; then
+      if test "${with_grpc:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-grpc explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-grpc explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+   fi
+   GRPC_BIN=`dirname $GRPC_CPP_PLUGIN`
 fi
 
 case "$with_msgsl" in
@@ -53440,6 +53543,8 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 
@@ -54767,8 +54872,10 @@ LIBXLSXWRITER_INCLUDE!$LIBXLSXWRITER_INCLUDE$ac_delim
 LIBXLSXWRITER_LIBS!$LIBXLSXWRITER_LIBS$ac_delim
 PROTOBUF_INCLUDE!$PROTOBUF_INCLUDE$ac_delim
 PROTOBUF_LIBS!$PROTOBUF_LIBS$ac_delim
+PROTOC!$PROTOC$ac_delim
 GRPC_INCLUDE!$GRPC_INCLUDE$ac_delim
 GRPC_LIBS!$GRPC_LIBS$ac_delim
+GRPC_CPP_PLUGIN!$GRPC_CPP_PLUGIN$ac_delim
 AWS_SDK_INCLUDE!$AWS_SDK_INCLUDE$ac_delim
 AWS_SDK_LIBS!$AWS_SDK_LIBS$ac_delim
 signature!$signature$ac_delim
@@ -54801,8 +54908,6 @@ NO_STRICT_ALIASING!$NO_STRICT_ALIASING$ac_delim
 D_SFX!$D_SFX$ac_delim
 DEBUG_SFX!$DEBUG_SFX$ac_delim
 LIB_OR_DLL!$LIB_OR_DLL$ac_delim
-FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
-APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54844,6 +54949,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
+APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
 APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
 LINK_DLL!$LINK_DLL$ac_delim
 has_dll_loadable!$has_dll_loadable$ac_delim
@@ -54939,8 +55046,6 @@ BERKELEYDB_STATIC_LIBS!$BERKELEYDB_STATIC_LIBS$ac_delim
 BERKELEYDB_CXX_LIBS!$BERKELEYDB_CXX_LIBS$ac_delim
 BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
 ODBC_INCLUDE!$ODBC_INCLUDE$ac_delim
-ODBC_LIBS!$ODBC_LIBS$ac_delim
-BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54982,6 +55087,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+ODBC_LIBS!$ODBC_LIBS$ac_delim
+BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
 BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
 BOOST_TAG!$BOOST_TAG$ac_delim
 BOOST_CHRONO_LIBS!$BOOST_CHRONO_LIBS$ac_delim
@@ -55077,8 +55184,6 @@ SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
-AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
-CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -55120,6 +55225,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
+CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
@@ -55183,7 +55290,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 63; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
