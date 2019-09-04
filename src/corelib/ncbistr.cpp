@@ -543,7 +543,7 @@ string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTe
     string s;
     s.reserve(str.length() + msg.length() + 50);
     s += "Cannot convert string '";
-    s += str;
+    s += NStr::PrintableString(str);
     s += "' to ";
     s += to_type;
     if ( !msg.empty() ) {
@@ -1286,7 +1286,7 @@ static double s_StringToDouble(const char* str, size_t size,
     _ASSERT(str[size] == '\0');
     if ((flags & NStr::fDecimalPosix) && (flags & NStr::fDecimalPosixOrLocal)) {
         NCBI_THROW2(CStringException, eBadArgs,
-                    "NStr::StringToDouble():  mutually exclusive flags specified",0);
+                    "NStr::StringToDouble():  mutually exclusive flags specified", 0);
     }
     S2N_CONVERT_GUARD_EX(flags);
 
@@ -3320,7 +3320,7 @@ string& NStr::Replace(const string& src,
     // source and destination should not be the same
     if (&src == &dst) {
         NCBI_THROW2(CStringException, eBadArgs,
-                    "NStr::Replace():  source and destination are the same",0);
+                    "NStr::Replace():  source and destination are the same", 0);
     }
     if (num_replace)
         *num_replace = 0;
@@ -4822,7 +4822,7 @@ string NStr::ParseEscapes(const CTempString str, EEscSeqRange mode, char user_ch
                             break;
                         case eEscSeqRange_Throw:
                             NCBI_THROW2(CStringException, eFormat, 
-                                "Escape sequence '" + string(CTempString(str, pos2, len)) +
+                                "Escape sequence '" + NStr::PrintableString(CTempString(str, pos2, len)) +
                                 "' is out of range [0-255]", pos2);
                             break;
                         case eEscSeqRange_Errno:
