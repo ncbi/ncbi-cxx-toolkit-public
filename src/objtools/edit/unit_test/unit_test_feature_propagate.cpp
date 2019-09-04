@@ -1195,6 +1195,76 @@ void TestPartialWhenCutStartDoNotExtend(bool partial5)
     listener.Clear();    
 }
 
+void TestFeatInsideGap(bool is_minus)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+
+    string str1 = "TCACTCTTTGAAAAAAAAAA";
+    CRef<CSeq_entry> seq1(new CSeq_entry);
+    CRef< CSeq_id > id1(new CSeq_id);
+    id1->SetLocal().SetStr("seq1");
+    seq1->SetSeq().SetId().push_back(id1);
+    seq1->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(str1);
+    seq1->SetSeq().SetInst().SetLength(str1.length());
+    seq1->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    seq1->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
+    entry->SetSet().SetSeq_set().push_back(seq1);
+
+    string str2 = "TCACTGAAAAAAAAAA";
+    CRef<CSeq_entry> seq2(new CSeq_entry);
+    CRef< CSeq_id > id2(new CSeq_id);
+    id2->SetLocal().SetStr("seq2");
+    seq2->SetSeq().SetId().push_back(id2);
+    seq2->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(str2);
+    seq2->SetSeq().SetInst().SetLength(str2.length());
+    seq2->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    seq2->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
+    entry->SetSet().SetSeq_set().push_back(seq2);
+    
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetType(objects::CSeq_align::eType_global);
+    align->SetDim(entry->GetSet().GetSeq_set().size());
+    align->SetSegs().SetDenseg().SetIds().push_back(id1);
+    align->SetSegs().SetDenseg().SetIds().push_back(id2);
+
+    auto& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(3);
+    denseg.SetLens().push_back(5);
+    denseg.SetLens().push_back(4);
+    denseg.SetLens().push_back(11);
+    denseg.SetDim(entry->GetSet().GetSeq_set().size());
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(5);
+    denseg.SetStarts().push_back(-1);
+    denseg.SetStarts().push_back(9);
+    denseg.SetStarts().push_back(5);
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    CRef<CSeq_loc> main_loc = CreateLoc(6, 7, *id1, false, false, is_minus);
+    CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+    CBioseq_CI bi(seh);
+    CBioseq_Handle bsh1 = *bi;
+    ++bi;
+    CBioseq_Handle bsh2 = *bi;
+
+    CMessageListener_Basic listener;
+
+    edit::CFeaturePropagator propagator1(bsh1, bsh2, *align, false, false, true, true, &listener);
+    CRef<CSeq_feat> new_feat = propagator1.Propagate(*cds);
+    BOOST_CHECK(new_feat.IsNull());
+    BOOST_CHECK_EQUAL(listener.Count(), 1);
+
+    listener.Clear();
+}
+
 BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
 {
     TestCds(false, false);
@@ -1249,6 +1319,9 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestPartialWhenCutLastIntervalDoNotExtend(true);
     TestPartialWhenCutStartDoNotExtend(false);
     TestPartialWhenCutStartDoNotExtend(true);
+
+    TestFeatInsideGap(false);
+    TestFeatInsideGap(true);
 }
 
 

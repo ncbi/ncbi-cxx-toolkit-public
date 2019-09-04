@@ -584,12 +584,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         try
         {
             new_start = AlignPosToSeqPos(align_start, target_row, true, sub_partial5, sub_partial3);
-            new_stop = AlignPosToSeqPos(align_stop, target_row, false, sub_partial5, sub_partial3);
-            if (new_stop < new_start && !IsReverse(strand)) {
-                // location completely in the gap, skip it
-                loc_it.Delete();
-                continue;
-            }
+            new_stop = AlignPosToSeqPos(align_stop, target_row, false, sub_partial5, sub_partial3);           
         }
         catch(const CException &e)
         {
@@ -601,7 +596,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
             }
             return target;
         }
-        if (new_start < 0 || new_stop < 0)
+        if (new_start < 0 || new_stop < 0 || new_stop < new_start)
         {
             if (loc_it.GetPos() == 0)
             {
@@ -628,10 +623,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
             partial3 = true;
         if (sub_partial3 && loc_it.GetPos() == 0 && IsReverse(strand))
             partial3 = true;
-        if (new_stop < new_start)
-        {
-            swap(new_start, new_stop);
-        }       
+       
         loc_it.SetFrom(new_start);
         loc_it.SetTo(new_stop);
         ++loc_it;
