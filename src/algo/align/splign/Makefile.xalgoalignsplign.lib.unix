@@ -1,0 +1,6 @@
+# $Id$
+# Adjust ICC flags to avoid problematic references to
+# __intel_cpu_features_* functions (as of ICC [20]19)
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+  compart_matching.o: CXXFLAGS = $(ORIG_CXXFLAGS)
+endif
