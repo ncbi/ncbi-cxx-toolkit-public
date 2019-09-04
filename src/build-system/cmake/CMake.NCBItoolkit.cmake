@@ -39,6 +39,7 @@ if(NCBI_EXPERIMENTAL)
     if(BUILD_SHARED_LIBS)
         if(WIN32 OR XCODE)
             set(NCBI_PTBCFG_COMPOSITE_DLL dll)
+            set(NCBI_PTBCFG_ALLOW_COMPOSITE ON)
         endif()
     endif()
 
