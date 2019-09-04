@@ -40,6 +40,7 @@ case "$1" in
   13* | 2013  ) search=$intel_root/2013/bin                      ;;
   15* | 2015  ) search=$intel_root/Compiler/15.0/bin             ;;
   17* | 2017  ) search=$intel_root/Compiler/17.0/bin             ;;
+  19* | 2019  ) search=$intel_root/Compiler/19.0/bin             ;;
   *           ) search=                                          ;;
 esac
 
