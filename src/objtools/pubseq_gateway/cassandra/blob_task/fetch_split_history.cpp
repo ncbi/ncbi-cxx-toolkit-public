@@ -47,6 +47,8 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+static const SSplitHistoryRecord::TSplitVersion kFetchAllVersions = -1;
+
 CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     unsigned int op_timeout_ms,
     unsigned int max_retries,
@@ -57,7 +59,7 @@ CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     TDataErrorCallback data_error_cb
 )
     : CCassBlobTaskFetchSplitHistory(
-        op_timeout_ms, max_retries, conn, keyspace, sat_key, 0, move(consume_callback), data_error_cb
+        op_timeout_ms, max_retries, conn, keyspace, sat_key, kFetchAllVersions, move(consume_callback), data_error_cb
     )
 {
 }
@@ -131,7 +133,7 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                 auto query = m_QueryArr[0].query;
                 string sql = "SELECT split_version, last_modified, id2_info FROM " + GetKeySpace() +
                     ".blob_split_history WHERE sat_key = ?";
-                if (m_SplitVersion == 0) {
+                if (m_SplitVersion == kFetchAllVersions) {
                     query->SetSQL(sql, 1);
                     query->BindInt32(0, m_Key);
                 } else {
@@ -160,11 +162,12 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                 auto query = m_QueryArr[0].query;
                 if (CheckReady(query, m_RestartCounter, restarted)) {
                     while (query->NextRow() == ar_dataready) {
+                        size_t last_item = m_Result.size();
                         m_Result.resize(m_Result.size() + 1);
-                        m_Result[m_Result.size() - 1].sat_key = m_Key;
-                        m_Result[m_Result.size() - 1].split_version = query->FieldGetInt32Value(0, 0);
-                        m_Result[m_Result.size() - 1].modified = query->FieldGetInt64Value(1, 0);
-                        m_Result[m_Result.size() - 1].id2_info = query->FieldGetStrValueDef(2, "");
+                        m_Result[last_item].sat_key = m_Key;
+                        m_Result[last_item].split_version = query->FieldGetInt32Value(0, 0);
+                        m_Result[last_item].modified = query->FieldGetInt64Value(1, 0);
+                        m_Result[last_item].id2_info = query->FieldGetStrValueDef(2, "");
                     }
                     if (query->IsEOF()) {
                         if (m_ConsumeCallback) {
