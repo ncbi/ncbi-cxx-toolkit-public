@@ -1,0 +1,168 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "Seq1"
+      },
+      descr {
+        source {
+          org {
+            orgname {
+              mod {
+                {
+                  subtype nat-host,
+                  subname "a host"
+                }
+              }
+            }
+          }
+        },
+        title "[gene=normal_mod_that_will_be_disregarded]
+ [also_bogus=mod_disregarded_instead_of_unused] [bogus=bad_mod]
+ [topology=mod_with_bad_value]"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 360,
+        seq-data ncbi2na '1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B'H
+      }
+    },
+    seq {
+      id {
+        local str "Seq2"
+      },
+      descr {
+        source {
+          org {
+            orgname {
+              mod {
+                {
+                  subtype nat-host,
+                  subname "a host 2"
+                }
+              }
+            }
+          }
+        },
+        title "[gene=another_mod_that_will_be_disregarded]"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 360,
+        seq-data ncbi2na '1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B'H
+      }
+    },
+    seq {
+      id {
+        local str "Seq3"
+      },
+      descr {
+        source {
+          org {
+            orgname {
+              mod {
+                {
+                  subtype nat-host,
+                  subname "a host 3"
+                }
+              }
+            }
+          }
+        },
+        title "[Gene=test_case_sensitivity]"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 360,
+        seq-data ncbi2na '1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B'H
+      }
+    },
+    seq {
+      id {
+        local str "Seq4"
+      },
+      descr {
+        title "[also-bogus=mod_name_with_dashes_should_be_treated_same]
+ [nathost=a host 4]"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 360,
+        seq-data ncbi2na '1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B'H
+      }
+    },
+    seq {
+      id {
+        local str "Seq5"
+      },
+      descr {
+        source {
+          org {
+            orgname {
+              mod {
+                {
+                  subtype nat-host,
+                  subname "another host"
+                }
+              }
+            }
+          }
+        },
+        title "not filtered out by disregarding 'nat-host' even though
+ converted to that in the output"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 360,
+        seq-data ncbi2na '1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B
+1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 5,
+          segs denseg {
+            dim 5,
+            numseg 1,
+            ids {
+              local str "Seq1",
+              local str "Seq2",
+              local str "Seq3",
+              local str "Seq4",
+              local str "Seq5"
+            },
+            starts {
+              0,
+              0,
+              0,
+              0,
+              0
+            },
+            lens {
+              360
+            }
+          }
+        }
+      }
+    }
+  }
+}

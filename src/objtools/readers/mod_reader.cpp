@@ -187,7 +187,6 @@ void CModHandler::AddMods(const TModList& mods,
         }
 
         if (x_IsDeprecated(canonical_name)) {
-            rejected_mods.push_back(mod);
             string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
             if (fReportError) {
                 fReportError(mod, message, eDiag_Warning, eModSubcode_Deprecated);
