@@ -8210,7 +8210,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(protobuf, PROTOBUF, [protobuf$D_SFX],
    [], [$Z_LIBS])
 if test -n "$PROTOBUF_LIBS"; then
    AC_PATH_PROG(PROTOC, protoc, [], [$PROTOBUF_PATH/bin:$PATH])
-   if [ ! -x "$PROTOC" ]; then
+   if test ! -x "$PROTOC"; then
       NCBI_MISSING_PACKAGE(grpc)
       NCBI_MISSING_PACKAGE(protobuf)
    fi
@@ -8242,7 +8242,7 @@ if test -n "$GRPC_LIBS"; then
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
    AC_PATH_PROG(GRPC_CPP_PLUGIN, grpc_cpp_plugin, [],
       [$GRPC_PATH/bin:$PROTOBUF_PATH/bin:$PATH])
-   if [ ! -x "$GRPC_CPP_PLUGIN" ]; then
+   if test ! -x "$GRPC_CPP_PLUGIN"; then
       NCBI_MISSING_PACKAGE(grpc)
    fi
    GRPC_BIN=`dirname $GRPC_CPP_PLUGIN`
