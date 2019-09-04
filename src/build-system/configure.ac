@@ -1374,7 +1374,7 @@ if test "$with_mt" != "no" ; then
          fi
          ;;
       ICC )
-         : ${OPENMP_FLAGS=-openmp}
+         : ${OPENMP_FLAGS=-qopenmp}
          ;;
       WorkShop* )
          : ${OPENMP_FLAGS=-xopenmp=parallel}
