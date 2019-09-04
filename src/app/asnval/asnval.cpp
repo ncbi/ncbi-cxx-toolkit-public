@@ -90,8 +90,6 @@ using namespace ncbi;
 using namespace objects;
 using namespace validator;
 
-const char * ASNVAL_APP_VER = "2.2.0";
-
 #define USE_XMLWRAPP_LIBS
 
 /////////////////////////////////////////////////////////////////////////////
@@ -213,7 +211,7 @@ CAsnvalApp::CAsnvalApp(void) :
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0)
 {
-    const CVersionInfo vers (2,2,0);
+    const CVersionInfo vers (2, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
     SetVersion (vers);
 }
 
@@ -1297,11 +1295,13 @@ void CAsnvalApp::ConstructOutputStreams()
         m_ostr_xml->SetUseIndentation(true);
         m_ostr_xml->Flush();
 
-        *m_ValidErrorStream << endl << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
+        *m_ValidErrorStream << endl << "<asnvalidate version=\"" << "2." << NCBI_SC_VERSION_PROXY << "."
+        << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
         << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << endl;
         m_ValidErrorStream->flush();
 #else
-        *m_ValidErrorStream << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
+        *m_ValidErrorStream << "<asnvalidate version=\"" << "2." << NCBI_SC_VERSION_PROXY << "."
+        << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
         << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << endl;
 #endif
     }
