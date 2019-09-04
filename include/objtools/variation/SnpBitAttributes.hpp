@@ -32,7 +32,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDbSnp)
 
 /// SNP bit attribute container.
-class CSnpBitAttributes
+class NCBI_VARIATION_UTILS_EXPORT CSnpBitAttributes
 {
 public:
     /// Bits in the 64-bit bit field of the SNP VDB product.

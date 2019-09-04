@@ -43,9 +43,11 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using namespace std;
 
+
 bool x_CheckForFirstNTSeq(const CVariation_inst& inst);
 
-class CVariationUtilities
+
+class NCBI_VARIATION_UTILS_EXPORT CVariationUtilities
 {
 public:
     static void   CorrectRefAllele(CVariation& var, CScope& scope);
@@ -76,8 +78,6 @@ public:
     static bool IsIntronicVariation(const CVariation_ref& var);
     static bool IsIntronicVariation(const CVariation& var);
 
-
-
 private:
     static string x_GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
     static string x_GetRefAlleleFromVP(CVariantPlacement& vp, CScope& scope, TSeqPos length);
@@ -96,14 +96,13 @@ private:
 };
 
 
-///
 /// A set of classes to normalize variation.
 ///
 /// The \a CSeqVectorCache class handles storing
 /// a cache of \a CSeqVectors, hard coded to 16.
 ///
 /// Not intended to be used directly
-class CSeqVectorCache
+class NCBI_VARIATION_UTILS_EXPORT CSeqVectorCache
 {
 public:
     static TSeqPos GetSeqSize(CSeqVector &seqvec);
@@ -116,13 +115,14 @@ private:
 };
 
 /// A struct to keep track of the start and stop of the range.
-struct SEndPosition {
+struct NCBI_VARIATION_UTILS_EXPORT SEndPosition {
     SEndPosition(int l, int r) :
         left(l), right(r) {}
 
     TSeqPos left;
     TSeqPos right;
 };
+
 
 /// Shifting can be one of four types (left, right, full, left-with-interval)
 /// and can be on two related types of objects: Seq-annot (and Seq-feat)
@@ -167,7 +167,6 @@ public:
         T::SetShiftFlag(var);
     }
 
-
     /// This method determine if a SeqLoc, and associated allele, are shiftable.
     static bool x_IsShiftable(const CSeq_loc &loc, const string &allele,
         CScope &scope, CVariation_inst::TType type);
@@ -189,12 +188,11 @@ protected:
        const CVariation_inst::TType type, const TSeqPos& deletion_size);
    static void ResetFullyShifted(CSeq_feat& feat, CSeq_loc &loc, SEndPosition& sep,
        const CVariation_inst::TType type, const TSeqPos& deletion_size);
-
-
-
 };
 
-class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
+
+class NCBI_VARIATION_UTILS_EXPORT CVariationNormalizationLeft 
+	: public CVariationNormalization_base<CVariationNormalizationLeft>
 {
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
@@ -208,7 +206,8 @@ public:
 
 };
 
-class CVariationNormalizationDelIns : public CVariationNormalization_base<CVariationNormalizationDelIns>
+class NCBI_VARIATION_UTILS_EXPORT CVariationNormalizationDelIns 
+	: public CVariationNormalization_base<CVariationNormalizationDelIns>
 {
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
@@ -225,7 +224,8 @@ public:
 
 };
 
-class CVariationNormalizationRight : public CVariationNormalization_base<CVariationNormalizationRight>
+class NCBI_VARIATION_UTILS_EXPORT CVariationNormalizationRight 
+	: public CVariationNormalization_base<CVariationNormalizationRight>
 {
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
@@ -236,11 +236,10 @@ public:
 
     template<class V>
     static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Right Shifted"); }
-
-
 };
 
-class CVariationNormalizationLeftInt :  public CVariationNormalization_base<CVariationNormalizationLeftInt>
+class NCBI_VARIATION_UTILS_EXPORT CVariationNormalizationLeftInt 
+	: public CVariationNormalization_base<CVariationNormalizationLeftInt>
 {
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
@@ -251,10 +250,9 @@ public:
 
     template<class V>
     static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Left Interval Shifted"); }
-
 };
 
-class CVariationNormalization
+class NCBI_VARIATION_UTILS_EXPORT CVariationNormalization
 {
 public:
     enum ETargetContext {
@@ -307,5 +305,4 @@ public:
     //Is the variant full-shifted, based on inclusion of 'UserObject'
     static bool isFullyShifted(const CVariation& var);
     static bool isFullyShifted(const CSeq_feat& feat);
-
 };
