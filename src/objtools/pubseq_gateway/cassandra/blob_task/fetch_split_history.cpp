@@ -162,12 +162,12 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                 auto query = m_QueryArr[0].query;
                 if (CheckReady(query, m_RestartCounter, restarted)) {
                     while (query->NextRow() == ar_dataready) {
-                        size_t last_item = m_Result.size();
-                        m_Result.resize(m_Result.size() + 1);
-                        m_Result[last_item].sat_key = m_Key;
-                        m_Result[last_item].split_version = query->FieldGetInt32Value(0, 0);
-                        m_Result[last_item].modified = query->FieldGetInt64Value(1, 0);
-                        m_Result[last_item].id2_info = query->FieldGetStrValueDef(2, "");
+                        size_t new_item_idx = m_Result.size();
+                        m_Result.resize(new_item_idx + 1);
+                        m_Result[new_item_idx].sat_key = m_Key;
+                        m_Result[new_item_idx].split_version = query->FieldGetInt32Value(0, 0);
+                        m_Result[new_item_idx].modified = query->FieldGetInt64Value(1, 0);
+                        m_Result[new_item_idx].id2_info = query->FieldGetStrValueDef(2, "");
                     }
                     if (query->IsEOF()) {
                         if (m_ConsumeCallback) {
