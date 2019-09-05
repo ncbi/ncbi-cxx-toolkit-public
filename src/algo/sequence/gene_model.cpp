@@ -3952,8 +3952,7 @@ CFeatureGenerator::SImplementation::x_CheckMatch(const CSeq_align &align,
     TSeqRange loc_range(loc_field.GetField("from").GetInt(),
                         loc_field.GetField("to").GetInt());
     return loc_range == align.GetSeqRange(1) ? eExact
-         : (loc_range.IntersectionWith(align.GetSeqRange(1)).GetLength() * 2
-               >= loc_range.GetLength()
+         : (loc_range.IntersectingWith(align.GetSeqRange(1))
              ? eOverlap : eNone);
 }
 
