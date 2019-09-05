@@ -65,6 +65,7 @@ NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
+NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
 
 NCBI_PARAM_ENUM_ARRAY(EPSG_DebugPrintout, PSG, debug_printout)
 {
@@ -1225,7 +1226,7 @@ void SPSG_IoThread::Execute(SPSG_UvBarrier& barrier)
 
     queue.Init(this, &loop, s_OnQueue);
     m_Shutdown.Init(this, &loop, s_OnShutdown);
-    m_Timer.Init(this, &loop, s_OnTimer);
+    m_Timer.Init(this, &loop, s_OnTimer, 0, TPSG_RebalanceTime::GetDefault() * milli::den);
     barrier.Wait();
 
     loop.Run();

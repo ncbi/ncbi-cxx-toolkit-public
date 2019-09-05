@@ -85,6 +85,9 @@ typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
 NCBI_PARAM_DECL(unsigned, PSG, reader_timeout);
 typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 
+NCBI_PARAM_DECL(double, PSG, rebalance_time);
+typedef NCBI_PARAM_TYPE(PSG, rebalance_time) TPSG_RebalanceTime;
+
 enum class EPSG_DebugPrintout { eNone, eSome, eAll };
 NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
 typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
@@ -581,7 +584,7 @@ struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
 
 struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
 {
-    void Init(void* d, uv_loop_t* l, uv_timer_cb cb)
+    void Init(void* d, uv_loop_t* l, uv_timer_cb cb, uint64_t timeout, uint64_t repeat)
     {
         if (auto rc = uv_timer_init(l, this)) {
             NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_init failed " << uv_strerror(rc));
@@ -589,7 +592,7 @@ struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
 
         data = d;
 
-        if (auto rc = uv_timer_start(this, cb, 0, 10000)) {
+        if (auto rc = uv_timer_start(this, cb, timeout, repeat)) {
             NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_start failed " << uv_strerror(rc));
         }
     }
