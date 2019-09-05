@@ -898,8 +898,7 @@ USER_CFLAGS=$CFLAGS
 USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
 
-test -f /etc/centos-release  ||  \
-    with_experimental="$with_experimental PSGLoader"
+with_experimental="$with_experimental PSGLoader"
 
 if test -n "$with_experimental"; then
    for x in `echo $with_experimental | tr , ' '`; do
