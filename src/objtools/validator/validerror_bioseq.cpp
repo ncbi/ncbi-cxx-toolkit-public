@@ -9065,7 +9065,7 @@ void CValidError_bioseq::x_ValidateMolInfoForBioSource(
     }
 
     string stranded_mol = s_GetStrandedMolStringFromLineage(lineage);
-    if (NStr::Find(stranded_mol, "unknown") != NPOS) {
+    if (NStr::FindNoCase(stranded_mol, "unknown") != NPOS) {
         return;
     }
 
@@ -9107,26 +9107,26 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol(
 
     // otherwise look for molecule match regardless of strandedness
     if (mol == CSeq_inst::eMol_dna) {
-        if (NStr::Find(stranded_mol, "DNA") != NPOS) {
+        if (NStr::FindNoCase(stranded_mol, "DNA") != NPOS) {
             return;
         }
     } else if (mol == CSeq_inst::eMol_rna) {
-        if (NStr::Find(stranded_mol, "RNA") != NPOS) {
+        if (NStr::FindNoCase(stranded_mol, "RNA") != NPOS) {
             return;
         }
     }
 
     string mssg = "";
-    if (NStr::Find(stranded_mol, "ssRNA") != NPOS) {
+    if (NStr::FindNoCase(stranded_mol, "ssRNA") != NPOS) {
         mssg = "single-stranded RNA";
     }
-    if (NStr::Find(stranded_mol, "dsRNA") != NPOS) {
+    if (NStr::FindNoCase(stranded_mol, "dsRNA") != NPOS) {
         mssg = "double-stranded RNA";
     }
-    if (NStr::Find(stranded_mol, "ssDNA") != NPOS) {
+    if (NStr::FindNoCase(stranded_mol, "ssDNA") != NPOS) {
         mssg = "single-stranded DNA";
     }
-    if (NStr::Find(stranded_mol, "dsDNA") != NPOS) {
+    if (NStr::FindNoCase(stranded_mol, "dsDNA") != NPOS) {
         mssg = "double-stranded DNA";
     }
 
@@ -9152,10 +9152,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
         return;
     }
 
-    bool is_ambisense = false;
-    if (NStr::EqualNocase(stranded_mol, "ssRNA(+/-)")) {
-        is_ambisense = true;
-    }
+    const bool is_ambisense = NStr::EqualNocase(stranded_mol, "ssRNA(+/-)");
 
     // special cases
     if (is_ambisense) {
@@ -9469,7 +9466,7 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
 
     if (s_ViralMap) {
         for (const auto & x : *s_ViralMap) {
-            if (NStr::Find(lineage, x.first) != NPOS) {
+            if (NStr::FindNoCase(lineage, x.first) != NPOS) {
                 return x.second;
             }
         }
