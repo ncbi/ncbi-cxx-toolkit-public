@@ -253,20 +253,14 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
                 const CUser_field& field = **field_iter;
                 if (field.GetLabel().IsStr()) {
                     if (NStr::Equal(field.GetLabel().GetStr(), *iter, use_case) ) {
-                        if (iter != last  &&  field.GetData().IsFields()) {
-                            new_f = *field_iter;
-                            break;
-                        } else if (iter == last) {
+                        if (iter == last  || field.GetData().IsFields()) {
                             new_f = *field_iter;
                             break;
                         }
                     }
                 } else if (field.GetLabel().IsId()) {
                     if (field.GetLabel().GetId() == NStr::StringToInt(*iter)) {
-                        if (iter != last  &&  field.GetData().IsFields()) {
-                            new_f = *field_iter;
-                            break;
-                        } else if (iter == last) {
+                        if (iter == last  || field.GetData().IsFields()) {
                             new_f = *field_iter;
                             break;
                         }
