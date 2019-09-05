@@ -61,7 +61,7 @@
           <key>USE_HEADERMAP</key>
           <string>NO</string>
           <key>OTHER_CPLUSPLUSFLAGS</key>
-          <string>-std=gnu++11 -stdlib=libc++ -Wno-deprecated-register</string>
+          <string>-std=gnu++14 -stdlib=libc++ -Wno-deprecated-register</string>
           <key>DEAD_CODE_STRIPPING</key>
           <string>NO</string>
           <key>PREBINDING</key>
@@ -109,7 +109,7 @@
           <key>USE_HEADERMAP</key>
           <string>NO</string>
           <key>OTHER_CPLUSPLUSFLAGS</key>
-          <string>-std=gnu++11 -stdlib=libc++ -Wno-deprecated-register</string>
+          <string>-std=gnu++14 -stdlib=libc++ -Wno-deprecated-register</string>
           <key>DEAD_CODE_STRIPPING</key>
           <string>NO</string>
           <key>PREBINDING</key>
@@ -151,7 +151,7 @@
           <key>USE_HEADERMAP</key>
           <string>NO</string>
           <key>OTHER_CPLUSPLUSFLAGS</key>
-          <string>-std=gnu++11 -stdlib=libc++ -Wno-deprecated-register</string>
+          <string>-std=gnu++14 -stdlib=libc++ -Wno-deprecated-register</string>
           <key>DEAD_CODE_STRIPPING</key>
           <string>NO</string>
           <key>PREBINDING</key>
@@ -193,7 +193,7 @@
           <key>USE_HEADERMAP</key>
           <string>NO</string>
           <key>OTHER_CPLUSPLUSFLAGS</key>
-          <string>-std=gnu++11 -stdlib=libc++ -Wno-deprecated-register</string>
+          <string>-std=gnu++14 -stdlib=libc++ -Wno-deprecated-register</string>
           <key>DEAD_CODE_STRIPPING</key>
           <string>NO</string>
           <key>PREBINDING</key>
