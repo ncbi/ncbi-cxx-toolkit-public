@@ -88,6 +88,9 @@ typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 NCBI_PARAM_DECL(double, PSG, rebalance_time);
 typedef NCBI_PARAM_TYPE(PSG, rebalance_time) TPSG_RebalanceTime;
 
+NCBI_PARAM_DECL(unsigned, PSG, request_timeout);
+typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
+
 enum class EPSG_DebugPrintout { eNone, eSome, eAll };
 NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
 typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
@@ -174,6 +177,7 @@ struct SPSG_Error : string
         eNgHttp2Cb = 1,
         eShutdown,
         eException,
+        eTimeout,
     };
 
     template <class ...TArgs>
@@ -703,6 +707,24 @@ private:
     uint32_t m_MaxStreams;
 };
 
+struct SPSG_TimedRequest
+{
+    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Request(move(r)) { Prolong(); }
+
+    shared_ptr<SPSG_Request> operator->() { Prolong(); return m_Request; }
+    operator shared_ptr<SPSG_Request>()   { Prolong(); return m_Request; }
+    chrono::system_clock::time_point Expiration() const { return m_Expiration; }
+
+private:
+    void Prolong()
+    {
+        m_Expiration = chrono::system_clock::now() + chrono::seconds(TPSG_RequestTimeout::GetDefault());
+    }
+
+    shared_ptr<SPSG_Request> m_Request;
+    chrono::system_clock::time_point m_Expiration;
+};
+
 struct SPSG_IoThread;
 
 struct SPSG_IoSession
@@ -712,6 +734,7 @@ struct SPSG_IoSession
     void StartClose();
 
     bool ProcessRequest();
+    void CheckRequestExpiration();
 
     template <typename TReturn, class ...TArgs>
     TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs...), TReturn error, TArgs... args)
@@ -793,7 +816,7 @@ private:
     SPSG_UvTcp m_Tcp;
     SPSG_NgHttp2Session m_Session;
 
-    unordered_map<int32_t, shared_ptr<SPSG_Request>> m_Requests;
+    unordered_map<int32_t, SPSG_TimedRequest> m_Requests;
 
     vector<shared_ptr<SPSG_Reply>> m_CompletionList;
 };
@@ -842,6 +865,7 @@ private:
     void OnShutdown(uv_async_t* handle);
     void OnQueue(uv_async_t* handle);
     void OnTimer(uv_timer_t* handle);
+    void OnRequestTimer(uv_timer_t* handle);
     void Execute(SPSG_UvBarrier& barrier);
 
     static void s_OnShutdown(uv_async_t* handle)
@@ -862,6 +886,12 @@ private:
         io->OnTimer(handle);
     }
 
+    static void s_OnRequestTimer(uv_timer_t* handle)
+    {
+        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
+        io->OnRequestTimer(handle);
+    }
+
     static void s_Execute(SPSG_IoThread* io, SPSG_UvBarrier& barrier)
     {
         io->Execute(barrier);
@@ -870,6 +900,7 @@ private:
     list<SSession> m_Sessions;
     SPSG_UvAsync m_Shutdown;
     SPSG_UvTimer m_Timer;
+    SPSG_UvTimer m_RequestTimer;
     CNetService m_Service;
     thread m_Thread;
 };

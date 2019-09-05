@@ -66,6 +66,7 @@ NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
+NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
 
 NCBI_PARAM_ENUM_ARRAY(EPSG_DebugPrintout, PSG, debug_printout)
 {
@@ -1109,6 +1110,21 @@ bool SPSG_IoSession::ProcessRequest()
     return false;
 }
 
+void SPSG_IoSession::CheckRequestExpiration()
+{
+    const auto now = chrono::system_clock::now();
+    const SPSG_Error error(SPSG_Error::eTimeout, "request timeout");
+
+    for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
+        if (it->second.Expiration() < now) {
+            Retry(it->second, error);
+            it = m_Requests.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 void SPSG_IoSession::Reset(const SPSG_Error& error)
 {
     m_Session.Del();
@@ -1146,6 +1162,7 @@ void SPSG_IoThread::OnShutdown(uv_async_t*)
     queue.Close();
     m_Shutdown.Close();
     m_Timer.Close();
+    m_RequestTimer.Close();
 
     for (auto& session : m_Sessions) {
         session.StartClose();
@@ -1220,6 +1237,13 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 
 }
 
+void SPSG_IoThread::OnRequestTimer(uv_timer_t* handle)
+{
+    for (auto& session : m_Sessions) {
+        session.CheckRequestExpiration();
+    }
+}
+
 void SPSG_IoThread::Execute(SPSG_UvBarrier& barrier)
 {
     SPSG_UvLoop loop;
@@ -1227,6 +1251,7 @@ void SPSG_IoThread::Execute(SPSG_UvBarrier& barrier)
     queue.Init(this, &loop, s_OnQueue);
     m_Shutdown.Init(this, &loop, s_OnShutdown);
     m_Timer.Init(this, &loop, s_OnTimer, 0, TPSG_RebalanceTime::GetDefault() * milli::den);
+    m_RequestTimer.Init(this, &loop, s_OnRequestTimer, milli::den, milli::den);
     barrier.Wait();
 
     loop.Run();
