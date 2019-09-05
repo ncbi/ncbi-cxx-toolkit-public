@@ -1118,9 +1118,7 @@ CNcbiOstream& CDiffText::PrintUnifiedDiff(CNcbiOstream& out,
                         hunk_end = it;
                         num_equal++;
                     } else if (num_equal <= num_common_lines) {
-                        if (hunk_end != diffs.end()) {
-                            hunk_end++;
-                        }
+                        hunk_end = it;
                         num_equal++;
                     } else {
                         // Found new hunk -- write it
