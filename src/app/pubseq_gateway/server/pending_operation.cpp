@@ -1180,10 +1180,9 @@ void CPendingOperation::x_SendReplyCompletion(bool  forced)
 {
     // Send the reply completion only if needed
     if (x_AllFinishedRead() || forced) {
-        // +1 for the reply completion itself
         m_ProtocolSupport.PrepareReplyCompletion();
 
-        // No need to set the context/engage context resetter: they set outside
+        // No need to set the context/engage context resetter: they're set outside
         x_PrintRequestStop(m_OverallStatus);
     }
 }
@@ -1718,7 +1717,14 @@ bool CPendingOperation::x_TSEChunkSatToSatName(SBlobId &  blob_id)
                   " for the blob " + blob_id.ToString();
     x_SendReplyError(msg, CRequestStatus::e500_InternalServerError,
                      eUnknownResolvedSatellite);
-    x_SendReplyCompletion();
+
+    // This method is used only in case of the TSE chunk requests.
+    // So in case of errors - synchronous or asynchronous - it is necessary to
+    // finish the reply anyway.
+    // In case of the sync part there are no initiated requests at all. So the
+    // call of completion is done with the force flag.
+    x_SendReplyCompletion(true);
+    m_ProtocolSupport.Flush();
     return false;
 }
 
