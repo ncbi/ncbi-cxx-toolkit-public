@@ -489,6 +489,10 @@ public:
     /// @throw  If the blob has not been splitted.
     CPSG_BlobId GetChunkBlobId(unsigned split_chunk_no) const;
 
+    /// Return ID2 split version (or zero, if not available)
+    using TSplitVersion = int;
+    TSplitVersion GetSplitVersion() const;
+
 private:
     CPSG_BlobInfo(CPSG_BlobId id);
 

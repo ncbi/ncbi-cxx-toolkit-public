@@ -795,6 +795,17 @@ CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
     return CPSG_BlobId(id2_info.sat, info + index - nchunks - 1);
 }
 
+CPSG_BlobInfo::TSplitVersion CPSG_BlobInfo::GetSplitVersion() const
+{
+    SId2Info id2_info(m_Data, m_Id);
+
+    if (!id2_info) return 0;
+    if (id2_info.values.size() <= SId2Info::eSplitVer) return 0;
+
+    auto split_ver = id2_info.values[SId2Info::eSplitVer];
+    return split_ver.empty() ? 0 : NStr::StringToInt(split_ver);
+}
+
 
 CPSG_SkippedBlob::CPSG_SkippedBlob(CPSG_BlobId id, EReason reason) :
     CPSG_ReplyItem(eSkippedBlob),

@@ -210,10 +210,12 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
 
     for (int i = 1; ; ++i) {
         auto blob_id = blob_info->GetChunkBlobId(i).Get();
-        if (blob_id.empty()) return;
+        if (blob_id.empty()) break;
         if (i == 1) CJson_Array ar = m_JsonObj.insert_array("chunk_blob_id");
         m_JsonObj["chunk_blob_id"].SetArray().push_back(blob_id);
     }
+
+    m_JsonObj["split_version"].SetValue().SetInt8(blob_info->GetSplitVersion());
 }
 
 string s_ReasonToString(CPSG_SkippedBlob::EReason reason)
