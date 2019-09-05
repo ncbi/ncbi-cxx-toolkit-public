@@ -66,6 +66,7 @@ void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names) {
                         if (dbi && *dbi) {
                             dbi->close(*m_Env);
                         }
+                        delete(dbi);
                     }
                 );
             }

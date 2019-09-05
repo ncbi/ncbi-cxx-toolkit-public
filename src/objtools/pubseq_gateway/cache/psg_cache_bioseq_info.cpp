@@ -62,6 +62,7 @@ void CPubseqGatewayCacheBioseqInfo::Open()
             if (dbi && *dbi) {
                 dbi->close(*m_Env);
             }
+            delete(dbi);
         }
     );
     rdtxn.commit();
