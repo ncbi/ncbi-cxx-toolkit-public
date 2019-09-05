@@ -2257,10 +2257,37 @@ public:
     }
 
     typedef CFeatTree::CFeatInfo CFeatInfo;
+    typedef list<CFeatInfo*> TChildList;
+    struct SParentInfo {
+        SParentInfo()
+            : m_NewParent(true),
+              m_DoesNotNeedChildren(false)
+            {
+            }
+        bool m_NewParent;
+        bool m_DoesNotNeedChildren;
+        TChildList m_ChildrenCandidates;
+    };
 
-    void Add(CFeatInfo* child, CFeatInfo* parent, Int1 quality, Int8 overlap)
+    bool Add(CFeatInfo* child, CFeatInfo* parent, Int1 quality, Int8 overlap)
     {
         // Store separate SBestInfo for each child/parent candidate.
+        SParentInfo& parent_info = m_Parents[parent];
+        if ( parent_info.m_NewParent ) {
+            // new parent appeared
+            // check if it already has children of this type
+            auto subtype = child->GetSubtype();
+            for ( auto& c : parent->m_Children ) {
+                if ( c->GetSubtype() == subtype ) {
+                    parent_info.m_DoesNotNeedChildren = true;
+                    break;
+                }
+            }
+            parent_info.m_NewParent = false;
+        }
+        if ( quality == 0 && parent_info.m_DoesNotNeedChildren ) {
+            return false;
+        }
         SBestInfo info;
         info.CheckBest(quality, overlap, parent);
         _ASSERT(m_Children.find(child) != m_Children.end());
@@ -2269,13 +2296,13 @@ public:
             m_IsAmbiguous = true;
         }
         c.parents.insert(info);
-        m_Parents[parent].push_back(child);
+        parent_info.m_ChildrenCandidates.push_back(child);
+        return true;
     }
 
     void Disambiguate(TBestArray& bests);
 
     typedef set<SBestInfo, SBestInfoLess> TBestSet;
-    typedef list<CFeatInfo*> TChildList;
 
     struct SCandidates
     {
@@ -2285,7 +2312,7 @@ public:
         TBestSet parents;
     };
     typedef map<CFeatInfo*, SCandidates> TChildren;
-    typedef map<CFeatInfo*, TChildList> TParents;
+    typedef map<CFeatInfo*, SParentInfo> TParents;
 
 private:
     bool m_IsAmbiguous;
@@ -2417,7 +2444,7 @@ void CDisambiguator::Disambiguate(TBestArray& bests)
         // Remove the parent candidate from all other children.
         TParents::iterator pi = m_Parents.find(parent);
         _ASSERT(pi != m_Parents.end());
-        ITERATE(TChildList, pci, pi->second) {
+        ITERATE(TChildList, pci, pi->second.m_ChildrenCandidates ) {
             SCandidates& ccand = m_Children[*pci];
             ERASE_ITERATE(TBestSet, bi, ccand.parents) {
                 if (bi->m_Info == parent) {
@@ -2596,7 +2623,9 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     }
                     if ( overlap >= 0 ) {
                         if (disambiguate) {
-                            disambibuator.Add(ci->m_Info, pc->m_Info, quality, overlap);
+                            if ( !disambibuator.Add(ci->m_Info, pc->m_Info, quality, overlap) ) {
+                                continue;
+                            }
                         }
                         ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
                         continue;
