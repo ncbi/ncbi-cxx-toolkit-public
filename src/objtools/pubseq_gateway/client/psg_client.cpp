@@ -728,51 +728,49 @@ string CPSG_BlobInfo::GetUsername() const
 
 struct SId2Info
 {
-    using TSatKeys = vector<CTempString>;
-    using TGetSatKey = function<int(const TSatKeys&)>;
-
     enum : size_t { eSat, eInfo, eNChunks, eSplitVer, eMinSize = eNChunks + 1 };
 
-    static CPSG_BlobId GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id);
+    vector<CTempString> values;
+    int sat = 0;
+
+    SId2Info(const CJsonNode& data, const CPSG_BlobId& id);
+
+    explicit operator bool() const { return !values.empty() && (sat != 0); }
+
+private:
+    string m_Value;
 };
 
-CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id)
+SId2Info::SId2Info(const CJsonNode& data, const CPSG_BlobId& id)
 {
-    if (!data.HasKey("id2_info")) return kEmptyStr;
+    if (!data.HasKey("id2_info")) return;
 
-    auto id2_info = data.GetString("id2_info");
+    m_Value = data.GetString("id2_info");
 
-    if (id2_info.empty()) return kEmptyStr;
+    if (m_Value.empty()) return;
 
-    vector<CTempString> sat_keys;
-    NStr::Split(id2_info, ".", sat_keys);
+    NStr::Split(m_Value, ".", values);
 
-    if (sat_keys.size() < eMinSize ) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong id2_info format: " << id2_info <<
+    if (values.size() < eMinSize ) {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong id2_info format: " << m_Value <<
                 " for blob '" << id.Get() << '\'');
     }
 
-    auto sat_str = sat_keys[eSat];
+    auto sat_str = values[eSat];
 
-    if (sat_str.empty()) return kEmptyStr;
-
-    auto sat = stoi(sat_str);
-
-    if (sat == 0) return kEmptyStr;
-
-    auto sat_key = get_sat_key(sat_keys);
-    return sat_key == 0 ? kEmptyStr : CPSG_BlobId(sat, sat_key);
+    if (!sat_str.empty()) {
+        sat = NStr::StringToInt(sat_str);
+    }
 }
 
 CPSG_BlobId CPSG_BlobInfo::GetSplitInfoBlobId() const
 {
-    auto l = [&](const vector<CTempString>& sat_keys)
-    {
-        auto sat_key = sat_keys[SId2Info::eInfo];
-        return stoi(sat_key);
-    };
+    SId2Info id2_info(m_Data, m_Id);
 
-    return SId2Info::GetBlobId(m_Data, l, m_Id);
+    if (!id2_info) return kEmptyStr;
+
+    auto sat_key = id2_info.values[SId2Info::eInfo];
+    return CPSG_BlobId(id2_info.sat, NStr::StringToInt(sat_key));
 }
 
 CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
@@ -781,21 +779,20 @@ CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
 
     int index = static_cast<int>(split_chunk_no);
 
-    auto l = [&](const vector<CTempString>& sat_keys)
-    {
-        auto info = stoi(sat_keys[SId2Info::eInfo]);
+    SId2Info id2_info(m_Data, m_Id);
 
-        if (info <= 0) return 0;
+    if (!id2_info) return kEmptyStr;
 
-        auto nchunks = stoi(sat_keys[SId2Info::eNChunks]);
+    auto info = NStr::StringToInt(id2_info.values[SId2Info::eInfo]);
 
-        if (nchunks <= 0) return 0;
-        if (nchunks < index) return 0;
+    if (info <= 0) return kEmptyStr;
 
-        return info + index - nchunks - 1;
-    };
+    auto nchunks = NStr::StringToInt(id2_info.values[SId2Info::eNChunks]);
 
-    return SId2Info::GetBlobId(m_Data, l, m_Id);
+    if (nchunks <= 0) return kEmptyStr;
+    if (nchunks < index) return kEmptyStr;
+
+    return CPSG_BlobId(id2_info.sat, info + index - nchunks - 1);
 }
 
 
