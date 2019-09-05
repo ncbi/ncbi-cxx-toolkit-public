@@ -2,7 +2,7 @@
 
 WATCHERS = morgulis dicuccio mozese2
 
-ASN_DEP = seqset
+ASN_DEP = seqset submit
 
 LIB = xalgowinmask
 
