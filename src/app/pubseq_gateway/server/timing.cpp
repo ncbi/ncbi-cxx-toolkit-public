@@ -285,6 +285,27 @@ CSplitHistoryRetrieveTiming::CSplitHistoryRetrieveTiming(unsigned long  min_stat
 }
 
 
+CResolutionTiming::CResolutionTiming(unsigned long  min_stat_value,
+                                     unsigned long  max_stat_value,
+                                     unsigned long  n_bins,
+                                     TPSGTiming::EScaleType  stat_type,
+                                     bool &  reset_to_default)
+{
+    reset_to_default = false;
+
+    try {
+        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
+                                         n_bins, stat_type));
+    } catch (...) {
+        reset_to_default = true;
+        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
+                                         kMaxStatValue,
+                                         kNStatBins,
+                                         TPSGTiming::eLog2));
+    }
+}
+
+
 
 COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    unsigned long  max_stat_value,
@@ -350,6 +371,25 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     m_NotFoundBlobRetrievalTiming.reset(
         new CNotFoundBlobRetrieveTiming(min_stat_value, max_stat_value,
                                         n_bins, scale_type, reset_to_default));
+
+    // Resolution timing
+    m_ResolutionErrorTiming.reset(
+        new CResolutionTiming(min_stat_value, max_stat_value,
+                              n_bins, scale_type, reset_to_default));
+    m_ResolutionNotFoundTiming.reset(
+        new CResolutionTiming(min_stat_value, max_stat_value,
+                              n_bins, scale_type, reset_to_default));
+    m_ResolutionFoundInCacheTiming.reset(
+        new CResolutionTiming(min_stat_value, max_stat_value,
+                              n_bins, scale_type, reset_to_default));
+    // 1, 2, 3, 4, 5+ trips to cassandra
+    for (size_t  index = 0; index < 5; ++index) {
+        m_ResolutionFoundCassandraTiming.push_back(
+            unique_ptr<CResolutionTiming>(
+                new CResolutionTiming(min_stat_value, max_stat_value,
+                                      n_bins, scale_type, reset_to_default)));
+    }
+
 
     reset_to_default |= x_SetupBlobSizeBins(min_stat_value, max_stat_value,
                                             n_bins, scale_type, small_blob_size);
@@ -421,7 +461,7 @@ ssize_t COperationTiming::x_GetBlobRetrievalBinIndex(unsigned long  blob_size)
 
 void COperationTiming::Register(EPSGOperation  operation,
                                 EPSGOperationStatus  status,
-                                chrono::high_resolution_clock::time_point &  op_begin_ts,
+                                const THighResolutionTimePoint &  op_begin_ts,
                                 unsigned long  blob_size)
 {
     auto            now = chrono::high_resolution_clock::now();
@@ -473,6 +513,22 @@ void COperationTiming::Register(EPSGOperation  operation,
         case eSplitHistoryRetrieve:
             m_SplitHistoryRetrieveTiming[index]->Add(mks);
             break;
+        case eResolutionError:
+            m_ResolutionErrorTiming->Add(mks);
+            break;
+        case eResolutionNotFound:
+            m_ResolutionNotFoundTiming->Add(mks);
+            break;
+        case eResolutionFoundInCache:
+            m_ResolutionFoundInCacheTiming->Add(mks);
+            break;
+        case eResolutionFoundInCassandra:
+            // The blob_size here is the number of queries of Cassandra
+            index = blob_size - 1;
+            if (index > 4)
+                index = 4;
+            m_ResolutionFoundCassandraTiming[index]->Add(mks);
+            break;
     }
 }
 
@@ -496,6 +552,12 @@ void COperationTiming::Reset(void)
 
     m_HugeBlobRetrievalTiming->Reset();
     m_NotFoundBlobRetrievalTiming->Reset();
+
+    m_ResolutionErrorTiming->Reset();
+    m_ResolutionNotFoundTiming->Reset();
+    m_ResolutionFoundInCacheTiming->Reset();
+    for (auto &  item : m_ResolutionFoundCassandraTiming)
+        item->Reset();
 
     for (auto &  item : m_BlobRetrieveTiming)
         item->Reset();
@@ -528,6 +590,14 @@ CJsonNode COperationTiming::Serialize(void) const
     static string   kHugeBlobRetrieval("HugeBlobRetrieval");
     static string   kBlobRetrievalNotFound("BlobRetrievalNotFound");
     static string   kBlobRetrieval("BlobRetrieval");
+    static string   kResolutionError("ResolutionError");
+    static string   kResolutionNotFound("ResolutionNotFound");
+    static string   kResolutionFoundInCache("ResolutionFoundInCache");
+    static string   kResolutionFoundCassandra1("ResolutionFoundCassandra1");
+    static string   kResolutionFoundCassandra2("ResolutionFoundCassandra2");
+    static string   kResolutionFoundCassandra3("ResolutionFoundCassandra3");
+    static string   kResolutionFoundCassandra4("ResolutionFoundCassandra4");
+    static string   kResolutionFoundCassandra5OrMore("ResolutionFoundCassandra5OrMore");
 
     CJsonNode       ret(CJsonNode::NewObjectNode());
     ret.SetString(kStartTime, FormatPreciseTime(m_StartTime));
@@ -554,6 +624,14 @@ CJsonNode COperationTiming::Serialize(void) const
     ret.SetByKey(kSplitHistoryRetrieveNotFound, m_SplitHistoryRetrieveTiming[1]->Serialize());
     ret.SetByKey(kHugeBlobRetrieval, m_HugeBlobRetrievalTiming->Serialize());
     ret.SetByKey(kBlobRetrievalNotFound, m_NotFoundBlobRetrievalTiming->Serialize());
+    ret.SetByKey(kResolutionError, m_ResolutionErrorTiming->Serialize());
+    ret.SetByKey(kResolutionNotFound, m_ResolutionNotFoundTiming->Serialize());
+    ret.SetByKey(kResolutionFoundInCache, m_ResolutionFoundInCacheTiming->Serialize());
+    ret.SetByKey(kResolutionFoundCassandra1, m_ResolutionFoundCassandraTiming[0]->Serialize());
+    ret.SetByKey(kResolutionFoundCassandra2, m_ResolutionFoundCassandraTiming[1]->Serialize());
+    ret.SetByKey(kResolutionFoundCassandra3, m_ResolutionFoundCassandraTiming[2]->Serialize());
+    ret.SetByKey(kResolutionFoundCassandra4, m_ResolutionFoundCassandraTiming[3]->Serialize());
+    ret.SetByKey(kResolutionFoundCassandra5OrMore, m_ResolutionFoundCassandraTiming[4]->Serialize());
 
     CJsonNode       retrieval(CJsonNode::NewArrayNode());
     for (const auto &  item : m_BlobRetrieveTiming)

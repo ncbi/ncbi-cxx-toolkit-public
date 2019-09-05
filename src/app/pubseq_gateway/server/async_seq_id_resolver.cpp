@@ -39,19 +39,20 @@
 using namespace std::placeholders;
 
 
-CAsyncSeqIdResolver::CAsyncSeqIdResolver(CSeq_id &            oslt_seq_id,
-                                         int16_t              effective_seq_id_type,
-                                         list<string>         secondary_id_list,
-                                         string               primary_seq_id,
-                                         const CTempString &  url_seq_id,
-                                         bool                 composed_ok,
-                                         SBioseqResolution &  bioseq_resolution,
-                                         CPendingOperation *  pending_op) :
+CAsyncSeqIdResolver::CAsyncSeqIdResolver(
+                            CSeq_id &                         oslt_seq_id,
+                            int16_t                           effective_seq_id_type,
+                            list<string>                      secondary_id_list,
+                            string                            primary_seq_id,
+                            const CTempString &               url_seq_id,
+                            bool                              composed_ok,
+                            SBioseqResolution &&              bioseq_resolution,
+                            CPendingOperation *               pending_op) :
     m_OsltSeqId(oslt_seq_id), m_EffectiveSeqIdType(effective_seq_id_type),
     m_SecondaryIdList(secondary_id_list), m_PrimarySeqId(primary_seq_id),
     m_UrlSeqId(url_seq_id.data(), url_seq_id.size()),
     m_ComposedOk(composed_ok),
-    m_BioseqResolution(bioseq_resolution),
+    m_BioseqResolution(std::move(bioseq_resolution)),
     m_PendingOp(pending_op),
     m_ResolveStage(eInit),
     m_CurrentFetch(nullptr),
@@ -148,13 +149,16 @@ void CAsyncSeqIdResolver::Process(void)
             m_BioseqResolution.m_BioseqInfo.Reset();
             m_BioseqResolution.m_CacheInfo.clear();
 
-            m_PendingOp->OnSeqIdAsyncResolutionFinished();
+            m_PendingOp->OnSeqIdAsyncResolutionFinished(
+                                                std::move(m_BioseqResolution));
     }
 }
 
 
 void CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(void)
 {
+    ++m_BioseqResolution.m_CassQueryCount;
+
     unique_ptr<CCassBioseqInfoFetch>   details;
     details.reset(new CCassBioseqInfoFetch());
 
@@ -186,6 +190,8 @@ void CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(void)
 void CAsyncSeqIdResolver::x_PrepareSi2csiQuery(const string &  secondary_id,
                                                int16_t  effective_seq_id_type)
 {
+    ++m_BioseqResolution.m_CassQueryCount;
+
     unique_ptr<CCassSi2csiFetch>   details;
     details.reset(new CCassSi2csiFetch());
 
@@ -278,28 +284,30 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoRecord(CBioseqInfoRecord &&  record,
 
         Process();
         return;
-    } else {
-        app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
-                                  m_BioseqInfoStart);
     }
 
+    app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
+                              m_BioseqInfoStart);
     app->GetDBCounters().IncBioseqInfoFoundOne();
 
     m_BioseqResolution.m_ResolutionResult = eFromBioseqDB;
     m_BioseqResolution.m_BioseqInfo = std::move(record);
     m_BioseqResolution.m_CacheInfo.clear();
 
-    m_PendingOp->OnSeqIdAsyncResolutionFinished();
+    m_PendingOp->OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
 }
 
 
 void CAsyncSeqIdResolver::x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
                                               EDiagSev  severity, const string &  message)
 {
-    m_CurrentFetch->SetReadFinished();
-    CPubseqGatewayApp::GetInstance()->GetDBCounters().IncBioseqInfoError();
+    auto    app = CPubseqGatewayApp::GetInstance();
 
-    m_PendingOp->OnSeqIdAsyncError(status, code, severity, message);
+    m_CurrentFetch->SetReadFinished();
+    app->GetDBCounters().IncBioseqInfoError();
+
+    m_PendingOp->OnSeqIdAsyncError(status, code, severity, message,
+                                   m_BioseqResolution.m_RequestStartTimestamp);
 }
 
 
@@ -323,11 +331,10 @@ void CAsyncSeqIdResolver::x_OnSi2csiRecord(CSI2CSIRecord &&  record,
 
         Process();
         return;
-    } else {
-        app->GetTiming().Register(eLookupCassSi2csi, eOpStatusFound,
-                                  m_Si2csiStart);
     }
 
+    app->GetTiming().Register(eLookupCassSi2csi, eOpStatusFound,
+                              m_Si2csiStart);
     app->GetDBCounters().IncSi2csiFoundOne();
 
     m_BioseqResolution.m_ResolutionResult = eFromSi2csiDB;
@@ -336,16 +343,19 @@ void CAsyncSeqIdResolver::x_OnSi2csiRecord(CSI2CSIRecord &&  record,
     m_BioseqResolution.m_BioseqInfo.SetSeqIdType(record.GetSeqIdType());
     m_BioseqResolution.m_CacheInfo.clear();
 
-    m_PendingOp->OnSeqIdAsyncResolutionFinished();
+    m_PendingOp->OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
 }
 
 
 void CAsyncSeqIdResolver::x_OnSi2csiError(CRequestStatus::ECode  status, int  code,
                                           EDiagSev  severity, const string &  message)
 {
-    m_CurrentFetch->SetReadFinished();
-    CPubseqGatewayApp::GetInstance()->GetDBCounters().IncSi2csiError();
+    auto    app = CPubseqGatewayApp::GetInstance();
 
-    m_PendingOp->OnSeqIdAsyncError(status, code, severity, message);
+    m_CurrentFetch->SetReadFinished();
+    app->GetDBCounters().IncSi2csiError();
+
+    m_PendingOp->OnSeqIdAsyncError(status, code, severity, message,
+                                   m_BioseqResolution.m_RequestStartTimestamp);
 }
 

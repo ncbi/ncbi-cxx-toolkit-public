@@ -64,7 +64,8 @@ struct SBlobRequest
                  vector<SBlobId> &  exclude_blobs,
                  ETSEOption  tse_option,
                  ECacheAndCassandraUse  use_cache,
-                 const string &  client_id) :
+                 const string &  client_id,
+                 const THighResolutionTimePoint &  start_timestamp) :
         m_TSEOption(tse_option),
         m_BlobIdType(eBySeqId),
         m_UseCache(use_cache),
@@ -74,7 +75,8 @@ struct SBlobRequest
         m_LastModified(INT64_MIN),
         m_SeqId(seq_id.data(), seq_id.size()),
         m_SeqIdType(seq_id_type),
-        m_ExcludeBlobs(std::move(exclude_blobs))
+        m_ExcludeBlobs(std::move(exclude_blobs)),
+        m_StartTimestamp(start_timestamp)
     {}
 
     bool IsExcludedBlob(void) const
@@ -111,6 +113,7 @@ public:
     string                      m_SeqId;
     int                         m_SeqIdType;
     vector<SBlobId>             m_ExcludeBlobs;
+    THighResolutionTimePoint    m_StartTimestamp;
 };
 
 
@@ -122,12 +125,14 @@ public:
                     TServIncludeData  include_data_flags,
                     EOutputFormat  output_format,
                     ECacheAndCassandraUse  use_cache,
-                    bool  use_psg_protocol) :
+                    bool  use_psg_protocol,
+                    const THighResolutionTimePoint &  start_timestamp) :
         m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
         m_UseCache(use_cache),
-        m_UsePsgProtocol(use_psg_protocol)
+        m_UsePsgProtocol(use_psg_protocol),
+        m_StartTimestamp(start_timestamp)
     {}
 
     SResolveRequest() = default;
@@ -139,6 +144,7 @@ public:
     EOutputFormat               m_OutputFormat;
     ECacheAndCassandraUse       m_UseCache;
     bool                        m_UsePsgProtocol;
+    THighResolutionTimePoint    m_StartTimestamp;
 };
 
 
@@ -148,9 +154,11 @@ public:
     SAnnotRequest(const CTempString &  seq_id,
                   int  seq_id_type,
                   vector<CTempString>  names,
-                  ECacheAndCassandraUse  use_cache) :
+                  ECacheAndCassandraUse  use_cache,
+                  const THighResolutionTimePoint &  start_timestamp) :
         m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
-        m_UseCache(use_cache)
+        m_UseCache(use_cache),
+        m_StartTimestamp(start_timestamp)
     {
         for (const auto &  name : names)
             m_Names.push_back(string(name.data(), name.size()));
@@ -163,6 +171,7 @@ public:
     int                         m_SeqIdType;
     vector<string>              m_Names;
     ECacheAndCassandraUse       m_UseCache;
+    THighResolutionTimePoint    m_StartTimestamp;
 };
 
 

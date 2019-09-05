@@ -123,23 +123,30 @@ private:
     void x_ProcessResolveRequest(SResolveInputSeqIdError &  err,
                                  SBioseqResolution &  bioseq_resolution);
     void x_CompleteResolveRequest(SBioseqResolution &  bioseq_resolution);
-    void x_OnResolveResolutionError(SResolveInputSeqIdError &  err);
+    void x_OnResolveResolutionError(SResolveInputSeqIdError &  err,
+                                    const THighResolutionTimePoint &  start_timestamp);
     void x_OnResolveResolutionError(CRequestStatus::ECode  status,
-                                    const string &  message);
-    void x_ResolveRequestBioseqInconsistency(void);
-    void x_ResolveRequestBioseqInconsistency(const string &  err_msg);
+                                    const string &  message,
+                                    const THighResolutionTimePoint &  start_timestamp);
+    void x_ResolveRequestBioseqInconsistency(const THighResolutionTimePoint &  start_timestamp);
+    void x_ResolveRequestBioseqInconsistency(const string &  err_msg,
+                                             const THighResolutionTimePoint &  start_timestamp);
 
 public:
-    void OnBioseqDetailsRecord(void);
+    void OnBioseqDetailsRecord(SBioseqResolution &&  async_bioseq_info);
     void OnBioseqDetailsError(CRequestStatus::ECode  status, int  code,
-                              EDiagSev  severity, const string &  message);
+                              EDiagSev  severity, const string &  message,
+                              const THighResolutionTimePoint &  start_timestamp);
 
 private:
     void x_ProcessGetRequest(void);
     void x_ProcessGetRequest(SResolveInputSeqIdError &  err,
                              SBioseqResolution &  bioseq_resolution);
-    void x_GetRequestBioseqInconsistency(void);
-    void x_GetRequestBioseqInconsistency(const string &  err_msg);
+    void x_GetRequestBioseqInconsistency(
+                            const THighResolutionTimePoint &  start_timestamp);
+    void x_GetRequestBioseqInconsistency(
+                            const string &  err_msg,
+                            const THighResolutionTimePoint &  start_timestamp);
     void x_CompleteGetRequest(SBioseqResolution &  bioseq_resolution);
     void x_StartMainBlobRequest(void);
 
@@ -194,18 +201,23 @@ private:
                                                      SBioseqResolution &  bioseq_resolution);
 
 private:
-    SBioseqResolution x_ResolveInputSeqId(SResolveInputSeqIdError &  err);
+    void x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
+                             SResolveInputSeqIdError &  err);
     bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
                                  int16_t &  eff_seq_id_type);
     ESeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id, string &  err_msg);
-    void x_OnBioseqError(CRequestStatus::ECode  status, const string &  err_msg);
-    void x_OnReplyError(CRequestStatus::ECode  status, int  err_code, const string &  err_msg);
+    void x_OnBioseqError(CRequestStatus::ECode  status, const string &  err_msg,
+                         const THighResolutionTimePoint &  start_timestamp);
+    void x_OnReplyError(CRequestStatus::ECode  status, int  err_code,
+                        const string &  err_msg,
+                        const THighResolutionTimePoint &  start_timestamp);
 
 public:
     int16_t GetEffectiveVersion(const CTextseq_id *  text_seq_id);
-    void OnSeqIdAsyncResolutionFinished(void);
+    void OnSeqIdAsyncResolutionFinished(SBioseqResolution &&  async_bioseq_resolution);
     void OnSeqIdAsyncError(CRequestStatus::ECode  status, int  code,
-                           EDiagSev  severity, const string &  message);
+                           EDiagSev  severity, const string &  message,
+                           const THighResolutionTimePoint &  start_timestamp);
 
 public:
     // Named annotations callbacks
@@ -256,6 +268,10 @@ private:
     void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
                            CCassSplitHistoryFetch *  fetch_details);
 
+    void x_RegisterResolveTiming(const SBioseqResolution &  bioseq_resolution);
+    void x_RegisterResolveTiming(CRequestStatus::ECode  status,
+                                 const THighResolutionTimePoint &  start_timestamp);
+
     unique_ptr<CPSGId2Info>     m_Id2Info;
 
 public:
@@ -297,10 +313,7 @@ private:
     unique_ptr<CAsyncSeqIdResolver>         m_AsyncSeqIdResolver;
     unique_ptr<CAsyncBioseqQuery>           m_AsyncBioseqDetailsQuery;
     EAsyncInterruptPoint                    m_AsyncInterruptPoint;
-    SResolveInputSeqIdError                 m_PostponedSeqIdResolveError;
-    SBioseqResolution                       m_PostponedSeqIdResolution;
-
-    chrono::high_resolution_clock::time_point       m_AsyncCassResolutionStart;
+    THighResolutionTimePoint                m_AsyncCassResolutionStart;
 };
 
 

@@ -39,15 +39,9 @@
 using namespace std::placeholders;
 
 
-CAsyncBioseqQuery::CAsyncBioseqQuery(const string &       accession,
-                                     int16_t              version,
-                                     int16_t              seq_id_type,
-                                     SBioseqResolution &  bioseq_resolution,
+CAsyncBioseqQuery::CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
                                      CPendingOperation *  pending_op) :
-    m_Accession(accession),
-    m_Version(version),
-    m_SeqIdType(seq_id_type),
-    m_BioseqResolution(bioseq_resolution),
+    m_BioseqResolution(std::move(bioseq_resolution)),
     m_PendingOp(pending_op)
 {}
 
@@ -55,24 +49,29 @@ CAsyncBioseqQuery::CAsyncBioseqQuery(const string &       accession,
 
 void CAsyncBioseqQuery::MakeRequest(void)
 {
+    ++m_BioseqResolution.m_CassQueryCount;
+
     unique_ptr<CCassBioseqInfoFetch>   details;
     details.reset(new CCassBioseqInfoFetch());
 
+    auto    version = m_BioseqResolution.m_BioseqInfo.GetVersion();
+    auto    seq_id_type = m_BioseqResolution.m_BioseqInfo.GetSeqIdType();
     CCassBioseqInfoTaskFetch *  fetch_task =
-            new CCassBioseqInfoTaskFetch(m_PendingOp->GetTimeout(),
-                                         m_PendingOp->GetMaxRetries(),
-                                         m_PendingOp->GetConnection(),
-                                         CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
-                                         m_Accession,
-                                         m_Version,
-                                         m_Version != -1,
-                                         m_SeqIdType,
-                                         m_SeqIdType != -1,
-                                         nullptr, nullptr);
+            new CCassBioseqInfoTaskFetch(
+                    m_PendingOp->GetTimeout(),
+                    m_PendingOp->GetMaxRetries(),
+                    m_PendingOp->GetConnection(),
+                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    m_BioseqResolution.m_BioseqInfo.GetAccession(),
+                    version, version != -1,
+                    seq_id_type, seq_id_type != -1,
+                    nullptr, nullptr);
     details->SetLoader(fetch_task);
 
-    fetch_task->SetConsumeCallback(std::bind(&CAsyncBioseqQuery::x_OnBioseqInfoRecord, this, _1, _2));
-    fetch_task->SetErrorCB(std::bind(&CAsyncBioseqQuery::x_OnBioseqInfoError, this, _1, _2, _3, _4));
+    fetch_task->SetConsumeCallback(
+        std::bind(&CAsyncBioseqQuery::x_OnBioseqInfoRecord, this, _1, _2));
+    fetch_task->SetErrorCB(
+        std::bind(&CAsyncBioseqQuery::x_OnBioseqInfoError, this, _1, _2, _3, _4));
     fetch_task->SetDataReadyCB(m_PendingOp->GetDataReadyCB());
 
     m_CurrentFetch = details.release();
@@ -110,18 +109,19 @@ void CAsyncBioseqQuery::x_OnBioseqInfoRecord(CBioseqInfoRecord &&  record,
         m_BioseqResolution.m_BioseqInfo = std::move(record);
     }
 
-    m_BioseqResolution.m_CacheInfo.clear();
-
-    m_PendingOp->OnBioseqDetailsRecord();
+    m_PendingOp->OnBioseqDetailsRecord(std::move(m_BioseqResolution));
 }
 
 
-void CAsyncBioseqQuery::x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
-                                            EDiagSev  severity, const string &  message)
+void CAsyncBioseqQuery::x_OnBioseqInfoError(
+                                CRequestStatus::ECode  status, int  code,
+                                EDiagSev  severity, const string &  message)
 {
     m_CurrentFetch->SetReadFinished();
     CPubseqGatewayApp::GetInstance()->GetDBCounters().IncBioseqInfoError();
 
-    m_PendingOp->OnBioseqDetailsError(status, code, severity, message);
+    m_PendingOp->OnBioseqDetailsError(
+                                status, code, severity, message,
+                                m_BioseqResolution.m_RequestStartTimestamp);
 }
 

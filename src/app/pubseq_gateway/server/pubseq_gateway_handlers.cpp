@@ -130,6 +130,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     if (!x_IsDBOK(req, resp))
         return 0;
 
+    auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -178,7 +179,8 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                     SBlobRequest(seq_id, seq_id_type, exclude_blobs,
                                  tse_option, use_cache,
                                  string(client_id_param.m_Value.data(),
-                                        client_id_param.m_Value.size())),
+                                        client_id_param.m_Value.size()),
+                                 now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -314,6 +316,7 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
     if (!x_IsDBOK(req, resp))
         return 0;
 
+    auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -406,7 +409,8 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
         resp.Postpone(
                 CPendingOperation(
                     SResolveRequest(seq_id, seq_id_type, include_data_flags,
-                                    output_format, use_cache, use_psg_protocol),
+                                    output_format, use_cache, use_psg_protocol,
+                                    now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -565,6 +569,7 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
     if (!x_IsDBOK(req, resp))
         return 0;
 
+    auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -638,7 +643,7 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
         m_RequestCounters.IncGetNA();
         resp.Postpone(
                 CPendingOperation(
-                    SAnnotRequest(seq_id, seq_id_type, names, use_cache),
+                    SAnnotRequest(seq_id, seq_id_type, names, use_cache, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {

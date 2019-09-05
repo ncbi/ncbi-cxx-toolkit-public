@@ -64,6 +64,11 @@ struct SBlobId
     SBlobId(const CTempString &  blob_id);
     SBlobId(int  sat, int  sat_key);
 
+    SBlobId(const SBlobId &) = default;
+    SBlobId(SBlobId &&) = default;
+    SBlobId &  operator=(const SBlobId &) = default;
+    SBlobId &  operator=(SBlobId &&) = default;
+
     void SetSatName(const string &  name)
     {
         m_SatName = name;
@@ -78,32 +83,6 @@ struct SBlobId
 
 
 
-
-struct SBioseqResolution
-{
-    SBioseqResolution() :
-        m_ResolutionResult(eNotResolved)
-    {}
-
-    EResolutionResult   m_ResolutionResult;
-    CBioseqInfoRecord   m_BioseqInfo;
-    string              m_CacheInfo;    // Bioseq or si2csi cache
-
-    bool IsValid(void) const
-    {
-        return m_ResolutionResult != eNotResolved;
-    }
-
-    void Reset(void)
-    {
-        m_ResolutionResult = eNotResolved;
-        m_CacheInfo.clear();
-        m_BioseqInfo.Reset();
-    }
-};
-
-
-
 // Used to report errors like bad request or LMDB cache error from a lower
 // level code to an upper one.
 struct SResolveInputSeqIdError
@@ -111,6 +90,12 @@ struct SResolveInputSeqIdError
     SResolveInputSeqIdError() :
         m_ErrorCode(CRequestStatus::e200_Ok)
     {}
+
+    SResolveInputSeqIdError(const SResolveInputSeqIdError &) = default;
+    SResolveInputSeqIdError(SResolveInputSeqIdError &&) = default;
+    SResolveInputSeqIdError &  operator=(const SResolveInputSeqIdError &) = default;
+    SResolveInputSeqIdError &  operator=(SResolveInputSeqIdError &&) = default;
+
 
     bool HasError(void) const
     {
@@ -125,6 +110,46 @@ struct SResolveInputSeqIdError
 
     string                  m_ErrorMessage;
     CRequestStatus::ECode   m_ErrorCode;
+};
+
+
+
+
+struct SBioseqResolution
+{
+    SBioseqResolution(const THighResolutionTimePoint &  request_start_timestamp) :
+        m_ResolutionResult(eNotResolved),
+        m_RequestStartTimestamp(request_start_timestamp),
+        m_CassQueryCount(0)
+    {}
+
+    SBioseqResolution(const SBioseqResolution &) = default;
+    SBioseqResolution(SBioseqResolution &&) = default;
+    SBioseqResolution &  operator=(const SBioseqResolution &) = default;
+    SBioseqResolution &  operator=(SBioseqResolution &&) = default;
+
+
+    bool IsValid(void) const
+    {
+        return m_ResolutionResult != eNotResolved;
+    }
+
+    void Reset(void)
+    {
+        m_ResolutionResult = eNotResolved;
+        m_CacheInfo.clear();
+        m_BioseqInfo.Reset();
+    }
+
+    EResolutionResult           m_ResolutionResult;
+    THighResolutionTimePoint    m_RequestStartTimestamp;
+    size_t                      m_CassQueryCount;
+
+    CBioseqInfoRecord           m_BioseqInfo;
+    string                      m_CacheInfo;    // Bioseq or si2csi cache
+
+    // Most likely parsing error if so
+    SResolveInputSeqIdError     m_PostponedError;
 };
 
 

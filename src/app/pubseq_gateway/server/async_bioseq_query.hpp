@@ -44,10 +44,7 @@ class CPendingOperation;
 class CAsyncBioseqQuery
 {
 public:
-    CAsyncBioseqQuery(const string &        accession,
-                      int16_t               version,
-                      int16_t               seq_id_type,
-                      SBioseqResolution &   bioseq_resolution,
+    CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
                       CPendingOperation *   pending_op);
 
 public:
@@ -60,15 +57,10 @@ public:
                              EDiagSev  severity, const string &  message);
 
 private:
-    string                  m_Accession;
-    int16_t                 m_Version;
-    int16_t                 m_SeqIdType;
+    SBioseqResolution                   m_BioseqResolution;
+    CPendingOperation *                 m_PendingOp;
 
-    SBioseqResolution &     m_BioseqResolution;
-    CPendingOperation *     m_PendingOp;
-
-    CCassFetch *            m_CurrentFetch;
-
+    CCassFetch *                        m_CurrentFetch;
     chrono::system_clock::time_point    m_BioseqRequestStart;
 };
 

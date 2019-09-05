@@ -33,6 +33,7 @@
  *
  */
 
+#include "pubseq_gateway_types.hpp"
 
 #include <chrono>
 #include <vector>
@@ -68,7 +69,12 @@ enum EPSGOperation {
     eBlobRetrieve,
     eNARetrieve,
 
-    eSplitHistoryRetrieve
+    eSplitHistoryRetrieve,
+
+    eResolutionError,
+    eResolutionNotFound,
+    eResolutionFoundInCache,
+    eResolutionFoundInCassandra
 };
 
 
@@ -233,6 +239,17 @@ class CSplitHistoryRetrieveTiming : public CPSGTimingBase
 };
 
 
+// Resolution
+class CResolutionTiming : public CPSGTimingBase
+{
+    public:
+        CResolutionTiming(unsigned long  min_stat_value,
+                          unsigned long  max_stat_value,
+                          unsigned long  n_bins,
+                          TPSGTiming::EScaleType  stat_type,
+                          bool &  reset_to_default);
+};
+
 
 class COperationTiming
 {
@@ -249,7 +266,7 @@ class COperationTiming
         // operation == eBlobRetrieve
         void Register(EPSGOperation  operation,
                       EPSGOperationStatus  status,
-                      chrono::high_resolution_clock::time_point &  op_begin_ts,
+                      const THighResolutionTimePoint &  op_begin_ts,
                       size_t  blob_size=0);
 
     public:
@@ -286,6 +303,14 @@ class COperationTiming
         vector<unsigned long>                               m_Ends;
         unique_ptr<CHugeBlobRetrieveTiming>                 m_HugeBlobRetrievalTiming;
         unique_ptr<CNotFoundBlobRetrieveTiming>             m_NotFoundBlobRetrievalTiming;
+
+        // Resolution timing
+        unique_ptr<CResolutionTiming>                       m_ResolutionErrorTiming;
+        unique_ptr<CResolutionTiming>                       m_ResolutionNotFoundTiming;
+        unique_ptr<CResolutionTiming>                       m_ResolutionFoundInCacheTiming;
+
+        // 1, 2, 3, 4, 5+ trips to cassandra
+        vector<unique_ptr<CResolutionTiming>>               m_ResolutionFoundCassandraTiming;
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */

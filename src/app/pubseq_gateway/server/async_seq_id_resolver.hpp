@@ -32,6 +32,7 @@
  *
  */
 
+#include "pubseq_gateway_types.hpp"
 
 #include <corelib/request_status.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
@@ -59,14 +60,14 @@ private:
     };
 
 public:
-    CAsyncSeqIdResolver(CSeq_id &               oslt_seq_id,
-                        int16_t                 effective_seq_id_type,
-                        list<string>            secondary_id_list,
-                        string                  primary_seq_id,
-                        const CTempString &     url_seq_id,
-                        bool                    composed_ok,
-                        SBioseqResolution &     bioseq_resolution,
-                        CPendingOperation *     pending_op);
+    CAsyncSeqIdResolver(CSeq_id &                         oslt_seq_id,
+                        int16_t                           effective_seq_id_type,
+                        list<string>                      secondary_id_list,
+                        string                            primary_seq_id,
+                        const CTempString &               url_seq_id,
+                        bool                              composed_ok,
+                        SBioseqResolution &&              bioseq_resolution,
+                        CPendingOperation *               pending_op);
 
 public:
     void Process(void);
@@ -91,24 +92,24 @@ public:
                          EDiagSev  severity, const string &  message);
 
 private:
-    CSeq_id &               m_OsltSeqId;
-    int16_t                 m_EffectiveSeqIdType;
-    list<string>            m_SecondaryIdList;
-    string                  m_PrimarySeqId;
-    string                  m_UrlSeqId;
-    bool                    m_ComposedOk;
-    SBioseqResolution &     m_BioseqResolution;
-    CPendingOperation *     m_PendingOp;
+    CSeq_id &                   m_OsltSeqId;
+    int16_t                     m_EffectiveSeqIdType;
+    list<string>                m_SecondaryIdList;
+    string                      m_PrimarySeqId;
+    string                      m_UrlSeqId;
+    bool                        m_ComposedOk;
+    SBioseqResolution           m_BioseqResolution;
+    CPendingOperation *         m_PendingOp;
 
-    EResolveStage           m_ResolveStage;
-    CCassFetch *            m_CurrentFetch;
+    EResolveStage               m_ResolveStage;
+    CCassFetch *                m_CurrentFetch;
 
-    size_t                  m_SecondaryIndex;
-    bool                    m_NeedToTryBioseqInfo;
-    int16_t                 m_EffectiveVersion;
+    size_t                      m_SecondaryIndex;
+    bool                        m_NeedToTryBioseqInfo;
+    int16_t                     m_EffectiveVersion;
 
-    chrono::high_resolution_clock::time_point       m_Si2csiStart;
-    chrono::high_resolution_clock::time_point       m_BioseqInfoStart;
+    THighResolutionTimePoint    m_Si2csiStart;
+    THighResolutionTimePoint    m_BioseqInfoStart;
 };
 
 #endif

@@ -32,6 +32,10 @@
  *
  */
 
+#include <chrono>
+using namespace std;
+
+
 // Error codes for the PSG protocol messages
 enum EPubseqGatewayErrorCode {
     eUnknownSatellite = 300,
@@ -189,5 +193,9 @@ enum EStartupDataState {
     eNoCassCache,
     eStartupDataOK
 };
+
+
+// Mostly for timing collection
+typedef chrono::high_resolution_clock::time_point   THighResolutionTimePoint;
 
 #endif
