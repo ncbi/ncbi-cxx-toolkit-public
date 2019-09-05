@@ -20,3 +20,10 @@
 { "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "success": true } }, "id": "annot_2" }
 { "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 12 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "fail": "reply" } }, "id": "annot_3" }
 { "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "boo-ga-ga", 12 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": { "fail": "reply" } }, "id": "annot_4" }
+{ "jsonrpc": "2.0", "method": "tse_chunk", "params": { "blob_id": "47.67890130", "chunk_no": 1, "split_ver": 0, "expected_result": { "success": true } }, "id": "tse_1" }
+{ "jsonrpc": "2.0", "method": "tse_chunk", "params": { "blob_id": "47.67890130", "chunk_no": 2, "split_ver": 0, "expected_result": { "success": true } }, "id": "tse_2" }
+{ "jsonrpc": "2.0", "method": "tse_chunk", "params": { "blob_id": "47.67890130", "chunk_no": 4, "split_ver": 0, "expected_result": { "success": true } }, "id": "tse_3" }
+{ "jsonrpc": "2.0", "method": "tse_chunk", "params": { "blob_id": "47.67890130", "chunk_no": 5, "split_ver": 0, "expected_result": { "fail": "reply" } }, "id": "tse_4" }
+{ "jsonrpc": "2.0", "method": "tse_chunk", "params": { "blob_id": "47.67890130", "chunk_no": 1, "split_ver": 1, "expected_result": { "fail": "reply" } }, "id": "tse_5" }
+{ "jsonrpc": "2.0", "method": "tse_chunk", "params": { "blob_id": "9999.88888", "chunk_no": 1, "split_ver": 0, "expected_result": { "fail": "item" } }, "id": "tse_6" }
+{ "jsonrpc": "2.0", "method": "tse_chunk", "params": { "blob_id": "blah.boo.10", "chunk_no": 1, "split_ver": 0, "expected_result": { "fail": "reply" } }, "id": "tse_7" }

@@ -89,6 +89,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Blob>          ("blob",        "Request blob by blob ID"),
             s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID"),
             s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID"),
+            s_GetCommand<CPSG_Request_TSE_Chunk>     ("tse_chunk",   "Request particular version of split by TSE blob ID and chunk number"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode"),
             s_GetCommand<SPerformance>               ("performance", "Performance testing mode", SCommand::TFlags::eHidden),
             s_GetCommand<STesting>                   ("test",        "Testing mode", SCommand::TFlags::eHidden),
@@ -187,6 +188,15 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&
     arg_desc.AddKey("na", "NAMED_ANNOT", "Named annotation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
+}
+
+template <>
+void CPsgClientApp::s_InitRequest<CPSG_Request_TSE_Chunk>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
+    arg_desc.AddPositional("ID", "TSE Blob ID", CArgDescriptions::eString);
+    arg_desc.AddPositional("CHUNK_NO", "Chunk number", CArgDescriptions::eInteger);
+    arg_desc.AddPositional("SPLIT_VER", "Split version", CArgDescriptions::eInteger);
 }
 
 template<>

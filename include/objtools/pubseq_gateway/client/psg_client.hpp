@@ -333,6 +333,42 @@ private:
 
 
 
+/// Request to the PSG server
+/// (by TSE blob-id and chunk number, for a particular version of split)
+///
+
+class CPSG_Request_TSE_Chunk : public CPSG_Request
+{
+public:
+    using TChunkNo = unsigned;
+    using TSplitVersion = int;
+
+    CPSG_Request_TSE_Chunk(CPSG_BlobId      tse_blob_id,
+                           TChunkNo         chunk_no,
+                           TSplitVersion    split_version,
+                           shared_ptr<void> user_context = {})
+        : CPSG_Request(user_context),
+          m_TSE_BlobId(tse_blob_id),
+          m_ChunkNo(chunk_no),
+          m_SplitVersion(split_version)
+    {}
+
+    const CPSG_BlobId&  GetTSE_BlobId()   const { return m_TSE_BlobId;   }
+    const TChunkNo      GetChunkNo()      const { return m_ChunkNo;      }
+    const TSplitVersion GetSplitVersion() const { return m_SplitVersion; }
+
+private:
+    string x_GetType() const override { return "tse_chunk"; }
+    string x_GetId() const override { return GetTSE_BlobId().Get(); }
+    string x_GetAbsPathRef() const override;
+
+    CPSG_BlobId    m_TSE_BlobId;
+    TChunkNo       m_ChunkNo;
+    TSplitVersion  m_SplitVersion;
+};
+
+
+
 /// Retrieval result
 /// @sa GetStatus
 enum class EPSG_Status {

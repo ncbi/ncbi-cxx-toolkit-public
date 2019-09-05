@@ -280,6 +280,12 @@ private:
     static string GetLastModified(const CArgs& input) { return input["last_modified"].AsString(); }
     static string GetLastModified(const CJson_ConstObject& input) { return input.has("last_modified") ? input["last_modified"].GetValue().GetString() : ""; }
 
+    static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CArgs& input) { return input["CHUNK_NO"].AsInteger(); }
+    static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CJson_ConstObject& input) { return input["chunk_no"].GetValue().GetUint8(); }
+
+    static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CArgs& input) { return input["SPLIT_VER"].AsInteger(); }
+    static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CJson_ConstObject& input) { return input["split_ver"].GetValue().GetInt8(); }
+
     using TSpecified = function<bool(const string&)>;
 
     template <class TRequest>
@@ -298,6 +304,8 @@ private:
     static void CreateRequestImpl(shared_ptr<CPSG_Request_Blob>&, shared_ptr<void>, const TInput&);
     template <class TInput>
     static void CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInfo>&, shared_ptr<void>, const TInput&);
+    template <class TInput>
+    static void CreateRequestImpl(shared_ptr<CPSG_Request_TSE_Chunk>&, shared_ptr<void>, const TInput&);
 
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
@@ -383,6 +391,15 @@ inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnno
     auto bio_id = GetBioId(input);
     auto named_annots = GetNamedAnnots(input);
     request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
+}
+
+template <class TInput>
+inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_TSE_Chunk>& request, shared_ptr<void> user_context, const TInput& input)
+{
+    auto blob_id = GetBlobId(input);
+    auto chunk_no = GetChunkNo(input);
+    auto split_ver = GetSplitVer(input);
+    request = make_shared<CPSG_Request_TSE_Chunk>(move(blob_id), move(chunk_no), move(split_ver), move(user_context));
 }
 
 template <class TRequest>

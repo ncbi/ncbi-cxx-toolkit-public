@@ -1356,6 +1356,8 @@ shared_ptr<CPSG_Request> CProcessing::CreateRequest(const string& method, shared
         return SRequestBuilder::CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
     } else if (method == "named_annot") {
         return SRequestBuilder::CreateRequest<CPSG_Request_NamedAnnotInfo>(move(user_context), params_obj);
+    } else if (method == "tse_chunk") {
+        return SRequestBuilder::CreateRequest<CPSG_Request_TSE_Chunk>(move(user_context), params_obj);
     } else {
         return {};
     }
@@ -1626,6 +1628,24 @@ CJson_Schema& CProcessing::RequestSchema()
                         "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id","named_annots" ]
+                },
+                "id": { "$ref": "#id" }
+            },
+            "required": [ "jsonrpc", "method", "params", "id" ]
+        },
+        {
+            "properties": {
+                "jsonrpc": { "$rev": "#jsonrpc" },
+                "method": { "enum": [ "tse_chunk" ] },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "blob_id": { "type": "string" },
+                        "chunk_no": { "type": "number" },
+                        "split_ver": { "type": "number" },
+                        "context": { "$ref": "#context" }
+                    },
+                    "required": [ "blob_id", "chunk_no", "split_ver" ]
                 },
                 "id": { "$ref": "#id" }
             },

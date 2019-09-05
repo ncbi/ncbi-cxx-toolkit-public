@@ -511,6 +511,16 @@ string CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef() const
     return s_AddUseCache(os);
 }
 
+string CPSG_Request_TSE_Chunk::x_GetAbsPathRef() const
+{
+    ostringstream os;
+
+    os << "/ID/get_tse_chunk?tse_id=" << m_TSE_BlobId.Get() <<
+        "&chunk=" << m_ChunkNo << "&split_version=" << m_SplitVersion;
+
+    return s_AddUseCache(os);
+}
+
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)
 {
     auto& ioc = m_Service.ioc;
