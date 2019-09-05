@@ -273,6 +273,9 @@ typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
 NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
 typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
 
+NCBI_PARAM_DECL(unsigned, PSG, request_timeout);
+typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
+
 END_NCBI_SCOPE
 
 #endif

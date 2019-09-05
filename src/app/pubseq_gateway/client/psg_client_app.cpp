@@ -109,6 +109,7 @@ void CPsgClientApp::Init()
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
         arg_desc->SetUsageContext("", command.desc);
         command.init(*arg_desc);
+        arg_desc->AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
         cmd_desc->AddCommand(command.name, arg_desc.release(), kEmptyStr, command.flags);
     }
 
@@ -119,6 +120,11 @@ int CPsgClientApp::Run()
 {
     auto& args = GetArgs();
     auto name = args.GetCommand();
+
+    if (args["timeout"].HasValue()) {
+        auto timeout = static_cast<unsigned>(args["timeout"].AsInteger());
+        TPSG_RequestTimeout::SetDefault(timeout);
+    }
 
     for (const auto& command : m_Commands) {
         if (command.name == name) {
