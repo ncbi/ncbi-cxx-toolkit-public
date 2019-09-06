@@ -234,7 +234,10 @@ void CPubseqGatewayApp::ParseArgs(void)
 
 void CPubseqGatewayApp::OpenCache(void)
 {
-    static bool need_logging = true;
+    // It was decided to work with and without the cache even if the wrapper
+    // has not been created. So the cache initialization is called once and
+    // always succeed.
+    m_StartupDataState = eStartupDataOK;
 
     try {
         // NB. It was decided that the configuration may ommit the cache file
@@ -246,25 +249,22 @@ void CPubseqGatewayApp::OpenCache(void)
         m_LookupCache->Open(m_SatNames);
 
         // All is good
-        m_StartupDataState = eStartupDataOK;
-        need_logging = false;
         return;
     } catch (const exception &  exc) {
         string      msg = "Error initializing the LMDB cache: " +
-                          string(exc.what());
-        if (need_logging)
-            PSG_CRITICAL(exc);
+                          string(exc.what()) +
+                          ". The server continues without cache.";
+        PSG_ERROR(exc);
         m_Alerts.Register(eOpenCache, msg);
     } catch (...) {
-        string      msg = "Unknown initializing LMDB cache error";
-        if (need_logging)
-            PSG_CRITICAL(msg);
+        string      msg = "Unknown initializing LMDB cache error. "
+                          "The server continues without cache.";
+        PSG_ERROR(msg);
         m_Alerts.Register(eOpenCache, msg);
     }
 
     // Here: there was an exception
     m_LookupCache.reset(nullptr);
-    need_logging = true;
 }
 
 
@@ -557,36 +557,18 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     }
 
     if (m_Si2csiDbFile.empty()) {
-        string  msg = "[LMDB_CACHE]/dbfile_si2csi is not found "
-                      "in the ini file. No si2csi cache will be used.";
-        PSG_WARNING(msg);
-        m_Alerts.Register(eConfigNoSi2csiCache, msg);
-    } else if (!CFile(m_Si2csiDbFile).Exists()) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "dbfile_si2csi is not found on the disk. It must "
-                   "be supplied for the server to start");
+        PSG_WARNING("[LMDB_CACHE]/dbfile_si2csi is not found "
+                    "in the ini file. No si2csi cache will be used.");
     }
 
     if (m_BioseqInfoDbFile.empty()) {
-        string  msg = "[LMDB_CACHE]/dbfile_bioseq_info is not found "
-                      "in the ini file. No bioseq_info cache will be used.";
-        PSG_WARNING(msg);
-        m_Alerts.Register(eConfigNoBioseqInfoCache, msg);
-    } else if (!CFile(m_BioseqInfoDbFile).Exists()) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "dbfile_bioseq_info is not found on the disk. It must "
-                   "be supplied for the server to start");
+        PSG_WARNING("[LMDB_CACHE]/dbfile_bioseq_info is not found "
+                    "in the ini file. No bioseq_info cache will be used.");
     }
 
     if (m_BlobPropDbFile.empty()) {
-        string  msg = "[LMDB_CACHE]/dbfile_blob_prop is not found "
-                      "in the ini file. No blob_prop cache will be used.";
-        m_Alerts.Register(eConfigNoBlobPropCache, msg);
-        PSG_WARNING(msg);
-    } else if (!CFile(m_BlobPropDbFile).Exists()) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "dbfile_blob_prop is not found on the disk. It must "
-                   "be supplied for the server to start");
+        PSG_WARNING("[LMDB_CACHE]/dbfile_blob_prop is not found "
+                    "in the ini file. No blob_prop cache will be used.");
     }
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {

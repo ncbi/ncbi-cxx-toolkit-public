@@ -43,9 +43,13 @@ ECacheLookupResult  CPSGCache::s_LookupBioseqInfo(
                                     CBioseqInfoRecord &  bioseq_info_record,
                                     string &  bioseq_info_cache_data)
 {
-    bool                    cache_hit = false;
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
+
+    if (cache == nullptr)
+        return eNotFound;
+
+    bool                    cache_hit = false;
     COperationTiming &      timing = app->GetTiming();
 
     int     version = bioseq_info_record.GetVersion();
@@ -123,9 +127,13 @@ ECacheLookupResult  CPSGCache::s_LookupBioseqInfo(
 ECacheLookupResult  CPSGCache::s_LookupSi2csi(CBioseqInfoRecord &  bioseq_info_record,
                                               string &  csi_cache_data)
 {
-    bool                    cache_hit = false;
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
+
+    if (cache == nullptr)
+        return eNotFound;
+
+    bool                    cache_hit = false;
     COperationTiming &      timing = app->GetTiming();
 
     // The Cassandra DB data types are incompatible with the cache API
@@ -173,9 +181,13 @@ ECacheLookupResult  CPSGCache::s_LookupBlobProp(int  sat,
                                                 int64_t &  last_modified,
                                                 CBlobRecord &  blob_record)
 {
-    bool                    cache_hit = false;
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
+
+    if (cache == nullptr)
+        return eNotFound;
+
+    bool                    cache_hit = false;
     COperationTiming &      timing = app->GetTiming();
     string                  blob_prop_cache_data;
 

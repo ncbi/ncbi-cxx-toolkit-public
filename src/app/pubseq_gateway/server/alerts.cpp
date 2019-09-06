@@ -44,9 +44,6 @@ struct SAlertToId
 
 const SAlertToId     kAlertToIdMap[] = {
     { eConfigAuthDecrypt,               "ConfigAuthDecrypt" },
-    { eConfigNoSi2csiCache,             "ConfigNoSi2csiCache" },
-    { eConfigNoBioseqInfoCache,         "ConfigNoBioseqInfoCache" },
-    { eConfigNoBlobPropCache,           "ConfigNoBlobPropCache" },
     { eConfigHttpWorkers,               "ConfigHttpWorkers" },
     { eConfigListenerBacklog,           "ConfigListenerBacklog" },
     { eConfigMaxConnections,            "ConfigMaxConnections" },
