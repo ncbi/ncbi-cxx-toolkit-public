@@ -1104,7 +1104,7 @@ DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller | eF
     }
 
     if (is_microsatellite && !is_tandem) {
-        m_Objs["[n] microsatellite[s] do not have a repeat type of tandem"].Add(*context.DiscrObj(obj), false).Fatal();
+        m_Objs["[n] microsatellite[s] do not have a repeat type of tandem"].Add(*context.DiscrObj(obj, true), false).Fatal();
     }
 }
 
