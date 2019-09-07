@@ -1,5 +1,5 @@
 # $Id$
-# Pregenerated summary of library relations, for use by project_tree_builder..
+# Pregenerated summary of library relations, for use by project_tree_builder.
 $(ORIG_LIBS) needs3party
 16S_common needs $(SOBJMGR_LIBS)
 16S_common needs xmlwrapp
@@ -1086,8 +1086,7 @@ psg_cassandra needs3party $(Z_LIBS)
 psg_client needs $(SEQ_LIBS)
 psg_client needs pub
 psg_client needs xconnserv
-psg_client needs3party $(LIBUV_LIBS)
-psg_client needs3party $(NGHTTP2_LIBS)
+psg_client needs3party $(PSG_CLIENT_LIBS)
 psg_diag needs xncbi
 psg_protobuf needs3party $(ORIG_LIBS)
 psloader-internal needs $(Z_LIB)
