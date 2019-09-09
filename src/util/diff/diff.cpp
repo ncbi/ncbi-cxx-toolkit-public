@@ -1083,11 +1083,11 @@ CNcbiOstream& CDiffText::PrintUnifiedDiff(CNcbiOstream& out,
                 } else {
                     s2++;
                 }
-                if (is_hunk) {
-                    num_equal = 0;
-                } else {
+                if (!is_hunk) {
+                    // Difference found, start new hunk
                     is_hunk = true;
                     if (!num_common_lines  ||  !num_equal) {
+                        // Show only differences or don't have equal lines before at all:
                         hunk_start = it;
                         hunk_s1 = s1;
                         hunk_s2 = s2;
@@ -1102,6 +1102,7 @@ CNcbiOstream& CDiffText::PrintUnifiedDiff(CNcbiOstream& out,
                         }
                     }
                 }
+                num_equal = 0;
                 break;
             case DIFF_EQUAL:
                 s1++;
@@ -1139,8 +1140,8 @@ CNcbiOstream& CDiffText::PrintUnifiedDiff(CNcbiOstream& out,
                         num_equal++;
                     } else {
                         hunk_start++;
-                        hunk_s1 = s1;
-                        hunk_s2 = s2;
+                        hunk_s1++;
+                        hunk_s2++;
                     }
                 }
                 break;
