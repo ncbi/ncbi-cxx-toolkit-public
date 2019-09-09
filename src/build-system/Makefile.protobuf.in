@@ -12,14 +12,14 @@
 SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
 INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
 
-SPEC = $(SRCDIR)/$(MODULE_ASN) # sic
+SPEC = $(MODULE_PATH)/$(MODULE_ASN) # sic
 FILES = $(MODULE).files
 comma = ,
 # empty =
 # space = $(empty) $(empty)
 # IMPDIRS = $(subst $(space),:,$(dir $(IMPDEPS)))
 # PROTOC_FLAGS = -I$(SRCDIR):$(IMPDIRS):$(subst $(comma),:,$(MODULE_SEARCH))
-PROTOC_FLAGS = -I$(subst $(comma),:,$(MODULE_SEARCH))
+PROTOC_FLAGS = -I.:$(subst $(comma),:,$(MODULE_SEARCH))
 
 PROTOBUF_BIN = @PROTOBUF_BIN@
 GRPC_BIN = @GRPC_BIN@

@@ -101,10 +101,10 @@ done
 
 (
     cd "$TREE_ROOT/src"
-    "$PROTOC" --cpp_out=. "$TREE_ROOT/src/$subtree/$input_spec_name"
+    "$PROTOC" --cpp_out=. -I. "$subtree/$input_spec_name"
     "$PROTOC" --grpc_out=generate_mock_code=true:. \
-              --plugin=protoc-gen-grpc="$GRPC_PLUGIN" \
-              "$TREE_ROOT/src/$subtree/$input_spec_name"
+              --plugin=protoc-gen-grpc="$GRPC_PLUGIN" -I. \
+              "$subtree/$input_spec_name"
     )
 mkdir -p "$TREE_ROOT/include/$subtree"
 mv -f "$TREE_ROOT/src/$subtree/"*.pb.h "$TREE_ROOT/include/$subtree/"

@@ -91,8 +91,8 @@ for %%i in ("%input_spec_path%") do set input_spec_spec=%%~nxi
 
 cd %TREE_ROOT%\src
 %PROTOC_EXE% --version
-%PROTOC_EXE% --cpp_out=. %TREE_ROOT%\src\%subtree%%input_spec_spec%
-%PROTOC_EXE% --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc="%GRPC_PLUGIN%" %TREE_ROOT%\src\%subtree%%input_spec_spec%
+%PROTOC_EXE% --cpp_out=. -I. %subtree%%input_spec_spec%
+%PROTOC_EXE% --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc="%GRPC_PLUGIN%" -I. %subtree%%input_spec_spec%
 if not exist "%TREE_ROOT%\include\%subtree%" (
   mkdir "%TREE_ROOT%\include\%subtree%"
 )
