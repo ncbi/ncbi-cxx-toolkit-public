@@ -766,59 +766,60 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
                                  last_modified, *blob_record.get());
     if (blob_prop_cache_lookup_result == eFound) {
         // Compare the version
-        unique_ptr<CPSGId2Info>     id2_info;
-        if (!x_ParseTSEChunkId2Info(blob_record->GetId2Info(),
-                                    id2_info, m_TSEChunkRequest.m_TSEId))
-            return;
+        if (!blob_record->GetId2Info().empty()) {
+            unique_ptr<CPSGId2Info>     id2_info;
+            if (x_ParseTSEChunkId2Info(blob_record->GetId2Info(),
+                                       id2_info, m_TSEChunkRequest.m_TSEId)) {
+                if (id2_info->GetSplitVersion() == m_TSEChunkRequest.m_SplitVersion) {
+                    // Form the new blob id for the chunk and look for it in the
+                    // blob_prop cache. But first, sanity check for the chunk number
+                    if (!x_ValidateTSEChunkNumber(m_TSEChunkRequest.m_Chunk,
+                                                  id2_info->GetChunks()))
+                        return;
 
-        if (id2_info->GetSplitVersion() == m_TSEChunkRequest.m_SplitVersion) {
-            // Form the new blob id for the chunk and look for it in the
-            // blob_prop cache. But first, sanity check for the chunk number
-            if (!x_ValidateTSEChunkNumber(m_TSEChunkRequest.m_Chunk,
-                                          id2_info->GetChunks()))
-                return;
+                    // Chunk's blob id
+                    int64_t     sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 + m_TSEChunkRequest.m_Chunk;
+                    SBlobId     chunk_blob_id(id2_info->GetSat(), sat_key);
+                    if (!x_TSEChunkSatToSatName(chunk_blob_id))
+                        return;
 
-            // Chunk's blob id
-            int64_t     sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 + m_TSEChunkRequest.m_Chunk;
-            SBlobId     chunk_blob_id(id2_info->GetSat(), sat_key);
-            if (!x_TSEChunkSatToSatName(chunk_blob_id))
-                return;
+                    last_modified = INT64_MIN;
+                    blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
+                            chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
+                            last_modified, *blob_record.get());
+                    if (blob_prop_cache_lookup_result != eFound) {
+                        err_msg = "Blob " + chunk_blob_id.ToString() +
+                                  " properties are not found";
+                        x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
+                                         eBlobPropsNotFound);
+                        x_SendReplyCompletion();
+                        return;
+                    }
 
-            last_modified = INT64_MIN;
-            blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
-                    chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
-                    last_modified, *blob_record.get());
-            if (blob_prop_cache_lookup_result != eFound) {
-                err_msg = "Blob " + chunk_blob_id.ToString() +
-                          " properties are not found";
-                x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
-                                 eBlobPropsNotFound);
-                x_SendReplyCompletion();
-                return;
+                    // Initiate the chunk request
+                    app->GetRequestCounters().IncTSEChunkSplitVersionCacheMatched();
+
+                    SBlobRequest        chunk_request(chunk_blob_id, INT64_MIN,
+                                                      eUnknownTSE, eUnknownUseCache, "");
+
+                    unique_ptr<CCassBlobFetch>  fetch_details;
+                    fetch_details.reset(new CCassBlobFetch(chunk_request));
+                    CCassBlobTaskLoadBlob *         load_task =
+                        new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+                                                  chunk_blob_id.m_SatName,
+                                                  std::move(blob_record),
+                                                  true, nullptr);
+                    fetch_details->SetLoader(load_task);
+                    load_task->SetDataReadyCB(GetDataReadyCB());
+                    load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
+                    load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(), false));
+                    load_task->SetChunkCallback(CBlobChunkCallback(this, fetch_details.get()));
+
+                    m_FetchDetails.push_back(std::move(fetch_details));
+                    load_task->Wait();  // Initiate cassandra request
+                    return;
+                }
             }
-
-            // Initiate the chunk request
-            app->GetRequestCounters().IncTSEChunkSplitVersionCacheMatched();
-
-            SBlobRequest        chunk_request(chunk_blob_id, INT64_MIN,
-                                              eUnknownTSE, eUnknownUseCache, "");
-
-            unique_ptr<CCassBlobFetch>  fetch_details;
-            fetch_details.reset(new CCassBlobFetch(chunk_request));
-            CCassBlobTaskLoadBlob *         load_task =
-                new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
-                                          chunk_blob_id.m_SatName,
-                                          std::move(blob_record),
-                                          true, nullptr);
-            fetch_details->SetLoader(load_task);
-            load_task->SetDataReadyCB(GetDataReadyCB());
-            load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
-            load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(), false));
-            load_task->SetChunkCallback(CBlobChunkCallback(this, fetch_details.get()));
-
-            m_FetchDetails.push_back(std::move(fetch_details));
-            load_task->Wait();  // Initiate cassandra request
-            return;
         }
 
         app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
