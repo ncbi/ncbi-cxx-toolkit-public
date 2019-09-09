@@ -1,0 +1,4 @@
+# $Id$
+LIB	= xaligncleanup
+SRC	= advanced_cleanup
+DLL_LIB = xalgoalignsplign prosplign

@@ -3,7 +3,8 @@
 # Meta-makefile (algo/align)
 #################################
 
-SUB_PROJ = util nw splign contig_assembly prosplign mergetree ngalign
+SUB_PROJ = util nw splign contig_assembly prosplign mergetree ngalign \
+           advanced_cleanup
 
 REQUIRES = objects
 
