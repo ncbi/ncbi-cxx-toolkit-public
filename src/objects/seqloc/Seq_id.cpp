@@ -1447,11 +1447,16 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
             // Can't necessarily go straight to x_IdentifyAccession, as
             // the accession may contain lowercase letters.
             EAccessionInfo ai = IdentifyAccession(tsid->GetAccession(), flags);
-            if ((ai & eAcc_type_mask) == e_not_set) {
+            E_Choice type2 = GetAccType(ai);
+            auto div2 = ai & eAcc_division_mask;
+            if (type2 == e_not_set) {
                 // We *know* what the type should be....
                 return (EAccessionInfo)((ai & eAcc_flag_mask) | type);
-            } else if ((ai & eAcc_type_mask) == type) {
+            } else if (type2 == type) {
                 return ai;
+            } else if (type == e_Tpe  &&  type2 == e_Embl
+                       &&  (div2 == eAcc_other  ||  div2 == eAcc_wgs)) {
+                return (EAccessionInfo)((ai & ~eAcc_type_mask) | type);
             } else { // misidentified or mislabeled; assume the former
                 return static_cast<EAccessionInfo>(type);
             }
