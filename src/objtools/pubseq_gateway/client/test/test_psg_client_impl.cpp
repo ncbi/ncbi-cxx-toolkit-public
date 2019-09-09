@@ -530,6 +530,12 @@ private:
 
 BOOST_AUTO_TEST_CASE(BlobReader)
 {
+    auto valgrind = getenv("NCBI_RUN_UNDER_VALGRIND");
+
+    if (valgrind && !NStr::strcasecmp(valgrind, "yes")) {
+        TPSG_ReaderTimeout::SetDefault(60);
+    }
+
     MtReading<SBlobReader>();
 }
 
