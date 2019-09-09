@@ -850,6 +850,14 @@ CheckForFreqRatioFile(const string& rps_dbname, CRef<CBlastOptionsHandle>  & opt
 bool
 IsIStreamEmpty(CNcbiIstream & in)
 {
+#ifdef NCBI_OS_MSWIN
+	char c;
+	in.setf(ios::skipws);
+	if (!(in >> c))
+		return true;
+	in.unget();
+	return false;
+#else
 	char c;
 	CNcbiStreampos orig_p = in.tellg();
 	// Piped input
@@ -868,6 +876,7 @@ IsIStreamEmpty(CNcbiIstream & in)
 	in.setstate(orig_state);
 
 	return false;
+#endif
 }
 
 string
