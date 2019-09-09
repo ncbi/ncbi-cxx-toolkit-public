@@ -745,6 +745,9 @@ string CPubseqGatewayApp::x_GetCmdLineArguments(void) const
 static string   kNcbiSidHeader = "HTTP_NCBI_SID";
 static string   kNcbiPhidHeader = "HTTP_NCBI_PHID";
 static string   kXForwardedForHeader = "X-Forwarded-For";
+static string   kUserAgentHeader = "User-Agent";
+static string   kUserAgentApplog = "USER_AGENT";
+static string   kRequestPathApplog = "request_path";
 CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
                                                 HST::CHttpRequest &  req) const
 {
@@ -798,7 +801,12 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
         CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
 
         // This is the URL path
-        extra.Print("request_path", req.GetPath());
+        extra.Print(kRequestPathApplog, req.GetPath());
+
+        string      user_agent = req.GetHeaderValue(kUserAgentHeader);
+        if (!user_agent.empty())
+            extra.Print(kUserAgentApplog, user_agent);
+
         req.PrintParams(extra);
 
         // If extra is not flushed then it picks read-only even though it is
