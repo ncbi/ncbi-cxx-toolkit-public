@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_add_subdirectory(util nw splign contig_assembly prosplign mergetree ngalign)
+NCBI_add_subdirectory(util nw splign contig_assembly prosplign mergetree ngalign advanced_cleanup)
 
 ##############################################################################
 # 
@@ -19,4 +19,5 @@ add_subdirectory(contig_assembly)
 add_subdirectory(prosplign)
 add_subdirectory(mergetree)
 add_subdirectory(ngalign)
+add_subdirectory(advanced_cleanup)
 endif()

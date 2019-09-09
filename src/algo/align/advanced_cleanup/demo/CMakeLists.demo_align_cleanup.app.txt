@@ -1,0 +1,23 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app( demo_align_cleanup)
+  NCBI_sources( demo_align_cleanup)
+  NCBI_uses_toolkit_libraries( xaligncleanup xobjutil xser data_loaders_util)
+NCBI_end_app()
+
+if(OFF)
+#
+#
+#
+add_executable(demo_align_cleanup-app
+    demo_align_cleanup
+)
+
+set_target_properties(demo_align_cleanup-app PROPERTIES OUTPUT_NAME demo_align_cleanup)
+
+target_link_libraries(demo_align_cleanup-app
+    xaligncleanup xobjutil xser data_loaders_util
+)
+endif()
