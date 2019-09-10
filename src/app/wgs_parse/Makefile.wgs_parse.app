@@ -21,7 +21,7 @@ LIB     = fix_pub eutils_client xcleanup ncbi_xdbapi_ftds \
           ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 \
           ncbi_xloader_genbank ncbi_xreader_id1 ncbi_xreader_id2 \
           ncbi_xreader_cache id2 ncbi_xreader dbapi_driver \
-          ct_ftds100 tds_ftds100 xconnext xcompress \
+          ct_ftds100 tds_ftds100 psg_client xconnserv xconnext xcompress \
           id1 xmlwrapp $(OBJEDIT_LIBS) \
           xobjutil valid taxon1 mlacli mla medlars pubmed xconnect \
           xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
