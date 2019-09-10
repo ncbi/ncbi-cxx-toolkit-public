@@ -593,11 +593,11 @@ CJsonNode COperationTiming::Serialize(void) const
     static string   kResolutionError("ResolutionError");
     static string   kResolutionNotFound("ResolutionNotFound");
     static string   kResolutionFoundInCache("ResolutionFoundInCache");
-    static string   kResolutionFoundCassandra1("ResolutionFoundCassandra1");
-    static string   kResolutionFoundCassandra2("ResolutionFoundCassandra2");
-    static string   kResolutionFoundCassandra3("ResolutionFoundCassandra3");
-    static string   kResolutionFoundCassandra4("ResolutionFoundCassandra4");
-    static string   kResolutionFoundCassandra5OrMore("ResolutionFoundCassandra5OrMore");
+    static string   kResolutionFoundCassandra1("ResolutionFoundCassandraIn1Try");
+    static string   kResolutionFoundCassandra2("ResolutionFoundCassandraIn2Tries");
+    static string   kResolutionFoundCassandra3("ResolutionFoundCassandraIn3Tries");
+    static string   kResolutionFoundCassandra4("ResolutionFoundCassandraIn4Tries");
+    static string   kResolutionFoundCassandra5OrMore("ResolutionFoundCassandraIn5OrMoreTries");
 
     CJsonNode       ret(CJsonNode::NewObjectNode());
     ret.SetString(kStartTime, FormatPreciseTime(m_StartTime));
