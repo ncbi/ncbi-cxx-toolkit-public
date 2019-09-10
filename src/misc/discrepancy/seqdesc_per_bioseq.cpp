@@ -58,7 +58,7 @@ DISCREPANCY_CASE(RETROVIRIDAE_DNA, CSeqdesc_BY_BIOSEQ, eOncaller, "Retroviridae 
     const CBioSource& src = obj.GetSource();
     if (src.IsSetLineage() && context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (!src.IsSetGenome() || src.GetGenome() != CBioSource::eGenome_proviral) {
-            m_Objs[kGenomeNotProviral].Add(*context.SeqdescObj(obj));
+            m_Objs[kGenomeNotProviral].Add(*context.SeqdescObj(obj, true));
         }
     }
 }
