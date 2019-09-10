@@ -9148,7 +9148,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
     const CSeq_entry    *ctx
 )
 {
-    if (NStr::EqualNocase(stranded_mol, "dsDNA")) {
+    if (NStr::FindNoCase(stranded_mol, "DNA") != NPOS) {
         return;
     }
 
