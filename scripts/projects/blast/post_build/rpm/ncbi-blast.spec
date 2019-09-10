@@ -73,7 +73,7 @@ cd c++/*/build
 %install
 %__mkdir_p $RPM_BUILD_ROOT/%_bindir
 cd c++/*/bin
-%__install -m755 blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast makembindex segmasker dustmasker windowmasker makeblastdb makeprofiledb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck legacy_blast.pl update_blastdb.pl get_species_taxids.sh $RPM_BUILD_ROOT/%_bindir
+%__install -m755 blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast makembindex segmasker dustmasker windowmasker makeblastdb makeprofiledb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck legacy_blast.pl update_blastdb.pl cleanup-blastdb-volumes.py get_species_taxids.sh $RPM_BUILD_ROOT/%_bindir
 
 %clean
 rm -rf $RPM_BUILD_ROOT
