@@ -9464,6 +9464,14 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         return "ssRNA(+)";
     }
 
+    // special case for virus satellites
+    if (NStr::FindNoCase(lineage, "satellite RNA") != NPOS || NStr::FindNoCase(lineage, "RNA satellite") != NPOS) {
+        return "ssRNA";
+    }
+    if (NStr::FindNoCase(lineage, "satellite DNA") != NPOS || NStr::FindNoCase(lineage, "DNA satellite") != NPOS) {
+        return "ssDNA";
+    }
+
     if (s_ViralMap) {
         for (const auto & x : *s_ViralMap) {
             if (NStr::FindNoCase(lineage, x.first) != NPOS) {
