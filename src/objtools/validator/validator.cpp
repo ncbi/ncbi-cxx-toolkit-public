@@ -627,7 +627,7 @@ CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool
         }
     }
 
-    if (!xref.CanGetDb()) {
+    if (!xref.IsSetDb()) {
         return flags;
     }
     const string& db = xref.GetDb();
