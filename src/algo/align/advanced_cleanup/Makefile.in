@@ -5,7 +5,7 @@
 
 LIB_PROJ = xaligncleanup
 SUB_PROJ = demo
-WATCHERS = mozes2
+WATCHERS = mozese2
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
