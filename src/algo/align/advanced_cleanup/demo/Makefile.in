@@ -3,7 +3,7 @@
 # Meta-makefile (algo/align/advanced_cleanup/demo)
 #################################
 
-APP_PROJ = demo_align_cleanup
+EXPENDABLE_APP_PROJ = demo_align_cleanup
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
