@@ -26,4 +26,4 @@ LIB     = fix_pub eutils_client xcleanup ncbi_xdbapi_ftds \
           xobjutil valid taxon1 mlacli mla medlars pubmed xconnect \
           xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
-LIBS    = $(SYBASE_LIBS) $(VDB_LIBS) $(FTDS_LIBS) $(PCRE_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(ORIG_LIBS)
+LIBS    = $(NGHTTP2_LIBS) $(LIBUV_LIBS) $(SYBASE_LIBS) $(VDB_LIBS) $(FTDS_LIBS) $(PCRE_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(ORIG_LIBS)
