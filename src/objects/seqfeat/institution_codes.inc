@@ -4308,6 +4308,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MM<DEU>\ts\tMagdeburg Museum\t\t\t",
 "MM<FRA>\ts\tUniversity of Montpellier\t\t\t",
 "MMBC\ts\tMoravske Muzeum [Moravian Museum]\tMMB\t\t",
+"MMBF\ts\tMicoteca Mario Barreto Figueiredo\t\t\t",
 "MMBS\ts\tMukaishima Marine Biological Station\t\t\t",
 "MMCC\tc\tMalaysian Agricultural Research and Development, MARDI Microbial Culture Collection\t\t\t",
 "MMCHPV\ts\tMuseo Municipal El Chocon\t\t\t",

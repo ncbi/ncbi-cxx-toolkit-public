@@ -4275,6 +4275,7 @@ MM<COL>	s	Museo del Mar
 MM<DEU>	s	Magdeburg Museum			
 MM<FRA>	s	University of Montpellier			
 MMBC	s	Moravske Muzeum [Moravian Museum]	MMB		
+MMBF	s	Micoteca Mario Barreto Figueiredo			
 MMBS	s	Mukaishima Marine Biological Station			
 MMCC	c	Malaysian Agricultural Research and Development, MARDI Microbial Culture Collection			
 MMCHPV	s	Museo Municipal El Chocon			
