@@ -67,6 +67,7 @@ align_format needs taxon1
 align_format needs xalnmgr
 align_format needs xcgi
 align_format needs xhtml
+align_format needs3party $(GENBANK_THIRD_PARTY_LIBS)
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
@@ -170,6 +171,7 @@ blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
 blast_unit_test_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
+blast_unit_test_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
 blastapi needs3party blast
 blastapi needs3party ncbitool
 blastdb needs $(SEQ_LIBS)
@@ -278,6 +280,7 @@ data_loaders_util needs ncbi_xloader_blastdb
 data_loaders_util needs ncbi_xloader_csra
 data_loaders_util needs ncbi_xloader_lds2
 data_loaders_util needs ncbi_xloader_wgs
+data_loaders_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
 db needs3party $(ORIG_LIBS)
 dbapi needs dbapi_driver
 dbapi_driver needs xncbi
@@ -314,6 +317,7 @@ dbsnp_primary_track needs3party $(Z_LIBS)
 dbsnp_tooltip_service needs xser
 ddvlib needs3party ncbidesk
 demo_contig_assembly needs $(OBJMGR_LIBS)
+demo_contig_assembly needs3party $(GENBANK_THIRD_PARTY_LIBS)
 distance needs xncbi
 docsum needs xser
 drmaa needs3party $(ORIG_LIBS)
@@ -331,6 +335,7 @@ egenedb needs entrezgene
 egenedb needs taxon1
 egenedomains needs $(OBJMGR_LIBS)
 egenedomains needs entrezgene
+egenedomains needs3party $(GENBANK_THIRD_PARTY_LIBS)
 egquery needs xser
 ehistory needs xser
 einfo needs xser
@@ -565,6 +570,7 @@ gpipe_objutil needs valid
 gpipe_objutil needs writedb
 gpipe_objutil needs xid_wgsdb
 gpipe_objutil needs3party $(DATA_LOADERS_UTIL_LIBS)
+gpipe_objutil needs3party $(GENBANK_THIRD_PARTY_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs prok_cluster_data
 gpipe_property needs gpipe_common
@@ -688,9 +694,11 @@ hgvs needs entrez2cli
 hgvs needs objcoords
 hgvs needs xobjutil
 hgvs needs xregexp
+hgvs needs3party $(GENBANK_THIRD_PARTY_LIBS)
 hgvs_name needs $(OBJMGR_LIBS)
 hgvs_name needs gui_objutils
 hgvs_name needs sv_objects
+hgvs_name needs3party $(GENBANK_THIRD_PARTY_LIBS)
 homologene needs $(SEQ_LIBS)
 homologene needs pub
 htbbase needs txxmldoc
@@ -974,6 +982,7 @@ ncbiprscxx needs ncbi_xdbapi_ftds
 ncbiprscxx needs ncbiindxcxx
 ncbiprscxx needs taxon1
 ncbiprscxx needs xid_utils
+ncbiprscxx needs3party $(GENBANK_THIRD_PARTY_LIBS)
 ncbiprsn needs3party ctutils
 ncbiprsn needs3party ncbiindx
 ncbiprsn needs3party ncbimla
@@ -984,6 +993,7 @@ ncbiprsncxx needs ncbi_xdbapi_ftds
 ncbiprsncxx needs ncbiindxcxx
 ncbiprsncxx needs taxon1
 ncbiprsncxx needs xid_utils
+ncbiprsncxx needs3party $(GENBANK_THIRD_PARTY_LIBS)
 ncbispel needs3party netcli
 ncbitax needs3party ncbiobj
 ncbitax needs3party netcli
@@ -1297,6 +1307,7 @@ trackmgr_objtools needs gencoll_client
 trackmgr_objtools needs trackmgrgridcli
 trackmgr_objtools needs uudutil
 trackmgr_objtools needs xid_mapper
+trackmgr_objtools needs3party $(GENBANK_THIRD_PARTY_LIBS)
 trackmgrcli needs trackmgr
 trackmgrcli needs xconnect
 trackmgrgridcli needs $(COMPRESS_LIBS)
@@ -1308,6 +1319,7 @@ tvlib needs gui_glmesa
 tvlib needs tv_objects
 tvlib needs uudutil
 tvlib needs w_phylo_tree
+tvlib needs3party $(GENBANK_THIRD_PARTY_LIBS)
 txclient needs xconnect
 txcscu needs txclient
 txcscu needs xregexp
@@ -1695,6 +1707,7 @@ xobjread needs submit
 xobjreadex needs $(OBJREAD_LIBS)
 xobjreadex needs xobjutil
 xobjsimple needs $(OBJMGR_LIBS)
+xobjsimple needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xobjutil needs $(SOBJMGR_LIBS)
 xobjwrite needs $(XFORMAT_LIBS)
 xobjwrite needs variation_utils
@@ -1708,6 +1721,7 @@ xprimer needs $(OBJMGR_LIBS)
 xprimer needs gene_info
 xprimer needs xalgoalignnw
 xprimer needs xalnmgr
+xprimer needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xqueryparse needs xncbi
 xregexp needs $(PCRE_LIB)
 xregexp needs xncbi
@@ -1754,6 +1768,7 @@ xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs trackmgrcli
 xsvcgi needs uudutil
 xsvcgi needs xid_mapper
+xsvcgi needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xsvcgi needs3party $(SYBASE_DLLS)
 xsvcgi needs3party $(SYBASE_LIBS)
 xsvdata needs $(BLAST_INPUT_LIBS)
