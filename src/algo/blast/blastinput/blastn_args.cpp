@@ -70,7 +70,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     m_Args.push_back(arg);
 
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, true,
-                                     false, false, true));
+                                     false, false, false));
     m_Args.push_back(arg);
 
     arg.Reset(new CNuclArgs);
