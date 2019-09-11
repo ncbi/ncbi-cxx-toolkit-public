@@ -130,10 +130,14 @@ void SDiscoveredServers::DeleteThis()
 
 CNetServer CNetServiceIterator::GetServer()
 {
-    m_Impl->m_ServerGroup->m_Service->m_RebalanceStrategy.OnResourceRequested();
-    return new SNetServerImpl(m_Impl->m_ServerGroup->m_Service,
-            m_Impl->m_ServerGroup->m_Service->m_ServerPool->
-            ReturnServer(m_Impl->m_Position->first));
+    return m_Impl->GetServer();
+}
+
+CNetServer SNetServiceIteratorImpl::GetServer()
+{
+    auto& service = m_ServerGroup->m_Service;
+    service->m_RebalanceStrategy.OnResourceRequested();
+    return new SNetServerImpl(service, service->m_ServerPool->ReturnServer(m_Position->first));
 }
 
 bool CNetServiceIterator::Next()
@@ -156,7 +160,7 @@ bool CNetServiceIterator::Prev()
 
 double CNetServiceIterator::GetRate() const
 {
-    return m_Impl->m_Position->second;
+    return m_Impl->GetRate();
 }
 
 bool SNetServiceIteratorImpl::Next()
@@ -1306,8 +1310,13 @@ CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode)
 
 CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server)
 {
+    return m_Impl->Iterate(priority_server);
+}
+
+SNetServiceIteratorImpl* SNetServiceImpl::Iterate(CNetServer::TInstance priority_server)
+{
     CRef<SDiscoveredServers> servers;
-    m_Impl->GetDiscoveredServers(servers);
+    GetDiscoveredServers(servers);
 
     // Find the requested server among the discovered servers.
     ITERATE(TNetServerList, it, servers->m_Servers) {
@@ -1322,7 +1331,7 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server)
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
         "Couldn't find any available servers for the " +
-        m_Impl->m_ServiceName + " service.");
+        m_ServiceName + " service.");
 }
 
 CNetServiceIterator CNetService::IterateByWeight(const string& key)

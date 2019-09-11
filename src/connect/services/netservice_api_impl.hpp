@@ -143,11 +143,14 @@ struct SNetServiceIteratorImpl : public CObject
     virtual bool Next();
     virtual bool Prev();
 
+    CNetServer GetServer();
+    double GetRate() const { return m_Position->second; }
+
+protected:
     CRef<SDiscoveredServers> m_ServerGroup;
 
     TNetServerList::const_iterator m_Position;
 
-protected:
     // For use by SNetServiceIterator_RandomPivot
     SNetServiceIteratorImpl(SDiscoveredServers* server_group_impl,
             TNetServerList::const_iterator position) :
@@ -330,6 +333,8 @@ public:
         CNetServer::SExecResult& exec_result,
         IServiceTraversal* service_traversal,
         EServerErrorHandling error_handling);
+
+    SNetServiceIteratorImpl* Iterate(CNetServer::TInstance priority_server);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
     CNetServer GetServer(CNetServer::SAddress server_address);
