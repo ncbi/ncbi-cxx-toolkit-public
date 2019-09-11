@@ -407,6 +407,7 @@ gc_schedule needs ncbi_xcache_netcache
 gc_utils needs $(GPIPE_COMMON_LIBS)
 gc_utils needs gc_common
 gc_utils needs gpipe_objutil
+gca_sqlite needs gencoll_client
 gcaccess_utils needs simple_asm
 gcaccess_utils needs xgencoll
 gcedit needs agp_lookup
