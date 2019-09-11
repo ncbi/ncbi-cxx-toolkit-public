@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(Test_MUIsJournalIndexed)
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Molecular Cell"), true);
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Genome Biology."), true);
 
-    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Nature"), false); // Too many entries found
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Journal"), false); // Too many entries found
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Fake journal"), false);
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Journal (which does not exist)"), false);
 }
