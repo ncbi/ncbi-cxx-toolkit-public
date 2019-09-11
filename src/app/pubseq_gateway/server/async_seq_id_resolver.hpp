@@ -105,7 +105,6 @@ private:
     CCassFetch *                m_CurrentFetch;
 
     size_t                      m_SecondaryIndex;
-    bool                        m_NeedToTryBioseqInfo;
     int16_t                     m_EffectiveVersion;
 
     THighResolutionTimePoint    m_Si2csiStart;

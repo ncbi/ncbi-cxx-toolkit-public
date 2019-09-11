@@ -1379,7 +1379,6 @@ ECacheLookupResult CPendingOperation::x_ResolvePrimaryOSLTInCache(
                                 const string &  primary_id,
                                 int16_t  effective_version,
                                 int16_t  effective_seq_id_type,
-                                bool  need_to_try_bioseq_info,
                                 SBioseqResolution &  bioseq_resolution)
 {
     ECacheLookupResult  bioseq_cache_lookup_result = eNotFound;
@@ -1387,19 +1386,17 @@ ECacheLookupResult CPendingOperation::x_ResolvePrimaryOSLTInCache(
     if (!primary_id.empty()) {
         CPSGCache           psg_cache(true);
 
-        if (need_to_try_bioseq_info) {
-            // Try BIOSEQ_INFO
-            bioseq_resolution.m_BioseqInfo.SetAccession(primary_id);
-            bioseq_resolution.m_BioseqInfo.SetVersion(effective_version);
-            bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
+        // Try BIOSEQ_INFO
+        bioseq_resolution.m_BioseqInfo.SetAccession(primary_id);
+        bioseq_resolution.m_BioseqInfo.SetVersion(effective_version);
+        bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
 
-            bioseq_cache_lookup_result =
-                    psg_cache.LookupBioseqInfo(bioseq_resolution.m_BioseqInfo,
-                                               bioseq_resolution.m_CacheInfo);
-            if (bioseq_cache_lookup_result == eFound) {
-                bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
-                return eFound;
-            }
+        bioseq_cache_lookup_result =
+                psg_cache.LookupBioseqInfo(bioseq_resolution.m_BioseqInfo,
+                                           bioseq_resolution.m_CacheInfo);
+        if (bioseq_cache_lookup_result == eFound) {
+            bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
+            return eFound;
         }
 
         // Second try: SI2CSI
@@ -1480,20 +1477,12 @@ CPendingOperation::x_ResolveViaComposeOSLTInCache(CSeq_id &  parsed_seq_id,
 {
     const CTextseq_id *     text_seq_id = parsed_seq_id.GetTextseq_Id();
     int16_t                 effective_version = GetEffectiveVersion(text_seq_id);
-
-    // Optimization (premature?) to avoid trying bioseq_info in some cases
-    bool                    need_to_try_bioseq_info = true;
-    if (text_seq_id == nullptr || !text_seq_id->CanGetAccession()) {
-        need_to_try_bioseq_info = false;
-    }
-
     bool                    cache_failure = false;
 
     if (!primary_id.empty()) {
         ECacheLookupResult  cache_lookup_result =
                 x_ResolvePrimaryOSLTInCache(primary_id, effective_version,
                                             effective_seq_id_type,
-                                            need_to_try_bioseq_info,
                                             bioseq_resolution);
         if (cache_lookup_result == eFound)
             return;

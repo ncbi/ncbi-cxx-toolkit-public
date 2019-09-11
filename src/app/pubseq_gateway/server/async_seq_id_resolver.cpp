@@ -57,23 +57,10 @@ CAsyncSeqIdResolver::CAsyncSeqIdResolver(
     m_ResolveStage(eInit),
     m_CurrentFetch(nullptr),
     m_SecondaryIndex(0),
-    m_NeedToTryBioseqInfo(true),
     m_EffectiveVersion(-1)
 {
-    if (!m_ComposedOk || m_PrimarySeqId.empty())
-        return;
-
-    // Here: if it makes sense to deal with the primary seq_id then
-    //       pre-calculate the necessity to try the BIOSEQ_INFO table
-    //       and the effective seq_id_version
-
     const CTextseq_id *     text_seq_id = m_OsltSeqId.GetTextseq_Id();
     m_EffectiveVersion = m_PendingOp->GetEffectiveVersion(text_seq_id);
-
-    // Optimization (premature?) to avoid trying bioseq_info in some cases
-    if (text_seq_id == nullptr || !text_seq_id->CanGetAccession()) {
-        m_NeedToTryBioseqInfo = false;
-    }
 }
 
 
@@ -101,13 +88,7 @@ void CAsyncSeqIdResolver::Process(void)
                 break;
             }
 
-            if (m_NeedToTryBioseqInfo) {
-                m_ResolveStage = ePrimaryBioseq;
-                Process();
-                break;
-            }
-
-            m_ResolveStage = ePrimarySi2csi;
+            m_ResolveStage = ePrimaryBioseq;
             Process();
             break;
 

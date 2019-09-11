@@ -194,7 +194,6 @@ private:
     ECacheLookupResult x_ResolvePrimaryOSLTInCache(const string &  primary_id,
                                                    int16_t  effective_version,
                                                    int16_t  effective_seq_id_type,
-                                                   bool  need_to_try_bioseq_info,
                                                    SBioseqResolution &  bioseq_resolution);
     ECacheLookupResult x_ResolveSecondaryOSLTInCache(const string &  secondary_id,
                                                      int16_t  effective_seq_id_type,
