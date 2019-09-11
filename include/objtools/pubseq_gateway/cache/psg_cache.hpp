@@ -34,6 +34,11 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <deque>
+#include <memory>
+#include <string>
+#include <vector>
+
 BEGIN_NCBI_SCOPE
 
 class CPubseqGatewayCacheBioseqInfo;
@@ -42,10 +47,28 @@ class CPubseqGatewayCacheBlobProp;
 
 class CPubseqGatewayCache
 {
-public:
+    struct SRuntimeError {
+        explicit SRuntimeError(const string& msg)
+            : message(msg)
+        {}
+        string message;
+    };
+
+ public:
+    using TRuntimeError = SRuntimeError;
+    using TRuntimeErrorList = deque<SRuntimeError>;
+
+    static const size_t kRuntimeErrorLimit;
+
     CPubseqGatewayCache(const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name);
     virtual ~CPubseqGatewayCache();
     void Open(const vector<string>& sat_names);
+
+    void ResetErrors();
+    const TRuntimeErrorList& GetErrors() const
+    {
+        return m_RuntimeErrors;
+    }
 
 /* bioseq_info */
     bool LookupBioseqInfoByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type);
@@ -73,13 +96,15 @@ public:
     static string PackBlobPropKey(int32_t sat_key, int64_t last_modified);
     static bool UnpackBlobPropKey(const char* key, size_t key_sz, int64_t& last_modified);
     static bool UnpackBlobPropKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key);
-private:
+
+ private:
     string m_BioseqInfoPath;
     string m_Si2CsiPath;
     string m_BlobPropPath;
     unique_ptr<CPubseqGatewayCacheBioseqInfo> m_BioseqInfoCache;
-    unique_ptr<CPubseqGatewayCacheSi2Csi>     m_Si2CsiCache;
-    unique_ptr<CPubseqGatewayCacheBlobProp>   m_BlobPropCache;
+    unique_ptr<CPubseqGatewayCacheSi2Csi> m_Si2CsiCache;
+    unique_ptr<CPubseqGatewayCacheBlobProp> m_BlobPropCache;
+    TRuntimeErrorList m_RuntimeErrors;
 };
 
 END_NCBI_SCOPE

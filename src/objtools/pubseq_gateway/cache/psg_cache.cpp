@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <sstream>
+
 #include <util/lmdbxx/lmdb++.h>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
@@ -40,6 +42,22 @@
 #include "psg_cache_blob_prop.hpp"
 
 USING_NCBI_SCOPE;
+
+const size_t CPubseqGatewayCache::kRuntimeErrorLimit = 10;
+
+static void sAddRuntimeError(
+    CPubseqGatewayCache::TRuntimeErrorList& error_list,
+    CPubseqGatewayCache::TRuntimeError error
+)
+{
+    ERR_POST(Warning << error.message);
+    if (CPubseqGatewayCache::kRuntimeErrorLimit > 0) {
+        while (error_list.size() >= CPubseqGatewayCache::kRuntimeErrorLimit) {
+            error_list.pop_front();
+        }
+    }
+    error_list.emplace_back(error);
+}
 
 CPubseqGatewayCache::CPubseqGatewayCache(const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name) :
     m_BioseqInfoPath(bioseq_info_file_name),
@@ -58,38 +76,53 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
         m_BioseqInfoCache.reset(new CPubseqGatewayCacheBioseqInfo(m_BioseqInfoPath));
         try {
             m_BioseqInfoCache->Open();
-        }
-        catch (const lmdb::error& e) {
-            ERR_POST(Warning << "Failed to open " << m_BioseqInfoPath
-                << " cache: " << e.what()
-                << ", bioseq_info cache will not be used.");
+        } catch (const lmdb::error& e) {
+            stringstream s;
+            s << "Failed to open '" << m_BioseqInfoPath << "' cache: "
+                << e.what() << ", bioseq_info cache will not be used.";
+            TRuntimeError error(s.str());
+            sAddRuntimeError(m_RuntimeErrors, error);
             m_BioseqInfoCache.reset();
         }
+    } else {
+        TRuntimeError error("Failed to open bioseq_info cache: empty file name.");
+        sAddRuntimeError(m_RuntimeErrors, error);
     }
     if (!m_Si2CsiPath.empty()) {
         m_Si2CsiCache.reset(new CPubseqGatewayCacheSi2Csi(m_Si2CsiPath));
         try {
             m_Si2CsiCache->Open();
-        }
-        catch (const lmdb::error& e) {
-            ERR_POST(Warning << "Failed to open " << m_Si2CsiPath
-                << " cache: " << e.what()
-                << ", si2csi cache will not be used.");
+        } catch (const lmdb::error& e) {
+            stringstream s;
+            s << "Failed to open '" << m_Si2CsiPath << "' cache: " << e.what() << ", si2csi cache will not be used.";
+            TRuntimeError error(s.str());
+            sAddRuntimeError(m_RuntimeErrors, error);
             m_Si2CsiCache.reset();
         }
+    } else {
+        TRuntimeError error("Failed to open si2csi cache: empty file name.");
+        sAddRuntimeError(m_RuntimeErrors, error);
     }
     if (!m_BlobPropPath.empty()) {
         m_BlobPropCache.reset(new CPubseqGatewayCacheBlobProp(m_BlobPropPath));
         try {
             m_BlobPropCache->Open(sat_names);
-        }
-        catch (const lmdb::error& e) {
-            ERR_POST(Warning << "Failed to open " << m_BlobPropPath
-                << " cache: " << e.what()
-                << ", blob prop cache will not be used.");
+        } catch (const lmdb::error& e) {
+            stringstream s;
+            s << "Failed to open '" << m_BlobPropPath << "' cache: " << e.what() << ", blob prop cache will not be used.";
+            TRuntimeError error(s.str());
+            sAddRuntimeError(m_RuntimeErrors, error);
             m_BlobPropCache.reset();
         }
+    } else {
+        TRuntimeError error("Failed to open blob prop cache: empty file name.");
+        sAddRuntimeError(m_RuntimeErrors, error);
     }
+}
+
+void CPubseqGatewayCache::ResetErrors()
+{
+    m_RuntimeErrors.clear();
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type)
