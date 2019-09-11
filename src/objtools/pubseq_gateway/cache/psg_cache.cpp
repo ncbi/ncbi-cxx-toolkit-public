@@ -84,9 +84,6 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
             sAddRuntimeError(m_RuntimeErrors, error);
             m_BioseqInfoCache.reset();
         }
-    } else {
-        TRuntimeError error("Failed to open bioseq_info cache: empty file name.");
-        sAddRuntimeError(m_RuntimeErrors, error);
     }
     if (!m_Si2CsiPath.empty()) {
         m_Si2CsiCache.reset(new CPubseqGatewayCacheSi2Csi(m_Si2CsiPath));
@@ -99,9 +96,6 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
             sAddRuntimeError(m_RuntimeErrors, error);
             m_Si2CsiCache.reset();
         }
-    } else {
-        TRuntimeError error("Failed to open si2csi cache: empty file name.");
-        sAddRuntimeError(m_RuntimeErrors, error);
     }
     if (!m_BlobPropPath.empty()) {
         m_BlobPropCache.reset(new CPubseqGatewayCacheBlobProp(m_BlobPropPath));
@@ -114,9 +108,6 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
             sAddRuntimeError(m_RuntimeErrors, error);
             m_BlobPropCache.reset();
         }
-    } else {
-        TRuntimeError error("Failed to open blob prop cache: empty file name.");
-        sAddRuntimeError(m_RuntimeErrors, error);
     }
 }
 

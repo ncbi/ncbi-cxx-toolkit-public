@@ -60,7 +60,6 @@ namespace {
 
     TEST(PubseqGatewayCacheRuntimeErrors, WrongFileNames) {
         CPubseqGatewayCache::TRuntimeErrorList expected_error_list{
-            CPubseqGatewayCache::TRuntimeError("Failed to open bioseq_info cache: empty file name."),
             CPubseqGatewayCache::TRuntimeError("Failed to open 'wrong si2sci' cache: No such file or directory: "
                 "No such file or directory, si2csi cache will not be used."),
             CPubseqGatewayCache::TRuntimeError("Failed to open '/really_wrong_blob_prop' cache: "
@@ -68,7 +67,7 @@ namespace {
         };
         CPubseqGatewayCache cache("", "wrong si2sci", "/really_wrong_blob_prop");
         cache.Open({});
-        EXPECT_EQ(3UL, cache.GetErrors().size());
+        EXPECT_EQ(2UL, cache.GetErrors().size());
         EXPECT_EQ(expected_error_list, cache.GetErrors());
         cache.ResetErrors();
         EXPECT_TRUE(cache.GetErrors().empty());
