@@ -292,8 +292,8 @@ public:
         : m_NS_api(CNetScheduleAPI::eAppRegistry, NS_registry_section),
           m_Timeout(DefaultTimeout)
     {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        static const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
+        CNcbiApplicationGuard guard = CNcbiApplication::InstanceGuard();
+        static const CNcbiRegistry& cfg = guard->GetConfig();
         const string nc_reg(
             NStr::IsBlank(NC_registry_section)
                 ? cfg.GetString(NS_registry_section, "netcache_api", "netcache_api")

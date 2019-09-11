@@ -1206,8 +1206,7 @@ class CBDB_Cache_OnAppExit
 public:
     static void AddOnExitCallback(CBDB_Cache& bdb_cache)
     {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app ) {
             app->AddOnExitAction(CBDB_Cache_OnAppExit(bdb_cache));
         }

@@ -87,8 +87,20 @@ static bool s_IsApplicationStarted = false;
 // CNcbiApplication
 //
 
-DEFINE_STATIC_MUTEX(s_InstanceMutex);
+CNcbiApplicationGuard::CNcbiApplicationGuard(CNcbiApplicationAPI* app) : m_App(app)
+{
+    if (m_App) {
+        m_AppLock = make_shared<CReadLockGuard>(m_App->GetInstanceLock());
+    }
+}
 
+
+CNcbiApplicationGuard::~CNcbiApplicationGuard(void)
+{
+}
+
+
+DEFINE_STATIC_MUTEX(s_InstanceMutex);
 
 SSystemMutex& CNcbiApplicationAPI::GetInstanceMutex(void)
 {
@@ -96,12 +108,25 @@ SSystemMutex& CNcbiApplicationAPI::GetInstanceMutex(void)
 }
 
 
-CNcbiApplicationAPI* CNcbiApplicationAPI::m_Instance;
+static CSafeStatic<CRWLock> s_InstanceRWLock(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 
+CRWLock& CNcbiApplicationAPI::GetInstanceLock(void)
+{
+    return s_InstanceRWLock.Get();
+}
+
+
+CNcbiApplicationAPI* CNcbiApplicationAPI::m_Instance = nullptr;
 
 CNcbiApplicationAPI* CNcbiApplicationAPI::Instance(void)
 {
     return m_Instance;
+}
+
+
+CNcbiApplicationGuard CNcbiApplicationAPI::InstanceGuard(void)
+{
+    return CNcbiApplicationGuard(m_Instance);
 }
 
 
@@ -122,12 +147,15 @@ CNcbiApplicationAPI::CNcbiApplicationAPI(const SBuildInfo& build_info)
     m_CinBuffer = 0;
     m_ExitCodeCond = eNoExits;
 
-    // Register the app. instance
-    if ( m_Instance ) {
-        NCBI_THROW(CAppException, eSecond,
-                   "Second instance of CNcbiApplication is prohibited");
+    {
+        CWriteLockGuard guard(GetInstanceLock());
+        // Register the app. instance
+        if (m_Instance) {
+            NCBI_THROW(CAppException, eSecond,
+                "Second instance of CNcbiApplication is prohibited");
+        }
+        m_Instance = this;
     }
-    m_Instance = this;
 
     // Create empty version info
     m_Version.Reset(new CVersionAPI(build_info));
@@ -159,7 +187,7 @@ CNcbiApplicationAPI::~CNcbiApplicationAPI(void)
 #endif
 
     {
-        CMutexGuard guard(GetInstanceMutex());
+        CWriteLockGuard guard(GetInstanceLock());
         m_Instance = 0;
     }
     FlushDiag(0, true);
@@ -1311,8 +1339,7 @@ void CNcbiApplicationAPI::SetProgramDisplayName(const string& app_name)
 string CNcbiApplicationAPI::GetAppName(EAppNameType name_type, int argc,
                                     const char* const* argv)
 {
-    CMutexGuard guard(GetInstanceMutex());
-    CNcbiApplicationAPI* instance = Instance();
+    CNcbiApplicationGuard instance = InstanceGuard();
     string app_name;
 
     switch (name_type) {
@@ -1351,8 +1378,7 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
  const char* const*            argv,
  string*                       real_path)
 {
-    CMutexGuard guard(GetInstanceMutex());
-    CNcbiApplicationAPI* instance = Instance();
+    CNcbiApplicationGuard instance = InstanceGuard();
     string ret_val;
     _ASSERT(argc >= 0); // formally signed for historical reasons
     _ASSERT(argv != NULL  ||  argc == 0);

@@ -456,8 +456,7 @@ void CVDBMgr::x_Init(void)
     }
     CKNSManager kns_mgr(CVFSManager(*this));
     CNcbiOstrstream str;
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    CNcbiApplication* app = CNcbiApplication::Instance();
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
     if ( app ) {
         str << app->GetAppName() << ": " << app->GetVersion().Print() << "; ";
     }

@@ -178,8 +178,7 @@ public:
         }
 
         {{
-            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-            CNcbiApplication* app = CNcbiApplication::Instance();
+            CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
             if (app)
                 os << "Executable path: " << app->GetProgramExecutablePath()
                         << "\nPID: " << CCurrentProcess::GetPid() << "\n";

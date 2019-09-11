@@ -475,9 +475,7 @@ string SNetScheduleAPIImpl::MakeAuthString()
     string name;
 
     {{
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-
-        if (CNcbiApplication* app = CNcbiApplication::Instance()) {
+        if (CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard()) {
             version = &app->GetFullVersion();
             name = app->GetProgramDisplayName();
         }

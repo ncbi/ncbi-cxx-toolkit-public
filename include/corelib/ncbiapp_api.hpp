@@ -94,6 +94,33 @@ public:
 };
 
 
+///////////////////////////////////////////////////////
+// CNcbiApplicationGuard
+//
+
+
+class CNcbiApplicationAPI;
+
+class NCBI_XNCBI_EXPORT CNcbiApplicationGuard
+{
+public:
+    ~CNcbiApplicationGuard(void);
+
+    CNcbiApplicationAPI* Get(void) { return m_App; }
+    const CNcbiApplicationAPI* Get(void) const { return m_App; }
+    CNcbiApplicationAPI* operator->(void) { return Get(); }
+    CNcbiApplicationAPI& operator*(void) { return *Get(); }
+    operator bool(void) const { return m_App != nullptr; }
+    bool operator !(void) const { return m_App == nullptr; }
+
+private:
+    friend class CNcbiApplicationAPI;
+    CNcbiApplicationGuard(CNcbiApplicationAPI* app);
+
+    CNcbiApplicationAPI* m_App;
+    shared_ptr<CReadLockGuard> m_AppLock;
+};
+
 
 ///////////////////////////////////////////////////////
 // CNcbiApplicationAPI
@@ -124,6 +151,15 @@ public:
     ///   GetInstanceMutex()
     static CNcbiApplicationAPI* Instance(void);
 
+    /// Singleton method.
+    ///
+    /// Get instance of the application and prevent its destruction until the lock is destroyed.
+    /// @return
+    ///   Current application instance guard.
+    /// @sa
+    ///   CNcbiApplicationGuard
+    static CNcbiApplicationGuard InstanceGuard(void);
+
     /// Mutex for application singleton object.
     ///
     /// Lock this mutex when calling Instance()
@@ -131,6 +167,8 @@ public:
     ///   Reference to application instance mutex.
     /// @sa
     ///   Instance()
+    /// @deprecated Use InstanceGuard() instead.
+    NCBI_DEPRECATED 
     static SSystemMutex& GetInstanceMutex(void);
 
     /// Constructor.
@@ -364,6 +402,9 @@ public:
     }
 
 protected:
+    friend class CNcbiApplicationGuard;
+    static CRWLock& GetInstanceLock(void);
+
     /// Result of PreparseArgs()
     enum EPreparseArgs {
         ePreparse_Continue,  ///< Continue application execution

@@ -1063,8 +1063,7 @@ class CBDB_Env_OnAppExit
 public:
     static void AddOnExitCallback(CBDB_Env& bdb_env)
     {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app ) {
             app->AddOnExitAction(CBDB_Env_OnAppExit(bdb_env));
         }

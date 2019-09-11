@@ -415,8 +415,8 @@ CSynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
 
 CSynRegistry::TPtr s_CreateISynRegistry()
 {
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    return s_CreateISynRegistry(CNcbiApplication::Instance());
+    CNcbiApplicationGuard guard = CNcbiApplication::InstanceGuard();
+    return s_CreateISynRegistry(guard.Get());
 }
 
 CSynRegistryBuilder::CSynRegistryBuilder(const IRegistry& registry) :

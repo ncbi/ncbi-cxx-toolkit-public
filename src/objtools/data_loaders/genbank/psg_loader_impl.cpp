@@ -329,8 +329,7 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         psg_params = CPSGDataLoader::GetParamsSubnode(params.GetParamTree(), NCBI_PSGLOADER_NAME);
     }
     else {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if (app) {
             app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
             psg_params = CPSGDataLoader::GetParamsSubnode(app_params.get(), NCBI_PSGLOADER_NAME);

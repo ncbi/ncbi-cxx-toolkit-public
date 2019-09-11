@@ -208,8 +208,8 @@ void*
 CThreadInPool_ForServer::Main(void)
 {
     if (!m_Pool->m_ThrSuffix.empty()) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
+        CNcbiApplicationGuard app(CNcbiApplication::InstanceGuard());
+        string thr_name = app ? app->GetProgramDisplayName() : "";
         thr_name += m_Pool->m_ThrSuffix;
         SetCurrentThreadName(thr_name.c_str());
     }

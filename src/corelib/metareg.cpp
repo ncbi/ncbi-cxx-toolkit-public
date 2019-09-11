@@ -368,8 +368,7 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 #endif
 
     {{
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* the_app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard the_app = CNcbiApplication::InstanceGuard();
         if ( the_app ) {
             const CNcbiArguments& args = the_app->GetArguments();
             string                dir  = args.GetProgramDirname(eIgnoreLinks);

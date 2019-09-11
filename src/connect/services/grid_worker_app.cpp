@@ -44,9 +44,8 @@ extern "C"
 void g_GridWorker_TermHandler(int /*sig*/)
 {
     try {
-        ncbi::CMutexGuard guard(ncbi::CNcbiApplication::GetInstanceMutex());
-        ncbi::CGridWorkerApp* app = dynamic_cast<ncbi::CGridWorkerApp*>(
-                ncbi::CNcbiApplication::Instance());
+        ncbi::CNcbiApplicationGuard guard = ncbi::CNcbiApplication::InstanceGuard();
+        ncbi::CGridWorkerApp* app = dynamic_cast<ncbi::CGridWorkerApp*>(guard.Get());
         if (app) {
             app->RequestShutdown();
         }

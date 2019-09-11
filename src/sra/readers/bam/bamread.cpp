@@ -445,8 +445,7 @@ CBamMgr::CBamMgr(void)
                     "Cannot create AlignAccessMgr", rc);
     }
     
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    if ( CNcbiApplication* app = CNcbiApplication::Instance() ) {
+    if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
         CBamVFSManager vfs_mgr;
         CBamRef<KNSManager> kns_mgr;
         if ( rc_t rc = VFSManagerGetKNSMgr(vfs_mgr, kns_mgr.x_InitPtr()) ) {

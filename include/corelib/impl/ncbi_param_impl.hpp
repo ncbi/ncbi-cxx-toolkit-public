@@ -457,8 +457,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
                     throw;
                 }
             }
-            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-            CNcbiApplication* app = CNcbiApplication::Instance();
+            CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
             sx_GetState() = app  &&  app->FinishedLoadingConfig()
                 ? eState_Config : eState_EnvVar;
         }

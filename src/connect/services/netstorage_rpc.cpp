@@ -770,8 +770,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     if (!m_Config.metadata.empty())
         hello.SetString("Metadata", m_Config.metadata);
     {{
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if (app != NULL)
             hello.SetString("Application", app->GetProgramExecutablePath());
     }}

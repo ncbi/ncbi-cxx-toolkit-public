@@ -771,8 +771,7 @@ void CRequestContext::x_LoadEnvContextProperties(void)
     if ( !sm_EnvContextProperties.get() ) {
         TPassThroughProperties props;
         {
-            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-            CNcbiApplication* app = CNcbiApplication::Instance();
+            CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
             if ( !app ) return;
             const CNcbiEnvironment& env = app->GetEnvironment();
             list<string> names;

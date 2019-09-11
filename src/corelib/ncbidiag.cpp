@@ -3148,8 +3148,7 @@ void CDiagContext::x_LogEnvironment(void)
             // The guard must be released before flushing the extra -
             // otherwise there may be a deadlock when accessing CParam-s
             // from other threads.
-            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-            CNcbiApplication* app = CNcbiApplication::Instance();
+            CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
             if ( app ) {
                 const CNcbiEnvironment& env = app->GetEnvironment();
                 ITERATE(list<string>, it, log_args_list) {
@@ -3171,8 +3170,7 @@ void CDiagContext::x_LogEnvironment(void)
         {{
             // The guard must be released before flushing the extra -
             // see above.
-            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-            CNcbiApplication* app = CNcbiApplication::Instance();
+            CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
             if ( app ) {
                 const CNcbiRegistry& reg = app->GetConfig();
                 ITERATE(list<string>, it, log_args_list) {
@@ -3592,8 +3590,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             break;
         case eDS_AppSpecific:
             {
-                CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-                CNcbiApplication* app = CNcbiApplication::Instance();
+                CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
                 if ( app ) {
                     app->SetupDiag_AppSpecific(); /* NCBI_FAKE_WARNING */
                 }
@@ -3625,8 +3622,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 string log_base;
                 string def_log_dir;
                 {{
-                    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-                    CNcbiApplication* app = CNcbiApplication::Instance();
+                    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
                     if ( app ) {
                         log_base = app->GetProgramExecutablePath();
                         def_log_dir = GetDefaultLogLocation(*app);
@@ -7244,8 +7240,8 @@ void*
 CAsyncDiagThread::Main(void)
 {
     if (!m_ThreadSuffix.empty()) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+        string thr_name = app ? app->GetProgramDisplayName() : "";
         thr_name += m_ThreadSuffix;
         SetCurrentThreadName(thr_name);
     }

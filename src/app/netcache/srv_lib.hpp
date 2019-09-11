@@ -542,9 +542,9 @@ public:
     static string GetAppName(ENameType)
     { return string(); }
 #if NCBI_DEVELOPMENT_VER > 20160817
-    static ncbi_namespace_mutex_mt::SSystemMutex& GetInstanceMutex(void);
+    static ncbi_namespace_mutex_mt::SSystemMutex& xGetInstanceMutex(void);
 #else
-    static SSystemMutex& GetInstanceMutex(void);
+    static SSystemMutex& xGetInstanceMutex(void);
 #endif
 };
 

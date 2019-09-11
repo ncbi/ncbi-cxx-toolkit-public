@@ -353,8 +353,7 @@ CID2SNPProcessor_Impl::CID2SNPProcessor_Impl(const CConfig::TParamTree* params,
 {
     auto_ptr<CConfig::TParamTree> app_params;
     if ( !params ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        if ( CNcbiApplication* app = CNcbiApplication::Instance() ) {
+        if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
             app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
             params = app_params.get();
         }

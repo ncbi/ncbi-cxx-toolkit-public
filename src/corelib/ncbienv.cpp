@@ -218,8 +218,7 @@ CAutoEnvironmentVariable::CAutoEnvironmentVariable(const CTempString& var_name,
     : m_Env(env, eNoOwnership), m_VariableName(var_name)
 {
     if ( !env ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if (app) {
             m_Env.reset(&app->SetEnvironment(), eNoOwnership);
         } else {
@@ -269,8 +268,7 @@ CEnvironmentCleaner::CEnvironmentCleaner(const char* s, ...)
 
 void CEnvironmentCleaner::Clean(const string& name)
 {
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    CNcbiApplication* app = CNcbiApplication::Instance();
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
     if (app) {
         app->SetEnvironment().Unset(name);
     } else {

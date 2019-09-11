@@ -640,9 +640,8 @@ void SNetServiceImpl::Init(CSynRegistry& registry, SRegSynonyms& sections, const
 
     if (m_ClientName.empty() || m_ClientName == "noname" ||
             NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app == NULL) {
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+        if (!app) {
             NCBI_THROW_FMT(CArgException, eNoValue,
                 m_APIName << ": client name is not set");
         }
@@ -722,9 +721,8 @@ string SNetServiceImpl::MakeAuthString()
             auth += '\"';
         }
 
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app != NULL) {
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+        if (app) {
             auth += " client_path=\"";
             auth += NStr::PrintableString(app->GetProgramExecutablePath());
             auth += '\"';

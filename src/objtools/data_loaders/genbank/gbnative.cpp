@@ -293,8 +293,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
         gb_params = GetLoaderParams(params.GetParamTree());
     }
     else {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app ) {
             app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
             gb_params = GetLoaderParams(app_params.get());

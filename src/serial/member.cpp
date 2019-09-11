@@ -291,8 +291,7 @@ bool NCBI_XSERIAL_EXPORT EnabledDelayBuffers(void)
     };
     static State state = eUnset;
     if ( state == eUnset ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         string value;
         if ( app ) {
             value = app->GetConfig().Get("SERIAL", "DISABLE_DELAY_BUFFERS");

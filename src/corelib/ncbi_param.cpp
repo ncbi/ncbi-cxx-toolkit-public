@@ -175,8 +175,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
     }
 
     if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app  &&  app->HasLoadedConfig() ) {
             const string& s = app->GetConfig().Get(section, variable);
             if ( !s.empty() ) {
@@ -264,8 +263,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
     }
 
     if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app  &&  app->HasLoadedConfig() ) {
             const string& s = app->GetConfig().Get(section, variable);
             if ( !s.empty() ) {
@@ -349,8 +347,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     }
 
     if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app  &&  app->HasLoadedConfig() ) {
             const string& s = app->GetConfig().Get(section, variable);
             if ( !s.empty() ) {
@@ -428,8 +425,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
     }
 
     if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app  &&  app->HasLoadedConfig() ) {
             const string& v = app->GetConfig().Get(section, variable);
             if ( !v.empty() ) {

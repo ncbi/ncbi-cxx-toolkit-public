@@ -272,8 +272,7 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 extern "C" {
 static const char* s_GetAppName(void)
 {
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    CNcbiApplication* app = CNcbiApplication::Instance();
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
     return app ? app->GetProgramDisplayName().c_str() : 0;
 }
 }
@@ -531,8 +530,7 @@ CConnIniter::CConnIniter(void)
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
         if (s_ConnectInit == eConnectInit_Intact) {
-            CMutexGuard appguard(CNcbiApplication::GetInstanceMutex());
-            CNcbiApplication* app = CNcbiApplication::Instance();
+            CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
             s_Init(app ? &app->GetConfig() : 0, NcbiSetupTls);
         }
     }
