@@ -1125,6 +1125,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         catch (CNetCacheException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
+            if (error_handling == eRethrowAllServerErrors)
+                throw;
             if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
                 blob_not_found = true;
                 skip_server = true;
@@ -1135,6 +1137,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         }
         catch (CNetScheduleException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
+                throw;
+            if (error_handling == eRethrowAllServerErrors)
                 throw;
             if (ex.GetErrCode() == CNetScheduleException::eSubmitsDisabled) {
                 ++ns_with_submits_disabled;

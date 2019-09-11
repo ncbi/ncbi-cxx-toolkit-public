@@ -298,45 +298,13 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
     CNetServer selected_server(parameters->GetServerToUse());
     CNetServer* server_last_used_ptr(parameters->GetServerLastUsedPtr());
 
-    if (!parameters->GetTryAllServers()) {
-        if (selected_server) {
-            CNetServer::SExecResult exec_result(
-                    selected_server.ExecWithRetry(cmd,
-                        multiline_output));
-
-            if (server_last_used_ptr) *server_last_used_ptr = selected_server;
-            return exec_result;
-        }
-
-        CNetServer::SExecResult exec_result;
-        auto it = m_Service.IterateByWeight(key);
-
-        do {
-            try {
-                exec_result = (*it).ExecWithRetry(cmd,
-                        multiline_output);
-                selected_server = *it;
-                break;
-            }
-            catch (CNetSrvConnException& ex) {
-                // A shortcut
-                const auto kErrCode = CNetSrvConnException::eConnectionFailure;
-
-                // Not a connection failure
-                if (ex.GetErrCode() != kErrCode) throw;
-
-                // No more servers to try
-                if (!++it) throw;
-            }
-        } while (it);
-
-        if (server_last_used_ptr) *server_last_used_ptr = selected_server;
-        return exec_result;
-    }
-
+    const auto try_all_servers = parameters->GetTryAllServers();
     CNetServer::SExecResult exec_result;
 
-    if (selected_server) {
+    if (!try_all_servers && selected_server) {
+        exec_result = selected_server.ExecWithRetry(cmd, multiline_output);
+
+    } else if (selected_server) {
         ESwitch server_check = eDefault;
         parameters->GetServerCheck(&server_check);
 
@@ -349,7 +317,8 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
         SWeightedServiceTraversal service_traversal(m_Service, key);
 
         m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
-                &service_traversal, SNetServiceImpl::eIgnoreServerErrors);
+                &service_traversal, try_all_servers ?
+                SNetServiceImpl::eIgnoreServerErrors : SNetServiceImpl::eRethrowAllServerErrors);
     }
 
     if (server_last_used_ptr != NULL)

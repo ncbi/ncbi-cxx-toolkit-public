@@ -324,7 +324,8 @@ public:
     bool IsInService(CNetServer::TInstance server);
 
     enum EServerErrorHandling {
-        eRethrowServerErrors,
+        eRethrowServerErrors, // This ignores two errors, eBlobNotFound and eSubmitsDisabled
+        eRethrowAllServerErrors,
         eIgnoreServerErrors
     };
 
