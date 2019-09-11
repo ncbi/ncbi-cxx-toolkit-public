@@ -1656,7 +1656,7 @@ NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGenomePrj =
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseLatLon =
     "https://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html";
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntology =
-    "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:"; // not government site
+    "http://amigo.geneontology.org/amigo/term/GO:"; // not government site
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntologyRef =
     "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:"; // not government site
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUSPTO =
