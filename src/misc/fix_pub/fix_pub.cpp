@@ -338,9 +338,8 @@ bool MUIsJournalIndexed(const string& journal)
             eutils.Search(EUTILS_DATABASE, title + "[issn]", ids);
         }
 
-        NStr::ReplaceInPlace(title, " ", "+");
         if (ids.empty()) {
-            eutils.Search(EUTILS_DATABASE, title + "[multi]+AND+ncbijournals[sb]", ids);
+            eutils.Search(EUTILS_DATABASE, title + "[multi] AND ncbijournals[sb]", ids);
         }
 
         if (ids.empty()) {
@@ -677,7 +676,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
                     return NStr::EqualNocase(last_name, cur_name);
                 }) != new_author_names.end()) {
 
-                match++;
+                ++match;
             }
         }
     }
