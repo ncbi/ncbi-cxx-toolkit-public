@@ -3679,7 +3679,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     // look for qualifiers that should be applied to protein feature
     // note - this should be moved to the "indexed" portion of basic cleanup,
     // because it needs to locate another sequence and feature
-    if (NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::Equal (qual, "EC_number")
+    if (NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::EqualNocase (qual, "EC_number")
         || NStr::Equal (qual, "prot_note"))  
     {
         // get protein sequence for product
