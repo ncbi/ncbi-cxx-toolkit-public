@@ -8,7 +8,7 @@ PROJ_TAG = demo
 
 CPPFLAGS = -I$(includedir)/util/lmdbxx $(LMDB_INCLUDE) $(ORIG_CPPFLAGS)
 
-LIB  = $(LMDB_LIB)
+LIB  = $(LMDB_LIB) xncbi
 LIBS = $(LMDB_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ivanov
