@@ -32,7 +32,6 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_process.hpp>
-#include <corelib/ncbiapp_api.hpp>
 
 #include "netcached.hpp"
 #include "nc_storage.hpp"
