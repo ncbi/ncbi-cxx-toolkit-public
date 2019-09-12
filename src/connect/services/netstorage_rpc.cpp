@@ -771,7 +771,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
         hello.SetString("Metadata", m_Config.metadata);
     {{
         CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-        if (app != NULL)
+        if (app)
             hello.SetString("Application", app->GetProgramExecutablePath());
     }}
     hello.SetString("ProtocolVersion", NST_PROTOCOL_VERSION);
