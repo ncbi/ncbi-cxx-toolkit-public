@@ -1,3 +1,18 @@
+Release 1.7.2 (2019-09-12)
+
+    * PSG: set alerts if the LMDB cache reported any errors on opening
+      (CXX-10906)
+    * PSG -- fails to lookup OSLT in BIOSEQ_INFO if OSLT is taken from name (or
+      locus) rather than accession (CXX-10901)
+    * PSG -- handling accession-less multi-GI blob chains (CXX-10896)
+    * PSG - ID/get_tse_chunk - do not fail if ID2_INFO is empty in the
+      requested blob (CXX-10892)
+    * PSG -- use "User-Agent:" HTTP header to pass client's name (and to log)
+      (CXX-10890)
+    * PSG -- allow to run if the cache is absent or invalid (CXX-10889)
+    * Server hangs on get_tse_chunk request (CXX-10882)
+    * PSG Stats -- collect timing on full resolution processsing (CXX-10872)
+
 Release 1.7.1 (2019-08-15)
 
     * CPubseqGatewayCacheBlobProp::LookupBySatKey() modifies last_modified in
