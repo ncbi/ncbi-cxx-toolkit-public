@@ -591,7 +591,6 @@ CopySources()
         */Makefile.in    ) output2=`echo $output | sed -e 's/\.in$//'`      ;;
         *                ) output2= ;;
     esac
-    [ -z "$output2" ] || ShouldBeIgnoredByVcs $(basename "$output2")
     if test -d $input; then
       mkdir $output
       CopySources $1/$base
