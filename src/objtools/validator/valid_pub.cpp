@@ -1248,7 +1248,7 @@ static bool s_IsTSA_Contig (const CBioseq& seq)
 
 void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
-     if ( m_NoPubs ) {
+     if ( m_NoPubs && !IsSeqSubmitParent() ) {
         if ( !m_IsGPS  &&  !cs) {
             CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
             if (b_it)
