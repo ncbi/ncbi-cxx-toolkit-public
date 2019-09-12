@@ -1814,7 +1814,7 @@ CFormatGuess::TestFormatZip(
     }
 
     // check if the first two bytes match with the zip magic number: 0x504B,
-    // or BK and the next two bytes match with any of 0x0102, 0x0304, 0x0506
+    // or PK and the next two bytes match with any of 0x0102, 0x0304, 0x0506
     // and 0x0708.
     if ( m_iTestDataSize < 4) {
         return false;
