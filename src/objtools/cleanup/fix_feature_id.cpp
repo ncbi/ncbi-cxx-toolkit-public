@@ -32,6 +32,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objtools/cleanup/fix_feature_id.hpp>
+#include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -51,8 +52,21 @@ CObject_id::TId CFixFeatureId::s_FindHighestFeatureId(const CSeq_entry_Handle& e
     return feat_id;
 }
 
-void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats, int offset)
+static void FindNextOffset(const unordered_set<int> &existing_ids, const unordered_set<int> &new_existing_ids, const unordered_set<int> &current_ids, int &offset)
 {
+    do
+    {
+        ++offset;
+    } while(existing_ids.find(offset) != existing_ids.end() ||
+            new_existing_ids.find(offset) != new_existing_ids.end() ||
+            current_ids.find(offset) != current_ids.end());
+}
+
+void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats, unordered_set<int> &existing_ids, int &offset)
+{
+    unordered_map<int, int> remapped_ids; // map between old id to new id within the current seq-entry only
+    unordered_set<int> new_existing_ids; // id's which were left unchanged in the current seq-entry
+    unordered_set<int>  current_ids; //  newly created (mapped) ids in the current seq-entry
     for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) 
     {
         bool modified = false;
@@ -71,9 +85,50 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
         if (edited->IsSetId() && edited->GetId().IsLocal() && edited->GetId().GetLocal().IsId())        
         {
             int id = edited->GetId().GetLocal().GetId();
-            edited->SetId().SetLocal().SetId(id+offset);  
-            modified = true;
+            if (existing_ids.find(id) != existing_ids.end() ||
+                current_ids.find(id) != current_ids.end())  // remap id if it's found in other seq-entries or among newly created ids in the current seq-entry, do not remap existing duplicate ids within the same seq-entry
+            {
+                auto it = remapped_ids.find(id);
+                if (it != remapped_ids.end())
+                {
+                    offset = it->second; // use the same remapped id if a duplicate exists in the current seq-entry and was already remapped
+                }
+                else
+                {
+                    FindNextOffset(existing_ids, new_existing_ids, current_ids, offset); // find id which does not exist among either of the 3 sets
+                    remapped_ids[id] = offset;
+                }
+                edited->SetId().SetLocal().SetId(offset);  
+                current_ids.insert(offset);
+                modified = true;
+            }
+            else
+            {
+                new_existing_ids.insert(id);
+            }
         }
+        if (modified)
+        {
+            changed_feats[fh] = edited;
+        }
+    }
+    existing_ids.insert(new_existing_ids.begin(), new_existing_ids.end());
+    existing_ids.insert(current_ids.begin(), current_ids.end());
+    for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) 
+    {
+        bool modified = false;
+        CRef<CSeq_feat> edited;
+        CSeq_feat_Handle fh = feat_it->GetSeq_feat_Handle();
+        if (changed_feats.find(fh) != changed_feats.end())
+        {
+            edited = changed_feats[fh];
+        }
+        else
+        {
+            edited.Reset(new CSeq_feat);
+            edited->Assign(feat_it->GetOriginalFeature());
+        }
+        
         if (edited->IsSetXref())
         {
             CSeq_feat::TXref::iterator xref_it = edited->SetXref().begin();
@@ -82,8 +137,12 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
                 if ((*xref_it)-> IsSetId() && (*xref_it)->GetId().IsLocal() && (*xref_it)->GetId().GetLocal().IsId())
                 {
                     int id = (*xref_it)->GetId().GetLocal().GetId();
-                    (*xref_it)->SetId().SetLocal().SetId(id+offset);
-                    modified = true;
+                    auto it = remapped_ids.find(id);
+                    if (it != remapped_ids.end())
+                    {
+                        (*xref_it)->SetId().SetLocal().SetId(it->second); // remap xrefs if necessary
+                        modified = true;
+                    }
                 }
                 ++xref_it;
             }
@@ -99,14 +158,13 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
 void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats)
 {
     int offset = 0;
+    unordered_set<int> existing_ids;
     if (tse && tse.IsSet() && tse.GetSet().IsSetClass() && tse.GetSet().GetClass() == CBioseq_set::eClass_genbank) 
     {
         for(CSeq_entry_CI direct_child_ci( tse.GetSet(), CSeq_entry_CI::eNonRecursive ); direct_child_ci; ++direct_child_ci ) 
         {
             const CSeq_entry_Handle& entry = *direct_child_ci;
-            CObject_id::TId top_id = s_FindHighestFeatureId(entry);
-            s_UpdateFeatureIds(entry, changed_feats, offset);
-            offset += top_id;
+            s_UpdateFeatureIds(entry, changed_feats, existing_ids, offset);
         }
     }
 }
