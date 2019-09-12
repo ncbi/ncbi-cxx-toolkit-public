@@ -465,7 +465,7 @@ DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eDisc | eOncaller, "ATCC str
         }
     }
     if (report) {
-        m_Objs[kATCCCultureConflict].Add(*context.FeatOrDescObj());
+        m_Objs[kATCCCultureConflict].Add(*context.FeatOrDescObj(true));
     }
 }
 
