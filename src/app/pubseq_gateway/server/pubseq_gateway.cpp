@@ -247,24 +247,31 @@ void CPubseqGatewayApp::OpenCache(void)
                                                     m_Si2csiDbFile,
                                                     m_BlobPropDbFile));
         m_LookupCache->Open(m_SatNames);
+        const auto        errors = m_LookupCache->GetErrors();
+        if (!errors.empty()) {
+            string  msg = "Error opening the LMDB cache:";
+            for (const auto &  err : errors) {
+                msg += "\n" + err.message;
+            }
 
-        // All is good
-        return;
+            PSG_ERROR(msg);
+            m_Alerts.Register(eOpenCache, msg);
+            m_LookupCache->ResetErrors();
+        }
     } catch (const exception &  exc) {
         string      msg = "Error initializing the LMDB cache: " +
                           string(exc.what()) +
                           ". The server continues without cache.";
         PSG_ERROR(exc);
         m_Alerts.Register(eOpenCache, msg);
+        m_LookupCache.reset(nullptr);
     } catch (...) {
         string      msg = "Unknown initializing LMDB cache error. "
                           "The server continues without cache.";
         PSG_ERROR(msg);
         m_Alerts.Register(eOpenCache, msg);
+        m_LookupCache.reset(nullptr);
     }
-
-    // Here: there was an exception
-    m_LookupCache.reset(nullptr);
 }
 
 
