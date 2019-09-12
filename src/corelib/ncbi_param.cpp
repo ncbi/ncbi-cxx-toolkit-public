@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/error_codes.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include "ncbisys.hpp"
 
 
