@@ -1342,6 +1342,11 @@ void CSingleFeatValidator::x_ValidateGbquals()
             continue;
         }
         CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
+        CSeqFeatData::EQualifier spqual = CSeqFeatData::GetQualifierType(qual_str, NStr::eCase);
+        if ( gbqual != spqual ) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_IncorrectQualifierCapitalization,
+                qual_str + " is improperly capitalized");
+        }
 
         if ( gbqual == CSeqFeatData::eQual_bad ) {
             if (is_imp) {
