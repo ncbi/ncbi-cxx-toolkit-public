@@ -2199,6 +2199,9 @@ same id type" } },
    { eErr_SEQ_FEAT_TRNAinsideTMRNA,
    { "TRNAinsideTMRNA",
      "tRNA should not be contained within tmRNA" } },
+   { eErr_SEQ_FEAT_IncorrectQualifierCapitalization,
+   { "IncorrectQualifierCapitalization",
+     "The qualifier name is incorrectly capitalized" } },
 
 /* SEQ_ALIGN */
 
