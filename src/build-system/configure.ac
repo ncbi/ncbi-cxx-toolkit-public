@@ -1933,20 +1933,20 @@ fi
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
 
-AC_CACHE_CHECK([how to enable C++ '14 or at least '11 features in $CXX],
+AC_CACHE_CHECK([how to enable C++ '14 features in $CXX],
    ncbi_cv_prog_cxx_14,
    [orig_CXX=$CXX
     ncbi_cv_prog_cxx_14=no
-    for x in -std=gnu++14 -std=gnu++11 -std=gnu++0x ''; do
+    for x in -std=gnu++14 ''; do
        CXX="$orig_CXX $x"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <memory>],
-          [std::unique_ptr<int> x;])],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <list>],
+          [std::list<int> l; auto it = std::cbegin(l);])],
           [ncbi_cv_prog_cxx_14=$x])
           test "x$ncbi_cv_prog_cxx_14" = "xno"  ||  break
        done
        CXX=$orig_CXX])
 if test "$ncbi_cv_prog_cxx_14" = no; then
-   AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer.])
+   AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '14, such as GCC 5 or newer.])
 else
    CXX="$CXX $ncbi_cv_prog_cxx_14"
 fi

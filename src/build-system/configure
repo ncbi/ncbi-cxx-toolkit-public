@@ -9502,14 +9502,14 @@ fi
 echo "${ECHO_T}$ac_cv_have_decl__LIBCPP_VERSION" >&6; }
 
 
-{ echo "$as_me:$LINENO: checking how to enable C++ '14 or at least '11 features in $CXX" >&5
-echo $ECHO_N "checking how to enable C++ '14 or at least '11 features in $CXX... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking how to enable C++ '14 features in $CXX" >&5
+echo $ECHO_N "checking how to enable C++ '14 features in $CXX... $ECHO_C" >&6; }
 if test "${ncbi_cv_prog_cxx_14+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   orig_CXX=$CXX
     ncbi_cv_prog_cxx_14=no
-    for x in -std=gnu++14 -std=gnu++11 -std=gnu++0x ''; do
+    for x in -std=gnu++14 ''; do
        CXX="$orig_CXX $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -9517,11 +9517,11 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <memory>
+#include <list>
 int
 main ()
 {
-std::unique_ptr<int> x;
+std::list<int> l; auto it = std::cbegin(l);
   ;
   return 0;
 }
@@ -9577,8 +9577,8 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_14" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cxx_14" >&6; }
 if test "$ncbi_cv_prog_cxx_14" = no; then
-   { { echo "$as_me:$LINENO: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&5
-echo "$as_me: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&2;}
+   { { echo "$as_me:$LINENO: error: Please upgrade to a compiler supporting C++ '14, such as GCC 5 or newer." >&5
+echo "$as_me: error: Please upgrade to a compiler supporting C++ '14, such as GCC 5 or newer." >&2;}
    { (exit 1); exit 1; }; }
 else
    CXX="$CXX $ncbi_cv_prog_cxx_14"
