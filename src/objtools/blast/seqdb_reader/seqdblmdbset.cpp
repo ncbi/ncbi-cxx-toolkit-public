@@ -326,7 +326,7 @@ void CSeqDBLMDBSet::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) 
 		}
 	}
 	if(rv.size() == 0) {
-		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy ID(s) not found.");
+		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy ID(s) not found. This could be because the ID(s) provided are not at or below the species level. Please use get_species_taxids.sh to get taxids for nodes higher than species (see https://www.ncbi.nlm.nih.gov/books/NBK546209/).");
 	}
 	tax_ids.swap(rv_tax_ids);
 }
@@ -346,7 +346,7 @@ void CSeqDBLMDBSet::NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOi
 		}
 	}
 	if(rv.size() == 0) {
-		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy ID(s) not found.");
+		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy ID(s) not found.Taxonomy ID(s) not found. This could be because the ID(s) provided are not at or below the species level. Please use get_species_taxids.sh to get taxids for nodes higher than species (see https://www.ncbi.nlm.nih.gov/books/NBK546209/).");
 	}
 
 	tax_ids.swap(rv_tax_ids);
