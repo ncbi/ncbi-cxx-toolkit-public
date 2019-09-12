@@ -665,7 +665,8 @@ static void RemoveOtherTaxnamesInBrackets(const list<string>& taxnames, string& 
         "acronym:",
         "synonym:",
         "anamorph:",
-        "teleomorph:"
+        "teleomorph:",
+        "" // no prefix
     };
 
     for (auto& taxname : taxnames) {
