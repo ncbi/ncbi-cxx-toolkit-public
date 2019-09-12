@@ -2,7 +2,7 @@ APP = psg_cache_unit
 SRC = psg_cache_unit unit/psg_cache_base
 
 WATCHERS = saprykin
-REQUIRES = MT Linux LMDB PROTOBUF
+REQUIRES = MT Linux LMDB PROTOBUF GMOCK
 
 LOCAL_CPPFLAGS=-I$(import_root)/../include
 CPPFLAGS = $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(GMOCK_INCLUDE) $(ORIG_CPPFLAGS)
