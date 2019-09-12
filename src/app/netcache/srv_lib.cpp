@@ -198,7 +198,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity, const char* buf, size_t len,
 #if 1
 DEFINE_STATIC_MUTEX(s_InstanceMutex);
 SSystemMutex&
-CNcbiApplication::xGetInstanceMutex(void) {
+CNcbiApplication::GetInstanceMutex(void) {
     return s_InstanceMutex;
 }
 #endif

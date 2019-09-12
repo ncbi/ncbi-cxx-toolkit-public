@@ -534,7 +534,8 @@ public:
     { return *(CNcbiEnvironment*)Instance(); }
     const CNcbiArguments& GetArguments(void)
     { return *(CNcbiArguments*)Instance(); }
-
+    static CNcbiApplication* InstanceGuard()
+    { return NULL; }
     enum ENameType {
         eFullName,
         eRealName
@@ -542,11 +543,12 @@ public:
     static string GetAppName(ENameType)
     { return string(); }
 #if NCBI_DEVELOPMENT_VER > 20160817
-    static ncbi_namespace_mutex_mt::SSystemMutex& xGetInstanceMutex(void);
+    static ncbi_namespace_mutex_mt::SSystemMutex& GetInstanceMutex(void);
 #else
-    static SSystemMutex& xGetInstanceMutex(void);
+    static SSystemMutex& GetInstanceMutex(void);
 #endif
 };
+typedef CNcbiApplication* CNcbiApplicationGuard;
 
 
 class CObject;
