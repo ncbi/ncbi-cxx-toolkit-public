@@ -414,7 +414,7 @@ CBlastDBAliasApp::CreateAliasFile() const
             gilist.assign(CNcbiOstrstreamToString(oss));
             const string& ifname = args[kArgGiList].AsString();
             ifstream input(ifname.c_str());
-            ofstream output(gilist.c_str());
+            ofstream output(gilist.c_str(), std::ios::binary);
             ConvertGiFile(input, output, &ifname, &gilist);
         }
     }
@@ -603,7 +603,7 @@ int CBlastDBAliasApp::Run(void)
             }
             {
                 // output will close at end of scope.
-                CNcbiOfstream output(gi_file_out.c_str());
+                CNcbiOfstream output(gi_file_out.c_str(),std::ios::binary);
                 status = ConvertGiFile(input, output);
             }
             if (!CFile(gi_file_out).Exists()) {
