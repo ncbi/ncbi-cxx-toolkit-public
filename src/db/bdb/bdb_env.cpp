@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbiapp_api.hpp>
 
 #include <db/bdb/bdb_env.hpp>
 #include <db/bdb/bdb_trans.hpp>

@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/stream_utils.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>

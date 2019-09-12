@@ -37,6 +37,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbiapp_api.hpp>
 
 BEGIN_NCBI_SCOPE
 

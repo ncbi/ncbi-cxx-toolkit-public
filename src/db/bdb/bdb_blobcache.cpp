@@ -41,6 +41,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbiapp_api.hpp>
 
 #include <connect/server_monitor.hpp>
 

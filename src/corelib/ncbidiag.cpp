@@ -43,6 +43,7 @@
 #include <corelib/request_control.hpp>
 #include <corelib/ncbi_strings.h>
 #include <corelib/impl/ncbi_param_impl.hpp>
+#include <corelib/ncbiapp_api.hpp>
 #include "ncbidiag_p.hpp"
 #include "ncbisys.hpp"
 #include <fcntl.h>

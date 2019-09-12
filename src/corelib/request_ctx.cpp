@@ -38,6 +38,7 @@
 #include <corelib/ncbi_strings.h>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbi_mask.hpp>
+#include <corelib/ncbiapp_api.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Diag

@@ -40,6 +40,7 @@
 #include <util/ncbi_url.hpp>
 
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbiapp_api.hpp>
 
 #include <sstream>
 #include <array>
