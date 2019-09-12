@@ -1268,7 +1268,7 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
             }
         } 
     }
-    if ( m_NoCitSubPubs && !cs ) {
+    if ( m_NoCitSubPubs && !cs && !IsSeqSubmitParent() ) {
         CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
         if (b_it) {
             CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
