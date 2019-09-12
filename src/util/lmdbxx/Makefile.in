@@ -2,7 +2,7 @@
 
 REQUIRES = LMDB
 
-EXPENDABLE_APP_PROJ = lmdbxx_sample
+APP_PROJ = lmdbxx_sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
