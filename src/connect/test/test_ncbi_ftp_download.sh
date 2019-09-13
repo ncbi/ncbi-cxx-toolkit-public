@@ -22,10 +22,7 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-# for netstat
-PATH=${PATH}:/sbin:/usr/sbin
-
-if [ -z "$proxy" -a "`netstat -a -n | grep -c ':\<5556\>'`" != "0" ]; then
+if [ "`echo $FEATURES | grep -c -E '(^| )connext( |$)'`" != "1" ]; then
   n=2
 else
   n=3
@@ -36,10 +33,10 @@ case "`expr '(' $$ / 10 ')' '%' $n`" in
     file=
     ;;
   1)
-    file='ftp://ftp-ext.ncbi.nlm.nih.gov/'
+    file='ftp://ftp.freebsd.org/'
     ;;
   2)
-    file='ftp://ftp.freebsd.org/'
+    file='ftp://ftp-ext.ncbi.nlm.nih.gov/'
     ;;
 esac
 
