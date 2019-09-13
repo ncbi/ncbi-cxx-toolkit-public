@@ -6,4 +6,4 @@
 # for more information see http://www.fastcgi.com
 
 
-/netopt/ncbi_tools/fcgi-current/bin/cgi-fcgi -bind -connect localhost:5000
+/netopt/ncbi_tools64/fcgi-current/bin/cgi-fcgi -bind -connect localhost:5000
