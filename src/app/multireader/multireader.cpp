@@ -1204,6 +1204,9 @@ void CMultiReaderApp::xSetFormat(
         format == "5colftbl" ) {
             m_uFormat = CFormatGuess::eFiveColFeatureTable;
     }
+    if( NStr::StartsWith(strProgramName, "vcf") || format == "vcf" ) {
+            m_uFormat = CFormatGuess::eVcf;
+    }
     if( NStr::StartsWith(strProgramName, "ucsc") ||
         format == "ucsc" ) {
             m_uFormat = CFormatGuess::eUCSCRegion;
