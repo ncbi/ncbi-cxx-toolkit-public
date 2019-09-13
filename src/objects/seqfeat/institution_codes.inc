@@ -7358,6 +7358,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UPTC\ts\tUniversidad Pedogogica y Tecnologica de Colombia, Escuela de Ciencias Biologicas\t\t\t",
 "UPVB\ts\tDepartamento de Geologia, Universidad del Pais Vasco\t\t\t",
 "UPVLP\ts\tLaboratorio de Paleontolgia of the Universdad del Pais Vasco/Euskal Herriko Unibersitatea\t\t\t",
+"UPVMI\ts\tUniversity of the Philippines Visayas Museum of Natural Sciences\t\t\t",
+"UPVMI:I\ts\tUniversity of the Philippines Visayas Museum of Natural Sciences, University of the Philippines Visayas Museum of Natural Sciences Ichthyological Collection\t",
 "UQAM\ts\tUniversite du Quebec a Montreal, Departement des Sciences biologiques\t\t\t",
 "UQAR\ts\tUniversite du Quebec a Rimouski, Departement de biologie\t\t\t",
 "UQIC\ts\tUniversity of Queensland Insect Collection\t\t\t",

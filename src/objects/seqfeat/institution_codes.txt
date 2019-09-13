@@ -7325,6 +7325,8 @@ UPSV	s	Uppsala University, Department of Plant Ecology
 UPTC	s	Universidad Pedogogica y Tecnologica de Colombia, Escuela de Ciencias Biologicas			
 UPVB	s	Departamento de Geologia, Universidad del Pais Vasco			
 UPVLP	s	Laboratorio de Paleontolgia of the Universdad del Pais Vasco/Euskal Herriko Unibersitatea			
+UPVMI	s	University of the Philippines Visayas Museum of Natural Sciences			
+UPVMI:I	s	University of the Philippines Visayas Museum of Natural Sciences, University of the Philippines Visayas Museum of Natural Sciences Ichthyological Collection	
 UQAM	s	Universite du Quebec a Montreal, Departement des Sciences biologiques			
 UQAR	s	Universite du Quebec a Rimouski, Departement de biologie			
 UQIC	s	University of Queensland Insect Collection			
