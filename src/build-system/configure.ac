@@ -778,7 +778,6 @@ fi
 if test "$with_bin_release" = "yes" ; then
    # Default some other options accordingly
    : ${with_ncbi_public=yes}
-   : ${with_dll=no}
    : ${with_local_lbsm=no}
    : ${with_ncbi_crypt=no}
    : ${with_connext=no}
@@ -2201,8 +2200,9 @@ case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_lib
     libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
     case "$libstdcxx" in
        /*)
-          LIBS="$libstdcxx $LIBS"
-          LINK=$C_LINK
+          # LIBS="$libstdcxx $LIBS"
+          # LINK=$C_LINK
+          LDFLAGS="$LDFLAGS -static-libstdc++"
           ;;
        *)
           AC_MSG_ERROR([Unable to find static libstdc++ requested by --with-bin-release.])
@@ -8026,6 +8026,9 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libuv, LIBUV, uv,
       [[uv_mutex_t m; return uv_mutex_init(&m);]])])
 if test "$with_libuv" != no -a -f "$LIBUV_LIBDIR/libuv-static.a"; then
     LIBUV_STATIC_LIBS="-L$LIBUV_LIBDIR -luv-static"
+    if test "x$with_bin_release" = "xyes"; then
+       LIBUV_LIBS=$LIBUV_STATIC_LIBS
+    fi
 else
     LIBUV_STATIC_LIBS=$LIBUV_LIBS
 fi
@@ -8114,6 +8117,9 @@ NCBI_CHECK_THIRD_PARTY_LIB(nghttp2,
 if test "$with_nghttp2" != no -a \
      -f "$NGHTTP2_LIBDIR/libnghttp2-static.a"; then
    NGHTTP2_STATIC_LIBS="-L$NGHTTP2_LIBDIR -lnghttp2-static"
+   if test "x$with_bin_release" = "xyes"; then
+      NGHTTP2_LIBS=$NGHTTP2_STATIC_LIBS
+   fi
 else
    NGHTTP2_STATIC_LIBS=$NGHTTP2_LIBS
 fi
