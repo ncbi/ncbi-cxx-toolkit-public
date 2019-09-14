@@ -2622,7 +2622,6 @@ HOL	s	Holden Arboretum
 HOLZ	s	Paleontological Collection			
 HOMP	s	Okresni muzeum Pribram Brezove Hory			
 HON	s	Sichuan Grassland Research Institute			
-HOU	s	University of Houston			
 HOXA	s	Estacion biologica del Jardin Botanico de Missouri			
 HPAN	s	University of the State of Mato Grosso, UNEMAT			
 HPBR	s	Universidade Regional Integrada do Alto Uruguai e das Missoes			
@@ -7235,7 +7234,6 @@ UNCM	s	Museo de Entomologia "Francisco Luis Gallego"
 UNCOQ	s	Universidad Catolica Norte			
 UNCP	s	Universidad Nacional de Colombia			
 UNCW	s	University of North Carolina at Wilmington			
-UND	s	University of North Dakota, Vertebrate Museum			
 UNDH	s	University of Natal Durban			
 UNEFM	s	Universidad Experimental Francisco de Miranda			
 UNEVR	s	University of Nevada, Museum of Biology	UNR		
