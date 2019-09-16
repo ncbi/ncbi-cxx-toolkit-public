@@ -48,6 +48,7 @@
 #  include <crtdbg.h>
 #  include <stdio.h>
 #  include <windows.h>
+#  include <dbghelp.h>
 #  ifndef NCBI_MSWIN_NO_POPUP
 #    undef   Type
 #  endif
@@ -61,6 +62,21 @@
 /* Handler for "Unhandled" exceptions */
 static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
 {
+    char dumpname[64];
+    wsprintf(dumpname, "core.%ld.dmp", GetCurrentProcessId());
+    HANDLE hf = CreateFile(dumpname,
+        GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hf != INVALID_HANDLE_VALUE)
+    {
+        MINIDUMP_EXCEPTION_INFORMATION ei;
+        ei.ThreadId = GetCurrentThreadId(); 
+        ei.ExceptionPointers = ep;
+        ei.ClientPointers = FALSE;
+        MiniDumpWriteDump(
+            GetCurrentProcess(), GetCurrentProcessId(),
+            hf,  MiniDumpNormal, &ei, NULL, NULL);
+        CloseHandle(hf);
+    }
     /* Always terminate a program */
     return EXCEPTION_EXECUTE_HANDLER;
 }

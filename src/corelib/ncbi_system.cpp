@@ -89,6 +89,7 @@ extern "C" {
 #  include <stdlib.h>
 #  include <windows.h>
 #  include "ncbi_os_mswin_p.hpp"
+#  include <dbghelp.h>
 #endif //NCBI_OS_MSWIN
 
 
@@ -1279,6 +1280,22 @@ static bool s_SuppressedDebugSystemMessageBox = false;
 // Handler for "Unhandled" exceptions
 static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
 {
+    char dumpname[64];
+    wsprintf(dumpname, "core.%ld.dmp", GetCurrentProcessId());
+    HANDLE hf = CreateFile(dumpname,
+        GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hf != INVALID_HANDLE_VALUE)
+    {
+        MINIDUMP_EXCEPTION_INFORMATION ei;
+        ei.ThreadId = GetCurrentThreadId(); 
+        ei.ExceptionPointers = ep;
+        ei.ClientPointers = FALSE;
+        MiniDumpWriteDump(
+            GetCurrentProcess(), GetCurrentProcessId(),
+            hf,  MiniDumpNormal, &ei, NULL, NULL);
+        CloseHandle(hf);
+        cerr << "Generated Minidump: " << dumpname << endl;
+    }
     // Always terminate a program
     return EXCEPTION_EXECUTE_HANDLER;
 }

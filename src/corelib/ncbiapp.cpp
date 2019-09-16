@@ -939,6 +939,11 @@ int CNcbiApplicationAPI::AppMain
 #endif
         }
         else {
+#ifdef NCBI_OS_MSWIN
+            if ( !IsDebuggerPresent() ) {
+                SuppressSystemMessageBox(fSuppress_Exception);
+            }
+#endif
             x_TryMain(diag, conf, &exit_code, &got_exception);
         }
     }
