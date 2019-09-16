@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/rwstream.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 #include <util/compress/zlib.hpp>

@@ -40,7 +40,6 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-#include <corelib/ncbiapp_api.hpp>
 
 #include <array>
 #include <memory>

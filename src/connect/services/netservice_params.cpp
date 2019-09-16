@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/env_reg.hpp>
-#include <corelib/ncbiapp_api.hpp>
 
 #include "netservice_params.hpp"
 

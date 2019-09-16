@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbiapp_api.hpp>
 
 #include <serial/impl/member.hpp>
 #include <serial/objectinfo.hpp>

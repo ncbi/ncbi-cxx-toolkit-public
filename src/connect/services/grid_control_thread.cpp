@@ -39,7 +39,6 @@
 #include <connect/services/grid_worker.hpp>
 
 #include <corelib/ncbistre.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include <corelib/ncbi_process.hpp>
 
 #include <math.h>

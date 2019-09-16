@@ -34,7 +34,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>

@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include "connection_pool.hpp"
 #include <connect/ncbi_buffer.h>
 #include <connect/error_codes.hpp>

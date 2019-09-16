@@ -34,7 +34,6 @@
 #include "grid_worker_impl.hpp"
 
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include <connect/services/grid_worker_app.hpp>
 
 #if defined(NCBI_OS_UNIX)

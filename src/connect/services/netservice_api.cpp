@@ -49,7 +49,6 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbi_message.hpp>
-#include <corelib/ncbiapp_api.hpp>
 
 #include <util/random_gen.hpp>
 #include <util/checksum.hpp>

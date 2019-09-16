@@ -31,7 +31,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include <objtools/data_loaders/genbank/gbnative.hpp>
 #include <objtools/data_loaders/genbank/gbloader_params.h>
 #include <objtools/data_loaders/genbank/impl/dispatcher.hpp>

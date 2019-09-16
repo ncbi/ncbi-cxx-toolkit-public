@@ -38,7 +38,6 @@
 #include <sra/error_codes.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
-#include <corelib/ncbiapp_api.hpp>
 #include <util/compress/zlib.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
