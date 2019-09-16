@@ -9126,7 +9126,7 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol(
     } else if (NStr::FindNoCase(stranded_mol, "dsDNA") != NPOS) {
         mssg = "double-stranded DNA";
     } else if (NStr::FindNoCase(stranded_mol, "RNA") != NPOS) {
-        mssg = "unknnown-stranded RNA";
+        mssg = "unknown-stranded RNA";
     } else if (NStr::FindNoCase(stranded_mol, "DNA") != NPOS) {
         mssg = "unknown-stranded DNA";
     }
@@ -9481,12 +9481,12 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         }
     }
 
-    // special case for virus satellites not in list - still need to check for ds vs ss
+    // special case for non-ICTV virus satellites - do not add ds or ss prefix
     if (NStr::FindNoCase(lineage, "RNA satellites") != NPOS) {
-        return "ssRNA";
+        return "RNA";
     }
     if (NStr::FindNoCase(lineage, "DNA satellites") != NPOS) {
-        return "ssDNA";
+        return "DNA";
     }
 
     // use root value for default
