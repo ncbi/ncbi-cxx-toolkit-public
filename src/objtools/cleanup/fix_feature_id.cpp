@@ -67,7 +67,8 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
     unordered_map<int, int> remapped_ids; // map between old id to new id within the current seq-entry only
     unordered_set<int> new_existing_ids; // id's which were left unchanged in the current seq-entry
     unordered_set<int>  current_ids; //  newly created (mapped) ids in the current seq-entry
-    for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) 
+    CFeat_CI feat_it(entry);
+    for ( ; feat_it; ++feat_it ) 
     {
         bool modified = false;
         CRef<CSeq_feat> edited;
@@ -114,7 +115,8 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
     }
     existing_ids.insert(new_existing_ids.begin(), new_existing_ids.end());
     existing_ids.insert(current_ids.begin(), current_ids.end());
-    for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) 
+    feat_it.Rewind();
+    for ( ; feat_it; ++feat_it ) 
     {
         bool modified = false;
         CRef<CSeq_feat> edited;
