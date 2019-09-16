@@ -64,7 +64,7 @@ GCC_SYMBOLS_PRIVATE_EXTERN = NO
 # Precompiled headers
 
 [UsePch]
-UsePch         = TRUE
+UsePch         = FALSE
 PchUsageDefine =
 DefaultPch     = ncbi_pch.hpp
 
