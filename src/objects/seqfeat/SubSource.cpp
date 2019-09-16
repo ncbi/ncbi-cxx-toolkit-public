@@ -2618,6 +2618,11 @@ bool CSubSource::IsEndogenousVirusNameValid(const string& value)
 
 bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const string& value, const string& taxname)
 {
+    if (NStr::FindNoCase(taxname, "Borrelia") != NPOS || NStr::FindNoCase(taxname, "Borreliella") != NPOS) {
+        if (NStr::StartsWith(value, "cp") || NStr::StartsWith(value, "lp")) {
+            return true;
+        }
+    }
     if (!x_GenericRepliconNameValid(value)) {
         // checks for isalnum start, blankness and unprintable characters
         // B.4, B.5, B.7
@@ -2686,6 +2691,12 @@ bool CSubSource::IsLinkageGroupNameValid(const string& value, const string& taxn
 bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
 {
     if (NStr::Equal(value, "megaplasmid")) {
+        return true;
+    }
+    if (NStr::StartsWith(value, "megaplasmid ") && value.length() > 12 && NStr::Find(value.substr(12), " ") == NPOS) {
+        return true;
+    }
+    if (NStr::Equal(value, "F") || NStr::Equal(value, "F factor") || NStr::Equal(value, "F plasmid")) {
         return true;
     }
     return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
