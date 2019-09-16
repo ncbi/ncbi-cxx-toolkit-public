@@ -1,6 +1,6 @@
 ===== Reading Scaffold from component AGP =====
 ./test/scaffold_from_contig_WGS.agp2.0:
-	WARNING: ignoring AGP version comment - version already set to 2.0
+	WARNING: ignoring AGP version comment - version already set to 2
 
 No errors, 1 warning.
   Count Code  Description
@@ -39,7 +39,7 @@ Component names             :  95
 
 ===== Reading Chromosome from scaffold AGP =====
 ./test/chr_from_scaffold_WGS.agp2.0:
-	WARNING: ignoring AGP version comment - version already set to 2.0
+	WARNING: ignoring AGP version comment - version already set to 2
 
 No errors, 1 warning.
   Count Code  Description
