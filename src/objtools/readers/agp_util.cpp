@@ -1127,7 +1127,7 @@ void CAgpReader::x_CheckPragmaComment(void)
                 m_agp_version = eAgpVersion_1_1;
                 m_prev_row->SetVersion( m_agp_version );
                 m_this_row->SetVersion( m_agp_version );
-            } else if( version == "2.0" ) {
+            } else if( version == "2.0" || version == "2.1" ) {
                 m_agp_version = eAgpVersion_2_0;
                 m_prev_row->SetVersion( m_agp_version );
                 m_this_row->SetVersion( m_agp_version );
@@ -1139,7 +1139,7 @@ void CAgpReader::x_CheckPragmaComment(void)
         } else {
             // extra AGP version
             // cannot use fAtThisLine: it prints the next component or gap line, not the comment line
-            m_AgpErr->Msg(CAgpErr::W_AGPVersionCommentUnnecessary, m_agp_version == eAgpVersion_1_1 ? "1.1" : "2.0", CAgpErr::fAtNone );
+            m_AgpErr->Msg(CAgpErr::W_AGPVersionCommentUnnecessary, m_agp_version == eAgpVersion_1_1 ? "1.1" : "2", CAgpErr::fAtNone );
         }
     }
 }
