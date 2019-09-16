@@ -619,7 +619,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_GeneID, "https://www.ncbi.nlm.nih.gov/gene/" },
     { CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_HGNC, "http://www.genenames.org/cgi-bin/gene_symbol_report?hgnc_id=HGNC:" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_HGNC, "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_HMP, "https://www.hmpdacc.org/catalog/grid.php?dataset=genomic&hmp_id=" },
     { CDbtag::eDbtagType_HOMD, "http://www.homd.org/" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_HPM, "http://www.humanproteomemap.org/protein.php?hpm_id=" }, // https not available tested 7/13/2016
