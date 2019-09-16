@@ -288,7 +288,7 @@ case "$ncbi_platform" in
         : ${PYTHON27=/usr/bin/python2.7}
         ;;
     Linux* )
-        : ${PYTHON_PATH=/opt/python-2.7env}
+        : ${PYTHON_PATH=/opt/python-all}
         : ${PYTHON25=/opt/python-2.5.1/bin/python}
         : ${PYTHON26=/usr/bin/python2.6}
         : ${PYTHON27=/opt/python-2.7env/bin/python}
