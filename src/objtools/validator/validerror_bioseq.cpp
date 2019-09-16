@@ -9119,15 +9119,16 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol(
     string mssg = "";
     if (NStr::FindNoCase(stranded_mol, "ssRNA") != NPOS) {
         mssg = "single-stranded RNA";
-    }
-    if (NStr::FindNoCase(stranded_mol, "dsRNA") != NPOS) {
+    } else if (NStr::FindNoCase(stranded_mol, "dsRNA") != NPOS) {
         mssg = "double-stranded RNA";
-    }
-    if (NStr::FindNoCase(stranded_mol, "ssDNA") != NPOS) {
+    } else if (NStr::FindNoCase(stranded_mol, "ssDNA") != NPOS) {
         mssg = "single-stranded DNA";
-    }
-    if (NStr::FindNoCase(stranded_mol, "dsDNA") != NPOS) {
+    } else if (NStr::FindNoCase(stranded_mol, "dsDNA") != NPOS) {
         mssg = "double-stranded DNA";
+    } else if (NStr::FindNoCase(stranded_mol, "RNA") != NPOS) {
+        mssg = "unknnown-stranded RNA";
+    } else if (NStr::FindNoCase(stranded_mol, "DNA") != NPOS) {
+        mssg = "unknown-stranded DNA";
     }
 
     m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
@@ -9148,6 +9149,9 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
     const CSeq_entry    *ctx
 )
 {
+    if (NStr::FindNoCase(stranded_mol, "ssRNA") == NPOS) {
+        return;
+    }
     if (NStr::FindNoCase(stranded_mol, "DNA") != NPOS) {
         return;
     }
@@ -9178,7 +9182,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
     if (NStr::FindNoCase(stranded_mol, "-)") != NPOS) {
         negative_strand_virus = true;
     }
-    if (NStr::FindNoCase(stranded_mol, "ssRNA") != NPOS && NStr::FindNoCase(stranded_mol, "(+") != NPOS) {
+    if (NStr::FindNoCase(stranded_mol, "(+") != NPOS) {
         plus_strand_virus = true;
     }
     if (!negative_strand_virus && !plus_strand_virus) {
@@ -9239,48 +9243,53 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
         }
     }
 
-    if (has_minus_cds) {
-        if (biomol != CMolInfo::eBiomol_genomic) {
-            if (negative_strand_virus) {
-                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                    "Negative-strand virus with minus strand CDS should be genomic",
-                    obj, ctx);
-            }
-        }
-    }
+    if (negative_strand_virus) {
 
-    if (has_plus_cds && !is_synthetic && !is_ambisense) {
-        if (negative_strand_virus &&
-            (biomol != CMolInfo::eBiomol_cRNA && biomol != CMolInfo::eBiomol_mRNA)) {
-            m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
-                obj, ctx);
-        }
-        if (plus_strand_virus) {
-            if (biomol == CMolInfo::eBiomol_cRNA) {
-                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                    "Plus-strand virus with plus strand CDS should be genomic RNA or mRNA",
-                    obj, ctx);
-            }
-        }
-    }
-
-    if (has_minus_misc_feat) {
-        if (negative_strand_virus) {
+        if (has_minus_cds) {
             if (biomol != CMolInfo::eBiomol_genomic) {
                 m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                    "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
+                    "Negative-sense single-stranded RNA virus with minus strand CDS should be genomic RNA",
+                    obj, ctx);
+            }
+        }
+
+        if (has_plus_cds && !is_synthetic && !is_ambisense) {
+            if (biomol != CMolInfo::eBiomol_cRNA) {
+                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Negative-sense single-stranded RNA virus with plus strand CDS should be cRNA",
+                    obj, ctx);
+            }
+        }
+
+        if (has_minus_misc_feat) {
+            if (biomol != CMolInfo::eBiomol_genomic) {
+                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Negative-sense single-stranded RNA virus with nonfunctional minus strand misc_feature should be genomic RNA",
+                    obj, ctx);
+            }
+        }
+
+        if (has_plus_misc_feat && !is_synthetic && !is_ambisense) {
+            if (biomol != CMolInfo::eBiomol_cRNA) {
+                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Negative-sense single-stranded RNA virus with nonfunctional plus strand misc_feature should be cRNA",
                     obj, ctx);
             }
         }
     }
 
-    if (has_plus_misc_feat) {
-        if (negative_strand_virus) {
-            if (!is_synthetic && !is_ambisense
-                && (biomol != CMolInfo::eBiomol_cRNA && biomol != CMolInfo::eBiomol_mRNA)) {
+    if (plus_strand_virus) {
+
+        if (has_minus_cds) {
+            m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                "CDS should not be on minus strand of a positive-sense single-stranded RNA virus",
+                obj, ctx);
+        }
+
+        if (has_plus_cds && !is_synthetic && !is_ambisense) {
+            if (biomol != CMolInfo::eBiomol_genomic) {
                 m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                    "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
+                    "Positive-sense single-stranded RNA virus should be genomic RNA",
                     obj, ctx);
             }
         }
@@ -9464,20 +9473,20 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         return "ssRNA(+)";
     }
 
-    // special case for virus satellites
-    if (NStr::FindNoCase(lineage, "satellite RNA") != NPOS || NStr::FindNoCase(lineage, "RNA satellite") != NPOS) {
-        return "ssRNA";
-    }
-    if (NStr::FindNoCase(lineage, "satellite DNA") != NPOS || NStr::FindNoCase(lineage, "DNA satellite") != NPOS) {
-        return "ssDNA";
-    }
-
     if (s_ViralMap) {
         for (const auto & x : *s_ViralMap) {
             if (NStr::FindNoCase(lineage, x.first) != NPOS) {
                 return x.second;
             }
         }
+    }
+
+    // special case for virus satellites not in list - still need to check for ds vs ss
+    if (NStr::FindNoCase(lineage, "RNA satellites") != NPOS) {
+        return "ssRNA";
+    }
+    if (NStr::FindNoCase(lineage, "DNA satellites") != NPOS) {
+        return "ssDNA";
     }
 
     // use root value for default
