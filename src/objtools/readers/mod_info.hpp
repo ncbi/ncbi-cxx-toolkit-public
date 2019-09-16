@@ -155,7 +155,7 @@ s_TopologyEnumToString = {{CSeq_inst::eTopology_linear, "linear"},
 
 static const auto& s_TopologyStringToEnum = s_GetReverseMap(s_TopologyEnumToString);
 
-
+/*
 static unordered_map<CBioSource::EGenome, string, hash<underlying_type<CBioSource::EGenome>::type>> s_GenomeEnumToString 
 = { {CBioSource::eGenome_unknown, "unknown"},
     {CBioSource::eGenome_genomic, "genomic" },
@@ -182,6 +182,34 @@ static unordered_map<CBioSource::EGenome, string, hash<underlying_type<CBioSourc
     {CBioSource::eGenome_plasmid_in_mitochondrion, "plasmid in mitochondrion"},
     {CBioSource::eGenome_plasmid_in_plastid, "plasmid in plastid"}
 };
+*/
+
+static unordered_map<string, CBioSource::EGenome> s_GenomeStringToEnum 
+= { { "unknown", CBioSource::eGenome_unknown},
+    { "genomic", CBioSource::eGenome_genomic},
+    { "chloroplast", CBioSource::eGenome_chloroplast},
+    { "kinetoplast", CBioSource::eGenome_kinetoplast},
+    { "mitochondrial", CBioSource::eGenome_mitochondrion},
+    { "mitochondrion", CBioSource::eGenome_mitochondrion},
+    { "plastid", CBioSource::eGenome_plastid},
+    { "macronuclear", CBioSource::eGenome_macronuclear},
+    { "extrachromosomal", CBioSource::eGenome_extrachrom},
+    { "plasmid", CBioSource::eGenome_plasmid},
+    { "transposon", CBioSource::eGenome_transposon},
+    { "insertion sequence", CBioSource::eGenome_insertion_seq},
+    { "cyanelle", CBioSource::eGenome_cyanelle},
+    { "provirus", CBioSource::eGenome_proviral},
+    { "virion", CBioSource::eGenome_virion},
+    { "nucleomorph", CBioSource::eGenome_nucleomorph},
+    { "apicoplast", CBioSource::eGenome_apicoplast},
+    { "leucoplast", CBioSource::eGenome_leucoplast},
+    { "proplastid", CBioSource::eGenome_proplastid},
+    { "endogenous virus", CBioSource::eGenome_endogenous_virus},
+    { "hydrogenosome", CBioSource::eGenome_hydrogenosome},
+    { "chromosome", CBioSource::eGenome_chromosome},
+    { "chromatophore", CBioSource::eGenome_chromatophore},
+    { "plasmid in mitochondrion", CBioSource::eGenome_plasmid_in_mitochondrion},
+    { "plasmid in plastid", CBioSource::eGenome_plasmid_in_plastid}};
 
 
 static unordered_map<CBioSource::EOrigin, string, hash<underlying_type<CBioSource::EOrigin>::type>> s_OriginEnumToString

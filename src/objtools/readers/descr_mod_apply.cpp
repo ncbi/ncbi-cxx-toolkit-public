@@ -195,7 +195,6 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
 {
     const auto& name = x_GetModName(mod_entry);
     if (name == "location") {
-        static const auto s_GenomeStringToEnum = s_GetReverseMap(s_GenomeEnumToString);
         const auto& value = x_GetModValue(mod_entry);
         auto it = s_GenomeStringToEnum.find(value);
         if (it == s_GenomeStringToEnum.end()) {
@@ -280,7 +279,7 @@ static void s_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_s
     const auto num_names = names.size();
 
     auto it = primer_set.Set().begin();
-    for (auto i=0; i<num_names; ++i) {
+    for (size_t i=0; i<num_names; ++i) {
         if (NStr::IsBlank(names[i])) {
             continue;
         }
@@ -305,7 +304,7 @@ static void s_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set
     const auto num_seqs = seqs.size();
 
     auto it = primer_set.Set().begin();
-    for (auto i=0; i<num_seqs; ++i) {
+    for (size_t i=0; i<num_seqs; ++i) {
         if (NStr::IsBlank(seqs[i])) {
             continue;
         }
@@ -418,7 +417,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             else {
 
                 auto it = pcr_reaction_set.Set().begin();
-                for (auto i=0; i<num_reactions; ++i) {
+                for (size_t i=0; i<num_reactions; ++i) {
                      s_SetPrimerNames(names[i], (*it++)->SetReverse());
                 }
 
@@ -451,7 +450,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             }
             else {
                 auto it = pcr_reaction_set.Set().begin();
-                for (auto i=0; i<num_reactions; ++i) {
+                for (size_t i=0; i<num_reactions; ++i) {
                      s_SetPrimerSeqs(seqs[i], (*it++)->SetReverse());
                 }
 
