@@ -31,10 +31,12 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistr.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include "pubseq_gateway_utils.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 SBlobId::SBlobId() :
@@ -104,6 +106,29 @@ bool SBlobId::operator == (const SBlobId &  other) const
 {
     return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
 }
+
+
+// Special case for the e_Gi (see CXX-10896)
+// Need to replace the found accession with the seq_ids found accession
+EAccessionAdjustmentResult SBioseqResolution::AdjustAccessionForGi(void)
+{
+    // Only for Gi
+    if (m_BioseqInfo.GetSeqIdType() != CSeq_id::e_Gi)
+        return eLogicError;
+
+    const auto &    seq_ids = m_BioseqInfo.GetSeqIds();
+    for (const auto &  seq_id : seq_ids) {
+        if (get<0>(seq_id) == CSeq_id::e_Gi) {
+            // Found Gi in the set of other seq_ids so use it instead of the
+            // original accession
+            m_BioseqInfo.SetAccession(get<1>(seq_id));
+            return eAdjusted;
+        }
+    }
+
+    return eGiNotFound;
+}
+
 
 
 static string   s_ProtocolPrefix = "\n\nPSG-Reply-Chunk: ";

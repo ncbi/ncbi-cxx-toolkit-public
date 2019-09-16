@@ -51,7 +51,11 @@ enum EPubseqGatewayErrorCode {
     eUnresolvedSeqId,
     eInsufficientArguments,
     eInvalidId2Info,
-    eSplitHistoryNotFound
+    eSplitHistoryNotFound,
+    eBioseqInfoNotFoundForGi,       // whole bioseq_info record not found
+    eBioseqInfoGiNotFoundForGi,     // gi is not found in in the seq_ids field
+                                    // in the bioseq_info record
+    eServerLogicError
 };
 
 
@@ -161,6 +165,13 @@ enum ECacheLookupResult {
     eFound,
     eNotFound,
     eFailure                // LMDB may throw an exception
+};
+
+
+enum EAccessionAdjustmentResult {
+    eAdjusted,
+    eGiNotFound,
+    eLogicError
 };
 
 

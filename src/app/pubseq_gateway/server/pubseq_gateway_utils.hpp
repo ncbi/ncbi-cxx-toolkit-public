@@ -141,6 +141,8 @@ struct SBioseqResolution
         m_BioseqInfo.Reset();
     }
 
+    EAccessionAdjustmentResult AdjustAccessionForGi(void);
+
     EResolutionResult           m_ResolutionResult;
     THighResolutionTimePoint    m_RequestStartTimestamp;
     size_t                      m_CassQueryCount;

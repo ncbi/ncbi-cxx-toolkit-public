@@ -1325,8 +1325,63 @@ CPendingOperation::x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
             x_ResolveAsIsInCache(bioseq_resolution, err);
 
         if (bioseq_resolution.IsValid()) {
-            app->GetTiming().Register(eResolutionLmdb, eOpStatusFound, start);
-            return;
+            // Special case for the seq_id like gi|156232
+            bool    continue_with_cassandra = false;
+            if (bioseq_resolution.m_ResolutionResult == eFromSi2csiCache) {
+                ConvertSi2csiToBioseqResolution(
+                    bioseq_resolution.m_CacheInfo, bioseq_resolution);
+                // It is like from DB
+                bioseq_resolution.m_ResolutionResult = eFromSi2csiDB;
+
+                if (bioseq_resolution.m_BioseqInfo.GetSeqIdType() == CSeq_id::e_Gi) {
+                    CPSGCache           psg_cache(true);
+                    ECacheLookupResult  bioseq_cache_lookup_result =
+                        psg_cache.LookupBioseqInfo(bioseq_resolution.m_BioseqInfo,
+                                                   bioseq_resolution.m_CacheInfo);
+                    if (bioseq_cache_lookup_result != eFound) {
+                        // Not found or error
+                        continue_with_cassandra = true;
+                        bioseq_resolution.Reset();
+                    } else {
+                        // Found bioseq info
+                        ConvertBioseqProtobufToBioseqInfo(bioseq_resolution.m_CacheInfo,
+                                                          bioseq_resolution.m_BioseqInfo);
+                        // It is like from DB
+                        bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
+
+                        // Adjust the accession
+                        auto    adj_result = bioseq_resolution.AdjustAccessionForGi();
+                        switch (adj_result) {
+                            case eGiNotFound:
+                                // Most probably it is data inconsistency in cache
+                                // Try in cassandra as well
+                                PSG_WARNING("Data inconsistency in the BIOSEQ_INFO cache. "
+                                            "Accession " + bioseq_resolution.m_BioseqInfo.GetAccession() +
+                                            " of type Gi has no accession of type Gi in its seq_ids field");
+
+                                continue_with_cassandra = true;
+                                bioseq_resolution.Reset();
+                                break;
+                            case eLogicError:
+                                // Just in case
+                                PSG_WARNING("Server logic error. Trying to "
+                                            "adjust non Gi accession " +
+                                            bioseq_resolution.m_BioseqInfo.GetAccession());
+
+                                continue_with_cassandra = true;
+                                bioseq_resolution.Reset();
+                                break;
+                            case eAdjusted:
+                                break;
+                        }
+                    }
+                }
+            }
+
+            if (!continue_with_cassandra) {
+                app->GetTiming().Register(eResolutionLmdb, eOpStatusFound, start);
+                return;
+            }
         }
         app->GetTiming().Register(eResolutionLmdb, eOpStatusNotFound, start);
     }

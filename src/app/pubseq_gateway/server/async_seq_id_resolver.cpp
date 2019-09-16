@@ -94,7 +94,8 @@ void CAsyncSeqIdResolver::Process(void)
 
         case ePrimaryBioseq:
             m_ResolveStage = ePrimarySi2csi;    // Next stage: if not found
-            x_PreparePrimaryBioseqInfoQuery();
+            x_PreparePrimaryBioseqInfoQuery(m_PrimarySeqId, m_EffectiveVersion,
+                                            m_EffectiveSeqIdType);
             break;
 
         case ePrimarySi2csi:
@@ -123,6 +124,15 @@ void CAsyncSeqIdResolver::Process(void)
             x_PrepareSecondaryAsIsModifiedSi2csiQuery();
             break;
 
+        case ePostSi2csiForGi:
+            // Really, there is no stage after that. This is post processing.
+            // What is done is defined in the found or error callbacks.
+            x_PreparePrimaryBioseqInfoQuery(
+                m_BioseqResolution.m_BioseqInfo.GetAccession(),
+                m_BioseqResolution.m_BioseqInfo.GetVersion(),
+                m_BioseqResolution.m_BioseqInfo.GetSeqIdType());
+            break;
+
         case eFinished:
         default:
             // 'not found' of PendingOperation
@@ -136,7 +146,10 @@ void CAsyncSeqIdResolver::Process(void)
 }
 
 
-void CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(void)
+void
+CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(const string &  seq_id,
+                                                     int16_t  version,
+                                                     int16_t  seq_id_type)
 {
     ++m_BioseqResolution.m_CassQueryCount;
 
@@ -148,11 +161,9 @@ void CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(void)
                                          m_PendingOp->GetMaxRetries(),
                                          m_PendingOp->GetConnection(),
                                          CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
-                                         m_PrimarySeqId,
-                                         m_EffectiveVersion,
-                                         m_EffectiveVersion != -1,
-                                         m_EffectiveSeqIdType,
-                                         m_EffectiveSeqIdType != -1,
+                                         seq_id,
+                                         version, version != -1,
+                                         seq_id_type, seq_id_type != -1,
                                          nullptr, nullptr);
     details->SetLoader(fetch_task);
 
@@ -263,6 +274,28 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoRecord(CBioseqInfoRecord &&  record,
             app->GetDBCounters().IncBioseqInfoNotFound();
         }
 
+        if (m_ResolveStage == ePostSi2csiForGi) {
+            // Special case for Gi; no next stage
+            if (ret_code == CRequestStatus::e300_MultipleChoices) {
+                m_PendingOp->OnSeqIdAsyncError(
+                    CRequestStatus::e502_BadGateway,
+                    eBioseqInfoNotFoundForGi, eDiag_Error,
+                    "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
+                    "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession() +
+                    " of type Gi",
+                    m_BioseqResolution.m_RequestStartTimestamp);
+            } else {
+                m_PendingOp->OnSeqIdAsyncError(
+                    CRequestStatus::e502_BadGateway,
+                    eBioseqInfoNotFoundForGi, eDiag_Error,
+                    "Data inconsistency. A BIOSEQ_INFO table record is not found for "
+                    "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession() +
+                    " of type Gi",
+                    m_BioseqResolution.m_RequestStartTimestamp);
+            }
+            return;
+        }
+
         Process();
         return;
     }
@@ -274,6 +307,34 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoRecord(CBioseqInfoRecord &&  record,
     m_BioseqResolution.m_ResolutionResult = eFromBioseqDB;
     m_BioseqResolution.m_BioseqInfo = std::move(record);
     m_BioseqResolution.m_CacheInfo.clear();
+
+    if (m_ResolveStage == ePostSi2csiForGi) {
+        // Special case: need to adjust accession
+        auto    adj_result = m_BioseqResolution.AdjustAccessionForGi();
+        switch (adj_result) {
+            case eGiNotFound:
+                m_PendingOp->OnSeqIdAsyncError(
+                    CRequestStatus::e502_BadGateway,
+                    eBioseqInfoGiNotFoundForGi, eDiag_Error,
+                    "Data inconsistency in the BIOSEQ_INFO table. "
+                    "Accession " + m_BioseqResolution.m_BioseqInfo.GetAccession() +
+                    " of type Gi has no accession of type Gi in its seq_ids field",
+                    m_BioseqResolution.m_RequestStartTimestamp);
+                break;
+            case eLogicError:
+                m_PendingOp->OnSeqIdAsyncError(
+                    CRequestStatus::e500_InternalServerError,
+                    eServerLogicError, eDiag_Error,
+                    "Server logic error. Trying to adjust non Gi accession " +
+                    m_BioseqResolution.m_BioseqInfo.GetAccession() +
+                    " after Cassandra lookup",
+                    m_BioseqResolution.m_RequestStartTimestamp);
+                break;
+            case eAdjusted:
+                // All OK; the accession has been updated
+                break;
+        }
+    }
 
     m_PendingOp->OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
 }
@@ -323,6 +384,14 @@ void CAsyncSeqIdResolver::x_OnSi2csiRecord(CSI2CSIRecord &&  record,
     m_BioseqResolution.m_BioseqInfo.SetVersion(record.GetVersion());
     m_BioseqResolution.m_BioseqInfo.SetSeqIdType(record.GetSeqIdType());
     m_BioseqResolution.m_CacheInfo.clear();
+
+    // Special case for the seq_id like gi|156232
+    if (m_BioseqResolution.m_BioseqInfo.GetSeqIdType() == CSeq_id::e_Gi) {
+        m_ResolveStage = ePostSi2csiForGi;
+        Process();
+        return;
+    }
+
 
     m_PendingOp->OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
 }
