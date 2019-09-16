@@ -114,3 +114,6 @@ endif()
 # FreeTDS
 set(FTDS95_INCLUDE  ${includedir}/dbapi/driver/ftds95  ${includedir}/dbapi/driver/ftds95/freetds)
 set(FTDS100_INCLUDE ${includedir}/dbapi/driver/ftds100 ${includedir}/dbapi/driver/ftds100/freetds)
+
+#############################################################################
+list(SORT NCBI_ALL_COMPONENTS)
