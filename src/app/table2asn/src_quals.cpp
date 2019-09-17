@@ -78,7 +78,6 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
         auto it = m_LineMap.find(id);
         if (it != m_LineMap.end()) {
             tokens.clear();
-            cout << it->second << endl;
             NStr::Split(it->second, "\t", tokens, 0);
             for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
                 if (!NStr::IsBlank(tokens[i])) {
@@ -141,8 +140,6 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
             CTempString line(start, endline-start+1);
             if (m_ColumnNames.empty()) {
                 NStr::Split(line, "\t", m_ColumnNames, 0);
-                cout << line << endl;
-                cout << "# columns : " << m_ColumnNames.size() << endl;
             }
             else 
             // parse regular line
