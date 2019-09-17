@@ -97,6 +97,9 @@ static const string kIdentLine2  = "ident";
 static const string kTotalLine2 = "score";
 static const string kQueryCov = "Query";
 static const string kQueryCovLine2 = "cover";
+static const string kPerc = "Per.";
+static const string kAccession = "Accession";
+static const string kDescription = "Description";
 
 //psiblast related
 static const string kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
@@ -275,10 +278,10 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
     }
 }
 
-static void s_LimitDescrLength(string &descr)
+static void s_LimitDescrLength(string &descr, size_t maxDescrLength = kMaxDescrLength)
 {
-	if(descr.length() > kMaxDescrLength) {
-        descr = descr.substr(0,kMaxDescrLength);
+	if(descr.length() > maxDescrLength) {
+        descr = descr.substr(0,maxDescrLength);
         size_t end = NStr::Find(descr," ",NStr::eNocase,NStr::eReverseSearch);
 
         if(end != NPOS) {
@@ -569,7 +572,12 @@ void CShowBlastDefline::Init(void)
 void CShowBlastDefline::Display(CNcbiOstream & out)
 {
     if (m_DeflineTemplates != NULL) {
-        x_DisplayDeflineTableTemplate(out);
+        if(m_Option & eHtml) {//text        
+            x_DisplayDeflineTableTemplate(out);
+        }
+        else {
+            x_DisplayDeflineTableTemplateText(out);
+        }
     }
     else {
         x_DisplayDefline(out);
@@ -990,15 +998,15 @@ void CShowBlastDefline::x_InitDeflineTable(void)
     bool is_first_aln = true;
     size_t num_align = 0;
     CConstRef<CSeq_id> previous_id, subid;
-    m_MaxScoreLen = kMaxScore.size();
+    m_MaxScoreLen = kBits.size();
     m_MaxEvalueLen = kValue.size();
     m_MaxSumNLen =1;
-    m_MaxTotalScoreLen = kTotal.size();
+    m_MaxTotalScoreLen = kTotal.size();    
     m_MaxPercentIdentityLen = kIdentity.size();
     int percent_identity = 0;
-    m_MaxQueryCoverLen = kCoverage.size();    
+    m_MaxQueryCoverLen = kQueryCov.size();    
     
-
+    
     if(m_Option & eHtml){
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
         m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));
@@ -1564,7 +1572,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     // Mixed db is genomic + transcript and this does not apply to proteins.
     bool is_mixed_database = (m_Ctx && m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_Ctx): false;
     string rowType = "odd";
-    string subHeaderID;
+    string subHeaderID;    
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);
         cur_database_type = (sdl->linkout & eGenomicSeq);
@@ -1579,7 +1587,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
         prev_database_type = cur_database_type;
 
         string defLine = x_FormatDeflineTableLine(sdl,*iter,first_new);
-
+        
         //This is done for 508 complience
         defLine = CAlignFormatUtil::MapTemplate(defLine,"defl_header_id",subHeaderID);
 
@@ -1595,6 +1603,56 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
         is_first = false;
         out << defLine;
 
+        delete sdl;
+    }
+}
+
+void CShowBlastDefline::x_DisplayDeflineTableTemplateText(CNcbiOstream & out)
+{
+        m_MaxPercentIdentityLen = kIdentLine2.size() + 1;
+        m_MaxAccLength = 16;
+                
+        string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"descr_hd1"," ",m_LineLen); //empty string
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kScore,m_MaxScoreLen);
+        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",kE,m_MaxEvalueLen,CAlignFormatUtil::eSpacePosToCenter);    
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,m_MaxPercentIdentityLen, CAlignFormatUtil::eSpacePosToCenter);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",m_MaxAccLength);        
+        //kBits 	kTotalLine2 kQueryCovLine2 kValue kIdentLine2 
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"descr_hd2",kDescription,m_LineLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd2",kBits,m_MaxScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd2",kTotalLine2,m_MaxTotalScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd2",kQueryCovLine2,m_MaxQueryCoverLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd2",kValue,m_MaxEvalueLen);    
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd2",kIdentLine2,m_MaxPercentIdentityLen);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd2",kAccession,m_MaxAccLength);
+        
+        out << descrHeader;
+    
+    ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);        
+        string defLine = m_DeflineTemplates->defLineTmpl;
+        string seqid;
+        if(!sdl->id.Empty()){
+            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos ||sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)) {
+                sdl->id->GetLabel(&seqid, CSeq_id::eContent);
+            }
+        }
+    
+        string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
+	    s_LimitDescrLength(descr,m_LineLen);
+	    defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"dfln_defline",descr, m_LineLen);
+    
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"score_info",(*iter)->bit_string,m_MaxScoreLen);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"total_bit_string",(*iter)->total_bit_string,m_MaxTotalScoreLen);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_coverage",NStr::IntToString((*iter)->percent_coverage) + "%",m_MaxQueryCoverLen);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"evalue_string",(*iter)->evalue_string,m_MaxEvalueLen);    
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_identity",NStr::DoubleToString((*iter)->percent_identity,2),m_MaxPercentIdentityLen);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"seq_info",seqid,m_MaxAccLength);    
+
+        out << defLine;
         delete sdl;
     }
 }
@@ -1717,7 +1775,6 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
 
     return defLine;
 }
-
 
 string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
 {

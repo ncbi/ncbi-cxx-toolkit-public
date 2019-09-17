@@ -3351,7 +3351,7 @@ string CAlignFormatUtil::AddSpaces(string paramVal, unsigned int maxParamValLeng
             paramVal = spaceString + paramVal;
         }
         if(spacesFormatFlag & eAddEOLAtLineStart) paramVal = "\n" + paramVal;
-        if(spacesFormatFlag & eAddEOLAtLineStart) paramVal = paramVal + "\n";        
+        if(spacesFormatFlag & eAddEOLAtLineEnd) paramVal = paramVal + "\n";        
     //}
     
     return paramVal;
