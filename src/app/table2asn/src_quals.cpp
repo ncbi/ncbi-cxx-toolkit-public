@@ -415,7 +415,9 @@ void g_ApplyMods(
                 if (!pTitleDesc) {
                     pTitleDesc = Ref(new CSeqdesc());
                     pDescriptors->push_back(pTitleDesc);
+                    pTitleDesc->SetTitle() = remainder;
                 }
+                else
                 if (pTitleDesc->GetTitle().empty()) {
                     pTitleDesc->SetTitle() = remainder;
                 }
