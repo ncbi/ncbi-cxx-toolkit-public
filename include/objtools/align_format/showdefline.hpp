@@ -126,6 +126,7 @@ public:
         string seqInfoTmpl;           ///< sequence infor template
         string psiFirstNewAnchorTmpl; ///< first new seq anchor template (psi blast)
         string psiGoodGiHiddenTmpl;   ///< good gi hidden field tewmplate (psi blast)
+        string deflineTxtHeader;
         bool   advancedView;
     };
 
@@ -486,6 +487,7 @@ protected:
     size_t m_MaxPercentIdentityLen;    
     //Coverage header size
     size_t m_MaxQueryCoverLen;  
+    size_t m_MaxAccLength;
     //Query Lenghth
     int m_QueryLength;
     ///Indicates if 'Related structures' link should show
@@ -588,12 +590,13 @@ protected:
     string x_FormatSeqSetHeaders(int isGenomic, bool formatHeaderSort);
     ///Format defline
     ///
-    string x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new);
+    string x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new);    
     ///Format PSI blat related data
     string x_FormatPsi(SDeflineInfo* sdl, bool &first_new);
     ///Display defline for table output using templates
     ///
     void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
+    void x_DisplayDeflineTableTemplateText(CNcbiOstream & out);
 
     void x_InitFormattingInfo(SScoreInfo* sci);    
     //For internal test
