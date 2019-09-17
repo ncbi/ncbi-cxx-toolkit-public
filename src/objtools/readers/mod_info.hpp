@@ -117,6 +117,40 @@ s_InitModNameSubSrcSubtypeMap(void)
 }
 
 
+static unordered_map<string, CBioSource::TGenome>
+s_InitModNameGenomeMap(void)
+{
+   static const TModNameSet skip_enum_names;
+   static const unordered_map<string, CBioSource::TGenome> 
+       extra_smod_to_enum_names 
+       {{ "mitochondrial", CBioSource::eGenome_mitochondrion },
+        { "provirus", CBioSource::eGenome_proviral},
+        { "extrachromosomal", CBioSource::eGenome_extrachrom},
+        { "insertion sequence", CBioSource::eGenome_insertion_seq}};
+
+   return s_InitModNameToEnumMap<CBioSource::TGenome>(
+           *CBioSource::GetTypeInfo_enum_EGenome(),
+           skip_enum_names,
+           extra_smod_to_enum_names);
+}
+
+static unordered_map<string, CBioSource::TOrigin>
+s_InitModNameOriginMap(void)
+{
+    static const TModNameSet skip_enum_names;
+    static const unordered_map<string, CBioSource::TOrigin>
+        extra_smod_to_enum_names 
+        {{ "natural mutant", CBioSource::eOrigin_natmut},
+         { "mutant", CBioSource::eOrigin_mut}};
+
+    return s_InitModNameToEnumMap<CBioSource::TOrigin>(
+            *CBioSource::GetTypeInfo_enum_EOrigin(),
+            skip_enum_names,
+            extra_smod_to_enum_names);
+
+}
+
+
 template<typename T, typename U, typename THash> // Only works if TUmap values are unique
 static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U,THash>& TUmap) 
 {
@@ -127,101 +161,31 @@ static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U,THash>& TUmap)
     return UTmap;
 }
 
-
-static const unordered_map<CSeq_inst::EStrand, string, hash<underlying_type<CSeq_inst::EStrand>::type>>
-s_StrandEnumToString = {{CSeq_inst::eStrand_ss, "single"},
-                        {CSeq_inst::eStrand_ds, "double"},
-                        {CSeq_inst::eStrand_mixed, "mixed"},
-                        {CSeq_inst::eStrand_other, "other"}};
-
-static const auto& s_StrandStringToEnum = s_GetReverseMap(s_StrandEnumToString);
+static const unordered_map<string, CSeq_inst::EStrand> 
+s_StrandStringToEnum = {{"single", CSeq_inst::eStrand_ss},
+                        {"double", CSeq_inst::eStrand_ds},
+                        {"mixed", CSeq_inst::eStrand_mixed},
+                        {"other", CSeq_inst::eStrand_other}};
 
 
-static const unordered_map<CSeq_inst::EMol, string, hash<underlying_type<CSeq_inst::EMol>::type>>
-s_MolEnumToString = {{CSeq_inst::eMol_dna, "dna"},
-                     {CSeq_inst::eMol_rna, "rna"},
-                     {CSeq_inst::eMol_aa, "aa"},
-                     {CSeq_inst::eMol_na, "na"},
-                    {CSeq_inst::eMol_other, "other"}};
-
-static const auto& s_MolStringToEnum = s_GetReverseMap(s_MolEnumToString);
+static const unordered_map<string, CSeq_inst::EMol>
+s_MolStringToEnum = {{"dna", CSeq_inst::eMol_dna},
+                     {"rna", CSeq_inst::eMol_rna},
+                     {"aa", CSeq_inst::eMol_aa},
+                     {"na", CSeq_inst::eMol_na},
+                    {"other", CSeq_inst::eMol_other}};
 
 
-static const unordered_map<CSeq_inst::ETopology, string, hash<underlying_type<CSeq_inst::ETopology>::type>> 
-s_TopologyEnumToString = {{CSeq_inst::eTopology_linear, "linear"},
-                          {CSeq_inst::eTopology_circular, "circular"},
-                          {CSeq_inst::eTopology_tandem, "tandem"},
-                          {CSeq_inst::eTopology_other, "other"}};
-
-static const auto& s_TopologyStringToEnum = s_GetReverseMap(s_TopologyEnumToString);
-
-/*
-static unordered_map<CBioSource::EGenome, string, hash<underlying_type<CBioSource::EGenome>::type>> s_GenomeEnumToString 
-= { {CBioSource::eGenome_unknown, "unknown"},
-    {CBioSource::eGenome_genomic, "genomic" },
-    {CBioSource::eGenome_chloroplast, "chloroplast"},
-    {CBioSource::eGenome_kinetoplast, "kinetoplast"}, 
-    {CBioSource::eGenome_mitochondrion, "mitochondrial"},
-    {CBioSource::eGenome_plastid, "plastid"},
-    {CBioSource::eGenome_macronuclear, "macronuclear"},
-    {CBioSource::eGenome_extrachrom, "extrachromosomal"},
-    {CBioSource::eGenome_plasmid, "plasmid"},
-    {CBioSource::eGenome_transposon, "transposon"},
-    {CBioSource::eGenome_insertion_seq, "insertion sequence"},
-    {CBioSource::eGenome_cyanelle, "cyanelle"},
-    {CBioSource::eGenome_proviral, "provirus"},
-    {CBioSource::eGenome_virion, "virion"},
-    {CBioSource::eGenome_nucleomorph, "nucleomorph"},
-    {CBioSource::eGenome_apicoplast, "apicoplase"},
-    {CBioSource::eGenome_leucoplast, "leucoplast"},
-    {CBioSource::eGenome_proplastid, "proplastid"},
-    {CBioSource::eGenome_endogenous_virus, "endogenous virus"},
-    {CBioSource::eGenome_hydrogenosome, "hydrogenosome"},
-    {CBioSource::eGenome_chromosome, "chromosome" },
-    {CBioSource::eGenome_chromatophore, "chromatophore"},
-    {CBioSource::eGenome_plasmid_in_mitochondrion, "plasmid in mitochondrion"},
-    {CBioSource::eGenome_plasmid_in_plastid, "plasmid in plastid"}
-};
-*/
-
-static unordered_map<string, CBioSource::EGenome> s_GenomeStringToEnum 
-= { { "unknown", CBioSource::eGenome_unknown},
-    { "genomic", CBioSource::eGenome_genomic},
-    { "chloroplast", CBioSource::eGenome_chloroplast},
-    { "kinetoplast", CBioSource::eGenome_kinetoplast},
-    { "mitochondrial", CBioSource::eGenome_mitochondrion},
-    { "mitochondrion", CBioSource::eGenome_mitochondrion},
-    { "plastid", CBioSource::eGenome_plastid},
-    { "macronuclear", CBioSource::eGenome_macronuclear},
-    { "extrachromosomal", CBioSource::eGenome_extrachrom},
-    { "plasmid", CBioSource::eGenome_plasmid},
-    { "transposon", CBioSource::eGenome_transposon},
-    { "insertion sequence", CBioSource::eGenome_insertion_seq},
-    { "cyanelle", CBioSource::eGenome_cyanelle},
-    { "provirus", CBioSource::eGenome_proviral},
-    { "virion", CBioSource::eGenome_virion},
-    { "nucleomorph", CBioSource::eGenome_nucleomorph},
-    { "apicoplast", CBioSource::eGenome_apicoplast},
-    { "leucoplast", CBioSource::eGenome_leucoplast},
-    { "proplastid", CBioSource::eGenome_proplastid},
-    { "endogenous virus", CBioSource::eGenome_endogenous_virus},
-    { "hydrogenosome", CBioSource::eGenome_hydrogenosome},
-    { "chromosome", CBioSource::eGenome_chromosome},
-    { "chromatophore", CBioSource::eGenome_chromatophore},
-    { "plasmid in mitochondrion", CBioSource::eGenome_plasmid_in_mitochondrion},
-    { "plasmid in plastid", CBioSource::eGenome_plasmid_in_plastid}};
+static const unordered_map<string, CSeq_inst::ETopology> 
+s_TopologyStringToEnum = {{"linear", CSeq_inst::eTopology_linear},
+                          {"circular", CSeq_inst::eTopology_circular},
+                          {"tandem", CSeq_inst::eTopology_tandem},
+                          {"other", CSeq_inst::eTopology_other}};
 
 
-static unordered_map<CBioSource::EOrigin, string, hash<underlying_type<CBioSource::EOrigin>::type>> s_OriginEnumToString
-= { {CBioSource::eOrigin_unknown, "unknown"},
-    {CBioSource::eOrigin_natural, "natural"},
-    {CBioSource::eOrigin_natmut, "natural mutant"},
-    {CBioSource::eOrigin_mut, "mutant"},
-    {CBioSource::eOrigin_artificial, "artificial"},
-    {CBioSource::eOrigin_synthetic, "synthetic"},
-    {CBioSource::eOrigin_other, "other"}
-};
+static const auto s_GenomeStringToEnum = s_InitModNameGenomeMap();
 
+static const auto s_OriginStringToEnum = s_InitModNameOriginMap();
 
 static const auto s_OrgModStringToEnum = s_InitModNameOrgSubtypeMap();
 static const auto s_SubSourceStringToEnum = s_InitModNameSubSrcSubtypeMap();

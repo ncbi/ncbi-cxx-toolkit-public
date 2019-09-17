@@ -206,7 +206,7 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
     }
 
     if (name == "origin") {
-        static const auto s_OriginStringToEnum = s_GetReverseMap(s_OriginEnumToString);
+       // static const auto s_OriginStringToEnum = s_GetReverseMap(s_OriginEnumToString);
         const auto& value = x_GetModValue(mod_entry);
         auto it = s_OriginStringToEnum.find(value);
         if (it == s_OriginStringToEnum.end()) {
