@@ -267,7 +267,7 @@ s_TechStringToEnum = {
 };
 
 
-static const auto s_TechEnumToString  = s_GetReverseMap(s_TechStringToEnum);
+//static const auto s_TechEnumToString  = s_GetReverseMap(s_TechStringToEnum);
 
 
 static const 
@@ -283,7 +283,7 @@ s_CompletenessStringToEnum = {
 };
 
 
-static const auto s_CompletenessEnumToString = s_GetReverseMap(s_CompletenessStringToEnum);
+//static const auto s_CompletenessEnumToString = s_GetReverseMap(s_CompletenessStringToEnum);
 
 
 END_SCOPE(objects)
