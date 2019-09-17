@@ -254,7 +254,6 @@ crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
 crypto needs3party $(Z_LIBS)
 ct_ftds100 needs tds_ftds100
-ct_ftds64 needs tds_ftds64
 ct_ftds95 needs tds_ftds95
 ctransition needs xncbi
 ctransition_nlmzip needs $(COMPRESS_LIBS)
@@ -316,8 +315,6 @@ dbsnp_primary_track needs3party $(ORIG_LIBS)
 dbsnp_primary_track needs3party $(Z_LIBS)
 dbsnp_tooltip_service needs xser
 ddvlib needs3party ncbidesk
-demo_contig_assembly needs $(OBJMGR_LIBS)
-demo_contig_assembly needs3party $(GENBANK_THIRD_PARTY_LIBS)
 distance needs xncbi
 docsum needs xser
 drmaa needs3party $(ORIG_LIBS)
@@ -888,8 +885,6 @@ ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
 ncbi_xdbapi_ftds100 needs $(FTDS_LIB)
 ncbi_xdbapi_ftds100 needs dbapi_driver
 ncbi_xdbapi_ftds100 needs3party $(FTDS_LIBS)
-ncbi_xdbapi_ftds64 needs ct_ftds64
-ncbi_xdbapi_ftds64 needs dbapi_driver
 ncbi_xdbapi_ftds95 needs $(FTDS95_LIB)
 ncbi_xdbapi_ftds95 needs dbapi_driver
 ncbi_xdbapi_mysql needs dbapi_driver
@@ -1014,8 +1009,6 @@ netcli needs3party $(NCBI_C_ncbi)
 netentr needs3party ncbiacc
 netentr needs3party netcli
 netstorage needs ncbi_xcache_netcache
-ngalign_app needs bdb
-ngalign_app needs xngalign
 nghttp2 needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
 notary needs xid_utils
@@ -1072,7 +1065,6 @@ prok_cluster_data needs bacterial_pipeline_proc
 prok_cluster_data needs gpipe_sqlite
 prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
-protein_match needs $(SOBJMGR_LIBS)
 proteinkmer needs xalgoblastdbindex
 proteinkmer needs xalgodustmask
 proteinkmer needs xalgowinmask
@@ -1273,9 +1265,6 @@ taxutl needs taxon1
 tds_ftds100 needs3party $(KRB5_LIBS)
 tds_ftds100 needs3party $(NETWORK_LIBS)
 tds_ftds100 needs3party $(ORIG_LIBS)
-tds_ftds64 needs3party $(KRB5_LIBS)
-tds_ftds64 needs3party $(NETWORK_LIBS)
-tds_ftds64 needs3party $(ORIG_LIBS)
 tds_ftds95 needs3party $(KRB5_LIBS)
 tds_ftds95 needs3party $(NETWORK_LIBS)
 tds_ftds95 needs3party $(ORIG_LIBS)
