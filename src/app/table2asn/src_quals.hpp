@@ -23,6 +23,7 @@ void g_ApplyMods(
     const string& namedSrcFile,
     const string& defaultSrcFile,
     const string& commandLineStr,
+    bool readModsFromTitle,
     bool allowAcc,
     bool isVerbose,
     ILineErrorListener* pEC,

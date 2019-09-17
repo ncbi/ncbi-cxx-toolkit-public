@@ -78,6 +78,7 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
         auto it = m_LineMap.find(id);
         if (it != m_LineMap.end()) {
             tokens.clear();
+            cout << it->second << endl;
             NStr::Split(it->second, "\t", tokens, 0);
             for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
                 if (!NStr::IsBlank(tokens[i])) {
@@ -140,6 +141,8 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
             CTempString line(start, endline-start+1);
             if (m_ColumnNames.empty()) {
                 NStr::Split(line, "\t", m_ColumnNames, 0);
+                cout << line << endl;
+                cout << "# columns : " << m_ColumnNames.size() << endl;
             }
             else 
             // parse regular line
@@ -284,6 +287,7 @@ void g_ApplyMods(
     const string& namedSrcFile,
     const string& defaultSrcFile,
     const string& commandLineStr,
+    bool readModsFromTitle,
     bool allowAcc,
     bool isVerbose,
     ILineErrorListener* pEC,
@@ -390,17 +394,20 @@ void g_ApplyMods(
                         [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
                 if (title_it != pDescriptors->end()) {
                     pTitleDesc = *title_it;
-                    auto& title = (*title_it)->SetTitle();
-                    string titleRemainder;
-                    TModList mods;
-                    CTitleParser::Apply(title, mods, titleRemainder);
+                    if (readModsFromTitle) {
+                        auto& title = (*title_it)->SetTitle();
+                        string titleRemainder;
+                        TModList mods;
+                        CTitleParser::Apply(title, mods, titleRemainder);
+                        title.clear(); 
 
-                    mod_handler.AddMods(mods, 
-                            CModHandler::ePreserve, 
-                            rejectedMods, 
-                            fReportError);
-                    s_AppendMods(rejectedMods, titleRemainder);
-                    remainder = titleRemainder +  remainder;
+                        mod_handler.AddMods(mods, 
+                                CModHandler::ePreserve, 
+                                rejectedMods, 
+                                fReportError);
+                        s_AppendMods(rejectedMods, titleRemainder);
+                        remainder = titleRemainder +  remainder;
+                    }
                 }
             }
             CModAdder::Apply(mod_handler, *pBioseq, rejectedMods, fReportError);
@@ -412,11 +419,17 @@ void g_ApplyMods(
                     pTitleDesc = Ref(new CSeqdesc());
                     pDescriptors->push_back(pTitleDesc);
                 }
-                pTitleDesc->SetTitle() = remainder;
+                if (pTitleDesc->GetTitle().empty()) {
+                    pTitleDesc->SetTitle() = remainder;
+                }
+                else {
+                    pTitleDesc->SetTitle() += " " + remainder;
+                }
             }
             else // remainder.empty() 
             if (pDescriptors) {
-                if (title_it != pDescriptors->end()) {
+                if (title_it != pDescriptors->end() &&
+                    (*title_it)->GetTitle().empty()) {
                     pDescriptors->erase(title_it);
                 } 
                 if (pDescriptors->empty()) {
