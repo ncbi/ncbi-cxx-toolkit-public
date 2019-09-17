@@ -62,8 +62,14 @@
 /* Handler for "Unhandled" exceptions */
 static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
 {
-    char dumpname[64];
-    wsprintf(dumpname, "core.%ld.dmp", GetCurrentProcessId());
+#ifdef __cplusplus
+#ifdef _UNICODE
+    wchar_t dumpname[64], tmp[64];
+    wcscat( wcscat( wcscpy(dumpname, L"core."), _ltow(GetCurrentProcessId(), tmp, 10)), L".dmp");
+#else
+    char dumpname[64], tmp[64];
+    strcat( strcat( strcpy(dumpname, "core."), _ltoa(GetCurrentProcessId(), tmp, 10)), ".dmp");
+#endif
     HANDLE hf = CreateFile(dumpname,
         GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hf != INVALID_HANDLE_VALUE)
@@ -76,8 +82,10 @@ static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
             GetCurrentProcess(), GetCurrentProcessId(),
             hf,  MiniDumpNormal, &ei, NULL, NULL);
         CloseHandle(hf);
+        fprintf(stderr, "Unhandled exception: %lx at %p", ep->ExceptionRecord->ExceptionCode, ep->ExceptionRecord->ExceptionAddress);
     }
-    /* Always terminate a program */
+#endif
+    // Always terminate a program
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
