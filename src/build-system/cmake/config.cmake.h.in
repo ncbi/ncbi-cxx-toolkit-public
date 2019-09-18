@@ -1053,3 +1053,4 @@
 #cmakedefine HAVE_LIBUV      1
 #cmakedefine HAVE_LIBGL2PS   1
 
+#define HAVE_PSG_LOADER 1

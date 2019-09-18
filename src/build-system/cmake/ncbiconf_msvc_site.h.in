@@ -44,6 +44,12 @@
 /* #undef USE_LOCAL_PCRE */
 /* #undef USE_LOCAL_ZLIB */
 
+#cmakedefine HAVE_LIBNGHTTP2 1
+#cmakedefine HAVE_LIBUV      1
+#cmakedefine HAVE_LIBGL2PS   1
+
+#define HAVE_PSG_LOADER 1
+
 #define NCBI_SIGNATURE \
   "@NCBI_SIGNATURE@"
 
