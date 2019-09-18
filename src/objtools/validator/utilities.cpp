@@ -2929,22 +2929,26 @@ bool DoesFeatureHaveUnnecessaryException(const CSeq_feat& feat, CScope& scope)
     if (!feat.IsSetLocation()) {
         return false;
     }
-    CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
-    if (!bsh) {
-        return false;
+    try {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+        if (!bsh) {
+            return false;
+        }
+        CSpliceProblems splice_problems;
+        splice_problems.CalculateSpliceProblems(feat, true, sequence::IsPseudo(feat, scope), bsh);
+        if (splice_problems.IsExceptionUnnecessary()) {
+            return true;
+        }
+        if (feat.GetData().IsCdregion()) {
+            return DoesCodingRegionHaveUnnecessaryException(feat, bsh, scope);
+        } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+            return DoesmRNAHaveUnnecessaryException(feat, bsh, scope);
+        } else {
+            return false;
+        }
+    } catch (CException&) {
     }
-    CSpliceProblems splice_problems;
-    splice_problems.CalculateSpliceProblems(feat, true, sequence::IsPseudo(feat, scope), bsh);
-    if (splice_problems.IsExceptionUnnecessary()) {
-        return true;
-    }
-    if (feat.GetData().IsCdregion()) {
-        return DoesCodingRegionHaveUnnecessaryException(feat, bsh, scope);
-    } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-        return DoesmRNAHaveUnnecessaryException(feat, bsh, scope);
-    } else {
-        return false;
-    }
+    return false;
 }
 //LCOV_EXCL_STOP
 
