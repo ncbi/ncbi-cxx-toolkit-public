@@ -52,6 +52,9 @@
 USING_NCBI_SCOPE;
 
 
+#define IO_TIMEOUT  5
+
+
 // Test exit code
 const int    kTestResult = 99;
 
@@ -137,9 +140,8 @@ static string s_ReadLine(FILE* fs)
         char*  res = fgets(buf, sizeof(buf) - 1, fs);
         size_t len = res ? strlen(res) : 0;
         ERR_POST(Info << len << " byte(s) read from file" +string(&":"[!len]));
-        if (!len) {
+        if (!len)
             break;
-        }
         NcbiCerr.write(res, len);
         NcbiCerr << endl << flush;
         if (res[len - 1] == '\n') {
@@ -173,9 +175,8 @@ static string s_ReadLine(CPipe& pipe)
             break;
         }
         str += c;
-        if (status != eIO_Success) {
+        if (status != eIO_Success)
             break;
-        }
     }
     return str;
 }
@@ -190,9 +191,8 @@ static void s_WriteLine(FILE* fs, const string& str)
     do {
         size_t cnt = fwrite(data + written, 1, size - written, fs);
         ERR_POST(Info << cnt << " byte(s) written to file"+string(&":"[!cnt]));
-        if (!cnt) {
+        if (!cnt)
             break;
-        }
         NcbiCerr.write(data + written, cnt);
         NcbiCerr << endl << flush;
         written += cnt;
@@ -218,9 +218,8 @@ static void s_ReadStream(istream& ios)
             NcbiCerr.write(buf, cnt);
             NcbiCerr << endl << flush;
             total += cnt;
-        } else if (ios.eof()  ||  ios.bad()) {
+        } else if (ios.eof()  ||  ios.bad())
             break;
-        }
         ios.clear();
     }
     ERR_POST(Info << "Total read from istream " << total << " byte(s)");
@@ -276,7 +275,7 @@ int CTest::Run(void)
     CPipe pipe;
     const CPipe::TCreateFlags share = CPipe::fStdErr_Share;
 
-    static const STimeout iotimeout = {5, 0};
+    static const STimeout iotimeout = { IO_TIMEOUT, 0 };
 
     assert(pipe.SetTimeout(eIO_Read,  &iotimeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &iotimeout) == eIO_Success);
@@ -429,7 +428,7 @@ int CTest::Run(void)
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
-        assert(process.Kill(2000));
+        assert(process.Kill((IO_TIMEOUT / 2) * 1000));
         assert(!process.IsAlive());
     }}
 
@@ -464,7 +463,7 @@ int CTest::Run(void)
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
         CProcess::CExitInfo exitinfo;
-        exitcode = process.Wait(10000/*10 sec*/, &exitinfo);
+        exitcode = process.Wait(IO_TIMEOUT * 1000, &exitinfo);
         string infostr;
         if (exitinfo.IsPresent()) {
             if (exitinfo.IsExited()) {
@@ -527,10 +526,9 @@ int main(int argc, const char* argv[])
         const int kYFrom  = kYChunk * kStep + 1;
         const int kYTo = kYChunk * (kStep + 1);
         const int kLength = (int)::log10((double)kXMax * kYTo) + 2;
-        for (int i = kYFrom; i <= kYTo; ++i) {
-            for (int j = 1; j <= kXMax; ++j) {
+        for (int i = kYFrom;  i <= kYTo;  ++i) {
+            for (int j = 1;  j <= kXMax;  ++j)
                 cout << setw(kLength) << i * j;
-            }
             cout << endl;
         }
         ERR_POST(Info << "--- CPipe unidirectional test (1) done ---");
@@ -560,7 +558,7 @@ int main(int argc, const char* argv[])
     case eStream:
     {
         ERR_POST(Info << "--- CPipe bidirectional test (iostream) ---");
-        for (int i = 5; i <= 10; ++i) {
+        for (int i = 5;  i <= 10;  ++i) {
             int value;
             cin >> value;
             assert(value == i);
@@ -578,7 +576,7 @@ int main(int argc, const char* argv[])
         ::signal(SIGPIPE, SIG_IGN);
 #endif /*NCBI_OS_UNIX*/
         ERR_POST(Info << "--- CPipe sleeping test ---");
-        SleepMilliSec(6000);
+        SleepMilliSec(IO_TIMEOUT * 1500);
         ERR_POST(Info << "--- CPipe sleeping test done ---");
         exit(kTestResult);
     }}
