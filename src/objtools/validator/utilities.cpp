@@ -2926,7 +2926,13 @@ bool DoesFeatureHaveUnnecessaryException(const CSeq_feat& feat, CScope& scope)
     if (!feat.IsSetData()) {
         return false;
     }
+    if (!feat.IsSetLocation()) {
+        return false;
+    }
     CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+    if (!bsh) {
+        return false;
+    }
     CSpliceProblems splice_problems;
     splice_problems.CalculateSpliceProblems(feat, true, sequence::IsPseudo(feat, scope), bsh);
     if (splice_problems.IsExceptionUnnecessary()) {
