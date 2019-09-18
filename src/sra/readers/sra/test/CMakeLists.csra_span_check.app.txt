@@ -6,22 +6,4 @@ NCBI_begin_app(csra_span_check)
   NCBI_sources(csra_span_check)
   NCBI_uses_toolkit_libraries(sraread)
   NCBI_project_watchers(vasilche)
-
 NCBI_end_app()
-
-if(OFF)
-#
-#
-#
-add_executable(csra_span_check-app
-    csra_span_check
-)
-
-set_target_properties(csra_span_check-app PROPERTIES OUTPUT_NAME csra_span_check)
-
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(csra_span_check-app
-    sraread
-)
-endif()
