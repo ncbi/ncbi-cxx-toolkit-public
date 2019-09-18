@@ -44696,7 +44696,16 @@ echo "$as_me: WARNING: $message" >&2;}  ;;
  esac
          VDB_PATH=$vdb_parent/`basename "$VDB_PATH"`
          in_path=" in $VDB_PATH"
-         for x in interfaces include; do
+         case "$host_os" in
+            darwin*  ) vdb_os=mac ;;
+            linux*   ) vdb_os=linux ;;
+            solaris* ) vdb_os=sun ;;
+         esac
+         case "$VDB_PATH" in
+            */cxx_toolkit/* ) vdb_os_interfaces=$vdb_os/../interfaces ;;
+            *               ) vdb_os_interfaces= ;;
+         esac
+         for x in $vdb_os_interfaces interfaces include; do
             if test -d "$VDB_PATH/$x"; then
                vdb_inc_root=$VDB_PATH/$x
                : ${VDB_INCLUDE="-I$vdb_inc_root"}
@@ -44711,11 +44720,7 @@ echo "$as_me: WARNING: $message" >&2;}  ;;
          if test "$ncbi_compiler" = ICC; then
             vdb_inc_subdirs="cc/icc $vdb_inc_subdirs"
          fi
-         case "$host_os" in
-            darwin*  ) vdb_inc_subdirs="os/mac os/unix $vdb_inc_subdirs" ;;
-            linux*   ) vdb_inc_subdirs="os/linux os/unix $vdb_inc_subdirs" ;;
-            solaris* ) vdb_inc_subdirs="os/sun os/unix $vdb_inc_subdirs" ;;
-         esac
+         vdb_inc_subdirs="os/$vdb_os os/unix $vdb_inc_subdirs"
          for x in $vdb_inc_subdirs; do
             VDB_INCLUDE="$VDB_INCLUDE -I$vdb_inc_root/$x"
          done
