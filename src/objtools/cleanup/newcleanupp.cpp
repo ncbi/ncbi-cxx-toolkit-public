@@ -1608,7 +1608,7 @@ void CNewCleanup_imp::BiosourceBC (
 
                 if( altitude_regex->IsMatch(altitude) ) {
                     string new_altitude = altitude_regex->GetSub(altitude, 1); 
-                    new_altitude += " m.";
+                    new_altitude += " m";
                     if( altitude != new_altitude ) {
                         altitude = new_altitude;
                         ChangeMade(CCleanupChange::eCleanSubsource);
