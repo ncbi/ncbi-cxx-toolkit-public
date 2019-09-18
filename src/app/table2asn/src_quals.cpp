@@ -391,7 +391,7 @@ void g_ApplyMods(
                         [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
                 if (title_it != pDescriptors->end()) {
                     pTitleDesc = *title_it;
-                    if (readModsFromTitle) {
+                    if (readModsFromTitle) { 
                         auto& title = (*title_it)->SetTitle();
                         string titleRemainder;
                         TModList mods;
@@ -410,6 +410,7 @@ void g_ApplyMods(
             CModAdder::Apply(mod_handler, *pBioseq, rejectedMods, fReportError);
             s_AppendMods(rejectedMods, remainder);
 
+
             NStr::TruncateSpacesInPlace(remainder);
             if (!remainder.empty()) {
                 if (!pTitleDesc) {
@@ -417,12 +418,14 @@ void g_ApplyMods(
                     pDescriptors->push_back(pTitleDesc);
                     pTitleDesc->SetTitle() = remainder;
                 }
-                else
-                if (pTitleDesc->GetTitle().empty()) {
-                    pTitleDesc->SetTitle() = remainder;
-                }
                 else {
-                    pTitleDesc->SetTitle() += " " + remainder;
+                    string current_title = 
+                        NStr::TruncateSpaces(
+                                pTitleDesc->GetTitle(), 
+                                NStr::eTrunc_End);
+                    pTitleDesc->SetTitle() = current_title.empty() ?
+                        remainder : 
+                        current_title + " " + remainder;
                 }
             }
             else // remainder.empty() 
