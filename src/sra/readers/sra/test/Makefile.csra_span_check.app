@@ -17,4 +17,4 @@ REQUIRES = objects
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-WATCHERS = vasilche ucko
+WATCHERS = vasilche
