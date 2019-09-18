@@ -5871,7 +5871,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       LIBS="$BOOST_LIBPATH $BOOST_SERIALIZATION_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([[#include <boost/archive/text_oarchive.hpp>
-	                     #include <iostream>]],
+                             #include <iostream>]],
               [[boost::archive::text_oarchive oa(std::cout);]])],
           [ncbi_cv_lib_boost_serialization=yes],
           [ncbi_cv_lib_boost_serialization=no])])
