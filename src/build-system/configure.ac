@@ -1019,6 +1019,40 @@ case "/$CXX" in
       ;;
 esac
 
+#### Don't let Clang pick up old (pre-C++14) system standard
+#### library installations on Linux.
+case "$host_os:/$CXX" in
+   linux*:*/clang* )
+      gccver=7.3.0
+      gccdir=/opt/ncbi/gcc/$gccver
+      if test -d $gccdir; then
+         # CPPFLAGS="--gcc-toolchain=$gccdir $CPPFLAGS"
+         # LDFLAGS="--gcc-toolchain=$gccdir $LDFLAGS"
+         for d in `$gccdir/bin/g++ -v -E -x c++ $ARCH_CFLAGS $ARCH_CPPFLAGS - \
+                   </dev/null 2>&1 | fgrep 'include/c++' | tac`; do
+            NCBI_FIX_DIR(d)
+            # We don't use a dedicated CXXCPPFLAGS variable, but sticking
+            # with -isystem rather than -cxx-isystem avoids spurious
+            # warnings when also using ccache or distcc, and should still
+            # be safe in practice.  (The three libstdc++ headers that have
+            # the same names as system headers all arrange to include
+            # those headers via #include_next, and to conditionalize any
+            # C++ declarations on compiling as actual C++.)
+            CPPFLAGS="-isystem $d $CPPFLAGS"
+         done
+         CPPFLAGS="-nostdinc++ $CPPFLAGS"
+         libstdcxx=`$gccdir/bin/g++ --print-file-name=libstdc++.a`
+         d=`dirname $libstdcxx`
+         NCBI_FIX_DIR(d)         
+         LDFLAGS="-L$d -Wl,-rpath,$d $LDFLAGS"
+         crtbegin=`$gccdir/bin/g++ --print-file-name=crtbegin.o`
+         d=`dirname $crtbegin`
+         NCBI_FIX_DIR(d)         
+         LDFLAGS="-L$d -B$d $LDFLAGS"
+      fi
+      ;;
+esac
+
 #### C and C++ compilers
 AC_LANG(C++)
 AX_PROG_CC_FOR_BUILD
@@ -1790,34 +1824,6 @@ if test -n "$with_64"; then
    fi
 fi
 
-#### Don't let Clang pick up old (pre-C++11) system standard
-#### library installations on Linux.
-case "$host_os:/$CXX" in
-   linux*:*/clang* )
-      gccver=4.9.3
-      gccdir=/opt/ncbi/gcc/$gccver
-      if test -d $gccdir; then
-         for d in `$gccdir/bin/g++ -v -E -x c++ $ARCH_CFLAGS $ARCH_CPPFLAGS - \
-                   </dev/null 2>&1 | fgrep 'include/c++' | tac`; do
-            NCBI_FIX_DIR(d)
-            # We don't use a dedicated CXXCPPFLAGS variable, but sticking
-            # with -isystem rather than -cxx-isystem avoids spurious
-            # warnings when also using ccache or distcc, and should still
-            # be safe in practice.  (The three libstdc++ headers that have
-            # the same names as system headers all arrange to include
-            # those headers via #include_next, and to conditionalize any
-            # C++ declarations on compiling as actual C++.)
-            CPPFLAGS="-isystem $d $CPPFLAGS"
-         done
-         CPPFLAGS="-nostdinc++ $CPPFLAGS"
-         libstdcxx=`$gccdir/bin/g++ --print-file-name=libstdc++.a`
-         d=`dirname $libstdcxx`
-         NCBI_FIX_DIR(d)         
-         LDFLAGS="-L$d -Wl,-rpath,$d $LDFLAGS"
-      fi
-      ;;
-esac
-
 case "$host_os:$compiler" in
    darwin*:GCC )
       AC_CACHE_CHECK([whether $CC supports -Wl,-rpath],
@@ -2223,7 +2229,7 @@ case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_lib
         dir=`dirname "$path"`
         abs_dir=`cd "$dir" && pwd`
         case "$dir:$abs_dir" in
-            *:/lib | *:/usr/lib | *:/usr/lib32 | *:/usr/lib64 \
+            *:/lib | *:/lib64 | *:/usr/lib | *:/usr/lib32 | *:/usr/lib64 \
             | *:/usr/lib/$multiarch )
                # no rpath needed
                break
