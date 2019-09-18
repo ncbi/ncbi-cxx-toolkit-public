@@ -8,12 +8,14 @@ LC_ALL=C
 export LC_ALL
 
 new_module=$NCBI/c++.metastable/Release/build/new_module.sh
+clients=false
 force=false
 
 for arg in "$@"; do
     case "$arg" in
+        --clients) clients=true ;;
         --force ) force=true ;;
-        *       ) echo "Usage: $1 [--force]" ; exit 1 ;;
+        *       ) echo "Usage: $1 [--clients] [--force]" ; exit 1 ;;
     esac
 done
 
@@ -66,6 +68,9 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
         esac
         dir=`dirname $spec`
         base=`basename $spec $ext`
+        if $clients; then
+            grep '^clients[     ]*=' $dir/$base.def >/dev/null 2>&1 || continue
+        fi
         if $force || [ ! -f $dir/$base.files ]; then
             echo $spec
             if (cd $dir && $new_module $flag $base >/dev/null 2>&1); then
