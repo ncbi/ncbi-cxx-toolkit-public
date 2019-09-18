@@ -1672,7 +1672,35 @@ void CFeatureItem::x_AddQualsIdx(
             }
         }
 
-        if ((! feat_gene_xref || ! suppressed) &&
+        if (feat_gene_xref && ! suppressed) {
+            gene_ref = feat_gene_xref;
+            CRef<CFeatureIndex> ft = bsx->GetFeatIndex (m_Feat);
+            if (ft) {
+                CRef<CFeatureIndex> fsx = ft->GetBestGene();
+                if (fsx) {
+                    const CMappedFeat mf = fsx->GetMappedFeat();
+                    if (mf) {
+                        const CGene_ref* gr = 0;
+                        CConstRef<CSeq_feat> gf;
+                        gf = &(mf.GetMappedFeature());
+                        gr = &(mf.GetData().GetGene());
+                        if (gr) {
+                            if (gene_ref->IsSetLocus() && gr->IsSetLocus()) {
+                                if (gene_ref->GetLocus() == gr->GetLocus()) {
+                                    gene_feat = &(mf.GetMappedFeature());
+                                    gene_ref = &(mf.GetData().GetGene());
+                                }
+                            } else if (gene_ref->IsSetLocus_tag() && gr->IsSetLocus_tag()) {
+                                if (gene_ref->GetLocus_tag() == gr->GetLocus_tag()) {
+                                    gene_feat = &(mf.GetMappedFeature());
+                                    gene_ref = &(mf.GetData().GetGene());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if ((! feat_gene_xref || ! suppressed) &&
                    subtype != CSeqFeatData::eSubtype_primer_bind) {
             CRef<CFeatureIndex> ft;
             bool is_mapped = false;
