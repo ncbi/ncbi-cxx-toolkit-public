@@ -50,8 +50,7 @@ static TNameToEnumMap<TEnum> s_InitModNameToEnumMap(
     const TNameToEnumMap<TEnum>&  extra_enum_names_to_vals)
 
 {
-    using TModNameEnumMap = unordered_map<string, TEnum>;
-    TModNameEnumMap smod_enum_map;
+    TNameToEnumMap<TEnum> smod_enum_map;
     
     for (const auto& name_val : etv.GetValues()) {
         const auto& enum_name = name_val.first;
