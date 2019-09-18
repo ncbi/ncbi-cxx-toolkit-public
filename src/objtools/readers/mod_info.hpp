@@ -61,13 +61,11 @@ static TNameToEnumMap<TEnum> s_InitModNameToEnumMap(
         {
             continue;
         }
-        auto emplace_result = smod_enum_map.emplace(enum_name, enum_val);
-        assert(emplace_result.second);
+        smod_enum_map.emplace(enum_name, enum_val);
     }
 
     for (auto extra_smod_to_enum : extra_enum_names_to_vals) {
-        auto emplace_result = smod_enum_map.emplace(extra_smod_to_enum);
-        _ASSERT(emplace_result.second);
+        smod_enum_map.emplace(extra_smod_to_enum);
     }
     return smod_enum_map;
 }
@@ -82,7 +80,7 @@ s_InitModNameOrgSubtypeMap(void)
         {{ "subspecies", COrgMod::eSubtype_sub_species},
          {"host",COrgMod::eSubtype_nat_host},
          {"specific-host", COrgMod::eSubtype_nat_host}};
-    return s_InitModNameToEnumMap<COrgMod::ESubtype>(
+    return s_InitModNameToEnumMap(
         *COrgMod::GetTypeInfo_enum_ESubtype(),
         kDeprecatedOrgSubtypes,
         extra_smod_to_enum_names
@@ -111,10 +109,10 @@ s_InitModNameSubSrcSubtypeMap(void)
         { "latitude-longitude", CSubSource::eSubtype_lat_lon },
         {  "note",  CSubSource::eSubtype_other  },
         {  "notes", CSubSource::eSubtype_other  }};  
-    return s_InitModNameToEnumMap<CSubSource::ESubtype>(
+    return s_InitModNameToEnumMap(
             *CSubSource::GetTypeInfo_enum_ESubtype(),
             skip_enum_names,
-            extra_smod_to_enum_names );
+            extra_smod_to_enum_names);
 }
 
 
@@ -129,7 +127,7 @@ s_InitModNameGenomeMap(void)
         { "extrachromosomal", CBioSource::eGenome_extrachrom},
         { "insertion sequence", CBioSource::eGenome_insertion_seq}};
 
-   return s_InitModNameToEnumMap<CBioSource::EGenome>(
+   return s_InitModNameToEnumMap(
            *CBioSource::GetTypeInfo_enum_EGenome(),
            skip_enum_names,
            extra_smod_to_enum_names);
@@ -145,11 +143,10 @@ s_InitModNameOriginMap(void)
         {{ "natural mutant", CBioSource::eOrigin_natmut},
          { "mutant", CBioSource::eOrigin_mut}};
 
-    return s_InitModNameToEnumMap<CBioSource::EOrigin>(
+    return s_InitModNameToEnumMap(
             *CBioSource::GetTypeInfo_enum_EOrigin(),
             skip_enum_names,
             extra_smod_to_enum_names);
-
 }
 
 
