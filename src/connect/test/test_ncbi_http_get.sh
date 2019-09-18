@@ -3,8 +3,8 @@
 
 . ./ncbi_test_data
 
-n="`ls -m $NCBI_TEST_DATA/proxy 2>/dev/null | wc -w`"
-n="`expr ${n:-0} + 1`"
+m="`ls -m $NCBI_TEST_DATA/proxy 2>/dev/null | wc -w`"
+n="`expr ${m:-0} + 1`"
 n="`expr $$ '%' $n`"
 
 if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$n ]; then
@@ -35,8 +35,8 @@ if [ "$ssl" = "1" ]; then
   else
     url='https://www.ncbi.nlm.nih.gov/Service/index.html'
   fi
-elif [ -n "$CONN_HTTP_USER_HEADER" -o \
-          "`echo $FEATURES | grep -c -E '(^| )connext( |$)'`" != "1" ]; then
+elif [ "$m" = "0" -o -n "$CONN_HTTP_USER_HEADER" -o \
+       "`echo $FEATURES | grep -c -E '(^| )connext( |$)'`" != "1" ]; then
   : ${CONN_USESSL:=1};  export CONN_USESSL
   url='http://www.ncbi.nlm.nih.gov/Service/index.html'
 else
