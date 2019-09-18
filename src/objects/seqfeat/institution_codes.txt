@@ -2232,6 +2232,7 @@ GLG	s	Trinity College
 GLLB	s	Laurel Bank School			
 GLM	s	Staatliches Museum fuer Naturkunde Goerlitz			
 GLMC	s	Guilin Medical College, Pharmacy Department			
+GLMC<DEU>	c	Culture collection of Senckenberg Museum of Natural  History Gorlitz			
 GLNP	s	Glacier National Park			
 GLO	s	Natural History Society of Glasglow			
 GLOW	s	Lowveld National Botanical Garden			
