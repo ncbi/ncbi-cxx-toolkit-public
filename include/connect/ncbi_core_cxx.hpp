@@ -39,7 +39,6 @@
 
 #include <corelib/ncbireg.hpp>
 #include <connect/ncbi_tls.h>
-#include <string.h>
 
 
 /** @addtogroup UtilityFunc

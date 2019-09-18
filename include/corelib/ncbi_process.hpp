@@ -41,9 +41,7 @@
 /// Implemented for: UNIX, MS-Windows
 
 
-#include <corelib/ncbistr.hpp>
 #include <corelib/interprocess_lock.hpp>
-#include <corelib/ncbimisc.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <sys/types.h>
