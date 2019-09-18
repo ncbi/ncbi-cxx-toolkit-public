@@ -40,12 +40,14 @@ BEGIN_SCOPE(objects)
 
 using TModNameSet = unordered_set<string>;
 
+template<typename TEnum> 
+using TNameToEnumMap = unordered_map<string,TEnum>;
 
 template<typename TEnum>
-static unordered_map<string, TEnum> s_InitModNameToEnumMap(
+static TNameToEnumMap<TEnum> s_InitModNameToEnumMap(
     const CEnumeratedTypeValues& etv,
     const TModNameSet& skip_enum_names,
-    const unordered_map<string, TEnum>&  extra_enum_names_to_vals)
+    const TNameToEnumMap<TEnum>&  extra_enum_names_to_vals)
 
 {
     using TModNameEnumMap = unordered_map<string, TEnum>;
@@ -65,23 +67,22 @@ static unordered_map<string, TEnum> s_InitModNameToEnumMap(
 
     for (auto extra_smod_to_enum : extra_enum_names_to_vals) {
         auto emplace_result = smod_enum_map.emplace(extra_smod_to_enum);
-        assert(emplace_result.second);
+        _ASSERT(emplace_result.second);
     }
     return smod_enum_map;
 }
 
-
-static unordered_map<string, COrgMod::TSubtype> 
+static TNameToEnumMap<COrgMod::ESubtype>
 s_InitModNameOrgSubtypeMap(void)
 {
-    static const unordered_set<string> kDeprecatedOrgSubtypes{
+    static const TModNameSet kDeprecatedOrgSubtypes{
             "dosage", "old-lineage", "old-name"};
-    static const unordered_map<string, COrgMod::TSubtype> 
+    static const TNameToEnumMap<COrgMod::ESubtype> 
         extra_smod_to_enum_names 
         {{ "subspecies", COrgMod::eSubtype_sub_species},
          {"host",COrgMod::eSubtype_nat_host},
          {"specific-host", COrgMod::eSubtype_nat_host}};
-    return s_InitModNameToEnumMap<COrgMod::TSubtype>(
+    return s_InitModNameToEnumMap<COrgMod::ESubtype>(
         *COrgMod::GetTypeInfo_enum_ESubtype(),
         kDeprecatedOrgSubtypes,
         extra_smod_to_enum_names
@@ -89,12 +90,12 @@ s_InitModNameOrgSubtypeMap(void)
 }
 
 
-static unordered_map<string, CSubSource::TSubtype> 
+static TNameToEnumMap<CSubSource::ESubtype>
 s_InitModNameSubSrcSubtypeMap(void)
 {
     // some are skipped because they're handled specially and some are
     // skipped because they're deprecated
-    static const unordered_set<string> skip_enum_names {
+    static const TModNameSet skip_enum_names {
         // skip because handled specially elsewhere
         "fwd-primer-seq", "rev-primer-seq",
         "fwd-primer-name", "rev-primer-name",
@@ -103,47 +104,48 @@ s_InitModNameSubSrcSubtypeMap(void)
         "plastid-name",
         "insertion-seq-name",
     };
-    static const unordered_map<string, CSubSource::TSubtype> 
+    static const TNameToEnumMap<CSubSource::ESubtype> 
         extra_smod_to_enum_names 
         {{ "sub-clone", CSubSource::eSubtype_subclone },
         { "lat-long",   CSubSource::eSubtype_lat_lon  },
         { "latitude-longitude", CSubSource::eSubtype_lat_lon },
         {  "note",  CSubSource::eSubtype_other  },
         {  "notes", CSubSource::eSubtype_other  }};  
-    return s_InitModNameToEnumMap<CSubSource::TSubtype>(
+    return s_InitModNameToEnumMap<CSubSource::ESubtype>(
             *CSubSource::GetTypeInfo_enum_ESubtype(),
             skip_enum_names,
             extra_smod_to_enum_names );
 }
 
 
-static unordered_map<string, CBioSource::TGenome>
+static TNameToEnumMap<CBioSource::EGenome>
 s_InitModNameGenomeMap(void)
 {
    static const TModNameSet skip_enum_names;
-   static const unordered_map<string, CBioSource::TGenome> 
+   static const TNameToEnumMap<CBioSource::EGenome> 
        extra_smod_to_enum_names 
        {{ "mitochondrial", CBioSource::eGenome_mitochondrion },
         { "provirus", CBioSource::eGenome_proviral},
         { "extrachromosomal", CBioSource::eGenome_extrachrom},
         { "insertion sequence", CBioSource::eGenome_insertion_seq}};
 
-   return s_InitModNameToEnumMap<CBioSource::TGenome>(
+   return s_InitModNameToEnumMap<CBioSource::EGenome>(
            *CBioSource::GetTypeInfo_enum_EGenome(),
            skip_enum_names,
            extra_smod_to_enum_names);
 }
 
-static unordered_map<string, CBioSource::TOrigin>
+
+static TNameToEnumMap<CBioSource::EOrigin>
 s_InitModNameOriginMap(void)
 {
     static const TModNameSet skip_enum_names;
-    static const unordered_map<string, CBioSource::TOrigin>
+    static const TNameToEnumMap<CBioSource::EOrigin>
         extra_smod_to_enum_names 
         {{ "natural mutant", CBioSource::eOrigin_natmut},
          { "mutant", CBioSource::eOrigin_mut}};
 
-    return s_InitModNameToEnumMap<CBioSource::TOrigin>(
+    return s_InitModNameToEnumMap<CBioSource::EOrigin>(
             *CBioSource::GetTypeInfo_enum_EOrigin(),
             skip_enum_names,
             extra_smod_to_enum_names);
@@ -151,24 +153,14 @@ s_InitModNameOriginMap(void)
 }
 
 
-template<typename T, typename U, typename THash> // Only works if TUmap values are unique
-static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U,THash>& TUmap) 
-{
-    unordered_map<U,T> UTmap;
-    for (const auto& key_val : TUmap) {
-        UTmap.emplace(key_val.second, key_val.first);
-    }
-    return UTmap;
-}
-
-static const unordered_map<string, CSeq_inst::EStrand> 
+static const TNameToEnumMap<CSeq_inst::EStrand> 
 s_StrandStringToEnum = {{"single", CSeq_inst::eStrand_ss},
                         {"double", CSeq_inst::eStrand_ds},
                         {"mixed", CSeq_inst::eStrand_mixed},
                         {"other", CSeq_inst::eStrand_other}};
 
 
-static const unordered_map<string, CSeq_inst::EMol>
+static const TNameToEnumMap<CSeq_inst::EMol>
 s_MolStringToEnum = {{"dna", CSeq_inst::eMol_dna},
                      {"rna", CSeq_inst::eMol_rna},
                      {"aa", CSeq_inst::eMol_aa},
@@ -176,7 +168,7 @@ s_MolStringToEnum = {{"dna", CSeq_inst::eMol_dna},
                     {"other", CSeq_inst::eMol_other}};
 
 
-static const unordered_map<string, CSeq_inst::ETopology> 
+static const TNameToEnumMap<CSeq_inst::ETopology> 
 s_TopologyStringToEnum = {{"linear", CSeq_inst::eTopology_linear},
                           {"circular", CSeq_inst::eTopology_circular},
                           {"tandem", CSeq_inst::eTopology_tandem},
@@ -188,11 +180,11 @@ static const auto s_GenomeStringToEnum = s_InitModNameGenomeMap();
 static const auto s_OriginStringToEnum = s_InitModNameOriginMap();
 
 static const auto s_OrgModStringToEnum = s_InitModNameOrgSubtypeMap();
+
 static const auto s_SubSourceStringToEnum = s_InitModNameSubSrcSubtypeMap();
 
-
 static const 
-unordered_map<string, CMolInfo::TBiomol> s_BiomolStringToEnum
+TNameToEnumMap<CMolInfo::TBiomol> s_BiomolStringToEnum
 = { {"crna",                    CMolInfo::eBiomol_cRNA },   
     {"dna",                     CMolInfo::eBiomol_genomic},   
     {"genomic",                 CMolInfo::eBiomol_genomic},   
@@ -237,7 +229,7 @@ unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> s_BiomolEnumToMolEnum
 
 
 static const 
-unordered_map<string, CMolInfo::TTech>
+TNameToEnumMap<CMolInfo::TTech>
 s_TechStringToEnum = {
     { "?",                  CMolInfo::eTech_unknown },
     { "barcode",            CMolInfo::eTech_barcode },
@@ -267,7 +259,6 @@ s_TechStringToEnum = {
 };
 
 
-//static const auto s_TechEnumToString  = s_GetReverseMap(s_TechStringToEnum);
 
 
 static const 
@@ -281,9 +272,6 @@ s_CompletenessStringToEnum = {
     { "no-right",  CMolInfo::eCompleteness_no_right  },
     { "partial",   CMolInfo::eCompleteness_partial  }
 };
-
-
-//static const auto s_CompletenessEnumToString = s_GetReverseMap(s_CompletenessStringToEnum);
 
 
 END_SCOPE(objects)
