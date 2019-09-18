@@ -484,6 +484,11 @@ void CMultiReaderApp::Init(void)
         true);
         
     arg_desc->AddFlag(
+        "genbank-no-locus-tags",
+        "clean up output for genbank submission, no locus-ag needed",
+        true);
+        
+    arg_desc->AddFlag(
         "euk",
         "in -genbank mode, generate any missing mRNA features",
         true);
@@ -499,7 +504,7 @@ void CMultiReaderApp::Init(void)
         "Prefix or starting tag for auto generated locus tags",
         CArgDescriptions::eString,
         "" );
-        
+                
     //
     //  wiggle reader specific arguments:
     //
@@ -655,7 +660,18 @@ CMultiReaderApp::Run(void)
             << endl;
         return 1;
     }
-
+    if (args["genbank"].AsBoolean()  &&  args["genbank-no-locus-tags"].AsBoolean()) {
+        cerr << "multireader: flags -genbank and -genbank-no-locus-tags are mutually "
+            "exclusive"
+            << endl;
+        return 1;
+    }
+    if (!args["locus-tag"].AsString().empty()  &&  args["genbank-no-locus-tags"].AsBoolean()) {
+        cerr << "multireader: flags -locus-tag and -genbank-no-locus-tags are mutually "
+            "exclusive"
+            << endl;
+        return 1;
+    }
     xSetMapper(args);
     xSetMessageListener(args);
 
@@ -669,7 +685,7 @@ CMultiReaderApp::Run(void)
         while (retIn) {
             if (!fileDestination.Next(inFile, outFile)) {
                 cerr << "multireader: unable to create output file "
-                     << outFile << "." << endl;
+                        << outFile << "." << endl;
                 return 1;
             }
             CNcbiIfstream istr(inFile.c_str(), IOS_BASE::binary);
@@ -780,6 +796,9 @@ CMultiReaderApp::xProcessSingleFile(
                 FORMAT(
                     "Reading aborted due to fatal error: " << std_ex.what()));
         m_pErrors->PutError(*line_error_p);
+        retCode = false;
+    } catch(int) {
+        // hack on top of hackish reporting system
         retCode = false;
     } catch(...) {
         AutoPtr<ILineError> line_error_p =
@@ -1286,6 +1305,9 @@ void CMultiReaderApp::xSetFlags(
         if ( args["child-links"] ) {
             m_iFlags |= CGtfReader::fGenerateChildXrefs;
         }
+        if (args["genbank-no-locus-tags"]) {
+            m_iFlags |= CGtfReader::fGenbankMode;
+        }
         if (args["genbank"]) {
             m_iFlags |= CGtfReader::fGenbankMode;
             if (args["locus-tag"]) {
@@ -1297,6 +1319,9 @@ void CMultiReaderApp::xSetFlags(
     case CFormatGuess::eGff3:
         if ( args["gene-xrefs"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
+        }
+        if (args["genbank-no-locus-tags"]) {
+            m_iFlags |= CGtfReader::fGenbankMode;
         }
         if ( args["genbank"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
@@ -1325,7 +1350,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     static unsigned int startingLocusTagNumber = 1;
     static unsigned int startingFeatureId = 1;
 
-    if (!args["genbank"].AsBoolean()) {
+    if (!args["genbank"].AsBoolean()  &&  !args["genbank-no-locus-tags"].AsBoolean()) {
 		return;
 	}
 
@@ -1351,7 +1376,18 @@ void CMultiReaderApp::xPostProcessAnnot(
         annot, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
     fte.InferPartials();
     fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
-    fte.GenerateLocusTags();
+    if (args["genbank"].AsBoolean()  &&  !fte.AnnotHasAllLocusTags()) {
+        if (!prefix.empty()) {
+            fte.GenerateLocusTags();
+        }
+        else {
+            AutoPtr<ILineError> line_error_p =
+                sCreateSimpleMessage(
+                    eDiag_Fatal, "Need prefix to generate missing locus tags but none was provided");
+            this->WriteMessageImmediately(cerr, *line_error_p);
+            throw(0);
+        }
+    }
     fte.GenerateProteinAndTranscriptIds();
     //fte.InstantiateProducts();
     fte.EliminateBadQualifiers();

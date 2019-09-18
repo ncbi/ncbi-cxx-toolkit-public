@@ -1197,6 +1197,22 @@ bool idAlpha(const CSeq_id_Handle& idh1, const CSeq_id_Handle idh2) {
 }
 
 //  ----------------------------------------------------------------------------
+bool CFeatTableEdit::AnnotHasAllLocusTags() const
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector selGenes;
+    selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+    CFeat_CI itGenes(mHandle, selGenes);
+    for (; itGenes; ++itGenes) {
+        CSeq_feat_Handle fh = *itGenes;
+        if (!fh.GetData().GetGene().IsSetLocus_tag()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateLocusTags()
 //  ----------------------------------------------------------------------------
 {

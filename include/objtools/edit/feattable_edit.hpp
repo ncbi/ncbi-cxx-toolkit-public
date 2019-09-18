@@ -83,6 +83,8 @@ public:
         return mNextFeatId;
     }
 
+    bool AnnotHasAllLocusTags() const;
+
     bool m_use_hypothetic_protein = true;
     string mLocusTagPrefix;
     unsigned int mLocusTagNumber = 1;
