@@ -92,9 +92,9 @@ static const string kQuery = "Query";
 static const string kCoverage = "Query coverage";
 static const string kEllipsis = "...";
 
-static const string kIdent = "Max";
-static const string kIdentLine2  = "ident";
-static const string kTotalLine2 = "score";
+static const string kMax = "Max";
+static const string kIdentLine2  = "Ident";
+static const string kScoreLine2 = "Score";
 static const string kQueryCov = "Query";
 static const string kQueryCovLine2 = "cover";
 static const string kPerc = "Per.";
@@ -738,7 +738,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                 CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
                 CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
                 CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
-                out << kIdent;//"Max" - "ident" -second line                
+                out << kMax;//"Max" - "ident" -second line                
             }
 
             out << "\n";
@@ -763,7 +763,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             
             if (m_Option & eShowTotalScore) {
                 CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
-                out << kTotalLine2;//"score"
+                out << kScoreLine2;//"score"
                 CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - kTotal.size()); 
                 CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             }
@@ -1613,8 +1613,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplateText(CNcbiOstream & out)
         m_MaxAccLength = 16;
                 
         string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"descr_hd1"," ",m_LineLen); //empty string
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kScore,m_MaxScoreLen);
-        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",kE,m_MaxEvalueLen,CAlignFormatUtil::eSpacePosToCenter);    
@@ -1622,8 +1621,8 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplateText(CNcbiOstream & out)
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",m_MaxAccLength);        
         //kBits 	kTotalLine2 kQueryCovLine2 kValue kIdentLine2 
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"descr_hd2",kDescription,m_LineLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd2",kBits,m_MaxScoreLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd2",kTotalLine2,m_MaxTotalScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd2",kScoreLine2,m_MaxScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd2",kScoreLine2,m_MaxTotalScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd2",kQueryCovLine2,m_MaxQueryCoverLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd2",kValue,m_MaxEvalueLen);    
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd2",kIdentLine2,m_MaxPercentIdentityLen);        
