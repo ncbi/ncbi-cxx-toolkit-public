@@ -9,19 +9,3 @@ NCBI_begin_app(test_ncbi_url)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-if(OFF)
-
-add_executable(test_ncbi_url-app
-    test_ncbi_url
-)
-
-set_target_properties(test_ncbi_url-app PROPERTIES OUTPUT_NAME test_ncbi_url)
-
-
-target_link_libraries(test_ncbi_url-app
-    test_boost
-)
-
-add_test(NAME test_ncbi_url-app
-         COMMAND $<TARGET_FILE:test_ncbi_url-app>)
-endif()

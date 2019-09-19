@@ -9,14 +9,3 @@ NCBI_begin_lib(xregexp_template_tester)
   NCBI_project_watchers(ivanov)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xregexp_template_tester
-    regexp_template_tester
-)
-target_link_libraries(xregexp_template_tester
-    xregexp
-)
-endif()

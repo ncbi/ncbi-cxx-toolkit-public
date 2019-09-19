@@ -9,7 +9,3 @@ NCBI_begin_lib(xpbacktest)
   NCBI_project_watchers(lavr)
 NCBI_end_lib()
 
-if(OFF)
-add_library(xpbacktest    pbacktest)
-target_link_libraries(xpbacktest    xncbi)
-endif()

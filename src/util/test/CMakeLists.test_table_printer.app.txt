@@ -11,18 +11,3 @@ NCBI_begin_app(test_table_printer)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_table_printer-app
-    test_table_printer
-)
-
-set_target_properties(test_table_printer-app PROPERTIES OUTPUT_NAME test_table_printer)
-
-
-target_link_libraries(test_table_printer-app
-    test_boost xutil
-)
-endif()

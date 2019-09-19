@@ -9,15 +9,3 @@ NCBI_begin_lib(xqueryparse)
   NCBI_project_watchers(kuznets)
 NCBI_end_lib()
 
-if (OFF)
-#
-#
-#
-add_library(xqueryparse
-    query_parse parser query_tree_print query_exec parse_utils
-)
-
-target_link_libraries(xqueryparse
-    xncbi
-)
-endif()

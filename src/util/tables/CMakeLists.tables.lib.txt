@@ -7,12 +7,3 @@ NCBI_begin_lib(tables)
   NCBI_project_watchers(ucko)
 NCBI_end_lib()
 
-if (OFF)
-#
-#
-add_library(tables
-    raw_scoremat
-)
-
-target_link_libraries(tables)
-endif()

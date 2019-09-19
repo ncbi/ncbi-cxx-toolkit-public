@@ -10,19 +10,3 @@ NCBI_begin_lib(xcser)
 NCBI_end_lib()
 
 
-if(OFF)
-#
-#
-#
-
-include_directories(SYSTEM ${NCBI_C_INCLUDE})
-link_directories(${NCBI_C_LIBPATH})
-
-add_library(xcser
-    asntypes serialasn
-)
-
-target_link_libraries(xcser
-    ${NCBI_C_ncbi} xser
-)
-endif()

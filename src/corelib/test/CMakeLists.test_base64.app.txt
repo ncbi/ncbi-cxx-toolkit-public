@@ -9,19 +9,3 @@ NCBI_begin_app(test_base64)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 
-if(OFF)
-add_executable(test_base64-app
-    test_base64
-)
-
-set_target_properties(test_base64-app PROPERTIES OUTPUT_NAME test_base64)
-
-
-target_link_libraries(test_base64-app
-    test_boost
-)
-
-
-add_test(NAME test_base64-app
-         COMMAND $<TARGET_FILE:test_base64-app>)
-endif()

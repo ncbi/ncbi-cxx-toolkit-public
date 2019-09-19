@@ -8,15 +8,3 @@ NCBI_begin_lib(xsoap_server)
   NCBI_project_watchers(gouriano)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xsoap_server
-    soap_server
-)
-
-target_link_libraries(xsoap_server
-    xcgi xsoap
-)
-endif()

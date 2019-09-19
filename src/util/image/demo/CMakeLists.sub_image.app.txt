@@ -8,19 +8,3 @@ NCBI_begin_app(sub_image)
   NCBI_project_watchers(dicuccio)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(sub_image-app
-    sub_image
-)
-
-set_target_properties(sub_image-app PROPERTIES OUTPUT_NAME sub_image)
-
-target_link_libraries(sub_image-app
-    ximage
-)
-endif()
-

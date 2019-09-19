@@ -9,19 +9,3 @@ NCBI_begin_app(test_ncbistr)
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
-if(OFF)
-
-add_executable(test_ncbistr-app
-    test_ncbistr
-)
-
-set_target_properties(test_ncbistr-app PROPERTIES OUTPUT_NAME test_ncbistr)
-
-
-target_link_libraries(test_ncbistr-app
-    test_boost
-)
-
-add_test(NAME test_ncbistr-app
-         COMMAND $<TARGET_FILE:test_ncbistr-app>)
-endif()

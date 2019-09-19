@@ -11,17 +11,3 @@ NCBI_begin_app(test_thread_pool)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_thread_pool-app
-    test_thread_pool
-)
-
-set_target_properties(test_thread_pool-app PROPERTIES OUTPUT_NAME test_thread_pool)
-
-target_link_libraries(test_thread_pool-app
-    test_mt xutil
-)
-endif()

@@ -11,17 +11,3 @@ NCBI_begin_app(test_cache_mt)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_cache_mt-app
-    test_cache_mt
-)
-
-set_target_properties(test_cache_mt-app PROPERTIES OUTPUT_NAME test_cache_mt)
-
-target_link_libraries(test_cache_mt-app
-    test_mt xutil
-)
-endif()

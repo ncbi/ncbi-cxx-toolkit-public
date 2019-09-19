@@ -12,18 +12,3 @@ NCBI_begin_app(test_porter_stemming)
   NCBI_add_test(test_porter_stemming -data-in porter-data.txt)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_porter_stemming-app
-    test_porter_stemming
-)
-
-set_target_properties(test_porter_stemming-app PROPERTIES OUTPUT_NAME test_porter_stemming)
-
-
-target_link_libraries(test_porter_stemming-app
-    test_boost xutil
-)
-endif()

@@ -8,15 +8,3 @@ NCBI_begin_lib(xdiff)
   NCBI_project_watchers(ivanov)
 NCBI_end_lib()
 
-
-if(OFF)
-#
-#
-add_library(xdiff
-    diff
-)
-
-target_link_libraries(xdiff
-    xncbi
-)
-endif()

@@ -10,13 +10,3 @@ NCBI_begin_app(test_limited_map)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-
-add_executable(test_limited_map
-    test_limited_map
-)
-
-target_link_libraries(test_limited_map
-    xncbi
-)
-endif()

@@ -8,18 +8,3 @@ NCBI_begin_app(test_ncbi_config)
   NCBI_project_watchers(gouriano)
 NCBI_end_app()
 
-if(OFF)
-
-add_executable(test_ncbi_config-app
-    test_ncbi_config
-)
-
-set_target_properties(test_ncbi_config-app PROPERTIES OUTPUT_NAME test_ncbi_config)
-
-target_link_libraries(test_ncbi_config-app
-    xncbi
-)
-
-add_test(NAME test_ncbi_config-app
-         COMMAND $<TARGET_FILE:test_ncbi_config-app>)
-endif()

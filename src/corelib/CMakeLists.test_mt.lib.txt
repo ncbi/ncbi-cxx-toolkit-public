@@ -10,8 +10,3 @@ NCBI_begin_lib(test_mt)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-add_library(test_mt    test_mt)
-target_link_libraries(test_mt    xncbi)
-endif()
-

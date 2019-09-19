@@ -9,19 +9,3 @@ NCBI_begin_app(test_trial_check)
   NCBI_project_watchers(vasilche)
 NCBI_end_app()
 
-
-if(OFF)
-
-add_executable(test_trial_check-app
-    test_trial_check
-)
-
-set_target_properties(test_trial_check-app PROPERTIES OUTPUT_NAME test_trial_check)
-
-target_link_libraries(test_trial_check-app
-    xncbi
-)
-
-add_test(NAME test_trial_check-app
-         COMMAND $<TARGET_FILE:test_trial_check-app>)
-endif()

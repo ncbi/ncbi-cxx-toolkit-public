@@ -9,15 +9,3 @@ NCBI_begin_app(coretest)
   NCBI_project_watchers(vakatov)
 NCBI_end_app()
 
-if(OFF)
-add_executable(coretest-app
-    coretest
-)
-
-set_target_properties(coretest-app PROPERTIES OUTPUT_NAME coretest)
-
-target_link_libraries(coretest-app
-    test_boost
-)
-endif()
-

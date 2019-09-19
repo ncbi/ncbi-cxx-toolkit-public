@@ -9,18 +9,3 @@ NCBI_begin_app(test_range_coll)
   NCBI_project_watchers(dicuccio)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_range_coll-app
-    test_range_coll
-)
-
-set_target_properties(test_range_coll-app PROPERTIES OUTPUT_NAME test_range_coll)
-
-
-target_link_libraries(test_range_coll-app
-    test_boost
-)
-endif()

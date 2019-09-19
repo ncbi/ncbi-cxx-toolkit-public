@@ -10,17 +10,3 @@ NCBI_begin_app(test_diff)
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_diff-app
-    test_diff
-)
-
-set_target_properties(test_diff-app PROPERTIES OUTPUT_NAME test_diff)
-
-target_link_libraries(test_diff-app
-    xdiff xutil
-)
-endif()

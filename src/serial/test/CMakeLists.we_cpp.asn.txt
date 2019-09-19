@@ -8,22 +8,3 @@ NCBI_begin_lib(we_cpp)
   NCBI_project_watchers(gouriano)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-
-set(MODULE we_cpp)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-set(MODULE_PATH_RELATIVE "serial/test")
-
-set(MODULE_EXT "asn")
-add_library(we_cpp ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(we_cpp
-    xser
-)
-endif()

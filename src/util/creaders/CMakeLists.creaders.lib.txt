@@ -8,11 +8,3 @@ NCBI_begin_lib(creaders)
   NCBI_project_watchers(bollin)
 NCBI_end_lib()
 
-if (OFF)
-#
-#
-#
-add_library(creaders
-    alnread
-)
-endif()

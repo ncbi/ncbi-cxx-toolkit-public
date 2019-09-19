@@ -12,11 +12,3 @@ NCBI_begin_app(test_timsort)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-
-add_executable(test_timsort test_timsort)
-
-target_link_libraries(test_timsort
-    xutil
-)
-endif()

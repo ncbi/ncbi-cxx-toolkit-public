@@ -9,18 +9,3 @@ NCBI_begin_app(test_expr)
   NCBI_project_watchers(vakatov)
 NCBI_end_app()
 
-if(OFF)
-add_executable(test_expr-app
-    test_expr
-)
-
-set_target_properties(test_expr-app PROPERTIES OUTPUT_NAME test_expr)
-
-
-target_link_libraries(test_expr-app
-    test_boost
-)
-
-add_test(NAME test_expr-app
-         COMMAND $<TARGET_FILE:test_expr-app>)
-endif()

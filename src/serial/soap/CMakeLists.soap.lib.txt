@@ -8,16 +8,3 @@ NCBI_begin_lib(xsoap)
   NCBI_project_watchers(gouriano)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xsoap
-    soap_message soap_readhook soap_writehook soap_client soap_11__
-    soap_11___
-)
-
-target_link_libraries(xsoap
-    xconnect xser
-)
-endif()

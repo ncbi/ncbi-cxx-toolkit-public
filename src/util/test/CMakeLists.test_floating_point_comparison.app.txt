@@ -11,18 +11,3 @@ NCBI_begin_app(test_floating_point_comparison)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_floating_point_comparison-app
-    test_floating_point_comparison
-)
-
-set_target_properties(test_floating_point_comparison-app PROPERTIES OUTPUT_NAME test_floating_point_comparison)
-
-
-target_link_libraries(test_floating_point_comparison-app
-    test_boost
-)
-endif()

@@ -10,19 +10,3 @@ NCBI_begin_app(test_regexp)
   NCBI_add_test(test_regexp Abc Ef Ghh Ooo Pppk)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_regexp-app
-    test_regexp
-)
-
-set_target_properties(test_regexp-app PROPERTIES OUTPUT_NAME test_regexp)
-
-include_directories(SYSTEM ${PCRE_INCLUDE})
-
-target_link_libraries(test_regexp-app
-    xregexp
-)
-endif()

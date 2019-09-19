@@ -10,17 +10,3 @@ NCBI_begin_app(test_ncbi_table)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_ncbi_table-app
-    test_table
-)
-
-set_target_properties(test_ncbi_table-app PROPERTIES OUTPUT_NAME test_ncbi_table)
-
-target_link_libraries(test_ncbi_table-app
-    xutil
-)
-endif()
