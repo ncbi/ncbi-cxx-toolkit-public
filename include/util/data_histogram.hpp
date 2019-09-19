@@ -128,6 +128,19 @@ public:
                EScaleType scale_type = eLinear, 
                EScaleView scale_view = eMonotonic);
 
+    /// Copy constructor.
+    ///
+    /// Create a full copy of the CHistogram objects "other".
+    ///
+    CHistogram(const CHistogram& other) { x_Copy(other); }
+
+    /// Assignment operator.
+    ///
+    /// Create a full copy of the CHistogram objects "other".
+    //
+    CHistogram& operator=(const CHistogram& other) {  return x_Copy(other); }
+
+
     /// Add auxiliary left/right scales.
     ///
     /// The CHistogram constructor defines a main scale for some data range.
@@ -296,9 +309,8 @@ protected:
     /// @sa Add, x_AddLinear
     void x_AddBisection(TValue value);
 
-    // Prevent copying
-    CHistogram(const CHistogram&);
-    CHistogram& operator=(const CHistogram&);
+    /// Create a full copy of the CHistogram objects "other".
+    CHistogram& x_Copy(const CHistogram& other);
 
 protected:
     TValue    m_Min;         ///< Minimum value (the lower bound of combined scale)
@@ -346,6 +358,27 @@ CHistogram<TValue, TScale, TCounter>::CHistogram
     x_CalculateBins(m_Min, m_Max, 0, m_NumBins, scale_type, scale_view);
     // Reset counters
     Reset();
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+CHistogram<TValue, TScale, TCounter>& 
+CHistogram<TValue, TScale, TCounter>::x_Copy(const CHistogram& other)
+{
+    if (this != &other) { // prevent self-assignment
+        m_Min = other.m_Min;
+        m_Max = other.m_Max;
+        m_NumBins = other.m_NumBins;
+        m_Count = other.m_Count;
+        m_LowerAnomalyCount = other.m_LowerAnomalyCount;
+        m_UpperAnomalyCount = other.m_UpperAnomalyCount;
+
+        m_Starts.reset(new TScale[m_NumBins]);
+        memcpy(m_Starts.get(), other.m_Starts.get(), sizeof(TScale) * m_NumBins);
+        m_Counters.reset(new TCounter[m_NumBins]);
+        memcpy(m_Counters.get(), other.m_Counters.get(), sizeof(TCounter) * m_NumBins);
+    }
+    return *this;
 }
 
 
