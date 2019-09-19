@@ -9,17 +9,3 @@ NCBI_begin_app(test_multipart_cgi)
   NCBI_project_watchers(ucko)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_multipart.cgi-app
-    test_multipart_cgi
-)
-
-set_target_properties(test_multipart.cgi-app PROPERTIES OUTPUT_NAME test_multipart.cgi)
-
-target_link_libraries(test_multipart.cgi-app
-    xcgi
-)
-endif()
