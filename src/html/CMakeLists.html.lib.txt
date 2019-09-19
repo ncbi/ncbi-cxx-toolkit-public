@@ -12,16 +12,3 @@ NCBI_begin_lib(xhtml)
   NCBI_project_watchers(ivanov)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xhtml
-    node html htmlhelper page pager selection components commentdiag
-    indentstream html_exception writer_htmlenc
-)
-
-target_link_libraries(xhtml
-    xncbi
-)
-endif()

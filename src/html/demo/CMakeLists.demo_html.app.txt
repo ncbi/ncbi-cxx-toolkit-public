@@ -9,17 +9,3 @@ NCBI_begin_app(demo_html)
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(demo_html-app
-    demo_html
-)
-
-set_target_properties(demo_html-app PROPERTIES OUTPUT_NAME demo_html)
-
-target_link_libraries(demo_html-app
-    xcgi xhtml
-)
-endif()
