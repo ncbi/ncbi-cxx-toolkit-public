@@ -10,19 +10,3 @@ NCBI_begin_app(test_asn_converter)
   NCBI_project_watchers(ucko)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_asn_converter-app
-    test_asn_converter
-)
-
-set_target_properties(test_asn_converter-app PROPERTIES OUTPUT_NAME test_asn_converter)
-
-target_link_libraries(test_asn_converter-app
-    seqset xconnect xctools
-    ncbiobj ${NCBI_C_ncbi}
-)
-endif()
-

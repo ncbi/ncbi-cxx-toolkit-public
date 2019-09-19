@@ -9,22 +9,3 @@ NCBI_begin_lib(xasn)
   NCBI_project_watchers(gouriano)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-
-add_library(xasn
-    asnio asnwrite
-)
-
-target_link_libraries(xasn
-    xhtml ${NCBI_C_ncbi}
-)
-
-if (APPLE)
-   target_link_libraries(xasn -Wl,-framework,ApplicationServices
-                         xhtml
-                        )
-endif (APPLE)
-endif()

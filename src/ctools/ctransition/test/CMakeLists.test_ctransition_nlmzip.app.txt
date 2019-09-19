@@ -10,13 +10,3 @@ NCBI_begin_app(test_ctransition_nlmzip)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-add_executable(test_ctransition_nlmzip test_ctransition_nlmzip)
-
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-target_link_libraries(test_ctransition
-    ctransition
-)
-endif()
-
