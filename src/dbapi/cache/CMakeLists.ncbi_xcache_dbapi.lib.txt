@@ -9,16 +9,3 @@ NCBI_begin_lib(ncbi_xcache_dbapi SHARED)
   NCBI_project_watchers(kuznets)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xcache_dbapi
-    dbapi_blob_cache dbapi_blob_cache_cf
-)
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-target_link_libraries(ncbi_xcache_dbapi
-    dbapi
-)
-endif()

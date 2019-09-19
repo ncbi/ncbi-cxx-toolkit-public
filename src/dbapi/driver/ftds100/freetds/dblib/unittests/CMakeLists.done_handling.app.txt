@@ -8,20 +8,3 @@ NCBI_begin_app(db100_done_handling)
   NCBI_add_test(test-db100 --no-auto db100_done_handling)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(db100_done_handling-app
-    done_handling common
-)
-
-set_target_properties(db100_done_handling-app PROPERTIES OUTPUT_NAME db100_done_handling)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(db100_done_handling-app
-    sybdb_ftds100 ${FTDS100_CTLIB_LIBS}
-     ${RT_LIBS} ${C_LIBS} 
-)
-endif()

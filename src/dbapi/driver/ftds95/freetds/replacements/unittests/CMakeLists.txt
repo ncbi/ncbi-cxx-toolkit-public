@@ -8,10 +8,3 @@ NCBI_project_watchers(ucko satskyse)
 
 NCBI_add_app(condition mutex1 strings passarg)
 
-
-# Include projects from this directory
-#include(CMakeLists.condition.app.txt)
-#include(CMakeLists.mutex1.app.txt)
-#include(CMakeLists.strings.app.txt)
-#include(CMakeLists.passarg.app.txt)
-

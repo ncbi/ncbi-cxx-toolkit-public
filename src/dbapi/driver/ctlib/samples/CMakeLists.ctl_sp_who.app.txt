@@ -11,19 +11,3 @@ NCBI_begin_app(ctl_sp_who)
   NCBI_add_test(run_sybase_app.sh ctl_sp_who -S DBAPI_DEV16_16K)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ctl_sp_who-app
-    ctl_sp_who dbapi_driver_sample_base_ctl
-)
-
-set_target_properties(ctl_sp_who-app PROPERTIES OUTPUT_NAME ctl_sp_who)
-
-include_directories(SYSTEM ${SYBASE_INCLUDE})
-
-target_link_libraries(ctl_sp_who-app
-    ncbi_xdbapi_ctlib xconnext
-)
-endif()

@@ -8,19 +8,3 @@ NCBI_begin_app(blobreader)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blobreader-app
-    blobreader
-)
-
-set_target_properties(blobreader-app PROPERTIES OUTPUT_NAME blobreader)
-
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-target_link_libraries(blobreader-app
-    dbapi_util_blobstore
-)
-endif()

@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_datafmt)
   NCBI_add_test(test-ct100 ct100_datafmt)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_datafmt-app
-    datafmt common
-)
-
-set_target_properties(ct100_datafmt-app PROPERTIES OUTPUT_NAME ct100_datafmt)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_datafmt-app
-    ct_ftds100
-)
-endif()

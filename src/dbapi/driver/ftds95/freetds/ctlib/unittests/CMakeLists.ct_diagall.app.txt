@@ -7,19 +7,3 @@ NCBI_begin_app(ct95_ct_diagall)
   NCBI_add_test(test-ct95 ct95_ct_diagall)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct95_ct_diagall-app
-    ct_diagall common
-)
-
-set_target_properties(ct95_ct_diagall-app PROPERTIES OUTPUT_NAME ct95_ct_diagall)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(ct95_ct_diagall-app
-    ct_ftds95
-)
-endif()

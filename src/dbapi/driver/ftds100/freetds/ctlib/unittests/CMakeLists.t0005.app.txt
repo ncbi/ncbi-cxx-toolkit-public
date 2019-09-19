@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_t0005)
   NCBI_add_test(test-ct100 ct100_t0005)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_t0005-app
-    t0005 common
-)
-
-set_target_properties(ct100_t0005-app PROPERTIES OUTPUT_NAME ct100_t0005)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_t0005-app
-    ct_ftds100
-)
-endif()

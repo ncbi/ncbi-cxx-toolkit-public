@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_t0002)
   NCBI_add_test(test-odbc100 odbc100_t0002)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_t0002-app
-    t0002 common
-)
-
-set_target_properties(odbc100_t0002-app PROPERTIES OUTPUT_NAME odbc100_t0002)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_t0002-app
-    odbc_ftds100
-)
-endif()

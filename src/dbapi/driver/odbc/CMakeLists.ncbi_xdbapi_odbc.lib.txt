@@ -12,16 +12,3 @@ NCBI_begin_lib(ncbi_xdbapi_odbc SHARED)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xdbapi_odbc
-    connection context cursor lang_cmd result rpc odbc_utils
-)
-include_directories(SYSTEM ${ODBC_INCLUDE})
-
-target_link_libraries(ncbi_xdbapi_odbc
-    dbapi_driver ${ODBC_LIBS}
-)
-endif()

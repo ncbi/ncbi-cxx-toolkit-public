@@ -9,19 +9,3 @@ NCBI_begin_app(odbc100_describecol)
   NCBI_add_test(test-odbc100 odbc100_describecol)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_describecol-app
-    describecol common parser
-)
-
-set_target_properties(odbc100_describecol-app PROPERTIES OUTPUT_NAME odbc100_describecol)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_describecol-app
-    odbc_ftds100
-)
-endif()

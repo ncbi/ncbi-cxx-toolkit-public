@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_blk_in)
   NCBI_add_test(test-ct100 --no-auto ct100_blk_in)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_blk_in-app
-    blk_in common
-)
-
-set_target_properties(ct100_blk_in-app PROPERTIES OUTPUT_NAME ct100_blk_in)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_blk_in-app
-    ct_ftds100
-)
-endif()

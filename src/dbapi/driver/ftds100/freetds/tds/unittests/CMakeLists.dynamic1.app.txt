@@ -7,19 +7,3 @@ NCBI_begin_app(tds100_dynamic1)
   NCBI_add_test(test-tds100 tds100_dynamic1)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds100_dynamic1-app
-    dynamic1 common
-)
-
-set_target_properties(tds100_dynamic1-app PROPERTIES OUTPUT_NAME tds100_dynamic1)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(tds100_dynamic1-app
-    tds_ftds100
-)
-endif()

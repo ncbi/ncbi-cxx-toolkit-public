@@ -7,19 +7,3 @@ NCBI_begin_app(tds95_iconv_fread)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds95_iconv_fread-app
-    iconv_fread
-)
-
-set_target_properties(tds95_iconv_fread-app PROPERTIES OUTPUT_NAME tds95_iconv_fread)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(tds95_iconv_fread-app
-    tds_ftds95
-)
-endif()

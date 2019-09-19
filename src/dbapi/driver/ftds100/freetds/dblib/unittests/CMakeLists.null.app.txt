@@ -7,20 +7,3 @@ NCBI_begin_app(db100_null)
   NCBI_add_test(test-db100 db100_null)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(db100_null-app
-    null common
-)
-
-set_target_properties(db100_null-app PROPERTIES OUTPUT_NAME db100_null)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(db100_null-app
-    sybdb_ftds100 ${FTDS100_CTLIB_LIBS}
-     ${RT_LIBS} ${C_LIBS} 
-)
-endif()

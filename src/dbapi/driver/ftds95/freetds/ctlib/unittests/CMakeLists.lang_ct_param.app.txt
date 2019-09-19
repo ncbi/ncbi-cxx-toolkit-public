@@ -7,19 +7,3 @@ NCBI_begin_app(ct95_lang_ct_param)
   NCBI_add_test(test-ct95 ct95_lang_ct_param)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct95_lang_ct_param-app
-    lang_ct_param common
-)
-
-set_target_properties(ct95_lang_ct_param-app PROPERTIES OUTPUT_NAME ct95_lang_ct_param)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(ct95_lang_ct_param-app
-    ct_ftds95
-)
-endif()

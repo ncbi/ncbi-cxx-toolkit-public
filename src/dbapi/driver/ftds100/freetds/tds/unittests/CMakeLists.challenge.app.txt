@@ -7,19 +7,3 @@ NCBI_begin_app(tds100_challenge)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds100_challenge-app
-    challenge common
-)
-
-set_target_properties(tds100_challenge-app PROPERTIES OUTPUT_NAME tds100_challenge)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(tds100_challenge-app
-    tds_ftds100
-)
-endif()

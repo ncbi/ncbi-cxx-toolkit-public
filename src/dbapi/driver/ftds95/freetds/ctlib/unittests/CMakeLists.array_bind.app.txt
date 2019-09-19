@@ -7,19 +7,3 @@ NCBI_begin_app(ct95_array_bind)
   NCBI_add_test(test-ct95 ct95_array_bind)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct95_array_bind-app
-    array_bind common
-)
-
-set_target_properties(ct95_array_bind-app PROPERTIES OUTPUT_NAME ct95_array_bind)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(ct95_array_bind-app
-    ct_ftds95
-)
-endif()

@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_bcp)
   NCBI_add_test(test-odbc100 odbc100_bcp )
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_bcp-app
-    bcp common
-)
-
-set_target_properties(odbc100_bcp-app PROPERTIES OUTPUT_NAME odbc100_bcp)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_bcp-app
-    odbc_ftds100
-)
-endif()

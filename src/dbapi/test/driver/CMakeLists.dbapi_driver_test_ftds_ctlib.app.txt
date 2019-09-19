@@ -10,17 +10,3 @@ NCBI_begin_app(dbapi_driver_test_ftds_ctlib)
   NCBI_add_test(run_sybase_app.sh dbapi_driver_test_ftds_ctlib)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(dbapi_driver_test_ftds_ctlib-app
-    dbapi_driver_test_ftds_ctlib
-)
-
-set_target_properties(dbapi_driver_test_ftds_ctlib-app PROPERTIES OUTPUT_NAME dbapi_driver_test_ftds_ctlib)
-
-target_link_libraries(dbapi_driver_test_ftds_ctlib-app
-    dbapi ncbi_xdbapi_ctlib ncbi_xdbapi_ftds
-)
-endif()

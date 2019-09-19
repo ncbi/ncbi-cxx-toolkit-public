@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_freeclose)
   NCBI_add_test(test-odbc100 --syb-ver 5.0 odbc100_freeclose)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_freeclose-app
-    freeclose common
-)
-
-set_target_properties(odbc100_freeclose-app PROPERTIES OUTPUT_NAME odbc100_freeclose)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_freeclose-app
-    odbc_ftds100
-)
-endif()

@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_ct_dynamic)
   NCBI_add_test(test-ct100 ct100_ct_dynamic)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_ct_dynamic-app
-    ct_dynamic common
-)
-
-set_target_properties(ct100_ct_dynamic-app PROPERTIES OUTPUT_NAME ct100_ct_dynamic)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_ct_dynamic-app
-    ct_ftds100
-)
-endif()

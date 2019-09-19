@@ -8,20 +8,3 @@ NCBI_begin_app(db100_pending)
   NCBI_add_test(test-db100 db100_pending)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(db100_pending-app
-    pending common
-)
-
-set_target_properties(db100_pending-app PROPERTIES OUTPUT_NAME db100_pending)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(db100_pending-app
-    sybdb_ftds100 ${FTDS100_CTLIB_LIBS}
-     ${RT_LIBS} ${C_LIBS} 
-)
-endif()

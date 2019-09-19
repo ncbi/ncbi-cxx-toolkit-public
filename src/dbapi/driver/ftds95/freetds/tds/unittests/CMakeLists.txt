@@ -12,33 +12,3 @@ NCBI_add_app(
   toodynamic challenge readconf charconv nulls collations
 )
 
-
-if(OFF)
-add_definitions(-DHAVE_CONFIG_H=1 -DNEED_FREETDS_SRCDIR)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-# Include projects from this directory
-include(CMakeLists.test-tds95.app.txt)
-include(CMakeLists.t0001.app.txt)
-include(CMakeLists.t0002.app.txt)
-include(CMakeLists.t0003.app.txt)
-include(CMakeLists.t0004.app.txt)
-include(CMakeLists.t0005.app.txt)
-include(CMakeLists.t0006.app.txt)
-include(CMakeLists.t0007.app.txt)
-include(CMakeLists.t0008.app.txt)
-include(CMakeLists.dynamic1.app.txt)
-include(CMakeLists.convert.app.txt)
-include(CMakeLists.dataread.app.txt)
-include(CMakeLists.utf8_1.app.txt)
-include(CMakeLists.utf8_2.app.txt)
-include(CMakeLists.utf8_3.app.txt)
-include(CMakeLists.numeric.app.txt)
-include(CMakeLists.iconv_fread.app.txt)
-include(CMakeLists.toodynamic.app.txt)
-include(CMakeLists.challenge.app.txt)
-include(CMakeLists.readconf.app.txt)
-include(CMakeLists.charconv.app.txt)
-include(CMakeLists.nulls.app.txt)
-include(CMakeLists.collations.app.txt)
-endif()

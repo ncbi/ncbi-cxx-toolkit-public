@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_testodbc)
   NCBI_add_test(test-odbc100 --no-auto odbc100_testodbc)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_testodbc-app
-    testodbc common
-)
-
-set_target_properties(odbc100_testodbc-app PROPERTIES OUTPUT_NAME odbc100_testodbc)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_testodbc-app
-    odbc_ftds100
-)
-endif()

@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_get_send_data)
   NCBI_add_test(test-ct100 --ms-ver 7.1 ct100_get_send_data)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_get_send_data-app
-    get_send_data common
-)
-
-set_target_properties(ct100_get_send_data-app PROPERTIES OUTPUT_NAME ct100_get_send_data)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_get_send_data-app
-    ct_ftds100
-)
-endif()

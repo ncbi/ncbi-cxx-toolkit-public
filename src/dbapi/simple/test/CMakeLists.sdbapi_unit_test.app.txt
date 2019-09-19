@@ -27,22 +27,3 @@ NCBI_begin_app(sdbapi_unit_test)
   NCBI_add_test(sdbapi_unit_test -dr ftds100 -S DBAPI_DEV16_16K -T Sybase)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(sdbapi_unit_test-app
-    sdbapi_unit_test sdbapi_unit_test_object sdbapi_unit_test_bcp
-    sdbapi_unit_test_proc sdbapi_unit_test_stmt
-    sdbapi_unit_test_connection sdbapi_unit_test_common
-    sdbapi_unit_test_lob sdbapi_unit_test_xact_abort
-)
-
-set_target_properties(sdbapi_unit_test-app PROPERTIES OUTPUT_NAME sdbapi_unit_test)
-
-
-
-target_link_libraries(sdbapi_unit_test-app
-    sdbapi test_boost
-)
-endif()

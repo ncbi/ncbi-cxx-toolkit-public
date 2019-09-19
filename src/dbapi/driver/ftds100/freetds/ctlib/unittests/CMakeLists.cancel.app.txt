@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_cancel)
   NCBI_add_test(test-ct100 ct100_cancel)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_cancel-app
-    cancel common
-)
-
-set_target_properties(ct100_cancel-app PROPERTIES OUTPUT_NAME ct100_cancel)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_cancel-app
-    ct_ftds100
-)
-endif()

@@ -12,17 +12,3 @@ NCBI_begin_lib(dbapi_sample_base)
   NCBI_optional_components(Sybase ODBC)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(dbapi_sample_base
-    dbapi_sample_base
-)
-include_directories(SYSTEM ${SYBASE_INCLUDE})
-
-target_link_libraries(dbapi_sample_base
-    ncbi_xdbapi_ftds ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100
-    dbapi_driver xconnext xutil
-)
-endif()

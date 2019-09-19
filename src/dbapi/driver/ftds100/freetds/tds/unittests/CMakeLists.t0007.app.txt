@@ -7,19 +7,3 @@ NCBI_begin_app(tds100_t0007)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds100_t0007-app
-    t0007
-)
-
-set_target_properties(tds100_t0007-app PROPERTIES OUTPUT_NAME tds100_t0007)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(tds100_t0007-app
-    tds_ftds100
-)
-endif()

@@ -8,19 +8,3 @@ NCBI_begin_app(tds100_convert)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds100_convert-app
-    convert
-)
-
-set_target_properties(tds100_convert-app PROPERTIES OUTPUT_NAME tds100_convert)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(tds100_convert-app
-    tds_ftds100
-)
-endif()

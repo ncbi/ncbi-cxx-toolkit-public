@@ -7,19 +7,3 @@ NCBI_begin_app(tds95_charconv)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds95_charconv-app
-    charconv
-)
-
-set_target_properties(tds95_charconv-app PROPERTIES OUTPUT_NAME tds95_charconv)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(tds95_charconv-app
-    tds_ftds95
-)
-endif()

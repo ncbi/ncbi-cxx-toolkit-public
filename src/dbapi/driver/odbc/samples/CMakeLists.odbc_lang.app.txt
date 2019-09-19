@@ -10,20 +10,3 @@ NCBI_begin_app(odbc_lang)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc_lang-app
-    odbc_lang
-)
-
-set_target_properties(odbc_lang-app PROPERTIES OUTPUT_NAME odbc_lang)
-
-include_directories(SYSTEM ${ODBC_INCLUDE})
-
-target_link_libraries(odbc_lang-app
-    ncbi_xdbapi_odbc dbapi_driver xconnext xconnect ${ODBC_LIBS}
-     
-)
-endif()

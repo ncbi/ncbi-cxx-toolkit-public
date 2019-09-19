@@ -6,19 +6,3 @@ NCBI_begin_app(tds95_collations)
   NCBI_sources(collations common)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds95_collations-app
-    collations common
-)
-
-set_target_properties(tds95_collations-app PROPERTIES OUTPUT_NAME tds95_collations)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(tds95_collations-app
-    tds_ftds95
-)
-endif()

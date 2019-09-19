@@ -9,13 +9,3 @@ NCBI_begin_lib(python_ncbi_dbapi)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib()
 
-if(OFF)
-add_library(python_ncbi_dbapi python_ncbi_dbapi)
-
-include_directories(SYSTEM ${PYTHON_INCLUDE})
-
-target_link_libraries(python_ncbi_dbapi
-    dbapi xconnext xutil
-    ${PYTHON_LIBS}
-)
-endif()

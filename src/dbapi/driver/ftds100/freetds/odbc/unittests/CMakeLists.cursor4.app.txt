@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_cursor4)
   NCBI_add_test(test-odbc100 odbc100_cursor4)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_cursor4-app
-    cursor4 common
-)
-
-set_target_properties(odbc100_cursor4-app PROPERTIES OUTPUT_NAME odbc100_cursor4)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_cursor4-app
-    odbc_ftds100
-)
-endif()

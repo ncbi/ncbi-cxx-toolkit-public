@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_timeout)
   NCBI_add_test(test-odbc100 --no-auto odbc100_timeout)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_timeout-app
-    timeout common
-)
-
-set_target_properties(odbc100_timeout-app PROPERTIES OUTPUT_NAME odbc100_timeout)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_timeout-app
-    odbc_ftds100
-)
-endif()

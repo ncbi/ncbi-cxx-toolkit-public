@@ -7,19 +7,3 @@ NCBI_begin_app(tds95_nulls)
   NCBI_add_test(test-tds95 tds95_nulls)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds95_nulls-app
-    nulls common
-)
-
-set_target_properties(tds95_nulls-app PROPERTIES OUTPUT_NAME tds95_nulls)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(tds95_nulls-app
-    tds_ftds95
-)
-endif()

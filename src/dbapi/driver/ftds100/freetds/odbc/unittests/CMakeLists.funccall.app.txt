@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_funccall)
   NCBI_add_test(test-odbc100 --no-auto odbc100_funccall)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_funccall-app
-    funccall common
-)
-
-set_target_properties(odbc100_funccall-app PROPERTIES OUTPUT_NAME odbc100_funccall)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_funccall-app
-    odbc_ftds100
-)
-endif()

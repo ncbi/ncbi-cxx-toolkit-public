@@ -7,20 +7,3 @@ NCBI_begin_app(db100_bcp_getl)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(db100_bcp_getl-app
-    bcp_getl
-)
-
-set_target_properties(db100_bcp_getl-app PROPERTIES OUTPUT_NAME db100_bcp_getl)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(db100_bcp_getl-app
-    sybdb_ftds100 ${FTDS100_CTLIB_LIBS}
-     ${RT_LIBS} ${C_LIBS} 
-)
-endif()

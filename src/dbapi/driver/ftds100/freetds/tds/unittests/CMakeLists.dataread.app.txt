@@ -7,19 +7,3 @@ NCBI_begin_app(tds100_dataread)
   NCBI_add_test(test-tds100 tds100_dataread)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds100_dataread-app
-    dataread common
-)
-
-set_target_properties(tds100_dataread-app PROPERTIES OUTPUT_NAME tds100_dataread)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(tds100_dataread-app
-    tds_ftds100
-)
-endif()

@@ -10,18 +10,3 @@ NCBI_begin_lib(ct_ftds100)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ct_ftds100
-    ct cs blk ctutil
-)
-# winmain?
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
-
-target_link_libraries(ct_ftds100
-    tds_ftds100 ${FTDS100_CTLIB_LIBS} ${NETWORK_LIBS} ${RT_LIBS} ${C_LIBS}
-)
-endif()

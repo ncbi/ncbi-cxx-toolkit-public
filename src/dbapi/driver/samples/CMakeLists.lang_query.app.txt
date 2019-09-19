@@ -9,17 +9,3 @@ NCBI_begin_app(lang_query)
   NCBI_add_test(test_lang_query.sh)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(lang_query-app
-    lang_query
-)
-
-set_target_properties(lang_query-app PROPERTIES OUTPUT_NAME lang_query)
-
-target_link_libraries(lang_query-app
-    dbapi_sample_base
-)
-endif()

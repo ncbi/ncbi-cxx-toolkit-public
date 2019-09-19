@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_ct_options)
   NCBI_add_test(test-ct100 ct100_ct_options)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_ct_options-app
-    ct_options common
-)
-
-set_target_properties(ct100_ct_options-app PROPERTIES OUTPUT_NAME ct100_ct_options)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_ct_options-app
-    ct_ftds100
-)
-endif()

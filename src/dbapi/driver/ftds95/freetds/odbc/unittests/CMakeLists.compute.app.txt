@@ -7,19 +7,3 @@ NCBI_begin_app(odbc95_compute)
   NCBI_add_test(test-odbc95 odbc95_compute)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc95_compute-app
-    compute common
-)
-
-set_target_properties(odbc95_compute-app PROPERTIES OUTPUT_NAME odbc95_compute)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc95_compute-app
-    odbc_ftds95
-)
-endif()

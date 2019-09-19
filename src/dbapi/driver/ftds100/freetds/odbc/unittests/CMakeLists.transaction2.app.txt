@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_transaction2)
   NCBI_add_test(test-odbc100 --no-auto odbc100_transaction2)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_transaction2-app
-    transaction2 common
-)
-
-set_target_properties(odbc100_transaction2-app PROPERTIES OUTPUT_NAME odbc100_transaction2)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_transaction2-app
-    odbc_ftds100
-)
-endif()

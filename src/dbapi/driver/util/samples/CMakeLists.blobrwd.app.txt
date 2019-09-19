@@ -8,20 +8,3 @@ NCBI_begin_app(blobrwd)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blobrwd-app
-    blobrwd
-)
-
-set_target_properties(blobrwd-app PROPERTIES OUTPUT_NAME blobrwd)
-
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-target_link_libraries(blobrwd-app
-    dbapi_util_blobstore
-)
-endif()
-

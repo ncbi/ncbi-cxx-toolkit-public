@@ -9,19 +9,3 @@ NCBI_begin_app(odbc95_data)
   NCBI_add_test(test-odbc95 --no-auto odbc95_data)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc95_data-app
-    data common c2string parser
-)
-
-set_target_properties(odbc95_data-app PROPERTIES OUTPUT_NAME odbc95_data)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc95_data-app
-    odbc_ftds95
-)
-endif()

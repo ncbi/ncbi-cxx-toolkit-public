@@ -7,19 +7,3 @@ NCBI_begin_app(odbc95_print)
   NCBI_add_test(test-odbc95 odbc95_print)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc95_print-app
-    print common
-)
-
-set_target_properties(odbc95_print-app PROPERTIES OUTPUT_NAME odbc95_print)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc95_print-app
-    odbc_ftds95
-)
-endif()

@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_utf8_2)
   NCBI_add_test(test-odbc100 odbc100_utf8_2)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_utf8_2-app
-    utf8_2 common
-)
-
-set_target_properties(odbc100_utf8_2-app PROPERTIES OUTPUT_NAME odbc100_utf8_2)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_utf8_2-app
-    odbc_ftds100
-)
-endif()

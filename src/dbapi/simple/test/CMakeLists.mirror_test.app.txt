@@ -7,17 +7,3 @@ NCBI_begin_app(mirror_test)
   NCBI_uses_toolkit_libraries(sdbapi)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(mirror_test-app
-    mirror_test
-)
-
-set_target_properties(mirror_test-app PROPERTIES OUTPUT_NAME mirror_test)
-
-target_link_libraries(mirror_test-app
-    sdbapi
-)
-endif()

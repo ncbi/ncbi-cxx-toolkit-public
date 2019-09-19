@@ -8,19 +8,3 @@ NCBI_begin_app(blobwriter)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blobwriter-app
-    blobwriter
-)
-
-set_target_properties(blobwriter-app PROPERTIES OUTPUT_NAME blobwriter)
-
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-target_link_libraries(blobwriter-app
-    dbapi_util_blobstore
-)
-endif()

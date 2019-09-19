@@ -12,20 +12,3 @@ NCBI_begin_app(ctl_lang_ftds95)
   NCBI_add_test(run_sybase_app.sh ctl_lang_ftds95 -S DBAPI_DEV16_16K -v 50)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ctl_lang_ftds95-app
-    ctl_lang_ftds95 dbapi_driver_sample_base_ftds95
-)
-
-set_target_properties(ctl_lang_ftds95-app PROPERTIES OUTPUT_NAME ctl_lang_ftds95)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(ctl_lang_ftds95-app
-    ncbi_xdbapi_ftds95 xconnext
-)
-endif()
-

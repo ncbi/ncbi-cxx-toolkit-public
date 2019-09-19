@@ -9,17 +9,3 @@ NCBI_begin_lib(sybdb_ftds95)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(sybdb_ftds95
-    dblib dbutil rpc bcp xact dbpivot dbopen
-)
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
-
-target_link_libraries(sybdb_ftds95
-    tds_ftds95 ${FTDS95_LIBS} ${NETWORK_LIBS} ${RT_LIBS} ${C_LIBS}
-)
-endif()

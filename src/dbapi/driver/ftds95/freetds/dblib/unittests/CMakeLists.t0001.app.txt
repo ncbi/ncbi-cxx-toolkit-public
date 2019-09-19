@@ -8,20 +8,3 @@ NCBI_begin_app(db95_t0001)
   NCBI_add_test(test-db95 db95_t0001)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(db95_t0001-app
-    t0001 common
-)
-
-set_target_properties(db95_t0001-app PROPERTIES OUTPUT_NAME db95_t0001)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(db95_t0001-app
-    sybdb_ftds95 ${FTDS95_CTLIB_LIBS}
-     ${RT_LIBS} ${C_LIBS} 
-)
-endif()

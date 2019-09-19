@@ -7,19 +7,3 @@ NCBI_begin_app(odbc95_moreandcount)
   NCBI_add_test(test-odbc95 odbc95_moreandcount)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc95_moreandcount-app
-    moreandcount common
-)
-
-set_target_properties(odbc95_moreandcount-app PROPERTIES OUTPUT_NAME odbc95_moreandcount)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc95_moreandcount-app
-    odbc_ftds95
-)
-endif()

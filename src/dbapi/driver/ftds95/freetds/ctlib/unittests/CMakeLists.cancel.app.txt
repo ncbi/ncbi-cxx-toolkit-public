@@ -7,19 +7,3 @@ NCBI_begin_app(ct95_cancel)
   NCBI_add_test(test-ct95 ct95_cancel)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct95_cancel-app
-    cancel common
-)
-
-set_target_properties(ct95_cancel-app PROPERTIES OUTPUT_NAME ct95_cancel)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(ct95_cancel-app
-    ct_ftds95
-)
-endif()

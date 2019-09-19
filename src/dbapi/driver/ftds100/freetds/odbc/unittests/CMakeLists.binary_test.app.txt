@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_binary_test)
   NCBI_add_test(test-odbc100 odbc100_binary_test)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_binary_test-app
-    binary_test common
-)
-
-set_target_properties(odbc100_binary_test-app PROPERTIES OUTPUT_NAME odbc100_binary_test)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_binary_test-app
-    odbc_ftds100
-)
-endif()

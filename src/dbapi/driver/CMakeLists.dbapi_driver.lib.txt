@@ -19,22 +19,3 @@ NCBI_begin_lib(dbapi_driver)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-
-
-add_library(dbapi_driver
-    handle_stack numeric_convert parameters exception interfaces public
-    types memory_store pointer_pot driver_mgr dbapi_driver_conn_mgr
-    dbapi_conn_factory dbapi_svc_mapper dbapi_driver_utils dbapi_impl_cmd
-    dbapi_impl_connection dbapi_impl_context dbapi_impl_result
-    dbapi_driver_conn_params dbapi_driver_exception_storage
-    dbapi_object_convert dbapi_driver_convert dbapi_pool_balancer ${os_src}
-)
-
-target_link_libraries(dbapi_driver
-    xncbi
-)
-endif()

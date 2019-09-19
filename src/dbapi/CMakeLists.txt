@@ -13,14 +13,3 @@ endif ()
 NCBI_add_library(dbapi)
 NCBI_add_subdirectory(driver simple cache lang_bind test)
 
-if(OFF)
-# Include projects from this directory
-include(CMakeLists.dbapi.lib.txt)
-
-# Recurse subdirectories
-add_subdirectory(driver)
-add_subdirectory(simple)
-add_subdirectory(cache)
-add_subdirectory(lang_bind)
-add_subdirectory(test)
-endif()

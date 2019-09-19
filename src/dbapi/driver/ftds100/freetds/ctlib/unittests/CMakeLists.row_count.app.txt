@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_row_count)
   NCBI_add_test(test-ct100 ct100_row_count)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_row_count-app
-    row_count common
-)
-
-set_target_properties(ct100_row_count-app PROPERTIES OUTPUT_NAME ct100_row_count)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_row_count-app
-    ct_ftds100
-)
-endif()

@@ -7,19 +7,3 @@ NCBI_begin_app(ct95_blk_out)
   NCBI_add_test(test-ct95 ct95_blk_out)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct95_blk_out-app
-    blk_out common
-)
-
-set_target_properties(ct95_blk_out-app PROPERTIES OUTPUT_NAME ct95_blk_out)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(ct95_blk_out-app
-    ct_ftds95
-)
-endif()

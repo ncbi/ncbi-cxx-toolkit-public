@@ -8,20 +8,3 @@ NCBI_begin_app(db95_rpc)
   NCBI_add_test(test-db95 --no-auto db95_rpc)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(db95_rpc-app
-    rpc common
-)
-
-set_target_properties(db95_rpc-app PROPERTIES OUTPUT_NAME db95_rpc)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(db95_rpc-app
-    sybdb_ftds95 ${FTDS95_CTLIB_LIBS}
-     ${RT_LIBS} ${C_LIBS} 
-)
-endif()

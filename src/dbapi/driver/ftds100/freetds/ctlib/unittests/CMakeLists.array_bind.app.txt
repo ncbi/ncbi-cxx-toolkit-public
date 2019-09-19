@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_array_bind)
   NCBI_add_test(test-ct100 ct100_array_bind)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_array_bind-app
-    array_bind common
-)
-
-set_target_properties(ct100_array_bind-app PROPERTIES OUTPUT_NAME ct100_array_bind)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_array_bind-app
-    ct_ftds100
-)
-endif()

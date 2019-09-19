@@ -7,19 +7,3 @@ NCBI_begin_app(tds95_passarg)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(tds95_passarg-app
-    passarg
-)
-
-set_target_properties(tds95_passarg-app PROPERTIES OUTPUT_NAME tds95_passarg)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(tds95_passarg-app
-    tds_ftds95
-)
-endif()

@@ -10,20 +10,3 @@ NCBI_begin_app(odbc_sp_who)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc_sp_who-app
-    odbc_sp_who
-)
-
-set_target_properties(odbc_sp_who-app PROPERTIES OUTPUT_NAME odbc_sp_who)
-
-include_directories(SYSTEM ${ODBC_INCLUDE})
-
-target_link_libraries(odbc_sp_who-app
-    ncbi_xdbapi_odbc dbapi_driver xconnext xconnect ${ODBC_LIBS}
-     
-)
-endif()

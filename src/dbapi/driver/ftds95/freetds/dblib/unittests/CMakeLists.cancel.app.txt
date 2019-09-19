@@ -8,20 +8,3 @@ NCBI_begin_app(db95_cancel)
   NCBI_add_test(test-db95 db95_cancel)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(db95_cancel-app
-    cancel common
-)
-
-set_target_properties(db95_cancel-app PROPERTIES OUTPUT_NAME db95_cancel)
-
-include_directories(SYSTEM ${FTDS95_INCLUDE})
-
-target_link_libraries(db95_cancel-app
-    sybdb_ftds95 ${FTDS95_CTLIB_LIBS}
-     ${RT_LIBS} ${C_LIBS} 
-)
-endif()

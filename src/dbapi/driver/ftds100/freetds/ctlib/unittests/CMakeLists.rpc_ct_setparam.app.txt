@@ -7,19 +7,3 @@ NCBI_begin_app(ct100_rpc_ct_setparam)
   NCBI_add_test(test-ct100 --no-auto ct100_rpc_ct_setparam)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ct100_rpc_ct_setparam-app
-    rpc_ct_setparam common
-)
-
-set_target_properties(ct100_rpc_ct_setparam-app PROPERTIES OUTPUT_NAME ct100_rpc_ct_setparam)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(ct100_rpc_ct_setparam-app
-    ct_ftds100
-)
-endif()

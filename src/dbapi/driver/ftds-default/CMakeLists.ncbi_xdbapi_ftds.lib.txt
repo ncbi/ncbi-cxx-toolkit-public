@@ -10,18 +10,3 @@ NCBI_begin_lib(ncbi_xdbapi_ftds SHARED)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xdbapi_ftds
-    bcp connection context cursor ftds_ctlib_utils lang_cmd result rpc
-)
-include_directories(SYSTEM ${FTDS_INCLUDE})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} )
-add_definitions( -DFTDS_IN_USE )
-
-target_link_libraries(ncbi_xdbapi_ftds
-    ct_${ftds} dbapi_driver
-)
-endif()

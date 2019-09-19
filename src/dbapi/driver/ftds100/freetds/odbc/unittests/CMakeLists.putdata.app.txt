@@ -7,19 +7,3 @@ NCBI_begin_app(odbc100_putdata)
   NCBI_add_test(test-odbc100 odbc100_putdata)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(odbc100_putdata-app
-    putdata common
-)
-
-set_target_properties(odbc100_putdata-app PROPERTIES OUTPUT_NAME odbc100_putdata)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
-
-target_link_libraries(odbc100_putdata-app
-    odbc_ftds100
-)
-endif()
