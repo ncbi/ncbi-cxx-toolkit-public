@@ -10,19 +10,3 @@ NCBI_begin_app(unit_test_defline)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_defline-app
-    unit_test_defline
-)
-
-set_target_properties(unit_test_defline-app PROPERTIES OUTPUT_NAME unit_test_defline)
-
-
-
-target_link_libraries(unit_test_defline-app
-    test_boost xobjutil
-)
-endif()

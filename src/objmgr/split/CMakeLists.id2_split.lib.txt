@@ -12,21 +12,3 @@ NCBI_begin_lib(id2_split)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(id2_split
-    blob_splitter blob_splitter_params split_blob blob_splitter_impl
-    blob_splitter_parser blob_splitter_maker id_range object_splitinfo
-    asn_sizer annot_piece chunk_info size split_exceptions
-)
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-add_dependencies(id2_split
-    seqsplit 
-)
-target_link_libraries(id2_split
-    xcompress xobjmgr
-)
-endif()

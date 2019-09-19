@@ -9,17 +9,3 @@ NCBI_begin_app(test_objmgr_sv)
   NCBI_add_test(test_objmgr_sv -seed 1 -checksum de21b79e1b948b6620333a8d1c6eaa87)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_objmgr_sv-app
-    test_objmgr_sv
-)
-
-set_target_properties(test_objmgr_sv-app PROPERTIES OUTPUT_NAME test_objmgr_sv)
-
-target_link_libraries(test_objmgr_sv-app
-    xobjmgr
-)
-endif()
