@@ -1023,7 +1023,15 @@ esac
 #### library installations on Linux.
 case "$host_os:/$CXX" in
    linux*:*/clang* )
-      gccver=7.3.0
+      case "`$CXX --version`" in
+         *version\ 3.* )
+            gccver=5.3.0
+            CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 $CPPFLAGS"
+            ;;
+         * )
+            gccver=7.3.0
+            ;;
+      esac
       gccdir=/opt/ncbi/gcc/$gccver
       if test -d $gccdir; then
          # CPPFLAGS="--gcc-toolchain=$gccdir $CPPFLAGS"
