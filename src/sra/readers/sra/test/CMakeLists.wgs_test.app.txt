@@ -9,19 +9,3 @@ NCBI_begin_app(wgs_test)
   NCBI_add_test(wgs_test.sh)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(wgs_test-app
-    wgs_test
-)
-
-set_target_properties(wgs_test-app PROPERTIES OUTPUT_NAME wgs_test)
-
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(wgs_test-app
-    sraread
-)
-endif()

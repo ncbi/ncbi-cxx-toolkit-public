@@ -10,20 +10,3 @@ NCBI_begin_lib(ncbi_xloader_wgs SHARED)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_wgs
-    wgsloader wgsloader_impl
-)
-add_definitions(-DNCBI_XLOADER_WGS_EXPORTS)
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(ncbi_xloader_wgs
-    sraread
-)
-add_dependencies(ncbi_xloader_wgs
-    seqset 
-)
-endif()

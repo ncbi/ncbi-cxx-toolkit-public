@@ -9,20 +9,3 @@ NCBI_begin_lib(ncbi_xloader_bam SHARED)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_bam
-    bamloader bamloader_impl
-)
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-add_dependencies(ncbi_xloader_bam
-    seqset 
-)
-
-target_link_libraries(ncbi_xloader_bam
-    bamread xobjreadex
-)
-endif()

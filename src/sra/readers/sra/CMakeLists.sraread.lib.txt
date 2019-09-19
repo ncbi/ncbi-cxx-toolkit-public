@@ -12,17 +12,3 @@ NCBI_begin_lib(sraread SHARED)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(sraread
-    sraread vdbread kdbread csraread wgsresolver wgsresolver_impl wgsread
-    graphread snpread
-)
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(sraread
-    xobjmgr ${SRAREAD_LDEP}
-)
-endif()

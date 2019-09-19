@@ -10,13 +10,3 @@ NCBI_begin_app(test_vdbgraph_loader)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-add_executable(test_vdbgraph_loader
-    test_vdbgraph_loader
-)
-
-
-target_link_libraries(test_vdbgraph_loader
-    ncbi_xloader_vdbgraph test_boost
-)
-endif()

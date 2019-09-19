@@ -9,16 +9,3 @@ NCBI_begin_lib(bamread SHARED)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(bamread
-    bamread bamgraph bgzf bamindex vdbfile
-)
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(bamread
-    seqset xcompress ${BAM_LIBS}
-)
-endif()

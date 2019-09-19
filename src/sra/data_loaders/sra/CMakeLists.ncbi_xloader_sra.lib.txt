@@ -9,19 +9,3 @@ NCBI_begin_lib(ncbi_xloader_sra SHARED)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_sra
-    sraloader
-)
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(ncbi_xloader_sra
-    sraread
-)
-add_dependencies(ncbi_xloader_sra
-    seqset 
-)
-endif()

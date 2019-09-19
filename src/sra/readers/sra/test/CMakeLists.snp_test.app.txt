@@ -8,19 +8,3 @@ NCBI_begin_app(snp_test)
   NCBI_project_watchers(vasilche)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(snp_test-app
-    snp_test
-)
-
-set_target_properties(snp_test-app PROPERTIES OUTPUT_NAME snp_test)
-
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(snp_test-app
-    sraread
-)
-endif()

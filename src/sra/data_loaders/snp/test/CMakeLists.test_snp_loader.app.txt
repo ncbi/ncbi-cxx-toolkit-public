@@ -10,14 +10,3 @@ NCBI_begin_app(test_snp_loader)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-add_executable(test_snp_loader
-    test_snp_loader
-)
-
-include_directories(SYSTEM ${BOOST_iNCLUDE})
-
-target_link_libraries(test_snp_loader
-    ncbi_xloader_snp test_boost
-)
-endif()

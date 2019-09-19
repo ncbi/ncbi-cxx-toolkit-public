@@ -10,17 +10,3 @@ NCBI_begin_app(test_csra_loader_mt)
   NCBI_add_test(test_csra_loader_mt -threads 24 -reference-sequences -accs SRR000010,SRR389414,SRR494733,SRR505887,SRR035417)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_csra_loader_mt-app
-    test_csra_loader_mt
-)
-
-set_target_properties(test_csra_loader_mt-app PROPERTIES OUTPUT_NAME test_csra_loader_mt)
-
-target_link_libraries(test_csra_loader_mt-app
-    ncbi_xloader_csra test_mt
-)
-endif()

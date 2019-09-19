@@ -10,18 +10,3 @@ NCBI_begin_app(test_sra_loader)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_sra_loader-app
-    test_sra_loader
-)
-
-set_target_properties(test_sra_loader-app PROPERTIES OUTPUT_NAME test_sra_loader)
-
-
-target_link_libraries(test_sra_loader-app
-    ncbi_xloader_sra test_boost
-)
-endif()

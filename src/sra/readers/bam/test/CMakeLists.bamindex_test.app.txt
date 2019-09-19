@@ -8,14 +8,3 @@ NCBI_begin_app(bamindex_test)
   NCBI_project_watchers(vasilche)
 NCBI_end_app()
 
-if(OFF)
-add_executable(bamindex_test-app
-    bamindex_test bam_test_common
-)
-
-set_target_properties(bamindex_test-app PROPERTIES OUTPUT_NAME bamindex_test)
-
-target_link_libraries(bamindex_test-app
-    bamread xobjreadex
-)
-endif()

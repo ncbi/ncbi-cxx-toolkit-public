@@ -8,19 +8,3 @@ NCBI_begin_app(bam2graph)
   NCBI_project_watchers(vasilche ucko)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(bam2graph-app
-    bam2graph
-)
-
-set_target_properties(bam2graph-app PROPERTIES OUTPUT_NAME bam2graph)
-
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(bam2graph-app
-    bamread
-)
-endif()
