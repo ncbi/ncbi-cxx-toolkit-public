@@ -9,15 +9,3 @@ NCBI_begin_lib(ncbi_xblobstorage_netcache SHARED)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_lib()
 
-
-if(OFF)
-#
-#
-#
-add_library(ncbi_xblobstorage_netcache
-    blob_storage_netcache
-)
-target_link_libraries(ncbi_xblobstorage_netcache
-    xconnserv
-)
-endif()

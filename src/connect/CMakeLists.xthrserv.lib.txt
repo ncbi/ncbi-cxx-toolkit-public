@@ -14,11 +14,3 @@ NCBI_begin_lib(xthrserv)
   NCBI_project_watchers(vakatov)
 NCBI_end_lib()
 
-if(OFF)
-add_library(xthrserv
-    threaded_server server server_monitor connection_pool
-)
-target_link_libraries(xthrserv
-    xconnect xutil
-)
-endif()

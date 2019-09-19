@@ -10,16 +10,3 @@ NCBI_begin_lib(connssl)
   NCBI_project_watchers(lavr)
 NCBI_end_lib()
 
-
-if(OFF)
-add_library(connssl
-    ${SRC_TLS}
-)
-include_directories(SYSTEM ${GNUTLS_INCLUDE} ${NCBI_C_INCLUDE})
-
-link_directories(${NCBI_TOOLS_ROOT}/lib64)
-
-target_link_libraries(connssl
-    connect ${GNUTLS_LIBS}
-)
-endif()

@@ -10,18 +10,3 @@ NCBI_begin_app(test_server)
   NCBI_add_test()
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_server-app
-    test_server
-)
-
-set_target_properties(test_server-app PROPERTIES OUTPUT_NAME test_server)
-
-target_link_libraries(test_server-app
-    xthrserv
-)
-endif()

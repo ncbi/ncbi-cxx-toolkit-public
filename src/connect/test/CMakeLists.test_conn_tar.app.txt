@@ -10,20 +10,3 @@ NCBI_begin_app(test_conn_tar)
   NCBI_add_test(test_conn_tar.sh)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_conn_tar-app
-    test_conn_tar
-)
-
-set_target_properties(test_conn_tar-app PROPERTIES OUTPUT_NAME test_conn_tar)
-
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-target_link_libraries(test_conn_tar-app
-    xcompress xconnect
-)
-endif()

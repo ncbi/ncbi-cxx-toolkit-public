@@ -9,18 +9,3 @@ NCBI_begin_app(http_connector_hit)
   NCBI_add_test(http_connector_hit www.ncbi.nlm.nih.gov 443 /Service/bounce.cgi 'arg1+arg2+arg3' + 'CAF-CHECK: YES!')
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(http_connector_hit-app
-    http_connector_hit
-)
-
-set_target_properties(http_connector_hit-app PROPERTIES OUTPUT_NAME http_connector_hit)
-
-target_link_libraries(http_connector_hit-app
-    xxconnect
-)
-endif()

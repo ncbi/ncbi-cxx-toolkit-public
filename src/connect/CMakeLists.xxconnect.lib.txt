@@ -11,12 +11,3 @@ NCBI_begin_lib(xxconnect)
   NCBI_project_watchers(lavr mcelhany)
 NCBI_end_lib()
 
-if(OFF)
-add_library(xxconnect
-    ${SRC_CXX}
-)
-
-target_link_libraries(xxconnect
-    connect xncbi ${GNUTLS_LIBS} ${NETWORK_LIBS}
-)
-endif()

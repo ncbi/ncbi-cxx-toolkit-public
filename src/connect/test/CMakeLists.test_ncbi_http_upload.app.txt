@@ -10,11 +10,3 @@ NCBI_begin_app(test_ncbi_http_upload)
   NCBI_add_test(test_ncbi_http_upload.sh)
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(test_ncbi_http_upload test_ncbi_http_upload)
-
-target_link_libraries(test_ncbi_http_upload
-    xconnect
-)
-endif()

@@ -11,18 +11,3 @@ NCBI_begin_app(test_netcache_api)
   NCBI_add_test()
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_netcache_api-app
-    test_netcache_api
-)
-
-set_target_properties(test_netcache_api-app PROPERTIES OUTPUT_NAME test_netcache_api)
-
-target_link_libraries(test_netcache_api-app
-    test_boost xconnserv
-)
-endif()

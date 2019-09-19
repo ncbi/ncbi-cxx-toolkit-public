@@ -8,18 +8,3 @@ NCBI_begin_app(test_fw)
   NCBI_project_watchers(lavr)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_fw-app
-    test_fw
-)
-
-set_target_properties(test_fw-app PROPERTIES OUTPUT_NAME test_fw)
-
-target_link_libraries(test_fw-app
-    connect
-)
-endif()

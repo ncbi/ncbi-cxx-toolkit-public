@@ -65,17 +65,3 @@ NCBI_disable_pch()
 NCBI_add_library(connect connssl xxconnect xconnect xthrserv)
 NCBI_add_subdirectory(services ext test daemons)
 
-if(OFF)
-# Include projects from this directory
-include(CMakeLists.connect.lib.txt)
-include(CMakeLists.connssl.lib.txt)
-include(CMakeLists.xxconnect.lib.txt)
-include(CMakeLists.xconnect.lib.txt)
-include(CMakeLists.xthrserv.lib.txt)
-
-# Recurse subdirectories
-add_subdirectory(services)
-add_subdirectory(ext)
-add_subdirectory(test )
-add_subdirectory(daemons)
-endif()

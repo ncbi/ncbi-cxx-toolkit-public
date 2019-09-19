@@ -10,14 +10,3 @@ NCBI_begin_lib(connect)
   NCBI_project_watchers(lavr mcelhany)
 NCBI_end_lib()
 
-
-if(OFF)
-
-add_library(connect
-    ${SRC_C}
-)
-
-target_link_libraries(connect
-    ${NETWORK_LIBS} ${MATH_LIBS} ${LIBS}
-)
-endif()

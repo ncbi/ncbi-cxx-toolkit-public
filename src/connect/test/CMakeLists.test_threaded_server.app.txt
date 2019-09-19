@@ -8,19 +8,3 @@ NCBI_begin_app(test_threaded_server)
   NCBI_project_watchers(ucko)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-#
-add_executable(test_threaded_server-app
-    test_threaded_server
-)
-
-set_target_properties(test_threaded_server-app PROPERTIES OUTPUT_NAME test_threaded_server)
-
-target_link_libraries(test_threaded_server-app
-    xthrserv
-)
-endif()

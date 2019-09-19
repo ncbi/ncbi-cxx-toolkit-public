@@ -8,18 +8,3 @@ NCBI_begin_app(test_nsstorage)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_nsstorage-app
-    test_nsstorage
-)
-
-set_target_properties(test_nsstorage-app PROPERTIES OUTPUT_NAME test_nsstorage)
-
-target_link_libraries(test_nsstorage-app
-    xconnserv
-)
-endif()

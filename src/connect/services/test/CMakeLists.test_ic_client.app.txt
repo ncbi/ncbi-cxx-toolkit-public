@@ -11,18 +11,3 @@ NCBI_begin_app(test_ic_client)
   NCBI_add_test()
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_ic_client-app
-    test_ic_client
-)
-
-set_target_properties(test_ic_client-app PROPERTIES OUTPUT_NAME test_ic_client)
-
-target_link_libraries(test_ic_client-app
-    ncbi_xcache_netcache test_boost
-)
-endif()

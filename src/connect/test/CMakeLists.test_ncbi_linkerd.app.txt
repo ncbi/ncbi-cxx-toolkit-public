@@ -13,18 +13,3 @@ NCBI_begin_app(test_ncbi_linkerd)
   NCBI_add_test(test_ncbi_linkerd.sh)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_ncbi_linkerd-app
-    test_ncbi_linkerd
-)
-
-set_target_properties(test_ncbi_linkerd-app PROPERTIES OUTPUT_NAME test_ncbi_linkerd)
-
-target_link_libraries(test_ncbi_linkerd-app
-    xxconnect
-)
-endif()
