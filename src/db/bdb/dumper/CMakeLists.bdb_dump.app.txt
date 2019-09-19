@@ -9,19 +9,3 @@ NCBI_begin_app(bdb_dump)
   NCBI_project_watchers(kuznets)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(bdb_dump-app
-    bdb_dumper
-)
-
-set_target_properties(bdb_dump-app PROPERTIES OUTPUT_NAME bdb_dump)
-
-include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
-
-target_link_libraries(bdb_dump-app
-    bdb
-)
-endif()

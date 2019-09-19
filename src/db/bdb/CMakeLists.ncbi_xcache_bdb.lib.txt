@@ -11,16 +11,3 @@ NCBI_begin_lib(ncbi_xcache_bdb SHARED)
   NCBI_project_watchers(kuznets)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xcache_bdb
-    bdb_blobcache
-)
-include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
-
-target_link_libraries(ncbi_xcache_bdb
-    bdb
-)
-endif()

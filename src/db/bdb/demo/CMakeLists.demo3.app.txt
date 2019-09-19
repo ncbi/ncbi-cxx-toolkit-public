@@ -9,19 +9,3 @@ NCBI_begin_app(bdb_demo3)
   NCBI_project_watchers(kuznets)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(bdb_demo3-app
-    demo3
-)
-
-set_target_properties(bdb_demo3-app PROPERTIES OUTPUT_NAME bdb_demo3)
-
-include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
-
-target_link_libraries(bdb_demo3-app
-    bdb
-)
-endif()

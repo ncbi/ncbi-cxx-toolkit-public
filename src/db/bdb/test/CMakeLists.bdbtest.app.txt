@@ -9,19 +9,3 @@ NCBI_begin_app(bdbtest)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(bdbtest-app
-    test_bdb
-)
-
-set_target_properties(bdbtest-app PROPERTIES OUTPUT_NAME bdbtest)
-
-include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
-
-target_link_libraries(bdbtest-app
-    ncbi_xcache_bdb xcompress
-)
-endif()

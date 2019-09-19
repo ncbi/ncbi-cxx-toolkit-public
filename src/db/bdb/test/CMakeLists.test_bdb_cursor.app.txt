@@ -11,17 +11,3 @@ NCBI_begin_app(test_bdb_cursor)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_bdb_cursor-app
-    test_bdb_cursor
-)
-
-set_target_properties(test_bdb_cursor-app PROPERTIES OUTPUT_NAME test_bdb_cursor)
-
-target_link_libraries(test_bdb_cursor-app
-    bdb test_boost
-)
-endif()
