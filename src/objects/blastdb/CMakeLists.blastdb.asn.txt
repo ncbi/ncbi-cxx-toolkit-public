@@ -8,19 +8,3 @@ NCBI_begin_lib(blastdb)
   NCBI_project_watchers(camacho)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE blastdb)
-set(MODULE_IMPORT objects/seqloc/seqloc)
-set(MODULE_PATH objects/blastdb)
-
-set(MODULE_EXT "asn")
-add_library("${MODULE}" ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq xnetblast
-)
-endif()

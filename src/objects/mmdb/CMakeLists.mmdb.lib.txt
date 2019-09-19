@@ -8,25 +8,3 @@ NCBI_begin_lib(mmdb)
   NCBI_project_watchers(camacho)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE_IMPORT )
-set(MODULE_EXT "asn")
-
-set(ASN mmdb1 mmdb2 mmdb3)
-
-foreach(ASN_FILE ${ASN})
-    set(MODULE ${ASN_FILE})
-    set(MODULE_PATH objects/${ASN_FILE})
-    set(MODULE_PATH_RELATIVE "objects/${ASN_FILE}")
-    RunDatatool("${ASN_FILE}" "${MODULE_IMPORT}")
-    SET(MODULE_FILES ${MODULE_FILES} ${NEW_MODULE_FILES})
-endforeach(ASN_FILE)
-
-add_library(mmdb ${MODULE_FILES})
-
-target_link_libraries(mmdb
-    seq
-)
-endif()

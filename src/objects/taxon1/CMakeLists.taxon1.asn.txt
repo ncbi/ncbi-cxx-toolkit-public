@@ -9,23 +9,3 @@ NCBI_begin_lib(taxon1)
   NCBI_project_watchers(domrach)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE taxon1)
-set(MODULE_IMPORT objects/seqfeat/seqfeat)
-set(MODULE_PATH objects/taxon1)
-
-set(MODULE_EXT "asn")
-add_library(taxon1 ${MODULE}__ ${MODULE}___ taxon1 cache utils ctreecont)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(taxon1
-    seq xconnect
-)
-endif()

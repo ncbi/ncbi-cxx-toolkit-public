@@ -7,23 +7,3 @@ NCBI_begin_lib(mim)
   NCBI_uses_toolkit_libraries(xser)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE mim)
-set(MODULE_IMPORT )
-set(MODULE_PATH objects/mim)
-
-set(MODULE_EXT "asn")
-add_library(mim ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    xser
-)
-
-target_link_libraries(mim
-    xser
-)
-endif()

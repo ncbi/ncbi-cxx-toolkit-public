@@ -8,27 +8,3 @@ NCBI_begin_lib(macro)
   NCBI_project_watchers(bollin kans)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE macro)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-
-set(MODULE_EXT "asn")
-add_library(macro ${MODULE}__ ${MODULE}___)
-add_dependencies(macro
-    genome_collection seqset
-)
-
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(macro
-    seq
-)
-endif()

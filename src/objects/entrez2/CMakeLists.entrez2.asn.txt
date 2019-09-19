@@ -8,20 +8,3 @@ NCBI_begin_lib(entrez2)
   NCBI_project_watchers(lavr)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE entrez2)
-set(MODULE_IMPORT )
-set(MODULE_PATH objects/entrez2)
-
-set(MODULE_EXT "asn")
-add_library(entrez2 ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(entrez2
-    xser
-)
-endif()
-

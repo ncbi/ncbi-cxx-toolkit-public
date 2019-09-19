@@ -7,23 +7,3 @@ NCBI_begin_lib(valid)
   NCBI_uses_toolkit_libraries(general xregexp)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE valid)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-
-set(MODULE_EXT "asn")
-add_library(valid ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    general-lib xregexp
-)
-
-target_link_libraries(valid
-    general-lib xregexp
-)
-endif()

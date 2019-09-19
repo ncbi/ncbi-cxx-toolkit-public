@@ -10,23 +10,3 @@ NCBI_begin_lib(taxon3)
   NCBI_project_watchers(bollin holmesbr)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE taxon3)
-set(MODULE_IMPORT objects/seqfeat/seqfeat)
-set(MODULE_PATH objects/taxon3)
-
-set(MODULE_EXT "asn")
-add_library(taxon3 ${MODULE}__ ${MODULE}___ taxon3)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(taxon3
-    seq xconnect
-)
-endif()

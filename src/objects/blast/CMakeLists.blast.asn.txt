@@ -9,20 +9,3 @@ NCBI_begin_lib(xnetblast)
   NCBI_project_watchers(camacho)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE blast)
-set(MODULE_IMPORT objects/scoremat/scoremat objects/seq/seq objects/seqset/seqset objects/seqloc/seqloc objects/seqalign/seqalign)
-set(MODULE_PATH objects/blast)
-
-set(MODULE_EXT "asn")
-add_library(xnetblast ${MODULE}__ ${MODULE}___ names)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-
-target_link_libraries(xnetblast
-    scoremat
-)
-endif()

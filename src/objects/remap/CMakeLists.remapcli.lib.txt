@@ -8,14 +8,3 @@ NCBI_begin_lib(remapcli)
   NCBI_project_watchers(jcherry)
 NCBI_end_lib()
 
-
-if(OFF)
-
-add_library(remapcli
-    remap_client remap_client_
-)
-
-target_link_libraries(remapcli
-    remap xconnect
-)
-endif()

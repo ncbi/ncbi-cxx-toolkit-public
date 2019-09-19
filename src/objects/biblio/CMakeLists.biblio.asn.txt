@@ -8,18 +8,3 @@ NCBI_begin_lib(biblio)
   NCBI_uses_toolkit_libraries(general)
 NCBI_end_lib()
 
-
-if (OFF)
-set(MODULE biblio)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-
-set(MODULE_EXT "asn")
-add_library(biblio ${MODULE}__ ${MODULE}___ citation_base)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(biblio
-    general-lib
-)
-endif()

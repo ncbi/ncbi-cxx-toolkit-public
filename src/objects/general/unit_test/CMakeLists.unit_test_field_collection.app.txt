@@ -10,17 +10,3 @@ NCBI_begin_app(unit_test_field_collection)
   NCBI_add_test(unit_test_field_collection -data-in uo.asnt)
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(unit_test_field_collection-app
-    unit_test_field_collection
-)
-
-set_target_properties(unit_test_field_collection-app PROPERTIES OUTPUT_NAME unit_test_field_collection)
-
-
-
-target_link_libraries(unit_test_field_collection-app
-    general-lib test_boost
-)
-endif()

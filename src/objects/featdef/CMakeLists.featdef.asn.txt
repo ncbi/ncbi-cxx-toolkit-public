@@ -7,23 +7,3 @@ NCBI_begin_lib(featdef)
   NCBI_uses_toolkit_libraries(xser)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE featdef)
-set(MODULE_IMPORT )
-set(MODULE_PATH objects/featdef)
-
-set(MODULE_EXT "asn")
-add_library(featdef ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(featdef
-    xser
-)
-endif()

@@ -7,23 +7,3 @@ NCBI_begin_lib(pcsubstance)
   NCBI_uses_toolkit_libraries(general pub)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE pcsubstance)
-set(MODULE_IMPORT objects/general/general objects/pub/pub)
-set(MODULE_PATH objects/pcsubstance)
-
-set(MODULE_EXT "asn")
-add_library(pcsubstance ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    pub
-)
-
-target_link_libraries(pcsubstance
-    pub
-)
-endif()

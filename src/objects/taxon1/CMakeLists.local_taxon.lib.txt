@@ -8,18 +8,3 @@ NCBI_begin_lib(local_taxon)
   NCBI_uses_toolkit_libraries(taxon1 sqlitewrapp)
 NCBI_end_lib()
 
-
-if(OFF)
-#
-#
-#
-add_library(local_taxon
-    local_taxon
-)
-
-include_directories(SYSTEM ${SQLITE3_INCLUDE})
-
-target_link_libraries(local_taxon
-    taxon1 sqlitewrapp
-)
-endif()

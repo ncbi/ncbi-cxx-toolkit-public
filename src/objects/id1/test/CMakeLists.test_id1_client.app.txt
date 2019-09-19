@@ -8,15 +8,3 @@ NCBI_begin_app(test_id1_client)
   NCBI_project_watchers(ucko)
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(test_id1_client-app
-    test_id1_client
-)
-
-set_target_properties(test_id1_client-app PROPERTIES OUTPUT_NAME test_id1_client)
-
-target_link_libraries(test_id1_client-app
-    id1cli
-)
-endif()

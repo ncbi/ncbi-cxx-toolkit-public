@@ -7,26 +7,3 @@ NCBI_begin_lib(pcassay)
   NCBI_uses_toolkit_libraries(general pub seq pcsubstance)
 NCBI_end_lib()
 
-
-if(OFF)
-#
-#
-#
-
-set(MODULE pcassay)
-set(MODULE_IMPORT objects/general/general objects/pub/pub objects/seqfeat/seqfeat objects/pcsubstance/pcsubstance)
-set(MODULE_PATH objects/pcassay/pcassay)
-
-set(MODULE_EXT "asn")
-add_library(pcassay ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    pcsubstance seq
-)
-
-target_link_libraries(pcassay
-    pcsubstance seq
-)
-endif()

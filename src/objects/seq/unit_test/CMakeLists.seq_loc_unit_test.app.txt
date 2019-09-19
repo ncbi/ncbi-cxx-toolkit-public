@@ -9,17 +9,3 @@ NCBI_begin_app(seq_loc_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(seq_loc_unit_test-app
-    seq_loc_unit_test
-)
-
-set_target_properties(seq_loc_unit_test-app PROPERTIES OUTPUT_NAME seq_loc_unit_test)
-
-
-
-target_link_libraries(seq_loc_unit_test-app
-    seq test_boost
-)
-endif()

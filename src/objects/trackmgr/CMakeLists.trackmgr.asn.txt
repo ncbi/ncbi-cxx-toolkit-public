@@ -8,24 +8,3 @@ NCBI_begin_lib(trackmgr)
   NCBI_project_watchers(meric clausen)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE trackmgr)
-set(MODULE_IMPORT objects/seqloc/seqloc objects/general/general)
-set(MODULE_PATH objects/trackmgr)
-
-set(MODULE_EXT "asn")
-add_library(trackmgr ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(trackmgr
-    seq
-)
-endif()

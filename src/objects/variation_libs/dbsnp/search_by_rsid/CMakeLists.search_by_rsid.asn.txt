@@ -8,20 +8,3 @@ NCBI_begin_lib(searchbyrsid)
   NCBI_project_watchers(ivanchen)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE search_by_rsid)
-set(MODULE_IMPORT )
-set(MODULE_PATH objects/variation_libs/dbsnp/search_by_rsid)
-
-set(MODULE_EXT "asn")
-add_library(searchbyrsid ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(searchbyrsid
-    general-lib trackmgr
-)
-endif()
-

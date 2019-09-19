@@ -7,13 +7,3 @@ NCBI_begin_lib(mlacli)
   NCBI_uses_toolkit_libraries(mla xconnect)
 NCBI_end_lib()
 
-
-if(OFF)
-add_library(mlacli
-    mla_client mla_client_
-)
-
-target_link_libraries(mlacli
-    mla xconnect
-)
-endif()

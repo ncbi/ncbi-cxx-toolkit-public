@@ -19,15 +19,3 @@ NCBI_begin_app(gc_cli)
   NCBI_end_test()
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(gc_cli-app
-    gc_cli
-)
-
-set_target_properties(gc_cli-app PROPERTIES OUTPUT_NAME gc_cli)
-
-target_link_libraries(gc_cli-app
-    gencoll_client
-)
-endif()

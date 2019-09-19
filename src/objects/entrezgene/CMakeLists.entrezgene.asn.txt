@@ -7,23 +7,3 @@ NCBI_begin_lib(entrezgene)
   NCBI_uses_toolkit_libraries(seq general pub)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE entrezgene)
-set(MODULE_IMPORT objects/seqfeat/seqfeat objects/general/general objects/seqloc/seqloc objects/pub/pub)
-set(MODULE_PATH objects/entrezgene)
-
-set(MODULE_EXT "asn")
-add_library(entrezgene ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(entrezgene
-    seq
-)
-endif()

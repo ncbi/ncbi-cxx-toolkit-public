@@ -10,17 +10,3 @@ NCBI_begin_app(seqalign_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(seqalign_unit_test-app
-    seqalign_unit_test
-)
-
-set_target_properties(seqalign_unit_test-app PROPERTIES OUTPUT_NAME seqalign_unit_test)
-
-
-
-target_link_libraries(seqalign_unit_test-app
-    seq test_boost
-)
-endif()

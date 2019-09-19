@@ -8,15 +8,3 @@ NCBI_begin_app(entrez2client)
   NCBI_project_watchers(dicuccio)
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(entrez2client-app
-    entrez2client
-)
-
-set_target_properties(entrez2client-app PROPERTIES OUTPUT_NAME entrez2client)
-
-target_link_libraries(entrez2client-app
-    entrez2cli
-)
-endif()

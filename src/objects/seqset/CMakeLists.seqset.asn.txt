@@ -8,19 +8,3 @@ NCBI_begin_lib(seqset)
   NCBI_uses_toolkit_libraries(general biblio medline seq)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE seqset)
-set(MODULE_IMPORT objects/general/general objects/ /biblio objects/medline/medline objects/seq/seq)
-set(MODULE_PATH objects/seqset)
-
-set(MODULE_EXT "asn")
-add_library(seqset ${MODULE}__ ${MODULE}___ gb_release_file)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(seqset
-    seq
-)
-endif()

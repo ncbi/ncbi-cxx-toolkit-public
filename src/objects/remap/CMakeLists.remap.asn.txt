@@ -7,24 +7,3 @@ NCBI_begin_lib(remap)
   NCBI_uses_toolkit_libraries(seq)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE remap)
-set(MODULE_IMPORT objects/seqloc/seqloc)
-set(MODULE_PATH objects/remap)
-
-set(MODULE_EXT "asn")
-add_library(remap ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(remap
-    seq
-)
-endif()

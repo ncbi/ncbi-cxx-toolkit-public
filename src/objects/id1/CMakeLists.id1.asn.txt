@@ -8,19 +8,3 @@ NCBI_begin_lib(id1)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE id1)
-set(MODULE_IMPORT objects/seqloc/seqloc objects/seqset/seqset objects/seq/seq)
-set(MODULE_PATH objects/id1)
-
-set(MODULE_EXT "asn")
-add_library(id1 ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(id1
-    seqset
-)
-endif()

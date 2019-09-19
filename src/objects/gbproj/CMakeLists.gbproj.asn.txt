@@ -7,26 +7,3 @@ NCBI_begin_lib(gbproj)
   NCBI_uses_toolkit_libraries(seq seqset general submit xconnect)
 NCBI_end_lib()
 
-
-if(OFF)
-#
-#
-#
-
-set(MODULE gbproj)
-set(MODULE_IMPORT objects/seq/seq objects/seqloc/seqloc objects/seqset/seqset objects/general/general objects/submit/submit objects/seqalign/seqalign)
-set(MODULE_PATH objects/gbproj)
-
-set(MODULE_EXT "asn")
-add_library(gbproj ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    submit
-)
-
-target_link_libraries(gbproj
-    submit xconnect
-)
-endif()

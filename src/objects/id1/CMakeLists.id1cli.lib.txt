@@ -8,14 +8,3 @@ NCBI_begin_lib(id1cli)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-
-if(OFF)
-add_library(id1cli
-    id1_client id1_client_
-)
-
-target_link_libraries(id1cli
-    id1 xconnect
-)
-endif()
-

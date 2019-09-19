@@ -7,27 +7,3 @@ NCBI_begin_lib(valerr)
   NCBI_uses_toolkit_libraries(xser seqset)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE valerr)
-set(MODULE_IMPORT )
-set(MODULE_PATH objects/valerr)
-
-set(MODULE_EXT "asn")
-add_library(valerr ${MODULE}__ ${MODULE}___)
-add_dependencies(valerr
-    seqset
-)
-
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    xser
-)
-
-target_link_libraries(valerr
-    xser
-)
-endif()

@@ -7,23 +7,3 @@ NCBI_begin_lib(variation)
   NCBI_uses_toolkit_libraries(seq general pub)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE variation)
-set(MODULE_IMPORT objects/seqfeat/seqfeat objects/general/general objects/seqloc/seqloc objects/pub/pub objects/seq/seq)
-set(MODULE_PATH objects/variation)
-
-set(MODULE_EXT "asn")
-add_library(variation ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(variation
-    seq
-)
-endif()

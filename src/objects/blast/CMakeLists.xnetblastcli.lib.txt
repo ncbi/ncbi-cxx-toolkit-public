@@ -7,16 +7,3 @@ NCBI_begin_lib(xnetblastcli)
   NCBI_uses_toolkit_libraries(xconnect xnetblast)
 NCBI_end_lib()
 
-
-if(OFF)
-
-add_library(xnetblastcli
-    blastclient blastclient_
-)
-
-#SET_TARGET_PROPERTIES(xnetblastcli PROPERTIES LINKER_LANGUAGE CXX)
-
-target_link_libraries(xnetblastcli
-    xconnect xnetblast
-)
-endif()

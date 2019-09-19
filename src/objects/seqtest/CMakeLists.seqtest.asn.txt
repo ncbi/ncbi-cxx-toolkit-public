@@ -7,23 +7,3 @@ NCBI_begin_lib(seqtest)
   NCBI_uses_toolkit_libraries(general seq)
 NCBI_end_lib()
 
-
-if(OFF)
-
-set(MODULE seqtest)
-set(MODULE_IMPORT objects/general/general objects/seqloc/seqloc objects/seqalign/seqalign objects/seqfeat/seqfeat objects/seq/seq)
-set(MODULE_PATH objects/seqtest)
-
-set(MODULE_EXT "asn")
-add_library(seqtest ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(seqtest
-    seq
-)
-endif()

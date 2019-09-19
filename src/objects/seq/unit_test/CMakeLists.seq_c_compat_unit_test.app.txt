@@ -10,20 +10,3 @@ NCBI_begin_app(seq_c_compat_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-
-if(OFF)
-
-include_directories(SYSTEM ${NCBI_C_INCLUDE})
-link_directories(${NCBI_C_LIBPATH})
-
-add_executable(seq_c_compat_unit_test-app
-    seq_c_compat_unit_test
-)
-
-set_target_properties(seq_c_compat_unit_test-app PROPERTIES OUTPUT_NAME seq_c_compat_unit_test)
-
-target_link_libraries(seq_c_compat_unit_test-app
-    seq test_boost xconnect
-    -lncbiobj ${NCBI_C_ncbi}
-)
-endif()

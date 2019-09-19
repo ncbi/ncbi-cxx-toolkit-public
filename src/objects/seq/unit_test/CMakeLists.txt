@@ -15,20 +15,3 @@ NCBI_add_app(
   seqfeatdata_unit_test
   unit_test_so_map
 )
-
-if(OFF)
-# Include projects from this directory
-include(CMakeLists.seq_id_unit_test.app.txt)
-include(CMakeLists.seqalign_unit_test.app.txt)
-include(CMakeLists.mapper_unit_test.app.txt)
-include(CMakeLists.ecnum_unit_test.app.txt)
-include(CMakeLists.seqfeatdata_unit_test.app.txt)
-include(CMakeLists.seqfeat_unit_test.app.txt)
-include(CMakeLists.seq_loc_unit_test.app.txt)
-
-if (HAVE_NCBI_C)
-
-include(CMakeLists.seq_c_compat_unit_test.app.txt)
-
-endif()
-endif()

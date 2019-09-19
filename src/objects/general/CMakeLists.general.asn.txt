@@ -9,21 +9,3 @@ NCBI_begin_lib(general)
   NCBI_project_watchers(bollin)
 NCBI_end_lib()
 
-
-if(OFF)
-set(MODULE general)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-
-set(MODULE_EXT "asn")
-add_library(general-lib ${MODULE}__ ${MODULE}___ uoconv)
-set_target_properties(general-lib PROPERTIES OUTPUT_NAME general)
-
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(general-lib
-    xser
-)
-
-endif()

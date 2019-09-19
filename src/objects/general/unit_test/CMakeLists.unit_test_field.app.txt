@@ -8,17 +8,3 @@ NCBI_begin_app(unit_test_field)
   NCBI_project_watchers(vasilche)
 NCBI_end_app()
 
-
-if(OFF)
-add_executable(unit_test_field-app
-    unit_test_field
-)
-
-set_target_properties(unit_test_field-app PROPERTIES OUTPUT_NAME unit_test_field)
-
-
-
-target_link_libraries(unit_test_field-app
-    general-lib test_boost
-)
-endif()
