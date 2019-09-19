@@ -138,7 +138,8 @@ private:
 
     void ProcessOneFile(bool isAlignment=false);
     void ProcessOneFile(CRef<CSerialObject>& result);
-    void ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
+    void ProcessOneEntry(CFormatGuess::EFormat inputFormat, 
+            CRef<CSerialObject> obj, CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessAlignmentFile();
     void ProcessSecretFiles1Phase(bool fastaInput, CSeq_entry& result);
@@ -850,7 +851,10 @@ CRef<CScope> CTbl2AsnApp::GetScope(void)
     return m_context.m_scope;
 }
 
-void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRef<CSerialObject>& result)
+void CTbl2AsnApp::ProcessOneEntry(
+        CFormatGuess::EFormat inputFormat, 
+        CRef<CSerialObject> obj, 
+        CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
@@ -884,9 +888,9 @@ void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRe
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
    // m_reader->ApplyAdditionalProperties(*entry);
-
-    const bool fastaInput = !updateDates;
-    ProcessSecretFiles1Phase(fastaInput, *entry);
+    ProcessSecretFiles1Phase(
+            inputFormat == CFormatGuess::eFasta,
+            *entry);
 
     CFeatureTableReader fr(m_context);
 
@@ -929,7 +933,8 @@ void CTbl2AsnApp::ProcessOneEntry(bool updateDates, CRef<CSerialObject> obj, CRe
         fr.ConvertNucSetToSet(entry);
     }
 
-    if (updateDates)
+    if ((inputFormat == CFormatGuess::eTextASN) ||
+        (inputFormat == CFormatGuess::eBinaryASN))
     {
         // if create-date exists apply update date
         m_context.ApplyCreateUpdateDates(*entry);
@@ -1063,10 +1068,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
             {
                 m_context.m_scope->ResetDataAndHistory();
                 CRef<CSerialObject> result;
-                const bool updateDates = 
-                    (format == CFormatGuess::eTextASN ||
-                     format == CFormatGuess::eBinaryASN);
-                ProcessOneEntry(updateDates, input_obj, result);
+                ProcessOneEntry(format, input_obj, result);
 
                 if (!IsDryRun() && result.NotEmpty())
                 {
@@ -1135,8 +1137,9 @@ void CTbl2AsnApp::ProcessAlignmentFile()
     m_context.MergeWithTemplate(*pEntry);
 
     CRef<CSerialObject> pResult;
-    const bool updateDates = false;
-    ProcessOneEntry(updateDates, pEntry, pResult);
+
+    CFormatGuess::EFormat inputFormat = CFormatGuess::eAlignment;
+    ProcessOneEntry(inputFormat, pEntry, pResult);
 
     if (IsDryRun() || !pResult) {
         return;
