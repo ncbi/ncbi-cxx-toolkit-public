@@ -8,8 +8,3 @@
 
 NCBI_add_subdirectory(project_tree_builder)
 
-if(OFF)
-# Recurse subdirectories
-add_subdirectory(project_tree_builder)
-#add_subdirectory(helpers)
-endif()
