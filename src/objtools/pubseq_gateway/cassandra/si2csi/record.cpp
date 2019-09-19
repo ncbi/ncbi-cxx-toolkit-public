@@ -42,15 +42,15 @@ USING_NCBI_SCOPE;
 
 string CSI2CSIRecord::ToString(void) const
 {
-    string  s;
+    string s;
     return s.append("SecSeqId: ")
             .append(m_SecSeqId)
             .append(" SeqSeqIdType: ")
             .append(NStr::NumericToString(m_SecSeqIdType))
             .append(" Accession: ")
             .append(m_Accession)
-            .append(" IdSync: ")
-            .append(NStr::NumericToString(m_IdSync))
+            .append(" GI: ")
+            .append(NStr::NumericToString(m_GI))
             .append(" SecSeqState: ")
             .append(NStr::NumericToString(m_SecSeqState))
             .append(" SeqIdType: ")

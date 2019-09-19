@@ -52,7 +52,7 @@ public:
     using TSecSeqIdType = int16_t;
 
     using TAccession = string;
-    using TIdSync = int64_t;
+    using TGI = int64_t;
     using TSecSeqState = int8_t;
     using TSeqIdType = int16_t;
     using TVersion = int16_t;
@@ -60,7 +60,7 @@ public:
  public:
     CSI2CSIRecord() :
         m_SecSeqIdType(-1),
-        m_IdSync(-1),
+        m_GI(-1),
         m_SecSeqState(-1),
         m_SeqIdType(-1),
         m_Version(-1)
@@ -88,9 +88,9 @@ public:
         return *this;
     }
 
-    CSI2CSIRecord & SetIdSync(TIdSync  value)
+    CSI2CSIRecord & SetGI(TGI  value)
     {
-        m_IdSync = value;
+        m_GI = value;
         return *this;
     }
 
@@ -128,9 +128,9 @@ public:
         return m_Accession;
     }
 
-    TIdSync GetIdSync(void) const
+    TGI GetGI(void) const
     {
-        return m_IdSync;
+        return m_GI;
     }
 
     TSecSeqState GetSecSeqState(void) const
@@ -155,7 +155,7 @@ public:
     TSecSeqIdType       m_SecSeqIdType;
 
     TAccession          m_Accession;
-    TIdSync             m_IdSync;
+    TGI                 m_GI;
     TSecSeqState        m_SecSeqState;
     TSeqIdType          m_SeqIdType;
     TVersion            m_Version;
@@ -164,8 +164,8 @@ public:
 // e200_Ok: exactly one record found
 // e404_NotFound: no records found
 // e300_MultipleChoices: more than one record found
-using TSI2CSIConsumeCallback = function<void(CSI2CSIRecord &&,
-                                             CRequestStatus::ECode)>;
+using TSI2CSIConsumeCallback =
+    function<void(CSI2CSIRecord &&, CRequestStatus::ECode)>;
 
 END_IDBLOB_SCOPE
 

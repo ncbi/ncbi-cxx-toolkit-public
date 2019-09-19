@@ -90,7 +90,7 @@ void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(TDataReadyCallback callback,
 {
     if (callback && m_State != eInit) {
         NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBioseqInfoTaskFetch: DataReadyCB can't be assigned "
+           "CCassBlobTaskFetchSplitHistory: DataReadyCB can't be assigned "
            "after the loading process has started");
     }
     CCassBlobWaiter::SetDataReadyCB(callback, data);
@@ -101,7 +101,7 @@ void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(shared_ptr<CCassDataCallback
 {
     if (callback && m_State != eInit) {
         NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBioseqInfoTaskFetch: DataReadyCB can't be assigned "
+           "CCassBlobTaskFetchSplitHistory: DataReadyCB can't be assigned "
            "after the loading process has started");
     }
     CCassBlobWaiter::SetDataReadyCB3(callback);

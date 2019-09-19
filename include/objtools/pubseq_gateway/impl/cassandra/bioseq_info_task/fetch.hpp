@@ -57,7 +57,7 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
         eError = CCassBlobWaiter::eError
     };
 
-public:
+ public:
     CCassBioseqInfoTaskFetch(unsigned int                           timeout_ms,
                              unsigned int                           max_retries,
                              shared_ptr<CCassConnection>            connection,
@@ -67,6 +67,8 @@ public:
                              bool                                   version_provided,
                              CBioseqInfoRecord::TSeqIdType          seq_id_type,
                              bool                                   seq_id_type_provided,
+                             CBioseqInfoRecord::TGI                 gi,
+                             bool                                   gi_provided,
                              TBioseqInfoConsumeCallback             consume_callback,
                              TDataErrorCallback                     data_error_cb);
 
@@ -75,31 +77,30 @@ public:
     void SetConsumeCallback(TBioseqInfoConsumeCallback callback);
     void Cancel(void);
 
-protected:
+ protected:
     virtual void Wait1(void) override;
 
-private:
+ private:
     void x_InitializeQuery(void);
     void x_PopulateRecord(void);
+    bool x_IsMatchingRecord(void);
     void x_ReadingLoop(void);
 
-private:
+ private:
     CBioseqInfoRecord::TAccession       m_Accession;
     CBioseqInfoRecord::TVersion         m_Version;
     bool                                m_VersionProvided;
     CBioseqInfoRecord::TSeqIdType       m_SeqIdType;
     bool                                m_SeqIdTypeProvided;
+    CBioseqInfoRecord::TGI              m_GI;
+    bool                                m_GIProvided;
     TBioseqInfoConsumeCallback          m_ConsumeCallback;
 
-private:
+ private:
     size_t                              m_RecordCount;
     CBioseqInfoRecord                   m_Record;
 
-private:
-    int                                 m_SelectedVersion;
-    int                                 m_SelectedSeqIdType;
-
-protected:
+ protected:
     unsigned int                        m_PageSize;
     unsigned int                        m_RestartCounter;
 };

@@ -48,7 +48,7 @@ void CBioseqInfoRecord::Reset(void)
     m_SeqIdType = -1;
     m_DateChanged = 0;
     m_Hash = -1;
-    m_IdSync = -1;
+    m_GI = -1;
     m_Length = -1;
     m_Mol = -1;
     m_Sat = -1;
@@ -59,22 +59,21 @@ void CBioseqInfoRecord::Reset(void)
     m_TaxId = -1;
 }
 
-
 string CBioseqInfoRecord::ToString(void) const
 {
-    string  s;
+    string s;
     return s.append("Accession: ")
             .append(m_Accession)
             .append(" Version: ")
             .append(NStr::NumericToString(m_Version))
             .append(" SeqIdType: ")
             .append(NStr::NumericToString(m_SeqIdType))
+            .append(" GI: ")
+            .append(NStr::NumericToString(m_GI))
             .append(" DateChanged: ")
             .append(NStr::NumericToString(m_DateChanged))
             .append(" Hash: ")
             .append(NStr::NumericToString(m_Hash))
-            .append(" IdSync: ")
-            .append(NStr::NumericToString(m_IdSync))
             .append(" Length: ")
             .append(NStr::NumericToString(m_Length))
             .append(" Mol: ")

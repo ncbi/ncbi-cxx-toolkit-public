@@ -116,7 +116,7 @@ void CCassSI2CSITaskFetch::Cancel(void)
 void CCassSI2CSITaskFetch::x_InitializeQuery(void)
 {
     static const string     s_Select = "SELECT sec_seq_id_type, accession, "
-                                              "id_sync, sec_seq_state, "
+                                              "gi, sec_seq_state, "
                                               "seq_id_type, version FROM ";
     static const string     s_Where_1 = ".SI2CSI WHERE sec_seq_id = ?";
     static const string     s_Where_2 = s_Where_1 + " AND sec_seq_id_type = ?";
@@ -184,7 +184,7 @@ void CCassSI2CSITaskFetch::Wait1(void)
                                 m_Record.SetSecSeqId(m_SecSeqId)
                                         .SetSecSeqIdType(m_QueryArr[0].query->FieldGetInt16Value(0))
                                         .SetAccession(m_QueryArr[0].query->FieldGetStrValue(1))
-                                        .SetIdSync(m_QueryArr[0].query->FieldGetInt64Value(2))
+                                        .SetGI(m_QueryArr[0].query->FieldGetInt64Value(2))
                                         .SetSecSeqState(m_QueryArr[0].query->FieldGetInt8Value(3))
                                         .SetSeqIdType(m_QueryArr[0].query->FieldGetInt16Value(4))
                                         .SetVersion(m_QueryArr[0].query->FieldGetInt16Value(5));

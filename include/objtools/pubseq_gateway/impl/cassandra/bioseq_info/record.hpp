@@ -53,7 +53,7 @@ public:
     using TSeqIdType = int16_t;
     using TDateChanged = int64_t;
     using THash = int32_t;
-    using TIdSync = int64_t;
+    using TGI = int64_t;
     using TLength = int32_t;
     using TMol = int8_t;
     using TSat = int16_t;
@@ -64,13 +64,19 @@ public:
     using TTaxId = int32_t;
 
 public:
-    CBioseqInfoRecord() :
-        m_Version(-1), m_SeqIdType(-1),
-        m_DateChanged(0), m_Hash(-1),
-        m_IdSync(-1), m_Length(-1),
-        m_Mol(-1), m_Sat(-1),
-        m_SatKey(-1), m_SeqState(-1),
-        m_State(-1), m_TaxId(-1)
+    CBioseqInfoRecord()
+        : m_Version(-1)
+        , m_SeqIdType(-1)
+        , m_GI(-1)
+        , m_DateChanged(0)
+        , m_Hash(-1)
+        , m_Length(-1)
+        , m_Mol(-1)
+        , m_Sat(-1)
+        , m_SatKey(-1)
+        , m_SeqState(-1)
+        , m_State(-1)
+        , m_TaxId(-1)
     {}
 
     void Reset(void);
@@ -110,9 +116,9 @@ public:
         return *this;
     }
 
-    CBioseqInfoRecord & SetIdSync(TIdSync  value)
+    CBioseqInfoRecord & SetGI(TGI value)
     {
-        m_IdSync = value;
+        m_GI = value;
         return *this;
     }
 
@@ -191,9 +197,9 @@ public:
         return m_Hash;
     }
 
-    TIdSync GetIdSync(void) const
+    TGI GetGI(void) const
     {
-        return m_IdSync;
+        return m_GI;
     }
 
     TLength GetLength(void) const
@@ -243,14 +249,14 @@ public:
 
     string ToString(void) const;
 
-private:
-    TAccession          m_Accession;
-    TVersion            m_Version;
-    TSeqIdType          m_SeqIdType;
+ private:
+    TAccession m_Accession;
+    TVersion m_Version;
+    TSeqIdType m_SeqIdType;
+    TGI m_GI;
 
     TDateChanged        m_DateChanged;
     THash               m_Hash;
-    TIdSync             m_IdSync;
     TLength             m_Length;
     TMol                m_Mol;
     TSat                m_Sat;
@@ -264,8 +270,8 @@ private:
 // e200_Ok: exactly one record found
 // e404_NotFound: no records found
 // e300_MultipleChoices: more than one record found
-using TBioseqInfoConsumeCallback = function<void(CBioseqInfoRecord &&,
-                                                 CRequestStatus::ECode)>;
+using TBioseqInfoConsumeCallback =
+    function<void(CBioseqInfoRecord &&, CRequestStatus::ECode)>;
 
 END_IDBLOB_SCOPE
 
