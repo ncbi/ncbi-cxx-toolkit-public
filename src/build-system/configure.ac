@@ -8735,6 +8735,9 @@ m4_foreach(CATEGORY, [Features,Packages,Projects],
       esac
    done
   ])
+# Sort, then consolidate back to a single line
+FEATURES=`echo $FEATURES | fmt -w1 | sort -dfu`
+FEATURES=`echo $FEATURES`
 
 
 ### Get rid of the KCC "anti-license-warning" filter

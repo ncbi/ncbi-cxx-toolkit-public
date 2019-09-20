@@ -166,7 +166,7 @@ fi
 (cd "$x_check_dir"  &&  find "$x_check_dir" -maxdepth 1 -mindepth 1 -type d -print | xargs rm -rf)
 
 # Features detection
-fs=`cat "${x_build_dir}/${x_libdll}/${x_cfg}/features_and_packages.txt" | tr '\r' ' '`
+fs=`sort -dfu "${x_build_dir}/${x_libdll}/${x_cfg}/features_and_packages.txt" | tr '\r' ' '`
 x_features=" "
 for f in $fs; do
    x_features="$x_features$f "

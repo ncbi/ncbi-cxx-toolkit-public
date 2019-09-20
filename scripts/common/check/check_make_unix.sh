@@ -135,7 +135,7 @@ fi
 
 # Features detection
 x_features=""
-for f in $x_conf_dir/status/*.enabled; do
+for f in `ls $x_conf_dir/status/*.enabled | sort -df`; do
    f=`echo $f | sed 's|^.*/status/\(.*\).enabled$|\1|g'`
    x_features="$x_features$f "
 done
