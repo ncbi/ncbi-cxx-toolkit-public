@@ -8,15 +8,3 @@ NCBI_begin_lib(clog)
   NCBI_project_watchers(ivanov)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(clog
-    ncbi_c_log
-)
-
-target_link_libraries(clog
-    ${LIBS}
-)
-endif()

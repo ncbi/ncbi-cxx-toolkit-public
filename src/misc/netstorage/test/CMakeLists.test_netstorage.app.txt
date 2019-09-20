@@ -12,18 +12,3 @@ NCBI_begin_app(test_netstorage)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_netstorage-app
-    test_netstorage
-)
-
-set_target_properties(test_netstorage-app PROPERTIES OUTPUT_NAME test_netstorage)
-
-
-target_link_libraries(test_netstorage-app
-    netstorage test_boost
-)
-endif()

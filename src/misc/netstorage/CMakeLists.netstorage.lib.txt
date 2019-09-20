@@ -8,14 +8,3 @@ NCBI_begin_lib(netstorage)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(netstorage
-    state object netstorage filetrack
-)
-target_link_libraries(netstorage
-    ncbi_xcache_netcache
-)
-endif()

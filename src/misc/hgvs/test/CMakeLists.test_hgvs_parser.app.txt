@@ -11,19 +11,3 @@ NCBI_begin_app(test_hgvs_parser)
   NCBI_project_watchers(astashya)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_hgvs_parser-app
-    test_hgvs_parser_app
-)
-
-set_target_properties(test_hgvs_parser-app PROPERTIES OUTPUT_NAME test_hgvs_parser)
-
-
-target_link_libraries(test_hgvs_parser-app
-    hgvs test_boost
-)
-endif()
-

@@ -17,24 +17,3 @@ NCBI_begin_lib(hgvs)
   NCBI_project_tags(gbench)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY -DBOOST_SYSTEM_NO_DEPRECATED)
-
-add_library(hgvs
-    hgvs_parser2 hgvs_writer2 variation_util2 seq_id_resolver objcoords
-    sequtils hgvs_reader
-)
-
-add_dependencies(hgvs
-    seq variation objcoords
-)
-
-target_link_libraries(hgvs
-    entrez2cli ncbi_xloader_genbank objcoords
-    variation xobjread xobjutil
-    xregexp
-)
-endif()

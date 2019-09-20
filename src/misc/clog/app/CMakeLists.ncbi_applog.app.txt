@@ -8,19 +8,3 @@ NCBI_begin_app(ncbi_applog)
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ncbi_applog-app
-    ncbi_applog ncbi_applog_url
-)
-
-set_target_properties(ncbi_applog-app PROPERTIES OUTPUT_NAME ncbi_applog)
-
-include_directories(${PCRE_INCLUDE})
-
-target_link_libraries(ncbi_applog-app
-    clog xconnect xregexp
-)
-endif()

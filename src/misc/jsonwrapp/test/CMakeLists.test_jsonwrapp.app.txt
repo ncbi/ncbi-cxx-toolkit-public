@@ -11,19 +11,3 @@ NCBI_begin_app(test_jsonwrapp)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_jsonwrapp-app
-    test_jsonwrapp
-)
-
-set_target_properties(test_jsonwrapp-app PROPERTIES OUTPUT_NAME test_jsonwrapp)
-
-
-target_link_libraries(test_jsonwrapp-app
-    test_boost
-)
-endif()
-

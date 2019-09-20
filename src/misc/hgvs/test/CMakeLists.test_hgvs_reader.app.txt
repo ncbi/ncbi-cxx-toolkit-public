@@ -10,18 +10,3 @@ NCBI_begin_app(test_hgvs_reader)
   NCBI_project_watchers(ludwigf meric)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_hgvs_reader-app
-    test_hgvs_reader
-)
-
-set_target_properties(test_hgvs_reader-app PROPERTIES OUTPUT_NAME test_hgvs_reader)
-
-
-target_link_libraries(test_hgvs_reader-app
-    gencoll_client hgvs test_boost
-)
-endif()

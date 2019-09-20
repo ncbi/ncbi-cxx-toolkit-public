@@ -7,15 +7,3 @@ NCBI_begin_lib(xmlreaders)
   NCBI_uses_toolkit_libraries(xmlwrapp)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xmlreaders
-    rfam_tool
-)
-
-target_link_libraries(xmlreaders
-    xmlwrapp
-)
-endif()

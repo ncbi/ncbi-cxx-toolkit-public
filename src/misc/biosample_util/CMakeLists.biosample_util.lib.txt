@@ -11,18 +11,3 @@ NCBI_begin_lib(xbiosample_util)
   NCBI_project_watchers(bollin)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xbiosample_util
-    biosample_util struc_table_column
-)
-add_dependencies(xbiosample_util
-    taxon3 seqset macro valid
-)
-
-target_link_libraries(xbiosample_util
-    xmlwrapp xobjedit
-)
-endif()
