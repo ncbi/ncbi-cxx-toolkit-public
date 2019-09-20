@@ -71,12 +71,20 @@ public:
     enum EVerbose {
         eVerbose_none = 0,
         eVerbose_error = 1,
+        eVerbose_statistics = 2,
         eVerbose_overlap = 7,
         eVerbose_skip = 8,
         eVerbose_trace = 9
     };
     int verbose;
-    int error_code;
+    
+    int total_file_count;
+    int single_table_file_count;
+    int unaligned_file_count;
+    int no_overlap_file_count;
+    int bad_schema_file_count;
+    int bad_overlap_file_count;
+    int good_overlap_file_count;
 
     struct SDB {
         SDB(const CVDBMgr& mgr, const string& file);
@@ -126,7 +134,7 @@ public:
                 }
             CVDBValueFor<TVDBRowId> SECONDARY_ALIGNMENT_IDS(TVDBRowId row) const
                 {
-                    return CVDBValueFor<TVDBRowId>(cursor, row, col_aln2);
+                    return col_aln2? CVDBValueFor<TVDBRowId>(cursor, row, col_aln2): CVDBValueFor<TVDBRowId>();
                 }
             CVDBValueFor<TVDBRowId> ALIGNMENT_IDS(int secondary, TVDBRowId row) const
                 {
@@ -220,6 +228,9 @@ void CSpanCheckApp::Init(void)
     arg_desc->AddOptionalKey("files", "Files",
                              "comma separated list of cSRA accessions or files names",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("filelist", "FileList",
+                             "file with cSRA accessions or files names",
+                             CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey("verbose", "Verbose",
                             "level of details to output",
@@ -242,7 +253,13 @@ int CSpanCheckApp::Run(void)
     const CArgs& args = GetArgs();
 
     verbose = args["verbose"].AsInteger();
-    error_code = 0;
+    total_file_count = 0;
+    single_table_file_count = 0;
+    unaligned_file_count = 0;
+    no_overlap_file_count = 0;
+    bad_schema_file_count = 0;
+    bad_overlap_file_count = 0;
+    good_overlap_file_count = 0;
     
     vector<string> files;
     if ( args["file"] ) {
@@ -251,15 +268,44 @@ int CSpanCheckApp::Run(void)
     else if ( args["files"] ) {
         NStr::Split(args["files"].AsString(), ",", files);
     }
+    else if ( args["filelist"] ) {
+        CNcbiIstream& in = args["filelist"].AsInputFile();
+        string file;
+        while ( getline(in, file) ) {
+            files.push_back(file);
+        }
+    }
 
     for ( auto& file : files ) {
         ProcessFile(file);
     }
 
+    if ( verbose >= eVerbose_statistics ) {
+        cout << "Processed "<<total_file_count<<" files.";
+        if ( single_table_file_count ) {
+            cout << " Single-table: " << single_table_file_count <<".";
+        }
+        if ( unaligned_file_count ) {
+            cout << " Unaligned: " << unaligned_file_count <<".";
+        }
+        if ( no_overlap_file_count ) {
+            cout << " No overlap: " << no_overlap_file_count <<".";
+        }
+        if ( bad_schema_file_count ) {
+            cout << " Bad schema: " << bad_schema_file_count<<".";
+        }
+        if ( bad_overlap_file_count ) {
+            cout << " Bad overlap: "<<bad_overlap_file_count<<".";
+        }
+        if ( 1 || good_overlap_file_count ) {
+            cout << " Good overlap: "<<good_overlap_file_count<<".";
+        }
+        cout << endl;
+    }
     if ( verbose >= eVerbose_trace ) {
         cout << "Success." << endl;
     }
-    return error_code;
+    return (bad_schema_file_count || bad_overlap_file_count? 1: 0);
 }
 
 
@@ -341,35 +387,54 @@ void CSpanCheckApp::ProcessFile(const string& file)
         string path = mgr.FindAccPath(file);
         cout << file << " -> "<<path<<endl;
     }
+    ++total_file_count;
 
-    SDB db(mgr, file);
-    if ( !db.is_aligned() ) {
-        // we don't scan it as there are no alignments
-        if ( verbose >= eVerbose_skip ) {
-            cout << file << ": skipping unaligned run"<<endl;
+    try {
+        SDB db(mgr, file);
+        if ( !db.db ) {
+            // old single-table VDB file
+            if ( verbose >= eVerbose_skip ) {
+                cout << file << ": skipping old single-table run"<<endl;
+            }
+            ++single_table_file_count;
+            return;
         }
-        return;
+        if ( !db.is_aligned() ) {
+            // we don't scan it as there are no alignments
+            if ( verbose >= eVerbose_skip ) {
+                cout << file << ": skipping unaligned run"<<endl;
+            }
+            ++unaligned_file_count;
+            return;
+        }
+        if ( !db.has_overlap_info() ) {
+            // we don't scan runs with default overlap
+            if ( verbose >= eVerbose_skip ) {
+                cout << file << ": skipping run with default overlap"<<endl;
+            }
+            ++no_overlap_file_count;
+            return;
+        }
+        
+        // now scan
+        if ( GetArgs()["recalculate"] ) {
+            if ( verbose >= eVerbose_trace ) {
+                cout << file << ": recalculating..."<<endl;
+            }
+            RecalculateFile(db);
+        }
+        else {
+            if ( verbose >= eVerbose_trace ) {
+                cout << file << ": scanning..."<<endl;
+            }
+            CheckFile(db);
+        }
     }
-    if ( !db.has_overlap_info() ) {
-        // we don't scan runs with default overlap
-        if ( verbose >= eVerbose_skip ) {
-            cout << file << ": skipping run with default overlap"<<endl;
+    catch ( exception& exc ) {
+        if ( verbose >= eVerbose_error ) {
+            cout << file << ": exception: "<<exc.what()<<endl;
         }
-        return;
-    }
-
-    // now scan
-    if ( GetArgs()["recalculate"] ) {
-        if ( verbose >= eVerbose_trace ) {
-            cout << file << ": recalculating..."<<endl;
-        }
-        RecalculateFile(db);
-    }
-    else {
-        if ( verbose >= eVerbose_trace ) {
-            cout << file << ": scanning..."<<endl;
-        }
-        CheckFile(db);
+        ++bad_schema_file_count;
     }
 }
 
@@ -377,6 +442,7 @@ void CSpanCheckApp::ProcessFile(const string& file)
 void CSpanCheckApp::CheckFile(const SDB& db)
 {
     const TSeqPos kRefPageSize = 5000;
+    bool bad_overlap = false;
     for ( TVDBRowId ref_row = 1, max_ref_row = db.ref.cursor.GetMaxRowId(); ref_row <= max_ref_row; ) {
         // read range and names
         CTempString ref_name = db.ref.NAME(ref_row);
@@ -414,9 +480,9 @@ void CSpanCheckApp::CheckFile(const SDB& db)
                      << " spans to "<<max_aln_end<<endl;
             }
             TVDBRowId last_ref_row = ref_row + (max_aln_end-1)/kRefPageSize;
-            for ( TVDBRowId row_id = ref_row; row_id <= last_ref_row; ++row_id ) {
+            for ( TVDBRowId row_id = ref_row+1; row_id <= last_ref_row; ++row_id ) {
                 auto overlap_pos = db.ref.OVERLAP_REF_POS(row_id);
-                TSeqPos pos = (last_ref_row-ref_row)*kRefPageSize;
+                TSeqPos pos = (row_id-ref_row)*kRefPageSize;
                 for ( int i = 0; i < 2; ++i ) {
                     TSeqPos p = overlap_pos[i];
                     if ( p && p < pos ) {
@@ -426,18 +492,24 @@ void CSpanCheckApp::CheckFile(const SDB& db)
                 if ( pos >= kRefPageSize ) {
                     // effective overlap starts not at the first ref page
                     // this is an actual overlap info error
-                    error_code = 1;
                     if ( verbose >= eVerbose_error ) {
                         cout << db.file << ": "<<ref_name<<" @"<<ref_row<<" "
                              << (!max_aln_secondary? "primary": "secondary") << " @"<<max_aln_row_id
                              << " spans to "<<max_aln_end<<endl;
                     }
+                    bad_overlap = true;
                     break;
                 }
             }
         }
         
         ref_row = ref_row_range.second+1;
+    }
+    if ( bad_overlap ) {
+        ++bad_overlap_file_count;
+    }
+    else {
+        ++good_overlap_file_count;
     }
 }
 
