@@ -595,14 +595,20 @@ int CSNPTestApp::Run(void)
                     TSeqPos snp_pos_100 = snp_pos/100;
                     TSeqPos snp_end_100 = (snp_pos+snp_len-1)/100;
                     if ( snp_pos >= range.GetFrom() ) {
-                        for ( TSeqPos i = snp_pos_100; i <= snp_pos_100; ++i ) {
+                        if ( snp_len == 2 && snp_pos_100 != snp_end_100 ) {
+                            snp_pos_100 = snp_end_100;
+                        }
+                        for ( TSeqPos i = snp_pos_100; i <= snp_end_100; ++i ) {
                             c100_0.at(i) += 1;
                         }
                     }
                     TSeqPos snp_pos_5000 = snp_pos/5000;
                     TSeqPos snp_end_5000 = (snp_pos+snp_len-1)/5000;
                     if ( snp_pos >= range.GetFrom() ) {
-                        for ( TSeqPos i = snp_pos_5000; i <= snp_pos_5000; ++i ) {
+                        if ( snp_len == 2 && snp_pos_5000 != snp_end_5000 ) {
+                            snp_pos_5000 = snp_end_5000;
+                        }
+                        for ( TSeqPos i = snp_pos_5000; i <= snp_end_5000; ++i ) {
                             c5000_0.at(i) += 1;
                         }
                     }
