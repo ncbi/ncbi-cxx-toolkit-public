@@ -8,17 +8,3 @@ NCBI_begin_app(adapter_search)
   NCBI_project_watchers(astashya)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(adapter_search-app
-    adapter_search
-)
-
-set_target_properties(adapter_search-app PROPERTIES OUTPUT_NAME adapter_search)
-
-target_link_libraries(adapter_search-app
-    xalgoseq
-)
-endif()

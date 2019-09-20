@@ -8,17 +8,3 @@ NCBI_begin_app(demo_gene_model)
   NCBI_project_watchers(dicuccio)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(demo_gene_model-app
-    demo_gene_model
-)
-
-set_target_properties(demo_gene_model-app PROPERTIES OUTPUT_NAME demo_gene_model)
-
-target_link_libraries(demo_gene_model-app
-    ncbi_xloader_genbank xalgoseq
-)
-endif()

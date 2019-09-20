@@ -4,4 +4,3 @@
 
 NCBI_add_app(ngalign_app)
 
-#include(CMakeLists.ngalign_app.app.txt)

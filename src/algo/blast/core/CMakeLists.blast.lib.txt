@@ -9,18 +9,3 @@ NCBI_begin_lib(blast)
   NCBI_project_watchers(madden camacho fongah2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-
-include (CMakeLists.blast.objs.txt)
-
-add_library(blast
-    ${SRC_C}
-)
-
-target_link_libraries(blast
-    composition_adjustment connect tables
-)
-endif()

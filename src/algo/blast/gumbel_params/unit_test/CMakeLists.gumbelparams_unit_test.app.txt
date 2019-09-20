@@ -11,19 +11,3 @@ NCBI_begin_app(gumbelparams_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(gumbelparams_unit_test-app
-    general_score_matrix_unit_test gumbel_params_unit_test
-)
-
-set_target_properties(gumbelparams_unit_test-app PROPERTIES OUTPUT_NAME gumbelparams_unit_test)
-
-
-
-target_link_libraries(gumbelparams_unit_test-app
-    gumbelparams test_boost
-)
-endif()

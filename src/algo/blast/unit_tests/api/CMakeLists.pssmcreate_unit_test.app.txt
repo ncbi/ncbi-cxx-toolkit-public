@@ -11,19 +11,3 @@ NCBI_begin_app(pssmcreate_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(pssmcreate_unit_test-app
-    pssmcreate_unit_test pssm_test_util pssmcreate_cdd_unit_test
-)
-
-set_target_properties(pssmcreate_unit_test-app PROPERTIES OUTPUT_NAME pssmcreate_unit_test)
-
-
-
-target_link_libraries(pssmcreate_unit_test-app
-    blast_unit_test_util xblast
-)
-endif()

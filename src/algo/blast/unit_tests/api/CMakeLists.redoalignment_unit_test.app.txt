@@ -11,19 +11,3 @@ NCBI_begin_app(redoalignment_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(redoalignment_unit_test-app
-    redoalignment_unit_test
-)
-
-set_target_properties(redoalignment_unit_test-app PROPERTIES OUTPUT_NAME redoalignment_unit_test)
-
-
-
-target_link_libraries(redoalignment_unit_test-app
-    blast_unit_test_util blastinput
-)
-endif()

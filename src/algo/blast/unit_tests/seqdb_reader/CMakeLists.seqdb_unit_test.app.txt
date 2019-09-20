@@ -12,19 +12,3 @@ NCBI_begin_app(seqdb_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(seqdb_unit_test-app
-    seqdb_unit_test
-)
-
-set_target_properties(seqdb_unit_test-app PROPERTIES OUTPUT_NAME seqdb_unit_test)
-
-
-
-target_link_libraries(seqdb_unit_test-app
-    seqdb test_boost xobjutil
-)
-endif()

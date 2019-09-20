@@ -10,19 +10,3 @@ NCBI_begin_app(search_strategy_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(search_strategy_unit_test-app
-    search_strategy_unit_test
-)
-
-set_target_properties(search_strategy_unit_test-app PROPERTIES OUTPUT_NAME search_strategy_unit_test)
-
-
-
-target_link_libraries(search_strategy_unit_test-app
-    blast_unit_test_util xblast
-)
-endif()

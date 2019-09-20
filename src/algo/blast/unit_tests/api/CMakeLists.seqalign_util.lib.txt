@@ -8,18 +8,3 @@ NCBI_begin_lib(seqalign_util)
   NCBI_project_watchers(camacho madden fongah2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(seqalign_util
-    seqalign_cmp seqalign_set_convert
-)
-add_dependencies(seqalign_util
-    blastdb xnetblast
-)
-
-target_link_libraries(seqalign_util
-    seq
-)
-endif()

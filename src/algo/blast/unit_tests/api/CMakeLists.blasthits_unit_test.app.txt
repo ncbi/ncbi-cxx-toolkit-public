@@ -11,21 +11,3 @@ NCBI_begin_app(blasthits_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blasthits_unit_test-app
-    blasthits_unit_test
-)
-
-set_target_properties(blasthits_unit_test-app PROPERTIES OUTPUT_NAME blasthits_unit_test)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../api
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../../core
-)
-
-target_link_libraries(blasthits_unit_test-app
-    blast_unit_test_util xblast
-)
-endif()

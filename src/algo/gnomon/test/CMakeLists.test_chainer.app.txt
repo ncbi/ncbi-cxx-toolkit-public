@@ -11,18 +11,3 @@ NCBI_begin_app(test_chainer)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_chainer-app
-    test_chainer
-)
-
-set_target_properties(test_chainer-app PROPERTIES OUTPUT_NAME test_chainer)
-
-
-target_link_libraries(test_chainer-app
-    test_boost xalgognomon
-)
-endif()

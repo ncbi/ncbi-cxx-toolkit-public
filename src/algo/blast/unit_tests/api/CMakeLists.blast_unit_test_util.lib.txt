@@ -12,21 +12,3 @@ NCBI_begin_lib(blast_unit_test_util)
   NCBI_project_watchers(camacho madden fongah2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(blast_unit_test_util
-    test_objmgr blast_test_util
-)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../api)
-
-add_dependencies(blast_unit_test_util
-    blastdb xnetblast
-)
-
-target_link_libraries(blast_unit_test_util
-    blast ncbi_xloader_genbank test_boost
-    xobjutil
-)
-endif()

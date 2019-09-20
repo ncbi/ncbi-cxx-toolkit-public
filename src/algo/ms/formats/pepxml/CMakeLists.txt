@@ -3,5 +3,3 @@
 #############################################################################
 
 NCBI_add_library(pepXML)
-
-#include(CMakeLists.pepXML.xsd.txt)

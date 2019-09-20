@@ -12,21 +12,3 @@ NCBI_begin_lib(xngalign)
   NCBI_project_watchers(boukn dicuccio)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xngalign
-    result_set sequence_set alignment_filterer alignment_scorer
-    blast_aligner banded_aligner merge_aligner inversion_merge_aligner
-    unordered_spliter ngalign
-)
-add_dependencies(xngalign
-    xnetblast
-)
-
-target_link_libraries(xngalign
-    blastinput xalgoalignnw xalgoalignutil
-    xmergetree
-)
-endif()

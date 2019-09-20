@@ -10,14 +10,3 @@ NCBI_begin_app(magicblast_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-add_executable(magicblast_unit_test-app
-    magicblast_unit_test 
-)
-
-set_target_properties(magicblast_unit_test-app PROPERTIES OUTPUT_NAME magicblast_unit_test)
-
-target_link_libraries(magicblast_unit_test-app
-    test_boost xblast
-)
-endif()

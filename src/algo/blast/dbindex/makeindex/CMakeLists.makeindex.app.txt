@@ -8,17 +8,3 @@ NCBI_begin_app(makembindex)
   NCBI_project_watchers(morgulis)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(makembindex-app
-    main mkindex_app
-)
-
-set_target_properties(makembindex-app PROPERTIES OUTPUT_NAME makembindex)
-
-target_link_libraries(makembindex-app
-    xalgoblastdbindex
-)
-endif()

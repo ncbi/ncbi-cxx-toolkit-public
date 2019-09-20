@@ -12,23 +12,3 @@ NCBI_begin_lib(xalgognomon)
   NCBI_project_watchers(chetvern souvorov)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-
-set(MODULE gnomon)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-
-set(MODULE_EXT "asn")
-add_library(xalgognomon ${MODULE}__ ${MODULE}___ gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1 chainer id_handler annot select_alignments_alt aligncollapser glb_align)
-target_link_libraries(xalgognomon
-    xalgoseq
-)
-add_dependencies(xalgognomon
-    seqset
-)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-endif()

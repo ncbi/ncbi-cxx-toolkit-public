@@ -11,20 +11,3 @@ NCBI_begin_app(unit_test_gene_model)
   NCBI_add_test(unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn -seqdata-expected seqdata.asn -combined-data-expected combined_annot.asn -combined-with-omission-expected combined_with_omission.asn)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_gene_model-app
-    unit_test_gene_model
-)
-
-set_target_properties(unit_test_gene_model-app PROPERTIES OUTPUT_NAME unit_test_gene_model)
-
-
-
-target_link_libraries(unit_test_gene_model-app
-    ncbi_xloader_genbank test_boost xalgoseq
-    xvalidate
-)
-endif()

@@ -11,19 +11,3 @@ NCBI_begin_app(blastinput_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blastinput_unit_test-app
-    blastinput_unit_test blast_scope_src_unit_test
-)
-
-set_target_properties(blastinput_unit_test-app PROPERTIES OUTPUT_NAME blastinput_unit_test)
-
-
-
-target_link_libraries(blastinput_unit_test-app
-    blastinput entrez2cli test_boost
-)
-endif()

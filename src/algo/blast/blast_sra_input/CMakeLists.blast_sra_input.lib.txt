@@ -10,14 +10,3 @@ NCBI_begin_lib(blast_sra_input)
   NCBI_project_watchers(boratyng)
 NCBI_end_lib()
 
-if(OFF)
-add_library(blast_sra_input
-    blast_sra_input
-)
-
-include_directories(SYSTEM ${SRA_INCLUDE})
-
-target_link_libraries(blast_sra_input
-    sraread
-)
-endif()

@@ -8,17 +8,3 @@ NCBI_begin_app(blastinput_demo)
   NCBI_project_watchers(madden camacho)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blastinput_demo-app
-    blastinput_demo
-)
-
-set_target_properties(blastinput_demo-app PROPERTIES OUTPUT_NAME blastinput_demo)
-
-target_link_libraries(blastinput_demo-app
-    blastinput
-)
-endif()

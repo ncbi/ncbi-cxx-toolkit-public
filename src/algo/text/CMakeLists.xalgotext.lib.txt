@@ -8,15 +8,3 @@ NCBI_begin_lib(xalgotext)
   NCBI_project_watchers(dicuccio)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalgotext
-    text_util vector_serial
-)
-
-target_link_libraries(xalgotext
-    xcompress
-)
-endif()

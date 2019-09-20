@@ -4,5 +4,3 @@
 
 NCBI_add_subdirectory(test)
 
-# Recurse subdirectories
-#add_subdirectory(test )

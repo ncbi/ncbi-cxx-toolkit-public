@@ -8,18 +8,3 @@ NCBI_begin_lib(xalgosegmask)
   NCBI_project_watchers(blastsoft)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalgosegmask
-    segmask
-)
-add_dependencies(xalgosegmask
-    seqset
-)
-
-target_link_libraries(xalgosegmask
-    blast xobjmgr
-)
-endif()

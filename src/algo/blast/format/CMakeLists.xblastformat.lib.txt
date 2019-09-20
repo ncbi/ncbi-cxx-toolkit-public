@@ -16,20 +16,3 @@ NCBI_begin_lib(xblastformat)
   NCBI_project_watchers(jianye zaretska madden camacho fongah2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xblastformat
-    blastfmtutil blastxml_format blastxml2_format blast_format
-    data4xmlformat data4xml2format build_archive vecscreen_run sam
-)
-add_dependencies(xblastformat
-    blastdb blastxml blastxml2 xnetblast
-)
-
-target_link_libraries(xblastformat
-    align_format blastxml blastxml2
-    xblast xformat
-)
-endif()

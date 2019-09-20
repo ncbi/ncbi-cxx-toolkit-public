@@ -10,18 +10,3 @@ NCBI_begin_app(blastdiag_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blastdiag_unit_test-app
-    blastdiag_unit_test
-)
-
-set_target_properties(blastdiag_unit_test-app PROPERTIES OUTPUT_NAME blastdiag_unit_test)
-
-
-target_link_libraries(blastdiag_unit_test-app
-    blast test_boost
-)
-endif()

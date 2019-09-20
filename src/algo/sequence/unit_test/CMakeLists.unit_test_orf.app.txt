@@ -11,19 +11,3 @@ NCBI_begin_app(unit_test_orf)
   NCBI_add_test(unit_test_orf -in orf.annot.asn)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_orf-app
-    unit_test_orf
-)
-
-set_target_properties(unit_test_orf-app PROPERTIES OUTPUT_NAME unit_test_orf)
-
-
-
-target_link_libraries(unit_test_orf-app
-    ncbi_xloader_genbank test_boost xalgoseq
-)
-endif()

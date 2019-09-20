@@ -11,17 +11,3 @@ NCBI_begin_lib(igblast)
   NCBI_project_watchers(madden camacho)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(igblast
-    igblast
-)
-target_link_libraries(igblast
-    xalnmgr xblast
-)
-add_dependencies(igblast
-    blastdb xnetblast
-)
-endif()

@@ -4,4 +4,3 @@
 
 NCBI_add_library(blast_sra_input)
 
-#include(CMakeLists.blast_sra_input.lib.txt)

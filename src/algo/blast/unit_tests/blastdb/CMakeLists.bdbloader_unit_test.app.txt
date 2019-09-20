@@ -12,19 +12,3 @@ NCBI_begin_app(bdbloader_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(bdbloader_unit_test-app
-    bdbloader_unit_test
-)
-
-set_target_properties(bdbloader_unit_test-app PROPERTIES OUTPUT_NAME bdbloader_unit_test)
-
-
-
-target_link_libraries(bdbloader_unit_test-app
-    ncbi_xloader_blastdb_rmt test_boost xobjutil
-)
-endif()

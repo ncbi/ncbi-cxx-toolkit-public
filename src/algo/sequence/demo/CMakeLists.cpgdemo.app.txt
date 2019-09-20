@@ -8,17 +8,3 @@ NCBI_begin_app(cpgdemo)
   NCBI_project_watchers(kskatz)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(cpgdemo-app
-    cpgdemo
-)
-
-set_target_properties(cpgdemo-app PROPERTIES OUTPUT_NAME cpgdemo)
-
-target_link_libraries(cpgdemo-app
-    ncbi_xloader_genbank xalgoseq
-)
-endif()

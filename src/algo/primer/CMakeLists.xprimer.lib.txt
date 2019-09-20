@@ -8,19 +8,3 @@ NCBI_begin_lib(xprimer)
   NCBI_project_watchers(jianye)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xprimer
-    primercheck
-)
-add_dependencies(xprimer
-    seqset
-)
-
-target_link_libraries(xprimer
-    gene_info ncbi_xloader_genbank xalgoalignnw
-    xalnmgr
-)
-endif()

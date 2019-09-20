@@ -8,18 +8,3 @@ NCBI_begin_lib(xalgocontig_assembly)
   NCBI_project_watchers(boukn dicuccio)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalgocontig_assembly
-    contig_assembly
-)
-add_dependencies(xalgocontig_assembly
-    xnetblast
-)
-
-target_link_libraries(xalgocontig_assembly
-    xalgoalignnw xalnmgr xblast
-)
-endif()

@@ -11,19 +11,3 @@ NCBI_begin_app(unit_test_gap_analysis)
   NCBI_add_test(unit_test_gap_analysis -basic-data gap_analysis.seq.asn -in-letter-gap-data gap_with_letters.seq.asn -mixed-gap-type-data mixed_gap_type_data.seq.asn)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_gap_analysis-app
-    unit_test_gap_analysis
-)
-
-set_target_properties(unit_test_gap_analysis-app PROPERTIES OUTPUT_NAME unit_test_gap_analysis)
-
-
-
-target_link_libraries(unit_test_gap_analysis-app
-    ncbi_xloader_genbank test_boost xalgoseq
-)
-endif()

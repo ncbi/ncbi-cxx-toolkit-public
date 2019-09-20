@@ -9,18 +9,3 @@ NCBI_begin_lib(xalgoblastdbindex_search)
   NCBI_project_watchers(morgulis)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalgoblastdbindex_search
-    sr_search
-)
-add_dependencies(xalgoblastdbindex_search
-    seqset
-)
-
-target_link_libraries(xalgoblastdbindex_search
-    xobjmgr
-)
-endif()

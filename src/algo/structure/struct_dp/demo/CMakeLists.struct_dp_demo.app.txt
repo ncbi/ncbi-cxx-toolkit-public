@@ -8,17 +8,3 @@ NCBI_begin_app(struct_dp_demo)
   NCBI_project_watchers(thiessen)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(struct_dp_demo-app
-    struct_dp_demo
-)
-
-set_target_properties(struct_dp_demo-app PROPERTIES OUTPUT_NAME struct_dp_demo)
-
-target_link_libraries(struct_dp_demo-app
-    tables xstruct_dp
-)
-endif()

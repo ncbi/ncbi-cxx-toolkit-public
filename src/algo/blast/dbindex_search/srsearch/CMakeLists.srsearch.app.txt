@@ -8,17 +8,3 @@ NCBI_begin_app(srsearch)
   NCBI_project_watchers(morgulis)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(srsearch-app
-    main srsearch_app
-)
-
-set_target_properties(srsearch-app PROPERTIES OUTPUT_NAME srsearch)
-
-target_link_libraries(srsearch-app
-    xalgoblastdbindex xalgoblastdbindex_search
-)
-endif()

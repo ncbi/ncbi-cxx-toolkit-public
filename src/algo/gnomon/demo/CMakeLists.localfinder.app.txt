@@ -8,17 +8,3 @@ NCBI_begin_app(localfinder)
   NCBI_project_watchers(chetvern)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(localfinder-app
-    local_finder
-)
-
-set_target_properties(localfinder-app PROPERTIES OUTPUT_NAME localfinder)
-
-target_link_libraries(localfinder-app
-    xalgognomon xobjread
-)
-endif()

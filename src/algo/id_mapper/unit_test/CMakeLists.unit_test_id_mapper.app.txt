@@ -12,19 +12,3 @@ NCBI_begin_app(unit_test_id_mapper)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_id_mapper-app
-    unit_test_id_mapper
-)
-
-set_target_properties(unit_test_id_mapper-app PROPERTIES OUTPUT_NAME unit_test_id_mapper)
-
-
-
-target_link_libraries(unit_test_id_mapper-app
-    gencoll_client test_boost xid_mapper
-)
-endif()

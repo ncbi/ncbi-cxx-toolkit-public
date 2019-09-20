@@ -4,6 +4,3 @@
 
 NCBI_add_subdirectory(pepxml)
 
-
-# Recurse subdirectories
-#add_subdirectory(pepxml)

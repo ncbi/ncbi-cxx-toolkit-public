@@ -16,23 +16,3 @@ NCBI_begin_lib(xomssa)
   NCBI_project_watchers(lewisg slottad)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xomssa
-    SpectrumSet msladder msms mspeak omssa Mod omssascore msmerge omssaapp
-    pepxml
-)
-include_directories(${PCRE_INCLUDE} ${NCBI_C_INCLUDE})
-
-add_dependencies(xomssa
-    blastdb pepXML omssa
-)
-
-target_link_libraries(xomssa
-    blast omssa pepXML
-    seqdb xcompress xconnect
-    xregexp
-)
-endif()

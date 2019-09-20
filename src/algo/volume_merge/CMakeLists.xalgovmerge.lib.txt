@@ -8,15 +8,3 @@ NCBI_begin_lib(xalgovmerge)
   NCBI_project_watchers(dicuccio)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalgovmerge
-    volume_merge
-)
-
-target_link_libraries(xalgovmerge
-    xncbi
-)
-endif()

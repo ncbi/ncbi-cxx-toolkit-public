@@ -8,17 +8,3 @@ NCBI_begin_app(bma_refiner_app)
   NCBI_project_watchers(lanczyck)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(bma_refiner-app
-    bma_refiner
-)
-
-set_target_properties(bma_refiner-app PROPERTIES OUTPUT_NAME bma_refiner)
-
-target_link_libraries(bma_refiner-app
-    xbma_refiner
-)
-endif()

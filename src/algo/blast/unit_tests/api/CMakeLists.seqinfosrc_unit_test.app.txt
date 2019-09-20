@@ -10,19 +10,3 @@ NCBI_begin_app(seqinfosrc_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(seqinfosrc_unit_test-app
-    seqinfosrc_unit_test
-)
-
-set_target_properties(seqinfosrc_unit_test-app PROPERTIES OUTPUT_NAME seqinfosrc_unit_test)
-
-
-
-target_link_libraries(seqinfosrc_unit_test-app
-    blast_unit_test_util xblast
-)
-endif()

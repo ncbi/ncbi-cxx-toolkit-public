@@ -8,18 +8,3 @@ NCBI_begin_lib(phytree_format)
   NCBI_project_watchers(boratyng)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(phytree_format
-    phytree_format phytree_simplify
-)
-add_dependencies(phytree_format
-    biotree seqset taxon1 blastdb scoremat
-)
-
-target_link_libraries(phytree_format
-    align_format xalgophytree
-)
-endif()

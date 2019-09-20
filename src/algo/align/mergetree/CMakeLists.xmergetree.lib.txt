@@ -8,18 +8,3 @@ NCBI_begin_lib(xmergetree)
   NCBI_project_watchers(boukn)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xmergetree
-    merge_tree merge_tree_core equiv_range
-)
-add_dependencies(xmergetree
-    genome_collection seqset
-)
-
-target_link_libraries(xmergetree
-    xobjmgr
-)
-endif()

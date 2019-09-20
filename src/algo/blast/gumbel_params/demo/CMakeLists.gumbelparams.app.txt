@@ -8,17 +8,3 @@ NCBI_begin_app(gumbelparams_app)
   NCBI_project_watchers(boratyng madden camacho)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(gumbelparams-app
-    gumbelparams_app
-)
-
-set_target_properties(gumbelparams-app PROPERTIES OUTPUT_NAME gumbelparams)
-
-target_link_libraries(gumbelparams-app
-    gumbelparams
-)
-endif()

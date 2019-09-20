@@ -13,17 +13,3 @@ NCBI_begin_lib(xstruct_thread)
   NCBI_project_watchers(thiessen)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xstruct_thread
-    thrdalgs thrdatd thrdbwfi thrdcpal thrdcpll thrdcprl thrdcxei thrddgri
-    thrdrsmp thrdsal0 thrdsalr thrdsalu thrdsgoi thrdslo0 thrdslor thrdslou
-    thrdspci thrdspea thrdspel thrdspni thrdttb0 thrdttbi thrdzsc
-)
-
-target_link_libraries(xstruct_thread
-    xutil
-)
-endif()

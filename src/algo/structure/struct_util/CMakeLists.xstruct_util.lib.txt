@@ -11,19 +11,3 @@ NCBI_begin_lib(xstruct_util)
   NCBI_project_watchers(thiessen lanczyck)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xstruct_util
-    aaa_dummy_pch struct_util su_alignment_set su_block_multiple_alignment
-    su_pssm su_sequence_set
-)
-add_dependencies(xstruct_util
-    seqset scoremat
-)
-
-target_link_libraries(xstruct_util
-    xblast xstruct_dp
-)
-endif()

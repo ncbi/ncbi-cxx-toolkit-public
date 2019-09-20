@@ -14,19 +14,3 @@ NCBI_begin_lib(gumbelparams)
   NCBI_project_watchers(boratyng madden camacho)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(gumbelparams
-    gumbel_params pvalues general_score_matrix sls_alp sls_alp_data
-    sls_alp_regression sls_alp_sim sls_pvalues njn_localmaxstatmatrix
-    njn_localmaxstat njn_localmaxstatutil njn_ioutil njn_matrix
-    njn_stringutil njn_dynprogprob njn_dynprogproblim njn_dynprogprobproto
-    sls_normal_distr_array
-)
-
-target_link_libraries(gumbelparams
-    tables xutil
-)
-endif()

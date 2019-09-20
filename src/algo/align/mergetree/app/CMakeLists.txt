@@ -4,4 +4,3 @@
 
 NCBI_add_app(merge_tree)
 
-#include(CMakeLists.merge_tree.app.txt)

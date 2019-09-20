@@ -8,17 +8,3 @@ NCBI_begin_app(omssa2pepXML)
   NCBI_project_watchers(lewisg gorelenk)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(omssa2pepXML-app
-    omssa2pepXML
-)
-
-set_target_properties(omssa2pepXML-app PROPERTIES OUTPUT_NAME omssa2pepXML)
-
-target_link_libraries(omssa2pepXML-app
-    xomssa
-)
-endif()

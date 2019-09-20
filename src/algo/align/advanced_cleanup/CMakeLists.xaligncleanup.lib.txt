@@ -10,15 +10,3 @@ NCBI_begin_lib(xaligncleanup)
   NCBI_project_watchers(mozese2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xaligncleanup
-    advanced_cleanup
-)
-
-target_link_libraries(xalgoalignutil
-    xalgoalignsplign prosplign
-)
-endif()

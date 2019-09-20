@@ -9,17 +9,3 @@ NCBI_begin_app(clusterer)
   NCBI_project_watchers(boratyng)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(clusterer-app
-    cobalt_app_util clusterer_app
-)
-
-set_target_properties(clusterer-app PROPERTIES OUTPUT_NAME clusterer)
-
-target_link_libraries(clusterer-app
-    align_format cobalt
-)
-endif()

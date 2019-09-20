@@ -10,14 +10,3 @@ NCBI_begin_app(stat_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-add_executable(stat_unit_test stat_unit_test)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../api)
-
-add_definitions(-DNCBI_MODULE=BLAST)
-
-target_link_libraries(stat_unit_test
-    blast test_boost
-)
-endif()

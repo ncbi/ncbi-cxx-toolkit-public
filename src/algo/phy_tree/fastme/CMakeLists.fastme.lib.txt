@@ -8,11 +8,3 @@ NCBI_begin_lib(fastme)
   NCBI_project_watchers(jcherry gorelenk)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(fastme
-    NNI bNNI bme fastme gme graph heap inputs newickstring traverse
-)
-endif()

@@ -8,18 +8,3 @@ NCBI_begin_lib(xalgodustmask)
   NCBI_project_watchers(morgulis)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalgodustmask
-    symdust
-)
-add_dependencies(xalgodustmask
-    seqset
-)
-
-target_link_libraries(xalgodustmask
-    xobjmgr
-)
-endif()

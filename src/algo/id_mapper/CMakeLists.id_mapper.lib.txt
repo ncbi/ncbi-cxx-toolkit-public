@@ -8,18 +8,3 @@ NCBI_begin_lib(xid_mapper)
   NCBI_project_watchers(boukn meric)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xid_mapper
-    id_mapper
-)
-add_dependencies(xid_mapper
-    genome_collection seqset
-)
-
-target_link_libraries(xid_mapper
-    xobjmgr
-)
-endif()

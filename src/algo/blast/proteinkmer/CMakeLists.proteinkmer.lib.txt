@@ -11,15 +11,3 @@ NCBI_begin_lib(proteinkmer)
   NCBI_project_watchers(boratyng madden)
 NCBI_end_lib()
 
-if(OFF)
-
-
-add_library(proteinkmer
-    blastkmer blastkmerindex blastkmeroptions blastkmerresults 
-    blastkmerutils mhfile pearson kblastapi
-)
-
-target_link_libraries(proteinkmer
-    xblast
-)
-endif()

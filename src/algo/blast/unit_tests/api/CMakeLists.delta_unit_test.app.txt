@@ -10,19 +10,3 @@ NCBI_begin_app(delta_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(delta_unit_test-app
-    delta_unit_test
-)
-
-set_target_properties(delta_unit_test-app PROPERTIES OUTPUT_NAME delta_unit_test)
-
-
-
-target_link_libraries(delta_unit_test-app
-    seqalign_util test_boost xblast
-)
-endif()

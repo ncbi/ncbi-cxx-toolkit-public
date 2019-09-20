@@ -12,20 +12,3 @@ NCBI_begin_lib(xbma_refiner)
   NCBI_project_watchers(lanczyck)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xbma_refiner
-    RowSelector ColumnScorer BMAUtils BlockBoundaryAlgorithm BlockEditor
-    AlignRefineScorer RefinerPhase RefinerCycle RefinerTrial RefinerEngine
-    Interface
-)
-add_dependencies(xbma_refiner
-    cdd
-)
-
-target_link_libraries(xbma_refiner
-    xcd_utils xstruct_util
-)
-endif()

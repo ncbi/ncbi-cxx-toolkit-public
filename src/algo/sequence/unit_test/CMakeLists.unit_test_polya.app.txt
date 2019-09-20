@@ -11,19 +11,3 @@ NCBI_begin_app(unit_test_polya)
   NCBI_add_test(unit_test_polya -data-in polya.seq.asn)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_polya-app
-    unit_test_polya
-)
-
-set_target_properties(unit_test_polya-app PROPERTIES OUTPUT_NAME unit_test_polya)
-
-
-
-target_link_libraries(unit_test_polya-app
-    test_boost xobjmgr
-)
-endif()

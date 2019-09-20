@@ -15,20 +15,3 @@ NCBI_begin_app(blast_format_unit_test)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(blast_format_unit_test-app
-    seqalignfilter_unit_test blastfmtutil_unit_test build_archive_unit_test
-    vecscreen_run_unit_test
-)
-
-set_target_properties(blast_format_unit_test-app PROPERTIES OUTPUT_NAME blast_format_unit_test)
-
-
-
-target_link_libraries(blast_format_unit_test-app
-    blastinput test_boost xblastformat
-)
-endif()

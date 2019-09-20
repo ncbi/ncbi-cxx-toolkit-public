@@ -11,20 +11,3 @@ NCBI_begin_lib(xalgoblastdbindex)
   NCBI_project_watchers(morgulis)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalgoblastdbindex
-    sequence_istream_fasta sequence_istream_bdb dbindex dbindex_factory
-    dbindex_search
-)
-add_dependencies(xalgoblastdbindex
-    seqset
-)
-
-target_link_libraries(xalgoblastdbindex
-    blast seqdb xobjread
-    xobjutil
-)
-endif()

@@ -8,15 +8,3 @@ NCBI_begin_lib(xstruct_dp)
   NCBI_project_watchers(thiessen)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xstruct_dp
-    block_align
-)
-
-target_link_libraries(xstruct_dp
-    xncbi
-)
-endif()
