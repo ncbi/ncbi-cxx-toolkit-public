@@ -39,6 +39,8 @@
 #    define ALIGNMENT_CALLBACK
 #endif
 
+#include <objtools/readers/aln_formats.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
@@ -156,6 +158,13 @@ bool ReadAlignmentFile(
 NCBI_XOBJREAD_EXPORT 
 bool ReadAlignmentFile(
     istream& istr,
+    CSequenceInfo& sequenceInfo,
+    SAlignmentFile& alignmentInfo);
+
+NCBI_XOBJREAD_EXPORT 
+bool ReadAlignmentFile(
+    istream& istr,
+    EAlignFormat&,
     CSequenceInfo& sequenceInfo,
     SAlignmentFile& alignmentInfo);
 

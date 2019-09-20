@@ -10,7 +10,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIB = xobjread
 SRC = read_util format_guess_ex seqid_validate \
       acc_pattern agp_read agp_seq_entry agp_util agp_validate_reader bed_reader cigar fasta \
-	  alnread aln_errors aln_error_reporter aln_formats aln_util aln_reader \
+	  aln_formats alnread aln_errors aln_error_reporter aln_formatguess aln_util aln_reader \
 	  aln_scanner aln_scanner_fastagap aln_scanner_clustal aln_scanner_nexus aln_scanner_phylip \
 		aln_scanner_sequin aln_scanner_multalign \
 	  fasta_aln_builder fasta_reader_utils getfeature gff_reader track_data reader_data \

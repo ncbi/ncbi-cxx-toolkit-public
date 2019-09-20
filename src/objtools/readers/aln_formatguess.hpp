@@ -33,22 +33,12 @@
  */
 #include <corelib/ncbistd.hpp>
 
+#include <objtools/readers/aln_reader.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 class CPeekAheadStream;
-
-//  ----------------------------------------------------------------------------
-enum EAlignFormat {
-//  ----------------------------------------------------------------------------
-    UNKNOWN,
-    NEXUS,
-    PHYLIP,
-    CLUSTAL,
-    FASTAGAP,
-    SEQUIN,
-    MULTALIGN
-};
 
 //  ============================================================================
 class CAlnFormatGuesser

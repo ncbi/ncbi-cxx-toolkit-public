@@ -44,11 +44,13 @@
 #include <objtools/readers/aln_error_reporter.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
+#include <objtools/readers/aln_formats.hpp>
+
 BEGIN_NCBI_SCOPE
+
 namespace objects {
     class CSeq_id;
 }
-
 
 class NCBI_XOBJREAD_EXPORT CAlnError
 {
@@ -218,6 +220,7 @@ public:
     const vector<string>& GetDeflines(void)  const {return m_Deflines;};
     const vector<TLineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
     int                   GetDim(void)       const {return m_Dim;};
+    EAlignFormat GetLastAlignmentFileFormat(void) const;
 
     NCBI_DEPRECATED
     const TErrorList& GetErrorList(void)     const {return m_Errors;};
@@ -276,6 +279,7 @@ private:
     vector<string> m_Deflines; // redundant
     vector<TLineInfo> m_DeflineInfo;
     FIdValidate m_fIdValidate;
+    EAlignFormat m_AlignFormat;
 
 
     /// Other internal data
@@ -422,6 +426,12 @@ void CAlnReader::SetAllGap(const string& value)
 {
     mSequenceInfo.SetBeginningGap(value).SetMiddleGap(value).SetEndGap(value);
 };
+
+inline
+EAlignFormat CAlnReader::GetLastAlignmentFileFormat() const
+{
+    return m_AlignFormat;
+}
 
 
 END_NCBI_SCOPE

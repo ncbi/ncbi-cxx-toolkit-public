@@ -59,6 +59,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+
 string sAlnErrorToString(const CAlnError & error)
 {
     auto lineNumber = error.GetLineNum();
@@ -120,6 +121,7 @@ CAlnError::CAlnError(const CAlnError& e)
 CAlnReader::CAlnReader(CNcbiIstream& is, FIdValidate fIdValidate) : 
     m_fIdValidate(fIdValidate),
     m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
+    m_AlignFormat(EAlignFormat::UNKNOWN),
     m_UseNexusInfo(true)
 {
     m_Errors.clear();
@@ -244,7 +246,7 @@ void CAlnReader::Read(
     // read the alignment stream
     SAlignmentFile alignmentInfo;
     try {
-        ReadAlignmentFile(m_IS, mSequenceInfo, alignmentInfo);
+        ReadAlignmentFile(m_IS, m_AlignFormat,  mSequenceInfo, alignmentInfo);
         x_VerifyAlignmentInfo(alignmentInfo, readFlags);
     }
     catch (const SShowStopper& showStopper) {

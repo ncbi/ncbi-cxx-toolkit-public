@@ -36,7 +36,7 @@
 #include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "aln_errors.hpp"
-#include "aln_formats.hpp"
+#include "aln_formatguess.hpp"
 #include "aln_peek_ahead.hpp"
 #include "aln_scanner_clustal.hpp"
 #include "aln_scanner_nexus.hpp"
@@ -110,14 +110,26 @@ bool ReadAlignmentFile(
     SAlignmentFile& alignmentInfo)
 //  ------------------------------------------------------------------------------
 {
+    EAlignFormat dummy;
+    return ReadAlignmentFile(istr, dummy, sequenceInfo, alignmentInfo);
+}
+
+//  ------------------------------------------------------------------------------
+bool ReadAlignmentFile(
+    istream& istr,
+    EAlignFormat& alignFormat,
+    CSequenceInfo& sequenceInfo,
+    SAlignmentFile& alignmentInfo)
+//  ------------------------------------------------------------------------------
+{
     if (sequenceInfo.Alphabet().empty()) {
         return false;
     }
 
     CPeekAheadStream iStr(istr);
-    EAlignFormat format = CAlnFormatGuesser().GetFormat(iStr);
+    alignFormat = CAlnFormatGuesser().GetFormat(iStr);
 
-    unique_ptr<CAlnScanner> pScanner(GetScannerForFormat(format));
+    unique_ptr<CAlnScanner> pScanner(GetScannerForFormat(alignFormat));
     if (!pScanner) {
         return false;
     }
