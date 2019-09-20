@@ -8,18 +8,3 @@ NCBI_begin_app(objextract)
   NCBI_project_watchers(dicuccio)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(objextract-app
-    objextract
-)
-
-set_target_properties(objextract-app PROPERTIES OUTPUT_NAME objextract)
-
-target_link_libraries(objextract-app
-    seqset
-)
-endif()

@@ -8,19 +8,3 @@ NCBI_begin_app(id2_fetch_simple)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(id2_fetch_simple-app
-    id2_fetch_simple
-)
-
-set_target_properties(id2_fetch_simple-app PROPERTIES OUTPUT_NAME id2_fetch_simple)
-
-target_link_libraries(id2_fetch_simple-app
-    dbapi_driver id2 xcompress
-    xconnect
-)
-endif()

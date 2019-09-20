@@ -7,19 +7,3 @@ NCBI_begin_app(ns_remote_job_control)
   NCBI_uses_toolkit_libraries(xconnserv)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(ns_remote_job_control-app
-    ns_remote_job_control info_collector renderer
-)
-
-set_target_properties(ns_remote_job_control-app PROPERTIES OUTPUT_NAME ns_remote_job_control)
-
-target_link_libraries(ns_remote_job_control-app
-    xconnserv
-)
-endif()

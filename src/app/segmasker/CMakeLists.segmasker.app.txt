@@ -8,23 +8,3 @@ NCBI_begin_app(segmasker)
   NCBI_project_watchers(camacho fongah2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(segmasker-app
-    segmasker
-)
-
-set_target_properties(segmasker-app PROPERTIES OUTPUT_NAME segmasker)
-
-target_link_libraries(segmasker-app
-    xobjsimple seqmasks_io xalgosegmask ${BLAST_LIBS} ${OBJMGR_LIBS}
-  
-)
-
-add_dependencies(segmasker-app
-    seq
-)
-endif()

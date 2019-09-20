@@ -8,19 +8,3 @@ NCBI_begin_app(gap_stats)
   NCBI_project_watchers(drozdov)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(gap_stats-app
-    gap_stats
-)
-
-set_target_properties(gap_stats-app PROPERTIES OUTPUT_NAME gap_stats)
-
-target_link_libraries(gap_stats-app
-    ncbi_xloader_genbank xalgoseq xmlwrapp
-    xobjread
-)
-endif()

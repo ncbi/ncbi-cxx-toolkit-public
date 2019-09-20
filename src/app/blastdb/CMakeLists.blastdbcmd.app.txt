@@ -9,19 +9,3 @@ NCBI_begin_app(blastdbcmd)
   NCBI_project_watchers(camacho fongah2)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(blastdbcmd-app
-    blastdbcmd
-)
-
-set_target_properties(blastdbcmd-app PROPERTIES OUTPUT_NAME blastdbcmd)
-
-target_link_libraries(blastdbcmd-app
-    blastdb_format blastinput
-)
-endif()

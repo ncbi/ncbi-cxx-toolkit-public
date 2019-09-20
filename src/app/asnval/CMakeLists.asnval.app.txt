@@ -8,18 +8,3 @@ NCBI_begin_app(asnvalidate)
   NCBI_project_watchers(bollin gotvyans)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(asnvalidate-app
-    asnval
-)
-
-set_target_properties(asnvalidate-app PROPERTIES OUTPUT_NAME asnvalidate)
-
-target_link_libraries(asnvalidate-app
-    data_loaders_util xmlwrapp xvalidate
-)
-endif()

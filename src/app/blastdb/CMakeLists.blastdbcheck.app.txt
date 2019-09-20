@@ -10,18 +10,3 @@ NCBI_begin_app(blastdbcheck)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(blastdbcheck-app
-    blastdbcheck
-)
-
-set_target_properties(blastdbcheck-app PROPERTIES OUTPUT_NAME blastdbcheck)
-
-target_link_libraries(blastdbcheck-app
-    align_format xblast
-)
-endif()

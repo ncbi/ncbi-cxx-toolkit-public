@@ -7,18 +7,3 @@ NCBI_begin_app(speedtest)
   NCBI_uses_toolkit_libraries(prosplign xcleanup xobjedit)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(speedtest-app
-    speedtest
-)
-
-set_target_properties(speedtest-app PROPERTIES OUTPUT_NAME speedtest)
-
-target_link_libraries(speedtest-app
-    prosplign xcleanup xobjedit 
-)
-endif()

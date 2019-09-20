@@ -8,19 +8,3 @@ NCBI_begin_app(splign)
   NCBI_project_watchers(kiryutin kapustin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(splign-app
-    splign_app
-)
-
-set_target_properties(splign-app PROPERTIES OUTPUT_NAME splign)
-
-target_link_libraries(splign-app
-    ncbi_xloader_blastdb ncbi_xloader_genbank ncbi_xloader_lds2
-    xalgoalignsplign
-)
-endif()

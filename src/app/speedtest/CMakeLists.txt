@@ -3,7 +3,3 @@
 #############################################################################
 
 NCBI_add_app(speedtest)
-
-# Include projects from this directory
-#include(CMakeLists.speedtest.app.txt)
-

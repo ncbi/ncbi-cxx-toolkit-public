@@ -8,18 +8,3 @@ NCBI_begin_app(cache_index_copy)
   NCBI_project_watchers(marksc2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(cache_index_copy-app
-    cache_index_copy
-)
-
-set_target_properties(cache_index_copy-app PROPERTIES OUTPUT_NAME cache_index_copy)
-
-target_link_libraries(cache_index_copy-app
-    asn_cache
-)
-endif()

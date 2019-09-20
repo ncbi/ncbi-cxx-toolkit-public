@@ -8,18 +8,3 @@ NCBI_begin_app(read_index_speed)
   NCBI_project_watchers(marksc2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(read_index_speed-app
-    read_index_speed
-)
-
-set_target_properties(read_index_speed-app PROPERTIES OUTPUT_NAME read_index_speed)
-
-target_link_libraries(read_index_speed-app
-    asn_cache
-)
-endif()

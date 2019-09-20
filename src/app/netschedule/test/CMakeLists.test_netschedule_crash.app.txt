@@ -8,19 +8,3 @@ NCBI_begin_app(test_netschedule_crash)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_netschedule_crash-app
-    test_netschedule_crash
-)
-
-set_target_properties(test_netschedule_crash-app PROPERTIES OUTPUT_NAME test_netschedule_crash)
-
-target_link_libraries(test_netschedule_crash-app
-    xconnserv xthrserv xconnect 
- 
-)
-endif()

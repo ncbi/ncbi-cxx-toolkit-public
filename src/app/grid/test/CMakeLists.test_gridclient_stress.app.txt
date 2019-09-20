@@ -8,18 +8,3 @@ NCBI_begin_app(test_gridclient_stress)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_gridclient_stress-app
-    test_gridclient_stress
-)
-
-set_target_properties(test_gridclient_stress-app PROPERTIES OUTPUT_NAME test_gridclient_stress)
-
-target_link_libraries(test_gridclient_stress-app
-    xconnserv
-)
-endif()

@@ -12,19 +12,3 @@ NCBI_begin_app(asn2asn)
   NCBI_add_test(asn2asn.sh)
   NCBI_add_test(asn2asn.sh /am/ncbiapdata/test_data/objects)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(asn2asn-app
-    asn2asn
-)
-
-set_target_properties(asn2asn-app PROPERTIES OUTPUT_NAME asn2asn)
-
-target_link_libraries(asn2asn-app
-    ncbi_xdbapi_ftds submit xcompress
-)
-endif()

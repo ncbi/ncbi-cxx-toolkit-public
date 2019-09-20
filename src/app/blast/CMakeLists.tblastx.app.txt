@@ -10,18 +10,3 @@ NCBI_begin_app(tblastx)
   NCBI_project_tags(gbench)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(tblastx-app
-    tblastx_app
-)
-
-set_target_properties(tblastx-app PROPERTIES OUTPUT_NAME tblastx)
-
-target_link_libraries(tblastx-app
-    blast_app_util
-)
-endif()

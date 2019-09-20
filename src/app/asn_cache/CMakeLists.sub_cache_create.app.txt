@@ -8,18 +8,3 @@ NCBI_begin_app(sub_cache_create)
   NCBI_project_watchers(mozese2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(sub_cache_create-app
-    sub_cache_create
-)
-
-set_target_properties(sub_cache_create-app PROPERTIES OUTPUT_NAME sub_cache_create)
-
-target_link_libraries(sub_cache_create-app
-    data_loaders_util
-)
-endif()

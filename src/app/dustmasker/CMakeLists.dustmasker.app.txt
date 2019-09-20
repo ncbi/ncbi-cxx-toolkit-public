@@ -8,22 +8,3 @@ NCBI_begin_app(dustmasker)
   NCBI_project_watchers(camacho fongah2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(dustmasker-app
-    main dust_mask_app
-)
-
-set_target_properties(dustmasker-app PROPERTIES OUTPUT_NAME dustmasker)
-
-target_link_libraries(dustmasker-app
-    seqmasks_io xalgodustmask
-)
-
-add_dependencies(dustmasker-app
-    seq
-)
-endif()

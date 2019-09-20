@@ -10,18 +10,3 @@ NCBI_begin_app(blastp)
   NCBI_project_tags(gbench)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(blastp-app
-    blastp_app
-)
-
-set_target_properties(blastp-app PROPERTIES OUTPUT_NAME blastp)
-
-target_link_libraries(blastp-app
-    blast_app_util
-)
-endif()

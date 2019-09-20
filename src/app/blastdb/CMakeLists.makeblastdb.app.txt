@@ -10,18 +10,3 @@ NCBI_begin_app(makeblastdb)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(makeblastdb-app
-    makeblastdb masked_range_set
-)
-
-set_target_properties(makeblastdb-app PROPERTIES OUTPUT_NAME makeblastdb)
-
-target_link_libraries(makeblastdb-app
-    blastinput writedb
-)
-endif()

@@ -8,19 +8,3 @@ NCBI_begin_app(remote_app)
   NCBI_project_watchers(sadyrovr)
   NCBI_project_tags(grid)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(remote_app-app
-    remote_app_wn exec_helpers
-)
-
-set_target_properties(remote_app-app PROPERTIES OUTPUT_NAME remote_app)
-
-target_link_libraries(remote_app-app
-    xconnserv
-)
-endif()

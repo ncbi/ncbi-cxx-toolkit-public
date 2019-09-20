@@ -8,19 +8,3 @@ NCBI_begin_lib(blast_app_util)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
 NCBI_end_lib()
 
-
-if(OFF)
-#
-#
-#
-add_library(blast_app_util
-    blast_app_util
-)
-add_dependencies(blast_app_util
-    blastdb xnetblast
-)
-
-target_link_libraries(blast_app_util
-    blastinput xblastformat
-)
-endif()

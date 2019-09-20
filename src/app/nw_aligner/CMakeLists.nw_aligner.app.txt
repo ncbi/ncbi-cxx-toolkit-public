@@ -8,18 +8,3 @@ NCBI_begin_app(nw_aligner)
   NCBI_project_watchers(kapustin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(nw_aligner-app
-    nwa
-)
-
-set_target_properties(nw_aligner-app PROPERTIES OUTPUT_NAME nw_aligner)
-
-target_link_libraries(nw_aligner-app
-    xalgoalignnw
-)
-endif()

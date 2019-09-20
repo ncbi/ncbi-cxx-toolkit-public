@@ -11,19 +11,3 @@ NCBI_begin_app(streamtest)
   NCBI_project_watchers(kans drozdov)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(streamtest-app
-    streamtest
-)
-
-set_target_properties(streamtest-app PROPERTIES OUTPUT_NAME streamtest)
-
-target_link_libraries(streamtest-app
-    ncbi_xloader_genbank ncbi_xloader_wgs prosplign
-    xmlwrapp xobjwrite xvalidate
-)
-endif()

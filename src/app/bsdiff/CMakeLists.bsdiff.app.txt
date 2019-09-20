@@ -8,18 +8,3 @@ NCBI_begin_app(bsdiff)
   NCBI_project_watchers(ludwigf)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(bsdiff-app
-    biosample_chk
-)
-
-set_target_properties(bsdiff-app PROPERTIES OUTPUT_NAME bsdiff)
-
-target_link_libraries(bsdiff-app
-    ncbi_xloader_genbank ncbi_xloader_wgs xbiosample_util
-)
-endif()

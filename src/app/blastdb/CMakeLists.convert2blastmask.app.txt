@@ -9,18 +9,3 @@ NCBI_begin_app(convert2blastmask)
   NCBI_project_watchers(camacho fongah2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(convert2blastmask-app
-    convert2blastmask
-)
-
-set_target_properties(convert2blastmask-app PROPERTIES OUTPUT_NAME convert2blastmask)
-
-target_link_libraries(convert2blastmask-app
-    blast seqmasks_io
-)
-endif()

@@ -10,21 +10,3 @@ NCBI_begin_app(blastdb_convert)
   NCBI_requires(LMDB -Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(blastdb_convert-app
-    blastdb_convert
-)
-
-set_target_properties(blastdb_convert-app PROPERTIES OUTPUT_NAME blastdb_convert)
-
-include_directories(SYSTEM ${LMDB_INCLUDE})
-add_definitions(-DNCBI_MODULE=BLASTDB)
-
-target_link_libraries(blastdb_convert-app
-    blastinput writedb
-)
-endif()

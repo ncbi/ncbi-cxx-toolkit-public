@@ -9,18 +9,3 @@ NCBI_begin_app(seedtop)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(seedtop-app
-    seedtop_app
-)
-
-set_target_properties(seedtop-app PROPERTIES OUTPUT_NAME seedtop)
-
-target_link_libraries(seedtop-app
-    blast_app_util
-)
-endif()

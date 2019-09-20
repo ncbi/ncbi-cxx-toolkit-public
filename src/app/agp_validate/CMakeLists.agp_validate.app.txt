@@ -10,20 +10,3 @@ NCBI_begin_app(agp_validate)
   )
   NCBI_project_watchers(sapojnik)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(agp_validate-app
-    agp_validate AltValidator AgpFastaComparator
-)
-
-set_target_properties(agp_validate-app PROPERTIES OUTPUT_NAME agp_validate)
-
-target_link_libraries(agp_validate-app
-    entrez2cli ncbi_xloader_genbank ncbi_xloader_lds2
-    taxon1 xobjutil
-)
-endif()

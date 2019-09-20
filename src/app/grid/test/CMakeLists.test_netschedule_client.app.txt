@@ -8,18 +8,3 @@ NCBI_begin_app(test_netschedule_client)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(test_netschedule_client-app
-    test_netschedule_client
-)
-
-set_target_properties(test_netschedule_client-app PROPERTIES OUTPUT_NAME test_netschedule_client)
-
-target_link_libraries(test_netschedule_client-app
-    xconnserv
-)
-endif()

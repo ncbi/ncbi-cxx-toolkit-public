@@ -9,18 +9,3 @@ NCBI_begin_app(igblastp)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(igblastp-app
-    igblastp_app
-)
-
-set_target_properties(igblastp-app PROPERTIES OUTPUT_NAME igblastp)
-
-target_link_libraries(igblastp-app
-    blast_app_util igblast
-)
-endif()

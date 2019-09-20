@@ -8,18 +8,3 @@ NCBI_begin_app(asn2flat)
   NCBI_project_watchers(ludwigf gotvyans)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(asn2flat-app
-    asn2flat
-)
-
-set_target_properties(asn2flat-app PROPERTIES OUTPUT_NAME asn2flat)
-
-target_link_libraries(asn2flat-app
-    data_loaders_util xformat
-)
-endif()

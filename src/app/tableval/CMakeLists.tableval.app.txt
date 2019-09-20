@@ -8,24 +8,3 @@ NCBI_begin_app(tableval)
   NCBI_project_watchers(gotvyans)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(tableval-app
-    tableval tab_table_reader col_validator
-)
-
-set_target_properties(tableval-app PROPERTIES OUTPUT_NAME tableval)
-
-target_link_libraries(tableval-app
-    taxon1 xmlwrapp xobjread
-)
-
-if (APPLE)
-   target_link_libraries(tableval-app
-    taxon1 xmlwrapp xobjread
-)
-endif (APPLE)
-endif()

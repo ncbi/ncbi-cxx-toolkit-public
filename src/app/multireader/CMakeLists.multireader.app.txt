@@ -10,19 +10,3 @@ NCBI_begin_app(multireader)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(multireader-app
-    multireader multifile_destination multifile_source
-)
-
-set_target_properties(multireader-app PROPERTIES OUTPUT_NAME multireader)
-
-target_link_libraries(multireader-app
-    xalgophytree xcleanup xobjedit
-    xobjreadex
-)
-endif()

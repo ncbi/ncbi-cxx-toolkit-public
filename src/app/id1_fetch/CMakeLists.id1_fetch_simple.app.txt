@@ -9,18 +9,3 @@ NCBI_begin_app(id1_fetch_simple)
   NCBI_add_test(id1_fetch_simple -gi 3)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(id1_fetch_simple-app
-    id1_fetch_simple
-)
-
-set_target_properties(id1_fetch_simple-app PROPERTIES OUTPUT_NAME id1_fetch_simple)
-
-target_link_libraries(id1_fetch_simple-app
-    id1 xconnect
-)
-endif()

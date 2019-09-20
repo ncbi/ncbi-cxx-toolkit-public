@@ -8,18 +8,3 @@ NCBI_begin_app(multipattern)
   NCBI_project_watchers(kachalos)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(multipattern-app
-    multipattern
-)
-
-set_target_properties(multipattern-app PROPERTIES OUTPUT_NAME multipattern)
-
-target_link_libraries(multipattern-app
-    data_loaders_util
-)
-endif()

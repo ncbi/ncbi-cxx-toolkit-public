@@ -8,19 +8,3 @@ NCBI_begin_app(dump_asn_cache_index)
   NCBI_project_watchers(marksc2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(dump_asn_cache_index-app
-    dump_seqids
-)
-
-set_target_properties(dump_asn_cache_index-app PROPERTIES OUTPUT_NAME dump_asn_cache_index)
-
-target_link_libraries(dump_asn_cache_index-app
-    asn_cache
-)
-endif()
-

@@ -8,18 +8,3 @@ NCBI_begin_app(netschedule_control)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(netschedule_control-app
-    netschedule_control
-)
-
-set_target_properties(netschedule_control-app PROPERTIES OUTPUT_NAME netschedule_control)
-
-target_link_libraries(netschedule_control-app
-    xconnserv
-)
-endif()

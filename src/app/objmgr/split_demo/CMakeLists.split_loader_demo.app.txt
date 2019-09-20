@@ -7,19 +7,3 @@ NCBI_begin_app(split_loader_demo)
   NCBI_uses_toolkit_libraries(xobjmgr)
   NCBI_project_watchers(vasilche)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(split_loader_demo-app
-    split_loader_demo split_loader
-)
-
-set_target_properties(split_loader_demo-app PROPERTIES OUTPUT_NAME split_loader_demo)
-
-target_link_libraries(split_loader_demo-app
-    xobjmgr
-)
-endif()

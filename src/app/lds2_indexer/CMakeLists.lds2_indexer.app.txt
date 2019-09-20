@@ -8,18 +8,3 @@ NCBI_begin_app(lds2_indexer)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(lds2_indexer-app
-    lds2_indexer
-)
-
-set_target_properties(lds2_indexer-app PROPERTIES OUTPUT_NAME lds2_indexer)
-
-target_link_libraries(lds2_indexer-app
-    lds2
-)
-endif()

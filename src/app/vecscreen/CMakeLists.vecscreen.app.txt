@@ -8,18 +8,3 @@ NCBI_begin_app(vecscreen)
   NCBI_project_watchers(camacho madden)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(vecscreen-app
-    vecscreen_app
-)
-
-set_target_properties(vecscreen-app PROPERTIES OUTPUT_NAME vecscreen)
-
-target_link_libraries(vecscreen-app
-    blastinput xblastformat
-)
-endif()

@@ -7,19 +7,3 @@ NCBI_begin_app(bdb_env_keeper)
   NCBI_uses_toolkit_libraries(bdb xthrserv)
   NCBI_project_watchers(vakatov)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(bdb_env_keeper-app
-    bdb_env_keeper
-)
-
-set_target_properties(bdb_env_keeper-app PROPERTIES OUTPUT_NAME bdb_env_keeper)
-
-target_link_libraries(bdb_env_keeper-app
-    bdb xthrserv
-)
-endif()

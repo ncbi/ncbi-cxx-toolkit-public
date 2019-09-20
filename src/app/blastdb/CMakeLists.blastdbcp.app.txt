@@ -10,18 +10,3 @@ NCBI_begin_app(blastdbcp)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(blastdbcp-app
-    blastdbcp
-)
-
-set_target_properties(blastdbcp-app PROPERTIES OUTPUT_NAME blastdbcp)
-
-target_link_libraries(blastdbcp-app
-    blastinput writedb
-)
-endif()

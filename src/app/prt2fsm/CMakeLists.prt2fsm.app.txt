@@ -8,18 +8,3 @@ NCBI_begin_app(prt2fsm)
   NCBI_project_watchers(kachalos)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(prt2fsm-app
-    prt2fsm
-)
-
-set_target_properties(prt2fsm-app PROPERTIES OUTPUT_NAME prt2fsm)
-
-target_link_libraries(prt2fsm-app
-    macro data_loaders_util
-)
-endif()

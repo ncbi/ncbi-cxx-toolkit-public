@@ -9,19 +9,3 @@ NCBI_begin_app(id1_fetch)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(id1_fetch-app
-    id1_fetch
-)
-
-set_target_properties(id1_fetch-app PROPERTIES OUTPUT_NAME id1_fetch)
-
-target_link_libraries(id1_fetch-app
-    entrez2cli id1cli ncbi_xloader_genbank
-    xformat
-)
-endif()

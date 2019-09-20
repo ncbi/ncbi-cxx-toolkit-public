@@ -8,18 +8,3 @@ NCBI_begin_app(nmer_repeats)
   NCBI_project_watchers(ludwigf)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(nmer_repeats-app
-    nmer_repeats
-)
-
-set_target_properties(nmer_repeats-app PROPERTIES OUTPUT_NAME nmer_repeats)
-
-target_link_libraries(nmer_repeats-app
-    xalgoseq xobjread
-)
-endif()

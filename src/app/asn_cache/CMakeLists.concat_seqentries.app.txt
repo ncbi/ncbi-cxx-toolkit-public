@@ -8,18 +8,3 @@ NCBI_begin_app(concat_seqentries)
   NCBI_project_watchers(marksc2)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(concat_seqentries-app
-    concat_seqentries
-)
-
-set_target_properties(concat_seqentries-app PROPERTIES OUTPUT_NAME concat_seqentries)
-
-target_link_libraries(concat_seqentries-app
-    bdb asn_cache seqset
-)
-endif()

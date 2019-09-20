@@ -8,18 +8,3 @@ NCBI_begin_app(cidtool)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(cidtool-app
-    cidtool
-)
-
-set_target_properties(cidtool-app PROPERTIES OUTPUT_NAME cidtool)
-
-target_link_libraries(cidtool-app
-    xconnserv
-)
-endif()

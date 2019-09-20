@@ -8,18 +8,3 @@ NCBI_begin_app(srcchk)
   NCBI_project_watchers(ludwigf)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(srcchk-app
-    srcchk
-)
-
-set_target_properties(srcchk-app PROPERTIES OUTPUT_NAME srcchk)
-
-target_link_libraries(srcchk-app
-    ncbi_xloader_genbank xobjwrite
-)
-endif()

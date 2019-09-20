@@ -8,18 +8,3 @@ NCBI_begin_app(compartp)
   NCBI_project_watchers(chetvern)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(compartp-app
-    compartp
-)
-
-set_target_properties(compartp-app PROPERTIES OUTPUT_NAME compartp)
-
-target_link_libraries(compartp-app
-    prosplign
-)
-endif()

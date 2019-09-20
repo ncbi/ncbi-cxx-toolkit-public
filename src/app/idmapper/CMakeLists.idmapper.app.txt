@@ -9,18 +9,3 @@ NCBI_begin_app(idmapper)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(idmapper-app
-    idmapper
-)
-
-set_target_properties(idmapper-app PROPERTIES OUTPUT_NAME idmapper)
-
-target_link_libraries(idmapper-app
-    xobjreadex
-)
-endif()

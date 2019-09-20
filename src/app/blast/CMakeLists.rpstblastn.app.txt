@@ -9,18 +9,3 @@ NCBI_begin_app(rpstblastn)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
-
-if(OFF)
-#
-#
-#
-add_executable(rpstblastn-app
-    rpstblastn_app
-)
-
-set_target_properties(rpstblastn-app PROPERTIES OUTPUT_NAME rpstblastn)
-
-target_link_libraries(rpstblastn-app
-    blast_app_util
-)
-endif()
