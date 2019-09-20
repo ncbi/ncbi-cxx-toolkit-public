@@ -40,18 +40,3 @@ NCBI_begin_app(test_bulkinfo)
 
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_bulkinfo-app
-    test_bulkinfo bulkinfo_tester
-)
-
-set_target_properties(test_bulkinfo-app PROPERTIES OUTPUT_NAME test_bulkinfo)
-
-target_link_libraries(test_bulkinfo-app
-    ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos
-    xobjutil
-)
-endif()

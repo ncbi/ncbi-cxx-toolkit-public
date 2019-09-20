@@ -11,19 +11,3 @@ NCBI_begin_app(unit_test_agp_converter)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_agp_converter-app
-    unit_test_agp_converter
-)
-
-set_target_properties(unit_test_agp_converter-app PROPERTIES OUTPUT_NAME unit_test_agp_converter)
-
-
-
-target_link_libraries(unit_test_agp_converter-app
-    test_boost xobjread xunittestutil
-)
-endif()

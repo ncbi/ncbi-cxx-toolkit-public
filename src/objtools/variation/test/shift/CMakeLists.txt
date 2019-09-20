@@ -3,4 +3,3 @@
 #############################################################################
 
 NCBI_add_app(test-shift)
-#include(CMakeLists.test-shift.app.txt)

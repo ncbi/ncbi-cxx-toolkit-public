@@ -10,19 +10,3 @@ NCBI_begin_lib(cdd_access SHARED)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-
-
-set(MODULE cdd_access)
-#set(MODULE_IMPORT objects/id2)
-set(MODULE_PATH objtools/data_loaders/cdd/cdd_access)
-
-set(MODULE_EXT "asn")
-add_library(cdd_access cdd_client ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(cdd_access
-    id2 xconnect
-)
-endif()

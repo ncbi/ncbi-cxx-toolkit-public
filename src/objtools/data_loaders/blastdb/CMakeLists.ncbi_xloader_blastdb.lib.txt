@@ -9,18 +9,3 @@ NCBI_begin_lib(ncbi_xloader_blastdb)
   NCBI_project_watchers(camacho fongah2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_blastdb
-    bdbloader cached_sequence local_blastdb_adapter
-)
-add_dependencies(ncbi_xloader_blastdb
-    blastdb seqset
-)
-
-target_link_libraries(ncbi_xloader_blastdb
-    seqdb
-)
-endif()

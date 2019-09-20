@@ -9,16 +9,3 @@ NCBI_begin_lib(lds2)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(lds2
-    lds2 lds2_db lds2_handlers
-)
-include_directories(SYSTEM ${SQLITE3_INCLUDE} ${CMPRS_INCLUDE})
-
-target_link_libraries(lds2
-    sqlitewrapp xcompress xobjread
-)
-endif()

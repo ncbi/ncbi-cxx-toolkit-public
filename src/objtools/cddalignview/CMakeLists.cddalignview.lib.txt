@@ -8,19 +8,3 @@ NCBI_begin_lib(xcddalignview)
   NCBI_project_watchers(thiessen)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xcddalignview
-    cav_alignset cav_alndisplay cav_function cav_seqset
-)
-add_dependencies(xcddalignview
-    seq cdd ncbimime
-)
-
-target_link_libraries(xcddalignview
-    ncbimime
-)
-endif()
-

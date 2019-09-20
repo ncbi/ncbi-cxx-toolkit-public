@@ -12,17 +12,3 @@ NCBI_begin_app(test_validator)
   NCBI_add_test(test_validator.sh)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_validator-app
-    test_validator
-)
-
-set_target_properties(test_validator-app PROPERTIES OUTPUT_NAME test_validator)
-
-target_link_libraries(test_validator-app
-    ncbi_xloader_genbank xvalidate
-)
-endif()

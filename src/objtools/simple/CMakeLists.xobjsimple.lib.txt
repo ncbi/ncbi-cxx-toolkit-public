@@ -8,18 +8,3 @@ NCBI_begin_lib(xobjsimple)
   NCBI_project_watchers(jcherry )
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xobjsimple
-    simple_om
-)
-add_dependencies(xobjsimple
-    seqset
-)
-
-target_link_libraries(xobjsimple
-    ncbi_xloader_genbank
-)
-endif()

@@ -8,17 +8,3 @@ NCBI_begin_app(ace2asn)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(ace2asn-app
-    ace2asn
-)
-
-set_target_properties(ace2asn-app PROPERTIES OUTPUT_NAME ace2asn)
-
-target_link_libraries(ace2asn-app
-    xobjread
-)
-endif()

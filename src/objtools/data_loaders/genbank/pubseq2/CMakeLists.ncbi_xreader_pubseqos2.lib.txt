@@ -10,19 +10,3 @@ NCBI_begin_lib(ncbi_xreader_pubseqos2 SHARED)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xreader_pubseqos2
-    reader_pubseq2 eMyNCBI_131204__ eMyNCBI_131204___
-)
-include_directories(SYSTEM ${CMPRS_INCLUDE})
-
-target_link_libraries(ncbi_xreader_pubseqos2
-    dbapi_driver ncbi_xreader xconnext
-)
-add_dependencies(ncbi_xreader_pubseqos2
- seqset id2 eMyNCBI_131204
-)
-endif()

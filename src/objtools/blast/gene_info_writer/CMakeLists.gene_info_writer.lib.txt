@@ -9,18 +9,3 @@ NCBI_begin_lib(gene_info_writer)
   NCBI_project_watchers(camacho)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(gene_info_writer
-    gene_info_writer
-)
-add_dependencies(gene_info_writer
-    blastdb
-)
-
-target_link_libraries(gene_info_writer
-    gene_info seqdb
-)
-endif()

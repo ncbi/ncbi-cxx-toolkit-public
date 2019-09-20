@@ -8,18 +8,3 @@ NCBI_begin_lib(xalntool)
   NCBI_project_watchers(jianye)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xalntool
-    alngraphic
-)
-add_dependencies(xalntool
-    seqset
-)
-
-target_link_libraries(xalntool
-    align_format
-)
-endif()

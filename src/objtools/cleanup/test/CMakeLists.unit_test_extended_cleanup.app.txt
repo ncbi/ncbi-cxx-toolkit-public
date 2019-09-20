@@ -10,21 +10,3 @@ NCBI_begin_app(unit_test_extended_cleanup)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_extended_cleanup-app
-    unit_test_extended_cleanup
-)
-
-set_target_properties(unit_test_extended_cleanup-app PROPERTIES OUTPUT_NAME unit_test_extended_cleanup)
-
-
-
-target_link_libraries(unit_test_extended_cleanup-app
-    ncbi_xloader_genbank test_boost xcleanup
-    xunittestutil
-)
-endif()
-

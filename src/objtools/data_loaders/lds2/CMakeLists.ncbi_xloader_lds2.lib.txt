@@ -9,20 +9,3 @@ NCBI_begin_lib(ncbi_xloader_lds2 SHARED)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_lds2
-    lds2_dataloader
-)
-include_directories(SYSTEM ${SQLITE3_INCLUDE})
-
-add_dependencies(ncbi_xloader_lds2
-    seq
-)
-
-target_link_libraries(ncbi_xloader_lds2
-    lds2 xobjmgr
-)
-endif()

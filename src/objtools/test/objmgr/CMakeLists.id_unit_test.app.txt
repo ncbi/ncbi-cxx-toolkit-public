@@ -11,20 +11,3 @@ NCBI_begin_app(id_unit_test)
   NCBI_add_test(all_readers.sh id_unit_test)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(id_unit_test-app
-    id_unit_test
-)
-
-set_target_properties(id_unit_test-app PROPERTIES OUTPUT_NAME id_unit_test)
-
-
-
-target_link_libraries(id_unit_test-app
-    ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos
-    test_boost
-)
-endif()

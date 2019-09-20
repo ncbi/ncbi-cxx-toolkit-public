@@ -11,19 +11,3 @@ NCBI_begin_app(unit_test_gtfwriter)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_gtfwriter-app
-    unit_test_gtfwriter
-)
-
-set_target_properties(unit_test_gtfwriter-app PROPERTIES OUTPUT_NAME unit_test_gtfwriter)
-
-
-
-target_link_libraries(unit_test_gtfwriter-app
-    ncbi_xloader_genbank test_boost xobjwrite
-)
-endif()

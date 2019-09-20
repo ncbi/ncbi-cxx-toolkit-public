@@ -9,16 +9,3 @@ NCBI_begin_lib(ncbi_id2proc_cdd SHARED)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-add_library(ncbi_id2proc_cdd
-    id2cdd id2cdd_impl
-)
-
-add_dependencies(ncbi_id2proc_cdd
-    seq
-)
-
-target_link_libraries(ncbi_id2proc_cdd
-    cdd_access xcompress
-)
-endif()

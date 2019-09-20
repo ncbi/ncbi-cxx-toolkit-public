@@ -8,17 +8,3 @@ NCBI_begin_app(aln_test)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(aln_test-app
-    aln_test_app
-)
-
-set_target_properties(aln_test-app PROPERTIES OUTPUT_NAME aln_test)
-
-target_link_libraries(aln_test-app
-    ncbi_xloader_genbank xalnmgr
-)
-endif()

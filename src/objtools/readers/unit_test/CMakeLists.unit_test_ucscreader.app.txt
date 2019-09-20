@@ -11,19 +11,3 @@ NCBI_begin_app(unit_test_ucscreader)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_ucscreader-app
-    unit_test_ucscreader
-)
-
-set_target_properties(unit_test_ucscreader-app PROPERTIES OUTPUT_NAME unit_test_ucscreader)
-
-
-
-target_link_libraries(unit_test_ucscreader-app
-    test_boost xobjread
-)
-endif()

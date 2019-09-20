@@ -10,19 +10,3 @@ NCBI_begin_app(unit_test_fasta_reader)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_fasta_reader-app
-    unit_test_fasta_reader
-)
-
-set_target_properties(unit_test_fasta_reader-app PROPERTIES OUTPUT_NAME unit_test_fasta_reader)
-
-
-
-target_link_libraries(unit_test_fasta_reader-app
-    test_boost xobjmgr xobjread
-)
-endif()

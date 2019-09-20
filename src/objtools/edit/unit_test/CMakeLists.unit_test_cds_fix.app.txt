@@ -13,20 +13,3 @@ NCBI_begin_app(unit_test_cds_fix)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_cds_fix-app
-    unit_test_cds_fix
-)
-
-set_target_properties(unit_test_cds_fix-app PROPERTIES OUTPUT_NAME unit_test_cds_fix)
-
-
-
-target_link_libraries(unit_test_cds_fix-app
-    macro test_boost xobjedit
-    xunittestutil
-)
-endif()

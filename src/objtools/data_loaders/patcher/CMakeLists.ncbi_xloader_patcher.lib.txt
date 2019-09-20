@@ -8,18 +8,3 @@ NCBI_begin_lib(ncbi_xloader_patcher)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_patcher
-    loaderpatcher
-)
-add_dependencies(ncbi_xloader_patcher
-    seqset seqedit
-)
-
-target_link_libraries(ncbi_xloader_patcher
-    xobjmgr
-)
-endif()

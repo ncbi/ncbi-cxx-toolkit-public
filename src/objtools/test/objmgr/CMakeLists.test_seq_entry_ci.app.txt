@@ -10,18 +10,3 @@ NCBI_begin_app(test_seq_entry_ci)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_seq_entry_ci-app
-    test_seq_entry_ci
-)
-
-set_target_properties(test_seq_entry_ci-app PROPERTIES OUTPUT_NAME test_seq_entry_ci)
-
-
-target_link_libraries(test_seq_entry_ci-app
-    test_boost xobjmgr
-)
-endif()

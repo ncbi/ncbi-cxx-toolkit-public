@@ -12,19 +12,3 @@ NCBI_begin_lib(xobjreadex)
   NCBI_project_watchers(dicuccio ludwigf gotvyans)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(xobjreadex
-    glimmer_reader idmapper idmapper_builtin idmapper_config
-    idmapper_database idmapper_gcassembly idmapper_scope
-    source_mod_parser_wrapper
-)
-target_link_libraries(xobjreadex
-    xobjread xobjutil
-)
-add_dependencies(xobjreadex
- seqset
-)
-endif()

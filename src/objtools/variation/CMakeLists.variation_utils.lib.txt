@@ -8,19 +8,3 @@ NCBI_begin_lib(variation_utils)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(variation_utils
-    variation_utils
-)
-add_dependencies(variation_utils
-    blastdb genome_collection submit variation
-)
-
-target_link_libraries(variation_utils
-    variation xobjutil
-)
-endif()
-

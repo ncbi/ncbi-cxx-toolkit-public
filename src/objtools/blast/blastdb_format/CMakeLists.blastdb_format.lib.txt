@@ -9,18 +9,3 @@ NCBI_begin_lib(blastdb_format)
   NCBI_project_watchers(camacho fongah2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(blastdb_format
-    seq_writer blastdb_dataextract blastdb_formatter seq_formatter
-)
-add_dependencies(blastdb_format
-    blastdb seqset
-)
-
-target_link_libraries(blastdb_format
-    seqdb xobjutil
-)
-endif()

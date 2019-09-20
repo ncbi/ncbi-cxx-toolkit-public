@@ -10,19 +10,3 @@ NCBI_begin_app(test_uudutil)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_uudutil-app
-    test_uudutil
-)
-
-set_target_properties(test_uudutil-app PROPERTIES OUTPUT_NAME test_uudutil)
-
-
-target_link_libraries(test_uudutil-app
-    test_boost uudutil
-)
-endif()
-

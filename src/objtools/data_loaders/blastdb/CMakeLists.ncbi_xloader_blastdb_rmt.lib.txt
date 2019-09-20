@@ -9,18 +9,3 @@ NCBI_begin_lib(ncbi_xloader_blastdb_rmt)
   NCBI_project_watchers(camacho)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_blastdb_rmt
-    bdbloader_rmt remote_blastdb_adapter
-)
-add_dependencies(ncbi_xloader_blastdb_rmt
-    blastdb xnetblast
-)
-
-target_link_libraries(ncbi_xloader_blastdb_rmt
-    blast_services ncbi_xloader_blastdb
-)
-endif()

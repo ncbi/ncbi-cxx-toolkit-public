@@ -14,17 +14,3 @@ NCBI_begin_app(test_lds2)
   NCBI_add_test(test_lds2 -stress -gzip -format fasta)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_lds2-app
-    test_lds2
-)
-
-set_target_properties(test_lds2-app PROPERTIES OUTPUT_NAME test_lds2)
-
-target_link_libraries(test_lds2-app
-    ncbi_xloader_lds2 xobjutil
-)
-endif()

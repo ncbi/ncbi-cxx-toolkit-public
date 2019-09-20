@@ -12,20 +12,3 @@ NCBI_begin_app(unit_test_field_handler)
   NCBI_set_test_timeout(3000)
   NCBI_add_test()
 NCBI_end_app()
-
-if(OFF)
-#
-#
-#
-add_executable(unit_test_field_handler-app
-    unit_test_field_handler
-)
-
-set_target_properties(unit_test_field_handler-app PROPERTIES OUTPUT_NAME unit_test_field_handler)
-
-
-
-target_link_libraries(unit_test_field_handler-app
-    test_boost xobjedit xunittestutil
-)
-endif()

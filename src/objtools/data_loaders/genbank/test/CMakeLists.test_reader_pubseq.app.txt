@@ -8,17 +8,3 @@ NCBI_begin_app(test_reader_pubseq)
   NCBI_project_watchers(vasilche)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_reader_pubseq-app
-    test_reader_pubseq
-)
-
-set_target_properties(test_reader_pubseq-app PROPERTIES OUTPUT_NAME test_reader_pubseq)
-
-target_link_libraries(test_reader_pubseq-app
-    ncbi_xreader_pubseqos
-)
-endif()

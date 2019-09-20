@@ -16,17 +16,3 @@ NCBI_begin_app(test_objmgr_data)
   NCBI_add_test(test_objmgr_data -prefetch)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_objmgr_data-app
-    test_objmgr_data
-)
-
-set_target_properties(test_objmgr_data-app PROPERTIES OUTPUT_NAME test_objmgr_data)
-
-target_link_libraries(test_objmgr_data-app
-    ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos
-)
-endif()

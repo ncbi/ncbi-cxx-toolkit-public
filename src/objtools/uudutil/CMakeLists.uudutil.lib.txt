@@ -8,20 +8,3 @@ NCBI_begin_lib(uudutil)
   NCBI_project_watchers(shkeda)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(uudutil
-    project_storage
-)
-include_directories(SYSTEM ${LZO_INCLUDE})
-
-add_dependencies(uudutil
-    gbproj
-)
-
-target_link_libraries(uudutil
-    gbproj xcompress xconnserv
-)
-endif()

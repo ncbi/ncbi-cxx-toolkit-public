@@ -8,18 +8,3 @@ NCBI_begin_lib(blast_services)
   NCBI_project_watchers(madden camacho)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(blast_services
-    blast_services
-)
-add_dependencies(blast_services
-    xnetblast
-)
-
-target_link_libraries(blast_services
-    xnetblastcli
-)
-endif()

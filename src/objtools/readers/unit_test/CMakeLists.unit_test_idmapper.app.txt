@@ -10,19 +10,3 @@ NCBI_begin_app(unit_test_idmapper)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(unit_test_idmapper-app
-    unit_test_idmapper
-)
-
-set_target_properties(unit_test_idmapper-app PROPERTIES OUTPUT_NAME unit_test_idmapper)
-
-
-
-target_link_libraries(unit_test_idmapper-app
-    test_boost xobjreadex
-)
-endif()

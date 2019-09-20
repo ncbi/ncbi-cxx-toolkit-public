@@ -11,18 +11,3 @@ NCBI_begin_app(seq_entry_reassign_ids)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(seq_entry_reassign_ids-app
-    seq_entry_reassign_ids
-)
-
-set_target_properties(seq_entry_reassign_ids-app PROPERTIES OUTPUT_NAME seq_entry_reassign_ids)
-
-
-target_link_libraries(seq_entry_reassign_ids-app
-    seqset test_boost
-)
-endif()

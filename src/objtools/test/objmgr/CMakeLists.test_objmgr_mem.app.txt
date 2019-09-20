@@ -9,17 +9,3 @@ NCBI_begin_app(test_objmgr_mem)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_objmgr_mem-app
-    test_objmgr_mem
-)
-
-set_target_properties(test_objmgr_mem-app PROPERTIES OUTPUT_NAME test_objmgr_mem)
-
-target_link_libraries(test_objmgr_mem-app
-    ncbi_xloader_genbank
-)
-endif()

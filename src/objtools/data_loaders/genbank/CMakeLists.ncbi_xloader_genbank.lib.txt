@@ -9,18 +9,3 @@ NCBI_begin_lib(ncbi_xloader_genbank SHARED)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xloader_genbank
-    gbloader gbload_util
-)
-add_dependencies(ncbi_xloader_genbank
-    seqsplit
-)
-
-target_link_libraries(ncbi_xloader_genbank
-    ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2
-)
-endif()

@@ -11,17 +11,3 @@ NCBI_begin_app(asniotest)
   NCBI_add_test()
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(asniotest-app
-    asniotest
-)
-
-set_target_properties(asniotest-app PROPERTIES OUTPUT_NAME asniotest)
-
-target_link_libraries(asniotest-app
-    id1cli ncbimime pcsubstance
-)
-endif()

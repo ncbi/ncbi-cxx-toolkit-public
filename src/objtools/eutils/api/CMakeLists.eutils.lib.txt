@@ -11,21 +11,3 @@ NCBI_begin_lib(eutils)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(eutils
-    eutils efetch einfo esearch egquery epost elink esummary espell ehistory
-)
-add_dependencies(eutils
-    einfo esearch egquery epost elink esummary espell uilist ehistory
-)
-
-target_link_libraries(eutils
-    egquery ehistory einfo
-    elink epost esearch
-    espell esummary uilist
-    xconnect
-)
-endif()

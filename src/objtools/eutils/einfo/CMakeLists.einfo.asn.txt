@@ -8,25 +8,3 @@ NCBI_begin_lib(einfo)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-
-set(MODULE einfo)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-
-set(MODULE_EXT "dtd")
-add_library(einfo ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    xser
-)
-
-target_link_libraries(einfo
-    xser
-)
-endif()

@@ -8,17 +8,3 @@ NCBI_begin_app(cddalignview)
   NCBI_project_watchers(thiessen)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(cddalignview-app
-    cav_main
-)
-
-set_target_properties(cddalignview-app PROPERTIES OUTPUT_NAME cddalignview)
-
-target_link_libraries(cddalignview-app
-    xcddalignview
-)
-endif()

@@ -11,19 +11,3 @@ NCBI_begin_lib(snputil)
   NCBI_project_watchers(rudnev)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(snputil
-    snp_utils snp_bitfield snp_bitfield_1_2 snp_bitfield_2 snp_bitfield_3
-    snp_bitfield_4 snp_bitfield_5 snp_bitfield_20 snp_bitfield_factory snp_bins
-)
-add_dependencies(snputil
-    seqset variation
-)
-
-target_link_libraries(snputil
-    variation xobjmgr
-)
-endif()

@@ -15,17 +15,3 @@ NCBI_begin_lib(align_format)
   NCBI_project_watchers(zaretska jianye madden camacho fongah2)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(align_format
-    format_flags align_format_util showdefline showalign tabular
-    vectorscreen seqalignfilter taxFormat aln_printer
-)
-target_link_libraries(align_format
-    blast_services gene_info ncbi_xloader_genbank
-    seqdb taxon1 xalnmgr
-    xcgi xhtml xobjread
-)
-endif()

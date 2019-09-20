@@ -8,17 +8,3 @@ NCBI_begin_app(alnvwr)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(alnvwr-app
-    alnvwrapp
-)
-
-set_target_properties(alnvwr-app PROPERTIES OUTPUT_NAME alnvwr)
-
-target_link_libraries(alnvwr-app
-    ncbi_xloader_genbank xalnmgr
-)
-endif()

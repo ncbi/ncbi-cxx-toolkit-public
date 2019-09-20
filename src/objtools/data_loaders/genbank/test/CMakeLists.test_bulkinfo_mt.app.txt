@@ -39,18 +39,3 @@ NCBI_begin_app(test_bulkinfo_mt)
   NCBI_add_test(all_readers.sh test_bulkinfo_mt -type hash -idlist bad_len.ids -reference ref/bad_len.hash.txt)
 NCBI_end_app()
 
-if(OFF)
-#
-#
-#
-add_executable(test_bulkinfo_mt-app
-    test_bulkinfo_mt bulkinfo_tester
-)
-
-set_target_properties(test_bulkinfo_mt-app PROPERTIES OUTPUT_NAME test_bulkinfo_mt)
-
-target_link_libraries(test_bulkinfo_mt-app
-    ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos
-    test_mt xobjutil
-)
-endif()

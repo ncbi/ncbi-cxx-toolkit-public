@@ -12,18 +12,3 @@ NCBI_end_lib()
 
 include_directories(SYSTEM ${LMDB_INCLUDE})
 
-if(OFF)
-#
-#
-#
-add_library(ncbi_xreader_gicache
-    reader_gicache gicache
-)
-
-include_directories(SYSTEM ${LMDB_INCLUDE})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(ncbi_xreader_gicache
-    ncbi_xreader ${LMDB_LIBS}
-)
-endif()

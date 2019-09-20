@@ -12,20 +12,3 @@ NCBI_begin_lib(seqmasks_io)
   NCBI_project_watchers(morgulis camacho)
 NCBI_end_lib()
 
-if(OFF)
-#
-#
-#
-add_library(seqmasks_io
-    mask_cmdline_args mask_bdb_reader mask_fasta_reader mask_writer
-    mask_writer_fasta mask_writer_int mask_writer_tab mask_writer_seqloc
-    mask_writer_blastdb_maskinfo
-)
-add_dependencies(seqmasks_io
-    seqset
-)
-
-target_link_libraries(seqmasks_io
-    seqdb xobjread xobjutil
-)
-endif()
