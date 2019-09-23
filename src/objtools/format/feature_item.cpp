@@ -2393,17 +2393,17 @@ void CFeatureItem::x_AddQualCodonStart(
 //  ----------------------------------------------------------------------------
 {
     CCdregion::TFrame frame = cdr.GetFrame();
+    // ID-5844 : codon_start is the position at which the first complete codon starts.
+    // If frame is 1, codon starts from that frame; if frame is 2, then next codon
+    // starts from position 3; if frame is 3, the next codon starts at position 2.
+    int codon_start =
+        ((frame == CCdregion::eFrame_not_set || frame == CCdregion::eFrame_one) ? 1 :
+         (frame == CCdregion::eFrame_two ? 3 : 2));
 
-    if ( !ctx.IsProt() || !IsMappedFromCDNA() ) {
-        if ( frame == CCdregion::eFrame_not_set ) {
-            frame = CCdregion::eFrame_one;
-        }
-        x_AddQual( eFQ_codon_start, new CFlatIntQVal( frame ) );
-    } 
-    else {
-        if ( frame > 1 ) {
-            x_AddQual( eFQ_codon_start, new CFlatIntQVal( frame ) );
-        }
+    // codon_start qualifier is always shown for nucleotides and for proteins mapped
+    // from cDNA, otherwise only when the frame is not 1.
+    if ( !ctx.IsProt() || !IsMappedFromCDNA() || frame > 1 ) {
+        x_AddQual( eFQ_codon_start, new CFlatIntQVal( codon_start ) );
     }
 }
 
