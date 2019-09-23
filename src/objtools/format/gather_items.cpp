@@ -2832,16 +2832,6 @@ static bool s_IsCDD(const CSeq_feat_Handle& feat)
     return false;
 }
 
-static bool s_IsSNP(const CSeq_feat_Handle& feat)
-{
-    return (feat.GetAnnot().IsNamed() && feat.GetAnnot().GetName() == "Annot:SNP");
-}
-
-static bool s_IsExon(const CSeq_feat_Handle& feat)
-{
-    return (feat.GetAnnot().IsNamed() && feat.GetAnnot().GetName() == "Annot:Exon");
-}
-
 struct SGapIdxData {
     string gap_type;
     int num_gaps;

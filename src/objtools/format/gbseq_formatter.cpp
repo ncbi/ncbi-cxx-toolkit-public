@@ -1028,10 +1028,8 @@ void CGBSeqFormatter::FormatSequence
 
     string data;
 
-    const CSeqVector& vec = seq.GetSequence();
     TSeqPos from = seq.GetFrom();
     TSeqPos to = seq.GetTo();
-    TSeqPos base_count = from;
 
     TSeqPos vec_pos = from-1;
     TSeqPos total = from <= to? to - from + 1 : 0;
