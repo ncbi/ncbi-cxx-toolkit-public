@@ -187,8 +187,10 @@ void CSeqTestManager::UnRegisterTest(const CTypeInfo* info,
 {
     const auto eq_range = m_Tests.equal_range(info);
     for (auto it = eq_range.first; it != eq_range.second;) {
-        it = (typeid(*it->second) == typeid(*test)) ? m_Tests.erase(it)
-                                                    : std::next(it);
+        const auto& ref = *it->second; // outside of typeid expression
+                                       // to avoid compiler-warning
+        it = typeid(ref) == typeid(*test) ? m_Tests.erase(it)
+                                          : std::next(it);
     }
 }
 
