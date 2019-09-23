@@ -79,6 +79,7 @@ set(NCBI_ThirdParty_GPG          ${NCBI_TOOLS_ROOT}/libgpg-error-1.6)
 set(NCBI_ThirdParty_GCRYPT       ${NCBI_TOOLS_ROOT}/libgcrypt-1.4.3)
 set(NCBI_ThirdParty_MSGSL        ${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94)
 set(NCBI_ThirdParty_SGE          "/netmnt/gridengine/current")
+set(NCBI_ThirdParty_MONGOCXX     ${NCBI_TOOLS_ROOT}/mongodb-3.4.0)
 set(NCBI_ThirdParty_LEVELDB      ${NCBI_TOOLS_ROOT}/leveldb-1.21)
 set(NCBI_ThirdParty_wxWidgets    ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2)
 set(NCBI_ThirdParty_UV           ${NCBI_TOOLS_ROOT}/libuv-1.25.0)
@@ -684,12 +685,9 @@ endif()
 
 #############################################################################
 # MONGOCXX
-find_package(MongoCXX)
-if (MONGOCXX_FOUND)
-    set(NCBI_COMPONENT_MONGOCXX_FOUND YES)
-    set(NCBI_COMPONENT_MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE_DIRS} ${BSONCXX_INCLUDE_DIRS})
-    set(NCBI_COMPONENT_MONGOCXX_LIBS    ${MONGOCXX_LIBPATH} ${MONGOCXX_LIBRARIES} ${BSONCXX_LIBRARIES})
-    list(APPEND NCBI_ALL_COMPONENTS MONGOCXX)
+NCBI_define_component(MONGOCXX mongocxx bsoncxx)
+if(NCBI_COMPONENT_MONGOCXX_FOUND)
+    set(NCBI_COMPONENT_MONGOCXX_INCLUDE ${NCBI_COMPONENT_MONGOCXX_INCLUDE}/mongocxx/v_noabi ${NCBI_COMPONENT_MONGOCXX_INCLUDE}/bsoncxx/v_noabi)
 endif()
 
 #############################################################################
