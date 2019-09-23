@@ -12,6 +12,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 if (NCBI_EXPERIMENTAL_CFG)
 
+    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
  
 #----------------------------------------------------------------------------
 if (WIN32)
