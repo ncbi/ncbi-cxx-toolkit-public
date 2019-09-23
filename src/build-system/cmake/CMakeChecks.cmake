@@ -340,6 +340,7 @@ if (NCBI_EXPERIMENTAL_CFG)
                 configure_file(${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in ${NCBI_CFGINC_ROOT}/${_cfg}/common/config/ncbicfg.cfg.c)
             endif()
             configure_file(${NCBI_TREE_COMMON_INCLUDE}/ncbi_build_ver.h.in ${NCBI_CFGINC_ROOT}/${_cfg}/common/ncbi_build_ver.h)
+            configure_file(${NCBI_TREE_COMMON_INCLUDE}/ncbi_revision.h.in ${NCBI_TREE_COMMON_INCLUDE}/ncbi_revision.h)
         endforeach()
         if(NOT EXISTS ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/corelib/ncbicfg.c)
             file(WRITE ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/corelib/ncbicfg.c "#include <common/config/ncbicfg.cfg.c>\n")
@@ -358,6 +359,7 @@ if (NCBI_EXPERIMENTAL_CFG)
         endif()
 
         configure_file(${NCBI_TREE_COMMON_INCLUDE}/ncbi_build_ver.h.in ${NCBI_CFGINC_ROOT}/common/ncbi_build_ver.h)
+        configure_file(${NCBI_TREE_COMMON_INCLUDE}/ncbi_revision.h.in ${NCBI_TREE_COMMON_INCLUDE}/ncbi_revision.h)
     endif()
 
 else (NCBI_EXPERIMENTAL_CFG)
@@ -373,6 +375,8 @@ endif()
 # This file holds information about the build version
 message(STATUS "Generating ${includedir}/common/ncbi_build_ver.h")
 configure_file(${includedir}/common/ncbi_build_ver.h.in ${includedir}/common/ncbi_build_ver.h)
+message(STATUS "Generating ${includedir}/common/ncbi_revision.h")
+configure_file(${includedir}/common/ncbi_revision.h.in ${includedir}/common/ncbi_revision.h)
 
 # OS-specific generated header configs
 if (UNIX)

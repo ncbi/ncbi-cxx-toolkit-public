@@ -53924,7 +53924,7 @@ ac_config_headers="$ac_config_headers ${ncbiconf}:src/build-system/config.h.in"
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:src/build-system/Makefile.in.top $build_root/inc/common/ncbi_build_ver.h:include/common/ncbi_build_ver.h.in"
+ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:src/build-system/Makefile.in.top $build_root/inc/common/ncbi_build_ver.h:include/common/ncbi_build_ver.h.in include/common/ncbi_revision.h:include/common/ncbi_revision.h.in"
 
 
 ac_config_commands="$ac_config_commands default"
@@ -54512,6 +54512,7 @@ do
     "$configurables") CONFIG_FILES="$CONFIG_FILES $configurables" ;;
     "$srcdir/./Makefile") CONFIG_FILES="$CONFIG_FILES $srcdir/./Makefile:src/build-system/Makefile.in.top" ;;
     "$build_root/inc/common/ncbi_build_ver.h") CONFIG_FILES="$CONFIG_FILES $build_root/inc/common/ncbi_build_ver.h:include/common/ncbi_build_ver.h.in" ;;
+    "include/common/ncbi_revision.h") CONFIG_FILES="$CONFIG_FILES include/common/ncbi_revision.h:include/common/ncbi_revision.h.in" ;;
     "default") CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
