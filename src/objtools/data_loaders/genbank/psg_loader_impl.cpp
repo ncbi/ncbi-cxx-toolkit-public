@@ -355,7 +355,7 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
                 m_NoSplit = NStr::StringToBool(value);
             }
         }
-        catch (CException& ignored) {
+        catch (CException&) {
         }
     }
 

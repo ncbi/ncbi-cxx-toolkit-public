@@ -150,7 +150,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::ConvertRegInfo(const TG
 {
     TRegisterLoaderInfo ret;
     ret.Set(info.GetLoader(), info.IsCreated());
-    return move(ret);
+    return ret;
 }
 
 

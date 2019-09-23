@@ -277,7 +277,7 @@ public:
         { PurgeCache(cache_type, access_timeout); }
     void PurgeCache(TCacheType            cache_type,
                     time_t                access_timeout = 0) override;
-    void CloseCache(void);
+    void CloseCache(void) override;
 
     virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
 

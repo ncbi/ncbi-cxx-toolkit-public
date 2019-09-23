@@ -567,13 +567,7 @@ CGBDataLoader::GetRealBlobId(const CTSE_Info& tse_info) const
 
 
 static set<TGi> s_IgnoreGis = {
-    // Missing in PSG database
-    GI_CONST(156205), GI_CONST(156206), GI_CONST(156208), GI_CONST(156232), GI_CONST(156323),
-    // test_objmgr_data errors
-    GI_CONST(156514), GI_CONST(156515), GI_CONST(156592), GI_CONST(156610), GI_CONST(156613)
-};
-
-static set<string> s_IgnoreAcc = {
+    GI_CONST(156232), GI_CONST(156323)
 };
 
 bool CGBDataLoader::IsUsingPSGLoader(void)
@@ -600,15 +594,7 @@ bool CGBDataLoader::IsIgnoredGi(TGi gi)
 
 bool CGBDataLoader::IsIgnoredAcc(const string& acc)
 {
-#if defined(HAVE_PSG_LOADER)
-    if (!TGenbankLoaderPsg::GetDefault()) return false;
-#  if NCBI_DEVELOPMENT_VER > 20191001
-    NCBI_THROW(CLoaderException, eOtherError, "Accession not supported by PSG data loader: " + acc);
-#  endif
-    return s_IgnoreAcc.find(acc) != s_IgnoreAcc.end();
-#else
     return false;
-#endif
 }
 
 bool CGBDataLoader::IsIgnoredId(const CSeq_id& id)
@@ -618,10 +604,7 @@ bool CGBDataLoader::IsIgnoredId(const CSeq_id& id)
 #  if NCBI_DEVELOPMENT_VER > 20191001
     NCBI_THROW(CLoaderException, eOtherError, "Seq-id not supported by PSG data loader: " + id.AsFastaString());
 #  endif
-    if (id.IsGi()) return IsIgnoredGi(id.GetGi());
-    const CTextseq_id* tid = id.GetTextseq_Id();
-    if (tid) return IsIgnoredAcc(tid->GetAccession());
-    return false;
+    return id.IsGi() && IsIgnoredGi(id.GetGi());
 #else
     return false;
 #endif
