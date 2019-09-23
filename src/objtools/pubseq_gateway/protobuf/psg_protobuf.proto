@@ -117,6 +117,7 @@ message BioseqInfoKey {
     string                accession     =   1;
     int32                 version       =   2;
     EnumSeqIdType         seq_id_type   =   3;
+    int64                 gi            =   4;
 }
  
  

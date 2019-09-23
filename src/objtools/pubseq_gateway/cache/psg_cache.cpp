@@ -116,25 +116,45 @@ void CPubseqGatewayCache::ResetErrors()
     m_RuntimeErrors.clear();
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccession(
+    const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccession(accession, data, found_version, found_seq_id_type) : false;
+    return m_BioseqInfoCache
+        ? m_BioseqInfoCache->LookupByAccession(accession, data, found_version, found_seq_id_type, found_gi) : false;
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(const string& accession, int version, string& data, int& found_seq_id_type)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(
+    const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, data, found_seq_id_type) : false;
+    return m_BioseqInfoCache
+        ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, data, found_seq_id_type, found_gi) : false;
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
+    const string& accession, int version, int seq_id_type, string& data, int64_t& found_gi)
 {
-    int found_version, found_saq_id_type;
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(accession, version, seq_id_type, data, found_version, found_saq_id_type) : false;
+    int found_version, found_seq_id_type;
+    return m_BioseqInfoCache
+        ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
+            accession, version, seq_id_type, data, found_version, found_seq_id_type, found_gi)
+        : false;
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
+    const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(accession, version, seq_id_type, data, found_version, found_saq_id_type) : false;
+    return m_BioseqInfoCache
+        ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
+            accession, version, seq_id_type, data, found_version, found_seq_id_type, found_gi)
+        : false;
+}
+
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionGi(
+    const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type)
+{
+    return m_BioseqInfoCache
+        ? m_BioseqInfoCache->LookupBioseqInfoByAccessionGi(accession, gi, data, found_version, found_seq_id_type)
+        : false;
 }
 
 string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version)
@@ -147,14 +167,21 @@ string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int versi
     return CPubseqGatewayCacheBioseqInfo::PackKey(accession, version, seq_id_type);
 }
 
-bool CPubseqGatewayCache::UnpackBioseqInfoKey(const char* key, size_t key_sz, int& version, int& seq_id_type)
+string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version, int seq_id_type, int64_t gi)
 {
-    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, version, seq_id_type);
+    return CPubseqGatewayCacheBioseqInfo::PackKey(accession, version, seq_id_type, gi);
 }
 
-bool CPubseqGatewayCache::UnpackBioseqInfoKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type)
+bool CPubseqGatewayCache::UnpackBioseqInfoKey(
+    const char* key, size_t key_sz, int& version, int& seq_id_type, int64_t& gi)
 {
-    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, accession, version, seq_id_type);
+    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, version, seq_id_type, gi);
+}
+
+bool CPubseqGatewayCache::UnpackBioseqInfoKey(
+    const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi)
+{
+    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, accession, version, seq_id_type, gi);
 }
 
 bool CPubseqGatewayCache::LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data)

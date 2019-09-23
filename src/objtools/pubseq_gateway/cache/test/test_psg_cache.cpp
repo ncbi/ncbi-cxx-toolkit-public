@@ -26,19 +26,25 @@ enum class job_t {
     jb_unpack_bp_key,
 };
 
-class CTestPsgCache : public CNcbiApplication {
-public:
-	CTestPsgCache() :
-        m_job(job_t::jb_lookup_bi_primary)
+class CTestPsgCache
+    : public CNcbiApplication
+{
+ public:
+	CTestPsgCache()
+        : m_job(job_t::jb_lookup_bi_primary)
+        , m_force_version{}
+	    , m_force_seq_id_type{}
     {}
     virtual void Init();
-    virtual int  Run();
-protected:
+    virtual int Run();
+
+ protected:
 	void ParseArgs();
-private:
+
+ private:
     bool ParsePrimarySeqId(const string& fasta_seqid, string& accession, int& version, int& seq_id_type);
     bool ParseSecondarySeqId(const string& fasta_seqid, string& seq_id_str, int& seq_id_type);
-    void PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, const string& data);
+    void PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, int64_t gi, const string& data);
     void PrintPrimaryId(bool lookup_res, const string& seq_id, int seq_id_type, const string& data);
     void PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t last_modified, const string& data);
     void LookupBioseqInfoByPrimary(const string& fasta_seqid, int force_version, int force_seq_id_type);
@@ -57,41 +63,42 @@ private:
     int m_force_seq_id_type;
 };
 
-bool IsHex(char ch) {
-    if (ch >= '0' && ch <= '9')
-        return true;
-    if (ch >= 'a' && ch <= 'f')
-        return true;
-    return false;
+bool IsHex(char ch)
+{
+    return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f');
 }
 
-char HexToBin(char ch) {
-    if (ch >= '0' && ch <= '9')
+char HexToBin(char ch)
+{
+    if (ch >= '0' && ch <= '9') {
         return ch - '0';
-    if (ch >= 'a' && ch <= 'f')
+    }
+    if (ch >= 'a' && ch <= 'f') {
         return ch - 'a' + 10;
+    }
     return -1;
 }
 
-string PrintableToHext(const string& str) {
+string PrintableToHext(const string& str)
+{
     stringstream ss;
     for (size_t i = 0; i < str.size(); ++i) {
         if (str[i] == '\\' && i + 2 < str.size() && IsHex(str[i + 1]) && IsHex(str[i + 2])) {
             char ch = HexToBin(str[i + 1]) * 16 + HexToBin(str[i + 2]);
             i += 2;
             ss << ch;
-        }
-        else
+        } else {
             ss << str[i];
+        }
     }
     return ss.str();
 }
 
 
-void CTestPsgCache::Init() {
+void CTestPsgCache::Init()
+{
 	unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
-	argdesc->SetUsageContext(GetArguments().GetProgramBasename(),
-                             "test PSG cache");
+	argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "test PSG cache");
 
 	argdesc->AddDefaultKey("ini", "IniFile", "File with configuration information", CArgDescriptions::eString, "test_psg_cache.ini");
     argdesc->AddOptionalKey("j", "job", "Job type (bi_pri|bi_sec|si2csi|blob_prop|unp_bi|unp_si|unp_bp)", CArgDescriptions::eString);
@@ -131,12 +138,14 @@ void CTestPsgCache::ParseArgs() {
 
 }
 
-static string GetListOfSeqIds(const ::google::protobuf::RepeatedPtrField<::psg::retrieval::BioseqInfoValue_SecondaryId>& seq_ids) {
+static string GetListOfSeqIds(const ::google::protobuf::RepeatedPtrField<::psg::retrieval::BioseqInfoValue_SecondaryId>& seq_ids)
+{
     stringstream ss;
     bool empty = true;
     for (const auto& it : seq_ids) {
-        if (!empty)
+        if (!empty) {
             ss << ", ";
+        }
         ss << "{" << it.sec_seq_id_type() << ", " << it.sec_seq_id() << "}";
         empty = false;
     }
@@ -151,10 +160,7 @@ int CTestPsgCache::Run() {
     m_SatNames.push_back("");                 // 2
     m_SatNames.push_back("");                 // 3
     m_SatNames.push_back("satncbi_extended"); // 4
-    m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile,
-                                                m_Si2csiDbFile,
-                                                m_BlobPropDbFile));
-
+    m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile, m_Si2csiDbFile, m_BlobPropDbFile));
     m_LookupCache->Open(m_SatNames);
 
 
@@ -191,16 +197,17 @@ int CTestPsgCache::Run() {
             else {
                 ERR_POST(Error << "Query parameter expected: sat,sat_key(,last_modified) ");
             }
-            
+
             break;
         }
         case job_t::jb_unpack_bi_key: {
             string s = PrintableToHext(m_query);
-            int version = -1; 
+            int version = -1;
             int seq_id_type = -1;
+            int64_t gi = -1;
             string accession;
-            CPubseqGatewayCache::UnpackBioseqInfoKey(s.c_str(), s.size(), accession, version, seq_id_type);
-            cout << accession << "." << version << "/" << seq_id_type << endl;
+            CPubseqGatewayCache::UnpackBioseqInfoKey(s.c_str(), s.size(), accession, version, seq_id_type, gi);
+            cout << accession << "." << version << "/" << seq_id_type << ":" << gi << endl;
             break;
         }
         case job_t::jb_unpack_si_key: {
@@ -229,7 +236,7 @@ bool CTestPsgCache::ParsePrimarySeqId(const string& fasta_seqid, string& accessi
         CSeq_id seq_id(fasta_seqid);
         seq_id_type = seq_id.Which() == CSeq_id::e_not_set  ? -1 : static_cast<int>(seq_id.Which());
         tx_id = seq_id.GetTextseq_Id();
-        if (seq_id_type != static_cast<int>(CSeq_id::e_Gi)) {        
+        if (seq_id_type != static_cast<int>(CSeq_id::e_Gi)) {
             if (tx_id) {
                 if (tx_id->IsSetAccession()) {
                     accession = tx_id->GetAccession();
@@ -262,7 +269,7 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
     const CTextseq_id *tx_id = nullptr;
     try {
         CSeq_id seq_id(fasta_seqid);
-        seq_id_type = seq_id.Which() == CSeq_id::e_not_set  ? -1 : static_cast<int>(seq_id.Which());        
+        seq_id_type = seq_id.Which() == CSeq_id::e_not_set  ? -1 : static_cast<int>(seq_id.Which());
         if (seq_id_type != static_cast<int>(CSeq_id::e_Gi)) {
 /*
             if (seq_id_type == static_cast<int>(CSeq_id::e_General)) {
@@ -275,7 +282,7 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
                             seq_id_str = "|" + seq_id_str;
                         seq_id_str = gen->GetDb() + seq_id_str;
                     }
-                    
+
                 }
             }
             else {
@@ -287,7 +294,7 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
                         if (tx_id->IsSetVersion())
                             seq_id_str = seq_id_str + "." + to_string(tx_id->GetVersion());
                     }
-                    else if (tx_id->IsSetName()) {                    
+                    else if (tx_id->IsSetName()) {
                         seq_id_str = tx_id->GetName();
                     }
                 }
@@ -312,7 +319,7 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
 
 }
 
-void CTestPsgCache::PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, const string& data) {
+void CTestPsgCache::PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, int64_t gi, const string& data) {
     if (lookup_res) {
         ::psg::retrieval::BioseqInfoValue value;
         bool b = value.ParseFromString(data);
@@ -321,6 +328,7 @@ void CTestPsgCache::PrintBioseqInfo(bool lookup_res, const string& accession, in
                  << "accession: " << accession << endl
                  << "version: " << version << endl
                  << "seq_id_type: " << seq_id_type << endl
+                 << "gi: " << gi << endl
                  << "sat: " << value.blob_key().sat() << endl
                  << "sat_key: " << value.blob_key().sat_key() << endl
                  << "state: " << value.state() << endl
@@ -330,12 +338,10 @@ void CTestPsgCache::PrintBioseqInfo(bool lookup_res, const string& accession, in
                  << "date_changed: " << value.date_changed() << endl
                  << "tax_id: " << value.tax_id() << endl
                  << "seq_ids: {" << GetListOfSeqIds(value.seq_ids()) << "}" << endl;
-        }
-        else {
+        } else {
             cout << "result: bioseq_info cache error: data corrupted" << endl;
         }
-    }
-    else {
+    } else {
         cout << "result: bioseq_info cache miss" << endl;
     }
 }
@@ -350,13 +356,12 @@ void CTestPsgCache::PrintPrimaryId(bool lookup_res, const string& seq_id, int se
                  << "sec_seq_id_type: " << seq_id_type << endl
                  << "accession: " << value.accession() << endl
                  << "version: " << value.version() << endl
-                 << "seq_id_type: " << value.seq_id_type() << endl;
-        }
-        else {
+                 << "seq_id_type: " << value.seq_id_type() << endl
+                 << "gi: " << value.gi() << endl;
+        } else {
             cout << "result: si2csi cache error: data corrupted" << endl;
         }
-    }
-    else {
+    } else {
         cout << "result: si2csi cache miss" << endl;
     }
 }
@@ -381,12 +386,10 @@ void CTestPsgCache::PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t
                  << "size: " << value.size() << endl
                  << "size_unpacked: " << value.size_unpacked() << endl
                  << "username: " << value.username() << endl;
-        }
-        else {
+        } else {
             cout << "result: blob_prop cache error: data corrupted" << endl;
         }
-    }
-    else {
+    } else {
         cout << "result: blob_prop cache miss" << endl;
     }
 }
@@ -397,14 +400,17 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid, int for
     string accession;
 
     bool res = ParsePrimarySeqId(fasta_seqid, accession, version, seq_id_type);
-    if (!res) 
+    if (!res) {
         return;
+    }
 
-    if (force_version != INT_MIN)
+    if (force_version != INT_MIN) {
         version = force_version;
+    }
 
-    if (force_seq_id_type != INT_MIN)
+    if (force_seq_id_type != INT_MIN) {
         seq_id_type = force_seq_id_type;
+    }
 
     LookupBioseqInfoByPrimaryAVT(accession, version, seq_id_type);
 }
@@ -412,19 +418,20 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid, int for
 void CTestPsgCache::LookupBioseqInfoByPrimaryAVT(const string& accession, int version, int seq_id_type) {
     string data;
     bool res = false;
+    int64_t gi = -1;
     if (version >= 0) {
-        if (seq_id_type >= 0) 
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(accession, version, seq_id_type, data, version, seq_id_type);
-        else
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersion(accession, version, data, seq_id_type);
-    }
-    else {
+        if (seq_id_type >= 0) {
+            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(accession, version, seq_id_type, data, version, seq_id_type, gi);
+        } else {
+            res = m_LookupCache->LookupBioseqInfoByAccessionVersion(accession, version, data, seq_id_type, gi);
+        }
+    } else {
         if (seq_id_type >= 0)
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(accession, -1, seq_id_type, data, version, seq_id_type);
+            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(accession, -1, seq_id_type, data, version, seq_id_type, gi);
         else
-            res = m_LookupCache->LookupBioseqInfoByAccession(accession, data, version, seq_id_type);
+            res = m_LookupCache->LookupBioseqInfoByAccession(accession, data, version, seq_id_type, gi);
     }
-    PrintBioseqInfo(res, accession, version, seq_id_type, data);
+    PrintBioseqInfo(res, accession, version, seq_id_type, gi, data);
 }
 
 void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int force_seq_id_type) {
@@ -439,27 +446,28 @@ void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int f
         seq_id_type = -1;
     }
 
-    if (force_seq_id_type != INT_MIN)
+    if (force_seq_id_type != INT_MIN) {
         seq_id_type = force_seq_id_type;
+    }
 
-    if (seq_id_type >= 0)
+    if (seq_id_type >= 0) {
         res = m_LookupCache->LookupCsiBySeqIdSeqIdType(seq_id, seq_id_type, data);
-    else
+    } else {
         res = m_LookupCache->LookupCsiBySeqId(seq_id, seq_id_type, data);
+    }
 
-    if (!res)
+    if (!res) {
         cout << "result: si2csi cache miss" << endl;
-    else {
+    } else {
         ::psg::retrieval::BioseqInfoKey value;
         bool b = value.ParseFromString(data);
         if (b) {
             LookupBioseqInfoByPrimaryAVT(value.accession(), value.version(), value.seq_id_type());
-        }
-        else {
+        } else {
             cout << "result: si2csi cache error: data corrupted" << endl;
         }
     }
-    
+
 }
 
 void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid, int force_seq_id_type) {
@@ -489,7 +497,7 @@ void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid, int forc
 void CTestPsgCache::LookupBlobProp(int sat, int sat_key, int64_t last_modified) {
     bool res;
     string data;
-    if (last_modified > 0) 
+    if (last_modified > 0)
         res = m_LookupCache->LookupBlobPropBySatKeyLastModified(sat, sat_key, last_modified, data);
     else
         res = m_LookupCache->LookupBlobPropBySatKey(sat, sat_key, last_modified, data);
@@ -531,7 +539,7 @@ int main(int argc, const char* argv[]) {
     date_changed: 1176933360000
     tax_id: 10506
     seq_ids: {{12, 52353967}}
-    
+
 -j=bi_pri -q=NC_000852.4
     result: bioseq_info cache hit
     accession: NC_000852
@@ -600,10 +608,10 @@ int main(int argc, const char* argv[]) {
     if (rv) PrintSi2CsiData(data);
 
     cout << endl << "===bp_cache===" << endl;
-    
+
     int64_t last_modified;
     CPsgBlobPropCache bp_cache("/data/cassandra/NEWRETRIEVAL/blob_prop_sat_ncbi.db");
-    
+
     rv = bp_cache.LookupBySatKey(142824422, last_modified, data);
     cout << "LookupBySatKey: 142824422: " << time2str(last_modified / 1000) << " rv=" << rv << ", data.size=" << data.size() << endl;
     if (rv) PrintBlobPropData(data);

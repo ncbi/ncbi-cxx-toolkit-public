@@ -71,15 +71,24 @@ class CPubseqGatewayCache
     }
 
 /* bioseq_info */
-    bool LookupBioseqInfoByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type);
-    bool LookupBioseqInfoByAccessionVersion(const string& accession, int version, string& data, int& found_seq_id_type);
-    bool LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int saq_id_type, string& data);
-    bool LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int saq_id_type, string& data, int& found_version, int& found_saq_id_type);
+    bool LookupBioseqInfoByAccession(
+        const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+    bool LookupBioseqInfoByAccessionVersion(
+        const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi);
+    bool LookupBioseqInfoByAccessionVersionSeqIdType(
+        const string& accession, int version, int seq_id_type, string& data, int64_t& found_gi);
+    bool LookupBioseqInfoByAccessionVersionSeqIdType(
+        const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+    bool LookupBioseqInfoByAccessionGi(
+        const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
-    static bool UnpackBioseqInfoKey(const char* key, size_t key_sz, int& found_version, int& found_seq_id_type);
-    static bool UnpackBioseqInfoKey(const char* key, size_t key_sz, string& accession, int& found_version, int& found_seq_id_type);
+    static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type, int64_t gi);
+    static bool UnpackBioseqInfoKey(
+        const char* key, size_t key_sz, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+    static bool UnpackBioseqInfoKey(
+        const char* key, size_t key_sz, string& accession, int& found_version, int& found_seq_id_type, int64_t& found_gi);
 
 /* si2csi */
     bool LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);

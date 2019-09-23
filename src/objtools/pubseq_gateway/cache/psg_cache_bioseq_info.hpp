@@ -34,25 +34,32 @@
 
 
 #include "psg_cache_base.hpp"
- 
+
 BEGIN_NCBI_SCOPE
 
-class CPubseqGatewayCacheBioseqInfo : public CPubseqGatewayCacheBase
+class CPubseqGatewayCacheBioseqInfo
+    : public CPubseqGatewayCacheBase
 {
-public:
+ public:
 	CPubseqGatewayCacheBioseqInfo(const string& file_name);
     virtual ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
-    bool LookupByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type);
-    bool LookupByAccessionVersion(const string& accession, int version, string& data, int& found_seq_id_type);
-    bool LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type);
+    bool LookupByAccession(
+        const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+    bool LookupByAccessionVersion(
+        const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi);
+    bool LookupByAccessionVersionSeqIdType(
+        const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type, int64_t& found_gi);
+    bool LookupBioseqInfoByAccessionGi(
+        const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
 
     static string PackKey(const string& accession, int version);
     static string PackKey(const string& accession, int version, int seq_id_type);
-    static bool UnpackKey(const char* key, size_t key_sz, int& version, int& seq_id_type);
-    static bool UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type);
+    static string PackKey(const string& accession, int version, int seq_id_type, int64_t gi);
+    static bool UnpackKey(const char* key, size_t key_sz, int& version, int& seq_id_type, int64_t& gi);
+    static bool UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi);
 
-private:
+ private:
     void ResetDbi();
     unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };

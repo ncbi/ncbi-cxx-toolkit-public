@@ -51,11 +51,12 @@ CPubseqGatewayCacheSi2Csi::~CPubseqGatewayCacheSi2Csi()
 {
 }
 
-void CPubseqGatewayCacheSi2Csi::Open() {
+void CPubseqGatewayCacheSi2Csi::Open()
+{
     CPubseqGatewayCacheBase::Open();
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     m_Dbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
-        new lmdb::dbi({lmdb::dbi::open(rdtxn, "#DATA", 0)}), 
+        new lmdb::dbi({lmdb::dbi::open(rdtxn, "#DATA", 0)}),
         [this](lmdb::dbi* dbi){
             if (dbi && *dbi) {
                 dbi->close(*m_Env);
@@ -66,11 +67,12 @@ void CPubseqGatewayCacheSi2Csi::Open() {
     rdtxn.commit();
 }
 
-bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data) {
+bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data)
+{
     bool rv = false;
-
-    if (!m_Env)
+    if (!m_Env) {
         return false;
+    }
 
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
@@ -80,39 +82,43 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_
             lmdb::val key, val;
             rv = cursor.get(key, val, MDB_GET_CURRENT);
             rv = rv && key.size() == PackedKeySize(sec_seqid.size()) && sec_seqid.compare(key.data<const char>()) == 0;
-            if (rv)
+            if (rv) {
                 rv = UnpackKey(key.data<const char>(), key.size(), sec_seq_id_type);
-            if (rv)
+            }
+            if (rv) {
                 data.assign(val.data(), val.size());
+            }
         }
     }
 
     rdtxn.commit();
-    if (!rv)
+    if (!rv) {
         data.clear();
+    }
     return rv;
 }
 
 bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data) {
     bool rv = false;
-
-    if (!m_Env)
+    if (!m_Env) {
         return false;
+    }
 
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
-
         string skey = PackKey(sec_seqid, sec_seq_id_type);
         lmdb::val val;
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
         rv = cursor.get(lmdb::val(skey), val, MDB_SET);
-        if (rv)
+        if (rv) {
             data.assign(val.data(), val.size());
+        }
     }
 
     rdtxn.commit();
-    if (!rv)
+    if (!rv) {
         data.clear();
+    }
     return rv;
 }
 
