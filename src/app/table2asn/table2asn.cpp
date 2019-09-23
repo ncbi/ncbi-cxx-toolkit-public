@@ -142,7 +142,7 @@ private:
             CRef<CSerialObject> obj, CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessAlignmentFile();
-    void ProcessSecretFiles1Phase(bool fastaInput, CSeq_entry& result);
+    void ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
@@ -888,8 +888,11 @@ void CTbl2AsnApp::ProcessOneEntry(
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
    // m_reader->ApplyAdditionalProperties(*entry);
+    const bool readModsFromTitle = 
+        inputFormat == CFormatGuess::eFasta ||
+        inputFormat == CFormatGuess::eAlignment;
     ProcessSecretFiles1Phase(
-            inputFormat == CFormatGuess::eFasta,
+            readModsFromTitle,
             *entry);
 
     CFeatureTableReader fr(m_context);
@@ -1232,7 +1235,7 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 .rna   Replacement mRNA sequences for RNA editing
 .prt   Proteins for suggest intervals
 */
-void CTbl2AsnApp::ProcessSecretFiles1Phase(bool fastaInput, CSeq_entry& result)
+void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result)
 {
     string dir;
     string base;
@@ -1246,7 +1249,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool fastaInput, CSeq_entry& result)
         m_context.m_single_source_qual_file,
         name + ".src",
         m_context.mCommandLineMods,
-        fastaInput,
+        readModsFromTitle,
         m_context.m_allow_accession,
         m_context.m_verbose,
         m_logger,
