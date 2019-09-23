@@ -37,7 +37,6 @@
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbistr.hpp>
 
 /** @addtogroup Diagnostics
  *

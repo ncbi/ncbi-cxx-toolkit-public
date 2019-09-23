@@ -38,9 +38,6 @@
 ///
 
 #include <corelib/ncbi_param.hpp>
-#include <corelib/ncbistr.hpp>
-#include <map>
-#include <memory>
 
 /** @addtogroup UTIL
  *
