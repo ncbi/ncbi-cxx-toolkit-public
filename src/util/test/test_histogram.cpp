@@ -1,4 +1,4 @@
-﻿/*  $Id$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -57,13 +57,17 @@ public:
     void SimpleLog(void);
     void CombinedScale(void);
     void CustomDataType(void);
+    void Clone(void);
 
     int Run(void) {
+/*
         SimpleLinear();
         SimpleLog();
         CombinedScale();
         CustomDataType();
         EstimateNumberOfBins();
+*/
+        Clone();
         return 0;
     }
 
@@ -541,6 +545,44 @@ void CDataHistogramDemoApp::EstimateNumberOfBins(void)
     }
     cout << endl;
 }
+
+
+void CDataHistogramDemoApp::Clone(void)
+{
+    PRINT_HEADER("CloneStructure() and move semantics");
+    typedef CHistogram<> H;
+
+    CHistogram<int> h(0, 10, 10);
+    RUN_INT(h, 0, 10);
+
+    // clone structure
+    {{
+        H hclone(h.CloneStructure());
+        PRINT_STATS(hclone);
+    }}
+    {{
+        H hclone;
+        hclone = h.CloneStructure();
+        PRINT_STATS(hclone);
+    }}
+    {{
+        H hclone(0, 100000000, 5, H::eLog10);
+        hclone = h.CloneStructure();
+        PRINT_STATS(hclone);
+    }}
+    // clone and steal counters
+    {{
+        H hclone(h.CloneStructure());
+        for (size_t i = 0; i < 10; i++) {
+            h.Add(rand() % 10);
+        }
+        PRINT_STATS(hclone);
+        h.StealCountersFrom(hclone);
+        PRINT_STATS(h);
+    }}
+
+}
+
 
 
 int main(int argc, char** argv)
