@@ -81,6 +81,7 @@ static char* x_ServiceName(unsigned int depth,
     char   buf[128];
     size_t len;
 
+    assert(!svc == !service);
     assert(sizeof(buf) > sizeof(CONN_SERVICE_NAME));
     if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*")))
         ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)) {
@@ -97,13 +98,17 @@ static char* x_ServiceName(unsigned int depth,
         return 0/*failure*/;
     }
     if (!ismask  &&  !isfast) {
-        char  tmp[128];
-        char* s = (char*) memcpy(buf, svc, len) + len;
+        char  tmp[sizeof(buf)];
+        char* s = (char*) memcpy(tmp, svc, len) + len;
         *s++ = '_';
         memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
+        len += 1 + sizeof(CONN_SERVICE_NAME);
         /* Looking for "svc_CONN_SERVICE_NAME" in the environment */
-        if (!(s = getenv(strupr(buf)))  ||  !*s) {
+        if ((!(s = getenv(strupr((char*) memcpy(buf, tmp, len--))))
+             &&  (memcmp(buf, tmp, len) == 0  ||  !(s = getenv(tmp))))
+            ||  !*s) {
             /* Looking for "CONN_SERVICE_NAME" in registry section "[svc]" */
+            len -= sizeof(CONN_SERVICE_NAME);
             buf[len++] = '\0';
             if (!CORE_REG_GET(buf, buf + len, tmp, sizeof(tmp), 0))
                 *tmp = '\0';

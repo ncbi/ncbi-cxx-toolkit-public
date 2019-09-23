@@ -148,7 +148,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         memcpy(s, param, parlen);
         CORE_LOCK_READ;
         if ((val = getenv(strupr((char*) memcpy(buf, tmp, len--)))) != 0
-            ||  (memcmp(tmp, buf, len) != 0  &&  (val = getenv(tmp)) != 0)) {
+            ||  (memcmp(buf, tmp, len) != 0  &&  (val = getenv(tmp)) != 0)) {
             rv = x_strncpy0(value, val, value_size);
             CORE_UNLOCK;
             return rv;
