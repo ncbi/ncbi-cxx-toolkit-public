@@ -128,19 +128,6 @@ public:
                EScaleType scale_type = eLinear, 
                EScaleView scale_view = eMonotonic);
 
-    /// Copy constructor.
-    ///
-    /// Create a full copy of the CHistogram objects "other".
-    ///
-    CHistogram(const CHistogram& other) { x_Copy(other); }
-
-    /// Assignment operator.
-    ///
-    /// Create a full copy of the CHistogram objects "other".
-    //
-    CHistogram& operator=(const CHistogram& other) {  return x_Copy(other); }
-
-
     /// Add auxiliary left/right scales.
     ///
     /// The CHistogram constructor defines a main scale for some data range.
@@ -182,6 +169,12 @@ public:
 
     /// Reset all data counters.
     void Reset();
+
+    /// Add counters from 'other' histogram to this histogram,
+    /// then reset the counters of 'other' histogram.
+    /// @note Both histograms should have the same structure.
+    /// @sa CloneStructure, Reset
+    void StealCountersFrom(CHistogram& other);
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -265,6 +258,47 @@ public:
     ///   EEstimateNumberOfBinsRules
     static unsigned EstimateNumberOfBins(size_t n, EEstimateNumberOfBinsRule rule = 0);
 
+
+    /////////////////////////////////////////////////////////////////////////
+    // Move semantics
+
+    /// Default constructor.
+    /// 
+    /// Creates empty object. The object itself is invalid without min/max values,
+    /// and any scale. Should be used with conjunction of CloneStructure() only.
+    /// @sa CloneStructure
+    ///
+    CHistogram(void);
+
+    /// Move constructor.
+    ///
+    /// Move 'other' histogram data to the current object. 'other' became invalid.
+    /// @example
+    ///     CHistogram<> h1(min, max, n, type);
+    ///     CHistogram<> h2(h1.CloneStructure());
+    /// @sa CloneStructure
+    ///
+    CHistogram(CHistogram&& other) { x_MoveFrom(other); };
+
+    /// Move assignment operator.
+    ///
+    /// Move 'other' histogram data to the current object. 'other' became invalid.
+    /// @example
+    ///     CHistogram<> h1(min, max, n, type);
+    ///     CHistogram<> h2;
+    ///     h2 = h1.CloneStructure();
+    /// @sa CloneStructure
+    ///
+    CHistogram& operator=(CHistogram&& other) { x_MoveFrom(other); return *this;  };
+
+    /// Clone histogram structure only (the counters will be zeroed).
+    /// 
+    /// Creates a copy of the histogram structure, including min/max values, 
+    /// numbers of bins, starting bins positions for a combined scale.
+    /// Do not copy any counters! All bins counters will be zeroed.
+    ///
+    CHistogram CloneStructure() const;
+
 protected:
     /// Calculate bins starting positions.
     /// Calculate positions for 'n' number of bins in [start,end] value range,
@@ -309,8 +343,13 @@ protected:
     /// @sa Add, x_AddLinear
     void x_AddBisection(TValue value);
 
-    /// Create a full copy of the CHistogram objects "other".
-    CHistogram& x_Copy(const CHistogram& other);
+    /// Prevent copying.
+    /// See move constructor and move assignment operator to use with move-semantics.
+    CHistogram(const CHistogram&);
+    CHistogram& operator=(const CHistogram&);
+
+    /// Move data from 'other' histogram. 'other' became invalid.
+    void x_MoveFrom(CHistogram& other);
 
 protected:
     TValue    m_Min;         ///< Minimum value (the lower bound of combined scale)
@@ -358,27 +397,6 @@ CHistogram<TValue, TScale, TCounter>::CHistogram
     x_CalculateBins(m_Min, m_Max, 0, m_NumBins, scale_type, scale_view);
     // Reset counters
     Reset();
-}
-
-
-template <typename TValue, typename TScale, typename TCounter>
-CHistogram<TValue, TScale, TCounter>& 
-CHistogram<TValue, TScale, TCounter>::x_Copy(const CHistogram& other)
-{
-    if (this != &other) { // prevent self-assignment
-        m_Min = other.m_Min;
-        m_Max = other.m_Max;
-        m_NumBins = other.m_NumBins;
-        m_Count = other.m_Count;
-        m_LowerAnomalyCount = other.m_LowerAnomalyCount;
-        m_UpperAnomalyCount = other.m_UpperAnomalyCount;
-
-        m_Starts.reset(new TScale[m_NumBins]);
-        memcpy(m_Starts.get(), other.m_Starts.get(), sizeof(TScale) * m_NumBins);
-        m_Counters.reset(new TCounter[m_NumBins]);
-        memcpy(m_Counters.get(), other.m_Counters.get(), sizeof(TCounter) * m_NumBins);
-    }
-    return *this;
 }
 
 
@@ -791,6 +809,71 @@ CHistogram<TValue, TScale, TCounter>::x_FuncInverse(EScaleType scale_type, TScal
     return scale_value; 
 }
 
+
+// Move semantics
+
+template <typename TValue, typename TScale, typename TCounter>
+CHistogram<TValue, TScale, TCounter>::CHistogram()
+    : m_NumBins(0) 
+{
+    // Reset counters
+    Reset();
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+CHistogram<TValue, TScale, TCounter> 
+CHistogram<TValue, TScale, TCounter>::CloneStructure() const 
+{
+    CHistogram h;
+    // clone structure only, not counters
+    h.m_Min     = m_Min;
+    h.m_Max     = m_Max;
+    h.m_NumBins = m_NumBins;
+    h.m_Starts.reset(new TScale[m_NumBins]);
+    memcpy(h.m_Starts.get(), m_Starts.get(), sizeof(TScale) * m_NumBins);
+    h.m_Counters.reset(new TCounter[m_NumBins]);
+    h.Reset();
+    return h;
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogram<TValue, TScale, TCounter>::x_MoveFrom(CHistogram& other)
+{
+    if (this == &other) return;
+
+    m_Min               = other.m_Min;
+    m_Max               = other.m_Max;
+    m_NumBins           = other.m_NumBins;
+    m_Count             = other.m_Count;
+    m_LowerAnomalyCount = other.m_LowerAnomalyCount;
+    m_UpperAnomalyCount = other.m_UpperAnomalyCount;
+
+    m_Starts.reset(other.m_Starts.release());
+    m_Counters.reset(other.m_Counters.release());
+    other.m_NumBins = 0;
+    
+    return;
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
+{
+    if (this == &other) return;
+    if ( m_NumBins != other.m_NumBins ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Histograms have different structure");
+    }
+    TCounter* counters_cur = m_Counters.get();
+    TCounter* counters_other = other.m_Counters.get();
+    for (unsigned i = 0; i < m_NumBins; i++) {
+        counters_cur[i] += counters_other[i];
+    }
+    other.Reset();
+}
 
 
 END_NCBI_SCOPE
