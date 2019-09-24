@@ -9100,7 +9100,7 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol(
     }
 
     // special cases
-    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS && NStr::FindNoCase(stranded_mol, "ssRNA-RT") != NPOS) {
+    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS && NStr::EqualNocase(stranded_mol, "ssRNA-RT")) {
         // retrovirus can be rna or dna
         return;
     }
@@ -9168,7 +9168,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
         return;
     }
 
-    if (NStr::EqualNocase(stranded_mol, "ssRNA-RT") && NStr::FindNoCase(lineage, "Retroviridae") != NPOS) {
+    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS && NStr::EqualNocase(stranded_mol, "ssRNA-RT")) {
         if (biomol != CMolInfo::eBiomol_genomic) {
              m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Retrovirus should be genomic RNA or genomic DNA",
@@ -9299,115 +9299,122 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
 
 typedef map<string, string> TViralMap;
 static const TViralMap kViralStrandMap {
-    {"root",                            "dsDNA"},
-    {"Alphasatellitidae",               "ssDNA"},
-    {"Anelloviridae",                   "ssDNA(-)"},
-    {"Bacilladnaviridae",               "ssDNA"},
-    {"Bidnaviridae",                    "ssDNA"},
-    {"Circoviridae",                    "ssDNA(+/-)"},
-    {"Geminiviridae",                   "ssDNA(+/-)"},
-    {"Genomoviridae",                   "ssDNA"},
-    {"Hepadnaviridae",                  "dsDNA-RT"},
-    {"Inoviridae",                      "ssDNA(+)"},
-    {"Microviridae",                    "ssDNA(+)"},
-    {"Nanoviridae",                     "ssDNA(+)"},
-    {"Belpaoviridae",                   "ssRNA-RT"},
-    {"Caulimoviridae",                  "dsDNA-RT"},
-    {"Metaviridae",                     "ssRNA-RT"},
-    {"Pseudoviridae",                   "ssRNA-RT"},
-    {"Retroviridae",                    "ssRNA-RT"},
-    {"Parvoviridae",                    "ssDNA(+/-)"},
-    {"Alphapleolipovirus",              "dsDNA; ssDNA"},
-    {"Albetovirus",                     "ssRNA(+)"},
-    {"Alphatetraviridae",               "ssRNA(+)"},
-    {"Alvernaviridae",                  "ssRNA(+)"},
-    {"Amalgaviridae",                   "dsRNA"},
-    {"Astroviridae",                    "ssRNA(+)"},
-    {"Aumaivirus",                      "ssRNA(+)"},
-    {"Avsunviroidae",                   "ssRNA"},
-    {"Barnaviridae",                    "ssRNA(+)"},
-    {"Benyviridae",                     "ssRNA(+)"},
-    {"Birnaviridae",                    "dsRNA"},
-    {"Botourmiaviridae",                "ssRNA(+)"},
-    {"Botybirnavirus",                  "dsRNA"},
-    {"Bromoviridae",                    "ssRNA(+)"},
-    {"Caliciviridae",                   "ssRNA(+)"},
-    {"Carmotetraviridae",               "ssRNA(+)"},
-    {"Chrysoviridae",                   "dsRNA"},
-    {"Closteroviridae",                 "ssRNA(+)"},
-    {"Cystoviridae",                    "dsRNA"},
-    {"Deltavirus",                      "ssRNA(-)"},
-    {"dsRNA viruses",                   "dsRNA"},
-    {"Endornaviridae",                  "dsRNA"},
-    {"Flaviviridae",                    "ssRNA(+)"},
-    {"Hepeviridae",                     "ssRNA(+)"},
-    {"Hypoviridae",                     "ssRNA(+)"},
-    {"Idaeovirus",                      "ssRNA(+)"},
-    {"Kitaviridae",                     "ssRNA(+)"},
-    {"Leviviridae",                     "ssRNA(+)"},
-    {"Luteoviridae",                    "ssRNA(+)"},
-    {"Matonaviridae",                   "ssRNA(+)"},
-    {"Megabirnaviridae",                "dsRNA"},
-    {"Narnaviridae",                    "ssRNA(+)"},
-    {"Haploviricotina",                 "ssRNA(-)"},
-    {"Arenaviridae",                    "ssRNA(+/-)"},
-    {"Coguvirus",                       "ssRNA(-)"},
-    {"Cruliviridae",                    "ssRNA(-)"},
-    {"Fimoviridae",                     "ssRNA(-)"},
-    {"Hantaviridae",                    "ssRNA(-)"},
-    {"Leishbuviridae",                  "ssRNA(-)"},
-    {"Mypoviridae",                     "ssRNA(-)"},
-    {"Nairoviridae",                    "ssRNA(-)"},
-    {"Peribunyaviridae",                "ssRNA(-)"},
-    {"Phasmaviridae",                   "ssRNA(-)"},
-    {"Banyangvirus",                    "ssRNA(+/-)"},
-    {"Beidivirus",                      "ssRNA(-)"},
-    {"Goukovirus",                      "ssRNA(-)"},
-    {"Horwuvirus",                      "ssRNA(-)"},
-    {"Hudivirus",                       "ssRNA(-)"},
-    {"Hudovirus",                       "ssRNA(-)"},
-    {"Kabutovirus",                     "ssRNA(-)"},
-    {"Laulavirus",                      "ssRNA(-)"},
-    {"Mobuvirus",                       "ssRNA(-)"},
-    {"Phasivirus",                      "ssRNA(-)"},
-    {"Phlebovirus",                     "ssRNA(+/-)"},
-    {"Pidchovirus",                     "ssRNA(-)"},
-    {"Tenuivirus",                      "ssRNA(-)"},
-    {"Wenrivirus",                      "ssRNA(-)"},
-    {"Wubeivirus",                      "ssRNA(-)"},
-    {"Tospoviridae",                    "ssRNA(+/-)"},
-    {"Wupedeviridae",                   "ssRNA(-)"},
-    {"Insthoviricetes",                 "ssRNA(-)"},
-    {"Nidovirales",                     "ssRNA(+)"},
-    {"Nodaviridae",                     "ssRNA(+)"},
-    {"Papanivirus",                     "ssRNA(+)"},
-    {"Partitiviridae",                  "dsRNA"},
-    {"Permutotetraviridae",             "ssRNA(+)"},
-    {"Picobirnaviridae",                "dsRNA"},
-    {"Picornavirales",                  "ssRNA(+)"},
-    {"Pospiviroidae",                   "ssRNA"},
-    {"Potyviridae",                     "ssRNA(+)"},
-    {"Quadriviridae",                   "dsRNA"},
-    {"Reoviridae",                      "dsRNA"},
-    {"Sarthroviridae",                  "ssRNA(+)"},
-    {"Sinaivirus",                      "ssRNA(+)"},
-    {"Solemoviridae",                   "ssRNA(+)"},
-    {"Solinviviridae",                  "ssRNA(+)"},
-    {"ssRNA viruses",                   "ssRNA"},
-    {"Togaviridae",                     "ssRNA(+)"},
-    {"Tombusviridae",                   "ssRNA(+)"},
-    {"Totiviridae",                     "dsRNA"},
-    {"Tymovirales",                     "ssRNA(+)"},
-    {"Virgaviridae",                    "ssRNA(+)"},
-    {"Virtovirus",                      "ssRNA(+)"},
-    {"unclassified viroids",            "ssRNA"},
-    {"Smacoviridae",                    "ssDNA"},
-    {"Spiraviridae",                    "ssDNA(+)"},
-    {"ssDNA viruses",                   "ssDNA"},
-    {"Tolecusatellitidae",              "ssDNA"},
-    {"unclassified bacterial viruses",  "unknown"},
-    {"unclassified viruses",            "unknown"},
-    {"environmental samples",           "unknown"}
+    {"root",                                        "dsDNA"},
+    {"Alphasatellitidae",                           "ssDNA"},
+    {"Anelloviridae",                               "ssDNA(-)"},
+    {"Bacilladnaviridae",                           "ssDNA"},
+    {"Bidnaviridae",                                "ssDNA"},
+    {"Circoviridae",                                "ssDNA(+/-)"},
+    {"Geminiviridae",                               "ssDNA(+/-)"},
+    {"Genomoviridae",                               "ssDNA"},
+    {"Hepadnaviridae",                              "dsDNA-RT"},
+    {"Inoviridae",                                  "ssDNA(+)"},
+    {"Microviridae",                                "ssDNA(+)"},
+    {"Nanoviridae",                                 "ssDNA(+)"},
+    {"Ortervirales",                                "ssRNA-RT"},
+    {"Caulimoviridae",                              "dsDNA-RT"},
+    {"Parvoviridae",                                "ssDNA(+/-)"},
+    {"Alphapleolipovirus",                          "dsDNA; ssDNA"},
+    {"Riboviria",                                   "RNA"},
+    {"Albetovirus",                                 "ssRNA(+)"},
+    {"Alphatetraviridae",                           "ssRNA(+)"},
+    {"Alvernaviridae",                              "ssRNA(+)"},
+    {"Amalgaviridae",                               "dsRNA"},
+    {"Astroviridae",                                "ssRNA(+)"},
+    {"Aumaivirus",                                  "ssRNA(+)"},
+    {"Avsunviroidae",                               "ssRNA"},
+    {"Barnaviridae",                                "ssRNA(+)"},
+    {"Benyviridae",                                 "ssRNA(+)"},
+    {"Birnaviridae",                                "dsRNA"},
+    {"Botourmiaviridae",                            "ssRNA(+)"},
+    {"Botybirnavirus",                              "dsRNA"},
+    {"Bromoviridae",                                "ssRNA(+)"},
+    {"Caliciviridae",                               "ssRNA(+)"},
+    {"Carmotetraviridae",                           "ssRNA(+)"},
+    {"Chrysoviridae",                               "dsRNA"},
+    {"Closteroviridae",                             "ssRNA(+)"},
+    {"Cystoviridae",                                "dsRNA"},
+    {"Deltavirus",                                  "ssRNA(-)"},
+    {"dsRNA viruses",                               "dsRNA"},
+    {"Endornaviridae",                              "dsRNA"},
+    {"Flaviviridae",                                "ssRNA(+)"},
+    {"Hepeviridae",                                 "ssRNA(+)"},
+    {"Hypoviridae",                                 "ssRNA(+)"},
+    {"Idaeovirus",                                  "ssRNA(+)"},
+    {"Kitaviridae",                                 "ssRNA(+)"},
+    {"Leviviridae",                                 "ssRNA(+)"},
+    {"Luteoviridae",                                "ssRNA(+)"},
+    {"Matonaviridae",                               "ssRNA(+)"},
+    {"Megabirnaviridae",                            "dsRNA"},
+    {"Narnaviridae",                                "ssRNA(+)"},
+    {"Haploviricotina",                             "ssRNA(-)"},
+    {"Arenaviridae",                                "ssRNA(+/-)"},
+    {"Coguvirus",                                   "ssRNA(-)"},
+    {"Cruliviridae",                                "ssRNA(-)"},
+    {"Fimoviridae",                                 "ssRNA(-)"},
+    {"Hantaviridae",                                "ssRNA(-)"},
+    {"Leishbuviridae",                              "ssRNA(-)"},
+    {"Mypoviridae",                                 "ssRNA(-)"},
+    {"Nairoviridae",                                "ssRNA(-)"},
+    {"Peribunyaviridae",                            "ssRNA(-)"},
+    {"Phasmaviridae",                               "ssRNA(-)"},
+    {"Banyangvirus",                                "ssRNA(+/-)"},
+    {"Beidivirus",                                  "ssRNA(-)"},
+    {"Goukovirus",                                  "ssRNA(-)"},
+    {"Horwuvirus",                                  "ssRNA(-)"},
+    {"Hudivirus",                                   "ssRNA(-)"},
+    {"Hudovirus",                                   "ssRNA(-)"},
+    {"Kabutovirus",                                 "ssRNA(-)"},
+    {"Laulavirus",                                  "ssRNA(-)"},
+    {"Mobuvirus",                                   "ssRNA(-)"},
+    {"Phasivirus",                                  "ssRNA(-)"},
+    {"Phlebovirus",                                 "ssRNA(+/-)"},
+    {"Pidchovirus",                                 "ssRNA(-)"},
+    {"Tenuivirus",                                  "ssRNA(-)"},
+    {"Wenrivirus",                                  "ssRNA(-)"},
+    {"Wubeivirus",                                  "ssRNA(-)"},
+    {"Tospoviridae",                                "ssRNA(+/-)"},
+    {"Wupedeviridae",                               "ssRNA(-)"},
+    {"Insthoviricetes",                             "ssRNA(-)"},
+    {"Nidovirales",                                 "ssRNA(+)"},
+    {"Nodaviridae",                                 "ssRNA(+)"},
+    {"Papanivirus",                                 "ssRNA(+)"},
+    {"Partitiviridae",                              "dsRNA"},
+    {"Permutotetraviridae",                         "ssRNA(+)"},
+    {"Picobirnaviridae",                            "dsRNA"},
+    {"Picornavirales",                              "ssRNA(+)"},
+    {"Pospiviroidae",                               "ssRNA"},
+    {"Potyviridae",                                 "ssRNA(+)"},
+    {"Quadriviridae",                               "dsRNA"},
+    {"Reoviridae",                                  "dsRNA"},
+    {"Sarthroviridae",                              "ssRNA(+)"},
+    {"Sinaivirus",                                  "ssRNA(+)"},
+    {"Solemoviridae",                               "ssRNA(+)"},
+    {"Solinviviridae",                              "ssRNA(+)"},
+    {"Togaviridae",                                 "ssRNA(+)"},
+    {"Tombusviridae",                               "ssRNA(+)"},
+    {"Totiviridae",                                 "dsRNA"},
+    {"Tymovirales",                                 "ssRNA(+)"},
+    {"Virgaviridae",                                "ssRNA(+)"},
+    {"Virtovirus",                                  "ssRNA(+)"},
+    {"ssRNA viruses",                               "ssRNA"},
+    {"unclassified ssRNA viruses",                  "ssRNA"},
+    {"unclassified ssRNA negative-strand viruses",  "ssRNA(-)"},
+    {"unclassified ssRNA positive-strand viruses",  "ssRNA(+)"},
+    {"unclassified viroids",                        "ssRNA"},
+    {"DNA satellites",                              "DNA"},
+    {"RNA satellites",                              "RNA"},
+    {"Smacoviridae",                                "ssDNA"},
+    {"Spiraviridae",                                "ssDNA(+)"},
+    {"Tolecusatellitidae",                          "ssDNA"},
+    {"unclassified viruses",                        "unknown"},
+    {"unclassified DNA viruses",                    "DNA"},
+    {"unclassified archaeal dsDNA viruses",         "dsDNA"},
+    {"unclassified dsDNA phages",                   "dsDNA"},
+    {"unclassified dsDNA viruses",                  "dsDNA"},
+    {"unclassified ssDNA bacterial viruses",        "ssDNA"},
+    {"unclassified ssDNA viruses",                  "ssDNA"},
+    {"environmental samples",                       "unknown"}
 };
 
 
@@ -9431,6 +9438,7 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
                       if ( tax.GetScientificName( it->GetIval1(), sName ) ) {
                           if ( it->GetIval2() == 1 ) {
                               s_ViralTaxonMap [sName] = it->GetSval();
+                              // printf ("    {\"%s\",\t\"%s\"},\n", sName.c_str(), it->GetSval().c_str());
                           }
                       }
                    }
@@ -9443,6 +9451,11 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
             }
             s_ViralMapInitialized = true;
         }
+    }
+
+    // Retroviridae no longer in list
+    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS) {
+        return "ssRNA-RT";
     }
 
     // Topsovirus (ambisense) not in list
@@ -9479,14 +9492,6 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
                 return x.second;
             }
         }
-    }
-
-    // special case for non-ICTV virus satellites - do not add ds or ss prefix
-    if (NStr::FindNoCase(lineage, "RNA satellites") != NPOS) {
-        return "RNA";
-    }
-    if (NStr::FindNoCase(lineage, "DNA satellites") != NPOS) {
-        return "DNA";
     }
 
     // use root value for default
