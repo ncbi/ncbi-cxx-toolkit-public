@@ -88,10 +88,10 @@ public:
     /// Bins size increasing depends on a logariphmic base (used scale type).
     ///
     enum EScaleType {
-        eLinear = 1, ///< Arithmetic or linear scale
-        eLog,        ///< Natural logarithmic scale with a base e ~ 2.72
-        eLog2,       ///< Binary logarithmic scale with a base 2
-        eLog10       ///< Common logarithmic scale with a base 10
+        eLinear = 1,  ///< Arithmetic or linear scale
+        eLog,         ///< Natural logarithmic scale with a base e ~ 2.72
+        eLog2,        ///< Binary logarithmic scale with a base 2
+        eLog10        ///< Common logarithmic scale with a base 10
     };
 
     /// Methods to build bins for a specified scale.
