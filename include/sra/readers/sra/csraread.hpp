@@ -208,6 +208,7 @@ private:
     string m_SraIdPart;
 
     CFastMutex m_TableMutex;
+    CFastMutex m_OverlapMutex;
     CVDBTable m_RefTable;
     CVDBTable m_AlnTable[2];
     CVDBTable m_SeqTable;

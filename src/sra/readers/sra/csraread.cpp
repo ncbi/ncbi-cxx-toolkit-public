@@ -312,8 +312,9 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
     if ( ref ) {
         SRefInfo info;
         m_RowSize = *ref->MAX_SEQ_LEN(1);
-        for ( TVDBRowId row = 1, max_row = ref->m_Cursor.GetMaxRowId();
-              row <= max_row; ) {
+        auto name_row_range = ref->m_NAME.GetRowIdRange(ref->m_Cursor);
+        TVDBRowId end_row = name_row_range.first + name_row_range.second;
+        for ( TVDBRowId row = 1; row < end_row; ) {
             // read range and names
             CTempString name = ref->NAME(row);
             ref->m_Cursor.SetParam("QUERY_SEQ_NAME", name);
@@ -838,7 +839,7 @@ const vector<TSeqPos>& CCSraRefSeqIterator::GetAlnOverStarts(void) const
     if ( info.m_AlnOverStarts.empty() ) {
         CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
         if ( ref->m_OVERLAP_REF_POS ) {
-            CFastMutexGuard guard(GetDb().m_TableMutex);
+            CFastMutexGuard guard(GetDb().m_OverlapMutex);
             if ( info.m_AlnOverStarts.empty() ) {
                 TSeqPos segment_len = GetDb().GetRowSize();
                 vector<TSeqPos> pp;
@@ -853,6 +854,37 @@ const vector<TSeqPos>& CCSraRefSeqIterator::GetAlnOverStarts(void) const
                         }
                     }
                     pp.push_back(pos);
+                }
+                if ( !pp.empty() ) {
+                    // fix overlaps for alignments starting at pos 0
+                    size_t max_aln_end = 1;
+                    for ( int secondary = 0; secondary < 2; ++secondary ) {
+                        CVDBValueFor<TVDBRowId> aln_ids;
+                        if ( secondary ) {
+                            if ( !ref->m_SECONDARY_ALIGNMENT_IDS ) {
+                                break;
+                            }
+                            aln_ids = ref->SECONDARY_ALIGNMENT_IDS(info.m_RowFirst);
+                        }
+                        else {
+                            aln_ids = ref->PRIMARY_ALIGNMENT_IDS(info.m_RowFirst);
+                        }
+                        if ( aln_ids.empty() ) {
+                            continue;
+                        }
+                        CRef<CCSraDb_Impl::SAlnTableCursor> aln(GetDb().Aln(secondary));
+                        for ( auto aln_id : aln_ids ) {
+                            INSDC_coord_zero pos = *aln->REF_POS(aln_id);
+                            if ( pos != 0 ) {
+                                // check only alignments that start at the very beginning
+                                break;
+                            }
+                            size_t end = pos + *aln->REF_LEN(aln_id);
+                            max_aln_end = max(max_aln_end, end);
+                        }
+                        GetDb().Put(aln);
+                    }
+                    pp[min(pp.size()-1, (max_aln_end-1)/segment_len)] = 0;
                 }
                 // propagate overlaps
                 for ( size_t i = pp.size(); i-- > 1; ) {
@@ -1573,7 +1605,7 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
                 }
             }
             x_AddField(*obj,
-                       "RefPos", m_Aln->REF_POS(mate_id),
+                       "RefPos", *m_Aln->REF_POS(mate_id),
                        cache.m_ObjectIdRefPos);
             
             CRef<CUser_field> field(new CUser_field());
@@ -1939,7 +1971,7 @@ void CCSraShortReadIterator::x_Init(const CCSraDb& csra_db,
         m_ClipByQuality = s_GetClipByQuality();
         break;
     }
-    TVDBRowIdRange range = m_Seq->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Seq->m_READ_LEN.GetRowIdRange(m_Seq->m_Cursor);
     m_SpotId = range.first;
     m_MaxSpotId = range.first+range.second-1;
     m_Error = m_SpotId <= m_MaxSpotId? 0: RC_NO_MORE_ALIGNMENTS;
