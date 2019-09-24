@@ -966,7 +966,7 @@ class CArgAllowGeneticCodeInteger : public CArgAllow
 protected:
      /// Overloaded method from CArgAllow
      virtual bool Verify(const string& value) const {
-         static int gcs[] = {1,2,3,4,5,6,9,10,11,12,13,14,15,16,21,22,23,24,25,26,27,28,29,30,31};
+         static int gcs[] = {1,2,3,4,5,6,9,10,11,12,13,14,15,16,21,22,23,24,25,26,27,28,29,30,31,33};
          static const set<int> genetic_codes(gcs, gcs+sizeof(gcs)/sizeof(*gcs));
          const int val = NStr::StringToInt(value);
          return (genetic_codes.find(val) != genetic_codes.end());
@@ -974,7 +974,7 @@ protected:
 
      /// Overloaded method from CArgAllow
      virtual string GetUsage(void) const {
-         return "values between: 1-6, 9-16, 21-31";
+         return "values between: 1-6, 9-16, 21-31, 33";
      }
 };
 
@@ -985,7 +985,7 @@ CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetCurrentGroup("Input query options");
         // query genetic code
         arg_desc.AddDefaultKey(kArgQueryGeneticCode, "int_value",
-                               "Genetic code to use to translate query (see user manual for details)\n",
+                               "Genetic code to use to translate query (see https://www.ncbi.nlm.nih.gov/Taxonomy/taxonomyhome.html/index.cgi?chapter=cgencodes for details)\n",
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_GENETIC_CODE));
         arg_desc.SetConstraint(kArgQueryGeneticCode,
