@@ -360,7 +360,7 @@ public:
     /// @sa GetSequenceHash()
     struct SHashFound {
         bool sequence_found; // true if the sequence is found by data loader
-        bool hash_known; // true if sequence exists but hash value isn't known
+        bool hash_known; // true if sequence exists and hash value is set
         int hash; // may be 0 even for existing sequence
         SHashFound()
             : sequence_found(false),
