@@ -1101,7 +1101,9 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Deleted)
                     bool bFeatureTrimmed = false;
 
                     // Modify the copy of the feature
-                    BOOST_CHECK_NO_THROW(edit::TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed));
+                    bool isPartialStart = false;
+                    bool isPartialStop = false;
+                    BOOST_CHECK_NO_THROW(edit::TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed, isPartialStart, isPartialStop));
 
                     if (bFeatureDeleted) {
                         // Delete the feature
@@ -1209,7 +1211,9 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Trimmed)
                     bool bFeatureTrimmed = false;
 
                     // Modify the copy of the feature
-                    BOOST_CHECK_NO_THROW(edit::TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed));
+                    bool isPartialStart = false;
+                    bool isPartialStop = false;
+                    BOOST_CHECK_NO_THROW(edit::TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed, isPartialStart, isPartialStop));
 
                     if (bFeatureDeleted) {
                         // Not testing this branch in this unit test.
@@ -1237,7 +1241,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Trimmed)
                             BOOST_CHECK_NO_THROW(edit::AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts));
 
                             // Retranslate the coding region using the new nuc sequence
-                            BOOST_CHECK_NO_THROW(edit::RetranslateCdregion(bsh, copy_inst, copy_feat, sorted_cuts));
+                            BOOST_CHECK_NO_THROW(edit::RetranslateCdregion(bsh, isPartialStart, isPartialStop, copy_inst, copy_feat, sorted_cuts));
                         }
 
                         // Update the original feature with the modified copy
@@ -1349,7 +1353,18 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
 
                 BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
             }
-        }
+
+			// Seq1 is found in test3 input
+			if (s_FindLocalId(bsh, "Contig1")) {
+				// Create the cuts from known vector contamination
+				// Seqid "Seq1" has vector
+				edit::TRange cut1(0, 11);
+				edit::TCuts cuts;
+				cuts.push_back(cut1);
+
+				BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation(bsh, cuts, edit::eTrimToClosestEnd));
+			}
+		}
 
         // Are the changes what we expect?
         BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(

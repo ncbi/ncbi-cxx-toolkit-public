@@ -272,7 +272,9 @@ NCBI_XOBJEDIT_EXPORT
 void TrimSeqFeat(CRef<CSeq_feat> feat, 
                  const TCuts& sorted_cuts,
                  bool& bFeatureDeleted, 
-                 bool& bFeatureTrimmed);
+                 bool& bFeatureTrimmed,
+                 bool& partial_start, 
+                 bool& partial_stop);
 
 /// Secondary function needed after trimming Seq-feat.
 /// If the trim completely covers the feature (boolean reference bFeatureDeleted
@@ -300,6 +302,8 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then retranslate cdregion.
 NCBI_XOBJEDIT_EXPORT
 void RetranslateCdregion(CBioseq_Handle nuc_bsh, 
+                         bool partial_start, 
+                         bool partial_stop,
                          CRef<CSeq_inst> trimmed_nuc_inst,
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts);

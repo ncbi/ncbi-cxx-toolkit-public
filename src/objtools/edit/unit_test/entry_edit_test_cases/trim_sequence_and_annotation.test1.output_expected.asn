@@ -308,7 +308,8 @@ C1DBD09F47D4B8E20ECFACFD4DCD8E099C0D378218'H
         title "class 1 integron dihydrofolate reductase (dfrA15) gene
  [Salmonella enterica]",
         molinfo {
-          biomol peptide
+          biomol peptide,
+          completeness no-ends
         },
         user {
           type str "OrginalID",
@@ -324,7 +325,7 @@ C1DBD09F47D4B8E20ECFACFD4DCD8E099C0D378218'H
         repr raw,
         mol aa,
         length 62,
-        seq-data ncbieaa "-TITLQSDYL*SVAFGRPKDFRVNGGFTQPKICRCNSFKLHFQ**ECIGISI
+        seq-data ncbieaa "GTITLQSDYL*SVAFGRPKDFRVNGGFTQPKICRCNSFKLHFQ**ECIGISI
 YR*SAKSSED"
       },
       annot {
@@ -336,10 +337,13 @@ YR*SAKSSED"
                   "class 1 integron dihydrofolate reductase (dfrA15) gene"
                 }
               },
+              partial TRUE,
               location int {
                 from 0,
                 to 61,
-                id local str "Seq4_prot_4"
+                id local str "Seq4_prot_4",
+                fuzz-from lim lt,
+                fuzz-to lim gt
               }
             }
           }
@@ -357,12 +361,15 @@ YR*SAKSSED"
               id 11
             }
           },
+          partial TRUE,
           product whole local str "Seq4_prot_4",
           location int {
             from 0,
             to 186,
             strand plus,
-            id local str "Seq4"
+            id local str "Seq4",
+            fuzz-from lim lt,
+            fuzz-to lim gt
           }
         }
       }

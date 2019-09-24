@@ -2126,7 +2126,9 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         bool bFeatureTrimmed = false;
 
         // Modify the copy of the feature
-        TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed);
+        bool isPartialStart = false;
+        bool isPartialStop = false;
+        TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed, isPartialStart, isPartialStop);
 
         if (bFeatureDeleted) {
             // Delete the feature
@@ -2152,7 +2154,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
                 AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts);
 
                 // Retranslate the coding region using the new nuc sequence
-                RetranslateCdregion(bsh, copy_inst, copy_feat, sorted_cuts);
+                RetranslateCdregion(bsh, isPartialStart, isPartialStop, copy_inst, copy_feat, sorted_cuts);
             }
 
             // Update the original feature with the modified copy
@@ -3003,11 +3005,32 @@ void TrimSeqAlign(CBioseq_Handle bsh,
 }
 
 
+void SetPartial(CSeq_loc& loc, CRef<CSeq_feat> feat, bool partial_start, bool partial_stop)
+{
+  	auto strand = eNa_strand_unknown;
+	if (feat->CanGetLocation()) {
+		strand = feat->GetLocation().GetStrand();
+	}
+
+    if (strand == eNa_strand_minus) {
+        swap(partial_start, partial_stop);
+    }
+
+    if (partial_start) {
+        loc.SetPartialStart(true, eExtreme_Biological);
+    }
+    if (partial_stop) {
+        loc.SetPartialStop(true, eExtreme_Biological);
+    }
+
+    if (partial_start || partial_stop) {
+        feat->SetPartial(true);
+    }
+}
+
+
 /// Trim Seq-feat annotation
-void TrimSeqFeat(CRef<CSeq_feat> feat, 
-                 const TCuts& sorted_cuts,
-                 bool& bFeatureDeleted, 
-                 bool& bFeatureTrimmed)
+void TrimSeqFeat(CRef<CSeq_feat> feat, const TCuts& sorted_cuts, bool& bFeatureDeleted, bool& bFeatureTrimmed, bool& partial_start, bool& partial_stop)
 {
     for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
         const TRange& cut = sorted_cuts[ii];
@@ -3018,11 +3041,27 @@ void TrimSeqFeat(CRef<CSeq_feat> feat,
         if (feat->CanGetLocation()) {
             CRef<CSeq_feat::TLocation> new_location(new CSeq_feat::TLocation);
             new_location->Assign(feat->GetLocation());
+
+            // check if the cut overlaps feature location, then feature should be marked partial
+			if (to >= new_location->GetStart(eExtreme_Positional) && 
+                to < new_location->GetStop(eExtreme_Positional) &&
+                from <= new_location->GetStart(eExtreme_Positional))
+            {
+				partial_start = true;
+			}
+			if (from <= new_location->GetStop(eExtreme_Positional) && 
+                from > new_location->GetStart(eExtreme_Positional) &&
+                to >= new_location->GetStop(eExtreme_Positional)) 
+            {
+				partial_stop = true;
+			}
             s_SeqLocDelete(new_location, from, to, bFeatureDeleted, bFeatureTrimmed);
             feat->SetLocation(*new_location);
+            if (bFeatureTrimmed) {
+                SetPartial(feat->SetLocation(), feat, partial_start, partial_stop);
+            }
 
-            // No need to cut anymore nor update.  Feature will be completely
-            // deleted.  
+            // No need to cut anymore nor update.  Feature will be completely deleted.  
             if (bFeatureDeleted) {
                 return;
             }
@@ -3176,6 +3215,8 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
 /// Secondary function needed after trimming Seq-feat.
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then retranslate cdregion.
 void RetranslateCdregion(CBioseq_Handle nuc_bsh,
+                         bool isPartialStart,
+                         bool isPartialStop,
                          CRef<CSeq_inst> trimmed_nuc_inst, 
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts)
@@ -3218,6 +3259,53 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
         CBioseq_EditHandle prot_eh = prot_bsh.GetEditHandle();
         prot_eh.SetInst(*new_inst);
 
+        // set molinfo completeness
+        bool partial5 = cds->GetLocation().IsPartialStart(eExtreme_Biological);
+        bool partial3 = cds->GetLocation().IsPartialStop(eExtreme_Biological);
+        CMolInfo::ECompleteness completeness = CMolInfo::eCompleteness_complete;
+        if (partial5 && partial3) {
+            completeness = CMolInfo::eCompleteness_no_ends;
+        } 
+        else 
+        if (partial5) {
+            completeness = CMolInfo::eCompleteness_no_left;
+        } 
+        else 
+        if (partial3) {
+            completeness = CMolInfo::eCompleteness_no_right;
+        }
+        bool found = false;
+        CBioseq::TDescr::Tdata::iterator it;
+        for (it = prot_eh.SetDescr().Set().begin(); it != prot_eh.SetDescr().Set().end(); ++it) {
+            if ((*it)->IsMolinfo()) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            // update existing descr
+            if (!(*it)->SetMolinfo().IsSetCompleteness() && completeness != CMolInfo::eCompleteness_complete) {
+                (*it)->SetMolinfo().SetCompleteness(completeness);
+            } 
+            else 
+            if (!(*it)->SetMolinfo().IsSetCompleteness() && completeness == CMolInfo::eCompleteness_complete) {
+                // do nothing, complete is implied by there being no completeness flag
+            }
+            else
+            {
+                (*it)->SetMolinfo().SetCompleteness(completeness);
+            }
+        }
+        else {
+            if (completeness != CMolInfo::eCompleteness_complete) {
+                // add new descr 
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+                desc->SetMolinfo().SetCompleteness(completeness);
+                prot_eh.SetDescr().Set().push_back(desc);
+            }
+        }
+
         // If protein feature exists, update it
         SAnnotSelector sel(CSeqFeatData::e_Prot);
         CFeat_CI prot_feat_ci(prot_bsh, sel);
@@ -3233,6 +3321,9 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
                 // Edit the copy
                 new_feat->SetLocation().SetInt().SetTo(
                     new_protein_bioseq->GetLength() - 1);
+
+                // set partial flag
+                SetPartial(new_feat->SetLocation(), new_feat, isPartialStart, isPartialStop);
 
                 // Update the original
                 CSeq_feat_EditHandle prot_feat_eh(*prot_feat_ci);

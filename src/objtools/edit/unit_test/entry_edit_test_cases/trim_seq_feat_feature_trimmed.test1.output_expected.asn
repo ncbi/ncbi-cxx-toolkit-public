@@ -249,6 +249,7 @@ Seq-entry ::= set {
                 id genbank {
                   accession "KJ710358"
                 },
+                fuzz-from lim lt,
                 fuzz-to lim gt
               }
             }
@@ -271,7 +272,7 @@ Seq-entry ::= set {
         title "23S rRNA methylase, partial [Escherichia coli]",
         molinfo {
           biomol peptide,
-          completeness no-right
+          completeness no-ends
         },
         user {
           type str "OrginalID",
@@ -287,7 +288,7 @@ Seq-entry ::= set {
         repr raw,
         mol aa,
         length 25,
-        seq-data ncbieaa "-KHMLKCKI*VLLLMNKCYLYLIHL"
+        seq-data ncbieaa "KKHMLKCKI*VLLLMNKCYLYLIHL"
       },
       annot {
         {
@@ -303,6 +304,7 @@ Seq-entry ::= set {
                 from 0,
                 to 24,
                 id local str "BankIt1717834_prot_1",
+                fuzz-from lim lt,
                 fuzz-to lim gt
               }
             }
@@ -330,6 +332,7 @@ Seq-entry ::= set {
             id genbank {
               accession "KJ710358"
             },
+            fuzz-from lim lt,
             fuzz-to lim gt
           }
         }
