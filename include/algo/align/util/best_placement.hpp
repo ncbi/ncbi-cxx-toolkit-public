@@ -37,7 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class NBestPlacement
+class NCBI_XALGOALIGN_EXPORT NBestPlacement
 {
 public:
     NBestPlacement() = delete;
