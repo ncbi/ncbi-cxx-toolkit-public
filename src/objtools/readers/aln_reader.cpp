@@ -145,7 +145,7 @@ string CAlnReader::GetAlphabetLetters(
             "ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy"},
 
         {EAlphabet::eAlpha_Protein,         // non negotiable due to existing code 
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"},
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz*"},
 
         {EAlphabet::eAlpha_Dna,             // all ambiguity characters but not U
             "ABCDGHKMNRSTVWXYabcdghkmnrstvwxy"},
@@ -605,8 +605,8 @@ CAlnReader::x_GetSequenceMolType(
     )
 {
     //if alphabet contains full complement (26) of protein chars then
-    // it's definitely protein:
-    if (alphabet.size() == 2*26) {
+    // it's definitely protein. It may also contain stop-codon characters:
+    if (alphabet.size() >= 2*26) {
         return CSeq_inst::eMol_aa;
     }
     
