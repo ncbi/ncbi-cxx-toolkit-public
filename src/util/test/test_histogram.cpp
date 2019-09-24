@@ -60,13 +60,11 @@ public:
     void Clone(void);
 
     int Run(void) {
-/*
         SimpleLinear();
         SimpleLog();
         CombinedScale();
         CustomDataType();
         EstimateNumberOfBins();
-*/
         Clone();
         return 0;
     }
@@ -552,7 +550,7 @@ void CDataHistogramDemoApp::Clone(void)
     PRINT_HEADER("CloneStructure() and move semantics");
     typedef CHistogram<> H;
 
-    CHistogram<int> h(0, 10, 10);
+    H h(0, 10, 10, H::eLinear);
     RUN_INT(h, 0, 10);
 
     // clone structure
@@ -574,7 +572,7 @@ void CDataHistogramDemoApp::Clone(void)
     {{
         H hclone(h.CloneStructure());
         for (size_t i = 0; i < 10; i++) {
-            h.Add(rand() % 10);
+            hclone.Add(rand() % 10);
         }
         PRINT_STATS(hclone);
         h.StealCountersFrom(hclone);
@@ -582,7 +580,6 @@ void CDataHistogramDemoApp::Clone(void)
     }}
 
 }
-
 
 
 int main(int argc, char** argv)
