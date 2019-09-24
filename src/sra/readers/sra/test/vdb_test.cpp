@@ -804,7 +804,7 @@ int CCSRATestApp::Run(void)
             }
             for ( size_t i = 0; i < vv.size(); ++i ) {
                 if ( verify ) {
-                    if ( vv[i] != vv_exp[i] ) {
+                    if ( vv[i]/step != vv_exp[i]/step ) {
                         out << "Overlap pos["<<i<<" / "<<(i*step)<<"]"
                             << " = "<<vv[i] <<" "<<int(vv[i]-i*step)
                             << " exp "<<vv_exp[i] <<" "<<int(vv_exp[i]-i*step)
