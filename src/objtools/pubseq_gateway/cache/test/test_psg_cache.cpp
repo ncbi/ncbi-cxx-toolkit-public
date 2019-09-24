@@ -400,6 +400,7 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid, int for
     string accession;
 
     bool res = ParsePrimarySeqId(fasta_seqid, accession, version, seq_id_type);
+    cout << "Accession: '" << accession << "' , version: " << version << ", seq_id_type: " << seq_id_type << endl;
     if (!res) {
         return;
     }

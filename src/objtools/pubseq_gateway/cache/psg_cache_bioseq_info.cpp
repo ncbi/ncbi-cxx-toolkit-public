@@ -106,6 +106,19 @@ size_t PackedKeySize(size_t acc_sz)
     return acc_sz + (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz + kPackedGISz);
 }
 
+void PrintKey(const string& rv)
+{
+    cout << "Result: " << rv.size() << " [ ";
+    cout << hex << setw(2) << setfill('0');
+    const char * r = rv.c_str();
+    for (size_t i = 0; i < rv.size(); ++i) {
+        cout << (int)r[i] << " ";
+    }
+    cout << dec;
+    cout << " ]" << endl;
+
+};
+
 END_SCOPE()
 
 CPubseqGatewayCacheBioseqInfo::CPubseqGatewayCacheBioseqInfo(const string& file_name) :
@@ -270,10 +283,30 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
         } else {
             string skey = PackKey(accession, version, seq_id_type);
             auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
-            rv = cursor.get(lmdb::val(skey), val, MDB_SET);
+            rv = cursor.get(lmdb::val(skey), val, MDB_SET_RANGE);
             if (rv) {
-                found_version = version;
-                found_seq_id_type = seq_id_type;
+                lmdb::val key;
+                rv = cursor.get(key, val, MDB_GET_CURRENT);
+                while (rv) {
+                    int _found_seq_id_type = -1;
+                    int _found_version = -1;
+                    int64_t _found_gi = -1;
+                    rv = key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
+                    if (!rv) {
+                        break;
+                    }
+                    if (rv) {
+                        rv = UnpackKey(key.data<const char>(), key.size(), _found_version, _found_seq_id_type, _found_gi);
+                    }
+                    rv = rv && (version == _found_version && seq_id_type == _found_seq_id_type);
+                    if (rv) {
+                        found_version = _found_version;
+                        found_seq_id_type = _found_seq_id_type;
+                        found_gi = _found_gi;
+                        break;
+                    }
+                    rv = cursor.get(key, val, MDB_NEXT);
+                }
             }
         }
         if (rv) {
