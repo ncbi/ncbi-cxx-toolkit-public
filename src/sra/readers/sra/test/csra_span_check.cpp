@@ -109,14 +109,21 @@ public:
             CVDBTable table;
             CVDBCursor cursor;
             
+            CVDBColumnBits<sizeof(INSDC_coord_len)*8> col_max_seq_len;
             CVDBColumnBits<sizeof(INSDC_coord_zero)*8> col_overlap_pos;
             CVDBColumnBits<sizeof(INSDC_coord_len)*8> col_overlap_len;
             CVDBColumnBits<8> col_name;
             typedef pair<TVDBRowId, TVDBRowId> TRowRange;
             CVDBColumnBits<sizeof(TRowRange)*8> col_name_range;
+            CVDBColumnBits<8> col_seq_id;
             CVDBColumnBits<sizeof(TVDBRowId)*8> col_aln1;
             CVDBColumnBits<sizeof(TVDBRowId)*8> col_aln2;
 
+            TSeqPos GetRowSize() const
+                {
+                    return *CVDBValueFor<INSDC_coord_len>(cursor, 1, col_max_seq_len);
+                }
+            
             CVDBStringValue NAME(TVDBRowId row) const
                 {
                     return CVDBStringValue(cursor, row, col_name);
@@ -126,6 +133,11 @@ public:
                 {
                     cursor.SetParam("QUERY_SEQ_NAME", name);
                     return *CVDBValueFor<TRowRange>(cursor, 1, col_name_range);
+                }
+
+            CVDBStringValue SEQ_ID(TVDBRowId row) const
+                {
+                    return CVDBStringValue(cursor, row, col_seq_id);
                 }
 
             CVDBValueFor<TVDBRowId> PRIMARY_ALIGNMENT_IDS(TVDBRowId row) const
@@ -361,6 +373,7 @@ CSpanCheckApp::SDB::SRef::SRef(const CVDB& db)
     }
     cursor = CVDBCursor(table);
 
+    col_max_seq_len = CVDBColumnBits<sizeof(INSDC_coord_len)*8>(cursor, "MAX_SEQ_LEN");
     col_overlap_pos = CVDBColumnBits<sizeof(INSDC_coord_zero)*8>(cursor, "OVERLAP_REF_POS", 0, CVDBColumn::eMissing_Allow);
     if ( !col_overlap_pos ) {
         return;
@@ -368,6 +381,7 @@ CSpanCheckApp::SDB::SRef::SRef(const CVDB& db)
     col_overlap_len = CVDBColumnBits<sizeof(INSDC_coord_len)*8>(cursor, "OVERLAP_REF_LEN");
     col_name = CVDBColumnBits<8>(cursor, "NAME");
     col_name_range = CVDBColumnBits<sizeof(TRowRange)*8>(cursor, "NAME_RANGE");
+    col_seq_id = CVDBColumnBits<8>(cursor, "SEQ_ID");
     col_aln1 = CVDBColumnBits<sizeof(TVDBRowId)*8>(cursor, "PRIMARY_ALIGNMENT_IDS");
     col_aln2 = CVDBColumnBits<sizeof(TVDBRowId)*8>(cursor, "SECONDARY_ALIGNMENT_IDS", 0, CVDBColumn::eMissing_Allow);
 }
@@ -441,15 +455,19 @@ void CSpanCheckApp::ProcessFile(const string& file)
 
 void CSpanCheckApp::CheckFile(const SDB& db)
 {
-    const TSeqPos kRefPageSize = 5000;
+    const TSeqPos kRefPageSize = db.ref.GetRowSize();
     bool bad_overlap = false;
-    for ( TVDBRowId ref_row = 1, max_ref_row = db.ref.cursor.GetMaxRowId(); ref_row <= max_ref_row; ) {
+    auto name_row_range = db.ref.col_name.GetRowIdRange(db.ref.cursor);
+    TVDBRowId end_ref_row = name_row_range.first + name_row_range.second;
+    for ( TVDBRowId ref_row = 1; ref_row < end_ref_row; ) {
         // read range and names
         CTempString ref_name = db.ref.NAME(ref_row);
         //cout << "ref "<<ref_name<<" @ "<<ref_row<<endl;
         
         auto ref_row_range = db.ref.NAME_RANGE(ref_name);
 
+        CTempString ref_seq_id = db.ref.SEQ_ID(ref_row);
+        
         int max_aln_secondary = 0;
         TVDBRowId max_aln_row_id = 0;
         TSeqPos max_aln_end = 0;
@@ -475,7 +493,7 @@ void CSpanCheckApp::CheckFile(const SDB& db)
         
         if ( max_aln_end > 2*kRefPageSize ) {
             if ( verbose >= eVerbose_overlap ) {
-                cout << db.file << ": "<<ref_name<<" @"<<ref_row<<" "
+                cout << db.file << ": "<<ref_seq_id<<" @"<<ref_row<<" "
                      << (!max_aln_secondary? "primary": "secondary") << " @"<<max_aln_row_id
                      << " spans to "<<max_aln_end<<endl;
             }
@@ -493,7 +511,7 @@ void CSpanCheckApp::CheckFile(const SDB& db)
                     // effective overlap starts not at the first ref page
                     // this is an actual overlap info error
                     if ( verbose >= eVerbose_error ) {
-                        cout << db.file << ": "<<ref_name<<" @"<<ref_row<<" "
+                        cout << db.file << ": "<<ref_seq_id<<" @"<<ref_row<<" "
                              << (!max_aln_secondary? "primary": "secondary") << " @"<<max_aln_row_id
                              << " spans to "<<max_aln_end<<endl;
                     }
@@ -516,8 +534,10 @@ void CSpanCheckApp::CheckFile(const SDB& db)
 
 void CSpanCheckApp::RecalculateFile(const SDB& db)
 {
-    const TSeqPos kRefPageSize = 5000;
-    for ( TVDBRowId ref_row = 1, max_ref_row = db.ref.cursor.GetMaxRowId(); ref_row <= max_ref_row; ) {
+    const TSeqPos kRefPageSize = db.ref.GetRowSize();
+    auto name_row_range = db.ref.col_name.GetRowIdRange(db.ref.cursor);
+    TVDBRowId end_ref_row = name_row_range.first + name_row_range.second;
+    for ( TVDBRowId ref_row = 1; ref_row < end_ref_row; ) {
         // read range and names
         CTempString ref_name = db.ref.NAME(ref_row);
         //cout << "ref "<<ref_name<<" @ "<<ref_row<<endl;
