@@ -499,7 +499,7 @@ public:
         }
 
     // returns first id, and count of ids in the range
-    TVDBRowIdRange GetRowIdRange(CVDBCursor& cursor) const
+    TVDBRowIdRange GetRowIdRange(const CVDBCursor& cursor) const
         {
             return cursor.GetRowIdRange(GetIndex());
         }
@@ -948,6 +948,16 @@ public:
     operator const TValue&(void) const
         {
             return Value();
+        }
+
+    typedef const TValue* const_iterator;
+    const_iterator begin() const
+        {
+            return data();
+        }
+    const_iterator end() const
+        {
+            return begin()+size();
         }
 
     CVDBValueFor<TValue> substr(size_t pos, size_t len) const
