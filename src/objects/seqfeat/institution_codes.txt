@@ -6111,7 +6111,7 @@ SEY	s	Seychelles Natural History Museum
 SF	s	Universidad Nacional del Litoral			
 SFAC	s	Stephen F. Austin State University			
 SFB	s	Salgues Foundation of Brignoles for Development of Biological Sciences			
-SFC	s	Laboratory of Fishes			
+SFC	s	Seoul National University, Fungal collection			
 SFD	s	Sheffield Galleries and Museums Trust, City Museum			
 SFDK	s	Sarawak Forestry Department			
 SFDL	s	Sheffield Literary and Philosophical Society			

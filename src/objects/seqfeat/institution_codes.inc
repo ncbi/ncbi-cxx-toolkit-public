@@ -6144,7 +6144,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SF\ts\tUniversidad Nacional del Litoral\t\t\t",
 "SFAC\ts\tStephen F. Austin State University\t\t\t",
 "SFB\ts\tSalgues Foundation of Brignoles for Development of Biological Sciences\t\t\t",
-"SFC\ts\tLaboratory of Fishes\t\t\t",
+"SFC\ts\tSeoul National University, Fungal collection\t\t\t",
 "SFD\ts\tSheffield Galleries and Museums Trust, City Museum\t\t\t",
 "SFDK\ts\tSarawak Forestry Department\t\t\t",
 "SFDL\ts\tSheffield Literary and Philosophical Society\t\t\t",
