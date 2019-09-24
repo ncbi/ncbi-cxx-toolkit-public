@@ -44,7 +44,7 @@ string EAlignFormatToString(
         {EAlignFormat::UNKNOWN, "Unknown"},
         {EAlignFormat::CLUSTAL, "Clustal"},
         {EAlignFormat::FASTAGAP, "FASTA-Gap"},
-        {EAlignFormat::MULTALIGN, "Multalin"},
+        {EAlignFormat::MULTALIN, "Multalin"},
         {EAlignFormat::NEXUS, "NEXUS"},
         {EAlignFormat::PHYLIP, "PHYLIP"},
         {EAlignFormat::SEQUIN, "Sequin"},
@@ -65,7 +65,7 @@ EAlignFormat StringToEAlignFormat(
     static const map<string, EAlignFormat> sFormatMap{{
         {"clustal", EAlignFormat::CLUSTAL},
         {"fasta-gap", EAlignFormat::FASTAGAP},
-        {"multalign", EAlignFormat::MULTALIGN},
+        {"multalign", EAlignFormat::MULTALIN},
         {"nexus", EAlignFormat::NEXUS},
         {"phylip", EAlignFormat::PHYLIP},
         {"sequin", EAlignFormat::SEQUIN},

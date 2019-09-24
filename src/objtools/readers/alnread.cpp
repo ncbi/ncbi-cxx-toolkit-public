@@ -67,7 +67,7 @@ GetScannerForFormat(
         return new CAlnScannerSequin();
     case EAlignFormat::NEXUS:
         return new CAlnScannerNexus();
-    case EAlignFormat::MULTALIGN:
+    case EAlignFormat::MULTALIN:
         return new CAlnScannerMultAlign();
     }
 }

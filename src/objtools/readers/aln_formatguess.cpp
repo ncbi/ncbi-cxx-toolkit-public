@@ -69,7 +69,7 @@ CAlnFormatGuesser::GetFormat(
         return EAlignFormat::SEQUIN;
     }
     if (xSampleIsMultAlign(testSample)) {
-        return EAlignFormat::MULTALIGN;
+        return EAlignFormat::MULTALIN;
     }
     return EAlignFormat::UNKNOWN;
 };

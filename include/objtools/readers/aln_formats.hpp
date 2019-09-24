@@ -41,7 +41,7 @@ enum EAlignFormat {
     CLUSTAL,
     FASTAGAP,
     SEQUIN,
-    MULTALIGN
+    MULTALIN
 };
 
 NCBI_XOBJREAD_EXPORT string EAlignFormatToString(EAlignFormat alnFmt);
