@@ -11,4 +11,4 @@ WATCHERS = gouriano
 
 
 USES_LIBRARIES =  \
-    $(NCBI_C_ncbi) xncbi
+    xncbi

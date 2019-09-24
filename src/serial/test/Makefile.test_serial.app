@@ -9,8 +9,6 @@
 APP = test_serial
 SRC = serialobject serialobject_Base test_serial test_cserial test_common cppwebenv twebenv
 
-DATATOOL_SRC = we_cpp
-
 LIB = test_boost we_cpp xcser xser xutil xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) $(BOOST_INCLUDE)
