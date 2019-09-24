@@ -242,12 +242,12 @@ public:
         /// Juran's "Quality Control Handbook" that provide guidelines
         /// to select the number of bins for histograms.
         eJuran,
-        /// Herbert Sturge`s rule. It works best for continuous data that is
+        /// Herbert Sturge's rule. It works best for continuous data that is
         /// normally distributed and symmetrical. As long as your data is not skewed,
-        /// using Sturge’s rule should give you a nice-looking, easy to read
+        /// using Sturge's rule should give you a nice-looking, easy to read
         /// histogram that represents the data well.
         eSturge,
-        /// Rice's rule. Presented as a simple alternative to Sturges's rule.
+        /// Rice's rule. Presented as a simple alternative to Sturge's rule.
         eRice
     };
 
@@ -350,6 +350,9 @@ protected:
 
     /// Move data from 'other' histogram. 'other' became invalid.
     void x_MoveFrom(CHistogram& other);
+
+    /// Check that 'a' and 'b' scale values are equal (or almost equal for floating scales).
+    bool x_IsEqual(TScale a, TScale b);
 
 protected:
     TValue    m_Min;         ///< Minimum value (the lower bound of combined scale)
@@ -860,18 +863,47 @@ CHistogram<TValue, TScale, TCounter>::x_MoveFrom(CHistogram& other)
 
 
 template <typename TValue, typename TScale, typename TCounter>
+bool
+CHistogram<TValue, TScale, TCounter>::x_IsEqual(TScale a, TScale b)
+{
+    if (std::numeric_limits<TScale>::is_integer) {
+        return a == b;
+    }
+    // Aproximately check for floating numbers
+    return std::abs(a - b) < 0.0001;
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
 void
 CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
 {
     if (this == &other) return;
-    if ( m_NumBins != other.m_NumBins ) {
+    // Check structure
+    if ( m_NumBins != other.m_NumBins  ||
+        !x_IsEqual(m_Min, other.m_Min) ||
+        !x_IsEqual(m_Max, other.m_Max) 
+        ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Histograms have different structure");
     }
-    TCounter* counters_cur = m_Counters.get();
+    // Check scale
+    TScale* starts_cur   = m_Starts.get();
+    TScale* starts_other = other.m_Starts.get();
+    for (unsigned i = 0; i < m_NumBins; i++) {
+        if (!x_IsEqual(starts_cur[i], starts_other[i])) {
+            NCBI_THROW(CCoreException, eInvalidArg, "Histograms have different starting positions");
+        }
+    }
+    // Steal counters
+    TCounter* counters_cur   = m_Counters.get();
     TCounter* counters_other = other.m_Counters.get();
     for (unsigned i = 0; i < m_NumBins; i++) {
         counters_cur[i] += counters_other[i];
     }
+    m_Count += other.m_Count;
+    m_LowerAnomalyCount += other.m_LowerAnomalyCount;
+    m_UpperAnomalyCount += other.m_UpperAnomalyCount;
+
     other.Reset();
 }
 
