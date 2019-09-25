@@ -71,6 +71,8 @@ private:
 
     void x_LoadIds(CNcbiIstream& in);
 
+    void x_ParseResults(istream& istr);
+
     CSeq_id_Handle x_NextId(void) {
         CFastMutexGuard guard(m_IdsMutex);
         CSeq_id_Handle ret;
@@ -92,6 +94,7 @@ private:
     CRef<CScope> m_Scope;
     TIds m_Ids;
     TIds::const_iterator m_NextId;
+    char m_TimeStat = 'r';
 };
 
 
@@ -180,6 +183,17 @@ void CPerfTestApp::Init(void)
     arg_desc->AddFlag("print_data", "print TSE");
     arg_desc->AddFlag("all_ids", "fetch all seq-ids from each thread");
 
+    arg_desc->AddOptionalKey("stat", "StatFile",
+        "File with performace test outputs",
+        CArgDescriptions::eInputFile);
+    arg_desc->SetDependency("ids", CArgDescriptions::eExcludes, "stat");
+    arg_desc->SetDependency("ids", CArgDescriptions::eExcludes, "stat");
+    arg_desc->SetDependency("gi_from", CArgDescriptions::eExcludes, "stat");
+    arg_desc->SetDependency("gi_to", CArgDescriptions::eExcludes, "stat");
+    arg_desc->AddDefaultKey("t", "time", "time to show", CArgDescriptions::eString, "r");
+    arg_desc->SetConstraint("t", &(*new CArgAllow_Strings, "r", "u", "s"));
+    arg_desc->SetDependency("t", CArgDescriptions::eRequires, "stat");
+
     string prog_description = "C++ object manager performance test\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               prog_description, false);
@@ -190,6 +204,12 @@ void CPerfTestApp::Init(void)
 int CPerfTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
+
+    if (args["stat"]) {
+        m_TimeStat = args["t"].AsString()[0];
+        x_ParseResults(args["stat"].AsInputFile());
+        return 0;
+    }
 
     int repeat_count = args["count"].AsInteger();
     if (repeat_count <= 0) repeat_count = 1;
@@ -310,8 +330,10 @@ int CPerfTestApp::Run(void)
         }
     }
 
-    cout << "Done: " << sw.Elapsed() << "; "
-        << m_Ids.size() << " ids; " << thread_count << " thr; " << repeat_count << " rep; ";
+    double t_real, t_user, t_sys;
+    CCurrentProcess::GetTimes(&t_real, &t_user, &t_sys);
+
+    cout << "Done: r=" << t_real << "; u=" << t_user << "; s=" << t_sys << "; ";
     if (args["ids"]) {
         cout << "'" << args["ids"].AsString() << "'";
     }
@@ -321,6 +343,7 @@ int CPerfTestApp::Run(void)
     cout << "; " << loader;
     if (loader == "gb") cout << (args["pubseqos"] ? "/pubseqos" : "/id");
     cout << (args["no_split"] ? "/no_split" : "/split");
+    cout << "; " << m_Ids.size() << " ids; " << thread_count << " thr; " << repeat_count << " rep";
     cout << endl;
 
     return 0;
@@ -340,6 +363,122 @@ void CPerfTestApp::x_LoadIds(CNcbiIstream& in)
         CSeq_id id(line);
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
         m_Ids.insert(idh);
+    }
+}
+
+
+double ParseDouble(const string& s, size_t& pos)
+{
+    pos = s.find('=', pos);
+    if (pos == NPOS) return -1;
+    size_t pos2 = s.find(';', pos);
+    if (pos2 == NPOS) return -1;
+    double ret = NStr::StringToDouble(s.substr(pos + 1, pos2 - pos - 1));
+    pos = pos2 + 1;
+    return ret;
+}
+
+
+void CPerfTestApp::x_ParseResults(istream& istr)
+{
+    // Done: r=1.07493; u=0.265625; s=0.109375; 10 ids; 0 thr; 1 rep; 1000..1010; psg/split
+    struct SPerfStat {
+        double r;
+        double u;
+        double s;
+
+        SPerfStat(double ar = 0, double au = 0, double as = 0) : r(ar), u(au), s(as) {}
+
+        void Add(const SPerfStat& ps) {
+            r += ps.r;
+            u += ps.u;
+            s += ps.s;
+        }
+    };
+    typedef map<string, vector<SPerfStat>> TStats;
+    TStats stats;
+    size_t name_len = 0;
+    while (!istr.eof() && istr.good()) {
+        string line;
+        getline(istr, line);
+        if (line.empty()) continue;
+        if (!NStr::StartsWith(line, "Done: r=")) continue;
+        size_t pos = 0;
+        SPerfStat stat;
+        stat.r = ParseDouble(line, pos);
+        stat.u = ParseDouble(line, pos);
+        stat.s = ParseDouble(line, pos);
+        string test_name = line.substr(pos + 1);
+        NStr::ReplaceInPlace(test_name, " ", "");
+        stats[test_name].push_back(stat);
+        if (test_name.size() > name_len) name_len = test_name.size();
+    }
+    cout << left << setw(name_len + 2) << "name"
+        << right
+        << setw(8) << "min"
+        << setw(10) << "max"
+        << setw(10) << "avg"
+        << setw(10) << "med"
+        << setw(10) << "p75"
+        << setw(10) << "count" << endl;
+    NON_CONST_ITERATE(TStats, test_it, stats) {
+        size_t count = test_it->second.size();
+        if (count == 0) continue;
+        vector<double> st;
+        st.reserve(count);
+        double avg = 0;
+        ITERATE(vector<SPerfStat>, it, test_it->second) {
+            double v;
+            if (m_TimeStat == 'r') {
+                v = it->r;
+            }
+            else if (m_TimeStat == 'u') {
+                v = it->u;
+            }
+            else {
+                v = it->s;
+            }
+            st.push_back(v);
+            avg += v;
+        }
+        avg /= count;
+        sort(st.begin(), st.end());
+
+        double p50;
+        size_t idx50 = count / 2;
+        if (idx50 + 1 >= count) {
+            p50 = st[idx50];
+        }
+        else if (count % 2 == 0) {
+            p50 = (st[idx50] + st[idx50 + 1]) / 2;
+        }
+        else {
+            ++idx50;
+            p50 = st[idx50];
+        }
+
+        double p75;
+        size_t idx75 = count * 0.75;
+        if (idx75 + 1 >= count) {
+            p75 = st[idx75];
+        }
+        else if (count % 4 == 0) {
+            p75 = (st[idx75] + st[idx75 + 1]) / 2;
+        }
+        else {
+            ++idx75;
+            p75 = st[idx75];
+        }
+
+        cout << left << setw(name_len + 2) << test_it->first
+            << right << fixed << setprecision(3)
+            << setw(8) << st[0] << "  "
+            << setw(8) << st[count - 1] << "  "
+            << setw(8) << avg << "  "
+            << setw(8) << p50 << "  "
+            << setw(8) << p75 << "  "
+            << setw(8) << count
+            << endl;
     }
 }
 
