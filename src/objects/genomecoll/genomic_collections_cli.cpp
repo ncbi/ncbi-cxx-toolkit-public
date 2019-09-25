@@ -166,7 +166,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, c
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         }
         if (e.GetErrCode() == CRPCClientException::eFailed ) {
-            ERR_POST(Error << "CGI failed to return result. Check applog for errors in gc_get_assembly_v3.cgi and refresh_cache");
+            ERR_POST(Error << "Service failed to return result. Check applog for errors in gc_get_assembly_v3 and refresh_cache");
         }
         throw;
     } catch (CException& ) {
@@ -207,7 +207,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const 
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         }
         if (e.GetErrCode() == CRPCClientException::eFailed ) {
-            ERR_POST(Error << "CGI failed to return result. Check applog for errors in gc_get_assembly_v3.cgi and refresh_cache");
+            ERR_POST(Error << "Service failed to return result. Check applog for errors in gc_get_assembly_v3 and refresh_cache");
         }
         throw;
     } catch (CException& ) {
