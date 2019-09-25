@@ -1076,6 +1076,9 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         field-name "Sequencing technology" ,
         required FALSE } ,
       {
+        field-name "Sequencing assay code" ,
+        required FALSE } ,
+      {
         field-name "Coverage" ,
         required FALSE } ,
       {
