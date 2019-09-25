@@ -1388,13 +1388,13 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
         return eIO_Unknown;
     }
     tm.tm_mday  = field[2];
-    if (field[3] < 1  ||  field[3] > 23)
+    if (field[3] < 0  ||  field[3] > 23)
         return eIO_Unknown;
     tm.tm_hour  = field[3];
-    if (field[4] < 1  ||  field[4] > 59)
+    if (field[4] < 0  ||  field[4] > 59)
         return eIO_Unknown;
     tm.tm_min   = field[4];
-    if (field[5] < 1  ||  field[5] > 60) /* allow one leap second */
+    if (field[5] < 0  ||  field[5] > 60) /* allow one leap second */
         return eIO_Unknown;
     tm.tm_sec   = field[5];
 #ifdef HAVE_TIMEGM
