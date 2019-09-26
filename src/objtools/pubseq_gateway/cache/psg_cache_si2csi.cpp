@@ -70,7 +70,7 @@ void CPubseqGatewayCacheSi2Csi::Open()
 bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data)
 {
     bool rv = false;
-    if (!m_Env) {
+    if (!m_Env || sec_seqid.empty()) {
         return false;
     }
 

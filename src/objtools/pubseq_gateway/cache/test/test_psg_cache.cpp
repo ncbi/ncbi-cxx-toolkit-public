@@ -1,6 +1,9 @@
 
 #include <ncbi_pch.hpp>
-#include <objtools/pubseq_gateway/cache/psg_cache.hpp>
+
+#include <vector>
+#include <sstream>
+#include <climits>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -9,9 +12,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
-
-#include <sstream>
-#include <climits>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -30,21 +30,22 @@ class CTestPsgCache
     : public CNcbiApplication
 {
  public:
-	CTestPsgCache()
+    CTestPsgCache()
         : m_job(job_t::jb_lookup_bi_primary)
         , m_force_version{}
-	    , m_force_seq_id_type{}
+        , m_force_seq_id_type{}
     {}
     virtual void Init();
     virtual int Run();
 
  protected:
-	void ParseArgs();
+    void ParseArgs();
 
  private:
     bool ParsePrimarySeqId(const string& fasta_seqid, string& accession, int& version, int& seq_id_type);
     bool ParseSecondarySeqId(const string& fasta_seqid, string& seq_id_str, int& seq_id_type);
-    void PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, int64_t gi, const string& data);
+    void PrintBioseqInfo(
+        bool lookup_res, const string& accession, int version, int seq_id_type, int64_t gi, const string& data);
     void PrintPrimaryId(bool lookup_res, const string& seq_id, int seq_id_type, const string& data);
     void PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t last_modified, const string& data);
     void LookupBioseqInfoByPrimary(const string& fasta_seqid, int force_version, int force_seq_id_type);
@@ -138,7 +139,9 @@ void CTestPsgCache::ParseArgs() {
 
 }
 
-static string GetListOfSeqIds(const ::google::protobuf::RepeatedPtrField<::psg::retrieval::BioseqInfoValue_SecondaryId>& seq_ids)
+static string GetListOfSeqIds(
+    const ::google::protobuf::RepeatedPtrField<::psg::retrieval::BioseqInfoValue_SecondaryId>& seq_ids
+)
 {
     stringstream ss;
     bool empty = true;
@@ -155,11 +158,11 @@ static string GetListOfSeqIds(const ::google::protobuf::RepeatedPtrField<::psg::
 int CTestPsgCache::Run() {
     ParseArgs();
 
-    m_SatNames.push_back("");                 // 0
-    m_SatNames.push_back("");                 // 1
-    m_SatNames.push_back("");                 // 2
-    m_SatNames.push_back("");                 // 3
-    m_SatNames.push_back("satncbi_extended"); // 4
+    m_SatNames.push_back("");                  // 0
+    m_SatNames.push_back("");                  // 1
+    m_SatNames.push_back("");                  // 2
+    m_SatNames.push_back("");                  // 3
+    m_SatNames.push_back("satncbi_extended");  // 4
     m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile, m_Si2csiDbFile, m_BlobPropDbFile));
     m_LookupCache->Open(m_SatNames);
 
@@ -193,8 +196,7 @@ int CTestPsgCache::Run() {
                     last_modified = stoi(*it);
                 }
                 LookupBlobProp(sat, sat_key, last_modified);
-            }
-            else {
+            } else {
                 ERR_POST(Error << "Query parameter expected: sat,sat_key(,last_modified) ");
             }
 
@@ -240,12 +242,12 @@ bool CTestPsgCache::ParsePrimarySeqId(const string& fasta_seqid, string& accessi
             if (tx_id) {
                 if (tx_id->IsSetAccession()) {
                     accession = tx_id->GetAccession();
-                    if (tx_id->IsSetVersion())
+                    if (tx_id->IsSetVersion()) {
                         version = tx_id->GetVersion();
-                    else
+                    } else {
                         version = -1;
-                }
-                else if (tx_id->IsSetName()) {
+                    }
+                } else if (tx_id->IsSetName()) {
                     accession = tx_id->GetName();
                 }
             }
@@ -258,7 +260,9 @@ bool CTestPsgCache::ParsePrimarySeqId(const string& fasta_seqid, string& accessi
     }
 
     if (accession.empty()) {
-        ERR_POST(Error << "Provided SeqId \"" << fasta_seqid << "\" is not recognized as primary. A primary would have accession[dot version]. In order to resolve secondary identifier, use -j=bi_secondary");
+        ERR_POST(Error << "Provided SeqId \"" << fasta_seqid
+             << "\" is not recognized as primary. A primary would have accession[dot version]. "
+             << "In order to resolve secondary identifier, use -j=bi_secondary");
         return false;
     }
 
@@ -293,14 +297,12 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
                         seq_id_str = tx_id->GetAccession();
                         if (tx_id->IsSetVersion())
                             seq_id_str = seq_id_str + "." + to_string(tx_id->GetVersion());
-                    }
-                    else if (tx_id->IsSetName()) {
+                    } else if (tx_id->IsSetName()) {
                         seq_id_str = tx_id->GetName();
                     }
                 }
 //            }
-        }
-        else {
+        } else {
             seq_id_str = NStr::NumericToString(seq_id.GetGi());
         }
     }

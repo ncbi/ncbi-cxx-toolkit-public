@@ -28,19 +28,24 @@
  * File Description:
  *
  */
+
 #include <ncbi_pch.hpp>
-#include <util/lmdbxx/lmdb++.h>
 
 #include "psg_cache_bioseq_info.hpp"
 
+#include <memory>
+#include <string>
+
+#include <util/lmdbxx/lmdb++.h>
+
 USING_NCBI_SCOPE;
 
-static const constexpr unsigned kPackedZeroSz = 1;
-static const constexpr unsigned kPackedVersionSz = 3;
-static const constexpr unsigned kPackedSeqIdTypeSz = 2;
-static const constexpr unsigned kPackedGISz = 8;
-
 BEGIN_SCOPE()
+
+static const unsigned kPackedZeroSz = 1;
+static const unsigned kPackedVersionSz = 3;
+static const unsigned kPackedSeqIdTypeSz = 2;
+static const unsigned kPackedGISz = 8;
 
 class CPackBytes
 {
@@ -60,7 +65,7 @@ class CPackBytes
     {
         using TIsLast = typename conditional<count == 1, true_type, false_type>::type;
         unsigned char c = (unsigned_bytes >> ((count - 1) * 8)) & 0xFF;
-        value.append(1, char(c));
+        value.append(1, static_cast<char>(c));
         PackImpl<count - 1>(value, unsigned_bytes, TIsLast());
     }
 
@@ -68,7 +73,6 @@ class CPackBytes
     void PackImpl(string&, TUInt, true_type /*zero_count*/) const
     {
     }
-
 };
 
 class CUnpackBytes
@@ -82,7 +86,6 @@ class CUnpackBytes
         const unsigned char* ukey = reinterpret_cast<const unsigned char*>(key);
         TUInt result{};
         UnpackImpl<count>(ukey, result, TIsLast());
-
         return static_cast<TInt>(result);
     }
 
@@ -106,18 +109,20 @@ size_t PackedKeySize(size_t acc_sz)
     return acc_sz + (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz + kPackedGISz);
 }
 
+/*
 void PrintKey(const string& rv)
 {
     cout << "Result: " << rv.size() << " [ ";
     cout << hex << setw(2) << setfill('0');
     const char * r = rv.c_str();
     for (size_t i = 0; i < rv.size(); ++i) {
-        cout << (int)r[i] << " ";
+        cout << static_cast<int>(r[i]) << " ";
     }
     cout << dec;
     cout << " ]" << endl;
 
 };
+*/
 
 END_SCOPE()
 
@@ -152,7 +157,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(
     const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
 {
     bool rv = false;
-    if (!m_Env) {
+    if (!m_Env || accession.empty()) {
         return false;
     }
 
@@ -194,7 +199,8 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(
 
     if (version < 0) {
         int _found_version;
-        return LookupByAccessionVersionSeqIdType(accession, version, 0, data, _found_version, found_seq_id_type, found_gi);
+        return LookupByAccessionVersionSeqIdType(
+            accession, version, 0, data, _found_version, found_seq_id_type, found_gi);
     }
 
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
@@ -208,7 +214,8 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(
             rv = rv && key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
             if (rv) {
                 int _found_version;
-                rv = UnpackKey(key.data<const char>(), key.size(), _found_version, found_seq_id_type, found_gi) && (_found_version == version);
+                rv = UnpackKey(key.data<const char>(), key.size(), _found_version, found_seq_id_type, found_gi)
+                    && (_found_version == version);
                 if (rv) {
                     data.assign(val.data(), val.size());
                 }
@@ -224,7 +231,8 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(
 }
 
 
-// LOOKUPS data for accession, potentially version (if >= 0) and potentially seq_id_type (if > 0). Picks record with matched version (or maximum version if < 0) and matched seq_id_type
+// LOOKUPS data for accession, potentially version (if >= 0) and potentially seq_id_type (if > 0).
+// Picks record with matched version (or maximum version if < 0) and matched seq_id_type
 // or minimum seq_id_type (if <= 0)
 bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
     const string& accession,
@@ -253,7 +261,8 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         lmdb::val val;
-        if (version < 0) { // Request for MAX version or unkown seq_id_type
+        // Request for MAX version or unkown seq_id_type
+        if (version < 0) {
             auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
             rv = cursor.get(lmdb::val(accession), MDB_SET_RANGE);
             if (rv) {
@@ -263,12 +272,14 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
                     int _found_seq_id_type = -1;
                     int _found_version = -1;
                     int64_t _found_gi = -1;
-                    rv = key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
+                    rv = key.size() == PackedKeySize(accession.size())
+                        && accession.compare(key.data<const char>()) == 0;
                     if (!rv) {
                         break;
                     }
                     if (rv) {
-                        rv = UnpackKey(key.data<const char>(), key.size(), _found_version, _found_seq_id_type, _found_gi);
+                        rv = UnpackKey(
+                            key.data<const char>(), key.size(), _found_version, _found_seq_id_type, _found_gi);
                     }
                     rv = rv && (seq_id_type <= 0 || seq_id_type == _found_seq_id_type);
                     if (rv) {
@@ -291,12 +302,14 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
                     int _found_seq_id_type = -1;
                     int _found_version = -1;
                     int64_t _found_gi = -1;
-                    rv = key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
+                    rv = key.size() == PackedKeySize(accession.size())
+                        && accession.compare(key.data<const char>()) == 0;
                     if (!rv) {
                         break;
                     }
                     if (rv) {
-                        rv = UnpackKey(key.data<const char>(), key.size(), _found_version, _found_seq_id_type, _found_gi);
+                        rv = UnpackKey(
+                            key.data<const char>(), key.size(), _found_version, _found_seq_id_type, _found_gi);
                     }
                     rv = rv && (version == _found_version && seq_id_type == _found_seq_id_type);
                     if (rv) {
@@ -326,7 +339,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupBioseqInfoByAccessionGi(
     const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type)
 {
     bool rv = false;
-    if (!m_Env) {
+    if (!m_Env || accession.empty()) {
         return false;
         data.clear();
     }
@@ -401,6 +414,7 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     rv = accession;
     rv.append(1, 0);
     int32_t ver = ~version;
+    gi = ~gi;
     CPackBytes().Pack<3>(rv, ver);
     CPackBytes().Pack<2>(rv, seq_id_type);
     CPackBytes().Pack<8>(rv, gi);
@@ -419,6 +433,7 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(
             version = ~(ver | 0xFF000000);
             seq_id_type = CUnpackBytes().Unpack<2, int>(key + ofs + 4);
             gi = CUnpackBytes().Unpack<8, int64_t>(key + ofs + 6);
+            gi = ~gi;
         }
     }
     return rv;

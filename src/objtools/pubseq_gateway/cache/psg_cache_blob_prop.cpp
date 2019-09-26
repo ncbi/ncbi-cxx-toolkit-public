@@ -49,8 +49,9 @@ CPubseqGatewayCacheBlobProp::~CPubseqGatewayCacheBlobProp()
 }
 
 void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names) {
-    if (sat_names.empty())
+    if (sat_names.empty()) {
         lmdb::runtime_error::raise("List of satellites is empty", 0);
+    }
 
     CPubseqGatewayCacheBase::Open();
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
@@ -61,7 +62,7 @@ void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names) {
             string sat_dbi = string("#DATA[") + to_string(sat) + "]";
             try {
                 pdbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
-                    new lmdb::dbi({lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0)}), 
+                    new lmdb::dbi({lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0)}),
                     [this](lmdb::dbi* dbi){
                         if (dbi && *dbi) {
                             dbi->close(*m_Env);
@@ -72,7 +73,7 @@ void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names) {
             }
             catch (const lmdb::error& e) {
                 ERR_POST(Warning << "BlobProp cache: failed to open " << sat_dbi << " dbi: " << e.what()
-                    << ", cache for sat = " << sat 
+                    << ", cache for sat = " << sat
                     << " will not be used.");
                 pdbi = nullptr;
             }
@@ -126,7 +127,7 @@ bool CPubseqGatewayCacheBlobProp::LookupBySatKeyLastModified(int32_t sat, int32_
         if (rv)
             data.assign(val.data(), val.size());
     }
-    
+
     rdtxn.commit();
     if (!rv)
         data.clear();

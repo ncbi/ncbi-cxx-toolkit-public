@@ -32,6 +32,8 @@
  *
  */
 
+#include <memory>
+#include <string>
 
 #include "psg_cache_base.hpp"
 
@@ -41,7 +43,7 @@ class CPubseqGatewayCacheBioseqInfo
     : public CPubseqGatewayCacheBase
 {
  public:
-	CPubseqGatewayCacheBioseqInfo(const string& file_name);
+    explicit CPubseqGatewayCacheBioseqInfo(const string& file_name);
     virtual ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
     bool LookupByAccession(
@@ -49,7 +51,14 @@ class CPubseqGatewayCacheBioseqInfo
     bool LookupByAccessionVersion(
         const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi);
     bool LookupByAccessionVersionSeqIdType(
-        const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type, int64_t& found_gi);
+        const string& accession,
+        int version,
+        int seq_id_type,
+        string& data,
+        int& found_version,
+        int& found_saq_id_type,
+        int64_t& found_gi
+    );
     bool LookupBioseqInfoByAccessionGi(
         const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
 
@@ -57,7 +66,8 @@ class CPubseqGatewayCacheBioseqInfo
     static string PackKey(const string& accession, int version, int seq_id_type);
     static string PackKey(const string& accession, int version, int seq_id_type, int64_t gi);
     static bool UnpackKey(const char* key, size_t key_sz, int& version, int& seq_id_type, int64_t& gi);
-    static bool UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi);
+    static bool UnpackKey(
+        const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi);
 
  private:
     void ResetDbi();
@@ -67,4 +77,4 @@ class CPubseqGatewayCacheBioseqInfo
 END_NCBI_SCOPE
 
 
-#endif
+#endif  // PSG_CACHE_BIOSEQ_INFO__HPP

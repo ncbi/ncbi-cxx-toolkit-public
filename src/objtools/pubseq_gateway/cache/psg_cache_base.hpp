@@ -32,30 +32,31 @@
  *
  */
 
-namespace lmdb {
+#include <corelib/ncbistd.hpp>
+
+#include <memory>
+#include <string>
+
+BEGIN_SCOPE(lmdb)
     class env;
     class dbi;
-}
-
-#include <corelib/ncbistd.hpp>
+END_SCOPE()
 
 BEGIN_NCBI_SCOPE
 
 class CPubseqGatewayCacheBase
 {
-public:
-	CPubseqGatewayCacheBase(const string& file_name);
+ public:
+    explicit CPubseqGatewayCacheBase(const string& file_name);
     virtual ~CPubseqGatewayCacheBase();
-    /**
-     * throws lmdb::error
-     */
+    // @throws lmdb::error
     void Open();
-protected:
+
+ protected:
     string m_FileName;
     unique_ptr<lmdb::env> m_Env;
 };
 
 END_NCBI_SCOPE
 
-
-#endif
+#endif  // PSG_CACHE_BASE__HPP
