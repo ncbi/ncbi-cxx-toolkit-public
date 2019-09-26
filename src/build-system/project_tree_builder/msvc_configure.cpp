@@ -335,15 +335,7 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
         return;
     }
 
-    // Create file
-
-    string candidate(filename + ".candidate");
-    CNcbiOfstream ofs(candidate.c_str(), IOS_BASE::out | IOS_BASE::trunc);
-    if ( !ofs ) {
-	    NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
-    }
-    WriteNcbiconfHeader(ofs);
-
+    // get vars
     string tc_ver   = GetApp().GetEnvironment().Get("TEAMCITY_VERSION");
     string tc_build = GetApp().GetEnvironment().Get("BUILD_NUMBER");
     string tc_build_id;
@@ -366,18 +358,10 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
             }
         }
     }
-
-    string prefix("#define NCBI_");
-
-    if (!tc_ver.empty()  &&  !tc_build.empty()) {
-        ofs << prefix << "TEAMCITY_BUILD_NUMBER    " << tc_build << endl;
-        ofs << prefix << "TEAMCITY_BUILD_ID        " << tc_build_id << endl;
-        ofs << prefix << "TEAMCITY_PROJECT_NAME    " << "\"" << tc_prj  << "\"" << endl;
-        ofs << prefix << "TEAMCITY_BUILDCONF_NAME  " << "\"" << tc_conf << "\"" << endl;
-    }
-
     string tree_root = GetApp().GetEnvironment().Get("TREE_ROOT");
-
+    if (tree_root.empty()) {
+        tree_root = GetApp().GetProjectTreeInfo().m_Root;
+    }
     if (!tree_root.empty()) {
         // Get SVN info
         string tmp_file = CFile::GetTmpName();
@@ -406,20 +390,57 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
                 sc_rev = re.GetMatch(prop_file_info, 0, 1);
             }
         }
-        if (!sc_rev.empty()) {
-            ofs << prefix << "SUBVERSION_REVISION      " << sc_rev << endl;
-        }
-        if (!sc_ver.empty()) {
-            ofs << prefix << "SC_VERSION               " << sc_ver << endl;
-        }
     }
-    ofs << endl;
-    PromoteIfDifferent(filename, candidate);
+    if (tc_build.empty()) {tc_build = "0";}
+    if (sc_ver.empty())   {sc_ver = "0";}
+    if (sc_rev.empty())   {sc_rev = "0";}
 
+    map<string,string> build_vars;
+    build_vars["NCBI_TEAMCITY_BUILD_NUMBER"] = tc_build;
+    build_vars["NCBI_TEAMCITY_BUILD_ID"] = tc_build_id;
+    build_vars["NCBI_TEAMCITY_PROJECT_NAME"] = tc_prj;
+    build_vars["NCBI_TEAMCITY_BUILDCONF_NAME"] = tc_conf;
+    build_vars["NCBI_SUBVERSION_REVISION"] = sc_rev;
+    build_vars["NCBI_SC_VERSION"] = sc_ver;
+
+    auto converter = [](const string& file_in, const string& file_out, const map<string,string>& vocabulary) {
+        string candidate = file_out + ".candidate";
+        CNcbiOfstream ofs(candidate, IOS_BASE::out | IOS_BASE::trunc);
+        if ( ofs.is_open() ) {
+
+            CNcbiIfstream ifs(file_in);
+            if (ifs.is_open()) {
+                string line;
+                while( getline(ifs, line) ) {
+                    for (string::size_type from = line.find("@"); from != string::npos; from = line.find("@")) {
+                        string::size_type  to = line.find("@", from + 1);
+                        if (to != string::npos) {
+                            string key = line.substr(from+1, to-from-1);
+                            if (vocabulary.find(key) != vocabulary.end()) {
+                                line.replace(from, to-from+1, vocabulary.at(key));
+                            } else {
+                                line.replace(from, to-from+1, "");
+                            }
+                        }
+                    }
+                    ofs << line << endl;
+                }
+                ifs.close();
+            }
+            ofs.close();
+            PromoteIfDifferent(file_out, candidate);
+        }
+    };
+
+    string file_in = CDirEntry::ConvertToOSPath(CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, "common/ncbi_build_ver.h.in"));
+    converter(file_in, filename, build_vars); 
     // Cache file name for the generated file
     filename_cache = NcbiSys_strdup(_T_XCSTRING(filename));
-
     m_HaveBuildVer = true;
+
+    filename = CDirEntry::ConvertToOSPath(CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, "common/ncbi_revision.h"));
+    file_in = CDirEntry::ConvertToOSPath(CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, "common/ncbi_revision.h.in"));
+    converter(file_in, filename, build_vars); 
 }
 
 
