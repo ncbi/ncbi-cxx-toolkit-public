@@ -724,7 +724,11 @@ void CAsnvalApp::ProcessBSSReleaseFile
 
     // Read the CBioseq_set, it will call the hook object each time we 
     // encounter a Seq-entry
-    *m_In >> *seqset;
+    try {
+        *m_In >> *seqset;
+    }
+    catch (CException) {
+    }
 }
 
 void CAsnvalApp::ProcessSSMReleaseFile
@@ -738,7 +742,12 @@ void CAsnvalApp::ProcessSSMReleaseFile
 
     // Read the CSeq_submit, it will call the hook object each time we 
     // encounter a Seq-entry
-    *m_In >> *seqset;
+    try {
+        *m_In >> *seqset;
+    }
+    catch (CException) {
+        LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a Seq-submit, do not use -a u to process.");
+    }
 }
 
 CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException *p_exception)
@@ -830,7 +839,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioseq(void)
     CRef<CSeq_entry> se(new CSeq_entry);
     CBioseq& bioseq = se->SetSeq();
 
-    m_In->Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+    try {
+        m_In->Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+    }
+    catch (const CException& e) {
+        ERR_POST(Error << e);
+        return ReportReadFailure(&e);
+    }
 
     // Validate Seq-entry
     return ProcessSeqEntry(*se);
@@ -842,7 +857,14 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioseqset(void)
     CRef<CSeq_entry> se(new CSeq_entry);
     CBioseq_set& bioseqset = se->SetSet();
 
-    m_In->Read(ObjectInfo(bioseqset), CObjectIStream::eNoFileHeader);
+    try {
+        m_In->Read(ObjectInfo(bioseqset), CObjectIStream::eNoFileHeader);
+    }
+    catch (const CException& e) {
+        ERR_POST(Error << e);
+        return ReportReadFailure(&e);
+    }
+
     // Validate Seq-entry
     return ProcessSeqEntry(*se);
 }
@@ -854,7 +876,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     CRef<CSeq_entry> se(new CSeq_entry);
 
     try {
-            m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);    
+        m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);    
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
@@ -913,7 +935,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
 CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat(void)
 {
     CRef<CSeq_feat> feat(new CSeq_feat);
-    m_In->Read(ObjectInfo(*feat), CObjectIStream::eNoFileHeader);
+
+    try {
+        m_In->Read(ObjectInfo(*feat), CObjectIStream::eNoFileHeader);
+    }
+    catch (const CException& e) {
+        ERR_POST(Error << e);
+    }
 
     return feat;
 }
@@ -939,7 +967,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat(void)
 CRef<CBioSource> CAsnvalApp::ReadBioSource(void)
 {
     CRef<CBioSource> src(new CBioSource);
-    m_In->Read(ObjectInfo(*src), CObjectIStream::eNoFileHeader);
+
+    try {
+        m_In->Read(ObjectInfo(*src), CObjectIStream::eNoFileHeader);
+    }
+    catch (const CException& e) {
+        ERR_POST(Error << e);
+    }
 
     return src;
 }
@@ -960,7 +994,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource(void)
 CRef<CPubdesc> CAsnvalApp::ReadPubdesc(void)
 {
     CRef<CPubdesc> pd(new CPubdesc());
-    m_In->Read(ObjectInfo(*pd), CObjectIStream::eNoFileHeader);
+
+    try {
+        m_In->Read(ObjectInfo(*pd), CObjectIStream::eNoFileHeader);
+    }
+    catch (const CException& e) {
+        ERR_POST(Error << e);
+    }
 
     return pd;
 }
@@ -1016,7 +1056,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
     CRef<CSeq_annot> sa(new CSeq_annot);
 
     // Get seq-annot to validate
-    m_In->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
+    try {
+        m_In->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException& e) {
+        ERR_POST(Error << e);
+        return ReportReadFailure(&e);
+    }
 
     // Validate Seq-annot
     CValidator validator(*m_ObjMgr);
@@ -1059,7 +1105,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc(void)
 {
     CRef<CSeqdesc> sd(new CSeqdesc);
 
-    m_In->Read(ObjectInfo(*sd), CObjectIStream::eNoFileHeader);
+    try {
+        m_In->Read(ObjectInfo(*sd), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException& e) {
+        ERR_POST(Error << e);
+        return ReportReadFailure(&e);
+    }
 
     CRef<CSeq_entry> ctx = s_BuildGoodSeq();
 
