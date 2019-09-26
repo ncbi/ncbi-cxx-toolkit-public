@@ -474,8 +474,7 @@ void CSpanCheckApp::CheckFile(const SDB& db)
         
         for ( int secondary = 0; secondary < 2; ++secondary ) {
             CVDBValueFor<TVDBRowId> ids = db.ref.ALIGNMENT_IDS(secondary, ref_row);
-            for ( size_t i = 0; i < ids.size(); ++i ) {
-                TVDBRowId row_id = ids[i];
+            for ( auto row_id : ids ) {
                 INSDC_coord_zero pos = db.aln(secondary).REF_POS(row_id);
                 INSDC_coord_len len = db.aln(secondary).REF_LEN(row_id);
                 if ( pos != 0 ) {
@@ -561,8 +560,7 @@ void CSpanCheckApp::RecalculateFile(const SDB& db)
                 old_ref_pos[secondary].push_back(overlap_pos[secondary]);
                 old_ref_len[secondary].push_back(overlap_len[secondary]);
                 CVDBValueFor<TVDBRowId> ids = db.ref.ALIGNMENT_IDS(secondary, ref_row+ref_page);
-                for ( size_t i = 0; i < ids.size(); ++i ) {
-                    TVDBRowId row_id = ids[i];
+                for ( auto row_id : ids ) {
                     TSeqPos pos = db.aln(secondary).REF_POS(row_id);
                     TSeqPos len = db.aln(secondary).REF_LEN(row_id);
                     TSeqPos last_pos = pos + len - 1;
