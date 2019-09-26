@@ -113,13 +113,13 @@ size_t PackedKeySize(size_t acc_sz)
 void PrintKey(const string& rv)
 {
     cout << "Result: " << rv.size() << " [ ";
-    cout << hex << setw(2) << setfill('0');
+    cout << hex;
     const char * r = rv.c_str();
     for (size_t i = 0; i < rv.size(); ++i) {
-        cout << static_cast<int>(r[i]) << " ";
+        cout << setw(2) << setfill('0') << static_cast<uint16_t>(r[i]) << " ";
     }
     cout << dec;
-    cout << " ]" << endl;
+    cout << "]" << endl;
 
 };
 */
@@ -156,11 +156,10 @@ void CPubseqGatewayCacheBioseqInfo::Open()
 bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(
     const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
 {
-    bool rv = false;
     if (!m_Env || accession.empty()) {
         return false;
     }
-
+    bool rv = false;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
@@ -181,9 +180,6 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(
     }
 
     rdtxn.commit();
-    if (!rv) {
-        data.clear();
-    }
     return rv;
 }
 
@@ -192,17 +188,14 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(
 bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(
     const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi)
 {
-    bool rv = false;
     if (!m_Env) {
         return false;
     }
-
     if (version < 0) {
-        int _found_version;
-        return LookupByAccessionVersionSeqIdType(
-            accession, version, 0, data, _found_version, found_seq_id_type, found_gi);
+        int _version;
+        return LookupByAccessionVersionSeqIdType(accession, version, 0, data, _version, found_seq_id_type, found_gi);
     }
-
+    bool rv = false;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         string skey = PackKey(accession, version);
@@ -224,9 +217,6 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(
     }
 
     rdtxn.commit();
-    if (!rv) {
-        data.clear();
-    }
     return rv;
 }
 
@@ -244,12 +234,9 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
     int64_t& found_gi
 )
 {
-    bool rv = false;
-    if (!m_Env) {
+    if (!m_Env || accession.empty()) {
         return false;
-        data.clear();
     }
-
     if (version >= 0 && seq_id_type <= 0) {
         bool rv = LookupByAccessionVersion(accession, version, data, found_seq_id_type, found_gi);
         if (rv) {
@@ -258,6 +245,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
         return rv;
     }
 
+    bool rv = false;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         lmdb::val val;
@@ -328,9 +316,6 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
     }
 
     rdtxn.commit();
-    if (!rv) {
-        data.clear();
-    }
     return rv;
 }
 
@@ -338,12 +323,10 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(
 bool CPubseqGatewayCacheBioseqInfo::LookupBioseqInfoByAccessionGi(
     const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type)
 {
-    bool rv = false;
     if (!m_Env || accession.empty()) {
         return false;
-        data.clear();
     }
-
+    bool rv = false;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         lmdb::val val;
@@ -378,9 +361,29 @@ bool CPubseqGatewayCacheBioseqInfo::LookupBioseqInfoByAccessionGi(
     }
 
     rdtxn.commit();
-    if (!rv) {
-        data.clear();
+    return rv;
+}
+
+// LOOKUPS data for accession, version, seq_id_type and GI
+bool CPubseqGatewayCacheBioseqInfo::LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
+    const string& accession, int version, int seq_id_type, int64_t gi, string& data)
+{
+    if (!m_Env || accession.empty() || version < 0 || seq_id_type < 0 || gi < 0) {
+        return false;
     }
+    bool rv = false;
+    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
+    {
+        string search_key = PackKey(accession, version, seq_id_type, gi);
+        lmdb::val val;
+        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
+        rv = cursor.get(lmdb::val(search_key), val, MDB_SET);
+        if (rv) {
+            data.assign(val.data(), val.size());
+        }
+    }
+
+    rdtxn.commit();
     return rv;
 }
 

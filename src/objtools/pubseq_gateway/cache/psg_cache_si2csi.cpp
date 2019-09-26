@@ -28,19 +28,30 @@
  * File Description:
  *
  */
+
 #include <ncbi_pch.hpp>
-#include <util/lmdbxx/lmdb++.h>
 
 #include "psg_cache_si2csi.hpp"
 
+#include <memory>
+#include <string>
+#include <utility>
+
+#include <util/lmdbxx/lmdb++.h>
+
 USING_NCBI_SCOPE;
 
-static const constexpr unsigned kPackedSeqIdTypeSz = 2;
-static const constexpr unsigned kPackedKeyZero = 1;
+BEGIN_SCOPE()
 
-static size_t PackedKeySize(size_t acc_sz) {
+static const unsigned kPackedSeqIdTypeSz = 2;
+static const unsigned kPackedKeyZero = 1;
+
+size_t PackedKeySize(size_t acc_sz)
+{
     return acc_sz + kPackedKeyZero + kPackedSeqIdTypeSz;
 }
+
+END_SCOPE()
 
 CPubseqGatewayCacheSi2Csi::CPubseqGatewayCacheSi2Csi(const string& file_name) :
     CPubseqGatewayCacheBase(file_name)
@@ -69,11 +80,10 @@ void CPubseqGatewayCacheSi2Csi::Open()
 
 bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data)
 {
-    bool rv = false;
     if (!m_Env || sec_seqid.empty()) {
         return false;
     }
-
+    bool rv = false;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
@@ -92,18 +102,15 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_
     }
 
     rdtxn.commit();
-    if (!rv) {
-        data.clear();
-    }
     return rv;
 }
 
-bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data) {
-    bool rv = false;
-    if (!m_Env) {
+bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data)
+{
+    if (!m_Env || sec_seqid.empty()) {
         return false;
     }
-
+    bool rv = false;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         string skey = PackKey(sec_seqid, sec_seq_id_type);
@@ -116,13 +123,11 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdSeqIdType(const string& sec_seqid, 
     }
 
     rdtxn.commit();
-    if (!rv) {
-        data.clear();
-    }
     return rv;
 }
 
-string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_id_type) {
+string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_id_type)
+{
     string rv;
     rv.reserve(sec_seqid.size() + kPackedKeyZero + kPackedSeqIdTypeSz);
     rv = sec_seqid;
@@ -132,7 +137,8 @@ string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_i
     return rv;
 }
 
-bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type) {
+bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type)
+{
     bool rv = key_sz > (kPackedKeyZero + kPackedSeqIdTypeSz);
     if (rv) {
         size_t ofs = key_sz - (kPackedKeyZero + kPackedSeqIdTypeSz);

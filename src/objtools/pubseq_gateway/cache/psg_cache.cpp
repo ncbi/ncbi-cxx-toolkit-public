@@ -31,11 +31,13 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objtools/pubseq_gateway/cache/psg_cache.hpp>
+
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include <util/lmdbxx/lmdb++.h>
-
-#include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 
 #include "psg_cache_bioseq_info.hpp"
 #include "psg_cache_si2csi.hpp"
@@ -43,7 +45,7 @@
 
 USING_NCBI_SCOPE;
 
-const size_t CPubseqGatewayCache::kRuntimeErrorLimit = 10;
+BEGIN_SCOPE()
 
 static void sAddRuntimeError(
     CPubseqGatewayCache::TRuntimeErrorList& error_list,
@@ -59,10 +61,16 @@ static void sAddRuntimeError(
     error_list.emplace_back(error);
 }
 
-CPubseqGatewayCache::CPubseqGatewayCache(const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name) :
-    m_BioseqInfoPath(bioseq_info_file_name),
-    m_Si2CsiPath(si2csi_file_name),
-    m_BlobPropPath(blob_prop_file_name)
+END_SCOPE()
+
+const size_t CPubseqGatewayCache::kRuntimeErrorLimit = 10;
+
+CPubseqGatewayCache::CPubseqGatewayCache(
+    const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name
+)
+    : m_BioseqInfoPath(bioseq_info_file_name)
+    , m_Si2CsiPath(si2csi_file_name)
+    , m_BlobPropPath(blob_prop_file_name)
 {
 }
 
@@ -103,7 +111,8 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
             m_BlobPropCache->Open(sat_names);
         } catch (const lmdb::error& e) {
             stringstream s;
-            s << "Failed to open '" << m_BlobPropPath << "' cache: " << e.what() << ", blob prop cache will not be used.";
+            s << "Failed to open '" << m_BlobPropPath
+              << "' cache: " << e.what() << ", blob prop cache will not be used.";
             TRuntimeError error(s.str());
             sAddRuntimeError(m_RuntimeErrors, error);
             m_BlobPropCache.reset();
@@ -141,7 +150,8 @@ bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
-    const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
+    const string& accession, int version, int seq_id_type,
+    string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
 {
     return m_BioseqInfoCache
         ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
@@ -154,6 +164,14 @@ bool CPubseqGatewayCache::LookupBioseqInfoByAccessionGi(
 {
     return m_BioseqInfoCache
         ? m_BioseqInfoCache->LookupBioseqInfoByAccessionGi(accession, gi, data, found_version, found_seq_id_type)
+        : false;
+}
+
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
+        const string& accession, int version, int seq_id_type, int64_t gi, string& data)
+{
+    return m_BioseqInfoCache
+        ? m_BioseqInfoCache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi(accession, version, seq_id_type, gi, data)
         : false;
 }
 
@@ -209,7 +227,8 @@ bool CPubseqGatewayCache::LookupBlobPropBySatKey(int32_t sat, int32_t sat_key, i
     return m_BlobPropCache ? m_BlobPropCache->LookupBySatKey(sat, sat_key, last_modified, data) : false;
 }
 
-bool CPubseqGatewayCache::LookupBlobPropBySatKeyLastModified(int32_t sat, int32_t sat_key, int64_t last_modified, string& data)
+bool CPubseqGatewayCache::LookupBlobPropBySatKeyLastModified(
+    int32_t sat, int32_t sat_key, int64_t last_modified, string& data)
 {
     return m_BlobPropCache ? m_BlobPropCache->LookupBySatKeyLastModified(sat, sat_key, last_modified, data) : false;
 }

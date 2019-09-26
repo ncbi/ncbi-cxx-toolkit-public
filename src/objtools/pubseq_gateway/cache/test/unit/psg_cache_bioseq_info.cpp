@@ -45,6 +45,7 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 namespace {
 
@@ -192,6 +193,37 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionGi)
     ASSERT_TRUE(result);
     EXPECT_EQ(0, version);
     EXPECT_EQ(5, seq_id_type);
+}
+
+TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
+{
+    string data;
+    EXPECT_FALSE(m_Cache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi("FAKE", 0, 5, 3643631,  data));
+    EXPECT_FALSE(m_Cache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi("", 0, 5, 3643631, data));
+    EXPECT_FALSE(m_Cache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi("AC005299", -1, 5, 3643631, data));
+    EXPECT_FALSE(m_Cache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi("AC005299", 0, 5, 888, data));
+    ASSERT_TRUE(m_Cache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi("AC005299", 0, 5, 3643631, data));
+
+    ::psg::retrieval::BioseqInfoValue value;
+    EXPECT_TRUE(value.ParseFromString(data));
+    EXPECT_EQ(907538716500, value.date_changed());
+    EXPECT_EQ(1310387125, value.hash());
+    EXPECT_EQ(40756, value.length());
+    EXPECT_EQ(1, value.mol());
+    EXPECT_EQ(0, value.blob_key().sat());
+    EXPECT_EQ(5985907, value.blob_key().sat_key());
+    EXPECT_EQ(0, value.state());
+    EXPECT_EQ(5072UL, value.tax_id());
+
+    set<tuple<short, string>> expected_seq_ids = {
+        {12, "3643631"}
+    };
+    set<tuple<short, string>> actual_seq_ids;
+    for (const auto& it : value.seq_ids()) {
+        actual_seq_ids.insert({it.sec_seq_id_type(), it.sec_seq_id()});
+    }
+
+    EXPECT_EQ(expected_seq_ids, actual_seq_ids);
 }
 
 }  // namespace

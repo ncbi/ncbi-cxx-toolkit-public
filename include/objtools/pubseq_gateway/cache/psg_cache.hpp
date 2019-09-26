@@ -60,7 +60,8 @@ class CPubseqGatewayCache
 
     static const size_t kRuntimeErrorLimit;
 
-    CPubseqGatewayCache(const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name);
+    CPubseqGatewayCache(
+        const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name);
     virtual ~CPubseqGatewayCache();
     void Open(const vector<string>& sat_names);
 
@@ -78,17 +79,20 @@ class CPubseqGatewayCache
     bool LookupBioseqInfoByAccessionVersionSeqIdType(
         const string& accession, int version, int seq_id_type, string& data, int64_t& found_gi);
     bool LookupBioseqInfoByAccessionVersionSeqIdType(
-        const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+        const string& accession, int version, int seq_id_type,
+        string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
     bool LookupBioseqInfoByAccessionGi(
         const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
+    bool LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
+        const string& accession, int version, int seq_id_type, int64_t gi, string& data);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type, int64_t gi);
     static bool UnpackBioseqInfoKey(
-        const char* key, size_t key_sz, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+        const char* key, size_t key_sz, int& version, int& seq_id_type, int64_t& gi);
     static bool UnpackBioseqInfoKey(
-        const char* key, size_t key_sz, string& accession, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+        const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi);
 
 /* si2csi */
     bool LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);
@@ -118,4 +122,4 @@ class CPubseqGatewayCache
 
 END_NCBI_SCOPE
 
-#endif
+#endif  // PSG_CACHE__HPP

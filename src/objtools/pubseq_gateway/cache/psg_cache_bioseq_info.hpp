@@ -61,6 +61,8 @@ class CPubseqGatewayCacheBioseqInfo
     );
     bool LookupBioseqInfoByAccessionGi(
         const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
+    bool LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
+        const string& accession, int version, int seq_id_type, int64_t gi, string& data);
 
     static string PackKey(const string& accession, int version);
     static string PackKey(const string& accession, int version, int seq_id_type);
