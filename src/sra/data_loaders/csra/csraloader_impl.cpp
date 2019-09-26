@@ -1605,7 +1605,7 @@ static const Uint8 k_align_bytes = 300;
 static const double k_read_byte_seconds = 7.5e-9; // 133 MB/s
 static const double k_make_graph_seconds = 20e-9; // 50 MB/s
 static const double k_make_align_seconds = 80e-9; // 12 MB/s
-static const double k_make_read_seconds = 80e-9; // 12 MB/s
+//static const double k_make_read_seconds = 80e-9; // 12 MB/s
 
 
 void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
