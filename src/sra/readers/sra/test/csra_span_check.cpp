@@ -499,7 +499,7 @@ void CSpanCheckApp::CheckFile(const SDB& db)
             TVDBRowId last_ref_row = ref_row + (max_aln_end-1)/kRefPageSize;
             for ( TVDBRowId row_id = ref_row+1; row_id <= last_ref_row; ++row_id ) {
                 auto overlap_pos = db.ref.OVERLAP_REF_POS(row_id);
-                TSeqPos pos = (row_id-ref_row)*kRefPageSize;
+                TSeqPos pos = TSeqPos(row_id-ref_row)*kRefPageSize;
                 for ( int i = 0; i < 2; ++i ) {
                     TSeqPos p = overlap_pos[i];
                     if ( p && p < pos ) {
