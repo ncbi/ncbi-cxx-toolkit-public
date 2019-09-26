@@ -728,7 +728,8 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_IsSetMasterDescr(false),
       m_HasNoDefaultGnlId(false),
       m_FeatLocIdType(eFeatLocIdUninitialized),
-      m_ProjectGBState(0)
+      m_ProjectGBState(0),
+      m_SeqIdType(CSeq_id::e_not_set)
 {
     PROFILE(sw_WGSOpen);
     //static CVDBSchema schema(mgr, "wgs.schema");
@@ -922,13 +923,16 @@ void CWGSDb_Impl::x_InitIdParams(void)
     Put(seq);
 
     if ( CKMetadata meta = CKMetadata(SeqTable()) ) {
-        if (  CKMDataNode node = CKMDataNode(meta, "GB_STATE", CKMDataNode::eMissing_Allow) ) {
+        if ( CKMDataNode node = CKMDataNode(meta, "GB_STATE", CKMDataNode::eMissing_Allow) ) {
             m_ProjectGBState = node.GetUint8();
         }
         if ( CKMDataNode node = CKMDataNode(meta, "REPLACED_BY", CKMDataNode::eMissing_Allow) ) {
             size_t size = node.GetSize();
             m_ReplacedBy.resize(size);
             node.GetData(&m_ReplacedBy[0], size);
+        }
+        if ( CKMDataNode node = CKMDataNode(meta, "SEQ_ID_TYPE", CKMDataNode::eMissing_Allow) ) {
+            m_SeqIdType = CSeq_id::E_Choice(node.GetUint8());
         }
     }
 }
@@ -1149,6 +1153,16 @@ bool sx_SetVersion(CSeq_id& id, int version)
 {
     if ( const CTextseq_id* text_id = id.GetTextseq_Id() ) {
         const_cast<CTextseq_id*>(text_id)->SetVersion(version);
+        return true;
+    }
+    return false;
+}
+
+
+bool sx_SetAccession(CSeq_id& id, CTempString accession)
+{
+    if ( const CTextseq_id* text_id = id.GetTextseq_Id() ) {
+        const_cast<CTextseq_id*>(text_id)->SetAccession(accession);
         return true;
     }
     return false;
@@ -1526,7 +1540,14 @@ CRef<CSeq_id> CWGSDb_Impl::GetAccSeq_id(CTempString acc, int version) const
     PROFILE(sw_GetAccSeq_id);
     CRef<CSeq_id> id;
     if ( !acc.empty() ) {
-        id = new CSeq_id(acc);
+        if ( m_SeqIdType != CSeq_id::e_not_set ) {
+            id = new CSeq_id();
+            id->Select(m_SeqIdType);
+            sx_SetAccession(*id, acc);
+        }
+        else {
+            id = new CSeq_id(acc);
+        }
         sx_SetVersion(*id, version);
     }
     return id;
@@ -1926,7 +1947,7 @@ CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetNucGiRanges(void)
     CRef<SSeqTableCursor> seq = Seq();
     if ( seq->m_GI ) {
         TIntId gi_start = -1, gi_end = -1;
-        TVDBRowIdRange row_range = seq->m_Cursor.GetRowIdRange();
+        TVDBRowIdRange row_range = seq->m_GI.GetRowIdRange(seq->m_Cursor);
         for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
             row_id = row_range.first+i;
             TIntId gi = s_ToGi(*seq->GI(row_id), "CWGSDb::GetNucGiRanges()");
@@ -2000,7 +2021,7 @@ CWGSDb_Impl::TProtAccRanges CWGSDb_Impl::GetProtAccRanges(void)
     TProtAccRanges ranges;
     if ( CRef<SProt0TableCursor> seq = Prot0() ) {
         TVDBRowId row_id = 0;
-        TVDBRowIdRange row_range = seq->m_Cursor.GetRowIdRange();
+        TVDBRowIdRange row_range = seq->m_GB_ACCESSION.GetRowIdRange(seq->m_Cursor);
         for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
             row_id = row_range.first+i;
             CTempString acc = *seq->GB_ACCESSION(row_id);
@@ -2673,7 +2694,7 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
         m_ClipByQuality = s_GetClipByQuality();
         break;
     }
-    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur->m_CONTIG_NAME.GetRowIdRange(m_Cur->m_Cursor);
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
 }
@@ -4994,7 +5015,7 @@ void CWGSScaffoldIterator::x_Init(const CWGSDb& wgs_db)
         return;
     }
     m_Db = wgs_db;
-    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur->m_SCAFFOLD_NAME.GetRowIdRange(m_Cur->m_Cursor);
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
 }

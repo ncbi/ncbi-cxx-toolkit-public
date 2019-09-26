@@ -580,6 +580,7 @@ private:
     TMasterDescr m_MasterDescr;
     CRef<CSeq_id> m_PatentId;
     NCBI_gb_state m_ProjectGBState;
+    CSeq_id::E_Choice m_SeqIdType;
     string m_ReplacedBy;
 };
 DECLARE_SAFE_FLAGS(CWGSDb_Impl::EGnlIdFlags);
