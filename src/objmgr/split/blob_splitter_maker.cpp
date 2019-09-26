@@ -634,7 +634,7 @@ namespace {
     struct SLessSeq_id
     {
         bool operator()(const CConstRef<CSeq_id>& id1,
-                        const CConstRef<CSeq_id>& id2)
+                        const CConstRef<CSeq_id>& id2) const
             {
                 if ( id1->Which() != id2->Which() ) {
                     return id1->Which() < id2->Which();
