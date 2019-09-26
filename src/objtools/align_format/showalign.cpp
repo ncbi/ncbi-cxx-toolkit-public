@@ -3783,7 +3783,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                 m_CurrAlnAccession = CAlignFormatUtil::GetBareId(
                                                    *alnDispParams->seqID);
             }
-            if(m_AlignTemplates != NULL) {
+            if(m_AlignTemplates != NULL && (m_AlignOption&eHtml)) {
                 x_InitAlignLinks(alnDispParams,bdl,eDisplayResourcesLinks);
             }
 			delete alnDispParams;

@@ -422,6 +422,11 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 break;
             }
         }
+        //The following is the case when for whatever reason the seq is not found in Blast database (bdl list is empty) and is retrived from genbank
+        if(bdl.size()  == 0) {         
+            CBioseq::TId& cur_id = (CBioseq::TId &) handle.GetBioseqCore()->GetId();            
+            x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins); //only initialized if !(m_DeflineTemplates->advancedView && !is_mixed_database)
+        }        
     }
 
     //get score and id url
