@@ -924,7 +924,7 @@ void CWGSDb_Impl::x_InitIdParams(void)
 
     if ( CKMetadata meta = CKMetadata(SeqTable()) ) {
         if ( CKMDataNode node = CKMDataNode(meta, "GB_STATE", CKMDataNode::eMissing_Allow) ) {
-            m_ProjectGBState = node.GetUint8();
+            m_ProjectGBState = NCBI_gb_state(node.GetUint8());
         }
         if ( CKMDataNode node = CKMDataNode(meta, "REPLACED_BY", CKMDataNode::eMissing_Allow) ) {
             size_t size = node.GetSize();
@@ -4243,7 +4243,7 @@ static void s_AddGiRange(CID2S_Seq_loc::TLoc_set& loc_set,
     else {
         CID2S_Gi_Range& gi_range = loc->SetWhole_gi_range();
         gi_range.SetStart(gi_range_start);
-        gi_range.SetCount(gi_range_stop - gi_range_start);
+        gi_range.SetCount(CID2S_Gi_Range::TCount(gi_range_stop - gi_range_start));
     }
     loc_set.push_back(loc);
 }
