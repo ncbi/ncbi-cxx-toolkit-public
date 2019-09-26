@@ -634,7 +634,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_ISD, "http://www.flu.lanl.gov/search/view_record.html?accession=" }, // http “page can’t be displayed” tested 7/13/2016  
     { CDbtag::eDbtagType_ISFinder, "http://www-is.biotoul.fr/scripts/is/is_spec.idc?name=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_InterimID, "https://www.ncbi.nlm.nih.gov/gene/" },
-    { CDbtag::eDbtagType_Interpro, "https://www.ebi.ac.uk/interpro/ISearch?mode=ipr&query=" },
+    { CDbtag::eDbtagType_Interpro, "https://www.ebi.ac.uk/interpro/entry/InterPro/" },
     { CDbtag::eDbtagType_IntrepidBio, "http://server1.intrepidbio.com/FeatureBrowser/gene/browse/" }, // http request shows “Database is down for maint” tested 7/13/2016  
     { CDbtag::eDbtagType_JCM, "https://www.jcm.riken.go.jp/cgi-bin/jcm/jcm_number?JCM=" },
     { CDbtag::eDbtagType_JGIDB, "http://genome.jgi-psf.org/cgi-bin/jgrs?id=" }, // https page “can’t be displayed” tested 7/13/2016  
