@@ -477,7 +477,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                         }
                         num_validated++;
                     }
-                    catch (CException &e) {
+                    catch (const CException &e) {
                         if (num_validated == 0) {
                             throw(e);
                         }
@@ -492,7 +492,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                     }
                 }
             }
-        } catch (CException &e) {
+        } catch (const CException &e) {
             string errstr = e.GetMsg();
             errstr = NStr::Replace(errstr, "\n", " * ");
             errstr = NStr::Replace(errstr, " *   ", " * ");
@@ -727,7 +727,8 @@ void CAsnvalApp::ProcessBSSReleaseFile
     try {
         *m_In >> *seqset;
     }
-    catch (CException) {
+    catch (const CException &e) {
+        LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Bioseq-set, do not use -a t to process.");
     }
 }
 
@@ -745,8 +746,8 @@ void CAsnvalApp::ProcessSSMReleaseFile
     try {
         *m_In >> *seqset;
     }
-    catch (CException) {
-        LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a Seq-submit, do not use -a u to process.");
+    catch (const CException &e) {
+        LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Seq-submit, do not use -a u to process.");
     }
 }
 
