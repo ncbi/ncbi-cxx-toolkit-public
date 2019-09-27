@@ -121,6 +121,18 @@
 #  endif
 #endif
 
+#if __has_cpp_attribute(fallthrough)
+#  define NCBI_FALLTHROUGH [[fallthrough]]
+#elif __has_cpp_attribute(gcc::fallthrough)
+#  define NCBI_FALLTHROUGH [[gcc::fallthrough]]
+#elif __has_cpp_attribute(clang::fallthrough)
+#  define NCBI_FALLTHROUGH [[clang::fallthrough]]
+#elif __has_attribute(fallthrough)
+#  define NCBI_FALLTHROUGH __attribute__ ((fallthrough))
+#else
+#  define NCBI_FALLTHROUGH
+#endif
+
 /* Definition of packed enum type, to save some memory */
 /* enum EMyEnum NCBI_PACKED_ENUM_TYPE(Type) { ... } NCBI_PACKED_ENUM_END(); */
 #ifndef NCBI_PACKED_ENUM_TYPE
