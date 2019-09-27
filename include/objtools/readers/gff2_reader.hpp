@@ -204,10 +204,6 @@ public:
         CRef< CSeq_feat >,
         CRef< CSeq_annot > );
                             
-    bool x_FeatureSetQualifiers(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
     bool xFeatureSetQualifier(
         const string&,
         const string&,
@@ -217,10 +213,6 @@ public:
         CGff2Record::TAttrCit,
         CRef< CSeq_feat > );
   
-    virtual bool x_FeatureSetLocation(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-    
     bool x_GetFeatureById(
         const string&,
         CRef< CSeq_feat >& );
@@ -233,14 +225,6 @@ public:
         const CSeq_feat&,
         CRef<CSeq_annot>,
         CRef< CSeq_feat >& );
-
-    bool xFeatureMergeExon(
-        CRef< CSeq_feat >,
-        CRef< CSeq_feat > );
-
-    bool xFeatureMergeCds(
-        CRef< CSeq_feat >,
-        CRef< CSeq_feat > );
 
     bool xAlignmentSetScore(
         const CGff2Record&,
@@ -303,23 +287,11 @@ public:
     CMessageListenerLenient m_ErrorsPrivate;
     IdToFeatureMap m_MapIdToFeature;
 
-    static string GenbankKey(
-        CSeqFeatData::ESubtype );
-
-    bool x_HasTemporaryLocation(
-        const CSeq_feat& );
-
     virtual bool xIsIgnoredFeatureType(
         const string&);
 
     virtual bool xIsIgnoredFeatureId(
         const string&);
-
-    static bool IsExon(
-        CRef< CSeq_feat > );
-
-    static bool IsCds(
-        CRef<CSeq_feat>);
 
     //
     //  helpers:
@@ -327,22 +299,11 @@ public:
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff2Record(); };
 
-    void x_PlaceFeature(
-        CSeq_feat& feat, 
-        const SRecord& );
-
-    static const string* s_GetAnnotId(
-        const CSeq_annot&);
-
     void xSetAncestryLine(
         CSeq_feat&,
         const string&);
 
     void xSetAncestorXrefs(
-        CSeq_feat&,
-        CSeq_feat&);
-
-    void xSetXrefFromTo(
         CSeq_feat&,
         CSeq_feat&);
 

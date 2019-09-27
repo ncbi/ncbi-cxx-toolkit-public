@@ -111,23 +111,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-//  ----------------------------------------------------------------------------
-const string* CGff2Reader::s_GetAnnotId(
-    const CSeq_annot& annot)
-//  ----------------------------------------------------------------------------
-{
-    if ( ! annot.CanGetId() || annot.GetId().size() != 1 ) {
-        // internal error
-        return 0;
-    }
-    
-    CRef< CAnnot_id > pId = *( annot.GetId().begin() );
-    if ( ! pId->IsLocal() ) {
-        // internal error
-        return 0;
-    }
-    return &pId->GetLocal().GetStr();
-}
 
 //  ----------------------------------------------------------------------------
 CGff2Reader::CGff2Reader(
@@ -1350,25 +1333,6 @@ bool CGff2Reader::xAlignmentSetScore(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetLocation(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
-    CRef< CSeq_loc > pLocation( new CSeq_loc );
-    pLocation->SetInt().SetId( *pId );
-    pLocation->SetInt().SetFrom(static_cast<TSeqPos>(record.SeqStart()));
-    pLocation->SetInt().SetTo(static_cast<TSeqPos>(record.SeqStop()));
-    if ( record.IsSetStrand() ) {
-        pLocation->SetInt().SetStrand( record.Strand() );
-    }
-    pFeature->SetLocation( *pLocation );
-
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ProcessQualifierSpecialCase(
     CGff2Record::TAttrCit it,
     CRef< CSeq_feat > pFeature )
@@ -1376,33 +1340,6 @@ bool CGff2Reader::x_ProcessQualifierSpecialCase(
 {
     return false;
 }  
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetQualifiers(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    //
-    //  Create GB qualifiers for the record attributes:
-    //
-    CRef< CGb_qual > pQual(0);
-    const CGff2Record::TAttributes& attrs = record.Attributes();
-    CGff2Record::TAttrCit it = attrs.begin();
-    for (/*NOOP*/; it != attrs.end(); ++it) {
-        // special case some well-known attributes
-        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
-            continue;
-        }
-
-        // turn everything else into a qualifier
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual(it->first);
-        pQual->SetVal(it->second);
-        pFeature->SetQual().push_back(pQual);
-    } 
-    return true;
-}
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xFeatureSetQualifier(
@@ -1434,75 +1371,12 @@ bool CGff2Reader::x_GetFeatureById(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_HasTemporaryLocation(
-    const CSeq_feat& feature )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! feature.CanGetExts() ) {
-        return false;
-    }
-    list< CRef< CUser_object > > pExts = feature.GetExts();
-    list< CRef< CUser_object > >::iterator it;
-    for ( it = pExts.begin(); it != pExts.end(); ++it ) {
-        if ( ! (*it)->CanGetType() || ! (*it)->GetType().IsStr() ) {
-            continue;
-        }
-        if ( (*it)->GetType().GetStr() != "gff-info" ) {
-            continue;
-        }
-        if ( ! (*it)->HasField( "gff-cooked" ) ) {
-            return false;
-        }
-        return ( (*it)->GetField( "gff-cooked" ).GetData().GetStr() == "false" );
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::IsExon(
-    CRef<CSeq_feat> pFeature )
-//  ----------------------------------------------------------------------------
-{
-    if (!pFeature->CanGetData() || !pFeature->GetData().IsImp()) {
-        return false;
-    }
-    return (pFeature->GetData().GetImp().GetKey() == "exon" );
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::IsCds(
-    CRef<CSeq_feat> pFeature)
-//  ----------------------------------------------------------------------------
-{
-    if (!pFeature->CanGetData()) {
-        return false;
-    }
-    return (pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Reader::xAddFeatureToAnnot(
     CRef< CSeq_feat > pFeature,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
-    if (IsExon(pFeature)) {
-        CRef< CSeq_feat > pParent;    
-        if (!xGetParentFeature(*pFeature, pParent) ) {
-            pAnnot->SetData().SetFtable().push_back(pFeature) ;
-            return true;
-        }
-        return xFeatureMergeExon( pFeature, pParent );
-    }
-    if (IsCds(pFeature)) {
-        CRef<CSeq_feat> pExisting;
-        if (!xGetExistingFeature(*pFeature, pAnnot, pExisting)) {
-            pAnnot->SetData().SetFtable().push_back(pFeature) ;
-            return true;
-        }
-        return xFeatureMergeCds(pFeature, pExisting);
-    }
-    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    pAnnot->SetData().SetFtable().push_back(pFeature);
     return true;
 }
 
@@ -1547,45 +1421,6 @@ bool CGff2Reader::xGetParentFeature(
     return true;
 }
 
-//  ---------------------------------------------------------------------------
-bool CGff2Reader::xFeatureMergeExon(
-    CRef< CSeq_feat > pExon,
-    CRef< CSeq_feat > pMrna )
-//  ---------------------------------------------------------------------------
-{
-    if ( x_HasTemporaryLocation( *pMrna ) ) {
-        // start rebuilding parent location from scratch
-        pMrna->SetLocation().Assign( pExon->GetLocation() );
-        list< CRef< CUser_object > > pExts = pMrna->SetExts();
-        list< CRef< CUser_object > >::iterator it;
-        for ( it = pExts.begin(); it != pExts.end(); ++it ) {
-            if ( ! (*it)->CanGetType() || ! (*it)->GetType().IsStr() ) {
-                continue;
-            }
-            if ( (*it)->GetType().GetStr() != "gff-info" ) {
-                continue;
-            }
-            (*it)->SetField( "gff-cooked" ).SetData().SetStr( "true" );
-        }
-    }
-    else {
-        // add exon location to current parent location
-        pMrna->SetLocation().Add(  pExon->GetLocation() );
-    }
-
-    return true;
-}
-                                
-//  ---------------------------------------------------------------------------
-bool CGff2Reader::xFeatureMergeCds(
-    CRef< CSeq_feat > pNewPiece,
-    CRef< CSeq_feat > pExisting )
-//  ---------------------------------------------------------------------------
-{
-    pExisting->SetLocation().Add(pNewPiece->GetLocation());
-    return true;
-}
-                                
 //  ============================================================================
 CRef< CDbtag >
 CGff2Reader::x_ParseDbtag(
@@ -1726,23 +1561,6 @@ void CGff2Reader::xSetAncestorXrefs(
         CRef<CSeqFeatXref> pDescendentXref(new CSeqFeatXref);
         pDescendentXref->SetId(*pDescendentId);
         ancestor.SetXref().push_back(pDescendentXref);
-    }
-}
-
-//  ============================================================================
-void CGff2Reader::xSetXrefFromTo(
-    CSeq_feat& from,
-    CSeq_feat& to)
-//  ============================================================================
-{
-
-    //xref descendent->ancestor
-    if (!sFeatureHasXref(from, to.GetId())) {
-        CRef<CFeat_id> pToId(new CFeat_id);
-        pToId->Assign(to.GetId());
-        CRef<CSeqFeatXref> pToXref(new CSeqFeatXref);
-        pToXref->SetId(*pToId);
-        from.SetXref().push_back(pToXref);
     }
 }
 
