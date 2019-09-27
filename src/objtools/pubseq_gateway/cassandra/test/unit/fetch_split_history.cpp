@@ -109,8 +109,8 @@ TEST_F(CFetchSplitHistoryTest, EmptyHistory) {
         usleep(100);
         done = fetch.Wait();
     }
-    EXPECT_EQ(1, call_count);
-    EXPECT_EQ(0, actual_result.size());
+    EXPECT_EQ(1UL, call_count);
+    EXPECT_EQ(0UL, actual_result.size());
 }
 
 TEST_F(CFetchSplitHistoryTest, FetchAllVersions) {
@@ -133,8 +133,8 @@ TEST_F(CFetchSplitHistoryTest, FetchAllVersions) {
         usleep(100);
         done = fetch.Wait();
     }
-    EXPECT_EQ(1, call_count);
-    ASSERT_EQ(2, actual_result.size());
+    EXPECT_EQ(1UL, call_count);
+    ASSERT_EQ(2UL, actual_result.size());
     sort(actual_result.begin(), actual_result.end(),
         [](SSplitHistoryRecord const & a, SSplitHistoryRecord const & b) -> bool {
             return a.split_version < b.split_version;
@@ -172,8 +172,8 @@ TEST_F(CFetchSplitHistoryTest, FetchOneVersion) {
         usleep(100);
         done = fetch.Wait();
     }
-    EXPECT_EQ(1, call_count);
-    ASSERT_EQ(1, actual_result.size());
+    EXPECT_EQ(1UL, call_count);
+    ASSERT_EQ(1UL, actual_result.size());
 
     EXPECT_EQ(sat_key, actual_result[0].sat_key);
     EXPECT_EQ(1563374207, actual_result[0].split_version);

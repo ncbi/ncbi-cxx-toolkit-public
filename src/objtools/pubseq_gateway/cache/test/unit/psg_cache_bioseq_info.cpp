@@ -214,16 +214,6 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
     EXPECT_EQ(5985907, value.blob_key().sat_key());
     EXPECT_EQ(0, value.state());
     EXPECT_EQ(5072UL, value.tax_id());
-
-    set<tuple<short, string>> expected_seq_ids = {
-        {12, "3643631"}
-    };
-    set<tuple<short, string>> actual_seq_ids;
-    for (const auto& it : value.seq_ids()) {
-        actual_seq_ids.insert({it.sec_seq_id_type(), it.sec_seq_id()});
-    }
-
-    EXPECT_EQ(expected_seq_ids, actual_seq_ids);
 }
 
 }  // namespace
