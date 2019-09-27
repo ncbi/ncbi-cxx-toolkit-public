@@ -405,10 +405,10 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
 
     auto converter = [](const string& file_in, const string& file_out, const map<string,string>& vocabulary) {
         string candidate = file_out + ".candidate";
-        CNcbiOfstream ofs(candidate, IOS_BASE::out | IOS_BASE::trunc);
+        CNcbiOfstream ofs(candidate.c_str(), IOS_BASE::out | IOS_BASE::trunc);
         if ( ofs.is_open() ) {
 
-            CNcbiIfstream ifs(file_in);
+            CNcbiIfstream ifs(file_in.c_str());
             if (ifs.is_open()) {
                 string line;
                 while( getline(ifs, line) ) {
