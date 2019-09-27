@@ -83,8 +83,15 @@
 #  define UNICODE 1
 #endif
 
-/* New/nonstandard keywords
+/* New/nonstandard keywords and attributes
  */
+
+#ifndef __has_cpp_attribute
+#  define __has_cpp_attribute(x) 0
+#endif
+#ifndef __has_attribute
+#  define __has_attribute(x) 0
+#endif
 
 #if defined(__cplusplus)  &&  defined(NCBI_RESTRICT_CXX)
 #  define NCBI_RESTRICT NCBI_RESTRICT_CXX
@@ -105,7 +112,9 @@
 #endif
 
 #ifndef NCBI_NORETURN
-#  ifdef __GNUC__
+#  if __has_cpp_attribute(noreturn)
+#    define NCBI_NORETURN [[noreturn]]
+#  elif __has_attribute(noreturn)
 #    define NCBI_NORETURN __attribute__((__noreturn__))
 #  else
 #    define NCBI_NORETURN
