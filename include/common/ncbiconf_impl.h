@@ -86,8 +86,10 @@
 /* New/nonstandard keywords and attributes
  */
 
-#ifndef __has_cpp_attribute
-#  define __has_cpp_attribute(x) 0
+#if defined(__cplusplus)  &&  defined(__has_cpp_attribute)
+#  define NCBI_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+#  define NCBI_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 #ifndef __has_attribute
 #  define __has_attribute(x) 0
@@ -112,7 +114,7 @@
 #endif
 
 #ifndef NCBI_NORETURN
-#  if __has_cpp_attribute(noreturn)
+#  if NCBI_HAS_CPP_ATTRIBUTE(noreturn)
 #    define NCBI_NORETURN [[noreturn]]
 #  elif __has_attribute(noreturn)
 #    define NCBI_NORETURN __attribute__((__noreturn__))
@@ -121,11 +123,11 @@
 #  endif
 #endif
 
-#if __has_cpp_attribute(fallthrough)
+#if NCBI_HAS_CPP_ATTRIBUTE(fallthrough)
 #  define NCBI_FALLTHROUGH [[fallthrough]]
-#elif __has_cpp_attribute(gcc::fallthrough)
+#elif NCBI_HAS_CPP_ATTRIBUTE(gcc::fallthrough)
 #  define NCBI_FALLTHROUGH [[gcc::fallthrough]]
-#elif __has_cpp_attribute(clang::fallthrough)
+#elif NCBI_HAS_CPP_ATTRIBUTE(clang::fallthrough)
 #  define NCBI_FALLTHROUGH [[clang::fallthrough]]
 #elif __has_attribute(fallthrough)
 #  define NCBI_FALLTHROUGH __attribute__ ((fallthrough))
