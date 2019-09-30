@@ -22,6 +22,7 @@ NCBI_add_app(
   test_ncbi_linkerd_proxy
   test_ncbi_namerd test_ncbi_namerd_mt
   test_server_listeners test_ncbi_ipv6 test_ncbi_iprange
-  test_ncbi_service_cxx_mt
+  test_ncbi_service_cxx_mt test_ncbi_http_stream
+  test_ncbi_http_session test_ncbi_blowfish
 )
 
