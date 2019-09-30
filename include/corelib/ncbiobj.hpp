@@ -137,7 +137,7 @@ public:
     void NCBI_OBJECT_LOCKER_EXPORT TransferLock(const CObject* object,
                                                 const CObjectCounterLocker& old_locker) const;
 
-    static NCBI_NORETURN
+    NCBI_NORETURN static
     void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
 
     /// Set monitored object type, e.g. typeid(CScope)
