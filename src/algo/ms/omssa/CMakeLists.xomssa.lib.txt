@@ -11,7 +11,7 @@ NCBI_begin_lib(xomssa)
     blast omssa pepXML
     seqdb xcompress xconnect
     xregexp
-    blastdb pepXML omssa
+    pepXML omssa
   )
   NCBI_project_watchers(lewisg slottad)
 NCBI_end_lib()

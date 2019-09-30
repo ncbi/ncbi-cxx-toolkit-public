@@ -82,8 +82,8 @@ NCBI_begin_lib(xblast)
   NCBI_sources(${SRC_BLAST_C_CORE} ${SRC_BLAST_CXX_CORE})
   NCBI_uses_toolkit_libraries(
     xalgoblastdbindex xalgodustmask xalgowinmask
-    xnetblast xnetblastcli
-    seq scoremat blastdb
+    xnetblastcli
+    seq blastdb
   )
   NCBI_project_watchers(morgulis boratyng madden camacho fongah2)
 NCBI_end_lib()

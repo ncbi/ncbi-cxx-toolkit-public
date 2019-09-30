@@ -16,7 +16,7 @@ NCBI_begin_lib(xalgowinmask)
     win_mask_counts_converter win_mask_dup_table win_mask_gen_counts
     win_mask_util win_mask_config seq_masker_istat
   )
-  NCBI_uses_toolkit_libraries(seqset submit seqmasks_io)
+  NCBI_uses_toolkit_libraries(submit seqmasks_io)
   NCBI_project_watchers(morgulis dicuccio mozese2)
 NCBI_end_lib()
 

@@ -7,7 +7,7 @@ NCBI_begin_lib(xstruct_util)
     aaa_dummy_pch struct_util su_alignment_set su_block_multiple_alignment
     su_pssm su_sequence_set
   )
-  NCBI_uses_toolkit_libraries(xblast xstruct_dp seqset scoremat)
+  NCBI_uses_toolkit_libraries(xblast xstruct_dp)
   NCBI_project_watchers(thiessen lanczyck)
 NCBI_end_lib()
 

@@ -5,7 +5,7 @@
 NCBI_begin_lib(xbma_refiner_gui)
   NCBI_sources(InterfaceGUI)
   NCBI_requires(wxWidgets)
-  NCBI_uses_toolkit_libraries(xbma_refiner wx_tools cdd)
+  NCBI_uses_toolkit_libraries(xbma_refiner wx_tools)
   NCBI_project_watchers(thiessen)
 NCBI_end_lib()
 

@@ -3,5 +3,5 @@
 #############################################################################
 
 NCBI_add_subdirectory(
-  client
+  diag cassandra client protobuf cache
 )

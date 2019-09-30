@@ -21,5 +21,7 @@ NCBI_add_app(
   unit_test_gtfreader
   unit_test_alnreader
   unit_test_5colftblreader
+  unit_test_mod_adder
+  unit_test_title_parser
 )
 

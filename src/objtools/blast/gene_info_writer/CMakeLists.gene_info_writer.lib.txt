@@ -5,7 +5,7 @@
 NCBI_begin_lib(gene_info_writer)
   NCBI_sources(gene_info_writer)
   NCBI_add_definitions(NCBI_MODULE=GENEINFO)
-  NCBI_uses_toolkit_libraries(gene_info seqdb blastdb)
+  NCBI_uses_toolkit_libraries(gene_info seqdb)
   NCBI_project_watchers(camacho)
 NCBI_end_lib()
 

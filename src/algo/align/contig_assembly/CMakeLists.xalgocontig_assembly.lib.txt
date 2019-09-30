@@ -4,7 +4,7 @@
 
 NCBI_begin_lib(xalgocontig_assembly)
   NCBI_sources(contig_assembly)
-  NCBI_uses_toolkit_libraries(xalgoalignnw xalnmgr xblast xnetblast)
+  NCBI_uses_toolkit_libraries(xalgoalignnw xalnmgr xblast)
   NCBI_project_watchers(boukn dicuccio)
 NCBI_end_lib()
 

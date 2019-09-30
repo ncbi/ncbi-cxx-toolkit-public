@@ -2,13 +2,12 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(unit_test_feature_propagate)
-  NCBI_sources(unit_test_feature_propagate)
+NCBI_begin_app(unit_test_mod_adder)
+  NCBI_sources(unit_test_mod_adder)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(xobjedit xunittestutil)
-  NCBI_project_watchers(bollin)
-
-  NCBI_set_test_timeout(3000)
+  NCBI_uses_toolkit_libraries(xunittestutil)
+  NCBI_project_watchers(foleyjp)
+  NCBI_set_test_assets( mod_adder_test_cases)
   NCBI_add_test()
 NCBI_end_app()
 

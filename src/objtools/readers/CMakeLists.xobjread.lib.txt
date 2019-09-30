@@ -22,7 +22,7 @@ NCBI_begin_lib(xobjread)
     mod_reader mod_error descr_mod_apply feature_mod_apply
     message_listener line_error
   )
-  NCBI_uses_toolkit_libraries(submit seqset xlogging)
+  NCBI_uses_toolkit_libraries(submit xlogging)
   NCBI_project_watchers(jcherry sapojnik bollin ludwigf ucko gotvyans foleyjp)
 NCBI_end_lib()
 

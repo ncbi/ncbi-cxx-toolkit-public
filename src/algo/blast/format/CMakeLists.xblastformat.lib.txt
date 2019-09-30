@@ -9,7 +9,7 @@ NCBI_begin_lib(xblastformat)
   )
   NCBI_add_definitions(NCBI_MODULE=BLASTFORMAT)
   NCBI_uses_toolkit_libraries(
-    blastdb blastxml blastxml2 xnetblast
+    blastxml blastxml2
     align_format blastxml blastxml2
     xblast xformat
   )

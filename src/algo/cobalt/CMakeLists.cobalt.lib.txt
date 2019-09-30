@@ -7,7 +7,7 @@ NCBI_begin_lib(cobalt)
     blast cobalt dist hit hitlist phi prog resfreq rps seg seq seqalign
     traceback tree kmercounts clusterer patterns options links
   )
-  NCBI_uses_toolkit_libraries(xalgoalignnw xalgophytree xblast seqset biotree xnetblast blastdb)
+  NCBI_uses_toolkit_libraries(xalgoalignnw xalgophytree xblast)
   NCBI_project_watchers(boratyng dicuccio )
 NCBI_end_lib()
 

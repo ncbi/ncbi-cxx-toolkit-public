@@ -20,7 +20,7 @@ NCBI_begin_lib(xobjwrite)
     fasta_writer
     aln_writer
   )
-  NCBI_uses_toolkit_libraries(variation_utils xformat xobjread seqset)
+  NCBI_uses_toolkit_libraries(variation_utils xformat xobjread)
   NCBI_project_watchers(ludwigf boukn gotvyans foleyjp)
 NCBI_end_lib()
 

@@ -8,7 +8,7 @@ NCBI_begin_lib(xngalign)
     blast_aligner banded_aligner merge_aligner inversion_merge_aligner
     unordered_spliter ngalign
   )
-  NCBI_uses_toolkit_libraries(blastinput xalgoalignnw xalgoalignutil xmergetree xnetblast)
+  NCBI_uses_toolkit_libraries(blastinput xalgoalignnw xalgoalignutil xmergetree)
   NCBI_project_watchers(boukn dicuccio)
 NCBI_end_lib()
 

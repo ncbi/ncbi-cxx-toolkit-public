@@ -9,7 +9,7 @@ NCBI_begin_lib(xalgoalignutil)
     depth_filter tabular_fmt collection_score named_collection_score_impl
     best_placement
   )
-  NCBI_uses_toolkit_libraries(xalgoseq xblast xqueryparse seqset xnetblast)
+  NCBI_uses_toolkit_libraries(xalgoseq xblast xqueryparse)
   NCBI_project_watchers(kapustin dicuccio)
 NCBI_end_lib()
 

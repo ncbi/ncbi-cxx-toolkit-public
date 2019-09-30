@@ -9,7 +9,7 @@ NCBI_begin_lib(writedb)
     writedb_convert writedb_general writedb_column mask_info_registry
     taxid_set build_db multisource_util criteria writedb_lmdb seqidlist_writer
   )
-  NCBI_uses_toolkit_libraries(seqdb xobjread blastdb seqset)
+  NCBI_uses_toolkit_libraries(seqdb xobjread)
   NCBI_project_watchers(camacho fongah2 rackerst)
 NCBI_end_lib()
 
