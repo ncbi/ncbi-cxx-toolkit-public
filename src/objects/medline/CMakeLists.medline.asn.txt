@@ -4,6 +4,6 @@
 
 NCBI_begin_lib(medline)
   NCBI_dataspecs(medline.asn)
-  NCBI_uses_toolkit_libraries(biblio general)
+  NCBI_uses_toolkit_libraries(biblio)
 NCBI_end_lib()
 

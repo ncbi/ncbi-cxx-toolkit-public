@@ -4,6 +4,6 @@
 
 NCBI_begin_lib(medlars)
   NCBI_dataspecs(medlars.asn)
-  NCBI_uses_toolkit_libraries(general biblio)
+  NCBI_uses_toolkit_libraries(biblio)
 NCBI_end_lib()
 

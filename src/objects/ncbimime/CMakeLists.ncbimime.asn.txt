@@ -4,6 +4,6 @@
 
 NCBI_begin_lib(ncbimime)
   NCBI_dataspecs(ncbimime.asn)
-  NCBI_uses_toolkit_libraries(general biblio pub medline seq seqset mmdb cn3d cdd)
+  NCBI_uses_toolkit_libraries(cdd)
 NCBI_end_lib()
 

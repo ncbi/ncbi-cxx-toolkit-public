@@ -4,6 +4,6 @@
 
 NCBI_begin_lib(seqedit)
   NCBI_dataspecs(seqedit.asn)
-  NCBI_uses_toolkit_libraries(general seq seqset)
+  NCBI_uses_toolkit_libraries(seqset)
 NCBI_end_lib()
 

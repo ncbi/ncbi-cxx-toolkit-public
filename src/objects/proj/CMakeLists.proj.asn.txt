@@ -4,6 +4,6 @@
 
 NCBI_begin_lib(proj)
   NCBI_dataspecs(proj.asn)
-  NCBI_uses_toolkit_libraries(general biblio pubmed seq seqset)
+  NCBI_uses_toolkit_libraries(pubmed seqset)
 NCBI_end_lib()
 

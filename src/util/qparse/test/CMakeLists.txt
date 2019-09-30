@@ -2,9 +2,5 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(we_cpp)
-  NCBI_dataspecs(we_cpp.asn)
-  NCBI_uses_toolkit_libraries(xser)
-  NCBI_project_watchers(gouriano)
-NCBI_end_lib()
-
+NCBI_project_tags(test)
+NCBI_add_app(test_qparse unit_test_parse_utils)

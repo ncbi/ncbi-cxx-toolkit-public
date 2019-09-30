@@ -4,6 +4,5 @@
 # 
 #
 NCBI_project_tags(test)
-NCBI_add_library(we_cpp)
 NCBI_add_app(test_serial)
 

@@ -4,7 +4,7 @@
 
 NCBI_begin_lib(genome_collection)
   NCBI_dataspecs(genome_collection.asn)
-  NCBI_uses_toolkit_libraries(general seq)
+  NCBI_uses_toolkit_libraries(seq)
   NCBI_project_watchers(dicuccio shchekot zherikov)
 NCBI_end_lib()
 

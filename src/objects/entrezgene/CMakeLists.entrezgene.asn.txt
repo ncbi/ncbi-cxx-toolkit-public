@@ -4,6 +4,6 @@
 
 NCBI_begin_lib(entrezgene)
   NCBI_dataspecs(entrezgene.asn)
-  NCBI_uses_toolkit_libraries(seq general pub)
+  NCBI_uses_toolkit_libraries(seq)
 NCBI_end_lib()
 

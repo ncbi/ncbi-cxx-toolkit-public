@@ -2,9 +2,6 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(id2)
-  NCBI_dataspecs(id2.asn)
-  NCBI_uses_toolkit_libraries(seqsplit)
-  NCBI_project_watchers(vasilche)
-NCBI_end_lib()
+NCBI_project_tags(demo)
+NCBI_add_app(cgidemo)
 
