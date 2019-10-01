@@ -39,9 +39,14 @@
 
 #include <util/lmdbxx/lmdb++.h>
 
+#include "psg_cache_bytes_util.hpp"
+
 USING_NCBI_SCOPE;
 
 BEGIN_SCOPE()
+
+using TPackBytes = CPubseqGatewayCachePackBytes;
+using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
 
 static const unsigned kPackedSeqIdTypeSz = 2;
 static const unsigned kPackedKeyZero = 1;
@@ -53,14 +58,12 @@ size_t PackedKeySize(size_t acc_sz)
 
 END_SCOPE()
 
-CPubseqGatewayCacheSi2Csi::CPubseqGatewayCacheSi2Csi(const string& file_name) :
-    CPubseqGatewayCacheBase(file_name)
+CPubseqGatewayCacheSi2Csi::CPubseqGatewayCacheSi2Csi(const string& file_name)
+    : CPubseqGatewayCacheBase(file_name)
 {
 }
 
-CPubseqGatewayCacheSi2Csi::~CPubseqGatewayCacheSi2Csi()
-{
-}
+CPubseqGatewayCacheSi2Csi::~CPubseqGatewayCacheSi2Csi() = default;
 
 void CPubseqGatewayCacheSi2Csi::Open()
 {
@@ -132,8 +135,7 @@ string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_i
     rv.reserve(sec_seqid.size() + kPackedKeyZero + kPackedSeqIdTypeSz);
     rv = sec_seqid;
     rv.append(1, 0);
-    rv.append(1, (sec_seq_id_type >> 8) & 0xFF);
-    rv.append(1, sec_seq_id_type        & 0xFF);
+    TPackBytes().Pack<kPackedSeqIdTypeSz>(rv, sec_seq_id_type);
     return rv;
 }
 
@@ -144,9 +146,7 @@ bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& s
         size_t ofs = key_sz - (kPackedKeyZero + kPackedSeqIdTypeSz);
         rv = key[ofs] == 0;
         if (rv) {
-            ++ofs;
-            sec_seq_id_type = (uint8_t(key[ofs]) << 8) |
-                               uint8_t(key[ofs + 1]);
+            sec_seq_id_type = TUnpackBytes().Unpack<kPackedSeqIdTypeSz, int>(key + ofs + 1);
         }
     }
     return rv;

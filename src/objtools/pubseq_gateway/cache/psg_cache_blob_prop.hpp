@@ -32,16 +32,24 @@
  *
  */
 
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
+
+#include <corelib/ncbistl.hpp>
+
 #include "psg_cache_base.hpp"
- 
+
 BEGIN_NCBI_SCOPE
 
-class CPubseqGatewayCacheBlobProp : public CPubseqGatewayCacheBase
+class CPubseqGatewayCacheBlobProp
+    : public CPubseqGatewayCacheBase
 {
-public:
-	CPubseqGatewayCacheBlobProp(const string& file_name);
+ public:
+    explicit CPubseqGatewayCacheBlobProp(const string& file_name);
     virtual ~CPubseqGatewayCacheBlobProp() override;
-    void Open(const vector<string>& sat_names);
+    void Open(const set<int>& sat_ids);
     bool LookupBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data);
     bool LookupBySatKeyLastModified(int32_t sat, int32_t sat_key, int64_t last_modified, string& data);
 
@@ -50,11 +58,10 @@ public:
     static bool UnpackKey(const char* key, size_t key_sz, int64_t& last_modified);
     static bool UnpackKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key);
 
-private:
+ private:
     vector<unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>> m_Dbis;
 };
 
 END_NCBI_SCOPE
 
-
-#endif
+#endif  // PSG_CACHE_BLOB_PROP__HPP

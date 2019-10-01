@@ -33,15 +33,21 @@
 #include "psg_cache_blob_prop.hpp"
 
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <util/lmdbxx/lmdb++.h>
 
+#include "psg_cache_bytes_util.hpp"
+
 USING_NCBI_SCOPE;
 
 BEGIN_SCOPE()
+
+using TPackBytes = CPubseqGatewayCachePackBytes;
+using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
 
 static const constexpr unsigned kPackedSatKeySize = 4;
 static const constexpr unsigned kPackedLastModifiedSize = 8;
@@ -54,43 +60,39 @@ CPubseqGatewayCacheBlobProp::CPubseqGatewayCacheBlobProp(const string& file_name
 {
 }
 
-CPubseqGatewayCacheBlobProp::~CPubseqGatewayCacheBlobProp()
-{
-}
+CPubseqGatewayCacheBlobProp::~CPubseqGatewayCacheBlobProp() = default;
 
-void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names)
+void CPubseqGatewayCacheBlobProp::Open(const set<int>& sat_ids)
 {
-    if (sat_names.empty()) {
+    if (sat_ids.empty()) {
         lmdb::runtime_error::raise("List of satellites is empty", 0);
     }
 
     CPubseqGatewayCacheBase::Open();
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
-    int sat = 0;
-    for (const auto & it : sat_names) {
+    for (const auto & sat_id : sat_ids) {
         unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> pdbi;
-        if (!it.empty()) {
-            string sat_dbi = string("#DATA[") + to_string(sat) + "]";
-            try {
-                pdbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
-                    new lmdb::dbi({lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0)}),
-                    [this](lmdb::dbi* dbi){
-                        if (dbi && *dbi) {
-                            dbi->close(*m_Env);
-                        }
-                        delete(dbi);
+        string sat_dbi = string("#DATA[") + to_string(sat_id) + "]";
+        try {
+            pdbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
+                new lmdb::dbi({lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0)}),
+                [this](lmdb::dbi* dbi){
+                    if (dbi && *dbi) {
+                        dbi->close(*m_Env);
                     }
-                );
-            }
-            catch (const lmdb::error& e) {
-                ERR_POST(Warning << "BlobProp cache: failed to open " << sat_dbi << " dbi: " << e.what()
-                    << ", cache for sat = " << sat
-                    << " will not be used.");
-                pdbi = nullptr;
-            }
+                    delete(dbi);
+                }
+            );
+        }
+        catch (const lmdb::error& e) {
+            ERR_POST(Warning << "BlobProp cache: failed to open " << sat_dbi << " dbi: " << e.what()
+                << ", cache for sat = " << sat_id << " will not be used.");
+            pdbi = nullptr;
+        }
+        if (static_cast<size_t>(sat_id) > m_Dbis.size()) {
+            m_Dbis.resize(sat_id);
         }
         m_Dbis.push_back(move(pdbi));
-        ++sat;
     }
     rdtxn.commit();
 }
@@ -148,10 +150,7 @@ string CPubseqGatewayCacheBlobProp::PackKey(int32_t sat_key)
 {
     string rv;
     rv.reserve(kPackedSatKeySize);
-    rv.append(1, (sat_key >> 24) & 0xFF);
-    rv.append(1, (sat_key >> 16) & 0xFF);
-    rv.append(1, (sat_key >>  8) & 0xFF);
-    rv.append(1,  sat_key        & 0xFF);
+    TPackBytes().Pack<kPackedSatKeySize>(rv, sat_key);
     return rv;
 }
 
@@ -159,19 +158,9 @@ string CPubseqGatewayCacheBlobProp::PackKey(int32_t sat_key, int64_t last_modifi
 {
     string rv;
     rv.reserve(kPackedKeySize);
-    rv.append(1, (sat_key >> 24) & 0xFF);
-    rv.append(1, (sat_key >> 16) & 0xFF);
-    rv.append(1, (sat_key >>  8) & 0xFF);
-    rv.append(1,  sat_key        & 0xFF);
+    TPackBytes().Pack<kPackedSatKeySize>(rv, sat_key);
     int64_t lm = -last_modified;
-    rv.append(1, (lm >> 56) & 0xFF);
-    rv.append(1, (lm >> 48) & 0xFF);
-    rv.append(1, (lm >> 40) & 0xFF);
-    rv.append(1, (lm >> 32) & 0xFF);
-    rv.append(1, (lm >> 24) & 0xFF);
-    rv.append(1, (lm >> 16) & 0xFF);
-    rv.append(1, (lm >>  8) & 0xFF);
-    rv.append(1,  lm        & 0xFF);
+    TPackBytes().Pack<kPackedLastModifiedSize>(rv, lm);
     return rv;
 }
 
@@ -179,14 +168,7 @@ bool CPubseqGatewayCacheBlobProp::UnpackKey(const char* key, size_t key_sz, int6
 {
     bool rv = key_sz == kPackedKeySize;
     if (rv) {
-        last_modified = (int64_t(uint8_t(key[4])) << 56) |
-                        (int64_t(uint8_t(key[5])) << 48) |
-                        (int64_t(uint8_t(key[6])) << 40) |
-                        (int64_t(uint8_t(key[7])) << 32) |
-                        (int64_t(uint8_t(key[8])) << 24) |
-                        (uint8_t(key[9]) << 16) |
-                        (uint8_t(key[10]) << 8) |
-                         uint8_t(key[11]);
+        last_modified = TUnpackBytes().Unpack<kPackedLastModifiedSize, int64_t>(key + 4);
         last_modified = -last_modified;
     }
     return rv;
@@ -195,19 +177,9 @@ bool CPubseqGatewayCacheBlobProp::UnpackKey(const char* key, size_t key_sz, int6
 bool CPubseqGatewayCacheBlobProp::UnpackKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key) {
     bool rv = key_sz == kPackedKeySize;
     if (rv) {
-        last_modified = (int64_t(uint8_t(key[4])) << 56) |
-                        (int64_t(uint8_t(key[5])) << 48) |
-                        (int64_t(uint8_t(key[6])) << 40) |
-                        (int64_t(uint8_t(key[7])) << 32) |
-                        (int64_t(uint8_t(key[8])) << 24) |
-                        (uint8_t(key[9]) << 16) |
-                        (uint8_t(key[10]) << 8) |
-                         uint8_t(key[11]);
+        sat_key = TUnpackBytes().Unpack<kPackedSatKeySize, int32_t>(key);
+        last_modified = TUnpackBytes().Unpack<kPackedLastModifiedSize, int64_t>(key + 4);
         last_modified = -last_modified;
-        sat_key       = (int32_t(uint8_t(key[0])) << 24) |
-                        (int32_t(uint8_t(key[1])) << 16) |
-                        (int32_t(uint8_t(key[2])) << 8) |
-                        (int32_t(uint8_t(key[3])));
     }
     return rv;
 }

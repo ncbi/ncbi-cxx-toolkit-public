@@ -38,71 +38,19 @@
 
 #include <util/lmdbxx/lmdb++.h>
 
+#include "psg_cache_bytes_util.hpp"
+
 USING_NCBI_SCOPE;
 
 BEGIN_SCOPE()
+
+using TPackBytes = CPubseqGatewayCachePackBytes;
+using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
 
 static const unsigned kPackedZeroSz = 1;
 static const unsigned kPackedVersionSz = 3;
 static const unsigned kPackedSeqIdTypeSz = 2;
 static const unsigned kPackedGISz = 8;
-
-class CPackBytes
-{
- public:
-    template<int count, typename TInt>
-    void Pack(string& value, TInt bytes) const
-    {
-        using TUInt = typename make_unsigned<TInt>::type;
-        using TIsLast = typename conditional<count == 0, true_type, false_type>::type;
-        TUInt unsigned_bytes = static_cast<TUInt>(bytes);
-        PackImpl<count>(value, unsigned_bytes, TIsLast());
-    }
-
- private:
-    template<int count, typename TUInt>
-    void PackImpl(string& value, TUInt unsigned_bytes, false_type /*zero_count*/) const
-    {
-        using TIsLast = typename conditional<count == 1, true_type, false_type>::type;
-        unsigned char c = (unsigned_bytes >> ((count - 1) * 8)) & 0xFF;
-        value.append(1, static_cast<char>(c));
-        PackImpl<count - 1>(value, unsigned_bytes, TIsLast());
-    }
-
-    template<int count, typename TUInt>
-    void PackImpl(string&, TUInt, true_type /*zero_count*/) const
-    {
-    }
-};
-
-class CUnpackBytes
-{
- public:
-    template<int count, typename TInt>
-    TInt Unpack(const char* key)
-    {
-        using TUInt = typename make_unsigned<TInt>::type;
-        using TIsLast = typename conditional<count == 0, true_type, false_type>::type;
-        const unsigned char* ukey = reinterpret_cast<const unsigned char*>(key);
-        TUInt result{};
-        UnpackImpl<count>(ukey, result, TIsLast());
-        return static_cast<TInt>(result);
-    }
-
- private:
-    template<int count, typename TUInt>
-    void UnpackImpl(const unsigned char* ukey, TUInt& result, false_type /*zero_count*/) const
-    {
-        using TIsLast = typename conditional<count == 1, true_type, false_type>::type;
-        result |= static_cast<TUInt>(ukey[0]) << ((count - 1) * 8);
-        UnpackImpl<count - 1>(ukey + 1, result, TIsLast());
-    }
-
-    template<int count, typename TUInt>
-    void UnpackImpl(const unsigned char*, TUInt&, true_type /*zero_count*/) const
-    {
-    }
-};
 
 size_t PackedKeySize(size_t acc_sz)
 {
@@ -126,14 +74,12 @@ void PrintKey(const string& rv)
 
 END_SCOPE()
 
-CPubseqGatewayCacheBioseqInfo::CPubseqGatewayCacheBioseqInfo(const string& file_name) :
-    CPubseqGatewayCacheBase(file_name)
+CPubseqGatewayCacheBioseqInfo::CPubseqGatewayCacheBioseqInfo(const string& file_name)
+    : CPubseqGatewayCacheBase(file_name)
 {
 }
 
-CPubseqGatewayCacheBioseqInfo::~CPubseqGatewayCacheBioseqInfo()
-{
-}
+CPubseqGatewayCacheBioseqInfo::~CPubseqGatewayCacheBioseqInfo() = default;
 
 void CPubseqGatewayCacheBioseqInfo::Open()
 {
@@ -394,7 +340,7 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     rv = accession;
     rv.append(1, 0);
     int32_t ver = ~version;
-    CPackBytes().Pack<3>(rv, ver);
+    TPackBytes().Pack<kPackedVersionSz>(rv, ver);
     return rv;
 }
 
@@ -405,8 +351,8 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     rv = accession;
     rv.append(1, 0);
     int32_t ver = ~version;
-    CPackBytes().Pack<3>(rv, ver);
-    CPackBytes().Pack<2>(rv, seq_id_type);
+    TPackBytes().Pack<kPackedVersionSz>(rv, ver);
+    TPackBytes().Pack<kPackedSeqIdTypeSz>(rv, seq_id_type);
     return rv;
 }
 
@@ -418,9 +364,9 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     rv.append(1, 0);
     int32_t ver = ~version;
     gi = ~gi;
-    CPackBytes().Pack<3>(rv, ver);
-    CPackBytes().Pack<2>(rv, seq_id_type);
-    CPackBytes().Pack<8>(rv, gi);
+    TPackBytes().Pack<kPackedVersionSz>(rv, ver);
+    TPackBytes().Pack<kPackedSeqIdTypeSz>(rv, seq_id_type);
+    TPackBytes().Pack<kPackedGISz>(rv, gi);
     return rv;
 }
 
@@ -432,10 +378,10 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(
         size_t ofs = key_sz - (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz + kPackedGISz);
         rv = key[ofs] == 0;
         if (rv) {
-            int32_t ver = CUnpackBytes().Unpack<3, int32_t>(key + ofs + 1);
+            int32_t ver = TUnpackBytes().Unpack<kPackedVersionSz, int32_t>(key + ofs + 1);
             version = ~(ver | 0xFF000000);
-            seq_id_type = CUnpackBytes().Unpack<2, int>(key + ofs + 4);
-            gi = CUnpackBytes().Unpack<8, int64_t>(key + ofs + 6);
+            seq_id_type = TUnpackBytes().Unpack<kPackedSeqIdTypeSz, int>(key + ofs + 4);
+            gi = TUnpackBytes().Unpack<kPackedGISz, int64_t>(key + ofs + 6);
             gi = ~gi;
         }
     }

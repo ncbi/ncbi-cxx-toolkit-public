@@ -36,6 +36,7 @@
 
 #include <deque>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -63,7 +64,8 @@ class CPubseqGatewayCache
     CPubseqGatewayCache(
         const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name);
     virtual ~CPubseqGatewayCache();
-    void Open(const vector<string>& sat_names);
+
+    void Open(const set<int>& sat_ids);
 
     void ResetErrors();
     const TRuntimeErrorList& GetErrors() const

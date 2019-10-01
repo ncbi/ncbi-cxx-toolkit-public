@@ -33,6 +33,7 @@
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -78,7 +79,7 @@ CPubseqGatewayCache::~CPubseqGatewayCache()
 {
 }
 
-void CPubseqGatewayCache::Open(const vector<string>& sat_names)
+void CPubseqGatewayCache::Open(const set<int>& sat_ids)
 {
     if (!m_BioseqInfoPath.empty()) {
         m_BioseqInfoCache.reset(new CPubseqGatewayCacheBioseqInfo(m_BioseqInfoPath));
@@ -108,7 +109,7 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
     if (!m_BlobPropPath.empty()) {
         m_BlobPropCache.reset(new CPubseqGatewayCacheBlobProp(m_BlobPropPath));
         try {
-            m_BlobPropCache->Open(sat_names);
+            m_BlobPropCache->Open(sat_ids);
         } catch (const lmdb::error& e) {
             stringstream s;
             s << "Failed to open '" << m_BlobPropPath

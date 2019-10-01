@@ -64,7 +64,7 @@ class CPsgCacheBlobPropTest
         CNcbiRegistry r(i);
         string file_name = r.GetString("LMDB_CACHE", "blob_prop", "");
         m_Cache = make_unique<CPubseqGatewayCache>("", "", file_name);
-        m_Cache->Open({"satold"});
+        m_Cache->Open({0, 4});
     }
 
     static string GetConfigPath()
@@ -94,7 +94,7 @@ TEST_F(CPsgCacheBlobPropTest, LookupUninitialized)
     int64_t last_modified;
 
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
-    cache->Open({"satold"});
+    cache->Open({0, 4});
     EXPECT_FALSE(cache->LookupBlobPropBySatKey(0, 2054006, last_modified, data));
 }
 
@@ -108,6 +108,10 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
 
     result = m_Cache->LookupBlobPropBySatKey(0, -500, last_modified, data);
     EXPECT_FALSE(result);
+
+    result = m_Cache->LookupBlobPropBySatKey(4, 128921745, last_modified, data);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(1418291395270, last_modified);
 
     result = m_Cache->LookupBlobPropBySatKey(0, 2054006, last_modified, data);
     ASSERT_TRUE(result);
