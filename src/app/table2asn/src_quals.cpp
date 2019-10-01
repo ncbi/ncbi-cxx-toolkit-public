@@ -61,6 +61,19 @@ bool CMemorySrcFileMap::Empty(void) const
 }
 
 
+void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
+{
+    vector<CTempString> tokens;
+    NStr::Split(line, "\t", tokens, 0);
+    for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
+        if (!NStr::IsBlank(tokens[i])) {
+            mods.emplace_back(m_ColumnNames[i], tokens[i]);
+        }
+    }
+}
+
+
+
 bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods) 
 {
     mods.clear();
@@ -68,26 +81,29 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
         return false;
     }
 
-    vector<CTempString> tokens;
-    string id;
+
     bool retval = false;
+    list<string> id_strings;
     for (const auto& pId : bioseq.GetId()) {
-        id.clear();
-        pId->GetLabel(&id, nullptr, CSeq_id::eContent);
+        string id;
+        pId->GetLabel(&id, nullptr, CSeq_id::eFastaContent);
         NStr::ToLower(id);
+        id_strings.push_back(id);
+        if (pId->IsGeneral()) {
+            string db, tag;
+            NStr::SplitInTwo(id, "|", db, tag);
+            id_strings.push_back(tag);
+        }
+    }
+
+    for (const auto& id : id_strings) {
         auto it = m_LineMap.find(id);
         if (it != m_LineMap.end()) {
-            tokens.clear();
-            NStr::Split(it->second, "\t", tokens, 0);
-            for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
-                if (!NStr::IsBlank(tokens[i])) {
-                    mods.emplace_back(m_ColumnNames[i], tokens[i]);
-                }
-            }
+            x_ProcessLine(it->second, mods);
             m_LineMap.erase(it);
             retval = true;
         }
-    }   
+    }
 
     return retval;
 }
@@ -154,8 +170,7 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
                     auto pSeqId = Ref(new CSeq_id(idString, parseFlags));
 
 			        idKey.clear();
-                    pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eContent);
-
+                    pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eFastaContent);
                     NStr::ToLower(idKey);
                     m_LineMap.emplace(move(idKey), move(line));
                 }

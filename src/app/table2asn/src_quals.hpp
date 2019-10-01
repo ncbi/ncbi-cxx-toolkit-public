@@ -42,6 +42,7 @@ public:
     const TLineMap& GetLineMap(void) const;
     void ReportUnusedIds(ILineErrorListener* pEC);
 private:
+    void x_ProcessLine(const CTempString& line, TModList& mods);
     bool m_FileMapped = false;
     unique_ptr<CMemoryFileMap> m_pFileMap;
     vector<CTempString> m_ColumnNames;
