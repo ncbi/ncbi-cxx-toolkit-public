@@ -1816,7 +1816,13 @@ Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program,
     }
 
     /* Prohibit any subsequent writing to the HSP stream. */
-    BlastHSPStreamClose(hsp_stream);
+    if((ext_options->compositionBasedStats) && (hit_options->hitlist_size < 1000)) {
+    	BlastHSPCBSStreamClose(hsp_stream, hit_options->hitlist_size);
+
+    }
+    else {
+    	BlastHSPStreamClose(hsp_stream);
+    }
 
     status =
        BLAST_ComputeTraceback_MT(program, hsp_stream, query, query_info,

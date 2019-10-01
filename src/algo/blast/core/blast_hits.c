@@ -59,11 +59,18 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
            return 2;
 
        prelim_hitlist_size = hit_options->hitlist_size;
-       if (ext_options->compositionBasedStats)
-            prelim_hitlist_size = prelim_hitlist_size * 2 + 50;
-       else if (scoring_options->gapped_calculation)
+       if (ext_options->compositionBasedStats) {
+    	   if(hit_options->hitlist_size < 1000) {
+    		   prelim_hitlist_size = prelim_hitlist_size + 1000;
+    	   }
+    	   else {
+    		   prelim_hitlist_size = prelim_hitlist_size*2 + 50;
+    	   }
+       }
+       else if (scoring_options->gapped_calculation) {
             prelim_hitlist_size = MIN(2 * prelim_hitlist_size,
                                       prelim_hitlist_size + 50);
+       }
 
        (*retval)->prelim_hitlist_size = MAX(prelim_hitlist_size, 10);
 

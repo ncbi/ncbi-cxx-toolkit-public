@@ -335,11 +335,18 @@ BlastHSPCollectorParamsNew(const BlastHitSavingOptions* hit_options,
        retval = (BlastHSPCollectorParams*) malloc(sizeof(BlastHSPCollectorParams));
 
        prelim_hitlist_size = hit_options->hitlist_size;
-       if (compositionBasedStats)
-            prelim_hitlist_size = prelim_hitlist_size * 2 + 50;  
-       else if (gapped_calculation)
+       if (compositionBasedStats) {
+    	   if(hit_options->hitlist_size < 1000) {
+    		   prelim_hitlist_size = prelim_hitlist_size + 1000;
+    	   }
+    	   else {
+    		   prelim_hitlist_size = prelim_hitlist_size*2 + 50;
+    	   }
+       }
+       else if (gapped_calculation) {
             prelim_hitlist_size = MIN(2 * prelim_hitlist_size, 
                                       prelim_hitlist_size + 50);
+       }
 
        retval->prelim_hitlist_size = MAX(prelim_hitlist_size, 10);
        retval->hsp_num_max = BlastHspNumMax(gapped_calculation, hit_options);

@@ -253,6 +253,9 @@ int BlastHSPStreamRegisterPipe(BlastHSPStream* hsp_stream,
                                BlastHSPPipe* pipe,
                                EBlastStage stage);
 
+
+NCBI_XBLAST_EXPORT
+void BlastHSPCBSStreamClose(BlastHSPStream* hsp_stream, int hitlist_size);
 #ifdef __cplusplus
 }
 #endif

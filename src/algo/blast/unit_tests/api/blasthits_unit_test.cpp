@@ -1319,7 +1319,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE(ext_options == NULL);
 
         BOOST_REQUIRE_EQUAL(blasthit_params->prelim_hitlist_size,
-             (2*hit_options->hitlist_size)+50);
+             hit_options->hitlist_size+1000);
 
         ext_options = BlastExtensionOptionsFree(ext_options);
         BOOST_REQUIRE(ext_options == NULL);

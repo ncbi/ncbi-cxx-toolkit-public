@@ -803,3 +803,60 @@ BlastHSPPipeNew (BlastHSPPipeInfo** pipe_info,
     return pipe;
 }
 
+void s_TrimHitList(BlastHitList* hitlist, int count)
+{
+	int old_count = hitlist->hsplist_count;
+	for (int index = count; index < old_count; ++index) {
+		hitlist->hsplist_array[index] = Blast_HSPListFree(hitlist->hsplist_array[index]);
+	}
+	hitlist->hsplist_count = count;
+}
+
+void BlastHSPCBSStreamClose(BlastHSPStream* hsp_stream, int hitlist_size)
+{
+   BlastHitList* hit_list;
+   BlastHSPResults * results;
+
+   if (!hsp_stream || !hsp_stream->results || hsp_stream->results_sorted)
+      return;
+
+   s_FinalizeWriter(hsp_stream);
+
+   results = hsp_stream->results;
+
+   for (int index = 0; index < results->num_queries; ++index) {
+      hit_list = results->hitlist_array[index];
+      if (hit_list) {
+    	  const int MIN_BUF_SZ = MAX(300, MIN(hitlist_size +100, 800));
+    	  if (hit_list->hsplist_count <= hitlist_size + MIN_BUF_SZ) {
+    		  continue;
+    	  }
+          else {
+        	  int max_index = hit_list->hsplist_count -1;
+        	  double best_evalue = 0, evalue_limit = 0;
+        	  int mag = 0, pct = 90, i = 0;
+        	  Blast_HitListSortByEvalue(hit_list);
+        	  best_evalue = hit_list->hsplist_array[hitlist_size]->best_evalue;
+        	  mag = -180 * pct/100;
+        	  if (best_evalue != 0 ){
+        		  mag = log10(hit_list->hsplist_array[hitlist_size]->best_evalue);
+        	  }
+
+        	  evalue_limit = (mag >= -1)? best_evalue*3: 9.9* pow(10, mag*pct/100);
+
+        	  i = hitlist_size + MIN_BUF_SZ;
+        	  for(; i < max_index; i +=100) {
+        		  if((hit_list->hsplist_array[i]->best_evalue != 0) &&
+        		     (evalue_limit < hit_list->hsplist_array[i]->best_evalue)){
+        			  s_TrimHitList(hit_list, i);
+        			  break;
+        		  }
+        	  }
+          }
+      }
+   }
+
+   BlastHSPStreamClose(hsp_stream);
+   return;
+
+}
