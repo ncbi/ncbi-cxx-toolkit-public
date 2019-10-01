@@ -355,5 +355,12 @@ December 18, 2018
 version 4.7.1, CXX-10397
 Added PreBuild script on XCode.
 
+October 01, 2019
+version 4.8.0, CXX-10947
+Added NCBI_APP_BUILT_AS definition into project settings.
+Corrected generation of build information headers.
+When adding metadata files, added checking their requirements.
+
+
 
 
