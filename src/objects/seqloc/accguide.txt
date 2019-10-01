@@ -3461,9 +3461,8 @@ special  LT556286-LT558089  embl_est
 special  LT571433-LT571435  embl_tpa_nuc
 special  LT605004           embl_tpa_nuc
 special  LT631550-LT631670  embl_tpa_nuc
-## Err on the side of caution on as yet unassigned IDs, and hope that
-## there's not *too* much more backfilling.
-#special LT828649-LT999999  unreserved_nuc
+special  LT906301-LT906358  embl_tpa_nuc
+special  LT962964-LT963174  embl_tpa_nuc
 
 # Nominally (conservatively) embl_other_nuc.
 special  OB000001-OB660024  embl_con
@@ -12619,10 +12618,10 @@ special  SAI82294-SAI82296  embl_tpa_prot
 special  SAI82298-SAI82303  embl_tpa_prot
 special  SAQ69746-SAQ69766  embl_tpa_prot
 special  SAQ71209           embl_tpa_prot
-special  SCC99881-SCC99885  embl_tpa_prot
+special  SCC98881-SCC98885  embl_tpa_prot
 special  SFW93197-SFW93317  embl_tpa_prot
 special  SNU76807-SNU78093  embl_tpa_prot
 special  SOR70182-SOR70392  embl_tpa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special SZF06526-SZZ99999  unreserved_prot
+#special SZF06859-SZZ99999  unreserved_prot
