@@ -99,3 +99,4 @@ if not exist "%TREE_ROOT%\include\%subtree%" (
 )
 xcopy /Y /D /F "%input_spec_dir%\*.h" "%TREE_ROOT%\include\%subtree%"
 del "%input_spec_dir%\*.h"
+cd %initial_dir%
