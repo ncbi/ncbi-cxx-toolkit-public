@@ -279,6 +279,20 @@ static void sReportMissingMods(
     pEC->PutError(*pErr);
 }
 
+
+static void s_PreprocessNoteMods(CModHandler::TModList& mods)
+{
+    for (auto& mod : mods) {
+        if (CModHandler::GetCanonicalName(mod.GetName()) == "note"){
+            string new_value = mod.GetValue();
+            NStr::ReplaceInPlace(new_value, "<", "[");
+            NStr::ReplaceInPlace(new_value, ">", "]");
+            mod.SetValue(new_value);
+        }
+    }
+}
+
+
 void g_ApplyMods(
     unique_ptr<CMemorySrcFileMap>& namedSrcFileMap,
     const string& namedSrcFile,
@@ -300,11 +314,14 @@ void g_ApplyMods(
     if (!NStr::IsBlank(commandLineStr)) {
         TModList mods;
         CTitleParser::Apply(commandLineStr, mods, commandLineRemainder);
+        s_PreprocessNoteMods(mods); // RW-928
+
         auto fReportCommandLineError = 
             [&](const CModData& /* mod */, const string& msg, EDiagSev sev,
                 EModSubcode subcode) {
                 return sReportError(pEC, sev, subcode, "", msg);
             };
+
 
         CModHandler mod_handler;
         mod_handler.AddMods(mods,
@@ -351,6 +368,7 @@ void g_ApplyMods(
             if (namedSrcFileMap && !namedSrcFileMap->Empty()) {
                 TModList mods;
                 if (namedSrcFileMap->GetMods(*pBioseq, mods)) {
+                    s_PreprocessNoteMods(mods); // RW-928
                     mod_handler.AddMods(mods, 
                             CModHandler::ePreserve, 
                             rejectedMods, 
@@ -365,6 +383,7 @@ void g_ApplyMods(
             if (!defaultSrcFileMap.Empty()) {
                 TModList mods;
                 if (defaultSrcFileMap.GetMods(*pBioseq, mods)) {
+                    s_PreprocessNoteMods(mods); // RW-928
                     mod_handler.AddMods(mods, 
                             CModHandler::ePreserve, 
                             rejectedMods, 
@@ -407,6 +426,8 @@ void g_ApplyMods(
                     }
                 }
             }
+
+
             CModAdder::Apply(mod_handler, *pBioseq, rejectedMods, fReportError);
             s_AppendMods(rejectedMods, remainder);
 
