@@ -435,7 +435,60 @@ rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
 {
     CTempString msg(buffer, size);
     NStr::TruncateSpacesInPlace(msg);
-    LOG_POST_X(2, "VDB: "<<msg);
+    EDiagSev sev = eDiag_Error;
+    for ( SIZE_TYPE token_pos = 0, token_end; token_pos < msg.size(); token_pos = token_end + 1 ) {
+        token_end = msg.find(' ', token_pos);
+        if ( token_end == NPOS ) {
+            token_end = msg.size();
+        }
+        CTempString token(msg, token_pos, token_end-token_pos);
+        if ( token.empty() ) {
+            continue;
+        }
+        if ( token == "fatal:" ) {
+            sev = eDiag_Fatal;
+            break;
+        }
+        if ( token == "sys:" ) {
+            sev = eDiag_Error;
+            break;
+        }
+        if ( token == "int:" ) {
+            sev = eDiag_Error;
+            break;
+        }
+        if ( token == "err:" ) {
+            sev = eDiag_Error;
+            break;
+        }
+        if ( token == "warn:" ) {
+            sev = eDiag_Warning;
+            break;
+        }
+        if ( token == "info:" ) {
+            sev = eDiag_Info;
+            break;
+        }
+        if ( token == "debug:" ) {
+            sev = eDiag_Trace;
+            break;
+        }
+    }
+    if ( sev == eDiag_Fatal ) {
+        ERR_POST_X(2, Fatal<<"VDB: "<<msg);
+    }
+    else if ( sev == eDiag_Warning ) {
+        ERR_POST_X(2, Warning<<"VDB: "<<msg);
+    }
+    else if ( sev == eDiag_Info ) {
+        ERR_POST_X(2, Info<<"VDB: "<<msg);
+    }
+    else if ( sev == eDiag_Trace ) {
+        _TRACE("VDB: "<<msg);
+    }
+    else {
+        ERR_POST_X(2, "VDB: "<<msg);
+    }
     *written = size;
     return 0;
 }
