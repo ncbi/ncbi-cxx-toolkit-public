@@ -1724,17 +1724,17 @@ void SeqLocAdjustForInsert(CSeq_loc& loc,
 }
 
 
-CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before, 
-                                        size_t start, size_t stop,
-                                        const CSeq_id* seqid, bool& cut,
-                                        unsigned int options)
+CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
+    size_t start, size_t stop,
+    const CSeq_id* seqid, bool& cut,
+    unsigned int options)
 {
     cut = false;
     if (!OkToAdjustLoc(before, seqid)) {
         return CRef<CSeq_interval>(NULL);
     }
     // These are required fields
-    if ( !(before.CanGetFrom() && before.CanGetTo()) )
+    if (!(before.CanGetFrom() && before.CanGetTo()))
     {
         return CRef<CSeq_interval>(NULL);
     }
@@ -1749,9 +1749,9 @@ CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
     }
 
     if (feat_from > stop && !(options & eSplitLocOption_split_in_intron)) {
-      // if gap completely before location, but not splitting in introns,
-      // no change
-      return after;
+        // if gap completely before location, but not splitting in introns,
+        // no change
+        return after;
     }
 
     if (feat_from < start && feat_to > stop) {
@@ -1789,23 +1789,29 @@ void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
                          const CSeq_id* seqid, unsigned int options)
 {
     if (before_intervals.IsSet()) {
-        // Process each interval in the list
-        CPacked_seqint::Tdata::iterator it;
-        for (it = before_intervals.Set().begin(); 
-                it != before_intervals.Set().end(); ) 
-        {
-            bool cut = false;
-            CRef<CSeq_interval> after = SplitLocationForGap(**it, start, stop, seqid, cut, options);
+        auto it = before_intervals.Set().begin();
+        while (it != before_intervals.Set().end()) {
+            CSeq_interval& sub_interval = **it;
 
-            // Should interval be deleted from list?
-            if (cut) {
+            TSeqPos int_from = sub_interval.GetFrom();
+            TSeqPos int_to = sub_interval.GetTo();
+            if (int_from > stop && after_intervals.IsSet() && !after_intervals.Get().empty()) {
+                after_intervals.Set().push_back(Ref(&sub_interval));
                 it = before_intervals.Set().erase(it);
-            }
-            else {
-                ++it;
-            }
-            if (after) {
-                after_intervals.Set().push_back(after);
+            } else {
+                bool cut = false;
+                CRef<CSeq_interval> after = SplitLocationForGap(sub_interval, start, stop, seqid, cut, options);
+
+                // Should interval be deleted from list?
+                if (cut) {
+                    it = before_intervals.Set().erase(it);
+                }
+                else {
+                    ++it;
+                }
+                if (after) {
+                    after_intervals.Set().push_back(after);
+                }
             }
         }
     }
@@ -1882,41 +1888,50 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
         // Multiple seqlocs
         case CSeq_loc::e_Mix:
             {{
-                CSeq_loc_mix& before_mix = loc1.SetMix();
-                CRef<CSeq_loc_mix> after_mix(new CSeq_loc_mix);
-                 if (before_mix.IsSet()) {
-                    // Process each seqloc in the list
-                    CSeq_loc_mix::Tdata::iterator it;
-                    for (it = before_mix.Set().begin(); 
-                         it != before_mix.Set().end(); ) 
-                    {
-                        CRef<CSeq_loc> after(new CSeq_loc());
-                        SplitLocationForGap(**it, *after, start, stop, seqid, options);
-                        // Should seqloc be deleted from list?
-                        if ((*it)->Which() == CSeq_loc::e_not_set) {
-                            it = before_mix.Set().erase(it);
+                    CSeq_loc_mix& before_mix = loc1.SetMix();
+                    CRef<CSeq_loc_mix> after_mix(new CSeq_loc_mix);
+                    if (before_mix.IsSet()) {
+                        auto it = before_mix.Set().begin();
+                        while (it != before_mix.Set().end()) {
+                            CSeq_loc& sub_loc = **it;
+
+                            TSeqPos from = sub_loc.GetStart(eExtreme_Positional);
+                            TSeqPos to = sub_loc.GetStop(eExtreme_Positional);
+                            if (from > stop && after_mix->IsSet() && !after_mix->Get().empty()) {
+                                after_mix->Set().push_back(Ref(&sub_loc));
+                                it = before_mix.Set().erase(it);
+                            }
+                            else {
+                                CRef<CSeq_loc> after(new CSeq_loc());
+                                SplitLocationForGap(**it, *after, start, stop, seqid, options);
+                                // Should seqloc be deleted from list?
+                                if ((*it)->Which() == CSeq_loc::e_not_set) {
+                                    it = before_mix.Set().erase(it);
+                                }
+                                else {
+                                    ++it;
+                                }
+                                if (after->Which() != CSeq_loc::e_not_set) {
+                                    after_mix->Set().push_back(after);
+                                }
+                            }
                         }
-                        else {
-                            ++it;
+
+                        // Update the original list
+                        if (before_mix.Set().empty()) {
+                            loc1.Reset();
                         }
-                        if (after->Which() != CSeq_loc::e_not_set) {
-                            after_mix->Set().push_back(after);
+                        if (!after_mix->Set().empty()) {
+                            if (loc2.Which() == CSeq_loc::e_not_set) {
+                                loc2.SetMix().Assign(*after_mix);
+                            }
+                            else {
+                                CRef<CSeq_loc> add(new CSeq_loc());
+                                add->SetMix().Assign(*after_mix);
+                                loc2.Add(*add);
+                            }
                         }
                     }
-                    // Update the original list
-                    if (before_mix.Set().empty()) {
-                        loc1.Reset();
-                    }
-                    if (!after_mix->Set().empty()) {
-                        if (loc2.Which() == CSeq_loc::e_not_set) {
-                            loc2.SetMix().Assign(*after_mix);
-                        } else {
-                            CRef<CSeq_loc> add(new CSeq_loc());
-                            add->SetMix().Assign(*after_mix);
-                            loc2.Add(*add);
-                        }
-                    }
-                }
             }}
             break;
         case CSeq_loc::e_Equiv:

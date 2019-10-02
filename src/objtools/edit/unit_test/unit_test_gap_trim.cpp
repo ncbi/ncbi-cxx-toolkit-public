@@ -559,7 +559,7 @@ BOOST_AUTO_TEST_CASE(TestRemoveCDS)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntron)
+BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntronMixLoc)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntron)
     nuc->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
     nuc->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", objects::CSeq_inst::eMol_dna);
     CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
-    gap_seg->SetLiteral().SetSeq_data().SetGap();
+    gap_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
     gap_seg->SetLiteral().SetLength(10);
     nuc->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
     nuc->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCAAATTTTAA", objects::CSeq_inst::eMol_dna);
@@ -593,21 +593,75 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntron)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     unit_test_util::RetranslateCdsForNucProtSet(entry, *scope);
 
+
     CFeat_CI f(seh);
     edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+
     gapped_list.front()->CalculateRelevantIntervals(false, true);
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
+
     vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
     adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, false, false);
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
 }
 
+BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntronPackedInt)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("orig_protein_id", "x")));
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("orig_transcript_id", "y")));
+
+    nuc->SetSeq().SetInst().ResetSeq_data();
+    nuc->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+    nuc->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", objects::CSeq_inst::eMol_dna);
+    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    gap_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
+    gap_seg->SetLiteral().SetLength(10);
+    nuc->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    nuc->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCAAATTTTAA", objects::CSeq_inst::eMol_dna);
+    nuc->SetSeq().SetInst().SetLength(34);
+
+    CRef<CSeq_interval> int1(new CSeq_interval());
+    int1->SetId().Assign(*(nuc->GetSeq().GetId().front()));
+    int1->SetFrom(0);
+    int1->SetTo(10);
+    CRef<CSeq_interval> int2(new CSeq_interval());
+    int2->SetId().Assign(*(nuc->GetSeq().GetId().front()));
+    int2->SetFrom(24);
+    int2->SetTo(33);
+    cds->SetLocation().SetPacked_int().Set().push_back(int1);
+    cds->SetLocation().SetPacked_int().Set().push_back(int2);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    unit_test_util::RetranslateCdsForNucProtSet(entry, *scope);
+
+
+    CFeat_CI f(seh);
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+
+    gapped_list.front()->CalculateRelevantIntervals(false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
+
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
+    adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, false, false);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
+}
 
 void AddNsToGoodDelta(CBioseq& seq)
 {
@@ -1051,3 +1105,5 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoMiscMixLoc)
     TestRemoveMiscMixLoc(12, 15, 17, 21, false);
     TestRemoveMiscMixLoc(17, 21, 12, 15, true);    
 }
+
+
