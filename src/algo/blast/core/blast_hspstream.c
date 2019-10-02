@@ -816,6 +816,7 @@ void BlastHSPCBSStreamClose(BlastHSPStream* hsp_stream, int hitlist_size)
 {
    BlastHitList* hit_list;
    BlastHSPResults * results;
+   int index =0;
 
    if (!hsp_stream || !hsp_stream->results || hsp_stream->results_sorted)
       return;
@@ -824,7 +825,7 @@ void BlastHSPCBSStreamClose(BlastHSPStream* hsp_stream, int hitlist_size)
 
    results = hsp_stream->results;
 
-   for (int index = 0; index < results->num_queries; ++index) {
+   for (index = 0; index < results->num_queries; ++index) {
       hit_list = results->hitlist_array[index];
       if (hit_list) {
     	  const int MIN_BUF_SZ = MAX(300, MIN(hitlist_size +100, 800));
