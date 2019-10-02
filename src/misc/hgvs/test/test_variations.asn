@@ -4,12 +4,12 @@ Variation ::= {
   placements {
     {
       loc int {
-        from 8806,
-        to 8811,
+        from 8727,
+        to 8732,
         strand plus,
         id other {
           accession "NM_000138",
-          version 4
+          version 5
         }
       },
       mol cdna,
@@ -64,12 +64,12 @@ Variation ::= {
               },
               {
                 loc int {
-                  from 8807,
-                  to 8812,
+                  from 8728,
+                  to 8733,
                   strand plus,
                   id other {
                     accession "NM_000138",
-                    version 4
+                    version 5
                   }
                 },
                 mol cdna,
