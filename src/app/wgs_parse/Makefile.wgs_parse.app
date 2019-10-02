@@ -17,13 +17,10 @@ SRC     = \
 
 APP     = wgs_parse
 
-LIB     = fix_pub eutils_client xcleanup ncbi_xdbapi_ftds \
-          ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 \
-          ncbi_xloader_genbank ncbi_xreader_id1 ncbi_xreader_id2 \
-          ncbi_xreader_cache id2 ncbi_xreader dbapi_driver \
-          ct_ftds100 tds_ftds100 psg_client xconnserv xconnext xcompress \
-          id1 xmlwrapp $(OBJEDIT_LIBS) \
-          xobjutil valid taxon1 mlacli mla medlars pubmed xconnect \
-          xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
+LIB  = fix_pub eutils_client xmlwrapp $(ncbi_xreader_pubseqos2) xcleanup \
+    $(OBJEDIT_LIBS) xobjutil valid taxon1 mlacli mla medlars pubmed \
+    ncbi_xdbapi_ftds $(FTDS_LIB) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
-LIBS    = $(NGHTTP2_LIBS) $(LIBUV_LIBS) $(SYBASE_LIBS) $(VDB_LIBS) $(FTDS_LIBS) $(PCRE_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(ORIG_LIBS)
+LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(FTDS_LIBS) \
+    $(GENBANK_THIRD_PARTY_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+
