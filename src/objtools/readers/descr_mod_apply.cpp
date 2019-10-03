@@ -196,6 +196,7 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
     const auto& name = x_GetModName(mod_entry);
     if (name == "location") {
         const auto& value = x_GetModValue(mod_entry);
+        static const auto s_GenomeStringToEnum = s_InitModNameGenomeMap();
         auto it = s_GenomeStringToEnum.find(value);
         if (it == s_GenomeStringToEnum.end()) {
             x_ReportInvalidValue(mod_entry.second.front());
@@ -206,8 +207,8 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
     }
 
     if (name == "origin") {
-       // static const auto s_OriginStringToEnum = s_GetReverseMap(s_OriginEnumToString);
         const auto& value = x_GetModValue(mod_entry);
+        static const auto s_OriginStringToEnum = s_InitModNameOriginMap();
         auto it = s_OriginStringToEnum.find(value);
         if (it == s_OriginStringToEnum.end()) {
             x_ReportInvalidValue(mod_entry.second.front());
@@ -251,7 +252,6 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
 
 void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry)
 {
-
     const auto subtype = s_SubSourceStringToEnum.at(x_GetModName(mod_entry));
     const auto needs_no_text = CSubSource::NeedsNoText(subtype);
     CBioSource::TSubtype subsources;
@@ -671,41 +671,11 @@ void CDescrModApply::x_SetDBLinkFieldVals(const string& label,
     pField->SetData().SetStrs().assign(vals.begin(), vals.end());
 }
 
-/*
-static string s_GetNormalizedMolInfoVal(const string& unnormalized)
-{
-    string normalized = unnormalized;
-
-    size_t pos = normalized.find_first_not_of(" \t\"\'-_");
-    if (pos != NPOS) {
-        normalized.erase(0,pos);
-    }
-
-    pos = normalized.find_last_not_of(" \t\"\'-_");
-    if (pos != NPOS) {
-        normalized.erase(pos+1);
-    }
-
-    normalized.erase(remove_if(normalized.begin(),
-                               normalized.end(),
-                               [](char c) { 
-                                return (c=='-' ||
-                                        c=='_' ||
-                                        isspace(c)); }),
-                     normalized.end());
-
-
-    NStr::ToLower(normalized);
-   
-    return normalized;
-    
-}
-*/
 
 void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(s_GetNormalizedMolInfoVal(value));
+    auto it = s_BiomolStringToEnum.find(s_GetNormalizedModVal(value));
     if (it != s_BiomolStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetBiomol(it->second);
         return;
@@ -717,7 +687,7 @@ void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_TechStringToEnum.find(s_GetNormalizedMolInfoVal(value));
+    auto it = s_TechStringToEnum.find(s_GetNormalizedModVal(value));
     if (it != s_TechStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetTech(it->second);
         return;
@@ -729,7 +699,7 @@ void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_CompletenessStringToEnum.find(s_GetNormalizedMolInfoVal(value));
+    auto it = s_CompletenessStringToEnum.find(s_GetNormalizedModVal(value));
     if (it != s_CompletenessStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetCompleteness(it->second);
         return;

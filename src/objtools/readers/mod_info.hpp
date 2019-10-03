@@ -34,6 +34,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -41,45 +42,85 @@ BEGIN_SCOPE(objects)
 using TModNameSet = unordered_set<string>;
 
 template<typename TEnum> 
-using TNameToEnumMap = unordered_map<string,TEnum>;
+using TStringToEnumMap = unordered_map<string,TEnum>;
 
-template<typename TEnum>
-static TNameToEnumMap<TEnum> s_InitModNameToEnumMap(
-    const CEnumeratedTypeValues& etv,
-    const TModNameSet& skip_enum_names,
-    const TNameToEnumMap<TEnum>&  extra_enum_names_to_vals)
-
+static string s_GetNormalizedModVal(const string& unnormalized)
 {
-    TNameToEnumMap<TEnum> smod_enum_map;
-    
-    for (const auto& name_val : etv.GetValues()) {
-        const auto& enum_name = name_val.first;
-        const TEnum& enum_val = static_cast<TEnum>(name_val.second);
+    string normalized = unnormalized;
+    static const string irrelevant_prefix_suffix_chars = " \t\"\'-_";
 
-        if (skip_enum_names.find(enum_name) != skip_enum_names.end()) 
-        {
-            continue;
-        }
-        smod_enum_map.emplace(enum_name, enum_val);
+    size_t pos = normalized.find_first_not_of(irrelevant_prefix_suffix_chars);
+    if (pos != NPOS) {
+        normalized.erase(0,pos);
     }
 
-    for (auto extra_smod_to_enum : extra_enum_names_to_vals) {
-        smod_enum_map.emplace(extra_smod_to_enum);
+    pos = normalized.find_last_not_of(irrelevant_prefix_suffix_chars);
+    if (pos != NPOS) {
+        normalized.erase(pos+1);
+    }
+
+    normalized.erase(remove_if(normalized.begin(),
+                               normalized.end(),
+                               [](char c) { 
+                                return (c=='-' ||
+                                        c=='_' ||
+                                        c==':' ||
+                                        isspace(c)); }),
+                     normalized.end());
+
+    NStr::ToLower(normalized);
+    return normalized;
+}
+
+static auto fNoNormalization =
+[](const string& mod_string) { return mod_string; };
+
+template<typename TEnum>
+static TStringToEnumMap<TEnum> s_InitModStringToEnumMap(
+    const CEnumeratedTypeValues& etv,
+    const TModNameSet& skip_mod_strings,
+    const TStringToEnumMap<TEnum>&  extra_mod_strings_to_enums,
+    function<string(const string&)> fNormalizeString  = fNoNormalization
+    )
+
+{
+    TModNameSet normalized_skip_set;
+    transform(skip_mod_strings.begin(),
+              skip_mod_strings.end(),
+              inserter(normalized_skip_set, normalized_skip_set.end()),
+              fNormalizeString);
+
+    
+    TStringToEnumMap<TEnum> smod_enum_map;
+    for (const auto& name_val : etv.GetValues()) {
+        const auto&  mod_string = fNormalizeString(name_val.first);
+        if (normalized_skip_set.find(mod_string) == normalized_skip_set.end()) 
+        {
+            const TEnum& enum_val = static_cast<TEnum>(name_val.second);
+            smod_enum_map.emplace(mod_string, enum_val);
+        }
+    }
+
+    for (auto extra_smod_to_enum : extra_mod_strings_to_enums) {
+        smod_enum_map.emplace(
+                fNormalizeString(extra_smod_to_enum.first),
+                extra_smod_to_enum.second);
     }
     return smod_enum_map;
 }
 
-static TNameToEnumMap<COrgMod::ESubtype>
+
+static TStringToEnumMap<COrgMod::ESubtype>
 s_InitModNameOrgSubtypeMap(void)
 {
     static const TModNameSet kDeprecatedOrgSubtypes{
             "dosage", "old-lineage", "old-name"};
-    static const TNameToEnumMap<COrgMod::ESubtype> 
+    static const TStringToEnumMap<COrgMod::ESubtype> 
         extra_smod_to_enum_names 
         {{ "subspecies", COrgMod::eSubtype_sub_species},
          {"host",COrgMod::eSubtype_nat_host},
          {"specific-host", COrgMod::eSubtype_nat_host}};
-    return s_InitModNameToEnumMap(
+    return s_InitModStringToEnumMap(
         *COrgMod::GetTypeInfo_enum_ESubtype(),
         kDeprecatedOrgSubtypes,
         extra_smod_to_enum_names
@@ -87,7 +128,7 @@ s_InitModNameOrgSubtypeMap(void)
 }
 
 
-static TNameToEnumMap<CSubSource::ESubtype>
+static TStringToEnumMap<CSubSource::ESubtype>
 s_InitModNameSubSrcSubtypeMap(void)
 {
     // some are skipped because they're handled specially and some are
@@ -101,62 +142,64 @@ s_InitModNameSubSrcSubtypeMap(void)
         "plastid-name",
         "insertion-seq-name",
     };
-    static const TNameToEnumMap<CSubSource::ESubtype> 
+    static const TStringToEnumMap<CSubSource::ESubtype> 
         extra_smod_to_enum_names 
         {{ "sub-clone", CSubSource::eSubtype_subclone },
         { "lat-long",   CSubSource::eSubtype_lat_lon  },
         { "latitude-longitude", CSubSource::eSubtype_lat_lon },
         {  "note",  CSubSource::eSubtype_other  },
         {  "notes", CSubSource::eSubtype_other  }};  
-    return s_InitModNameToEnumMap(
+    return s_InitModStringToEnumMap(
             *CSubSource::GetTypeInfo_enum_ESubtype(),
             skip_enum_names,
             extra_smod_to_enum_names);
 }
 
 
-static TNameToEnumMap<CBioSource::EGenome>
+static TStringToEnumMap<CBioSource::EGenome>
 s_InitModNameGenomeMap(void)
 {
    static const TModNameSet skip_enum_names;
-   static const TNameToEnumMap<CBioSource::EGenome> 
+   static const TStringToEnumMap<CBioSource::EGenome> 
        extra_smod_to_enum_names 
        {{ "mitochondrial", CBioSource::eGenome_mitochondrion },
         { "provirus", CBioSource::eGenome_proviral},
         { "extrachromosomal", CBioSource::eGenome_extrachrom},
         { "insertion sequence", CBioSource::eGenome_insertion_seq}};
 
-   return s_InitModNameToEnumMap(
+   return s_InitModStringToEnumMap(
            *CBioSource::GetTypeInfo_enum_EGenome(),
            skip_enum_names,
-           extra_smod_to_enum_names);
+           extra_smod_to_enum_names,
+           s_GetNormalizedModVal);
 }
 
 
-static TNameToEnumMap<CBioSource::EOrigin>
+static TStringToEnumMap<CBioSource::EOrigin>
 s_InitModNameOriginMap(void)
 {
     static const TModNameSet skip_enum_names;
-    static const TNameToEnumMap<CBioSource::EOrigin>
+    static const TStringToEnumMap<CBioSource::EOrigin>
         extra_smod_to_enum_names 
         {{ "natural mutant", CBioSource::eOrigin_natmut},
          { "mutant", CBioSource::eOrigin_mut}};
 
-    return s_InitModNameToEnumMap(
+    return s_InitModStringToEnumMap(
             *CBioSource::GetTypeInfo_enum_EOrigin(),
             skip_enum_names,
-            extra_smod_to_enum_names);
+            extra_smod_to_enum_names,
+            s_GetNormalizedModVal);
 }
 
 
-static const TNameToEnumMap<CSeq_inst::EStrand> 
+static const TStringToEnumMap<CSeq_inst::EStrand> 
 s_StrandStringToEnum = {{"single", CSeq_inst::eStrand_ss},
                         {"double", CSeq_inst::eStrand_ds},
                         {"mixed", CSeq_inst::eStrand_mixed},
                         {"other", CSeq_inst::eStrand_other}};
 
 
-static const TNameToEnumMap<CSeq_inst::EMol>
+static const TStringToEnumMap<CSeq_inst::EMol>
 s_MolStringToEnum = {{"dna", CSeq_inst::eMol_dna},
                      {"rna", CSeq_inst::eMol_rna},
                      {"aa", CSeq_inst::eMol_aa},
@@ -164,23 +207,19 @@ s_MolStringToEnum = {{"dna", CSeq_inst::eMol_dna},
                     {"other", CSeq_inst::eMol_other}};
 
 
-static const TNameToEnumMap<CSeq_inst::ETopology> 
+static const TStringToEnumMap<CSeq_inst::ETopology> 
 s_TopologyStringToEnum = {{"linear", CSeq_inst::eTopology_linear},
                           {"circular", CSeq_inst::eTopology_circular},
                           {"tandem", CSeq_inst::eTopology_tandem},
                           {"other", CSeq_inst::eTopology_other}};
 
 
-static const auto s_GenomeStringToEnum = s_InitModNameGenomeMap();
-
-static const auto s_OriginStringToEnum = s_InitModNameOriginMap();
-
 static const auto s_OrgModStringToEnum = s_InitModNameOrgSubtypeMap();
 
 static const auto s_SubSourceStringToEnum = s_InitModNameSubSrcSubtypeMap();
 
 static const 
-TNameToEnumMap<CMolInfo::TBiomol> s_BiomolStringToEnum
+TStringToEnumMap<CMolInfo::TBiomol> s_BiomolStringToEnum
 = { {"crna",                    CMolInfo::eBiomol_cRNA },   
     {"dna",                     CMolInfo::eBiomol_genomic},   
     {"genomic",                 CMolInfo::eBiomol_genomic},   
@@ -225,7 +264,7 @@ unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> s_BiomolEnumToMolEnum
 
 
 static const 
-TNameToEnumMap<CMolInfo::TTech>
+TStringToEnumMap<CMolInfo::TTech>
 s_TechStringToEnum = {
     { "?",                  CMolInfo::eTech_unknown },
     { "barcode",            CMolInfo::eTech_barcode },
@@ -256,7 +295,6 @@ s_TechStringToEnum = {
 
 
 
-
 static const 
 unordered_map<string, CMolInfo::TCompleteness> 
 s_CompletenessStringToEnum = {
@@ -269,33 +307,6 @@ s_CompletenessStringToEnum = {
     { "partial",   CMolInfo::eCompleteness_partial  }
 };
 
-
-static string s_GetNormalizedMolInfoVal(const string& unnormalized)
-{
-    string normalized = unnormalized;
-    static const string irrelevant_prefix_suffix_chars = " \t\"\'-_";
-
-    size_t pos = normalized.find_first_not_of(irrelevant_prefix_suffix_chars);
-    if (pos != NPOS) {
-        normalized.erase(0,pos);
-    }
-
-    pos = normalized.find_last_not_of(irrelevant_prefix_suffix_chars);
-    if (pos != NPOS) {
-        normalized.erase(pos+1);
-    }
-
-    normalized.erase(remove_if(normalized.begin(),
-                               normalized.end(),
-                               [](char c) { 
-                                return (c=='-' ||
-                                        c=='_' ||
-                                        isspace(c)); }),
-                     normalized.end());
-
-    NStr::ToLower(normalized);
-    return normalized;
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
