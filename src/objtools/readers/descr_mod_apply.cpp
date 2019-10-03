@@ -65,11 +65,17 @@
 #include <cassert>
 #include <objtools/readers/mod_reader.hpp>
 #include <objtools/readers/mod_error.hpp>
-#include "mod_info.hpp"
+#include "mod_to_enum.hpp"
 #include "descr_mod_apply.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+static const auto s_OrgModStringToEnum = g_InitModNameOrgSubtypeMap();
+
+static const auto s_SubSourceStringToEnum = g_InitModNameSubSrcSubtypeMap();
+
 
 class CDescrCache 
 {
@@ -196,7 +202,7 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
     const auto& name = x_GetModName(mod_entry);
     if (name == "location") {
         const auto& value = x_GetModValue(mod_entry);
-        static const auto s_GenomeStringToEnum = s_InitModNameGenomeMap();
+        static const auto s_GenomeStringToEnum = g_InitModNameGenomeMap();
         auto it = s_GenomeStringToEnum.find(value);
         if (it == s_GenomeStringToEnum.end()) {
             x_ReportInvalidValue(mod_entry.second.front());
@@ -208,7 +214,7 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
 
     if (name == "origin") {
         const auto& value = x_GetModValue(mod_entry);
-        static const auto s_OriginStringToEnum = s_InitModNameOriginMap();
+        static const auto s_OriginStringToEnum = g_InitModNameOriginMap();
         auto it = s_OriginStringToEnum.find(value);
         if (it == s_OriginStringToEnum.end()) {
             x_ReportInvalidValue(mod_entry.second.front());
@@ -675,7 +681,7 @@ void CDescrModApply::x_SetDBLinkFieldVals(const string& label,
 void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(s_GetNormalizedModVal(value));
+    auto it = s_BiomolStringToEnum.find(g_GetNormalizedModVal(value));
     if (it != s_BiomolStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetBiomol(it->second);
         return;
@@ -687,7 +693,7 @@ void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_TechStringToEnum.find(s_GetNormalizedModVal(value));
+    auto it = s_TechStringToEnum.find(g_GetNormalizedModVal(value));
     if (it != s_TechStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetTech(it->second);
         return;
@@ -699,7 +705,7 @@ void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_CompletenessStringToEnum.find(s_GetNormalizedModVal(value));
+    auto it = s_CompletenessStringToEnum.find(g_GetNormalizedModVal(value));
     if (it != s_CompletenessStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetCompleteness(it->second);
         return;

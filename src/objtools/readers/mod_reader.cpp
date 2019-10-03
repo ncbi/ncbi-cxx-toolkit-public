@@ -48,7 +48,7 @@
 #include <unordered_set>
 #include <cassert>
 
-#include "mod_info.hpp"
+#include "mod_to_enum.hpp"
 #include "descr_mod_apply.hpp"
 #include "feature_mod_apply.hpp"
 
@@ -519,7 +519,7 @@ void CModAdder::x_SetStrand(const TModEntry& mod_entry,
                             FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
-    const auto it = s_StrandStringToEnum.find(s_GetNormalizedModVal(value));
+    const auto it = s_StrandStringToEnum.find(g_GetNormalizedModVal(value));
     if (it == s_StrandStringToEnum.end()) {
         x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
         return;
@@ -534,7 +534,7 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
                               FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
-    const auto it = s_MolStringToEnum.find(s_GetNormalizedModVal(value));
+    const auto it = s_MolStringToEnum.find(g_GetNormalizedModVal(value));
     if (it == s_MolStringToEnum.end()) {
         x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
         return;
@@ -546,7 +546,7 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
 void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(s_GetNormalizedModVal(value));
+    auto it = s_BiomolStringToEnum.find(g_GetNormalizedModVal(value));
     if (it == s_BiomolStringToEnum.end()) {
         // No need to report an error here.
         // The error is reported in x_SetMolInfoType
@@ -563,7 +563,7 @@ void CModAdder::x_SetTopology(const TModEntry& mod_entry,
                               FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
-    const auto it = s_TopologyStringToEnum.find(s_GetNormalizedModVal(value));
+    const auto it = s_TopologyStringToEnum.find(g_GetNormalizedModVal(value));
     if (it == s_TopologyStringToEnum.end()) {
         x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
         return;
