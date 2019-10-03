@@ -188,10 +188,22 @@ public:
             ncbi_Utf8ToWstring(_Filename).c_str(), _Mode, _Prot) {
     }
     explicit CNcbiIfstream(
+        const string& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in,
+        int _Prot = (int)IOS_BASE::_Openprot
+    ) : CNcbiIfstream(_Filename.c_str(), _Mode, _Prot) {
+    }
+    explicit CNcbiIfstream(
         const wchar_t *_Filename,
         IOS_BASE::openmode _Mode = IOS_BASE::in,
         int _Prot = (int)IOS_BASE::_Openprot
     ) : IO_PREFIX::ifstream(_Filename,_Mode,_Prot) {
+    }
+    explicit CNcbiIfstream(
+        const wstring& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in,
+        int _Prot = (int)IOS_BASE::_Openprot
+    ) : CNcbiIfstream(_Filename.c_str(),_Mode,_Prot) {
     }
  
     void open(
@@ -201,10 +213,21 @@ public:
         IO_PREFIX::ifstream::open(
             ncbi_Utf8ToWstring(_Filename).c_str(), _Mode, _Prot);
     }
+    void open(
+        const string& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in,
+        int _Prot = (int)IOS_BASE::_Openprot) {
+        CNcbiIfstream::open(_Filename.c_str(), _Mode, _Prot);
+    }
     void open(const wchar_t *_Filename,
         IOS_BASE::openmode _Mode = IOS_BASE::in,
         int _Prot = (int)ios_base::_Openprot) {
         IO_PREFIX::ifstream::open(_Filename,_Mode,_Prot);
+    }
+    void open(const wstring& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in,
+        int _Prot = (int)ios_base::_Openprot) {
+        CNcbiIfstream::open(_Filename.c_str(), _Mode, _Prot);
     }
 };
 #elif defined(NCBI_COMPILER_MSVC)
@@ -261,10 +284,22 @@ public:
             ncbi_Utf8ToWstring(_Filename).c_str(), _Mode, _Prot) {
     }
     explicit CNcbiOfstream(
+        const string& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    ) : CNcbiOfstream(_Filename.c_str(), _Mode, _Prot) {
+    }
+    explicit CNcbiOfstream(
         const wchar_t *_Filename,
         IOS_BASE::openmode _Mode = IOS_BASE::out,
         int _Prot = (int)IOS_BASE::_Openprot
     ) : IO_PREFIX::ofstream(_Filename,_Mode,_Prot) {
+    }
+    explicit CNcbiOfstream(
+        const wstring& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    ) : CNcbiOfstream(_Filename.c_str(),_Mode,_Prot) {
     }
  
     void open(
@@ -274,10 +309,21 @@ public:
         IO_PREFIX::ofstream::open(
             ncbi_Utf8ToWstring(_Filename).c_str(), _Mode, _Prot);
     }
+    void open(
+        const string& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot) {
+        CNcbiOfstream::open(_Filename.c_str(), _Mode, _Prot);
+    }
     void open(const wchar_t *_Filename,
         IOS_BASE::openmode _Mode = IOS_BASE::out,
         int _Prot = (int)IOS_BASE::_Openprot) {
         IO_PREFIX::ofstream::open(_Filename,_Mode,_Prot);
+    }
+    void open(const wstring& _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot) {
+        CNcbiOfstream::open(_Filename.c_str(), _Mode, _Prot);
     }
 };
 #elif defined(NCBI_COMPILER_MSVC)
