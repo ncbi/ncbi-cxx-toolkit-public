@@ -669,34 +669,43 @@ void CDescrModApply::x_SetDBLinkFieldVals(const string& label,
     }
 
     pField->SetData().SetStrs().assign(vals.begin(), vals.end());
-
 }
 
-static string s_GetNormalizedString(const string& unnormalized)
+/*
+static string s_GetNormalizedMolInfoVal(const string& unnormalized)
 {
     string normalized = unnormalized;
-    NStr::ToLower(normalized);
-    NStr::TruncateSpacesInPlace(normalized);
-    auto new_end = unique(normalized.begin(), 
-                          normalized.end(),
-                          [](char a, char b) { 
-                              return ((a=='-' || a=='_' || a==' ') &&
-                                      (b=='-' || b=='_' || b==' ')); });
 
-    normalized.erase(new_end, normalized.end());
-    for (char& c : normalized) {
-        if (c == '_' || c == ' ') {
-            c = '-';
-        }
+    size_t pos = normalized.find_first_not_of(" \t\"\'-_");
+    if (pos != NPOS) {
+        normalized.erase(0,pos);
     }
-    return normalized;
-}
 
+    pos = normalized.find_last_not_of(" \t\"\'-_");
+    if (pos != NPOS) {
+        normalized.erase(pos+1);
+    }
+
+    normalized.erase(remove_if(normalized.begin(),
+                               normalized.end(),
+                               [](char c) { 
+                                return (c=='-' ||
+                                        c=='_' ||
+                                        isspace(c)); }),
+                     normalized.end());
+
+
+    NStr::ToLower(normalized);
+   
+    return normalized;
+    
+}
+*/
 
 void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(s_GetNormalizedString(value));
+    auto it = s_BiomolStringToEnum.find(s_GetNormalizedMolInfoVal(value));
     if (it != s_BiomolStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetBiomol(it->second);
         return;
@@ -708,7 +717,7 @@ void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_TechStringToEnum.find(s_GetNormalizedString(value));
+    auto it = s_TechStringToEnum.find(s_GetNormalizedMolInfoVal(value));
     if (it != s_TechStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetTech(it->second);
         return;
@@ -720,7 +729,7 @@ void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_CompletenessStringToEnum.find(s_GetNormalizedString(value));
+    auto it = s_CompletenessStringToEnum.find(s_GetNormalizedMolInfoVal(value));
     if (it != s_CompletenessStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetCompleteness(it->second);
         return;

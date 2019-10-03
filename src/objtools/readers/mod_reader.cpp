@@ -546,8 +546,7 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
 void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
     string value = x_GetModValue(mod_entry);
-    //auto it = s_BiomolStringToEnum.find(NStr::ToLower(value));
-    auto it = s_BiomolStringToEnum.find(s_GetNormalizedString(value));
+    auto it = s_BiomolStringToEnum.find(s_GetNormalizedMolInfoVal(value));
     if (it == s_BiomolStringToEnum.end()) {
         // No need to report an error here.
         // The error is reported in x_SetMolInfoType

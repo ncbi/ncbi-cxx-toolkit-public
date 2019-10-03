@@ -184,20 +184,20 @@ TNameToEnumMap<CMolInfo::TBiomol> s_BiomolStringToEnum
 = { {"crna",                    CMolInfo::eBiomol_cRNA },   
     {"dna",                     CMolInfo::eBiomol_genomic},   
     {"genomic",                 CMolInfo::eBiomol_genomic},   
-    {"genomic-dna",             CMolInfo::eBiomol_genomic},   
-    {"genomic-rna",             CMolInfo::eBiomol_genomic},   
+    {"genomicdna",              CMolInfo::eBiomol_genomic},   
+    {"genomicrna",              CMolInfo::eBiomol_genomic},   
     {"mrna",                    CMolInfo::eBiomol_mRNA},   
     {"ncrna",                   CMolInfo::eBiomol_ncRNA},
-    {"non-coding-rna",          CMolInfo::eBiomol_ncRNA},   
-    {"noncoding-rna",           CMolInfo::eBiomol_ncRNA},   
-    {"other-genetic",           CMolInfo::eBiomol_other_genetic}, 
-    {"precursor-rna",           CMolInfo::eBiomol_pre_RNA},   
-    {"ribosomal-rna",           CMolInfo::eBiomol_rRNA},   
+    {"noncodingrna",            CMolInfo::eBiomol_ncRNA},   
+    {"noncodingrna",            CMolInfo::eBiomol_ncRNA},   
+    {"othergenetic",            CMolInfo::eBiomol_other_genetic}, 
+    {"precursorrna",            CMolInfo::eBiomol_pre_RNA},   
+    {"ribosomalrna",            CMolInfo::eBiomol_rRNA},   
     {"rrna",                    CMolInfo::eBiomol_rRNA},   
-    {"transcribed-rna",         CMolInfo::eBiomol_transcribed_RNA},   
-    {"transfer-messenger-rna",  CMolInfo::eBiomol_tmRNA},   
+    {"transcribedrna",          CMolInfo::eBiomol_transcribed_RNA},   
+    {"transfermessengerrna",    CMolInfo::eBiomol_tmRNA},   
     {"tmrna",                   CMolInfo::eBiomol_tmRNA},   
-    {"transfer rna",            CMolInfo::eBiomol_tRNA},   
+    {"transferrna",             CMolInfo::eBiomol_tRNA},   
     {"trna",                    CMolInfo::eBiomol_tRNA},   
 };
 
@@ -230,22 +230,22 @@ s_TechStringToEnum = {
     { "?",                  CMolInfo::eTech_unknown },
     { "barcode",            CMolInfo::eTech_barcode },
     { "both",               CMolInfo::eTech_both },
-    { "composite-wgs-htgs", CMolInfo::eTech_composite_wgs_htgs },
-    { "concept-trans",      CMolInfo::eTech_concept_trans },
-    { "concept-trans-a",    CMolInfo::eTech_concept_trans_a },
+    { "compositewgshtgs",   CMolInfo::eTech_composite_wgs_htgs },
+    { "concepttrans",       CMolInfo::eTech_concept_trans },
+    { "concepttransa",      CMolInfo::eTech_concept_trans_a },
     { "derived",            CMolInfo::eTech_derived },
     { "est",                CMolInfo::eTech_est },
-    { "fli-cdna",           CMolInfo::eTech_fli_cdna },
-    { "genetic-map",        CMolInfo::eTech_genemap },
+    { "flicdna",            CMolInfo::eTech_fli_cdna },
+    { "geneticmap",         CMolInfo::eTech_genemap },
     { "htc",                CMolInfo::eTech_htc },
-    { "htgs-0",             CMolInfo::eTech_htgs_0 },
-    { "htgs-1",             CMolInfo::eTech_htgs_1 },
-    { "htgs-2",             CMolInfo::eTech_htgs_2 },
-    { "htgs-3",             CMolInfo::eTech_htgs_3 },
-    { "physical-map",       CMolInfo::eTech_physmap },
-    { "seq-pept",           CMolInfo::eTech_seq_pept },
-    { "seq-pept-homol",     CMolInfo::eTech_seq_pept_homol },
-    { "seq-pept-overlap",   CMolInfo::eTech_seq_pept_overlap },
+    { "htgs0",              CMolInfo::eTech_htgs_0 },
+    { "htgs1",              CMolInfo::eTech_htgs_1 },
+    { "htgs2",              CMolInfo::eTech_htgs_2 },
+    { "htgs3",              CMolInfo::eTech_htgs_3 },
+    { "physicalmap",        CMolInfo::eTech_physmap },
+    { "seqpept",            CMolInfo::eTech_seq_pept },
+    { "seqpepthomol",       CMolInfo::eTech_seq_pept_homol },
+    { "seqpeptoverlap",     CMolInfo::eTech_seq_pept_overlap },
     { "standard",           CMolInfo::eTech_standard },
     { "sts",                CMolInfo::eTech_sts },
     { "survey",             CMolInfo::eTech_survey },
@@ -261,14 +261,41 @@ static const
 unordered_map<string, CMolInfo::TCompleteness> 
 s_CompletenessStringToEnum = {
     { "complete",  CMolInfo::eCompleteness_complete  },
-    { "has-left",  CMolInfo::eCompleteness_has_left  },
-    { "has-right", CMolInfo::eCompleteness_has_right  },
-    { "no-ends",   CMolInfo::eCompleteness_no_ends  },
-    { "no-left",   CMolInfo::eCompleteness_no_left  },
-    { "no-right",  CMolInfo::eCompleteness_no_right  },
+    { "hasleft",   CMolInfo::eCompleteness_has_left  },
+    { "hasright",  CMolInfo::eCompleteness_has_right  },
+    { "noends",    CMolInfo::eCompleteness_no_ends  },
+    { "noleft",    CMolInfo::eCompleteness_no_left  },
+    { "noright",   CMolInfo::eCompleteness_no_right  },
     { "partial",   CMolInfo::eCompleteness_partial  }
 };
 
+
+static string s_GetNormalizedMolInfoVal(const string& unnormalized)
+{
+    string normalized = unnormalized;
+    static const string irrelevant_prefix_suffix_chars = " \t\"\'-_";
+
+    size_t pos = normalized.find_first_not_of(irrelevant_prefix_suffix_chars);
+    if (pos != NPOS) {
+        normalized.erase(0,pos);
+    }
+
+    pos = normalized.find_last_not_of(irrelevant_prefix_suffix_chars);
+    if (pos != NPOS) {
+        normalized.erase(pos+1);
+    }
+
+    normalized.erase(remove_if(normalized.begin(),
+                               normalized.end(),
+                               [](char c) { 
+                                return (c=='-' ||
+                                        c=='_' ||
+                                        isspace(c)); }),
+                     normalized.end());
+
+    NStr::ToLower(normalized);
+    return normalized;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
