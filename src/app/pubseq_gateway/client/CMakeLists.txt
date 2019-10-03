@@ -2,5 +2,5 @@
 #  $Id$
 #############################################################################
 
-NCBI_add_app(unit_test_biosample_util)
-
+NCBI_requires(UV NGHTTP2)
+NCBI_add_app(psg_client)

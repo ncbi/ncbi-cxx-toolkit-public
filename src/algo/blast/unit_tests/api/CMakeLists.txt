@@ -56,5 +56,7 @@ gencode_singleton_unit_test
 bl2seq_unit_test
 stat_unit_test
 magicblast_unit_test
+rmblast_blasthits_unit_test
+rmblast_traceback_unit_test
 )
 

@@ -71,6 +71,7 @@ NCBI_add_subdirectory(
   tls
   wgs_parse
   wig2table
+  pubseq_gateway
 )
 endif()
 

@@ -1,0 +1,11 @@
+#############################################################################
+#  $Id$
+#############################################################################
+
+NCBI_begin_app(blastsrainput_unit_test)
+  NCBI_sources(blastsrainput_unit_test)
+  NCBI_uses_toolkit_libraries(test_boost blast_sra_input blastinput)
+  NCBI_requires(VDB Boost.Test.Included)
+  NCBI_add_test(blastsrainput_unit_test)
+  NCBI_project_watchers(boratyng)
+NCBI_end_app()

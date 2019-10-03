@@ -45,6 +45,7 @@ NCBI_add_app(
     test_random
     test_timsort
     test_metaphone
+    test_row_reader
     test_row_reader_performance
     test_row_reader_iana_tsv
     test_row_reader_iana_csv

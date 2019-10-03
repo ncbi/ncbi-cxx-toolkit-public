@@ -2,4 +2,4 @@
 # $Id$
 #############################################################################
 
-NCBI_add_subdirectory(demo split_demo)
+NCBI_add_subdirectory(demo split_demo test)

@@ -1,0 +1,15 @@
+#############################################################################
+#  $Id$
+#############################################################################
+
+NCBI_begin_app(rmblast_traceback_unit_test)
+  NCBI_sources(rmblast_traceback_unit_test)
+  NCBI_add_definitions(NCBI_MODULE=BLAST)
+  NCBI_add_include_directories(../../api)
+  NCBI_uses_toolkit_libraries(blast_unit_test_util test_boost xobjsimple)
+  NCBI_set_test_assets(data)
+  NCBI_add_test(rmblast_traceback_unit_test)
+  NCBI_project_watchers(
+    boratyng madden camacho fongah2
+  )
+NCBI_end_app()
