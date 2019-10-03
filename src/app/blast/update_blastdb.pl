@@ -62,7 +62,7 @@ my $opt_quiet = 0;
 my $opt_force_download = 0;     
 my $opt_help = 0;
 my $opt_passive = 1;
-my $opt_blastdb_ver = 4;
+my $opt_blastdb_ver = undef;
 my $opt_timeout = 120;
 my $opt_showall = undef;
 my $opt_show_version = 0;
@@ -91,8 +91,11 @@ if (length($opt_passive) and ($opt_passive !~ /1|no/i)) {
 pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or 
                                                   defined($opt_showall) or
                                                   $opt_show_version);
-pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid BLAST database version"}) 
-    unless ($opt_blastdb_ver == 4 or $opt_blastdb_ver == 5);
+if (defined $opt_blastdb_ver) {
+    pod2usage({-exitval => 1, -verbose => 0, 
+               -msg => "Invalid BLAST database version: $opt_blastdb_ver. Supported values: 4, 5"}) 
+        unless ($opt_blastdb_ver == 4 or $opt_blastdb_ver == 5);
+}
 pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid number of threads"}) 
     if ($opt_nt <= 0);
 if (length($opt_passive) and $opt_passive =~ /n|no/i) {
@@ -225,10 +228,16 @@ sub connect_to_ftp
     $ftp->login(USER, PASSWORD) 
         or die "Failed to login to " . NCBI_FTP . ": $!\n";
     my $ftp_path = BLAST_DB_DIR;
-    $ftp_path .= "/v5" if ($opt_blastdb_ver == 5);
+    $ftp_path .= "/v$opt_blastdb_ver" if (defined $opt_blastdb_ver);
     $ftp->cwd($ftp_path);
     $ftp->binary();
-    print "Connected to $location\n" if $opt_verbose;
+    if ($opt_verbose) {
+        if (defined $opt_blastdb_ver) {
+            print "Connected to $location; downloading BLASTDBv$opt_blastdb_ver\n";
+        } else {
+            print "Connected to $location\n";
+        }
+    }
     return $ftp;
 }
 
