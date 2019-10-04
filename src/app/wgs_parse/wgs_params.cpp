@@ -163,7 +163,7 @@ struct CParams_imp
 };
 
 CParams::CParams() :
-m_imp(new CParams_imp)
+    m_imp(new CParams_imp)
 {
 }
 
