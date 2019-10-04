@@ -931,7 +931,7 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
         time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)
 {
-    string cmd(g_MakeBaseCmd("STATUS2", job.job_id));
+    string cmd("STATUS2 " + job.job_id);
     g_AppendClientIPSessionIDHitID(cmd);
     cmd += " need_progress_msg=1";
     auto response = m_Impl->ExecOnJobServer(job, cmd);
@@ -972,14 +972,15 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
     return status;
 }
 
-CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
+CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(string cmd,
         const CNetScheduleJob& job, time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)
 {
     string response;
 
     try {
-        string cmd(g_MakeBaseCmd(cmd, job.job_id));
+        cmd += ' ';
+        cmd += job.job_id;
         g_AppendClientIPSessionIDHitID(cmd);
         response = ExecOnJobServer(job, cmd);
     }
@@ -1122,7 +1123,7 @@ void CNetScheduleAPI::GetQueueParams(TQueueParams& queue_params)
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
-    string cmd(g_MakeBaseCmd("MGET", job.job_id));
+    string cmd("MGET " + job.job_id);
     g_AppendClientIPSessionIDHitID(cmd);
     auto response = m_Impl->ExecOnJobServer(job, cmd);
     job.progress_msg = NStr::ParseEscapes(response);

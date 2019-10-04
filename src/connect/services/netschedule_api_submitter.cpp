@@ -589,7 +589,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
 void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
-    string cmd(g_MakeBaseCmd("CANCEL", job_key));
+    string cmd("CANCEL " + job_key);
     g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->ExecOnJobServer(job_key, cmd);
 }

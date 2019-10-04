@@ -118,7 +118,7 @@ bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 void CNetScheduleExecutor::JobDelayExpiration(const CNetScheduleJob& job,
                                               unsigned      runtime_inc)
 {
-    string cmd(g_MakeBaseCmd("JDEX", job.job_id));
+    string cmd("JDEX " + job.job_id);
     cmd += ' ';
     cmd += NStr::NumericToString(runtime_inc);
     g_AppendClientIPSessionIDHitID(cmd);
@@ -477,7 +477,7 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Progress message too long");
     }
-    string cmd(g_MakeBaseCmd("MPUT", job.job_id));
+    string cmd("MPUT " + job.job_id);
     cmd += " \"";
     cmd += NStr::PrintableString(job.progress_msg);
     cmd += '\"';

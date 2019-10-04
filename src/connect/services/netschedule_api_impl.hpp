@@ -135,14 +135,6 @@ using namespace grid::netschedule;
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)
-{
-    string cmd(cmd_name);
-    cmd += ' ';
-    cmd += job_key;
-    return cmd;
-}
-
 struct SNetScheduleServerProperties : public INetServerProperties
 {
     SNetScheduleServerProperties() :
@@ -325,7 +317,7 @@ public:
                 m_Service->m_Listener.GetPointer());
     }
 
-    CNetScheduleAPI::EJobStatus GetJobStatus(const string& cmd,
+    CNetScheduleAPI::EJobStatus GetJobStatus(string cmd,
             const CNetScheduleJob& job, time_t* job_exptime,
             ENetScheduleQueuePauseMode* pause_mode);
 
