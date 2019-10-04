@@ -2425,8 +2425,9 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             break;
         }
 
-        if (master_info.m_input_type == eUnknownType) {
-            GetInputTypeFromFile(in, master_info.m_input_type);
+        if (!GetInputTypeFromFile(in, master_info.m_input_type)) {
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_FileOpenFailed, Fatal << "Unsupported input type in \"" << file << "\". Should be one of {Seq-entry, Bioseq-set, Bioseq}. Cannot proceed.");
+            break;
         }
 
         bool first = true;
