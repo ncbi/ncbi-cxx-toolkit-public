@@ -81,6 +81,16 @@ suppression = {
 	}
 }
 suppression = {
+	name = "tds_vasprintf_ver100 - all"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=vasprintf.c,func=tds_vasprintf_ver100;
+		}
+	}
+}
+suppression = {
 	name = "read_login_info/snprintf"
 	type = {invalid_memory_access_partial}
 	stacks = {

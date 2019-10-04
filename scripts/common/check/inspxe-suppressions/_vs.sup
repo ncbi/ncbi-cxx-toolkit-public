@@ -230,6 +230,16 @@ suppression = {
 	}
 }
 suppression = {
+	name = "False positive in getsockopt()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=WS2_32.dll,func=getsockopt;
+		}
+	}
+}
+suppression = {
 	name = "SHELL32.dll -- SHGetPathFromIDList() -- invalid memory access"
 	type = {invalid_memory_access}
 	stacks = {
@@ -291,4 +301,13 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "False positive in sprintf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			func=sprintf,src=stdio.h;
+		}
+	}
+}
