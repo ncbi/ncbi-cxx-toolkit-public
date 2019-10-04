@@ -1166,20 +1166,16 @@ bool SetParams(const CArgs& args)
 
         if(params->IsTsa())
         {
-            if(NStr::EqualNocase(tsa_biomol, "mRNA"))
-            {
+            if(NStr::EqualNocase(tsa_biomol, "mRNA")) {
                 params_imp.m_fix_tech |= eFixBiomol_mRNA;
             }
-            else if(NStr::EqualNocase(tsa_biomol, "rRNA"))
-            {
+            else if(NStr::EqualNocase(tsa_biomol, "rRNA"))  {
                 params_imp.m_fix_tech |= eFixBiomol_rRNA;
             }
-            else if(NStr::EqualNocase(tsa_biomol, "ncRNA"))
-            {
+            else if(NStr::EqualNocase(tsa_biomol, "ncRNA")) {
                 params_imp.m_fix_tech |= eFixBiomol_ncRNA;
             }
-            else
-            {
+            else {
                 ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectBiomolTypeSupplied, Fatal << "Incorrect biomol type for TSA project provided via \"-T\" command line switch. Valid ones are (case sensitive): \"mRNA\", \"rRNA\" and \"ncRNA\".");
                 return false;
             }
