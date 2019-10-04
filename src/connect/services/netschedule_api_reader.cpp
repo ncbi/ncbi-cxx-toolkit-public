@@ -172,8 +172,7 @@ void SNetScheduleJobReaderImpl::CImpl::ReturnJob(CNetScheduleJob& job)
     cmd += " blacklist=0";
 
     g_AppendClientIPSessionIDHitID(cmd);
-
-    m_API->GetServer(job.job_id).ExecWithRetry(cmd, false);
+    m_API->ExecOnJobServer(job, cmd, eOn);
 }
 
 CNetServer SNetScheduleJobReaderImpl::CImpl::WaitForNotifications(const CDeadline& deadline)

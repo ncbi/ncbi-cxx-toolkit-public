@@ -742,7 +742,7 @@ int SGridWorkerNodeImpl::Run(
     }
 
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();
-    m_NSExecutor->m_WorkerNodeMode = true;
+    m_NSExecutor->retry_on_exception = eOff;
 
     CDeadline max_wait_for_servers(TWorkerNode_MaxWaitForServers::GetDefault());
 

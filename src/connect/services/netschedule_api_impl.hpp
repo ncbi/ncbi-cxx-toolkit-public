@@ -325,18 +325,6 @@ public:
                 m_Service->m_Listener.GetPointer());
     }
 
-    string x_ExecOnce(const string& cmd_name, const CNetScheduleJob& job)
-    {
-        string cmd(g_MakeBaseCmd(cmd_name, job.job_id));
-        g_AppendClientIPSessionIDHitID(cmd);
-
-        CNetServer::SExecResult exec_result;
-
-        GetServer(job)->ConnectAndExec(cmd, false, exec_result);
-
-        return exec_result.response;
-    }
-
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& cmd,
             const CNetScheduleJob& job, time_t* job_exptime,
             ENetScheduleQueuePauseMode* pause_mode);
@@ -356,6 +344,14 @@ public:
     CNetServer GetServer(const CNetScheduleJob& job)
     {
         return job.server != NULL ? job.server : GetServer(job.job_id);
+    }
+
+    template <class TJob>
+    string ExecOnJobServer(const TJob& job, const string& cmd, ESwitch roe = eDefault)
+    {
+        auto server = GetServer(job);
+        auto retry_on_exception = (roe == eDefault) ? m_RetryOnException : (roe == eOn);
+        return server->ConnectAndExec(cmd, false, retry_on_exception).response;
     }
 
     bool GetServerByNode(const string& ns_node, CNetServer* server);
@@ -382,6 +378,7 @@ private:
 public:
     CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
     CRef<SNetScheduleSharedData> m_SharedData;
+    bool m_RetryOnException;
     CNetService m_Service;
 
     string m_Queue;
@@ -452,8 +449,7 @@ struct SNetScheduleExecutorImpl : public CObject
     SNetScheduleExecutorImpl(CNetScheduleAPI::TInstance ns_api_impl) :
         m_API(ns_api_impl),
         m_AffinityPreference(ns_api_impl->m_AffinityPreference),
-        m_JobGroup(ns_api_impl->m_JobGroup),
-        m_WorkerNodeMode(false)
+        m_JobGroup(ns_api_impl->m_JobGroup)
     {
         copy(ns_api_impl->m_AffinityList.begin(),
              ns_api_impl->m_AffinityList.end(),
@@ -471,7 +467,6 @@ struct SNetScheduleExecutorImpl : public CObject
             bool any_affinity,
             CNetScheduleJob& job);
 
-    void ExecWithOrWithoutRetry(const CNetScheduleJob& job, const string& cmd);
     void ReturnJob(const CNetScheduleJob& job, bool blacklist = true);
 
     enum EChangeAffAction {
@@ -491,10 +486,7 @@ struct SNetScheduleExecutorImpl : public CObject
     set<string> m_PreferredAffinities;
 
     string m_JobGroup;
-
-    // True when this object is used by a real
-    // worker node application (CGridWorkerNode).
-    bool m_WorkerNodeMode;
+    ESwitch retry_on_exception = eOn;
 };
 
 class CNetScheduleGETCmdListener : public INetServerExecListener

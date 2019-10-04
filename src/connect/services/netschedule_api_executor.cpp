@@ -122,7 +122,7 @@ void CNetScheduleExecutor::JobDelayExpiration(const CNetScheduleJob& job,
     cmd += ' ';
     cmd += NStr::NumericToString(runtime_inc);
     g_AppendClientIPSessionIDHitID(cmd);
-    m_Impl->m_API->GetServer(job).ExecWithRetry(cmd, false);
+    m_Impl->m_API->ExecOnJobServer(job, cmd, eOn);
 }
 
 class CGetJobCmdExecutor : public INetServerFinder
@@ -449,18 +449,6 @@ void static s_CheckOutputSize(const string& output, size_t max_output_size)
     }
 }
 
-void SNetScheduleExecutorImpl::ExecWithOrWithoutRetry(
-        const CNetScheduleJob& job, const string& cmd)
-{
-    if (!m_WorkerNodeMode)
-        m_API->GetServer(job).ExecWithRetry(cmd, false);
-    else {
-        CNetServer::SExecResult exec_result;
-
-        m_API->GetServer(job)->ConnectAndExec(cmd, false, exec_result);
-    }
-}
-
 void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
 {
     s_CheckOutputSize(job.output,
@@ -480,8 +468,7 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
     cmd.push_back('\"');
 
     g_AppendClientIPSessionIDHitID(cmd);
-
-    m_Impl->ExecWithOrWithoutRetry(job, cmd);
+    m_Impl->m_API->ExecOnJobServer(job, cmd, m_Impl->retry_on_exception);
 }
 
 void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
@@ -495,8 +482,7 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
     cmd += NStr::PrintableString(job.progress_msg);
     cmd += '\"';
     g_AppendClientIPSessionIDHitID(cmd);
-    CNetServer::SExecResult exec_result;
-    m_Impl->m_API->GetServer(job)->ConnectAndExec(cmd, false, exec_result);
+    m_Impl->m_API->ExecOnJobServer(job, cmd, m_Impl->retry_on_exception);
 }
 
 void CNetScheduleExecutor::GetProgressMsg(CNetScheduleJob& job)
@@ -535,7 +521,7 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job,
     if (no_retries)
         cmd.append(" no_retries=1");
 
-    m_Impl->ExecWithOrWithoutRetry(job, cmd);
+    m_Impl->m_API->ExecOnJobServer(job, cmd, m_Impl->retry_on_exception);
 }
 
 void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
@@ -561,8 +547,7 @@ void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
     }
 
     g_AppendClientIPSessionIDHitID(cmd);
-
-    m_Impl->ExecWithOrWithoutRetry(job, cmd);
+    m_Impl->m_API->ExecOnJobServer(job, cmd, m_Impl->retry_on_exception);
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleExecutor::GetJobStatus(
@@ -586,8 +571,7 @@ void SNetScheduleExecutorImpl::ReturnJob(const CNetScheduleJob& job,
     }
 
     g_AppendClientIPSessionIDHitID(cmd);
-
-    ExecWithOrWithoutRetry(job, cmd);
+    m_API->ExecOnJobServer(job, cmd, retry_on_exception);
 }
 
 void CNetScheduleExecutor::ReturnJob(const CNetScheduleJob& job)

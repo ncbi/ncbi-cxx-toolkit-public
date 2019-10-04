@@ -336,8 +336,7 @@ void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
     }
 
     g_AppendClientIPSessionIDHitID(cmd);
-
-    m_API->GetServer(job_id).ExecWithRetry(cmd, false);
+    m_API->ExecOnJobServer(job_id, cmd, eOn);
 }
 
 void CNetScheduleSubmitter::ReadConfirm(const string& job_id,
@@ -531,7 +530,7 @@ CNetScheduleNotificationHandler::TJobInfo CNetScheduleNotificationHandler::Reque
     g_AppendClientIPSessionIDHitID(cmd);
 
     cmd += " need_progress_msg=1";
-    m_Receiver.message = ns_api->GetServer(job_id).ExecWithRetry(cmd, false).response;
+    m_Receiver.message = ns_api->ExecOnJobServer(job_id, cmd, eOn);
 
     SNetScheduleOutputParser parser(m_Receiver.message);
     const auto job_status = CNetScheduleAPI::StringToStatus(parser("job_status"));
@@ -592,9 +591,7 @@ void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
     string cmd(g_MakeBaseCmd("CANCEL", job_key));
     g_AppendClientIPSessionIDHitID(cmd);
-
-    CNetServer::SExecResult exec_result;
-    m_Impl->m_API->GetServer(job_key)->ConnectAndExec(cmd, false, exec_result);
+    m_Impl->m_API->ExecOnJobServer(job_key, cmd);
 }
 
 void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,

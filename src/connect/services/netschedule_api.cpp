@@ -572,6 +572,8 @@ void SNetScheduleAPIImpl::Init(CSynRegistry& registry, SRegSynonyms& sections)
 {
     SetDiagUserAndHost();
 
+    m_RetryOnException = registry.Get(sections, "enforce_retry_policy", false);
+
     if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
 
     const string& user(GetDiagContext().GetUsername());
@@ -725,6 +727,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         SNetServerInPool* server, SNetScheduleAPIImpl* parent) :
     m_Mode(parent->m_Mode),
     m_SharedData(parent->m_SharedData),
+    m_RetryOnException(parent->m_RetryOnException),
     m_Service(SNetServiceImpl::Clone(server, parent->m_Service)),
     m_Queue(parent->m_Queue),
     m_ProgramVersion(parent->m_ProgramVersion),
@@ -931,12 +934,9 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
     string cmd(g_MakeBaseCmd("STATUS2", job.job_id));
     g_AppendClientIPSessionIDHitID(cmd);
     cmd += " need_progress_msg=1";
+    auto response = m_Impl->ExecOnJobServer(job, cmd);
 
-    CNetServer::SExecResult exec_result;
-
-    m_Impl->GetServer(job)->ConnectAndExec(cmd, false, exec_result);
-
-    SNetScheduleOutputParser parser(exec_result.response);
+    SNetScheduleOutputParser parser(response);
 
     const auto status = StringToStatus(parser("job_status"));
 
@@ -979,7 +979,9 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
     string response;
 
     try {
-        response = x_ExecOnce(cmd, job);
+        string cmd(g_MakeBaseCmd(cmd, job.job_id));
+        g_AppendClientIPSessionIDHitID(cmd);
+        response = ExecOnJobServer(job, cmd);
     }
     catch (CNetScheduleException& e) {
         if (e.GetErrCode() != CNetScheduleException::eJobNotFound)
@@ -1120,7 +1122,10 @@ void CNetScheduleAPI::GetQueueParams(TQueueParams& queue_params)
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
-    job.progress_msg = NStr::ParseEscapes(m_Impl->x_ExecOnce("MGET", job));
+    string cmd(g_MakeBaseCmd("MGET", job.job_id));
+    g_AppendClientIPSessionIDHitID(cmd);
+    auto response = m_Impl->ExecOnJobServer(job, cmd);
+    job.progress_msg = NStr::ParseEscapes(response);
 }
 
 void CNetScheduleAPI::SetClientNode(const string& client_node)
