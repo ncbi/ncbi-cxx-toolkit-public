@@ -77,6 +77,16 @@ suppression = {
 	}
 }
 suppression = {
+	name = "ConnNetInfo_SetupStandardArgs - all"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			func=ConnNetInfo_SetupStandardArgs;
+		}
+	}
+}
+suppression = {
 	name = "x_FixupUserHeader/sprintf - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
@@ -98,6 +108,17 @@ suppression = {
 			...;
 			func=sprintf;
 			func=x_FixupUserHeader,src=ncbi_http_connector.c;
+		}
+	}
+}
+suppression = {
+	name = "g_CORE_Sprintf/_stdio_common_vsprintf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL;
+			func=g_CORE_Sprintf,src=ncbi_priv.c;
 		}
 	}
 }
