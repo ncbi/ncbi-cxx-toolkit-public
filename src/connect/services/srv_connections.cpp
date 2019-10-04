@@ -759,26 +759,24 @@ void SThrottleStats::Discover()
     m_DiscoveredAfterThrottling = true;
 }
 
-CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
-        bool multiline_output)
+CNetServer::SExecResult SNetServerImpl::ConnectAndExec(const string& cmd,
+        bool multiline_output, bool retry_on_exception)
 {
     CNetServer::SExecResult exec_result;
 
-    const CTimeout& max_total_time = m_Impl->m_ServerInPool->m_ServerPool->m_MaxTotalTime;
+    const CTimeout& max_total_time = m_ServerInPool->m_ServerPool->m_MaxTotalTime;
     CDeadline deadline(max_total_time);
 
     unsigned attempt = 0;
-    auto& service = m_Impl->m_Service;
 
-    const auto max_retries = service->GetConnectionMaxRetries();
-    const auto retry_delay = service->GetConnectionRetryDelay();
+    const auto max_retries = retry_on_exception ? m_Service->GetConnectionMaxRetries() : 0;
+    const auto retry_delay = m_Service->GetConnectionRetryDelay();
 
     for (;;) {
         string warning;
 
         try {
-            m_Impl->ConnectAndExec(cmd, multiline_output,
-                    exec_result);
+            ConnectAndExec(cmd, multiline_output, exec_result);
             return exec_result;
         }
         catch (CNetSrvConnException& e) {
@@ -813,10 +811,16 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
         warning += " of ";
         warning += NStr::NumericToString(max_retries);
 
-        service->m_Listener->OnWarning(warning, *this);
+        CNetServer server(this);
+        m_Service->m_Listener->OnWarning(warning, server);
 
         SleepMilliSec(retry_delay);
     }
+}
+
+CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd, bool multiline_output)
+{
+    return m_Impl->ConnectAndExec(cmd, multiline_output, true);
 }
 
 CNetServerInfo CNetServer::GetServerInfo()

@@ -261,6 +261,10 @@ struct SNetServerImpl : public CObject
     void TryExec(INetServerExecHandler& handler,
             const STimeout* timeout = NULL);
 
+    CNetServer::SExecResult ConnectAndExec(const string& cmd,
+            bool multiline_output,
+            bool retry_on_exception = false);
+
     void ConnectAndExec(const string& cmd,
             bool multiline_output,
             CNetServer::SExecResult& exec_result,
