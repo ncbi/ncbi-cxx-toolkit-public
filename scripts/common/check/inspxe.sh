@@ -16,7 +16,7 @@ suppress_dir="$(cygpath -w $script_dir)\\inspxe-suppressions"
 
 if test -z "$INSPECTOR_2019_DIR"; then
    echo "Cannot find Intel Inspector 2019."
-   exit 1 
+#   exit 1 
 fi
 inspxe=`echo $(cygpath -u $INSPECTOR_2019_DIR) | sed 's| |\ |g'`/bin32/inspxe-cl
 
@@ -40,6 +40,12 @@ shift
 "$inspxe" -collect mi3 -knob detect-leaks-on-exit=false -knob enable-memory-growth-detection=false -knob enable-on-demand-leak-detection=false -knob still-allocated-memory=false -knob detect-resource-leaks=false -knob stack-depth=32 -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $exe "$@"
 app_result=$?
 sleep 5
+if test ! -d $rd; then
+   echo
+   echo "Intel Inspector fails, mark test as timeouted :" 
+   echo "Maximum execution time is exceeded"
+   exit $app_result
+fi
 "$inspxe" -report problems -report-all -result-dir $rd
 insp_result=$?
 
