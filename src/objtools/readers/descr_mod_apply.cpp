@@ -203,7 +203,7 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
     if (name == "location") {
         const auto& value = x_GetModValue(mod_entry);
         static const auto s_GenomeStringToEnum = g_InitModNameGenomeMap();
-        auto it = s_GenomeStringToEnum.find(value);
+        auto it = s_GenomeStringToEnum.find(g_GetNormalizedModVal(value));
         if (it == s_GenomeStringToEnum.end()) {
             x_ReportInvalidValue(mod_entry.second.front());
             return true;
@@ -215,7 +215,7 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
     if (name == "origin") {
         const auto& value = x_GetModValue(mod_entry);
         static const auto s_OriginStringToEnum = g_InitModNameOriginMap();
-        auto it = s_OriginStringToEnum.find(value);
+        auto it = s_OriginStringToEnum.find(g_GetNormalizedModVal(value));
         if (it == s_OriginStringToEnum.end()) {
             x_ReportInvalidValue(mod_entry.second.front());
             return true;

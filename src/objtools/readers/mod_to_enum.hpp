@@ -93,7 +93,6 @@ TStringToEnumMap<CMolInfo::TBiomol> s_BiomolStringToEnum
     {"mrna",                    CMolInfo::eBiomol_mRNA},   
     {"ncrna",                   CMolInfo::eBiomol_ncRNA},
     {"noncodingrna",            CMolInfo::eBiomol_ncRNA},   
-    {"noncodingrna",            CMolInfo::eBiomol_ncRNA},   
     {"othergenetic",            CMolInfo::eBiomol_other_genetic}, 
     {"precursorrna",            CMolInfo::eBiomol_pre_RNA},   
     {"ribosomalrna",            CMolInfo::eBiomol_rRNA},   
