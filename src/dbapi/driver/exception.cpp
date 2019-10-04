@@ -884,7 +884,7 @@ CDB_UserHandler_Deferred::~CDB_UserHandler_Deferred(void)
                 Flush();
                 done = true;
             } catch (CException& ex) {
-                ERR_POST(ex);
+                ERR_POST_X(9, ex);
             }
         }
     }
@@ -928,7 +928,10 @@ void CDB_UserHandler_Deferred::Flush(EDiagSev max_severity)
             try {
                 m_UltimateHandlers.PostMsg(ex.get());
             } catch (CDB_Exception& ex2) {
-                ERR_POST(ex2);
+                if (ex2.GetSeverity() > max_severity) {
+                    ex2.SetSeverity(max_severity);
+                }
+                ERR_POST_X(10, ex2);
             }
         } else { 
             m_UltimateHandlers.PostMsg(ex.get());
