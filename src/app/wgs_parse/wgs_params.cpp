@@ -220,8 +220,9 @@ bool CParams::IsTsa() const
 {
     _ASSERT(!m_imp->m_accession.empty() && "Accession should be set at this moment");
 
-    if(m_imp->m_tpa_tsa)
+    if(m_imp->m_tpa_tsa) {
         return true;
+    }
 
     static const string TSA_FIRST_LETTER = "GHI";
     return TSA_FIRST_LETTER.find_first_of(m_imp->m_accession.front()) != string::npos;
