@@ -597,8 +597,9 @@ GetProsplignCompartments(const CSeq_align_set::Tdata& input_aligns,
             THitComparator sorter (THitComparator::eSubjMinSubjMax);
             stable_sort(hit_refs.begin(), hit_refs.end(), sorter);
         }
-        compartments.splice(compartments.end(),
-          prosplign::SelectCompartmentsHits(hit_refs, *m_CompartOptions, pgap));
+        prosplign::TCompartments compartments_for_aligns =
+          prosplign::SelectCompartmentsHits(hit_refs, *m_CompartOptions, pgap);
+        compartments.splice(compartments.end(), compartments_for_aligns);
     }
 }
 
