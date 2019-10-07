@@ -65,7 +65,10 @@ BEGIN_SCOPE(objects)
  * @{
  */
 
-class NCBI_XOBJREAD_EXPORT CGFFReader
+// use CGff3Reader or CGtfReader.
+// combine with format guess if exact input format is not known in advance.
+// see app/multiredare/multireader.cpp for a code sample.
+class NCBI_DEPRECATED NCBI_XOBJREAD_EXPORT CGFFReader
 {
 public:
     enum EFlags {

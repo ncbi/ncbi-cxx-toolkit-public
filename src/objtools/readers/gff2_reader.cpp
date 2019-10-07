@@ -740,46 +740,6 @@ CGff2Reader::xIsCurrentDataType(
     return (!mParsingAlignment  ||  !mCurrentFeatureCount);
 }
 
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_InitAnnot(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot,
-    ILineErrorListener* pEC )
-//  ----------------------------------------------------------------------------
-{
-    //CRef< CAnnot_id > pAnnotId( new CAnnot_id );
-    //pAnnotId->SetLocal().SetStr( gff.Id() );
-    //pAnnot->SetId().push_back( pAnnotId );
-    //pAnnot->SetData().SetFtable();
-
-    // if available, add current browser information
-    if ( m_CurrentBrowserInfo ) {
-        pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
-    }
-
-    // if available, add current track information
-    if (m_pTrackDefaults->ContainsData() ) {
-        m_pTrackDefaults->WriteToAnnot(*pAnnot);
-    }
-
-    if ( !m_AnnotName.empty() ) {
-        pAnnot->SetNameDesc(m_AnnotName);
-    }
-    if ( !m_AnnotTitle.empty() ) {
-        pAnnot->SetTitleDesc(m_AnnotTitle);
-    }
-
-    if (gff.IsAlignmentRecord()) {
-        pAnnot->SetData().SetAlign();
-        return x_UpdateAnnotAlignment( gff, pAnnot );
-    }
-    else {
-        pAnnot->SetData().SetFtable();
-        return xUpdateAnnotFeature( gff, pAnnot, pEC );
-    }
-}
-
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xUpdateAnnotFeature(
     const CGff2Record& gff,
@@ -1377,47 +1337,6 @@ bool CGff2Reader::xAddFeatureToAnnot(
 //  ----------------------------------------------------------------------------
 {
     pAnnot->SetData().SetFtable().push_back(pFeature);
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::xGetExistingFeature(
-    const CSeq_feat& feature,
-    CRef<CSeq_annot> pAnnot,
-    CRef< CSeq_feat >& pExisting )
-//  ----------------------------------------------------------------------------
-{
-    if (!feature.CanGetQual()) {
-        return false;
-    }
-
-    string strExistingId = feature.GetNamedQual("ID");
-    if (strExistingId.empty()) {
-        return false;
-    }
-    if (!x_GetFeatureById( strExistingId, pExisting)) {
-        return false;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::xGetParentFeature(
-    const CSeq_feat& feature,
-    CRef< CSeq_feat >& pParent )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! feature.CanGetQual() ) {
-        return false;
-    }
-
-    string strParentId = feature.GetNamedQual("Parent");
-    if (strParentId.empty()) {
-        return false;
-    }
-    if ( ! x_GetFeatureById( strParentId, pParent ) ) {
-        return false;
-    }
     return true;
 }
 

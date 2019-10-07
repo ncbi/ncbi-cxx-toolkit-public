@@ -274,10 +274,6 @@ protected:
         CRef< CSeq_annot >&,
         ILineErrorListener* );
                     
-    virtual void xAddConversionInfo(
-        CRef< CSeq_entry >&,
-        ILineErrorListener*);
-    
     virtual CRef<CUser_object> xMakeAsnConversionInfo(
         ILineErrorListener*);
 

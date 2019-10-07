@@ -395,9 +395,6 @@ protected:
         CRef<CSeq_annot>&,
         ILineErrorListener*);
 
-    CRef< CSeq_annot > x_AppendAnnot(
-        vector< CRef< CSeq_annot > >& );
-                    
     bool
     xReadBedDataRaw(
         ILineReader&,

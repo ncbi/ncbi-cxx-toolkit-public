@@ -185,11 +185,6 @@ public:
         const map<string, list<CRef<CSeq_align>>>& alignments,
         CRef<CSeq_annot> pAnnot);
 
-    virtual bool x_InitAnnot(
-        const CGff2Record&,
-        CRef< CSeq_annot >,
-        ILineErrorListener* =0);
-
     virtual bool xUpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
@@ -215,15 +210,6 @@ public:
   
     bool x_GetFeatureById(
         const string&,
-        CRef< CSeq_feat >& );
-
-    bool xGetParentFeature(
-        const CSeq_feat&,
-        CRef< CSeq_feat >& );
-
-    bool xGetExistingFeature(
-        const CSeq_feat&,
-        CRef<CSeq_annot>,
         CRef< CSeq_feat >& );
 
     bool xAlignmentSetScore(

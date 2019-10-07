@@ -509,20 +509,6 @@ void CReaderBase::xAddConversionInfo(
 }
 
 //  ----------------------------------------------------------------------------
-void CReaderBase::xAddConversionInfo(
-    CRef<CSeq_entry >& entry,
-    ILineErrorListener *pMessageListener)
-//  ----------------------------------------------------------------------------
-{
-    if (!entry || !pMessageListener) {
-        return;
-    }
-    CRef<CSeqdesc> user(new CSeqdesc());
-    user->SetUser(*xMakeAsnConversionInfo(pMessageListener));
-    entry->SetDescr().Set().push_back(user);
-}
-
-//  ----------------------------------------------------------------------------
 CRef<CUser_object> CReaderBase::xMakeAsnConversionInfo(
     ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------

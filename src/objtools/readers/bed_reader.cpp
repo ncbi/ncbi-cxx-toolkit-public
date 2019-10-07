@@ -606,19 +606,6 @@ CBedReader::xParseTrackLine(
 }
 
 //  ----------------------------------------------------------------------------
-CRef< CSeq_annot >
-CBedReader::x_AppendAnnot(
-    vector< CRef< CSeq_annot > >& annots )
-//  ----------------------------------------------------------------------------
-{
-    CRef< CSeq_annot > annot( new CSeq_annot );
-    CRef< CAnnot_descr > desc( new CAnnot_descr );
-    annot->SetDesc( *desc );
-    annots.push_back( annot );
-    return annot;
-}    
-    
-//  ----------------------------------------------------------------------------
 bool
 CBedReader::xParseFeature(
     const string& line,

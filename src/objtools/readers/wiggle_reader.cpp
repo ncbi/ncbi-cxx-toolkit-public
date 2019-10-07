@@ -68,39 +68,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CRef<CSeq_loc> 
-CWiggleReader::xGetContainingLoc()
-//  ----------------------------------------------------------------------------
-{
-    if (m_Values.empty()) {
-        return CRef<CSeq_loc>();
-    }
-    CRef<CSeq_loc> pContainingLoc(new CSeq_loc);
-
-    int sortAndMergeFlags = CSeq_loc::fMerge_All;
-    if (this->xValuesAreFromSingleSequence()) {
-        sortAndMergeFlags = CSeq_loc::fMerge_SingleRange;
-    }
-    CWiggleReader::TValues::const_iterator cit = m_Values.begin();
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(cit->m_Chrom, m_iFlags);
-    CRef<CSeq_interval> pInterval(new CSeq_interval(*pId, cit->m_Pos,
-        cit->m_Pos + cit->m_Span));
-    pContainingLoc->SetInt(*pInterval);
-    int count = 0;
-    for (cit++; cit != m_Values.end(); ++cit) {
-        ++count;
-        CRef<CSeq_id> pId = CReadUtil::AsSeqId(cit->m_Chrom, m_iFlags);
-        CRef<CSeq_interval> pInterval(new CSeq_interval(*pId, cit->m_Pos,
-            cit->m_Pos + cit->m_Span));
-        CRef<CSeq_loc> pAdd(new CSeq_loc);
-        pAdd->SetInt(*pInterval);
-        pContainingLoc->Assign(
-            *pContainingLoc->Add(*pAdd, sortAndMergeFlags, 0));
-    }
-    return pContainingLoc;
-}
-
-//  ----------------------------------------------------------------------------
 bool
 CWiggleReader::xValuesAreFromSingleSequence() const
 //  ----------------------------------------------------------------------------
@@ -305,6 +272,7 @@ CWiggleReader::xReadSeqAnnotTable(
     }
     return xGetAnnot();
 }
+
 
 //  ----------------------------------------------------------------------------
 bool 
@@ -522,7 +490,6 @@ CRef<CSeq_table> CWiggleReader::xMakeTable(void)
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table->SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_name("Seq-table location");
-        //col_id->SetDefault().SetLoc(*xGetContainingLoc());
         col_id->SetDefault().SetLoc(*table_loc);
     }
 
@@ -699,15 +666,6 @@ CRef<CSeq_annot> CWiggleReader::xMakeAnnot(void)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    return annot;
-}
-
-//  ----------------------------------------------------------------------------
-CRef<CSeq_annot> CWiggleReader::xMakeTableAnnot(void)
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_annot> annot = xMakeAnnot();
-    annot->SetData().SetSeq_table(*xMakeTable());
     return annot;
 }
 

@@ -804,7 +804,6 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
     // if one exists already then police it
     // if it doen't have one then generate one following a strict set of rules
 
-
     auto orig_pid = mf.GetNamedQual("orig_protein_id");
     if (!orig_pid.empty()) {
         xFeatureRemoveQualifier(mf, "orig_protein_id");

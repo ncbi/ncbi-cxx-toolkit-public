@@ -402,9 +402,6 @@ protected:
     xMakeAnnot();
 
     CRef<CSeq_annot> 
-    xMakeTableAnnot();
-
-    CRef<CSeq_annot> 
     xMakeGraphAnnot(
         void);
 
@@ -438,9 +435,6 @@ protected:
     void 
     xSetChrom(
         const string& chrom);
-
-    CRef<CSeq_loc> 
-    xGetContainingLoc();
 
     bool
     xValuesAreFromSingleSequence() const;
