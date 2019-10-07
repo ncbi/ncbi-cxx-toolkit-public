@@ -291,20 +291,20 @@ CFeatGapInfo::TLocList CFeatGapInfo::Split(const CSeq_loc& orig, bool in_intron,
             if (make_partial)
             {
                 loc2->SetPartialStart(true, objects::eExtreme_Positional);
-		if (left_loc->Which() != CSeq_loc::e_not_set)
-		{
-		    left_loc->SetPartialStop(true, objects::eExtreme_Positional);
-		}
+		        if (left_loc->Which() != CSeq_loc::e_not_set)
+		        {
+		            left_loc->SetPartialStop(true, objects::eExtreme_Positional);
+		        }
             }
             locs.push_back(loc2);
         }
     }
     if (locs.size() > 0) {
-      if (left_loc->Which() != CSeq_loc::e_not_set)
-      {
-          locs.push_back(left_loc);
-      }
-      reverse(locs.begin(), locs.end());
+        if (left_loc->Which() != CSeq_loc::e_not_set)
+        {
+            locs.push_back(left_loc);
+        }
+        reverse(locs.begin(), locs.end());
     }
     return locs;
 }

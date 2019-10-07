@@ -1199,7 +1199,7 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
 
 }
 
-BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap_GB8665)
+BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap_GB8665Plus)
 {
     CRef<CSeq_loc> loc1(new CSeq_loc());
     CRef<CSeq_id> id(new CSeq_id());
@@ -1241,6 +1241,100 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap_GB8665)
 
     BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_Mix);
     s_CheckMixLoc(*loc2, after_from, after_to);
+}
+
+BOOST_AUTO_TEST_CASE(Test_SplitLocationForGapFirstInt_GB8665Minus)
+{
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr("nuc1");
+
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+
+    unsigned int options = edit::eSplitLocOption_make_partial | edit::eSplitLocOption_split_in_exon;
+
+    // gap in the first interval
+
+    // Test for Packed-int
+    vector<TSeqPos> from, to;
+    from.push_back(69); to.push_back(79);
+    from.push_back(49); to.push_back(59);
+    from.push_back(24); to.push_back(39);
+    from.push_back(0);  to.push_back(19);
+    s_MakePackedInt(*loc1, *id, from, to);
+    loc1->SetStrand(eNa_strand_minus);
+    loc2->Reset();
+
+    edit::SplitLocationForGap(*loc1, *loc2, 7, 13, id.GetPointer(), options);
+
+    s_CheckInterval(loc1->GetInt(), 0, 6);
+
+    BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_Packed_int);
+    vector<TSeqPos> after_from, after_to;
+    after_from.push_back(69); after_to.push_back(79);
+    after_from.push_back(49); after_to.push_back(59);
+    after_from.push_back(24); after_to.push_back(39);
+    after_from.push_back(14); after_to.push_back(19);
+    s_CheckPackedInt(loc2->GetPacked_int(), after_from, after_to);
+
+    // Test for Seq-loc-mix
+    loc1->Reset();
+    s_MakeMixLoc(*loc1, *id, from, to);
+    loc1->SetStrand(eNa_strand_minus);
+    loc2->Reset();
+
+    edit::SplitLocationForGap(*loc1, *loc2, 7, 13, id.GetPointer(), options);
+    s_CheckInterval(loc1->GetInt(), 0, 6);
+
+    BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_Mix);
+    s_CheckMixLoc(*loc2, after_from, after_to);
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_SplitLocationForGapLastInt_GB8665Minus)
+{
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr("nuc1");
+
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+
+    unsigned int options = edit::eSplitLocOption_make_partial | edit::eSplitLocOption_split_in_exon;
+
+    // gap in the last interval
+
+   // Test for Packed-int
+    vector<TSeqPos> from, to;
+    from.push_back(48); to.push_back(64);
+    from.push_back(39); to.push_back(44);
+    from.push_back(19); to.push_back(34);
+    from.push_back(0);  to.push_back(14);
+    s_MakePackedInt(*loc1, *id, from, to);
+    loc1->SetStrand(eNa_strand_minus);
+    loc2->Reset();
+
+    edit::SplitLocationForGap(*loc1, *loc2, 51, 57, id.GetPointer(), options);
+    BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_Packed_int);
+    vector<TSeqPos> after_from, after_to;
+    after_from.push_back(48); after_to.push_back(50);
+    after_from.push_back(39); after_to.push_back(44);
+    after_from.push_back(19); after_to.push_back(34);
+    after_from.push_back(0); after_to.push_back(14);
+    s_CheckPackedInt(loc1->GetPacked_int(), after_from, after_to);
+
+    s_CheckInterval(loc2->GetInt(), 58, 64);
+
+    // Test for Seq-loc-mix
+    loc1->Reset();
+    s_MakeMixLoc(*loc1, *id, from, to);
+    loc1->SetStrand(eNa_strand_minus);
+    loc2->Reset();
+
+    edit::SplitLocationForGap(*loc1, *loc2, 51, 57, id.GetPointer(), options);
+    BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_Mix);
+    s_CheckMixLoc(*loc1, after_from, after_to);
+
+    s_CheckInterval(loc2->GetInt(), 58, 64);
 }
 
 

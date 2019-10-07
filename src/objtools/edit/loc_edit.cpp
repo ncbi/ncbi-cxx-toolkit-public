@@ -1789,6 +1789,10 @@ void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
                          const CSeq_id* seqid, unsigned int options)
 {
     if (before_intervals.IsSet()) {
+        if (before_intervals.IsReverseStrand()) {
+            reverse(before_intervals.Set().begin(), before_intervals.Set().end());
+        }
+
         auto it = before_intervals.Set().begin();
         while (it != before_intervals.Set().end()) {
             CSeq_interval& sub_interval = **it;
@@ -1798,7 +1802,8 @@ void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
             if (int_from > stop && after_intervals.IsSet() && !after_intervals.Get().empty()) {
                 after_intervals.Set().push_back(Ref(&sub_interval));
                 it = before_intervals.Set().erase(it);
-            } else {
+            }
+            else {
                 bool cut = false;
                 CRef<CSeq_interval> after = SplitLocationForGap(sub_interval, start, stop, seqid, cut, options);
 
@@ -1813,6 +1818,13 @@ void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
                     after_intervals.Set().push_back(after);
                 }
             }
+        }
+
+        if (after_intervals.IsReverseStrand()) {
+            reverse(after_intervals.Set().begin(), after_intervals.Set().end());
+        }
+        if (before_intervals.IsReverseStrand()) {
+            reverse(before_intervals.Set().begin(), before_intervals.Set().end());
         }
     }
 }
@@ -1887,52 +1899,62 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
 
         // Multiple seqlocs
         case CSeq_loc::e_Mix:
-            {{
-                    CSeq_loc_mix& before_mix = loc1.SetMix();
-                    CRef<CSeq_loc_mix> after_mix(new CSeq_loc_mix);
-                    if (before_mix.IsSet()) {
-                        auto it = before_mix.Set().begin();
-                        while (it != before_mix.Set().end()) {
-                            CSeq_loc& sub_loc = **it;
+        {{
+            CSeq_loc_mix& before_mix = loc1.SetMix();
+            CRef<CSeq_loc_mix> after_mix(new CSeq_loc_mix);
+            if (before_mix.IsSet()) {
+                if (before_mix.IsReverseStrand()) {
+                    reverse(before_mix.Set().begin(), before_mix.Set().end());
+                }
+                auto it = before_mix.Set().begin();
+                while (it != before_mix.Set().end()) {
+                    CSeq_loc& sub_loc = **it;
 
-                            TSeqPos from = sub_loc.GetStart(eExtreme_Positional);
-                            TSeqPos to = sub_loc.GetStop(eExtreme_Positional);
-                            if (from > stop && after_mix->IsSet() && !after_mix->Get().empty()) {
-                                after_mix->Set().push_back(Ref(&sub_loc));
-                                it = before_mix.Set().erase(it);
-                            }
-                            else {
-                                CRef<CSeq_loc> after(new CSeq_loc());
-                                SplitLocationForGap(**it, *after, start, stop, seqid, options);
-                                // Should seqloc be deleted from list?
-                                if ((*it)->Which() == CSeq_loc::e_not_set) {
-                                    it = before_mix.Set().erase(it);
-                                }
-                                else {
-                                    ++it;
-                                }
-                                if (after->Which() != CSeq_loc::e_not_set) {
-                                    after_mix->Set().push_back(after);
-                                }
-                            }
+                    TSeqPos from = sub_loc.GetStart(eExtreme_Positional);
+                    TSeqPos to = sub_loc.GetStop(eExtreme_Positional);
+                    if (from > stop && after_mix->IsSet() && !after_mix->Get().empty()) {
+                        after_mix->Set().push_back(Ref(&sub_loc));
+                        it = before_mix.Set().erase(it);
+                    }
+                    else {
+                        CRef<CSeq_loc> after(new CSeq_loc());
+                        SplitLocationForGap(**it, *after, start, stop, seqid, options);
+                        // Should seqloc be deleted from list?
+                        if ((*it)->Which() == CSeq_loc::e_not_set) {
+                            it = before_mix.Set().erase(it);
                         }
-
-                        // Update the original list
-                        if (before_mix.Set().empty()) {
-                            loc1.Reset();
+                        else {
+                            ++it;
                         }
-                        if (!after_mix->Set().empty()) {
-                            if (loc2.Which() == CSeq_loc::e_not_set) {
-                                loc2.SetMix().Assign(*after_mix);
-                            }
-                            else {
-                                CRef<CSeq_loc> add(new CSeq_loc());
-                                add->SetMix().Assign(*after_mix);
-                                loc2.Add(*add);
-                            }
+                        if (after->Which() != CSeq_loc::e_not_set) {
+                            after_mix->Set().push_back(after);
                         }
                     }
-            }}
+                }
+
+                if (after_mix->IsReverseStrand()) {
+                    reverse(after_mix->Set().begin(), after_mix->Set().end());
+                }
+                if (before_mix.IsReverseStrand()) {
+                    reverse(before_mix.Set().begin(), before_mix.Set().end());
+                }
+
+                // Update the original list
+                if (before_mix.Set().empty()) {
+                    loc1.Reset();
+                }
+                if (!after_mix->Set().empty()) {
+                    if (loc2.Which() == CSeq_loc::e_not_set) {
+                        loc2.SetMix().Assign(*after_mix);
+                    }
+                    else {
+                        CRef<CSeq_loc> add(new CSeq_loc());
+                        add->SetMix().Assign(*after_mix);
+                        loc2.Add(*add);
+                    }
+                }
+            }
+        }}
             break;
         case CSeq_loc::e_Equiv:
              {{
