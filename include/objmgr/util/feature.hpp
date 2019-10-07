@@ -229,6 +229,13 @@ public:
         return m_GeneCheckMode;
     }
     void SetGeneCheckMode(EGeneCheckMode mode);
+
+    /// Mode for taking into account gene xref to a missing genes
+    /// 
+    bool GetIgnoreMissingGeneXref(void) const {
+        return m_IgnoreMissingGeneXref;
+    }
+    void SetIgnoreMissingGeneXref(bool ignore = true);
     
     /// Mode of processing SNP strands
     enum ESNPStrandMode {
@@ -414,6 +421,7 @@ protected:
     EFeatIdMode m_FeatIdMode;
     EBestGeneFeatIdMode m_BestGeneFeatIdMode;
     EGeneCheckMode m_GeneCheckMode;
+    bool m_IgnoreMissingGeneXref;
     ESNPStrandMode m_SNPStrandMode;
     CRef<CFeatTreeIndex> m_Index;
 };

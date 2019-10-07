@@ -173,6 +173,7 @@ vector<CCleanup::TFeatGenePair> CCleanup::GetNormalizableGeneQualPairs(CBioseq_H
 
     CFeat_CI f(bsh);
     CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
+    tr->SetIgnoreMissingGeneXref();
     while (f) {
         if (f->GetData().IsCdregion()) {
             CMappedFeat gene = tr->GetBestGene(*f);

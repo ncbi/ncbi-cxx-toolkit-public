@@ -1978,6 +1978,7 @@ CFeatTree& CFeatTree::operator=(const CFeatTree& ft)
         m_FeatIdMode = ft.m_FeatIdMode;
         m_BestGeneFeatIdMode = ft.m_BestGeneFeatIdMode;
         m_GeneCheckMode = ft.m_GeneCheckMode;
+        m_IgnoreMissingGeneXref = ft.m_IgnoreMissingGeneXref;
         m_SNPStrandMode = ft.m_SNPStrandMode;
         m_Index = null;
         m_InfoArray.reserve(ft.m_InfoArray.size());
@@ -1996,6 +1997,7 @@ void CFeatTree::x_Init(void)
     m_FeatIdMode = eFeatId_by_type;
     m_BestGeneFeatIdMode = eBestGeneFeatId_always;
     m_GeneCheckMode = eGeneCheck_match;
+    m_IgnoreMissingGeneXref = false;
     m_SNPStrandMode = eSNPStrand_both;
 }
 
@@ -2009,6 +2011,12 @@ void CFeatTree::SetFeatIdMode(EFeatIdMode mode)
 void CFeatTree::SetGeneCheckMode(EGeneCheckMode mode)
 {
     m_GeneCheckMode = mode;
+}
+
+
+void CFeatTree::SetIgnoreMissingGeneXref(bool ignore)
+{
+    m_IgnoreMissingGeneXref = ignore;
 }
 
 
@@ -2145,6 +2153,7 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
                             return ret;
                         }
                     }
+                    ret.first = kByLocusParentQuality;
                 }
             }
         }
@@ -2159,6 +2168,10 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
     pair<int, CFeatInfo*> parent =
         x_LookupParentByRef(info, CSeqFeatData::eSubtype_any);
     if ( !parent.second ) {
+        if ( parent.first == kByLocusParentQuality && !GetIgnoreMissingGeneXref() ) {
+            // explicit xref to a missing gene
+            x_SetGene(info, 0);
+        }
         return false;
     }
     if ( parent.first <= kWorseTypeParentQuality ||
@@ -3020,8 +3033,7 @@ void CFeatTree::x_SetNoParent(CFeatInfo& info)
 
 void CFeatTree::x_SetGene(CFeatInfo& info, CFeatInfo* gene)
 {
-    _ASSERT(!info.IsSetGene());
-    _ASSERT(!info.m_Gene);
+    _ASSERT(!info.IsSetGene() || gene == info.m_Gene);
     info.m_Gene = gene;
     info.m_IsSetGene = true;
 }
