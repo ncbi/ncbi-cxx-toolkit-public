@@ -1,9 +1,0 @@
-#############################################################################
-# $Id$
-#############################################################################
-
-NCBI_begin_app(ns_remote_job_control)
-  NCBI_sources(ns_remote_job_control info_collector renderer)
-  NCBI_uses_toolkit_libraries(xconnserv)
-  NCBI_project_watchers(sadyrovr)
-NCBI_end_app()
