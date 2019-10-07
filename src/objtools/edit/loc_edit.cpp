@@ -1798,7 +1798,6 @@ void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
             CSeq_interval& sub_interval = **it;
 
             TSeqPos int_from = sub_interval.GetFrom();
-            TSeqPos int_to = sub_interval.GetTo();
             if (int_from > stop && after_intervals.IsSet() && !after_intervals.Get().empty()) {
                 after_intervals.Set().push_back(Ref(&sub_interval));
                 it = before_intervals.Set().erase(it);
@@ -1911,7 +1910,6 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
                     CSeq_loc& sub_loc = **it;
 
                     TSeqPos from = sub_loc.GetStart(eExtreme_Positional);
-                    TSeqPos to = sub_loc.GetStop(eExtreme_Positional);
                     if (from > stop && after_mix->IsSet() && !after_mix->Get().empty()) {
                         after_mix->Set().push_back(Ref(&sub_loc));
                         it = before_mix.Set().erase(it);
