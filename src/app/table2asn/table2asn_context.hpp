@@ -129,6 +129,7 @@ public:
     bool   m_postprocess_pubs{ false };
     string m_asn1_suffix;
     string m_locus_tag_prefix;
+    bool   m_locus_tags_needed;
     bool   m_use_hypothetic_protein{ false };
     bool   m_eukariote{ false };
     bool   m_di_fasta{ false };

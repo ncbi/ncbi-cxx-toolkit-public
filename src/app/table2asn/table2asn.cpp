@@ -368,6 +368,7 @@ void CTbl2AsnApp::Init(void)
     //arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
     arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
     arg_desc->AddOptionalKey("locus-tag-prefix", "String",  "Add prefix to locus tags in annotation files", CArgDescriptions::eString);
+    arg_desc->AddFlag("no-locus-tags-needed", "Submission data does not require locus tags");
     arg_desc->AddFlag("euk", "Assume eukaryote, and create missing mRNA features");
     arg_desc->AddOptionalKey("suspect-rules", "String", "Path to a file containing suspect rules set. Overrides environment variable PRODUCT_RULES_LIST", CArgDescriptions::eString);
     arg_desc->AddFlag("allow-acc", "Allow accession recognition in sequence IDs. Default is local");
@@ -683,9 +684,22 @@ int CTbl2AsnApp::Run(void)
         m_context.m_discrepancy = eTriState_True;
     }
 
-    if (args["locus-tag-prefix"])
-        m_context.m_locus_tag_prefix = args["locus-tag-prefix"].AsString();
-
+    if (args["locus-tag-prefix"]  ||  args["no-locus-tags-needed"]) {
+        if (args["locus-tag-prefix"]  &&  args["no-locus-tags-needed"]) {
+            // mutually exclusive
+            NCBI_THROW(CArgException, eConstraint, 
+                "-no-locus-tags-needed and -locus-tag-prefix are mutually exclusive");
+        }
+        if (args["no-locus-tags-needed"]) {
+            m_context.m_locus_tag_prefix = "";
+            m_context.m_locus_tags_needed = false;
+        }
+        else {
+            m_context.m_locus_tag_prefix = args["locus-tag-prefix"].AsString();
+            m_context.m_locus_tags_needed = true;
+        }
+    }
+    
     if (m_context.m_HandleAsSet)
     {
         if (m_context.m_GenomicProductSet)

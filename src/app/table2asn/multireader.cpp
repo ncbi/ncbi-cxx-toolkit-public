@@ -857,7 +857,13 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
             **it, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
         //fte.InferPartials();
         fte.GenerateMissingParentFeatures(m_context.m_eukariote);
-        fte.GenerateLocusTags();
+        if (m_context.m_locus_tags_needed) {
+            if (m_context.m_locus_tag_prefix.empty()  &&  !fte.AnnotHasAllLocusTags()) {
+                NCBI_THROW(CArgException, eNoArg, 
+                    "GFF annotation requires locus tag, which is missing from arguments");
+            }
+            fte.GenerateLocusTags();
+        }
         fte.GenerateProteinAndTranscriptIds();
         //fte.InstantiateProducts();
         fte.EliminateBadQualifiers();
