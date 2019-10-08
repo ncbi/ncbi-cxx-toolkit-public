@@ -1099,7 +1099,7 @@ string CAutoDefFeatureClause_Base::FindGeneProductName(CAutoDefFeatureClause_Bas
         }
         // don't get product names from introns and exons
         auto subtype = m_ClauseList[k]->GetMainFeatureSubtype();
-        if (subtype == CSeqFeatData::eSubtype_exon || CSeqFeatData::eSubtype_intron) {
+        if (subtype == CSeqFeatData::eSubtype_exon || subtype == CSeqFeatData::eSubtype_intron) {
             continue;
         }
         if (NStr::Equal(look_for_name, m_ClauseList[k]->GetGeneName())
