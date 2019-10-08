@@ -103,7 +103,6 @@ an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
 an_genbank_pipeline needs gpipe_an_base
 an_genbank_pipeline needs gpipe_fileutils
 an_prok_pipeline needs gpipe_an_base
-an_prok_pipeline needs gpipe_asn_proc
 an_prok_pipeline needs gpipe_fileutils
 an_prok_pipeline needs gpipe_kmer_metadata_cache
 an_prok_pipeline needs gpipe_xmlutil
@@ -132,8 +131,9 @@ auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
-bacterial_pipeline_proc needs gencoll_client
-bacterial_pipeline_proc needs gpipe_alnutil
+bacterial_pipeline_proc needs $(EUTILS_LIBS)
+bacterial_pipeline_proc needs $(GPIPE_COMMON_LIBS)
+bacterial_pipeline_proc needs gpipe_asn_proc
 bacterial_pipeline_proc needs pgap_yaml_input_reader
 bag_access needs gpipe_common
 bamread needs $(COMPRESS_LIBS)
@@ -427,7 +427,6 @@ gene_info needs xncbi
 gene_info_writer needs gene_info
 gene_info_writer needs seqdb
 genemark_proc needs bacterial_pipeline_proc
-genemark_proc needs xalgoseq
 general needs xser
 generic_db_asn needs xser
 generic_db_core needs $(CONNEXT)
@@ -496,9 +495,8 @@ gpipe_an_base needs gpxlib
 gpipe_an_base needs grid_wrapper
 gpipe_ani needs refseq_ctl
 gpipe_ani needs tax_xml
-gpipe_ani needs xalgoalignutil
 gpipe_asn_cleanup needs xvalidate
-gpipe_asn_proc needs bacterial_pipeline_proc
+gpipe_asn_proc needs gencoll_client
 gpipe_asn_proc needs gpipe_blast
 gpipe_asn_proc needs xalgoalignutil
 gpipe_asn_proc needs xalgognomon
@@ -1059,7 +1057,6 @@ pn_ctl needs bacterial_pipeline_proc
 pn_ctl needs gpipe_clean_prot_names
 pn_ctl needs gpipe_jira
 pn_ctl needs idload_utils
-pn_ctl needs xcleanup
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
@@ -1069,7 +1066,6 @@ proj needs seqset
 prok_cluster_data needs attr_cd
 prok_cluster_data needs bacterial_pipeline_proc
 prok_cluster_data needs gpipe_sqlite
-prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
 proteinkmer needs xalgoblastdbindex
 proteinkmer needs xalgodustmask
