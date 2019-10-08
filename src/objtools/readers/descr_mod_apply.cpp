@@ -681,8 +681,8 @@ void CDescrModApply::x_SetDBLinkFieldVals(const string& label,
 void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_BiomolStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it != s_BiomolStringToEnum.end()) {
+    auto it = g_BiomolStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it != g_BiomolStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetBiomol(it->second);
         return;
     }
@@ -693,8 +693,8 @@ void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_TechStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it != s_TechStringToEnum.end()) {
+    auto it = g_TechStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it != g_TechStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetTech(it->second);
         return;
     }
@@ -705,8 +705,8 @@ void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = s_CompletenessStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it != s_CompletenessStringToEnum.end()) {
+    auto it = g_CompletenessStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it != g_CompletenessStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetCompleteness(it->second);
         return;
     }

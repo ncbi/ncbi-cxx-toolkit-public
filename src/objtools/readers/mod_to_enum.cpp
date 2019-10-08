@@ -67,15 +67,17 @@ string g_GetNormalizedModVal(const string& unnormalized)
     return normalized;
 }
 
-static auto fNoNormalization =
-[](const string& mod_string) { return mod_string; };
+
+static string s_NoNormalization(const string& mod_string) 
+{ return mod_string; };
+
 
 template<typename TEnum>
 static TStringToEnumMap<TEnum> s_InitModStringToEnumMap(
     const CEnumeratedTypeValues& etv,
     const TModNameSet& skip_mod_strings,
     const TStringToEnumMap<TEnum>&  extra_mod_strings_to_enums,
-    function<string(const string&)> fNormalizeString  = fNoNormalization
+    function<string(const string&)> fNormalizeString  = s_NoNormalization
     )
 
 {
@@ -185,6 +187,118 @@ g_InitModNameOriginMap(void)
             extra_smod_to_enum_names,
             g_GetNormalizedModVal);
 }
+
+
+const TStringToEnumMap<CSeq_inst::EStrand> 
+g_StrandStringToEnum = {{"single", CSeq_inst::eStrand_ss},
+                        {"double", CSeq_inst::eStrand_ds},
+                        {"mixed", CSeq_inst::eStrand_mixed},
+                        {"other", CSeq_inst::eStrand_other}};
+
+
+const TStringToEnumMap<CSeq_inst::EMol>
+g_MolStringToEnum = {{"dna", CSeq_inst::eMol_dna},
+                     {"rna", CSeq_inst::eMol_rna},
+                     {"aa", CSeq_inst::eMol_aa},
+                     {"na", CSeq_inst::eMol_na},
+                    {"other", CSeq_inst::eMol_other}};
+
+
+
+const TStringToEnumMap<CSeq_inst::ETopology> 
+g_TopologyStringToEnum = {{"linear", CSeq_inst::eTopology_linear},
+                          {"circular", CSeq_inst::eTopology_circular},
+                          {"tandem", CSeq_inst::eTopology_tandem},
+                          {"other", CSeq_inst::eTopology_other}};
+
+
+const 
+TStringToEnumMap<CMolInfo::TBiomol> 
+g_BiomolStringToEnum
+= { {"crna",                    CMolInfo::eBiomol_cRNA },   
+    {"dna",                     CMolInfo::eBiomol_genomic},   
+    {"genomic",                 CMolInfo::eBiomol_genomic},   
+    {"genomicdna",              CMolInfo::eBiomol_genomic},   
+    {"genomicrna",              CMolInfo::eBiomol_genomic},   
+    {"mrna",                    CMolInfo::eBiomol_mRNA},   
+    {"ncrna",                   CMolInfo::eBiomol_ncRNA},
+    {"noncodingrna",            CMolInfo::eBiomol_ncRNA},   
+    {"othergenetic",            CMolInfo::eBiomol_other_genetic}, 
+    {"precursorrna",            CMolInfo::eBiomol_pre_RNA},   
+    {"ribosomalrna",            CMolInfo::eBiomol_rRNA},   
+    {"rrna",                    CMolInfo::eBiomol_rRNA},   
+    {"transcribedrna",          CMolInfo::eBiomol_transcribed_RNA},   
+    {"transfermessengerrna",    CMolInfo::eBiomol_tmRNA},   
+    {"tmrna",                   CMolInfo::eBiomol_tmRNA},   
+    {"transferrna",             CMolInfo::eBiomol_tRNA},   
+    {"trna",                    CMolInfo::eBiomol_tRNA},   
+};
+
+
+const 
+unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> 
+g_BiomolEnumToMolEnum = { 
+    { CMolInfo::eBiomol_genomic, CSeq_inst::eMol_dna},
+    { CMolInfo::eBiomol_pre_RNA,  CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_mRNA,  CSeq_inst::eMol_rna },
+    { CMolInfo::eBiomol_rRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_tRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_snRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_scRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_genomic_mRNA, CSeq_inst::eMol_rna },
+    { CMolInfo::eBiomol_cRNA, CSeq_inst::eMol_rna },
+    { CMolInfo::eBiomol_snoRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_ncRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_tmRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_peptide, CSeq_inst::eMol_aa},
+    { CMolInfo::eBiomol_other_genetic, CSeq_inst::eMol_other},
+    { CMolInfo::eBiomol_other, CSeq_inst::eMol_other}
+};
+
+
+const 
+TStringToEnumMap<CMolInfo::TTech>
+g_TechStringToEnum = {
+    { "?",                  CMolInfo::eTech_unknown },
+    { "barcode",            CMolInfo::eTech_barcode },
+    { "both",               CMolInfo::eTech_both },
+    { "compositewgshtgs",   CMolInfo::eTech_composite_wgs_htgs },
+    { "concepttrans",       CMolInfo::eTech_concept_trans },
+    { "concepttransa",      CMolInfo::eTech_concept_trans_a },
+    { "derived",            CMolInfo::eTech_derived },
+    { "est",                CMolInfo::eTech_est },
+    { "flicdna",            CMolInfo::eTech_fli_cdna },
+    { "geneticmap",         CMolInfo::eTech_genemap },
+    { "htc",                CMolInfo::eTech_htc },
+    { "htgs0",              CMolInfo::eTech_htgs_0 },
+    { "htgs1",              CMolInfo::eTech_htgs_1 },
+    { "htgs2",              CMolInfo::eTech_htgs_2 },
+    { "htgs3",              CMolInfo::eTech_htgs_3 },
+    { "physicalmap",        CMolInfo::eTech_physmap },
+    { "seqpept",            CMolInfo::eTech_seq_pept },
+    { "seqpepthomol",       CMolInfo::eTech_seq_pept_homol },
+    { "seqpeptoverlap",     CMolInfo::eTech_seq_pept_overlap },
+    { "standard",           CMolInfo::eTech_standard },
+    { "sts",                CMolInfo::eTech_sts },
+    { "survey",             CMolInfo::eTech_survey },
+    { "targeted",           CMolInfo::eTech_targeted },
+    { "tsa",                CMolInfo::eTech_tsa },
+    { "wgs",                CMolInfo::eTech_wgs }
+};
+
+
+const 
+unordered_map<string, CMolInfo::TCompleteness> 
+g_CompletenessStringToEnum = {
+    { "complete",  CMolInfo::eCompleteness_complete  },
+    { "hasleft",   CMolInfo::eCompleteness_has_left  },
+    { "hasright",  CMolInfo::eCompleteness_has_right  },
+    { "noends",    CMolInfo::eCompleteness_no_ends  },
+    { "noleft",    CMolInfo::eCompleteness_no_left  },
+    { "noright",   CMolInfo::eCompleteness_no_right  },
+    { "partial",   CMolInfo::eCompleteness_partial  }
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
