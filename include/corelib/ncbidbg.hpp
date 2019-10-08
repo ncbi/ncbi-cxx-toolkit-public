@@ -63,22 +63,24 @@ BEGIN_NCBI_SCOPE
 
 /// Define macros to support debugging.
 #define _ALWAYS_TRACE(message)                   \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
+    do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_Trace)) \
+    { NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
       NCBI_NS_NCBI::eDiag_Trace).GetRef()        \
-      << message << NCBI_NS_NCBI::Endm )
+      << message << NCBI_NS_NCBI::Endm; } while (0)
 
 #define _ALWAYS_TRACE_EX(err_code, err_subcode, message)    \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,            \
+    do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_Trace)) \
+    { NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,            \
       NCBI_NS_NCBI::eDiag_Trace).GetRef()                   \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
-      << message << NCBI_NS_NCBI::Endm )
+      << message << NCBI_NS_NCBI::Endm; } while (0)
 
 #define _ALWAYS_TRACE_X(err_subcode, message)               \
     _ALWAYS_TRACE_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 #define _ALWAYS_TRACE_XX(error_name, err_subcode, message)                 \
-    ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
-      _ALWAYS_TRACE_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
+    do { (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode));            \
+      _ALWAYS_TRACE_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message); } while (0)
 
 #define NCBI_ALWAYS_TROUBLE(mess) \
     NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
