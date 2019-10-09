@@ -161,15 +161,14 @@ private:
     void x_PrintRequestStop(int  status);
     bool x_SatToSatName(const SBlobRequest &  blob_request,
                         SBlobId &  blob_id);
-    bool x_TSEChunkSatToSatName(SBlobId &  blob_id);
+    bool x_TSEChunkSatToSatName(SBlobId &  blob_id, bool  need_finish);
     void x_SendBlobPropError(size_t  item_id,
                              const string &  message,
                              int  error_code);
     void x_SendReplyError(const string &  msg,
                           CRequestStatus::ECode  status,
                           int  code);
-    void x_SendBioseqInfo(const string &  protobuf_bioseq_info,
-                          CBioseqInfoRecord &  bioseq_info,
+    void x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution,
                           EOutputFormat  output_format);
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<CCassFetch> &  fetch_details);
@@ -178,7 +177,8 @@ private:
     bool x_UsePsgProtocol(void) const;
     void x_InitUrlIndentification(void);
     bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
-                                  CPSGId2Info::TChunks  total_chunks);
+                                  CPSGId2Info::TChunks  total_chunks,
+                                  bool  need_finish);
 
 private:
     bool x_ComposeOSLT(CSeq_id &  parsed_seq_id, int16_t &  effective_seq_id_type,
@@ -263,13 +263,17 @@ private:
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details, CBlobRecord const &  blob);
     bool x_ParseTSEChunkId2Info(const string &  info,
                                 unique_ptr<CPSGId2Info> &  id2_info,
-                                const SBlobId &  blob_id);
+                                const SBlobId &  blob_id,
+                                bool  need_finish);
     void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
                            CCassSplitHistoryFetch *  fetch_details);
 
     void x_RegisterResolveTiming(const SBioseqResolution &  bioseq_resolution);
     void x_RegisterResolveTiming(CRequestStatus::ECode  status,
                                  const THighResolutionTimePoint &  start_timestamp);
+    EAccessionSubstitutionOption x_GetAccessionSubstitutionOption(void) const;
+    TServIncludeData x_GetBioseqInfoFields(void) const;
+    bool x_NonKeyBioseqInfoFieldsRequested(void) const;
 
     unique_ptr<CPSGId2Info>     m_Id2Info;
 
@@ -278,6 +282,11 @@ public:
     unsigned int GetMaxRetries(void) const                { return m_MaxRetries; }
     shared_ptr<CCassConnection> GetConnection(void) const { return m_Conn; }
     int16_t GetUrlSeqIdType(void) const                   { return m_UrlSeqIdType; }
+    EAccessionAdjustmentResult AdjustBioseqAccession(
+                                        SBioseqResolution &  bioseq_resolution);
+    bool CanSkipBioseqInfoRetrieval(
+                            const CBioseqInfoRecord &  bioseq_info_record) const;
+
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
     { return m_ProtocolSupport.GetReply()->GetDataReadyCB(); }
 

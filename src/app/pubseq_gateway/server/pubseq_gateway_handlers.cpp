@@ -67,6 +67,7 @@ static string  kResetParam = "reset";
 static string  kTSEIdParam = "tse_id";
 static string  kChunkParam = "chunk";
 static string  kSplitVersionParam = "split_version";
+static string  kAccSubstitutionParam = "acc_substitution";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -79,7 +80,8 @@ static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
     make_pair("blob_id", fServBlobId),
     make_pair("tax_id", fServTaxId),
     make_pair("hash", fServHash),
-    make_pair("date_changed", fServDateChanged)
+    make_pair("date_changed", fServDateChanged),
+    make_pair("gi", fServGi)
 };
 static string  kBadUrlMessage = "Unknown request, the provided URL "
                                 "is not recognized";
@@ -171,13 +173,25 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
             }
         }
 
+        EAccessionSubstitutionOption        subst_option = eDefaultAccSubstitution;
+        SRequestParameter                   subst_param = x_GetParam(req, kAccSubstitutionParam);
+        if (subst_param.m_Found) {
+            subst_option = x_GetAccessionSubstitutionOption(kAccSubstitutionParam,
+                                                            subst_param.m_Value,
+                                                            err_msg);
+            if (subst_option == eUnknownAccSubstitution) {
+                x_MalformedArguments(resp, context, err_msg);
+                return 0;
+            }
+        }
+
         SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
         m_RequestCounters.IncGetBlobBySeqId();
         resp.Postpone(
                 CPendingOperation(
                     SBlobRequest(seq_id, seq_id_type, exclude_blobs,
-                                 tse_option, use_cache,
+                                 tse_option, use_cache, subst_option,
                                  string(client_id_param.m_Value.data(),
                                         client_id_param.m_Value.size()),
                                  now),
@@ -404,13 +418,37 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             }
         }
 
+        EAccessionSubstitutionOption        subst_option = eDefaultAccSubstitution;
+        SRequestParameter                   subst_param = x_GetParam(req, kAccSubstitutionParam);
+        if (subst_param.m_Found) {
+            subst_option = x_GetAccessionSubstitutionOption(kAccSubstitutionParam,
+                                                            subst_param.m_Value,
+                                                            err_msg);
+            if (subst_option == eUnknownAccSubstitution) {
+                m_ErrorCounters.IncMalformedArguments();
+                if (use_psg_protocol) {
+                    x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                     CRequestStatus::e400_BadRequest,
+                                                     eMalformedParameter, eDiag_Error);
+                } else {
+                    resp.SetContentType(ePlainTextMime);
+                    resp.Send400("Bad Request", err_msg.c_str());
+                }
+
+                PSG_WARNING(err_msg);
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
+        }
+
+
         // Parameters processing has finished
         m_RequestCounters.IncResolve();
         resp.Postpone(
                 CPendingOperation(
                     SResolveRequest(seq_id, seq_id_type, include_data_flags,
                                     output_format, use_cache, use_psg_protocol,
-                                    now),
+                                    subst_option, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {

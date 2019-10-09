@@ -39,9 +39,8 @@ USING_NCBI_SCOPE;
 
 
 
-ECacheLookupResult  CPSGCache::s_LookupBioseqInfo(
-                                    CBioseqInfoRecord &  bioseq_info_record,
-                                    string &  bioseq_info_cache_data)
+ECacheLookupResult
+CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
 {
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
@@ -52,52 +51,68 @@ ECacheLookupResult  CPSGCache::s_LookupBioseqInfo(
     bool                    cache_hit = false;
     COperationTiming &      timing = app->GetTiming();
 
-    int     version = bioseq_info_record.GetVersion();
-    int     seq_id_type = bioseq_info_record.GetSeqIdType();
+    int     version = bioseq_resolution.m_BioseqInfo.GetVersion();
+    int     seq_id_type = bioseq_resolution.m_BioseqInfo.GetSeqIdType();
+    int64_t gi = bioseq_resolution.m_BioseqInfo.GetGI();
 
     auto    start = chrono::high_resolution_clock::now();
 
     try {
-        if (version >= 0) {
-            if (seq_id_type >= 0) {
-                cache_hit = cache->LookupBioseqInfoByAccessionVersionSeqIdType(
-                                            bioseq_info_record.GetAccession(),
-                                            version, seq_id_type,
-                                            bioseq_info_cache_data);
-            } else {
-                // The cache and Cassandra DB have incompatible data types so
-                // here are temporary value
-                cache_hit = cache->LookupBioseqInfoByAccessionVersion(
-                                            bioseq_info_record.GetAccession(),
-                                            version,  bioseq_info_cache_data,
-                                            seq_id_type);
-                if (cache_hit) {
-                    bioseq_info_record.SetSeqIdType(seq_id_type);
-                }
+        if (gi > 0) {
+            cache_hit = cache->LookupBioseqInfoByAccessionGi(
+                                    bioseq_resolution.m_BioseqInfo.GetAccession(),
+                                    bioseq_resolution.m_BioseqInfo.GetGI(),
+                                    bioseq_resolution.m_CacheInfo,
+                                    version, seq_id_type);
+            if (cache_hit) {
+                bioseq_resolution.m_BioseqInfo.SetVersion(version);
+                bioseq_resolution.m_BioseqInfo.SetSeqIdType(seq_id_type);
             }
         } else {
-            if (seq_id_type >= 0) {
-                // The cache and Cassandra DB have incompatible data types so
-                // here are temporary value
-                cache_hit = cache->LookupBioseqInfoByAccessionVersionSeqIdType(
-                                            bioseq_info_record.GetAccession(),
-                                            -1, seq_id_type,
-                                            bioseq_info_cache_data,
-                                            version, seq_id_type);
-                if (cache_hit) {
-                    bioseq_info_record.SetVersion(version);
-                    bioseq_info_record.SetSeqIdType(seq_id_type);
+            if (version >= 0) {
+                if (seq_id_type >= 0) {
+                    cache_hit = cache->LookupBioseqInfoByAccessionVersionSeqIdType(
+                                    bioseq_resolution.m_BioseqInfo.GetAccession(),
+                                    version, seq_id_type,
+                                    bioseq_resolution.m_CacheInfo, gi);
+                } else {
+                    // The cache and Cassandra DB have incompatible data types so
+                    // here are temporary value
+                    cache_hit = cache->LookupBioseqInfoByAccessionVersion(
+                                    bioseq_resolution.m_BioseqInfo.GetAccession(),
+                                    version,  bioseq_resolution.m_CacheInfo,
+                                    seq_id_type, gi);
+                    if (cache_hit) {
+                        bioseq_resolution.m_BioseqInfo.SetSeqIdType(seq_id_type);
+                        bioseq_resolution.m_BioseqInfo.SetGI(gi);
+                    }
                 }
             } else {
-                // The cache and Cassandra DB have incompatible data types so
-                // here are temporary value
-                cache_hit = cache->LookupBioseqInfoByAccession(
-                                            bioseq_info_record.GetAccession(),
-                                            bioseq_info_cache_data,
-                                            version, seq_id_type);
-                if (cache_hit) {
-                    bioseq_info_record.SetVersion(version);
-                    bioseq_info_record.SetSeqIdType(seq_id_type);
+                if (seq_id_type >= 0) {
+                    // The cache and Cassandra DB have incompatible data types so
+                    // here are temporary value
+                    cache_hit = cache->LookupBioseqInfoByAccessionVersionSeqIdType(
+                                    bioseq_resolution.m_BioseqInfo.GetAccession(),
+                                    -1, seq_id_type,
+                                    bioseq_resolution.m_CacheInfo,
+                                    version, seq_id_type, gi);
+                    if (cache_hit) {
+                        bioseq_resolution.m_BioseqInfo.SetVersion(version);
+                        bioseq_resolution.m_BioseqInfo.SetSeqIdType(seq_id_type);
+                        bioseq_resolution.m_BioseqInfo.SetGI(gi);
+                    }
+                } else {
+                    // The cache and Cassandra DB have incompatible data types so
+                    // here are temporary value
+                    cache_hit = cache->LookupBioseqInfoByAccession(
+                                    bioseq_resolution.m_BioseqInfo.GetAccession(),
+                                    bioseq_resolution.m_CacheInfo,
+                                    version, seq_id_type, gi);
+                    if (cache_hit) {
+                        bioseq_resolution.m_BioseqInfo.SetVersion(version);
+                        bioseq_resolution.m_BioseqInfo.SetSeqIdType(seq_id_type);
+                        bioseq_resolution.m_BioseqInfo.SetGI(gi);
+                    }
                 }
             }
         }
@@ -124,8 +139,8 @@ ECacheLookupResult  CPSGCache::s_LookupBioseqInfo(
 }
 
 
-ECacheLookupResult  CPSGCache::s_LookupSi2csi(CBioseqInfoRecord &  bioseq_info_record,
-                                              string &  csi_cache_data)
+ECacheLookupResult
+CPSGCache::s_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
 {
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
@@ -138,19 +153,19 @@ ECacheLookupResult  CPSGCache::s_LookupSi2csi(CBioseqInfoRecord &  bioseq_info_r
 
     // The Cassandra DB data types are incompatible with the cache API
     // so this is a temporary value to retrieve the seq_id from cache
-    int     seq_id_type = bioseq_info_record.GetSeqIdType();
+    int     seq_id_type = bioseq_resolution.m_BioseqInfo.GetSeqIdType();
 
     auto    start = chrono::high_resolution_clock::now();
 
     try {
         if (seq_id_type < 0) {
             cache_hit = cache->LookupCsiBySeqId(
-                                    bioseq_info_record.GetAccession(),
-                                    seq_id_type, csi_cache_data);
+                                    bioseq_resolution.m_BioseqInfo.GetAccession(),
+                                    seq_id_type, bioseq_resolution.m_CacheInfo);
         } else {
             cache_hit = cache->LookupCsiBySeqIdSeqIdType(
-                                    bioseq_info_record.GetAccession(),
-                                    seq_id_type, csi_cache_data);
+                                    bioseq_resolution.m_BioseqInfo.GetAccession(),
+                                    seq_id_type, bioseq_resolution.m_CacheInfo);
         }
     } catch (const exception &  exc) {
         ERR_POST(Critical << "Exception while csi cache lookup: "
@@ -165,7 +180,7 @@ ECacheLookupResult  CPSGCache::s_LookupSi2csi(CBioseqInfoRecord &  bioseq_info_r
 
     if (cache_hit) {
         timing.Register(eLookupLmdbSi2csi, eOpStatusFound, start);
-        bioseq_info_record.SetSeqIdType(seq_id_type);
+        bioseq_resolution.m_BioseqInfo.SetSeqIdType(seq_id_type);
         app->GetCacheCounters().IncSi2csiCacheHit();
         return eFound;
     }

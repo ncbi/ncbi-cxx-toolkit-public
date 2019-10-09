@@ -58,7 +58,7 @@ private:
 
         eFinished,
 
-        ePostSi2csiForGi            // Special case for seq_id like gi|156232
+        ePostSi2Csi                 // Special case for seq_id like gi|156232
     };
 
 public:
@@ -77,7 +77,8 @@ public:
 private:
     void x_PreparePrimaryBioseqInfoQuery(const string &  seq_id,
                                          int16_t  version,
-                                         int16_t  seq_id_type);
+                                         int16_t  seq_id_type,
+                                         int64_t  gi);
     void x_PreparePrimarySi2csiQuery(void);
     void x_PrepareSecondarySi2csiQuery(void);
     void x_PrepareSecondaryAsIsSi2csiQuery(void);

@@ -108,25 +108,49 @@ bool SBlobId::operator == (const SBlobId &  other) const
 }
 
 
-// Special case for the e_Gi (see CXX-10896)
+// see CXX-10728
 // Need to replace the found accession with the seq_ids found accession
-EAccessionAdjustmentResult SBioseqResolution::AdjustAccessionForGi(void)
+EAccessionAdjustmentResult
+SBioseqResolution::AdjustAccession(void)
 {
-    // Only for Gi
-    if (m_BioseqInfo.GetSeqIdType() != CSeq_id::e_Gi)
-        return eLogicError;
+    if (m_AdjustmentTried)
+        return m_AccessionAdjustmentResult;
+    m_AdjustmentTried = true;
+
+    if (m_ResolutionResult != eFromBioseqDB) {
+        m_AdjustmentError = "BIOSEQ_INFO accession adjustment logic error. The "
+                            "data are not ready for adjustments.";
+        m_AccessionAdjustmentResult = eLogicError;
+        return m_AccessionAdjustmentResult;
+    }
+
+    auto    seq_id_type = m_BioseqInfo.GetSeqIdType();
+    if (m_BioseqInfo.GetVersion() > 0 && seq_id_type != CSeq_id::e_Gi) {
+        m_AccessionAdjustmentResult = eNotRequired;
+        return m_AccessionAdjustmentResult;
+    }
 
     const auto &    seq_ids = m_BioseqInfo.GetSeqIds();
     for (const auto &  seq_id : seq_ids) {
         if (get<0>(seq_id) == CSeq_id::e_Gi) {
-            // Found Gi in the set of other seq_ids so use it instead of the
-            // original accession
             m_BioseqInfo.SetAccession(get<1>(seq_id));
-            return eAdjusted;
+            m_AccessionAdjustmentResult = eAdjustedWithGi;
+            return m_AccessionAdjustmentResult;
         }
     }
 
-    return eGiNotFound;
+    if (seq_ids.empty()) {
+        m_AdjustmentError = "BIOSEQ_INFO data inconsistency. Accession " +
+                            m_BioseqInfo.GetAccession() + " needs to be "
+                            "adjusted but the seq_ids list is empty.";
+        m_AccessionAdjustmentResult = eSeqIdsEmpty;
+        return m_AccessionAdjustmentResult;
+    }
+
+    // Adjusted with any
+    m_BioseqInfo.SetAccession(get<1>(*seq_ids.begin()));
+    m_AccessionAdjustmentResult = eAdjustedWithAny;
+    return m_AccessionAdjustmentResult;
 }
 
 

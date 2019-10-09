@@ -396,9 +396,7 @@ void CPendingOperation::x_ProcessGetRequest(SResolveInputSeqIdError &  err,
         // bioseq info
         CPSGCache           psg_cache(m_UrlUseCache != eCassandraOnly);
         ECacheLookupResult  cache_lookup_result =
-                                psg_cache.LookupBioseqInfo(
-                                        bioseq_resolution.m_BioseqInfo,
-                                        bioseq_resolution.m_CacheInfo);
+                                psg_cache.LookupBioseqInfo(bioseq_resolution);
         if (cache_lookup_result == eFound) {
             ConvertBioseqProtobufToBioseqInfo(
                         bioseq_resolution.m_CacheInfo,
@@ -436,7 +434,7 @@ void CPendingOperation::x_CompleteGetRequest(
                                         SBioseqResolution &  bioseq_resolution)
 {
     // Send BIOSEQ_INFO
-    x_SendBioseqInfo(kEmptyStr, bioseq_resolution.m_BioseqInfo, eJsonFormat);
+    x_SendBioseqInfo(bioseq_resolution, eJsonFormat);
     x_RegisterResolveTiming(bioseq_resolution);
 
     // Translate sat to keyspace
@@ -583,36 +581,42 @@ void CPendingOperation::x_ProcessResolveRequest(
         // Need to convert binary to a structured representation
         ConvertSi2csiToBioseqResolution(
                 bioseq_resolution.m_CacheInfo, bioseq_resolution);
+        bioseq_resolution.m_ResolutionResult = eFromSi2csiDB;
     }
 
-    if (bioseq_resolution.m_ResolutionResult == eFromSi2csiCache ||
-        bioseq_resolution.m_ResolutionResult == eFromSi2csiDB) {
-        // The only key fields are available, need to pull the full
-        // bioseq info
-        CPSGCache           psg_cache(m_UrlUseCache != eCassandraOnly);
-        ECacheLookupResult  cache_lookup_result =
-                                psg_cache.LookupBioseqInfo(
-                                        bioseq_resolution.m_BioseqInfo,
-                                        bioseq_resolution.m_CacheInfo);
-        if (cache_lookup_result != eFound) {
-            // No cache hit (or not allowed); need to get to DB if allowed
-            if (m_UrlUseCache != eCacheOnly) {
-                // Async DB query
-                bioseq_resolution.m_CacheInfo.clear();
-                m_AsyncInterruptPoint = eResolveBioseqDetails;
-                m_AsyncBioseqDetailsQuery.reset(
-                        new CAsyncBioseqQuery(std::move(bioseq_resolution),
-                                              this));
-                m_AsyncBioseqDetailsQuery->MakeRequest();
-                return;
-            }
+    if (bioseq_resolution.m_ResolutionResult == eFromSi2csiDB) {
+        // We have the following fields at hand:
+        // - accession, version, seq_id_type, gi
+        // May be it is what the user asked for
+        if (!CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo)) {
+            // Need to pull the full bioseq info
+            CPSGCache           psg_cache(m_UrlUseCache != eCassandraOnly);
+            ECacheLookupResult  cache_lookup_result =
+                                    psg_cache.LookupBioseqInfo(bioseq_resolution);
+            if (cache_lookup_result != eFound) {
+                // No cache hit (or not allowed); need to get to DB if allowed
+                if (m_UrlUseCache != eCacheOnly) {
+                    // Async DB query
+                    bioseq_resolution.m_CacheInfo.clear();
+                    m_AsyncInterruptPoint = eResolveBioseqDetails;
+                    m_AsyncBioseqDetailsQuery.reset(
+                            new CAsyncBioseqQuery(std::move(bioseq_resolution),
+                                                  this));
+                    m_AsyncBioseqDetailsQuery->MakeRequest();
+                    return;
+                }
 
-            // default error message
-            x_ResolveRequestBioseqInconsistency(
-                                    bioseq_resolution.m_RequestStartTimestamp);
-            return;
+                // default error message
+                x_ResolveRequestBioseqInconsistency(
+                                        bioseq_resolution.m_RequestStartTimestamp);
+                return;
+            } else {
+                bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
+            }
         }
-    } else if (bioseq_resolution.m_ResolutionResult == eFromBioseqDB) {
+    }
+
+    if (bioseq_resolution.m_ResolutionResult == eFromBioseqDB) {
         // just in case
         bioseq_resolution.m_CacheInfo.clear();
     }
@@ -661,9 +665,7 @@ void CPendingOperation::x_CompleteResolveRequest(
                                         SBioseqResolution &  bioseq_resolution)
 {
     // Bioseq info is found, send it to the client
-    x_SendBioseqInfo(bioseq_resolution.m_CacheInfo,
-                     bioseq_resolution.m_BioseqInfo,
-                     m_ResolveRequest.m_OutputFormat);
+    x_SendBioseqInfo(bioseq_resolution, m_ResolveRequest.m_OutputFormat);
     if (x_UsePsgProtocol()) {
         x_SendReplyCompletion(true);
         m_ProtocolSupport.Flush();
@@ -765,84 +767,96 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
                                  m_TSEChunkRequest.m_TSEId.m_SatKey,
                                  last_modified, *blob_record.get());
     if (blob_prop_cache_lookup_result == eFound) {
-        // Compare the version
-        if (!blob_record->GetId2Info().empty()) {
+        do {
+            // Step 1: check the id2info presense
+            if (blob_record->GetId2Info().empty()) {
+                app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
+                PSG_WARNING("Blob " + m_TSEChunkRequest.m_TSEId.ToString() +
+                            " properties id2info is empty in cache");
+                break;  // Continue with cassandra
+            }
+
+            // Step 2: check that the id2info is parsable
             unique_ptr<CPSGId2Info>     id2_info;
-            if (x_ParseTSEChunkId2Info(blob_record->GetId2Info(),
-                                       id2_info, m_TSEChunkRequest.m_TSEId)) {
-                if (id2_info->GetSplitVersion() == m_TSEChunkRequest.m_SplitVersion) {
-                    // Form the new blob id for the chunk and look for it in the
-                    // blob_prop cache. But first, sanity check for the chunk number
-                    if (!x_ValidateTSEChunkNumber(m_TSEChunkRequest.m_Chunk,
-                                                  id2_info->GetChunks()))
-                        return;
+            // false -> do not finish the request
+            if (!x_ParseTSEChunkId2Info(blob_record->GetId2Info(),
+                                        id2_info, m_TSEChunkRequest.m_TSEId,
+                                        false)) {
+                app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
+                break;  // Continue with cassandra
+            }
 
-                    // Chunk's blob id
-                    int64_t     sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 + m_TSEChunkRequest.m_Chunk;
-                    SBlobId     chunk_blob_id(id2_info->GetSat(), sat_key);
-                    if (!x_TSEChunkSatToSatName(chunk_blob_id))
-                        return;
+            // Step 3: check the split version in cache
+            if (id2_info->GetSplitVersion() != m_TSEChunkRequest.m_SplitVersion) {
+                app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
+                PSG_WARNING("Blob " + m_TSEChunkRequest.m_TSEId.ToString() +
+                            " split version in cache does not match the requested one");
+                break;  // Continue with cassandra
+            }
 
-                    last_modified = INT64_MIN;
-                    blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
+            app->GetRequestCounters().IncTSEChunkSplitVersionCacheMatched();
+
+            // Step 4: validate the chunk number
+            if (!x_ValidateTSEChunkNumber(m_TSEChunkRequest.m_Chunk,
+                                          id2_info->GetChunks(), false)) {
+                break; // Continue with cassandra
+            }
+
+            // Step 5: For the target chunk - convert sat to sat name
+            // Chunk's blob id
+            int64_t     sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 + m_TSEChunkRequest.m_Chunk;
+            SBlobId     chunk_blob_id(id2_info->GetSat(), sat_key);
+            if (!x_TSEChunkSatToSatName(chunk_blob_id, false)) {
+                break;  // Continue with cassandra
+            }
+
+            // Step 6: search in cache the TSE chunk properties
+            last_modified = INT64_MIN;
+            auto  tse_blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
                             chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
                             last_modified, *blob_record.get());
-                    if (blob_prop_cache_lookup_result != eFound) {
-                        err_msg = "Blob " + chunk_blob_id.ToString() +
-                                  " properties are not found";
-                        x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
-                                         eBlobPropsNotFound);
-                        x_SendReplyCompletion();
-                        return;
-                    }
-
-                    // Initiate the chunk request
-                    app->GetRequestCounters().IncTSEChunkSplitVersionCacheMatched();
-
-                    SBlobRequest        chunk_request(chunk_blob_id, INT64_MIN,
-                                                      eUnknownTSE, eUnknownUseCache, "");
-
-                    unique_ptr<CCassBlobFetch>  fetch_details;
-                    fetch_details.reset(new CCassBlobFetch(chunk_request));
-                    CCassBlobTaskLoadBlob *         load_task =
-                        new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
-                                                  chunk_blob_id.m_SatName,
-                                                  std::move(blob_record),
-                                                  true, nullptr);
-                    fetch_details->SetLoader(load_task);
-                    load_task->SetDataReadyCB(GetDataReadyCB());
-                    load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
-                    load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(), false));
-                    load_task->SetChunkCallback(CBlobChunkCallback(this, fetch_details.get()));
-
-                    m_FetchDetails.push_back(std::move(fetch_details));
-                    load_task->Wait();  // Initiate cassandra request
-                    return;
-                }
+            if (tse_blob_prop_cache_lookup_result != eFound) {
+                err_msg = "TSE chunk blob " + chunk_blob_id.ToString() +
+                          " properties are not found in cache";
+                if (tse_blob_prop_cache_lookup_result == eFailure)
+                    err_msg += " due to LMDB error";
+                PSG_WARNING(err_msg);
+                break;  // Continue with cassandra
             }
-        }
 
-        app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
-    } else {
-        // Not found in the blob_prop cache
-        if (m_UrlUseCache == eCacheOnly) {
-            // No need to continue; it is forbidded to look for blob props in
-            // the Cassandra DB
-            if (blob_prop_cache_lookup_result == eNotFound) {
-                err_msg = "Blob properties are not found";
-            } else {
-                err_msg = "Blob properties are not found due to LMDB cache error";
-            }
-            x_SendReplyError(err_msg, CRequestStatus::e404_NotFound, eBlobPropsNotFound);
-            x_SendReplyCompletion();
+            // Step 7: initiate the chunk request
+            SBlobRequest        chunk_request(chunk_blob_id, INT64_MIN,
+                                              eUnknownTSE, eUnknownUseCache, "");
+
+            unique_ptr<CCassBlobFetch>  fetch_details;
+            fetch_details.reset(new CCassBlobFetch(chunk_request));
+            CCassBlobTaskLoadBlob *         load_task =
+                new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+                                          chunk_blob_id.m_SatName,
+                                          std::move(blob_record),
+                                          true, nullptr);
+            fetch_details->SetLoader(load_task);
+            load_task->SetDataReadyCB(GetDataReadyCB());
+            load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
+            load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(), false));
+            load_task->SetChunkCallback(CBlobChunkCallback(this, fetch_details.get()));
+
+            m_FetchDetails.push_back(std::move(fetch_details));
+            load_task->Wait();  // Initiate cassandra request
             return;
-        }
+        } while (false);
+    } else {
+        err_msg = "Blob " + m_TSEChunkRequest.m_TSEId.ToString() +
+                  " properties are not found";
+        if (blob_prop_cache_lookup_result == eFailure)
+            err_msg += " due to LMDB error";
+        PSG_WARNING(err_msg);
     }
 
     // Here:
-    // - not found in the cache
+    // - fallback to cassandra
     // - cache is not allowed
-    // - found in cache but the version is not the last
+    // - not found in cache
 
     // Initiate async the history request
     unique_ptr<CCassSplitHistoryFetch>      fetch_details;
@@ -1275,16 +1289,21 @@ void CPendingOperation::x_InitUrlIndentification(void)
 
 
 bool CPendingOperation::x_ValidateTSEChunkNumber(int64_t  requested_chunk,
-                                                 CPSGId2Info::TChunks  total_chunks)
+                                                 CPSGId2Info::TChunks  total_chunks,
+                                                 bool  need_finish)
 {
     if (requested_chunk > total_chunks) {
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncMalformedArguments();
-        x_SendReplyError(
-                "Invalid chunk requested. The number of available chunks: " +
-                NStr::NumericToString(total_chunks) + ", requested number: " +
-                NStr::NumericToString(requested_chunk),
-                CRequestStatus::e400_BadRequest, eMalformedParameter);
-        x_SendReplyCompletion();
+        string      msg = "Invalid chunk requested. The number of available chunks: " +
+                          NStr::NumericToString(total_chunks) + ", requested number: " +
+                          NStr::NumericToString(requested_chunk);
+        if (need_finish) {
+            CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncMalformedArguments();
+            x_SendReplyError(msg, CRequestStatus::e400_BadRequest, eMalformedParameter);
+            x_SendReplyCompletion(true);
+            m_ProtocolSupport.Flush();
+        } else {
+            PSG_WARNING(msg);
+        }
         return false;
     }
     return true;
@@ -1333,48 +1352,34 @@ CPendingOperation::x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
                 // It is like from DB
                 bioseq_resolution.m_ResolutionResult = eFromSi2csiDB;
 
-                if (bioseq_resolution.m_BioseqInfo.GetSeqIdType() == CSeq_id::e_Gi) {
-                    CPSGCache           psg_cache(true);
-                    ECacheLookupResult  bioseq_cache_lookup_result =
-                        psg_cache.LookupBioseqInfo(bioseq_resolution.m_BioseqInfo,
-                                                   bioseq_resolution.m_CacheInfo);
+                if (!CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo)) {
+                    // This is an optimization. Try to find the record in the
+                    // BIOSEQ_INFO only if needed.
+                    CPSGCache               psg_cache(true);
+                    ECacheLookupResult      bioseq_cache_lookup_result =
+                                    psg_cache.LookupBioseqInfo(bioseq_resolution);
+
                     if (bioseq_cache_lookup_result != eFound) {
                         // Not found or error
                         continue_with_cassandra = true;
                         bioseq_resolution.Reset();
                     } else {
-                        // Found bioseq info
-                        ConvertBioseqProtobufToBioseqInfo(bioseq_resolution.m_CacheInfo,
-                                                          bioseq_resolution.m_BioseqInfo);
-                        // It is like from DB
-                        bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
+                        bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
 
-                        // Adjust the accession
-                        auto    adj_result = bioseq_resolution.AdjustAccessionForGi();
-                        switch (adj_result) {
-                            case eGiNotFound:
-                                // Most probably it is data inconsistency in cache
-                                // Try in cassandra as well
-                                PSG_WARNING("Data inconsistency in the BIOSEQ_INFO cache. "
-                                            "Accession " + bioseq_resolution.m_BioseqInfo.GetAccession() +
-                                            " of type Gi has no accession of type Gi in its seq_ids field");
-
-                                continue_with_cassandra = true;
-                                bioseq_resolution.Reset();
-                                break;
-                            case eLogicError:
-                                // Just in case
-                                PSG_WARNING("Server logic error. Trying to "
-                                            "adjust non Gi accession " +
-                                            bioseq_resolution.m_BioseqInfo.GetAccession());
-
-                                continue_with_cassandra = true;
-                                bioseq_resolution.Reset();
-                                break;
-                            case eAdjusted:
-                                break;
+                        auto    adj_result = AdjustBioseqAccession(bioseq_resolution);
+                        if (adj_result == eLogicError || adj_result == eSeqIdsEmpty) {
+                            continue_with_cassandra = true;
+                            bioseq_resolution.Reset();
                         }
                     }
+                }
+            } else {
+                // The result is coming from the BIOSEQ_INFO cache. Need to try
+                // the adjustment
+                auto    adj_result = AdjustBioseqAccession(bioseq_resolution);
+                if (adj_result == eLogicError || adj_result == eSeqIdsEmpty) {
+                    continue_with_cassandra = true;
+                    bioseq_resolution.Reset();
                 }
             }
 
@@ -1446,9 +1451,7 @@ ECacheLookupResult CPendingOperation::x_ResolvePrimaryOSLTInCache(
         bioseq_resolution.m_BioseqInfo.SetVersion(effective_version);
         bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
 
-        bioseq_cache_lookup_result =
-                psg_cache.LookupBioseqInfo(bioseq_resolution.m_BioseqInfo,
-                                           bioseq_resolution.m_CacheInfo);
+        bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(bioseq_resolution);
         if (bioseq_cache_lookup_result == eFound) {
             bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
             return eFound;
@@ -1458,10 +1461,8 @@ ECacheLookupResult CPendingOperation::x_ResolvePrimaryOSLTInCache(
         bioseq_resolution.m_BioseqInfo.SetAccession(primary_id);
         bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
 
-        ECacheLookupResult  si2csi_cache_lookup_result = psg_cache.LookupSi2csi(
-                                    bioseq_resolution.m_BioseqInfo,
-                                    bioseq_resolution.m_CacheInfo);
-
+        ECacheLookupResult  si2csi_cache_lookup_result =
+                             psg_cache.LookupSi2csi(bioseq_resolution);
         if (si2csi_cache_lookup_result == eFound) {
             bioseq_resolution.m_ResolutionResult = eFromSi2csiCache;
             return eFound;
@@ -1489,8 +1490,7 @@ ECacheLookupResult CPendingOperation::x_ResolveSecondaryOSLTInCache(
 
     CPSGCache           psg_cache(true);
     ECacheLookupResult  si2csi_cache_lookup_result =
-                psg_cache.LookupSi2csi(bioseq_resolution.m_BioseqInfo,
-                                       bioseq_resolution.m_CacheInfo);
+                psg_cache.LookupSi2csi(bioseq_resolution);
     if (si2csi_cache_lookup_result == eFound) {
         bioseq_resolution.m_ResolutionResult = eFromSi2csiCache;
         return eFound;
@@ -1666,53 +1666,50 @@ int16_t CPendingOperation::GetEffectiveVersion(const CTextseq_id *  text_seq_id)
 }
 
 
-void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
-                                         CBioseqInfoRecord &  bioseq_info,
+void CPendingOperation::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution,
                                          EOutputFormat  output_format)
 {
     EOutputFormat       effective_output_format = output_format;
 
     if (output_format == eNativeFormat || output_format == eUnknownFormat) {
-        if (protobuf_bioseq_info.empty())
-            effective_output_format = eJsonFormat;
-        else
-            effective_output_format = eProtobufFormat;
+        effective_output_format = eJsonFormat;
     }
 
+    if (bioseq_resolution.m_ResolutionResult == eFromSi2csiCache) {
+        ConvertSi2csiToBioseqResolution(bioseq_resolution.m_CacheInfo,
+                                        bioseq_resolution);
+        bioseq_resolution.m_ResolutionResult = eFromSi2csiDB;
+    } else if (bioseq_resolution.m_ResolutionResult == eFromBioseqCache) {
+        ConvertBioseqProtobufToBioseqInfo(bioseq_resolution.m_CacheInfo,
+                                          bioseq_resolution.m_BioseqInfo);
+        bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
+    }
+
+    if (bioseq_resolution.m_ResolutionResult == eFromBioseqDB)
+        AdjustBioseqAccession(bioseq_resolution);
+
+    // Convert to the appropriate format
     string              data_to_send;
-    const string *      data_ptr = &data_to_send;   // To avoid copying in case
-                                                    // of protobuf
-
     if (effective_output_format == eJsonFormat) {
-        if (!protobuf_bioseq_info.empty())
-            ConvertBioseqProtobufToBioseqInfo(protobuf_bioseq_info,
-                                              bioseq_info);
-
-        ConvertBioseqInfoToJson(
-                bioseq_info,
-                m_RequestType == eResolveRequest ? m_ResolveRequest.m_IncludeDataFlags :
-                                                   fServAllBioseqFields,
-                data_to_send);
+        ConvertBioseqInfoToJson(bioseq_resolution.m_BioseqInfo,
+                                x_GetBioseqInfoFields(), data_to_send);
     } else {
-        if (protobuf_bioseq_info.empty()) {
-            ConvertBioseqInfoToBioseqProtobuf(bioseq_info, data_to_send);
-        } else {
-            data_ptr = &protobuf_bioseq_info;
-        }
+        ConvertBioseqInfoToBioseqProtobuf(bioseq_resolution.m_BioseqInfo,
+                                          data_to_send);
     }
 
     if (x_UsePsgProtocol()) {
         // Send it as the PSG protocol
         size_t              item_id = m_ProtocolSupport.GetItemId();
-        m_ProtocolSupport.PrepareBioseqData(item_id, *data_ptr,
+        m_ProtocolSupport.PrepareBioseqData(item_id, data_to_send,
                                             effective_output_format);
         m_ProtocolSupport.PrepareBioseqCompletion(item_id, 2);
     } else {
         // Send it as the HTTP data
         if (effective_output_format == eJsonFormat)
-            m_ProtocolSupport.SendData(data_ptr, eJsonMime);
+            m_ProtocolSupport.SendData(data_to_send, eJsonMime);
         else
-            m_ProtocolSupport.SendData(data_ptr, eBinaryMime);
+            m_ProtocolSupport.SendData(data_to_send, eBinaryMime);
     }
 }
 
@@ -1749,7 +1746,8 @@ bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
 }
 
 
-bool CPendingOperation::x_TSEChunkSatToSatName(SBlobId &  blob_id)
+bool CPendingOperation::x_TSEChunkSatToSatName(SBlobId &  blob_id,
+                                               bool  need_finish)
 {
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     if (app->SatToSatName(blob_id.m_Sat, blob_id.m_SatName))
@@ -1757,19 +1755,23 @@ bool CPendingOperation::x_TSEChunkSatToSatName(SBlobId &  blob_id)
 
     app->GetErrorCounters().IncServerSatToSatName();
 
-    string  msg = "Unknown satellite number " +
+    string  msg = "Unknown TSE chunk satellite number " +
                   NStr::NumericToString(blob_id.m_Sat) +
                   " for the blob " + blob_id.ToString();
-    x_SendReplyError(msg, CRequestStatus::e500_InternalServerError,
-                     eUnknownResolvedSatellite);
+    if (need_finish) {
+        x_SendReplyError(msg, CRequestStatus::e500_InternalServerError,
+                         eUnknownResolvedSatellite);
 
-    // This method is used only in case of the TSE chunk requests.
-    // So in case of errors - synchronous or asynchronous - it is necessary to
-    // finish the reply anyway.
-    // In case of the sync part there are no initiated requests at all. So the
-    // call of completion is done with the force flag.
-    x_SendReplyCompletion(true);
-    m_ProtocolSupport.Flush();
+        // This method is used only in case of the TSE chunk requests.
+        // So in case of errors - synchronous or asynchronous - it is necessary to
+        // finish the reply anyway.
+        // In case of the sync part there are no initiated requests at all. So the
+        // call of completion is done with the force flag.
+        x_SendReplyCompletion(true);
+        m_ProtocolSupport.Flush();
+    } else {
+        PSG_WARNING(msg);
+    }
     return false;
 }
 
@@ -1939,8 +1941,8 @@ void CPendingOperation::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
     app->GetErrorCounters().IncBlobPropsNotFoundError();
 
-    string      message = "Blob properties are not found";
-    string      blob_prop_msg;
+    SBlobId     blob_id = fetch_details->GetBlobId();
+    string      message = "Blob " + blob_id.ToString() + " properties are not found";
     if (fetch_details->GetBlobIdType() == eBySatAndSatKey) {
         // User requested wrong sat_key, so it is a client error
         PSG_WARNING(message);
@@ -1959,7 +1961,6 @@ void CPendingOperation::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
                                 eBlobPropsNotFound, eDiag_Error);
     }
 
-    SBlobId     blob_id = fetch_details->GetBlobId();
     if (blob_id == m_BlobRequest.m_BlobId) {
         if (m_BlobRequest.m_ExcludeBlobCacheAdded &&
             !m_BlobRequest.m_ClientId.empty()) {
@@ -2266,18 +2267,19 @@ void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_rec
     // Parse id2info
     unique_ptr<CPSGId2Info>     id2_info;
     if (!x_ParseTSEChunkId2Info(split_record.id2_info,
-                                id2_info, fetch_details->GetTSEId()))
+                                id2_info, fetch_details->GetTSEId(), true))
         return;
 
     // Check the requested chunk
+    // true -> finish the request if failed
     if (!x_ValidateTSEChunkNumber(fetch_details->GetChunk(),
-                                  id2_info->GetChunks()))
+                                  id2_info->GetChunks(), true))
         return;
 
     // Resolve sat to satkey
     int64_t     sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 + fetch_details->GetChunk();
     SBlobId     chunk_blob_id(id2_info->GetSat(), sat_key);
-    if (!x_TSEChunkSatToSatName(chunk_blob_id))
+    if (!x_TSEChunkSatToSatName(chunk_blob_id, true))
         return;
 
     // Look for the blob props
@@ -2289,6 +2291,19 @@ void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_rec
         psg_cache.LookupBlobProp(chunk_blob_id.m_Sat,
                                  chunk_blob_id.m_SatKey,
                                  last_modified, *blob_record.get());
+    if (blob_prop_cache_lookup_result != eFound &&
+        fetch_details->GetUseCache() == eCacheOnly) {
+        // Cassandra is forbidden for the blob prop
+        string  err_msg = "TSE chunk blob " + chunk_blob_id.ToString() +
+                          " properties are not found in cache";
+        if (blob_prop_cache_lookup_result == eFailure)
+            err_msg += " due to LMDB error";
+        x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
+                         eBlobPropsNotFound);
+        x_SendReplyCompletion(true);
+        m_ProtocolSupport.Flush();
+        return;
+    }
 
     SBlobRequest                chunk_request(chunk_blob_id, INT64_MIN,
                                               eUnknownTSE, eUnknownUseCache, "");
@@ -2618,7 +2633,8 @@ bool CPendingOperation::x_ParseId2Info(CCassBlobFetch *  fetch_details,
 
 bool CPendingOperation::x_ParseTSEChunkId2Info(const string &  info,
                                                unique_ptr<CPSGId2Info> &  id2_info,
-                                               const SBlobId &  blob_id)
+                                               const SBlobId &  blob_id,
+                                               bool  need_finish)
 {
     string      err_msg;
     try {
@@ -2633,9 +2649,14 @@ bool CPendingOperation::x_ParseTSEChunkId2Info(const string &  info,
     }
 
     CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncInvalidId2InfoError();
-    x_SendReplyError(err_msg, CRequestStatus::e500_InternalServerError,
-                     eInvalidId2Info);
-    x_SendReplyCompletion();
+    if (need_finish) {
+        x_SendReplyError(err_msg, CRequestStatus::e500_InternalServerError,
+                         eInvalidId2Info);
+        x_SendReplyCompletion(true);
+        m_ProtocolSupport.Flush();
+    } else {
+        PSG_WARNING(err_msg);
+    }
     return false;
 }
 
@@ -2730,4 +2751,101 @@ void CPendingOperation::x_RegisterResolveTiming(
 }
 
 
+EAccessionSubstitutionOption
+CPendingOperation::x_GetAccessionSubstitutionOption(void) const
+{
+    // The substitution makes sense only for resolve/get requests
+    switch (m_RequestType) {
+        case eBlobRequest:
+            return m_BlobRequest.m_AccSubstOption;
+        case eResolveRequest:
+            return m_ResolveRequest.m_AccSubstOption;
+        default:
+            break;
+    }
+    return eNeverAccSubstitute;
+}
+
+
+EAccessionAdjustmentResult
+CPendingOperation::AdjustBioseqAccession(SBioseqResolution &  bioseq_resolution)
+{
+    if (CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo))
+        return eNotRequired;
+
+    auto    acc_subst_option = x_GetAccessionSubstitutionOption();
+    if (acc_subst_option == eNeverAccSubstitute)
+        return eNotRequired;
+
+    if (acc_subst_option == eLimitedAccSubstitution &&
+        bioseq_resolution.m_BioseqInfo.GetSeqIdType() != CSeq_id::e_Gi)
+        return eNotRequired;
+
+    // Here: need to call the adjustment so the data need to be unpacked
+    auto    original_data_source = bioseq_resolution.m_ResolutionResult;
+    if (original_data_source == eFromBioseqCache) {
+        ConvertBioseqProtobufToBioseqInfo(bioseq_resolution.m_CacheInfo,
+                                          bioseq_resolution.m_BioseqInfo);
+        // It is like from DB
+        bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
+    }
+
+    auto    adj_result = bioseq_resolution.AdjustAccession();
+    if (adj_result == eLogicError || adj_result == eSeqIdsEmpty) {
+        if (original_data_source == eFromBioseqCache)
+            PSG_WARNING("BIOSEQ_INFO cache error: " +
+                        bioseq_resolution.m_AdjustmentError);
+        else
+            PSG_WARNING("BIOSEQ_INFO Cassandra error: " +
+                        bioseq_resolution.m_AdjustmentError);
+    }
+    return adj_result;
+}
+
+
+TServIncludeData CPendingOperation::x_GetBioseqInfoFields(void) const
+{
+    if (m_RequestType == eResolveRequest)
+        return m_ResolveRequest.m_IncludeDataFlags;
+    return fServAllBioseqFields;
+}
+
+bool CPendingOperation::x_NonKeyBioseqInfoFieldsRequested(void) const
+{
+    return (x_GetBioseqInfoFields() & ~fBioseqKeyFields) != 0;
+}
+
+
+// The method tells if the BIOSEQ_INFO record needs to be retrieved.
+// It can be skipped under very specific conditions.
+// It makes sense if the source of data is SI2CSI, i.e. only key fields are
+// available.
+bool
+CPendingOperation::CanSkipBioseqInfoRetrieval(
+                            const CBioseqInfoRecord &  bioseq_info_record) const
+{
+    if (m_RequestType != eResolveRequest)
+        return false;   // The get request supposes the full bioseq info
+
+    if (x_NonKeyBioseqInfoFieldsRequested())
+        return false;   // In the resolve request more bioseq_info fields are requested
+
+
+    auto    seq_id_type = bioseq_info_record.GetSeqIdType();
+    if (bioseq_info_record.GetVersion() > 0 && seq_id_type != CSeq_id::e_Gi)
+        return true;    // This combination in data never requires accession adjustments
+
+    if ((m_ResolveRequest.m_IncludeDataFlags & ~fServGi) == 0)
+        return true;    // Only GI field or no fields are requested so no accession
+                        // adjustments are required
+
+    if (m_ResolveRequest.m_AccSubstOption == eNeverAccSubstitute)
+        return true;    // No accession adjustments anyway so key fields are enough
+
+    if (m_ResolveRequest.m_AccSubstOption == eLimitedAccSubstitution &&
+        seq_id_type != CSeq_id::e_Gi)
+        return true;    // No accession adjustments required
+
+    return false;
+}
 

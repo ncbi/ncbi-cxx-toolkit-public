@@ -253,6 +253,10 @@ private:
                                 const string &  section,
                                 const string &  entry,
                                 unsigned long  default_val);
+    EAccessionSubstitutionOption x_GetAccessionSubstitutionOption(
+                                            const string &  param_name,
+                                            const CTempString &  param_value,
+                                            string &  err_msg) const;
 
 private:
     void x_InsufficientArguments(HST::CHttpReply<CPendingOperation> &  resp,

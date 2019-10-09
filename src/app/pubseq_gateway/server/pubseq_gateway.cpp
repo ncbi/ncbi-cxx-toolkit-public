@@ -246,7 +246,16 @@ void CPubseqGatewayApp::OpenCache(void)
         m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile,
                                                     m_Si2csiDbFile,
                                                     m_BlobPropDbFile));
-        m_LookupCache->Open(m_SatNames);
+
+        // The format of the sat ids is different
+        set<int>        sat_ids;
+        for (size_t  index = 0; index < m_SatNames.size(); ++index) {
+            if (!m_SatNames[index].empty()) {
+                sat_ids.insert(index);
+            }
+        }
+
+        m_LookupCache->Open(sat_ids);
         const auto        errors = m_LookupCache->GetErrors();
         if (!errors.empty()) {
             string  msg = "Error opening the LMDB cache:";
@@ -929,6 +938,32 @@ CPubseqGatewayApp::x_GetTSEOption(const string &  param_name,
               smart + "' and '" +
               slim + "'.";
     return eUnknownTSE;
+}
+
+
+EAccessionSubstitutionOption
+CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
+                                    const string &  param_name,
+                                    const CTempString &  param_value,
+                                    string &  err_msg) const
+{
+    static string       default_option = "default";
+    static string       limited_option = "limited";
+    static string       never_option = "never";
+
+    if (param_value == default_option)
+        return eDefaultAccSubstitution;
+    if (param_value == limited_option)
+        return eLimitedAccSubstitution;
+    if (param_value == never_option)
+        return eNeverAccSubstitute;
+
+    err_msg = "Malformed '" + param_name + "' parameter. "
+              "Acceptable values are '" +
+              default_option + "', '" +
+              limited_option + "', '" +
+              never_option + "'.";
+    return eUnknownAccSubstitution;
 }
 
 

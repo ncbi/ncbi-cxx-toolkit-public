@@ -120,7 +120,9 @@ struct SBioseqResolution
     SBioseqResolution(const THighResolutionTimePoint &  request_start_timestamp) :
         m_ResolutionResult(eNotResolved),
         m_RequestStartTimestamp(request_start_timestamp),
-        m_CassQueryCount(0)
+        m_CassQueryCount(0),
+        m_AdjustmentTried(false),
+        m_AccessionAdjustmentResult(eNotRequired)
     {}
 
     SBioseqResolution(const SBioseqResolution &) = default;
@@ -139,9 +141,13 @@ struct SBioseqResolution
         m_ResolutionResult = eNotResolved;
         m_CacheInfo.clear();
         m_BioseqInfo.Reset();
+
+        m_AdjustmentTried = false;
+        m_AccessionAdjustmentResult = eNotRequired;
+        m_AdjustmentError.clear();
     }
 
-    EAccessionAdjustmentResult AdjustAccessionForGi(void);
+    EAccessionAdjustmentResult AdjustAccession(void);
 
     EResolutionResult           m_ResolutionResult;
     THighResolutionTimePoint    m_RequestStartTimestamp;
@@ -152,6 +158,12 @@ struct SBioseqResolution
 
     // Most likely parsing error if so
     SResolveInputSeqIdError     m_PostponedError;
+
+    // The accession adjustment should happened exactly once so the results
+    // of the call are saved for the use on the other stages
+    bool                        m_AdjustmentTried;
+    EAccessionAdjustmentResult  m_AccessionAdjustmentResult;
+    string                      m_AdjustmentError;
 };
 
 

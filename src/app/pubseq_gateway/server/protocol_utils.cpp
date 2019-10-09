@@ -317,12 +317,12 @@ void CProtocolUtils::PrepareReplyCompletion(void)
 }
 
 
-void CProtocolUtils::SendData(const string *  data_ptr,
+void CProtocolUtils::SendData(const string &  data_to_send,
                               EReplyMimeType  mime_type)
 {
     m_Reply->SetContentType(mime_type);
-    m_Reply->SetContentLength(data_ptr->length());
-    m_Reply->SendOk(data_ptr->data(), data_ptr->length(), false);
+    m_Reply->SetContentLength(data_to_send.length());
+    m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
 }
 
 

@@ -125,7 +125,7 @@ public:
 
 public:
     // HTTP facilities
-    void SendData(const string *  data_ptr, EReplyMimeType  mime_type);
+    void SendData(const string &  data_ptr, EReplyMimeType  mime_type);
     void Send400(const char *  msg);
     void Send404(const char *  msg);
     void Send500(const char *  msg);

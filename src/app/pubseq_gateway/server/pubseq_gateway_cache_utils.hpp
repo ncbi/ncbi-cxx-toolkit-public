@@ -35,6 +35,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include "pubseq_gateway_types.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 #include <string>
 using namespace std;
@@ -49,19 +50,17 @@ public:
         x_Allowed(allowed)
     {}
 
-    ECacheLookupResult  LookupBioseqInfo(CBioseqInfoRecord &  bioseq_info_record,
-                                         string &  bioseq_info_cache_data)
+    ECacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
     {
         if (x_Allowed)
-            return s_LookupBioseqInfo(bioseq_info_record, bioseq_info_cache_data);
+            return s_LookupBioseqInfo(bioseq_resolution);
         return eNotFound;
     }
 
-    ECacheLookupResult  LookupSi2csi(CBioseqInfoRecord &  bioseq_info_record,
-                                     string &  csi_cache_data)
+    ECacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution)
     {
         if (x_Allowed)
-            return s_LookupSi2csi(bioseq_info_record, csi_cache_data);
+            return s_LookupSi2csi(bioseq_resolution);
         return eNotFound;
     }
 
@@ -77,12 +76,10 @@ public:
 
 public:
     static
-    ECacheLookupResult  s_LookupBioseqInfo(CBioseqInfoRecord &  bioseq_info_record,
-                                           string &  bioseq_info_cache_data);
+    ECacheLookupResult  s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution);
 
     static
-    ECacheLookupResult  s_LookupSi2csi(CBioseqInfoRecord &  bioseq_info_record,
-                                       string &  csi_cache_data);
+    ECacheLookupResult  s_LookupSi2csi(SBioseqResolution &  bioseq_resolution);
 
     static
     ECacheLookupResult  s_LookupBlobProp(int  sat,

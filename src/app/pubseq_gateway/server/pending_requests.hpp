@@ -53,7 +53,8 @@ struct SBlobRequest
         m_ExcludeBlobCacheAdded(false),
         m_ExcludeBlobCacheCompleted(false),
         m_BlobId(blob_id),
-        m_LastModified(last_modified)
+        m_LastModified(last_modified),
+        m_AccSubstOption(eNeverAccSubstitute)
     {}
 
     SBlobRequest() = default;
@@ -64,6 +65,7 @@ struct SBlobRequest
                  vector<SBlobId> &  exclude_blobs,
                  ETSEOption  tse_option,
                  ECacheAndCassandraUse  use_cache,
+                 EAccessionSubstitutionOption  subst_option,
                  const string &  client_id,
                  const THighResolutionTimePoint &  start_timestamp) :
         m_TSEOption(tse_option),
@@ -76,6 +78,7 @@ struct SBlobRequest
         m_SeqId(seq_id.data(), seq_id.size()),
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(std::move(exclude_blobs)),
+        m_AccSubstOption(subst_option),
         m_StartTimestamp(start_timestamp)
     {}
 
@@ -93,27 +96,28 @@ struct SBlobRequest
     }
 
 public:
-    ETSEOption                  m_TSEOption;
-    EBlobIdentificationType     m_BlobIdType;
-    ECacheAndCassandraUse       m_UseCache;
-    string                      m_ClientId;
+    ETSEOption                      m_TSEOption;
+    EBlobIdentificationType         m_BlobIdType;
+    ECacheAndCassandraUse           m_UseCache;
+    string                          m_ClientId;
 
     // Helps to avoid not needed cache updates;
     // - only the one who added will remove
     // - only the one who added will set completed once
-    bool                        m_ExcludeBlobCacheAdded;
-    bool                        m_ExcludeBlobCacheCompleted;
+    bool                            m_ExcludeBlobCacheAdded;
+    bool                            m_ExcludeBlobCacheCompleted;
 
     // Fields in case of request by sat/sat_key
-    SBlobId                     m_BlobId;
-    int64_t                     m_LastModified;
+    SBlobId                         m_BlobId;
+    int64_t                         m_LastModified;
 
     // Fields in case of request by seq_id/seq_id_type
     // NB: need a copy because it could be an asynchronous request
-    string                      m_SeqId;
-    int                         m_SeqIdType;
-    vector<SBlobId>             m_ExcludeBlobs;
-    THighResolutionTimePoint    m_StartTimestamp;
+    string                          m_SeqId;
+    int                             m_SeqIdType;
+    vector<SBlobId>                 m_ExcludeBlobs;
+    EAccessionSubstitutionOption    m_AccSubstOption;
+    THighResolutionTimePoint        m_StartTimestamp;
 };
 
 
@@ -126,25 +130,28 @@ public:
                     EOutputFormat  output_format,
                     ECacheAndCassandraUse  use_cache,
                     bool  use_psg_protocol,
+                    EAccessionSubstitutionOption  subst_option,
                     const THighResolutionTimePoint &  start_timestamp) :
         m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
         m_UseCache(use_cache),
         m_UsePsgProtocol(use_psg_protocol),
+        m_AccSubstOption(subst_option),
         m_StartTimestamp(start_timestamp)
     {}
 
     SResolveRequest() = default;
 
 public:
-    string                      m_SeqId;
-    int                         m_SeqIdType;
-    TServIncludeData            m_IncludeDataFlags;
-    EOutputFormat               m_OutputFormat;
-    ECacheAndCassandraUse       m_UseCache;
-    bool                        m_UsePsgProtocol;
-    THighResolutionTimePoint    m_StartTimestamp;
+    string                          m_SeqId;
+    int                             m_SeqIdType;
+    TServIncludeData                m_IncludeDataFlags;
+    EOutputFormat                   m_OutputFormat;
+    ECacheAndCassandraUse           m_UseCache;
+    bool                            m_UsePsgProtocol;
+    EAccessionSubstitutionOption    m_AccSubstOption;
+    THighResolutionTimePoint        m_StartTimestamp;
 };
 
 
@@ -167,11 +174,11 @@ public:
     SAnnotRequest() = default;
 
 public:
-    string                      m_SeqId;
-    int                         m_SeqIdType;
-    vector<string>              m_Names;
-    ECacheAndCassandraUse       m_UseCache;
-    THighResolutionTimePoint    m_StartTimestamp;
+    string                          m_SeqId;
+    int                             m_SeqIdType;
+    vector<string>                  m_Names;
+    ECacheAndCassandraUse           m_UseCache;
+    THighResolutionTimePoint        m_StartTimestamp;
 };
 
 

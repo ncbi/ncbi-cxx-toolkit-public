@@ -55,7 +55,8 @@ enum EPubseqGatewayErrorCode {
     eBioseqInfoNotFoundForGi,       // whole bioseq_info record not found
     eBioseqInfoGiNotFoundForGi,     // gi is not found in in the seq_ids field
                                     // in the bioseq_info record
-    eServerLogicError
+    eServerLogicError,
+    eBioseqInfoAccessionAdjustmentError
 };
 
 
@@ -91,10 +92,13 @@ enum EServIncludeData {
     fServTaxId = (1 << 10),
     fServHash = (1 << 11),
     fServDateChanged = (1 << 12),
+    fServGi = (1 << 13),
 
     fServAllBioseqFields = fServCanonicalId | fServSeqIds | fServMoleculeType |
                            fServLength | fServState | fServBlobId |
-                           fServTaxId | fServHash | fServDateChanged
+                           fServTaxId | fServHash | fServDateChanged | fServGi,
+
+    fBioseqKeyFields = fServCanonicalId | fServGi
 };
 
 // Bit-set of EServIncludeData flags
@@ -169,8 +173,10 @@ enum ECacheLookupResult {
 
 
 enum EAccessionAdjustmentResult {
-    eAdjusted,
-    eGiNotFound,
+    eNotRequired,
+    eAdjustedWithGi,
+    eAdjustedWithAny,
+    eSeqIdsEmpty,
     eLogicError
 };
 
@@ -189,6 +195,15 @@ enum EBlobSkipReason {
     eExcluded,
     eInProgress,
     eSent
+};
+
+
+enum EAccessionSubstitutionOption {
+    eDefaultAccSubstitution,
+    eLimitedAccSubstitution,
+    eNeverAccSubstitute,
+
+    eUnknownAccSubstitution
 };
 
 

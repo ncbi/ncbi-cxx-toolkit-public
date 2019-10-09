@@ -56,6 +56,7 @@ void CAsyncBioseqQuery::MakeRequest(void)
 
     auto    version = m_BioseqResolution.m_BioseqInfo.GetVersion();
     auto    seq_id_type = m_BioseqResolution.m_BioseqInfo.GetSeqIdType();
+    auto    gi = m_BioseqResolution.m_BioseqInfo.GetGI();
     CCassBioseqInfoTaskFetch *  fetch_task =
             new CCassBioseqInfoTaskFetch(
                     m_PendingOp->GetTimeout(),
@@ -65,6 +66,7 @@ void CAsyncBioseqQuery::MakeRequest(void)
                     m_BioseqResolution.m_BioseqInfo.GetAccession(),
                     version, version != -1,
                     seq_id_type, seq_id_type != -1,
+                    gi, gi != -1,
                     nullptr, nullptr);
     details->SetLoader(fetch_task);
 
