@@ -205,6 +205,7 @@ CConstRef<CValidError> CValidator::Validate
  CScope* scope,
  Uint4 options)
 {
+    options |= CValidator::eVal_seqsubmit_parent;
     CRef<CValidError> errors(new CValidError(&ss));
     CValidErrorFormat::SetSuppressionRules(ss, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), m_Taxon.get(), options);
