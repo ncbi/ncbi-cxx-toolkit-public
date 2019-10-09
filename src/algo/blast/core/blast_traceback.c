@@ -1802,6 +1802,7 @@ Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program,
     const int N_T = ((num_threads == 0) ? 1 : num_threads);
     Int2 status = 0;
     SThreadLocalDataArray* thread_data = SThreadLocalDataArrayNew(N_T);
+    char * ADAPTIVE_CBS_ENV = getenv("ADAPTIVE_CBS");
 
     if (thread_data == NULL) {
         return BLASTERR_MEMORY;
@@ -1816,7 +1817,7 @@ Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program,
     }
 
     /* Prohibit any subsequent writing to the HSP stream. */
-    if((ext_options->compositionBasedStats) && (hit_options->hitlist_size < 1000)) {
+    if((ADAPTIVE_CBS_ENV != NULL) && (ext_options->compositionBasedStats) && (hit_options->hitlist_size < 1000)) {
     	BlastHSPCBSStreamClose(hsp_stream, hit_options->hitlist_size);
 
     }

@@ -829,24 +829,26 @@ void BlastHSPCBSStreamClose(BlastHSPStream* hsp_stream, int hitlist_size)
    for (index = 0; index < results->num_queries; index++) {
       hit_list = results->hitlist_array[index];
       if (hit_list) {
-    	  const int MIN_BUF_SZ = MAX(300, MIN(hitlist_size +100, 800));
-    	  if (hit_list->hsplist_count <= hitlist_size + MIN_BUF_SZ) {
-    		  continue;
-    	  }
-          else {
+    	  const int REF_HIT_NUM = MAX(500, hitlist_size);
+    	  const int MIN_BUF_SZ = REF_HIT_NUM + 600;
+    	  if (MIN_BUF_SZ + 100 < hit_list->hsplist_count) {
         	  int max_index = hit_list->hsplist_count -1;
         	  double best_evalue = 0, evalue_limit = 0;
-        	  int mag = 0, pct = 90, i = 0;
+        	  int mag = -180, pct = 90, i = 0;
         	  Blast_HitListSortByEvalue(hit_list);
-        	  best_evalue = hit_list->hsplist_array[hitlist_size]->best_evalue;
-        	  mag = -180 * pct/100;
+        	  best_evalue = hit_list->hsplist_array[REF_HIT_NUM]->best_evalue;
         	  if (best_evalue != 0 ){
-        		  mag = log10(hit_list->hsplist_array[hitlist_size]->best_evalue);
+        		  mag = log10(hit_list->hsplist_array[REF_HIT_NUM]->best_evalue);
         	  }
+        	  if (mag < -20){
+        		  mag = MAX(mag*pct/100, mag +10);
+        	  }
+        	  else {
+        		 mag = mag/2;
+        	  }
+        	  evalue_limit = (mag >= 0)? best_evalue*3: 9.9* pow(10, mag);
 
-        	  evalue_limit = (mag >= -1)? best_evalue*3: 9.9* pow(10, mag*pct/100);
-
-        	  i = hitlist_size + MIN_BUF_SZ;
+        	  i = MIN_BUF_SZ;
         	  for(; i < max_index; i +=100) {
         		  if((hit_list->hsplist_array[i]->best_evalue != 0) &&
         		     (evalue_limit < hit_list->hsplist_array[i]->best_evalue)){

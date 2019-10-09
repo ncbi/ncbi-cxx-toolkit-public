@@ -595,23 +595,10 @@ BlastHSPBestHitParamsNew(const BlastHitSavingOptions* hit_options,
                          Boolean gapped_calculation)
 {
     BlastHSPBestHitParams* retval = NULL;
-    Int4 prelim_hitlist_size = hit_options->hitlist_size;
-
-    if (compositionBasedStats) {
-         if(hit_options->hitlist_size < 1000) {
-       		   prelim_hitlist_size = prelim_hitlist_size + 1000;
-         }
-         else {
-       		   prelim_hitlist_size = prelim_hitlist_size*2 + 50;
-         }
-    }
-    else if (gapped_calculation) {
-         prelim_hitlist_size = MIN(2 * prelim_hitlist_size,
-                                   prelim_hitlist_size + 50);
-    }
 
     retval = (BlastHSPBestHitParams*) malloc(sizeof(BlastHSPBestHitParams));
-    retval->prelim_hitlist_size = MAX(prelim_hitlist_size, 10);
+    retval->prelim_hitlist_size = GetPrelimHitlistSize(hit_options->hitlist_size,
+  	   	   	   	   	   	   	   	   	   	   	   compositionBasedStats, gapped_calculation);
     retval->hsp_num_max = BlastHspNumMax(gapped_calculation, hit_options);
     retval->program = hit_options->program_number;
     retval->overhang = best_hit_opts->overhang;

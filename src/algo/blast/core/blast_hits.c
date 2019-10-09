@@ -39,13 +39,44 @@
 #include "blast_itree.h"
 #include "jumper.h"
 
+
+Int4
+GetPrelimHitlistSize(Int4 hitlist_size, Int4 compositionBasedStats, Boolean gapped_calculation)
+{
+    Int4 prelim_hitlist_size = hitlist_size;
+    char * ADAPTIVE_CBS_ENV = getenv("ADAPTIVE_CBS");
+    if (compositionBasedStats) {
+    	if(ADAPTIVE_CBS_ENV != NULL) {
+    		if(hitlist_size < 1000) {
+    			prelim_hitlist_size = MAX(prelim_hitlist_size + 1000, 1500);
+    		}
+    		else {
+    			prelim_hitlist_size = prelim_hitlist_size*2 + 50;
+    		}
+    	}
+    	else {
+    		if(hitlist_size <= 500) {
+    			prelim_hitlist_size = 1050;
+    		}
+    		else {
+    			prelim_hitlist_size = prelim_hitlist_size*2 + 50;
+    		}
+
+    	}
+    }
+    else if (gapped_calculation) {
+         prelim_hitlist_size = MIN(MAX(2 * prelim_hitlist_size, 10), prelim_hitlist_size + 50);
+    }
+    return prelim_hitlist_size;
+}
+
+
 NCBI_XBLAST_EXPORT
 Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
                              const BlastExtensionOptions* ext_options,
                              const BlastScoringOptions* scoring_options,
                              SBlastHitsParameters* *retval)
 {
-       Int4 prelim_hitlist_size;
        ASSERT(retval);
        *retval = NULL;
 
@@ -58,21 +89,8 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
        if (*retval == NULL)
            return 2;
 
-       prelim_hitlist_size = hit_options->hitlist_size;
-       if (ext_options->compositionBasedStats) {
-    	   if(hit_options->hitlist_size < 1000) {
-    		   prelim_hitlist_size = prelim_hitlist_size + 1000;
-    	   }
-    	   else {
-    		   prelim_hitlist_size = prelim_hitlist_size*2 + 50;
-    	   }
-       }
-       else if (scoring_options->gapped_calculation) {
-            prelim_hitlist_size = MIN(2 * prelim_hitlist_size,
-                                      prelim_hitlist_size + 50);
-       }
-
-       (*retval)->prelim_hitlist_size = MAX(prelim_hitlist_size, 10);
+       (*retval)->prelim_hitlist_size = GetPrelimHitlistSize(hit_options->hitlist_size,
+    		   ext_options->compositionBasedStats, scoring_options->gapped_calculation);
 
        (*retval)->hsp_num_max = BlastHspNumMax(scoring_options->gapped_calculation, hit_options);
 

@@ -943,7 +943,10 @@ Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
                                     const BlastQueryInfo *query_info,
                                     Int4 masklevel, Int4 query_length);
 
-
+NCBI_XBLAST_EXPORT
+Int4 GetPrelimHitlistSize(Int4 hitlist_size,
+		                  Int4 compositionBasedStats,
+		                  Boolean gapped_calculation);
 #ifdef __cplusplus
 }
 #endif
