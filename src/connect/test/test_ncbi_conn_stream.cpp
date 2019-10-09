@@ -186,14 +186,14 @@ int CNCBITestConnStreamApp::Run(void)
     srand(g_NCBI_ConnectRandomSeed);
 
 
-    LOG_POST(Info << "Test 0 of 10: Checking error log setup");
+    LOG_POST(Info << "Test 0 of 11: Checking error log setup");
 
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
     LOG_POST(Info << "Test 0 passed\n");
 
 
-    LOG_POST(Info << "Test 1 of 10: Memory stream");
+    LOG_POST(Info << "Test 1 of 11: Memory stream");
 
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
@@ -335,6 +335,32 @@ int CNCBITestConnStreamApp::Run(void)
              << (int) size << " byte(s) transferred\n");
 
 
+    LOG_POST(Info << "Test 2 of 11: Socket stream");
+
+    bool secure = rand() & 1 ? true : false;
+    if (!(net_info = ConnNetInfo_Create(0)))
+        ERR_POST(Fatal << "Cannot create net info");
+
+    unique_ptr<CSocket>        socket(new CSocket
+                                      (net_info->host,    secure
+                                       ? CONN_PORT_HTTPS
+                                       : CONN_PORT_HTTP,
+                                       net_info->timeout, secure
+                                       ? fSOCK_LogDefault | fSOCK_Secure
+                                       : fSOCK_LogDefault));
+    unique_ptr<CConn_IOStream> stream(new CConn_SocketStream
+                                      (socket->GetSOCK(), eNoOwnership,
+                                       net_info->timeout));
+    if (!stream->good())
+        ERR_POST(Fatal << "Test 2 failed");
+
+    stream.reset();
+    socket.reset();
+    ConnNetInfo_Destroy(net_info);
+    LOG_POST(Info << "Test 2 passed\n");
+
+    return 0;
+
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create("_FTP")))
@@ -349,7 +375,7 @@ int CNCBITestConnStreamApp::Run(void)
     }
 
 
-    LOG_POST(Info << "Test 2 of 10: FTP download");
+    LOG_POST(Info << "Test 3 of 11: FTP download");
 
     CConn_FTPDownloadStream download(CONN_NCBI_FTP_PUBLIC_HOST,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
@@ -380,11 +406,11 @@ int CNCBITestConnStreamApp::Run(void)
         ERR_POST(Fatal << "Size mismatch: " << size << "!="
                  << pos2 << '-' <<  pos1);
     }
-    LOG_POST(Info << "Test 2 passed: 1024+" << size << '=' << n
+    LOG_POST(Info << "Test 3 passed: 1024+" << size << '=' << n
              << " byte(s) downloaded via FTP\n");
 
 
-    LOG_POST(Info << "Test 3 of 10: FTP upload");
+    LOG_POST(Info << "Test 4 of 11: FTP upload");
 
     EIO_Status status;
     string ftpuser, ftppass, ftpfile;
@@ -452,7 +478,7 @@ int CNCBITestConnStreamApp::Run(void)
                                       (long)CTime(CTime::eCurrent).GetTimeT());
             }
             if (delta < 1800) {
-                LOG_POST(Info << "Test 3 passed: " <<
+                LOG_POST(Info << "Test 4 passed: " <<
                          speedstr << '\n');
             } else
                 LOG_POST(speedstr);
@@ -476,10 +502,10 @@ int CNCBITestConnStreamApp::Run(void)
                      " seconds");
         }
     } else
-        LOG_POST(Info << "Test 3 skipped\n");
+        LOG_POST(Info << "Test 4 skipped\n");
 
 
-    LOG_POST(Info << "Test 4 of 10: FTP peculiarities");
+    LOG_POST(Info << "Test 5 of 11: FTP peculiarities");
 
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
@@ -495,7 +521,7 @@ int CNCBITestConnStreamApp::Run(void)
         ftp << "SYST" << NcbiEndl;
         ftp >> temp;  // dangerous: may leave some putback behind
         if (temp.empty())
-            ERR_POST(Fatal << "Test 4 failed in SYST");
+            ERR_POST(Fatal << "Test 5 failed in SYST");
         LOG_POST(Info << "SYST command returned: '" << temp << '\'');
         _ASSERT(ftp.Drain() == eIO_Success);
         ftp << "CWD \"dir\"ect\"ory\"" << NcbiEndl;
@@ -513,18 +539,18 @@ int CNCBITestConnStreamApp::Run(void)
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
-            ERR_POST(Fatal << "Test 4 failed in PWD: " + reason);
+            ERR_POST(Fatal << "Test 5 failed in PWD: " + reason);
         }
         ftp >> temp;
         LOG_POST(Info << "PWD command returned: '" << temp << '\'');
         if (temp != "/test_download/\"dir\"ect\"ory\"")
-            ERR_POST(Fatal << "Test 4 failed in PWD response");
+            ERR_POST(Fatal << "Test 5 failed in PWD response");
         ftp.clear();
         ftp << "XCUP" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
-            ERR_POST(Fatal << "Test 4 failed in XCUP: " + reason);
+            ERR_POST(Fatal << "Test 5 failed in XCUP: " + reason);
         }
         //ftp.clear();
         ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
@@ -547,19 +573,19 @@ int CNCBITestConnStreamApp::Run(void)
         status = ftp.Status (eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
-            ERR_POST(Fatal << "Test 4 failed in RETR UTF-8: " + reason);
+            ERR_POST(Fatal << "Test 5 failed in RETR UTF-8: " + reason);
         }
         ftp << "STOR " << "../test_upload/" << ftpfile << ".0" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
-            ERR_POST(Fatal << "Test 4 failed in STOR: " + reason);
+            ERR_POST(Fatal << "Test 5 failed in STOR: " + reason);
         }
         if (ftp.Close() == eIO_Success)
-            ERR_POST(Fatal << "Test 4 failed");
-        LOG_POST(Info << "Test 4 done\n");
+            ERR_POST(Fatal << "Test 5 failed");
+        LOG_POST(Info << "Test 5 done\n");
     } else
-        LOG_POST(Info << "Test 4 skipped\n");
+        LOG_POST(Info << "Test 5 skipped\n");
 
 
     {{
@@ -571,7 +597,7 @@ int CNCBITestConnStreamApp::Run(void)
     }}
 
 
-    LOG_POST(Info << "Test 5 of 10: Big buffer bounce via HTTP");
+    LOG_POST(Info << "Test 6 of 11: Big buffer bounce via HTTP");
 
     ConnNetInfo_Destroy(net_info);
     if (!(net_info = ConnNetInfo_Create(0)))
@@ -622,13 +648,13 @@ int CNCBITestConnStreamApp::Run(void)
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
 
-    LOG_POST(Info << "Test 5 passed\n");
+    LOG_POST(Info << "Test 6 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
 
-    LOG_POST(Info << "Test 6 of 10: Random bounce");
+    LOG_POST(Info << "Test 7 of 11: Random bounce");
 
     if (!(ios << buf1.get()))
         ERR_POST(Fatal << "Cannot send data");
@@ -667,13 +693,13 @@ int CNCBITestConnStreamApp::Run(void)
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
 
-    LOG_POST(Info << "Test 6 passed\n");
+    LOG_POST(Info << "Test 7 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
 
-    LOG_POST(Info << "Test 7 of 10: Truly binary bounce");
+    LOG_POST(Info << "Test 8 of 11: Truly binary bounce");
 
     for (i = 0;  i < kBufferSize;  i++)
         buf1.get()[i] = (char)(255/*rand() % 256*/);
@@ -703,13 +729,13 @@ int CNCBITestConnStreamApp::Run(void)
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
 
-    LOG_POST(Info << "Test 7 passed\n");
+    LOG_POST(Info << "Test 8 passed\n");
 
     buf1.reset(0);
     buf2.reset(0);
 
 
-    LOG_POST(Info << "Test 8 of 10: NcbiStreamCopy()");
+    LOG_POST(Info << "Test 9 of 11: NcbiStreamCopy()");
 
     ofstream null(DEV_NULL);
     assert(null);
@@ -720,12 +746,12 @@ int CNCBITestConnStreamApp::Run(void)
     http << "Sample input -- should be ignored";
 
     if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))
-        ERR_POST(Fatal << "Test 8 failed");
+        ERR_POST(Fatal << "Test 9 failed");
     else
-        LOG_POST(Info << "Test 8 passed\n");
+        LOG_POST(Info << "Test 9 passed\n");
 
 
-    LOG_POST(Info << "Test 9 of 10: HTTP status code and text");
+    LOG_POST(Info << "Test 10 of 11: HTTP status code and text");
 
     CConn_HttpStream bad_http("https://www.ncbi.nlm.nih.gov/blah");
     bad_http >> ftpfile/*dummy*/;
@@ -734,7 +760,7 @@ int CNCBITestConnStreamApp::Run(void)
     string text = bad_http.GetStatusText();
     NcbiCout << "Status(bad) = " << code << ' ' << text << NcbiEndl;
     if (code != 404  ||  text.empty())
-        ERR_POST(Fatal << "Test 9 failed");
+        ERR_POST(Fatal << "Test 10 failed");
     bad_http.Close();
 
     CConn_HttpStream good_http("https://www.ncbi.nlm.nih.gov/index.html");
@@ -744,12 +770,12 @@ int CNCBITestConnStreamApp::Run(void)
     text = good_http.GetStatusText();
     NcbiCout << "Status(good) = " << code << ' ' << text << NcbiEndl;
     if (code != 200  ||  text.empty())
-        ERR_POST(Fatal << "Test 9 failed");
+        ERR_POST(Fatal << "Test 10 failed");
 
-    LOG_POST(Info << "Test 9 passed\n");
+    LOG_POST(Info << "Test 10 passed\n");
 
 
-    LOG_POST(Info << "Test 10 of 10: HTTP If-Modified-Since");
+    LOG_POST(Info << "Test 11 of 11: HTTP If-Modified-Since");
 
     CConn_HttpStream modified("https://www.ncbi.nlm.nih.gov/Service"
                               "/index.html",
@@ -765,7 +791,7 @@ int CNCBITestConnStreamApp::Run(void)
     if (modified.GetStatusCode() != 304)
         ERR_POST(Fatal << "Non-304 response");
 
-    LOG_POST(Info << "Test 10 passed\n");
+    LOG_POST(Info << "Test 11 passed\n");
 
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
