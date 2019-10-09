@@ -281,18 +281,19 @@ int main(int argc, const char* argv[])
     int retval = 1/*failure*/;
 
     try {
-        CNcbiOfstream log(kLogfile, IOS_BASE::out | IOS_BASE::trunc);
-        log.close();
-        log.open(kLogfile, IOS_BASE::out | IOS_BASE::app);
-        if (log) {
-            SetDiagStream(&log);
+        // Going to leak because it is used in CNcbiDiag after main() returns
+        CNcbiOfstream* log = new CNcbiOfstream(kLogfile,
+                                               IOS_BASE::out |
+                                               IOS_BASE::trunc);
+        log->close();
+        log->open(kLogfile, IOS_BASE::out | IOS_BASE::app);
+        if (log->good()) {
+            SetDiagStream(log);
 
             // Execute main application function
-            int rv = CTestApp(log).AppMain(argc, argv, 0, eDS_User);
+            int rv = CTestApp(*log).AppMain(argc, argv, 0, eDS_User);
 
-            log.flush();
-            // Make sure CNcbiDiag remains valid when main() returns
-            SetLogFile(kLogfile);
+            log->flush();
             retval = rv;
         } else {
             int/*bool*/ dynamic = 0/*false*/;
@@ -303,6 +304,7 @@ int main(int argc, const char* argv[])
             ERR_POST(Critical << msg);
             if (dynamic)
                 free((void*) msg);
+            delete log;
         }
     }
     NCBI_CATCH_ALL("Test failed");
