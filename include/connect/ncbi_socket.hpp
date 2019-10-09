@@ -171,7 +171,7 @@ public:
     ///                   eIO_Closed if closed by Close() or not yet open;
     ///     - eIO_Read  - status of last read operation;
     ///     - eIO_Write - status of last write operation.
-    /// Direction eIO_Close and eIO_ReadWrite generate eIO_InvalidArg error.
+    /// Directions eIO_Close and eIO_ReadWrite generate eIO_InvalidArg error.
     /// @sa
     ///  SOCK_Status
     EIO_Status GetStatus(EIO_Event direction) const;

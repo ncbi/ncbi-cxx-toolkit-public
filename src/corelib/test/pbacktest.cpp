@@ -100,7 +100,7 @@ static int s_StreamPushback(iostream&   ios,
 #ifdef NCBI_COMPILER_MSVC
     bool   first_pushback_done = false;
 #endif
-    for (it = 0;  nread < size;  it++) {
+    for (it = 0;  nread < size;  ++it) {
         if (1 < nread  &&  nread <= (size >> 1)  &&  rand() % 100 == 91) {
             i = rand() % nread + 1;
             j = (nread - i) >> 1;
@@ -233,7 +233,7 @@ static int s_StreamPushback(iostream&   ios,
         } else
             pbackch = '\0';
 
-        for (i = 0;  i < j;  i++) {
+        for (i = 0;  i < j;  ++i) {
             if (orig[nread + i] != data[nread + i]) {
                 ERR_POST("Mismatch: sent '"                                <<
                          NStr::PrintableString(string(1, orig[nread + i])) <<
@@ -267,8 +267,8 @@ static int s_StreamPushback(iostream&   ios,
 #ifdef NCBI_COMPILER_MSVC
             if (!stl  ||  first_pushback_done) {
 #endif
-                j--;
-                npback++;
+                --j;
+                ++npback;
                 putback = true;
                 pbackch = data[--nread];
                 string action;
@@ -356,11 +356,11 @@ static int s_StreamPushback(iostream&   ios,
             if (how ^ 3) {
                 // clobber unused data
                 if (!original  &&  (!longform  ||  !passthru)) {
-                    for (size_t ii = slack;  ii < slack + i;  ii++)
+                    for (size_t ii = slack;  ii < slack + i;  ++ii)
                         p[ii] = "%*-+="[rand() % 5];
                     delete[] p;
                 }
-                for (size_t ii = max(nbusy, nread);  ii < nread + i;  ii++)
+                for (size_t ii = max(nbusy, nread);  ii < nread + i;  ++ii)
                     data[ii] = "!@#$&"[rand() % 5];
             } else if (original  &&  nbusy < nread + i)
                 nbusy = nread + i;
@@ -411,7 +411,7 @@ static int s_StreamPushback(iostream&   ios,
     data[nread] = '\0';
     _ASSERT(!npback);
 
-    for (i = 0;  i < nread;  i++) {
+    for (i = 0;  i < nread;  ++i) {
         if (!data[i]) {
             ERR_POST("Zero byte encountered @ " << i);
             return 1;
@@ -480,8 +480,8 @@ extern int TEST_StreamPushback(iostream& ios,
     ERR_POST(Info << "Generating array of random data (" << kBufferSize
              << " byte" << &"s"[kBufferSize == 1] << ')');
     char* orig = new char[kBufferSize + 1];
-    for (size_t j = 0; j < kBufferSize/1024; j++) {
-        for (size_t i = 0; i < 1024 - 1; i++)
+    for (size_t j = 0;  j < kBufferSize/1024;  ++j) {
+        for (size_t i = 0;  i < 1024 - 1;  ++i)
             orig[j*1024 + i] = "0123456789"[rand() % 10];
         orig[j*1024 + 1024 - 1] = '\n';
     }

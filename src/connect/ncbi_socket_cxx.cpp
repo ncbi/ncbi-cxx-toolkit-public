@@ -65,13 +65,13 @@ CSocket::CSocket(const string&   host,
                  const STimeout* timeout,
                  TSOCK_Flags     flags)
     : m_IsOwned(eTakeOwnership),
-      r_timeout(0), w_timeout(0), c_timeout(0)
+      r_timeout(0/*kInfiniteTimeout*/), w_timeout(0), c_timeout(0)
 {
     if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout  = &oo_timeout;
     } else
-        o_timeout  = 0;
+        o_timeout  = 0/*kInfiniteTimeout*/;
     SOCK_CreateEx(host.c_str(), port, o_timeout, &m_Socket, 0, 0, flags);
 }
 
@@ -81,14 +81,14 @@ CSocket::CSocket(unsigned int    host,
                  const STimeout* timeout,
                  TSOCK_Flags     flags)
     : m_IsOwned(eTakeOwnership),
-      r_timeout(0), w_timeout(0), c_timeout(0)
+      r_timeout(0/*kInfiniteTimeout*/), w_timeout(0), c_timeout(0)
 {
     char x_host[16/*sizeof("255.255.255.255")*/];
     if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
-        o_timeout = &oo_timeout;
+        o_timeout  = &oo_timeout;
     } else
-        o_timeout = 0;
+        o_timeout  = 0/*kInfiniteTimeout*/;
     if (SOCK_ntoa(host, x_host, sizeof(x_host)) != 0)
         m_Socket = 0;
     else
@@ -103,9 +103,9 @@ CUNIXSocket::CUNIXSocket(const string&   path,
 {
     if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
-        o_timeout = &oo_timeout;
+        o_timeout  = &oo_timeout;
     } else
-        o_timeout = 0;
+        o_timeout  = 0/*kInfiniteTimeout*/;
     SOCK_CreateUNIX(path.c_str(), o_timeout, &m_Socket, 0, 0, flags);
 }
 
@@ -132,9 +132,9 @@ EIO_Status CSocket::Connect(const string&   host,
         if ( timeout ) {
             if (&oo_timeout != timeout)
                 oo_timeout = *timeout;
-            o_timeout  = &oo_timeout;
+            o_timeout = &oo_timeout;
         } else
-            o_timeout = 0;
+            o_timeout = 0/*kInfiniteTimeout*/;
     }
     EIO_Status status = SOCK_CreateEx(host.c_str(), port, o_timeout,
                                       &m_Socket, 0, 0, flags);
@@ -164,7 +164,7 @@ EIO_Status CUNIXSocket::Connect(const string&   path,
                 oo_timeout = *timeout;
             o_timeout = &oo_timeout;
         } else
-            o_timeout = 0;
+            o_timeout = 0/*kInfiniteTimeout*/;
     }
     EIO_Status status = SOCK_CreateUNIX(path.c_str(), o_timeout,
                                         &m_Socket, 0, 0, flags);
@@ -184,9 +184,9 @@ EIO_Status CSocket::Reconnect(const STimeout* timeout)
         if ( timeout ) {
             if (&oo_timeout != timeout)
                 oo_timeout = *timeout;
-            o_timeout  = &oo_timeout;
+            o_timeout = &oo_timeout;
         } else
-            o_timeout = 0;
+            o_timeout = 0/*kInfiniteTimeout*/;
     }
     return m_Socket ? SOCK_Reconnect(m_Socket, 0, 0, o_timeout) : eIO_Closed;
 }
@@ -202,46 +202,46 @@ EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
         if ( timeout ) {
             if (&oo_timeout != timeout)
                 oo_timeout = *timeout;
-            o_timeout  = &oo_timeout;
+            o_timeout = &oo_timeout;
         } else
-            o_timeout  = 0;
+            o_timeout = 0/*kInfiniteTimeout*/;
         break;
     case eIO_Read:
         if ( timeout ) {
             if (&rr_timeout != timeout)
                 rr_timeout = *timeout;
-            r_timeout  = &rr_timeout;
+            r_timeout = &rr_timeout;
         } else
-            r_timeout  = 0;
+            r_timeout = 0/*kInfiniteTimeout*/;
         break;
     case eIO_Write:
         if ( timeout ) {
             if (&ww_timeout != timeout)
                 ww_timeout = *timeout;
-            w_timeout  = &ww_timeout;
+            w_timeout = &ww_timeout;
         } else
-            w_timeout  = 0;
+            w_timeout = 0/*kInfiniteTimeout*/;
         break;
     case eIO_ReadWrite:
         if ( timeout ) {
             if (&rr_timeout != timeout)
                 rr_timeout = *timeout;
-            r_timeout  = &rr_timeout;
+            r_timeout = &rr_timeout;
             if (&ww_timeout != timeout)
                 ww_timeout = *timeout;
-            w_timeout  = &ww_timeout;
+            w_timeout = &ww_timeout;
         } else {
-            r_timeout  = 0;
-            w_timeout  = 0;
+            r_timeout = 0/*kInfiniteTimeout*/;
+            w_timeout = 0/*kInfiniteTimeout*/;
         }
         break;
     case eIO_Close:
         if ( timeout ) {
             if (&cc_timeout != timeout)
                 cc_timeout = *timeout;
-            c_timeout  = &cc_timeout;
+            c_timeout = &cc_timeout;
         } else
-            c_timeout  = 0;
+            c_timeout = 0/*kInfiniteTimeout*/;
         break;
     default:
         return eIO_InvalidArg;
@@ -361,21 +361,21 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
                 rr_timeout = *timeout;
                 r_timeout  = &rr_timeout;
             } else
-                r_timeout  = 0;
+                r_timeout  = 0/*kInfiniteTimeout*/;
             timeout = SOCK_GetTimeout(sock, eIO_Write);
             if ( timeout ) {
                 ww_timeout = *timeout;
                 w_timeout  = &ww_timeout;
             } else
-                w_timeout  = 0;
+                w_timeout  = 0/*kInfiniteTimeout*/;
             timeout = SOCK_GetTimeout(sock, eIO_Close);
             if ( timeout ) {
                 cc_timeout = *timeout;
                 c_timeout  = &cc_timeout;
             } else
-                c_timeout  = 0;
+                c_timeout  = 0/*kInfiniteTimeout*/;
         } else
-            r_timeout = w_timeout = c_timeout = 0;
+            r_timeout = w_timeout = c_timeout = 0/*kInfiniteTimeout*/;
     } else if ( sock ) {
         SOCK_SetTimeout(sock, eIO_Read,  r_timeout);
         SOCK_SetTimeout(sock, eIO_Write, w_timeout);
@@ -517,15 +517,15 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
     if (x_n  &&  !(x_polls = new SPOLLABLE_Poll[x_n]))
         return eIO_Unknown;
 
-    for (size_t i = 0;  i < x_n;  i++) {
+    for (size_t i = 0;  i < x_n;  ++i) {
         CPollable* p     = polls[i].m_Pollable;
         EIO_Event  event = polls[i].m_Event;
         if (p  &&  event) {
-            CSocket* s = dynamic_cast<CSocket*> (p);
+            CSocket* s = dynamic_cast<CSocket*>(p);
             if (!s) {
-                CListeningSocket* ls = dynamic_cast<CListeningSocket*> (p);
+                CListeningSocket* ls = dynamic_cast<CListeningSocket*>(p);
                 if (!ls) {
-                    CTrigger* tr = dynamic_cast<CTrigger*> (p);
+                    CTrigger* tr = dynamic_cast<CTrigger*>(p);
                     x_polls[i].poll = POLLABLE_FromTRIGGER(tr
                                                            ? tr->GetTRIGGER()
                                                            : 0);
@@ -540,7 +540,7 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                 } else {
                     x_polls[i].poll = 0;
                     revent = eIO_Close;
-                    x_ready++;
+                    ++x_ready;
                 }
                 polls[i].m_REvent = revent;
             }
@@ -555,7 +555,7 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
     EIO_Status status = POLLABLE_Poll(x_n, x_polls,
                                       x_ready ? &kZero : timeout, &xx_ready);
 
-    for (size_t i = 0;  i < x_n;  i++) {
+    for (size_t i = 0;  i < x_n;  ++i) {
         if (x_polls[i].revent)
             polls[i].m_REvent = x_polls[i].revent;
     }
