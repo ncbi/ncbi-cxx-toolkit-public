@@ -3293,7 +3293,7 @@ void CFeatureTableReader_Imp::x_InitId(const CTempString& seq_id, const TFlags f
     if (!NStr::IsBlank(seq_id)) {
         CBioseq::TId ids;
         CSeq_id::ParseIDs(ids, seq_id, 
-            (flags && CFeature_table_reader::fAllIdsAsLocal) ? CSeq_id::fParse_AnyLocal:CSeq_id::fParse_Default);
+            (flags & CFeature_table_reader::fAllIdsAsLocal) ? CSeq_id::fParse_AnyLocal : CSeq_id::fParse_Default);
 
         m_seq_id.Reset();
         if (flags & CFeature_table_reader::fPreferGenbankId)
