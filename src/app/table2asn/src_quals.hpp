@@ -34,7 +34,7 @@ class CMemorySrcFileMap
 {
 public:
     using TModList = CModHandler::TModList;
-    using TLineMap = map<string, CTempString>;
+    using TLineMap = map<set<string>, CTempString>;
 
     bool GetMods(const CBioseq& bioseq, TModList& mods);
     void MapFile(const string& fileName, bool allowAcc);

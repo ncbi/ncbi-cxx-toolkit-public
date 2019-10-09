@@ -86,6 +86,11 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
     list<string> id_strings;
     for (const auto& pId : bioseq.GetId()) {
         string id;
+        pId->GetLabel(&id, nullptr, CSeq_id::eFasta);
+        NStr::ToLower(id);
+        id_strings.push_back(id);
+
+        id.clear();
         pId->GetLabel(&id, nullptr, CSeq_id::eFastaContent);
         NStr::ToLower(id);
         id_strings.push_back(id);
@@ -97,7 +102,12 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
     }
 
     for (const auto& id : id_strings) {
-        auto it = m_LineMap.find(id);
+        auto it = 
+            find_if(m_LineMap.begin(),
+                    m_LineMap.end(),
+                    [id](const TLineMap::value_type& entry) {
+                        return (entry.first.find(id) != entry.first.end());
+                    });
         if (it != m_LineMap.end()) {
             x_ProcessLine(it->second, mods);
             m_LineMap.erase(it);
@@ -123,7 +133,6 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
     const char* ptr = (const char*)m_pFileMap->Map(0, fileSize);
     const char* end = ptr + fileSize;
 
-    string idKey;
 
     while (ptr < end)
     {
@@ -161,18 +170,36 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
             // parse regular line
             {
                 CTempString idString, remainder;
-                NStr::SplitInTwo(line, "\t", idString, remainder);
+                NStr::SplitInTwo(line, "\t", idString, remainder);  
+                NStr::TruncateSpacesInPlace(idString);
+
                 if (!idString.empty()) {
                     auto parseFlags = 
                         allowAcc ?
                         CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal :
                         CSeq_id::fParse_AnyLocal;
-                    auto pSeqId = Ref(new CSeq_id(idString, parseFlags));
 
-			        idKey.clear();
-                    pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eFastaContent);
-                    NStr::ToLower(idKey);
-                    m_LineMap.emplace(move(idKey), move(line));
+                    list<CRef<CSeq_id>> ids;
+                    CSeq_id::ParseIDs(ids, idString, parseFlags);
+                    // If ids is empty, we should report
+
+                    set<string> idSet;
+                    if (ids.size() == 1 &&
+                        ids.front()->IsLocal() &&
+                        !NStr::StartsWith(idString, "lcl|", NStr::eNocase)) {
+                        string idKey = idString;
+                        NStr::ToLower(idKey);
+                        idSet.emplace(idKey);
+                    }
+                    else {
+                        for (const auto& pSeqId : ids) {
+                            string idKey;
+                            pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eFasta);
+                            NStr::ToLower(idKey);
+                            idSet.emplace(idKey); 
+                        }
+                    }
+                    m_LineMap.emplace(idSet, move(line));
                 }
             }
         }
