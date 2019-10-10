@@ -503,7 +503,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             user_header.c_str(),
                                             this,
                                             x_Adjust,
-                                            0,
+                                            0/*cleanup*/,
                                             x_ParseHeader,
                                             flgs,
                                             timeout),
@@ -528,7 +528,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             this,
                                             x_Adjust,
-                                            0,
+                                            0/*cleanup*/,
                                             x_ParseHeader,
                                             flgs,
                                             timeout),
@@ -555,7 +555,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             user_header.c_str(),
                                             this,
                                             x_Adjust,
-                                            0,
+                                            0/*cleanup*/,
                                             x_ParseHeader,
                                             flgs,
                                             timeout),
@@ -585,7 +585,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             0,
                                             user_header.c_str(),
                                             this,
-                                                      x_Adjust ,
+                                                      x_Adjust,
                                             cleanup ? x_Cleanup : 0,
                                             x_ParseHeader,
                                             flgs,
@@ -670,18 +670,20 @@ static EHTTP_HeaderParse s_ParseHttpHeader(const char*       header,
 }
 
 
-int/*bool*/ CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
-                                       void*         data,
-                                       unsigned int  count)
+int CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
+                               void*         data,
+                               unsigned int  count)
 {
+    int retval;
+    bool modified;
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
-    int retval, modified = 0/*false*/;
     if (count == (unsigned int)(-1)  &&  !http->m_URL.empty()) {
         if (!ConnNetInfo_ParseURL(net_info, http->m_URL.c_str()))
             return 0/*failure*/;
         http->m_URL.erase();
-        modified = 1/*true*/;
-    }
+        modified = true;
+    } else
+        modified = false;
     if (http->m_UserAdjust) {
         if (!(retval = http->m_UserAdjust(net_info, http->m_UserData, count)))
             return 0/*failure*/;
@@ -689,7 +691,7 @@ int/*bool*/ CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
             retval = 1;
     } else
         retval = modified ? 1 : -1;
-    return retval;
+    return retval/*success*/;
 }
 
 
