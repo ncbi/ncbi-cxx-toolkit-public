@@ -14,5 +14,6 @@ NCBI_add_app(
   unit_test_ucscwriter
   unit_test_srcwriter
   unit_test_alnwriter
+  unit_test_pslwriter
 )
 
