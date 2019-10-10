@@ -123,7 +123,7 @@ public:
         fConn_ReadUnbuffered  = 4,          ///< read buffer NOT to be alloc'd
         fConn_WriteUnbuffered = 8           ///< write buffer NOT 2.b. alloc'd
     } EConn_Flag;
-    typedef unsigned int TConn_Flags;      ///< bitwise OR of EConn_Flag
+    typedef unsigned int TConn_Flags;       ///< bitwise OR of EConn_Flag
 
     /// Create a stream based on a CONN, which is to be closed upon stream
     /// dtor only if "close" parameter is passed as "true".
@@ -158,23 +158,31 @@ public:
      size_t          size     = 0);
 
     typedef pair<CONNECTOR, EIO_Status> TConnPair;
+    /// Helper class to build streams on top of CONNECTOR (internal use only).
     class TConnector : public TConnPair
     {
     public:
-        TConnector(CONNECTOR c, EIO_Status s = eIO_Success)
-            : TConnPair(c, s != eIO_Success ? s :
-                        c ? eIO_Success : eIO_Unknown)
+        /// @param connector
+        ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which a
+        ///  stream will be constructed.  NULL CONNECTOR indicates an error (if
+        ///  none is passed in the second argument, eIO_Unknown results).
+        /// @param status
+        ///  I/O status to use in the underlying streambuf (e.g. when CONNECTOR
+        ///  is NULL), and if non-eIO_Success will also cause a non-NULL
+        ///  CONNECTOR (if any passed in the first argument) to be destroyed.
+        /// @sa
+        ///  CONNECTOR, ncbi_connector.h
+        TConnector(CONNECTOR connector, EIO_Status status = eIO_Success)
+            : TConnPair(connector, status != eIO_Success ? status :
+                        connector ? eIO_Success : eIO_Unknown)
         { }
     };
 protected:
     /// Create a stream based on a CONNECTOR --
     /// only for internal use in derived classes.
     ///
-    /// @param TConn_Pair::connector
-    ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which the
-    ///  stream is being constructed.  CONNECTOR may not be NULL.
-    /// @param TConn_Pair::status
-    ///  I/O status to use in underlying streambuf when CONNECTOR is NULL
+    /// @param connector
+    ///  CONNECTOR coupled with an error code (if any)
     /// @param timeout
     ///  Default I/O timeout
     /// @param buf_size
@@ -187,8 +195,6 @@ protected:
     ///  from the actual connection
     /// @param size
     ///  The size of the area pointed to by the "ptr" argument
-    /// @sa
-    ///  CONNECTOR, ncbi_connector.h
     CConn_IOStream
     (const TConnector& connector,
      const STimeout*   timeout  = kDefaultTimeout,

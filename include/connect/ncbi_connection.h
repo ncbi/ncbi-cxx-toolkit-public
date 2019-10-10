@@ -156,7 +156,8 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
 
 /** Specify timeout for the connection I/O, including "Connect" (aka "Open")
  * and "Close".  May be called at any time during the connection lifetime.
- * @note  If "timeout" is NULL then set the timeout to be infinite.
+ * @note  If "timeout" is NULL (aka kInfiniteTimeout) then set the timeout to
+          be infinite.
  * @note  If "timeout" is kDefaultTimeout then an underlying,
  *        CONNECTOR-specific value is used (this is the default).
  */
@@ -195,7 +196,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
 
 /** Write up to "size" bytes from the buffer "buf" to the connection.
  * Return the number of actually written bytes in "*n_written".  May not return
- * eIO_Success if no data at all can be written before the write timeout
+ * eIO_Success if no data at all can be written before either the write timeout
  * expires or an error occurs.  Parameter "how" modifies the write behavior:
  * * @var eIO_WritePlain
  *                        return immediately after having written as little
@@ -204,12 +205,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
  * * @var eIO_WritePersist
  *                        return only after having written all of the data from
  *                        "buf" (return eIO_Success), or if an error has
- *                        occurred (fewer bytes written, non-eIO_Success);
- * * @var eIO_WriteSupplement
- *                        same as eIO_WritePlain but can return non-eIO_Success
- *                        even with some data written (as indicated by
- *                        "*n_written"), to signify that an error has occurred
- *                        past the just written block of data.
+ *                        occurred (fewer bytes written, non-eIO_Success).
+ * @note if "conn" has the fCONN_Supplement flag set, then the return code can
+ *       be non-eIO_Success even with some data written (as indicated by
+ *       "*n_written"), to signify that an error has occurred _past_ the just
+ *       written block of data.
  * @note  See CONN_SetTimeout() for how to set the write timeout.
  * @sa
  *  CONN_SetTimeout
@@ -260,8 +260,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
 
 /** Read up to "size" bytes from connection to the buffer pointed to by "buf".
  * Return the number of actually read bytes in "*n_read".  May not return
- * eIO_Success if no data at all can be read before the read timeout expires or
- * an error occurs.  Parameter "how" modifies the read behavior:
+ * eIO_Success if no data at all can be read before either the read timeout
+ * expires or an error occurs.  Parameter "how" modifies the read behavior:
  * * @var eIO_ReadPlain
  *                         return immediately after having read as many as
  *                         1 byte from connection (return eIO_Success), or
@@ -274,12 +274,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
  * * @var eIO_ReadPersist
  *                         return only after having filled full "buf" with data
  *                         (exactly "size" bytes, eIO_Success), or if an error
- *                         has occurred (fewer bytes, non-eIO_Success);
- * * @var eIO_ReadSupplement
- *                         same as eIO_ReadPlain but can return non-eIO_Success
- *                         even with some read data (as indicated by
- *                         "*n_read"), to show that an error has been following
- *                         the just read block of data (eg eIO_Closed for EOF).
+ *                         has occurred (fewer bytes, non-eIO_Success).
+ * @note if "conn" has the fCONN_Supplement flag set, then the return code can
+ *       be non-eIO_Success even with some read data (indicated by "*n_read"),
+ *       to signify that an error has been _following_ the just read block of
+ *       data (e.g. eIO_Closed for EOF encountered).
  * @note  See CONN_SetTimeout() for how to set the read timeout.
  * @sa
  *  CONN_SetTimeout, CONN_ReadLine
