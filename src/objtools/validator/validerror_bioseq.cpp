@@ -1644,16 +1644,13 @@ static bool s_BiosrcFullLengthIsOk (const CBioSource& src)
 static bool s_SuppressMultipleEquivBioSources (const CBioSource& src)
 {
     if (!src.IsSetOrg() || !src.GetOrg().IsSetTaxname()) {
-        //printf ("taxname not set!\n");
         return false;
     }
     if (NStr::EqualNocase(src.GetOrg().GetTaxname(), "unidentified phage")) {
-        //printf ("is unidentified phage!\n");
         return true;
     }
     if (src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetLineage()
         && NStr::StartsWith(src.GetOrg().GetOrgname().GetLineage(), "Viruses", NStr::eNocase)) {
-        //printf ("Starts with viruses!\n");
         return true;
     }
 #if 0
@@ -1953,7 +1950,10 @@ void CValidError_bioseq::x_ReportDuplicatePubLabels (
     if (labels.size() <= 1) {
         // optimize fast case
         return;
-                }
+    }
+    if (m_Imp.IsRefSeqConventions() || m_Imp.IsRefSeq()) {
+        return;
+    }
 
     static const string kWarningPrefix =
         "Multiple equivalent publications annotated on this sequence [";
@@ -2014,6 +2014,8 @@ void CValidError_bioseq::x_ValidateMultiplePubs(
     CConstRef<CSeq_entry> ctx =
         bsh.GetSeq_entry_Handle().GetCompleteSeq_entry();
 
+    const CBioseq& seq = *(bsh.GetCompleteBioseq());
+
     for (CSeqdesc_CI it(bsh, CSeqdesc::e_Pub); it; ++it) {
         CConstRef<CPubdesc> pub = ConstRef(&it->GetPub());
         // first, try to receive from cache
@@ -2059,15 +2061,15 @@ void CValidError_bioseq::x_ValidateMultiplePubs(
                     pmids_seen.insert(pmid);
                 }
             }
-            if ( collision ) {
+            if ( collision && !m_Imp.IsRefSeqConventions() && !m_Imp.IsRefSeq() ) {
                 PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPubMedID,
                     "Multiple publications with identical PubMed ID", *ctx, *it);
             }
         }
     }
 
-    x_ReportDuplicatePubLabels (*(bsh.GetCompleteBioseq()), unpublished_labels);
-    x_ReportDuplicatePubLabels (*(bsh.GetCompleteBioseq()), published_labels);
+    x_ReportDuplicatePubLabels (seq, unpublished_labels);
+    x_ReportDuplicatePubLabels (seq, published_labels);
 
 }
 
@@ -9438,7 +9440,6 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
                       if ( tax.GetScientificName( it->GetIval1(), sName ) ) {
                           if ( it->GetIval2() == 1 ) {
                               s_ViralTaxonMap [sName] = it->GetSval();
-                              // printf ("    {\"%s\",\t\"%s\"},\n", sName.c_str(), it->GetSval().c_str());
                           }
                       }
                    }
