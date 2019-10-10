@@ -101,8 +101,15 @@ private:
         odds(double pos_ = 0.0, double neg_ = 0.0) : pos(pos_), neg(neg_) {}
        
         void operator += (double x)     { (x > 0 ? pos : neg) += fabs(x);  }
-        void operator += (const odds o) { pos += o.pos;  neg  += o.neg;         }
-        double logodds(int a = 2) const { return log( (a+pos)/(a+neg) );   }
+        void operator += (const odds o) { pos += o.pos;  neg  += o.neg;    }
+        
+        double logodds(int a = 2) const
+        {
+            if(pos < 0 || neg < 0) {
+                NCBI_USER_THROW("Invalid state of odds: " + this->AsString());
+            }
+            return log( (a+pos)/(a+neg) );
+        }
 
         string AsString() const
         {
@@ -314,20 +321,40 @@ private:
     static odds s_GetIdentOdds_protSS(const CSeq_align& aln)
     {
         _ASSERT(isProtSS(aln));
+
         GET_SCORE(num_ident);
         GET_SCORE(num_mismatch);
 
         GET_SCORE(num_positives);
         GET_SCORE(num_negatives);
 
-        const size_t ungapped_len = aln.GetAlignLength(false);
+        // Note: for ProSplign spliced-segs these are in terms of NAs, not AAs,
+        // JIRA:GP-27664
+
+        const size_t ungapped_len = aln.GetAlignLength(false); // in NAs, not AAs.
+
+        if(!have_num_ident && have_num_mismatch) {
+            have_num_ident = true;
+            num_ident = ungapped_len - num_mismatch;
+        }
 
         if(!have_num_positives && have_num_negatives) {
             have_num_positives = true;
             num_positives = ungapped_len - num_negatives;
         }
 
-        double identity = (num_ident + num_positives * 0.2) / ungapped_len;
+        // GP-9599 - disregarding num_positives if have num_ident.
+        // (used to take weighted sum thereof when both are present).
+
+        double identity = have_num_ident     ?     num_ident / ungapped_len
+                        : have_num_positives ? num_positives / ungapped_len
+                        : 0.5; // log-odds=0.
+
+        if(identity < 0 || identity > 1.0) {
+            std::cerr << MSerial_AsnText << aln;
+            NCBI_USER_THROW("Identity is outside of [0..1] range - problem with alignment scores.");
+        }
+
         return odds(ungapped_len * identity,
                     ungapped_len * (1 - identity));
     }        
@@ -373,6 +400,12 @@ private:
 
         GET_SCORE(num_ident);
         GET_SCORE(num_mismatch);
+
+        // Note: if alignment is from tblastn, 
+        // num_ident/num_mismatch/num_positives/num_negatives are in AAs,
+        // and CSeq_align::GetAlignLength is in AAs.
+        //
+        // if the alignment is from ProSplign, those are in NAs.
 
         if(have_num_ident && have_num_mismatch) {
             return odds(num_ident, 
@@ -568,7 +601,7 @@ int NBestPlacement::GetScore(const CSeq_align& aln)
 {
     static SAlignmentScoringModel get_score;
     return get_score(aln);
-};
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
