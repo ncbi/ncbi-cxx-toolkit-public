@@ -68,6 +68,7 @@
 #include <boost/test/framework.hpp>
 #include <boost/test/execution_monitor.hpp>
 #include <boost/test/parameterized_test.hpp>
+#include <boost/test/results_collector.hpp>
 
 #if BOOST_VERSION >= 105600
 #  include <boost/core/ignore_unused.hpp>
@@ -95,6 +96,18 @@
 #  undef BOOST_FIXTURE_TEST_CASE
 #endif
 #undef BOOST_PARAM_TEST_CASE
+
+
+/// Check that current boost test case passed (no exceptions or assertions)
+/// on the moment of calling this method.
+/// This can be useful to ignore some unit code if (any) previos checks fails.
+inline bool BOOST_CURRENT_TEST_PASSED()
+{
+    ::boost::unit_test::test_case::id_t id = ::boost::unit_test::framework::current_test_case().p_id;
+    ::boost::unit_test::test_results rc = ::boost::unit_test::results_collector.results(id);
+    return rc.passed();
+}
+
 
 #if BOOST_VERSION >= 105900
 #  if BOOST_VERSION >= 106000

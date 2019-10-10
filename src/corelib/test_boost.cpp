@@ -169,20 +169,20 @@ static void s_SetEnabled(but::test_unit& tu, bool enabled) {
 #endif
 
 const char* kTestsDisableSectionName = "UNITTESTS_DISABLE";
-const char* kTestsToFixSectionName = "UNITTESTS_TOFIX";
+const char* kTestsToFixSectionName   = "UNITTESTS_TOFIX";
 const char* kTestsTimeoutSectionName = "UNITTESTS_TIMEOUT_MULT";
-const char* kTestConfigGlobalValue = "GLOBAL";
+const char* kTestConfigGlobalValue   = "GLOBAL";
 
 #define DUMMY_TEST_FUNCTION_NAME  DummyTestFunction
-const char* kDummyTestCaseName    = BOOST_STRINGIZE(DUMMY_TEST_FUNCTION_NAME);
+const char* kDummyTestCaseName  = BOOST_STRINGIZE(DUMMY_TEST_FUNCTION_NAME);
 
-const char* kTestResultPassed      = "passed";
-const char* kTestResultFailed      = "failed";
-const char* kTestResultTimeout     = "timeout";
-const char* kTestResultAborted     = "aborted";
-const char* kTestResultSkipped     = "skipped";
-const char* kTestResultDisabled    = "disabled";
-const char* kTestResultToFix       = "tofix";
+const char* kTestResultPassed   = "passed";
+const char* kTestResultFailed   = "failed";
+const char* kTestResultTimeout  = "timeout";
+const char* kTestResultAborted  = "aborted";
+const char* kTestResultSkipped  = "skipped";
+const char* kTestResultDisabled = "disabled";
+const char* kTestResultToFix    = "tofix";
 
 
 typedef but::results_reporter::format   TBoostRepFormatter;
@@ -207,16 +207,11 @@ public:
     void SetOutputFormat(but::output_format format);
 
     // TBoostRepFormatter interface
-    virtual
-    void results_report_start   (ostream& ostr);
-    virtual
-    void results_report_finish  (ostream& ostr);
-    virtual
-    void test_unit_report_start (but::test_unit const& tu, ostream& ostr);
-    virtual
-    void test_unit_report_finish(but::test_unit const& tu, ostream& ostr);
-    virtual
-    void do_confirmation_report (but::test_unit const& tu, ostream& ostr);
+    virtual void results_report_start    (ostream& ostr);
+    virtual void results_report_finish   (ostream& ostr);
+    virtual void test_unit_report_start  (but::test_unit const& tu, ostream& ostr);
+    virtual void test_unit_report_finish (but::test_unit const& tu, ostream& ostr);
+    virtual void do_confirmation_report  (but::test_unit const& tu, ostream& ostr);
 
 private:
     /// Standard reporter from Boost for particular report format
@@ -243,67 +238,40 @@ public:
     void SetOutputFormat(but::output_format format);
 
     // TBoostLogFormatter interface
-    virtual
-    void log_start        (ostream& ostr, but::counter_t test_cases_amount);
-    virtual
-    void log_finish       (ostream& ostr);
+    virtual void log_start(ostream& ostr, but::counter_t test_cases_amount);
+    virtual void log_finish(ostream& ostr);
 #if BOOST_VERSION >= 107000
-    virtual
-    void log_build_info   (ostream& ostr, bool log_build_info = true);
+    virtual void log_build_info(ostream& ostr, bool log_build_info = true);
 #else
-    virtual
-    void log_build_info   (ostream& ostr);
+    virtual void log_build_info(ostream& ostr);
 #endif
-    virtual
-    void test_unit_start  (ostream& ostr, but::test_unit const& tu);
-    virtual
-    void test_unit_finish (ostream& ostr, but::test_unit const& tu,
-                                          unsigned long elapsed);
-    virtual
-    void test_unit_skipped(ostream& ostr, but::test_unit const& tu);
+    virtual void test_unit_start(ostream& ostr, but::test_unit const& tu);
+    virtual void test_unit_finish(ostream& ostr, but::test_unit const& tu, unsigned long elapsed);
+    virtual void test_unit_skipped(ostream& ostr, but::test_unit const& tu);
 #if BOOST_VERSION >= 105900
-    virtual
-    void log_exception_start(ostream& ostr, but::log_checkpoint_data const& lcd,
-                             boost::execution_exception const& ex);
-    virtual
-    void log_exception_finish(ostream& ostr);
+    virtual void log_exception_start(ostream& ostr, but::log_checkpoint_data const& lcd, boost::execution_exception const& ex);
+    virtual void log_exception_finish(ostream& ostr);
 #elif BOOST_VERSION >= 104200
-    virtual
-    void log_exception    (ostream& ostr, but::log_checkpoint_data const& lcd,
-                                          boost::execution_exception const& ex);
+    virtual void log_exception(ostream& ostr, but::log_checkpoint_data const& lcd, boost::execution_exception const& ex);
     // Next line is necessary for compiling with ICC and Boost 1.41.0 and up
     using TBoostLogFormatter::log_exception;
 #else
-    virtual
-    void log_exception    (ostream& ostr, but::log_checkpoint_data const& lcd,
-                                          but::const_string explanation);
+    virtual void log_exception(ostream& ostr, but::log_checkpoint_data const& lcd, but::const_string explanation);
 #endif
-    virtual
-    void log_entry_start  (ostream& ostr, but::log_entry_data const& led,
-                                          log_entry_types let);
-    virtual
-    void log_entry_value  (ostream& ostr, but::const_string value);
+    virtual void log_entry_start(ostream& ostr, but::log_entry_data const& led, log_entry_types let);
+    virtual void log_entry_value  (ostream& ostr, but::const_string value);
     // Next line is necessary for compiling with ICC and Boost 1.41.0 and up
     using TBoostLogFormatter::log_entry_value;
-    virtual
-    void log_entry_finish (ostream& ostr);
+    virtual void log_entry_finish (ostream& ostr);
 
 #if BOOST_VERSION >= 105900
-    virtual
-    void entry_context_start(ostream& ostr, but::log_level l);
-
+    virtual void entry_context_start(ostream& ostr, but::log_level l);
 #  if BOOST_VERSION >= 106500
-    virtual
-    void log_entry_context(ostream& os, but::log_level l, but::const_string v);
-
-    virtual
-    void entry_context_finish(ostream& os, but::log_level l);
+    virtual void log_entry_context(ostream& os, but::log_level l, but::const_string v);
+    virtual void entry_context_finish(ostream& os, but::log_level l);
 #  else
-    virtual
-    void log_entry_context(ostream& ostr, but::const_string value);
-
-    virtual
-    void entry_context_finish (ostream& ostr);
+    virtual void log_entry_context(ostream& ostr, but::const_string value);
+    virtual void entry_context_finish (ostream& ostr);
 #  endif
 #endif
 
@@ -332,12 +300,12 @@ public:
     virtual void test_unit_start(but::test_unit const& tu);
 
     /// Method called after execution of each unit
-    virtual void test_unit_finish(but::test_unit const& tu,
-                                  unsigned long         elapsed);
+    virtual void test_unit_finish(but::test_unit const& tu, unsigned long elapsed);
 
     /// Method called when some exception was caught during execution of unit
     virtual void exception_caught(boost::execution_exception const& ex);
 
+    /// Method called when some check fails during execution of unit
     virtual void test_unit_aborted(but::test_unit const& tu);
     virtual void assertion_result(bool passed);
 };
@@ -403,19 +371,15 @@ private:
     /// Ensure that leftElem and rightElem (or element pointed by it_right
     /// inside m_Children) are in that very order: leftElem first, rightElem
     /// after that. leftElem and rightElem should be children of this element.
-    void x_EnsureChildOrder(CNcbiTestTreeElement* leftElem,
-                            CNcbiTestTreeElement* rightElem);
-    void x_EnsureChildOrder(CNcbiTestTreeElement* leftElem,
-                            size_t                idx_right);
+    void x_EnsureChildOrder(CNcbiTestTreeElement* leftElem, CNcbiTestTreeElement* rightElem);
+    void x_EnsureChildOrder(CNcbiTestTreeElement* leftElem, size_t idx_right);
 
     /// Add leftElem (rightElem) in the list of elements that should be
     /// "lefter" ("righter") in the tests tree.
-    void x_AddToMustLeft(CNcbiTestTreeElement* elem,
-                         CNcbiTestTreeElement* leftElem);
-    void x_AddToMustRight(CNcbiTestTreeElement* elem,
-                          CNcbiTestTreeElement* rightElem);
+    void x_AddToMustLeft(CNcbiTestTreeElement* elem,  CNcbiTestTreeElement* leftElem);
+    void x_AddToMustRight(CNcbiTestTreeElement* elem, CNcbiTestTreeElement* rightElem);
 
-
+private:
     /// Parent element in tests tree
     CNcbiTestTreeElement* m_Parent;
     /// Unit represented by the element
@@ -550,7 +514,6 @@ public:
 private:
     typedef list<TNcbiTestUserFunction> TUserFuncsList;
 
-
     /// Setup our own reporter for Boost.Test
     void x_SetupBoostReporters(void);
     /// Call all user functions. Return TRUE if functions execution is
@@ -584,6 +547,7 @@ private:
     bool x_CalcConfigValue(const string& value);
 
 
+private:
     /// Mode of running testing application
     enum ERunMode {
         fTestList   = 0x1,  ///< Only tests list is requested
@@ -591,7 +555,6 @@ private:
         fInitFailed = 0x4   ///< Initialization user functions failed
     };
     typedef unsigned int TRunMode;
-
 
     /// If Run() was called or not
     ///
@@ -668,10 +631,9 @@ CNcbiBoostReporter::SetOutputFormat(but::output_format fmt)
     }
 }
 
-
 inline
 CNcbiBoostLogger::CNcbiBoostLogger(void)
-: m_IsXML(false)
+    : m_IsXML(false)
 {}
 
 inline void
@@ -686,7 +648,6 @@ CNcbiBoostLogger::SetOutputFormat(but::output_format format)
         m_Upper = new but::output::compiler_log_formatter();
     }
 }
-
 
 inline
 CNcbiTestTreeElement::CNcbiTestTreeElement(but::test_unit* tu)
@@ -746,7 +707,6 @@ CNcbiTestTreeElement::x_AddToMustLeft(CNcbiTestTreeElement* elem,
                           << elem->m_TestUnit->p_name.get()
                           << "' must depend on itself."));
     }
-
     elem->m_MustLeft.insert(leftElem);
 
     ITERATE(TElemsSet, it, elem->m_MustRight) {
@@ -764,7 +724,6 @@ CNcbiTestTreeElement::x_AddToMustRight(CNcbiTestTreeElement* elem,
                           << elem->m_TestUnit->p_name.get()
                           << "' must depend on itself."));
     }
-
     elem->m_MustRight.insert(rightElem);
 
     ITERATE(TElemsSet, it, elem->m_MustLeft) {
@@ -863,7 +822,6 @@ CNcbiTestTreeElement::GetParent(void)
     return m_Parent;
 }
 
-
 CNcbiTestsTreeBuilder::CNcbiTestsTreeBuilder(void)
     : m_RootElem(NULL),
       m_CurElem (NULL)
@@ -887,9 +845,7 @@ CNcbiTestsTreeBuilder::test_suite_start(but::test_suite const& suite)
         m_RootElem = new CNcbiTestTreeElement(nc_suite);
         m_CurElem  = m_RootElem;
     }
-
     m_AllUnits[nc_suite] = m_CurElem;
-
     return true;
 }
 
@@ -915,7 +871,6 @@ CNcbiTestsTreeBuilder::EnsureDep(but::test_unit* tu, but::test_unit* tu_from)
     CNcbiTestTreeElement* elem = m_AllUnits[tu];
     CNcbiTestTreeElement* elem_from = m_AllUnits[tu_from];
     _ASSERT(elem  &&  elem_from);
-
     elem->EnsureDep(elem_from);
 }
 
@@ -953,7 +908,6 @@ void CNcbiTestMemoryCleanupList::Add(void* ptr) {
 
 
 static CNcbiTestApplication* s_TestApp = NULL;
-
 
 inline
 CNcbiTestApplication::CNcbiTestApplication(void)
@@ -998,10 +952,8 @@ CNcbiTestApplication::Init(void)
          CArgDescriptions::eString, CArgDescriptions::fMandatorySeparator);
 #endif
     m_ArgDescrs->AddFlag("dryrun",
-                         "Do not actually run tests, "
-                         "just print list of all available tests.");
-    m_ArgDescrs->SetUsageContext(GetArguments().GetProgramBasename(),
-                                 "NCBI unit test");
+         "Do not actually run tests, just print list of all available tests.");
+    m_ArgDescrs->SetUsageContext(GetArguments().GetProgramBasename(), "NCBI unit test");
     if (!m_UserFuncs[eTestUserFuncCmdLine].empty())
         x_CallUserFuncs(eTestUserFuncCmdLine);
     SetupArgDescriptions(m_ArgDescrs.release());
@@ -1024,15 +976,13 @@ CNcbiTestApplication::DryRun(void)
 }
 
 inline void
-CNcbiTestApplication::AddUserFunction(TNcbiTestUserFunction func,
-                                      ETestUserFuncType     func_type)
+CNcbiTestApplication::AddUserFunction(TNcbiTestUserFunction func, ETestUserFuncType     func_type)
 {
     m_UserFuncs[func_type].push_back(func);
 }
 
 inline void
-CNcbiTestApplication::AddTestDependsOn(but::test_unit* tu,
-                                       but::test_unit* dep_tu)
+CNcbiTestApplication::AddTestDependsOn(but::test_unit* tu, but::test_unit* dep_tu)
 {
     m_TestDeps[tu].insert(dep_tu);
 }
@@ -1078,14 +1028,12 @@ CNcbiTestApplication::x_GetTrimmedTestName(const string& test_name)
     if (pos != NPOS) {
         new_name = new_name.substr(pos + 2);
     }
-
     if(NStr::StartsWith(new_name, "test_", NStr::eNocase)) {
         new_name = new_name.substr(5);
     }
     else if(NStr::StartsWith(new_name, "test", NStr::eNocase)) {
         new_name = new_name.substr(4);
     }
-
     return new_name;
 }
 
@@ -1093,8 +1041,9 @@ inline void
 CNcbiTestApplication::CollectTestUnit(but::test_unit* tu)
 {
     const string unit_name = x_GetTrimmedTestName(tu->p_name.get());
-    if (unit_name == kDummyTestCaseName)
+    if (unit_name == kDummyTestCaseName) {
         return;
+    }
     string test_name(unit_name);
     int index = 0;
     for (;;) {
@@ -1124,7 +1073,6 @@ CNcbiTestApplication::x_EnsureAllDeps(void)
             m_TreeBuilder.EnsureDep(test, dep_test);
         }
     }
-
     m_TreeBuilder.FixUnitsOrder();
 }
 
@@ -1143,13 +1091,11 @@ CNcbiTestApplication::x_ActualizeDeps(void)
         if (!m_DisabledTests.count(test) && !s_IsEnabled(*test)) {
             continue;
         }
-
         ITERATE(TUnitsSet, dep_it, it->second) {
             but::test_unit* dep_test = *dep_it;
             if (!m_DisabledTests.count(dep_test) && !s_IsEnabled(*dep_test)) {
                 continue;
             }
-
             test->depends_on(dep_test);
         }
     }
@@ -1386,10 +1332,9 @@ CNcbiTestApplication::x_CalcConfigValue(const string& value)
 {
     m_IniParser->Parse(value.c_str());
     const CExprValue& expr_res = m_IniParser->GetResult();
-
-    if (expr_res.GetType() == CExprValue::eBOOL  &&  !expr_res.GetBool())
+    if (expr_res.GetType() == CExprValue::eBOOL && !expr_res.GetBool()) {
         return false;
-
+    }
     return true;
 }
 
@@ -1398,8 +1343,7 @@ void
 DUMMY_TEST_FUNCTION_NAME(void)
 {
     if (s_GetTestApp().IsInitFailed()) {
-        but::results_collector.test_unit_aborted(
-                                        *s_GetTestApp().GetDummyTest());
+        but::results_collector.test_unit_aborted(*s_GetTestApp().GetDummyTest());
     }
 }
 
@@ -1423,8 +1367,7 @@ CNcbiTestApplication::SetGloballySkipped(void)
 
     // This should certainly go to the output. So we can use only printf,
     // nothing else.
-    printf("Tests cannot be executed in current configuration "
-                                                    "and will be skipped.\n"
+    printf("Tests cannot be executed in current configuration and will be skipped.\n"
            " (for autobuild scripts: NCBI_UNITTEST_SKIPPED)\n");
 }
 
@@ -1442,9 +1385,9 @@ CNcbiTestApplication::x_ReadConfiguration(void)
 {
     m_IniParser = new CExprParser(CExprParser::eDenyAutoVar);
     x_InitCommonParserVars();
-    if (!x_CallUserFuncs(eTestUserFuncVars))
+    if (!x_CallUserFuncs(eTestUserFuncVars)) {
         return false;
-
+    }
     const IRegistry& registry = s_GetTestApp().GetConfig();
     list<string> reg_entries;
     registry.EnumerateEntries(kTestsDisableSectionName, &reg_entries);
@@ -1460,7 +1403,6 @@ CNcbiTestApplication::x_ReadConfiguration(void)
             }
             continue;
         }
-
         but::test_unit* tu = GetTestUnit(test_name);
         if (tu) {
             if (x_CalcConfigValue(reg_value)) {
@@ -1468,8 +1410,7 @@ CNcbiTestApplication::x_ReadConfiguration(void)
             }
         }
         else {
-            ERR_POST_X(2, Warning << "Invalid test case name: '"
-                                  << test_name << "'");
+            ERR_POST_X(2, Warning << "Invalid test case name: '" << test_name << "'");
         }
     }
 
@@ -1487,8 +1428,7 @@ CNcbiTestApplication::x_ReadConfiguration(void)
             }
         }
         else {
-            ERR_POST_X(4, Warning << "Invalid test case name: '"
-                                  << test_name << "'");
+            ERR_POST_X(4, Warning << "Invalid test case name: '" << test_name << "'");
         }
     }
 
@@ -1507,26 +1447,21 @@ CNcbiTestApplication::x_ReadConfiguration(void)
                 CTempString koef_str, koef_cond;
                 if (NStr::SplitInTwo(*it_koef, ":", koef_str, koef_cond)) {
                     if (x_CalcConfigValue(koef_cond)) {
-                        double koef = NStr::StringToDouble(koef_str,
-                                                NStr::fAllowLeadingSpaces
-                                                | NStr::fAllowTrailingSpaces);
+                        double koef = NStr::StringToDouble(koef_str, NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
                         tu->p_timeout.set(Uint4(tu->p_timeout.get() * koef));
                         break;
                     }
                 }
                 else {
-                    ERR_POST_X(6, "Bad format of TIMEOUT_MULT string: '"
-                                  << reg_value << "'");
+                    ERR_POST_X(6, "Bad format of TIMEOUT_MULT string: '" << reg_value << "'");
                     break;
                 }
             }
         }
         else {
-            ERR_POST_X(5, Warning << "Invalid test case name: '"
-                                  << test_name << "'");
+            ERR_POST_X(5, Warning << "Invalid test case name: '" << test_name << "'");
         }
     }
-
     return true;
 }
 
@@ -1537,7 +1472,6 @@ CNcbiTestApplication::x_EnableAllTests(bool enable)
         but::test_unit* tu = it->second;
         if (tu->p_type == but::TUT_CASE) {
             s_SetEnabled(*tu, enable);
-
             /*
             For full correctness this functionality should exist but it
             can't be made now. So if test suite will be disabled by user
@@ -1570,7 +1504,6 @@ CNcbiTestApplication::InitTestsBeforeRun(void)
     }
     else {
         x_EnableAllTests(false);
-
         if (m_RunMode & fInitFailed) {
             x_AddDummyTest();
         }
@@ -1624,15 +1557,13 @@ CNcbiTestApplication::AdjustTestTimeout(but::test_unit* tu)
         double elapsed = m_Timer.Elapsed();
         if (m_Timeout <= elapsed) {
             CNcbiEnvironment env;
-            printf("Maximum execution time of %s seconds is exceeded",
-                   m_TimeoutStr.c_str());
+            printf("Maximum execution time of %s seconds is exceeded", m_TimeoutStr.c_str());
 #if BOOST_VERSION < 105900
             throw but::test_being_aborted();
 #elif defined(SIGALRM)
             raise(SIGALRM);
 #else
-            throw runtime_error("Maximum execution time of " + m_TimeoutStr +
-                                " seconds is exceeded");
+            throw runtime_error("Maximum execution time of " + m_TimeoutStr + " seconds is exceeded");
 #endif
         }
         new_timeout = (unsigned int)(m_Timeout - elapsed);
@@ -1656,10 +1587,8 @@ CNcbiTestApplication::GetTestResultString(but::test_unit* tu)
         result = kTestResultToFix;
     else if (tr.p_aborted)
         result = kTestResultAborted;
-    else if (tr.p_assertions_failed.get() > tr.p_expected_failures.get()
-             ||  tr.p_test_cases_failed.get()
-                        + tr.p_test_cases_aborted.get() > 0)
-    {
+    else if (tr.p_assertions_failed.get() > tr.p_expected_failures.get()  ||  
+             tr.p_test_cases_failed.get() + tr.p_test_cases_aborted.get() > 0) {
         result = kTestResultFailed;
     }
     else if ((m_RunMode & fTestList)  ||  tr.p_skipped)
@@ -1678,12 +1607,13 @@ CNcbiTestApplication::GetRanTestsCount(void)
     int result = 0;
     ITERATE(TStringToUnitMap, it, m_AllTests) {
         but::test_unit* tu = it->second;
-        if (tu->p_type != but::TUT_CASE)
+        if (tu->p_type != but::TUT_CASE) {
             continue;
-
+        }
         string str = GetTestResultString(tu);
-        if (str != kTestResultDisabled  &&  str != kTestResultSkipped)
+        if (str != kTestResultDisabled && str != kTestResultSkipped) {
             ++result;
+        }
     }
     return result;
 }
@@ -1702,8 +1632,7 @@ CNcbiTestApplication::GetToFixTestsCount(void)
 inline bool
 CNcbiTestApplication::IsTestToFix(const but::test_unit* tu)
 {
-    return m_ToFixTests.find(const_cast<but::test_unit*>(tu))
-                                                        != m_ToFixTests.end();
+    return m_ToFixTests.find(const_cast<but::test_unit*>(tu)) != m_ToFixTests.end();
 }
 
 inline void
@@ -1728,8 +1657,7 @@ CNcbiTestApplication::x_SetupBoostReporters(void)
                 but::results_reporter::set_stream(m_ReportOut);
             }
             else {
-                ERR_POST("Error opening Boost.Test report file '"
-                         << boost_rep << "'");
+                ERR_POST("Error opening Boost.Test report file '" << boost_rep << "'");
             }
         }
     }
@@ -1737,8 +1665,7 @@ CNcbiTestApplication::x_SetupBoostReporters(void)
     m_Reporter->SetOutputFormat(format);
     but::results_reporter::set_format(m_Reporter);
 
-    m_Logger->SetOutputFormat(RTCFG(but::output_format, LOG_FORMAT,
-                                    log_format));
+    m_Logger->SetOutputFormat(RTCFG(but::output_format, LOG_FORMAT, log_format));
     but::unit_test_log.set_formatter(m_Logger);
 }
 
@@ -1779,20 +1706,17 @@ CNcbiTestApplication::x_CallUserFuncs(ETestUserFuncType func_type)
             //return false;
         }
     }
-
     return true;
 }
 
 inline but::test_unit*
 CNcbiTestApplication::GetTestUnit(CTempString test_name)
 {
-    TStringToUnitMap::iterator it = m_AllTests.find(
-                                            x_GetTrimmedTestName(test_name));
+    TStringToUnitMap::iterator it = m_AllTests.find( x_GetTrimmedTestName(test_name));
     if (it == m_AllTests.end()) {
         NCBI_THROW(CCoreException, eInvalidArg,
                    "Test unit '" + (string)test_name + "' not found.");
     }
-
     return it->second;
 }
 
@@ -1801,16 +1725,14 @@ CNcbiTestApplication::x_CollectAllTests(void)
 {
     m_AllTests.clear();
     CNcbiTestsCollector collector;
-    but::traverse_test_tree(but::framework::master_test_suite(), collector
-                            IGNORE_STATUS);
+    but::traverse_test_tree(but::framework::master_test_suite(), collector IGNORE_STATUS);
 }
 
 inline int
 CNcbiTestApplication::x_GetEnabledTestsCount(void)
 {
     but::test_case_counter tcc;
-    but::traverse_test_tree(but::framework::master_test_suite(), tcc
-                            IGNORE_STATUS);
+    but::traverse_test_tree(but::framework::master_test_suite(), tcc IGNORE_STATUS);
     return (int)tcc.p_count;
 }
 
@@ -1854,8 +1776,7 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     if (AppMain(argc, argv) == 0 && m_RunCalled) {
         x_CollectAllTests();
 
-        but::traverse_test_tree(but::framework::master_test_suite(),
-                                m_TreeBuilder IGNORE_STATUS);
+        but::traverse_test_tree(but::framework::master_test_suite(), m_TreeBuilder IGNORE_STATUS);
 
         // We do not read configuration if particular tests were given in
         // command line
@@ -1879,7 +1800,6 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
                 x_AddDummyTest();
             }
 #endif
-
             return NULL;
         }
     }
@@ -1935,8 +1855,7 @@ CNcbiTestsObserver::test_unit_start(but::test_unit const& tu)
 }
 
 void
-CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu,
-                                     unsigned long         elapsed)
+CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu, unsigned long elapsed)
 {
     unsigned long timeout = tu.p_timeout.get();
     // elapsed comes in microseconds
@@ -1950,11 +1869,9 @@ CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu,
     but::test_results& tr = but::s_rc_impl().m_results_store[tu.p_id];
     if (!tr.passed()  &&  s_GetTestApp().IsTestToFix(&tu)) {
         static_cast<but::readwrite_property<bool>& >(
-            static_cast<but::class_property<bool>& >(
-                                            tr.p_skipped)).set(true);
+            static_cast<but::class_property<bool>& >(tr.p_skipped)).set(true);
         static_cast<but::readwrite_property<but::counter_t>& >(
-            static_cast<but::class_property<but::counter_t>& >(
-                                            tr.p_assertions_failed)).set(0);
+            static_cast<but::class_property<but::counter_t>& >(tr.p_assertions_failed)).set(0);
     }
 }
 
@@ -1981,18 +1898,18 @@ void
 CNcbiTestsObserver::assertion_result(bool passed)
 {
     if (!passed) {
-        s_GetTestApp().SetTestErrored(const_cast<but::test_case*>(
-                                      &but::framework::current_test_case()));
+        s_GetTestApp().SetTestErrored(const_cast<but::test_case*>(&but::framework::current_test_case()));
+        // On any failed assetion set request context status to 500
+        // We have the same for exceptions, see test_boost.hpp : BOOST_AUTO_TC_INVOKER()
+        NCBI_NS_NCBI::GetDiagContext().GetRequestContext().SetRequestStatus(500);
     }
 }
 
-
 void
-CNcbiBoostReporter::results_report_start(ostream& ostr)
+CNcbiBoostReporter::results_report_start(ostream& ostr) 
 {
     m_Indent = 0;
     s_GetTestApp().ReEnableAllTests();
-
     m_Upper->results_report_start(ostr);
 }
 
@@ -2009,43 +1926,38 @@ void
 CNcbiBoostReporter::test_unit_report_start(but::test_unit const&  tu,
                                            ostream&               ostr)
 {
-    if (tu.p_name.get() == kDummyTestCaseName)
+    if (tu.p_name.get() == kDummyTestCaseName) {
         return;
-
-    string descr = s_GetTestApp().GetTestResultString(
-                                        const_cast<but::test_unit*>(&tu));
+    }
+    string descr = s_GetTestApp().GetTestResultString(const_cast<but::test_unit*>(&tu));
 
     if (m_IsXML) {
         ostr << '<' << (tu.p_type == but::TUT_CASE ? "TestCase" : "TestSuite")
              << " name"   << but::attr_value() << tu.p_name.get()
              << " result" << but::attr_value() << descr;
-
         ostr << '>';
     }
     else {
         ostr << std::setw( m_Indent ) << ""
             << "Test " << (tu.p_type == but::TUT_CASE ? "case " : "suite " )
             << "\"" << tu.p_name << "\" " << descr;
-
         ostr << '\n';
         m_Indent += 2;
     }
 }
 
 void
-CNcbiBoostReporter::test_unit_report_finish(but::test_unit const&  tu,
-                                            std::ostream&          ostr)
+CNcbiBoostReporter::test_unit_report_finish(but::test_unit const&  tu, std::ostream& ostr)
 {
-    if (tu.p_name.get() == kDummyTestCaseName)
+    if (tu.p_name.get() == kDummyTestCaseName) {
         return;
-
+    }
     m_Indent -= 2;
     m_Upper->test_unit_report_finish(tu, ostr);
 }
 
 void
-CNcbiBoostReporter::do_confirmation_report(but::test_unit const&  tu,
-                                           std::ostream&          ostr)
+CNcbiBoostReporter::do_confirmation_report(but::test_unit const&  tu, std::ostream& ostr)
 {
 #if BOOST_VERSION >= 105900
     if (tu.p_type == but::TUT_SUITE  &&  tu.p_line_num == 0) {
@@ -2053,8 +1965,7 @@ CNcbiBoostReporter::do_confirmation_report(but::test_unit const&  tu,
 
         if ( !m_IsXML ) {
             if (tr.p_test_cases_skipped > 0) {
-                ostr << "*** Skipped " << tr.p_test_cases_skipped
-                     << " test(s)\n";
+                ostr << "*** Skipped " << tr.p_test_cases_skipped << " test(s)\n";
             } else if (tr.p_skipped) {
                 ostr << "*** Skipped some tests\n";
             }
@@ -2082,8 +1993,7 @@ CNcbiBoostLogger::log_finish(ostream& ostr)
 {
     m_Upper->log_finish(ostr);
     if (!m_IsXML) {
-        ostr << "Executed " << s_GetTestApp().GetRanTestsCount()
-             << " test cases";
+        ostr << "Executed " << s_GetTestApp().GetRanTestsCount() << " test cases";
         int to_fix = s_GetTestApp().GetToFixTestsCount();
         if (to_fix != 0) {
             ostr << " (" << to_fix << " to fix)";
@@ -2156,8 +2066,7 @@ CNcbiBoostLogger::log_exception(ostream& ostr, but::log_checkpoint_data const& l
 #endif
 
 void
-CNcbiBoostLogger::log_entry_start(ostream& ostr, but::log_entry_data const& led,
-                                  log_entry_types let)
+CNcbiBoostLogger::log_entry_start(ostream& ostr, but::log_entry_data const& led, log_entry_types let)
 {
     m_Upper->log_entry_start(ostr, led, let);
 }
@@ -2193,8 +2102,7 @@ void CNcbiBoostLogger::entry_context_finish(ostream& ostr, but::log_level l)
     m_Upper->entry_context_finish(ostr, l);
 }
 #  else
-void CNcbiBoostLogger::log_entry_context(ostream& ostr,
-                                         but::const_string value)
+void CNcbiBoostLogger::log_entry_context(ostream& ostr, but::const_string value)
 {
     m_Upper->log_entry_context(ostr, value);
 }
@@ -2338,48 +2246,36 @@ main(int argc, char* argv[])
             std::getchar();
             results_reporter::get_stream() << "Continuing..." << std::endl;
         }
-
         framework::finalize_setup_phase();
-
-        output_format list_cont = RTCFG(output_format, LIST_CONTENT,
-                                        list_content);
+        output_format list_cont = RTCFG(output_format, LIST_CONTENT, list_content);
         if( list_cont != but::OF_INVALID ) {
             if( list_cont == but::OF_DOT ) {
                 ut_detail::dot_content_reporter reporter( results_reporter::get_stream() );
-
                 traverse_test_tree( framework::master_test_suite().p_id, reporter, true );
             }
             else {
                 ut_detail::hrf_content_reporter reporter( results_reporter::get_stream() );
-
                 traverse_test_tree( framework::master_test_suite().p_id, reporter, true );
             }
-
             return boost::exit_success;
         }
 
         if( RTCFG(bool, LIST_LABELS, list_labels) ) {
             ut_detail::labels_collector collector;
-
             traverse_test_tree( framework::master_test_suite().p_id, collector, true );
-
             results_reporter::get_stream() << "Available labels:\n  ";
             std::copy( collector.labels().begin(), collector.labels().end(), 
                        std::ostream_iterator<std::string>( results_reporter::get_stream(), "\n  " ) );
             results_reporter::get_stream() << "\n";
-
             return boost::exit_success;
         }
 #else
         if( !runtime_config::test_to_run().is_empty() ) {
             test_case_filter filter( runtime_config::test_to_run() );
-
             traverse_test_tree( framework::master_test_suite().p_id, filter );
         }
 #endif
-
         framework::run();
-
         results_reporter::make_report();
         made_report = true;
 
@@ -2425,25 +2321,20 @@ main(int argc, char* argv[])
 #endif
     BOOST_TEST_I_CATCH( framework::internal_error, ex ) {
         results_reporter::get_stream() << "Boost.Test framework internal error: " << ex.what() << std::endl;
-
         result_code = boost::exit_exception_failure;
     }
     BOOST_TEST_I_CATCH( framework::setup_error, ex ) {
         results_reporter::get_stream() << "Test setup error: " << ex.what() << std::endl;
-
         result_code = boost::exit_exception_failure;
     }
     BOOST_TEST_I_CATCH( std::exception, ex ) {
         results_reporter::get_stream() << "Test framework error: " << ex.what() << std::endl;
-
         result_code = boost::exit_exception_failure;
     }
     BOOST_TEST_I_CATCHALL() {
         results_reporter::get_stream() << "Boost.Test framework internal error: unknown reason" << std::endl;
-
         result_code = boost::exit_exception_failure;
     }
-
     // Report results now if an exception precluded doing so earlier.
     if ( !made_report ) {
         results_reporter::make_report();
