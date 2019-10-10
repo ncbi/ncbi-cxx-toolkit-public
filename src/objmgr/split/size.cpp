@@ -47,10 +47,10 @@ CSize::CSize(const CAsnSizer& sizer)
 }
 
 
-CSize::CSize(TDataSize asn_size, double ratio)
+CSize::CSize(TDataSize asn_size, TSizeRatio ratio)
     : m_Count(1),
       m_AsnSize(asn_size),
-      m_ZipSize(TDataSize(double(asn_size)*ratio + .5))
+      m_ZipSize(TDataSize((Uint8(asn_size)*ratio.first+ratio.second/2)/ratio.second))
 {
 }
 

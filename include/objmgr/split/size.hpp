@@ -46,13 +46,14 @@ class CSize
 {
 public:
     typedef size_t TDataSize;
+    typedef pair<TDataSize, TDataSize> TSizeRatio;
 
     CSize(void)
         {
             clear();
         }
     CSize(const CAsnSizer& sizer);
-    CSize(TDataSize asn_size, double ratio);
+    CSize(TDataSize asn_size, TSizeRatio ratio);
 
     void clear(void)
         {
@@ -97,6 +98,10 @@ public:
     double GetRatio(void) const
         {
             return (double)m_ZipSize/(double)m_AsnSize;
+        }
+    TSizeRatio GetExactRatio(void) const
+        {
+            return TSizeRatio(m_ZipSize, m_AsnSize);
         }
 
     CNcbiOstream& Print(CNcbiOstream& out) const;

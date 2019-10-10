@@ -417,5 +417,38 @@ void CSeqsRange::Add(const CSeqTableLocColumns& loc, const CSeq_table& table,
 }
 
 
+int CSeqsRange::Compare(const CSeqsRange& other) const
+{
+    for ( TRanges::const_iterator i1(m_Ranges.begin()), i2(other.m_Ranges.begin());
+          i1 != m_Ranges.end() || i2 != other.m_Ranges.end(); ++i1, ++i2 ) {
+        if ( int cmp = (i1 != m_Ranges.end()) - (i2 != other.m_Ranges.end()) ) {
+            return cmp;
+        }
+        if ( i1->first != i2->first ) {
+            string s1 = i1->first.AsString();
+            string s2 = i2->first.AsString();
+            if ( int cmp = NStr::CompareNocase(s1, s2) ) {
+                return cmp;
+            }
+        }
+        auto r1 = i1->second.GetTotalRange();
+        auto r2 = i2->second.GetTotalRange();
+        if ( r1.GetFrom() < r2.GetFrom() ) {
+            return -1;
+        }
+        if ( r1.GetFrom() > r2.GetFrom() ) {
+            return 1;
+        }
+        if ( r1.GetTo() < r2.GetTo() ) {
+            return 1;
+        }
+        if ( r1.GetTo() > r2.GetTo() ) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

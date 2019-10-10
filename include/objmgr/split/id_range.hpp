@@ -147,6 +147,8 @@ public:
     void Add(const CSeqTableLocColumns& loc, const CSeq_table& table,
              const CBlobSplitterImpl& impl);
 
+    int Compare(const CSeqsRange& other) const;
+
 private:
     TRanges m_Ranges;
 };

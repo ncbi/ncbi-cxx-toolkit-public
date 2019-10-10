@@ -103,16 +103,16 @@ public:
         }
     CAnnotObject_SplitInfo(const CSeq_feat& obj,
                            const CBlobSplitterImpl& impl,
-                           double ratio);
+                           CSize::TSizeRatio ratio);
     CAnnotObject_SplitInfo(const CSeq_align& obj,
                            const CBlobSplitterImpl& impl,
-                           double ratio);
+                           CSize::TSizeRatio ratio);
     CAnnotObject_SplitInfo(const CSeq_graph& obj,
                            const CBlobSplitterImpl& impl,
-                           double ratio);
+                           CSize::TSizeRatio ratio);
     CAnnotObject_SplitInfo(const CSeq_table& obj,
                            const CBlobSplitterImpl& impl,
-                           double ratio);
+                           CSize::TSizeRatio ratio);
 
     TAnnotPriority GetPriority(void) const;
     TAnnotPriority CalcPriority(void) const;
@@ -195,6 +195,8 @@ public:
     TAnnotPriority GetPriority(void) const;
     TAnnotPriority GetPriority(const CAnnotObject_SplitInfo& obj) const;
 
+    int Compare(const CSeq_annot_SplitInfo& other) const;
+    
     CConstRef<CSeq_annot> m_Src_annot;
     CAnnotName      m_Name;
 

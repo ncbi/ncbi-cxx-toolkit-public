@@ -162,8 +162,12 @@ bool SAnnotPiece::operator<(const SAnnotPiece& piece) const
     }
     if ( m_Object != piece.m_Object ) {
         if ( m_ObjectType == seq_descr ) {
-            int cmp = m_Seq_descr->Compare(*piece.m_Seq_descr);
-            if ( cmp ) {
+            if ( int cmp = m_Seq_descr->Compare(*piece.m_Seq_descr) ) {
+                return cmp < 0;
+            }
+        }
+        else if ( m_ObjectType == annot_object ) {
+            if ( int cmp = m_Seq_annot->Compare(*piece.m_Seq_annot) ) {
                 return cmp < 0;
             }
         }
@@ -172,8 +176,7 @@ bool SAnnotPiece::operator<(const SAnnotPiece& piece) const
         }
     }
     if ( m_AnnotObject != piece.m_AnnotObject ) {
-        int cmp = m_AnnotObject->Compare(*piece.m_AnnotObject);
-        if ( cmp ) {
+        if ( int cmp = m_AnnotObject->Compare(*piece.m_AnnotObject) ) {
             return cmp < 0;
         }
     }

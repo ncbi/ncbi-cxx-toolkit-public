@@ -263,6 +263,21 @@ size_t CSeq_annot_SplitInfo::CountAnnotObjects(const CSeq_annot& annot)
 }
 
 
+int CSeq_annot_SplitInfo::Compare(const CSeq_annot_SplitInfo& other) const
+{
+    if ( int cmp = m_Location.Compare(other.m_Location) ) {
+        return cmp;
+    }
+    if ( int cmp = m_Size.Compare(other.m_Size) ) {
+        return cmp;
+    }
+    if ( int cmp = AsnCompare(*m_Src_annot, *other.m_Src_annot) ) {
+        return cmp;
+    }
+    return 0;
+}
+
+
 void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
                                         const SSplitterParams& params,
                                         const CBlobSplitterImpl& impl)
@@ -270,7 +285,7 @@ void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
     s_Sizer->Set(annot, params);
     m_Size = CSize(*s_Sizer);
 
-    double ratio = m_Size.GetRatio();
+    auto ratio = m_Size.GetExactRatio();
     _ASSERT(!m_Src_annot);
     m_Src_annot.Reset(&annot);
     _ASSERT(!m_Name.IsNamed());
@@ -356,7 +371,7 @@ CNcbiOstream& CSeq_annot_SplitInfo::Print(CNcbiOstream& out) const
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_feat& obj,
                                                const CBlobSplitterImpl& impl,
-                                               double ratio)
+                                               CSize::TSizeRatio ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Ftable),
       m_Object(&obj),
       m_Size(s_Sizer->GetAsnSize(obj), ratio)
@@ -367,7 +382,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_feat& obj,
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_graph& obj,
                                                const CBlobSplitterImpl& impl,
-                                               double ratio)
+                                               CSize::TSizeRatio ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Graph),
       m_Object(&obj),
       m_Size(s_Sizer->GetAsnSize(obj), ratio)
@@ -378,7 +393,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_graph& obj,
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_align& obj,
                                                const CBlobSplitterImpl& impl,
-                                               double ratio)
+                                               CSize::TSizeRatio ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Align),
       m_Object(&obj),
       m_Size(s_Sizer->GetAsnSize(obj), ratio)
@@ -389,7 +404,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_align& obj,
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_table& obj,
                                                const CBlobSplitterImpl& impl,
-                                               double ratio)
+                                               CSize::TSizeRatio ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Seq_table),
       m_Object(&obj),
       m_Size(s_Sizer->GetAsnSize(obj), ratio)
