@@ -44,20 +44,23 @@
 ///   CDeadline      - timeout that use absolute time mark (deadline time).
 ///   CFastLocalTime - class for quick and dirty getting a local time.
 ///
-/// NOTE about CTime:
+/// NOTE(s) about CTime and Time API:
 ///
-///   - The time zone database in most Windows-based computer systems usually
-///     stores only a single start and end rule for each zone, regardless
-///     of year. One of the problems of this approach is that using time-zone
-///     information will get incorrect results if referring to a year with
-///     rules that are different from those currently in the database.
+///  1) CTime works with Gregorian calendar dates only (with some cut-off).
+///     Earlier valid date is January 1, 1583.
 ///
-///   - Do not use Local time and time_t and its dependent functions with
+///  2) Do not use local time and time_t and its dependent functions with
 ///     dates outside the range January 1, 1970 UTC to January 18, 2038 UTC.
 ///     Also avoid to use universal->local time conversion functions.
 ///
-///   - Do not use DataBase conversion functions for dates
-///     prior to January 1, 1900.
+///  3) On Windows-based computers the time zone database usually stores
+///     a single start and end rule for each zone only, regardless of year.
+///     One of the problems of this approach is that using time-zone
+///     information for some year in past will get incorrect results, 
+///     if time zone rules changes since then. This affect local time only, 
+///     any calculations with UTC time should be fine.
+///
+///  4) Do not use DataBase conversion functions for dates prior to January 1, 1900.
 
 #include <corelib/ncbistd.hpp>
 
