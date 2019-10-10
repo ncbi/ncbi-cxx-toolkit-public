@@ -43,6 +43,7 @@ public:
     void ReportUnusedIds(ILineErrorListener* pEC);
 private:
     void x_ProcessLine(const CTempString& line, TModList& mods);
+    void x_RegisterLine(CTempString line, bool allowAcc);
     bool m_FileMapped = false;
     unique_ptr<CMemoryFileMap> m_pFileMap;
     vector<CTempString> m_ColumnNames;

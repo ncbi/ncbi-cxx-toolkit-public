@@ -66,8 +66,9 @@ void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
     vector<CTempString> tokens;
     NStr::Split(line, "\t", tokens, 0);
     for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
-        if (!NStr::IsBlank(tokens[i])) {
-            mods.emplace_back(m_ColumnNames[i], tokens[i]);
+        auto value=NStr::TruncateSpaces_Unsafe(tokens[i]);
+        if (!NStr::IsBlank(value)) {
+            mods.emplace_back(m_ColumnNames[i], value);
         }
     }
 }
@@ -118,6 +119,41 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
     return retval;
 }
 
+void CMemorySrcFileMap::x_RegisterLine(CTempString line, bool allowAcc)
+{
+    CTempString idString, remainder;
+    NStr::SplitInTwo(line, "\t", idString, remainder);
+    NStr::TruncateSpacesInPlace(idString);
+
+    if (!idString.empty()) {
+        auto parseFlags =
+            allowAcc ?
+            CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal :
+            CSeq_id::fParse_AnyLocal;
+
+        list<CRef<CSeq_id>> ids;
+        CSeq_id::ParseIDs(ids, idString, parseFlags);
+        // If ids is empty, we should report
+
+        set<string> idSet;
+        if (ids.size() == 1 &&
+            ids.front()->IsLocal() &&
+            !NStr::StartsWith(idString, "lcl|", NStr::eNocase)) {
+            string idKey = idString;
+            NStr::ToLower(idKey);
+            idSet.emplace(idKey);
+        }
+        else {
+            for (const auto& pSeqId : ids) {
+                string idKey;
+                pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eFasta);
+                NStr::ToLower(idKey);
+                idSet.emplace(idKey);
+            }
+        }
+        m_LineMap.emplace(idSet, move(line));
+    }
+}
 
 void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
 {
@@ -145,63 +181,22 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
         const char* start = ptr;
         // search for end of line
         const char* endline = (const char*)memchr(ptr, '\n', end - ptr);
-        if (endline == NULL) {
-            endline = ptr;
-            ptr = end;
-        } 
-        else
-        {
-            ptr = endline + 1;
-            endline--;
-        }
+        if (endline == nullptr) endline = end;
 
-        while (start < endline && *endline == '\r') {
+        ptr = endline + 1;
+        endline--;
+
+        while (start < endline && *endline == '\r')
             endline--;
-        }
 
         // compose line control structure
         if (start < endline)
         {
             CTempString line(start, endline-start+1);
-            if (m_ColumnNames.empty()) {
+            if (m_ColumnNames.empty())
                 NStr::Split(line, "\t", m_ColumnNames, 0);
-            }
-            else 
-            // parse regular line
-            {
-                CTempString idString, remainder;
-                NStr::SplitInTwo(line, "\t", idString, remainder);  
-                NStr::TruncateSpacesInPlace(idString);
-
-                if (!idString.empty()) {
-                    auto parseFlags = 
-                        allowAcc ?
-                        CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal :
-                        CSeq_id::fParse_AnyLocal;
-
-                    list<CRef<CSeq_id>> ids;
-                    CSeq_id::ParseIDs(ids, idString, parseFlags);
-                    // If ids is empty, we should report
-
-                    set<string> idSet;
-                    if (ids.size() == 1 &&
-                        ids.front()->IsLocal() &&
-                        !NStr::StartsWith(idString, "lcl|", NStr::eNocase)) {
-                        string idKey = idString;
-                        NStr::ToLower(idKey);
-                        idSet.emplace(idKey);
-                    }
-                    else {
-                        for (const auto& pSeqId : ids) {
-                            string idKey;
-                            pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eFasta);
-                            NStr::ToLower(idKey);
-                            idSet.emplace(idKey); 
-                        }
-                    }
-                    m_LineMap.emplace(idSet, move(line));
-                }
-            }
+            else // parse regular line
+                x_RegisterLine(line, allowAcc);
         }
     }
 
