@@ -2154,6 +2154,8 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
                         }
                     }
                     ret.first = kByLocusParentQuality;
+                    ret.second = 0;
+                    return ret;
                 }
             }
         }
