@@ -151,7 +151,7 @@ static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& com
     size_t num_of_pubs = 0;
     list<string> pubs;
 
-    if (descrs && descrs->IsSet()) {
+    if (descrs->IsSet()) {
 
         for (auto& descr : descrs->Set()) {
             if (descr->IsPub()) {
@@ -232,13 +232,10 @@ static void CollectDataFromDescr(const CSeq_entry& entry, list<string>& containe
     }
 
     const CSeq_descr* descrs = nullptr;
-    if (GetDescr(entry, descrs)) {
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
 
-        if (descrs && descrs->IsSet()) {
-
-            for (auto& descr : descrs->Get()) {
-                process(*descr, container, checker);
-            }
+        for (auto& descr : descrs->Get()) {
+            process(*descr, container, checker);
         }
     }
 
@@ -358,32 +355,29 @@ static bool CheckBioSource(const CSeq_entry& entry, CMasterInfo& info, const str
     bool ret = true;
 
     const CSeq_descr* descrs = nullptr;
-    if (GetDescr(entry, descrs)) {
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
 
-        if (descrs && descrs->IsSet()) {
+        auto is_biosource = [](const CRef<CSeqdesc>& descr) { return descr->IsSource(); };
+        size_t num_of_biosources = count_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
 
-            auto is_biosource = [](const CRef<CSeqdesc>& descr) { return descr->IsSource(); };
-            size_t num_of_biosources = count_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
+        if (num_of_biosources > 1) {
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MultipleBioSources, Fatal << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
+            ret = false;
+        }
+        else if (num_of_biosources < 1) {
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_NoBioSourceInSeqEntry, Warning << "Submission from file \"" << file << "\" is lacking BioSource.");
+        }
+        else {
 
-            if (num_of_biosources > 1) {
-                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MultipleBioSources, Fatal << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
-                ret = false;
-            }
-            else if (num_of_biosources < 1) {
-                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_NoBioSourceInSeqEntry, Warning << "Submission from file \"" << file << "\" is lacking BioSource.");
+            auto biosource_it = find_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
+            if (info.m_biosource.Empty()) {
+                info.m_biosource.Reset(new CBioSource);
+                info.m_biosource->Assign((*biosource_it)->GetSource());
             }
             else {
-
-                auto biosource_it = find_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
-                if (info.m_biosource.Empty()) {
-                    info.m_biosource.Reset(new CBioSource);
-                    info.m_biosource->Assign((*biosource_it)->GetSource());
-                }
-                else {
                     
-                    if (!IsBiosourcesSame(*info.m_biosource, (*biosource_it)->GetSource())) {
-                        info.m_same_biosource = false;
-                    }
+                if (!IsBiosourcesSame(*info.m_biosource, (*biosource_it)->GetSource())) {
+                    info.m_same_biosource = false;
                 }
             }
         }
@@ -462,7 +456,7 @@ static void CollectDblink(CSeq_entry& entry, CDBLinkInfo& info, bool& reject)
     }
 
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         for (auto& descr : descrs->Set()) {
             if (IsUserObjectOfType(*descr, "DBLink")) {
@@ -536,16 +530,13 @@ static bool CheckGPID(const CSeq_entry& entry)
 {
     const CSeq_descr* descrs = nullptr;
     bool ret = false;
-    if (GetDescr(entry, descrs)) {
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
 
-        if (descrs && descrs->IsSet()) {
-
-            for (auto& descr : descrs->Get()) {
-                if (descr->IsUser()) {
-                    ret = HasGenomeProjectID(descr->GetUser());
-                    if (ret) {
-                        break;
-                    }
+        for (auto& descr : descrs->Get()) {
+            if (descr->IsUser()) {
+                ret = HasGenomeProjectID(descr->GetUser());
+                if (ret) {
+                    break;
                 }
             }
         }
@@ -1681,21 +1672,18 @@ static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info, CSeq_submit& submi
         CCit_sub* cit_sub = nullptr;
 
         const CSeq_descr* descrs = nullptr;
-        if (GetDescr(*entry, descrs)) {
+        if (GetDescr(*entry, descrs) && descrs->IsSet()) {
 
-            if (descrs && descrs->IsSet()) {
+            for (auto descr : descrs->Get()) {
 
-                for (auto descr : descrs->Get()) {
+                if (descr->IsPub()) {
 
-                    if (descr->IsPub()) {
-
-                        cit_sub = GetNonConstCitSub(descr->SetPub());
-                        if (cit_sub) {
-                            if (GetParams().IsSetSubmissionDate()) {
-                                cit_sub->SetDate().SetStd().Assign(GetParams().GetSubmissionDate());
-                            }
-                            break;
+                    cit_sub = GetNonConstCitSub(descr->SetPub());
+                    if (cit_sub) {
+                        if (GetParams().IsSetSubmissionDate()) {
+                            cit_sub->SetDate().SetStd().Assign(GetParams().GetSubmissionDate());
                         }
+                        break;
                     }
                 }
             }

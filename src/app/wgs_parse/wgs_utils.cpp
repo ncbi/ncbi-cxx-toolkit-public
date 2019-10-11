@@ -119,67 +119,46 @@ bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs)
         ret = true;
     }
 
-    return ret;
+    return ret && descrs != nullptr;
 }
 
 bool GetNonConstDescr(CSeq_entry& entry, CSeq_descr* &descrs)
 {
-    bool ret = true;
-    if (entry.IsSeq()) {
-        if (entry.GetSeq().IsSetDescr()) {
-            descrs = &entry.SetSeq().SetDescr();
-        }
-    }
-    else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetDescr()) {
-            descrs = &entry.SetSet().SetDescr();
-        }
-    }
-    else {
-        ret = false;
+    bool ret = false;
+    if ((entry.IsSeq() || entry.IsSet())
+        && entry.IsSetDescr()) {
+
+        descrs = &entry.SetDescr();
+        ret = true;
     }
 
-    return ret;
+    return ret && descrs != nullptr;
 }
 
 bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot)
 {
-    bool ret = true;
-    if (entry.IsSeq()) {
-        if (entry.GetSeq().IsSetAnnot()) {
-            annot = &entry.GetSeq().GetAnnot();
-        }
-    }
-    else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetAnnot()) {
-            annot = &entry.GetSet().GetAnnot();
-        }
-    }
-    else {
-        ret = false;
+    bool ret = false;
+    if ((entry.IsSeq() || entry.IsSet())
+        && entry.IsSetAnnot()) {
+
+        annot = &entry.GetAnnot();
+        ret = true;
     }
 
-    return ret;
+    return ret && annot != nullptr;
 }
 
 bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot)
 {
-    bool ret = true;
-    if (entry.IsSeq()) {
-        if (entry.GetSeq().IsSetAnnot()) {
-            annot = &entry.SetSeq().SetAnnot();
-        }
-    }
-    else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetAnnot()) {
-            annot = &entry.SetSet().SetAnnot();
-        }
-    }
-    else {
-        ret = false;
+    bool ret = false;
+    if ((entry.IsSeq() || entry.IsSet())
+        && entry.IsSetAnnot()) {
+
+        annot = &entry.SetAnnot();
+        ret = true;
     }
 
-    return ret;
+    return ret && annot != nullptr;
 }
 
 CSeqdesc* GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type)

@@ -402,7 +402,7 @@ static bool ReorganizeEntries(CSeq_submit::C_Data::TEntrys& entries, bool first)
 
                 // Process entries of 'cur_bioseq_set' and put them into 'entries' list
 
-                if (add_descr) {
+                if (add_descr && cur_bioseq_set.IsSetDescr()) {
                     for (auto cur_entry : cur_bioseq_set.SetSeq_set()) {
                         AddDescr(cur_bioseq_set.GetDescr(), *cur_entry);
                     }

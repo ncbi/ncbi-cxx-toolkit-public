@@ -97,7 +97,7 @@ static void RemoveDatesFromDescrs(CSeq_descr::Tdata& descrs, bool remove_creatio
 static void RemoveDates(CSeq_entry& entry, bool remove_creation, bool remove_update)
 {
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
         RemoveDatesFromDescrs(descrs->Set(), remove_creation, remove_update);
     }
 
@@ -117,7 +117,7 @@ static void RemovePubs(CSeq_entry& entry, const list<string>& common_pubs, CPubC
     }
 
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         for (auto cur_descr = descrs->Set().begin(); cur_descr != descrs->Set().end();) {
 
@@ -241,12 +241,12 @@ static void FixDbName(CSeq_entry& entry, map<string, string>& ids)
     CollectObjectIds(entry, ids);
 
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs) {
+    if (GetNonConstDescr(entry, descrs)) {
         FixDbNameInObject(*descrs, ids);
     }
 
     CBioseq::TAnnot* annots = nullptr;
-    if (GetNonConstAnnot(entry, annots) && annots) {
+    if (GetNonConstAnnot(entry, annots)) {
 
         for (auto& annot : *annots) {
             FixDbNameInObject(*annot, ids);
@@ -300,7 +300,7 @@ static void FixOrigProtTransQuals(CSeq_annot::C_Data::TFtable& ftable)
 static void FixOrigProtTransIds(CSeq_entry& entry)
 {
     CBioseq::TAnnot* annots = nullptr;
-    if (GetNonConstAnnot(entry, annots) && annots) {
+    if (GetNonConstAnnot(entry, annots)) {
         for (auto& annot : *annots) {
             if (annot->IsFtable()) {
                 FixOrigProtTransQuals(annot->SetData().SetFtable());
@@ -505,7 +505,7 @@ static void FixTech(CSeq_entry& entry)
 static bool FixBioSources(CSeq_entry& entry, const CMasterInfo& master_info)
 {
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         auto source_it = find_if(descrs->Set().begin(), descrs->Set().end(), [](CRef<CSeqdesc>& descr) { return descr->IsSource(); });
 
@@ -515,7 +515,7 @@ static bool FixBioSources(CSeq_entry& entry, const CMasterInfo& master_info)
     }
 
     CBioseq::TAnnot* annots = nullptr;
-    if (GetNonConstAnnot(entry, annots) && annots) {
+    if (GetNonConstAnnot(entry, annots)) {
 
         for (auto feat_table_it : *annots) {
 
@@ -609,7 +609,7 @@ static void GetTaxNameInfoFromSource(const CBioSource& bio_src, TTaxNameInfo& in
 static void GetTaxNameInfo(const CSeq_entry& entry, TTaxNameInfo& info)
 {
     const CSeq_descr* descrs = nullptr;
-    if (GetDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
 
         auto source_it = find_if(descrs->Get().begin(), descrs->Get().end(),
                                  [](const CRef<CSeqdesc>& descr) { return descr->IsSource() && descr->GetSource().IsSetOrg() && descr->GetSource().GetOrg().IsSetTaxname(); });
@@ -827,7 +827,7 @@ static void PackEntry(CSeq_entry& entry)
 static void RemoveBioSources(CSeq_entry& entry)
 {
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
@@ -924,7 +924,7 @@ static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_fil
 static void RemoveKeywords(CSeq_entry& entry, const map<string, string>& keywords)
 {
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
@@ -990,7 +990,7 @@ static void RemoveComments(CSeq_entry& entry, const list<string>& comments, GetC
     }
 
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         CDataChecker checker(false, comments);
         for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
@@ -1125,7 +1125,7 @@ static void CleanupSetGbblock(CSeq_entry& entry)
 static void RemoveDblinkGPID(CSeq_entry& entry, size_t& dblink_order_num)
 {
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         size_t order = 0;
         for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
@@ -1185,7 +1185,7 @@ static void FixCDRegionGeneticCode(CCdregion& cdregion)
 static void FixGeneticCode(CSeq_entry& entry)
 {
     CBioseq::TAnnot* annots = nullptr;
-    if (GetNonConstAnnot(entry, annots) && annots) {
+    if (GetNonConstAnnot(entry, annots)) {
 
         for (auto feat_table_it: *annots) {
 

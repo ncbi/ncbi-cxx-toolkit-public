@@ -76,14 +76,12 @@ void CollectOrgRefs(const CSeq_entry& entry, list<COrgRefInfo>& org_refs)
     }
 
     const CSeq_descr* descrs = nullptr;
-    if (GetDescr(entry, descrs)) {
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
 
-        if (descrs && descrs->IsSet()) {
-            for (auto& descr : descrs->Get()) {
-                if (descr->IsSource() && descr->GetSource().IsSetOrg()) {
-                    if (AddOrgRef(descr->GetSource().GetOrg(), org_refs) && org_refs.size() >= MAX_ORG_REF_NUM) {
-                        return;
-                    }
+        for (auto& descr : descrs->Get()) {
+            if (descr->IsSource() && descr->GetSource().IsSetOrg()) {
+                if (AddOrgRef(descr->GetSource().GetOrg(), org_refs) && org_refs.size() >= MAX_ORG_REF_NUM) {
+                    return;
                 }
             }
         }
@@ -92,15 +90,13 @@ void CollectOrgRefs(const CSeq_entry& entry, list<COrgRefInfo>& org_refs)
     const CBioseq::TAnnot* annots = nullptr;
     if (GetAnnot(entry, annots)) {
 
-        if (annots) {
-            for (auto& annot : *annots) {
-                if (annot->IsFtable()) {
+        for (auto& annot : *annots) {
+            if (annot->IsFtable()) {
 
-                    for (auto& feat : annot->GetData().GetFtable()) {
-                        if (feat->IsSetData() && feat->GetData().IsBiosrc() && feat->GetData().GetBiosrc().IsSetOrg()) {
-                            if (AddOrgRef(feat->GetData().GetBiosrc().GetOrg(), org_refs) && org_refs.size() >= MAX_ORG_REF_NUM) {
-                                return;
-                            }
+                for (auto& feat : annot->GetData().GetFtable()) {
+                    if (feat->IsSetData() && feat->GetData().IsBiosrc() && feat->GetData().GetBiosrc().IsSetOrg()) {
+                        if (AddOrgRef(feat->GetData().GetBiosrc().GetOrg(), org_refs) && org_refs.size() >= MAX_ORG_REF_NUM) {
+                            return;
                         }
                     }
                 }

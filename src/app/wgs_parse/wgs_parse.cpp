@@ -347,7 +347,7 @@ static void ReportMultiplePubs(const CSeq_entry& entry, PubPredicat predicat, Re
 
     const CSeq_descr* descrs = nullptr;
     size_t num_of_problems = 0;
-    if (GetDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
 
         num_of_problems = count_if(descrs->Get().begin(), descrs->Get().end(), predicat);
     }
@@ -885,7 +885,7 @@ static bool RemoveDescriptors(CSeq_entry& entry, TDescrPredicat to_remove)
     CSeq_descr* descrs = nullptr;
     bool ret = false;
 
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         auto& descr_cont = descrs->Set();
         for (auto descr = descr_cont.begin(); descr != descr_cont.end();) {
@@ -919,7 +919,7 @@ static CSeqdesc* CheckCitArtToReplace(CSeq_entry& entry, string& iso_jta, bool i
     CSeqdesc* ret = nullptr;
 
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
         for (auto& descr : descrs->Set()) {
             if (descr->IsPub()) {
@@ -1289,7 +1289,7 @@ static void ReplaceSubmissionDate(CRef<CSeq_entry>& entry, const CDate_std& date
     if (entry.NotEmpty()) {
 
         CSeq_descr* descrs = nullptr;
-        if (GetNonConstDescr(*entry, descrs) && descrs && descrs->IsSet()) {
+        if (GetNonConstDescr(*entry, descrs) && descrs->IsSet()) {
             for (auto& descr : descrs->Set()) {
                 if (descr->IsPub()) {
                     CCit_sub* cit_sub = GetNonConstCitSub(descr->SetPub());
