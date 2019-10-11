@@ -2668,6 +2668,14 @@ bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
         } else {
             // just a point. do nothing
         }
+
+        if (partial5) {
+            pPoint->SetPartialStart (true, eExtreme_Biological);
+        }
+        if (partial3) {
+            pPoint->SetPartialStop (true, eExtreme_Biological);
+        }
+
         loc->SetPnt( *pPoint );
     } else {
         // interval
@@ -2954,6 +2962,26 @@ void CFeatureTableReader_Imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval
 {
     if (feat.IsSetLocation() && feat.GetLocation().IsMix())
     {
+
+
+        for (auto pSeqLoc : feat.SetLocation().SetMix().Set()) {
+            if (pSeqLoc->IsPnt()) {
+                auto& seq_point = pSeqLoc->SetPnt();
+                const auto old_strand = 
+                    seq_point.IsSetStrand() ? 
+                    seq_point.GetStrand() :
+                    eNa_strand_plus;
+
+                    seq_point.SetStrand(strand);
+                    if (old_strand != strand) {
+                        const bool is_5p_partial = seq_point.IsPartialStop(eExtreme_Biological);
+                        const bool is_3p_partial = seq_point.IsPartialStart(eExtreme_Biological);
+                        seq_point.SetPartialStart(is_5p_partial, eExtreme_Biological);
+                        seq_point.SetPartialStop(is_3p_partial, eExtreme_Biological);  
+                    }
+            }
+        }
+/*
         NON_CONST_REVERSE_ITERATE(CSeq_loc_mix::Tdata, it, feat.SetLocation().SetMix().Set())
         {
             if ((**it).IsPnt())
@@ -2961,6 +2989,7 @@ void CFeatureTableReader_Imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval
                 (**it).SetPnt().SetStrand(strand);
             }
         }
+    */
     }    
 }
 
