@@ -44,10 +44,12 @@ class CScope;
 class CSparse_align;
 class CSparse_seg;
 
+ 
+//  ----------------------------------------------------------------------------
 class NCBI_XOBJWRITE_EXPORT CPslWriter:
     public CWriterBase
+//  ----------------------------------------------------------------------------
 {
-
 public:
     CPslWriter(
         CScope& scope,
@@ -66,6 +68,11 @@ public:
         const string& descr="");
 
 protected:
+    void xWritePreamble();
+
+    void xWriteAlignSlicedSeg(
+        const CSpliced_seg& splicedSeg);
+
     CRef<CScope> m_pScope;
 };
 
