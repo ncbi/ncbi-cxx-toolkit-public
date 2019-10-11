@@ -408,13 +408,14 @@ static bool ReorganizeEntries(CSeq_submit::C_Data::TEntrys& entries, bool first)
                     }
                 }
 
-                entries.splice(entry, cur_bioseq_set.SetSeq_set());
+                entries.splice(entries.end(), cur_bioseq_set.SetSeq_set());
             }
 
             entry = entries.erase(entry);
         }
-        else
+        else {
             ++entry;
+        }
     }
 
     return ret;

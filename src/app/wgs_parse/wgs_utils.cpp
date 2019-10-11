@@ -111,14 +111,12 @@ bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type)
 
 bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs)
 {
-    bool ret = true;
-    if (!entry.IsSeq() && !entry.IsSet()) {
-        ret = false;
-    }
-    else {
-        if (entry.IsSetDescr()) {
-            descrs = &entry.GetDescr();
-        }
+    bool ret = false;
+    if ((entry.IsSeq() || entry.IsSet())
+        && entry.IsSetDescr()) {
+
+        descrs = &entry.GetDescr();
+        ret = true;
     }
 
     return ret;
