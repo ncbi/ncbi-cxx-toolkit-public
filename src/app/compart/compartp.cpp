@@ -48,7 +48,7 @@ void CCompartApplication::Init(void)
     arg_desc->AddDefaultKey("ifmt", "InputFormat",
                             "Format for input",
                             CArgDescriptions::eString,
-                            "");
+                            "tabular");
     arg_desc->SetConstraint("ifmt",
                             &(*new CArgAllow_Strings,
                               "tabular", "seq-align", "seq-align-set", "seq-annot"));
