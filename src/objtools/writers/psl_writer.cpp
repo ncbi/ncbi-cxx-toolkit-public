@@ -52,6 +52,7 @@
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/psl_writer.hpp>
+#include "psl_record.hpp"
 
 #include <util/sequtil/sequtil_manip.hpp>
 
@@ -87,7 +88,34 @@ bool CPslWriter::WriteAlign(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    return false;
+    xWritePreamble();
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::C_Segs::e_Spliced:
+        xWriteAlignSlicedSeg(align.GetSegs().GetSpliced());
+        return true;
+    default:
+        return false;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CPslWriter::xWritePreamble()
+//  ----------------------------------------------------------------------------
+{
+    m_Os << "!! The PSL writer is still under development!" << endl;
+    m_Os << "!! It does not produce valid output." << endl;
+    m_Os << "!! Please don't use it yet." << endl;
+    m_Os << endl;
+}
+
+//  ----------------------------------------------------------------------------
+void CPslWriter::xWriteAlignSlicedSeg(
+    const CSpliced_seg& splicedSeg)
+//  ----------------------------------------------------------------------------
+{
+    CPslRecord psl;
+    psl.Initialize(splicedSeg);
+    psl.Write(m_Os, true);
 }
 
 END_NCBI_SCOPE

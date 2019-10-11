@@ -47,6 +47,7 @@
 
 #include <objtools/edit/loc_edit.hpp>
 #include <objtools/edit/feattable_edit.hpp>
+#include <objtools/edit/cds_fix.hpp>
 #include <corelib/ncbi_message.hpp>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/logging/listener.hpp>
@@ -625,18 +626,27 @@ void CFeatTableEdit::xConvertToGeneralIds(const CMappedFeat& mf,
     string locus_tag_prefix;
     if (update_protein_id || update_transcript_id) {
         locus_tag_prefix = xGetCurrentLocusTagPrefix(mf);
-        if (NStr::IsBlank(locus_tag_prefix)) {
-            xPutErrorMissingLocustag(mf);
-            return;
+        if (!NStr::IsBlank(locus_tag_prefix)) {
+            if (update_protein_id) {
+                protein_id = "gnl|" + locus_tag_prefix + "|" + protein_id;
+            }
+
+            if (update_transcript_id) {
+                transcript_id = "gnl|" + locus_tag_prefix + "|" + transcript_id;
+            }
         }
-    }
+        else {
+            string seq_label;
+            mf.GetLocation().GetId()->GetLabel(&seq_label, CSeq_id::eContent);
 
-    if (update_protein_id) {
-        protein_id = "gnl|" + locus_tag_prefix + "|" + protein_id;
-    }
+            if (update_protein_id) {
+                protein_id = "gnl|" + seq_label + "|" + protein_id;
+            }
 
-    if (update_transcript_id) {
-        transcript_id = "gnl|" + locus_tag_prefix + "|" + transcript_id;
+            if (update_transcript_id) {
+                transcript_id = "gnl|" + seq_label + "|" + transcript_id;
+            }
+        }
     }
 }
 

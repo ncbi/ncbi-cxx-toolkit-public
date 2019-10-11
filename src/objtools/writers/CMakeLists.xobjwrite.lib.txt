@@ -19,7 +19,7 @@ NCBI_begin_lib(xobjwrite)
     src_writer
     fasta_writer
     aln_writer
-	psl_writer
+	psl_record psl_writer
   )
   NCBI_uses_toolkit_libraries(variation_utils xformat xobjread)
   NCBI_project_watchers(ludwigf boukn gotvyans foleyjp)
