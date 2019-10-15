@@ -3022,12 +3022,11 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByPercentIdent(CSeq_align_s
             double alnPercentIdent = GetPercentIdentity(num_ident, seqAlnLength);						
             if(alnPercentIdent >= percentIdentLow && alnPercentIdent <= percentIdentHigh) {				
                 new_aln->Set().push_back(*iter);
-            }
+            }            
         }
     }   
     return new_aln;
 }
-
 
 CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByScoreParams(CSeq_align_set& source_aln,
                                                                     double evalueLow,
@@ -3060,8 +3059,94 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByScoreParams(CSeq_align_se
     return new_aln;
 }
 
+static double adjustPercentIdentToDisplayValue(double value)
+{
+    char buffer[512];    
+    sprintf(buffer, "%.*f", 2, value);
+    double newVal = NStr::StringToDouble(buffer);
+    return newVal;
+}
 
+static bool s_isAlnInFilteringRange(double evalue,
+                                  double percentIdent,
+                                  int queryCover,
+                                  double evalueLow,
+                                  double evalueHigh,
+                                  double percentIdentLow,
+                                  double percentIdentHigh,
+                                  int queryCoverLow,
+                                  int queryCoverHigh)
+{
+    
 
+    bool isInRange = false;
+    //Adjust percent identity and evalue to display values
+    percentIdent = adjustPercentIdentToDisplayValue(percentIdent);
+    string evalue_buf, bit_score_buf, total_bit_buf, raw_score_buf;
+    double bits;
+	CAlignFormatUtil::GetScoreString(evalue, bits, 0, 0, evalue_buf, bit_score_buf, total_bit_buf, raw_score_buf);
+	evalue = NStr::StringToDouble(evalue_buf);
+
+    if(evalueLow >= 0 && percentIdentLow >= 0 && queryCoverLow >= 0) {
+        isInRange = (evalue >= evalueLow && evalue <= evalueHigh) &&
+				    (percentIdent >= percentIdentLow && percentIdent <= percentIdentHigh) &&
+                    (queryCover >= queryCoverLow && queryCover <= queryCoverHigh);
+    }
+    else if(evalueLow >= 0 && percentIdentLow >= 0) {
+        isInRange = (evalue >= evalueLow && evalue <= evalueHigh) &&
+				(percentIdent >= percentIdentLow && percentIdent <= percentIdentHigh);                
+	}
+    else if(evalueLow >= 0 && queryCoverLow >= 0) {
+        isInRange = (evalue >= evalueLow && evalue <= evalueHigh) &&
+				(queryCover >= queryCoverLow && queryCover <= queryCoverHigh);                
+	}
+    else if(queryCoverLow >= 0 && 	percentIdentLow >= 0) {
+        isInRange = (queryCover >= queryCoverLow && queryCover <= queryCoverHigh) &&
+				(percentIdent >= percentIdentLow && percentIdent <= percentIdentHigh);                
+	}
+    else if(evalueLow >= 0) {
+        isInRange = (evalue >= evalueLow && evalue <= evalueHigh);        
+    }
+	else if(percentIdentLow >= 0) {
+        isInRange = (percentIdent >= percentIdentLow && percentIdent <= percentIdentHigh);                		
+	}
+    else if(queryCoverLow >= 0) {
+        isInRange = (queryCover >= queryCoverLow && queryCover <= queryCoverHigh);                		
+	}
+    return isInRange;
+}
+
+CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByScoreParams(CSeq_align_set& source_aln,
+                                                                    double evalueLow,
+                                                                    double evalueHigh,
+                                                                    double percentIdentLow,
+                                                                    double percentIdentHigh,
+                                                                    int queryCoverLow,
+                                                                    int queryCoverHigh)
+{
+    list< CRef<CSeq_align_set> > seqalign_hit_total_list;
+    list< CRef<CSeq_align_set> > seqalign_hit_list;
+
+    HspListToHitList(seqalign_hit_list, source_aln);
+    
+    ITERATE(list< CRef<CSeq_align_set> >, iter, seqalign_hit_list) { 
+        CRef<CSeq_align_set> temp(*iter);
+        CAlignFormatUtil::SSeqAlignSetCalcParams* seqSetInfo = CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*temp);
+                
+        if(s_isAlnInFilteringRange(seqSetInfo->evalue,
+                                  seqSetInfo->percent_identity,
+                                  seqSetInfo->percent_coverage,
+                                  evalueLow,
+                                  evalueHigh,
+                                  percentIdentLow,
+                                  percentIdentHigh,
+                                  queryCoverLow,
+                                  queryCoverHigh)) {
+            seqalign_hit_total_list.push_back(temp);
+        }               
+    }
+    return HitListToHspList(seqalign_hit_total_list);    
+}
 
 CRef<CSeq_align_set> CAlignFormatUtil::LimitSeqalignByHsps(CSeq_align_set& source_aln,
                                                            int maxAligns,
@@ -4373,8 +4458,8 @@ bool CAlignFormatUtil::MatchSeqInSeqList(CConstRef<CSeq_id> &alnSeqID, list<stri
         //match in use_this_seq list
         ITERATE(list<string>, iter_seq, use_this_seq){                    
             string useThisSeq = s_UseThisSeqToTextSeqID(*iter_seq, isGi);            
-            if(curSeqID == useThisSeq){
-                found = true;            
+            found = std::find(seqList.begin(), seqList.end(), useThisSeq) != seqList.end();
+            if(found){            
                 break;
             }
         }
