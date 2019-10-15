@@ -95,10 +95,6 @@ void CCassBlobTaskDelete::Wait1()
                     UpdateLastActivity();
                     while ((wr = it.query->NextRow()) == ar_dataready) {
                         m_ExtendedVersions.push_back(it.query->FieldGetInt64Value(0));
-                        ERR_POST(Trace << "blob, key=" << m_Keyspace << "."
-                                 << m_Key << ", last_modified: "
-                                 << m_ExtendedVersions[m_ExtendedVersions.size() - 1]
-                        );
                     }
                     if (wr == ar_wait) {
                         break;

@@ -632,62 +632,56 @@ vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspa
     return result;
 }
 
-const CassPrepared *  CCassConnection::Prepare(const string &  sql)
+const CassPrepared * CCassConnection::Prepare(const string &  sql)
 {
-    const CassPrepared *    rv = nullptr;
-
+    const CassPrepared * rv = nullptr;
 #if CASS_PREPARED_Q
     {
-        CSpinGuard      guard(m_prepared_mux);
-        auto            it = m_prepared.find(sql);
+        CSpinGuard guard(m_prepared_mux);
+        auto it = m_prepared.find(sql);
         if (it != m_prepared.end()) {
             rv = it->second;
-/*            ERR_POST(Trace << "Prepared hit: sql: " << sql << ", " << rv); */
             return rv;
         }
     }
 
-    CSpinGuard      guard(m_prepared_mux);
-    auto            it = m_prepared.find(sql);
+    CSpinGuard guard(m_prepared_mux);
+    auto it = m_prepared.find(sql);
     if (it == m_prepared.end())
     {
-        const char *    query = sql.c_str();
-        CassFuture *    __future = cass_session_prepare(m_session, query);
-
-        if (!__future)
+        const char * query = sql.c_str();
+        CassFuture * __future = cass_session_prepare(m_session, query);
+        if (!__future) {
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
+        }
 
-        unique_ptr<CassFuture,
-                   function<void(CassFuture*)> >    future(
-                           __future,
-                           [](CassFuture* future)
-                           {
-                                cass_future_free(future);
-                           });
+        unique_ptr<CassFuture, function<void(CassFuture*)>> future(
+            __future,
+            [](CassFuture* future)
+            {
+                cass_future_free(future);
+            }
+        );
 
-        bool        b;
+        bool b;
         b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
-        if (!b)
-            RAISE_DB_QRY_TIMEOUT(m_qtimeoutms, 0,
-                                 string("failed to prepare query \"") + sql + "\"");
-
-        CassError   rc = cass_future_error_code(future.get());
+        if (!b) {
+            RAISE_DB_QRY_TIMEOUT(m_qtimeoutms, 0, string("failed to prepare query \"") + sql + "\"");
+        }
+        CassError rc = cass_future_error_code(future.get());
         if (rc != CASS_OK) {
-            string      msg = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR ||
-                               rc == CASS_ERROR_SERVER_INVALID_QUERY) ?
-                                        string(", sql: ") + sql : string("");
+            string msg = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR || rc == CASS_ERROR_SERVER_INVALID_QUERY) ?
+                            string(", sql: ") + sql : string("");
             RAISE_CASS_QRY_ERROR(future.get(), msg);
         }
 
         rv = cass_future_get_prepared(future.get());
-        if (!rv)
+        if (!rv) {
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain prepared handle for sql: ") + sql);
-/*        ERR_POST(Trace << "Prepared miss: sql: " << sql << ", " << rv);*/
-
+        }
         m_prepared.emplace(sql, rv);
     } else {
         rv = it->second;
-/*        ERR_POST(Trace << "Prepared hit2: sql: " << sql << ", " << rv); */
         return rv;
     }
 #endif
@@ -696,13 +690,13 @@ const CassPrepared *  CCassConnection::Prepare(const string &  sql)
 
 
 void CCassConnection::Perform(
-                unsigned int  optimeoutms,
+                unsigned int optimeoutms,
                 const std::function<bool()> &  PreLoopCB,
                 const std::function<void(const CCassandraException&)> &  DbExceptCB,
                 const std::function<bool(bool)> &  OpCB)
 {
-    int     err_cnt = 0;
-    bool    is_repeated = false;
+    int err_cnt = 0;
+    bool is_repeated = false;
     int64_t op_begin = gettime();
 
     while (!PreLoopCB || PreLoopCB()) {
@@ -836,13 +830,10 @@ CCassQuery::~CCassQuery()
     m_ondata_data = nullptr;
     m_ondata2_data = nullptr;
     m_onexecute_data = nullptr;
-/*    ERR_POST(Trace << "CCassQuery::~CCassQuery this=" << this);*/
 }
 
 void CCassQuery::InternalClose(bool  closebatch)
 {
-/*    ERR_POST(Trace << "CCassQuery::InternalClose: this: " << this <<
-             ", fut: " << m_future);*/
     m_params.clear();
     if (m_future) {
         cass_future_free(m_future);
@@ -883,8 +874,6 @@ void CCassQuery::InternalClose(bool  closebatch)
     m_is_prepared = false;
 
     if (m_cb_ref) {
-/*        ERR_POST(Trace << "CCassQuery::InternalClose: cb_ref detach, this: " <<
-                 this << ", cb_ref: " << m_cb_ref.get());*/
         m_cb_ref->Detach();
         m_cb_ref = nullptr;
     }
@@ -1070,36 +1059,35 @@ void CCassQuery::NewBatch()
 void CCassQuery::Query(CassConsistency  c, bool  run_async,
                        bool  allow_prepared, unsigned int  page_size)
 {
-/*    ERR_POST(Trace << "CCassQuery::Query this: " << this);*/
-    if (!m_connection)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, DB connection closed");
-    if (m_sql.empty())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, SQL is not set");
-    if (m_batch)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, can't run select in batch mode");
-    if (IsActive())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Query is active");
-
-    const CassPrepared *    prepared = nullptr;
+    if (!m_connection) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, DB connection closed");
+    }
+    if (m_sql.empty()) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, SQL is not set");
+    }
+    if (m_batch) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, can't run select in batch mode");
+    }
+    if (IsActive()) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, Query is active");
+    }
+    const CassPrepared * prepared = nullptr;
     if (allow_prepared) {
         prepared = m_connection->Prepare(m_sql);
         m_is_prepared = prepared != nullptr;
     }
-
-    if (m_is_prepared)
+    if (m_is_prepared) {
         m_statement = cass_prepared_bind(prepared);
-    else
+    } else {
         m_statement = cass_statement_new(m_sql.c_str(), m_params.size());
+    }
 
-    if (!m_statement)
+    if (!m_statement) {
         RAISE_DB_ERROR(eRsrcFailed, string("failed to create cassandra query"));
+    }
 
     try {
-        CassError   rc;
+        CassError rc;
         Bind();
         rc = cass_statement_set_consistency(m_statement, c);
         if (rc != CASS_OK)
@@ -1107,19 +1095,18 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
                              string("Failed to set consistency level ") +
                              NStr::NumericToString(static_cast<int>(c)));
         if (m_serial_consistency != CASS_CONSISTENCY_ANY) {
-            rc = cass_statement_set_serial_consistency(m_statement,
-                                                       m_serial_consistency);
+            rc = cass_statement_set_serial_consistency(m_statement, m_serial_consistency);
             if (rc != CASS_OK)
                 RAISE_CASS_ERROR(rc, eQueryFailed,
-                                 string("Failed to set serial consistency level ") +
-                                 NStr::NumericToString(static_cast<int>(m_serial_consistency)));
+                    string("Failed to set serial consistency level ") +
+                    NStr::NumericToString(static_cast<int>(m_serial_consistency)));
         }
         if (page_size > 0) {
             rc = cass_statement_set_paging_size(m_statement, page_size);
             if (rc != CASS_OK)
                 RAISE_CASS_ERROR(rc, eQueryFailed,
-                                 string("Failed to set page size to ") +
-                                 NStr::NumericToString(static_cast<int>(page_size)));
+                    string("Failed to set page size to ") +
+                    NStr::NumericToString(static_cast<int>(page_size)));
         }
 
         m_page_start = true;
@@ -1142,22 +1129,19 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
 
 void CCassQuery::RestartQuery(CassConsistency c)
 {
-    if (!m_future)
+    if (!m_future) {
         NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
+    }
     unsigned int page_size = m_page_size;
     CCassParams params = move(m_params);
     bool async = m_async, allow_prepared = m_is_prepared;
-
     Close();
     m_params = move(params);
     Query(c, async, allow_prepared, page_size);
 }
 
-
-void CCassQuery::Execute(CassConsistency  c, bool  run_async,
-                         bool  allow_prepared)
+void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
 {
-
     if (!m_connection)
         NCBI_THROW(CCassandraException, eSeqFailed,
                    "invalid sequence of operations, DB connection closed");
@@ -1323,10 +1307,6 @@ void CCassQuery::GetFuture()
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
         }
         m_futuretime = gettime();
-/*
-        ERR_POST(Trace << "CCassQuery::GetFuture: this: " << this <<
-                 ", fut: " << m_future);
-*/
         if (m_ondata || m_ondata2 || m_ondata3.lock()) {
             SetupOnDataCallback();
         }
@@ -1336,23 +1316,19 @@ void CCassQuery::GetFuture()
 
 async_rslt_t  CCassQuery::Wait(unsigned int  timeoutmks)
 {
-/*
-    ERR_POST(Trace << "CCassQuery::Wait: this: " << this <<
-             ", fut: " << m_future);
-*/
     if (m_results_expected && m_result) {
-        if (m_async)
+        if (m_async) {
             return ar_dataready;
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "result has already been allocated");
+        }
+        NCBI_THROW(CCassandraException, eSeqFailed, "result has already been allocated");
     }
 
-    if (m_EOF && m_results_expected)
+    if (m_EOF && m_results_expected) {
         return ar_done;
+    }
 
     GetFuture();
-
-    bool        rv;
+    bool rv;
     if (timeoutmks != 0) {
         rv = cass_future_wait_timed(m_future, timeoutmks);
     } else if (!m_async) {
@@ -1364,87 +1340,77 @@ async_rslt_t  CCassQuery::Wait(unsigned int  timeoutmks)
 
     if (!rv) {
         if (!m_async && timeoutmks > 0) {
-            int64_t     t = (gettime() - m_futuretime) / 1000L;
-            RAISE_DB_QRY_TIMEOUT(t, timeoutmks / 1000L,
-                                 string("failed to perform query \"") +
-                                 m_sql + "\"");
-        } else
+            int64_t t = (gettime() - m_futuretime) / 1000L;
+            RAISE_DB_QRY_TIMEOUT(t, timeoutmks / 1000L, string("failed to perform query \"") + m_sql + "\"");
+        } else {
             return ar_wait;
+        }
     } else {
         ProcessFutureResult();
-        if ((m_statement || m_batch) && !m_results_expected)
+        if ((m_statement || m_batch) && !m_results_expected) {
             // next request was run in m_ondata event handler
             return ar_wait;
-        else if (m_EOF || !m_results_expected)
+        } else if (m_EOF || !m_results_expected) {
             return ar_done;
-        else if (m_result)
+        } else if (m_result) {
             return ar_dataready;
-        else
+        } else {
             return ar_wait;
+        }
     }
 }
 
-
 void CCassQuery::SetupOnDataCallback()
 {
-    if (!m_future)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "Future is not assigned");
-    if (!m_ondata && !m_ondata2 && !m_ondata3.lock()) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, m_ondata is not set");
+    if (!m_future) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "Future is not assigned");
     }
-/*
-    ERR_POST(Trace << "CCassQuery::SetupOnDataCallback: this: " << this <<
-             ", fut: " << m_future << ", ondata: " << m_ondata <<
-             ", ondata2: " << m_ondata2);
-*/
-    if (m_cb_ref)
+    if (!m_ondata && !m_ondata2 && !m_ondata3.lock()) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, m_ondata is not set");
+    }
+    if (m_cb_ref) {
         m_cb_ref->Detach();
+    }
 
     m_cb_ref.reset(new CCassQueryCbRef(shared_from_this()));
     m_cb_ref->Attach(m_ondata, m_ondata_data, m_ondata2, m_ondata2_data, m_ondata3.lock());
 
-    CassError       rv = cass_future_set_callback(m_future,
-                                                  CCassQueryCbRef::s_OnFutureCb,
-                                                  m_cb_ref.get());
+    CassError rv = cass_future_set_callback(m_future, CCassQueryCbRef::s_OnFutureCb, m_cb_ref.get());
     if (rv != CASS_OK) {
         m_cb_ref->Detach(true);
         m_cb_ref = nullptr;
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "failed to assign future callback");
+        NCBI_THROW(CCassandraException, eSeqFailed, "failed to assign future callback");
     }
 }
 
-
 void CCassQuery::ProcessFutureResult()
 {
-    if (!m_future)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, m_future is not set");
-    if (m_iterator || m_result)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, results already obtained");
+    if (!m_future) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, m_future is not set");
+    }
+    if (m_iterator || m_result) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, results already obtained");
+    }
 
-    CassError   rc = cass_future_error_code(m_future);
+    CassError rc = cass_future_error_code(m_future);
     if (rc != CASS_OK) {
         if (m_statement) {
             cass_statement_free(m_statement);
             m_statement = nullptr;
         }
-        string      msg = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR ||
-                           rc == CASS_ERROR_SERVER_INVALID_QUERY) ?
-                                    string(", sql: ") + m_sql : string("");
+        string msg = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR || rc == CASS_ERROR_SERVER_INVALID_QUERY) ?
+            string(", sql: ") + m_sql : string("");
         RAISE_CASS_QRY_ERROR(m_future, msg);
     }
 
     if (m_results_expected) {
         m_result = cass_future_get_result(m_future);
-        if (!m_result)
+        if (!m_result) {
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query result"));
-        if (m_iterator)
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                       "iterator has already been allocated");
+        }
+        if (m_iterator) {
+            NCBI_THROW(CCassandraException, eSeqFailed, "iterator has already been allocated");
+        }
 
         m_iterator = cass_iterator_from_result(m_result);
         if (!m_iterator)
@@ -1454,16 +1420,10 @@ void CCassQuery::ProcessFutureResult()
             otherwise we free it in the destructor, keeping m_future not null
             as an indication that we have already waited for query to finish
         */
-/*
-        ERR_POST(Trace << "CCassQuery::ProcessFutureResult: "
-                 "release future this: " << this << ", fut: " << m_future);
-*/
         cass_future_free(m_future);
         --m_connection->m_active_statements;
         m_future = nullptr;
         if (m_cb_ref) {
-/*            ERR_POST(Trace << "CCassQuery::ProcessFutureResult: cb_ref detach, "
-                     "this: " << this << ", cb_ref: " << m_cb_ref.get());*/
             m_cb_ref->Detach();
             m_cb_ref = nullptr;
         }
@@ -1485,17 +1445,11 @@ void CCassQuery::ProcessFutureResult()
 }
 
 
-async_rslt_t  CCassQuery::NextRow()
+async_rslt_t CCassQuery::NextRow()
 {
-/*
-    ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
-             ", fut: " << m_future << ", m_row: " << m_row <<
-             ", m_result: " << m_result << ", m_iterator: " << m_iterator);
-*/
-    if (!IsActive())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Query is not active");
-
+    if (!IsActive()) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, Query is not active");
+    }
     while(1) {
         m_row = nullptr;
         if (m_result == nullptr) {
@@ -1507,30 +1461,20 @@ async_rslt_t  CCassQuery::NextRow()
             }
 
             if (wr != ar_dataready) {
-/*
-                ERR_POST(Trace << "CCassQuery::NextRow: async=" << m_async <<
-                         " returning wr=" << static_cast<int>(wr) <<
-                         " b'ze of Wait");
-*/
                 return wr;
             }
         }
 
         if (m_iterator && m_result) {
-            bool    b = cass_iterator_next(m_iterator);
+            bool b = cass_iterator_next(m_iterator);
             if (!b) {
-/*
-                ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
-                         ", cass_iterator_next returned false");
-*/
                 if (m_page_size > 0) {
-                    bool    has_more_pages = cass_result_has_more_pages(m_result);
+                    bool has_more_pages = cass_result_has_more_pages(m_result);
                     if (has_more_pages) {
                         CassError err;
-                        if ((err = cass_statement_set_paging_state(m_statement,
-                                                                   m_result)) != CASS_OK)
-                            RAISE_CASS_ERROR(err, eFetchFailed,
-                                             string("failed to retrive next page"));
+                        if ((err = cass_statement_set_paging_state(m_statement, m_result)) != CASS_OK) {
+                            RAISE_CASS_ERROR(err, eFetchFailed, string("failed to retrive next page"));
+                        }
                     }
 
                     cass_iterator_free(m_iterator);
@@ -1540,34 +1484,25 @@ async_rslt_t  CCassQuery::NextRow()
 
                     if (!has_more_pages) {
                         SetEOF(true);
-/*
-                        ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
-                                 ", async=" << m_async << " returning "
-                                 "wr=ar_done b'ze has_more_pages==false");
-*/
                         return ar_done;
                     }
                     // go to above
-                    m_page_start = true; 
+                    m_page_start = true;
                 } else {
                     SetEOF(true);
-/*
-                    ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
-                             ", async=" << m_async << " returning "
-                             "wr=ar_done b'ze m_page_size=" << m_page_size);
-*/
                     return ar_done;
                 }
             } else {
                 m_row = cass_iterator_get_row(m_iterator);
-                if (!m_row)
+                if (!m_row) {
                     RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query result row"));
+                }
                 return ar_dataready;
             }
         } else {
             NCBI_THROW(CCassandraException, eSeqFailed,
-                       "invalid sequence of operations, "
-                       "attempt to fetch next row on a closed query");
+                "invalid sequence of operations, "
+                "attempt to fetch next row on a closed query");
         }
     }
 }

@@ -108,11 +108,6 @@ void CCassBlobTaskDeleteExpired::Wait1()
                     async_rslt_t wr = it.query->NextRow();
                     if (wr == ar_dataready) {
                         CBlobRecord::TTimestamp write_timestamp = it.query->FieldGetInt64Value(0);
-                        ERR_POST(Trace << "BlobDeleteExpired write_time fetch key=" << m_Keyspace << "."
-                                 << m_Key << ", last_modified = " << m_LastModified
-                                 << ", write_time = " << write_timestamp
-                        );
-
                         CloseAll();
                         CTime expiration(CTime::eEmpty, CTime::eUTC);
                         expiration.SetTimeT(write_timestamp / 1000000);
@@ -122,9 +117,6 @@ void CCassBlobTaskDeleteExpired::Wait1()
                             m_State = eDeleteData;
                             b_need_repeat = true;
                         } else {
-                            ERR_POST(Trace << "BlobDeleteExpired key=" << m_Keyspace << "." << m_Key
-                                     << ", last_modified = " << m_LastModified << " is not expired yet"
-                            );
                             m_State = eDone;
                         }
                     }
@@ -169,9 +161,6 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 if (!CheckReady(m_QueryArr[0])) {
                     break;
                 }
-                ERR_POST(Trace << "BlobDeleteExpired blob key=" << m_Keyspace << "." << m_Key
-                         << ", last_modified = " << m_LastModified << " has been deleted successfully"
-                );
                 m_ExpiredVersionDeleted = true;
                 CloseAll();
                 m_State = eDone;

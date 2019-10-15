@@ -120,8 +120,6 @@ void CCassBlobLoader::x_RequestChunk(shared_ptr<CCassQuery> qry, int local_id)
 {
     CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM;
     string sql = "SELECT data FROM " + GetKeySpace() + ".largeentity WHERE ent = ? AND local_id = ?";
-    ERR_POST(Trace << "reading LARGE blob part, key=" << m_Keyspace <<
-             "." << m_Key << ", local_id=" << local_id << ", qry: " << qry.get());
     qry->SetSQL(sql, 2);
     qry->BindInt32(0, m_Key);
     qry->BindInt32(1, local_id);
@@ -313,12 +311,6 @@ void CCassBlobLoader::Wait1(void)
                             break;
                         }
 
-                        ERR_POST(Trace << "BD blob fetching, key=" <<
-                                 m_Keyspace << "." << m_Key <<
-                                 ", sz: " << len << ", " <<
-                                 "EOF: " << it.query->IsEOF() <<
-                                 ", large_parts: " << m_LargeParts);
-
                         if (m_LargeParts == 0) {
                             if (m_RemainingSize != 0) {
                                 snprintf(msg, sizeof(msg),
@@ -422,7 +414,7 @@ void CCassBlobLoader::Wait1(void)
                                   eDiag_Error, msg);
                             return;
                         }
-                            
+
                     }
                     else {
                         snprintf(msg, sizeof(msg),

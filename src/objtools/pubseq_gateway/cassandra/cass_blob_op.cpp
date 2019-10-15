@@ -386,7 +386,6 @@ void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name,
             string sql = "INSERT INTO " + KeySpaceDot(m_Keyspace) + "settings (name, value) VALUES(?, ?)";
             shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
             qry->SetSQL(sql, 2);
-            ERR_POST(Trace << "InternalUpdateSetting: " << name << "=>" << value << ", " << sql);
             qry->BindStr(0, name);
             qry->BindStr(1, value);
             qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
@@ -395,20 +394,17 @@ void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name,
     );
 }
 
-bool CCassBlobOp::GetSetting(unsigned int  op_timeout_ms, const string &  name, string &  value)
+bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, string & value)
 {
     bool rslt = false;
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
         [this, name, &value, &rslt](bool is_repeated) {
             string sql = "SELECT value FROM " + KeySpaceDot(m_Keyspace) + "settings WHERE name = ?";
             shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
-            ERR_POST(Trace << "InternalGetSetting: " << name << ": " << sql);
             qry->SetSQL(sql, 1);
             qry->BindStr(0, name);
-            CassConsistency cons = is_repeated &&
-               m_Conn->GetFallBackRdConsistency() ?
-                    CASS_CONSISTENCY_LOCAL_ONE :
-                    CASS_CONSISTENCY_LOCAL_QUORUM;
+            CassConsistency cons = is_repeated && m_Conn->GetFallBackRdConsistency() ?
+                CASS_CONSISTENCY_LOCAL_ONE : CASS_CONSISTENCY_LOCAL_QUORUM;
             qry->Query(cons, false, false);
             async_rslt_t rv = qry->NextRow();
             if (rv == ar_dataready) {

@@ -104,12 +104,10 @@ class CCassBlobWaiter
       ,  m_Async(async)
       ,  m_Cancelled(false)
     {
-        ERR_POST(Trace << "CCassBlobWaiter::CCassBlobWaiter this=" << this);
     }
 
     virtual ~CCassBlobWaiter()
     {
-        ERR_POST(Trace << "CCassBlobWaiter::~CCassBlobWaiter this=" << this);
         CloseAll();
     }
 
@@ -173,18 +171,14 @@ class CCassBlobWaiter
         m_ErrorCb = std::move(error_cb);
     }
 
-    void SetDataReadyCB(TDataReadyCallback datareadycb, void *  data)
+    void SetDataReadyCB(TDataReadyCallback datareadycb, void * data)
     {
-        ERR_POST(Trace << "CCassBlobWaiter::SetDataReadyCB this=" << this <<
-                 " CB: " << datareadycb << ", DATA: " << data);
         m_DataReadyData = data;
         m_DataReadyCb = datareadycb;
     }
 
     void SetDataReadyCB3(shared_ptr<CCassDataCallbackReceiver> datareadycb3)
     {
-        ERR_POST(Trace << "CCassBlobWaiter::SetDataReadyCB3 this=" << this <<
-                 " CB: " << static_cast<void*>(datareadycb3.get()));
         m_DataReadyCb3 = datareadycb3;
     }
 
@@ -267,7 +261,7 @@ class CCassBlobWaiter
             }
             return true;
         } catch (const CCassandraException& e) {
-            if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && 
+            if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) &&
                 CanRestart(qry, restart_counter))
             {
                 need_repeat = true;

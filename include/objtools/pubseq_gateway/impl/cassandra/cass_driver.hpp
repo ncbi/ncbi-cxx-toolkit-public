@@ -131,7 +131,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
  public:
     using TTokenValue = int64_t;
-    using TTokenRanges = vector<pair<TTokenValue,TTokenValue>>;
+    using TTokenRanges = vector<pair<TTokenValue, TTokenValue>>;
 
     CCassConnection(const CCassConnection&) = delete;
     CCassConnection& operator=(const CCassConnection&) = delete;
@@ -527,12 +527,10 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
         , m_data2(nullptr)
         , m_query(query)
     {
-//        ERR_POST(Trace << "CCassQueryCbRef::CCassQueryCbRef " << this);
     }
 
     virtual ~CCassQueryCbRef()
     {
-//        ERR_POST(Trace << "CCassQueryCbRef::~CCassQueryCbRef " << this);
     }
 
     void Attach(void (*ondata)(CCassQuery&, void*),
@@ -551,40 +549,32 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 
     void Detach(bool remove_self_ref = false)
     {
-/*        ERR_POST(Trace << "CCassQueryCbRef::Detach " << this << ", Query: " <<
-                 m_query.lock().get());*/
-//        m_query.reset();
-//        m_ondata3.reset();
-        if (remove_self_ref)
+        if (remove_self_ref) {
             m_self = nullptr;
+        }
     }
 
     static void s_OnFutureCb(CassFuture* future, void* data)
     {
         try {
-/*            ERR_POST(Trace << "CCassQueryCbRef::s_OnFutureCb " << data); */
-            shared_ptr<CCassQueryCbRef>     self(
-                    static_cast<CCassQueryCbRef*>(data)->shared_from_this());
-
+            shared_ptr<CCassQueryCbRef> self(static_cast<CCassQueryCbRef*>(data)->shared_from_this());
             assert(self->m_self);
             self->m_self = nullptr;
 
             auto    query = self->m_query.lock();
             if (query != nullptr) {
-/*
-                ERR_POST(Trace << "CCassQuery::OnDataReady this: " <<
-                         query.get() << ", fut: " << future);
-*/
-                if (self->m_ondata)
+                if (self->m_ondata) {
                     self->m_ondata(*query.get(), self->m_data);
-                if (self->m_ondata2)
+                }
+                if (self->m_ondata2) {
                     self->m_ondata2(self->m_data2);
+                }
                 auto ondata3 = self->m_ondata3.lock();
-                if (ondata3)
+                if (ondata3) {
                     ondata3->OnData();
+                }
             }
-        }
-        catch (const CException& e) {
+        } catch (const CException& e) {
             ERR_POST("CException caught! Message: " << e.GetMsg());
             abort();
         }
@@ -666,7 +656,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         static_assert(sizeof(F) == 0, "Columns can be accessed by either index or name");
         return CNotImplemented<F>::GetColumn_works_by_name_and_by_index();
     }
-    
+
     void GetFuture();
     void ProcessFutureResult();
     void SetupOnDataCallback();
@@ -703,7 +693,6 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         m_onexecute(nullptr),
         m_onexecute_data(nullptr)
     {
-/*        ERR_POST(Trace << "CCassQuery::CCassQuery this=" << this);*/
         if (!m_connection) {
             NCBI_THROW(CCassandraException, eFatal, "Cassandra connection is not established");
         }

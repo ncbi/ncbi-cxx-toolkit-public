@@ -111,17 +111,15 @@ void CCassConnectionFactory::AppParseArgs(const CArgs & /*args*/)
 
 void CCassConnectionFactory::ProcessParams(void)
 {
-//    ERR_POST(Trace << "CCassDataConnectionFactory::ProcessParams");
     if (!m_PassFile.empty()) {
-        filebuf     fb;
-        if (!fb.open(m_PassFile.c_str(), ios::in | ios::binary))
-            NCBI_THROW(CCassandraException, eGeneric,
-                       " Cannot open file: " + m_PassFile);
+        filebuf fb;
+        if (!fb.open(m_PassFile.c_str(), ios::in | ios::binary)) {
+            NCBI_THROW(CCassandraException, eGeneric, " Cannot open file: " + m_PassFile);
+        }
 
-        CNcbiIstream        is(&fb);
-        CNcbiRegistry       registry(is, 0);
+        CNcbiIstream is(&fb);
+        CNcbiRegistry registry(is, 0);
         fb.close();
-
         m_CassUserName = registry.GetString(m_PassSection, "user", "");
         m_CassPassword = registry.GetString(m_PassSection, "password", "");
     }
@@ -129,82 +127,64 @@ void CCassConnectionFactory::ProcessParams(void)
     x_ValidateArgs();
 }
 
-
 void CCassConnectionFactory::LoadConfig(const string &  cfg_name,
                                         const string &  section)
 {
-//    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
     m_Section = section;
     m_CfgName = cfg_name;
     ReloadConfig();
 }
 
-
 void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
                                         const string &  section)
 {
-//    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
     m_Section = section;
     m_CfgName = "";
     ReloadConfig(registry);
 }
 
-
 void CCassConnectionFactory::ReloadConfig(void)
 {
-//    ERR_POST(Trace << "CCassDataConnectionFactory::ReloadConfig");
-
-    if (m_CfgName.empty())
-        NCBI_THROW(CCassandraException, eGeneric,
-                   "Configuration file is not specified");
-
+    if (m_CfgName.empty()) {
+        NCBI_THROW(CCassandraException, eGeneric, "Configuration file is not specified");
+    }
     filebuf fb;
-    if (!fb.open(m_CfgName.c_str(), ios::in | ios::binary))
-        NCBI_THROW(CCassandraException, eGeneric,
-                   " Cannot open file: " + m_CfgName);
+    if (!fb.open(m_CfgName.c_str(), ios::in | ios::binary)) {
+        NCBI_THROW(CCassandraException, eGeneric, " Cannot open file: " + m_CfgName);
+    }
     CNcbiIstream is(&fb);
     CNcbiRegistry registry(is, 0);
     fb.close();
-
     ReloadConfig(registry);
 }
 
-
-void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry &  registry)
+void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
 {
     CFastMutexGuard _(m_RunTimeParams);
 
-    if (m_Section.empty())
+    if (m_Section.empty()) {
         m_Section = kCassConfigSection;
+    }
 
     if (!registry.Empty()) {
-        m_CassConnTimeoutMs = registry.GetInt(m_Section, "ctimeout",
-                                              kCassConnTimeoutDefault);
-        m_CassQueryTimeoutMs = registry.GetInt(m_Section, "qtimeout",
-                                               kCassQueryTimeoutDefault);
+        m_CassConnTimeoutMs = registry.GetInt(m_Section, "ctimeout", kCassConnTimeoutDefault);
+        m_CassQueryTimeoutMs = registry.GetInt(m_Section, "qtimeout", kCassQueryTimeoutDefault);
         m_CassDataNamespace = registry.GetString(m_Section, "namespace", "");
-        m_CassFallbackRdConsistency = registry.GetBool(
-            m_Section, "fallbackrdconsistency", false);
+        m_CassFallbackRdConsistency = registry.GetBool(m_Section, "fallbackrdconsistency", false);
         m_CassFallbackWrConsistency = registry.GetInt(
-            m_Section, "fallbackwriteconsistency",
-            kCassFallbackWrConsistencyDefault);
+            m_Section, "fallbackwriteconsistency", kCassFallbackWrConsistencyDefault);
         m_LoadBalancingStr = registry.GetString(m_Section, "loadbalancing", "");
         m_TokenAware = registry.GetBool(m_Section, "tokenaware", true);
         m_LatencyAware = registry.GetBool(m_Section, "latencyaware", true);
-        m_NumThreadsIo = registry.GetInt(m_Section, "numthreadsio",
-                                         kNumThreadsIoDefault);
-        m_NumConnPerHost = registry.GetInt(m_Section, "numconnperhost",
-                                           kNumConnPerHostDefault);
-        m_MaxConnPerHost = registry.GetInt(m_Section, "maxconnperhost",
-                                           kMaxConnPerHostDefault);
-        m_Keepalive = registry.GetInt(m_Section, "keepalive",
-                                      kKeepaliveDefault);
+        m_NumThreadsIo = registry.GetInt(m_Section, "numthreadsio", kNumThreadsIoDefault);
+        m_NumConnPerHost = registry.GetInt(m_Section, "numconnperhost", kNumConnPerHostDefault);
+        m_MaxConnPerHost = registry.GetInt(m_Section, "maxconnperhost", kMaxConnPerHostDefault);
+        m_Keepalive = registry.GetInt(m_Section, "keepalive", kKeepaliveDefault);
         m_PassFile = registry.GetString(m_Section, "password_file", "");
         m_PassSection = registry.GetString(m_Section, "password_section", "");
         m_CassHosts = registry.GetString(m_Section, "service", "");
         m_CassBlackList = registry.GetString(m_Section, "black_list", "");
         m_LogEnabled = registry.GetBool(m_Section, "log", false);
-
         ProcessParams();
     }
 }
