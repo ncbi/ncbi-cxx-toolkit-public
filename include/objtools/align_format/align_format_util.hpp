@@ -1135,6 +1135,14 @@ public:
 	                                                                 double percentIdentLow,
 	                                                                 double percentIdentHigh);
 
+
+    static CRef<objects::CSeq_align_set> FilterSeqalignByScoreParams(objects::CSeq_align_set& source_aln,
+                                                                    double evalueLow,
+                                                                    double evalueHigh,
+                                                                    double percentIdentLow,
+                                                                    double percentIdentHigh,
+                                                                    int queryCoverageLow,
+                                                                    int queryCoverageHigh);
     ///function for Filtering seqalign by specific subjects
     ///@param source_aln
     /// CSeq_align_set original seqalign
