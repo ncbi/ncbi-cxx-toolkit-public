@@ -334,6 +334,11 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
                         "collection-date year is out of range");
     }
 
+    if (year_val >= 2100) {
+        NCBI_THROW (CException, eUnknown,
+                        "collection-date year is out of range");
+    }
+
     if (day_val > 0 && month_val > 0 && !IsDayValueOkForMonth(day_val, month_val, year_val)) {
         NCBI_THROW (CException, eUnknown,
                         "collection-date day is greater than monthly maximum");
@@ -355,10 +360,12 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
 
     CDate now(t);
 
+    /*
     if (IsCollectionDateAfterTime(*date, t)) {
          NCBI_THROW (CException, eUnknown,
                         "collection-date year is out of range");
     }
+    */
 
     return date;
 }
