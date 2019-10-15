@@ -160,8 +160,9 @@ private:
 class CScore_FrameShifts : public CScoreLookup::IScore
 {
 public:
-    CScore_FrameShifts(int row = -1)
+    CScore_FrameShifts(int row = -1, bool frameshifts = true)
         : m_Row(row)
+        , m_Frameshifts(frameshifts)
     {
     }
 
@@ -176,7 +177,9 @@ public:
             CSpliced_seg::eProduct_type_protein)
         {
             /// Protein alignment; just count frameshifts
-            return align.GetNumFrameshifts(m_Row);
+            return m_Frameshifts ? align.GetNumFrameshifts(m_Row)
+                                 : align.GetNumGapOpenings(m_Row)
+                                 - align.GetNumFrameshifts(m_Row);
         }
 
         CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
@@ -194,14 +197,19 @@ public:
         CFeat_CI feat_it(bsh,
                          SAnnotSelector()
                          .IncludeFeatType(CSeqFeatData::e_Cdregion));
-        return feat_it
+        return !feat_it ? 0 : (m_Frameshifts
             ? align.GetNumFrameshiftsWithinRange(feat_it->GetRange(), m_Row)
-            : 0;
+            : align.GetNumGapOpeningsWithinRange(feat_it->GetRange(), m_Row)
+            - align.GetNumFrameshiftsWithinRange(feat_it->GetRange(), m_Row));
     }
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
-        ostr << "Number of frame shifts";
+        if (m_Frameshifts) {
+            ostr << "Number of frame shifts";
+        } else {
+            ostr << "Number of non-frame-shift insertions";
+        }
         if (m_Row == 0) {
             ostr << " in query";
         } else if(m_Row == 1) {
@@ -211,6 +219,7 @@ public:
 
 private:
     int m_Row;
+    bool m_Frameshifts;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1719,6 +1728,18 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("sframe",
           CIRef<IScore>(new CScore_FrameShifts(1))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("nonframe_indel",
+          CIRef<IScore>(new CScore_FrameShifts(-1, false))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("qnonframe_indel",
+          CIRef<IScore>(new CScore_FrameShifts(0, false))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("snonframe_indel",
+          CIRef<IScore>(new CScore_FrameShifts(1, false))));
     m_Scores.insert
         (TScoreDictionary::value_type
          ("symmetric_overlap",
