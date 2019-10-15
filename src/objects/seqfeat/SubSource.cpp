@@ -322,7 +322,14 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
                         "collection-date string is improperly formatted");
     }
 
-    if (year_val < 1700 || year_val >= 2100) {
+    /*
+    if (year_val < 1000 || year_val >= 2100) {
+        NCBI_THROW (CException, eUnknown,
+                        "collection-date year is out of range");
+    }
+    */
+
+    if (year_val < 1000) {
         NCBI_THROW (CException, eUnknown,
                         "collection-date year is out of range");
     }
@@ -342,6 +349,17 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
         date->SetStd().SetDay (day_val);
     }
     
+    time_t t;
+
+    time(&t);
+
+    CDate now(t);
+
+    if (IsCollectionDateAfterTime(*date, t)) {
+         NCBI_THROW (CException, eUnknown,
+                        "collection-date year is out of range");
+    }
+
     return date;
 }
 
@@ -1067,7 +1085,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             year += 2000;
         }
     }
-    if (year >= 1700 && year < 2100) {
+    if (year >= 1000 && year < 2100) {
         reformatted_date = NStr::NumericToString (year);
         if (!NStr::IsBlank (month)) {
             reformatted_date = month + "-" + reformatted_date;
