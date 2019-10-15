@@ -437,7 +437,7 @@ static const char* const sc_ScoreHelpText[] = {
     "Count of positives; protein-to-DNA score",
     "Count of negatives; protein-to-DNA score",
     "Count of mismatches",
-    "Number of gap bases in the alignment",
+    "Number of gaps in the alignment",
     "Percent identity (0.0-100.0); count each base in a gap in any row as a mismatch",
     "Percent identity (0.0-100.0); don't count gaps",
     "Percent identity (0.0-100.0); count a gap of any length in any row as a mismatch of length 1",
