@@ -331,7 +331,7 @@ static void s_PreprocessNoteMods(CModHandler::TModList& mods)
 
 
 void g_ApplyMods(
-    unique_ptr<CMemorySrcFileMap>& namedSrcFileMap,
+    unique_ptr<CMemorySrcFileMap>& pNamedSrcFileMap,
     const string& namedSrcFile,
     const string& defaultSrcFile,
     const string& commandLineStr,
@@ -371,9 +371,9 @@ void g_ApplyMods(
 
 
     if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
-        if (!namedSrcFileMap)
-            namedSrcFileMap.reset(new CMemorySrcFileMap);
-        namedSrcFileMap->MapFile(namedSrcFile, allowAcc);
+        if (!pNamedSrcFileMap)
+            pNamedSrcFileMap.reset(new CMemorySrcFileMap);
+        pNamedSrcFileMap->MapFile(namedSrcFile, allowAcc);
     }
 
     CMemorySrcFileMap defaultSrcFileMap;
@@ -402,9 +402,9 @@ void g_ApplyMods(
                     return sReportError(pEC, sev, subcode, seqId, msg);
                 };
  
-            if (namedSrcFileMap && !namedSrcFileMap->Empty()) {
+            if (pNamedSrcFileMap && !pNamedSrcFileMap->Empty()) {
                 TModList mods;
-                if (namedSrcFileMap->GetMods(*pBioseq, mods)) {
+                if (pNamedSrcFileMap->GetMods(*pBioseq, mods)) {
                     s_PreprocessNoteMods(mods); // RW-928
                     mod_handler.AddMods(mods, 
                             CModHandler::ePreserve, 
@@ -501,6 +501,9 @@ void g_ApplyMods(
 
     if (isVerbose) {
         defaultSrcFileMap.ReportUnusedIds(pEC);
+        if (pNamedSrcFileMap) {
+            pNamedSrcFileMap->ReportUnusedIds(pEC);
+        }
     }
 }
 
