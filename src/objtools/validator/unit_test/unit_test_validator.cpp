@@ -20553,8 +20553,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExtraProteinFeature)
 
 BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 {
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("1000"), "");
-    BOOST_CHECK_EQUAL(CSubSource::GetCollectionDateProblem("1000"), "Collection_date format is not in DD-Mmm-YYYY format");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("999"), "");
+    BOOST_CHECK_EQUAL(CSubSource::GetCollectionDateProblem("999"), "Collection_date format is not in DD-Mmm-YYYY format");
 
     //ISO dates are fine as they are
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2014-08-10T12:23:30Z"), "2014-08-10T12:23:30Z");
