@@ -349,15 +349,32 @@ private:
     // returns true if parsed (otherwise, out_offset is left unchanged)
     bool x_TryToParseOffset(const CTempString & sLine, Int4 & out_offset );
 
-    bool x_ParseFeatureTableLine (const CTempString& line, Int4* startP, Int4* stopP,
-                                  bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
-                                  string& featP, string& qualP, string& valP, Int4 offset);
+
+    struct SFeatLocInfo {
+        Int4 start_pos;
+        Int4 stop_pos;
+        bool is_5p_partial;
+        bool is_3p_partial;
+        bool is_point;
+        bool is_minus_strand;
+    };
+
+
+    bool x_ParseFeatureTableLine(
+            const CTempString& line,
+            SFeatLocInfo& loc_info,
+            string& feat,
+            string& qual,
+            string& val,
+            Int4 offset); 
+
 
     bool x_IsWebComment(CTempString line);
 
-    bool x_AddIntervalToFeature (CTempString strFeatureName, CRef<CSeq_feat>& sfp,
-                                 Int4 start, Int4 stop,
-                                 bool partial5, bool partial3, bool ispoint, bool isminus);
+    bool x_AddIntervalToFeature (
+            CTempString strFeatureName, 
+            CRef<CSeq_feat>& sfp,
+            const SFeatLocInfo& loc_info);
 
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
         const string &feat_name,
@@ -895,12 +912,7 @@ bool CFeatureTableReader_Imp::x_TryToParseOffset(
 
 bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
     const CTempString& line,
-    Int4* startP,
-    Int4* stopP,
-    bool* partial5P,
-    bool* partial3P,
-    bool* ispointP,
-    bool* isminusP,
+    SFeatLocInfo& loc_info,
     string& featP,
     string& qualP,
     string& valP,
@@ -1012,6 +1024,140 @@ bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
             feat);
     }
 
+    loc_info.start_pos = ( startv < 0 ? -1 : startv);
+    loc_info.stop_pos = ( stopv < 0 ? -1 : stopv);
+    
+    
+    loc_info.is_5p_partial = partial5;
+    loc_info.is_3p_partial = partial3;
+    loc_info.is_point = ispoint;
+    loc_info.is_minus_strand = isminus;
+    featP = feat;
+    qualP = qual;
+    valP = val;
+
+    return true;
+}
+
+/*
+bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
+    const CTempString& line,
+    Int4* startP,
+    Int4* stopP,
+    bool* partial5P,
+    bool* partial3P,
+    bool* ispointP,
+    bool* isminusP,
+    string& featP,
+    string& qualP,
+    string& valP,
+    Int4 offset
+)
+
+{
+    SIZE_TYPE      numtkns;
+    bool           isminus = false;
+    bool           ispoint = false;
+    size_t         len;
+    bool           partial5 = false;
+    bool           partial3 = false;
+    Int4           startv = -1;
+    Int4           stopv = -1;
+    Int4           swp;
+    string         start, stop, feat, qual, val, stnd;
+    vector<string> tkns;
+
+
+    if (line.empty ()) return false;
+
+    if (NStr::StartsWith (line, '[')) return false;
+
+    tkns.clear ();
+    x_TokenizeLenient(line, tkns);
+    numtkns = tkns.size ();
+
+    if (numtkns > 0) {
+        start = NStr::TruncateSpaces(tkns[0]);
+    }
+    if (numtkns > 1) {
+        stop = NStr::TruncateSpaces(tkns[1]);
+    }
+    if (numtkns > 2) {
+        feat = NStr::TruncateSpaces(tkns[2]);
+    }
+    if (numtkns > 3) {
+        qual = NStr::TruncateSpaces(tkns[3]);
+    }
+    if (numtkns > 4) {
+        val = NStr::TruncateSpaces(tkns[4]);
+        // trim enclosing double-quotes
+        if( val.length() >= 2 && val[0] == '"' && val[val.length()-1] == '"' ) {
+            val = val.substr(1, val.length() - 2);
+        }
+    }
+    if (numtkns > 5) {
+        stnd = NStr::TruncateSpaces(tkns[5]);
+    }
+
+    bool has_start = false;
+    if (! start.empty ()) {
+        if (start [0] == '<') {
+            partial5 = true;
+            start.erase (0, 1);
+        }
+        len = start.length ();
+        if (len > 1 && start [len - 1] == '^') {
+          ispoint = true;
+          start [len - 1] = '\0';
+        }
+        startv = x_StringToLongNoThrow(start, feat, qual,
+            ILineError::eProblem_BadFeatureInterval);
+        has_start = true;
+    }
+
+    bool has_stop = false;
+    if (! stop.empty ()) {
+        if (stop [0] == '>') {
+            partial3 = true;
+            stop.erase (0, 1);
+        }
+        stopv = x_StringToLongNoThrow (stop, feat, qual,
+            ILineError::eProblem_BadFeatureInterval);
+        has_stop = true;
+    }
+    
+    if ( startv <= 0 || stopv <= 0 ) {
+        startv = -1;
+        stopv = -1;
+    } else {
+        startv--;
+        stopv--;
+        if (! stnd.empty ()) {
+            if (stnd == "minus" || stnd == "-" || stnd == "complement") {
+                if (start < stop) {
+                    swp = startv;
+                    startv = stopv;
+                    stopv = swp;
+                }
+                isminus = true;
+            }
+        }
+    }
+
+    if (startv >= 0) {
+        startv += offset;
+    }
+    if (stopv >= 0) {
+        stopv += offset;
+    }
+    
+    if ((has_start && startv < 0) || (has_stop && stopv < 0)) {
+        x_ProcessMsg( 
+            ILineError::eProblem_FeatureBadStartAndOrStop,
+            eDiag_Error,
+            feat);
+    }
+
     *startP = ( startv < 0 ? -1 : startv);
     *stopP = ( stopv < 0 ? -1 : stopv);
     
@@ -1026,6 +1172,7 @@ bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
 
     return true;
 }
+*/
 
 void CFeatureTableReader_Imp::x_TokenizeStrict( 
     const CTempString &line,
@@ -2620,15 +2767,14 @@ bool CFeatureTableReader_Imp::x_IsWebComment(CTempString line)
 bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
     CTempString strFeatureName,
     CRef<CSeq_feat>& sfp,
-    Int4 start,
-    Int4 stop,
-    bool partial5,
-    bool partial3,
-    bool ispoint,
-    bool isminus
+    const SFeatLocInfo& loc_info
 )
 
 {
+
+    auto start = loc_info.start_pos;
+    auto stop = loc_info.stop_pos;
+
     const Int4 orig_start = start;
     CSeq_interval::TStrand strand = eNa_strand_plus;
 
@@ -2636,14 +2782,14 @@ bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
         swap(start, stop);
         strand = eNa_strand_minus;
     }
-    if (isminus) {
+    if (loc_info.is_minus_strand) {
         strand = eNa_strand_minus;
     }
 
     // construct loc, which will be added to the mix
     CSeq_loc_mix::Tdata & mix_set = sfp->SetLocation().SetMix();
     CRef<CSeq_loc> loc(new CSeq_loc);
-    if (ispoint || start == stop ) {
+    if (loc_info.is_point || start == stop ) {
         // a point of some kind
         if (mix_set.empty())
            m_need_check_strand = true;
@@ -2656,7 +2802,7 @@ bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
         // works differently for plus vs. minus strand
         CRef<CSeq_point> pPoint(
             new CSeq_point(*m_seq_id, orig_start, strand) );
-        if( ispoint ) {
+        if( loc_info.is_point ) {
             // between two bases
             pPoint->SetRightOf (true);
             // warning if stop is not start plus one
@@ -2669,10 +2815,10 @@ bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
             // just a point. do nothing
         }
 
-        if (partial5) {
+        if (loc_info.is_5p_partial) {
             pPoint->SetPartialStart (true, eExtreme_Biological);
         }
-        if (partial3) {
+        if (loc_info.is_3p_partial) {
             pPoint->SetPartialStop (true, eExtreme_Biological);
         }
 
@@ -2680,10 +2826,10 @@ bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
     } else {
         // interval
         CRef<CSeq_interval> pIval( new CSeq_interval(*m_seq_id, start, stop, strand) );
-        if (partial5) {
+        if (loc_info.is_5p_partial) {
             pIval->SetPartialStart (true, eExtreme_Biological);
         }
-        if (partial3) {
+        if (loc_info.is_3p_partial) {
             pIval->SetPartialStop (true, eExtreme_Biological);
         }
         loc->SetInt(*pIval);
@@ -2709,12 +2855,13 @@ bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
     mix_set.push_back(loc);
 
 
-    if (partial5 || partial3) {
+    if (loc_info.is_5p_partial || loc_info.is_3p_partial) {
         sfp->SetPartial (true);
     }
 
     return true;
 }
+
 
 
 bool CFeatureTableReader_Imp::x_SetupSeqFeat (
@@ -2963,7 +3110,6 @@ void CFeatureTableReader_Imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval
     if (feat.IsSetLocation() && feat.GetLocation().IsMix())
     {
 
-
         for (auto pSeqLoc : feat.SetLocation().SetMix().Set()) {
             if (pSeqLoc->IsPnt()) {
                 auto& seq_point = pSeqLoc->SetPnt();
@@ -2981,15 +3127,6 @@ void CFeatureTableReader_Imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval
                     }
             }
         }
-/*
-        NON_CONST_REVERSE_ITERATE(CSeq_loc_mix::Tdata, it, feat.SetLocation().SetMix().Set())
-        {
-            if ((**it).IsPnt())
-            {
-                (**it).SetPnt().SetStrand(strand);
-            }
-        }
-    */
     }    
 }
 
@@ -3097,9 +3234,12 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 {
     string feat, qual, qual_value;
     string curr_feat_name;
-    Int4 start, stop;
-    bool partial5, partial3, ispoint, isminus, ignore_until_next_feature_key = false;
+   // Int4 start, stop;
+    //bool partial5, partial3, ispoint, isminus, 
+         
+    bool ignore_until_next_feature_key = false;
     Int4 offset = 0;
+    SFeatLocInfo loc_info;
 
     CRef<CSeq_annot> sap(new CSeq_annot);
 
@@ -3189,14 +3329,23 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                 sfp->SetLocation( *loc_with_nulls );
             }
 
-        } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
-                                            &ispoint, &isminus, feat, qual, qual_value, offset)) {
-
+        } else if (x_ParseFeatureTableLine (line, loc_info, feat, qual, qual_value, offset)) {
+      //  } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
+       //                                     &ispoint, &isminus, feat, qual, qual_value, offset)) {
+/*
+            SFeatLocInfo loc_info;
+            loc_info.start_pos = start;
+            loc_info.stop_pos = stop;
+            loc_info.is_5p_partial = partial5;
+            loc_info.is_3p_partial = partial3;
+            loc_info.is_point = ispoint;
+            loc_info.is_minus_strand = isminus;
+            */
             // process line in feature table
 
             replace( qual_value.begin(), qual_value.end(), '\"', '\'' );
 
-            if ((! feat.empty ()) && start >= 0 && stop >= 0) {
+            if ((! feat.empty ()) && loc_info.start_pos >= 0 && loc_info.stop_pos >= 0) {
 
                 // process start - stop - feature line
 
@@ -3219,10 +3368,12 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                     if( eChoice == CSeqFeatData::e_Cdregion ) {
                         best_CDS_finder.AddFeat( *sfp );
                     }
-
+                    
                     // and add first interval
-                    x_AddIntervalToFeature (curr_feat_name, sfp,
-                        start, stop, partial5, partial3, ispoint, isminus);
+                    x_AddIntervalToFeature (curr_feat_name, sfp, loc_info);
+
+                  //  x_AddIntervalToFeature (curr_feat_name, sfp,
+                   //     start, stop, partial5, partial3, ispoint, isminus);
 
                     ignore_until_next_feature_key = false;
 
@@ -3240,7 +3391,13 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                 // bad feature was found before, so ignore 
                 // qualifiers until next feature key
 
-            } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && qual_value.empty ()) {
+            } 
+            else 
+            if (loc_info.start_pos >= 0 && 
+                loc_info.stop_pos >= 0 && 
+                feat.empty () && 
+                qual.empty () && 
+                qual_value.empty ()) {
 
                 if( curr_feat_intervals_done ) {
                     // the feat intervals were done, so it's an error for there to be more intervals
@@ -3250,8 +3407,8 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                     x_ResetFeat(sfp, curr_feat_intervals_done);
                 } else if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
                     // process start - stop multiple interval line
-                    x_AddIntervalToFeature (curr_feat_name, sfp,
-                                            start, stop, partial5, partial3, ispoint, isminus);
+                    x_AddIntervalToFeature (curr_feat_name, sfp, loc_info);
+                                           // start, stop, partial5, partial3, ispoint, isminus);
                 } else {
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                         x_ProcessMsg(ILineError::eProblem_NoFeatureProvidedOnIntervals,
