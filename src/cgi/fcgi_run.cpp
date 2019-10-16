@@ -688,6 +688,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                         x_result = 0;
                     }
                     else {
+                        if (!ValidateSynchronizationToken()) {
+                            NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
+                                "Invalid or missing CSRF token.", CCgiException::e403_Forbidden);
+                        }
                         x_result = ProcessRequest(*m_Context);
                     }
                     GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
