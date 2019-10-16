@@ -115,7 +115,10 @@ if test "$ncbi_favor_std_packages" = yes; then
 fi
 
 case "$ncbi_platform" in
-    Linux64   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&," ;;
+    Linux64   )
+        ncbi_rpath_sed="s,\\(/netmnt/gridengine\\)/uge[0-9]*,\\1/current,"
+        ncbi_rpath_sed="$ncbi_rpath_sed; s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&,"
+        ;;
 esac
 case "$with_vdb" in
     rc | */* ) ;;
