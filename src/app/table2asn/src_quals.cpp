@@ -132,8 +132,14 @@ void CMemorySrcFileMap::x_RegisterLine(CTempString line, bool allowAcc)
             CSeq_id::fParse_AnyLocal;
 
         list<CRef<CSeq_id>> ids;
-        CSeq_id::ParseIDs(ids, idString, parseFlags);
-        // If ids is empty, we should report
+        try {
+            CSeq_id::ParseIDs(ids, idString, parseFlags);
+        }
+        catch (const CSeqIdException& e) {
+            NCBI_THROW(CSeqIdException, eFormat, 
+                    "Unable to parse " + idString);
+        }
+
 
         set<string> idSet;
         if (ids.size() == 1 &&
