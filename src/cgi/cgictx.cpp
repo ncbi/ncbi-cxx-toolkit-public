@@ -206,6 +206,7 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags,
     m_Request->x_SetSession(*m_Session);
     m_Response.x_SetSession(*m_Session);
     string track_cookie_value = RetrieveTrackingId();
+    m_Request->SetTrackingCookie(track_cookie_value);
     bool bad_tracking_cookie = false;
     if ((flags & CCgiRequest::fSkipDiagProperties) == 0) {
         try {
@@ -214,9 +215,11 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags,
             if (ctx.GetSessionID() != track_cookie_value) {
                 // Bad session-id was ignored
                 track_cookie_value = ctx.SetSessionID();
+                m_Request->SetTrackingCookie(kEmptyStr);
             }
         }
         catch (CRequestContextException& e) {
+            m_Request->SetTrackingCookie(kEmptyStr);
             x_SetStatus(CCgiException::e400_BadRequest, e.GetMsg());
             bad_tracking_cookie = true;
         }

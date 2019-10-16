@@ -566,6 +566,10 @@ int CCgiApplication::Run(void)
                     result = 0;
                 }
                 else {
+                    if (!ValidateSynchronizationToken()) {
+                        NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
+                            "Invalid or missing CSRF token.", CCgiException::e403_Forbidden);
+                    }
                     result = ProcessRequest(*m_Context);
                 }
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
@@ -2023,6 +2027,22 @@ bool CCgiApplication::ProcessAdminRequest(EAdminCommand cmd)
         CCgiException::GetStdStatusMessage(CCgiException::e200_Ok));
     response.WriteHeader();
     return true;
+}
+
+
+NCBI_PARAM_DECL(bool, CGI, ValidateCSRFToken);
+NCBI_PARAM_DEF_EX(bool, CGI, ValidateCSRFToken, false, eParam_NoThread,
+    CGI_VALIDATE_CSRF_TOKEN);
+typedef NCBI_PARAM_TYPE(CGI, ValidateCSRFToken) TParamValidateCSRFToken;
+
+static const char* kCSRFTokenName = "NCBI_CSRF_TOKEN";
+
+bool CCgiApplication::ValidateSynchronizationToken(void)
+{
+    if (!TParamValidateCSRFToken::GetDefault()) return true;
+    const CCgiRequest& req = GetContext().GetRequest();
+    const string& token = req.GetRandomProperty(kCSRFTokenName, false);
+    return !token.empty() && token == req.GetTrackingCookie();
 }
 
 

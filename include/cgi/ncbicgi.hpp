@@ -909,6 +909,12 @@ public:
     /// Get request method.
     ERequestMethod GetRequestMethod(void) const;
 
+    /// Store/retrieve tracking cookie value.
+    /// Unlike CCgiResponse or CRequestContext, this value is not empty only
+    /// if the tracking ID was actually received in the request.
+    void SetTrackingCookie(const string& cookie_value) { m_TrackingCookie = cookie_value; }
+    const string& GetTrackingCookie(void) const { return m_TrackingCookie; }
+
 private:
     /// set of environment variables
     const CNcbiEnvironment*    m_Env;
@@ -931,6 +937,7 @@ private:
     /// add diagnostics and print out accumulated request buffer 
     /// 0 in this variable means no buffer diagnostics
     size_t        m_ErrBufSize;
+    string        m_TrackingCookie;
 
     bool m_QueryStringParsed;
     /// the real constructor code

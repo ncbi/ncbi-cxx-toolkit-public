@@ -144,6 +144,17 @@ public:
     ///  Optional parameters
     virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters& params) const;
 
+    /// Validate synchronization token (cross-site request forgery prevention).
+    /// CSRF prevention is controlled by CGI_VALIDATE_CSRF_TOKEN variable (bool).
+    /// The default implementation assumes the token is passed in Ncbi-CSRF-Token
+    /// HTTP header and must be equal to the current session id.
+    /// @return
+    ///   - true if the token passes validation or if CSRF prevention is disabled.
+    ///   - false if the token does not pass validation; the CGI will return
+    ///     status "403 Forbidden".
+    /// @sa CCgiSession
+    virtual bool ValidateSynchronizationToken(void);
+
 private:
     virtual ICache* GetCacheStorage() const;
     virtual bool IsCachingNeeded(const CCgiRequest& request) const;
