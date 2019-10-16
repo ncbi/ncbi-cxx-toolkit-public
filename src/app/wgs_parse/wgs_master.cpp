@@ -1665,8 +1665,6 @@ static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info, CSeq_submit& submi
     bool ret = true;
 
     CCitSubInfo &cit_sub_info = master_info.m_cit_sub_info;
-    CCit_sub* first_cit_sub = nullptr;
-
     for (auto entry : submit.GetData().GetEntrys()) {
 
         CCit_sub* cit_sub = nullptr;
@@ -1736,8 +1734,8 @@ static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info, CSeq_submit& submi
         }
         else {
 
-            if (first_cit_sub) {
-                if (!EqualNoDate(*first_cit_sub, *cit_sub)) {
+            if (cit_sub_info.m_cit_sub.NotEmpty()) {
+                if (!cit_sub_info.m_cit_sub->Equals(*cit_sub)) {
                     ReportMissingOrDiffCitSub(*entry, false);
                     master_info.m_reject = true;
                     ret = false;
@@ -1745,7 +1743,8 @@ static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info, CSeq_submit& submi
                 }
             }
             else {
-                first_cit_sub = cit_sub;
+                cit_sub_info.m_cit_sub.Reset(new CCit_sub);
+                cit_sub_info.m_cit_sub->Assign(*cit_sub);
             }
         }
     }
@@ -2457,9 +2456,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 }
                 else if (same_submit) {
                     same_submit = CheckCitSubsInBioseqSet(master_info, *seq_submit);
-                    if(master_info.m_reject == true)
-                    {
-                        ret = false;
+                    if(master_info.m_reject == true) {
                         break;
                     }
                 }
@@ -2506,6 +2503,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
             if (!seq_submit->IsSetData()) {
                 ERR_POST_EX(ERR_MASTER, ERR_MASTER_SeqEntryReadFailed, Fatal << "Failed to read Seq-entry from file \"" << file << "\". Cannot proceed.");
+                ret = false;
                 break;
             }
 
@@ -2658,7 +2656,9 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         SetReplaceDBName(false);
     }
 
-    master_info.m_reject = master_info.m_reject || DBLinkProblemReport(master_info);
+    if (DBLinkProblemReport(master_info)) {
+        master_info.m_reject = true;
+    }
 
     common_info.m_acc_assigned.sort();
     if (GetParams().IsAccessionAssigned()) {
