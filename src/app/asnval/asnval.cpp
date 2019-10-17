@@ -456,7 +456,8 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
         if (close_error_stream) {
             DestroyOutputStreams();
         }
-        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
+        // NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
+        LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to open invalid ASN.1 file " + fname);
     } else {
         try {
             if ( NStr::Equal(args["a"].AsString(), "t")) {          // Bioseq-set release file
