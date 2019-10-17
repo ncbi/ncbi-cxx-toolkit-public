@@ -718,6 +718,20 @@ private:
 };
 
 
+class CTabularFormatter_Frameshifts : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_Frameshifts();
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 END_NCBI_SCOPE

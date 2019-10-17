@@ -2298,6 +2298,39 @@ void CTabularFormatter_Traceback::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
+CTabularFormatter_Frameshifts::CTabularFormatter_Frameshifts()
+{
+}
+
+
+void CTabularFormatter_Frameshifts::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "List of frameshift indels";
+}
+
+void CTabularFormatter_Frameshifts::PrintHeader(CNcbiOstream& ostr) const
+{
+    ostr << "frameshifts";
+}
+
+
+void CTabularFormatter_Frameshifts::Print(CNcbiOstream& ostr,
+                                        const CSeq_align& align)
+{
+    vector<CSeq_align::SIndel> frameshifts = align.GetFrameshifts();
+    bool first = true;
+    for (const CSeq_align::SIndel &frameshift : frameshifts) {
+        if (!first) {
+            ostr << ',';
+        }
+        ostr << frameshift.AsString();
+        first = false;
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 CTabularFormatter::CTabularFormatter(CNcbiOstream& ostr, CScoreLookup &scores)
 : m_Scores(&scores), m_Ostr(ostr)
 {
@@ -2484,6 +2517,8 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
             new CTabularFormatter_Cigar);
     formatter.RegisterField("btop",
             new CTabularFormatter_Traceback);
+    formatter.RegisterField("frameshifts",
+            new CTabularFormatter_Frameshifts);
     formatter.RegisterField("qasmunit", new CTabularFormatter_AssemblyInfo(0,
                                    CTabularFormatter_AssemblyInfo::eUnit,
                                    CTabularFormatter_AssemblyInfo::eName));
