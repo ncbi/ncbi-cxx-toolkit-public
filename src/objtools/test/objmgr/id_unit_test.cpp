@@ -597,6 +597,16 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
+{
+    LOG_POST("Checking ExtAnnot CDD on WGS sequence");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_region);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("CDD");
+    s_CheckFeat(sel, "RLL67630.1");
+}
+
+
 BOOST_AUTO_TEST_CASE(CheckExtMGC)
 {
     LOG_POST("Checking ExtAnnot MGC");
@@ -819,7 +829,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
 BOOST_AUTO_TEST_CASE(Test_HUP)
 {
     bool authorized;
-    string user_name = GetProcessUserName();
+    string user_name = CSystemInfo::GetUserName();
     if ( user_name == "vasilche" ) {
         authorized = true;
     }
@@ -936,6 +946,73 @@ BOOST_AUTO_TEST_CASE(TestGBLoaderName)
     objmgr->RevokeDataLoader("GBLOADER");
     objmgr->RevokeDataLoader("GBLOADER-user");
 }
+
+BOOST_AUTO_TEST_CASE(CheckExtGetAllTSEs)
+{
+    LOG_POST("Checking CScope::GetAllTSEs() with external annotations");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("CDD");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AAC73113.1"));
+    BOOST_CHECK(bh);
+    BOOST_CHECK(!CFeat_CI(bh, sel));
+    CScope::TTSE_Handles tses;
+    scope->GetAllTSEs(tses, CScope::eAllTSEs);
+    BOOST_CHECK(tses.size() > 1);
+    size_t size = 0;
+    for ( auto& tse : tses ) {
+        size += CFeat_CI(tse.GetTopLevelEntry(), sel).GetSize();
+    }
+    BOOST_CHECK(size == 0);
+    sel.SetFeatSubtype(CSeqFeatData::eSubtype_region);
+    for ( auto& tse : tses ) {
+        size += CFeat_CI(tse.GetTopLevelEntry(), sel).GetSize();
+    }
+    BOOST_CHECK(size > 0);
+}
+
+enum EInstType {
+    eInst_ext, // inst.ext is set, inst.seq-data is not set
+    eInst_data, // inst.ext is not set, inst.seq-data is set
+    eInst_split_data // inst.ext is not set, inst.seq-data is split
+};
+
+static void s_CheckSplitSeqData(CScope& scope, const string& seq_id, EInstType type)
+{
+    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetSeq_data(), type == eInst_data);
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetExt(), type == eInst_ext);
+    BOOST_CHECK_EQUAL(bh.IsSetInst_Seq_data(), type != eInst_ext);
+    BOOST_CHECK_EQUAL(bh.IsSetInst_Ext(), type == eInst_ext);
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetSeq_data(), type == eInst_data);
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetExt(), type == eInst_ext);
+    bh.GetInst();
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetSeq_data(), type != eInst_ext);
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetExt(), type == eInst_ext);
+    BOOST_CHECK_EQUAL(bh.IsSetInst_Seq_data(), type != eInst_ext);
+    BOOST_CHECK_EQUAL(bh.IsSetInst_Ext(), type == eInst_ext);
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetSeq_data(), type != eInst_ext);
+    BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetExt(), type == eInst_ext);
+}
+
+BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
+{
+    if ( !s_HaveID2() ) {
+        LOG_POST("Skipping check of split Seq-data access without ID2");
+        return;
+    }
+    LOG_POST("Checking split Seq-data access");
+    CRef<CScope> scope = s_InitScope();
+    s_CheckSplitSeqData(*scope, "NC_000001.11", eInst_ext);
+    s_CheckSplitSeqData(*scope, "568815361", eInst_ext);
+    s_CheckSplitSeqData(*scope, "24210292", eInst_ext);
+    s_CheckSplitSeqData(*scope, "499533515", eInst_data);
+    s_CheckSplitSeqData(*scope, "10086043", eInst_split_data);
+    s_CheckSplitSeqData(*scope, "8894296", eInst_split_data);
+}
+
 
 #if defined(RUN_MT_TESTS) && defined(NCBI_THREADS)
 BOOST_AUTO_TEST_CASE(MTCrash1)
