@@ -193,6 +193,18 @@ public:
 
     typedef map<string, EScoreType> TScoreNameMap;
 
+    struct SIndel {
+        TSeqPos genomic_pos;
+        TDim row;
+        TSeqPos length;
+
+        SIndel(TSeqPos p = 0, TDim r = 0, TSeqPos l = 0)
+        : genomic_pos(p), row(r), length(l)
+        {} 
+
+        string AsString() const;
+    };
+
     /// constructor
     CSeq_align(void);
     /// destructor
@@ -243,6 +255,15 @@ public:
                                                  TDim row = -1) const;
     TSeqPos         GetNumFrameshiftsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
                                                   TDim row = -1) const;
+
+    /// Retrieves descriptions of all frameshifts on a given row; i.e.
+    /// all gaps with a length that is not a multiple of 3.
+    /// @throws CSeqalignException if alignment type is not supported
+    vector<SIndel>  GetFrameshifts(TDim row = -1) const;
+    vector<SIndel>  GetFrameshiftsWithinRange(const TSeqRange &range,
+                                              TDim row = -1) const;
+    vector<SIndel>  GetFrameshiftsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
+                                               TDim row = -1) const;
 
     /// Retrieves the locations of aligned bases in the given row, excluding
     /// gaps and incontinuities

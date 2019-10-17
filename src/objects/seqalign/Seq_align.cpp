@@ -1584,18 +1584,55 @@ TSeqPos CSeq_align::GetNumGapOpeningsWithinRanges(
     return s_GetGapCount(*this, row, ranges, false);
 }
 
-static TSeqPos s_GetNumFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
-                                   const CRangeCollection<TSeqPos> &ranges)
+string CSeq_align::SIndel::AsString() const
 {
+    return NStr::NumericToString(genomic_pos)
+         + (row == 0 ? 'I' : 'D')
+         + NStr::NumericToString(length);
+}
+
+static vector<CSeq_align::SIndel>
+s_GetFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
+                    const CRangeCollection<TSeqPos> &ranges)
+{
+    vector<CSeq_align::SIndel> results;
     if (ranges.empty()) {
-        return 0;
+        return results;;
     }
 
-    TSeqPos retval = 0;
+    CRef<CSeq_align> generated_denseg;
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
+        break;
+    
+    case CSeq_align::TSegs::e_Disc:
+        generated_denseg = align.CreateDensegFromDisc();
+        break;
+
+    case CSeq_align::TSegs::e_Spliced:
         {{
-            const CDense_seg& ds = align.GetSegs().GetDenseg();
+            CRef<CSeq_align> as_disc_seg =
+                align.GetSegs().GetSpliced().AsDiscSeg();
+            generated_denseg = as_disc_seg->CreateDensegFromDisc();
+        }}
+        break;
+
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetNumFrameshifts() currently does not handle "
+                   "this type of alignment.");
+    }
+
+    if (generated_denseg) {
+        generated_denseg->SetSegs().SetDenseg().OrderAdjacentGaps();
+        generated_denseg->SetSegs().SetDenseg().Compact();
+        generated_denseg->SetSegs().SetDenseg().RemovePureGapSegs();
+        generated_denseg->SetSegs().SetDenseg().TrimEndGaps();
+    }
+
+    const CDense_seg &ds = (generated_denseg ? *generated_denseg : align)
+                           . GetSegs().GetDenseg();
+
             for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
                 bool is_gapped = false;
                 for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
@@ -1623,133 +1660,62 @@ static TSeqPos s_GetNumFrameshifts(const CSeq_align& align, CSeq_align::TDim row
                         }
                     }
                     if (gap_len % 3) {
-                        ++retval;
+                        TSignedSeqPos genomic_gap_start = ds.GetStarts()[i*ds.GetDim() + 1];
+                        CSeq_align::TDim inserted_row = 1;
+                        if (genomic_gap_start < 0) {
+                            ENa_strand genomic_strand = ds.IsSetStrands() ? ds.GetStrands()[(i-1) * ds.GetDim() + 1] : eNa_strand_plus;
+                            genomic_gap_start = genomic_strand == eNa_strand_minus
+                                 ? ds.GetStarts()[(i+1) * ds.GetDim() + 1]
+                                      + ds.GetLens()[i+1]
+                                 : ds.GetStarts()[(i-1) * ds.GetDim() + 1]
+                                      + ds.GetLens()[i-1];
+                            inserted_row = 0;
+                        }
+                        results.push_back(CSeq_align::SIndel(genomic_gap_start, inserted_row, gap_len));
                     }
                 }
             }
-        }}
-        break;
 
-    case CSeq_align::TSegs::e_Disc:
-        {{
-            CConstRef<CSeq_align> last_align;
-            ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
-                    align.GetSegs().GetDisc().Get()) {
-                retval += (*iter)->GetNumFrameshifts(row);
-                for (int j = 0; j <= 1; ++j) {
-                    if (last_align && (row < 0 || row == j)) {
-                        bool reverse = last_align->GetSeqStart(j)
-                                     > (*iter)->GetSeqStart(j);
-                        TSeqRange gap(
-                            reverse ? (*iter)->GetSeqStop(j) + 1
-                                    : last_align->GetSeqStop(j) + 1,
-                            reverse ? last_align->GetSeqStart(j) - 1
-                                    : (*iter)->GetSeqStart(j) - 1);
-                        if (s_IntersectionLength(ranges, gap) % 3) {
-                            ++retval;
-                        }
-                    }
-                }
-                last_align = *iter;
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Spliced:
-        {{
-            bool is_minus[] = {
-                             align.GetSegs().GetSpliced().CanGetProduct_strand()
-                          && align.GetSegs().GetSpliced().GetProduct_strand()
-                          == eNa_strand_minus,
-                             align.GetSegs().GetSpliced().CanGetGenomic_strand()
-                          && align.GetSegs().GetSpliced().GetGenomic_strand()
-                          == eNa_strand_minus
-                              };
-            CConstRef<CSpliced_exon> last_exon;
-            vector<TSeqPos> last_edge_insertions(2, 0);
-            ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
-                const CSpliced_exon& exon = **iter;
-                vector<TSeqPos> edge_insertions(2, 0);
-                for (CSeq_align::TDim r = 0; r < 2; ++r) {
-                    if (row != r) {
-                        CRangeCollection<TSeqPos> insertions = 
-                             exon.GetRowSeq_insertions(
-                                  r, align.GetSegs().GetSpliced(), ranges);
-                        vector<TSeqRange> edges;
-                        edges.push_back(TSeqRange(exon.GetRowSeq_range(r,true).GetFrom(),
-                                                  exon.GetRowSeq_range(r,true).GetFrom()));
-                        edges.push_back(TSeqRange(exon.GetRowSeq_range(r,true).GetTo(),
-                                                  exon.GetRowSeq_range(r,true).GetTo()));
-                        if (is_minus[r]) {
-                            reverse(edges.begin(), edges.end());
-                        }
-                        ITERATE (CRangeCollection<TSeqPos>, ins_it, insertions)
-                        {
-                            if (ins_it->GetLength() % 3 == 0) {
-                                continue;
-                            }
-                            if (ins_it->IntersectingWith(edges[1])) {
-                                edge_insertions[r] = ins_it->GetLength();
-                            }
-                            if (ins_it->IntersectingWith(edges[0]) &&
-                                last_edge_insertions[r])
-                            {
-                                last_edge_insertions[r] += ins_it->GetLength();
-                                if (last_edge_insertions[r] % 3 == 0) {
-                                    /// This insertion is on edge of exon, and
-                                    /// combines with edge of last exon to a multiple of 3
-                                    --retval;
-                                }
-                                continue;
-                            }
-                            ++retval;
-                        }
-                    }
-                }
-                if (last_exon && row != 0) {
-                    const CSpliced_exon &lower_exon = is_minus[0]
-                                                    ? exon : *last_exon;
-                    const CSpliced_exon &higher_exon = is_minus[0]
-                                                    ? *last_exon : exon;
-                    TSeqRange gap(lower_exon.GetProduct_end().AsSeqPos() + 1,
-                                  higher_exon.GetProduct_start().AsSeqPos() - 1);
-                    if ((s_IntersectionLength(ranges, gap)
-                             + last_edge_insertions[0]) % 3)
-                    {
-                        ++retval;
-                    }
-                }
-                last_exon.Reset(&exon);
-                last_edge_insertions = edge_insertions;
-            }
-        }}
-        break;
-
-    default:
-        NCBI_THROW(CSeqalignException, eUnsupported,
-                   "CSeq_align::GetNumFrameshifts() currently does not handle "
-                   "this type of alignment.");
-    }
-
-    return retval;
+    return results;
 }
 
 TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
 {
-    return s_GetNumFrameshifts(*this, row,
-                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()));
+    return s_GetFrameshifts(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()))
+           .size();
 }
 
 TSeqPos CSeq_align::GetNumFrameshiftsWithinRange(
     const TSeqRange &range, TDim row) const
 {
-    return s_GetNumFrameshifts(*this, row, CRangeCollection<TSeqPos>(range));
+    return s_GetFrameshifts(*this, row, CRangeCollection<TSeqPos>(range))
+           .size();
 }
 
 TSeqPos CSeq_align::GetNumFrameshiftsWithinRanges(
     const CRangeCollection<TSeqPos> &ranges, TDim row) const
 {
-    return s_GetNumFrameshifts(*this, row, ranges);
+    return s_GetFrameshifts(*this, row, ranges)
+           .size();
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetFrameshifts(TDim row) const
+{
+    return s_GetFrameshifts(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()));
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetFrameshiftsWithinRange(
+    const TSeqRange &range, TDim row) const
+{
+    return s_GetFrameshifts(*this, row, CRangeCollection<TSeqPos>(range));
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetFrameshiftsWithinRanges(
+    const CRangeCollection<TSeqPos> &ranges, TDim row) const
+{
+    return s_GetFrameshifts(*this, row, ranges);
 }
 
 
