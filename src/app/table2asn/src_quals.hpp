@@ -39,6 +39,7 @@ public:
     bool GetMods(const CBioseq& bioseq, TModList& mods);
     void MapFile(const string& fileName, bool allowAcc);
     bool Empty(void) const;
+    bool Mapped(void) const;
     const TLineMap& GetLineMap(void) const;
     void ReportUnusedIds(ILineErrorListener* pEC);
 private:

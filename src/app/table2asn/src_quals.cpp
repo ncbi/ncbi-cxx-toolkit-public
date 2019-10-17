@@ -61,6 +61,12 @@ bool CMemorySrcFileMap::Empty(void) const
 }
 
 
+bool CMemorySrcFileMap::Mapped(void) const 
+{
+    return m_FileMapped;
+}
+
+
 void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
 {
     vector<CTempString> tokens;
@@ -408,7 +414,7 @@ void g_ApplyMods(
                     return sReportError(pEC, sev, subcode, seqId, msg);
                 };
  
-            if (pNamedSrcFileMap && !pNamedSrcFileMap->Empty()) {
+            if (pNamedSrcFileMap && pNamedSrcFileMap->Mapped()) {
                 TModList mods;
                 if (pNamedSrcFileMap->GetMods(*pBioseq, mods)) {
                     s_PreprocessNoteMods(mods); // RW-928
@@ -423,7 +429,7 @@ void g_ApplyMods(
                 }
             }
 
-            if (!defaultSrcFileMap.Empty()) {
+            if (defaultSrcFileMap.Mapped()) {
                 TModList mods;
                 if (defaultSrcFileMap.GetMods(*pBioseq, mods)) {
                     s_PreprocessNoteMods(mods); // RW-928
