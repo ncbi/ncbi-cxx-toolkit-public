@@ -814,19 +814,25 @@ void CBioseq_Info::ResetInst_Strand()
 
 bool CBioseq_Info::IsSetInst_Seq_data(void) const
 {
-    return IsSetInst() && GetInst().IsSetSeq_data();
+    if ( !IsSetInst() ) {
+        return false;
+    }
+    auto& inst = m_Object->GetInst();
+    return inst.IsSetSeq_data() ||
+        (!inst.IsSetExt() && x_NeedUpdate(fNeedUpdate_seq_data) && m_Seq_dataChunks.size() == 1);
 }
 
 
 bool CBioseq_Info::CanGetInst_Seq_data(void) const
 {
-    return CanGetInst() && GetInst().CanGetSeq_data();
+    return IsSetInst_Seq_data();
 }
 
 
 const CBioseq_Info::TInst_Seq_data& CBioseq_Info::GetInst_Seq_data(void) const
 {
-    return GetInst().GetSeq_data();
+    x_Update(fNeedUpdate_seq_data);
+    return m_Object->GetInst().GetSeq_data();
 }
 
 
@@ -855,19 +861,20 @@ void CBioseq_Info::ResetInst_Seq_data()
 
 bool CBioseq_Info::IsSetInst_Ext(void) const
 {
-    return IsSetInst() && GetInst().IsSetExt();
+    return IsSetInst() && m_Object->GetInst().IsSetExt();
 }
 
 
 bool CBioseq_Info::CanGetInst_Ext(void) const
 {
-    return CanGetInst() && GetInst().CanGetExt();
+    return IsSetInst_Ext();
 }
 
 
 const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
 {
-    return GetInst().GetExt();
+    x_Update(fNeedUpdate_seq_data);
+    return m_Object->GetInst().GetExt();
 }
 
 
