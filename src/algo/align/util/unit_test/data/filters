@@ -109,9 +109,9 @@ cds_internal_stops == 9
 frame > 0
 4 9 11
 sframe > 0
-4 9
-qframe > 0
 4 11
+qframe > 0
+4 9
 start_codon = 1
 1 2 4 5 10 11
 stop_codon = 1
