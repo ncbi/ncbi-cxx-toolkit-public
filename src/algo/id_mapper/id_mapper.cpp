@@ -836,11 +836,14 @@ CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
         textseqid->IsSetAccession() &&
         !textseqid->IsSetVersion()
        ) {
-        const int Ver = m_AccToVerMap.find(textseqid->GetAccession())->second;
-        CRef<CSeq_id> NewId(new CSeq_id());
-        NewId->Set(Id->Which(), textseqid->GetAccession(), kEmptyStr, Ver);
-        if(x_IsExactIdInAssembly(*NewId))
-            Id = NewId;
+        if(m_AccToVerMap.find(textseqid->GetAccession()) != m_AccToVerMap.end()) {
+            const int Ver = m_AccToVerMap.find(textseqid->GetAccession())->second;
+            CRef<CSeq_id> NewId(new CSeq_id());
+            NewId->Set(Id->Which(), textseqid->GetAccession(), kEmptyStr, Ver);
+            if(x_IsExactIdInAssembly(*NewId)) {
+                Id = NewId;
+            }
+        }
     }
 
     return Id;

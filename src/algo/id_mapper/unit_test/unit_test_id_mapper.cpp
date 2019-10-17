@@ -768,6 +768,70 @@ BOOST_AUTO_TEST_CASE(TestCasePartialChromosomeTest)
 }
 
 
+
+// Bare MT error test
+BOOST_AUTO_TEST_CASE(TestCaseBareMTErrorTest)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_001858045.2", "Scaffolds") //"SequenceNames" )
+    );
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    //MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    //MapSpec.Role = eGC_SequenceRole_component;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    CSeq_loc OrigLoc;
+    OrigLoc.SetWhole().SetGenbank().SetAccession("MT");
+   
+    // do either throw or return null
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.IsNull());
+}
+
+
+BOOST_AUTO_TEST_CASE(TestCaseBareMTNotErrorTest)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_001858045.2", "Scaffolds") //"SequenceNames" )
+    );
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    //MapSpec.Role = eGC_SequenceRole_component;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    CSeq_loc OrigLoc;
+    OrigLoc.SetWhole().SetGenbank().SetAccession("MT");
+   
+ 
+    // this time work 
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    
+    CSeq_loc ExpectLoc;
+    ExpectLoc.SetWhole().SetGenbank().SetAccession("GU238433");
+    ExpectLoc.SetWhole().SetGenbank().SetVersion(1);
+    BOOST_CHECK(Result->Equals(ExpectLoc));
+
+}
+
+
+
+
+
 // Fix-up PDB Seq-ids
 BOOST_AUTO_TEST_CASE(TestCase_PDBSeqIdFix)
 {
