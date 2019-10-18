@@ -5772,6 +5772,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RBR\ts\tUniversidade Federal Rural do Rio de Janeiro, Departamento de Botanica\t\t\t",
 "RBS\ts\tRoyal Botanic Society\t\t\t",
 "RBY\ts\tEast Divisional Library\t\t\t",
+"RC CCM\tc\tResource Centre Culture Collection of Microorganisms (St. Petersburg State University)\t\t\t",
 "RCAM\ts\tRutgers University, Biology Department\t\t\t",
 "RCAT\tc\tRegional Collection of Animal Viruses and Tissue Cultures\t\t\t",
 "RCB\tc\tRIKEN Cell Bank\t\t\t",

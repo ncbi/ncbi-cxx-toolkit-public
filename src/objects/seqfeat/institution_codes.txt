@@ -5739,6 +5739,7 @@ RBINS	s	Royal Belgian Institute of Natural Sciences
 RBR	s	Universidade Federal Rural do Rio de Janeiro, Departamento de Botanica			
 RBS	s	Royal Botanic Society			
 RBY	s	East Divisional Library			
+RC CCM	c	Resource Centre Culture Collection of Microorganisms (St. Petersburg State University)			
 RCAM	s	Rutgers University, Biology Department			
 RCAT	c	Regional Collection of Animal Viruses and Tissue Cultures			
 RCB	c	RIKEN Cell Bank			
