@@ -193,7 +193,7 @@ public:
 
     typedef map<string, EScoreType> TScoreNameMap;
 
-    struct SIndel {
+    struct NCBI_SEQALIGN_EXPORT SIndel {
         TSeqPos genomic_pos;
         TDim row;
         TSeqPos length;
