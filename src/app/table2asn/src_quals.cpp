@@ -88,8 +88,6 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
         return false;
     }
 
-
-    bool retval = false;
     list<string> id_strings;
     for (const auto& pId : bioseq.GetId()) {
         string id;
@@ -116,16 +114,16 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
                         return (entry.first.find(id) != entry.first.end());
                     });
         if (it != m_LineMap.end()) {
-            x_ProcessLine(it->second, mods);
+            x_ProcessLine(it->second.line, mods);
             m_LineMap.erase(it);
-            retval = true;
+            return true;
         }
     }
 
-    return retval;
+    return false;
 }
 
-void CMemorySrcFileMap::x_RegisterLine(CTempString line, bool allowAcc)
+void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, CTempString line, bool allowAcc)
 {
     CTempString idString, remainder;
     NStr::SplitInTwo(line, "\t", idString, remainder);
@@ -163,7 +161,7 @@ void CMemorySrcFileMap::x_RegisterLine(CTempString line, bool allowAcc)
                 idSet.emplace(idKey);
             }
         }
-        m_LineMap.emplace(idSet, move(line));
+        m_LineMap.emplace(idSet, SLineInfo{lineNum, line});
     }
 }
 
@@ -181,7 +179,7 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
     const char* ptr = (const char*)m_pFileMap->Map(0, fileSize);
     const char* end = ptr + fileSize;
 
-
+    size_t lineNum = 0;
     while (ptr < end)
     {
         // search for next non empty line
@@ -208,7 +206,8 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
             if (m_ColumnNames.empty())
                 NStr::Split(line, "\t", m_ColumnNames, 0);
             else // parse regular line
-                x_RegisterLine(line, allowAcc);
+                x_RegisterLine(lineNum, line, allowAcc);
+            ++lineNum;
         }
     }
 
@@ -223,6 +222,7 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
 static void sReportUnusedMods(
     ILineErrorListener* pEC,
     const string& fileName,
+    size_t lineNum,
     const CTempString& seqId)
 {
     if (!pEC) {
@@ -252,8 +252,11 @@ void CMemorySrcFileMap::ReportUnusedIds(ILineErrorListener* pEC)
     if (!Empty()) {
         for (const auto& entry : m_LineMap) {
             CTempString seqId, remainder;
-            NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
-            sReportUnusedMods(pEC, m_pFileMap->GetFileName(), NStr::TruncateSpaces_Unsafe(seqId));
+            NStr::SplitInTwo(entry.second.line, "\t", seqId, remainder);
+            sReportUnusedMods(pEC, 
+                    m_pFileMap->GetFileName(), 
+                    entry.second.lineNum, 
+                    NStr::TruncateSpaces_Unsafe(seqId));
         }
     }
 }
@@ -513,9 +516,6 @@ void g_ApplyMods(
 
     if (isVerbose) {
         defaultSrcFileMap.ReportUnusedIds(pEC);
-        if (pNamedSrcFileMap) {
-            pNamedSrcFileMap->ReportUnusedIds(pEC);
-        }
     }
 }
 

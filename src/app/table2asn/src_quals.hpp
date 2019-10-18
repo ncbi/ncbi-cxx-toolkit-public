@@ -34,7 +34,13 @@ class CMemorySrcFileMap
 {
 public:
     using TModList = CModHandler::TModList;
-    using TLineMap = map<set<string>, CTempString>;
+
+    struct SLineInfo {
+        size_t lineNum;
+        CTempString line;
+    };    
+
+    using TLineMap = map<set<string>, SLineInfo>;
 
     bool GetMods(const CBioseq& bioseq, TModList& mods);
     void MapFile(const string& fileName, bool allowAcc);
@@ -44,7 +50,7 @@ public:
     void ReportUnusedIds(ILineErrorListener* pEC);
 private:
     void x_ProcessLine(const CTempString& line, TModList& mods);
-    void x_RegisterLine(CTempString line, bool allowAcc);
+    void x_RegisterLine(size_t lineNum, CTempString line, bool allowAcc);
     bool m_FileMapped = false;
     unique_ptr<CMemoryFileMap> m_pFileMap;
     vector<CTempString> m_ColumnNames;

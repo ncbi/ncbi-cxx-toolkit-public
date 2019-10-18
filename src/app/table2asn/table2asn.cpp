@@ -800,6 +800,13 @@ int CTbl2AsnApp::Run(void)
             ProcessOneFile(isAlignment);
         }
 
+        // RW-927
+        if (m_context.m_verbose &&
+            m_context.mp_named_src_map &&
+            !m_context.mp_named_src_map->Empty()) {
+            m_context.mp_named_src_map->ReportUnusedIds(m_logger);
+        }
+
         if (m_validator->TotalErrors() > 0)
         {
             m_validator->ReportErrorStats(m_context.GetOstream(".stats", m_context.m_base_name));
