@@ -553,28 +553,31 @@ void CDataHistogramDemoApp::Clone(void)
     H h(0, 10, 10, H::eLinear);
     RUN_INT(h, 0, 10);
 
-    // clone structure
+    // clone
     {{
-        H hclone(h.CloneStructure());
+        H hclone(h.Clone());
         PRINT_STATS(hclone);
     }}
     {{
         H hclone;
-        hclone = h.CloneStructure();
+        hclone = h.Clone();
         PRINT_STATS(hclone);
     }}
     {{
         H hclone(0, 100000000, 5, H::eLog10);
-        hclone = h.CloneStructure();
+        hclone = h.Clone(H::eCloneStructureOnly);
         PRINT_STATS(hclone);
     }}
+
     // clone and steal counters
     {{
-        H hclone(h.CloneStructure());
+        // Create clone and add counters to it
+        H hclone(h.Clone(H::eCloneStructureOnly));
         for (size_t i = 0; i < 10; i++) {
             hclone.Add(rand() % 10);
         }
         PRINT_STATS(hclone);
+        // Move counters to original histogram (add)
         h.StealCountersFrom(hclone);
         PRINT_STATS(h);
     }}
