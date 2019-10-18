@@ -95,7 +95,7 @@ public:
     };
 
     /// Methods to build bins for a specified scale.
-    // Applies to the main scale, defined in constructor, only.
+    /// Applies to the main scale, defined in constructor, only.
     enum EScaleView {
         /// Use specified scale method to calculate bins sizes from a minimum
         /// to a maximum value.
@@ -173,7 +173,7 @@ public:
     /// Add counters from 'other' histogram to this histogram,
     /// then reset the counters of 'other' histogram.
     /// @note Both histograms should have the same structure.
-    /// @sa CloneStructure, Reset
+    /// @sa Clone, Reset
     void StealCountersFrom(CHistogram& other);
 
 
@@ -265,8 +265,8 @@ public:
     /// Default constructor.
     /// 
     /// Creates empty object. The object itself is invalid without min/max values,
-    /// and any scale. Should be used with conjunction of CloneStructure() only.
-    /// @sa CloneStructure
+    /// and any scale. Should be used with conjunction of Clone() only.
+    /// @sa Clone
     ///
     CHistogram(void);
 
@@ -275,8 +275,8 @@ public:
     /// Move 'other' histogram data to the current object. 'other' became invalid.
     /// @example
     ///     CHistogram<> h1(min, max, n, type);
-    ///     CHistogram<> h2(h1.CloneStructure());
-    /// @sa CloneStructure
+    ///     CHistogram<> h2(h1.Clone(how));
+    /// @sa Clone
     ///
     CHistogram(CHistogram&& other) { x_MoveFrom(other); };
 
@@ -286,18 +286,22 @@ public:
     /// @example
     ///     CHistogram<> h1(min, max, n, type);
     ///     CHistogram<> h2;
-    ///     h2 = h1.CloneStructure();
-    /// @sa CloneStructure
+    ///     h2 = h1.Clone(how);
+    /// @sa Clone
     ///
     CHistogram& operator=(CHistogram&& other) { x_MoveFrom(other); return *this;  };
 
-    /// Clone histogram structure only (the counters will be zeroed).
+    enum EClone {
+        eCloneAll = 0,       ///< Clone whole histogram, with scale and counters
+        eCloneStructureOnly  ///< Clone structure only (the counters will be zeroed)
+    };
+
+    /// Clone histogram structure.
     /// 
-    /// Creates a copy of the histogram structure, including min/max values, 
-    /// numbers of bins, starting bins positions for a combined scale.
-    /// Do not copy any counters! All bins counters will be zeroed.
+    /// Creates a copy of the histogram structure depending on clone method.
+    /// By default it is a whole copy, but you can clone histogram's structure only, without counters.
     ///
-    CHistogram CloneStructure() const;
+    CHistogram Clone(EClone how = eCloneAll) const;
 
 protected:
     /// Calculate bins starting positions.
@@ -826,17 +830,30 @@ CHistogram<TValue, TScale, TCounter>::CHistogram()
 
 template <typename TValue, typename TScale, typename TCounter>
 CHistogram<TValue, TScale, TCounter> 
-CHistogram<TValue, TScale, TCounter>::CloneStructure() const 
+CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const 
 {
     CHistogram h;
-    // clone structure only, not counters
     h.m_Min     = m_Min;
     h.m_Max     = m_Max;
     h.m_NumBins = m_NumBins;
+
     h.m_Starts.reset(new TScale[m_NumBins]);
-    memcpy(h.m_Starts.get(), m_Starts.get(), sizeof(TScale) * m_NumBins);
     h.m_Counters.reset(new TCounter[m_NumBins]);
+    memcpy(h.m_Starts.get(), m_Starts.get(), sizeof(TScale) * m_NumBins);
+
     h.Reset();
+
+    switch (how) {
+    case eCloneStructureOnly:
+        // All done
+        break;
+    case eCloneAll:
+        // Copy counters as well
+        memcpy(h.m_Counters.get(), m_Counters.get(), sizeof(TCounter) * m_NumBins);
+        break;
+    default:
+        _TROUBLE;
+    }
     return h;
 }
 
