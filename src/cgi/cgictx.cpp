@@ -718,6 +718,12 @@ static bool s_IsAllowedMethod(const string& method)
 }
 
 
+// Declaration only; definition is in cgiapp.cpp.
+NCBI_PARAM_DECL(bool, CGI, ValidateCSRFToken);
+typedef NCBI_PARAM_TYPE(CGI, ValidateCSRFToken) TParamValidateCSRFToken;
+static const char* kCSRFTokenHeader = " NCBI-CSRF-Token";
+
+
 // Check if the (space separated) list of headers is a subset of the
 // list of allowed headers. Empty list of headers is a match.
 // Comparison is case-insensitive.
@@ -739,6 +745,10 @@ static bool s_IsAllowedHeaderList(const string& headers)
     // Always allow simple headers.
     ah += kSimpleHeaders;
     ah += kDefaultHeaders;
+    if (TParamValidateCSRFToken::GetDefault()) {
+        ah += kCSRFTokenHeader;
+    }
+
     NStr::ToUpper(ah);
     NStr::Split(ah, ", ", allowed,
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
