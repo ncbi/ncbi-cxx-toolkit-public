@@ -223,9 +223,7 @@ CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 if test "$generator" = "Xcode"; then
   build_root=CMake-${CC_NAME}${CC_VERSION}
   if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-    build_root="$build_root"/dll
-  else
-    build_root="$build_root"/static
+    build_root="$build_root"-DLL
   fi
 else
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"

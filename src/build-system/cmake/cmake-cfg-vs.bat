@@ -174,9 +174,7 @@ set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 
 set build_root=CMake-%generator_name%
 if "%BUILD_SHARED_LIBS%"=="ON" (
-  set build_root=%build_root%\dll
-) else (
-  set build_root=%build_root%\static
+  set build_root=%build_root%-DLL
 )
 
 if not exist "%tree_root%\%build_root%\build" (
