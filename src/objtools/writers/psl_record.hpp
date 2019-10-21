@@ -74,6 +74,7 @@ public:
     ~CPslRecord() = default;
 
     void Initialize(
+        CScope&,
         const CSpliced_seg& splicedSeg);
 
     void Write(
@@ -81,11 +82,6 @@ public:
         bool debug=false) const;
 
 protected:
-    //void xWriteColumnar(
-    //    ostream& ostr) const;
-
-    //void xWriteLinear(
-    //    ostream& ostr) const;
 
     string xFieldMatches(bool debug) const;
     string xFieldMisMatches(bool debug) const;

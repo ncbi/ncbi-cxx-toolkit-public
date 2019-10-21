@@ -95,10 +95,16 @@ sDebugFormatValue(
 //  ----------------------------------------------------------------------------
 void
 CPslRecord::Initialize(
+    CScope& scope,
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
     //prep
+    const auto& queryId = splicedSeg.GetProduct_id();
+    auto querySeqHandle = scope.GetBioseqHandle(queryId);
+    const auto& targetId = splicedSeg.GetGenomic_id();
+    auto targetSeqHandle = scope.GetBioseqHandle(targetId);
+    
     const auto& exonList = splicedSeg.GetExons();
     for (auto pExon: exonList) {
         if (!pExon->CanGetProduct_start()  || !pExon->CanGetProduct_end()) {
@@ -119,26 +125,51 @@ CPslRecord::Initialize(
             else if (part->IsMismatch()) {
                 mMisMatches += part->GetMismatch();
             }
-        }
+        } 
     }
 
     //repMatches
 
     //nCount
 
-    //qNumInsert
+    //qNumInsert, qBaseInsert
+    int lastExonEndQ = -1;
+    for (auto pExon: exonList) {
+        if (lastExonEndQ == -1) {
+            lastExonEndQ = pExon->GetProduct_end().AsSeqPos() + 1;
+            continue;
+        }
+        auto exonStart = pExon->GetProduct_start().AsSeqPos();
+        if (exonStart > lastExonEndQ) {
+            mNumInsertQ++;
+            mBaseInsertQ += (exonStart - lastExonEndQ);
+        }
+        lastExonEndQ = pExon->GetProduct_end().AsSeqPos() + 1;
+    }
 
-    //qBaseInsert
-
-    //tNumInsert
-
-    //tBaseInsert
+    //tNumInsert, tBaseInsert
+    int lastExonEndT = -1;
+    for (auto pExon: exonList) {
+        if (lastExonEndT == -1) {
+            lastExonEndT = pExon->GetGenomic_end() + 1;
+            continue;
+        }
+        auto exonStart = pExon->GetGenomic_start();
+        if (exonStart > lastExonEndT) {
+            mNumInsertT++;
+            mBaseInsertT += (exonStart - lastExonEndT);
+        }
+        lastExonEndT = pExon->GetGenomic_end() + 1;
+    }
 
     //strand
+    if (splicedSeg.CanGetProduct_strand()) {
+        mStartQ = splicedSeg.CanGetProduct_strand();
+    }
 
-    //qName
-
-    //qSize
+    //qName, qSize
+    CWriteUtil::GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
+    mSizeQ = querySeqHandle.GetInst_Length();
 
     //qStart, qEnd
     mStartQ = mEndQ = -1;
@@ -153,9 +184,9 @@ CPslRecord::Initialize(
         }
     }
 
-    //tName
-
-    //tSize
+    //tName, tSize
+    CWriteUtil::GetBestId(targetSeqHandle.GetSeq_id_Handle(), scope, mNameT);
+    mSizeT = targetSeqHandle.GetInst_Length();
 
     //tStart, tEnd
     mStartT = mEndT = -1;
@@ -531,38 +562,6 @@ CPslRecord::Write(
          << xFieldStartsT(debug) 
          << endl;
 }
-
-/*
-//  ----------------------------------------------------------------------------
-void
-CPslRecord::xWriteColumnar(
-    ostream& ostr) const
-//  ----------------------------------------------------------------------------
-{
-    ostr << "matches      : " << xFieldMatches() << endl;
-    ostr << "misMatches   : " << xFieldMisMatches() << endl;
-    ostr << "repMatches   : " << xFieldRepMatches() << endl;
-    ostr << "countN       : " << xFieldCountN() << endl;
-    ostr << "qNumInsert   : " << xFieldNumInsertQ() << endl;
-    ostr << "qBaseInsert  : " << xFieldBaseInsertQ() << endl;
-    ostr << "tNumInsert   : " << xFieldNumInsertT() << endl;
-    ostr << "tBaseInsert  : " << xFieldBaseInsertT() << endl;
-    ostr << "strand       : " << xFieldStrand() << endl;
-    ostr << "qName        : " << xFieldNameQ() << endl;
-    ostr << "qSize        : " << xFieldSizeQ() << endl;
-    ostr << "qStart       : " << xFieldStartQ() << endl;
-    ostr << "qEnd         : " << xFieldEndQ() << endl;
-    ostr << "tName        : " << xFieldNameT() << endl;
-    ostr << "tSize        : " << xFieldSizeT() << endl;
-    ostr << "tStart       : " << xFieldStartT() << endl;
-    ostr << "tEnd         : " << xFieldEndT() << endl;
-    ostr << "blockCount   : " << xFieldBlockCount() << endl;
-    ostr << "blockSizes   : " << xFieldBlockSizes() << endl;
-    ostr << "startsQ      : " << xFieldStartsQ() << endl;
-    ostr << "startsT      : " << xFieldStartsT() << endl;
-    ostr << endl;
-}
-*/
 
 END_NCBI_SCOPE
 

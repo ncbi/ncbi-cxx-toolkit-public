@@ -114,8 +114,8 @@ void CPslWriter::xWriteAlignSlicedSeg(
 //  ----------------------------------------------------------------------------
 {
     CPslRecord psl;
-    psl.Initialize(splicedSeg);
-    psl.Write(m_Os, true);
+    psl.Initialize(*m_pScope, splicedSeg);
+    psl.Write(m_Os, (m_uFlags & fDebugOutput));
 }
 
 END_NCBI_SCOPE

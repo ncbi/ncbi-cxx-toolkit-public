@@ -60,7 +60,8 @@ public:
     ///
     typedef enum {
         fNormal = 0,
-        fWriterBaseLast = (1<<0),
+        fDebugOutput = (1<<0),
+        fWriterBaseLast = fDebugOutput,
     } TFlags;
     
 protected:
