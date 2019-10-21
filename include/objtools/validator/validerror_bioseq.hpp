@@ -255,6 +255,7 @@ private:
     void x_ReportLineageConflictWithMol(
         const string& lineage,
         const string& stranded_mol,
+        const CMolInfo::TBiomol biomol,
         CSeq_inst::EMol mol,
         const CSerialObject& obj,
         const CSeq_entry *ctx

@@ -9085,13 +9085,14 @@ void CValidError_bioseq::x_ValidateMolInfoForBioSource(
         mol = m_CurrentHandle.GetInst_Mol();
     }
 
-    x_ReportLineageConflictWithMol(lineage, stranded_mol, mol, desc, ctx);
+    x_ReportLineageConflictWithMol(lineage, stranded_mol, biomol, mol, desc, ctx);
 }
 
 
 void CValidError_bioseq::x_ReportLineageConflictWithMol(
     const string& lineage,
     const string& stranded_mol,
+    const CMolInfo::TBiomol biomol,
     CSeq_inst::EMol mol,
     const CSerialObject& obj,
     const CSeq_entry    *ctx
@@ -9105,6 +9106,15 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol(
     if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS && NStr::EqualNocase(stranded_mol, "ssRNA-RT")) {
         // retrovirus can be rna or dna
         return;
+    }
+
+    if (NStr::EqualNocase(stranded_mol, "dsRNA")) {
+        if (biomol != CMolInfo::eBiomol_genomic) {
+             m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "dsRNA virus should be genomic RNA",
+                    obj, ctx);
+            return;
+        }
     }
 
     // otherwise look for molecule match regardless of strandedness
@@ -9288,7 +9298,7 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
                 obj, ctx);
         }
 
-        if (has_plus_cds && !is_synthetic && !is_ambisense) {
+        if (!is_synthetic && !is_ambisense) {
             if (biomol != CMolInfo::eBiomol_genomic) {
                 m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "Positive-sense single-stranded RNA virus should be genomic RNA",
