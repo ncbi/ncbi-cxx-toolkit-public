@@ -12,6 +12,7 @@ if (NOT DEFINED NCBI_CMAKEPROJECT_NAME)
 endif()
 
 set(NCBI_PTBCFG_KNOWN_FOLDERS
+  dll
   corelib
   util
   connect
