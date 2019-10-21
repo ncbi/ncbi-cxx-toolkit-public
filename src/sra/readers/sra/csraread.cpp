@@ -1440,7 +1440,33 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
                 ret += c;
             }
         }
-        else if ( type == 'D' || type == 'N' || type == 'S' || type == 'P' ) {
+        else if ( type == 'S' ) {
+            if ( seqpos == 0 ) {
+                // soft clip at the beginning may have mismatches
+                if ( seqpos + seglen > has_mismatch.size() ) {
+                    NCBI_THROW_FMT(CSraException, eDataError,
+                                   "CIGAR insert segment beyond HAS_MISMATCH: "
+                                   <<cigar<<" vs "<<mismatch);
+                }
+                for ( TSeqPos i = 0; i < seglen; ++i, ++seqpos ) {
+                    if ( has_mismatch[seqpos] == '1' ) {
+                        if ( mptr == mend ) {
+                            NCBI_THROW_FMT(CSraException, eDataError,
+                                           "CIGAR insert/mismatch segment beyond MISMATCH: "
+                                           <<cigar<<" vs "<<mismatch);
+                            
+                        }
+                        ++mptr;
+                    }
+                }
+                continue;
+            }
+            else {
+                // soft clip at the end
+                break;
+            }
+        }
+        else if ( type == 'D' || type == 'N' || type == 'P' ) {
             continue;
         }
         else {
