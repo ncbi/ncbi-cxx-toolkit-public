@@ -79,4 +79,20 @@ function(NCBI_internal_process_dataspec _variable _access _value)
 endfunction()
 
 #############################################################################
+function(NCBI_internal_allow_datatool)
+    get_property(_allowedprojects GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS)
+    if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
+        if("${NCBI_DATATOOL}.local" IN_LIST _allowedprojects)
+            set(NCBI_DATATOOL "${NCBI_DATATOOL}.local" PARENT_SCOPE)
+        endif()
+    else()
+        set(_allowedprojects ${_allowedprojects} ${NCBI_DATATOOL})
+        set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS ${_allowedprojects})
+    endif()
+endfunction()
+
+#############################################################################
+if(NOT IS_ABSOLUTE "${NCBI_DATATOOL}")
+    NCBI_register_hook(ALL_PARSED NCBI_internal_allow_datatool)
+endif()
 NCBI_register_hook(DATASPEC NCBI_internal_process_dataspec ".asn;.dtd;.xsd;.wsdl;.jsd;.json")
