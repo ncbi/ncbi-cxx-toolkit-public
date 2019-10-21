@@ -45,6 +45,7 @@
 
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 
+#include <algorithm>
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(align_format)
 
@@ -164,10 +165,12 @@ public:
                         CRef<CSeqDB> db,
                         objects::CSeq_align_set& filtered_aln);
 
-
     CRef<CSeq_align_set>FilterBySeqDB(const objects::CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign
                                       CRef<CSeqDB> &filteredDB,
                                       vector<int>& oid_vec);
+    CRef<CSeq_align_set> FilterByTaxonomy(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
+                                          CRef<CSeqDB> &seqdb,
+                                          const set<int>& taxids);
 
     //--- Auxiliary methods used for seqalign filtering ---//
 
