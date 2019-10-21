@@ -2364,6 +2364,13 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
         break;
 
     case e_Pdb:
+        if (fields[0].size() < 4
+            ||  (fields[0].size() > 5
+                 &&  ( !fields[1].empty()
+                       ||  strchr("|-_", fields[0][4]) == NULL))) {
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "Malformatted PDB ID " + string(fields[0]));
+        }
         if (fields[0].size() > 4  &&  fields[1].empty()) { // misdelimited
             if (fields[0].size() > 5) {
                 fields[1] = fields[0].substr(5);
