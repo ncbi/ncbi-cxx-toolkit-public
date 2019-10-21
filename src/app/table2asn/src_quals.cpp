@@ -123,6 +123,41 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
     return false;
 }
 
+
+static void sReportDuplicateIds(
+    ILineErrorListener* pEC,
+    const string& fileName,
+    size_t currentLine,
+    size_t previousLine,
+    const CTempString& seqId)
+{
+    _ASSERT(pEC);
+
+    string message = 
+        "Sequence id " 
+        + seqId 
+        + " on line "  
+        + NStr::NumericToString(currentLine)
+        + " of " + fileName 
+        + " duplicates id on line "
+        + NStr::NumericToString(previousLine) 
+        + ". Skipping line "
+        + NStr::NumericToString(currentLine) 
+        + ".";
+
+    AutoPtr<CLineErrorEx> pErr(
+        CLineErrorEx::Create(
+            ILineError::eProblem_GeneralParsingError,
+            eDiag_Error,
+            0, 0, // code and subcode
+            seqId,
+            currentLine, // lineNumber,
+            message));
+
+    pEC->PutError(*pErr);
+}
+
+
 void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, CTempString line, bool allowAcc)
 {
     CTempString idString, remainder;
@@ -161,7 +196,16 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, CTempString line, bool al
                 idSet.emplace(idKey);
             }
         }
-        m_LineMap.emplace(idSet, SLineInfo{lineNum, line});
+        auto rval = m_LineMap.emplace(idSet, SLineInfo{lineNum, line});
+        if (!rval.second) { // conflicts with a prexisting entry
+            CTempString seqId, remainder;
+            NStr::SplitInTwo(line, "\t", seqId, remainder);
+            sReportDuplicateIds(m_pEC, 
+                    m_pFileMap->GetFileName(),
+                    lineNum,
+                    rval.first->second.lineNum,
+                    NStr::TruncateSpaces_Unsafe(seqId));
+        }
     }
 }
 
@@ -202,12 +246,12 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
         // compose line control structure
         if (start < endline)
         {
+            ++lineNum;
             CTempString line(start, endline-start+1);
             if (m_ColumnNames.empty())
                 NStr::Split(line, "\t", m_ColumnNames, 0);
             else // parse regular line
                 x_RegisterLine(lineNum, line, allowAcc);
-            ++lineNum;
         }
     }
 
@@ -225,15 +269,13 @@ static void sReportUnusedMods(
     size_t lineNum,
     const CTempString& seqId)
 {
-    if (!pEC) {
-        // throw an exception
-    }
+    _ASSERT(pEC);
 
     string message =
         fileName +
         " contains qualifiers for sequence id " +
         seqId +
-        " , but no sequence with that id was found.";
+        ", but no sequence with that id was found.";
 
     AutoPtr<CLineErrorEx> pErr(
         CLineErrorEx::Create(
@@ -241,19 +283,19 @@ static void sReportUnusedMods(
             eDiag_Error,
             0, 0, // code and subcode
             seqId,
-            0, // lineNumber,
+            lineNum, // lineNumber,
             message));
 
     pEC->PutError(*pErr);
 }
 
-void CMemorySrcFileMap::ReportUnusedIds(ILineErrorListener* pEC)
+void CMemorySrcFileMap::ReportUnusedIds()
 {
     if (!Empty()) {
         for (const auto& entry : m_LineMap) {
             CTempString seqId, remainder;
             NStr::SplitInTwo(entry.second.line, "\t", seqId, remainder);
-            sReportUnusedMods(pEC, 
+            sReportUnusedMods(m_pEC, 
                     m_pFileMap->GetFileName(), 
                     entry.second.lineNum, 
                     NStr::TruncateSpaces_Unsafe(seqId));
@@ -284,9 +326,7 @@ static void sReportError(
         const string& message,
         ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
 {
-    if (!pEC) {
-        // throw an exception
-    }
+    _ASSERT(pEC);
 
     AutoPtr<CLineErrorEx> pErr(
             CLineErrorEx::Create(
@@ -308,9 +348,7 @@ static void sReportMissingMods(
         const CBioseq& bioseq)
 {
 
-    if (!pEC) {
-        // throw an exception
-    }
+    _ASSERT(pEC);
 
     string seqId = bioseq.GetId().front()->AsFastaString();
     string message = 
@@ -387,11 +425,11 @@ void g_ApplyMods(
 
     if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
         if (!pNamedSrcFileMap)
-            pNamedSrcFileMap.reset(new CMemorySrcFileMap);
+            pNamedSrcFileMap.reset(new CMemorySrcFileMap(pEC));
         pNamedSrcFileMap->MapFile(namedSrcFile, allowAcc);
     }
 
-    CMemorySrcFileMap defaultSrcFileMap;
+    CMemorySrcFileMap defaultSrcFileMap(pEC);
     if (!NStr::IsBlank(defaultSrcFile) && CFile(defaultSrcFile).Exists()) {
         defaultSrcFileMap.MapFile(defaultSrcFile, allowAcc);
     }
@@ -515,7 +553,7 @@ void g_ApplyMods(
     }
 
     if (isVerbose) {
-        defaultSrcFileMap.ReportUnusedIds(pEC);
+        defaultSrcFileMap.ReportUnusedIds();
     }
 }
 

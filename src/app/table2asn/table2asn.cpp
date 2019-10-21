@@ -804,7 +804,7 @@ int CTbl2AsnApp::Run(void)
         if (m_context.m_verbose &&
             m_context.mp_named_src_map &&
             !m_context.mp_named_src_map->Empty()) {
-            m_context.mp_named_src_map->ReportUnusedIds(m_logger);
+            m_context.mp_named_src_map->ReportUnusedIds();
         }
 
         if (m_validator->TotalErrors() > 0)

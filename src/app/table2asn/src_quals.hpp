@@ -42,12 +42,16 @@ public:
 
     using TLineMap = map<set<string>, SLineInfo>;
 
+    CMemorySrcFileMap(ILineErrorListener* pEC)
+        : m_pEC(pEC) {}
+
+
     bool GetMods(const CBioseq& bioseq, TModList& mods);
     void MapFile(const string& fileName, bool allowAcc);
     bool Empty(void) const;
     bool Mapped(void) const;
     const TLineMap& GetLineMap(void) const;
-    void ReportUnusedIds(ILineErrorListener* pEC);
+    void ReportUnusedIds(void);
 private:
     void x_ProcessLine(const CTempString& line, TModList& mods);
     void x_RegisterLine(size_t lineNum, CTempString line, bool allowAcc);
@@ -55,6 +59,7 @@ private:
     unique_ptr<CMemoryFileMap> m_pFileMap;
     vector<CTempString> m_ColumnNames;
     TLineMap m_LineMap;
+    ILineErrorListener* m_pEC;
 };
 
 
