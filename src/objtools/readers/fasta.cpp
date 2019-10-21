@@ -1592,9 +1592,14 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
     } else if (inst.IsSetMol()) {
         if (inst.GetMol() == CSeq_inst::eMol_na &&
             !m_SeqData.empty()) {
-            sRefineNaMol(m_SeqData.data(), 
-                         m_SeqData.data() + min(m_SeqData.length(), SIZE_TYPE(4096)),
-                         inst);
+            bool refined = sRefineNaMol(m_SeqData.data(), 
+                        m_SeqData.data() + min(m_SeqData.length(), SIZE_TYPE(4096)),
+                        inst);
+            if (refined && inst.GetMol() == CSeq_inst::eMol_dna) {
+                auto pDesc = Ref(new CSeqdesc());
+                pDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+                m_CurrentSeq->SetDescr().Set().emplace_back(move(pDesc));
+            }
         }
         return;
     } else if (m_SeqData.empty()) {
@@ -1614,6 +1619,11 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
         if (!sRefineNaMol(data, data+length, inst)) {
             inst.SetMol(CSeq_inst::eMol_na);  
         }
+        else if (inst.GetMol() == CSeq_inst::eMol_dna) {
+            auto pDesc = Ref(new CSeqdesc());
+            pDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+            m_CurrentSeq->SetDescr().Set().emplace_back(move(pDesc));
+        } 
         return;
     }
     case CFormatGuess::eProtein:     inst.SetMol(CSeq_inst::eMol_aa);  return;
