@@ -9154,7 +9154,7 @@ AC_CONFIG_HEADER(${ncbiconf}:src/build-system/config.h.in)
 AC_CONFIG_FILES($configurables \
    $srcdir/./Makefile:src/build-system/Makefile.in.top \
    $build_root/inc/common/ncbi_build_ver.h:include/common/ncbi_build_ver.h.in \
-   include/common/ncbi_revision.h:include/common/ncbi_revision.h.in)
+   $srcdir/include/common/ncbi_revision.h:include/common/ncbi_revision.h.in)
 
 AC_CONFIG_COMMANDS([default], [
 dnl make all shell scripts *.sh be executable
