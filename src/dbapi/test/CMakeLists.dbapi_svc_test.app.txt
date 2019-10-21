@@ -1,0 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(dbapi_svc_test)
+  NCBI_sources(dbapi_svc_test)
+  NCBI_uses_toolkit_libraries(connext xxconnect sdbapi ncbi_xdbapi_ctlib)
+#  NCBI_project_watchers(ucko mcelhany)
+  NCBI_project_watchers(mcelhany)
+
+  NCBI_set_test_timeout(600)
+  NCBI_set_test_assets(dbapi_svc_test.ini interfaces)
+  NCBI_add_test(dbapi_svc_test -mapper LBSMD)
+  NCBI_add_test(dbapi_svc_test -mapper NAMERD)
+NCBI_end_app()
