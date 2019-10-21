@@ -309,7 +309,7 @@ NCBI_BLOWFISH NcbiBlowfishInit(const void* key, size_t keylen)
     assert(sizeof(Uint4) == 4); 
     assert(sizeof(Uint8) == 8);
 
-    if (!(bf = (struct SNcbiBlowfish*) malloc(sizeof(*bf))))
+    if (!keylen  ||  !(bf = (struct SNcbiBlowfish*) malloc(sizeof(*bf))))
         return 0;
     memcpy(bf, &kBFInit, sizeof(*bf));
 

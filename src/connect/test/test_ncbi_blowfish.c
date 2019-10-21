@@ -166,8 +166,10 @@ int main(int argc, char* argv[])
         perror("Cannot init cipher");
         return 1;
     }
-
-    klen = (slen + sizeof(*data) - 1) / sizeof(*data);
+    if (!(klen = (slen + sizeof(*data) - 1) / sizeof(*data))) {
+        printf("Nothing to do!\n");
+        return 0;
+    }
     if (!(data = (Uint8*) malloc(klen * sizeof(*data)))) {
         perror("Cannot allocate memory");
         return 1;
@@ -207,7 +209,6 @@ int main(int argc, char* argv[])
     putchar('\n');
 
     free(data);
-
     NcbiBlowfishFini(bf);
 
     return 0;    
