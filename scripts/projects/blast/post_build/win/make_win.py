@@ -64,7 +64,8 @@ def main():
              "legacy_blast.pl",
              "update_blastdb.pl",
              "cleanup-blastdb-volumes.py",
-             "get_species_taxids.sh"
+             "get_species_taxids.sh",
+             "nghttp2.dll"
              ]
     
     cwd = os.getcwd()
