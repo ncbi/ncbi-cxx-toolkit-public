@@ -617,7 +617,6 @@ CRef<CSeq_align> s_UpdateSeqAlnWithFilteredSeqIDs(CRef<CSeqDB> filteredDB,
 }
 
 
-
 CRef<CSeq_align_set> CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign
                                                     CRef<CSeqDB> &filteredDB,
                                                     vector<int>& oid_vec)
@@ -646,6 +645,110 @@ CRef<CSeq_align_set> CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& seqali
                 }                    
             }
             i++;
+        }
+        else {
+            if(success) {
+                filtered_aln = s_UpdateSubjectInSeqalign(currAlign,newSubjectID);
+            }
+        }
+        previous_id = subjid;
+
+        if(success && !filtered_aln.Empty()) {                
+            new_aln->Set().push_back(filtered_aln);
+        }            
+    }    
+    return new_aln;
+}
+
+bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<int> & user_tax_ids)
+{
+    CBlast_def_line::TTaxIds tax_ids;
+    if (def.IsSetTaxid()) {
+        tax_ids.insert(def.GetTaxid());
+    }
+    if(def.IsSetLinks()) {
+        CBlast_def_line::TLinks leaf_ids = def.GetLinks();
+        tax_ids.insert(leaf_ids.begin(), leaf_ids.end());
+    }
+
+    if(user_tax_ids.size() > tax_ids.size()) {
+        ITERATE(CBlast_def_line::TTaxIds, itr, tax_ids) {
+          if(user_tax_ids.find(*itr) != user_tax_ids.end()) {
+            return true;
+          }
+        }
+    }
+    else {
+        ITERATE(set<int>, itr, user_tax_ids) {
+            if(tax_ids.find(*itr) != tax_ids.end()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_set>  &bdlRef,
+                                                         const set<int>& taxids,
+                                                         CRef<CSeq_align> &in_align)
+{
+    CRef<CSeq_align> sa_copy;
+
+    const list< CRef< CBlast_def_line > >& bdlSet = bdlRef->Get();
+    vector <string> useThisSeqs;
+    ITERATE(list<CRef<CBlast_def_line> >, iter, bdlSet) {
+        const CBlast_def_line & defline = **iter;
+        bool has_match = s_IncludeDeflineTaxid(defline, taxids);
+        if(has_match) {
+            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
+            CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
+            if(sa_copy.Empty()) {                
+                sa_copy = s_UpdateSubjectInSeqalign(in_align,seqID);
+            }
+            string textSeqID;
+            CAlignFormatUtil::GetTextSeqID(seqID, &textSeqID);
+            if(seqID->IsGi()) {
+                useThisSeqs.push_back("gi:" + textSeqID);
+            }
+            else {
+                useThisSeqs.push_back("seqid:" + textSeqID);
+            }   
+            CRef<CUser_object> userObject(new CUser_object());
+	        userObject->SetType().SetStr("use_this_seqid");
+	        userObject->AddField("SEQIDS", useThisSeqs);
+            sa_copy->ResetExt();
+	        sa_copy->SetExt().push_back(userObject);      
+        }                
+    }
+    return sa_copy;
+}
+
+CRef<CSeq_align_set> CSeqAlignFilter::FilterByTaxonomy(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
+                                                        CRef<CSeqDB> &seqdb,
+                                                        const set<int>& taxids)                                                                  
+{
+    CConstRef<CSeq_id> previous_id, subjid;    
+    bool success = false;
+    CRef<CSeq_id> newSubjectID;
+
+    CRef<CSeq_align_set> new_aln(new CSeq_align_set);
+
+    ITERATE(CSeq_align_set::Tdata, iter, seqalign.Get()){ 
+        CRef<CSeq_align> currAlign = *iter;
+        CRef<CSeq_align> filtered_aln;
+
+        subjid = &(currAlign->GetSeq_id(1));    
+        if(previous_id.Empty() || !subjid->Match(*previous_id))
+        {
+            success = false;
+            int oid;
+            seqdb->SeqidToOid(*subjid, oid);            
+            CRef<CBlast_def_line_set> bdlSet = seqdb->GetHdr(oid);               
+            filtered_aln = s_ModifySeqAlnWithFilteredSeqIDs(bdlSet, taxids, currAlign);                
+            if(!filtered_aln.Empty()) { //found sequence with this oid oid_vec[i] in filtered seqdb
+                newSubjectID.Reset(const_cast<CSeq_id*>(&filtered_aln->GetSeq_id(1)));                    
+                success = true;
+            }                                
         }
         else {
             if(success) {
