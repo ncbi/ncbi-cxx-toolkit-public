@@ -1613,6 +1613,29 @@ s_GetFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
         {{
             CRef<CSeq_align> as_disc_seg =
                 align.GetSegs().GetSpliced().AsDiscSeg();
+            if (align.GetSeqStart(1) > align.GetSeqStop(1)) {
+                /// genomic sequence is circular; won't work on the entire
+                /// alignment, need to check separately on the parts before and
+                /// after the origin
+                CSeq_align before_origin, after_origin;
+                before_origin.SetType(CSeq_align::eType_disc);
+                after_origin.SetType(CSeq_align::eType_disc);
+                for (const CRef<CSeq_align> &segment
+                     : as_disc_seg->GetSegs().GetDisc().Get())
+                {
+                    (segment->GetSeqStart(1) < align.GetSeqStart(1)
+                       ? after_origin : before_origin)
+                    . SetSegs().SetDisc().Set().push_back(segment);
+                }
+                vector<CSeq_align::SIndel> before_origin_frameshifts =
+                    s_GetFrameshifts(before_origin, row, ranges),
+                                           after_origin_frameshifts =
+                    s_GetFrameshifts(after_origin, row, ranges);
+                results = before_origin_frameshifts;
+                results.insert(results.end(), after_origin_frameshifts.begin(),
+                                              after_origin_frameshifts.end());
+                return results;
+            }
             generated_denseg = as_disc_seg->CreateDensegFromDisc();
         }}
         break;
