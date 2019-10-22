@@ -110,7 +110,8 @@ if "%1"=="--with-targets"      (set project_targets=%~2&   shift& goto :CONTINUE
 if "%1"=="--with-details"      (set project_details=%~2&   shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-vs"           (set VISUAL_STUDIO=%~2&     shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-install"      (set INSTALL_PATH=%~2&      shift& goto :CONTINUEPARSEARGS)
-if "%1"=="--with-generator"    (set generator=%~2&         shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-generator"    (set CMAKE_GENERATOR=%~2&   shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-prebuilt"     (set prebuilt_dir=%~dp2& set prebuilt_name=%~nx2&   shift& goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
 :CONTINUEPARSEARGS
 shift
@@ -127,17 +128,31 @@ if not "%unknown%"=="" (
   goto :DONE
 )
 
-if "%generator%"=="" (
+if not "%prebuilt_dir%"=="" (
+  if exist "%prebuilt_dir%%prebuilt_name%\cmake\buildinfo" (
+    copy /Y "%prebuilt_dir%%prebuilt_name%\cmake\buildinfo" "%TEMP%\%prebuilt_name%cmakebuildinfo.bat" >NUL
+    call "%TEMP%\%prebuilt_name%cmakebuildinfo.bat"
+    del "%TEMP%\%prebuilt_name%cmakebuildinfo.bat"
+  ) else (
+    echo ERROR:  Buildinfo not found in %prebuilt_dir%%prebuilt_name%
+    exit /b 1
+  )
+)
+
+if "%CMAKE_GENERATOR%"=="" (
   if "%VISUAL_STUDIO%"=="2017" (
-    set generator=Visual Studio 15 2017 Win64
-    set generator_name=vs2017
+    set CMAKE_GENERATOR=Visual Studio 15 2017 Win64
   )
   if "%VISUAL_STUDIO%"=="2015" (
-    set generator=Visual Studio 14 2015 Win64
-    set generator_name=vs2015
+    set CMAKE_GENERATOR=Visual Studio 14 2015 Win64
   )
-) else (
-  set generator_name=%generator%
+)
+set generator_name=%CMAKE_GENERATOR%
+if "%CMAKE_GENERATOR%"=="Visual Studio 15 2017 Win64" (
+  set generator_name=VS2017
+)
+if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015 Win64" (
+  set generator_name=VS2015
 )
 
 if not "%project_list%"=="" (
@@ -160,8 +175,8 @@ REM #########################################################################
 
 set CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
 
-if not "%generator%"=="" (
-  set CMAKE_ARGS=%CMAKE_ARGS% -G "%generator%"
+if not "%CMAKE_GENERATOR%"=="" (
+  set CMAKE_ARGS=%CMAKE_ARGS% -G "%CMAKE_GENERATOR%"
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%project_tags%"

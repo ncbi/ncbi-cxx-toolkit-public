@@ -14,33 +14,11 @@ host_os=`uname`
 if test $host_os = "Darwin"; then
   CMAKE_CMD=/Applications/CMake.app/Contents/bin/cmake
 fi
-############################################################################# 
 if [ -z "${CMAKE_CMD}" ]; then
   CMAKE_CMD=`which cmake 2>/dev/null`
   if test $? -ne 0; then
     echo ERROR: CMake is not found
     exit 1
-  fi
-fi
-if [ -z "$CC" ]; then
-  CC=`which gcc 2>/dev/null`
-  if test $? -ne 0; then
-    CC=""
-  fi
-fi
-if [ -z "$CXX" ]; then
-  CXX=`which g++ 2>/dev/null`
-  if test $? -ne 0; then
-    CXX=""
-  fi
-fi
-if [ -n "$CC" ]; then
-  if test $host_os = "Darwin"; then
-    CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
-    CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
-  else
-    CC_NAME=`$CC --version | awk 'NR==1{print $2}' | sed 's/[()]//g'`
-    CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
   fi
 fi
 
@@ -50,7 +28,6 @@ BUILD_TYPE="Debug"
 BUILD_SHARED_LIBS="OFF"
 USE_CCACHE="ON"
 USE_DISTCC="ON"
-NCBI_EXPERIMENTAL=ON
 
 ############################################################################# 
 Usage()
@@ -149,7 +126,7 @@ while [ $# != 0 ]; do
       USE_DISTCC="OFF"
       ;;
     --with-generator=*)
-      generator=${1#*=}
+      CMAKE_GENERATOR=${1#*=}
       ;; 
     --with-projects=*)
       project_list=${1#*=}
@@ -175,6 +152,11 @@ while [ $# != 0 ]; do
     --with-install=*)
       install_path=${1#*=}
       ;; 
+    --with-prebuilt=*)
+      prebuilt_path=${1#*=}
+      prebuilt_dir=`dirname $prebuilt_path`
+      prebuilt_name=`basename $prebuilt_path`
+      ;; 
     *) 
       Error "unknown option: $1" 
       ;; 
@@ -187,7 +169,17 @@ if [ $do_help = "yes" ]; then
 fi
 
 ############################################################################# 
-if test "$generator" = "Xcode"; then
+if [ -n $prebuilt_dir ]; then
+  if [ -f $prebuilt_dir/$prebuilt_name/cmake/buildinfo ]; then
+    source $prebuilt_dir/$prebuilt_name/cmake/buildinfo
+  else
+    echo ERROR:  Buildinfo not found in $prebuilt_dir/$prebuilt_name
+    exit 1
+  fi
+fi
+
+############################################################################# 
+if test "$CMAKE_GENERATOR" = "Xcode"; then
   XC=`which xcodebuild 2>/dev/null`
   if test $? -ne 0; then
     echo ERROR: xcodebuild is not found
@@ -197,10 +189,34 @@ if test "$generator" = "Xcode"; then
   CC_VERSION=`xcodebuild -version | awk 'NR==1{print $2}'`
   CC=
   CXX=
+else
+  CC=$CMAKE_C_COMPILER
+  CXX=$CMAKE_CXX_COMPILER
+  if [ -z "$CC" ]; then
+    CC=`which gcc 2>/dev/null`
+    if test $? -ne 0; then
+      CC=""
+    fi
+  fi
+  if [ -z "$CXX" ]; then
+    CXX=`which g++ 2>/dev/null`
+    if test $? -ne 0; then
+      CXX=""
+    fi
+  fi
+  if [ -n "$CC" ]; then
+    if test $host_os = "Darwin"; then
+      CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
+      CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
+    else
+      CC_NAME=`$CC --version | awk 'NR==1{print $2}' | sed 's/[()]//g'`
+      CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+    fi
+  fi
 fi
 ############################################################################# 
 
-CMAKE_ARGS=-DNCBI_EXPERIMENTAL=${NCBI_EXPERIMENTAL}
+CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
 
 if [ -n "$CC" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(Quote "$CC")"
@@ -208,8 +224,8 @@ fi
 if [ -n "$CXX" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER=$(Quote "$CXX")"
 fi
-if [ -n "$generator" ]; then
-  CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$generator")"
+if [ -n "$CMAKE_GENERATOR" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$CMAKE_GENERATOR")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
@@ -220,7 +236,7 @@ if [ -n "$install_path" ]; then
 fi
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
-if test "$generator" = "Xcode"; then
+if test "$CMAKE_GENERATOR" = "Xcode"; then
   build_root=CMake-${CC_NAME}${CC_VERSION}
   if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
     build_root="$build_root"-DLL
@@ -237,13 +253,6 @@ fi
 
 mkdir -p ${tree_root}/${build_root}/build 
 cd ${tree_root}/${build_root}/build 
-
-#we need to do this because CMake caches configuration parameters,
-#and if you run ./cmake-configure for existing build directory
-#but with another parameters, CMake will use old values for paramers you omit (not default ones)
-#if [ -e CMakeCache.txt ]; then
-#   rm CMakeCache.txt
-#fi
 
 #echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"

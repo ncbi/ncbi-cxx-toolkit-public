@@ -24,7 +24,6 @@ fi
 
 ############################################################################# 
 # defaults
-
 BUILD_SHARED_LIBS="OFF"
 
 ############################################################################# 
@@ -83,7 +82,6 @@ Quote() {
 # parse arguments
 
 do_help="no"
-generator=Xcode
 while [ $# != 0 ]; do
   case "$1" in 
     --help|-help|help)
@@ -125,6 +123,11 @@ while [ $# != 0 ]; do
     --with-install=*)
       install_path=${1#*=}
       ;; 
+    --with-prebuilt=*)
+      prebuilt_path=${1#*=}
+      prebuilt_dir=`dirname $prebuilt_path`
+      prebuilt_name=`basename $prebuilt_path`
+      ;; 
     *) 
       Error "unknown option: $1" 
       ;; 
@@ -134,6 +137,16 @@ done
 if [ $do_help = "yes" ]; then
   Usage
   exit 0
+fi
+
+############################################################################# 
+if [ -n $prebuilt_dir ]; then
+  if [ -f $prebuilt_dir/$prebuilt_name/cmake/buildinfo ]; then
+    source $prebuilt_dir/$prebuilt_name/cmake/buildinfo
+  else
+    echo ERROR:  Buildinfo not found in $prebuilt_dir/$prebuilt_name
+    exit 1
+  fi
 fi
 
 ############################################################################# 
