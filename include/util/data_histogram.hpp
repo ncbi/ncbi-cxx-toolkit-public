@@ -841,14 +841,19 @@ CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const
     h.m_Counters.reset(new TCounter[m_NumBins]);
     memcpy(h.m_Starts.get(), m_Starts.get(), sizeof(TScale) * m_NumBins);
 
-    h.Reset();
-
     switch (how) {
     case eCloneStructureOnly:
-        // All done
+        // Reset counters
+        h.m_Count = 0;
+        h.m_LowerAnomalyCount = 0;
+        h.m_UpperAnomalyCount = 0;
+        memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
         break;
     case eCloneAll:
-        // Copy counters as well
+        // Copy counters
+        h.m_Count = m_Count;
+        h.m_LowerAnomalyCount = m_LowerAnomalyCount;
+        h.m_UpperAnomalyCount = m_UpperAnomalyCount;
         memcpy(h.m_Counters.get(), m_Counters.get(), sizeof(TCounter) * m_NumBins);
         break;
     default:
