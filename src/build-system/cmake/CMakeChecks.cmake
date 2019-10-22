@@ -113,7 +113,7 @@ include(${NCBI_TREE_CMAKECFG}/CMakeChecks.compiler.cmake)
 #############################################################################
 set(_prebuilt_loc)
 if ("${NCBI_COMPILER}" STREQUAL "MSVC")
-    set(_prebuilt_loc "CMake-vs")
+    set(_prebuilt_loc "CMake-VS")
     if ("${NCBI_COMPILER_VERSION}" LESS "1900")
         set(_prebuilt_loc ${_prebuilt_loc}2015)
     else()
