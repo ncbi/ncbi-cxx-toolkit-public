@@ -369,16 +369,16 @@ class Collector(object):
         info = { 'vcs_type': 'cvs' }
         cvs_dir = os.path.join(srcdir, 'CVS')
         with open(os.path.join(cvs_dir, 'Root'), 'r') as f:
-            cvs_root = f.getline().rstrip('\n')
+            cvs_root = f.readline().rstrip('\n')
         with open(os.path.join(cvs_dir, 'Repository'), 'r') as f:
-            cvs_path = f.getline().rstrip('\n')
+            cvs_path = f.readline().rstrip('\n')
             if cvs_path.startswith('/'):
                 pos = cvs_root.find(':') + 1
                 info['vcs_path'] = cvs_root[:pos] + cvs_path
             else:
                 info['vcs_path'] = cvs_root + '/' + cvs_path
         with open(os.path.join(cvs_dir, 'Entries'), 'r') as f:
-            l = f.getline().rstrip('\n')
+            l = f.readline().rstrip('\n')
             match_info = re.match(r'/.*?/.*?/.*?/.*?/[^D](.+)', l)
             if match_info is None:
                 info['vcs_branch'] = 'HEAD'
