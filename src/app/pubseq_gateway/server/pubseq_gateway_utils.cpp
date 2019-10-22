@@ -130,11 +130,13 @@ SBioseqResolution::AdjustAccession(void)
         return m_AccessionAdjustmentResult;
     }
 
-    const auto &    seq_ids = m_BioseqInfo.GetSeqIds();
+    auto &    seq_ids = m_BioseqInfo.GetSeqIds();
     for (const auto &  seq_id : seq_ids) {
         if (get<0>(seq_id) == CSeq_id::e_Gi) {
             m_BioseqInfo.SetAccession(get<1>(seq_id));
             m_BioseqInfo.SetSeqIdType(CSeq_id::e_Gi);
+            seq_ids.erase(seq_id);
+
             m_AccessionAdjustmentResult = eAdjustedWithGi;
             return m_AccessionAdjustmentResult;
         }
@@ -152,6 +154,8 @@ SBioseqResolution::AdjustAccession(void)
     auto    first_seq_id = seq_ids.begin();
     m_BioseqInfo.SetAccession(get<1>(*first_seq_id));
     m_BioseqInfo.SetSeqIdType(get<0>(*first_seq_id));
+    seq_ids.erase(*first_seq_id);
+
     m_AccessionAdjustmentResult = eAdjustedWithAny;
     return m_AccessionAdjustmentResult;
 }
