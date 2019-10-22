@@ -1543,9 +1543,17 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
     }
 }
 
-
-static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CSeq_inst& seqInst) 
+static void s_AddBiomol(CMolInfo::EBiomol biomol, CBioseq& bioseq)
 {
+    auto pDesc = Ref(new CSeqdesc());
+    pDesc->SetMolinfo().SetBiomol(biomol);
+    bioseq.SetDescr().Set().emplace_back(move(pDesc));
+}
+
+static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CBioseq& bioseq) 
+{
+
+    auto& seqInst = bioseq.SetInst();
     const bool hasT = 
         (find_if(beginSeqData, endSeqData, [](char c) { return (c=='t' || c == 'T'); }) != endSeqData);
     const bool hasU =
@@ -1553,6 +1561,7 @@ static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CSeq_
 
     if (hasT && !hasU) {
         seqInst.SetMol(CSeq_inst::eMol_dna);
+        s_AddBiomol(CMolInfo::eBiomol_genomic, bioseq); // RW-931
         return true;
     }
 
@@ -1567,7 +1576,6 @@ static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CSeq_
 
 void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
 {
-    CSeq_inst&                  inst = m_CurrentSeq->SetInst();
     CSeq_inst::EMol             default_mol;
     CFormatGuess::ESTStrictness strictness;
 
@@ -1585,24 +1593,24 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
     default:            strictness = CFormatGuess::eST_Default; break;
     }
 
+    auto& inst = m_CurrentSeq->SetInst();
+
     if (TestFlag(fForceType)) {
         _ASSERT(default_mol != CSeq_inst::eMol_not_set);
         inst.SetMol(default_mol);
         return;
-    } else if (inst.IsSetMol()) {
-        if (inst.GetMol() == CSeq_inst::eMol_na &&
-            !m_SeqData.empty()) {
-            bool refined = sRefineNaMol(m_SeqData.data(), 
-                        m_SeqData.data() + min(m_SeqData.length(), SIZE_TYPE(4096)),
-                        inst);
-            if (refined && inst.GetMol() == CSeq_inst::eMol_dna) {
-                auto pDesc = Ref(new CSeqdesc());
-                pDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-                m_CurrentSeq->SetDescr().Set().emplace_back(move(pDesc));
-            }
+    } 
+        
+    if (inst.IsSetMol()) {
+        if (inst.GetMol() == CSeq_inst::eMol_na && !m_SeqData.empty()) {
+            sRefineNaMol(m_SeqData.data(), 
+                    m_SeqData.data() + min(m_SeqData.length(), SIZE_TYPE(4096)), 
+                    *m_CurrentSeq);
         }
         return;
-    } else if (m_SeqData.empty()) {
+    } 
+        
+    if (m_SeqData.empty()) {
         // Nothing else to go on, but that's OK (no sequence to worry
         // about encoding); however, Seq-inst.mol is still mandatory.
         inst.SetMol(CSeq_inst::eMol_not_set);
@@ -1616,14 +1624,9 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
     switch (CFormatGuess::SequenceType(data, length, strictness)) {
     case CFormatGuess::eNucleotide:  
     {
-        if (!sRefineNaMol(data, data+length, inst)) {
-            inst.SetMol(CSeq_inst::eMol_na);  
+        if (!sRefineNaMol(data, data+length, *m_CurrentSeq)) {
+            inst.SetMol(CSeq_inst::eMol_na);
         }
-        else if (inst.GetMol() == CSeq_inst::eMol_dna) {
-            auto pDesc = Ref(new CSeqdesc());
-            pDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-            m_CurrentSeq->SetDescr().Set().emplace_back(move(pDesc));
-        } 
         return;
     }
     case CFormatGuess::eProtein:     inst.SetMol(CSeq_inst::eMol_aa);  return;
