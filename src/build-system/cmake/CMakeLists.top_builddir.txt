@@ -4,11 +4,7 @@
 ##############################################################################
 
 if (NOT DEFINED NCBI_CMAKEPROJECT_NAME)
-  if (BUILD_SHARED_LIBS)
-    set(NCBI_CMAKEPROJECT_NAME ncbi_cpp_dll)
-  else()
-    set(NCBI_CMAKEPROJECT_NAME ncbi_cpp)
-  endif()
+  set(NCBI_CMAKEPROJECT_NAME ncbi_cpp)
 endif()
 
 set(NCBI_PTBCFG_KNOWN_FOLDERS
