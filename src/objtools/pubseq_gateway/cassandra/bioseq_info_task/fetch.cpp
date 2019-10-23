@@ -36,6 +36,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info_task/fetch.hpp>
 
 #include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -45,25 +46,31 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-static const CassConsistency kBioSeqInfoConsistency = CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM;
-
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-// Select field numbers; must be in sync with the select statements
-static const int fnVersion = 0;
-static const int fnSeqIdType = 1;
-static const int fnDateChanged = 2;
-static const int fnHash = 3;
-static const int fnGI = 4;
-static const int fnLength = 5;
-static const int fnMol = 6;
-static const int fnSat = 7;
-static const int fnSatKey = 8;
-static const int fnSeqIds = 9;
-static const int fnSeqState = 10;
-static const int fnState = 11;
-static const int fnTaxId = 12;
+BEGIN_SCOPE()
+    const CassConsistency kBioSeqInfoConsistency = CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM;
+
+    // Select field numbers; must be in sync with the select statements
+    const int fnVersion = 0;
+    const int fnSeqIdType = 1;
+    const int fnDateChanged = 2;
+    const int fnHash = 3;
+    const int fnGI = 4;
+    const int fnLength = 5;
+    const int fnMol = 6;
+    const int fnSat = 7;
+    const int fnSatKey = 8;
+    const int fnSeqIds = 9;
+    const int fnSeqState = 10;
+    const int fnState = 11;
+    const int fnTaxId = 12;
+
+    const string kSelectStatement = "SELECT version, seq_id_type, "
+        "date_changed, hash, gi, length, mol, sat, "
+        "sat_key, seq_ids, seq_state, state, tax_id FROM ";
+END_SCOPE()
 
 CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
                             unsigned int                           timeout_ms,
@@ -137,19 +144,13 @@ void CCassBioseqInfoTaskFetch::Cancel(void)
 
 void CCassBioseqInfoTaskFetch::x_InitializeQuery(void)
 {
-    static const string     s_Select = "SELECT version, seq_id_type, "
-                                              "date_changed, hash, gi, "
-                                              "length, mol, sat, sat_key, "
-                                              "seq_ids, seq_state, state, "
-                                              "tax_id FROM ";
-    static const string     s_Where_1 = ".BIOSEQ_INFO WHERE accession = ?";
-    static const string     s_Where_2 = s_Where_1 + " AND version = ?";
-    static const string     s_Where_3 = s_Where_2 + " AND seq_id_type = ?";
-    static const string     s_Where_4 = s_Where_3 + " AND gi = ?";
+    static const string s_Where_1 = ".bioseq_info WHERE accession = ?";
+    static const string s_Where_2 = s_Where_1 + " AND version = ?";
+    static const string s_Where_3 = s_Where_2 + " AND seq_id_type = ?";
+    static const string s_Where_4 = s_Where_3 + " AND gi = ?";
 
-    string sql = s_Select;
+    string sql = kSelectStatement;
     sql.append(GetKeySpace());
-
     if (m_VersionProvided && m_SeqIdTypeProvided && m_GIProvided) {
         sql.append(s_Where_4);
         m_QueryArr[0].query->SetSQL(sql, 4);
@@ -175,6 +176,29 @@ void CCassBioseqInfoTaskFetch::x_InitializeQuery(void)
     }
 }
 
+void CCassBioseqInfoTaskFetch::x_InitializeAliveRecordQuery(void)
+{
+    string sql = kSelectStatement + GetKeySpace() + ".bioseq_info WHERE accession = ?";
+    m_QueryArr[0].query->SetSQL(sql, 1);
+    m_QueryArr[0].query->BindStr(0, m_Accession);
+}
+
+void CCassBioseqInfoTaskFetch::x_StartQuery(void)
+{
+    if (m_DataReadyCb) {
+        m_QueryArr[0].query->SetOnData2(m_DataReadyCb, m_DataReadyData);
+    }
+    {
+        auto DataReadyCb3 = m_DataReadyCb3.lock();
+        if (DataReadyCb3) {
+            m_QueryArr[0].query->SetOnData3(DataReadyCb3);
+        }
+    }
+
+    UpdateLastActivity();
+    m_QueryArr[0].query->Query(kBioSeqInfoConsistency, m_Async, true, m_PageSize);
+}
+
 bool CCassBioseqInfoTaskFetch::x_IsMatchingRecord()
 {
     int version = m_QueryArr[0].query->FieldGetInt16Value(fnVersion);
@@ -194,9 +218,14 @@ bool CCassBioseqInfoTaskFetch::x_IsMatchingRecord()
     return acceptable;
 }
 
-void CCassBioseqInfoTaskFetch::x_PopulateRecord(void)
+bool CCassBioseqInfoTaskFetch::x_IsMatchingAliveRecord()
 {
-    m_Record.SetAccession(m_Accession)
+    return m_QueryArr[0].query->FieldGetInt16Value(fnSeqIdType) == m_Record.GetSeqIdType();
+}
+
+void CCassBioseqInfoTaskFetch::x_PopulateRecord(CBioseqInfoRecord& record) const
+{
+    record.SetAccession(m_Accession)
         .SetVersion(m_QueryArr[0].query->FieldGetInt16Value(fnVersion))
         .SetSeqIdType(m_QueryArr[0].query->FieldGetInt16Value(fnSeqIdType))
         .SetDateChanged(m_QueryArr[0].query->FieldGetInt64Value(fnDateChanged))
@@ -210,7 +239,7 @@ void CCassBioseqInfoTaskFetch::x_PopulateRecord(void)
         .SetState(m_QueryArr[0].query->FieldGetInt8Value(fnState))
         .SetTaxId(m_QueryArr[0].query->FieldGetInt32Value(fnTaxId));
     m_QueryArr[0].query->FieldGetContainerValue(
-        fnSeqIds, inserter(m_Record.GetSeqIds(), m_Record.GetSeqIds().end()));
+        fnSeqIds, inserter(record.GetSeqIds(), record.GetSeqIds().end()));
 }
 
 void CCassBioseqInfoTaskFetch::x_ReadingLoop(void)
@@ -220,14 +249,14 @@ void CCassBioseqInfoTaskFetch::x_ReadingLoop(void)
         if (!stop_fetch && x_IsMatchingRecord()) {
             // GI privided: should return just one natching record
             if (m_GIProvided) {
-                x_PopulateRecord();
+                x_PopulateRecord(m_Record);
                 m_RecordCount = 1;
                 stop_fetch = true;
             }
             // Case 3: accession and seq_id_type are provided.
             // So the latest matching version has to be retrieved
             else if (m_SeqIdTypeProvided) {
-                x_PopulateRecord();
+                x_PopulateRecord(m_Record);
                 m_RecordCount = 1;
                 stop_fetch = true;
             }
@@ -237,7 +266,7 @@ void CCassBioseqInfoTaskFetch::x_ReadingLoop(void)
             // need to count matching records and return if there is just one
             else if (m_VersionProvided) {
                 if (++m_RecordCount == 1) {
-                    x_PopulateRecord();
+                    x_PopulateRecord(m_Record);
                 }
             }
             // Case 4: only accession is provided;
@@ -245,8 +274,24 @@ void CCassBioseqInfoTaskFetch::x_ReadingLoop(void)
             // need to count matching records and return if there is just one
             else {
                 if (++m_RecordCount == 1) {
-                    x_PopulateRecord();
+                    x_PopulateRecord(m_Record);
                 }
+            }
+        }
+    }
+}
+
+void CCassBioseqInfoTaskFetch::x_MergeSeqIds(void)
+{
+    if (m_LatestRecord.GetState() == CBioseqInfoRecord::kStateAlive) {
+        set<int16_t> seq_id_types;
+        for (auto const & seq_id : m_Record.GetSeqIds()) {
+            seq_id_types.insert(get<0>(seq_id));
+        }
+
+        for (auto const & seq_id : m_LatestRecord.GetSeqIds()) {
+            if (seq_id_types.count(get<0>(seq_id)) == 0) {
+                m_Record.GetSeqIds().insert(seq_id);
             }
         }
     }
@@ -268,20 +313,7 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
                     m_QueryArr.resize(1);
                     m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                     x_InitializeQuery();
-
-                    if (m_DataReadyCb) {
-                        m_QueryArr[0].query->SetOnData2(m_DataReadyCb, m_DataReadyData);
-                    }
-
-                    {
-                        auto DataReadyCb3 = m_DataReadyCb3.lock();
-                        if (DataReadyCb3) {
-                            m_QueryArr[0].query->SetOnData3(DataReadyCb3);
-                        }
-                    }
-
-                    UpdateLastActivity();
-                    m_QueryArr[0].query->Query(kBioSeqInfoConsistency, m_Async, true, m_PageSize);
+                    x_StartQuery();
                     m_State = eFetchStarted;
                     break;
                 }
@@ -291,20 +323,31 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
                     if (CheckReady(m_QueryArr[0].query, m_RestartCounter, restarted)) {
                         x_ReadingLoop();
                         if (m_QueryArr[0].query->IsEOF()) {
+                            bool final_state = true;
                             if (m_ConsumeCallback) {
                                 switch (m_RecordCount) {
                                     case 0:
                                         m_ConsumeCallback(CBioseqInfoRecord(), CRequestStatus::e404_NotFound);
                                         break;
                                     case 1:
-                                        m_ConsumeCallback(move(m_Record), CRequestStatus::e200_Ok);
+                                        if (m_Record.GetState() == CBioseqInfoRecord::kStateAlive) {
+                                            m_ConsumeCallback(move(m_Record), CRequestStatus::e200_Ok);
+                                        } else {
+                                            final_state = false;
+                                            m_QueryArr[0].query->Close();
+                                            x_InitializeAliveRecordQuery();
+                                            x_StartQuery();
+                                            m_State = eFetchAliveVersionStarted;
+                                        }
                                         break;
                                     default:
                                         m_ConsumeCallback(CBioseqInfoRecord(), CRequestStatus::e300_MultipleChoices);
                                 }
                             }
-                            CloseAll();
-                            m_State = eDone;
+                            if (final_state) {
+                                CloseAll();
+                                m_State = eDone;
+                            }
                         }
                     } else if (restarted) {
                         ++m_RestartCounter;
@@ -315,7 +358,29 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
                     UpdateLastActivity();
                     break;
                 }
-
+            // We can assume that getting into this state we have m_ConsumeCallback
+            case eFetchAliveVersionStarted:
+                {
+                    if (CheckReady(m_QueryArr[0])) {
+                        while (m_QueryArr[0].query->NextRow() == ar_dataready) {
+                            if (x_IsMatchingAliveRecord()) {
+                                x_PopulateRecord(m_LatestRecord);
+                                x_MergeSeqIds();
+                                m_ConsumeCallback(move(m_Record), CRequestStatus::e200_Ok);
+                                CloseAll();
+                                m_State = eDone;
+                                break;
+                            }
+                        }
+                        if (m_QueryArr[0].query->IsEOF()) {
+                            m_ConsumeCallback(move(m_Record), CRequestStatus::e200_Ok);
+                            CloseAll();
+                            m_State = eDone;
+                        }
+                    }
+                    UpdateLastActivity();
+                    break;
+                }
             default: {
                 char msg[1024];
                 snprintf(msg, sizeof(msg), "Failed to fetch bioseq info (key=%s.%s.%d.%d) unexpected state (%d)",

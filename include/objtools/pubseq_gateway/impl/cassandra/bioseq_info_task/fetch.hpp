@@ -53,6 +53,7 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     enum EBlobFetchState {
         eInit = CCassBlobWaiter::eInit,
         eFetchStarted,
+        eFetchAliveVersionStarted,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
@@ -82,9 +83,13 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
 
  private:
     void x_InitializeQuery(void);
-    void x_PopulateRecord(void);
+    void x_InitializeAliveRecordQuery(void);
+    void x_PopulateRecord(CBioseqInfoRecord& record) const;
     bool x_IsMatchingRecord(void);
+    bool x_IsMatchingAliveRecord();
     void x_ReadingLoop(void);
+    void x_StartQuery(void);
+    void x_MergeSeqIds(void);
 
  private:
     CBioseqInfoRecord::TAccession       m_Accession;
@@ -99,6 +104,11 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
  private:
     size_t                              m_RecordCount;
     CBioseqInfoRecord                   m_Record;
+
+    // Record containing alive BioseqInfo record with the same accession and seq_id_type as main record
+    // in case main record is Dead.
+    // Required to merge secondary identifiers set.
+    CBioseqInfoRecord                   m_LatestRecord;
 
  protected:
     unsigned int                        m_PageSize;

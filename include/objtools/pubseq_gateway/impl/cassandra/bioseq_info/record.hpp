@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 
 class CBioseqInfoRecord
 {
-public:
+ public:
     using TAccession = string;
     using TVersion = int16_t;
     using TSeqIdType = int16_t;
@@ -63,7 +63,9 @@ public:
     using TState = int8_t;
     using TTaxId = int32_t;
 
-public:
+    static const TState kStateAlive = 10;
+
+ public:
     CBioseqInfoRecord()
         : m_Version(-1)
         , m_SeqIdType(-1)

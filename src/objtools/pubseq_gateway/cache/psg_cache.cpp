@@ -36,6 +36,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <util/lmdbxx/lmdb++.h>
@@ -44,11 +45,13 @@
 #include "psg_cache_si2csi.hpp"
 #include "psg_cache_blob_prop.hpp"
 
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
+
 USING_NCBI_SCOPE;
 
 BEGIN_SCOPE()
 
-static void sAddRuntimeError(
+void sAddRuntimeError(
     CPubseqGatewayCache::TRuntimeErrorList& error_list,
     CPubseqGatewayCache::TRuntimeError error
 )
@@ -61,6 +64,54 @@ static void sAddRuntimeError(
     }
     error_list.emplace_back(error);
 }
+
+void ApplyInheritedSeqIds(
+    CPubseqGatewayCacheBioseqInfo* cache,
+    string const & accession,
+    int seq_id_type,
+    string& data)
+{
+    if (cache) {
+        ::psg::retrieval::BioseqInfoValue record;
+        if (record.ParseFromString(data) && record.state() != ::psg::retrieval::SEQ_STATE_LIVE) {
+            int found_version, found_seq_id_type;
+            int64_t found_gi;
+            string latest_data;
+            if (cache->LookupByAccessionVersionSeqIdType(
+                accession, -1, seq_id_type, latest_data, found_version, found_seq_id_type, found_gi)
+            ) {
+                ::psg::retrieval::BioseqInfoValue latest_record;
+                if (
+                    latest_record.ParseFromString(latest_data)
+                    && latest_record.state() == ::psg::retrieval::SEQ_STATE_LIVE
+                ) {
+                    set<int16_t> seq_id_types;
+                    for (auto const & seq_id : record.seq_ids()) {
+                        seq_id_types.insert(seq_id.sec_seq_id_type());
+                    }
+                    bool needs_update{false};
+                    for (auto const & seq_id : latest_record.seq_ids()) {
+                        if (seq_id_types.count(seq_id.sec_seq_id_type()) == 0) {
+                            auto item = record.mutable_seq_ids()->Add();
+                            item->set_sec_seq_id_type(seq_id.sec_seq_id_type());
+                            item->set_sec_seq_id(seq_id.sec_seq_id());
+                            needs_update = true;
+                        }
+                    }
+
+                    if (needs_update) {
+                        string updated_data;
+                        if (record.SerializeToString(&updated_data)) {
+                            swap(data, updated_data);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
+
 
 END_SCOPE()
 
@@ -129,51 +180,83 @@ void CPubseqGatewayCache::ResetErrors()
 bool CPubseqGatewayCache::LookupBioseqInfoByAccession(
     const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
 {
-    return m_BioseqInfoCache
-        ? m_BioseqInfoCache->LookupByAccession(accession, data, found_version, found_seq_id_type, found_gi) : false;
+    if (
+        m_BioseqInfoCache
+        && m_BioseqInfoCache->LookupByAccession(accession, data, found_version, found_seq_id_type, found_gi)
+    ) {
+        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
+        return true;
+    }
+    return false;
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(
     const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi)
 {
-    return m_BioseqInfoCache
-        ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, data, found_seq_id_type, found_gi) : false;
+    if (
+        m_BioseqInfoCache
+        && m_BioseqInfoCache->LookupByAccessionVersion(accession, version, data, found_seq_id_type, found_gi)
+    ) {
+        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
+        return true;
+    }
+    return false;
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
     const string& accession, int version, int seq_id_type, string& data, int64_t& found_gi)
 {
     int found_version, found_seq_id_type;
-    return m_BioseqInfoCache
-        ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
+    if (
+        m_BioseqInfoCache
+        && m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
             accession, version, seq_id_type, data, found_version, found_seq_id_type, found_gi)
-        : false;
+    ) {
+        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
+        return true;
+    }
+    return false;
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
     const string& accession, int version, int seq_id_type,
     string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
 {
-    return m_BioseqInfoCache
-        ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
+    if (
+        m_BioseqInfoCache
+        && m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
             accession, version, seq_id_type, data, found_version, found_seq_id_type, found_gi)
-        : false;
+    ) {
+        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
+        return true;
+    }
+    return false;
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccessionGi(
     const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type)
 {
-    return m_BioseqInfoCache
-        ? m_BioseqInfoCache->LookupBioseqInfoByAccessionGi(accession, gi, data, found_version, found_seq_id_type)
-        : false;
+    if (
+        m_BioseqInfoCache
+        && m_BioseqInfoCache->LookupBioseqInfoByAccessionGi(accession, gi, data, found_version, found_seq_id_type)
+    ) {
+        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
+        return true;
+    }
+    return false;
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
         const string& accession, int version, int seq_id_type, int64_t gi, string& data)
 {
-    return m_BioseqInfoCache
-        ? m_BioseqInfoCache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi(accession, version, seq_id_type, gi, data)
-        : false;
+    if (
+        m_BioseqInfoCache
+        && m_BioseqInfoCache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi(accession, version, seq_id_type, gi, data)
+    ) {
+        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, seq_id_type, data);
+        return true;
+    }
+    return false;
 }
 
 string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version)

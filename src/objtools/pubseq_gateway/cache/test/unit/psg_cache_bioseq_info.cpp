@@ -34,7 +34,10 @@
 #include <ncbi_pch.hpp>
 
 #include <memory>
+#include <set>
 #include <string>
+#include <tuple>
+#include <utility>
 
 #include <unistd.h>
 #include <libgen.h>
@@ -214,6 +217,38 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
     EXPECT_EQ(5985907, value.blob_key().sat_key());
     EXPECT_EQ(0, value.state());
     EXPECT_EQ(5072UL, value.tax_id());
+}
+
+TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionWithSeqIdsInheritance)
+{
+    string data;
+    int found_seq_id_type{0};
+    int64_t found_gi{0};
+    ASSERT_TRUE(m_Cache->LookupBioseqInfoByAccessionVersion("AH015101", 1, data, found_seq_id_type, found_gi));
+
+    ::psg::retrieval::BioseqInfoValue value;
+    EXPECT_TRUE(value.ParseFromString(data));
+    EXPECT_EQ(-1984866248, value.hash());
+    EXPECT_EQ(821, value.length());
+    EXPECT_EQ(1, value.mol());
+    EXPECT_EQ(4, value.blob_key().sat());
+    EXPECT_EQ(10756063, value.blob_key().sat_key());
+    EXPECT_EQ(0, value.state());
+    EXPECT_EQ(9606UL, value.tax_id());
+    EXPECT_EQ(2, value.seq_ids_size());
+
+    set<tuple<int16_t, string>> expected_seq_ids, actual_seq_ids;
+
+    // Inherited
+    expected_seq_ids.insert(make_tuple<int16_t, string>(5, "SEG_DQ123855S"));
+
+    // Own
+    expected_seq_ids.insert(make_tuple<int16_t, string>(12, "71493118"));
+
+    for (auto const & item : value.seq_ids()) {
+        actual_seq_ids.insert(make_tuple(static_cast<int16_t>(item.sec_seq_id_type()), item.sec_seq_id()));
+    }
+    EXPECT_EQ(expected_seq_ids, actual_seq_ids);
 }
 
 }  // namespace
