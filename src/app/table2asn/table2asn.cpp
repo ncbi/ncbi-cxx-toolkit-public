@@ -1204,24 +1204,34 @@ void CTbl2AsnApp::ProcessAlignmentFile()
 
 bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse)
 {
-    CDir::TEntries* e = directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive);
-    unique_ptr<CDir::TEntries> entries(e);
-
-    for (CDir::TEntries::const_iterator it = e->begin(); it != e->end(); it++)
+    unique_ptr<CDir::TEntries> entries(directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive));
+    vector<unique_ptr<CDir::CDirEntry>> vec(entries->size());
+    auto vec_it = vec.begin();
+    for (auto it : *entries)
+    {
+        vec_it->reset(it.release());
+        ++vec_it;
+    }
+ 
+    sort(vec.begin(), vec.end(), [](const auto& l, const auto& r)
+    {
+        return l->GetPath() < r->GetPath();
+    });
+    for (const auto& it: vec)
     {
         // first process files and then recursivelly access other folders
-        if (!(*it)->IsDir())
+        if (!it->IsDir())
         {
-            if (mask.Match((*it)->GetPath()))
+            if (mask.Match(it->GetPath()))
             {
-                m_context.m_current_file = (*it)->GetPath();
+                m_context.m_current_file = it->GetPath();
                 ProcessOneFile();
             }
         }
         else
             if (recurse)
             {
-            ProcessOneDirectory(**it, mask, recurse);
+            ProcessOneDirectory(*it, mask, recurse);
             }
     }
 
@@ -1402,5 +1412,3 @@ int main(int argc, const char* argv[])
 {
     return CTbl2AsnApp().AppMain(argc, argv, 0, eDS_Default, "table2asn.conf");
 }
-
-    
