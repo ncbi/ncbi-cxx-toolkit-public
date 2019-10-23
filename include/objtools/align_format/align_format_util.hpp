@@ -788,6 +788,8 @@ public:
     ///@param seqList: string contaning comma separated seqIds
     ///@ret: bool=true if the match is found
     static bool MatchSeqInSeqList(CConstRef<objects::CSeq_id> &alnSeqID, list<string> &use_this_seq,vector <string> &seqList);
+    
+    static bool MatchSeqInUseThisSeqList(list<string> &use_this_seq, string textSeqIDToMatch);
 
     ///Check if use_this_seq conatins gi list
     ///@param use_this_seq: list<string> containg gi:sssssss or seqid:sssssssss
@@ -1545,7 +1547,7 @@ public:
 
     /// Get sequence id with no database source (bare accession)
     static string GetBareId(const objects::CSeq_id& id);
-
+    
 protected:
 
     ///Wrap a string to specified length.  If break happens to be in
