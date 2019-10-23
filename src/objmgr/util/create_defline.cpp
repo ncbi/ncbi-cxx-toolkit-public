@@ -3495,6 +3495,13 @@ string CDeflineGenerator::GenerateDefline (
                 options.InitFromUserObject(desc->GetUser());
                 mod_combo.SetOptions(options);
                 return autodef.GetOneDefLine(&mod_combo, bsh);
+            } else {
+                // default if no autodef user object in record
+                CSeq_entry_Handle seh = bsh.GetParentEntry();
+                CAutoDef autodef;
+                autodef.AddSources (seh);
+                CAutoDefModifierCombo mod_combo;
+                return autodef.GetOneDefLine(&mod_combo, bsh);
             }
         }
 
