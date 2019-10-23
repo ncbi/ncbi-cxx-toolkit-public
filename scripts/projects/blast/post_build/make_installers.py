@@ -20,7 +20,7 @@ def main(): #IGNORE:R0911
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 4:
+    if len(args) != 5:
         parser.error("Incorrect number of arguments")
         return 1
 
