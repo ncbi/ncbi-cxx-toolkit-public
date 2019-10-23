@@ -82,12 +82,32 @@ CPslWriter::CPslWriter(
 
 
 //  ----------------------------------------------------------------------------
+bool CPslWriter::WriteAnnot(
+    const CSeq_annot& annot,
+    const string& name,
+    const string& descr) 
+//  ----------------------------------------------------------------------------
+{
+    xWritePreamble();
+    if (!annot.IsAlign()) {
+        return CWriterBase::WriteAnnot(annot, name, descr);
+    }
+    for (const auto& pAlign: annot.GetData().GetAlign()) {
+        if (!WriteAlign(*pAlign, name, descr)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CPslWriter::WriteAlign(
     const CSeq_align& align,
     const string& name,
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
+    //cerr << ".";
     xWritePreamble();
     switch (align.GetSegs().Which()) {
     case CSeq_align::C_Segs::e_Spliced:

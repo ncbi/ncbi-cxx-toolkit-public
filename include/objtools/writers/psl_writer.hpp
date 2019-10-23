@@ -62,6 +62,11 @@ public:
 
     virtual ~CPslWriter() = default;
 
+    virtual bool WriteAnnot(
+        const CSeq_annot& annot,
+        const string& name="",
+        const string& descr="");
+
     virtual bool WriteAlign(
         const CSeq_align& align,
         const string& name="",
