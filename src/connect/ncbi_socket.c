@@ -7440,6 +7440,11 @@ extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
                              s_ID(sock, _id), on_off ? "" : "!"));
         UTIL_ReleaseBuffer(strerr);
     }
+#  ifdef TCP_NOPUSH
+    /* try to avoid 5 second delay on BSD systems (incl. Darwin) */
+    if (!on_off)
+        (void) send(sock->sock, _id/*dontcare*/, 0, 0);
+#  endif /*TCP_NOPUSH*/
 #endif /*TCP_CORK && !NCBI_OS_CYGWIN*/
 }
 
