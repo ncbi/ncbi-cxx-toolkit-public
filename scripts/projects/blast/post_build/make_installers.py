@@ -35,6 +35,17 @@ def main(): #IGNORE:R0911
         print("Source tarball:", srctarball)
 
     if platform.startswith("Win"):
+        import glob
+        print("Files in libdir " + libdir + ":")
+        for dll in glob.glob(libdir + "/*"):
+            print(dll)
+        print("Files in install dir " + installdir + ":")
+        for dll in glob.glob(installdir + "/*"):
+            print(dll)
+
+    if platform.startswith("Win"):
+        # copy ncbi-vdb-md.dll
+        shutil.copy(libdir + "nghttp2.dll", installdir + "bin")
         return launch_win_installer_build(installdir, blast_version)                
     if platform.startswith("Linux64"):
         return launch_rpm_build(installdir, blast_version, srctarball)
