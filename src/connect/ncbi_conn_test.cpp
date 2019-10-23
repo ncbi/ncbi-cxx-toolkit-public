@@ -67,7 +67,7 @@ static const char kFWSign[] =
 const STimeout CConnTest::kTimeout = {
     (unsigned int)  DEF_CONN_TIMEOUT,
     (unsigned int)((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT)
-                   * 1000000.0)
+                   * (double) kMicroSecondsPerSecond)
 };
 
 
@@ -75,7 +75,9 @@ inline bool operator > (const STimeout* t1, const STimeout& t2)
 {
     if (!t1)
         return true;
-    return t1->sec + t1->usec / 1000000.0 > t2.sec + t2.usec / 1000000.0;
+    return
+        t1->sec + t1->usec / (double) kMicroSecondsPerSecond >
+        t2.sec  + t2.usec  / (double) kMicroSecondsPerSecond;
 }
 
 
@@ -270,8 +272,8 @@ struct Deleter<SConnNetInfo>
 
 EIO_Status CConnTest::ExtraCheckOnFailure(void)
 {
-    static const STimeout kTimeout   = { 5,      0 };
-    static const STimeout kTimeSlice = { 0, 100000 };
+    static const STimeout kTimeout   = { 5,                           0 };
+    static const STimeout kTimeSlice = { 0, kMicroSecondsPerSecond / 10 };
     static const struct {
         EURLScheme scheme;
         const char*  host;
@@ -305,7 +307,8 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     net_info->max_try    = 0;
     m_Timeout = 0;
 
-    CDeadline deadline(kTimeout.sec, kTimeout.usec * 1000);
+    CDeadline deadline(kTimeout.sec, kTimeout.usec * (kNanoSecondsPerSecond /
+                                                      kMicroSecondsPerSecond));
     time_t           sec;
     unsigned int nanosec;
     deadline.GetExpirationTime(&sec, &nanosec);
