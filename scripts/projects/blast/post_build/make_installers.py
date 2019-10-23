@@ -24,7 +24,7 @@ def main(): #IGNORE:R0911
         parser.error("Incorrect number of arguments")
         return 1
 
-    blast_version, platform, installdir, srctarball = args
+    blast_version, platform, installdir, srctarball, libdir = args
 
     global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
@@ -33,6 +33,7 @@ def main(): #IGNORE:R0911
         print("Platform:", platform)
         print("Installation directory:", installdir)
         print("Source tarball:", srctarball)
+        print("Lib directory:", libdir)
 
     if platform.startswith("Win"):
         import glob
@@ -44,7 +45,6 @@ def main(): #IGNORE:R0911
             print(dll)
 
     if platform.startswith("Win"):
-        # copy ncbi-vdb-md.dll
         shutil.copy(libdir + "nghttp2.dll", installdir + "bin")
         return launch_win_installer_build(installdir, blast_version)                
     if platform.startswith("Linux64"):
