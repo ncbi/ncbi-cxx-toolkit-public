@@ -4467,6 +4467,20 @@ bool CAlignFormatUtil::MatchSeqInSeqList(CConstRef<CSeq_id> &alnSeqID, list<stri
     return found;
 }
 
+bool CAlignFormatUtil::MatchSeqInUseThisSeqList(list<string> &use_this_seq, string textSeqIDToMatch)
+{
+    bool has_match = false;
+   
+    ITERATE(list<string>, iter_seq, use_this_seq) {              
+        bool isGi;
+        string useThisSeq = s_UseThisSeqToTextSeqID(*iter_seq, isGi); 
+        if(useThisSeq == textSeqIDToMatch) {
+             has_match = true;
+             break;
+        }
+    }
+    return has_match;
+}
 
 CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 const CSeq_id& aln_id,

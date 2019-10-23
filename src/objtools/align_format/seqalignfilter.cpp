@@ -688,6 +688,7 @@ bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<int> & 
     return false;
 }
 
+
 static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_set>  &bdlRef,
                                                          const set<int>& taxids,
                                                          CRef<CSeq_align> &in_align)
@@ -699,14 +700,23 @@ static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_se
     ITERATE(list<CRef<CBlast_def_line> >, iter, bdlSet) {
         const CBlast_def_line & defline = **iter;
         bool has_match = s_IncludeDeflineTaxid(defline, taxids);
+        CRef<CSeq_id> seqID;
+        string textSeqID;
         if(has_match) {
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
+            seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
+            CAlignFormatUtil::GetTextSeqID(seqID, &textSeqID);
+
+            list<string> use_this_seq;
+            CAlignFormatUtil::GetUseThisSequence(*in_align,use_this_seq);  
+            if(use_this_seq.size() > 0) {
+                has_match = CAlignFormatUtil::MatchSeqInUseThisSeqList(use_this_seq, textSeqID);          
+            }
+        }
+        if(has_match) {
             if(sa_copy.Empty()) {                
                 sa_copy = s_UpdateSubjectInSeqalign(in_align,seqID);
             }
-            string textSeqID;
-            CAlignFormatUtil::GetTextSeqID(seqID, &textSeqID);
             if(seqID->IsGi()) {
                 useThisSeqs.push_back("gi:" + textSeqID);
             }
