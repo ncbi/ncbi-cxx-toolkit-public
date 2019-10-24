@@ -966,16 +966,16 @@ static void RemoveKeywords(CSeq_entry& entry, const map<string, string>& keyword
 }
 
 
-typedef string (*GetCommentFunc) (const CSeqdesc& );
+typedef function<string (const CSeqdesc& )> GetDescrStrFunc;
 
 static string GetCommentString(const CSeqdesc& descr)
 {
     return descr.IsComment() ? descr.GetComment() : kEmptyStr;
 }
 
-static string GetStructuredCommentString(const CSeqdesc& descr)
+static string GetUserObjectString(const CSeqdesc& descr, const string& obj_type)
 {
-    if (IsUserObjectOfType(descr, "StructuredComment")) {
+    if (IsUserObjectOfType(descr, obj_type)) {
         const CUser_object& user_obj = descr.GetUser();
         return ToString(user_obj);
     }
@@ -983,23 +983,23 @@ static string GetStructuredCommentString(const CSeqdesc& descr)
     return kEmptyStr;
 }
 
-static void RemoveComments(CSeq_entry& entry, const list<string>& comments, GetCommentFunc getComment)
+static void RemoveDescrs(CSeq_entry& entry, const list<string>& common_descrs, GetDescrStrFunc getDescrStr)
 {
-    if (comments.empty()) {
+    if (common_descrs.empty()) {
         return;
     }
 
     CSeq_descr* descrs = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
 
-        CDataChecker checker(false, comments);
+        CDataChecker checker(false, common_descrs);
         for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
             bool removed = false;
-            const string& comment = getComment(**descr);
-            if (!comment.empty()) {
+            const string& descr_str = getDescrStr(**descr);
+            if (!descr_str.empty()) {
 
-                if (checker.IsStringPresent(comment)) {
+                if (checker.IsStringPresent(descr_str)) {
                     descr = descrs->Set().erase(descr);
                     removed = true;
                 }
@@ -1014,7 +1014,7 @@ static void RemoveComments(CSeq_entry& entry, const list<string>& comments, GetC
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
 
         for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-            RemoveComments(*cur_entry, comments, getComment);
+            RemoveDescrs(*cur_entry, common_descrs, getDescrStr);
         }
     }
 }
@@ -1580,8 +1580,11 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (GetParams().GetUpdateMode() != eUpdatePartial) {
-                        RemoveComments(*entry, master_info.m_common_comments, GetCommentString);
-                        RemoveComments(*entry, master_info.m_common_structured_comments, GetStructuredCommentString);
+                        RemoveDescrs(*entry, master_info.m_common_comments, GetCommentString);
+                        RemoveDescrs(*entry, master_info.m_common_structured_comments,
+                            bind(GetUserObjectString, placeholders::_1, "StructuredComment"));
+                        RemoveDescrs(*entry, master_info.m_common_file_tracks,
+                            bind(GetUserObjectString, placeholders::_1, "FileTrack"));
                         RemovePubs(*entry, master_info.m_common_pubs, master_info.m_pubs, nullptr);
                     }
 
@@ -1670,8 +1673,11 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
         if (GetParams().GetUpdateMode() == eUpdatePartial) {
             for (auto& cur_entry : bioseq_set->SetSeq_set()) {
-                RemoveComments(*cur_entry, master_info.m_common_comments, GetCommentString);
-                RemoveComments(*cur_entry, master_info.m_common_structured_comments, GetStructuredCommentString);
+                RemoveDescrs(*cur_entry, master_info.m_common_comments, GetCommentString);
+                RemoveDescrs(*cur_entry, master_info.m_common_structured_comments,
+                    bind(GetUserObjectString, placeholders::_1, "StructuredComment"));
+                RemoveDescrs(*cur_entry, master_info.m_common_file_tracks,
+                    bind(GetUserObjectString, placeholders::_1, "FileTrack"));
 
                 const CDate_std* submission_date = GetParams().IsSetSubmissionDate() ? &GetParams().GetSubmissionDate() : nullptr;
                 RemovePubs(*cur_entry, master_info.m_common_pubs, master_info.m_pubs, submission_date);

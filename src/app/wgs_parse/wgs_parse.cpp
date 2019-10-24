@@ -1162,7 +1162,7 @@ public:
     virtual bool UpdateIfNeeded(const string& comment, CSeq_descr::Tdata& descrs) const
     {
         bool ret = false;
-        CRef<CSeqdesc> descr = BuildStructuredComment(comment);
+        CRef<CSeqdesc> descr = BuildUserObject(comment);
         if (descr->GetUser().IsSetData() && !descr->GetUser().GetData().empty()) {
             
             static const set<string> COMMENTS_TO_UPDATE = {
@@ -1218,7 +1218,7 @@ public:
 
     virtual void AddDescriptor(CSeq_descr& descrs, const string& comment) const
     {
-        descrs.Set().push_back(BuildStructuredComment(comment));
+        descrs.Set().push_back(BuildUserObject(comment));
     }
 
     virtual string DescrToString(const CSeqdesc& descr) const
@@ -1228,58 +1228,89 @@ public:
     }
 };
 
-static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comments, const CDescriptorUpdater& updater)
+class CFileTrackDescriptorUpdater : public CDescriptorUpdater
+{
+public:
+    virtual bool NeedToProcess(const CSeqdesc& descr) const
+    {
+        return IsUserObjectOfType(descr, "FileTrack");
+    }
+
+    virtual bool UpdateIfNeeded(const string&, CSeq_descr::Tdata&) const
+    {
+        return false;
+    }
+
+    virtual bool IsSame(const CSeqdesc& descr, const string& file_track) const
+    {
+        _ASSERT(IsUserObjectOfType(descr, "FileTrack") && "Should be FileTrack");
+        return ToString(descr.GetUser()) == file_track;
+    }
+
+    virtual void AddDescriptor(CSeq_descr& descrs, const string& file_track) const
+    {
+        descrs.Set().push_back(BuildUserObject(file_track));
+    }
+
+    virtual string DescrToString(const CSeqdesc& descr) const
+    {
+        _ASSERT(IsUserObjectOfType(descr, "FileTrack") && "Should be FileTrack");
+        return ToString(descr.GetUser());
+    }
+};
+
+static void UpdateCommonDescriptors(CRef<CSeq_entry>& id_entry, list<string>& common_descrs, const CDescriptorUpdater& updater)
 {
     if (id_entry.Empty() || !id_entry->IsSeq()) {
-        comments.clear();
+        common_descrs.clear();
         return;
     }
 
-    list<string*> comments_to_add;
+    list<string*> descrs_to_add;
 
     if (GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateExtraContigs) {
-        if (!comments.empty()) {
+        if (!common_descrs.empty()) {
 
             // selecting new master comments to be added
             auto& descrs = id_entry->SetSeq().SetDescr().Set();
-            for (auto& comment : comments) {
+            for (auto& common_descr : common_descrs) {
 
-                if (!updater.UpdateIfNeeded(comment, descrs)) {
-                    auto same_comment = find_if(descrs.begin(), descrs.end(), [&comment, &updater](const CRef<CSeqdesc>& descr) { return updater.NeedToProcess(*descr) && updater.IsSame(*descr, comment); });
+                if (!updater.UpdateIfNeeded(common_descr, descrs)) {
+                    auto same_comment = find_if(descrs.begin(), descrs.end(), [&common_descr, &updater](const CRef<CSeqdesc>& descr) { return updater.NeedToProcess(*descr) && updater.IsSame(*descr, common_descr); });
                     if (same_comment == descrs.end()) {
-                        comments_to_add.push_back(&comment);
+                        descrs_to_add.push_back(&common_descr);
                     }
                 }
             }
         }
     }
     else {
-        comments.clear();
+        common_descrs.clear();
     }
 
     // adding old master entry comments
     if (id_entry->GetSeq().IsSetDescr() && id_entry->GetSeq().GetDescr().IsSet()) {
 
-        list<string> old_comments_to_add;
+        list<string> old_descrs_to_add;
         for (auto& descr : id_entry->GetSeq().GetDescr().Get()) {
 
             if (updater.NeedToProcess(*descr)) {
-                auto same_comment = find_if(comments.begin(), comments.end(), [&descr, &updater](const string& comment) { return updater.IsSame(*descr, comment); });
-                if (same_comment == comments.end()) {
-                    old_comments_to_add.push_back(updater.DescrToString(*descr));
+                auto same_descr = find_if(common_descrs.begin(), common_descrs.end(), [&descr, &updater](const string& common_descr) { return updater.IsSame(*descr, common_descr); });
+                if (same_descr == common_descrs.end()) {
+                    old_descrs_to_add.push_back(updater.DescrToString(*descr));
                 }
             }
         }
 
-        comments.splice(comments.end(), old_comments_to_add);
+        common_descrs.splice(common_descrs.end(), old_descrs_to_add);
     }
 
-    if (!comments_to_add.empty()) {
+    if (!descrs_to_add.empty()) {
 
         // adding new master comments to the old master
         auto& descrs = id_entry->SetSeq().SetDescr();
-        for (auto comment : comments_to_add) {
-            updater.AddDescriptor(descrs, *comment);
+        for (auto& descr: descrs_to_add) {
+            updater.AddDescriptor(descrs, *descr);
         }
     }
 }
@@ -1739,8 +1770,9 @@ int CWGSParseApp::Run(void)
                 CheckOrganisms(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq);
             }
 
-            UpdateCommonComments(master_info.m_id_master_bioseq, master_info.m_common_comments, CCommentDescriptorUpdater());
-            UpdateCommonComments(master_info.m_id_master_bioseq, master_info.m_common_structured_comments, CStructuredCommentDescriptorUpdater());
+            UpdateCommonDescriptors(master_info.m_id_master_bioseq, master_info.m_common_comments, CCommentDescriptorUpdater());
+            UpdateCommonDescriptors(master_info.m_id_master_bioseq, master_info.m_common_structured_comments, CStructuredCommentDescriptorUpdater());
+            UpdateCommonDescriptors(master_info.m_id_master_bioseq, master_info.m_common_file_tracks, CFileTrackDescriptorUpdater());
 
             if (GetParams().GetUpdateMode() == eUpdatePartial) {
                 if (GetParams().IsSetSubmissionDate()) {

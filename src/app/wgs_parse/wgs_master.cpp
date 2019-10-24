@@ -223,7 +223,7 @@ static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& com
     return num_of_pubs;
 }
 
-typedef void(*StringProcessFunc) (const CSeqdesc& , list<string>& , const CDataChecker& );
+typedef function<void (const CSeqdesc&, list<string>&, const CDataChecker&)> StringProcessFunc;
 
 static void CollectDataFromDescr(const CSeq_entry& entry, list<string>& container, StringProcessFunc process, const CDataChecker& checker)
 {
@@ -253,53 +253,53 @@ static void ProcessComment(const CSeqdesc& descr, list<string>& comments, const 
     }
 }
 
-static void ProcessStructuredComment(const CSeqdesc& descr, list<string>& comments, const CDataChecker& checker)
+static void ProcessUserObject(const CSeqdesc& descr, list<string>& user_objs, const CDataChecker& checker, const string& obj_type)
 {
-    if (IsUserObjectOfType(descr, "StructuredComment")) {
+    if (IsUserObjectOfType(descr, obj_type)) {
 
         const CUser_object& user_obj = descr.GetUser();
-        const string& comment = ToString(user_obj);
+        const string& user_obj_str = ToString(user_obj);
 
-        if (checker.IsStringPresent(comment)) {
-            comments.push_back(comment);
+        if (checker.IsStringPresent(user_obj_str)) {
+            user_objs.push_back(user_obj_str);
         }
     }
 }
 
-typedef function<void(const CSeq_entry&)> CommentErrorReportFunc;
+typedef function<void(const CSeq_entry&)> CommonDescrErrorReportFunc;
 
-static void CommentErrorReport(const CSeq_entry& entry, const string& comment_type, const string& file)
+static void CommonDescrErrorReport(const CSeq_entry& entry, const string& descr_type, const string& file)
 {
     string id_str;
     GetSeqIdStrFromEntry(entry, id_str);
     if (id_str.empty()) {
         id_str = "Unknown";
     }
-    ERR_POST_EX(ERR_MASTER, ERR_MASTER_DifferentComments, Warning << comment_type << " descriptor differences were detected. First occurence is in record with " << id_str << " from file \"" << file << "\". Comments will not be removed from contigs, and the master Bioseq will not receive a comment descriptor.");
+    ERR_POST_EX(ERR_MASTER, ERR_MASTER_DifferentComments, Warning << descr_type << " descriptor differences were detected. First occurence is in record with " << id_str << " from file \"" << file << "\". Comments will not be removed from contigs, and the master Bioseq will not receive a comment descriptor.");
 }
 
-static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bool& comments_not_set, list<string>& comments, CommentErrorReportFunc report_error)
+static void CheckCommonDescrs(const CSeq_entry& entry, StringProcessFunc process, bool& descrs_not_set, list<string>& common_descrs, CommonDescrErrorReportFunc report_error)
 {
-    if (comments_not_set) {
+    if (descrs_not_set) {
 
-        CDataChecker checker(true, comments);
-        CollectDataFromDescr(entry, comments, process, checker);
-        comments_not_set = comments.empty();
+        CDataChecker checker(true, common_descrs);
+        CollectDataFromDescr(entry, common_descrs, process, checker);
+        descrs_not_set = common_descrs.empty();
     }
     else {
 
-        if (!comments.empty()) {
+        if (!common_descrs.empty()) {
 
-            list<string> common_comments;
-            CDataChecker checker(false, comments);
+            list<string> cur_common_descrs;
+            CDataChecker checker(false, common_descrs);
 
-            CollectDataFromDescr(entry, common_comments, process, checker);
+            CollectDataFromDescr(entry, cur_common_descrs, process, checker);
 
-            if (common_comments.size() < comments.size()) {
-                comments.swap(common_comments);
+            if (cur_common_descrs.size() < common_descrs.size()) {
+                common_descrs.swap(cur_common_descrs);
             }
 
-            if (comments.empty()) {
+            if (common_descrs.empty()) {
                 report_error(entry);
             }
         }
@@ -1425,7 +1425,11 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     for (auto& structured_comment : info.m_common_structured_comments) {
-        bioseq->SetDescr().Set().push_back(BuildStructuredComment(structured_comment));
+        bioseq->SetDescr().Set().push_back(BuildUserObject(structured_comment));
+    }
+
+    for (auto& file_track: info.m_common_file_tracks) {
+        bioseq->SetDescr().Set().push_back(BuildUserObject(file_track));
     }
 
     // CitSub
@@ -2567,12 +2571,17 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     if (!GetParams().IsKeepRefs()) {
 
                         master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs, master_info.m_reject, master_info.m_pubs), master_info.m_num_of_pubs);
-                        CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments,
-                                      [&file](const CSeq_entry& cur_entry) { CommentErrorReport(cur_entry, "Comment", file); });
+                        CheckCommonDescrs(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments,
+                                      [&file](const CSeq_entry& cur_entry) { CommonDescrErrorReport(cur_entry, "Comment", file); });
                     }
 
-                    CheckComments(*entry, ProcessStructuredComment, master_info.m_common_structured_comments_not_set, master_info.m_common_structured_comments,
-                                  [&file](const CSeq_entry& cur_entry) { CommentErrorReport(cur_entry, "Structured comment", file); });
+                    CheckCommonDescrs(*entry, bind(ProcessUserObject, placeholders::_1, placeholders::_2, placeholders::_3, "StructuredComment"),
+                        master_info.m_common_structured_comments_not_set, master_info.m_common_structured_comments,
+                        [&file](const CSeq_entry& cur_entry) { CommonDescrErrorReport(cur_entry, "Structured comment", file); });
+
+                    CheckCommonDescrs(*entry, bind(ProcessUserObject, placeholders::_1, placeholders::_2, placeholders::_3, "FileTrack"),
+                        master_info.m_common_file_tracks_not_set, master_info.m_common_file_tracks,
+                        [&file](const CSeq_entry& cur_entry) { CommonDescrErrorReport(cur_entry, "File Track", file); });
                 }
 
                 if (!CheckBioSource(*entry, master_info, file)) {

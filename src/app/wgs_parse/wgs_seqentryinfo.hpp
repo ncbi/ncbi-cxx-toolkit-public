@@ -263,6 +263,7 @@ struct CMasterInfo
 
     bool m_common_comments_not_set;
     bool m_common_structured_comments_not_set;
+    bool m_common_file_tracks_not_set;
     bool m_has_targeted_keyword;
     bool m_has_gmi_keyword;
     bool m_has_genome_project_id;
@@ -278,6 +279,7 @@ struct CMasterInfo
 	list<string> m_common_pubs;
     list<string> m_common_comments;
     list<string> m_common_structured_comments;
+    list<string> m_common_file_tracks;
     CRef<CBioSource> m_biosource;
     list<COrgRefInfo> m_org_refs;
     list<string> m_object_ids;
@@ -325,6 +327,7 @@ struct CMasterInfo
         m_num_of_pubs(0),
         m_common_comments_not_set(true),
         m_common_structured_comments_not_set(true),
+        m_common_file_tracks_not_set(true),
         m_has_targeted_keyword(false),
         m_has_gmi_keyword(false),
         m_has_genome_project_id(false),

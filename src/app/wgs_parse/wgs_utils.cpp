@@ -483,11 +483,11 @@ CRef<CSeqdesc> CreateCitSub(CCit_sub& cit_sub, const CContact_info* contact)
     return descr;
 }
 
-CRef<CSeqdesc> BuildStructuredComment(const string& comment)
+CRef<CSeqdesc> BuildUserObject(const string& user_obj_str)
 {
     CRef<CSeqdesc> descr(new CSeqdesc);
 
-    CNcbiIstrstream stream(comment.c_str());
+    CNcbiIstrstream stream(user_obj_str.c_str());
     CRef<CUser_object> user_obj(new CUser_object);
     stream >> MSerial_AsnText >> *user_obj;
     descr->SetUser(*user_obj);
