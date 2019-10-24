@@ -50,31 +50,31 @@ class CPslRecord
 {
 public:
     CPslRecord():
-        mMatches(0),
-        mMisMatches(0),
-        mRepMatches(0),
+        mMatches(-1),
+        mMisMatches(-1),
+        mRepMatches(-1),
         mCountN(0),
-        mNumInsertQ(0),
-        mBaseInsertQ(0),
-        mNumInsertT(0),
-        mBaseInsertT(0),
+        mNumInsertQ(-1),
+        mBaseInsertQ(-1),
+        mNumInsertT(-1),
+        mBaseInsertT(-1),
         mStrandQ(eNa_strand_unknown),
         mStrandT(eNa_strand_unknown),
         mNameQ(""),
-        mSizeQ(0),
-        mStartQ(0),
-        mEndQ(0),
+        mSizeQ(-1),
+        mStartQ(-1),
+        mEndQ(-1),
         mNameT(""),
-        mSizeT(0),
-        mStartT(0),
-        mEndT(0),
-        mExonCount(0)
+        mSizeT(-1),
+        mStartT(-1),
+        mEndT(-1),
+        mExonCount(-1)
     {};
 
     ~CPslRecord() = default;
 
     void Initialize(
-        CScope&,
+        CScope& scope,
         const CSpliced_seg& splicedSeg);
 
     void Write(
@@ -82,7 +82,31 @@ public:
         bool debug=false) const;
 
 protected:
-
+    void xValidateSegment(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeStrands(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeInsertsQ(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeInsertsT(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeMatchesMismatches(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeSequenceQ(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeSequenceT(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeBlocks(
+        CScope&,
+        const CSpliced_seg&);
+       
     string xFieldMatches(bool debug) const;
     string xFieldMisMatches(bool debug) const;
     string xFieldRepMatches(bool debug) const;

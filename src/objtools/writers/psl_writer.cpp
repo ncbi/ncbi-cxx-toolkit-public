@@ -107,7 +107,7 @@ bool CPslWriter::WriteAlign(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    if (m_uFlags & CPslWriter::fDebugOutput) {
+    if (true || m_uFlags & CPslWriter::fDebugOutput) {
         cerr << ".";
     }
     //xWritePreamble();
