@@ -306,9 +306,9 @@ static bool s_Api_DBAPI_Init(const string& service, size_t api_id)
                                                                                                ERR_POST(Info << "s_Api_DBAPI_" << skDbapiNames[api_id] << "_Init() opening database, service=" << service);
         drv_context->SetTimeout(3);
                                                                                                ERR_POST(Info << "s_Api_DBAPI_" << skDbapiNames[api_id] << "_Init() opening database, service=" << service);
-        /// set in registry
-        /// SetMaxNumOfConnAttempts(1); // This value is supposed to be default.
-        /// SetMaxNumOfServerAlternatives(1); // Do not try other servers.
+        // Use the registry for these values (or add command-line argument):
+        // SetMaxNumOfConnAttempts(1);
+        // SetMaxNumOfServerAlternatives(1);
         s_Dbapi_Conn = s_Dbapi_Ds->CreateConnection();
                                                                                                ERR_POST(Info << "s_Api_DBAPI_" << skDbapiNames[api_id] << "_Init() opening database, service=" << service);
         if (s_Dbapi_Conn == NULL) {
@@ -320,7 +320,11 @@ static bool s_Api_DBAPI_Init(const string& service, size_t api_id)
         ///conn->Connect(skDbParamUser, skDbParamPassword, service, skDbParamDb);
         s_Dbapi_Conn->ConnectValidated(val, skDbParamUser, skDbParamPassword, service, skDbParamDb);
                                                                                                ERR_POST(Info << "s_Api_DBAPI_" << skDbapiNames[api_id] << "_Init() opening database, service=" << service);
-    } catch (...) { // try/catch here just to facilitate debugging
+    } catch (CException& exc) {
+        ERR_POST(Critical << "s_Api_DBAPI_" << skDbapiNames[api_id] << "_Init() caught exception '" << exc.what() << "'");
+        throw;
+    } catch (...) {
+        ERR_POST(Critical << "s_Api_DBAPI_" << skDbapiNames[api_id] << "_Init() caught unknown exception.");
         throw;
     }
 
@@ -458,7 +462,7 @@ static size_t s_Api_DBLB_Check(const string& service)
 static IDBServiceMapper* s_GetServiceMapper(void)
 {
 #if 0 // CRuntimeData and GetRuntimeData are protected
-    ERR_POST(Info << "s_GetServiceMapper() - if 0");
+    ERR_POST(Info << "s_GetServiceMapper() - CRuntimeData and GetRuntimeData are protected");
     return &(dynamic_cast<CDBConnectionFactory&>
              (*CDbapiConnMgr::Instance().GetConnectionFactory())
              .GetRuntimeData(kEmptyStr).GetDBServiceMapper());
@@ -551,8 +555,8 @@ public:
     FApiInit    m_Init;
     FApiQuit    m_Quit;
 
-    void    Check(STest& test);
-    bool    Init(const STest& test);
+    void    Check(STest& test, bool reset_api);
+    bool    Init(const STest& test, bool reset_api);
     bool    Quit(void);
 };
 static CApi s_Apis[] = {
@@ -597,25 +601,9 @@ static string   s_ResIdnss[] = {
     string("I")
 };
 
-// DB statuses
-enum : size_t {
-    eDbstat_NONE,
-    eDbstat_BK,
-    eDbstat_DN,
-    eDbstat_NE,
-    eDbstat_UP,
-};
-static string   s_Dbstats[] = {
-    string("NONE"),
-    string("BK"),
-    string("DN"),
-    string("NE"),
-    string("UP"),
-};
-
 // Server setups
 enum : size_t {
-    eServer_UNSET,
+    eServer_NONE,
     eServer_BK,
     eServer_DN,
     eServer_NE,
@@ -625,7 +613,7 @@ enum : size_t {
     eServer_NE_UP,
 };
 static string   s_Servers[] = {
-    string("UNSET"),
+    string("NONE"),
     string("BK"),
     string("DN"),
     string("NE"),
@@ -635,13 +623,12 @@ static string   s_Servers[] = {
     string("NE_UP"),
 };
 static size_t           s_NumServers = sizeof(s_Servers) / sizeof(*s_Servers);
-static vector<size_t>   s_SelectedServerIds;
+static vector<size_t>   s_SelectedServer1Ids;
+static vector<size_t>   s_SelectedServer2Ids;
 
 
 // Service setups
 enum : size_t {
-    ///eSetup_LBR_I_DN,
-
     eSetup_NOLB_NOI,
     eSetup_NOLB_I_BK,
     eSetup_NOLB_I_DN,
@@ -682,56 +669,55 @@ enum : size_t {
 struct SSetup
 {
     size_t  m_Id;
-    size_t  m_Server;
     string  m_Service;
     bool    m_Sybase;
     size_t  m_ResLbNm;
     size_t  m_ResRev;
     size_t  m_ResIdns;
-    size_t  m_Dbstat1;
-    size_t  m_Dbstat2;
+    size_t  m_Server1;
+    size_t  m_Server2;
     size_t  m_ResultExpectedId;
 };
 static SSetup   s_Setups[] = {
-    ///{eSetup_LBR_I_DN     , eServer_DN   , "DBAPI_SYB160_TEST", true , eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_UP  , eDbstat_NONE, eResult_UP          },
-    ///{eSetup_LBR_I_UP     , "CXX_TESTSUITE", false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_UP  , eDbstat_NONE, eResult_UP          },
+    ///{eSetup_??????????    , "DBAPI_SYB160_TEST", true , eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
+    ///{eSetup_??????????    , "CXX_TESTSUITE", false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
 
-    { eSetup_NOLB_NOI     , eServer_UNSET, "DT_NOI"          , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_NOI, eDbstat_NONE, eDbstat_NONE, eResult_ERROR       },
-    { eSetup_NOLB_I_BK    , eServer_BK   , "DT_I_BK"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eDbstat_BK  , eDbstat_NONE, eResult_ERROR       /* eResult_BK */ },
-    { eSetup_NOLB_I_DN    , eServer_DN   , "DT_I_DN"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eDbstat_DN  , eDbstat_NONE, eResult_ERROR       /* eResult_DN */ },
-    { eSetup_NOLB_I_NE    , eServer_NE   , "DT_I_NE"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eDbstat_NE  , eDbstat_NONE, eResult_ERROR       },
-    { eSetup_NOLB_I_UP    , eServer_UP   , "DT_I_UP"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eDbstat_UP  , eDbstat_NONE, eResult_UP          },
-    { eSetup_LB_NOI_BK    , eServer_BK   , "DT_LB_NOI_BK"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eDbstat_BK  , eDbstat_NONE, eResult_ERROR       /* eResult_BK */ },
-    { eSetup_LB_NOI_DN    , eServer_DN   , "DT_LB_NOI_DN"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eDbstat_DN  , eDbstat_NONE, eResult_ERROR       /* eResult_DN */ },
-    { eSetup_LB_NOI_NE    , eServer_NE   , "DT_LB_NOI_NE"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eDbstat_NE  , eDbstat_NONE, eResult_ERROR       },
-    { eSetup_LB_NOI_UP    , eServer_UP   , "DT_LB_NOI_UP"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eDbstat_UP  , eDbstat_NONE, eResult_UP          },
-    { eSetup_LB_I_BK      , eServer_BK   , "DT_LB_I_BK"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eDbstat_BK  , eDbstat_NONE, eResult_ERROR       /* eResult_BK */ },
-    { eSetup_LB_I_DN      , eServer_DN   , "DT_LB_I_DN"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eDbstat_DN  , eDbstat_NONE, eResult_ERROR       /* eResult_DN */ },
-    { eSetup_LB_I_NE      , eServer_NE   , "DT_LB_I_NE"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eDbstat_NE  , eDbstat_NONE, eResult_ERROR       },
-    { eSetup_LB_I_UP      , eServer_UP   , "DT_LB_I_UP"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eDbstat_UP  , eDbstat_NONE, eResult_UP          },
-    { eSetup_LBR_NOI_BK   , eServer_BK   , "DT_LBR_NOI_BK"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eDbstat_BK  , eDbstat_NONE, eResult_ERROR       /* eResult_BK */ },
-    { eSetup_LBR_NOI_DN   , eServer_DN   , "DT_LBR_NOI_DN"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eDbstat_DN  , eDbstat_NONE, eResult_ERROR       /* eResult_DN */ },
-    { eSetup_LBR_NOI_NE   , eServer_NE   , "DT_LBR_NOI_NE"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eDbstat_NE  , eDbstat_NONE, eResult_ERROR       },
-    { eSetup_LBR_NOI_UP   , eServer_UP   , "DT_LBR_NOI_UP"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eDbstat_UP  , eDbstat_NONE, eResult_UP          },
-    { eSetup_LBR_I_BK     , eServer_BK   , "DT_LBR_I_BK"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_BK  , eDbstat_NONE, eResult_ERROR       /* eResult_BK */ },
-    { eSetup_LBR_I_DN     , eServer_DN   , "DT_LBR_I_DN"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_DN  , eDbstat_NONE, eResult_ERROR       /* eResult_DN */ },
-    { eSetup_LBR_I_NE     , eServer_NE   , "DT_LBR_I_NE"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_NE  , eDbstat_NONE, eResult_ERROR       },
-    { eSetup_LBR_I_UP     , eServer_UP   , "DT_LBR_I_UP"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_UP  , eDbstat_NONE, eResult_UP          },
-    { eSetup_NOLB_I_BK_UP , eServer_BK_UP, "DT_I_BK_UP"      , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eDbstat_BK  , eDbstat_UP  , eResult_UP          },
-    { eSetup_NOLB_I_DN_UP , eServer_DN_UP, "DT_I_DN_UP"      , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eDbstat_DN  , eDbstat_UP  , eResult_UP          },
-    { eSetup_NOLB_I_NE_UP , eServer_NE_UP, "DT_I_NE_UP"      , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eDbstat_NE  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LB_NOI_BK_UP , eServer_BK_UP, "DT_LB_NOI_BK_UP" , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eDbstat_BK  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LB_NOI_DN_UP , eServer_DN_UP, "DT_LB_NOI_DN_UP" , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eDbstat_DN  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LB_NOI_NE_UP , eServer_NE_UP, "DT_LB_NOI_NE_UP" , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eDbstat_NE  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LB_I_BK_UP   , eServer_BK_UP, "DT_LB_I_BK_UP"   , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eDbstat_BK  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LB_I_DN_UP   , eServer_DN_UP, "DT_LB_I_DN_UP"   , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eDbstat_DN  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LB_I_NE_UP   , eServer_NE_UP, "DT_LB_I_NE_UP"   , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eDbstat_NE  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LBR_NOI_BK_UP, eServer_BK_UP, "DT_LBR_NOI_BK_UP", false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eDbstat_BK  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LBR_NOI_DN_UP, eServer_DN_UP, "DT_LBR_NOI_DN_UP", false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eDbstat_DN  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LBR_NOI_NE_UP, eServer_NE_UP, "DT_LBR_NOI_NE_UP", false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eDbstat_NE  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LBR_I_BK_UP  , eServer_BK_UP, "DT_LBR_I_BK_UP"  , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_BK  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LBR_I_DN_UP  , eServer_DN_UP, "DT_LBR_I_DN_UP"  , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_DN  , eDbstat_UP  , eResult_UP          },
-    { eSetup_LBR_I_NE_UP  , eServer_NE_UP, "DT_LBR_I_NE_UP"  , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eDbstat_NE  , eDbstat_UP  , eResult_UP          },
+    { eSetup_NOLB_NOI     , "DT_NOI"          , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_NOI, eServer_NONE, eServer_NONE, eResult_ERROR       },
+    { eSetup_NOLB_I_BK    , "DT_I_BK"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eServer_BK  , eServer_NONE, eResult_ERROR       /* eResult_BK */ },
+    { eSetup_NOLB_I_DN    , "DT_I_DN"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eServer_DN  , eServer_NONE, eResult_ERROR       /* eResult_DN */ },
+    { eSetup_NOLB_I_NE    , "DT_I_NE"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eServer_NE  , eServer_NONE, eResult_ERROR       },
+    { eSetup_NOLB_I_UP    , "DT_I_UP"         , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
+    { eSetup_LB_NOI_BK    , "DT_LB_NOI_BK"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eServer_BK  , eServer_NONE, eResult_ERROR       /* eResult_BK */ },
+    { eSetup_LB_NOI_DN    , "DT_LB_NOI_DN"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eServer_DN  , eServer_NONE, eResult_ERROR       /* eResult_DN */ },
+    { eSetup_LB_NOI_NE    , "DT_LB_NOI_NE"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eServer_NE  , eServer_NONE, eResult_ERROR       },
+    { eSetup_LB_NOI_UP    , "DT_LB_NOI_UP"    , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eServer_UP  , eServer_NONE, eResult_UP          },
+    { eSetup_LB_I_BK      , "DT_LB_I_BK"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eServer_BK  , eServer_NONE, eResult_ERROR       /* eResult_BK */ },
+    { eSetup_LB_I_DN      , "DT_LB_I_DN"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eServer_DN  , eServer_NONE, eResult_ERROR       /* eResult_DN */ },
+    { eSetup_LB_I_NE      , "DT_LB_I_NE"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eServer_NE  , eServer_NONE, eResult_ERROR       },
+    { eSetup_LB_I_UP      , "DT_LB_I_UP"      , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
+    { eSetup_LBR_NOI_BK   , "DT_LBR_NOI_BK"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eServer_BK  , eServer_NONE, eResult_ERROR       /* eResult_BK */ },
+    { eSetup_LBR_NOI_DN   , "DT_LBR_NOI_DN"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eServer_DN  , eServer_NONE, eResult_ERROR       /* eResult_DN */ },
+    { eSetup_LBR_NOI_NE   , "DT_LBR_NOI_NE"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eServer_NE  , eServer_NONE, eResult_ERROR       },
+    { eSetup_LBR_NOI_UP   , "DT_LBR_NOI_UP"   , false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eServer_UP  , eServer_NONE, eResult_UP          },
+    { eSetup_LBR_I_BK     , "DT_LBR_I_BK"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_BK  , eServer_NONE, eResult_ERROR       /* eResult_BK */ },
+    { eSetup_LBR_I_DN     , "DT_LBR_I_DN"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_DN  , eServer_NONE, eResult_ERROR       /* eResult_DN */ },
+    { eSetup_LBR_I_NE     , "DT_LBR_I_NE"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_NE  , eServer_NONE, eResult_ERROR       },
+    { eSetup_LBR_I_UP     , "DT_LBR_I_UP"     , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
+    { eSetup_NOLB_I_BK_UP , "DT_I_BK_UP"      , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eServer_BK  , eServer_UP  , eResult_UP          },
+    { eSetup_NOLB_I_DN_UP , "DT_I_DN_UP"      , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eServer_DN  , eServer_UP  , eResult_UP          },
+    { eSetup_NOLB_I_NE_UP , "DT_I_NE_UP"      , false, eResLbNm_NOLB, eResRev_NOREV, eResIdns_I  , eServer_NE  , eServer_UP  , eResult_UP          },
+    { eSetup_LB_NOI_BK_UP , "DT_LB_NOI_BK_UP" , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eServer_BK  , eServer_UP  , eResult_UP          },
+    { eSetup_LB_NOI_DN_UP , "DT_LB_NOI_DN_UP" , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eServer_DN  , eServer_UP  , eResult_UP          },
+    { eSetup_LB_NOI_NE_UP , "DT_LB_NOI_NE_UP" , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_NOI, eServer_NE  , eServer_UP  , eResult_UP          },
+    { eSetup_LB_I_BK_UP   , "DT_LB_I_BK_UP"   , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eServer_BK  , eServer_UP  , eResult_UP          },
+    { eSetup_LB_I_DN_UP   , "DT_LB_I_DN_UP"   , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eServer_DN  , eServer_UP  , eResult_UP          },
+    { eSetup_LB_I_NE_UP   , "DT_LB_I_NE_UP"   , false, eResLbNm_LB  , eResRev_NOREV, eResIdns_I  , eServer_NE  , eServer_UP  , eResult_UP          },
+    { eSetup_LBR_NOI_BK_UP, "DT_LBR_NOI_BK_UP", false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eServer_BK  , eServer_UP  , eResult_UP          },
+    { eSetup_LBR_NOI_DN_UP, "DT_LBR_NOI_DN_UP", false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eServer_DN  , eServer_UP  , eResult_UP          },
+    { eSetup_LBR_NOI_NE_UP, "DT_LBR_NOI_NE_UP", false, eResLbNm_LB  , eResRev_REV  , eResIdns_NOI, eServer_NE  , eServer_UP  , eResult_UP          },
+    { eSetup_LBR_I_BK_UP  , "DT_LBR_I_BK_UP"  , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_BK  , eServer_UP  , eResult_UP          },
+    { eSetup_LBR_I_DN_UP  , "DT_LBR_I_DN_UP"  , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_DN  , eServer_UP  , eResult_UP          },
+    { eSetup_LBR_I_NE_UP  , "DT_LBR_I_NE_UP"  , false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_NE  , eServer_UP  , eResult_UP          },
 };
 static size_t           s_NumSetups = sizeof(s_Setups) / sizeof(*s_Setups);
 static vector<size_t>   s_SelectedSetupIds;
@@ -745,7 +731,7 @@ static string s_LocalServerSpec(const string& host, int port)
 class CMapper
 {
 public:
-    static bool Init(vector<CMapper>& mappers)
+    static void Init(vector<CMapper>& mappers)
     {
         {{
             CMapper mapper;
@@ -818,7 +804,6 @@ public:
             mapper.m_EnvUnset.push_back("BOUNCEHTTP_CONN_LOCAL_SERVER_1");
             mappers.push_back(mapper);
         }}
-        return true;
     }
 
     static void Select(size_t mapper_id);
@@ -829,7 +814,6 @@ public:
     list<string>        m_EnvUnset;
 };
 static vector<CMapper>  s_Mappers;
-static bool             s_CMapperInited = CMapper::Init(s_Mappers);   // hack to quasi-declaratively initialize static mapper data
 static vector<size_t>   s_SelectedMapperIds;
 
 void CMapper::Select(size_t mapper_id)
@@ -850,11 +834,11 @@ void CMapper::Select(size_t mapper_id)
 }
 
 
-void CApi::Check(STest& test)
+void CApi::Check(STest& test, bool reset_api)
 {
     test.m_ResultActualId = eResult_ERROR;
     try {
-        if (Init(test)) {
+        if (Init(test, reset_api)) {
             test.m_ResultActualId = (*m_Check)(s_Setups[test.m_SetupId].m_Service);
         }
     } catch (CException& exc) {
@@ -864,15 +848,15 @@ void CApi::Check(STest& test)
     }
 }
 
-bool CApi::Init(const STest& test)
+bool CApi::Init(const STest& test, bool reset_api)
 {
     bool success = false;
     const string& service(s_Setups[test.m_SetupId].m_Service);
 
-    // Don't init this API more than once.
+    // Don't init this API more than once (unless a reset is requested).
     // Also, quit last API if it was different from the current one.
     if (s_ApiInited) {
-        if (test.m_ApiId == s_ApiInitedId) {
+        if (test.m_ApiId == s_ApiInitedId  &&  ! reset_api) {
             return true;
         } else {
             try {
@@ -962,7 +946,8 @@ private:
 
     // Application data
     bool    m_ProcessAll;
-    bool    m_ReportAll;
+    string  m_Report;
+    bool    m_ResetApi;
     string  m_SelectedService;
 };
 
@@ -1101,6 +1086,8 @@ void CTestNcbiDblbSvcResApp::SelectApis(void)
 
 void CTestNcbiDblbSvcResApp::SelectMappers(void)
 {
+    CMapper::Init(s_Mappers);
+
     if (GetArgs()["mapper"].HasValue()) {
         vector<string> mapper_strs;
         NStr::Split(GetArgs()["mapper"].AsString(), ",", mapper_strs);
@@ -1131,31 +1118,51 @@ void CTestNcbiDblbSvcResApp::SelectMappers(void)
             s_SelectedMapperIds.push_back(mapper_id);
         }
     }
-    ERR_POST(Info << "Selected service mapper: " << s_Mappers[s_SelectedMapperIds[0]].m_Name);
 }
 
 
 void CTestNcbiDblbSvcResApp::SelectServers(void)
 {
-    if (GetArgs()["server"].HasValue()) {
-        vector<string> server_strs;
-        NStr::Split(GetArgs()["server"].AsString(), ",", server_strs);
-        for (const string& server_name : server_strs) {
+    if (GetArgs()["srv1"].HasValue()) {
+        vector<string> srv1_strs;
+        NStr::Split(GetArgs()["srv1"].AsString(), ",", srv1_strs);
+        for (const string& srv1_name : srv1_strs) {
             bool found = false;
-            for (size_t server_id = 0; server_id < s_NumServers; ++server_id) {
-                if (NStr::EqualNocase(s_Servers[server_id], server_name)) {
-                    s_SelectedServerIds.push_back(server_id);
+            for (size_t srv1_id = 0; srv1_id < s_NumServers; ++srv1_id) {
+                if (NStr::EqualNocase(s_Servers[srv1_id], srv1_name)) {
+                    s_SelectedServer1Ids.push_back(srv1_id);
                     found = true;
                     break;
                 }
             }
             if ( ! found) {
-                NCBI_USER_THROW(string("Invalid server name '") + server_name + "'.");
+                NCBI_USER_THROW(string("Invalid srv1 name '") + srv1_name + "'.");
             }
         }
     } else {
-        for (size_t server_id = 0; server_id < s_NumServers; ++server_id) {
-            s_SelectedServerIds.push_back(server_id);
+        for (size_t srv1_id = 0; srv1_id < s_NumServers; ++srv1_id) {
+            s_SelectedServer1Ids.push_back(srv1_id);
+        }
+    }
+    if (GetArgs()["srv2"].HasValue()) {
+        vector<string> srv2_strs;
+        NStr::Split(GetArgs()["srv2"].AsString(), ",", srv2_strs);
+        for (const string& srv2_name : srv2_strs) {
+            bool found = false;
+            for (size_t srv2_id = 0; srv2_id < s_NumServers; ++srv2_id) {
+                if (NStr::EqualNocase(s_Servers[srv2_id], srv2_name)) {
+                    s_SelectedServer2Ids.push_back(srv2_id);
+                    found = true;
+                    break;
+                }
+            }
+            if ( ! found) {
+                NCBI_USER_THROW(string("Invalid srv2 name '") + srv2_name + "'.");
+            }
+        }
+    } else {
+        for (size_t srv2_id = 0; srv2_id < s_NumServers; ++srv2_id) {
+            s_SelectedServer2Ids.push_back(srv2_id);
         }
     }
 }
@@ -1212,14 +1219,14 @@ void CTestNcbiDblbSvcResApp::TestCaseLine(
     string msg("\n");
     msg += header + prefix;
     msg += sep + "TestId=" + NStr::SizetToString(test.m_Id);
+    msg += sep + "Mapper=" + s_Mappers[s_SelectedMapperIds[0]].m_Name;
     msg += sep + "API=" + s_Apis[test.m_ApiId].m_Name;
     msg += sep + "Service=" + setup.m_Service;
-    msg += sep + "Server=" + s_Servers[setup.m_Server];
+    msg += sep + "Server1=" + s_Servers[setup.m_Server1];
+    msg += sep + "Server2=" + s_Servers[setup.m_Server2];
     msg += sep + "ResLbNm=" + s_ResLbNms[setup.m_ResLbNm];
     msg += sep + "ResRev=" + s_ResRevs[setup.m_ResRev];
     msg += sep + "ResIdns=" + s_ResIdnss[setup.m_ResIdns];
-    msg += sep + "DB1=" + s_Dbstats[setup.m_Dbstat1];
-    msg += sep + "DB2=" + s_Dbstats[setup.m_Dbstat2];
     msg += sep + "Expected=" + s_Results[setup.m_ResultExpectedId];
     if (show_success) {
         msg += sep + "Actual=" + s_Results[test.m_ResultActualId];
@@ -1251,7 +1258,7 @@ bool CTestNcbiDblbSvcResApp::Test(STest& test)
     TestCaseStart(test);
     bool success = false;
     CMapper::Select(test.m_MapperId);
-    s_Apis[test.m_ApiId].Check(test);
+    s_Apis[test.m_ApiId].Check(test, m_ResetApi);
     if (test.m_ResultActualId == s_Setups[test.m_SetupId].m_ResultExpectedId) {
         success = true;
     }
@@ -1268,7 +1275,15 @@ void CTestNcbiDblbSvcResApp::Init(void)
 
     args->AddFlag("process_all", "Process all selected tests regardless of failures");
 
-    args->AddFlag("report_all", "Process all selected tests regardless of failures");
+    args->AddFlag("reset_api", "Always reset the DB API between test cases, even if it isn't changing");
+
+    args->AddDefaultKey("report", "report", "Desired level of results reporting from least to most (one of 'fail'*, 'run', 'selected', 'skip', 'all')",
+                        CArgDescriptions::eString, "fail");
+    args->SetConstraint("report", 
+                        &(*new CArgAllow_Strings,
+                          "fail", "run", "selected", "skip", "all",
+                          "FAIL", "RUN", "SELECTED", "SKIP", "ALL"),
+                        CArgDescriptions::eConstraint);
 
     args->AddOptionalKey("api", "api", "Comma-separated list of APIs (from dbapi_ftds,dbapi_ctlib,sdbapi,dblb)",
                          CArgDescriptions::eString);
@@ -1276,8 +1291,21 @@ void CTestNcbiDblbSvcResApp::Init(void)
     args->AddKey("mapper", "mapper", "The service mapper to use (from dispd,lbsmd,linkerd,local,namerd)",
                  CArgDescriptions::eString);
 
-    args->AddOptionalKey("server", "server", "Comma-separated list of servers (from bk,dn,ne,up,bk_up,dn_up,ne_up)",
+    args->AddOptionalKey("srv1", "srv1", "Comma-separated list of first server states (from none,bk,dn,ne,up)",
                          CArgDescriptions::eString);
+    args->SetConstraint("srv1", 
+                        &(*new CArgAllow_Strings,
+                          "none", "bk", "dn", "ne", "up",
+                          "NONE", "BK", "DN", "NE", "UP"),
+                        CArgDescriptions::eConstraint);
+
+    args->AddOptionalKey("srv2", "srv2", "Comma-separated list of second server states (from none,bk,dn,ne,up)",
+                         CArgDescriptions::eString);
+    args->SetConstraint("srv2", 
+                        &(*new CArgAllow_Strings,
+                          "none", "bk", "dn", "ne", "up",
+                          "NONE", "BK", "DN", "NE", "UP"),
+                        CArgDescriptions::eConstraint);
 
     args->AddOptionalKey("service", "service", "Comma-separated list of services (e.g. DT_LB_NOI_BK,DT_LB_NOI_NE)",
                          CArgDescriptions::eString);
@@ -1288,7 +1316,8 @@ void CTestNcbiDblbSvcResApp::Init(void)
     SetupArgDescriptions(args.release());
 
     m_ProcessAll = GetArgs()["process_all"];
-    m_ReportAll = GetArgs()["report_all"];
+    m_ResetApi = GetArgs()["reset_api"];
+    m_Report = GetArgs()["report"].AsString();
 
     SelectApis();
     SelectMappers();
@@ -1329,7 +1358,8 @@ int CTestNcbiDblbSvcResApp::Run(void)
                 deselected = deselected  ||  (find(s_SelectedApiIds.begin(), s_SelectedApiIds.end(), api_id) == s_SelectedApiIds.end());
                 deselected = deselected  ||  (find(s_SelectedTestIds.begin(), s_SelectedTestIds.end(), test_id) == s_SelectedTestIds.end()  &&  s_SelectedTestIds.size() > 0);
                 deselected = deselected  ||  (find(s_SelectedSetupIds.begin(), s_SelectedSetupIds.end(), setup_id) == s_SelectedSetupIds.end());
-                deselected = deselected  ||  (find(s_SelectedServerIds.begin(), s_SelectedServerIds.end(), s_Setups[setup_id].m_Server) == s_SelectedServerIds.end());
+                deselected = deselected  ||  (find(s_SelectedServer1Ids.begin(), s_SelectedServer1Ids.end(), s_Setups[setup_id].m_Server1) == s_SelectedServer1Ids.end());
+                deselected = deselected  ||  (find(s_SelectedServer2Ids.begin(), s_SelectedServer2Ids.end(), s_Setups[setup_id].m_Server2) == s_SelectedServer2Ids.end());
                 if (deselected) {
                     test.m_ResultActualId = eResult_SKIP_USER;
                     ++num_skipped;
@@ -1396,46 +1426,65 @@ void CTestNcbiDblbSvcResApp::ReportResults(size_t num_possible, size_t num_skipp
                   << "\nPassed:         " << num_passed
                   << "\nFailed:         " << num_failed);
 
-    if (num_possible == 0) {
-        ERR_POST(Info << "No tests possible!");
-        return;
-    } else if (num_selected == 0) {
-        ERR_POST(Info << "No tests selected!");
-        return;
-    } else if (num_passed > 0  &&  num_failed == 0  &&  ! m_ReportAll) {
-        ERR_POST(Info << "All tests passed.");
-        return;
-    }
-
-    string msg("\nTest results:");
+    string results;
     for (const STest& test : s_Tests) {
         const SSetup& setup(s_Setups[test.m_SetupId]);
-        string status("....");
+        string status;
         if (NStr::StartsWith(s_Results[test.m_ResultActualId], "SKIP")  ||
             NStr::StartsWith(s_Results[setup.m_ResultExpectedId], "SKIP"))
         {
             status = "skip";
-        } else if (test.m_ResultActualId != setup.m_ResultExpectedId) {
+        } else if (test.m_ResultActualId == setup.m_ResultExpectedId) {
+            status = "pass";
+        } else if (setup.m_ResultExpectedId != eResult_NONE) {
             status = "FAIL";
+        } else {
+            status = "none";
         }
-        if (m_ReportAll  ||  status == "FAIL") {
+        if (status == "FAIL"  ||
+            (m_Report == "run"  &&  status == "pass")  ||
+            (m_Report == "selected"  &&
+                (status == "FAIL"  ||
+                 status == "pass"  ||
+                (status == "skip"  &&  test.m_ResultActualId == eResult_SKIP_FAIL)))  ||
+            (m_Report == "skip"  &&  status != "none")  ||
+            (m_Report == "all"))
+        {
             string sep("    ");
-            msg += "\n";
-            msg += sep + status;
-            msg += sep + "-test " + NStr::SizetToString(test.m_Id);
-            msg += sep + "-api " + s_Apis[test.m_ApiId].m_Name;
-            msg += sep + "-service " + setup.m_Service;
-            msg += sep + "-server " + s_Servers[setup.m_Server];
-            msg += sep + "ResLbNm=" + s_ResLbNms[setup.m_ResLbNm];
-            msg += sep + "ResRev=" + s_ResRevs[setup.m_ResRev];
-            msg += sep + "ResIdns=" + s_ResIdnss[setup.m_ResIdns];
-            msg += sep + "DB1=" + s_Dbstats[setup.m_Dbstat1];
-            msg += sep + "DB2=" + s_Dbstats[setup.m_Dbstat2];
-            msg += sep + "Expected=" + s_Results[setup.m_ResultExpectedId];
-            msg += sep + "Actual=" + s_Results[test.m_ResultActualId];
+            results += "\n";
+            results += sep + status;
+            results += sep + "-test " + NStr::SizetToString(test.m_Id);
+            results += sep + "-api " + s_Apis[test.m_ApiId].m_Name;
+            results += sep + "-mapper " + s_Mappers[s_SelectedMapperIds[0]].m_Name;
+            results += sep + "-service " + setup.m_Service;
+            results += sep + "-srv1 " + s_Servers[setup.m_Server1];
+            results += sep + "-srv2 " + s_Servers[setup.m_Server2];
+            results += sep + "ResLbNm=" + s_ResLbNms[setup.m_ResLbNm];
+            results += sep + "ResRev=" + s_ResRevs[setup.m_ResRev];
+            results += sep + "ResIdns=" + s_ResIdnss[setup.m_ResIdns];
+            results += sep + "Expected=" + s_Results[setup.m_ResultExpectedId];
+            results += sep + "Actual=" + s_Results[test.m_ResultActualId];
         }
     }
-    ERR_POST(Info << msg);
+    if (results.empty()) {
+        if (num_selected == 0) {
+            ERR_POST(Info << "\nNo selected tests!");
+        } else if (num_run == 0) {
+            ERR_POST(Info << "\nNo run tests!");
+        } else if (m_Report == "fail") {
+            ERR_POST(Info << "\nNo failed tests!");
+        } else if (m_Report == "run") {
+            ERR_POST(Info << "\nNo run tests!");
+        } else if (m_Report == "selected") {
+            ERR_POST(Info << "\nNo selected tests!");
+        } else if (m_Report == "skip") {
+            ERR_POST(Info << "\nNo skipped or failed tests!");
+        } else {
+            ERR_POST(Info << "\nNo tests!");
+        }
+    } else {
+        ERR_POST(Info << "\nTest results:" + results);
+    }
 }
 
 
@@ -1449,7 +1498,7 @@ int main(int argc, char* argv[])
 {
     int exit_code = 1;
 
-    //SetDiagTrace(eDT_Enable);
+    SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
                         | eDPF_Severity | eDPF_ErrorID | eDPF_Prefix | eDPF_File | eDPF_Line);
