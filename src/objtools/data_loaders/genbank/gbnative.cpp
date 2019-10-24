@@ -1394,6 +1394,13 @@ CGBDataLoader_Native::x_GetRecords(const CSeq_id_Handle& sih,
                             "blob state error for "+blob_id.ToString(),
                             lock->GetBlobState());
             }
+            if ( processed_nas ) {
+                if ( auto annot_info = info.GetAnnotInfo() ) {
+                    for ( auto& acc : annot_info->GetNamedAnnotNames() ) {
+                        CDataLoader::SetProcessedNA(acc, processed_nas);
+                    }
+                }
+            }
             locks.insert(lock);
         }
     }
