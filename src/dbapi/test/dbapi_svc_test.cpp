@@ -555,8 +555,8 @@ public:
     FApiInit    m_Init;
     FApiQuit    m_Quit;
 
-    void    Check(STest& test, bool reset_api);
-    bool    Init(const STest& test, bool reset_api);
+    void    Check(STest& test);
+    bool    Init(const STest& test);
     bool    Quit(void);
 };
 static CApi s_Apis[] = {
@@ -834,11 +834,11 @@ void CMapper::Select(size_t mapper_id)
 }
 
 
-void CApi::Check(STest& test, bool reset_api)
+void CApi::Check(STest& test)
 {
     test.m_ResultActualId = eResult_ERROR;
     try {
-        if (Init(test, reset_api)) {
+        if (Init(test)) {
             test.m_ResultActualId = (*m_Check)(s_Setups[test.m_SetupId].m_Service);
         }
     } catch (CException& exc) {
@@ -848,29 +848,24 @@ void CApi::Check(STest& test, bool reset_api)
     }
 }
 
-bool CApi::Init(const STest& test, bool reset_api)
+bool CApi::Init(const STest& test)
 {
     bool success = false;
     const string& service(s_Setups[test.m_SetupId].m_Service);
 
-    // Don't init this API more than once (unless a reset is requested).
-    // Also, quit last API if it was different from the current one.
+    // Quit the last API if there is one still inited.
     if (s_ApiInited) {
-        if (test.m_ApiId == s_ApiInitedId  &&  ! reset_api) {
-            return true;
-        } else {
-            try {
-                if ( ! s_Apis[s_ApiInitedId].Quit()) {
-                    ERR_POST(Critical << "API Init() failed to quit last API.");
-                    return false;
-                }
-            } catch (CException& exc) {
-                ERR_POST(Critical << "API Init() caught exception '" << exc.what() << "'");
-                return false;
-            } catch (...) {
-                ERR_POST(Critical << "API Init() caught unknown exception.");
+        try {
+            if ( ! s_Apis[s_ApiInitedId].Quit()) {
+                ERR_POST(Critical << "API Init() failed to quit last API.");
                 return false;
             }
+        } catch (CException& exc) {
+            ERR_POST(Critical << "API Init() caught exception '" << exc.what() << "'");
+            return false;
+        } catch (...) {
+            ERR_POST(Critical << "API Init() caught unknown exception.");
+            return false;
         }
     }
 
@@ -947,7 +942,6 @@ private:
     // Application data
     bool    m_ProcessAll;
     string  m_Report;
-    bool    m_ResetApi;
     string  m_SelectedService;
 };
 
@@ -1258,7 +1252,7 @@ bool CTestNcbiDblbSvcResApp::Test(STest& test)
     TestCaseStart(test);
     bool success = false;
     CMapper::Select(test.m_MapperId);
-    s_Apis[test.m_ApiId].Check(test, m_ResetApi);
+    s_Apis[test.m_ApiId].Check(test);
     if (test.m_ResultActualId == s_Setups[test.m_SetupId].m_ResultExpectedId) {
         success = true;
     }
@@ -1274,8 +1268,6 @@ void CTestNcbiDblbSvcResApp::Init(void)
                           "Test service resolution via DBAPI, SDBAPI, and DBLB.");
 
     args->AddFlag("process_all", "Process all selected tests regardless of failures");
-
-    args->AddFlag("reset_api", "Always reset the DB API between test cases, even if it isn't changing");
 
     args->AddDefaultKey("report", "report", "Desired level of results reporting from least to most (one of 'fail'*, 'run', 'selected', 'skip', 'all')",
                         CArgDescriptions::eString, "fail");
@@ -1316,7 +1308,6 @@ void CTestNcbiDblbSvcResApp::Init(void)
     SetupArgDescriptions(args.release());
 
     m_ProcessAll = GetArgs()["process_all"];
-    m_ResetApi = GetArgs()["reset_api"];
     m_Report = GetArgs()["report"].AsString();
 
     SelectApis();
