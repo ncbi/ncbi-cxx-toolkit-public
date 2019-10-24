@@ -1079,6 +1079,7 @@ protobufd needs3party $(ORIG_LIBS)
 protobufd needs3party $(Z_LIBS)
 proxsort needs taxoscli
 psg_cache needs $(LMDB_LIB)
+psg_cache needs psg_protobuf
 psg_cache needs xncbi
 psg_cache needs3party $(LMDB_LIBS)
 psg_cassandra needs $(Z_LIB)
