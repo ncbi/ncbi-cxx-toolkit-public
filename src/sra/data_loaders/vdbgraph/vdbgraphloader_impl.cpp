@@ -274,7 +274,7 @@ string CVDBGraphDataLoader_Impl::SVDBFileInfo::GetMidZoomAnnotName(void) const
 
 CObjectManager::TPriority CVDBGraphDataLoader_Impl::GetDefaultPriority(void) const
 {
-    CObjectManager::TPriority priority = CObjectManager::kPriority_Replace;
+    CObjectManager::TPriority priority = CObjectManager::kPriority_Extra;
     if ( m_FixedFileMap.empty() ) {
         // implicit loading data loader has lower priority by default
         priority += 1;
