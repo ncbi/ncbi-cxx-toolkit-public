@@ -215,7 +215,7 @@ CPslRecord::xInitializeMatchesMismatches(
                 mMatches += part->GetMatch();
             }
             else if (part->IsMismatch()) {
-                mMisMatches += part->GetMismatch();
+                mMatches += part->GetMismatch();
             }
         } 
     }
@@ -290,25 +290,44 @@ CPslRecord::xInitializeBlocks(
     mExonCount = static_cast<int>(exonList.size());
 
     if (mStrandT == eNa_strand_plus) {
+        mExonCount = 0;
         for (auto pExon: exonList) {
             int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
-            mExonStartsQ.push_back(exonStartQ);
             int exonStartT = static_cast<int>(pExon->GetGenomic_start());
-            mExonStartsT.push_back(exonStartT);
-            auto blockSize = static_cast<int>(
-                pExon->GetGenomic_end() - exonStartT + 1);
-            mExonSizes.push_back(blockSize);
+            for (auto pPart: pExon->GetParts()) {
+                mExonCount++;
+                mExonStartsQ.push_back(exonStartQ);
+                mExonStartsT.push_back(exonStartT);
+                int blockSize = 0;
+                if (pPart->IsMatch()) {
+                    blockSize += pPart->GetMatch();
+                }
+                else if (pPart->IsMismatch()) {
+                    blockSize += pPart->GetMismatch();
+                }
+                mExonSizes.push_back(blockSize);
+                exonStartQ += blockSize;
+                exonStartT += blockSize;
+            }
         }
     }
     else {
+        mExonCount = 0;
         for (auto pExon: exonList) {
-            //int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
-            //mExonStartsQ.push_back(runningBaseCountQ);
-            int exonStartT = static_cast<int>(pExon->GetGenomic_start());
-            mExonStartsT.push_back(exonStartT);
-            auto blockSize = static_cast<int>(
-                pExon->GetGenomic_end() - exonStartT + 1);
-            mExonSizes.push_back(blockSize);
+            int exonEndT = static_cast<int>(pExon->GetGenomic_end() + 1);
+            for (auto pPart: pExon->GetParts()) {
+                mExonCount++;
+                int blockSize = 0;
+                if (pPart->IsMatch()) {
+                    blockSize += pPart->GetMatch();
+                }
+                else if (pPart->IsMismatch()) {
+                    blockSize += pPart->GetMismatch();
+                }
+                exonEndT -= blockSize;
+                mExonStartsT.push_back(exonEndT);
+                mExonSizes.push_back(blockSize);
+            }
         }
         std::reverse(mExonStartsT.begin(), mExonStartsT.end());
         std::reverse(mExonSizes.begin(), mExonSizes.end());
