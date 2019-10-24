@@ -87,6 +87,7 @@
 #include <objtools/writers/vcf_writer.hpp>
 #include <objtools/writers/gvf_writer.hpp>
 #include <objtools/writers/aln_writer.hpp>
+#include <objtools/writers/psl_writer.hpp>
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
@@ -207,7 +208,8 @@ void CAnnotWriterApp::Init()
             "bed",
             "bedgraph",
             "vcf",
-            "aln" ) );
+            "aln",
+            "psl"));
     }}
 
     // parameters
@@ -245,6 +247,10 @@ void CAnnotWriterApp::Init()
 
     //  flags
     {{
+    arg_desc->AddFlag(
+        "debug-output",
+        "produce formally invalid output that is easy to read",
+        true );
     arg_desc->AddFlag(
         "structibutes",
         "limit attributes to inter feature relationships",
@@ -799,6 +805,13 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
     if (strFormat == "aln") {
         return new CAlnWriter(*m_pScope, *pOs, 0);
+    }
+    if (strFormat == "psl") {
+        unsigned int flags = 0;
+        if (args["debug-output"].AsBoolean()) {
+            flags |= CPslWriter::fDebugOutput;
+        }
+        return new CPslWriter(*m_pScope, *pOs, flags);
     }
     NCBI_THROW(CObjWriterException, eArgErr, 
         "xInitWriter: No suitable writer for format \"" + strFormat + "\"");
