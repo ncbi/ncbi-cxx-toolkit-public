@@ -86,7 +86,7 @@ sDebugFormatValue(
     const string& data)
 //  ----------------------------------------------------------------------------
 {
-    string formattedValue = (label + string(14, ' ')).substr(0, 14) + ": ";
+    string formattedValue = (label + string(12, ' ')).substr(0, 12) + ": ";
     formattedValue += data;
     formattedValue += "\n";
     return formattedValue;
@@ -113,6 +113,14 @@ CPslRecord::Initialize(
         if (!pExon->CanGetGenomic_start()  || !pExon->CanGetGenomic_end()) {
             //throw?
         }
+    }
+
+    //strand
+    if (splicedSeg.CanGetProduct_strand()) {
+        mStrandQ = splicedSeg.GetProduct_strand();
+    }
+    if (splicedSeg.CanGetGenomic_strand()) {
+        mStrandT = splicedSeg.GetGenomic_strand();
     }
 
     //matches, misMatches
@@ -161,27 +169,31 @@ CPslRecord::Initialize(
         }
         lastExonEndT = pExon->GetGenomic_end() + 1;
     }
-
-    //strand
-    if (splicedSeg.CanGetProduct_strand()) {
-        mStartQ = splicedSeg.CanGetProduct_strand();
-    }
+    mMatches += mBaseInsertT;
+    mNumInsertT = 0;
 
     //qName, qSize
     CWriteUtil::GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
     mSizeQ = querySeqHandle.GetInst_Length();
 
     //qStart, qEnd
-    mStartQ = mEndQ = -1;
+    //mStartQ = mEndQ = -1;
+    int startQQ(-1), endQQ(-1);
     for (auto pExon: exonList) {
         int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
-        if (mStartQ == -1  ||  exonStartQ < mStartQ) {
-            mStartQ = exonStartQ;
+        if (startQQ == -1  ||  exonStartQ < startQQ) {
+            startQQ = exonStartQ;
         }
         int exonEndQ = static_cast<int>(pExon->GetProduct_end().AsSeqPos());
-        if (mEndQ == -1  ||  exonEndQ >= mEndQ) {
-            mEndQ = exonEndQ + 1;
+        if (endQQ == -1  ||  exonEndQ >= endQQ) {
+            endQQ = exonEndQ + 1;
         }
+    }
+    mStartQ = 0;
+    mEndQ = mStartQ + mSizeQ;
+    mBaseInsertQ = mEndQ - endQQ;
+    if (mBaseInsertQ) {
+        cout << "";
     }
 
     //tName, tSize
@@ -211,6 +223,10 @@ CPslRecord::Initialize(
         auto blockSize = static_cast<int>(
             pExon->GetGenomic_end() - exonStartT + 1);
         mExonSizes.push_back(blockSize);
+    }
+    if (mStrandT == eNa_strand_minus) {
+        std::reverse(mExonStartsT.begin(), mExonStartsT.end());
+        std::reverse(mExonSizes.begin(), mExonSizes.end());
     }
 }
 
@@ -315,13 +331,13 @@ string
 CPslRecord::xFieldStrand(bool debug) const
 //  ----------------------------------------------------------------------------
 {
-    string rawString = (mStrandQ == eNa_strand_minus ? "-" : "+");
-    if (mStrandT == eNa_strand_plus) {
-        rawString += "+";
-    }
-    else if (mStrandT == eNa_strand_minus) {
-        rawString += "-";
-    }
+    string rawString = (mStrandT == eNa_strand_minus ? "-" : "+");
+    //if (mStrandT == eNa_strand_plus) {
+    //    rawString += "+";
+    //}
+    //else if (mStrandT == eNa_strand_minus) {
+    //    rawString += "-";
+    //}
     if (debug) {
         return sDebugFormatValue("strand", rawString);
     }
@@ -456,20 +472,20 @@ CPslRecord::xFieldBlockSizes(bool debug) const
         bool labelWritten = false;
         string field;
         for (auto& chunk: chunks) {
-            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ",");
+            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ", ");
             if (!labelWritten) {
                 field += sDebugFormatValue("blockSizes", value);
                 labelWritten = true;
             }
             else {
-                field += "                ";
+                field += "              ";
                 field += value;
                 field += "\n";
             }
         }
         return field;
     }
-    return NStr::JoinNumeric(mExonSizes.begin(), mExonSizes.end(), ",");
+    return "\t" + NStr::JoinNumeric(mExonSizes.begin(), mExonSizes.end(), ",");
 }
 
 //  ----------------------------------------------------------------------------
@@ -486,20 +502,20 @@ CPslRecord::xFieldStartsQ(bool debug) const
         bool labelWritten = false;
         string field;
         for (auto& chunk: chunks) {
-            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ",");
+            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ", ");
             if (!labelWritten) {
                 field += sDebugFormatValue("qStarts", value);
                 labelWritten = true;
             }
             else {
-                field += "                ";
+                field += "              ";
                 field += value;
                 field += "\n";
             }
         }
         return field;
     }
-    return NStr::JoinNumeric(mExonStartsQ.begin(), mExonStartsQ.end(), ",");
+    return "\t" + NStr::JoinNumeric(mExonStartsQ.begin(), mExonStartsQ.end(), ",");
 }
 
 //  ----------------------------------------------------------------------------
@@ -516,20 +532,20 @@ CPslRecord::xFieldStartsT(bool debug) const
         bool labelWritten = false;
         string field;
         for (auto& chunk: chunks) {
-            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ",");
+            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ", ");
             if (!labelWritten) {
                 field += sDebugFormatValue("tStarts", value);
                 labelWritten = true;
             }
             else {
-                field += "                ";
+                field += "              ";
                 field += value;
                 field += "\n";
             }
         }
         return field;
     }
-    return NStr::JoinNumeric(mExonStartsT.begin(), mExonStartsT.end(), ",");
+    return "\t" + NStr::JoinNumeric(mExonStartsT.begin(), mExonStartsT.end(), ",");
 }
 
 //  ----------------------------------------------------------------------------

@@ -88,7 +88,7 @@ bool CPslWriter::WriteAnnot(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    xWritePreamble();
+    //xWritePreamble();
     if (!annot.IsAlign()) {
         return CWriterBase::WriteAnnot(annot, name, descr);
     }
@@ -107,8 +107,10 @@ bool CPslWriter::WriteAlign(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    //cerr << ".";
-    xWritePreamble();
+    if (m_uFlags & CPslWriter::fDebugOutput) {
+        cerr << ".";
+    }
+    //xWritePreamble();
     switch (align.GetSegs().Which()) {
     case CSeq_align::C_Segs::e_Spliced:
         xWriteAlignSlicedSeg(align.GetSegs().GetSpliced());
@@ -122,10 +124,16 @@ bool CPslWriter::WriteAlign(
 void CPslWriter::xWritePreamble()
 //  ----------------------------------------------------------------------------
 {
+    static bool preambleDone = false;
+
+    if (preambleDone) {
+        return;
+    }
     m_Os << "!! The PSL writer is still under development!" << endl;
     m_Os << "!! It does not produce valid output." << endl;
     m_Os << "!! Please don't use it yet." << endl;
     m_Os << endl;
+    preambleDone = true;
 }
 
 //  ----------------------------------------------------------------------------
