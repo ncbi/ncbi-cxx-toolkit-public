@@ -278,20 +278,45 @@ CPslRecord::xInitializeBlocks(
     if (mExonCount != -1) {
         return;
     }
+
+    if (mStrandT == eNa_strand_unknown) {
+        xInitializeStrands(scope, splicedSeg);
+    }
+    if (mBaseInsertQ == -1) {
+        xInitializeInsertsQ(scope, splicedSeg);
+    }
+
     const auto& exonList = splicedSeg.GetExons();
     mExonCount = static_cast<int>(exonList.size());
-    for (auto pExon: exonList) {
-        int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
-        mExonStartsQ.push_back(exonStartQ);
-        int exonStartT = static_cast<int>(pExon->GetGenomic_start());
-        mExonStartsT.push_back(exonStartT);
-        auto blockSize = static_cast<int>(
-            pExon->GetGenomic_end() - exonStartT + 1);
-        mExonSizes.push_back(blockSize);
+
+    if (mStrandT == eNa_strand_plus) {
+        for (auto pExon: exonList) {
+            int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
+            mExonStartsQ.push_back(exonStartQ);
+            int exonStartT = static_cast<int>(pExon->GetGenomic_start());
+            mExonStartsT.push_back(exonStartT);
+            auto blockSize = static_cast<int>(
+                pExon->GetGenomic_end() - exonStartT + 1);
+            mExonSizes.push_back(blockSize);
+        }
     }
-    if (mStrandT == eNa_strand_minus) {
+    else {
+        for (auto pExon: exonList) {
+            //int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
+            //mExonStartsQ.push_back(runningBaseCountQ);
+            int exonStartT = static_cast<int>(pExon->GetGenomic_start());
+            mExonStartsT.push_back(exonStartT);
+            auto blockSize = static_cast<int>(
+                pExon->GetGenomic_end() - exonStartT + 1);
+            mExonSizes.push_back(blockSize);
+        }
         std::reverse(mExonStartsT.begin(), mExonStartsT.end());
         std::reverse(mExonSizes.begin(), mExonSizes.end());
+        int runningBaseCountQ = mBaseInsertQ;
+        for (auto blockSize: mExonSizes) {
+            mExonStartsQ.push_back(runningBaseCountQ);
+            runningBaseCountQ += blockSize;
+        }
     }
 }
 
@@ -322,6 +347,12 @@ CPslRecord::Initialize(
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
+    //if (splicedSeg.CanGetProduct_type()) {
+    //    auto productType = splicedSeg.GetProduct_type();
+    //    if (productType == CSpliced_seg::eProduct_type_protein) {
+    //        cout << "";
+    //    }
+    //}
     xValidateSegment(scope, splicedSeg);
 
     xInitializeStrands(scope, splicedSeg);
