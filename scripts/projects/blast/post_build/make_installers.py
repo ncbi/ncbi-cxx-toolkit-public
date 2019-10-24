@@ -45,6 +45,7 @@ def main(): #IGNORE:R0911
             print(dll)
 
     if platform.startswith("Win"):
+        import shutil
         shutil.copy(libdir + "nghttp2.dll", installdir + "bin")
         return launch_win_installer_build(installdir, blast_version)                
     if platform.startswith("Linux64"):
