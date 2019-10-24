@@ -1527,11 +1527,18 @@ CFeatureTableReader_Imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string
 {
     if (NStr::IsBlank (str)) return false;
 
-    if ( NStr::StartsWith(str, "(pos:") ) {
+    string normalized_string = str;
+    normalized_string.erase(
+            remove_if(begin(normalized_string), 
+                      end(normalized_string), 
+                      [](char c) { return isspace(c);}),
+            end(normalized_string));
+
+    if ( NStr::StartsWith(normalized_string, "(pos:") ) {
         // find position of closing paren
-        string::size_type pos_end = x_MatchingParenPos( str, 0 );
+        string::size_type pos_end = x_MatchingParenPos( normalized_string, 0 );
         if (pos_end != string::npos) {
-            string pos_str = str.substr (5, pos_end - 5);
+            string pos_str = normalized_string.substr (5, pos_end - 5);
             string::size_type aa_start = NStr::FindNoCase(pos_str, "aa:");
             if (aa_start != string::npos) {
                 auto seq_start = NStr::FindNoCase(pos_str, ",seq:");
