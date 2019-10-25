@@ -39,6 +39,7 @@
 #include <math.h>         // log/pow functions
 #include <cmath>          // additional overloads for pow()
 #include <memory>
+#include <mutex>
 
 
 /** @addtogroup Statistics
@@ -369,6 +370,75 @@ protected:
     TCounter  m_Count;              ///< Number of counted values (sum all m_Counters[])
     TCounter  m_LowerAnomalyCount;  ///< Number of anomaly values < m_Min
     TCounter  m_UpperAnomalyCount;  ///< Number of anomaly values > m_Max
+};
+
+
+/// A series of same-structured histograms covering logarithmically (base 2)
+/// increasing time periods... roughly
+
+template <typename TValue, typename TScale, typename TCounter>
+class CHistogramTimeSeries
+{
+public:
+    /// @param model_histogram
+    ///  This histogram will be used as a template for all histogram objects
+    ///  in this time series
+    using THistogram = CHistogram<TValue,TScale,TCounter>;
+    CHistogramTimeSeries(const THistogram& model_histogram);
+
+    /// Add value to the data distribution.
+    /// Try to find an appropriate bin for a specified value and increment its
+    /// counter by 1.
+    /// @sa CHistogram::Add()
+    void Add(TValue value);
+
+    /// Merge the most recent (now active) histogram data into the time series.
+    /// This method is generally supposed to be called periodically, thus
+    /// defining the unit of time (tick) as far as this API is concerned.
+    void Rotate();
+
+    /// Type of the unit of time
+    using TTicks = unsigned int;
+
+    /// A histograms which covers a certain number of ticks
+    struct STimeBin {
+        STimeBin(STimeBin &&) = default;
+        STimeBin & operator=(STimeBin &&) = default;
+
+        STimeBin(const STimeBin &  other) :
+            histogram(other.histogram.Clone(THistogram::eCloneAll)),
+            n_ticks(other.n_ticks)
+        {}
+
+        STimeBin & operator=(const STimeBin &  other)
+        {
+            histogram = other.histogram.Clone(THistogram::eCloneAll);
+            n_ticks = other.n_ticks;
+        }
+
+        STimeBin(THistogram &&  h, TTicks  t) :
+            histogram(std::move(h)), n_ticks(t)
+        {}
+
+        /// Histogram for the ticks
+        THistogram histogram;
+        /// Number of ticks in this histogram
+        TTicks     n_ticks;
+    };
+    /// Type of the series of histograms
+    using TTimeBins = list<STimeBin>;
+
+    /// Histograms -- in the order from the most recent to the least recent
+    TTimeBins GetHistograms() const;
+
+private:
+    void x_AppendBin(const THistogram& model_histogram, TTicks n_ticks);
+    void x_Shift(size_t index, typename TTimeBins::iterator current_it);
+
+private:
+    TTimeBins           m_TimeBins;
+    mutable std::mutex  m_Mutex;         // for Rotate() and GetHistograms()
+    TTicks              m_CurrentTick;
 };
 
 
@@ -927,6 +997,98 @@ CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
     m_UpperAnomalyCount += other.m_UpperAnomalyCount;
 
     other.Reset();
+}
+
+
+
+template <typename TValue, typename TScale, typename TCounter>
+CHistogramTimeSeries<TValue, TScale, TCounter>::CHistogramTimeSeries(const THistogram& model_histogram) :
+    m_CurrentTick(0)
+{
+    // Need to create the first item in the list
+    x_AppendBin(model_histogram, 1);
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogramTimeSeries<TValue, TScale, TCounter>::Add(TValue value)
+{
+    // The first bin always exists
+    m_TimeBins.front().histogram.Add(value);
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogramTimeSeries<TValue, TScale, TCounter>::Rotate()
+{
+    ++m_CurrentTick;
+
+    m_Mutex.lock();
+    x_Shift(0, m_TimeBins.begin());
+    m_Mutex.unlock();
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t  index,
+       typename ncbi::CHistogramTimeSeries<TValue, TScale, TCounter>::TTimeBins::iterator current_it)
+{
+    if (m_TimeBins.size() <= index + 1) {
+        // There is not enough bins. Need to add one
+        x_AppendBin(m_TimeBins.front().histogram, pow(2, index));
+
+        // Move from index to index + 1
+        auto    next_it = current_it;
+        ++next_it;
+        next_it->histogram.StealCountersFrom(current_it->histogram);
+
+        if (index != 0)
+            current_it->n_ticks /= 2;
+        return;
+    }
+
+    auto    next_it = current_it;
+    ++next_it;
+
+    if (next_it->n_ticks == pow(2, index)) {
+        // Half full bin; make it full and just accumulate
+        next_it->n_ticks *= 2;
+        next_it->histogram.StealCountersFrom(current_it->histogram);
+        if (index != 0)
+            current_it->n_ticks /= 2;
+        return;
+    }
+
+    // The next bin is full; need to move further
+    x_Shift(index + 1, next_it);
+    // Move to the vacant next
+    next_it->histogram.StealCountersFrom(current_it->histogram);
+    // The current one is a half now
+    if (index != 0)
+        current_it->n_ticks /= 2;
+}
+
+template <typename TValue, typename TScale, typename TCounter>
+typename CHistogramTimeSeries<TValue, TScale, TCounter>::TTimeBins
+CHistogramTimeSeries<TValue, TScale, TCounter>::GetHistograms() const
+{
+    m_Mutex.lock();
+    TTimeBins       ret = m_TimeBins;
+    m_Mutex.unlock();
+    return ret;
+}
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogramTimeSeries<TValue, TScale, TCounter>::x_AppendBin(const THistogram& model_histogram,
+                                                            TTicks n_ticks)
+{
+    m_TimeBins.push_back(
+            STimeBin{model_histogram.Clone(THistogram::eCloneStructureOnly),
+                     n_ticks});
 }
 
 
