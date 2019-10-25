@@ -73,10 +73,22 @@ CMsvcSite::CMsvcSite(const string& reg_path)
 
         // Not provided requests
         str = x_GetConfigureEntry("NotProvidedRequests");
-        list<string> not_provided;
-        NStr::Split(str, LIST_SEPARATOR, not_provided, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-        ITERATE (list<string>, it, not_provided) {
-            m_NotProvidedThing.insert(*it);
+        if (!str.empty()) {
+            list<string> not_provided;
+            NStr::Split(str, LIST_SEPARATOR, not_provided, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+            ITERATE (list<string>, it, not_provided) {
+                m_NotProvidedThing.insert(*it);
+            }
+        }
+        // to override project_tree_builder.ini
+        // in env:  NCBI_CONFIG__CONFIGURE__NOTPROVIDED=x,y
+        str = g_GetConfigString("Configure", "NotProvided", nullptr, nullptr);
+        if (!str.empty()) {
+            list<string> not_provided;
+            NStr::Split(str, LIST_SEPARATOR, not_provided, NStr::fSplit_Tokenize);
+            ITERATE (list<string>, it, not_provided) {
+                m_NotProvidedThing.insert(*it);
+            }
         }
 
         string unix_cfg = m_Registry.Get("ProjectTree","MetaData");
