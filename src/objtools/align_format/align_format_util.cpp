@@ -3083,7 +3083,7 @@ static bool s_isAlnInFilteringRange(double evalue,
     //Adjust percent identity and evalue to display values
     percentIdent = adjustPercentIdentToDisplayValue(percentIdent);
     string evalue_buf, bit_score_buf, total_bit_buf, raw_score_buf;
-    double bits;
+    double bits = 0;
 	CAlignFormatUtil::GetScoreString(evalue, bits, 0, 0, evalue_buf, bit_score_buf, total_bit_buf, raw_score_buf);
 	evalue = NStr::StringToDouble(evalue_buf);
 
