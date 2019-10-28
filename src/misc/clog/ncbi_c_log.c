@@ -1,4 +1,4 @@
-/* $Id$
+﻿/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -1186,7 +1186,7 @@ static const char* s_GetToolkitRCLogLocation()
     static const char  kSectionName[] = "[Web_dir_to_port]";
 
     FILE*  fp;
-    char   buf[256];
+    char   buf[FILENAME_MAX];
     char   *line, *token, *p;
     int    inside_section = 0 /*false*/;
     size_t line_size;
@@ -1484,6 +1484,13 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
 #if defined(NCBI_OS_UNIX)
     if (is_applog) {
         int nbuf;
+        /* sprintf() overflow guard */
+        if (strlen(sx_Info->app_base_name) 
+            + 1    /* . */
+            + 10   /* max(uid_t) ~ MAX_UINT32 ~ 4,294,967,295 */
+            >= FILENAME_MAX) {
+            return 0;
+        }
         nbuf = sprintf(filename_buf, "%s.%d", sx_Info->app_base_name, geteuid());
         if (nbuf <= 0) {
             return 0;
@@ -2897,10 +2904,6 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
     }
 
     /* Generate sub hit ID */
-    assert(strlen(hit_id) + 6 <= NCBILOG_HITID_MAX);
-    if (strlen(hit_id) + 6 > NCBILOG_HITID_MAX) {
-        return NULL;
-    }
     if (need_increment) {
         ++(*sub_id);
     }
@@ -2912,6 +2915,10 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
     s_LogSubHitID(ctx, buf);
 
     /* And return new sub hit ID */
+    assert(strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ <= NCBILOG_HITID_MAX);
+    if (strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ > NCBILOG_HITID_MAX) {
+        return NULL;  /* error */
+    }
     n = sprintf(buf, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
     if (n <= 0) {
         return NULL;  /* error */
@@ -3440,8 +3447,7 @@ extern void NcbiLogP_ExtraStr(const char* params)
 }
 
 
-extern void NcbiLog_Perf(int status, double timespan,
-                         const SNcbiLog_Param* params)
+extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
     size_t pos, pos_prev;
