@@ -107,8 +107,12 @@ bool CPslWriter::WriteAlign(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    if (true ||  m_uFlags & CPslWriter::fDebugOutput) {
+    if (m_uFlags & CPslWriter::fDebugOutput) {
+        static int recordCount = 1;
         cerr << ".";
+        if (0 == recordCount++ % 50) {
+            cerr << endl;
+        }
     }
     xWritePreamble();
     switch (align.GetSegs().Which()) {

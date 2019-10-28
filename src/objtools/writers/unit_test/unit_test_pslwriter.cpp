@@ -181,12 +181,12 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CNcbiOfstream ofstr(output.c_str());
     CPslWriter* pWriter = new CPslWriter(*pScope, ofstr, writerFlags);
 
-    CRef<CSeq_align> pAlign(new CSeq_align);
-    *pI >> *pAlign;
-    pWriter->WriteAlign(*pAlign);
+    CRef<CSeq_annot> pAnnot(new CSeq_annot);
+    *pI >> *pAnnot;
+    pWriter->WriteAnnot(*pAnnot);
     while (!pI->EndOfData()) {
-        *pI >> *pAlign;
-        pWriter->WriteAlign(*pAlign);
+        *pI >> *pAnnot;
+        pWriter->WriteAnnot(*pAnnot);
     }
 
     delete pWriter;
@@ -246,12 +246,12 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CNcbiOfstream ofstr(resultName.c_str());
     CPslWriter* pWriter = new CPslWriter(*pScope, ofstr, writerFlags);
 
-    CRef<CSeq_align> pAlign(new CSeq_align);
-    *pI >> *pAlign;
-    pWriter->WriteAlign(*pAlign);
+    CRef<CSeq_annot> pAnnot(new CSeq_annot);
+    *pI >> *pAnnot;
+    pWriter->WriteAnnot(*pAnnot);
     while (!pI->EndOfData()) {
-        *pI >> *pAlign;
-        pWriter->WriteAlign(*pAlign);
+        *pI >> *pAnnot;
+        pWriter->WriteAnnot(*pAnnot);
     }
 
     delete pWriter;
