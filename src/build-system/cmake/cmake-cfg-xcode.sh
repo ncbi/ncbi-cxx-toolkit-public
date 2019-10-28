@@ -140,7 +140,7 @@ if [ $do_help = "yes" ]; then
 fi
 
 ############################################################################# 
-if [ -n $prebuilt_dir ]; then
+if [ -n "$prebuilt_dir" ]; then
   if [ -f $prebuilt_dir/$prebuilt_name/cmake/buildinfo ]; then
     source $prebuilt_dir/$prebuilt_name/cmake/buildinfo
   else
