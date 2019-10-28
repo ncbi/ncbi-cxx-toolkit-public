@@ -2061,7 +2061,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
 #ifndef NCBI_OS_LINUX
     const size_t buf_size = 16 * 1024;
 #else
-    const size_t buf_size = 64 * 1024;
+    const size_t buf_size = 192 * 1024;
 #endif
     size_t total_bytes_written = 0;
     size_t bytes_in_inbuf = 0;
