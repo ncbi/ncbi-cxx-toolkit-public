@@ -140,6 +140,7 @@ CPslRecord::xInitializeInsertsQ(
         }
     }
     mBaseInsertQ = mEndQ - endQQ;
+    mEndQ = endQQ;
 }
 
 //  ----------------------------------------------------------------------------
@@ -172,7 +173,6 @@ CPslRecord::xInitializeInsertsT(
             }
             lastExonEndT = pExon->GetGenomic_end() + 1;
         }
-        mNumInsertT = 0;
     }
     else { // eNa_strand_minus
         int lastExonStartT = -1;
@@ -188,7 +188,6 @@ CPslRecord::xInitializeInsertsT(
             }
             lastExonStartT = pExon->GetGenomic_start();
         }
-        mNumInsertT = 0;
     }
 }
 
@@ -202,9 +201,6 @@ CPslRecord::xInitializeMatchesMismatches(
     if (mMatches != -1  &&  mMisMatches != -1  &&  mRepMatches != -1) {
         return;
     }
-    if (mBaseInsertT == -1) {
-        xInitializeInsertsT(scope, splicedSeg);
-    }
 
     mMatches = mMisMatches = mRepMatches = 0;
     const auto& exonList = splicedSeg.GetExons();
@@ -215,11 +211,10 @@ CPslRecord::xInitializeMatchesMismatches(
                 mMatches += part->GetMatch();
             }
             else if (part->IsMismatch()) {
-                mMatches += part->GetMismatch();
+                mMisMatches += part->GetMismatch();
             }
         } 
     }
-    mMatches += mBaseInsertT;
 }
 
 //  ----------------------------------------------------------------------------
@@ -437,7 +432,8 @@ string
 CPslRecord::xFieldNumInsertQ(bool debug) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(mNumInsertQ);
+    //auto rawString = NStr::IntToString(mNumInsertQ);
+    auto rawString = NStr::IntToString(0);
     if (debug) {
         return sDebugFormatValue("qNumInsert", rawString);
     }
@@ -449,7 +445,8 @@ string
 CPslRecord::xFieldBaseInsertQ(bool debug) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(mBaseInsertQ);
+    //auto rawString = NStr::IntToString(mBaseInsertQ);
+    auto rawString = NStr::IntToString(0);
     if (debug) {
         return sDebugFormatValue("qBaseInsert", rawString);
     }

@@ -88,7 +88,7 @@ bool CPslWriter::WriteAnnot(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    //xWritePreamble();
+    xWritePreamble();
     if (!annot.IsAlign()) {
         return CWriterBase::WriteAnnot(annot, name, descr);
     }
@@ -107,10 +107,10 @@ bool CPslWriter::WriteAlign(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    if (true || m_uFlags & CPslWriter::fDebugOutput) {
+    if (true ||  m_uFlags & CPslWriter::fDebugOutput) {
         cerr << ".";
     }
-    //xWritePreamble();
+    xWritePreamble();
     switch (align.GetSegs().Which()) {
     case CSeq_align::C_Segs::e_Spliced:
         xWriteAlignSlicedSeg(align.GetSegs().GetSpliced());
