@@ -70,6 +70,8 @@ string CBioseqInfoRecord::ToString(void) const
             .append(NStr::NumericToString(m_SeqIdType))
             .append(" GI: ")
             .append(NStr::NumericToString(m_GI))
+            .append(" Name: ")
+            .append(m_Name)
             .append(" DateChanged: ")
             .append(NStr::NumericToString(m_DateChanged))
             .append(" Hash: ")

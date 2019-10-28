@@ -49,6 +49,7 @@ class CBioseqInfoRecord
 {
  public:
     using TAccession = string;
+    using TName = string;
     using TVersion = int16_t;
     using TSeqIdType = int16_t;
     using TDateChanged = int64_t;
@@ -172,6 +173,12 @@ class CBioseqInfoRecord
         return *this;
     }
 
+    CBioseqInfoRecord & SetName(TName  value)
+    {
+        m_Name = value;
+        return *this;
+    }
+
 
     // Getters
     TAccession const & GetAccession(void) const
@@ -249,6 +256,11 @@ class CBioseqInfoRecord
         return m_TaxId;
     }
 
+    TName GetName(void) const
+    {
+        return m_Name;
+    }
+
     string ToString(void) const;
 
  private:
@@ -257,6 +269,7 @@ class CBioseqInfoRecord
     TSeqIdType m_SeqIdType;
     TGI m_GI;
 
+    TName               m_Name;
     TDateChanged        m_DateChanged;
     THash               m_Hash;
     TLength             m_Length;

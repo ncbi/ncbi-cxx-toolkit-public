@@ -110,6 +110,7 @@ message BioseqInfoValue {
         string        sec_seq_id      = 2;
     }
     repeated SecondaryId  seq_ids       =   8;
+    string                name          =   9;
 }
  
  

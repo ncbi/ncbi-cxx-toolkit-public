@@ -16,7 +16,7 @@ LDFLAGS = $(ORIG_LDFLAGS) $(COVERAGE_FLAGS)
 
 REQUIRES = CASSANDRA MT Linux
 
-WATCHERS = satskyse dmitrie1 saprykin
+WATCHERS = satskyse saprykin
 
 #PEDANTIC = -pedantic -Werror -Wextra -Wno-type-limits
 #EXTRA=-fno-omit-frame-pointer -fsanitize=address
