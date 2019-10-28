@@ -78,6 +78,9 @@ protected:
     void xWriteAlignSlicedSeg(
         const CSpliced_seg& splicedSeg);
 
+    void xWriteAlignDenseSeg(
+        const CDense_seg& denseSeg);
+
     CRef<CScope> m_pScope;
 };
 

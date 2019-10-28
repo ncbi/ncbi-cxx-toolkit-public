@@ -379,6 +379,18 @@ CPslRecord::Initialize(
     xInitializeBlocks(scope, splicedSeg);
 }
 
+
+
+//  ----------------------------------------------------------------------------
+void
+CPslRecord::Initialize(
+    CScope& scope,
+    const CDense_seg& denseSeg)
+//  ----------------------------------------------------------------------------
+{
+}
+
+
 //  ----------------------------------------------------------------------------
 string
 CPslRecord::xFieldMatches(bool debug) const

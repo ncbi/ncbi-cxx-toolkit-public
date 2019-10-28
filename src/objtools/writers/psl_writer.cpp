@@ -119,6 +119,9 @@ bool CPslWriter::WriteAlign(
     case CSeq_align::C_Segs::e_Spliced:
         xWriteAlignSlicedSeg(align.GetSegs().GetSpliced());
         return true;
+    case CSeq_align::C_Segs::e_Denseg:
+        xWriteAlignDenseSeg(align.GetSegs().GetDenseg());
+        return true;
     default:
         return false;
     }
@@ -147,6 +150,16 @@ void CPslWriter::xWriteAlignSlicedSeg(
 {
     CPslRecord psl;
     psl.Initialize(*m_pScope, splicedSeg);
+    psl.Write(m_Os, (m_uFlags & fDebugOutput));
+}
+
+//  ----------------------------------------------------------------------------
+void CPslWriter::xWriteAlignDenseSeg(
+    const CDense_seg& denseSeg)
+//  ----------------------------------------------------------------------------
+{
+    CPslRecord psl;
+    psl.Initialize(*m_pScope, denseSeg);
     psl.Write(m_Os, (m_uFlags & fDebugOutput));
 }
 

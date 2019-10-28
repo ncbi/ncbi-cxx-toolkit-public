@@ -77,6 +77,10 @@ public:
         CScope& scope,
         const CSpliced_seg& splicedSeg);
 
+    void Initialize(
+        CScope& scope,
+        const CDense_seg& denseSeg);
+
     void Write(
         ostream& ostr,
         bool debug=false) const;
