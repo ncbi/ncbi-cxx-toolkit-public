@@ -304,9 +304,9 @@ protected:
     void HandleSeqSubmit(CSeq_submit& sub);
     void HandleSeqId(const string& id);
 
-    CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(CObjectIStream& is);
-    CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is);
-    CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
+    CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(CObjectIStream& is, bool report = false);
+    CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is, bool report = false);
+    CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is, bool report = false);
 
     CNcbiOstream* OpenFlatfileOstream(const string& name);
 
@@ -606,7 +606,7 @@ int CAsn2FlatApp::Run(void)
         //  a seq_entry:
         //
         while ( !is->EndOfData() ) {
-            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is, true);
             if ( !seh ) {
                 NCBI_THROW(CException, eUnknown,
                            "Unable to construct Seq-entry object" );
@@ -621,7 +621,7 @@ int CAsn2FlatApp::Run(void)
         //  the wrapped bioseq as a seq_entry:
         //
         while ( !is->EndOfData() ) {
-            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseq(*is);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseq(*is, true);
             if ( !seh ) {
                 NCBI_THROW(CException, eUnknown,
                            "Unable to construct Seq-entry object" );
@@ -636,7 +636,7 @@ int CAsn2FlatApp::Run(void)
         //  process the wrapped bioseq_set as a seq_entry:
         //
         while ( !is->EndOfData() ) {
-            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseqSet(*is);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseqSet(*is, true);
             if ( !seh ) {
                 NCBI_THROW(CException, eUnknown,
                            "Unable to construct Seq-entry object" );
@@ -950,7 +950,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
     return true;
 }
 
-CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is)
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is, bool report)
 {
     try {
         CRef<CSeq_entry> se(new CSeq_entry);
@@ -962,12 +962,14 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is)
         return m_Scope->AddTopLevelSeqEntry(*se);
     }
     catch (CException& e) {
-        ERR_POST(Error << e);
+        if (report) {
+            ERR_POST(Error << e);
+        }
     }
     return CSeq_entry_Handle();
 }
 
-CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(CObjectIStream& is)
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(CObjectIStream& is, bool report)
 {
     try {
         CRef<CBioseq> bs(new CBioseq);
@@ -976,12 +978,14 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(CObjectIStream& is)
         return bsh.GetTopLevelEntry();
     }
     catch (CException& e) {
-        ERR_POST(Error << e);
+        if (report) {
+            ERR_POST(Error << e);
+        }
     }
     return CSeq_entry_Handle();
 }
 
-CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is)
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is, bool report)
 {
     try {
         CRef<CSeq_entry> entry(new CSeq_entry);
@@ -989,7 +993,9 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is)
         return m_Scope->AddTopLevelSeqEntry(*entry);
     }
     catch (CException& e) {
-        ERR_POST(Error << e);
+        if (report) {
+            ERR_POST(Error << e);
+        }
     }
     return CSeq_entry_Handle();
 }
