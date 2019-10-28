@@ -3,6 +3,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <objtools/readers/mod_reader.hpp>
+#include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 
@@ -46,7 +47,7 @@ public:
         : m_pEC(pEC) {}
 
 
-    bool GetMods(const CBioseq& bioseq, TModList& mods);
+    bool GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose);
     void MapFile(const string& fileName, bool allowAcc);
     bool Empty(void) const;
     bool Mapped(void) const;
@@ -60,6 +61,7 @@ private:
     vector<CTempString> m_ColumnNames;
     TLineMap m_LineMap;
     ILineErrorListener* m_pEC;
+    unordered_map<string, size_t> m_ProcessedIdsToLineNum;
 };
 
 

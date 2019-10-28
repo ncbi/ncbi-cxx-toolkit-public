@@ -80,8 +80,67 @@ void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
 }
 
 
+static void sReportMissingMods(
+        ILineErrorListener* pEC,
+        const string& fileName,
+        const CBioseq& bioseq)
+{
 
-bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods) 
+    _ASSERT(pEC);
+
+    string seqId = bioseq.GetId().front()->AsFastaString();
+    string message = 
+        fileName + 
+        " doesn't contain qualifiers for sequence id " +
+        seqId + 
+       "."; 
+
+    AutoPtr<CLineErrorEx> pErr(
+            CLineErrorEx::Create(
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error,
+                0, 0, // code and subcode
+                seqId,
+                0, // lineNumber,
+                message));
+
+    pEC->PutError(*pErr);
+}
+
+
+static void sReportMultipleMatches(
+        ILineErrorListener* pEC,
+        const string& fileName,
+        size_t lineNum,
+        const CBioseq& bioseq)
+{
+    _ASSERT(pEC);
+    string seqId = bioseq.GetId().front()->AsFastaString();
+
+    string message = 
+        "Multiple potential matches for line " + 
+        to_string(lineNum) +
+        " of " + 
+        fileName + "."
+        " Unable to match sequence id " +
+        seqId +
+        " to a previously matched entry.";
+
+    AutoPtr<CLineErrorEx> pErr(
+            CLineErrorEx::Create(
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error,
+                0, 0, // code and subcode
+                seqId,
+                0, // lineNumber,
+                message));
+
+    pEC->PutError(*pErr);
+}
+
+
+
+bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose) 
 {
     mods.clear();
     if (!m_FileMapped) {
@@ -115,11 +174,26 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods)
                     });
         if (it != m_LineMap.end()) {
             x_ProcessLine(it->second.line, mods);
+            auto lineNum = it->second.lineNum;
+            for (const string& entry_id : it->first) {
+                m_ProcessedIdsToLineNum.emplace(entry_id, lineNum);
+            } 
             m_LineMap.erase(it);
             return true;
         }
     }
 
+    for (const auto& id : id_strings) {
+        auto it = m_ProcessedIdsToLineNum.find(id);
+        if (it != end(m_ProcessedIdsToLineNum)) {
+            sReportMultipleMatches(m_pEC, m_pFileMap->GetFileName(), it->second, bioseq);
+            return false;
+        }
+    }
+
+    if (isVerbose) {
+        sReportMissingMods(m_pEC, m_pFileMap->GetFileName(), bioseq);
+    }
     return false;
 }
 
@@ -342,33 +416,6 @@ static void sReportError(
 }
 
 
-static void sReportMissingMods(
-        ILineErrorListener* pEC,
-        const string& fileName,
-        const CBioseq& bioseq)
-{
-
-    _ASSERT(pEC);
-
-    string seqId = bioseq.GetId().front()->AsFastaString();
-    string message = 
-        fileName + 
-        " doesn't contain qualifiers for sequence id " +
-        seqId + 
-       "."; 
-
-    AutoPtr<CLineErrorEx> pErr(
-            CLineErrorEx::Create(
-                ILineError::eProblem_GeneralParsingError,
-                eDiag_Error,
-                0, 0, // code and subcode
-                seqId,
-                0, // lineNumber,
-                message));
-
-    pEC->PutError(*pErr);
-}
-
 
 static void s_PreprocessNoteMods(CModHandler::TModList& mods)
 {
@@ -457,31 +504,25 @@ void g_ApplyMods(
  
             if (pNamedSrcFileMap && pNamedSrcFileMap->Mapped()) {
                 TModList mods;
-                if (pNamedSrcFileMap->GetMods(*pBioseq, mods)) {
+                if (pNamedSrcFileMap->GetMods(*pBioseq, mods, isVerbose)) {
                     s_PreprocessNoteMods(mods); // RW-928
                     mod_handler.AddMods(mods, 
                             CModHandler::ePreserve, 
                             rejectedMods, 
                             fReportError);
                     s_AppendMods(rejectedMods, remainder);
-                }
-                else if (isVerbose) {
-                    sReportMissingMods(pEC, namedSrcFile, *pBioseq);
                 }
             }
 
             if (defaultSrcFileMap.Mapped()) {
                 TModList mods;
-                if (defaultSrcFileMap.GetMods(*pBioseq, mods)) {
+                if (defaultSrcFileMap.GetMods(*pBioseq, mods, isVerbose)) {
                     s_PreprocessNoteMods(mods); // RW-928
                     mod_handler.AddMods(mods, 
                             CModHandler::ePreserve, 
                             rejectedMods, 
                             fReportError);
                     s_AppendMods(rejectedMods, remainder);
-                }
-                else if (isVerbose) {
-                    sReportMissingMods(pEC, defaultSrcFile, *pBioseq);
                 }
             }
 
