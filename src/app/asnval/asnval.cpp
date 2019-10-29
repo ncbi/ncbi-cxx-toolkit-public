@@ -500,11 +500,13 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             CRef<CValidError> eval(new CValidError());
             if (NStr::StartsWith (errstr, "duplicate Bioseq id", NStr::eNocase)) {
                 eval->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, errstr);
+                PrintValidError(eval, args);
+                // ERR_POST(e);
             } else {
                 eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, errstr);
+                PrintValidError(eval, args);
+                ERR_POST(e);
             }
-            PrintValidError(eval, args);
-            ERR_POST(e);
             ++m_Reported;
         }
     }
