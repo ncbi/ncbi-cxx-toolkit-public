@@ -87,6 +87,7 @@ set(NCBI_ThirdParty_NGHTTP2      ${NCBI_TOOLS_ROOT}/nghttp2-1.29.0)
 set(NCBI_ThirdParty_GL2PS        ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0)
 set(NCBI_ThirdParty_GMOCK        ${NCBI_TOOLS_ROOT}/googletest-1.8.1)
 set(NCBI_ThirdParty_CASSANDRA    ${NCBI_TOOLS_ROOT}/datastax-cpp-driver-2.9.0-ncbi1)
+set(NCBI_ThirdParty_H2O          ${NCBI_TOOLS_ROOT}/h2o-2.2.5)
 
 #############################################################################
 #############################################################################
@@ -733,4 +734,11 @@ NCBI_define_component(GL2PS gl2ps)
 # GMOCK
 NCBI_define_component(GMOCK gmock gtest)
 
+#############################################################################
+# CASSANDRA
+NCBI_define_component(CASSANDRA cassandra)
+
+#############################################################################
+# H2O
+NCBI_define_component(H2O h2o)
 
