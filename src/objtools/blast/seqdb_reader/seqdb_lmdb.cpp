@@ -56,7 +56,10 @@ void CBlastLMDBManager::CBlastEnv::InitDbi(lmdb::env & env, ELMDBFileType file_t
 {
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
 	if(file_type == eLMDB) {
+		try {
 	    m_dbis[eDbiAcc2oid] = lmdb::dbi::open(txn, blastdb::acc2oid_str.c_str(), MDB_DUPSORT | MDB_DUPFIXED).handle();
+		}
+		catch (...){ /* It's ok not to have acc in a db */}
 		m_dbis[eDbiVolname] = lmdb::dbi::open(txn, blastdb::volname_str.c_str(), MDB_INTEGERKEY).handle();
 		m_dbis[eDbiVolinof] = lmdb::dbi::open(txn, blastdb::volinfo_str.c_str(), MDB_INTEGERKEY).handle();
 	}
@@ -106,7 +109,23 @@ CBlastLMDBManager::CBlastEnv::~CBlastEnv()
 MDB_dbi CBlastLMDBManager::CBlastEnv::GetDbi(EDbiType dbi_type)
 {
 	if(m_dbis[dbi_type] == UINT_MAX) {
-   		NCBI_THROW( CSeqDBException, eArgErr, "Invalid dbi type");
+		string err = "DB contains no ";
+		switch (dbi_type) {
+		case eDbiVolinof:
+		case eDbiVolname:
+			err += "vol info.";
+			break;
+		case eDbiAcc2oid:
+			err += "accession info.";
+			break;
+		case eDbiTaxid2offset:
+			err += "tax id info";
+			break;
+		default:
+			NCBI_THROW( CSeqDBException, eArgErr, "Invalid dbi type");
+		}
+		NCBI_THROW( CSeqDBException, eArgErr, err);
+
 	}
 	return m_dbis[dbi_type];
 }

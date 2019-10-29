@@ -1386,7 +1386,19 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in,
     }
 
     oids.clear();
-    if (m_LMDBSet.IsBlastDBVersion5()) {
+
+    bool is_BL_ORD_ID = false;
+    if(seqid_in.Which() == CSeq_id::e_General)
+    {
+       const CDbtag & dbt = seqid_in.GetGeneral();
+       if (dbt.CanGetDb()) {
+            if (dbt.GetDb() == "BL_ORD_ID") {
+                    is_BL_ORD_ID = true;
+            }
+       }
+    }
+
+    if (m_LMDBSet.IsBlastDBVersion5() && (!is_BL_ORD_ID)) {
     	if(IsStringId(seqid_in)) {
     		vector<int>  tmp;
     		if(seqid_in.IsPir() || seqid_in.IsPrf()) {
