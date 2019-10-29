@@ -261,6 +261,7 @@ private:
 
     struct RPS_DbInfo	m_RpsDbInfo;
     CRef<CWriteDB>	m_OutputDb;
+    EBlastDbVersion m_DbVer;
     CRef<CTaxIdSet> m_Taxids;
     bool m_Done;
 
@@ -383,6 +384,13 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
     arg_desc->AddOptionalKey(kOutDbName, "database_name",
                              "Name of database to be created\n" +
                               dflt , CArgDescriptions::eString);
+
+    arg_desc->AddDefaultKey("blastdb_version", "version",
+                             "Version of BLAST database to be created",
+                             CArgDescriptions::eInteger,
+                             NStr::NumericToString(static_cast<int>(eBDB_Version5)));
+    arg_desc->SetConstraint("blastdb_version",
+                            new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
 
     arg_desc->AddDefaultKey(kMaxFileSize, "max_file_size_in_bytes",
                             "Maximum file size for database files",
@@ -511,6 +519,7 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 	m_ObsrvThreshold = args[kObsrThreshold].AsDouble();
 	m_ExcludeInvalid = args[kExcludeInvalid].AsBoolean();
 
+    m_DbVer = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
 }
 
 vector<string> CMakeProfileDBApp::x_GetSMPFilenames(void)
@@ -632,7 +641,7 @@ bool CMakeProfileDBApp::x_IsUpdateFreqRatios(const CPssm & p)
 void CMakeProfileDBApp::x_InitOutputDb(void)
 {
 	CWriteDB::EIndexType index_type = (m_CreateIndexFile == true ? CWriteDB::eDefault : CWriteDB::eNoIndex);
-	m_OutputDb.Reset(new CWriteDB(m_OutDbName, CWriteDB::eProtein, m_Title, index_type, m_CreateIndexFile));
+	m_OutputDb.Reset(new CWriteDB(m_OutDbName, CWriteDB::eProtein, m_Title, index_type, m_CreateIndexFile, false, false, m_DbVer));
 	m_OutputDb->SetMaxFileSize(m_MaxFileSize);
 	return;
 }
