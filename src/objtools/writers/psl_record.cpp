@@ -130,6 +130,12 @@ CPslRecord::xInitializeInsertsQ(
 
     int startQQ(-1), endQQ(-1);
     for (auto pExon: exonList) {
+        for (auto pPart: pExon->GetParts()) {
+            if (pPart->IsProduct_ins()) {
+                mNumInsertQ++;
+                mBaseInsertQ += pPart->GetProduct_ins();
+            }
+        }
         int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
         if (startQQ == -1  ||  exonStartQ < startQQ) {
             startQQ = exonStartQ;
@@ -139,7 +145,6 @@ CPslRecord::xInitializeInsertsQ(
             endQQ = exonEndQ + 1;
         }
     }
-    mBaseInsertQ = mEndQ - endQQ;
     mEndQ = endQQ;
 }
 
@@ -285,48 +290,75 @@ CPslRecord::xInitializeBlocks(
     mExonCount = static_cast<int>(exonList.size());
 
     if (mStrandT == eNa_strand_plus) {
-        mExonCount = 0;
         for (auto pExon: exonList) {
             int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
             int exonStartT = static_cast<int>(pExon->GetGenomic_start());
+            mExonStartsQ.push_back(exonStartQ);
+            mExonStartsT.push_back(exonStartT);
+            int blockSize = 0;
+            int productInsertionPending = 0;
             for (auto pPart: pExon->GetParts()) {
-                mExonCount++;
-                mExonStartsQ.push_back(exonStartQ);
-                mExonStartsT.push_back(exonStartT);
-                int blockSize = 0;
+                if (productInsertionPending) {
+                    mExonCount++;
+                    mExonSizes.push_back(blockSize);
+                    mExonStartsQ.push_back(
+                        exonStartQ + blockSize + productInsertionPending);
+                    mExonStartsT.push_back(exonStartT + blockSize);
+                    exonStartQ += blockSize;
+                    exonStartT += blockSize;
+                    blockSize = 0;
+                    productInsertionPending = 0;
+                }
                 if (pPart->IsMatch()) {
                     blockSize += pPart->GetMatch();
                 }
                 else if (pPart->IsMismatch()) {
                     blockSize += pPart->GetMismatch();
                 }
-                mExonSizes.push_back(blockSize);
-                exonStartQ += blockSize;
-                exonStartT += blockSize;
+                else if (pPart->IsProduct_ins()) {
+                    if (blockSize > 0) {
+                        productInsertionPending = pPart->GetProduct_ins();
+                    }
+                }
             }
+            mExonSizes.push_back(blockSize);
+            exonStartQ += blockSize;
+            exonStartT += blockSize;
         }
     }
     else {
-        mExonCount = 0;
         for (auto pExon: exonList) {
             int exonEndT = static_cast<int>(pExon->GetGenomic_end() + 1);
+            int blockSize = 0;
+            int productInsertionPending = 0;
             for (auto pPart: pExon->GetParts()) {
-                mExonCount++;
-                int blockSize = 0;
+                if (productInsertionPending) {
+                    mExonCount++;
+                    mExonSizes.push_back(blockSize);
+                    mExonStartsT.push_back(exonEndT - blockSize);
+                    exonEndT -= blockSize;
+                    blockSize = 0;
+                    productInsertionPending = 0;
+                }
                 if (pPart->IsMatch()) {
                     blockSize += pPart->GetMatch();
                 }
                 else if (pPart->IsMismatch()) {
                     blockSize += pPart->GetMismatch();
                 }
-                exonEndT -= blockSize;
-                mExonStartsT.push_back(exonEndT);
-                mExonSizes.push_back(blockSize);
+                else if (pPart->IsProduct_ins()) {
+                    if (blockSize > 0) {
+                        productInsertionPending = pPart->GetProduct_ins();
+                    }
+                }
             }
+            exonEndT -= blockSize;
+            mExonStartsT.push_back(exonEndT);
+            mExonSizes.push_back(blockSize);
         }
         std::reverse(mExonStartsT.begin(), mExonStartsT.end());
         std::reverse(mExonSizes.begin(), mExonSizes.end());
-        int runningBaseCountQ = mBaseInsertQ;
+        int runningBaseCountQ = mStartQ + mSizeQ - mEndQ;
         for (auto blockSize: mExonSizes) {
             mExonStartsQ.push_back(runningBaseCountQ);
             runningBaseCountQ += blockSize;
@@ -380,6 +412,18 @@ CPslRecord::Initialize(
 }
 
 
+//  ----------------------------------------------------------------------------
+void
+CPslRecord::xValidateSegment(
+    CScope& scope,
+    const CDense_seg& denseSeg)
+//  ----------------------------------------------------------------------------
+{
+    if (denseSeg.GetDim() != 2) {
+        //throw!
+    }
+}
+
 
 //  ----------------------------------------------------------------------------
 void
@@ -388,6 +432,7 @@ CPslRecord::Initialize(
     const CDense_seg& denseSeg)
 //  ----------------------------------------------------------------------------
 {
+    xValidateSegment(scope, denseSeg);
 }
 
 
@@ -444,21 +489,22 @@ string
 CPslRecord::xFieldNumInsertQ(bool debug) const
 //  ----------------------------------------------------------------------------
 {
-    //auto rawString = NStr::IntToString(mNumInsertQ);
-    auto rawString = NStr::IntToString(0);
+    auto rawString = NStr::IntToString(mNumInsertQ);
+    //auto rawString = NStr::IntToString(0);
     if (debug) {
         return sDebugFormatValue("qNumInsert", rawString);
     }
     return "\t" + rawString;
 }
 
+
 //  ----------------------------------------------------------------------------
 string
 CPslRecord::xFieldBaseInsertQ(bool debug) const
 //  ----------------------------------------------------------------------------
 {
-    //auto rawString = NStr::IntToString(mBaseInsertQ);
-    auto rawString = NStr::IntToString(0);
+    auto rawString = NStr::IntToString(mBaseInsertQ);
+    //auto rawString = NStr::IntToString(0);
     if (debug) {
         return sDebugFormatValue("qBaseInsert", rawString);
     }

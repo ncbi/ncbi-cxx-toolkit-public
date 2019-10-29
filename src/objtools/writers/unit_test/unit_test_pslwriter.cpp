@@ -212,7 +212,7 @@ void sUpdateAll(CDir& test_cases_dir)
         kEmptyStringVec,
         kEmptyStringVec,
         testInfoLoader,
-        fFF_Default | fFF_Recursive );
+        fFF_File );
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;

@@ -110,7 +110,11 @@ protected:
     void xInitializeBlocks(
         CScope&,
         const CSpliced_seg&);
-       
+
+    void xValidateSegment(
+        CScope&,
+        const CDense_seg&);
+
     string xFieldMatches(bool debug) const;
     string xFieldMisMatches(bool debug) const;
     string xFieldRepMatches(bool debug) const;
