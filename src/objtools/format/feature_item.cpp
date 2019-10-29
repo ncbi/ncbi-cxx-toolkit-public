@@ -5350,6 +5350,50 @@ bool CFeatureItem::x_AddFTableGeneQuals(
     return (gene.IsSetPseudo()  &&  gene.GetPseudo());
 }
 
+
+void CFeatureItem::x_AddFTableAnticodon(
+        const CTrna_ext& trna_ext,
+        CBioseqContext& ctx)
+{
+
+
+    if (!trna_ext.IsSetAnticodon()) {
+        return;
+    }
+
+    const auto& loc = trna_ext.GetAnticodon();
+    string pos = CFlatSeqLoc(loc, ctx).GetString();
+
+    string aa;
+    switch(trna_ext.GetAa().Which()) {
+    case CTrna_ext::C_Aa::e_Iupacaa:
+        aa = GetAAName(trna_ext.GetAa().GetIupacaa(), true);
+        break;
+    case CTrna_ext::C_Aa::e_Ncbieaa:
+        aa = GetAAName(trna_ext.GetAa().GetNcbieaa(), true);
+        break;
+    case CTrna_ext::C_Aa::e_Ncbi8aa:
+        aa = GetAAName(trna_ext.GetAa().GetNcbi8aa(), false);
+        break;
+    case CTrna_ext::C_Aa::e_Ncbistdaa:
+        aa = GetAAName(trna_ext.GetAa().GetNcbistdaa(), false);
+        break;
+    }
+
+    string seq("---");
+    try {
+        CSeqVector seq_vec(loc, ctx.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        seq_vec.GetSeqData(0, 3, seq);
+        NStr::ToLower(seq);
+    }
+    catch(...) 
+    {}
+
+
+    x_AddFTableQual("anticodon", "(pos:" + pos + ",aa:" + aa + ",seq:" + seq + ")");
+
+}
+
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddFTableRnaQuals(
     const CMappedFeat& feat, 
@@ -5373,6 +5417,8 @@ void CFeatureItem::x_AddFTableRnaQuals(
             feature::GetLabel(feat.GetOriginalFeature(), &label,
                               feature::fFGL_Content, &ctx.GetScope());
             x_AddFTableQual("product", label);
+            // check for anticodon
+             x_AddFTableAnticodon(ext.GetTRNA(), ctx);
         }
         else if ( ext.IsGen() ) {
             const CRNA_gen& gen = ext.GetGen();

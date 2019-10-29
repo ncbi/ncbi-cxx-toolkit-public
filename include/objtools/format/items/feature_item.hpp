@@ -51,6 +51,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CTrna_ext;
 
 //  ============================================================================
 class NCBI_FORMAT_EXPORT CFeatHeaderItem : 
@@ -259,6 +260,7 @@ protected:
     void x_AddFTableQuals(CBioseqContext& ctx);
     bool x_AddFTableGeneQuals(const CSeqFeatData::TGene& gene);
     void x_AddFTableRnaQuals(const CMappedFeat& feat, CBioseqContext& ctx);
+    void x_AddFTableAnticodon(const CTrna_ext& trna_ext, CBioseqContext& ctx);
     static string x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_local, bool giOK);
     void x_AddFTableCdregionQuals(const CMappedFeat& feat, CBioseqContext& ctx);
     void x_AddFTableProtQuals(const CMappedFeat& prot);
