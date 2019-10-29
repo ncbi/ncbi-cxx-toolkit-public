@@ -966,12 +966,12 @@ void CProcessor::AddWGSMaster(CLoadLockSetter& blob)
             int mask = kGoodDescrMask;
             TUserObjectTypesSet existing_uo_types;
             if ( kAddMasterDescrToTSE ) {
-                // exclude existing descr types except User
-                mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | (1<<CSeqdesc::e_User);
+                // exclude existing descr types except forced ones (User, Pub, Comment)
+                mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | kForceDescrMask;
                 lock->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
                 if ( lock->IsSet() ) {
                     if ( auto first_entry = lock->GetSet().GetFirstEntry() ) {
-                        mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | (1<<CSeqdesc::e_User);
+                        mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | kForceDescrMask;
                         first_entry->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
                     }
                 }
