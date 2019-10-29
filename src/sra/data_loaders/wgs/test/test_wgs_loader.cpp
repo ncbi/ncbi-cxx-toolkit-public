@@ -42,7 +42,7 @@
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objects/general/Dbtag.hpp>
+#include <objects/general/general__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqset/seqset__.hpp>
@@ -2286,6 +2286,49 @@ BOOST_AUTO_TEST_CASE(TestReplaced)
     
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ABAJ01000001"));
     BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
+{
+    LOG_POST("Checking WGS master sequence descriptors");
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+    scope.AddDefaults();
+    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("BASL01000795.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 3);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
 }
 
 
