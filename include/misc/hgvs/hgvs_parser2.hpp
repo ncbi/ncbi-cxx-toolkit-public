@@ -92,6 +92,7 @@ public:
         m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__LRG(scope)));
         m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__CCDS(scope)));
         //m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__GeneSymbol(scope, tax_id)));
+        (void)tax_id; // FIXME remove this and solve the warnings about unused parameter
         m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver(scope)));
     }
 
