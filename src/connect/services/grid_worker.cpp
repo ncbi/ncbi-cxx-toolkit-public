@@ -918,7 +918,7 @@ void SGridWorkerNodeImpl::AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
         m_Watchers[&job_watcher] = owner == eTakeOwnership ?
                 AutoPtr<IWorkerNodeJobWatcher>(&job_watcher) :
                 AutoPtr<IWorkerNodeJobWatcher>();
-};
+}
 
 void CGridWorkerNode::SetListener(IGridWorkerNodeApp_Listener* listener)
 {

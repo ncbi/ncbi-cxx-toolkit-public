@@ -151,26 +151,26 @@ CCompoundIDField CCompoundIDField::GetNextHomogeneous()
         return (ret_type) m_Impl->member; \
     }
 
-CIF_GET_IMPL(Uint8, GetID, eCIT_ID, m_Uint8Value);
-CIF_GET_IMPL(Int8, GetInteger, eCIT_Integer, m_Int8Value);
-CIF_GET_IMPL(string, GetServiceName, eCIT_ServiceName, m_StringValue);
-CIF_GET_IMPL(string, GetDatabaseName, eCIT_DatabaseName, m_StringValue);
-CIF_GET_IMPL(Int8, GetTimestamp, eCIT_Timestamp, m_Int8Value);
-CIF_GET_IMPL(Uint4, GetRandom, eCIT_Random, m_Uint4Value);
+CIF_GET_IMPL(Uint8, GetID, eCIT_ID, m_Uint8Value)
+CIF_GET_IMPL(Int8, GetInteger, eCIT_Integer, m_Int8Value)
+CIF_GET_IMPL(string, GetServiceName, eCIT_ServiceName, m_StringValue)
+CIF_GET_IMPL(string, GetDatabaseName, eCIT_DatabaseName, m_StringValue)
+CIF_GET_IMPL(Int8, GetTimestamp, eCIT_Timestamp, m_Int8Value)
+CIF_GET_IMPL(Uint4, GetRandom, eCIT_Random, m_Uint4Value)
 CIF_GET_IMPL_(Uint4, GetIPv4Address, eCIT_IPv4Address, m_Impl->m_Type != eCIT_IPv4Address &&
-        m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_IPv4Addr);
-CIF_GET_IMPL(string, GetHost, eCIT_Host, m_StringValue);
+        m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_IPv4Addr)
+CIF_GET_IMPL(string, GetHost, eCIT_Host, m_StringValue)
 CIF_GET_IMPL_(Uint2, GetPort, eCIT_Port, m_Impl->m_Type != eCIT_Port &&
-        m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_Port);
-CIF_GET_IMPL(string, GetObjectRef, eCIT_ObjectRef, m_StringValue);
-CIF_GET_IMPL(string, GetString, eCIT_String, m_StringValue);
-CIF_GET_IMPL(bool, GetBoolean, eCIT_Boolean, m_BoolValue);
-CIF_GET_IMPL(Uint8, GetFlags, eCIT_Flags, m_Uint8Value);
-CIF_GET_IMPL(string, GetLabel, eCIT_Label, m_StringValue);
-CIF_GET_IMPL(Uint8, GetCue, eCIT_Cue, m_Uint8Value);
-CIF_GET_IMPL(string, GetSeqID, eCIT_SeqID, m_StringValue);
-CIF_GET_IMPL(Uint8, GetTaxID, eCIT_TaxID, m_Uint8Value);
-CIF_GET_IMPL(const CCompoundID&, GetNestedCID, eCIT_NestedCID, m_NestedCID);
+        m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_Port)
+CIF_GET_IMPL(string, GetObjectRef, eCIT_ObjectRef, m_StringValue)
+CIF_GET_IMPL(string, GetString, eCIT_String, m_StringValue)
+CIF_GET_IMPL(bool, GetBoolean, eCIT_Boolean, m_BoolValue)
+CIF_GET_IMPL(Uint8, GetFlags, eCIT_Flags, m_Uint8Value)
+CIF_GET_IMPL(string, GetLabel, eCIT_Label, m_StringValue)
+CIF_GET_IMPL(Uint8, GetCue, eCIT_Cue, m_Uint8Value)
+CIF_GET_IMPL(string, GetSeqID, eCIT_SeqID, m_StringValue)
+CIF_GET_IMPL(Uint8, GetTaxID, eCIT_TaxID, m_Uint8Value)
+CIF_GET_IMPL(const CCompoundID&, GetNestedCID, eCIT_NestedCID, m_NestedCID)
 
 
 SCompoundIDFieldImpl* SCompoundIDImpl::AppendField(
@@ -243,20 +243,20 @@ CCompoundIDField CCompoundID::GetFirst(ECompoundIDFieldType field_type)
         m_Impl->AppendField(field_type)->member = value; \
     }
 
-CID_APPEND_IMPL(AppendID, eCIT_ID, Uint8, m_Uint8Value);
-CID_APPEND_IMPL(AppendInteger, eCIT_Integer, Int8, m_Int8Value);
+CID_APPEND_IMPL(AppendID, eCIT_ID, Uint8, m_Uint8Value)
+CID_APPEND_IMPL(AppendInteger, eCIT_Integer, Int8, m_Int8Value)
 CID_APPEND_IMPL(AppendServiceName, eCIT_ServiceName,
-        const string&, m_StringValue);
+        const string&, m_StringValue)
 CID_APPEND_IMPL(AppendDatabaseName, eCIT_DatabaseName,
-        const string&, m_StringValue);
-CID_APPEND_IMPL(AppendTimestamp, eCIT_Timestamp, Int8, m_Int8Value);
+        const string&, m_StringValue)
+CID_APPEND_IMPL(AppendTimestamp, eCIT_Timestamp, Int8, m_Int8Value)
 
 void CCompoundID::AppendCurrentTime()
 {
     AppendTimestamp(time(NULL));
 }
 
-CID_APPEND_IMPL(AppendRandom, eCIT_Random, Uint4, m_Uint4Value);
+CID_APPEND_IMPL(AppendRandom, eCIT_Random, Uint4, m_Uint4Value)
 
 void CCompoundID::AppendRandom()
 {
@@ -264,9 +264,9 @@ void CCompoundID::AppendRandom()
 }
 
 CID_APPEND_IMPL(AppendIPv4Address, eCIT_IPv4Address,
-        Uint4, m_IPv4SockAddr.m_IPv4Addr);
-CID_APPEND_IMPL(AppendHost, eCIT_Host, const string&, m_StringValue);
-CID_APPEND_IMPL(AppendPort, eCIT_Port, Uint2, m_IPv4SockAddr.m_Port);
+        Uint4, m_IPv4SockAddr.m_IPv4Addr)
+CID_APPEND_IMPL(AppendHost, eCIT_Host, const string&, m_StringValue)
+CID_APPEND_IMPL(AppendPort, eCIT_Port, Uint2, m_IPv4SockAddr.m_Port)
 
 void CCompoundID::AppendIPv4SockAddr(Uint4 ipv4_address, Uint2 port_number)
 {
@@ -275,16 +275,16 @@ void CCompoundID::AppendIPv4SockAddr(Uint4 ipv4_address, Uint2 port_number)
     new_field->m_IPv4SockAddr.m_Port = port_number;
 }
 
-CID_APPEND_IMPL(AppendObjectRef, eCIT_ObjectRef, const string&, m_StringValue);
-CID_APPEND_IMPL(AppendString, eCIT_String, const string&, m_StringValue);
-CID_APPEND_IMPL(AppendBoolean, eCIT_Boolean, bool, m_BoolValue);
-CID_APPEND_IMPL(AppendFlags, eCIT_Flags, Uint8, m_Uint8Value);
-CID_APPEND_IMPL(AppendLabel, eCIT_Label, const string&, m_StringValue);
-CID_APPEND_IMPL(AppendCue, eCIT_Cue, Uint8, m_Uint8Value);
-CID_APPEND_IMPL(AppendSeqID, eCIT_SeqID, const string&, m_StringValue);
-CID_APPEND_IMPL(AppendTaxID, eCIT_TaxID, Uint8, m_Uint8Value);
+CID_APPEND_IMPL(AppendObjectRef, eCIT_ObjectRef, const string&, m_StringValue)
+CID_APPEND_IMPL(AppendString, eCIT_String, const string&, m_StringValue)
+CID_APPEND_IMPL(AppendBoolean, eCIT_Boolean, bool, m_BoolValue)
+CID_APPEND_IMPL(AppendFlags, eCIT_Flags, Uint8, m_Uint8Value)
+CID_APPEND_IMPL(AppendLabel, eCIT_Label, const string&, m_StringValue)
+CID_APPEND_IMPL(AppendCue, eCIT_Cue, Uint8, m_Uint8Value)
+CID_APPEND_IMPL(AppendSeqID, eCIT_SeqID, const string&, m_StringValue)
+CID_APPEND_IMPL(AppendTaxID, eCIT_TaxID, Uint8, m_Uint8Value)
 CID_APPEND_IMPL(AppendNestedCID, eCIT_NestedCID,
-        const CCompoundID&, m_NestedCID);
+        const CCompoundID&, m_NestedCID)
 
 CCompoundIDField CCompoundID::GetLastField()
 {

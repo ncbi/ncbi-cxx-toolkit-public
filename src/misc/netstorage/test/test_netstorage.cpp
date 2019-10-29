@@ -1257,7 +1257,7 @@ string TServer::GetInitString()
         append("&domain=").append(TNetStorage_AppDomain::GetDefault()).
         append("&client=" APP_NAME).
         append("&err_mode=ignore");
-};
+}
 
 string TServer::GetNotFound()
 {

@@ -147,7 +147,7 @@ bool CRemoteAppRemoverTask::operator()(int current, int max_attempts) const
     }
 
     return false;
-};
+}
 
 // This class is responsibe for removing tmp directories
 class CRemoteAppRemover : public CAsyncTaskProcessor<CRemoteAppRemoverTask>
