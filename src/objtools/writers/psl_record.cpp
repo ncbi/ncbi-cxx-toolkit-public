@@ -167,9 +167,15 @@ CPslRecord::xInitializeInsertsT(
     if (mStrandT == eNa_strand_plus) {
         int lastExonEndT = -1;
         for (auto pExon: exonList) {
+             for (auto pPart: pExon->GetParts()) {
+                if (pPart->IsGenomic_ins()) {
+                    mNumInsertT++;
+                    mBaseInsertT += pPart->GetGenomic_ins();
+                }
+            }
             if (lastExonEndT == -1) {
-                lastExonEndT = pExon->GetGenomic_end() + 1;
-                continue;
+                 lastExonEndT = pExon->GetGenomic_end() + 1;
+                 continue;
             }
             auto exonStart = pExon->GetGenomic_start();
             if (exonStart > lastExonEndT) {
@@ -182,6 +188,12 @@ CPslRecord::xInitializeInsertsT(
     else { // eNa_strand_minus
         int lastExonStartT = -1;
         for (auto pExon: exonList) {
+            for (auto pPart: pExon->GetParts()) {
+                if (pPart->IsGenomic_ins()) {
+                    mNumInsertT++;
+                    mBaseInsertT += pPart->GetGenomic_ins();
+                }
+            }
             if (lastExonStartT == -1) {
                 lastExonStartT = pExon->GetGenomic_start();
                 continue;
@@ -297,6 +309,7 @@ CPslRecord::xInitializeBlocks(
             mExonStartsT.push_back(exonStartT);
             int blockSize = 0;
             int productInsertionPending = 0;
+            int genomicInsertionPending = 0;
             for (auto pPart: pExon->GetParts()) {
                 if (productInsertionPending) {
                     mExonCount++;
@@ -309,6 +322,17 @@ CPslRecord::xInitializeBlocks(
                     blockSize = 0;
                     productInsertionPending = 0;
                 }
+                if (genomicInsertionPending) {
+                    mExonCount++;
+                    mExonSizes.push_back(blockSize);
+                    mExonStartsQ.push_back(exonStartQ + blockSize);
+                    mExonStartsT.push_back(
+                        exonStartT + blockSize + genomicInsertionPending);
+                    exonStartQ += blockSize;
+                    exonStartT += blockSize;
+                    blockSize = 0;
+                    genomicInsertionPending = 0;
+                }
                 if (pPart->IsMatch()) {
                     blockSize += pPart->GetMatch();
                 }
@@ -318,6 +342,11 @@ CPslRecord::xInitializeBlocks(
                 else if (pPart->IsProduct_ins()) {
                     if (blockSize > 0) {
                         productInsertionPending = pPart->GetProduct_ins();
+                    }
+                }
+                else if (pPart->IsGenomic_ins()) {
+                    if (blockSize > 0) {
+                        genomicInsertionPending = pPart->GetGenomic_ins();
                     }
                 }
             }
