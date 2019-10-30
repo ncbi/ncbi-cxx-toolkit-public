@@ -77,6 +77,7 @@ static const string kOutIndexFile("index");
 static const string kObsrThreshold("obsr_threshold");
 static const string kExcludeInvalid("exclude_invalid");
 static const string kBinaryScoremat("binary");
+static const string kUseCmdlineThreshold("force");
 
 static const string kLogFile("logfile");
 
@@ -274,6 +275,7 @@ private:
 	Int4 m_CurrObsrOffset;
 
 	bool m_UpdateFreqRatios;
+	bool m_UseModelThreshold;
 };
 
 CMakeProfileDBApp::CMakeProfileDBApp(void)
@@ -283,7 +285,7 @@ CMakeProfileDBApp::CMakeProfileDBApp(void)
                   m_GapExtPenalty(0), m_PssmScaleFactor(0),m_Matrix(kEmptyStr),  m_op_mode(op_invalid),
                   m_binary_scoremat(false), m_Taxids(new CTaxIdSet()), m_Done(false),
                   m_ObsrvThreshold(0), m_ExcludeInvalid(false), m_CurrFreqOffset(0), m_CurrObsrOffset(0),
-                  m_UpdateFreqRatios(true)
+                  m_UpdateFreqRatios(true), m_UseModelThreshold(true)
 {
 	CRef<CVersion> version(new CVersion());
 	version->SetVersionInfo(new CBlastVersion());
@@ -379,6 +381,7 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
     						"Minimum word score to add a word to the lookup table",
     						CArgDescriptions::eDouble,
     						NStr::DoubleToString(kDefaultWordScoreThreshold));
+    arg_desc->AddFlag(kUseCmdlineThreshold, "Use cmdline threshold", true);
 
     arg_desc->SetCurrentGroup("Output options");
     arg_desc->AddOptionalKey(kOutDbName, "database_name",
@@ -519,6 +522,9 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 	m_ObsrvThreshold = args[kObsrThreshold].AsDouble();
 	m_ExcludeInvalid = args[kExcludeInvalid].AsBoolean();
 
+	if (args[kUseCmdlineThreshold]){
+		m_UseModelThreshold = false;
+	}
     m_DbVer = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
 }
 
@@ -854,7 +860,7 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
     	     // asn1 default value is 1
     	     m_RpsDbInfo.scale_factor = 1.0;
     	 }
-    	 if(pssm_w_parameters.GetPssm().GetFinalData().IsSetWordScoreThreshold())
+    	 if(m_UseModelThreshold && pssm_w_parameters.GetPssm().GetFinalData().IsSetWordScoreThreshold())
     	 {
     	 	 wordScoreThreshold = pssm_w_parameters.GetPssm().GetFinalData().GetWordScoreThreshold();
     	 }
@@ -1357,7 +1363,7 @@ int CMakeProfileDBApp::x_Run(void)
                 }
             }
 
-			if(pssm.GetFinalData().IsSetWordScoreThreshold()) {
+			if(m_UseModelThreshold && pssm.GetFinalData().IsSetWordScoreThreshold()) {
 			 	m_RpsDbInfo.lookup->threshold = m_RpsDbInfo.scale_factor * pssm_w_parameters.GetPssm().GetFinalData().GetWordScoreThreshold();
 			}
 			else {
