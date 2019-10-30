@@ -75,7 +75,7 @@ case "$with_3psw" in
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
-                     libxlsxwriter, protobuf, grpc, msgsl, aws-sdk],
+                     libxlsxwriter, protobuf, grpc, msgsl, aws-sdk, hiredis],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -573,6 +573,10 @@ AC_ARG_WITH(aws-sdk,
    [ --with-aws-sdk=DIR      use Amazon Web Services SDK installation in DIR])
 AC_ARG_WITH(aws-sdk,
    [ --without-aws-sdk       do not use the Amazon Web Services SDK])
+AC_ARG_WITH(hiredis,
+   [ --with-hiredis=DIR      use Hiredis installation in DIR])
+AC_ARG_WITH(grpc,
+   [ --without-hiredis       do not use Hiredis])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -639,7 +643,7 @@ gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
-libxlsxwriter protobuf grpc msgsl aws-sdk \
+libxlsxwriter protobuf grpc msgsl aws-sdk hiredis \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -715,7 +719,8 @@ for x_arg in "$@" ; do
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
-      | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* )
+      | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* \
+      | --with-hiredis=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -8322,6 +8327,16 @@ else
     AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
 fi
 
+NCBI_CHECK_THIRD_PARTY_LIB(hiredis,
+   [AC_LANG_PROGRAM([[#include <hiredis/hiredis.h>]],
+       [[redisReader* r = redisReaderCreate();]])])
+if test "$with_hiredis" != no \
+      -a -f "$HIREDIS_PATH/lib/libhiredis-static.a"; then
+    HIREDIS_STATIC_LIBS="-L$HIREDIS_PATH/lib -lhiredis-static"
+else
+    HIREDIS_STATIC_LIBS=$HIREDIS_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -9078,6 +9093,7 @@ AC_SUBST(GRPC_CPP_PLUGIN)
 AC_SUBST(GRPC_BIN)
 AC_SUBST(MSGSL_INCLUDE)
 AC_SUBST(AWS_SDK_STATIC_LIBS)
+AC_SUBST(HIREDIS_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)

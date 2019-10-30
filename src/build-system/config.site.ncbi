@@ -57,6 +57,7 @@ try_local() {
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/h2o.h"         &&  : ${H2O_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
+        test -d "$d/include/hiredis"       &&  : ${HIREDIS_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -f "$d/include/influxdb.hpp"  &&  : ${INFLUXDB_PATH=$d}
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
@@ -202,6 +203,8 @@ esac
 : ${H2O_PATH=$NCBI/h2o-2.2.5}
 
 : ${HDF5_PATH=$NCBI/hdf5-1.8.3}
+
+: ${HIREDIS_PATH=$NCBI/hiredis-0.14.0}
 
 case "$ncbi_platform" in
     *MAC       ) ;;
