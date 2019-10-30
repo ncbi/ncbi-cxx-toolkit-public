@@ -62,6 +62,9 @@
 /* Define to 1 if the `Boost.Regex' library is available. */
 #undef HAVE_BOOST_REGEX
 
+/* Define to 1 if the `Boost.Serialization' library is available. */
+#undef HAVE_BOOST_SERIALIZATION
+
 /* Define to 1 if the `Boost.Spirit' headers are available. */
 #undef HAVE_BOOST_SPIRIT
 
