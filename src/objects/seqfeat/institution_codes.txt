@@ -907,7 +907,7 @@ CCCR	s	Federal University of Tocantins
 CCCryo<DEU>	c	Culture Collection of Cryophilic Algae			
 CCCS	c	Culture Collection of Ciliates and their Symbionts			
 CCCZ	s	University of Malawi			
-CCDB<BRA>	s	Crustacean Collection of the Department of Biology			
+CCDB<BRA>	s	Crustacean Collection of the Department of Biology	USP:CCDB		
 CCDM<CHN>	c	Culture Collection of Department of Microbiology			
 CCDM<CZH>	c	Culture Collection of Dairy Microorganisms Laktoflora			
 CCDMBI	c	Culture Collection, Department of Microbiology			
@@ -4569,6 +4569,7 @@ MU<USA-OH>	s	Miami University, Botany Department, Willard Sherman Turrell Herbar
 MU<USA-TX>	s	Midwestern University			
 MUACC	c	Murdoch University Algal Culture Collection			
 MUAF	c	Culture collection of Mendel University of Agriculture and Forestry in Brno			
+MUAP	s	Museo del Mar Universidad Arturo Prat			
 MUB	s	Universidad de Murcia, Departamento de Biologia Vegetal, Botanica			
 MUB:ALGAS	s	Universidad de Murcia, Departamento de Biologia Vegetal, Botanica, Algal Collection		
 MUB:BRIOFITOS	s	Universidad de Murcia, Departamento de Biologia Vegetal, Botanica, Bryophyta Collection		
