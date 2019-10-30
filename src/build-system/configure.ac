@@ -3266,6 +3266,7 @@ fi
 
 #### Manage the debug-vs.-optimization flags ("--with(out)-(max-)debug",
 #### "--with(out)-symbols", "--with(out)-optimization")
+asan_sfx=''
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" -o "$with_tcheck" != "no"; then
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
@@ -3276,7 +3277,7 @@ if test "$compiler" != "MSVC" ; then
    if test "${with_max_debug-no}" != "no"; then
       case "$compiler:$with_max_debug" in
          GCC:thread ) sanitize=-fsanitize=thread ;;
-         GCC:yes    ) sanitize=-fsanitize=address ;;
+         GCC:yes    ) sanitize=-fsanitize=address; asan_sfx=ASan ;;
          *:yes      ) ;;
          *          )
             AC_MSG_ERROR([--with-max-debug=$with_max_debug unimplemented for compiler $compiler])
@@ -8214,7 +8215,11 @@ case "$with_grpc" in
 esac
 if test -d "$GRPC_PATH"; then
    NCBI_FIX_DIR(GRPC_PATH)
-   for d in "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+   for d in "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
+            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
+            "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$asan_sfx" \
+            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$asan_sfx" \
+            "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
             "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
             "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
             "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
