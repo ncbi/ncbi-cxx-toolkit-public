@@ -1498,6 +1498,13 @@
 #  define NCBI_ID2PROC_CDD_EXPORT NCBI_DLL_IMPORT
 #endif
 
+ /* Export specifier for library ncbi_xloader_cdd
+  */
+#ifdef NCBI_XLOADER_CDD_EXPORTS
+#  define NCBI_XLOADER_CDD_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XLOADER_CDD_EXPORT NCBI_DLL_IMPORT
+#endif
 
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */

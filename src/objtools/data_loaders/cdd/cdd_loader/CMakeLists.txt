@@ -2,5 +2,4 @@
 # $Id$
 #############################################################################
 
-NCBI_add_subdirectory(cdd_access id2proc_cdd cdd_loader)
-
+NCBI_add_library(ncbi_xloader_cdd)
