@@ -31,10 +31,15 @@ CDD-Request ::= SEQUENCE {
         serial-number  INTEGER OPTIONAL,
 
         request CHOICE {
+		
                 -- get blob-id for the seq-id
-                get-blob-id    Seq-id,
+                get-blob-id           Seq-id,
+
                 -- get data for the blob-id
-                get-blob       ID2-Blob-Id
+                get-blob              ID2-Blob-Id,
+
+                -- get data for the seq-id
+                get-blob-by-seq-id    Seq-id
         }
 }
 
@@ -52,6 +57,7 @@ CDD-Request ::= SEQUENCE {
 -- reply must have end-of-reply flag set.
 
 CDD-Reply ::= SEQUENCE {
+
         -- request's serial number, copy from request
         serial-number  INTEGER OPTIONAL,
 
@@ -62,14 +68,35 @@ CDD-Reply ::= SEQUENCE {
         end-of-reply   NULL OPTIONAL,
 
         reply CHOICE {
-                empty          NULL, -- no data found for the request
-                get-blob-id    CDD-Reply-Get-Blob-Id,
-                get-blob       Seq-annot
+
+                -- no data found for the request
+                empty                 NULL,
+
+                -- return blob-id for get-blob-id request
+                get-blob-id           CDD-Reply-Get-Blob-Id,
+
+                -- return Seq-annot for get-blob request
+                get-blob              Seq-annot,
+
+                -- return (Seq-annot + blob-id) for get-blob-by-seq-id request
+                get-blob-by-seq-id    CDD-Reply-Get-Blob-By-Seq-Id
         }
+}
+
+-- Reply to the get-blob-by-seq-id request.
+-- Reply is a composite of get-blob-id + get-blob replies.
+CDD-Reply-Get-Blob-By-Seq-Id ::= SEQUENCE {
+
+        -- return Seq-annot (like a get-blob request)
+        blob       Seq-annot,
+        
+        -- return blob-id (like a get-blob-id request)
+        blob-id    CDD-Reply-Get-Blob-Id
 }
 
 -- Reply to get-blob-id request.
 CDD-Reply-Get-Blob-Id ::= SEQUENCE {
+
         -- seq-id used in the CDD annotation
         seq-id         Seq-id,
 
