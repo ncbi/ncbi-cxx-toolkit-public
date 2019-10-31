@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = convert_to_fasta cache_test
+APP_PROJ = convert_to_fasta cache_test fasta_parsable
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
