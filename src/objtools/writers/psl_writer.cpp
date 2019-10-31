@@ -64,7 +64,8 @@ CPslWriter::CPslWriter(
     CScope& scope,
     CNcbiOstream& ostr,
     unsigned int uFlags) :
-    CWriterBase(ostr, uFlags) 
+    CWriterBase(ostr, uFlags),
+    mRecordCounter(0)
 //  ----------------------------------------------------------------------------
 {
     m_pScope.Reset(&scope);
@@ -107,11 +108,11 @@ bool CPslWriter::WriteAlign(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    if (m_uFlags & CPslWriter::fDebugOutput) {
-        static int recordCount = 1;
+    ++mRecordCounter;
+    if (true  ||  m_uFlags & CPslWriter::fDebugOutput) {
         cerr << ".";
-        if (0 == recordCount++ % 50) {
-            cerr << endl;
+        if (0 == mRecordCounter % 50) {
+            cerr << " " << mRecordCounter << endl;
         }
     }
     xWritePreamble();

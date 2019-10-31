@@ -82,6 +82,8 @@ protected:
         const CDense_seg& denseSeg);
 
     CRef<CScope> m_pScope;
+
+    int mRecordCounter;
 };
 
 END_objects_SCOPE

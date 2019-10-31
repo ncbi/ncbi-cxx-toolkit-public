@@ -1,0 +1,142 @@
+Seq-annot ::= {
+  desc {
+    name "D:\testing\rw\0255\rw-255-100.asnb",
+    title "rw-255-100"
+  },
+  data align {
+    {
+      type global,
+      dim 2,
+      segs spliced {
+        product-id gi 201023342,
+        genomic-id gi 568815597,
+        product-strand plus,
+        genomic-strand plus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 198,
+            genomic-start 151762968,
+            genomic-end 151763166,
+            parts {
+              match 199
+            },
+            scores {
+              {
+                id str "score",
+                value real { 199, 10, 0 }
+              },
+              {
+                id str "idty",
+                value real { 1, 10, 0 }
+              }
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 199,
+            product-end nucpos 335,
+            genomic-start 151767162,
+            genomic-end 151767298,
+            parts {
+              match 137
+            },
+            scores {
+              {
+                id str "score",
+                value real { 137, 10, 0 }
+              },
+              {
+                id str "idty",
+                value real { 1, 10, 0 }
+              }
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 336,
+            product-end nucpos 511,
+            genomic-start 151768057,
+            genomic-end 151768232,
+            parts {
+              match 176
+            },
+            scores {
+              {
+                id str "score",
+                value real { 176, 10, 0 }
+              },
+              {
+                id str "idty",
+                value real { 1, 10, 0 }
+              }
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 512,
+            product-end nucpos 597,
+            genomic-start 151770171,
+            genomic-end 151770256,
+            parts {
+              match 86
+            },
+            scores {
+              {
+                id str "score",
+                value real { 86, 10, 0 }
+              },
+              {
+                id str "idty",
+                value real { 1, 10, 0 }
+              }
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 598,
+            product-end nucpos 851,
+            genomic-start 151771076,
+            genomic-end 151771329,
+            parts {
+              match 254
+            },
+            scores {
+              {
+                id str "score",
+                value real { 254, 10, 0 }
+              },
+              {
+                id str "idty",
+                value real { 1, 10, 0 }
+              }
+            },
+            acceptor-before-exon {
+              bases "AG"
+            }
+          }
+        },
+        poly-a 852,
+        product-length 866
+      }
+    }
+  }
+}
