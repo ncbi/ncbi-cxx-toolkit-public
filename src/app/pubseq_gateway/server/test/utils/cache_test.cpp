@@ -29,8 +29,9 @@ void gc(void)
 
 void add(string user, size_t  count)
 {
+    bool    val;
     for (size_t k = 0; k < count; ++k) {
-        cache.AddBlobId(user, 10, k);
+        cache.AddBlobId(user, 10, k, val);
     }
 }
 
