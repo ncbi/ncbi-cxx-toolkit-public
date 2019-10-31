@@ -1,3 +1,25 @@
+matches     : 887
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 3789
+strand      : +
+qName       : NM_016178.2
+qSize       : 901
+qStart      : 0
+qEnd        : 887
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 151766654
+tEnd        : 151771330
+blockCount  : 5
+blockSizes  : 234, 137, 176, 86, 254
+qStarts     : 0, 234, 371, 547, 633
+tStarts     : 151766654, 151767162, 151768057, 151770171, 151771076
+
 matches     : 852
 misMatches  : 0
 repMatches  : 0
