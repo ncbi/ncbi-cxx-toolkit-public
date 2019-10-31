@@ -2915,9 +2915,12 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
     s_LogSubHitID(ctx, buf);
 
     /* And return new sub hit ID */
-    assert(strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ <= NCBILOG_HITID_MAX);
-    if (strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ > NCBILOG_HITID_MAX) {
-        return NULL;  /* error */
+    if (prefix) {
+        // sprintf() overflow check if prefix is specified
+        assert(strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ <= NCBILOG_HITID_MAX);
+        if (strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ > NCBILOG_HITID_MAX) {
+            return NULL;  /* error */
+        }
     }
     n = sprintf(buf, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
     if (n <= 0) {

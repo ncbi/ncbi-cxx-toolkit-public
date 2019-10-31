@@ -58,18 +58,18 @@ extern "C" {
  *  Configurables that could theoretically change 
  */
 
-#define NCBILOG_HOST_MAX         256
-#define NCBILOG_CLIENT_MAX       256
-#define NCBILOG_SESSION_MAX      256
-#define NCBILOG_HITID_MAX        256
-#define NCBILOG_APPNAME_MAX     1024
-#define NCBILOG_PORT_MAX       65535
+#define NCBILOG_HOST_MAX         256    /* string length */
+#define NCBILOG_CLIENT_MAX       256    /* string length */
+#define NCBILOG_SESSION_MAX      256    /* string length */
+#define NCBILOG_HITID_MAX       1024    /* string length */
+#define NCBILOG_APPNAME_MAX     1024    /* string length */
+#define NCBILOG_PORT_MAX       65535    /* value */
 
 /* Minimum line length:
     5+3+4+2+16+4+4+23+15+15+24 (min for fields) + (11 delimiters) + (1 char for appname)
     http://ncbi.github.io/cxx-toolkit/pages/ch_log#ch_core.The_New_Post_Format
 */
-#define NCBILOG_ENTRY_MIN        127
+#define NCBILOG_ENTRY_MIN        127    /* string length */
 
 /** Maximum length of each log entry, all text after this position will be truncated */
 #define NCBILOG_ENTRY_MAX_ALLOC 8192   /* 8Kb*/ 
