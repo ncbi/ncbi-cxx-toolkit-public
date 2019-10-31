@@ -160,7 +160,7 @@ CQuerySplitter::x_ComputeChunkRanges()
 
         m_SplitBlk->SetChunkBounds(chunk_num, 
                                    TChunkRange(chunk_start, chunk_end));
-        _TRACE("Chunk " << chunk_num << ": ranges from " << chunk_start 
+        _TRACE("Chunk " << chunk_num << ": ranges from " << chunk_start
                << " to " << chunk_end);
 
         chunk_start += (m_ChunkSize - kOverlapSize);
@@ -188,6 +188,7 @@ CQuerySplitter::x_ComputeChunkRanges()
 static void
 s_SetSplitQuerySeqInterval(const TChunkRange& chunk, 
                            const TChunkRange& query_range, 
+                           int query_offset,
                            CRef<CSeq_loc> split_query_loc)
 {
     _ASSERT(split_query_loc.NotEmpty());
@@ -196,12 +197,14 @@ s_SetSplitQuerySeqInterval(const TChunkRange& chunk,
     const int qstart = chunk.GetFrom() - query_range.GetFrom();
     const int qend = chunk.GetToOpen() - query_range.GetToOpen();
 
-    interval.SetFrom(max(0, qstart));
+    interval.SetFrom(max(0, qstart) + query_offset);
+
     if (qend >= 0) {
-        interval.SetTo(query_range.GetToOpen() - query_range.GetFrom());
+        interval.SetTo(query_range.GetToOpen() - query_range.GetFrom() + query_offset);
     } else {
-        interval.SetTo(chunk.GetToOpen() - query_range.GetFrom());
+        interval.SetTo(chunk.GetToOpen() - query_range.GetFrom() + query_offset);
     }
+
     // Note subtraction, as Seq-intervals are assumed to be
     // open/inclusive
     interval.SetTo() -= 1;
@@ -247,11 +250,20 @@ CQuerySplitter::x_ComputeQueryIndicesForChunks()
             }
 
             // Build the split query seqloc for this query
-            CRef<CSeq_loc> split_query_loc(new CSeq_loc);
-            s_SetSplitQuerySeqInterval(chunk, query_range, split_query_loc);
 
-            CConstRef<CSeq_loc>
-                query_seqloc(m_LocalQueryData->GetSeq_loc(qindex));
+            CConstRef<CSeq_loc> query_seqloc(m_LocalQueryData->GetSeq_loc(qindex));
+
+            CRef<CSeq_loc> split_query_loc(new CSeq_loc);
+            {
+            	int q_sl_offset = 0;
+            	if(query_seqloc->IsInt() && (query_seqloc->GetInt().GetFrom() > 0 )) {
+            		q_sl_offset = query_seqloc->GetInt().GetFrom();
+            	}
+            	s_SetSplitQuerySeqInterval(chunk, query_range, q_sl_offset, split_query_loc);
+            }
+
+
+
             split_query_loc->SetId(*query_seqloc->GetId());
             const ENa_strand kStrand = 
                 BlastSetup_GetStrand(*query_seqloc, kProgram, kStrandOption);
@@ -263,9 +275,10 @@ CQuerySplitter::x_ComputeQueryIndicesForChunks()
                    << " strand " << (int)split_query_loc->GetStrand());
 
             // retrieve the split mask corresponding to this chunk of the query
+            CRef<CSeq_loc> mask_query_loc(new CSeq_loc);
+            s_SetSplitQuerySeqInterval(chunk, query_range, 0, mask_query_loc);
             TMaskedQueryRegions split_mask = 
-                m_UserSpecifiedMasks[qindex].RestrictToSeqInt
-                (split_query_loc->GetInt());
+                m_UserSpecifiedMasks[qindex].RestrictToSeqInt(mask_query_loc->GetInt());
 
             // retrieve the scope to retrieve this query
             CRef<CScope> scope(m_Scopes[qindex]);
