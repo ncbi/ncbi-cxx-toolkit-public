@@ -901,6 +901,8 @@ ncbi_xloader_bam needs xobjreadex
 ncbi_xloader_blastdb needs seqdb
 ncbi_xloader_blastdb_rmt needs blast_services
 ncbi_xloader_blastdb_rmt needs ncbi_xloader_blastdb
+ncbi_xloader_cdd needs $(SOBJMGR_LIBS)
+ncbi_xloader_cdd needs cdd_access
 ncbi_xloader_csra needs $(SOBJMGR_LIBS)
 ncbi_xloader_csra needs $(SRAREAD_LIBS)
 ncbi_xloader_genbank needs ncbi_xreader_cache
