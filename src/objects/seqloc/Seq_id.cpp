@@ -2353,7 +2353,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
     case e_Patent:
         // "version" actually sequence number within patent, but whatever...
         ver = NStr::StringToNonNegativeInt(fields[2]);
-        if (ver <= 0) {
+        if (ver < 0) {
             NCBI_THROW(CSeqIdException, eFormat,
                        "Bad sequence number " + string(fields[2]) + " for "
                        + string(fields[0]) + " patent " + string(fields[1]));
