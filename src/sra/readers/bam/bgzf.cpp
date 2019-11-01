@@ -132,16 +132,19 @@ CPagedFile::~CPagedFile()
 }
 
 
-
 CPagedFile::TPage CPagedFile::GetPage(TFilePos file_pos)
 {
-    file_pos = s_GetPagePos(file_pos);
-    TPage page = m_PageCache->get_lock(file_pos);
-    if ( page->GetFilePos() != file_pos ) {
+    TFilePos page_pos = s_GetPagePos(file_pos);
+    TPage page = m_PageCache->get_lock(page_pos);
+    if ( page->GetFilePos() != page_pos ) {
         CFastMutexGuard guard(page.GetValueMutex());
-        if ( page->GetFilePos() != file_pos ) {
-            x_ReadPage(*page, file_pos);
+        if ( page->GetFilePos() != page_pos ) {
+            x_ReadPage(*page, page_pos);
         }
+    }
+    if ( !page->Contains(file_pos) ) {
+        NCBI_THROW_FMT(CBGZFException, eFormatError,
+                       "BGZF read @ "<<file_pos<<" is beyond file size");
     }
     return page;
 }

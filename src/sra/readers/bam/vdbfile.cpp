@@ -201,6 +201,32 @@ size_t CBamVDBFile::ReadAll(size_t pos, char* buffer, size_t buffer_size)
                         "CBamVDBFile::ReadAll(): "
                         "read failed from "<<m_Path.GetString(), rc);
     }
+    // workaround for incomplete read in KFileReadAll()
+    if ( nread != buffer_size ) {
+        size_t nread0 = nread;
+        size_t nread_total = nread;
+        pos += nread;
+        buffer += nread;
+        buffer_size -= nread;
+        while ( buffer_size ) {
+            if ( rc_t rc = KFileReadAll(*this, pos, buffer, buffer_size, &nread) ) {
+                NCBI_THROW2_FMT(CBamException, eInitFailed,
+                                "CBamVDBFile::ReadAll(): "
+                                "read failed from "<<m_Path.GetString(), rc);
+            }
+            if ( nread == 0 ) {
+                break;
+            }
+            nread_total += nread;
+            pos += nread;
+            buffer += nread;
+            buffer_size -= nread;
+        }
+        nread = nread_total;
+        if ( nread != nread0 ) {
+            ERR_POST(Warning<<"KFileReadAll("<<m_Path.GetString()<<" @ "<<(pos-nread)<<", buffer, "<<(buffer_size+nread)<<") didn't read all. First time: "<<nread0<<" total: "<<nread<<". Workaround applied.");
+        }
+    }
     return nread;
 }
 
