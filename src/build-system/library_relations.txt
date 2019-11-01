@@ -413,6 +413,10 @@ gcaccess_utils needs seqgapscan
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcedit needs idload_utils
+gcextract2 needs gcaccess_utils
+gcextract2 needs gpipe_sqlite
+gcextract2 needs simple_asm
+gcextract2 needs xgencoll
 gcrypt needs3party $(ORIG_LIBS)
 gencoll_client needs $(COMPRESS_LIBS)
 gencoll_client needs $(SQLITE3_WRAPPER)
@@ -1253,10 +1257,8 @@ sybtcl64 needs3party sybintl64
 sybtcl64 needs3party sybunic64
 sybunic64 needs3party $(ORIG_LIBS)
 tables needs3party $(ORIG_LIBS)
+tax_xml includes gcextract2
 tax_xml needs bacterial_pipeline_proc
-tax_xml needs gcaccess_utils
-tax_xml needs simple_asm
-tax_xml needs xgencoll
 taxon needs xser
 taxon1 needs $(SEQ_LIBS)
 taxon1 needs pub
