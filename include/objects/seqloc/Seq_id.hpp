@@ -747,8 +747,18 @@ public:
     const static size_t kMaxAccessionLength  = 30;
 
 private:
+    enum ETypeVariant {
+        eTV_plain,
+        eTV_tr, // variant of sp
+        eTV_pgp // variant of pat
+    };
+
+    static ETypeVariant x_IdentifyTypeVariant(E_Choice type,
+                                              const CTempString& str);
+
     // returns next type if determined along the way
-    E_Choice x_Init(list<CTempString>& fasta_pieces, int type);
+    E_Choice x_Init(list<CTempString>& fasta_pieces, E_Choice type,
+                    ETypeVariant tv);
 
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);

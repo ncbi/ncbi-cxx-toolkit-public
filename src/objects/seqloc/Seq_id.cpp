@@ -2037,11 +2037,15 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
 }
 
 inline
-static void s_AdjustType(int* type, const CTempString& str)
+CSeq_id::ETypeVariant CSeq_id::x_IdentifyTypeVariant(CSeq_id::E_Choice type,
+                                                     const CTempString& str)
 {
-    if ((*type == CSeq_id::e_Swissprot  &&  NStr::EqualNocase(str, "tr"))
-        ||  (*type == CSeq_id::e_Patent  &&  NStr::EqualNocase(str, "pgp"))) {
-        *type = -*type;
+    if (type == CSeq_id::e_Swissprot  &&  NStr::EqualNocase(str, "tr")) {
+        return eTV_tr;
+    } else if (type == CSeq_id::e_Patent  &&  NStr::EqualNocase(str, "pgp")) {
+        return eTV_pgp;
+    } else {
+        return eTV_plain;
     }
 }
 
@@ -2106,12 +2110,11 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         }
         }
     } else {
-        int type2 = type;
         list<CTempString> fasta_pieces;
         NStr::Split(the_id, "|", fasta_pieces);
-        s_AdjustType(&type2, fasta_pieces.front());
+        ETypeVariant tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
         fasta_pieces.pop_front();
-        x_Init(fasta_pieces, type2);
+        x_Init(fasta_pieces, type, tv);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.
             ITERATE(list<CTempString>, it, fasta_pieces) {
@@ -2144,7 +2147,7 @@ CSeq_id& CSeq_id::Set(EFastaAsTypeAndContent f, E_Choice the_type,
 {
     list<CTempString> fasta_pieces;
     NStr::Split(the_content, "|", fasta_pieces);
-    x_Init(fasta_pieces, the_type);
+    x_Init(fasta_pieces, the_type, eTV_plain); // explicit assumption
     return *this;
 }
 
@@ -2213,19 +2216,20 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     }
     else
     {
-        int type = WhichInverseSeqId(fasta_pieces.front());       
+        E_Choice     type = WhichInverseSeqId(fasta_pieces.front());
+        ETypeVariant tv;
         if (type == e_not_set) {
             // unknown database are reported as 'general'
             type = e_General;
         } else {
-            s_AdjustType(&type, fasta_pieces.front());
+            tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
             fasta_pieces.pop_front();
         }
         while ( !fasta_pieces.empty() ) {
             try {
                 CRef<CSeq_id> id(new CSeq_id);
                 if (type != e_not_set) {
-                    type = id->x_Init(fasta_pieces, type);
+                    type = id->x_Init(fasta_pieces, type, tv);
                 }
                 if (type == e_not_set  &&  !fasta_pieces.empty() ) {
                     type = WhichInverseSeqId(fasta_pieces.front());
@@ -2238,7 +2242,7 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
                 }
                 if (type != e_not_set) {
                     _ASSERT( !fasta_pieces.empty() );
-                    s_AdjustType(&type, fasta_pieces.front());
+                    tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
                     fasta_pieces.pop_front();
                 }
                 ids.push_back(id);
@@ -2257,14 +2261,14 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
 
 
 CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
-                                  int type_in)
+                                  E_Choice type, ETypeVariant tv)
 {
     _ASSERT(!fasta_pieces.empty());
-    _ASSERT(type_in != e_not_set);
+    _ASSERT(type != e_not_set);
 
     vector<CTempString> fields(3);
     SIZE_TYPE   min_fields, max_fields;
-    E_Choice    type = (E_Choice) abs(type_in), next_type = e_not_set;
+    E_Choice    next_type = e_not_set;
     switch (type) {
     case e_Local:
     case e_Gibbsq:
@@ -2343,7 +2347,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
     int ver = 0;
     switch (type) {
     case e_Swissprot:
-        if (type_in != type) {
+        if (tv == eTV_tr) {
             fields[2] = "unreviewed";
         } else {
             fields[2] = "reviewed";
@@ -2360,7 +2364,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
         }
         // to distinguish applications from granted patents; the numeric
         // content has already made its way into ver.
-        fields[2] = type_in == type ? "pat" : "pgp";
+        fields[2] = tv == eTV_pgp ? "pgp" : "pat";
         break;
 
     case e_Pdb:
