@@ -55,14 +55,10 @@ void GetSequenceLengthAndId(const blast::IBlastSeqInfoSrc * seqinfo_src,
 {
     _ASSERT(length);
     list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
-    
-    CRef<CSeq_id> id = FindBestChoice(seqid_list, CSeq_id::BestRank);
+    CRef<CSeq_id> id = FindBestChoice(seqid_list, CSeq_id::BlastRank);
     if (id.NotEmpty()) {
         seqid.Reset(new CSeq_id);
-	if (id->IsGi())
-        	SerialAssign(*seqid, *id);
-	else
-        	SerialAssign(*seqid, *(seqid_list.front()));
+        SerialAssign(*seqid, *id);
     }
     *length = seqinfo_src->GetLength(oid);
 
