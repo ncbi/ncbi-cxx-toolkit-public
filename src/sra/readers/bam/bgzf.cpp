@@ -442,9 +442,16 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
                             CPagedFile::TPage& page,
                             CSimpleBufferT<char>& buffer)
 {
-    page = m_File->GetPage(file_pos0);
-    if ( !page->Contains(file_pos0) ) {
-        return false;
+    try {
+        page = m_File->GetPage(file_pos0);
+    }
+    catch ( CBGZFException& exc ) {
+        if ( exc.GetErrCode() == exc.eFormatError &&
+             (page->GetFilePos()+page->GetPageSize() == file_pos0) ) {
+            // read past of the file
+            return false;
+        }
+        throw;
     }
     
     CBGZFPos::TFileBlockPos file_pos = file_pos0;
