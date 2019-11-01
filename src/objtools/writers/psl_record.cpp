@@ -248,8 +248,8 @@ CPslRecord::xInitializeSequenceQ(
     auto querySeqHandle = scope.GetBioseqHandle(queryId);
     CWriteUtil::GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
     mSizeQ = querySeqHandle.GetInst_Length();
-    mStartQ = 0;
-    mEndQ = mStartQ + mSizeQ;
+    mStartQ = splicedSeg.GetSeqStart(0);
+    mEndQ = splicedSeg.GetSeqStop(0);
 }
 
 //  ----------------------------------------------------------------------------
@@ -303,6 +303,10 @@ CPslRecord::xInitializeBlocks(
 
     if (mStrandT == eNa_strand_plus) {
         for (auto pExon: exonList) {
+            auto partCount = pExon->GetParts().size();
+            if (partCount != 1) {
+                cerr << "";
+            }
             int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
             int exonStartT = static_cast<int>(pExon->GetGenomic_start());
             mExonStartsQ.push_back(exonStartQ);
@@ -317,7 +321,7 @@ CPslRecord::xInitializeBlocks(
                     mExonStartsQ.push_back(
                         exonStartQ + blockSize + productInsertionPending);
                     mExonStartsT.push_back(exonStartT + blockSize);
-                    exonStartQ += blockSize;
+                    exonStartQ += blockSize + productInsertionPending;
                     exonStartT += blockSize;
                     blockSize = 0;
                     productInsertionPending = 0;
@@ -329,7 +333,7 @@ CPslRecord::xInitializeBlocks(
                     mExonStartsT.push_back(
                         exonStartT + blockSize + genomicInsertionPending);
                     exonStartQ += blockSize;
-                    exonStartT += blockSize;
+                    exonStartT += blockSize + genomicInsertionPending;
                     blockSize = 0;
                     genomicInsertionPending = 0;
                 }
@@ -356,17 +360,13 @@ CPslRecord::xInitializeBlocks(
         }
     }
     else {
-        int runningBaseCountQ = mSizeQ /*+ mEndQ - mSizeQ*/;
+        int runningBaseCountQ = mSizeQ - mStartQ;
         for (auto pExon: exonList) {
             int exonEndT = static_cast<int>(pExon->GetGenomic_end() + 1);
             int exonEndQ = static_cast<int>(pExon->GetProduct_end().AsSeqPos() + 1);
             int blockSize = 0;
             int productInsertionPending = 0;
             int genomicInsertionPending = 0;
-            auto partCount = pExon->GetParts().size();
-            if (partCount != 1) {
-                cerr << "";
-            }
             for (auto pPart: pExon->GetParts()) {
                 if (productInsertionPending) {
                     mExonCount++;
