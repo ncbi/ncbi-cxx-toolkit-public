@@ -53,6 +53,7 @@
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/psl_writer.hpp>
 #include "psl_record.hpp"
+#include "psl_formatter.hpp"
 
 #include <util/sequtil/sequtil_manip.hpp>
 
@@ -64,9 +65,9 @@ CPslWriter::CPslWriter(
     CScope& scope,
     CNcbiOstream& ostr,
     unsigned int uFlags) :
+//  ----------------------------------------------------------------------------
     CWriterBase(ostr, uFlags),
     mRecordCounter(0)
-//  ----------------------------------------------------------------------------
 {
     m_pScope.Reset(&scope);
 };
@@ -149,9 +150,10 @@ void CPslWriter::xWriteAlignSlicedSeg(
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
-    CPslRecord psl;
-    psl.Initialize(*m_pScope, splicedSeg);
-    psl.Write(m_Os, (m_uFlags & fDebugOutput));
+    CPslRecord record;
+    record.Initialize(*m_pScope, splicedSeg);
+    CPslFormatter formatter(m_Os, m_uFlags);
+    formatter.Format(record);
 }
 
 //  ----------------------------------------------------------------------------
@@ -159,9 +161,10 @@ void CPslWriter::xWriteAlignDenseSeg(
     const CDense_seg& denseSeg)
 //  ----------------------------------------------------------------------------
 {
-    CPslRecord psl;
-    psl.Initialize(*m_pScope, denseSeg);
-    psl.Write(m_Os, (m_uFlags & fDebugOutput));
+    CPslRecord record;
+    record.Initialize(*m_pScope, denseSeg);
+    CPslFormatter formatter(m_Os, m_uFlags);
+    formatter.Format(record);
 }
 
 END_NCBI_SCOPE

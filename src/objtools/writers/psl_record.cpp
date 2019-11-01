@@ -51,46 +51,12 @@
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
-#include <objtools/writers/psl_writer.hpp>
 #include "psl_record.hpp"
 
 #include <util/sequtil/sequtil_manip.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-//  ----------------------------------------------------------------------------
-void
-sDebugChunkArray(
-    const vector<int>& origArray,
-    int chunkSize,
-    vector<vector<int>>& chunks)
-//  ----------------------------------------------------------------------------
-{
-    if (origArray.empty()) {
-        return;
-    }
-    auto numElements = origArray.size();
-    for (auto index=0; index < numElements; ++index) {
-        if (0 == index % chunkSize) {
-            chunks.push_back(vector<int>());
-        }
-        chunks.back().push_back(origArray[index]);
-    }
-}
-
-//  ----------------------------------------------------------------------------
-string
-sDebugFormatValue(
-    const string& label,
-    const string& data)
-//  ----------------------------------------------------------------------------
-{
-    string formattedValue = (label + string(12, ' ')).substr(0, 12) + ": ";
-    formattedValue += data;
-    formattedValue += "\n";
-    return formattedValue;
-}
 
 //  ----------------------------------------------------------------------------
 void
@@ -106,7 +72,6 @@ CPslRecord::xInitializeStrands(
         mStrandT = splicedSeg.GetGenomic_strand();
     }
 }
-
 
 //  ----------------------------------------------------------------------------
 void
@@ -421,7 +386,6 @@ CPslRecord::xInitializeBlocks(
     }
 }
 
-
 //  ----------------------------------------------------------------------------
 void
 CPslRecord::xValidateSegment(
@@ -439,7 +403,6 @@ CPslRecord::xValidateSegment(
         }
     }
 }
-
 
 //  ----------------------------------------------------------------------------
 void
@@ -466,7 +429,6 @@ CPslRecord::Initialize(
     xInitializeBlocks(scope, splicedSeg);
 }
 
-
 //  ----------------------------------------------------------------------------
 void
 CPslRecord::xValidateSegment(
@@ -479,7 +441,6 @@ CPslRecord::xValidateSegment(
     }
 }
 
-
 //  ----------------------------------------------------------------------------
 void
 CPslRecord::Initialize(
@@ -488,359 +449,6 @@ CPslRecord::Initialize(
 //  ----------------------------------------------------------------------------
 {
     xValidateSegment(scope, denseSeg);
-}
-
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldMatches(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mMatches);
-    if (debug) {
-        return sDebugFormatValue("matches", rawString);
-    }
-    return rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldMisMatches(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mMisMatches);
-    if (debug) {
-        return sDebugFormatValue("misMatches", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldRepMatches(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mRepMatches);
-    if (debug) {
-        return sDebugFormatValue("repMatches", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldCountN(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mCountN);
-    if (debug) {
-        return sDebugFormatValue("nCount", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldNumInsertQ(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mNumInsertQ);
-    //auto rawString = NStr::IntToString(0);
-    if (debug) {
-        return sDebugFormatValue("qNumInsert", rawString);
-    }
-    return "\t" + rawString;
-}
-
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldBaseInsertQ(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mBaseInsertQ);
-    //auto rawString = NStr::IntToString(0);
-    if (debug) {
-        return sDebugFormatValue("qBaseInsert", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldNumInsertT(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mNumInsertT);
-    if (debug) {
-        return sDebugFormatValue("tNumInsert", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldBaseInsertT(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mBaseInsertT);
-    if (debug) {
-        return sDebugFormatValue("tBaseInsert", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldStrand(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    string rawString = (mStrandT == eNa_strand_minus ? "-" : "+");
-    //if (mStrandT == eNa_strand_plus) {
-    //    rawString += "+";
-    //}
-    //else if (mStrandT == eNa_strand_minus) {
-    //    rawString += "-";
-    //}
-    if (debug) {
-        return sDebugFormatValue("strand", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldNameQ(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = mNameQ;
-    if (debug) {
-        if (rawString.empty()) {
-            rawString = ".";
-        }
-        return sDebugFormatValue("qName", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldSizeQ(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mSizeQ);
-    if (debug) {
-        return sDebugFormatValue("qSize", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldStartQ(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mStartQ);
-    if (debug) {
-        return sDebugFormatValue("qStart", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldEndQ(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mEndQ);
-    if (debug) {
-        return sDebugFormatValue("qEnd", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldNameT(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = mNameT;
-    if (debug) {
-        if (rawString.empty()) {
-            rawString = ".";
-        }
-        return sDebugFormatValue("tName", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldSizeT(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mSizeT);
-    if (debug) {
-        return sDebugFormatValue("tSize", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldStartT(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mStartT);
-    if (debug) {
-       return sDebugFormatValue("tStart", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldEndT(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mEndT);
-    if (debug) {
-        return sDebugFormatValue("tEnd", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldBlockCount(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    auto rawString = NStr::IntToString(mExonCount);
-    if (debug) {
-        return sDebugFormatValue("blockCount", rawString);
-    }
-    return "\t" + rawString;
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldBlockSizes(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    if (debug) {
-        if (mExonSizes.empty()) {
-            return sDebugFormatValue("blockSizes", ".");
-        }
-        vector<vector<int>> chunks;
-        sDebugChunkArray(mExonSizes, 5, chunks);
-        bool labelWritten = false;
-        string field;
-        for (auto& chunk: chunks) {
-            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ", ");
-            if (!labelWritten) {
-                field += sDebugFormatValue("blockSizes", value);
-                labelWritten = true;
-            }
-            else {
-                field += "              ";
-                field += value;
-                field += "\n";
-            }
-        }
-        return field;
-    }
-    return "\t" + NStr::JoinNumeric(mExonSizes.begin(), mExonSizes.end(), ",");
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldStartsQ(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    if (debug) {
-        if (mExonStartsQ.empty()) {
-            return sDebugFormatValue("qStarts", ".");
-        }
-        vector<vector<int>> chunks;
-        sDebugChunkArray(mExonStartsQ, 5, chunks);
-        bool labelWritten = false;
-        string field;
-        for (auto& chunk: chunks) {
-            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ", ");
-            if (!labelWritten) {
-                field += sDebugFormatValue("qStarts", value);
-                labelWritten = true;
-            }
-            else {
-                field += "              ";
-                field += value;
-                field += "\n";
-            }
-        }
-        return field;
-    }
-    return "\t" + NStr::JoinNumeric(mExonStartsQ.begin(), mExonStartsQ.end(), ",");
-}
-
-//  ----------------------------------------------------------------------------
-string
-CPslRecord::xFieldStartsT(bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    if (debug) {
-        if (mExonStartsT.empty()) {
-            return sDebugFormatValue("tStarts", ".");
-        }
-        vector<vector<int>> chunks;
-        sDebugChunkArray(mExonStartsT, 5, chunks);
-        bool labelWritten = false;
-        string field;
-        for (auto& chunk: chunks) {
-            auto value = NStr::JoinNumeric(chunk.begin(), chunk.end(), ", ");
-            if (!labelWritten) {
-                field += sDebugFormatValue("tStarts", value);
-                labelWritten = true;
-            }
-            else {
-                field += "              ";
-                field += value;
-                field += "\n";
-            }
-        }
-        return field;
-    }
-    return "\t" + NStr::JoinNumeric(mExonStartsT.begin(), mExonStartsT.end(), ",");
-}
-
-//  ----------------------------------------------------------------------------
-void
-CPslRecord::Write(
-    ostream& ostr,
-    bool debug) const
-//  ----------------------------------------------------------------------------
-{
-    ostr << xFieldMatches(debug) 
-         << xFieldMisMatches(debug) 
-         << xFieldRepMatches(debug)
-         << xFieldCountN(debug)
-         << xFieldNumInsertQ(debug)
-         << xFieldBaseInsertQ(debug)
-         << xFieldNumInsertT(debug)
-         << xFieldBaseInsertT(debug)
-         << xFieldStrand(debug)
-         << xFieldNameQ(debug)
-         << xFieldSizeQ(debug)
-         << xFieldStartQ(debug)
-         << xFieldEndQ(debug)
-         << xFieldNameT(debug)
-         << xFieldSizeT(debug)
-         << xFieldStartT(debug)
-         << xFieldEndT(debug)
-         << xFieldBlockCount(debug)
-         << xFieldBlockSizes(debug)
-         << xFieldStartsQ(debug)
-         << xFieldStartsT(debug) 
-         << endl;
 }
 
 END_NCBI_SCOPE

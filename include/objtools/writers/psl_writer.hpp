@@ -43,7 +43,7 @@ class CDense_seg;
 class CScope;
 class CSparse_align;
 class CSparse_seg;
-
+class CPslFormatter;
  
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJWRITE_EXPORT CPslWriter:
@@ -82,7 +82,6 @@ protected:
         const CDense_seg& denseSeg);
 
     CRef<CScope> m_pScope;
-
     int mRecordCounter;
 };
 

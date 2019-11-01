@@ -81,9 +81,29 @@ public:
         CScope& scope,
         const CDense_seg& denseSeg);
 
-    void Write(
-        ostream& ostr,
-        bool debug=false) const;
+    int GetMatches() const { return mMatches; };
+    int GetMisMatches() const { return mMisMatches; };
+    int GetRepMatches() const { return mRepMatches; };
+    int GetCountN() const { return mCountN; };
+    int GetNumInsertQ() const { return mNumInsertQ; };
+    int GetBaseInsertQ() const { return mBaseInsertQ; };
+    int GetNumInsertT() const { return mNumInsertT; };
+    int GetBaseInsertT() const { return mBaseInsertT; };
+    ENa_strand GetStrandQ() const { return mStrandQ; };
+    ENa_strand GetStrandT() const { return mStrandT; };
+    const string& GetNameQ() const { return mNameQ; };
+    int GetSizeQ() const { return mSizeQ; };
+    int GetStartQ() const { return mStartQ; };
+    int GetEndQ() const { return mEndQ; };
+    const string& GetNameT() const { return mNameT; };
+    int GetSizeT() const { return mSizeT; };
+    int GetStartT() const { return mStartT; };
+    int GetEndT() const { return mEndT; };
+    int GetBlockCount() const { return mExonCount; };
+    const vector<int>& GetBlockSizes() const { return mExonSizes; };
+    const vector<int>& GetBlockStartsQ() const { return  mExonStartsQ; };
+    const vector<int>& GetBlockStartsT() const { return mExonStartsT; };
+
 
 protected:
     void xValidateSegment(
@@ -114,28 +134,6 @@ protected:
     void xValidateSegment(
         CScope&,
         const CDense_seg&);
-
-    string xFieldMatches(bool debug) const;
-    string xFieldMisMatches(bool debug) const;
-    string xFieldRepMatches(bool debug) const;
-    string xFieldCountN(bool debug) const;
-    string xFieldNumInsertQ(bool debug) const;
-    string xFieldBaseInsertQ(bool debug) const;
-    string xFieldNumInsertT(bool debug) const;
-    string xFieldBaseInsertT(bool debug) const;
-    string xFieldStrand(bool debug) const;
-    string xFieldNameQ(bool debug) const;
-    string xFieldSizeQ(bool debug) const;
-    string xFieldStartQ(bool debug) const;
-    string xFieldEndQ(bool debug) const;
-    string xFieldNameT(bool debug) const;
-    string xFieldSizeT(bool debug) const;
-    string xFieldStartT(bool debug) const;
-    string xFieldEndT(bool debug) const;
-    string xFieldBlockCount(bool debug) const;
-    string xFieldBlockSizes(bool debug) const;
-    string xFieldStartsQ(bool debug) const;
-    string xFieldStartsT(bool debug) const;
 
     int mMatches;               // number of bases that match that aren't repeats
     int mMisMatches;            // number of bases that don't match
