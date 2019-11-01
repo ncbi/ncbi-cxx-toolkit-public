@@ -79,14 +79,35 @@ void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
     }
 }
 
+static void sPostError(
+        ILineErrorListener* pEC,
+        const string& message,
+        const string& seqId,
+        size_t lineNum=0)
+{
+    _ASSERT(pEC);
+
+    AutoPtr<CLineErrorEx> pErr(
+            CLineErrorEx::Create(
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error,
+                0, 0, // code and subcode
+                seqId,
+                lineNum, // lineNumber,
+                message));
+
+    pEC->PutError(*pErr);
+
+}
+
+
+
 
 static void sReportMissingMods(
         ILineErrorListener* pEC,
         const string& fileName,
         const CBioseq& bioseq)
 {
-
-    _ASSERT(pEC);
 
     string seqId = bioseq.GetId().front()->AsFastaString();
     string message = 
@@ -95,16 +116,7 @@ static void sReportMissingMods(
         seqId + 
        "."; 
 
-    AutoPtr<CLineErrorEx> pErr(
-            CLineErrorEx::Create(
-                ILineError::eProblem_GeneralParsingError,
-                eDiag_Error,
-                0, 0, // code and subcode
-                seqId,
-                0, // lineNumber,
-                message));
-
-    pEC->PutError(*pErr);
+    sPostError(pEC, message, seqId);
 }
 
 
@@ -114,7 +126,6 @@ static void sReportMultipleMatches(
         size_t lineNum,
         const CBioseq& bioseq)
 {
-    _ASSERT(pEC);
     string seqId = bioseq.GetId().front()->AsFastaString();
 
     string message = 
@@ -126,16 +137,7 @@ static void sReportMultipleMatches(
         seqId +
         " to a previously matched entry.";
 
-    AutoPtr<CLineErrorEx> pErr(
-            CLineErrorEx::Create(
-                ILineError::eProblem_GeneralParsingError,
-                eDiag_Error,
-                0, 0, // code and subcode
-                seqId,
-                0, // lineNumber,
-                message));
-
-    pEC->PutError(*pErr);
+    sPostError(pEC, message, seqId);
 }
 
 
@@ -205,7 +207,6 @@ static void sReportDuplicateIds(
     size_t previousLine,
     const CTempString& seqId)
 {
-    _ASSERT(pEC);
 
     string message = 
         "Sequence id " 
@@ -219,16 +220,7 @@ static void sReportDuplicateIds(
         + NStr::NumericToString(currentLine) 
         + ".";
 
-    AutoPtr<CLineErrorEx> pErr(
-        CLineErrorEx::Create(
-            ILineError::eProblem_GeneralParsingError,
-            eDiag_Error,
-            0, 0, // code and subcode
-            seqId,
-            currentLine, // lineNumber,
-            message));
-
-    pEC->PutError(*pErr);
+    sPostError(pEC, message, seqId, currentLine);
 }
 
 
@@ -249,8 +241,12 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, CTempString line, bool al
             CSeq_id::ParseIDs(ids, idString, parseFlags);
         }
         catch (const CSeqIdException& e) {
-            NCBI_THROW(CSeqIdException, eFormat, 
-                    "Unable to parse " + idString);
+            sPostError(m_pEC,
+                    "In " + m_pFileMap->GetFileName() +
+                    ". Unable to parse " + idString + ".",
+                    "",
+                    lineNum);
+            return;
         }
 
 
