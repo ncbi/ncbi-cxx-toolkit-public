@@ -173,7 +173,7 @@ typedef unsigned EBDebugPrintout;
  * NOTE2:      HTTP passwords can be either clear text or Base-64 encoded value
  *             enclosed in square brackets [] (which are not Base-64 charset).
  *             For encoding / decoding, one can use command-line OpenSSL:
- *             echo "password|base64value" | openssl enc {-e|-d} -base64
+ *             echo [-n] "password|base64value" | openssl enc {-e|-d} -base64
  *             or an online tool (search the Web for "base64 online").
  */
 typedef struct {  /* NCBI_FAKE_WARNING: ICC */
