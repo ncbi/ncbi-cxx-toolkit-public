@@ -672,6 +672,13 @@ CMultiReaderApp::Run(void)
             << endl;
         return 1;
     }
+    if (argInFile == "-"  &&  args["format"].AsString() == "guess") {
+        cerr << "multireader: must specify input format (\"-format ...\") if input comes from "
+                "console or pipe"
+            << endl;
+        return 1;
+    }
+
     xSetMapper(args);
     xSetMessageListener(args);
 
