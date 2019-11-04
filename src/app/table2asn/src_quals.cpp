@@ -82,7 +82,7 @@ void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
 static void sPostError(
         ILineErrorListener* pEC,
         const string& message,
-        const string& seqId,
+        const CTempString& seqId,
         size_t lineNum=0)
 {
     _ASSERT(pEC);
@@ -127,17 +127,17 @@ static void sReportMultipleMatches(
         const CBioseq& bioseq)
 {
     string seqId = bioseq.GetId().front()->AsFastaString();
+    ostringstream message;
+    message 
+        << "Multiple potential matches for line " 
+        << lineNum 
+        << " of " 
+        << fileName
+        << ". Unable to match sequence id " 
+        << seqId 
+        << " to a previously matched entry.";
 
-    string message = 
-        "Multiple potential matches for line " + 
-        to_string(lineNum) +
-        " of " + 
-        fileName + "."
-        " Unable to match sequence id " +
-        seqId +
-        " to a previously matched entry.";
-
-    sPostError(pEC, message, seqId);
+    sPostError(pEC, message.str(), seqId);
 }
 
 
@@ -208,19 +208,20 @@ static void sReportDuplicateIds(
     const CTempString& seqId)
 {
 
-    string message = 
-        "Sequence id " 
-        + seqId 
-        + " on line "  
-        + NStr::NumericToString(currentLine)
-        + " of " + fileName 
-        + " duplicates id on line "
-        + NStr::NumericToString(previousLine) 
-        + ". Skipping line "
-        + NStr::NumericToString(currentLine) 
-        + ".";
+    ostringstream message;
+    message
+        <<  "Sequence id " 
+        <<  seqId 
+        << " on line "  
+        << currentLine
+        << " of " << fileName 
+        << " duplicates id on line "
+        << previousLine 
+        << ". Skipping line "
+        << currentLine 
+        << ".";
 
-    sPostError(pEC, message, seqId, currentLine);
+    sPostError(pEC, message.str(), seqId, currentLine);
 }
 
 
