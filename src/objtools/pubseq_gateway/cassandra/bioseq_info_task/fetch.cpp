@@ -66,10 +66,11 @@ BEGIN_SCOPE()
     const int fnSeqState = 10;
     const int fnState = 11;
     const int fnTaxId = 12;
+    const int fnName = 13;
 
     const string kSelectStatement = "SELECT version, seq_id_type, "
         "date_changed, hash, gi, length, mol, sat, "
-        "sat_key, seq_ids, seq_state, state, tax_id FROM ";
+        "sat_key, seq_ids, seq_state, state, tax_id, name FROM ";
 END_SCOPE()
 
 CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
@@ -237,7 +238,8 @@ void CCassBioseqInfoTaskFetch::x_PopulateRecord(CBioseqInfoRecord& record) const
         .SetSatKey(m_QueryArr[0].query->FieldGetInt32Value(fnSatKey))
         .SetSeqState(m_QueryArr[0].query->FieldGetInt8Value(fnSeqState))
         .SetState(m_QueryArr[0].query->FieldGetInt8Value(fnState))
-        .SetTaxId(m_QueryArr[0].query->FieldGetInt32Value(fnTaxId));
+        .SetTaxId(m_QueryArr[0].query->FieldGetInt32Value(fnTaxId))
+        .SetName(m_QueryArr[0].query->FieldGetStrValueDef(fnName, ""));
     m_QueryArr[0].query->FieldGetContainerValue(
         fnSeqIds, inserter(record.GetSeqIds(), record.GetSeqIds().end()));
 }
