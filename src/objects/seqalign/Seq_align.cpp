@@ -1064,6 +1064,7 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 
 
     /// First pass: determine dim & numseg
+    CDense_seg::TStrands single_segment_strands;
     ITERATE(TDsVec, ds_i, ds_vec) {
         const CDense_seg& ds = *ds_i->second;
 
@@ -1081,12 +1082,12 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 
         /// Strands?
         if ( !ds.GetStrands().empty() ) {
-            if (new_ds.GetStrands().empty()) {
-                new_ds.SetStrands().assign(ds.GetStrands().begin(),
-                                           ds.GetStrands().begin() + ds.GetDim());
+            if (single_segment_strands.empty()) {
+                single_segment_strands.assign(ds.GetStrands().begin(),
+                    ds.GetStrands().begin() + ds.GetDim());
             } else {
-                if ( !equal(new_ds.GetStrands().begin(),
-                            new_ds.GetStrands().end(),
+                if ( !equal(single_segment_strands.begin(),
+                            single_segment_strands.end(),
                             ds.GetStrands().begin()) ) {
                     NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
                                "CreateDensegFromDisc(): "
@@ -1098,15 +1099,15 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     
     new_ds.SetStarts().resize(new_ds.GetDim() * new_ds.GetNumseg());
     new_ds.SetLens().resize(new_ds.GetNumseg());
-    if ( !new_ds.GetStrands().empty() ) {
+    if ( !single_segment_strands.empty() ) {
         /// Multiply the strands by the number of segments.
         new_ds.SetStrands().reserve(new_ds.GetDim() * new_ds.GetNumseg());
         for (CDense_seg::TNumseg seg = 0; 
-             seg < new_ds.GetNumseg() - 1;
+             seg < new_ds.GetNumseg();
              ++seg) {
             new_ds.SetStrands().insert(new_ds.SetStrands().end(),
-                                       new_ds.GetStrands().begin(), 
-                                       new_ds.GetStrands().begin() + new_ds.GetDim());
+                single_segment_strands.begin(), 
+                single_segment_strands.begin() + new_ds.GetDim());
         }
     }
     
