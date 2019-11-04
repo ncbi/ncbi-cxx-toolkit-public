@@ -129,7 +129,7 @@ public:
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         if (m_CountBases) {
-            ostr << "Total number of gap bases";
+            ostr << "Total number of gap bases missing";
         }
         else {
             ostr << "Number of gap openings";
@@ -205,15 +205,17 @@ public:
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
-        if (m_Frameshifts) {
-            ostr << "Number of frame shifts";
-        } else {
-            ostr << "Number of non-frame-shift insertions";
+        ostr << "Number of ";
+        if (!m_Frameshifts) {
+            ostr << "non-";
         }
+        ostr << "frameshifting insertions";
         if (m_Row == 0) {
-            ostr << " in query";
+            ostr << " in the query";
         } else if(m_Row == 1) {
-            ostr << " in subject";
+            ostr << " in the subject";
+        } else {
+            ostr << " or deletions";
         }
     }
 
