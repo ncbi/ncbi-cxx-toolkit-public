@@ -59,6 +59,37 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
+static void
+sSizeExonChunk(
+    const CSpliced_exon_chunk& chunk,
+    int& blockSize,
+    int& productInsertionSize,
+    int& genomicInsertionSize)
+//  ----------------------------------------------------------------------------
+{
+    switch(chunk.Which()) {
+        case CSpliced_exon_chunk::e_Match:
+            blockSize += chunk.GetMatch();
+            break;
+        case CSpliced_exon_chunk::e_Mismatch:
+            blockSize += chunk.GetMismatch();
+            break;
+        case CSpliced_exon_chunk::e_Product_ins:
+            if (blockSize > 0) {
+                productInsertionSize = chunk.GetProduct_ins();
+            }
+            break;
+        case CSpliced_exon_chunk::e_Genomic_ins:
+            if (blockSize > 0) {
+                genomicInsertionSize = chunk.GetGenomic_ins();
+            }
+            break;
+        default:
+            break; //for now, not interested
+    }
+}
+
+//  ----------------------------------------------------------------------------
 void
 CPslRecord::xInitializeStrands(
     CScope& scope,
@@ -247,6 +278,92 @@ CPslRecord::xInitializeSequenceT(
 
 //  ----------------------------------------------------------------------------
 void
+CPslRecord::xInitializeBlocksStrandPositive(
+    CScope& scope,
+    const CSpliced_seg& splicedSeg)
+//  ----------------------------------------------------------------------------
+{
+    const auto& exonList = splicedSeg.GetExons();
+    mExonCount = static_cast<int>(exonList.size());
+
+    for (auto pExon: exonList) {
+        auto partCount = pExon->GetParts().size();
+        if (partCount != 1) {
+            cerr << "";
+        }
+        int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
+        int exonStartT = static_cast<int>(pExon->GetGenomic_start());
+        mExonStartsQ.push_back(exonStartQ);
+        mExonStartsT.push_back(exonStartT);
+        int blockSize = 0;
+        int productInsertionPending = 0;
+        int genomicInsertionPending = 0;
+        for (auto pPart: pExon->GetParts()) {
+            if (productInsertionPending  ||  genomicInsertionPending) {
+                mExonCount++;
+                mExonSizes.push_back(blockSize);
+                mExonStartsQ.push_back(exonStartQ + blockSize + productInsertionPending);
+                mExonStartsT.push_back(
+                    exonStartT + blockSize + genomicInsertionPending);
+                exonStartQ += blockSize + productInsertionPending;
+                exonStartT += blockSize + genomicInsertionPending;
+                blockSize = 0;
+                productInsertionPending = 0;
+                genomicInsertionPending = 0;
+            }
+            sSizeExonChunk(
+                *pPart, blockSize, productInsertionPending, genomicInsertionPending);
+        }
+        mExonSizes.push_back(blockSize);
+        exonStartQ += blockSize;
+        exonStartT += blockSize;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CPslRecord::xInitializeBlocksStrandNegative(
+    CScope& scope,
+    const CSpliced_seg& splicedSeg)
+//  ----------------------------------------------------------------------------
+{
+    const auto& exonList = splicedSeg.GetExons();
+    mExonCount = static_cast<int>(exonList.size());
+
+    for (auto pExon: exonList) {
+        int exonEndT = static_cast<int>(pExon->GetGenomic_end() + 1);
+        int exonEndQ = mSizeQ - static_cast<int>(pExon->GetProduct_end().AsSeqPos() + 1);
+        int blockSize = 0;
+        int productInsertionPending = 0;
+        int genomicInsertionPending = 0;
+        for (auto pPart: pExon->GetParts()) {
+            if (productInsertionPending  ||  genomicInsertionPending) {
+                mExonCount++;
+                mExonSizes.push_back(blockSize);
+                mExonStartsT.push_back(exonEndT - blockSize);
+                mExonStartsQ.push_back(exonEndQ);
+                exonEndQ -= (blockSize + productInsertionPending);
+                exonEndT -= (blockSize + genomicInsertionPending);
+                blockSize = 0;
+                productInsertionPending = 0;
+                genomicInsertionPending = 0;
+            }
+            sSizeExonChunk(
+                *pPart, blockSize, productInsertionPending, genomicInsertionPending);
+        }
+        exonEndT -= blockSize;
+        mExonStartsT.push_back(exonEndT);
+        mExonStartsQ.push_back(exonEndQ);
+        exonEndQ -= blockSize;
+        mExonSizes.push_back(blockSize);
+    }
+    std::reverse(mExonStartsT.begin(), mExonStartsT.end());
+    std::reverse(mExonSizes.begin(), mExonSizes.end());
+    std::reverse(mExonStartsQ.begin(), mExonStartsQ.end());
+}
+
+//  ----------------------------------------------------------------------------
+void
 CPslRecord::xInitializeBlocks(
     CScope& scope,
     const CSpliced_seg& splicedSeg)
@@ -267,122 +384,10 @@ CPslRecord::xInitializeBlocks(
     mExonCount = static_cast<int>(exonList.size());
 
     if (mStrandT == eNa_strand_plus) {
-        for (auto pExon: exonList) {
-            auto partCount = pExon->GetParts().size();
-            if (partCount != 1) {
-                cerr << "";
-            }
-            int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
-            int exonStartT = static_cast<int>(pExon->GetGenomic_start());
-            mExonStartsQ.push_back(exonStartQ);
-            mExonStartsT.push_back(exonStartT);
-            int blockSize = 0;
-            int productInsertionPending = 0;
-            int genomicInsertionPending = 0;
-            for (auto pPart: pExon->GetParts()) {
-                if (productInsertionPending) {
-                    mExonCount++;
-                    mExonSizes.push_back(blockSize);
-                    mExonStartsQ.push_back(
-                        exonStartQ + blockSize + productInsertionPending);
-                    mExonStartsT.push_back(exonStartT + blockSize);
-                    exonStartQ += blockSize + productInsertionPending;
-                    exonStartT += blockSize;
-                    blockSize = 0;
-                    productInsertionPending = 0;
-                }
-                if (genomicInsertionPending) {
-                    mExonCount++;
-                    mExonSizes.push_back(blockSize);
-                    mExonStartsQ.push_back(exonStartQ + blockSize);
-                    mExonStartsT.push_back(
-                        exonStartT + blockSize + genomicInsertionPending);
-                    exonStartQ += blockSize;
-                    exonStartT += blockSize + genomicInsertionPending;
-                    blockSize = 0;
-                    genomicInsertionPending = 0;
-                }
-                if (pPart->IsMatch()) {
-                    blockSize += pPart->GetMatch();
-                }
-                else if (pPart->IsMismatch()) {
-                    blockSize += pPart->GetMismatch();
-                }
-                else if (pPart->IsProduct_ins()) {
-                    if (blockSize > 0) {
-                        productInsertionPending = pPart->GetProduct_ins();
-                    }
-                }
-                else if (pPart->IsGenomic_ins()) {
-                    if (blockSize > 0) {
-                        genomicInsertionPending = pPart->GetGenomic_ins();
-                    }
-                }
-            }
-            mExonSizes.push_back(blockSize);
-            exonStartQ += blockSize;
-            exonStartT += blockSize;
-        }
+        xInitializeBlocksStrandPositive(scope, splicedSeg);
     }
     else {
-        int runningBaseCountQ = mSizeQ - mStartQ;
-        for (auto pExon: exonList) {
-            int exonEndT = static_cast<int>(pExon->GetGenomic_end() + 1);
-            int exonEndQ = static_cast<int>(pExon->GetProduct_end().AsSeqPos() + 1);
-            int blockSize = 0;
-            int productInsertionPending = 0;
-            int genomicInsertionPending = 0;
-            for (auto pPart: pExon->GetParts()) {
-                if (productInsertionPending) {
-                    mExonCount++;
-                    mExonSizes.push_back(blockSize);
-                    mExonStartsT.push_back(exonEndT - blockSize);
-                    runningBaseCountQ -= blockSize;
-                    mExonStartsQ.push_back(runningBaseCountQ);
-                    runningBaseCountQ -= productInsertionPending;
-                    exonEndQ -= (blockSize + productInsertionPending);
-                    exonEndT -= blockSize;
-                    blockSize = 0;
-                    productInsertionPending = 0;
-                }
-                if (genomicInsertionPending) {
-                    mExonCount++;
-                    mExonSizes.push_back(blockSize);
-                    mExonStartsT.push_back(exonEndT - blockSize);
-                    runningBaseCountQ -= blockSize;
-                    mExonStartsQ.push_back(runningBaseCountQ);
-                    exonEndQ -= blockSize;
-                    exonEndT -= (blockSize + genomicInsertionPending);
-                    blockSize = 0;
-                    genomicInsertionPending = 0;
-                }
-                if (pPart->IsMatch()) {
-                    blockSize += pPart->GetMatch();
-                }
-                else if (pPart->IsMismatch()) {
-                    blockSize += pPart->GetMismatch();
-                }
-                else if (pPart->IsProduct_ins()) {
-                    if (blockSize > 0) {
-                        productInsertionPending = pPart->GetProduct_ins();
-                    }
-                }
-                else if (pPart->IsGenomic_ins()) {
-                    if (blockSize > 0) {
-                        genomicInsertionPending = pPart->GetGenomic_ins();
-                    }
-                }
-            }
-            exonEndT -= blockSize;
-            exonEndQ -= blockSize;
-            mExonStartsT.push_back(exonEndT);
-            runningBaseCountQ -= blockSize;
-            mExonStartsQ.push_back(runningBaseCountQ);
-            mExonSizes.push_back(blockSize);
-        }
-        std::reverse(mExonStartsT.begin(), mExonStartsT.end());
-        std::reverse(mExonSizes.begin(), mExonSizes.end());
-        std::reverse(mExonStartsQ.begin(), mExonStartsQ.end());
+        xInitializeBlocksStrandNegative(scope, splicedSeg);
     }
 }
 
@@ -396,10 +401,14 @@ CPslRecord::xValidateSegment(
     const auto& exonList = splicedSeg.GetExons();
     for (auto pExon: exonList) {
         if (!pExon->CanGetProduct_start()  || !pExon->CanGetProduct_end()) {
-            //throw?
+            NCBI_THROW(CObjWriterException, 
+                eBadInput, 
+                "Mandatory product information missing");
         }
         if (!pExon->CanGetGenomic_start()  || !pExon->CanGetGenomic_end()) {
-            //throw?
+            NCBI_THROW(CObjWriterException, 
+                eBadInput, 
+                "Mandatory target information missing");
         }
     }
 }
@@ -411,12 +420,6 @@ CPslRecord::Initialize(
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
-    //if (splicedSeg.CanGetProduct_type()) {
-    //    auto productType = splicedSeg.GetProduct_type();
-    //    if (productType == CSpliced_seg::eProduct_type_protein) {
-    //        cout << "";
-    //    }
-    //}
     xValidateSegment(scope, splicedSeg);
 
     xInitializeStrands(scope, splicedSeg);
@@ -437,7 +440,9 @@ CPslRecord::xValidateSegment(
 //  ----------------------------------------------------------------------------
 {
     if (denseSeg.GetDim() != 2) {
-        //throw!
+        NCBI_THROW(CObjWriterException, 
+            eBadInput, 
+            "PSL supports only pairwaise alignments");
     }
 }
 

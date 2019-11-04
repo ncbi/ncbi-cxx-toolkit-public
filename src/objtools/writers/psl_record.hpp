@@ -130,6 +130,12 @@ protected:
     void xInitializeBlocks(
         CScope&,
         const CSpliced_seg&);
+    void xInitializeBlocksStrandPositive(
+        CScope&,
+        const CSpliced_seg&);
+    void xInitializeBlocksStrandNegative(
+        CScope&,
+        const CSpliced_seg&);
 
     void xValidateSegment(
         CScope&,
