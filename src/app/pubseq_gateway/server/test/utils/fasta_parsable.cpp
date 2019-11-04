@@ -132,18 +132,19 @@ int CFastaParsableApp::Run(void)
 
         for (const auto &  item : seq_ids) {
             try {
+                if (item.first == -1 && !check_minus_one)
+                    continue;
+
                 seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
                            (CSeq_id::E_Choice)item.first, item.second);
 
                 // Check the type and label
-                if (item.first != -1 || check_minus_one) {
-                    if (seq_id.Which() != (CSeq_id::E_Choice)item.first) {
-                        cerr << lines << " Line: " << line
-                             << " Which() inconsistency. Which() reports " << seq_id.Which()
-                             << ", expected " << item.first
-                             << " for fasta content " << item.second << endl;
-                        ++errors;
-                    }
+                if (seq_id.Which() != (CSeq_id::E_Choice)item.first) {
+                    cerr << lines << " Line: " << line
+                         << " Which() inconsistency. Which() reports " << seq_id.Which()
+                         << ", expected " << item.first
+                         << " for fasta content " << item.second << endl;
+                    ++errors;
                 }
 
                 fasta_content.clear();
