@@ -283,7 +283,8 @@ CMakeProfileDBApp::CMakeProfileDBApp(void)
                   m_WordDefaultScoreThreshold(0), m_OutDbName(kEmptyStr), m_MaxFileSize(0),
                   m_OutDbType(kEmptyStr), m_CreateIndexFile(false),m_GapOpenPenalty(0),
                   m_GapExtPenalty(0), m_PssmScaleFactor(0),m_Matrix(kEmptyStr),  m_op_mode(op_invalid),
-                  m_binary_scoremat(false), m_Taxids(new CTaxIdSet()), m_Done(false),
+                  m_binary_scoremat(false), m_DbVer(eBDB_Version5),
+                  m_Taxids(new CTaxIdSet()), m_Done(false),
                   m_ObsrvThreshold(0), m_ExcludeInvalid(false), m_CurrFreqOffset(0), m_CurrObsrOffset(0),
                   m_UpdateFreqRatios(true), m_UseModelThreshold(true)
 {
@@ -440,6 +441,18 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
                             "not pass validation test",
                             CArgDescriptions::eBoolean, kDefaultExcludeInvalid);
 
+    arg_desc->SetCurrentGroup("Taxonomy options");
+    arg_desc->AddOptionalKey("taxid", "TaxID",
+                             "Taxonomy ID to assign to all sequences",
+                             CArgDescriptions::eInteger);
+    arg_desc->SetConstraint("taxid", new CArgAllowValuesGreaterThanOrEqual(0));
+    arg_desc->SetDependency("taxid", CArgDescriptions::eExcludes, "taxid_map");
+
+    arg_desc->AddOptionalKey("taxid_map", "TaxIDMapFile",
+             "Text file mapping sequence IDs to taxonomy IDs.\n"
+             "Format:<SequenceId> <TaxonomyId><newline>",
+             CArgDescriptions::eInputFile);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -526,6 +539,15 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 		m_UseModelThreshold = false;
 	}
     m_DbVer = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+
+    if (args["taxid"].HasValue()) {
+        _ASSERT( !args["taxid_map"].HasValue() );
+        m_Taxids.Reset(new CTaxIdSet(args["taxid"].AsInteger()));
+    } else if (args["taxid_map"].HasValue()) {
+        _ASSERT( !args["taxid"].HasValue() );
+        _ASSERT( !m_Taxids.Empty() );
+        m_Taxids->SetMappingFromFile(args["taxid_map"].AsInputFile());
+    }
 }
 
 vector<string> CMakeProfileDBApp::x_GetSMPFilenames(void)
