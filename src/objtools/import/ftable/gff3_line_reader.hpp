@@ -63,7 +63,7 @@ private:
     void
     xInitializeRecord(
         const std::vector<std::string>&,
-        CFeatImportData&);
+        CFeatImportData&) override;
 
     void
     xSplitLine(

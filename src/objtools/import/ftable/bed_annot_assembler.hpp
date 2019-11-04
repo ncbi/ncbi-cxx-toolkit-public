@@ -64,7 +64,7 @@ public:
     virtual void
     FinalizeAnnot(
         const CAnnotImportData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
 private:
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;

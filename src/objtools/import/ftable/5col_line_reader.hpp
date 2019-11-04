@@ -80,7 +80,7 @@ private:
     void
     xInitializeRecord(
         const std::vector<std::string>&,
-        CFeatImportData&);
+        CFeatImportData&) override;
 
     std::string mCurrentSeqId;
     std::vector<std::string> mCollectedLines;
