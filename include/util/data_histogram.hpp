@@ -40,6 +40,7 @@
 #include <cmath>          // additional overloads for pow()
 #include <memory>
 #include <mutex>
+#include <type_traits>
 
 
 /** @addtogroup Statistics
@@ -165,7 +166,7 @@ public:
 
     /// Add value to the data distribution.
     /// Try to find an appropriate bin for a specified value and increase its counter on 1.
-    /// @sa GetStarts, GetCounters
+    /// @sa GetStarts, GetCounters, GetSum
     void Add(TValue value);
 
     /// Reset all data counters.
@@ -176,6 +177,19 @@ public:
     /// @note Both histograms should have the same structure.
     /// @sa Clone, Reset
     void StealCountersFrom(CHistogram& other);
+
+    /// Sum type. double for all floating points TValue types, and Int8 otherwise.
+    using TSum = typename std::conditional<std::is_floating_point<TValue>::value, double, Int8>::type;
+
+    /// Return the sum of all added values.
+    /// @return
+    ///   Returned type is 'double' or 'Int8', depends on TValue type.
+    ///   The sum can be calculated for arithmetic TValue types only.
+    ///   If TValue is not integral or floating point Int8(0) will be returned.
+    /// @note 
+    ///   Add() doesn't check calculated sum on overflow.
+    /// @sa Add, TSum
+    TSum GetSum(void) const { return m_Sum; };
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -363,6 +377,7 @@ protected:
     TValue    m_Min;         ///< Minimum value (the lower bound of combined scale)
     TValue    m_Max;         ///< Maximum value (the upper bound of combined scale)
     unsigned  m_NumBins;     ///< Number of bins (m_Starts[]/m_Counts[] length)
+    TSum      m_Sum;         ///< Sum of the all added values
 
     std::unique_ptr<TScale[]>   m_Starts;    ///< Combined scale: starting bins positions
     std::unique_ptr<TCounter[]> m_Counters;  ///< Combined scale: counters - the number of measurements for each bin
@@ -459,7 +474,7 @@ CHistogram<TValue, TScale, TCounter>::CHistogram
     EScaleType  scale_type, 
     EScaleView  scale_view
 )
-    : m_Min(min_value), m_Max(max_value), m_NumBins(n_bins) 
+    : m_Min(min_value), m_Max(max_value), m_NumBins(n_bins), m_Sum(0)
 {
     if ( m_Min > m_Max ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Minimum value cannot exceed maximum value");
@@ -570,6 +585,10 @@ template <typename TValue, typename TScale, typename TCounter>
 void 
 CHistogram<TValue, TScale, TCounter>::Add(TValue value)
 {
+    if (std::is_integral<TValue>::value ||
+        std::is_floating_point<TValue>::value) {
+        m_Sum += (TSum)value;
+    }
     if (value < m_Min) {
         m_LowerAnomalyCount++;
         return;
@@ -594,6 +613,7 @@ CHistogram<TValue, TScale, TCounter>::Reset(void)
     m_Count = m_LowerAnomalyCount = m_UpperAnomalyCount = 0;
     // Reset bins
     memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
+    m_Sum = 0;
 }
 
 
@@ -906,6 +926,7 @@ CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const
     h.m_Min     = m_Min;
     h.m_Max     = m_Max;
     h.m_NumBins = m_NumBins;
+    h.m_Sum     = m_Sum;
 
     h.m_Starts.reset(new TScale[m_NumBins]);
     h.m_Counters.reset(new TCounter[m_NumBins]);
@@ -942,6 +963,7 @@ CHistogram<TValue, TScale, TCounter>::x_MoveFrom(CHistogram& other)
     m_Min               = other.m_Min;
     m_Max               = other.m_Max;
     m_NumBins           = other.m_NumBins;
+    m_Sum               = other.m_Sum;
     m_Count             = other.m_Count;
     m_LowerAnomalyCount = other.m_LowerAnomalyCount;
     m_UpperAnomalyCount = other.m_UpperAnomalyCount;
@@ -949,6 +971,7 @@ CHistogram<TValue, TScale, TCounter>::x_MoveFrom(CHistogram& other)
     m_Starts.reset(other.m_Starts.release());
     m_Counters.reset(other.m_Counters.release());
     other.m_NumBins = 0;
+    other.m_Sum = 0;
     
     return;
 }
@@ -995,11 +1018,18 @@ CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
     m_Count += other.m_Count;
     m_LowerAnomalyCount += other.m_LowerAnomalyCount;
     m_UpperAnomalyCount += other.m_UpperAnomalyCount;
+    m_Sum += other.m_Sum;
 
     other.Reset();
 }
 
 
+
+//============================================================================
+//
+// CHistogramTimeSeries 
+//
+//============================================================================
 
 template <typename TValue, typename TScale, typename TCounter>
 CHistogramTimeSeries<TValue, TScale, TCounter>::CHistogramTimeSeries(const THistogram& model_histogram) :
@@ -1033,7 +1063,7 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::Rotate()
 
 template <typename TValue, typename TScale, typename TCounter>
 void
-CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t  index,
+CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t index,
        typename ncbi::CHistogramTimeSeries<TValue, TScale, TCounter>::TTimeBins::iterator current_it)
 {
     if (m_TimeBins.size() <= index + 1) {
@@ -1050,7 +1080,7 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t  index,
         return;
     }
 
-    auto    next_it = current_it;
+    auto next_it = current_it;
     ++next_it;
 
     if (next_it->n_ticks == pow(2, index)) {

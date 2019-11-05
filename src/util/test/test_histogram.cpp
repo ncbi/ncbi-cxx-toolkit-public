@@ -159,6 +159,7 @@ private:
         cout << "Total count    : "  << h.GetCount()             << endl; \
         cout << "Anomaly (lower): "  << h.GetLowerAnomalyCount() << endl; \
         cout << "Anomaly (upper): "  << h.GetUpperAnomalyCount() << endl; \
+        cout << "Sum            : "  << h.GetSum() << endl; \
         cout << endl; \
     }}
 
