@@ -1,0 +1,7 @@
+                Warning:
+Problem:        FASTA-Reader: Start of first data line in seq is about 70% ambiguous nucleotides (shouldn't be over 40%)
+SeqId:          lcl|seq_id
+Line:           2
+FeatureName:    first data line
+
+

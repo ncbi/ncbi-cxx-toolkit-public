@@ -17,5 +17,6 @@ LIBS = $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
+CHECK_COPY = fasta_reader_test_cases
 
 WATCHERS = ucko gotvyans foleyjp

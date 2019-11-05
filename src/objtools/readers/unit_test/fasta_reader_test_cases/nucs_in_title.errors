@@ -1,0 +1,7 @@
+                Warning:
+Problem:        FASTA-Reader: Title ends with at least 20 valid nucleotide characters.  Was the sequence accidentally put in the title line?
+SeqId:          lcl|seq_id
+Line:           1
+FeatureName:    defline
+
+
