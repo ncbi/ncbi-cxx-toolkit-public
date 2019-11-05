@@ -60,29 +60,26 @@ USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 static void
-sSizeExonChunk(
+sExonChunkAppendStats(
     const CSpliced_exon_chunk& chunk,
-    int& blockSize,
+    int& matchSize,
+    int& misMatchSize,
     int& productInsertionSize,
     int& genomicInsertionSize)
 //  ----------------------------------------------------------------------------
 {
     switch(chunk.Which()) {
         case CSpliced_exon_chunk::e_Match:
-            blockSize += chunk.GetMatch();
+            matchSize += chunk.GetMatch();
             break;
         case CSpliced_exon_chunk::e_Mismatch:
-            blockSize += chunk.GetMismatch();
+            misMatchSize += chunk.GetMismatch();
             break;
         case CSpliced_exon_chunk::e_Product_ins:
-            if (blockSize > 0) {
-                productInsertionSize = chunk.GetProduct_ins();
-            }
+            productInsertionSize += chunk.GetProduct_ins();
             break;
         case CSpliced_exon_chunk::e_Genomic_ins:
-            if (blockSize > 0) {
-                genomicInsertionSize = chunk.GetGenomic_ins();
-            }
+            genomicInsertionSize += chunk.GetGenomic_ins();
             break;
         default:
             break; //for now, not interested
@@ -106,47 +103,7 @@ CPslRecord::xInitializeStrands(
 
 //  ----------------------------------------------------------------------------
 void
-CPslRecord::xInitializeInsertsQ(
-    CScope& scope,
-    const CSpliced_seg& splicedSeg)
-//  ----------------------------------------------------------------------------
-{
-    if (mNumInsertQ != -1  &&  mBaseInsertQ != -1) {
-        return;
-    }
-    if (mStrandQ == eNa_strand_unknown) {
-        xInitializeStrands(scope, splicedSeg);
-    }
-    if (mEndQ == -1) {
-        xInitializeSequenceQ(scope, splicedSeg);
-    }
-
-    mNumInsertQ = mBaseInsertQ = 0;
-    const auto& exonList = splicedSeg.GetExons();
-
-    int startQQ(-1), endQQ(-1);
-    for (auto pExon: exonList) {
-        for (auto pPart: pExon->GetParts()) {
-            if (pPart->IsProduct_ins()) {
-                mNumInsertQ++;
-                mBaseInsertQ += pPart->GetProduct_ins();
-            }
-        }
-        int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
-        if (startQQ == -1  ||  exonStartQ < startQQ) {
-            startQQ = exonStartQ;
-        }
-        int exonEndQ = static_cast<int>(pExon->GetProduct_end().AsSeqPos());
-        if (endQQ == -1  ||  exonEndQ >= endQQ) {
-            endQQ = exonEndQ + 1;
-        }
-    }
-    mEndQ = endQQ;
-}
-
-//  ----------------------------------------------------------------------------
-void
-CPslRecord::xInitializeInsertsT(
+CPslRecord::xInitializeStats(
     CScope& scope,
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
@@ -158,122 +115,75 @@ CPslRecord::xInitializeInsertsT(
         xInitializeStrands(scope, splicedSeg);
     }
 
+    // get inserts that are part of exons:
+    mMatches = mMisMatches = mRepMatches = 0;
     mNumInsertT = mBaseInsertT = 0;
+    mNumInsertQ = mBaseInsertQ = 0;
     const auto& exonList = splicedSeg.GetExons();
-    if (mStrandT == eNa_strand_plus) {
-        int lastExonEndT = -1;
-        for (auto pExon: exonList) {
-             for (auto pPart: pExon->GetParts()) {
-                if (pPart->IsGenomic_ins()) {
-                    mNumInsertT++;
-                    mBaseInsertT += pPart->GetGenomic_ins();
-                }
+    for (auto pExon: exonList) {
+        for (auto pPart: pExon->GetParts()) {
+            sExonChunkAppendStats(
+                *pPart, mMatches, mMisMatches, mBaseInsertQ, mBaseInsertT);
+            if (pPart->IsProduct_ins()) {
+                mNumInsertQ++;
             }
-            if (lastExonEndT == -1) {
-                 lastExonEndT = pExon->GetGenomic_end() + 1;
+            else if (pPart->IsGenomic_ins()) {
+                mNumInsertT++;
+            }
+        }
+    }
+
+    // for the target, introns count as inserts:
+    int lastExonBoundT = -1;
+    if ( mStrandT == eNa_strand_plus) {
+        for (auto pExon: exonList) {
+            if (lastExonBoundT == -1) {
+                 lastExonBoundT = pExon->GetGenomic_end() + 1;
                  continue;
             }
-            auto exonStart = pExon->GetGenomic_start();
-            if (exonStart > lastExonEndT) {
-                mNumInsertT++;
-                mBaseInsertT += (exonStart - lastExonEndT);
+            int exonStart = pExon->GetGenomic_start();
+            if (exonStart > lastExonBoundT) {
+                mBaseInsertT += (exonStart - lastExonBoundT);
             }
-            lastExonEndT = pExon->GetGenomic_end() + 1;
+            lastExonBoundT = pExon->GetGenomic_end() + 1;
         }
     }
     else { // eNa_strand_minus
-        int lastExonStartT = -1;
         for (auto pExon: exonList) {
-            for (auto pPart: pExon->GetParts()) {
-                if (pPart->IsGenomic_ins()) {
-                    mNumInsertT++;
-                    mBaseInsertT += pPart->GetGenomic_ins();
-                }
-            }
-            if (lastExonStartT == -1) {
-                lastExonStartT = pExon->GetGenomic_start();
+            if (lastExonBoundT == -1) {
+                lastExonBoundT = pExon->GetGenomic_start();
                 continue;
             }
-            auto exonEnd = pExon->GetGenomic_end() + 1;
-            if (exonEnd < lastExonStartT) {
-                mNumInsertT++;
-                mBaseInsertT += (lastExonStartT - exonEnd);
+            int exonEnd = pExon->GetGenomic_end() + 1;
+            if (exonEnd < lastExonBoundT) {
+                mBaseInsertT += (lastExonBoundT - exonEnd);
             }
-            lastExonStartT = pExon->GetGenomic_start();
+            lastExonBoundT = pExon->GetGenomic_start();
         }
     }
+    mNumInsertT += static_cast<int>((exonList.size() - 1));
 }
 
 //  ----------------------------------------------------------------------------
 void
-CPslRecord::xInitializeMatchesMismatches(
+CPslRecord::xInitializeSequenceInfo(
     CScope& scope,
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
-    if (mMatches != -1  &&  mMisMatches != -1  &&  mRepMatches != -1) {
-        return;
-    }
-
-    mMatches = mMisMatches = mRepMatches = 0;
-    const auto& exonList = splicedSeg.GetExons();
-    for (auto pExon: exonList) {
-        const auto& exonParts = pExon->GetParts();
-        for (auto part: exonParts) {
-            if (part->IsMatch()) {
-                mMatches += part->GetMatch();
-            }
-            else if (part->IsMismatch()) {
-                mMisMatches += part->GetMismatch();
-            }
-        } 
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void
-CPslRecord::xInitializeSequenceQ(
-    CScope& scope,
-    const CSpliced_seg& splicedSeg)
-//  ----------------------------------------------------------------------------
-{
-    if (mSizeQ != -1  &&  mStartQ != -1  &&  mEndQ != -1) {
-        return;
-    }
     const auto& queryId = splicedSeg.GetProduct_id();
     auto querySeqHandle = scope.GetBioseqHandle(queryId);
     CWriteUtil::GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
     mSizeQ = querySeqHandle.GetInst_Length();
     mStartQ = splicedSeg.GetSeqStart(0);
-    mEndQ = splicedSeg.GetSeqStop(0);
-}
+    mEndQ = splicedSeg.GetSeqStop(0) + 1;
 
-//  ----------------------------------------------------------------------------
-void
-CPslRecord::xInitializeSequenceT(
-    CScope& scope,
-    const CSpliced_seg& splicedSeg)
-//  ----------------------------------------------------------------------------
-{
-    if (mSizeT != -1  &&  mStartT != -1  &&  mEndT != -1) {
-        return;
-    }
     const auto& targetId = splicedSeg.GetGenomic_id();
     auto targetSeqHandle = scope.GetBioseqHandle(targetId);
     CWriteUtil::GetBestId(targetSeqHandle.GetSeq_id_Handle(), scope, mNameT);
     mSizeT = targetSeqHandle.GetInst_Length();
-
-    const auto& exonList = splicedSeg.GetExons();
-    for (auto pExon: exonList) {
-        int exonStartT = static_cast<int>(pExon->GetGenomic_start());
-        if (mStartT == -1  ||  exonStartT < mStartT) {
-            mStartT = exonStartT;
-        }
-        int exonEndT = static_cast<int>(pExon->GetGenomic_end());
-        if (mEndT == -1  ||  exonEndT >= mEndT) {
-            mEndT = exonEndT + 1;
-        }
-    }
+    mStartT = splicedSeg.GetSeqStart(1);
+    mEndT = splicedSeg.GetSeqStop(1) + 1;
 }
 
 //  ----------------------------------------------------------------------------
@@ -311,8 +221,8 @@ CPslRecord::xInitializeBlocksStrandPositive(
                 productInsertionPending = 0;
                 genomicInsertionPending = 0;
             }
-            sSizeExonChunk(
-                *pPart, blockSize, productInsertionPending, genomicInsertionPending);
+            sExonChunkAppendStats(
+                *pPart, blockSize, blockSize, productInsertionPending, genomicInsertionPending);
         }
         mExonSizes.push_back(blockSize);
         exonStartQ += blockSize;
@@ -348,8 +258,8 @@ CPslRecord::xInitializeBlocksStrandNegative(
                 productInsertionPending = 0;
                 genomicInsertionPending = 0;
             }
-            sSizeExonChunk(
-                *pPart, blockSize, productInsertionPending, genomicInsertionPending);
+            sExonChunkAppendStats(
+                *pPart, blockSize, blockSize, productInsertionPending, genomicInsertionPending);
         }
         exonEndT -= blockSize;
         mExonStartsT.push_back(exonEndT);
@@ -375,9 +285,6 @@ CPslRecord::xInitializeBlocks(
 
     if (mStrandT == eNa_strand_unknown) {
         xInitializeStrands(scope, splicedSeg);
-    }
-    if (mBaseInsertQ == -1) {
-        xInitializeInsertsQ(scope, splicedSeg);
     }
 
     const auto& exonList = splicedSeg.GetExons();
@@ -423,12 +330,9 @@ CPslRecord::Initialize(
     xValidateSegment(scope, splicedSeg);
 
     xInitializeStrands(scope, splicedSeg);
-    xInitializeMatchesMismatches(scope, splicedSeg);
-    //nCount?
-    xInitializeSequenceQ(scope, splicedSeg);
-    xInitializeSequenceT(scope, splicedSeg);
-    xInitializeInsertsQ(scope, splicedSeg);
-    xInitializeInsertsT(scope, splicedSeg);
+     //nCount?
+    xInitializeSequenceInfo(scope, splicedSeg);
+    xInitializeStats(scope, splicedSeg);
     xInitializeBlocks(scope, splicedSeg);
 }
 

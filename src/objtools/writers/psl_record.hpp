@@ -109,24 +109,19 @@ protected:
     void xValidateSegment(
         CScope&,
         const CSpliced_seg&);
+
     void xInitializeStrands(
         CScope&,
         const CSpliced_seg&);
-    void xInitializeInsertsQ(
+
+    void xInitializeStats(
         CScope&,
         const CSpliced_seg&);
-    void xInitializeInsertsT(
+
+    void xInitializeSequenceInfo(
         CScope&,
         const CSpliced_seg&);
-    void xInitializeMatchesMismatches(
-        CScope&,
-        const CSpliced_seg&);
-    void xInitializeSequenceQ(
-        CScope&,
-        const CSpliced_seg&);
-    void xInitializeSequenceT(
-        CScope&,
-        const CSpliced_seg&);
+
     void xInitializeBlocks(
         CScope&,
         const CSpliced_seg&);
