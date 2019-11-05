@@ -67,7 +67,7 @@ const string dirTestFiles("fasta_reader_test_cases");
 // !!!
 //  ============================================================================
 
-static int s_StringToFastaFlag(const string& flag_string)
+static CFastaReader::TFlags s_StringToFastaFlag(const string& flag_string)
 {
     map<string, CFastaReader::EFlags> sFlagsMap =
     {
@@ -83,13 +83,45 @@ static int s_StringToFastaFlag(const string& flag_string)
 
     auto it = sFlagsMap.find(flag_string);
     if (it != end(sFlagsMap)) {
-        return static_cast<int>(it->second);
+        return static_cast<CFastaReader::TFlags>(it->second);
     }
 
 
     return 0;
 }
 
+struct SConfigInfo
+{
+    vector<CFastaReader::TFlags> flags;
+    vector<string> excluded_mods;
+};
+
+
+static int s_ReadConfig(CNcbiIfstream ifstr, SConfigInfo& config) 
+{
+    for (string line; getline(ifstr, line);) {
+        NStr::TruncateSpaces(line);
+        if (line.empty()) {
+            continue;
+        }
+        list<string> tokens;
+        NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
+
+        if (tokens.front() == "FLAGS") {
+            transform(next(begin(tokens)), end(tokens),
+                    back_inserter(config.flags), s_StringToFastaFlag);
+            continue;
+        }
+
+        if (tokens.front() == "EXCLUDED_MODS") {
+            copy(next(begin(tokens)), end(tokens), 
+                    config.excluded_mods.begin());
+            continue;
+        }
+    }
+
+
+}
 
 struct STestInfo {
     CFile mConfigFile;
@@ -176,6 +208,7 @@ private:
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
+    string cfg    = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extConfig);
     string input  = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
@@ -188,9 +221,18 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     unique_ptr<CMessageListenerBase> pMessageListener(new CMessageListenerLenient());
     
     CRef<ILineReader> pLineReader = ILineReader::New(ifstr);
-    CFastaReader::TFlags fFlags = 
+    CFastaReader::TFlags fFlags = 0;
+    SConfigInfo config_info;
+    s_ReadConfig(CNcbiIfstream(cfg.c_str()), config_info);
+    if (!config_info.flags.empty()) {
+        for (auto flag : config_info.flags) {
+            fFlags |= flag;
+        }
+    }
+   /* 
         CFastaReader::fAssumeNuc |
         CFastaReader::fForceType; 
+    */
     CFastaReader fasta_reader(*pLineReader, fFlags);
     CRef<CSeq_entry> pSeqEntry;
     try {
@@ -252,9 +294,23 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     unique_ptr<CMessageListenerBase> pMessageListener(new CMessageListenerLenient());
     CRef<ILineReader> pLineReader = ILineReader::New(ifstr);
+
+    CFastaReader::TFlags fFlags = 0;
+    SConfigInfo config_info;
+    s_ReadConfig(
+        CNcbiIfstream(testInfo.mConfigFile.GetPath().c_str()), 
+        config_info);
+    if (!config_info.flags.empty()) {
+        for (auto flag : config_info.flags) {
+            fFlags |= flag;
+        }
+    }
+
+/*
     CFastaReader::TFlags fFlags = 
         CFastaReader::fAssumeNuc |
         CFastaReader::fForceType; 
+        */
     CFastaReader fasta_reader(*pLineReader, fFlags);
     CRef<CSeq_entry> pSeqEntry;
     try {
