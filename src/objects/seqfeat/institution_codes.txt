@@ -1318,6 +1318,7 @@ CPATU	s	Centro de Pesquisa Agroflorestal da Amazonia Oriental-Embrapa
 CPB	s	National Institute for the Control of Pharmaceutical and Biological Products			
 CPC	c	Culture collection of Pedro Crous			
 CPCC	c	Canadian Phycological Culture Centre	UTCC		
+CPCC<CHN>	c	China Pharmaceutical Culture Collection			
 CPDC	s	Centro de Pesquisas do Cacau			
 CPF	s	KwaZulu-Natal Nature Conservation Service			
 CPH	s	University of the Pacific, Biological Sciences Department			

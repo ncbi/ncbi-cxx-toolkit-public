@@ -1351,6 +1351,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CPB\ts\tNational Institute for the Control of Pharmaceutical and Biological Products\t\t\t",
 "CPC\tc\tCulture collection of Pedro Crous\t\t\t",
 "CPCC\tc\tCanadian Phycological Culture Centre\tUTCC\t\t",
+"CPCC<CHN>\tc\tChina Pharmaceutical Culture Collection\t\t\t",
 "CPDC\ts\tCentro de Pesquisas do Cacau\t\t\t",
 "CPF\ts\tKwaZulu-Natal Nature Conservation Service\t\t\t",
 "CPH\ts\tUniversity of the Pacific, Biological Sciences Department\t\t\t",
