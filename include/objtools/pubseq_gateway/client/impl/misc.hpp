@@ -1,0 +1,306 @@
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CLIENT__IMPL__MISC__HPP
+#define OBJTOOLS__PUBSEQ_GATEWAY__CLIENT__IMPL__MISC__HPP
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Rafael Sadyrov
+ *
+ */
+
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <thread>
+
+#include <corelib/ncbitime.hpp>
+
+BEGIN_NCBI_SCOPE
+
+template <int ITERS, typename MUTEX = void, int SLEEP_US = 10, int WAIT_MS = 100>
+struct SPSG_CV
+{
+    template <typename M, typename NA = void>
+    struct SAddMutex
+    {
+    };
+
+    template <typename NA>
+    struct SAddMutex<mutex, NA>
+    {
+        mutable mutex m;
+    };
+
+private:
+    template <int I, typename NA = void>
+    struct SImpl : SAddMutex<MUTEX>
+    {
+        void NotifyOne() {}
+        void NotifyAll() {}
+
+        bool WaitUntil(const CDeadline& deadline)
+        {
+            return x_WaitUntil() || !deadline.IsExpired();
+        }
+
+        bool WaitUntil(const atomic_bool& stopped, const CDeadline& deadline)
+        {
+            return x_WaitUntil() || (!stopped && !deadline.IsExpired());
+        }
+
+    private:
+        bool x_WaitUntil()
+        {
+            this_thread::sleep_for(chrono::microseconds(SLEEP_US));
+
+            if (m_I-- > 0) {
+                return true;
+            }
+
+            m_I += I;
+            return false;
+        }
+
+        int m_I = I;
+    };
+
+    template <typename NA>
+    struct SImpl<0, NA>
+    {
+        using clock = chrono::system_clock;
+
+        mutable mutex m;
+
+        SImpl() : m_Signal(0) {}
+
+        void NotifyOne() { x_Signal(); m_CV.notify_one(); }
+        void NotifyAll() { x_Signal(); m_CV.notify_all(); }
+
+        bool WaitUntil(const CDeadline& deadline)
+        {
+            return deadline.IsInfinite() ? x_Wait() : x_Wait(x_GetTP(deadline));
+        }
+
+        bool WaitUntil(const atomic_bool& stopped, const CDeadline& deadline)
+        {
+            const auto until = deadline.IsInfinite() ? clock::time_point::max() : x_GetTP(deadline);
+            const clock::duration wait = chrono::milliseconds(WAIT_MS);
+            const auto max = clock::now() + wait;
+
+            do {
+                if (until < max) {
+                    return x_Wait(until);
+                }
+
+                if (x_Wait(max)) {
+                    return true;
+                }
+            }
+            while (!stopped);
+
+            return false;
+        }
+
+    private:
+        static clock::time_point x_GetTP(const CDeadline& d)
+        {
+            time_t seconds;
+            unsigned int nanoseconds;
+
+            d.GetExpirationTime(&seconds, &nanoseconds);
+            const auto ns = chrono::duration_cast<clock::duration>(chrono::nanoseconds(nanoseconds));
+            return clock::from_time_t(seconds) + ns;
+        }
+
+        template <class... TArgs>
+        bool x_Wait(TArgs&&... args)
+        {
+            unique_lock<mutex> lock(m);
+            auto p = [&](){ return m_Signal > 0; };
+
+            if (!x_CvWait(lock, p, forward<TArgs>(args)...)) return false;
+
+            m_Signal--;
+            return true;
+        }
+
+        template <class TL, class TP, class TT>
+        bool x_CvWait(TL& l, TP p, const TT& t)
+        {
+            return m_CV.wait_until(l, t, p);
+        }
+
+        template <class TL, class TP>
+        bool x_CvWait(TL& l, TP p)
+        {
+            m_CV.wait(l, p); return true;
+        }
+
+        void x_Signal()
+        {
+            lock_guard<mutex> lock(m);
+            m_Signal++;
+        }
+
+        condition_variable m_CV;
+        int m_Signal;
+    };
+
+public:
+    void NotifyOne() volatile { GetImpl().NotifyOne(); }
+    void NotifyAll() volatile { GetImpl().NotifyAll(); }
+
+    template <class... TArgs>
+    bool WaitUntil(TArgs&&... args) volatile
+    {
+        return GetImpl().WaitUntil(forward<TArgs>(args)...);
+    }
+
+protected:
+    mutex& GetMutex() const { return m_Impl.m; }
+
+private:
+    using TImpl = SImpl<ITERS>;
+
+    TImpl& GetImpl() volatile { return const_cast<TImpl&>(m_Impl); }
+
+    TImpl m_Impl;
+};
+
+template <class TValue>
+struct CPSG_Stack
+{
+private:
+    struct TElement
+    {
+        shared_ptr<TElement> next;
+        TValue value;
+
+        template <class... TArgs>
+        TElement(shared_ptr<TElement> n, TArgs&&... args) : next(n), value(forward<TArgs>(args)...) {}
+    };
+
+public:
+    ~CPSG_Stack() { Clear(); }
+
+    template <class... TArgs>
+    void Emplace(TArgs&&... args)
+    {
+        auto head = make_shared<TElement>(atomic_load(&m_Head), forward<TArgs>(args)...);
+
+        while (!atomic_compare_exchange_weak(&m_Head, &head->next, head));
+    }
+
+    void Push(TValue value)
+    {
+        auto head = make_shared<TElement>(atomic_load(&m_Head), move(value));
+
+        while (!atomic_compare_exchange_weak(&m_Head, &head->next, head));
+    }
+
+    bool Pop(TValue& value)
+    {
+        while (auto head = atomic_load(&m_Head)) {
+            if (atomic_compare_exchange_weak(&m_Head, &head, head->next)) {
+                value = move(head->value);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void Clear()
+    {
+        while (auto head = atomic_load(&m_Head)) {
+            if (atomic_compare_exchange_weak(&m_Head, &head, {})) {
+                while (auto old_head = head) {
+                    head = head->next;
+                }
+            }
+        }
+    }
+
+    bool Empty() const { return !atomic_load(&m_Head); }
+
+private:
+    shared_ptr<TElement> m_Head;
+};
+
+template <class TValue>
+struct CPSG_WaitingStack : private CPSG_Stack<TValue>
+{
+    CPSG_WaitingStack() : m_Stopped(false) {}
+
+    template <class... TArgs>
+    void Emplace(TArgs&&... args)
+    {
+        if (m_Stopped) return;
+
+        CPSG_Stack<TValue>::Emplace(forward<TArgs>(args)...);
+        m_CV.NotifyOne();
+    }
+
+    void Push(TValue value)
+    {
+        if (m_Stopped) return;
+
+        CPSG_Stack<TValue>::Push(move(value));
+        m_CV.NotifyOne();
+    }
+
+    bool Pop(TValue& value, const CDeadline& deadline = CDeadline::eInfinite)
+    {
+        do {
+            if (CPSG_Stack<TValue>::Pop(value)) {
+                return true;
+            }
+        }
+        while (m_CV.WaitUntil(m_Stopped, deadline));
+
+        return false;
+    }
+
+    enum EStop { eDrain, eClear };
+    void Stop(EStop stop)
+    {
+        m_Stopped.store(true);
+        if (stop == eClear) CPSG_Stack<TValue>::Clear();
+        m_CV.NotifyAll();
+    }
+
+    const atomic_bool& Stopped() const { return m_Stopped; }
+    bool Empty() const { return m_Stopped && CPSG_Stack<TValue>::Empty(); }
+
+private:
+    SPSG_CV<0> m_CV;
+    atomic_bool m_Stopped;
+};
+
+END_NCBI_SCOPE
+
+#endif

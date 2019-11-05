@@ -49,18 +49,19 @@ const vector<SRule> SRule::Rules =
     { "CloseToDone",      { SMetricType::eClose,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
 
     { "StartToSubmit",    { SMetricType::eStart,   SPoint::eFirst }, { SMetricType::eSubmit,  SPoint::eFirst } },
+    { "SubmitToReply",    { SMetricType::eSubmit,  SPoint::eFirst }, { SMetricType::eReply,   SPoint::eFirst } },
     { "ReplyToDone",      { SMetricType::eReply,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
 };
 
 const vector<pair<size_t, string>> SPercentiles::PercentileTypes =
 {
-    {   0, "Min"    },
+    {   0, "Min "   },
     {  25, "25th"   },
     {  50, "Median" },
     {  75, "75th"   },
     {  90, "90th"   },
     {  95, "95th"   },
-    { 100, "Max"    }
+    { 100, "Max "   }
 };
 
 const char* SMetricType::Name(EType t)
@@ -134,19 +135,27 @@ ostream& operator<<(ostream& os, const SComplexMetrics& complex_metrics)
 void SPercentiles::Add(const SComplexMetrics& complex_metrics)
 {
     for (size_t i = 0; i < SRule::Rules.size(); ++i) {
-        m_Data[i].emplace(complex_metrics.Get(i));
+        m_Data[i].emplace_back(complex_metrics.Get(i));
     }
 }
 
 ostream& operator<<(ostream& os, SPercentiles& percentiles)
 {
+    for (size_t i = 0; i < SRule::Rules.size(); ++i) {
+        auto& data = percentiles.m_Data[i];
+        sort(data.begin(), data.end());
+    }
+
     for (const auto& type : percentiles.PercentileTypes) {
         os << type.second;
 
         for (size_t i = 0; i < SRule::Rules.size(); ++i) {
             const auto& data = percentiles.m_Data[i];
+            const size_t data_size = percentiles.m_Percentage * (data.size() / 100.0);
+            auto data_end = data.begin();
+            advance(data_end, data_size);
             auto it = data.begin();
-            if (auto index = data.size() * (type.first / 100.0)) advance(it, index - 1);
+            if (auto index = data_size * (type.first / 100.0)) advance(it, index - 1);
             os << '\t' << setw(7) << *it;
         }
 
@@ -157,31 +166,26 @@ ostream& operator<<(ostream& os, SPercentiles& percentiles)
 
     for (size_t i = 0; i < SRule::Rules.size(); ++i) {
         const auto& data = percentiles.m_Data[i];
-        os << '\t' << setw(7) << accumulate(data.begin(), data.end(), 0.0) / data.size();
+        const size_t data_size = percentiles.m_Percentage * (data.size() / 100.0);
+        auto data_end = data.begin();
+        advance(data_end, data_size);
+        os << '\t' << setw(7) << accumulate(data.begin(), data_end, 0.0) / data_size;
     }
 
     return os;
 }
 
-SPostProcessing::SPostProcessing(bool raw_metrics) :
-    SIoRedirector<stringstream>(cout),
-    m_RawMetrics(raw_metrics)
-{
-}
-
-SPostProcessing::~SPostProcessing()
+void SPercentiles::Report(istream& is, ostream& os, double percentage)
 {
     cerr << "Reading raw metrics: ";
 
-    Reset();
-
     map<size_t, vector<SMessage>> raw_data;
 
-    while (*this) {
+    while (is) {
         size_t request;
         SMessage message;
 
-        if ((*this >> request >> message) && (message.type != SMetricType::eError)) {
+        if ((is >> request >> message) && (message.type != SMetricType::eError)) {
             auto old_size = raw_data.size();
             raw_data[request].emplace_back(std::move(message));
             auto new_size = raw_data.size();
@@ -193,17 +197,9 @@ SPostProcessing::~SPostProcessing()
     size_t processed = 0;
 
     vector<SComplexMetrics> complex_metrics;
-    SPercentiles percentiles;
+    SPercentiles percentiles(percentage);
     double min = numeric_limits<double>::max();
     double max = numeric_limits<double>::min();
-
-    const string& prefix(CNcbiApplication::Instance()->GetProgramDisplayName());
-    ofstream raw_file;
-
-    if (m_RawMetrics) {
-        raw_file.open(prefix + ".raw.txt");
-        raw_file.setf(ios_base::fixed);
-    }
 
     for (auto& node : raw_data) {
         auto& request = node.first;
@@ -220,10 +216,6 @@ SPostProcessing::~SPostProcessing()
         for (const auto& message : messages) {
             auto current = message.milliseconds;
 
-            if (m_RawMetrics) {
-                raw_file << request << '\t' << message << '\n';
-            }
-
             if (current < min) min = current;
             if (current > max) max = current;
 
@@ -237,16 +229,14 @@ SPostProcessing::~SPostProcessing()
 
     cerr << "\nPrinting complex metrics: ";
     size_t printed = 0;
-
-    ofstream complex_file(prefix + ".table.txt");
-    complex_file << SComplexMetrics::SHeader() << '\n';
+    os << SComplexMetrics::SHeader() << '\n';
 
     for (const auto& request_metrics : complex_metrics) {
-        complex_file << request_metrics << '\n';
+        os << request_metrics << '\n';
         if (++printed % 2000 == 0) cerr << '.';
     }
 
-    complex_file << '\n' << percentiles << "\n\nOverall\t" << setw(7) << (max - min) / milli::den << "\tseconds" << endl;
+    os << '\n' << percentiles << "\n\nOverall\t" << setw(7) << (max - min) / milli::den << "\tseconds" << endl;
     cerr << '\n';
 }
 

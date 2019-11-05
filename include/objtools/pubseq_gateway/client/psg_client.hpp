@@ -88,9 +88,10 @@ public:
     string GetId() const { return x_GetId(); }
 
 protected:
-    CPSG_Request(shared_ptr<void> user_context = {})
+    CPSG_Request(shared_ptr<void> user_context = {},
+                 CRef<CRequestContext> request_context = {})
         : m_UserContext(user_context),
-          m_RequestContext(CDiagContext::GetRequestContext().Clone())
+          m_RequestContext(request_context)
     {}
 
     virtual ~CPSG_Request() = default;
@@ -164,8 +165,9 @@ class CPSG_Request_Biodata : public CPSG_Request
 public:
     /// 
     CPSG_Request_Biodata(CPSG_BioId       bio_id,
-                         shared_ptr<void> user_context = {})
-        : CPSG_Request(user_context),
+                         shared_ptr<void> user_context = {},
+                         CRef<CRequestContext> request_context = {})
+        : CPSG_Request(user_context, request_context),
           m_BioId(bio_id)
     {}
 
@@ -224,8 +226,9 @@ class CPSG_Request_Resolve : public CPSG_Request
 public:
     /// 
     CPSG_Request_Resolve(CPSG_BioId       bio_id,
-                         shared_ptr<void> user_context = {})
-        : CPSG_Request(user_context),
+                         shared_ptr<void> user_context = {},
+                         CRef<CRequestContext> request_context = {})
+        : CPSG_Request(user_context, request_context),
           m_BioId(bio_id)
     {}
 
@@ -270,8 +273,9 @@ public:
     /// 
     CPSG_Request_Blob(CPSG_BlobId      blob_id,
                       string           last_modified = {},
-                      shared_ptr<void> user_context = {})
-        : CPSG_Request(user_context),
+                      shared_ptr<void> user_context = {},
+                      CRef<CRequestContext> request_context = {})
+        : CPSG_Request(user_context, request_context),
           m_BlobId(blob_id),
           m_LastModified(last_modified)
     {}
@@ -313,8 +317,9 @@ public:
     ///  List of NAs for which to request the metainfo
     CPSG_Request_NamedAnnotInfo(CPSG_BioId       bio_id,
                                 TAnnotNames      annot_names,
-                                shared_ptr<void> user_context = {})
-        : CPSG_Request(user_context),
+                                shared_ptr<void> user_context = {},
+                                CRef<CRequestContext> request_context = {})
+        : CPSG_Request(user_context, request_context),
           m_BioId(bio_id),
           m_AnnotNames(annot_names)
     {}
@@ -346,16 +351,17 @@ public:
     CPSG_Request_TSE_Chunk(CPSG_BlobId      tse_blob_id,
                            TChunkNo         chunk_no,
                            TSplitVersion    split_version,
-                           shared_ptr<void> user_context = {})
-        : CPSG_Request(user_context),
+                           shared_ptr<void> user_context = {},
+                           CRef<CRequestContext> request_context = {})
+        : CPSG_Request(user_context, request_context),
           m_TSE_BlobId(tse_blob_id),
           m_ChunkNo(chunk_no),
           m_SplitVersion(split_version)
     {}
 
     const CPSG_BlobId&  GetTSE_BlobId()   const { return m_TSE_BlobId;   }
-    const TChunkNo      GetChunkNo()      const { return m_ChunkNo;      }
-    const TSplitVersion GetSplitVersion() const { return m_SplitVersion; }
+    TChunkNo            GetChunkNo()      const { return m_ChunkNo;      }
+    TSplitVersion       GetSplitVersion() const { return m_SplitVersion; }
 
 private:
     string x_GetType() const override { return "tse_chunk"; }
@@ -721,7 +727,7 @@ public:
     ///  If an error has been detected.
     shared_ptr<CPSG_ReplyItem> GetNextItem(CDeadline deadline);
 
-    virtual ~CPSG_Reply();
+    ~CPSG_Reply();
 
 private:
     CPSG_Reply();
@@ -798,17 +804,19 @@ public:
     shared_ptr<CPSG_Reply> GetNextReply(CDeadline deadline);
 
 
-    /// Cancel all requests (not yet sent to the server; waiting for a reply
-    /// from the server; or in the middle of the reply data transmission).
-    /// Also invalidate all CPSG_ReplyItem objects that have not yet received
-    /// all of their data from the server.
+    /// Stop accepting new requests.
+    /// All already accepted requests will be processed as usual.
+    /// No requests are accepted after the stop.
+    void Stop();
+
+
+    /// Stop accepting new requests and
+    /// cancel all requests whose replies have not been returned yet.
+    /// No requests are accepted and no replies are returned after the reset.
     void Reset();
 
 
-    /// Check whether the queue is empty -- i.e. that there are no:
-    ///  - pending requests
-    ///  - requests still waiting for a reply from the server
-    ///  - replies that still have not been completely retrieved
+    /// Check whether the queue was stopped/reset and is now empty.
     bool IsEmpty() const;
 
     CPSG_Queue(CPSG_Queue&&);

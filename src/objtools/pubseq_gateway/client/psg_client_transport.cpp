@@ -36,7 +36,6 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <queue>
 #include <list>
 #include <vector>
 #include <cassert>
@@ -62,8 +61,7 @@ BEGIN_NCBI_SCOPE
 NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, write_hiwater,          64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
-NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
-NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
+NCBI_PARAM_DEF(unsigned, PSG, num_io,                 1);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
@@ -109,27 +107,23 @@ struct SContextSetter
 
 void SDebugPrintout::Print(const char* authority, const string& path)
 {
-    ERR_POST(Warning << id << ": " << authority << path);
+    ERR_POST(Message << id << ": " << authority << path);
 }
 
-void SDebugPrintout::Print(const SPSG_Chunk& chunk)
+void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
 {
-    auto& args = chunk.args;
     ostringstream os;
 
     os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
 
     if ((m_DebugOutput.level == EPSG_DebugPrintout::eAll) ||
             (args.GetValue("item_type") != "blob") || (args.GetValue("chunk_type") != "data")) {
-        for (auto& v : chunk.data) {
-            os.write(v.data(), v.size());
-        }
+        os << chunk;
     } else {
-        auto l = [](size_t sum, const vector<char>& v) { return sum + v.size(); };
-        os << "<BINARY DATA OF " << accumulate(chunk.data.begin(), chunk.data.end(), 0ul, l) << " BYTES>";
+        os << "<BINARY DATA OF " << chunk.size() << " BYTES>";
     }
 
-    ERR_POST(Warning << id << ": " << NStr::PrintableString(os.str()));
+    ERR_POST(Message << id << ": " << NStr::PrintableString(os.str()));
 }
 
 const char* s_NgHttp2Error(int error_code)
@@ -143,17 +137,17 @@ const char* s_NgHttp2Error(int error_code)
 
 void SDebugPrintout::Print(uint32_t error_code)
 {
-    ERR_POST(Warning << id << ": Closed with status " << s_NgHttp2Error(error_code));
+    ERR_POST(Message << id << ": Closed with status " << s_NgHttp2Error(error_code));
 }
 
 void SDebugPrintout::Print(unsigned retries, const SPSG_Error& error)
 {
-    ERR_POST(Warning << id << ": Retrying (" << retries << " retries remaining) after " << error);
+    ERR_POST(Message << id << ": Retrying (" << retries << " retries remaining) after " << error);
 }
 
 void SDebugPrintout::Print(const SPSG_Error& error)
 {
-    ERR_POST(Warning << id << ": Gave up after " << error);
+    ERR_POST(Message << id << ": Gave up after " << error);
 }
 
 SDebugPrintout::~SDebugPrintout()
@@ -212,7 +206,7 @@ string SPSG_Error::Build(int error, const char* details)
     return ss.str();
 }
 
-void SPSG_Reply::SState::AddError(const string& message)
+void SPSG_Reply::SState::AddError(string message)
 {
     const auto state = m_State.load();
 
@@ -222,12 +216,11 @@ void SPSG_Reply::SState::AddError(const string& message)
             /* FALL THROUGH */
 
         case eError:
-            m_Messages.push(message);
+            m_Messages.push_back(move(message));
             return;
 
         default:
             ERR_POST("Unexpected state " << state << " for error '" << message << '\'');
-            return;
     }
 }
 
@@ -236,7 +229,7 @@ string SPSG_Reply::SState::GetError()
     if (m_Messages.empty()) return {};
 
     auto rv = m_Messages.back();
-    m_Messages.pop();
+    m_Messages.pop_back();
     return rv;
 }
 
@@ -264,27 +257,15 @@ void SPSG_Reply::SetSuccess()
     }
 }
 
-void SPSG_Reply::SetCanceled()
-{
-    reply_item.GetMTSafe().state.SetState(SState::eCanceled);
-
-    auto items_locked = items.GetLock();
-
-    for (auto& item : *items_locked) {
-        item.GetMTSafe().state.SetState(SState::eCanceled);
-    }
-}
-
 SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c) :
     full_path(move(p)),
     reply(r),
-    context(c->Clone()),
+    context(c ? c->Clone() : null),
     m_State(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo ?
             &SPSG_Request::StateIo : &SPSG_Request::StatePrefix),
     m_Retries(TPSG_RequestRetries::GetDefault())
 {
     _ASSERT(reply);
-    _ASSERT(context);
 
     if (TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo) AddIo();
 }
@@ -327,18 +308,18 @@ void SPSG_Request::StateArgs(const char*& data, size_t& len)
 {
     // Accumulating args
     while (*data != '\n') {
-        m_Buffer.args.push_back(*data++);
+        m_Buffer.args_buffer.push_back(*data++);
         if (!--len) return;
     }
 
     ++data;
     --len;
 
-    SPSG_Args args(m_Buffer.args);
+    SPSG_Args args(m_Buffer.args_buffer);
 
     auto size = args.GetValue("size");
 
-    m_Buffer.chunk.args = move(args);
+    m_Buffer.args = move(args);
 
     if (!size.empty()) {
         SetStateData(stoul(size));
@@ -356,7 +337,7 @@ void SPSG_Request::StateData(const char*& data, size_t& len)
     if (!data_size) return;
 
     auto& chunk = m_Buffer.chunk;
-    chunk.data.emplace_back(data, data + data_size);
+    chunk.append(data, data_size);
     data += data_size;
     len -= data_size;
     m_Buffer.data_to_read -= data_size;
@@ -368,9 +349,7 @@ void SPSG_Request::StateData(const char*& data, size_t& len)
 
 void SPSG_Request::AddIo()
 {
-    SPSG_Chunk chunk;
-    chunk.args = SPSG_Args("item_id=1&item_type=blob&chunk_type=data&size=1&blob_id=0&blob_chunk=0");
-    chunk.data.emplace_back(1, ' ');
+    SPSG_Chunk chunk(1, ' ');
 
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
     auto reply_item_ts = &reply->reply_item;
@@ -396,7 +375,6 @@ void SPSG_Request::AddIo()
     }
 
     reply_item_ts->NotifyOne();
-    if (auto queue = reply->queue.lock()) queue->NotifyOne();
     item_ts->NotifyOne();
 }
 
@@ -404,12 +382,12 @@ void SPSG_Request::Add()
 {
     SContextSetter setter(this);
 
-    reply->debug_printout << m_Buffer.chunk << endl;
+    reply->debug_printout << m_Buffer.args << m_Buffer.chunk << endl;
 
     auto& chunk = m_Buffer.chunk;
-    auto& args = chunk.args;
+    auto* args = &m_Buffer.args;
 
-    auto item_type = args.GetValue("item_type");
+    auto item_type = args->GetValue("item_type");
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
 
     if (item_type.empty() || (item_type == "reply")) {
@@ -425,7 +403,7 @@ void SPSG_Request::Add()
             }
         }
 
-        auto item_id = args.GetValue("item_id");
+        auto item_id = args->GetValue("item_id");
         auto& item_by_id = m_ItemsByID[item_id];
 
         if (!item_by_id) {
@@ -435,10 +413,14 @@ void SPSG_Request::Add()
                 item_by_id = &items.back();
             }
 
-            item_by_id->GetLock()->args = args;
+            if (auto item_locked = item_by_id->GetLock()) {
+                auto& item = *item_locked;
+                item.args = move(*args);
+                args = &item.args;
+            }
+
             auto reply_item_ts = &reply->reply_item;
             reply_item_ts->NotifyOne();
-            if (auto queue = reply->queue.lock()) queue->NotifyOne();
         }
 
         item_ts = item_by_id;
@@ -452,10 +434,10 @@ void SPSG_Request::Add()
             item.state.AddError("Protocol error: received more than expected");
         }
 
-        auto chunk_type = args.GetValue("chunk_type");
+        auto chunk_type = args->GetValue("chunk_type");
 
         if (chunk_type == "meta") {
-            auto n_chunks = args.GetValue("n_chunks");
+            auto n_chunks = args->GetValue("n_chunks");
 
             if (!n_chunks.empty()) {
                 auto expected = stoul(n_chunks);
@@ -472,24 +454,25 @@ void SPSG_Request::Add()
             }
 
         } else if (chunk_type == "message") {
-            ostringstream os;
-
-            for (auto& p : chunk.data) os.write(p.data(), p.size());
-
-            auto severity = args.GetValue("severity");
+            auto severity = args->GetValue("severity");
 
             if (severity == "warning") {
-                ERR_POST(Warning << os.str());
+                ERR_POST(Warning << chunk);
             } else if (severity == "info") {
-                ERR_POST(Info << os.str());
+                ERR_POST(Info << chunk);
             } else if (severity == "trace") {
-                ERR_POST(Trace << os.str());
+                ERR_POST(Trace << chunk);
             } else {
-                item.state.AddError(os.str());
+                item.state.AddError(move(chunk));
             }
 
         } else if (chunk_type == "data") {
-            item.chunks.push_back(move(chunk));
+            auto blob_chunk = args->GetValue("blob_chunk");
+            auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
+
+            if (item.chunks.size() <= index) item.chunks.resize(index + 1);
+
+            item.chunks[index] = move(chunk);
             item.state.SetNotEmpty();
 
         } else {
@@ -512,20 +495,20 @@ SPSG_UvWrite::SPSG_UvWrite(void* user_data)
     m_Buffers[0].reserve(kSize);
     m_Buffers[1].reserve(kSize);
 
-    ERR_POST(Trace << this << " created");
+    _TRACE(this << " created");
 }
 
 int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
 {
     if (m_InProgress) {
-        ERR_POST(Trace << this << " already writing");
+        _TRACE(this << " already writing");
         return 0;
     }
 
     auto& write_buffer = m_Buffers[m_Index];
 
     if (write_buffer.empty()) {
-        ERR_POST(Trace << this << " empty write");
+        _TRACE(this << " empty write");
         return 0;
     }
 
@@ -536,11 +519,11 @@ int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
     auto rv = uv_write(&m_Request, handle, &buf, 1, cb);
 
     if (rv < 0) {
-        ERR_POST(Trace << this << " pre-write failed");
+        _TRACE(this << " pre-write failed");
         return rv;
     }
 
-    ERR_POST(Trace << this << " writing: " << write_buffer.size());
+    _TRACE(this << " writing: " << write_buffer.size());
     m_Index = !m_Index;
     m_InProgress = true;
     return 0;
@@ -578,7 +561,7 @@ SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const CNetServer::SAddress& address,
     data = this;
     m_ReadBuffer.reserve(TPSG_RdBufSize::GetDefault());
 
-    ERR_POST(Trace << this << " created");
+    _TRACE(this << " created");
 }
 
 int SPSG_UvTcp::Write()
@@ -587,19 +570,19 @@ int SPSG_UvTcp::Write()
         auto rv = uv_tcp_init(m_Loop, this);
 
         if (rv < 0) {
-            ERR_POST(Trace << this << " init failed: " << uv_strerror(rv));
+            _TRACE(this << " init failed: " << uv_strerror(rv));
             return rv;
         }
 
         rv = m_Connect(this, s_OnConnect);
 
         if (rv < 0) {
-            ERR_POST(Trace << this << " pre-connect failed: " << uv_strerror(rv));
+            _TRACE(this << " pre-connect failed: " << uv_strerror(rv));
             Close();
             return rv;
         }
 
-        ERR_POST(Trace << this << " connecting");
+        _TRACE(this << " connecting");
         m_State = eConnecting;
     }
 
@@ -607,12 +590,12 @@ int SPSG_UvTcp::Write()
         auto rv = m_Write((uv_stream_t*)this, s_OnWrite);
 
         if (rv < 0) {
-            ERR_POST(Trace << this << "  pre-write failed: " << uv_strerror(rv));
+            _TRACE(this << "  pre-write failed: " << uv_strerror(rv));
             Close();
             return rv;
         }
 
-        ERR_POST(Trace << this << " writing");
+        _TRACE(this << " writing");
     }
 
     return 0;
@@ -624,20 +607,20 @@ void SPSG_UvTcp::Close()
         auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
 
         if (rv < 0) {
-            ERR_POST(Trace << this << " read stop failed: " << uv_strerror(rv));
+            _TRACE(this << " read stop failed: " << uv_strerror(rv));
         } else {
-            ERR_POST(Trace << this << " read stopped");
+            _TRACE(this << " read stopped");
         }
 
         m_Write.Reset();
     }
 
     if ((m_State != eClosing) && (m_State != eClosed)) {
-        ERR_POST(Trace << this << " closing");
+        _TRACE(this << " closing");
         m_State = eClosing;
         SPSG_UvHandle<uv_tcp_t>::Close();
     } else {
-        ERR_POST(Trace << this << " already closing/closed");
+        _TRACE(this << " already closing/closed");
     }
 }
 
@@ -650,18 +633,18 @@ void SPSG_UvTcp::OnConnect(uv_connect_t*, int status)
             status = uv_read_start((uv_stream_t*)this, s_OnAlloc, s_OnRead);
 
             if (status >= 0) {
-                ERR_POST(Trace << this << " connected");
+                _TRACE(this << " connected");
                 m_State = eConnected;
                 m_ConnectCb(status);
                 return;
             } else {
-                ERR_POST(Trace << this << " read start failed: " << uv_strerror(status));
+                _TRACE(this << " read start failed: " << uv_strerror(status));
             }
         } else {
-            ERR_POST(Trace << this << " nodelay failed: " << uv_strerror(status));
+            _TRACE(this << " nodelay failed: " << uv_strerror(status));
         }
     } else {
-        ERR_POST(Trace << this << " connect failed: " << uv_strerror(status));
+        _TRACE(this << " connect failed: " << uv_strerror(status));
     }
 
     Close();
@@ -678,10 +661,10 @@ void SPSG_UvTcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
-        ERR_POST(Trace << this << " read failed: " << uv_strerror(nread));
+        _TRACE(this << " read failed: " << uv_strerror(nread));
         Close();
     } else {
-        ERR_POST(Trace << this << " read: " << nread);
+        _TRACE(this << " read: " << nread);
     }
 
     m_ReadCb(buf->base, nread);
@@ -690,10 +673,10 @@ void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
 {
     if (status < 0) {
-        ERR_POST(Trace << this << " write failed: " << uv_strerror(status));
+        _TRACE(this << " write failed: " << uv_strerror(status));
         Close();
     } else {
-        ERR_POST(Trace << this << " wrote");
+        _TRACE(this << " wrote");
         m_Write.Done();
     }
 
@@ -702,7 +685,7 @@ void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
 
 void SPSG_UvTcp::OnClose(uv_handle_t*)
 {
-    ERR_POST(Trace << this << " closed");
+    _TRACE(this << " closed");
     m_State = eClosed;
 }
 
@@ -754,7 +737,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
     m_OnError(on_error),
     m_MaxStreams(TPSG_MaxConcurrentStreams::GetDefault())
 {
-    ERR_POST(Trace << this << " created");
+    _TRACE(this << " created");
 }
 
 ssize_t SPSG_NgHttp2Session::Init()
@@ -778,11 +761,11 @@ ssize_t SPSG_NgHttp2Session::Init()
 
     /* client 24 bytes magic string will be sent by nghttp2 library */
     if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]))) {
-        ERR_POST(Trace << this << " submit settings failed: " << s_NgHttp2Error(rv));
+        _TRACE(this << " submit settings failed: " << s_NgHttp2Error(rv));
         return x_DelOnError(rv);
     }
 
-    ERR_POST(Trace << this << " initialized");
+    _TRACE(this << " initialized");
     auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
     m_MaxStreams = min(max_streams, TPSG_MaxConcurrentStreams::GetDefault());
     return 0;
@@ -791,16 +774,16 @@ ssize_t SPSG_NgHttp2Session::Init()
 void SPSG_NgHttp2Session::Del()
 {
     if (!m_Session) {
-        ERR_POST(Trace << this << " already terminated");
+        _TRACE(this << " already terminated");
         return;
     }
 
     auto rv = nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
 
     if (rv) {
-        ERR_POST(Trace << this << " terminate failed: " << s_NgHttp2Error(rv));
+        _TRACE(this << " terminate failed: " << s_NgHttp2Error(rv));
     } else {
-        ERR_POST(Trace << this << " terminated");
+        _TRACE(this << " terminated");
     }
 
     x_DelOnError(-1);
@@ -831,11 +814,11 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
     auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), headers_size, nullptr, req.get());
 
     if (rv < 0) {
-        ERR_POST(Trace << this << " submit failed: " << s_NgHttp2Error(rv));
+        _TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
     } else {
         auto authority = (const char*)m_Headers[eAuthority].value;
         req->reply->debug_printout << authority << path << endl;
-        ERR_POST(Trace << this << " submitted");
+        _TRACE(this << " submitted");
     }
 
     return x_DelOnError(rv);
@@ -846,7 +829,7 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
     if (auto rv = Init()) return rv;
 
     if (nghttp2_session_want_write(m_Session) == 0) {
-        ERR_POST(Trace << this << " does not want to write");
+        _TRACE(this << " does not want to write");
         return 0;
     }
 
@@ -861,9 +844,9 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
             total += rv;
         } else {
             if (rv) {
-                ERR_POST(Trace << this << " send failed: " << s_NgHttp2Error(rv));
+                _TRACE(this << " send failed: " << s_NgHttp2Error(rv));
             } else {
-                ERR_POST(Trace << this << " sended: " << total);
+                _TRACE(this << " sended: " << total);
             }
 
             return x_DelOnError(rv);
@@ -875,7 +858,7 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 {
     if (auto rv = Init()) return rv;
 
-    const size_t total = size;
+    _DEBUG_ARG(const size_t total = size);
 
     for (;;) {
         auto rv = nghttp2_session_mem_recv(m_Session, buffer, size);
@@ -887,9 +870,9 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
         }
 
         if (rv < 0) {
-            ERR_POST(Trace << this << " receive failed: " << s_NgHttp2Error(rv));
+            _TRACE(this << " receive failed: " << s_NgHttp2Error(rv));
         } else {
-            ERR_POST(Trace << this << " received: " << total);
+            _TRACE(this << " received: " << total);
         }
 
         return x_DelOnError(rv);
@@ -941,7 +924,6 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error
 
     debug_printout << error << endl;
     req->reply->reply_item.GetLock()->state.AddError(error);
-    AddToCompletion(req->reply);
     return false;
 }
 
@@ -964,7 +946,6 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             }
         } else {
             req->reply->SetSuccess();
-            AddToCompletion(req->reply);
         }
 
         m_Requests.erase(it);
@@ -1043,26 +1024,7 @@ void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
     if (readlen < 0) {
         Reset(readlen);
     } else {
-        ProcessCompletionList();
         Send();
-    }
-}
-
-void SPSG_IoSession::ProcessCompletionList()
-{
-    for (auto& reply : m_CompletionList) {
-        reply->reply_item.NotifyOne();
-    }
-
-    m_CompletionList.clear();
-}
-
-void SPSG_IoSession::AddToCompletion(shared_ptr<SPSG_Reply>& reply)
-{
-    if (TPSG_DelayedCompletion::GetDefault())
-        m_CompletionList.emplace_back(reply);
-    else {
-        reply->reply_item.NotifyOne();
     }
 }
 
@@ -1081,9 +1043,7 @@ bool SPSG_IoSession::ProcessRequest()
             break;
         }
 
-        if (req->reply->reply_item.GetMTSafe().state.GetState() == SPSG_Reply::SState::eCanceled) {
-            continue;
-        }
+        m_Io->space->NotifyOne();
 
         auto stream_id = m_Session.Submit(req);
 
@@ -1125,7 +1085,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     }
 }
 
-void SPSG_IoSession::Reset(const SPSG_Error& error)
+void SPSG_IoSession::Reset(SPSG_Error error)
 {
     m_Session.Del();
     m_Tcp.Close();
@@ -1143,7 +1103,6 @@ void SPSG_IoSession::Reset(const SPSG_Error& error)
     }
 
     m_Requests.clear();
-    ProcessCompletionList();
 }
 
 
@@ -1200,7 +1159,7 @@ void SPSG_IoThread::OnQueue(uv_async_t*)
 void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 {
     try {
-        const auto& service_name = m_Service.GetServiceName();
+        _DEBUG_ARG(const auto& service_name = m_Service.GetServiceName());
         vector<CNetServer::SAddress> discovered;
 
         // Gather all discovered addresses
@@ -1220,7 +1179,7 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 
             if (session.discovered != in_service) {
                 session.discovered = in_service;
-                ERR_POST(Trace << "Host '" << address.AsString() << "' " <<
+                _TRACE("Host '" << address.AsString() << "' " <<
                         (in_service ? "added to" : "removed from") << " service '" << service_name << '\'');
             }
         }
@@ -1228,7 +1187,7 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
         // Add sessions for newly discovered addresses
         for (auto& address : discovered) {
             m_Sessions.emplace_back(this, handle->loop, address);
-            ERR_POST(Trace << "Host '" << address.AsString() << "' added to service '" << service_name << '\'');
+            _TRACE("Host '" << address.AsString() << "' added to service '" << service_name << '\'');
         }
     }
     catch(...) {
@@ -1269,16 +1228,14 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(const string& service_name) : m_RequestCo
     auto service = CNetService::Create("psg", service_name, kEmptyStr);
 
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
-        m_Io.emplace_back(new SPSG_IoThread(service, m_Barrier));
+        m_Io.emplace_back(new SPSG_IoThread(service, m_Barrier, &m_Space));
     }
 
     m_Barrier.Wait();
 }
 
-bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, chrono::milliseconds timeout)
+bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline)
 {
-    auto deadline = chrono::system_clock::now() + timeout;
-
     if (m_Io.size() == 0)
         NCBI_THROW(CPSG_Exception, eInternalError, "IO is not open");
 
@@ -1287,33 +1244,23 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, chrono::millis
     const auto first = (counter++ / requests_per_io) % m_Io.size();
     auto idx = first;
 
-    while(true) {
-        if (m_Io[idx]->queue.Push(move(req))) return true;
+    do {
+        do {
+            if (m_Io[idx]->queue.Push(move(req))) return true;
 
-        // No room for the request
+            // No room for the request
 
-        // Try to update request counter once so the next IO thread would be tried for new requests
-        if (idx == first) {
-            m_RequestCounter.compare_exchange_weak(counter, counter + requests_per_io);
-        }
-
-        // Try next IO thread for this request, too
-        idx = (idx + 1) % m_Io.size();
-
-        if (idx == first) {
-            auto wait_ms = deadline - chrono::system_clock::now();
-
-            if (wait_ms <= chrono::milliseconds::zero()) {
-                return false;
+            // Try to update request counter once so the next IO thread would be tried for new requests
+            if (idx == first) {
+                m_RequestCounter.compare_exchange_weak(counter, counter + requests_per_io);
             }
 
-            chrono::milliseconds max_wait_ms(10);
-
-            if (wait_ms > max_wait_ms) wait_ms = max_wait_ms;
-
-            this_thread::sleep_for(wait_ms);
+            // Try next IO thread for this request, too
+            idx = (idx + 1) % m_Io.size();
         }
-    };
+        while (idx != first);
+    }
+    while (m_Space.WaitUntil(stopped, deadline));
 
     return false;
 }

@@ -189,6 +189,7 @@ SFixture::SFixture()
     const size_t kMessageSizeMin = 20;
     const size_t kMessageSizeMax = 100;
 
+    SetDiagPostLevel(eDiag_Info);
 
     // Generating source
 
@@ -266,8 +267,7 @@ void SFixture::MtReading()
     const size_t kSleepMax = 13;
     const unsigned kReadingDeadline = 300;
 
-    auto queue = make_shared<SPSG_Future>();
-    auto reply = make_shared<SPSG_Reply>("", queue);
+    auto reply = make_shared<SPSG_Reply>("");
     map<SPSG_Reply::SItem::TTS*, thread> readers;
 
 
@@ -313,10 +313,11 @@ void SFixture::MtReading()
     auto dispatcher_impl = [&]() {
         CDeadline deadline(kReadingDeadline, 0);
 
-        while (!deadline.IsExpired()) {
+        for (;;) {
+            bool empty_items = false;
+
             if (auto items_locked = reply->items.GetLock()) {
                 auto& items = *items_locked;
-                bool empty_items = false;
 
                 for (auto& item_ts : items) {
                     auto reader = readers.find(&item_ts);
@@ -328,7 +329,7 @@ void SFixture::MtReading()
                         if (chunks.empty()) {
                             empty_items = true;
                         } else {
-                            auto blob_id = chunks.front().args.GetValue("blob_id");
+                            auto blob_id = item_locked->args.GetValue("blob_id");
                             auto src_blob = src_blobs.find(blob_id);
                             thread t;
 
@@ -342,14 +343,16 @@ void SFixture::MtReading()
                         }
                     }
                 }
-
-                if (empty_items) continue;
             }
 
             if (readers.size() == src_blobs.size()) break;
 
-            auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
-            reply->reply_item.WaitFor(ms);
+            if (empty_items) {
+                reply->reply_item.WaitUntil(CTimeout(0, 1));
+
+            } else if (!reply->reply_item.WaitUntil(deadline)) {
+                break;
+            }
         }
 
         if (readers.size() < src_blobs.size()) {
@@ -399,8 +402,7 @@ BOOST_AUTO_TEST_CASE(Request)
     const size_t kSizeMin = 100 * 1024;
     const size_t kSizeMax = 1024 * 1024;
 
-    auto queue = make_shared<SPSG_Future>();
-    auto reply = make_shared<SPSG_Reply>("", queue);
+    auto reply = make_shared<SPSG_Reply>("");
 
 
     // Reading
@@ -439,7 +441,7 @@ BOOST_AUTO_TEST_CASE(Request)
         }
 
         auto& chunks = item.chunks;
-        auto blob_id = chunks.front().args.GetValue("blob_id");
+        auto blob_id = item.args.GetValue("blob_id");
 
         auto src_blob = src_blobs.find(blob_id);
 
@@ -449,29 +451,20 @@ BOOST_AUTO_TEST_CASE(Request)
             auto src_current = src_blob->second.begin();
             auto src_end = src_blob->second.end();
 
-            // Reorder chunks according to 'blob_chunk'
-            chunks.sort([](const SPSG_Chunk& lhs, const SPSG_Chunk& rhs) {
-                    auto ln = stoul(lhs.args.GetValue("blob_chunk"));
-                    auto rn = stoul(rhs.args.GetValue("blob_chunk"));
-                    return ln < rn;
-                });
-
             for (auto& chunk : chunks) {
-                for (auto& part : chunk.data) {
-                    auto dst_current = part.begin();
-                    auto dst_end = part.end();
+                auto dst_current = chunk.begin();
+                auto dst_end = chunk.end();
 
-                    auto src_to_compare = distance(src_current, src_end);
-                    auto dst_to_compare = distance(dst_current, dst_end);
+                auto src_to_compare = distance(src_current, src_end);
+                auto dst_to_compare = distance(dst_current, dst_end);
 
-                    if (dst_to_compare > src_to_compare) {
-                        BOOST_ERROR("Received more data than sent");
-                    } else if (!equal(dst_current, dst_end, src_current)) {
-                        BOOST_FAIL("Received data does not match expected");
-                    }
-
-                    advance(src_current, dst_to_compare);
+                if (dst_to_compare > src_to_compare) {
+                    BOOST_ERROR("Received more data than sent");
+                } else if (!equal(dst_current, dst_end, src_current)) {
+                    BOOST_FAIL("Received data does not match expected");
                 }
+
+                advance(src_current, dst_to_compare);
             }
 
             if (src_current != src_end) {

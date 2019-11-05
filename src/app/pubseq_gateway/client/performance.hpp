@@ -209,44 +209,38 @@ private:
 
 struct SPercentiles
 {
-    SPercentiles() { m_Data.resize(SRule::Rules.size()); }
+    SPercentiles(double percentage) : m_Percentage(percentage) { m_Data.resize(SRule::Rules.size()); }
 
     void Add(const SComplexMetrics& complex_metrics);
+
+    static void Report(istream& is, ostream& os, double percentage);
 
 private:
     static const vector<pair<size_t, string>> PercentileTypes;
 
-    vector<set<double>> m_Data;
+    const double m_Percentage;
+    vector<vector<double>> m_Data;
 
     friend ostream& operator<<(ostream& os, SPercentiles& percentiles);
 };
 
-template <class TStream>
-struct SIoRedirector : TStream
+struct SIoRedirector
 {
-    template <class... TArgs>
-    SIoRedirector(ios& io, TArgs&&... args) :
-        TStream(forward<TArgs>(args)...),
-        m_Io(io),
-        m_Buf(m_Io.rdbuf())
+    SIoRedirector(ios& what, ios& to) :
+        m_What(what),
+        m_To(to),
+        m_Buf(m_What.rdbuf())
     {
-        m_Io.rdbuf(TStream::rdbuf());
+        m_What.rdbuf(m_To.rdbuf());
     }
 
-    void Reset() { m_Io.rdbuf(m_Buf); TStream::seekg(0); }
+    ~SIoRedirector() { Reset(); }
+    void Reset() { m_What.rdbuf(m_Buf); }
 
 private:
-    ios& m_Io;
+    ios& m_What;
+    ios& m_To;
     streambuf* m_Buf;
-};
-
-struct SPostProcessing : SIoRedirector<stringstream>
-{
-    SPostProcessing(bool raw_metrics);
-    ~SPostProcessing();
-
-private:
-    const bool m_RawMetrics;
 };
 
 
@@ -266,9 +260,6 @@ typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
 
 NCBI_PARAM_DECL(unsigned, PSG, requests_per_io);
 typedef NCBI_PARAM_TYPE(PSG, requests_per_io) TPSG_RequestsPerIo;
-
-NCBI_PARAM_DECL(bool, PSG, delayed_completion);
-typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
 
 NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
 typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;

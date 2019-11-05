@@ -50,22 +50,6 @@
 BEGIN_NCBI_SCOPE
 
 
-namespace {
-
-chrono::milliseconds RemainingTimeMs(const CDeadline& deadline)
-{
-    using namespace chrono;
-
-    if (deadline.IsInfinite()) return milliseconds::max();
-
-    unsigned int sec, nanosec;
-    deadline.GetRemainingTime().GetNano(&sec, &nanosec);
-    return duration_cast<milliseconds>(nanoseconds(nanosec)) + seconds(sec);
-}
-
-}
-
-
 const char* CPSG_Exception::GetErrCodeString(void) const
 {
     switch (GetErrCode())
@@ -94,28 +78,23 @@ ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
     CheckForNewChunks();
 
     for (; m_Chunk < m_Data.size(); ++m_Chunk) {
-        auto& data = m_Data[m_Chunk].data;
+        auto& data = m_Data[m_Chunk];
 
         // Chunk has not been received yet
         if (data.empty()) return eRW_Success;
 
-        for (; m_Part < data.size(); ++m_Part) {
-            auto& part = data[m_Part];
-            auto available = part.size() - m_Index;
-            auto to_copy = min(count, available);
+        auto available = data.size() - m_Index;
+        auto to_copy = min(count, available);
 
-            memcpy(buf, part.data() + m_Index, to_copy);
-            buf = (char*)buf + to_copy;
-            count -= to_copy;
-            *bytes_read += to_copy;
-            m_Index += to_copy;
+        memcpy(buf, data.data() + m_Index, to_copy);
+        buf = (char*)buf + to_copy;
+        count -= to_copy;
+        *bytes_read += to_copy;
+        m_Index += to_copy;
 
-            if (!count) return eRW_Success;
+        if (!count) return eRW_Success;
 
-            m_Index = 0;
-        }
-
-        m_Part = 0;
+        m_Index = 0;
     }
 
     auto src_locked = m_Src->GetLock();
@@ -128,17 +107,15 @@ ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
     const auto kSeconds = TPSG_ReaderTimeout::GetDefault();
     CDeadline deadline(kSeconds);
 
-    while (!deadline.IsExpired()) {
+    do {
         auto rv = x_Read(buf, count, &read);
 
         if ((rv != eRW_Success) || (read != 0)) {
             if (bytes_read) *bytes_read = read;
             return rv;
         }
-
-        auto wait_ms = RemainingTimeMs(deadline);
-        m_Src->WaitFor(wait_ms);
     }
+    while (m_Src->WaitUntil(deadline));
 
     NCBI_THROW_FMT(CPSG_Exception, eTimeout, "Timeout on reading (after " << kSeconds << " seconds)");
     return eRW_Error;
@@ -152,22 +129,16 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
     CheckForNewChunks();
 
-    auto j = m_Part;
     auto k = m_Index;
 
     for (auto i = m_Chunk; i < m_Data.size(); ++i) {
-        auto& data = m_Data[i].data;
+        auto& data = m_Data[i];
 
         // Chunk has not been received yet
         if (data.empty()) return eRW_Success;
 
-        for (; j < data.size(); ++j) {
-            auto& part = data[j];
-            *count += part.size() - k;
-            k = 0;
-        }
-
-        j = 0;
+        *count += data.size() - k;
+        k = 0;
     }
 
     return eRW_Success;
@@ -181,15 +152,12 @@ void SPSG_BlobReader::CheckForNewChunks()
     auto& src = *src_locked;
     auto& chunks = src.chunks;
 
-    auto it = chunks.begin();
+    if (m_Data.size() < chunks.size()) m_Data.resize(chunks.size());
 
-    while (it != chunks.end()) {
-        auto& args = it->args;
-        auto blob_chunk = args.GetValue("blob_chunk");
-        auto index = stoul(blob_chunk);
-        if (m_Data.size() <= index) m_Data.resize(index + 1);
-        m_Data[index] = move(*it);
-        it = chunks.erase(it);
+    for (size_t i = 0; i < chunks.size(); ++i) {
+        if (!chunks[i].empty()) {
+            m_Data[i].swap(chunks[i]);
+        }
     }
 }
 
@@ -199,14 +167,12 @@ static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId mo
 
 
 template <class TReplyItem>
-TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, list<SPSG_Chunk>& chunks)
+TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks)
 {
     if (chunks.empty()) return item;
 
     unique_ptr<TReplyItem> rv(item);
-    ostringstream os;
-    for (auto& v : chunks.front().data) os.write(v.data(), v.size());
-    rv->m_Data = CJsonNode::ParseJSON(os.str());
+    rv->m_Data = CJsonNode::ParseJSON(chunks.front());
 
     return rv.release();
 }
@@ -294,61 +260,6 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 }
 
 
-CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_request,
-        shared_ptr<SPSG_Request> request) :
-    m_UserRequest(user_request),
-    m_Request(request)
-{
-    _ASSERT(m_Request);
-}
-
-shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
-{
-    auto& reply = m_Request->reply;
-    auto& reply_item = reply->reply_item;
-    auto& state = reply_item.GetMTSafe().state;
-
-    // A reply has already been returned
-    if (!state.SetReturned()) {
-        // The order of the checks is important, it would be a race otherwise.
-        const bool in_io_queue = m_Request.use_count() > 1;
-        const bool in_progress = state.InProgress();
-
-        if (in_progress && !in_io_queue) {
-            reply_item.GetLock()->state.AddError("Internal error, request was lost");
-        }
-
-        return {};
-    }
-
-    shared_ptr<CPSG_Reply> rv(new CPSG_Reply);
-    rv->m_Impl->reply = reply;
-    rv->m_Impl->user_reply = rv;
-    rv->m_Request = move(m_UserRequest);
-
-    return rv;
-}
-
-void CPSG_Queue::SImpl::SRequest::Reset()
-{
-    m_Request->reply->SetCanceled();
-}
-
-bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
-{
-    auto& reply = m_Request->reply;
-    const auto& state = reply->reply_item.GetMTSafe().state;
-
-    if (state.InProgress() || !state.Returned()) return false;
-
-    auto items_locked = reply->items.GetLock();
-    auto& items = *items_locked;
-    auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetMTSafe().state.Returned(); };
-
-    return all_of(items.begin(), items.end(), returned);
-}
-
-
 pair<mutex, weak_ptr<CPSG_Queue::SImpl::CService::TMap>> CPSG_Queue::SImpl::CService::sm_Instance;
 
 SPSG_IoCoordinator& CPSG_Queue::SImpl::CService::GetIoC(const string& service)
@@ -385,7 +296,6 @@ shared_ptr<CPSG_Queue::SImpl::CService::TMap> CPSG_Queue::SImpl::CService::GetMa
 
 
 CPSG_Queue::SImpl::SImpl(const string& service) :
-    m_Requests(new SPSG_ThreadSafe<TRequests>),
     m_Service(service)
 {
 }
@@ -521,96 +431,46 @@ string CPSG_Request_TSE_Chunk::x_GetAbsPathRef() const
     return s_AddUseCache(os);
 }
 
-bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)
+bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, const CDeadline& deadline)
 {
     auto& ioc = m_Service.ioc;
 
-    chrono::milliseconds wait_ms{};
     auto user_context = TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eOff ?
         nullptr : user_request->GetUserContext<string>();
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
-    auto reply = make_shared<SPSG_Reply>(request_id, m_Requests);
+    auto reply = make_shared<SPSG_Reply>(move(request_id));
     auto abs_path_ref = user_request->x_GetAbsPathRef() + ioc.GetClientId();
-    auto request = make_shared<SPSG_Request>(move(abs_path_ref), move(reply), user_request->m_RequestContext);
+    auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, user_request->m_RequestContext);
 
-    for (;;) {
-        if (ioc.AddRequest(request, wait_ms)) {
-            auto requests_locked = m_Requests->GetLock();
-            requests_locked->emplace_back(user_request, request);
-            return true;
-        }
-
-        // Internal queue is full
-        wait_ms = RemainingTimeMs(deadline);
-        if (wait_ms < chrono::milliseconds::zero())  return false;
-    }
-}
-
-shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::GetNextReply(CDeadline deadline)
-{
-    for (;;) {
-        if (auto requests_locked = m_Requests->GetLock()) {
-            auto it = requests_locked->begin();
-            
-            while (it != requests_locked->end()) {
-                if (auto rv = it->GetNextReply()) return rv;
-
-                if (it->IsEmpty()) {
-                    it = requests_locked->erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
-
-        if (deadline.IsExpired()) return {};
-
-        auto wait_ms = RemainingTimeMs(deadline);
-        m_Requests->WaitFor(wait_ms);
-    }
-}
-
-void CPSG_Queue::SImpl::Reset()
-{
-    auto requests_locked = m_Requests->GetLock();
-
-    for (auto& request : *requests_locked) {
-        request.Reset();
+    if (ioc.AddRequest(request, Stopped(), deadline)) {
+        shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
+        user_reply->m_Impl->reply = move(reply);
+        user_reply->m_Impl->user_reply = user_reply;
+        user_reply->m_Request = move(user_request);
+        Push(move(user_reply));
+        return true;
     }
 
-    requests_locked->clear();
+    return false;
 }
 
-bool CPSG_Queue::SImpl::IsEmpty() const
-{
-    auto requests_locked = m_Requests->GetLock();
-
-    for (auto& request : *requests_locked) {
-        if (!request.IsEmpty()) return false;
-    }
-
-    return true;
-}
-
-
-EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS* ts, CDeadline deadline)
+EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS* ts, const CDeadline& deadline)
 {
     assert(ts);
 
-    for (;;) {
-        switch (ts->GetMTSafe().state.GetState()) {
-            case SPSG_Reply::SState::eCanceled: return EPSG_Status::eCanceled;
-            case SPSG_Reply::SState::eNotFound: return EPSG_Status::eNotFound;
-            case SPSG_Reply::SState::eError:    return EPSG_Status::eError;
-            case SPSG_Reply::SState::eSuccess:  return EPSG_Status::eSuccess;
+    auto& state = ts->GetMTSafe().state;
 
-            default: // SPSG_Reply::SState::eInProgress;
-                if (deadline.IsExpired()) return EPSG_Status::eInProgress;
+    do {
+        switch (state.GetState()) {
+            case SPSG_Reply::SState::eNotFound:   return EPSG_Status::eNotFound;
+            case SPSG_Reply::SState::eError:      return EPSG_Status::eError;
+            case SPSG_Reply::SState::eSuccess:    return EPSG_Status::eSuccess;
+            case SPSG_Reply::SState::eInProgress: break;
         }
-
-        auto wait_ms = RemainingTimeMs(deadline);
-        ts->WaitFor(wait_ms);
     }
+    while (state.change.WaitUntil(deadline));
+
+    return EPSG_Status::eInProgress;
 }
 
 EPSG_Status CPSG_ReplyItem::GetStatus(CDeadline deadline) const
@@ -1116,7 +976,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
 
     auto& reply_item = m_Impl->reply->reply_item;
 
-    for (;;) {
+    do {
         bool was_in_progress = reply_item.GetMTSafe().state.InProgress();
 
         if (auto items_locked = m_Impl->reply->items.GetLock()) {
@@ -1144,13 +1004,8 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
         if (!was_in_progress) {
             return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
         }
-
-        if (deadline.IsExpired()) return {};
-
-        // Wait for more items or reply completion
-        auto wait_ms = RemainingTimeMs(deadline);
-        reply_item.WaitFor(wait_ms);
     }
+    while (reply_item.WaitUntil(deadline));
 
     return {};
 }
@@ -1179,19 +1034,28 @@ bool CPSG_Queue::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadlin
 shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
 {
     _ASSERT(m_Impl);
-    return m_Impl->GetNextReply(deadline);
+
+    shared_ptr<CPSG_Reply> rv;
+    m_Impl->Pop(rv, deadline);
+    return rv;
+}
+
+void CPSG_Queue::Stop()
+{
+    _ASSERT(m_Impl);
+    m_Impl->Stop(CPSG_Queue::SImpl::eDrain);
 }
 
 void CPSG_Queue::Reset()
 {
     _ASSERT(m_Impl);
-    m_Impl->Reset();
+    m_Impl->Stop(CPSG_Queue::SImpl::eClear);
 }
 
 bool CPSG_Queue::IsEmpty() const
 {
     _ASSERT(m_Impl);
-    return m_Impl->IsEmpty();
+    return m_Impl->Empty();
 }
 
 

@@ -30,6 +30,7 @@
  *
  */
 
+#include <objtools/pubseq_gateway/client/impl/misc.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #ifdef HAVE_PSG_CLIENT
@@ -47,7 +48,6 @@
 #include <limits>
 #include <unordered_map>
 #include <cstdint>
-#include <queue>
 #include <set>
 #include <thread>
 #include <utility>
@@ -79,9 +79,6 @@ typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
 NCBI_PARAM_DECL(unsigned, PSG, num_io);
 typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
 
-NCBI_PARAM_DECL(bool, PSG, delayed_completion);
-typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
-
 NCBI_PARAM_DECL(unsigned, PSG, reader_timeout);
 typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 
@@ -110,33 +107,8 @@ enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
 NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
 typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
 
-struct SPSG_Future
-{
-    void NotifyOne()
-    {
-        unique_lock<mutex> lock(m_Mutex);
-        ++m_Signal;
-        m_CV.notify_one();
-    }
-
-    template <class TDuration>
-    void WaitFor(const TDuration& duration)
-    {
-        unique_lock<mutex> lock(m_Mutex);
-        auto p = [&](){ return m_Signal > 0; };
-        if (p() || m_CV.wait_for(lock, duration, p)) --m_Signal;
-    }
-
-protected:
-    mutable mutex m_Mutex;
-
-private:
-    int m_Signal = 0;
-    condition_variable m_CV;
-};
-
 template <class TType>
-struct SPSG_ThreadSafe : SPSG_Future
+struct SPSG_ThreadSafe : SPSG_CV<0>
 {
     template <class T>
     struct SLock : private unique_lock<std::mutex>
@@ -159,8 +131,8 @@ struct SPSG_ThreadSafe : SPSG_Future
     template <class... TArgs>
     SPSG_ThreadSafe(TArgs&&... args) : m_Object(forward<TArgs>(args)...) {}
 
-    SLock<      TType> GetLock()       { return { &m_Object, m_Mutex }; }
-    SLock<const TType> GetLock() const { return { &m_Object, m_Mutex }; }
+    SLock<      TType> GetLock()       { return { &m_Object, GetMutex() }; }
+    SLock<const TType> GetLock() const { return { &m_Object, GetMutex() }; }
 
     // Direct access to the protected object (e.g. to access atomic members).
     // All thread-safe members must be explicitly marked volatile to be available.
@@ -181,7 +153,7 @@ struct SPSG_Error : string
     };
 
     template <class ...TArgs>
-    SPSG_Error(TArgs... args) : string(Build(forward<TArgs>(args)...)) {}
+    SPSG_Error(TArgs&&... args) : string(Build(forward<TArgs>(args)...)) {}
 
 private:
     static string Build(EError error, const char* details);
@@ -211,13 +183,17 @@ struct SPSG_Nullable : protected CNullable<TValue>
     using CNullable<TValue>::operator=;
 };
 
-struct SPSG_Chunk
+struct SPSG_Chunk : string
 {
-    using TPart = vector<char>;
-    using TData = deque<TPart>;
+    using string::string;
 
-    SPSG_Args args;
-    TData data;
+    SPSG_Chunk() = default;
+
+    SPSG_Chunk(SPSG_Chunk&&) = default;
+    SPSG_Chunk& operator=(SPSG_Chunk&&) = default;
+
+    SPSG_Chunk(const SPSG_Chunk&) = delete;
+    SPSG_Chunk& operator=(const SPSG_Chunk&) = delete;
 };
 
 struct SDebugOutput
@@ -259,7 +235,7 @@ struct SDebugPrintout
 
 private:
     template <class ...TArgs>
-    void Process(TArgs... args)
+    void Process(TArgs&&... args)
     {
         if (m_DebugOutput.level == EPSG_DebugPrintout::eNone) return;
 
@@ -270,11 +246,11 @@ private:
 
     enum EType { eSend = 1000, eReceive, eClose, eRetry, eFail };
 
-    void Event(const char*, const string&)         { Event(eSend);    }
-    void Event(const SPSG_Chunk&)                  { Event(eReceive); }
-    void Event(uint32_t)                           { Event(eClose);   }
-    void Event(unsigned, const SPSG_Error&)        { Event(eRetry);   }
-    void Event(const SPSG_Error&)                  { Event(eFail);    }
+    void Event(const char*, const string&)          { Event(eSend);    }
+    void Event(const SPSG_Args&, const SPSG_Chunk&) { Event(eReceive); }
+    void Event(uint32_t)                            { Event(eClose);   }
+    void Event(unsigned, const SPSG_Error&)         { Event(eRetry);   }
+    void Event(const SPSG_Error&)                   { Event(eFail);    }
 
     void Event(EType type)
     {
@@ -284,7 +260,7 @@ private:
     }
 
     void Print(const char* authority, const string& path);
-    void Print(const SPSG_Chunk& chunk);
+    void Print(const SPSG_Args& args, const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
     void Print(unsigned retries, const SPSG_Error& error);
     void Print(const SPSG_Error& error);
@@ -311,7 +287,7 @@ struct SDebugPrintout::SPack : SPack<TRest...>
 
 protected:
     template <class ...TArgs>
-    void Process(TArgs... args)
+    void Process(TArgs&&... args)
     {
         SPack<TRest...>::Process(*m_Arg, forward<TArgs>(args)...);
     }
@@ -338,7 +314,7 @@ struct SDebugPrintout::SPack<TArg>
 
 protected:
     template <class ...TArgs>
-    void Process(TArgs... args)
+    void Process(TArgs&&... args)
     {
         m_DebugPrintout->Process(*m_Arg, forward<TArgs>(args)...);
     }
@@ -355,10 +331,11 @@ struct SPSG_Reply
         enum EState {
             eInProgress,
             eSuccess,
-            eCanceled,
             eNotFound,
             eError,
         };
+
+        SPSG_CV<0> change;
 
         SState() : m_State(eInProgress), m_Returned(false), m_Empty(true) {}
 
@@ -369,24 +346,31 @@ struct SPSG_Reply
         bool Returned() const volatile { return m_Returned; }
         bool Empty() const volatile { return m_Empty; }
 
-        void SetState(EState state) volatile { auto expected = eInProgress; m_State.compare_exchange_strong(expected, state); }
+        void SetState(EState state) volatile
+        {
+            auto expected = eInProgress;
 
-        void AddError(const string& message);
-        bool SetReturned() volatile { bool expected = false; return m_Returned.compare_exchange_strong(expected, true); }
+            if (m_State.compare_exchange_strong(expected, state)) {
+                change.NotifyOne();
+            }
+        }
+
+        void AddError(string message);
+        void SetReturned() volatile { bool expected = false; m_Returned.compare_exchange_strong(expected, true); }
         void SetNotEmpty() volatile { bool expected = true; m_Empty.compare_exchange_strong(expected, false); }
 
     private:
         atomic<EState> m_State;
         atomic_bool m_Returned;
         atomic_bool m_Empty;
-        queue<string> m_Messages;
+        vector<string> m_Messages;
     };
 
     struct SItem
     {
         using TTS = SPSG_ThreadSafe<SItem>;
 
-        list<SPSG_Chunk> chunks;
+        vector<SPSG_Chunk> chunks;
         SPSG_Args args;
         SPSG_Nullable<size_t> expected;
         size_t received = 0;
@@ -397,17 +381,16 @@ struct SPSG_Reply
     class SItemsTS : public SPSG_ThreadSafe<list<SItem::TTS>>
     {
         using SPSG_ThreadSafe::NotifyOne;
-        using SPSG_ThreadSafe::WaitFor;
+        using SPSG_ThreadSafe::NotifyAll;
+        using SPSG_ThreadSafe::WaitUntil;
     };
 
     SItemsTS items;
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
-    weak_ptr<SPSG_Future> queue;
 
-    SPSG_Reply(string id, weak_ptr<SPSG_Future> q) : debug_printout(move(id)), queue(q) {}
+    SPSG_Reply(string id) : debug_printout(move(id)) {}
     void SetSuccess();
-    void SetCanceled();
 };
 
 struct SPSG_Request
@@ -417,11 +400,6 @@ struct SPSG_Request
     CRef<CRequestContext> context;
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c);
-
-    ~SPSG_Request()
-    {
-        _ASSERT(!reply->reply_item.GetMTSafe().state.InProgress());
-    }
 
     void OnReplyData(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
 
@@ -449,7 +427,8 @@ private:
     struct SBuffer
     {
         size_t prefix_index = 0;
-        string args;
+        string args_buffer;
+        SPSG_Args args;
         SPSG_Chunk chunk;
         size_t data_to_read = 0;
     };
@@ -484,14 +463,14 @@ struct SPSG_UvWrite
 
     void Done()
     {
-        ERR_POST(Trace << this << " done");
+        _TRACE(this << " done");
         m_Buffers[!m_Index].clear();
         m_InProgress = false;
     }
 
     void Reset()
     {
-        ERR_POST(Trace << this << " reset");
+        _TRACE(this << " reset");
         m_Buffers[0].clear();
         m_Buffers[1].clear();
         m_InProgress = false;
@@ -544,11 +523,11 @@ private:
     void OnWrite(uv_write_t*, int status);
     void OnClose(uv_handle_t*);
 
-    template <class THandle, class ...TArgs>
-    static void OnCallback(void (SPSG_UvTcp::*member)(THandle*, TArgs...), THandle* handle, TArgs... args)
+    template <class THandle, class ...TArgs1, class ...TArgs2>
+    static void OnCallback(void (SPSG_UvTcp::*member)(THandle*, TArgs1...), THandle* handle, TArgs2&&... args)
     {
         auto that = static_cast<SPSG_UvTcp*>(handle->data);
-        (that->*member)(handle, forward<TArgs>(args)...);
+        (that->*member)(handle, forward<TArgs2>(args)...);
     }
 
     static void s_OnAlloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) { OnCallback(&SPSG_UvTcp::OnAlloc, handle, suggested_size, buf); }
@@ -736,11 +715,11 @@ struct SPSG_IoSession
     bool ProcessRequest();
     void CheckRequestExpiration();
 
-    template <typename TReturn, class ...TArgs>
-    TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs...), TReturn error, TArgs... args)
+    template <typename TReturn, class ...TArgs1, class ...TArgs2>
+    TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs1...), TReturn error, TArgs2&&... args)
     {
         try {
-            return (this->*member)(forward<TArgs>(args)...);
+            return (this->*member)(forward<TArgs2>(args)...);
         }
         catch(const CException& e) {
             ostringstream os;
@@ -764,13 +743,11 @@ private:
 
     void Send();
     bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
-    void AddToCompletion(shared_ptr<SPSG_Reply>& reply);
-    void ProcessCompletionList();
 
-    void Reset(const SPSG_Error& error);
+    void Reset(SPSG_Error error);
 
     template <class ...TArgs>
-    void Reset(TArgs... args)
+    void Reset(TArgs&&... args)
     {
         Reset(SPSG_Error(forward<TArgs>(args)...));
     }
@@ -781,11 +758,11 @@ private:
             const uint8_t* value, size_t valuelen, uint8_t flags);
     int OnError(nghttp2_session* session, const char* msg, size_t len);
 
-    template <class ...TArgs>
-    static int OnNgHttp2(void* user_data, int (SPSG_IoSession::*member)(TArgs...), TArgs... args)
+    template <class ...TArgs1, class ...TArgs2>
+    static int OnNgHttp2(void* user_data, int (SPSG_IoSession::*member)(TArgs1...), TArgs2&&... args)
     {
         auto that = static_cast<SPSG_IoSession*>(user_data);
-        return that->TryCatch(member, (int)NGHTTP2_ERR_CALLBACK_FAILURE, forward<TArgs>(args)...);
+        return that->TryCatch(member, (int)NGHTTP2_ERR_CALLBACK_FAILURE, forward<TArgs2>(args)...);
     }
 
     static int s_OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data,
@@ -817,8 +794,6 @@ private:
     SPSG_NgHttp2Session m_Session;
 
     unordered_map<int32_t, SPSG_TimedRequest> m_Requests;
-
-    vector<shared_ptr<SPSG_Reply>> m_CompletionList;
 };
 
 struct SPSG_AsyncQueue : SPSG_UvAsync
@@ -848,16 +823,18 @@ private:
 
 struct SPSG_IoThread
 {
-    SPSG_AsyncQueue queue;
+    using TSpaceCV = SPSG_CV<1000>;
 
-    SPSG_IoThread(CNetService service, SPSG_UvBarrier& barrier) :
+    SPSG_AsyncQueue queue;
+    TSpaceCV* space;
+
+    SPSG_IoThread(CNetService service, SPSG_UvBarrier& barrier, TSpaceCV* s) :
+        space(s),
         m_Service(service),
         m_Thread(s_Execute, this, ref(barrier))
     {}
 
     ~SPSG_IoThread();
-
-    bool AddRequestMove(shared_ptr<SPSG_Request>& req);
 
 private:
     struct SSession;
@@ -920,11 +897,12 @@ struct SPSG_IoThread::SSession : SPSG_IoSession
 struct SPSG_IoCoordinator
 {
     SPSG_IoCoordinator(const string& service_name);
-    bool AddRequest(shared_ptr<SPSG_Request> req, chrono::milliseconds timeout);
+    bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
     const string& GetClientId() const { return m_ClientId; }
 
 private:
+    SPSG_IoThread::TSpaceCV m_Space;
     vector<unique_ptr<SPSG_IoThread>> m_Io;
     atomic<size_t> m_RequestCounter;
     atomic<size_t> m_RequestId;

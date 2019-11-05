@@ -39,6 +39,7 @@
 #include <utility>
 
 #include <misc/jsonwrapp/jsonwrapp.hpp>
+#include <objtools/pubseq_gateway/client/impl/misc.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 #include <serial/objectinfo.hpp>
 
@@ -61,26 +62,25 @@ struct SInfoFlag
 
 struct SJsonOut
 {
-    SJsonOut(bool interactive = false) : m_Printed(false), m_Interactive(interactive) {}
+    SJsonOut(bool pipe = false) : m_Pipe(pipe) {}
     ~SJsonOut();
     SJsonOut& operator<<(const CJson_Document& doc);
 
 private:
     mutex m_Mutex;
-    atomic_bool m_Printed;
-    bool m_Interactive;
+    char m_Separator = '[';
+    const bool m_Pipe;
 };
 
 class CJsonResponse : public CJson_Document
 {
 public:
     template <class TItem>
-    CJsonResponse(EPSG_Status status, TItem item);
+    CJsonResponse(EPSG_Status status, TItem item, bool set_reply_type = true);
 
     CJsonResponse(const string& id, bool result);
     CJsonResponse(const string& id, const CJson_Document& result);
     CJsonResponse(const string& id, int code, const string& message);
-    CJsonResponse(const string& id, int counter);
 
 private:
     CJsonResponse(const string& id);
@@ -98,178 +98,96 @@ private:
     void Fill(TItem item, string type);
 
     CJson_Object m_JsonObj;
+    const bool m_SetReplyType = true;
 };
 
-class CProcessor
+class CParallelProcessing
 {
 public:
-    CProcessor() : m_Stop(false) {}
+    CParallelProcessing(const string& service, bool pipe, const CArgs& args, bool echo, bool batch_resolve);
+    ~CParallelProcessing();
 
-    void Stop()
-    {
-        unique_lock<mutex> lock(m_Mutex);
-        m_Stop.store(true);
-        m_CV.notify_one();
-        lock.unlock();
-        m_Thread.join();
-    }
-
-protected:
-    thread m_Thread;
-    atomic_bool m_Stop;
-    mutex m_Mutex;
-    condition_variable m_CV;
-};
-
-class CReporter : public CProcessor
-{
-public:
-    CReporter(SJsonOut& json_out, bool batch_resolve = false) :
-        m_JsonOut(json_out),
-        m_BatchResolve(batch_resolve)
-    {}
-
-    void Start()
-    {
-        m_Thread = thread([this]() { Run(); });
-    }
-
-    template <class TItem>
-    void Add(TItem item)
-    {
-        unique_lock<mutex> lock(m_Mutex);
-        Emplace(move(item));
-        m_CV.notify_one();
-    }
+    void operator()(string id) { m_InputQueue.Push(move(id)); }
 
 private:
-    void Run();
+    using TInputQueue = CPSG_WaitingStack<string>;
+    using TReplyQueue = CPSG_WaitingStack<shared_ptr<CPSG_Reply>>;
 
-    void Emplace(string request)                  { m_Requests.emplace(move(request)); }
-    void Emplace(shared_ptr<CPSG_Reply> reply)    {  m_Replies.emplace(move(reply));   }
-    void Emplace(shared_ptr<CPSG_ReplyItem> item) {    m_Items.emplace(move(item));    }
-
-    SJsonOut& m_JsonOut;
-    queue<string> m_Requests;
-    queue<shared_ptr<CPSG_Reply>> m_Replies;
-    queue<shared_ptr<CPSG_ReplyItem>> m_Items;
-    const bool m_BatchResolve;
-};
-
-class CRetriever : public CProcessor
-{
-public:
-    CRetriever(CPSG_Queue& queue, CReporter& reporter) : m_Queue(queue), m_Reporter(reporter) {}
-
-    void Start()
+    struct BatchResolve
     {
-        m_Thread = thread([this]() { Run(); });
-    }
+        static void Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args);
+        static void Reporter(TReplyQueue& input, SJsonOut& output);
+    };
 
-private:
-    void Run();
+    static void Retriever(CPSG_Queue& input, TReplyQueue& output);
 
-    bool ShouldStop()
+    struct Interactive
     {
-        unique_lock<mutex> lock(m_Mutex);
-        return m_Stop;
-    }
+        static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo);
+        static void Reporter(TReplyQueue& input, SJsonOut& output);
+    };
 
-    CPSG_Queue& m_Queue;
-    CReporter& m_Reporter;
-    list<shared_ptr<CPSG_Reply>> m_Replies;
-    list<shared_ptr<CPSG_ReplyItem>> m_Items;
-};
-
-class CSender : public CProcessor
-{
-public:
-    CSender(CPSG_Queue& queue, SJsonOut& json_out, bool batch_resolve = false) :
-        m_Queue(queue),
-        m_JsonOut(json_out),
-        m_BatchResolve(batch_resolve)
-    {}
-
-    void Start()
+    struct SThread
     {
-        m_Thread = thread([this]() { Run(); });
-    }
+        template <class TMethod, class... TArgs>
+        SThread(TMethod method, TArgs&&... args) : m_Thread(method, forward<TArgs>(args)...) {}
+        ~SThread() { m_Thread.join(); }
 
-    void Add(shared_ptr<CPSG_Request> request)
-    {
-        unique_lock<mutex> lock(m_Mutex);
-        m_Requests.emplace(move(request));
-        m_CV.notify_one();
-    }
+    private:
+        thread m_Thread;
+    };
 
-private:
-    void Run();
-
-    CPSG_Queue& m_Queue;
-    SJsonOut& m_JsonOut;
-    queue<shared_ptr<CPSG_Request>> m_Requests;
-    const bool m_BatchResolve;
+    TInputQueue m_InputQueue;
+    CPSG_Queue m_PsgQueue;
+    TReplyQueue m_ReplyQueue;
+    SJsonOut m_JsonOut;
+    list<SThread> m_Threads;
 };
 
 class CProcessing
 {
 public:
-    CProcessing() :
-        m_RequestsCounter(0),
-        m_Reporter(m_JsonOut),
-        m_Retriever(m_Queue, m_Reporter),
-        m_Sender(m_Queue, m_JsonOut)
-    {}
-
-    CProcessing(string service, bool interactive = false, bool batch_resolve = false) :
-        m_Queue(service),
-        m_RequestsCounter(0),
-        m_JsonOut(interactive),
-        m_Reporter(m_JsonOut, batch_resolve),
-        m_Retriever(m_Queue, m_Reporter),
-        m_Sender(m_Queue, m_JsonOut, batch_resolve)
-    {}
-
-    int OneRequest(shared_ptr<CPSG_Request> request);
-    int BatchResolve(const CArgs& input, istream& is);
-    int Interactive(bool echo);
-    int Performance(size_t user_threads, bool raw_metrics, const string& service);
-    int Testing();
-
+    static int OneRequest(const string& service, shared_ptr<CPSG_Request> request);
+    static int ParallelProcessing(const CArgs& args, bool batch_resolve, bool echo);
+    static int Performance(const string& service, size_t user_threads, bool local_queue, ostream& os);
+    static int Report(istream& is, ostream& os, double percentage);
+    static int Testing();
     static int Io(const string& service, time_t start_time, int duration, int user_threads, int download_size);
+
+    static CJson_Document RequestSchema();
 
 private:
     template <class TCreateContext>
-    vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context) const;
-
-    void PerformanceReply();
+    static vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context);
 
     static bool ReadLine(string& line, istream& is = cin);
-    static CJson_Schema& RequestSchema();
-
-    static shared_ptr<CPSG_Request> CreateRequest(const string& method, shared_ptr<void> user_context,
-            const CJson_ConstObject& params_obj);
-
-    CPSG_Queue m_Queue;
-    atomic_int m_RequestsCounter;
-    SJsonOut m_JsonOut;
-    CReporter m_Reporter;
-    CRetriever m_Retriever;
-    CSender m_Sender;
 };
 
 struct SRequestBuilder
 {
-    struct SBatchResolve;
+    template <class TRequest, class TInput, class... TArgs>
+    static shared_ptr<TRequest> Build(const TInput& input, TArgs&&... args);
+
+    template <class... TArgs>
+    static shared_ptr<CPSG_Request> Build(const string& name, const CJson_ConstObject& input, TArgs&&... args);
 
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
 
-    template <class TRequest, class TInput>
-    static shared_ptr<CPSG_Request> CreateRequest(shared_ptr<void> user_context, const TInput& input);
+    static CPSG_BioId::TType GetBioIdType(string type);
+
+    using TSpecified = function<bool(const string&)>;
+
+    template <class TRequest>
+    static TSpecified GetSpecified(const CArgs& input);
+    template <class TRequest>
+    static TSpecified GetSpecified(const CJson_ConstObject& input);
+
+    static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
 
 private:
-    static CPSG_BioId::TType GetBioIdType(string type);
+    template <class TInput>
+    struct SImpl;
 
     static CPSG_BioId GetBioId(const CArgs& input);
     static CPSG_BioId GetBioId(const CJson_ConstObject& input);
@@ -286,45 +204,35 @@ private:
     static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CArgs& input) { return input["SPLIT_VER"].AsInteger(); }
     static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CJson_ConstObject& input) { return input["split_ver"].GetValue().GetInt8(); }
 
-    using TSpecified = function<bool(const string&)>;
-
-    template <class TRequest>
-    static TSpecified GetSpecified(const CArgs& input);
-    template <class TRequest>
-    static TSpecified GetSpecified(const CJson_ConstObject& input);
-
     static vector<string> GetNamedAnnots(const CArgs& input) { return input["na"].GetStringList(); }
     static vector<string> GetNamedAnnots(const CJson_ConstObject& input);
 
-    template <class TInput>
-    static void CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>&, shared_ptr<void>, const TInput&);
-    template <class TInput>
-    static void CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>&, shared_ptr<void>, const TInput&);
-    template <class TInput>
-    static void CreateRequestImpl(shared_ptr<CPSG_Request_Blob>&, shared_ptr<void>, const TInput&);
-    template <class TInput>
-    static void CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInfo>&, shared_ptr<void>, const TInput&);
-    template <class TInput>
-    static void CreateRequestImpl(shared_ptr<CPSG_Request_TSE_Chunk>&, shared_ptr<void>, const TInput&);
-
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
-
-    static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
 
     static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input);
     static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CJson_ConstObject& input);
 };
 
-struct SRequestBuilder::SBatchResolve
+// Helper class to 'overload' on return type and specify input parameters once
+template <class TInput>
+struct SRequestBuilder::SImpl
 {
-    SBatchResolve(const CArgs& input);
+    const TInput& input;
+    shared_ptr<void> user_context;
+    CRef<CRequestContext> request_context;
 
-    shared_ptr<CPSG_Request_Resolve> operator()(string id);
+    SImpl(const TInput& i, shared_ptr<void> uc = {}, CRef<CRequestContext> rc = {}) :
+        input(i),
+        user_context(move(uc)),
+        request_context(move(rc))
+    {}
 
-private:
-    const CPSG_BioId::TType m_Type;
-    const CPSG_Request_Resolve::TIncludeInfo m_IncludeInfo;
+    operator shared_ptr<CPSG_Request_Biodata>();
+    operator shared_ptr<CPSG_Request_Resolve>();
+    operator shared_ptr<CPSG_Request_Blob>();
+    operator shared_ptr<CPSG_Request_NamedAnnotInfo>();
+    operator shared_ptr<CPSG_Request_TSE_Chunk>();
 };
 
 template <class TRequest>
@@ -355,51 +263,80 @@ inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Re
     };
 }
 
+template <class TRequest, class TInput, class... TArgs>
+shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args)
+{
+    return SImpl<TInput>(input, forward<TArgs>(args)...);
+}
+
+template <class... TArgs>
+shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_ConstObject& input, TArgs&&... args)
+{
+    SImpl<CJson_ConstObject> build(input, forward<TArgs>(args)...);
+
+    if (name == "biodata") {
+        return static_cast<shared_ptr<CPSG_Request_Biodata>>(build);
+    } else if (name == "blob") {
+        return static_cast<shared_ptr<CPSG_Request_Blob>>(build);
+    } else if (name == "resolve") {
+        return static_cast<shared_ptr<CPSG_Request_Resolve>>(build);
+    } else if (name == "named_annot") {
+        return static_cast<shared_ptr<CPSG_Request_NamedAnnotInfo>>(build);
+    } else if (name == "tse_chunk") {
+        return static_cast<shared_ptr<CPSG_Request_TSE_Chunk>>(build);
+    } else {
+        return {};
+    }
+}
+
 template <class TInput>
-inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Biodata>& request, shared_ptr<void> user_context, const TInput& input)
+SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Biodata>()
 {
     auto bio_id = GetBioId(input);
-    request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
+    auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
     auto specified = GetSpecified<CPSG_Request_Biodata>(input);
     IncludeData(request, specified);
     ExcludeTSEs(request, input);
+    return request;
 }
 
 template <class TInput>
-inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Resolve>& request, shared_ptr<void> user_context, const TInput& input)
+SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Resolve>()
 {
     auto bio_id = GetBioId(input);
-    request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
+    auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
     auto specified = GetSpecified<CPSG_Request_Resolve>(input);
     const auto include_info = GetIncludeInfo(specified);
     request->IncludeInfo(include_info);
+    return request;
 }
 
 template <class TInput>
-inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_Blob>& request, shared_ptr<void> user_context, const TInput& input)
+SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Blob>()
 {
     auto blob_id = GetBlobId(input);
     auto last_modified = GetLastModified(input);
-    request = make_shared<CPSG_Request_Blob>(move(blob_id), move(last_modified), move(user_context));
+    auto request = make_shared<CPSG_Request_Blob>(move(blob_id), move(last_modified), move(user_context));
     auto specified = GetSpecified<CPSG_Request_Blob>(input);
     IncludeData(request, specified);
+    return request;
 }
 
 template <class TInput>
-inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_NamedAnnotInfo>& request, shared_ptr<void> user_context, const TInput& input)
+SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_NamedAnnotInfo>()
 {
     auto bio_id = GetBioId(input);
     auto named_annots = GetNamedAnnots(input);
-    request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
+    return make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
 }
 
 template <class TInput>
-inline void SRequestBuilder::CreateRequestImpl(shared_ptr<CPSG_Request_TSE_Chunk>& request, shared_ptr<void> user_context, const TInput& input)
+SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_TSE_Chunk>()
 {
     auto blob_id = GetBlobId(input);
     auto chunk_no = GetChunkNo(input);
     auto split_ver = GetSplitVer(input);
-    request = make_shared<CPSG_Request_TSE_Chunk>(move(blob_id), move(chunk_no), move(split_ver), move(user_context));
+    return make_shared<CPSG_Request_TSE_Chunk>(move(blob_id), move(chunk_no), move(split_ver), move(user_context));
 }
 
 template <class TRequest>
@@ -411,14 +348,6 @@ inline void SRequestBuilder::IncludeData(shared_ptr<TRequest> request, TSpecifie
             return;
         }
     }
-}
-
-template <class TRequest, class TInput>
-inline shared_ptr<CPSG_Request> SRequestBuilder::CreateRequest(shared_ptr<void> user_context, const TInput& input)
-{
-    shared_ptr<TRequest> request;
-    CreateRequestImpl(request, move(user_context), input);
-    return request;
 }
 
 END_NCBI_SCOPE

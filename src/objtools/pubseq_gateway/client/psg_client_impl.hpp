@@ -30,6 +30,7 @@
  *
  */
 
+#include <objtools/pubseq_gateway/client/impl/misc.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #ifdef HAVE_PSG_CLIENT
@@ -56,9 +57,8 @@ private:
     ERW_Result x_Read(void* buf, size_t count, size_t* bytes_read);
 
     SPSG_Reply::SItem::TTS* m_Src;
-    deque<SPSG_Chunk> m_Data;
+    vector<SPSG_Chunk> m_Data;
     size_t m_Chunk = 0;
-    size_t m_Part = 0;
     size_t m_Index = 0;
 };
 
@@ -84,17 +84,14 @@ struct CPSG_Reply::SImpl
 
 private:
     template <class TReplyItem>
-    TReplyItem* CreateImpl(TReplyItem* item, list<SPSG_Chunk>& chunks);
+    TReplyItem* CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks);
 };
 
-struct CPSG_Queue::SImpl
+struct CPSG_Queue::SImpl : CPSG_WaitingStack<shared_ptr<CPSG_Reply>>
 {
     SImpl(const string& service);
 
-    bool SendRequest(shared_ptr<const CPSG_Request> request, CDeadline deadline);
-    shared_ptr<CPSG_Reply> GetNextReply(CDeadline deadline);
-    void Reset();
-    bool IsEmpty() const;
+    bool SendRequest(shared_ptr<const CPSG_Request> request, const CDeadline& deadline);
 
 private:
     class CService
@@ -114,25 +111,7 @@ private:
         CService(const string& service) : m_Map(GetMap()), ioc(GetIoC(service)) {}
     };
 
-    struct SRequest;
-    using TRequests = list<SRequest>;
-
-    shared_ptr<SPSG_ThreadSafe<TRequests>> m_Requests;
     CService m_Service;
-};
-
-struct CPSG_Queue::SImpl::SRequest
-{
-    SRequest(shared_ptr<const CPSG_Request> user_request,
-            shared_ptr<SPSG_Request> request);
-
-    shared_ptr<CPSG_Reply> GetNextReply();
-    void Reset();
-    bool IsEmpty() const;
-
-private:
-    shared_ptr<const CPSG_Request> m_UserRequest;
-    shared_ptr<SPSG_Request> m_Request;
 };
 
 END_NCBI_SCOPE
