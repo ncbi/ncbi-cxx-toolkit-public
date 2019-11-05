@@ -92,7 +92,7 @@ static CFastaReader::TFlags s_StringToFastaFlag(const string& flag_string)
 
 struct SConfigInfo
 {
-    vector<CFastaReader::TFlags> flags;
+    list<CFastaReader::TFlags> flags;
     vector<string> excluded_mods;
 };
 
@@ -115,7 +115,7 @@ static int s_ReadConfig(CNcbiIfstream ifstr, SConfigInfo& config)
 
         if (tokens.front() == "EXCLUDED_MODS") {
             copy(next(begin(tokens)), end(tokens), 
-                    config.excluded_mods.begin());
+                    back_inserter(config.excluded_mods));
             continue;
         }
     }
