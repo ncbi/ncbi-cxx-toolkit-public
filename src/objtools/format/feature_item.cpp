@@ -1673,7 +1673,8 @@ void CFeatureItem::x_AddQualsIdx(
         }
 
         if (feat_gene_xref && ! suppressed) {
-            gene_ref = feat_gene_xref;
+            // RW-943
+            // gene_ref = feat_gene_xref;
             CRef<CFeatureIndex> ft = bsx->GetFeatIndex (m_Feat);
             if (ft) {
                 CRef<CFeatureIndex> fsx = ft->GetBestGene();
@@ -1685,19 +1686,22 @@ void CFeatureItem::x_AddQualsIdx(
                         gf = &(mf.GetMappedFeature());
                         gr = &(mf.GetData().GetGene());
                         if (gr) {
-                            if (gene_ref->IsSetLocus() && gr->IsSetLocus()) {
-                                if (gene_ref->GetLocus() == gr->GetLocus()) {
+                            if (feat_gene_xref->IsSetLocus() && gr->IsSetLocus()) {
+                                if (feat_gene_xref->GetLocus() == gr->GetLocus()) {
                                     gene_feat = &(mf.GetMappedFeature());
                                     gene_ref = &(mf.GetData().GetGene());
                                 }
-                            } else if (gene_ref->IsSetLocus_tag() && gr->IsSetLocus_tag()) {
-                                if (gene_ref->GetLocus_tag() == gr->GetLocus_tag()) {
+                            } else if (feat_gene_xref->IsSetLocus_tag() && gr->IsSetLocus_tag()) {
+                                if (feat_gene_xref->GetLocus_tag() == gr->GetLocus_tag()) {
                                     gene_feat = &(mf.GetMappedFeature());
                                     gene_ref = &(mf.GetData().GetGene());
                                 }
                             }
                         }
                     }
+                } else {
+                    // RW-943
+                    gene_ref = feat_gene_xref;
                 }
             }
         } else if ((! feat_gene_xref || ! suppressed) &&
