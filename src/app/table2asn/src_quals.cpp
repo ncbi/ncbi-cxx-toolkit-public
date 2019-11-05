@@ -42,6 +42,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include "src_quals.hpp"
+#include <sstream>
 
 
 BEGIN_NCBI_SCOPE
