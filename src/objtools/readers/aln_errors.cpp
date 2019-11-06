@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
+thread_local unique_ptr<CAlnErrorReporter> theErrorReporter(new CAlnErrorReporter(nullptr));
 
 //  ----------------------------------------------------------------------------
 BEGIN_NAMED_ENUM_INFO("", EReaderCode, false)
