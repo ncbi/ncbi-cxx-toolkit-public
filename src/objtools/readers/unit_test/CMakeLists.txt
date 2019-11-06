@@ -9,6 +9,7 @@ NCBI_add_app(
   unit_test_format_guess_ex
   unit_test_feature_table_reader
   unit_test_fasta_reader
+  unit_test_fasta_reader_old
   unit_test_agp_seq_entry
   unit_test_agp_converter
   unit_test_gvfreader
