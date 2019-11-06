@@ -47,6 +47,7 @@ CJsonNode CPSGTimingBase::Serialize(void) const
     static string   kLowerAnomaly("LowerAnomaly");
     static string   kUpperAnomaly("UpperAnomaly");
     static string   kTotalCount("TotalCount");
+    static string   kValueSum("ValueSum");
 
     CJsonNode       ret(CJsonNode::NewObjectNode());
     CJsonNode       bins(CJsonNode::NewArrayNode());
@@ -75,6 +76,7 @@ CJsonNode CPSGTimingBase::Serialize(void) const
     ret.SetInteger(kUpperAnomaly, upper_anomalies);
     ret.SetInteger(kTotalCount, m_PSGTiming->GetCount() +
                                 lower_anomalies + upper_anomalies);
+    ret.SetInteger(kValueSum, m_PSGTiming->GetSum());
     return ret;
 }
 
