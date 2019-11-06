@@ -1,7 +1,3 @@
-!! The PSL writer is still under development!
-!! It does not produce valid output.
-!! Please don't use it yet.
-
 matches     : 5238
 misMatches  : 0
 repMatches  : 0

@@ -53,7 +53,7 @@ public:
         mMatches(-1),
         mMisMatches(-1),
         mRepMatches(-1),
-        mCountN(0),
+        mCountN(-1),
         mNumInsertQ(-1),
         mBaseInsertQ(-1),
         mNumInsertT(-1),
@@ -109,19 +109,15 @@ protected:
     void xValidateSegment(
         CScope&,
         const CSpliced_seg&);
-
     void xInitializeStrands(
         CScope&,
         const CSpliced_seg&);
-
     void xInitializeStats(
         CScope&,
         const CSpliced_seg&);
-
     void xInitializeSequenceInfo(
         CScope&,
         const CSpliced_seg&);
-
     void xInitializeBlocks(
         CScope&,
         const CSpliced_seg&);
@@ -133,6 +129,15 @@ protected:
         const CSpliced_seg&);
 
     void xValidateSegment(
+        CScope&,
+        const CDense_seg&);
+    void xInitializeStrands(
+        CScope&,
+        const CDense_seg&);
+    void xInitializeSequenceInfo(
+        CScope&,
+        const CDense_seg&);
+    void xInitializeStatsAndBlocks(
         CScope&,
         const CDense_seg&);
 

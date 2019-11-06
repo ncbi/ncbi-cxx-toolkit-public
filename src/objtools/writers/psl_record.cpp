@@ -162,6 +162,8 @@ CPslRecord::xInitializeStats(
         }
     }
     mNumInsertT += static_cast<int>((exonList.size() - 1));
+
+    mCountN = 0; //for now
 }
 
 //  ----------------------------------------------------------------------------
@@ -330,7 +332,6 @@ CPslRecord::Initialize(
     xValidateSegment(scope, splicedSeg);
 
     xInitializeStrands(scope, splicedSeg);
-     //nCount?
     xInitializeSequenceInfo(scope, splicedSeg);
     xInitializeStats(scope, splicedSeg);
     xInitializeBlocks(scope, splicedSeg);
@@ -352,12 +353,112 @@ CPslRecord::xValidateSegment(
 
 //  ----------------------------------------------------------------------------
 void
+CPslRecord::xInitializeStrands(
+    CScope& scope,
+    const CDense_seg& denseSeg)
+//  ----------------------------------------------------------------------------
+{
+    mStrandQ = denseSeg.GetSeqStrand(0);
+    mStrandT = denseSeg.GetSeqStrand(1);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CPslRecord::xInitializeSequenceInfo(
+    CScope& scope,
+    const CDense_seg& denseSeg)
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_id& idQ = denseSeg.GetSeq_id(0);
+    auto seqHandleQ = scope.GetBioseqHandle(idQ);
+    CWriteUtil::GetBestId(seqHandleQ.GetSeq_id_Handle(), scope, mNameQ);
+    mSizeQ = seqHandleQ.GetInst_Length();
+    mStartQ = denseSeg.GetSeqStart(0);
+    mEndQ = denseSeg.GetSeqStop(0) + 1;
+
+    const CSeq_id& idT = denseSeg.GetSeq_id(1);
+    auto seqHandleT = scope.GetBioseqHandle(idT);
+    CWriteUtil::GetBestId(seqHandleT.GetSeq_id_Handle(), scope, mNameT);
+    mSizeT = seqHandleT.GetInst_Length();
+    mStartT = denseSeg.GetSeqStart(1);
+    mEndT = denseSeg.GetSeqStop(1) + 1;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CPslRecord::xInitializeStatsAndBlocks(
+    CScope& scope,
+    const CDense_seg& denseSeg)
+//  ----------------------------------------------------------------------------
+{
+    mMatches = mMisMatches = mRepMatches = 0;
+    for (auto length: denseSeg.GetLens()) {
+        mMatches += length;
+    }
+    mExonCount = static_cast<int>(denseSeg.GetLens().size());
+    auto starts = denseSeg.GetStarts();
+    auto lens = denseSeg.GetLens();
+    for (int i=0; i < mExonCount; ++i) {
+        mExonStartsQ.push_back(starts[2*i]);
+        mExonStartsT.push_back(starts[2*i + 1]);
+        mExonSizes.push_back(lens[i]);
+    }
+    if (eNa_strand_minus == denseSeg.GetSeqStrand(0)) {
+        std::reverse(mExonStartsQ.begin(), mExonStartsQ.end());
+        std::reverse(mExonSizes.begin(), mExonSizes.end());
+    }
+    if (eNa_strand_minus == denseSeg.GetSeqStrand(1)) {
+        std::reverse(mExonStartsT.begin(), mExonStartsT.end());
+        std::reverse(mExonSizes.begin(), mExonSizes.end());
+    }
+
+    mNumInsertQ = mBaseInsertQ = 0;
+    mNumInsertT = mBaseInsertT = 0;
+    if (mExonStartsT[0] == -1) {
+        mNumInsertQ++;
+        mBaseInsertQ += mExonSizes[0];
+    }
+    if (mExonStartsQ[0] == -1) {
+        mNumInsertT++;
+        mBaseInsertT += mExonSizes[0];
+    }
+    for (int i=1; i < mExonCount; ++i) {
+        auto endOfLastQ = mExonStartsQ[i-1] + mExonSizes[i-1];
+        auto startOfThisQ = mExonStartsQ[i];
+        if (startOfThisQ - endOfLastQ != 0) {
+            mNumInsertQ++;
+            mBaseInsertQ += (startOfThisQ - endOfLastQ);
+        }
+        if (mExonStartsT[i] == -1) {
+            mNumInsertQ++;
+            mBaseInsertQ += mExonSizes[i];
+        }
+        auto endOfLastT = mExonStartsT[i-1] + mExonSizes[i-1];
+        auto startOfThisT = mExonStartsT[i];
+        if (startOfThisT - endOfLastT != 0) {
+            mNumInsertT++;
+            mBaseInsertT += (startOfThisT - endOfLastT);
+        }
+        if (mExonStartsQ[i] == -1) {
+            mNumInsertT++;
+            mBaseInsertT += mExonSizes[i];
+        }
+    }
+
+    mCountN = 0; //for now
+}
+
+//  ----------------------------------------------------------------------------
+void
 CPslRecord::Initialize(
     CScope& scope,
     const CDense_seg& denseSeg)
 //  ----------------------------------------------------------------------------
 {
     xValidateSegment(scope, denseSeg);
+    xInitializeStrands(scope, denseSeg);
+    xInitializeSequenceInfo(scope, denseSeg);
+    xInitializeStatsAndBlocks(scope, denseSeg);
 }
 
 END_NCBI_SCOPE

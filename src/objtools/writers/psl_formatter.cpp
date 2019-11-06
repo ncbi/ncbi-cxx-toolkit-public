@@ -72,6 +72,19 @@ sDebugChunkArray(
 }
 
 //  ----------------------------------------------------------------------------
+static string
+sFormatInt(
+    int value,
+    int default)
+//  ----------------------------------------------------------------------------
+{
+    if (value == default) {
+        return ".";
+    }
+    return NStr::IntToString(value);
+}
+
+//  ----------------------------------------------------------------------------
 CPslFormatter::CPslFormatter(
     CNcbiOstream& ostr,
     unsigned int flags):
@@ -87,7 +100,7 @@ CPslFormatter::xFieldMatches(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetMatches());
+    auto rawString = sFormatInt(record.GetMatches(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("matches", rawString);
     }
@@ -100,7 +113,7 @@ CPslFormatter::xFieldMisMatches(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetMisMatches());
+    auto rawString = sFormatInt(record.GetMisMatches(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("misMatches", rawString);
     }
@@ -113,7 +126,7 @@ CPslFormatter::xFieldRepMatches(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetRepMatches());
+    auto rawString = sFormatInt(record.GetRepMatches(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("repMatches", rawString);
     }
@@ -126,7 +139,7 @@ CPslFormatter::xFieldCountN(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetCountN());
+    auto rawString = sFormatInt(record.GetCountN(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("nCount", rawString);
     }
@@ -139,7 +152,7 @@ CPslFormatter::xFieldNumInsertQ(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetNumInsertQ());
+    auto rawString = sFormatInt(record.GetNumInsertQ(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("qNumInsert", rawString);
     }
@@ -152,7 +165,7 @@ CPslFormatter::xFieldBaseInsertQ(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetBaseInsertQ());
+    auto rawString = sFormatInt(record.GetBaseInsertQ(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("qBaseInsert", rawString);
     }
@@ -165,7 +178,7 @@ CPslFormatter::xFieldNumInsertT(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetNumInsertT());
+    auto rawString = sFormatInt(record.GetNumInsertT(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("tNumInsert", rawString);
     }
@@ -178,7 +191,7 @@ CPslFormatter::xFieldBaseInsertT(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetBaseInsertT());
+    auto rawString = sFormatInt(record.GetBaseInsertT(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("tBaseInsert", rawString);
     }
@@ -191,7 +204,10 @@ CPslFormatter::xFieldStrand(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    string rawString = (record.GetStrandT() == eNa_strand_minus ? "-" : "+");
+    string rawString = ".";
+    if (record.GetStrandT() != eNa_strand_unknown) {
+        rawString = (record.GetStrandT() == eNa_strand_minus ? "-" : "+");
+    }
     if (mDebugMode) {
         return sDebugFormatValue("strand", rawString);
     }
@@ -205,10 +221,10 @@ CPslFormatter::xFieldNameQ(
 //  ----------------------------------------------------------------------------
 {
     auto rawString = record.GetNameQ();
+    if (rawString.empty()) {
+        rawString = ".";
+    }
     if (mDebugMode) {
-        if (rawString.empty()) {
-            rawString = ".";
-        }
         return sDebugFormatValue("qName", rawString);
     }
     return "\t" + rawString;
@@ -220,8 +236,8 @@ CPslFormatter::xFieldSizeQ(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetSizeQ());
-    if (mDebugMode) {
+    auto rawString = sFormatInt(record.GetSizeQ(), -1);
+     if (mDebugMode) {
         return sDebugFormatValue("qSize", rawString);
     }
     return "\t" + rawString;
@@ -233,7 +249,7 @@ CPslFormatter::xFieldStartQ(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetStartQ());
+    auto rawString = sFormatInt(record.GetStartQ(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("qStart", rawString);
     }
@@ -246,7 +262,7 @@ CPslFormatter::xFieldEndQ(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetEndQ());
+    auto rawString = sFormatInt(record.GetEndQ(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("qEnd", rawString);
     }
@@ -260,10 +276,10 @@ CPslFormatter::xFieldNameT(
 //  ----------------------------------------------------------------------------
 {
     auto rawString = record.GetNameT();
+    if (rawString.empty()) {
+        rawString = ".";
+    }
     if (mDebugMode) {
-        if (rawString.empty()) {
-            rawString = ".";
-        }
         return sDebugFormatValue("tName", rawString);
     }
     return "\t" + rawString;
@@ -275,7 +291,7 @@ CPslFormatter::xFieldSizeT(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetSizeT());
+    auto rawString = sFormatInt(record.GetSizeT(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("tSize", rawString);
     }
@@ -288,7 +304,7 @@ CPslFormatter::xFieldStartT(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetStartT());
+    auto rawString = sFormatInt(record.GetStartT(), -1);
     if (mDebugMode) {
        return sDebugFormatValue("tStart", rawString);
     }
@@ -301,7 +317,7 @@ CPslFormatter::xFieldEndT(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetEndT());
+    auto rawString = sFormatInt(record.GetEndT(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("tEnd", rawString);
     }
@@ -314,7 +330,7 @@ CPslFormatter::xFieldBlockCount(
     const CPslRecord& record) const
 //  ----------------------------------------------------------------------------
 {
-    auto rawString = NStr::IntToString(record.GetBlockCount());
+    auto rawString = sFormatInt(record.GetBlockCount(), -1);
     if (mDebugMode) {
         return sDebugFormatValue("blockCount", rawString);
     }
