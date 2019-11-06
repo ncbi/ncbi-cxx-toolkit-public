@@ -1885,9 +1885,10 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
     }
 
     // collect biosources descriptors on bioseq
-    // if ( !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
+    // RW-941 restore exclusion for IsFormatFTable, commented out in GB-5412
+    if ( !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
         x_CollectSourceDescriptors(bh, ctx, srcs);
-    // }
+    }
 
     if ( ! ctx.IsProt() ) {
         // collect biosources features on bioseq
@@ -1910,7 +1911,8 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
                                 srcs);
   
     // if no source found create one (only if not FTable format or Dump mode)
-    if ( srcs.empty()  &&  /* ! cfg.IsFormatFTable()  && */  ! cfg.IsModeDump() ) {
+    // RW-941 restore exclusion for IsFormatFTable, commented out in GB-5412
+    if ( srcs.empty()  &&  ! cfg.IsFormatFTable()  &&  ! cfg.IsModeDump() ) {
         CRef<CBioSource> bsrc(new CBioSource);
         bsrc->SetOrg();
         CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*bsrc, CRange<TSeqPos>::GetWhole(), ctx, m_Feat_Tree));
