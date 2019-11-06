@@ -71,14 +71,35 @@ static CFastaReader::TFlags s_StringToFastaFlag(const string& flag_string)
 {
     map<string, CFastaReader::EFlags> sFlagsMap =
     {
-        { "fAssumeNuc",  CFastaReader::fAssumeNuc},
-        { "fAssumeProt", CFastaReader::fAssumeProt},
-        { "fForceType",  CFastaReader::fForceType},
-        { "fNoParseID",  CFastaReader::fNoParseID},
-        { "fParseGaps",  CFastaReader::fParseGaps},
-        { "fOneSeq",     CFastaReader::fOneSeq},
-        { "fAllSeqIds",  CFastaReader::fAllSeqIds},
-        { "fAddMods",    CFastaReader::fAddMods}
+        { "fAssumeNuc",    CFastaReader::fAssumeNuc},
+        { "fAssumeProt",   CFastaReader::fAssumeProt},
+        { "fForceType",    CFastaReader::fForceType},
+        { "fNoParseID",    CFastaReader::fNoParseID},
+        { "fParseGaps",    CFastaReader::fParseGaps},
+        { "fOneSeq",       CFastaReader::fOneSeq},
+        { "fAllSeqIds",    CFastaReader::fAllSeqIds},
+        { "fNoSeqData",    CFastaReader::fNoSeqData},
+        { "fRequireID",    CFastaReader::fRequireID},
+        { "fDLOptional",   CFastaReader::fDLOptional},
+        { "fParseRawID",   CFastaReader::fParseRawID},
+        { "fSkipCheck",    CFastaReader::fSkipCheck},
+        { "fNoSplit",      CFastaReader::fNoSplit},
+        { "fValidate",     CFastaReader::fValidate},
+        { "fUniqueIDs",    CFastaReader::fUniqueIDs},
+        { "fStrictGuess",  CFastaReader::fStrictGuess},
+        { "fLaxGuess",     CFastaReader::fLaxGuess},
+        { "fAddMods",      CFastaReader::fAddMods},
+        { "fLetterGaps",   CFastaReader::fLetterGaps},
+        { "fNoUserObjs",   CFastaReader::fNoUserObjs},
+        { "fBadModThrow",  CFastaReader::fBadModThrow},
+        { "fUnknModThrow", CFastaReader::fUnknModThrow},
+        { "fLeaveAsText",  CFastaReader::fLeaveAsText},
+        { "fQuickIDCheck", CFastaReader::fQuickIDCheck},
+        { "fUseIupacaa",   CFastaReader::fUseIupacaa},
+        { "fHyphensIgnoreAndWarn", CFastaReader::fHyphensIgnoreAndWarn},
+        { "fDisableNoResidues",    CFastaReader::fDisableNoResidues},
+        { "fDisableParseRange",    CFastaReader::fDisableParseRange},
+        { "fIgnoreMods",           CFastaReader::fIgnoreMods}
     };
 
     auto it = sFlagsMap.find(flag_string);
@@ -86,6 +107,8 @@ static CFastaReader::TFlags s_StringToFastaFlag(const string& flag_string)
         return static_cast<CFastaReader::TFlags>(it->second);
     }
 
+    string message = "Unrecognized FASTA flag : " + it->second;
+    NCBI_THROW(CException, eUnknown, message);
 
     return 0;
 }
@@ -97,7 +120,7 @@ struct SConfigInfo
 };
 
 
-static int s_ReadConfig(CNcbiIfstream ifstr, SConfigInfo& config) 
+static void s_ReadConfig(CNcbiIfstream ifstr, SConfigInfo& config) 
 {
     for (string line; getline(ifstr, line);) {
         NStr::TruncateSpaces(line);
@@ -119,8 +142,6 @@ static int s_ReadConfig(CNcbiIfstream ifstr, SConfigInfo& config)
             continue;
         }
     }
-
-
 }
 
 struct STestInfo {
@@ -205,6 +226,40 @@ private:
 };
 
 
+static bool
+sReadInputAndGenerateAsn(
+        const string& fasta_file,
+        const string& config_file,
+        CRef<CSeq_entry> pSeqEntry, 
+        CMessageListenerBase& message_listener)
+{
+    CNcbiIfstream ifstr(fasta_file.c_str());
+    CRef<ILineReader> pLineReader = ILineReader::New(ifstr);
+
+    CFastaReader::TFlags fFlags = 0;
+    SConfigInfo config_info;
+    s_ReadConfig(
+        CNcbiIfstream(config_file.c_str()), 
+        config_info);
+    if (!config_info.flags.empty()) {
+        for (auto flag : config_info.flags) {
+            fFlags |= flag;
+        }
+    }
+
+    CFastaReader fasta_reader(*pLineReader, fFlags);
+    CRef<CSeq_entry> pSeqEntry;
+    try {
+        pSeqEntry = fasta_reader.ReadOneSeq(message_listener); 
+    }
+    catch (...) {
+        BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
+        ifstr.close();
+        return false;
+    }
+    return true;
+}
+
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
@@ -214,6 +269,9 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
     if (!CFile(input).Exists()) {
          BOOST_FAIL("input file " << input << " does not exist.");
+    }
+    if (!CFile(cfg).Exists()) {
+         BOOST_FAIL("config file " << cfg << " does not exist.");
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
@@ -229,10 +287,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
             fFlags |= flag;
         }
     }
-   /* 
-        CFastaReader::fAssumeNuc |
-        CFastaReader::fForceType; 
-    */
+
     CFastaReader fasta_reader(*pLineReader, fFlags);
     CRef<CSeq_entry> pSeqEntry;
     try {
@@ -247,7 +302,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CNcbiOfstream ofstr(output.c_str());
     ofstr << MSerial_AsnText << pSeqEntry;
     ofstr.close();
-    cerr << "    Produced new ASN1 file " << output << "." << endl;
+    cerr << "    Produced new ASN1 file " << output << "." << endl
 
     CNcbiOfstream errstr(errors.c_str());
     if (pMessageListener->Count() > 0) {
@@ -306,11 +361,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         }
     }
 
-/*
-    CFastaReader::TFlags fFlags = 
-        CFastaReader::fAssumeNuc |
-        CFastaReader::fForceType; 
-        */
     CFastaReader fasta_reader(*pLineReader, fFlags);
     CRef<CSeq_entry> pSeqEntry;
     try {
