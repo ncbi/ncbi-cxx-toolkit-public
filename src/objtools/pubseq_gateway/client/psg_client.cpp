@@ -387,6 +387,7 @@ string CPSG_Request_Resolve::x_GetAbsPathRef() const
     if (include_info & CPSG_Request_Resolve::fTaxId)        os << "&tax_id=" << value;
     if (include_info & CPSG_Request_Resolve::fHash)         os << "&hash=" << value;
     if (include_info & CPSG_Request_Resolve::fDateChanged)  os << "&date_changed=" << value;
+    if (include_info & CPSG_Request_Resolve::fGi)           os << "&gi=" << value;
 
     return s_AddUseCache(os);
 }
@@ -766,6 +767,11 @@ CTime CPSG_BioseqInfo::GetDateChanged() const
     return s_GetTime(m_Data.GetInteger("date_changed"));
 }
 
+Uint8 CPSG_BioseqInfo::GetGi() const
+{
+    return m_Data.GetInteger("gi");
+}
+
 CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
 {
     CPSG_Request_Resolve::TIncludeInfo rv = {};
@@ -779,6 +785,7 @@ CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
     if (m_Data.HasKey("tax_id"))                                          rv |= CPSG_Request_Resolve::fTaxId;
     if (m_Data.HasKey("hash"))                                            rv |= CPSG_Request_Resolve::fHash;
     if (m_Data.HasKey("date_changed"))                                    rv |= CPSG_Request_Resolve::fDateChanged;
+    if (m_Data.HasKey("gi"))                                              rv |= CPSG_Request_Resolve::fGi;
 
     return rv;
 }

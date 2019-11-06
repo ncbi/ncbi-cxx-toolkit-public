@@ -246,6 +246,7 @@ public:
         fTaxId            = (1 << 7),
         fHash             = (1 << 8),
         fDateChanged      = (1 << 9),
+        fGi               = (1 << 10),
         fAllInfo          = numeric_limits<unsigned>::max()
     };
     DECLARE_SAFE_FLAGS_TYPE(EIncludeInfo, TIncludeInfo);
@@ -617,6 +618,9 @@ public:
 
     /// Date when the bioseq was changed last time
     CTime GetDateChanged() const;
+
+    /// Get GI
+    Uint8 GetGi() const;
 
     /// What data is immediately available now. Other data will require
     /// a separate hit to the server.
