@@ -195,7 +195,7 @@ private:
     static CPSG_BlobId GetBlobId(const CArgs& input) { return input["ID"].AsString(); }
     static CPSG_BlobId GetBlobId(const CJson_ConstObject& input) { return input["blob_id"].GetValue().GetString(); }
 
-    static string GetLastModified(const CArgs& input) { return input["last_modified"].AsString(); }
+    static string GetLastModified(const CArgs& input) { return input["last-modified"].HasValue() ? input["last-modified"].AsString() : ""; }
     static string GetLastModified(const CJson_ConstObject& input) { return input.has("last_modified") ? input["last_modified"].GetValue().GetString() : ""; }
 
     static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CArgs& input) { return input["CHUNK_NO"].AsInteger(); }

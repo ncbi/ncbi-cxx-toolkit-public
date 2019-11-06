@@ -195,7 +195,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
-    arg_desc.AddDefaultKey("last_modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString, "");
+    arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString);
     s_InitDataFlags(arg_desc);
 }
 
