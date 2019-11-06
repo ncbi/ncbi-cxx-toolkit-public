@@ -325,6 +325,17 @@ string s_AddUseCache(ostringstream& os)
     return os.str();
 }
 
+const char* s_GetAccSubstitution(EPSG_AccSubstitution acc_substitution)
+{
+    switch (acc_substitution) {
+        case EPSG_AccSubstitution::Default: break;
+        case EPSG_AccSubstitution::Limited: return "&acc_substitution=limited";
+        case EPSG_AccSubstitution::Never:   return "&acc_substitution=never";
+    }
+
+    return "";
+}
+
 
 struct CPSG_Request::x_GetBioIdParams
 {
@@ -359,6 +370,8 @@ string CPSG_Request_Biodata::x_GetAbsPathRef() const
         }
     }
 
+    os << s_GetAccSubstitution(m_AccSubstitution);
+
     return s_AddUseCache(os);
 }
 
@@ -389,6 +402,8 @@ string CPSG_Request_Resolve::x_GetAbsPathRef() const
     if (include_info & CPSG_Request_Resolve::fDateChanged)  os << "&date_changed=" << value;
     if (include_info & CPSG_Request_Resolve::fGi)           os << "&gi=" << value;
 
+    os << s_GetAccSubstitution(m_AccSubstitution);
+
     return s_AddUseCache(os);
 }
 
@@ -418,6 +433,7 @@ string CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef() const
     // Remove last comma (there must be some output after seekp to succeed)
     os.seekp(-1, ios_base::cur);
     os << "&fmt=json&psg_protocol=yes";
+    os << s_GetAccSubstitution(m_AccSubstitution);
 
     return s_AddUseCache(os);
 }

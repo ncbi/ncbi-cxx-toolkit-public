@@ -207,11 +207,17 @@ private:
     static vector<string> GetNamedAnnots(const CArgs& input) { return input["na"].GetStringList(); }
     static vector<string> GetNamedAnnots(const CJson_ConstObject& input);
 
+    static string GetAccSubstitution(const CArgs& input) { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
+    static string GetAccSubstitution(const CJson_ConstObject& input) { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
+
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
 
     static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input);
     static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CJson_ConstObject& input);
+
+    template <class TRequest, class TInput>
+    static void SetAccSubstitution(shared_ptr<TRequest>& request, const TInput& input);
 };
 
 // Helper class to 'overload' on return type and specify input parameters once
@@ -297,6 +303,7 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Biodata>()
     auto specified = GetSpecified<CPSG_Request_Biodata>(input);
     IncludeData(request, specified);
     ExcludeTSEs(request, input);
+    SetAccSubstitution(request, input);
     return request;
 }
 
@@ -308,6 +315,7 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Resolve>()
     auto specified = GetSpecified<CPSG_Request_Resolve>(input);
     const auto include_info = GetIncludeInfo(specified);
     request->IncludeInfo(include_info);
+    SetAccSubstitution(request, input);
     return request;
 }
 
@@ -327,7 +335,9 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_NamedAnnotInfo>
 {
     auto bio_id = GetBioId(input);
     auto named_annots = GetNamedAnnots(input);
-    return make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
+    auto request =  make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
+    SetAccSubstitution(request, input);
+    return request;
 }
 
 template <class TInput>
@@ -347,6 +357,18 @@ inline void SRequestBuilder::IncludeData(shared_ptr<TRequest> request, TSpecifie
             request->IncludeData(f.value);
             return;
         }
+    }
+}
+
+template <class TRequest, class TInput>
+void SRequestBuilder::SetAccSubstitution(shared_ptr<TRequest>& request, const TInput& input)
+{
+    const auto& acc_substitution = GetAccSubstitution(input);
+
+    if (acc_substitution == "limited") {
+        request->SetAccSubstitution(EPSG_AccSubstitution::Limited);
+    } else if (acc_substitution == "never") {
+        request->SetAccSubstitution(EPSG_AccSubstitution::Never);
     }
 }
 

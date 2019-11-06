@@ -1527,6 +1527,14 @@ CJson_Document CProcessing::RequestSchema()
                 "type": "string"
             }
         },
+        "acc_substitution": {
+            "$id": "#acc_substitution",
+            "enum": [
+                "default",
+                "limited",
+                "never"
+            ]
+        },
         "context": {
             "$id": "#context",
             "type": "object",
@@ -1548,6 +1556,7 @@ CJson_Document CProcessing::RequestSchema()
                         "bio_id" : { "$ref": "#bio_id" },
                         "include_data": { "$ref": "#include_data" },
                         "exclude_blobs": { "$ref": "#exclude_blobs" },
+                        "acc_substitution": { "$ref": "#acc_substitution" },
                         "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id" ]
@@ -1583,6 +1592,7 @@ CJson_Document CProcessing::RequestSchema()
                     "properties": {
                         "bio_id" : { "$ref": "#bio_id" },
                         "include_info": { "$ref": "#include_info" },
+                        "acc_substitution": { "$ref": "#acc_substitution" },
                         "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id" ]
@@ -1600,6 +1610,7 @@ CJson_Document CProcessing::RequestSchema()
                     "properties": {
                         "bio_id" : { "$ref": "#bio_id" },
                         "named_annots": { "$ref": "#named_annots" },
+                        "acc_substitution": { "$ref": "#acc_substitution" },
                         "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id","named_annots" ]

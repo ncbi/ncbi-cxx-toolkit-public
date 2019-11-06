@@ -157,6 +157,16 @@ private:
 
 
 
+/// Whether and how to substitute version-less primary seq-ids with
+/// the "more unique" secondary seq-ids
+enum class EPSG_AccSubstitution {
+    Default,  ///< Substitute always (default)
+    Limited,  ///< Substitute only if the resolved record's seq_id_type is GI(12)
+    Never     ///< No substitution whatsoever - return exact raw accession info
+};
+
+
+
 /// Request to the PSG server (by bio-id, for a biodata specific info and data)
 ///
 
@@ -206,6 +216,9 @@ public:
 
     const TExcludeTSEs& GetExcludeTSEs() const { return m_ExcludeTSEs; }
 
+    /// Set substitution policy for version-less primary seq-ids
+    void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
+
 private:
     string x_GetType() const override { return "biodata"; }
     string x_GetId() const override { return GetBioId().Get(); }
@@ -214,6 +227,7 @@ private:
     CPSG_BioId    m_BioId;
     EIncludeData  m_IncludeData = EIncludeData::eDefault;
     TExcludeTSEs  m_ExcludeTSEs;
+    EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
 };
 
 
@@ -254,6 +268,9 @@ public:
 
     TIncludeInfo      GetIncludeInfo() const { return m_IncludeInfo; }
 
+    /// Set substitution policy for version-less primary seq-ids
+    void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
+
 private:
     string x_GetType() const override { return "resolve"; }
     string x_GetId() const override { return GetBioId().Get(); }
@@ -261,6 +278,7 @@ private:
 
     CPSG_BioId    m_BioId;
     TIncludeInfo  m_IncludeInfo = 0;
+    EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
 };
 
 
@@ -328,6 +346,9 @@ public:
     const CPSG_BioId&  GetBioId()      const { return m_BioId;      }
     const TAnnotNames& GetAnnotNames() const { return m_AnnotNames; }
 
+    /// Set substitution policy for version-less primary seq-ids
+    void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
+
 private:
     string x_GetType() const override { return "annot"; }
     string x_GetId() const override { return GetBioId().Get(); }
@@ -335,6 +356,7 @@ private:
 
     CPSG_BioId  m_BioId;
     TAnnotNames m_AnnotNames;
+    EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
 };
 
 
