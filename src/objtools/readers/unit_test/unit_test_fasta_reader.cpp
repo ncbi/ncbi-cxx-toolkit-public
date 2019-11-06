@@ -150,6 +150,7 @@ struct STestInfo {
     CFile mOutFile;
     CFile mErrorFile;
 };
+
 typedef string TTestName;
 typedef map<TTestName, STestInfo> TTestNameToInfoMap;
 
@@ -225,13 +226,12 @@ private:
     string mExtErrors;
 };
 
-/*
 static bool
 sReadInputAndGenerateAsn(
         const string& fasta_file,
         const string& config_file,
-        CRef<CSeq_entry> pSeqEntry, 
-        CMessageListenerBase& message_listener)
+        CRef<CSeq_entry>& pSeqEntry, 
+        CMessageListenerBase*  pMessageListener)
 {
     CNcbiIfstream ifstr(fasta_file.c_str());
     CRef<ILineReader> pLineReader = ILineReader::New(ifstr);
@@ -248,18 +248,20 @@ sReadInputAndGenerateAsn(
         }
     }
 
-    CFastaReader fasta_reader(*pLineReader, fFlags);
     try {
-        pSeqEntry = fasta_reader.ReadOneSeq(message_listener); 
+        CFastaReader fasta_reader(*pLineReader, fFlags);
+        if (!config_info.excluded_mods.empty()) {
+            fasta_reader.SetExcludedMods(config_info.excluded_mods);
+        }
+        pSeqEntry = fasta_reader.ReadOneSeq(pMessageListener); 
     }
     catch (...) {
-        BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
         ifstr.close();
+        cfgstr.close();
         return false;
     }
     return true;
 }
-*/
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
@@ -275,30 +277,16 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CNcbiIfstream ifstr(input.c_str());
+   // CNcbiIfstream ifstr(input.c_str());
     unique_ptr<CMessageListenerBase> pMessageListener(new CMessageListenerLenient());
-    
-    CRef<ILineReader> pLineReader = ILineReader::New(ifstr);
-    CFastaReader::TFlags fFlags = 0;
-    SConfigInfo config_info;
-    CNcbiIfstream cfgstr(cfg.c_str());
-    s_ReadConfig(cfgstr, config_info);
-    if (!config_info.flags.empty()) {
-        for (auto flag : config_info.flags) {
-            fFlags |= flag;
-        }
-    }
-
-    CFastaReader fasta_reader(*pLineReader, fFlags);
     CRef<CSeq_entry> pSeqEntry;
-    try {
-        pSeqEntry = fasta_reader.ReadOneSeq(pMessageListener.get()); 
-    }
-    catch (...) {
-        ifstr.close();
+
+    if (!sReadInputAndGenerateAsn(input, cfg, 
+                pSeqEntry, pMessageListener.get())) {
+
         BOOST_FAIL("Error: " << input << " failed during conversion.");
+        return;
     }
-    ifstr.close();
 
     CNcbiOfstream ofstr(output.c_str());
     ofstr << MSerial_AsnText << pSeqEntry;
@@ -313,6 +301,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << "    Produced new error listing " << errors << "." << endl;
     cerr << " ... Done." << endl;
 }
+
 
 void sUpdateAll(CDir& test_cases_dir) {
 
@@ -342,43 +331,29 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
-    CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     const string& logName = CDirEntry::GetTmpName();
     CNcbiOfstream errstr(logName.c_str());
     const string& resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
 
+
+    //CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     unique_ptr<CMessageListenerBase> pMessageListener(new CMessageListenerLenient());
-    CRef<ILineReader> pLineReader = ILineReader::New(ifstr);
-
-    CFastaReader::TFlags fFlags = 0;
-    SConfigInfo config_info;
-    CNcbiIfstream cfgstr(testInfo.mConfigFile.GetPath().c_str());
-    s_ReadConfig(
-        cfgstr,
-        config_info);
-    if (!config_info.flags.empty()) {
-        for (auto flag : config_info.flags) {
-            fFlags |= flag;
-        }
-    }
-
-    CFastaReader fasta_reader(*pLineReader, fFlags);
     CRef<CSeq_entry> pSeqEntry;
-    try {
-        pSeqEntry = fasta_reader.ReadOneSeq(pMessageListener.get()); 
-    }
-    catch (...) {
+
+    if (!sReadInputAndGenerateAsn(
+            testInfo.mInFile.GetPath(),
+            testInfo.mConfigFile.GetPath(),
+            pSeqEntry,
+            pMessageListener.get())) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
-        ifstr.close();
         return;
     }
+
     ofstr << MSerial_AsnText << pSeqEntry;
     if (pMessageListener->Count() > 0) {
         pMessageListener->Dump(errstr);
     }
-
-    ifstr.close();
     ofstr.close();
     errstr.close();
 
