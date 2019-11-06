@@ -120,7 +120,7 @@ struct SConfigInfo
 };
 
 
-static void s_ReadConfig(CNcbiIfstream ifstr, SConfigInfo& config) 
+static void s_ReadConfig(CNcbiIfstream& ifstr, SConfigInfo& config) 
 {
     for (string line; getline(ifstr, line);) {
         NStr::TruncateSpaces(line);
@@ -225,7 +225,7 @@ private:
     string mExtErrors;
 };
 
-
+/*
 static bool
 sReadInputAndGenerateAsn(
         const string& fasta_file,
@@ -238,8 +238,9 @@ sReadInputAndGenerateAsn(
 
     CFastaReader::TFlags fFlags = 0;
     SConfigInfo config_info;
+    CNcbiIfstream cfgstr(config_file.c_str());
     s_ReadConfig(
-        CNcbiIfstream(config_file.c_str()), 
+        cfgstr,
         config_info);
     if (!config_info.flags.empty()) {
         for (auto flag : config_info.flags) {
@@ -248,7 +249,6 @@ sReadInputAndGenerateAsn(
     }
 
     CFastaReader fasta_reader(*pLineReader, fFlags);
-    CRef<CSeq_entry> pSeqEntry;
     try {
         pSeqEntry = fasta_reader.ReadOneSeq(message_listener); 
     }
@@ -259,7 +259,7 @@ sReadInputAndGenerateAsn(
     }
     return true;
 }
-
+*/
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
@@ -281,7 +281,8 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CRef<ILineReader> pLineReader = ILineReader::New(ifstr);
     CFastaReader::TFlags fFlags = 0;
     SConfigInfo config_info;
-    s_ReadConfig(CNcbiIfstream(cfg.c_str()), config_info);
+    CNcbiIfstream cfgstr(cfg.c_str());
+    s_ReadConfig(cfgstr, config_info);
     if (!config_info.flags.empty()) {
         for (auto flag : config_info.flags) {
             fFlags |= flag;
@@ -302,7 +303,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CNcbiOfstream ofstr(output.c_str());
     ofstr << MSerial_AsnText << pSeqEntry;
     ofstr.close();
-    cerr << "    Produced new ASN1 file " << output << "." << endl
+    cerr << "    Produced new ASN1 file " << output << "." << endl;
 
     CNcbiOfstream errstr(errors.c_str());
     if (pMessageListener->Count() > 0) {
@@ -352,8 +353,9 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     CFastaReader::TFlags fFlags = 0;
     SConfigInfo config_info;
+    CNcbiIfstream cfgstr(testInfo.mConfigFile.GetPath().c_str());
     s_ReadConfig(
-        CNcbiIfstream(testInfo.mConfigFile.GetPath().c_str()), 
+        cfgstr,
         config_info);
     if (!config_info.flags.empty()) {
         for (auto flag : config_info.flags) {
