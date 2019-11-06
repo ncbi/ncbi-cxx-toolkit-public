@@ -661,12 +661,8 @@ void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sectio
 {
     const auto kConnTimeoutDefault = 2.0;
     const auto kCommTimeoutDefault = 12.0;
-    const auto kFirstServerTimeoutDefault = 0.3;
+    const auto kFirstServerTimeoutDefault = 0.0;
 
-    g_CTimeoutToSTimeout(CTimeout(kConnTimeoutDefault), m_ConnTimeout);
-    g_CTimeoutToSTimeout(CTimeout(kCommTimeoutDefault), m_CommTimeout);
-    g_CTimeoutToSTimeout(CTimeout(kFirstServerTimeoutDefault), m_FirstServerTimeout);
-   
     m_LBSMAffinity.first = registry.Get(sections, "use_lbsm_affinity", "");
 
     // Get affinity value from the local LBSM configuration file.
@@ -675,18 +671,13 @@ void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sectio
     }
 
     double conn_timeout = registry.Get(sections, "connection_timeout", kConnTimeoutDefault);
-    if (conn_timeout > 0) g_CTimeoutToSTimeout(CTimeout(conn_timeout), m_ConnTimeout);
+    g_CTimeoutToSTimeout(CTimeout(conn_timeout > 0 ? conn_timeout : kConnTimeoutDefault), m_ConnTimeout);
 
     double comm_timeout = registry.Get({ sections, "netservice_api" }, "communication_timeout", kCommTimeoutDefault);
-    if (comm_timeout > 0) g_CTimeoutToSTimeout(CTimeout(comm_timeout), m_CommTimeout);
+    g_CTimeoutToSTimeout(CTimeout(comm_timeout > 0 ? comm_timeout : kCommTimeoutDefault), m_CommTimeout);
 
     double first_srv_timeout = registry.Get(sections, "first_server_timeout", kFirstServerTimeoutDefault);
-
-    if (first_srv_timeout > 0) {
-        g_CTimeoutToSTimeout(CTimeout(first_srv_timeout), m_FirstServerTimeout);
-    } else if (comm_timeout > 0) {
-        m_FirstServerTimeout = m_CommTimeout;
-    }
+    g_CTimeoutToSTimeout(CTimeout(first_srv_timeout > 0 ? first_srv_timeout : kFirstServerTimeoutDefault), m_FirstServerTimeout);
 
     double max_total_time = registry.Get(sections, "max_connection_time", 0.0);
     if (max_total_time > 0) m_MaxTotalTime = CTimeout(max_total_time);
@@ -1105,8 +1096,9 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     unsigned servers_throttled = 0;
     bool blob_not_found = false;
 
-    const STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
-            NULL : &m_ServerPool->m_FirstServerTimeout;
+    const auto& fst = m_ServerPool->m_FirstServerTimeout;
+    const bool use_fst = (fst.sec || fst.usec) && (retry_count > 0 || m_UseSmartRetries);
+    const STimeout* timeout = use_fst ? &fst : nullptr;
 
     SFailOnlyWarnings fail_only_warnings(m_Listener);
 
