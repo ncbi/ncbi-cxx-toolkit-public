@@ -142,6 +142,18 @@ static void sReportMultipleMatches(
 }
 
 
+static void s_PostProcessID(string& id)
+{
+    if (id.empty()) {
+        return;
+    }
+
+    if (id.back() == '|') {
+        id.pop_back();
+    }
+    NStr::ToLower(id);
+}
+
 
 bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose) 
 {
@@ -154,12 +166,12 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
     for (const auto& pId : bioseq.GetId()) {
         string id;
         pId->GetLabel(&id, nullptr, CSeq_id::eFasta);
-        NStr::ToLower(id);
+        s_PostProcessID(id);
         id_strings.push_back(id);
 
         id.clear();
         pId->GetLabel(&id, nullptr, CSeq_id::eFastaContent);
-        NStr::ToLower(id);
+        s_PostProcessID(id);
         id_strings.push_back(id);
         if (pId->IsGeneral()) {
             string db, tag;
@@ -257,14 +269,14 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, CTempString line, bool al
             ids.front()->IsLocal() &&
             !NStr::StartsWith(idString, "lcl|", NStr::eNocase)) {
             string idKey = idString;
-            NStr::ToLower(idKey);
+            s_PostProcessID(idKey);
             idSet.emplace(idKey);
         }
         else {
             for (const auto& pSeqId : ids) {
                 string idKey;
                 pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eFasta);
-                NStr::ToLower(idKey);
+                s_PostProcessID(idKey);
                 idSet.emplace(idKey);
             }
         }
