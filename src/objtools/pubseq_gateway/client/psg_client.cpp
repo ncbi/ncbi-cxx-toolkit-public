@@ -178,21 +178,6 @@ TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Ch
 }
 
 
-template <typename TType, typename TVersion>
-CPSG_BioId s_CreateBioId(TType t, string accession, string name, TVersion v)
-{
-    auto type = static_cast<CPSG_BioId::TType>(t);
-    auto version = static_cast<int>(v);
-    return objects::CSeq_id(type, accession, name, version).AsFastaString();
-};
-
-template <typename TType>
-CPSG_BioId s_CreateBioId(TType t, string content)
-{
-    auto type = static_cast<CPSG_BioId::TType>(t);
-    return objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent, type, content).AsFastaString();
-};
-
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
 {
     auto user_reply_locked = user_reply.lock();
@@ -706,13 +691,13 @@ CPSG_BioseqInfo::CPSG_BioseqInfo()
 
 CPSG_BioId CPSG_BioseqInfo::GetCanonicalId() const
 {
-    auto type = m_Data.GetInteger("seq_id_type");
+    auto type = static_cast<CPSG_BioId::TType>(m_Data.GetInteger("seq_id_type"));
     auto accession = m_Data.GetString("accession");
     auto name_node = m_Data.GetByKeyOrNull("name");
     auto name = name_node && name_node.IsString() ? name_node.AsString() : string();
-    auto version = m_Data.GetInteger("version");
-    return s_CreateBioId(type, accession, name, version);
-}
+    auto version = static_cast<int>(m_Data.GetInteger("version"));
+    return objects::CSeq_id(type, accession, name, version).AsFastaString();
+};
 
 vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
 {
@@ -725,9 +710,10 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
         error = !seq_id.IsArray() || (seq_id.GetSize() != 2);
 
         if (!error) {
-            auto type = seq_id.GetAt(0).AsInteger();
+            auto tag = objects::CSeq_id::eFasta_AsTypeAndContent;
+            auto type = static_cast<CPSG_BioId::TType>(seq_id.GetAt(0).AsInteger());
             auto content = seq_id.GetAt(1).AsString();
-            rv.emplace_back(s_CreateBioId(type, content));
+            rv.emplace_back(objects::CSeq_id(tag, type, content).AsFastaString());
         }
     }
 
