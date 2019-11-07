@@ -691,14 +691,21 @@ static bool SetBioSampleSRAIds(const list<string>& ids, TIdContainer& biosample_
     return true;
 }
 
-static bool IsValidAccession(const string& accession)
+enum EAccInvalid {
+    eValidAcc,
+    eInvalidAcc,
+    eInvalidNewAccFirstChar
+};
+
+static EAccInvalid IsValidAccession(const string& accession)
 {
     static const size_t ACC_MIN_LEN = 6;
-    static const size_t VALID_NUM_OF_LETTERS[] = {4, 6};
+    static const size_t NEW_ACC_NUM_OF_LETTERS = 6;
+    static const size_t VALID_NUM_OF_LETTERS[] = {4, NEW_ACC_NUM_OF_LETTERS };
     static const auto VALID_NUM_OF_LETTERS_END = VALID_NUM_OF_LETTERS + sizeof(VALID_NUM_OF_LETTERS) / sizeof(VALID_NUM_OF_LETTERS[0]);
 
     if (accession.size() < ACC_MIN_LEN) {
-        return false;
+        return eInvalidAcc;
     }
 
     string::const_iterator start = accession.begin();
@@ -715,14 +722,14 @@ static bool IsValidAccession(const string& accession)
     }
 
     if (find(VALID_NUM_OF_LETTERS, VALID_NUM_OF_LETTERS_END, num_of_letters) == VALID_NUM_OF_LETTERS_END) {
-        return false;
+        return eInvalidAcc;
     }
 
     bool non_zero = false;
     size_t num_of_digits = 0;
     for (; start != accession.end(); ++start) {
         if (!isdigit(*start)) {
-            return false;
+            return eInvalidAcc;
         }
 
         if (*start != '0') {
@@ -731,7 +738,14 @@ static bool IsValidAccession(const string& accession)
         ++num_of_digits;
     }
 
-    return num_of_digits == ACC_NUM_OF_DIGITS && non_zero;
+    EAccInvalid ret = (num_of_digits == ACC_NUM_OF_DIGITS && non_zero) ? eValidAcc : eInvalidAcc;
+
+    if (ret == eValidAcc && num_of_letters == NEW_ACC_NUM_OF_LETTERS) {
+        if (accession[0] < 'A' || accession[0] > 'D') {
+            ret = eInvalidNewAccFirstChar;
+        }
+    }
+    return ret;
 }
 
 static int GetMonthNumber(const string& month)
@@ -906,8 +920,15 @@ bool SetParams(const CArgs& args)
     string accession = args["a"].AsString();
     params_imp.SetAccession(NStr::ToUpper(accession));
 
-    if (!IsValidAccession(params_imp.m_accession)) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 or 6 letters + 2 digits (Not 00) or 2 letters + underscore + 4 or 6 letters + 2 digits.");
+    EAccInvalid validity = IsValidAccession(params_imp.m_accession);
+    if (validity != eValidAcc) {
+
+        if (validity == eInvalidAcc) {
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 or 6 letters + 2 digits (Not 00) or 2 letters + underscore + 4 or 6 letters + 2 digits.");
+        }
+        else if (validity == eInvalidNewAccFirstChar) {
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect new format (6+2) accession prefix provided on input: \"" << params_imp.m_accession << "\". Must begin with 'A', 'B', 'C' or 'D' letter.");
+        }
         return false;
     }
 
