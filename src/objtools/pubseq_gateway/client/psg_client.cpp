@@ -187,10 +187,10 @@ CPSG_BioId s_CreateBioId(TType t, string accession, TVersion v)
 };
 
 template <typename TType>
-CPSG_BioId s_CreateBioId(TType t, string accession)
+CPSG_BioId s_CreateBioId(TType t, string content)
 {
     auto type = static_cast<CPSG_BioId::TType>(t);
-    return objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent, type, accession).AsFastaString();
+    return objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent, type, content).AsFastaString();
 };
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
@@ -727,8 +727,8 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
 
         if (!error) {
             auto type = seq_id.GetAt(0).AsInteger();
-            auto accession = seq_id.GetAt(1).AsString();
-            rv.emplace_back(s_CreateBioId(type, accession));
+            auto content = seq_id.GetAt(1).AsString();
+            rv.emplace_back(s_CreateBioId(type, content));
         }
     }
 
