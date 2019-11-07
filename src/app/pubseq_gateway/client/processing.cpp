@@ -289,7 +289,6 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 {
     if (m_SetReplyType) m_JsonObj["reply"].SetValue().SetString("NamedAnnotInfo");
-    m_JsonObj["canonical_id"].SetValue().SetString(named_annot_info->GetCanonicalId().Get());
     m_JsonObj["name"].SetValue().SetString(named_annot_info->GetName());
 
     const auto range = named_annot_info->GetRange();

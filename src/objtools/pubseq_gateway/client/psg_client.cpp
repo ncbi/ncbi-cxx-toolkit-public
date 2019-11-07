@@ -243,12 +243,8 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         rv.reset(CreateImpl(new CPSG_BlobInfo(blob_id), chunks));
 
     } else if (item_type == "bioseq_na") {
-        auto type = stoul(args.GetValue("seq_type"));
-        auto accession = args.GetValue("seq_acc");
-        auto version = stoul(args.GetValue("seq_ver"));
-        auto bio_id = s_CreateBioId(type, accession, kEmptyStr, version);
         auto name = args.GetValue("na");
-        rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(bio_id, name), chunks));
+        rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(name), chunks));
 
     } else {
         NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
@@ -811,9 +807,8 @@ CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
 }
 
 
-CPSG_NamedAnnotInfo::CPSG_NamedAnnotInfo(CPSG_BioId bio_id, string name) :
+CPSG_NamedAnnotInfo::CPSG_NamedAnnotInfo(string name) :
     CPSG_ReplyItem(eNamedAnnotInfo),
-    m_BioId(move(bio_id)),
     m_Name(move(name))
 {
 }

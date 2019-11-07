@@ -669,9 +669,6 @@ private:
 class CPSG_NamedAnnotInfo : public CPSG_ReplyItem
 {
 public:
-    /// Get canonical bio-id
-    const CPSG_BioId& GetCanonicalId() const { return m_BioId; }
-
     /// Name of the annotation
     const string& GetName() const { return m_Name; }
 
@@ -703,9 +700,8 @@ public:
     TAnnotInfoList GetAnnotInfoList() const;
 
 private:
-    CPSG_NamedAnnotInfo(CPSG_BioId id, string name);
+    CPSG_NamedAnnotInfo(string name);
 
-    CPSG_BioId m_BioId;
     string     m_Name;
     CJsonNode  m_Data;
 
