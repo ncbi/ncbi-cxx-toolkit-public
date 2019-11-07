@@ -85,6 +85,8 @@ public:
         CScope& scope,
         const CSeq_align::TScore& scores);
 
+    void Finalize();
+
     int GetMatches() const { return mMatches; };
     int GetMisMatches() const { return mMisMatches; };
     int GetRepMatches() const { return mRepMatches; };

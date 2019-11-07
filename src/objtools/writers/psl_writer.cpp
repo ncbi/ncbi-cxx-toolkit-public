@@ -143,6 +143,7 @@ bool CPslWriter::WriteAlign(
         }
         return true;
     }
+    record.Finalize();
 
     CPslFormatter formatter(m_Os, m_uFlags);
     formatter.Format(record);

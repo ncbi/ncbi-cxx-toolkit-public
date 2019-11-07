@@ -41,6 +41,7 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
@@ -116,7 +117,7 @@ CPslRecord::xInitializeStats(
     }
 
     // get inserts that are part of exons:
-    mMatches = mMisMatches = mRepMatches = 0;
+    mMatches = mMisMatches = 0;
     mNumInsertT = mBaseInsertT = 0;
     mNumInsertQ = mBaseInsertQ = 0;
     const auto& exonList = splicedSeg.GetExons();
@@ -162,8 +163,6 @@ CPslRecord::xInitializeStats(
         }
     }
     mNumInsertT += static_cast<int>((exonList.size() - 1));
-
-    mCountN = 0; //for now
 }
 
 //  ----------------------------------------------------------------------------
@@ -344,6 +343,36 @@ CPslRecord::Initialize(
     const CSeq_align::TScore& scores)
 //  ----------------------------------------------------------------------------
 {
+    for (const auto& pScore: scores) {
+        if (!pScore->CanGetId()  ||  !pScore->GetId().IsStr()) {
+            continue;
+        }
+        if (!pScore->CanGetValue()) {
+            continue;
+        }
+        const auto& key = pScore->GetId().GetStr();
+        const auto& value = pScore->GetValue();
+        if (key == "num_mismatch"  &&  value.IsInt()  &&  mMisMatches == -1) {
+            mMisMatches = value.GetInt();
+            continue;
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CPslRecord::Finalize()
+//  ----------------------------------------------------------------------------
+{
+    if (mRepMatches == -1) {
+        mRepMatches = 0;
+    }
+    if (mMisMatches == -1) {
+        mMisMatches = 0;
+    }
+    if (mCountN == -1) {
+        mCountN = 0;
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -400,7 +429,7 @@ CPslRecord::xInitializeStatsAndBlocks(
     const CDense_seg& denseSeg)
 //  ----------------------------------------------------------------------------
 {
-    mMatches = mMisMatches = mRepMatches = 0;
+    mMatches = 0;
     for (auto length: denseSeg.GetLens()) {
         mMatches += length;
     }
@@ -456,8 +485,6 @@ CPslRecord::xInitializeStatsAndBlocks(
             mBaseInsertT += mBlockSizes[i];
         }
     }
-
-    mCountN = 0; //for now
 }
 
 //  ----------------------------------------------------------------------------
