@@ -926,7 +926,6 @@ CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const
     h.m_Min     = m_Min;
     h.m_Max     = m_Max;
     h.m_NumBins = m_NumBins;
-    h.m_Sum     = m_Sum;
 
     h.m_Starts.reset(new TScale[m_NumBins]);
     h.m_Counters.reset(new TCounter[m_NumBins]);
@@ -935,6 +934,7 @@ CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const
     switch (how) {
     case eCloneStructureOnly:
         // Reset counters
+        h.m_Sum = 0;
         h.m_Count = 0;
         h.m_LowerAnomalyCount = 0;
         h.m_UpperAnomalyCount = 0;
@@ -942,6 +942,7 @@ CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const
         break;
     case eCloneAll:
         // Copy counters
+        h.m_Sum = m_Sum;
         h.m_Count = m_Count;
         h.m_LowerAnomalyCount = m_LowerAnomalyCount;
         h.m_UpperAnomalyCount = m_UpperAnomalyCount;
