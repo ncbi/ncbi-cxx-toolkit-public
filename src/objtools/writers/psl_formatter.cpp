@@ -87,11 +87,11 @@ sFormatInt(
 //  ----------------------------------------------------------------------------
 CPslFormatter::CPslFormatter(
     CNcbiOstream& ostr,
-    unsigned int flags):
+    bool debugMode):
 //  ----------------------------------------------------------------------------
-    mOstr(ostr)
+    mOstr(ostr),
+    mDebugMode(debugMode)
 {
-    mDebugMode = true;
 }
 
 //  ----------------------------------------------------------------------------

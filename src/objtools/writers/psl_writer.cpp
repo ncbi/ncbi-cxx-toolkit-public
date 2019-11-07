@@ -153,7 +153,7 @@ void CPslWriter::xWriteAlignDenseSeg(
 {
     CPslRecord record;
     record.Initialize(*m_pScope, denseSeg);
-    CPslFormatter formatter(m_Os, m_uFlags);
+    CPslFormatter formatter(m_Os, (m_uFlags & CPslWriter::fDebugOutput));
     formatter.Format(record);
 }
 

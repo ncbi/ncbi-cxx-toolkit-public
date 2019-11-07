@@ -46,7 +46,7 @@ class CPslFormatter
 public:
     CPslFormatter(
         CNcbiOstream& ostr,
-        unsigned int flags);
+        bool debugMode);
 
     ~CPslFormatter() = default;
 
