@@ -79,26 +79,21 @@ enum EBlobIdentificationType {
 // Pretty much copied from the client; the justfication for copying is:
 // "it will be decoupled with the client type"
 enum EServIncludeData {
-    fServNoTSE = (1 << 0),
-    fServFastInfo = (1 << 1),
-    fServWholeTSE = (1 << 2),
-    fServOrigTSE = (1 << 3),
-    fServCanonicalId = (1 << 4),
-    fServSeqIds = (1 << 5),
-    fServMoleculeType = (1 << 6),
-    fServLength = (1 << 7),
-    fServState = (1 << 8),
-    fServBlobId = (1 << 9),
-    fServTaxId = (1 << 10),
-    fServHash = (1 << 11),
-    fServDateChanged = (1 << 12),
-    fServGi = (1 << 13),
+    fServCanonicalId = (1 << 1),
+    fServSeqIds = (1 << 2),
+    fServMoleculeType = (1 << 3),
+    fServLength = (1 << 4),
+    fServState = (1 << 5),
+    fServBlobId = (1 << 6),
+    fServTaxId = (1 << 7),
+    fServHash = (1 << 8),
+    fServDateChanged = (1 << 9),
+    fServGi = (1 << 10),
 
     fServAllBioseqFields = fServCanonicalId | fServSeqIds | fServMoleculeType |
                            fServLength | fServState | fServBlobId |
-                           fServTaxId | fServHash | fServDateChanged | fServGi,
-
-    fBioseqKeyFields = fServCanonicalId | fServGi
+                           fServTaxId | fServHash | fServDateChanged |
+                           fServGi
 };
 
 // Bit-set of EServIncludeData flags

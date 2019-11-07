@@ -52,6 +52,7 @@ static const string     kTaxId = "tax_id";
 static const string     kHash = "hash";
 static const string     kDateChanged = "date_changed";
 static const string     kSeqIds = "seq_ids";
+static const string     kName = "name";
 
 static const string     kKey = "key";
 static const string     kLastModified = "last_modified";
@@ -118,6 +119,8 @@ void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
         protobuf_secondary_id->set_sec_seq_id(get<1>(item));
     }
 
+    protobuf_bioseq_info_value->set_name(bioseq_info.GetName());
+
     // Convert to binary
     protobuf_bioseq_info_reply.SerializeToString(&bioseq_protobuf);
 }
@@ -135,6 +138,7 @@ void ConvertBioseqProtobufToBioseqInfo(const string &  bioseq_protobuf,
     psg::retrieval::BioseqInfoValue     protobuf_bioseq_info_value;
     protobuf_bioseq_info_value.ParseFromString(bioseq_protobuf);
 
+    bioseq_info.SetName(protobuf_bioseq_info_value.name());
     bioseq_info.SetDateChanged(protobuf_bioseq_info_value.date_changed());
     bioseq_info.SetHash(protobuf_bioseq_info_value.hash());
     bioseq_info.SetLength(protobuf_bioseq_info_value.length());
@@ -177,6 +181,7 @@ CJsonNode  ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
         json.SetString(kAccession, bioseq_info.GetAccession());
         json.SetInteger(kVersion, bioseq_info.GetVersion());
         json.SetInteger(kSeqIdType, bioseq_info.GetSeqIdType());
+        json.SetString(kName, bioseq_info.GetName());
     }
     if (include_data_flags & fServGi)
         json.SetInteger(kGi, bioseq_info.GetGI());
