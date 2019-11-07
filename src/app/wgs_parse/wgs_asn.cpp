@@ -1231,7 +1231,7 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
         ret = false;
     }
     else if (GetParams().IsTpa() && !info.m_has_tpa_keyword && GetParams().GetTpaKeyword().empty()) {
-        ERR_POST_EX(ERR_TPA, ERR_TPA_Keyword, Fatal << "One or more TRA WGS reassembly record from \"" << file << "\" is missing required TPA keyword. Cannot proceed.");
+        ERR_POST_EX(ERR_TPA, ERR_TPA_Keyword, Fatal << "One or more TPA WGS reassembly record from \"" << file << "\" is missing required TPA keyword. Cannot proceed.");
         ret = false;
     }
 

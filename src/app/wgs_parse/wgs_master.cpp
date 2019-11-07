@@ -1536,16 +1536,20 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
 
 static bool IsDupIds(const list<string>& ids)
 {
-    set<string> unique_ids;
+    map<string, int> unique_ids;
     for (auto& id : ids) {
-        if (!unique_ids.insert(id).second) {
+        ++unique_ids[id];
+    }
 
-            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicatedObjectIds, Error << "Found duplicated general or local id: \"" << id << "\".");
-            return true;
+    bool ret = false;
+    for (auto& id: unique_ids) {
+        if (id.second > 1) {
+            ret = true;
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicatedObjectIds, Error << "Found duplicated general or local id: \"" << id.first << "\".");
         }
     }
 
-    return false;
+    return ret;
 }
 
 static bool NeedToGetAccessionPrefix() {
