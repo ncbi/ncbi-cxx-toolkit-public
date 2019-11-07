@@ -75,10 +75,10 @@ sDebugChunkArray(
 static string
 sFormatInt(
     int value,
-    int default)
+    int dflt)
 //  ----------------------------------------------------------------------------
 {
-    if (value == default) {
+    if (value == dflt) {
         return ".";
     }
     return NStr::IntToString(value);
