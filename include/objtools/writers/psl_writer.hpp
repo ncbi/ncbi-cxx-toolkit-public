@@ -73,17 +73,6 @@ public:
         const string& descr="");
 
 protected:
-    void xWritePreamble();
-
-    void xWriteAlignSlicedSeg(
-        const CSpliced_seg& splicedSeg);
-
-    void xWriteAlignDenseSeg(
-        const CDense_seg& denseSeg);
-
-    void xWriteAlignSegSet(
-        const CSeq_align_set& segSet);
-
     CRef<CScope> m_pScope;
     int mRecordCounter;
 };

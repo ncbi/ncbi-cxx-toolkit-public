@@ -91,7 +91,6 @@ bool CPslWriter::WriteAnnot(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
-    xWritePreamble();
     if (!annot.IsAlign()) {
         return CWriterBase::WriteAnnot(annot, name, descr);
     }
@@ -117,61 +116,37 @@ bool CPslWriter::WriteAlign(
             cerr << " " << mRecordCounter << endl;
         }
     }
-    xWritePreamble();
+
+    CPslRecord record;
     auto segType = align.GetSegs().Which();
     switch (segType) {
-    case CSeq_align::C_Segs::e_Spliced:
-        xWriteAlignSlicedSeg(align.GetSegs().GetSpliced());
-        return true;
-    case CSeq_align::C_Segs::e_Denseg:
-        xWriteAlignDenseSeg(align.GetSegs().GetDenseg());
-        return true;
-    case CSeq_align::C_Segs::e_Disc:
-        xWriteAlignSegSet(align.GetSegs().GetDisc());
-        return true;
+
     default:
         cerr << "Unknown record type" << endl;
         return false;
+
+    case CSeq_align::C_Segs::e_Spliced:
+        record.Initialize(*m_pScope, align.GetSegs().GetSpliced());
+        break;
+
+    case CSeq_align::C_Segs::e_Denseg:
+        record.Initialize(*m_pScope, align.GetSegs().GetDenseg());
+        if (align.CanGetScore()) {
+            record.Initialize(*m_pScope, align.GetScore());
+        }
+        break;
+
+    case CSeq_align::C_Segs::e_Disc:
+        const auto& data = align.GetSegs().GetDisc().Get();
+        for (const auto& pAlign: data) {
+            WriteAlign(*pAlign);
+        }
+        return true;
     }
-}
 
-//  ----------------------------------------------------------------------------
-void CPslWriter::xWritePreamble()
-//  ----------------------------------------------------------------------------
-{
-}
-
-//  ----------------------------------------------------------------------------
-void CPslWriter::xWriteAlignSlicedSeg(
-    const CSpliced_seg& splicedSeg)
-//  ----------------------------------------------------------------------------
-{
-    CPslRecord record;
-    record.Initialize(*m_pScope, splicedSeg);
     CPslFormatter formatter(m_Os, m_uFlags);
     formatter.Format(record);
-}
-
-//  ----------------------------------------------------------------------------
-void CPslWriter::xWriteAlignDenseSeg(
-    const CDense_seg& denseSeg)
-//  ----------------------------------------------------------------------------
-{
-    CPslRecord record;
-    record.Initialize(*m_pScope, denseSeg);
-    CPslFormatter formatter(m_Os, (m_uFlags & CPslWriter::fDebugOutput));
-    formatter.Format(record);
-}
-
-//  ----------------------------------------------------------------------------
-void CPslWriter::xWriteAlignSegSet(
-    const CSeq_align_set& segSet)
-//  ----------------------------------------------------------------------------
-{
-    const auto& data = segSet.Get();
-    for (const auto& pAlign: data) {
-        WriteAlign(*pAlign);
-    }
+    return true;
 }
 
 END_NCBI_SCOPE

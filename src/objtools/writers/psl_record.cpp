@@ -339,6 +339,15 @@ CPslRecord::Initialize(
 
 //  ----------------------------------------------------------------------------
 void
+CPslRecord::Initialize(
+    CScope& scope,
+    const CSeq_align::TScore& scores)
+//  ----------------------------------------------------------------------------
+{
+}
+
+//  ----------------------------------------------------------------------------
+void
 CPslRecord::xValidateSegment(
     CScope& scope,
     const CDense_seg& denseSeg)

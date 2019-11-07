@@ -81,6 +81,10 @@ public:
         CScope& scope,
         const CDense_seg& denseSeg);
 
+    void Initialize(
+        CScope& scope,
+        const CSeq_align::TScore& scores);
+
     int GetMatches() const { return mMatches; };
     int GetMisMatches() const { return mMisMatches; };
     int GetRepMatches() const { return mRepMatches; };
