@@ -42,7 +42,6 @@
 
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/gff2_data.hpp>
 
 BEGIN_NCBI_SCOPE
