@@ -168,14 +168,12 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
         pId->GetLabel(&id, nullptr, CSeq_id::eFasta);
         s_PostProcessID(id);
         id_strings.push_back(id);
-
-        id.clear();
-        pId->GetLabel(&id, nullptr, CSeq_id::eFastaContent);
-        s_PostProcessID(id);
-        id_strings.push_back(id);
+        string type, content;
+        NStr::SplitInTwo(id, "|", type, content);
+        id_strings.push_back(content);
         if (pId->IsGeneral()) {
             string db, tag;
-            NStr::SplitInTwo(id, "|", db, tag);
+            NStr::SplitInTwo(content, "|", db, tag);
             id_strings.push_back(tag);
         }
     }
