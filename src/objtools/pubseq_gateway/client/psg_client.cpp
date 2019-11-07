@@ -179,11 +179,11 @@ TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Ch
 
 
 template <typename TType, typename TVersion>
-CPSG_BioId s_CreateBioId(TType t, string accession, TVersion v)
+CPSG_BioId s_CreateBioId(TType t, string accession, string name, TVersion v)
 {
     auto type = static_cast<CPSG_BioId::TType>(t);
     auto version = static_cast<int>(v);
-    return objects::CSeq_id(type, accession, kEmptyStr, version).AsFastaString();
+    return objects::CSeq_id(type, accession, name, version).AsFastaString();
 };
 
 template <typename TType>
@@ -246,7 +246,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         auto type = stoul(args.GetValue("seq_type"));
         auto accession = args.GetValue("seq_acc");
         auto version = stoul(args.GetValue("seq_ver"));
-        auto bio_id = s_CreateBioId(type, accession, version);
+        auto bio_id = s_CreateBioId(type, accession, kEmptyStr, version);
         auto name = args.GetValue("na");
         rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(bio_id, name), chunks));
 
@@ -711,8 +711,10 @@ CPSG_BioId CPSG_BioseqInfo::GetCanonicalId() const
 {
     auto type = m_Data.GetInteger("seq_id_type");
     auto accession = m_Data.GetString("accession");
+    auto name_node = m_Data.GetByKeyOrNull("name");
+    auto name = name_node && name_node.IsString() ? name_node.AsString() : string();
     auto version = m_Data.GetInteger("version");
-    return s_CreateBioId(type, accession, version);
+    return s_CreateBioId(type, accession, name, version);
 }
 
 vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
