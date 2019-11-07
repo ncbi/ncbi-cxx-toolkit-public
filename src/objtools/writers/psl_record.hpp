@@ -68,7 +68,7 @@ public:
         mSizeT(-1),
         mStartT(-1),
         mEndT(-1),
-        mExonCount(-1)
+        mBlockCount(-1)
     {};
 
     ~CPslRecord() = default;
@@ -99,10 +99,10 @@ public:
     int GetSizeT() const { return mSizeT; };
     int GetStartT() const { return mStartT; };
     int GetEndT() const { return mEndT; };
-    int GetBlockCount() const { return mExonCount; };
-    const vector<int>& GetBlockSizes() const { return mExonSizes; };
-    const vector<int>& GetBlockStartsQ() const { return  mExonStartsQ; };
-    const vector<int>& GetBlockStartsT() const { return mExonStartsT; };
+    int GetBlockCount() const { return mBlockCount; };
+    const vector<int>& GetBlockSizes() const { return mBlockSizes; };
+    const vector<int>& GetBlockStartsQ() const { return  mBlockStartsQ; };
+    const vector<int>& GetBlockStartsT() const { return mBlockStartsT; };
 
 
 protected:
@@ -141,6 +141,7 @@ protected:
         CScope&,
         const CDense_seg&);
 
+
     int mMatches;               // number of bases that match that aren't repeats
     int mMisMatches;            // number of bases that don't match
     int mRepMatches;            // number of bases that match but are part of repeats
@@ -159,10 +160,10 @@ protected:
     int mSizeT;                 // target sequence size
     int mStartT;                // alignment start position in target
     int mEndT;                  // alignment end position in target
-    int mExonCount;             // number of blocks in the alignment
-    vector<int> mExonSizes;     // list of block sizes
-    vector<int> mExonStartsQ;   // list of block starting positions in query
-    vector<int> mExonStartsT;   // list of block starting positions in target
+    int mBlockCount;            // number of blocks in the alignment
+    vector<int> mBlockSizes;    // list of block sizes
+    vector<int> mBlockStartsQ;  // list of block starting positions in query
+    vector<int> mBlockStartsT;  // list of block starting positions in target
 };
  
 

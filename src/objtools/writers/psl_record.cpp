@@ -196,7 +196,7 @@ CPslRecord::xInitializeBlocksStrandPositive(
 //  ----------------------------------------------------------------------------
 {
     const auto& exonList = splicedSeg.GetExons();
-    mExonCount = static_cast<int>(exonList.size());
+    mBlockCount = static_cast<int>(exonList.size());
 
     for (auto pExon: exonList) {
         auto partCount = pExon->GetParts().size();
@@ -205,17 +205,17 @@ CPslRecord::xInitializeBlocksStrandPositive(
         }
         int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
         int exonStartT = static_cast<int>(pExon->GetGenomic_start());
-        mExonStartsQ.push_back(exonStartQ);
-        mExonStartsT.push_back(exonStartT);
+        mBlockStartsQ.push_back(exonStartQ);
+        mBlockStartsT.push_back(exonStartT);
         int blockSize = 0;
         int productInsertionPending = 0;
         int genomicInsertionPending = 0;
         for (auto pPart: pExon->GetParts()) {
             if (productInsertionPending  ||  genomicInsertionPending) {
-                mExonCount++;
-                mExonSizes.push_back(blockSize);
-                mExonStartsQ.push_back(exonStartQ + blockSize + productInsertionPending);
-                mExonStartsT.push_back(
+                mBlockCount++;
+                mBlockSizes.push_back(blockSize);
+                mBlockStartsQ.push_back(exonStartQ + blockSize + productInsertionPending);
+                mBlockStartsT.push_back(
                     exonStartT + blockSize + genomicInsertionPending);
                 exonStartQ += blockSize + productInsertionPending;
                 exonStartT += blockSize + genomicInsertionPending;
@@ -226,7 +226,7 @@ CPslRecord::xInitializeBlocksStrandPositive(
             sExonChunkAppendStats(
                 *pPart, blockSize, blockSize, productInsertionPending, genomicInsertionPending);
         }
-        mExonSizes.push_back(blockSize);
+        mBlockSizes.push_back(blockSize);
         exonStartQ += blockSize;
         exonStartT += blockSize;
     }
@@ -240,7 +240,7 @@ CPslRecord::xInitializeBlocksStrandNegative(
 //  ----------------------------------------------------------------------------
 {
     const auto& exonList = splicedSeg.GetExons();
-    mExonCount = static_cast<int>(exonList.size());
+    mBlockCount = static_cast<int>(exonList.size());
 
     for (auto pExon: exonList) {
         int exonEndT = static_cast<int>(pExon->GetGenomic_end() + 1);
@@ -250,10 +250,10 @@ CPslRecord::xInitializeBlocksStrandNegative(
         int genomicInsertionPending = 0;
         for (auto pPart: pExon->GetParts()) {
             if (productInsertionPending  ||  genomicInsertionPending) {
-                mExonCount++;
-                mExonSizes.push_back(blockSize);
-                mExonStartsT.push_back(exonEndT - blockSize);
-                mExonStartsQ.push_back(exonEndQ);
+                mBlockCount++;
+                mBlockSizes.push_back(blockSize);
+                mBlockStartsT.push_back(exonEndT - blockSize);
+                mBlockStartsQ.push_back(exonEndQ);
                 exonEndQ -= (blockSize + productInsertionPending);
                 exonEndT -= (blockSize + genomicInsertionPending);
                 blockSize = 0;
@@ -264,14 +264,14 @@ CPslRecord::xInitializeBlocksStrandNegative(
                 *pPart, blockSize, blockSize, productInsertionPending, genomicInsertionPending);
         }
         exonEndT -= blockSize;
-        mExonStartsT.push_back(exonEndT);
-        mExonStartsQ.push_back(exonEndQ);
+        mBlockStartsT.push_back(exonEndT);
+        mBlockStartsQ.push_back(exonEndQ);
         exonEndQ -= blockSize;
-        mExonSizes.push_back(blockSize);
+        mBlockSizes.push_back(blockSize);
     }
-    std::reverse(mExonStartsT.begin(), mExonStartsT.end());
-    std::reverse(mExonSizes.begin(), mExonSizes.end());
-    std::reverse(mExonStartsQ.begin(), mExonStartsQ.end());
+    std::reverse(mBlockStartsT.begin(), mBlockStartsT.end());
+    std::reverse(mBlockSizes.begin(), mBlockSizes.end());
+    std::reverse(mBlockStartsQ.begin(), mBlockStartsQ.end());
 }
 
 //  ----------------------------------------------------------------------------
@@ -281,7 +281,7 @@ CPslRecord::xInitializeBlocks(
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
-    if (mExonCount != -1) {
+    if (mBlockCount != -1) {
         return;
     }
 
@@ -290,7 +290,7 @@ CPslRecord::xInitializeBlocks(
     }
 
     const auto& exonList = splicedSeg.GetExons();
-    mExonCount = static_cast<int>(exonList.size());
+    mBlockCount = static_cast<int>(exonList.size());
 
     if (mStrandT == eNa_strand_plus) {
         xInitializeBlocksStrandPositive(scope, splicedSeg);
@@ -395,56 +395,56 @@ CPslRecord::xInitializeStatsAndBlocks(
     for (auto length: denseSeg.GetLens()) {
         mMatches += length;
     }
-    mExonCount = static_cast<int>(denseSeg.GetLens().size());
+    mBlockCount = static_cast<int>(denseSeg.GetLens().size());
     auto starts = denseSeg.GetStarts();
     auto lens = denseSeg.GetLens();
-    for (int i=0; i < mExonCount; ++i) {
+    for (int i=0; i < mBlockCount; ++i) {
         if (starts[2*i] != -1  &&  starts[2*i+1] != -1) {
-            mExonStartsQ.push_back(starts[2*i]);
-            mExonStartsT.push_back(starts[2*i + 1]);
-            mExonSizes.push_back(lens[i]);
+            mBlockStartsQ.push_back(starts[2*i]);
+            mBlockStartsT.push_back(starts[2*i + 1]);
+            mBlockSizes.push_back(lens[i]);
         }
     }
     if (eNa_strand_minus == denseSeg.GetSeqStrand(0)) {
-        std::reverse(mExonStartsQ.begin(), mExonStartsQ.end());
-        std::reverse(mExonSizes.begin(), mExonSizes.end());
+        std::reverse(mBlockStartsQ.begin(), mBlockStartsQ.end());
+        std::reverse(mBlockSizes.begin(), mBlockSizes.end());
     }
     if (eNa_strand_minus == denseSeg.GetSeqStrand(1)) {
-        std::reverse(mExonStartsT.begin(), mExonStartsT.end());
-        std::reverse(mExonSizes.begin(), mExonSizes.end());
+        std::reverse(mBlockStartsT.begin(), mBlockStartsT.end());
+        std::reverse(mBlockSizes.begin(), mBlockSizes.end());
     }
-    mExonCount = mExonSizes.size();
+    mBlockCount = static_cast<int>(mBlockSizes.size());
 
     mNumInsertQ = mBaseInsertQ = 0;
     mNumInsertT = mBaseInsertT = 0;
-    if (mExonStartsT[0] == -1) {
+    if (mBlockStartsT[0] == -1) {
         mNumInsertQ++;
-        mBaseInsertQ += mExonSizes[0];
+        mBaseInsertQ += mBlockSizes[0];
     }
-    if (mExonStartsQ[0] == -1) {
+    if (mBlockStartsQ[0] == -1) {
         mNumInsertT++;
-        mBaseInsertT += mExonSizes[0];
+        mBaseInsertT += mBlockSizes[0];
     }
-    for (int i=1; i < mExonCount; ++i) {
-        auto endOfLastQ = mExonStartsQ[i-1] + mExonSizes[i-1];
-        auto startOfThisQ = mExonStartsQ[i];
+    for (int i=1; i < mBlockCount; ++i) {
+        auto endOfLastQ = mBlockStartsQ[i-1] + mBlockSizes[i-1];
+        auto startOfThisQ = mBlockStartsQ[i];
         if (startOfThisQ - endOfLastQ != 0) {
             mNumInsertQ++;
             mBaseInsertQ += (startOfThisQ - endOfLastQ);
         }
-        if (mExonStartsT[i] == -1) {
+        if (mBlockStartsT[i] == -1) {
             mNumInsertQ++;
-            mBaseInsertQ += mExonSizes[i];
+            mBaseInsertQ += mBlockSizes[i];
         }
-        auto endOfLastT = mExonStartsT[i-1] + mExonSizes[i-1];
-        auto startOfThisT = mExonStartsT[i];
+        auto endOfLastT = mBlockStartsT[i-1] + mBlockSizes[i-1];
+        auto startOfThisT = mBlockStartsT[i];
         if (startOfThisT - endOfLastT != 0) {
             mNumInsertT++;
             mBaseInsertT += (startOfThisT - endOfLastT);
         }
-        if (mExonStartsQ[i] == -1) {
+        if (mBlockStartsQ[i] == -1) {
             mNumInsertT++;
-            mBaseInsertT += mExonSizes[i];
+            mBaseInsertT += mBlockSizes[i];
         }
     }
 
