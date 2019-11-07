@@ -81,7 +81,8 @@ static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
     make_pair("tax_id", fServTaxId),
     make_pair("hash", fServHash),
     make_pair("date_changed", fServDateChanged),
-    make_pair("gi", fServGi)
+    make_pair("gi", fServGi),
+    make_pair("name", fServName),
 };
 static string  kBadUrlMessage = "Unknown request, the provided URL "
                                 "is not recognized";

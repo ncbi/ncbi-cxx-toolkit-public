@@ -2812,14 +2812,7 @@ TServIncludeData CPendingOperation::x_GetBioseqInfoFields(void) const
 
 bool CPendingOperation::x_NonKeyBioseqInfoFieldsRequested(void) const
 {
-    // In the initial implementation it was like
-    // (x_GetBioseqInfoFields() & ~fBioseqKeyFields) != 0
-    //  where fBioseqKeyFields := fServCanonicalId | fServGi
-    // Then however the 'name' field was added into the canonicalId set of
-    // fields. The 'name' is not a key field in neither cache nor cassandra
-    // which means that if canonicalId is requested then the bioseq_info
-    // retrieval will be needed.
-    return (x_GetBioseqInfoFields() & ~fServGi) != 0;
+    return (x_GetBioseqInfoFields() & ~fBioseqKeyFields) != 0;
 }
 
 

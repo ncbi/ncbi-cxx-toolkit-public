@@ -181,8 +181,9 @@ CJsonNode  ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
         json.SetString(kAccession, bioseq_info.GetAccession());
         json.SetInteger(kVersion, bioseq_info.GetVersion());
         json.SetInteger(kSeqIdType, bioseq_info.GetSeqIdType());
-        json.SetString(kName, bioseq_info.GetName());
     }
+    if (include_data_flags & fServName)
+        json.SetString(kName, bioseq_info.GetName());
     if (include_data_flags & fServGi)
         json.SetInteger(kGi, bioseq_info.GetGI());
     if (include_data_flags & fServDateChanged)
