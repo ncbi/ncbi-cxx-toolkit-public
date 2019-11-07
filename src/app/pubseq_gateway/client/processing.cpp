@@ -1442,6 +1442,7 @@ const initializer_list<SInfoFlag> kInfoFlags =
 {
     { "all-info-except", "Return all info except explicitly specified by other flags", CPSG_Request_Resolve::fAllInfo },
     { "canonical-id",    "Return canonical ID info",                    CPSG_Request_Resolve::fCanonicalId  },
+    { "name",            "Use name for canonical ID info, if returned", CPSG_Request_Resolve::fName         },
     { "other-ids",       "Return other IDs info",                       CPSG_Request_Resolve::fOtherIds     },
     { "molecule-type",   "Return molecule type info",                   CPSG_Request_Resolve::fMoleculeType },
     { "length",          "Return length info",                          CPSG_Request_Resolve::fLength       },
@@ -1500,6 +1501,7 @@ CJson_Document CProcessing::RequestSchema()
                 "enum": [
                     "all-info-except",
                     "canonical-id",
+                    "name",
                     "other-ids",
                     "molecule-type",
                     "length",

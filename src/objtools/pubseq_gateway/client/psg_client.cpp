@@ -392,6 +392,7 @@ string CPSG_Request_Resolve::x_GetAbsPathRef() const
     }
 
     if (include_info & CPSG_Request_Resolve::fCanonicalId)  os << "&canon_id=" << value;
+    if (include_info & CPSG_Request_Resolve::fName)         os << "&name=" << value;
     if (include_info & CPSG_Request_Resolve::fOtherIds)     os << "&seq_ids=" << value;
     if (include_info & CPSG_Request_Resolve::fMoleculeType) os << "&mol_type=" << value;
     if (include_info & CPSG_Request_Resolve::fLength)       os << "&length=" << value;
@@ -795,6 +796,7 @@ CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
     CPSG_Request_Resolve::TIncludeInfo rv = {};
 
     if (m_Data.HasKey("accession") && m_Data.HasKey("seq_id_type"))       rv |= CPSG_Request_Resolve::fCanonicalId;
+    if (m_Data.HasKey("name"))                                            rv |= CPSG_Request_Resolve::fName;
     if (m_Data.HasKey("seq_ids") && m_Data.GetByKey("seq_ids").GetSize()) rv |= CPSG_Request_Resolve::fOtherIds;
     if (m_Data.HasKey("mol"))                                             rv |= CPSG_Request_Resolve::fMoleculeType;
     if (m_Data.HasKey("length"))                                          rv |= CPSG_Request_Resolve::fLength;

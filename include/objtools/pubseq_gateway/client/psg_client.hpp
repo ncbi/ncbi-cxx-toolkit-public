@@ -252,15 +252,16 @@ public:
     enum EIncludeInfo : unsigned {
         // These flags correspond exactly to the CPSG_BioseqInfo's getters
         fCanonicalId      = (1 << 1),
-        fOtherIds         = (1 << 2),
-        fMoleculeType     = (1 << 3),
-        fLength           = (1 << 4),
-        fState            = (1 << 5),
-        fBlobId           = (1 << 6),
-        fTaxId            = (1 << 7),
-        fHash             = (1 << 8),
-        fDateChanged      = (1 << 9),
-        fGi               = (1 << 10),
+        fName             = (1 << 2), ///< Requests name to use for canonical bio-id
+        fOtherIds         = (1 << 3),
+        fMoleculeType     = (1 << 4),
+        fLength           = (1 << 5),
+        fState            = (1 << 6),
+        fBlobId           = (1 << 7),
+        fTaxId            = (1 << 8),
+        fHash             = (1 << 9),
+        fDateChanged      = (1 << 10),
+        fGi               = (1 << 11),
         fAllInfo          = numeric_limits<unsigned>::max()
     };
     DECLARE_SAFE_FLAGS_TYPE(EIncludeInfo, TIncludeInfo);
