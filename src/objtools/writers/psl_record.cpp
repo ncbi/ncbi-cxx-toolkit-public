@@ -399,9 +399,11 @@ CPslRecord::xInitializeStatsAndBlocks(
     auto starts = denseSeg.GetStarts();
     auto lens = denseSeg.GetLens();
     for (int i=0; i < mExonCount; ++i) {
-        mExonStartsQ.push_back(starts[2*i]);
-        mExonStartsT.push_back(starts[2*i + 1]);
-        mExonSizes.push_back(lens[i]);
+        if (starts[2*i] != -1  &&  starts[2*i+1] != -1) {
+            mExonStartsQ.push_back(starts[2*i]);
+            mExonStartsT.push_back(starts[2*i + 1]);
+            mExonSizes.push_back(lens[i]);
+        }
     }
     if (eNa_strand_minus == denseSeg.GetSeqStrand(0)) {
         std::reverse(mExonStartsQ.begin(), mExonStartsQ.end());
@@ -411,6 +413,7 @@ CPslRecord::xInitializeStatsAndBlocks(
         std::reverse(mExonStartsT.begin(), mExonStartsT.end());
         std::reverse(mExonSizes.begin(), mExonSizes.end());
     }
+    mExonCount = mExonSizes.size();
 
     mNumInsertQ = mBaseInsertQ = 0;
     mNumInsertT = mBaseInsertT = 0;

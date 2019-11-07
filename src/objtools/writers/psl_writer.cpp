@@ -35,6 +35,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Sparse_seg.hpp>
 #include <objects/seqalign/Sparse_align.hpp>
@@ -117,14 +118,19 @@ bool CPslWriter::WriteAlign(
         }
     }
     xWritePreamble();
-    switch (align.GetSegs().Which()) {
+    auto segType = align.GetSegs().Which();
+    switch (segType) {
     case CSeq_align::C_Segs::e_Spliced:
         xWriteAlignSlicedSeg(align.GetSegs().GetSpliced());
         return true;
     case CSeq_align::C_Segs::e_Denseg:
         xWriteAlignDenseSeg(align.GetSegs().GetDenseg());
         return true;
+    case CSeq_align::C_Segs::e_Disc:
+        xWriteAlignSegSet(align.GetSegs().GetDisc());
+        return true;
     default:
+        cerr << "Unknown record type" << endl;
         return false;
     }
 }
@@ -155,6 +161,17 @@ void CPslWriter::xWriteAlignDenseSeg(
     record.Initialize(*m_pScope, denseSeg);
     CPslFormatter formatter(m_Os, (m_uFlags & CPslWriter::fDebugOutput));
     formatter.Format(record);
+}
+
+//  ----------------------------------------------------------------------------
+void CPslWriter::xWriteAlignSegSet(
+    const CSeq_align_set& segSet)
+//  ----------------------------------------------------------------------------
+{
+    const auto& data = segSet.Get();
+    for (const auto& pAlign: data) {
+        WriteAlign(*pAlign);
+    }
 }
 
 END_NCBI_SCOPE
