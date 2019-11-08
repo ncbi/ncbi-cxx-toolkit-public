@@ -1209,7 +1209,7 @@ static bool FixCapitalization(string& name, bool apostroph)
         else if (apostroph && cur == '\'') {
             to_lower = false;
         }
-        else if (cur == ' ') {
+        else if (cur == ' ' || cur == '-') {
             to_lower = false;
         }
     }
