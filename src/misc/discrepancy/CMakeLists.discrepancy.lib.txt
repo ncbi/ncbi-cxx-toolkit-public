@@ -9,6 +9,6 @@ NCBI_begin_lib(xdiscrepancy)
     gene_names rna_names transl_too_long sesame_street transl_note feature_tests
     sequence_tests pub_tests biosource_tests discrepancy_stream
   )
-  NCBI_uses_toolkit_libraries(macro xcleanup xobjedit)
+  NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
   NCBI_project_watchers(kachalos)
 NCBI_end_lib()
