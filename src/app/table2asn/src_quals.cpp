@@ -168,11 +168,11 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
         pId->GetLabel(&id, nullptr, CSeq_id::eFasta);
         s_PostProcessID(id);
         id_strings.push_back(id);
-        string type, content;
+        CTempString type, content;
         NStr::SplitInTwo(id, "|", type, content);
         id_strings.push_back(content);
         if (pId->IsGeneral()) {
-            string db, tag;
+            CTempString db, tag;
             NStr::SplitInTwo(content, "|", db, tag);
             id_strings.push_back(tag);
         }
@@ -181,7 +181,7 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
             if (pTextSeqId && pTextSeqId->IsSetVersion()) {
                 size_t pointPos = id.rfind('.');
                 if (pointPos != string::npos) {
-                    string versionlessId(id, pointPos);
+                    CTempString versionlessId(id, 0, pointPos);
                     NStr::SplitInTwo(versionlessId, "|", type, content);
                     id_strings.push_back(versionlessId);
                     id_strings.push_back(content);
