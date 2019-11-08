@@ -52,16 +52,17 @@ public:
         eType_string
     };
     virtual ~CReportObj(void){}
-    virtual const string& GetText(void) const = 0;
+    virtual const string GetText(void) const = 0;
+    virtual const string GetPath(void) const = 0;
     virtual const string& GetFeatureType() const = 0;
     virtual const string& GetProductName() const = 0;
     virtual const string& GetLocation(void) const = 0;
     virtual const string& GetLocusTag() const = 0;
-    virtual const string& GetShort(void) const = 0;
-    virtual size_t GetFileID(void) const = 0;
+    virtual const string GetShort(void) const = 0;
     virtual EType GetType(void) const = 0;
-    virtual CConstRef<CSerialObject> GetObject(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
+    virtual bool IsFixed(void) const = 0;
+    virtual void SetMoreInfo(CObject* data) = 0;
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
 
@@ -69,7 +70,7 @@ typedef vector<CRef<CReportObj> > TReportObjectList;
 class NCBI_DISCREPANCY_EXPORT CAutofixReport : public CObject
 {
 public:
-    CAutofixReport(const string&s, unsigned int n = 0) : S(s), N(n) {}
+    CAutofixReport(const string&s, unsigned int n) : S(s), N(n) {}
     void AddSubitems(const vector<CRef<CAutofixReport>>& v) { copy(v.begin(), v.end(), back_inserter(V)); }
     string GetS(void) { return S; }
     unsigned int GetN(void) { return N; }
@@ -79,7 +80,6 @@ protected:
     unsigned int N;
     vector<CRef<CAutofixReport>> V;
 };
-typedef string(*TAutofixHook)(void*);
 
 
 class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
@@ -106,7 +106,6 @@ public:
     virtual bool IsExtended(void) const = 0;
     virtual bool IsSummary(void) const = 0;
     virtual bool IsReal(void) const = 0;
-    virtual CRef<CAutofixReport> Autofix(objects::CScope&) const = 0;
     static CRef<CReportItem> CreateReportItem(const string& test, const string& msg, bool autofix = false);
     virtual void PushReportObj(CReportObj& obj) = 0;
 };
@@ -124,10 +123,11 @@ public:
 };
 typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 
+
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
-    CDiscrepancySet(void) : m_SesameStreetCutoff(0.75), m_Eucariote(false), m_Gui(false), m_KeepRef(false), m_UserData(0) {}
+    CDiscrepancySet(void) : m_SesameStreetCutoff(0.75), m_Eucariote(false), m_Gui(false), m_UserData(0) {}
     virtual ~CDiscrepancySet(void){}
 
     template<typename Container>
@@ -139,41 +139,43 @@ public:
     }
 
     virtual bool AddTest(const string& name) = 0;
-    virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;
-    virtual void Parse(const CSerialObject& root) = 0;
+    virtual void Parse(const CSerialObject& root, const string& fname = kEmptyStr) = 0;
+    virtual void ParseStream(CObjectIStream& stream, const string& fname, const string& default_header = kEmptyStr) = 0;
+    virtual void ParseStrings(const string& fname) = 0;
     virtual void TestString(const string& str) = 0;
     virtual unsigned Summarize(void) = 0;
-    virtual void AutofixAll(void) = 0;
+    virtual void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr) = 0;
     virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
-    virtual void OutputText(CNcbiOstream& out, bool fatal = false, bool summary = false, bool ext = false, char group = 0) = 0;
-    virtual void OutputXML(CNcbiOstream& out, bool ext = false) = 0;
+
+    enum EOutput {
+        eOutput_Summary = 1 << 0,   // only summary
+        eOutput_Fatal   = 1 << 1,   // print FATAL
+        eOutput_Ext     = 1 << 2,   // extended output
+        eOutput_Files   = 1 << 3    // print file name
+    };
+    virtual void OutputText(CNcbiOstream& out, unsigned short flags, char group = 0) = 0;
+    virtual void OutputXML(CNcbiOstream& out, unsigned short flags) = 0;
 
     bool IsGui(void) const { return m_Gui;}
-    const string& GetFile(void) const { return m_Files[m_File];}
     const string& GetLineage(void) const { return m_Lineage; }
     float GetSesameStreetCutoff(void) const { return m_SesameStreetCutoff; }
-    bool GetKeepRef(void) const { return m_KeepRef; }
     void* GetUserData(void) const { return m_UserData; }
-    void SetFile(const string& s){ m_Files.push_back(s); m_File = m_Files.size() - 1; }
-    void SetLineage(const string& s){ m_Lineage = s; }
+    //virtual void SetFile(const string& fname) = 0;
+    void SetLineage(const string& s) { m_Lineage = s; }
     void SetEucariote(bool b){ m_Eucariote = b; }
     void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
     virtual void SetSuspectRules(const string& name, bool read = true) = 0;
     void SetGui(bool b){ m_Gui = b; }
-    void SetKeepRef(bool b){ m_KeepRef = b; }
     void SetUserData(void* p){ m_UserData = p; }
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
     static string Format(const string& str, unsigned int count);
-    static const char** GetTestSuiteKClark();
+    virtual const CSerialObject* FindObject(CReportObj& obj, bool alt = false) = 0;
 
 protected:
-    size_t m_File;
-    vector<string> m_Files;
     string m_Lineage;
     float m_SesameStreetCutoff;
     bool m_Eucariote;
     bool m_Gui;
-    bool m_KeepRef;     // set true to allow autofix
     void* m_UserData;
 };
 
@@ -205,15 +207,6 @@ enum EGroup {
     eAutofix = 128
 };
 typedef unsigned short TGroup;
-
-
-struct CAutofixHookRegularArguments // (*TAutofixHook)(void*) can accept any other input if needed
-{
-    void* m_User;
-    string m_Title;
-    string m_Message;
-    vector<string> m_List;
-};
 
 
 NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);

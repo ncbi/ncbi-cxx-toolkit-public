@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 
 #include "discrepancy_core.hpp"
-#include <misc/discrepancy/report_object.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -52,7 +51,6 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-//#include <objects/submit/Submit_block.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -66,38 +64,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
-
-CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope, bool keep) : m_Obj(keep ? obj : 0)
-{
-    const CBioseq* bioseq = dynamic_cast<const CBioseq*>(obj);
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj);
-    const CBioseq_set* set = dynamic_cast<const CBioseq_set*>(obj);
-    if (bioseq) {
-        m_Type = CReportObj::eType_sequence;
-        CConstRef<CSeq_id> id = GetBestId(*bioseq);
-        id->GetLabel(&m_Text, CSeq_id::eContent);
-        m_ShortName = m_Text;
-    }
-    else if (feat) {
-        m_Type = CReportObj::eType_feature;
-        CReportObject::GetTextObjectDescription(*feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
-        m_Text = m_FeatureType + "\t" + m_Product + "\t" + m_Location + "\t" + m_LocusTag;
-    }
-    else if (desc) {
-        m_Type = CReportObj::eType_descriptor;
-        m_Text = CReportObject::GetTextObjectDescription(*desc);
-    }
-    else if (set) {
-        m_Type = CReportObj::eType_seq_set;
-        m_Text = CReportObject::GetTextObjectDescription(scope.GetBioseq_setHandle(*set));
-    }
-    else {
-        m_Type = CReportObj::eType_submit_block;
-        m_Text = "other type";
-    }
-}
-
 
 string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
 {
@@ -310,7 +276,7 @@ string GetSeqLocDescription(const CSeq_loc& loc, CScope& scope)
 }
 
 
-void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
+void CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
 {
     location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
     label = seq_feat.GetData().GetKey();
@@ -318,7 +284,7 @@ void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& 
 }
 
 
-string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product)
+string CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product)
 {
     string location;
     string label;
@@ -328,8 +294,9 @@ string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope
     return rval;
 }
 
+//                                               CDiscrepancyObject::GetTextObjectDescription(*feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
 
-void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
+void CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
 {
     if ( seq_feat.GetData().IsProt()) {
         CConstRef <CBioseq> bioseq = sequence::GetBioseqFromSeqLoc(seq_feat.GetLocation(), scope).GetCompleteBioseq();
@@ -372,7 +339,7 @@ void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& 
 }
 
 
-string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
+string CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
 {
     string type;
     string location;
@@ -393,7 +360,7 @@ string GetIdLabel(const CBioseq& seq)
 }
 
 
-string CReportObject::GetTextObjectDescription(const CSeqdesc& sd)
+string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
 {
     string label(kEmptyStr);
     switch (sd.Which()) 
@@ -464,7 +431,7 @@ string CReportObject::GetTextObjectDescription(const CSeqdesc& sd)
 
 // label for Bioseq includes "best" ID, plus length, plus number of
 // non-ATGC characters (if any), plus number of gaps (if any)
-string CReportObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
+string CDiscrepancyObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
 {
     string rval;
     CConstRef<CSeq_id> id = GetBestId(bs);
@@ -473,7 +440,7 @@ string CReportObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
 }
 
 
-string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
+string CDiscrepancyObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 {
     CNcbiOstrstream result_strm;
 

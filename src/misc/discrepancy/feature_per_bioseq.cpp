@@ -43,75 +43,44 @@ DISCREPANCY_MODULE(feature_per_bioseq);
 
 // COUNT_RRNAS
 
-DISCREPANCY_CASE(COUNT_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count rRNAs")
+static inline string rRnaLabel(const CSeqFeatData& data) // eSubtype_rRNA assumed
 {
-    if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
-        return;
-    }
-    CBioSource::TGenome genome = context.GetCurrentGenome();
-    if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
+    return data.IsRna() && data.GetRna().IsSetExt() && data.GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name ? data.GetRna().GetExt().GetName() : "==invalid==";
+}
 
-    if (m_Count != context.GetCountBioseq()) {
-        m_Count = context.GetCountBioseq();
-        Summarize(context);
-        m_Objs[kEmptyStr].Add(*context.BioseqObj());
-    }
 
-    string aa;
-    feature::GetLabel(obj, &aa, feature::fFGL_Content);
-    size_t n = aa.find_last_of('-');            // cut off the "rRNA-" prefix
-    if (n != string::npos) {
-        aa = aa.substr(n + 1); // is there any better way to get the aminoacid name?
+DISCREPANCY_CASE(COUNT_RRNAS, SEQUENCE, eDisc, "Count rRNAs")
+{
+    const CSeqdesc* biosrc = context.GetBiosource();
+    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
+        size_t total = 0;
+        CReportNode tmp;
+        for (auto& feat : context.FeatRRNAs()) {
+            tmp[rRnaLabel(feat->GetData())].Add(*context.SeqFeatObjRef(*feat));
+            total++;
+        }
+        if (total) {
+            auto bsref = context.BioseqObjRef();
+            string item = " [n] sequence[s] [has] [(]" + to_string(total) + "[)] rRNA feature" + (total == 1 ? kEmptyStr : "s");
+            m_Objs[item].Add(*bsref).Incr();
+            string short_name = bsref->GetShort();
+            string subitem = "[n] rRNA feature[s] found on [(]" + short_name;
+            for (auto& it : tmp.GetMap()) {
+                m_Objs[item][subitem].Ext().Add(it.second->GetObjects());
+            }
+            for (auto& it : tmp.GetMap()) {
+                if (it.second->GetObjects().size() > 1) {
+                    m_Objs["[(]" + to_string(it.second->GetObjects().size()) + "[)] rRNA features on [(]" + short_name + "[)] have the same name [(](" + it.first + ")"].Add(tmp[it.first].GetObjects());
+                }
+            }
+        }
     }
-    m_Objs[aa].Add(*context.DiscrObj(obj));
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
-    CRef<CReportObj> bioseq = m_Objs[kEmptyStr].GetObjects()[0];
-    string short_name = bioseq->GetShort();
-    m_Objs[kEmptyStr].clearObjs();
-
-    size_t total = 0;
-    // count rRNAs
-    CReportNode::TNodeMap& map = m_Objs.GetMap();
-    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
-        if (!NStr::IsBlank(it->first)) {
-            total += it->second->GetObjects().size();
-        }
-    }
-
-    CNcbiOstrstream ss;
-    ss << " [n] sequence[s] [has] [(]" << total << "[)] rRNA feature" << (total == 1 ? kEmptyStr : "s");
-    string subitem = CNcbiOstrstreamToString(ss);
-    m_Objs[kEmptyStr][subitem].Add(*bioseq);
-    m_Objs[kEmptyStr][subitem].Incr();
-
-    string subitem_bioseq = "[n] rRNA feature[s] found on [(]" + short_name;
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
-        if (!NStr::IsBlank(it->first)) {
-            m_Objs[kEmptyStr][subitem][subitem_bioseq].Ext().Add(it->second->GetObjects());
-        }
-    }
-
-    // duplicated rRNA names
-    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
-        if (NStr::IsBlank(it->first) || it->second->GetObjects().size() <= 1) {
-            continue;
-        }
-        CNcbiOstrstream ss;
-        ss << "[(]" << it->second->GetObjects().size() << "[)] rRNA features on [(]" << short_name << "[)] have the same name [(](" << it->first << ")";
-        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
-    }
-    CReportNode tmp = m_Objs[kEmptyStr];
-    m_Objs.clear();
-    m_Objs[kEmptyStr] = tmp;
-    m_ReportItems = tmp.Export(*this, false)->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -159,101 +128,65 @@ static const DesiredAAData desired_aaList[] = {
 };
 
 
-DISCREPANCY_CASE(COUNT_TRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count tRNAs")
+DISCREPANCY_CASE(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs")
 {
-    if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
-        return;
-    }
-    CBioSource::TGenome genome = context.GetCurrentGenome();
-    if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
+    const CSeqdesc* biosrc = context.GetBiosource();
+    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
+        size_t total = 0;
+        CReportNode tmp;
+        for (auto& feat : context.FeatTRNAs()) {
+            tmp[context.GetAminoacidName(*feat)].Add(*context.SeqFeatObjRef(*feat));
+            total++;
+        }
+        if (total) {
+            static CSafeStatic<map<string, size_t> > DesiredCount;
+            if (DesiredCount->empty()) {
+                for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
+                    (*DesiredCount)[desired_aaList[i].long_symbol] = desired_aaList[i].num_expected;
+                }
+            }
 
-    if (m_Count != context.GetCountBioseq()) {
-        m_Count = context.GetCountBioseq();
-        Summarize(context);
-        m_Objs["*"].Add(*context.BioseqObj());
+            auto bsref = context.BioseqObjRef();
+            string item = " [n] sequence[s] [has] [(]" + to_string(total) + "[)] tRNA feature" + (total == 1 ? kEmptyStr : "s");
+            m_Objs[item].NoRec().Add(*bsref);
+            string short_name = bsref->GetShort();
+            string subitem = "[n] tRNA feature[s] found on [(]" + short_name;
+            for (auto& it : tmp.GetMap()) {
+                m_Objs[item][subitem].Ext().Add(it.second->GetObjects());
+            }
+            // extra tRNAs
+            for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
+                const size_t n = tmp[desired_aaList[i].long_symbol].GetObjects().size();
+                if (n > desired_aaList[i].num_expected) {
+                    subitem = "Sequence [(]" + short_name + "[)] has [(]" + to_string(n) + "[)] trna-[(]" + desired_aaList[i].long_symbol + "[)] feature" + (n == 1 ? kEmptyStr : "s");
+                    m_Objs[subitem].Add(*bsref);
+                    m_Objs[subitem].Add(tmp[desired_aaList[i].long_symbol].GetObjects());
+                }
+            }
+            // unusual tRNAs
+            for (auto& it : tmp.GetMap()) {
+                if (DesiredCount->find(it.first) == DesiredCount->end()) {
+                    subitem = "Sequence [(]" + short_name + "[)] has [(]" + to_string(it.second->GetObjects().size()) + "[)] trna-[(]" + it.first + "[)] feature" + (it.second->GetObjects().size() == 1 ? kEmptyStr : "s");
+                    m_Objs[subitem].Add(*bsref);
+                    m_Objs[subitem].Add(tmp[it.first].GetObjects(), false);
+                }
+            }
+            // missing tRNAs
+            for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
+                const size_t n = tmp[desired_aaList[i].long_symbol].GetObjects().size();
+                if (n < desired_aaList[i].num_expected) {
+                    subitem = "Sequence [(]" + short_name + "[)] is missing trna-[(]" + desired_aaList[i].long_symbol;
+                    m_Objs[subitem].Add(*bsref);
+                }
+            }
+        }
     }
-
-    string aa = context.GetAminoacidName(obj);
-    m_Objs[aa].Add(*context.DiscrObj(obj), false);
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-    static CSafeStatic<map<string, size_t> > DesiredCount;
-    if (DesiredCount->empty()) {
-        for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
-            (*DesiredCount)[desired_aaList[i].long_symbol] = desired_aaList[i].num_expected;
-        }
-    }
-
-    CRef<CReportObj> bioseq = m_Objs["*"].GetObjects()[0];
-    string short_name = bioseq->GetShort();
-    m_Objs["*"].clearObjs();
-
-    size_t total = 0;
-    // count tRNAs
-    CReportNode::TNodeMap& map = m_Objs.GetMap();
-    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
-        if (!NStr::IsBlank(it->first) && it->first != "*") {
-            total += it->second->GetObjects().size();
-        }
-    }
-
-    CNcbiOstrstream ss;
-    ss << " [n] sequence[s] [has] [(]" << total << "[)] tRNA feature" << (total == 1 ? kEmptyStr : "s");
-    string subitem = CNcbiOstrstreamToString(ss);
-    m_Objs[kEmptyStr][subitem].NoRec().Add(*bioseq);
-
-    string trna_on_bioseq = "[n] tRNA feature[s] found on [(]" + short_name;
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
-        if (!NStr::IsBlank(it->first) && it->first != "*") {
-            m_Objs[kEmptyStr][subitem][trna_on_bioseq].Ext().Add(it->second->GetObjects());
-        }
-    }
-
-    // extra tRNAs
-    for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
-        const size_t n = m_Objs[desired_aaList[i].long_symbol].GetObjects().size();
-        if (n <= desired_aaList[i].num_expected) {
-            continue;
-        }
-        CNcbiOstrstream ss;
-        ss << "Sequence [(]" << short_name << "[)] has [(]" << n << "[)] trna-[(]" << desired_aaList[i].long_symbol << "[)] feature" << (n == 1 ? kEmptyStr : "s");
-        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
-        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[desired_aaList[i].long_symbol].GetObjects(), false);
-    }
-    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
-        if (NStr::IsBlank(it->first) || it->first == "*" || DesiredCount->find(it->first.c_str()) != DesiredCount->end()) {
-            continue;
-        }
-        CNcbiOstrstream ss;
-        ss << "Sequence [(]" << short_name << "[)] has [(]" << it->second->GetObjects().size() << "[)] trna-[(]" << it->first << "[)] feature" << (it->second->GetObjects().size() == 1 ? kEmptyStr : "s");
-        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
-        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
-    }
-
-    // missing tRNAs
-    for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
-        if (!desired_aaList[i].num_expected) {
-            continue;
-        }
-        const size_t n = m_Objs[desired_aaList[i].long_symbol].GetObjects().size();
-        if (n >= desired_aaList[i].num_expected) {
-            continue;
-        }
-        CNcbiOstrstream ss;
-        ss << "Sequence [(]" << short_name << "[)] is missing trna-[(]" << desired_aaList[i].long_symbol;
-        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
-    }
-
-    CReportNode tmp = m_Objs[kEmptyStr];
-    m_Objs.clear();
-    m_Objs[kEmptyStr] = tmp;
-    m_ReportItems = tmp.Export(*this, false)->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

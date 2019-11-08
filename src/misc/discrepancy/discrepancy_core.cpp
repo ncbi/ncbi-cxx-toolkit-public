@@ -30,11 +30,14 @@
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
+#include <algorithm>
 #include <sstream>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-
+#include <serial/objcopy.hpp>
+#include <util/compress/stream_util.hpp>
+#include <util/format_guess.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -123,6 +126,7 @@ CReportNode& CReportNode::operator[](const string& name)
 
 void CReportNode::Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique)
 {
+    // BIG FILE
     if (unique && hash.find(&obj) != hash.end()) {
         return;
     }
@@ -170,10 +174,10 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     bool autofix = false;
     CReportItem::ESeverity severity = m_Severity;
     string unit;
-    NON_CONST_ITERATE(TNodeMap, it, m_Map) {
-        CRef<CReportItem> sub = it->second->Export(test, unique);
-        if (severity < it->second->m_Severity) {
-            severity = it->second->m_Severity;
+    for (auto& it : m_Map) {
+        CRef<CReportItem> sub = it.second->Export(test, unique);
+        if (severity < it.second->m_Severity) {
+            severity = it.second->m_Severity;
         }
         if (severity < sub->GetSeverity()) {
             severity = sub->GetSeverity();
@@ -185,17 +189,15 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
         subs.push_back(sub);
         if (!m_NoRec) {
             TReportObjectList details = sub->GetDetails();
-            NON_CONST_ITERATE (TReportObjectList, ob, details) {
-                Add(objs, hash, **ob, unique);
+            for (auto& ob : details) {
+                Add(objs, hash, *ob, unique);
             }
         }
     }
-    if (!autofix) {
-        NON_CONST_ITERATE (TReportObjectList, ob, objs) {
-            if ((*ob)->CanAutofix()) {
-                autofix = true;
-                break;
-            }
+    for (auto& ob : objs) {
+        if (ob->CanAutofix()) {
+            static_cast<CDiscrepancyObject&>(*ob).m_Case.Reset(&test);
+            autofix = true;
         }
     }
     string str = m_Name;
@@ -268,10 +270,10 @@ TReportObjectList CDiscrepancyCore::GetObjects(void) const
     TReportObjectList ret;
     TReportObjectSet hash;
     TReportItemList items = GetReport();
-    ITERATE (TReportItemList, rep, items) {
-        TReportObjectList objs = (*rep)->GetDetails();
-        NON_CONST_ITERATE (TReportObjectList, obj, objs) {
-            CReportNode::Add(ret, hash, **obj);
+    for (auto& rep : items) {
+        TReportObjectList objs = rep->GetDetails();
+        for (auto& obj : objs) {
+            CReportNode::Add(ret, hash, *obj);
         }
     }
     return ret;
@@ -295,11 +297,13 @@ void CDiscrepancyItem::PushReportObj(CReportObj& obj)
     m_Objs.push_back(CRef<CReportObj>(&obj));
 }
 
-
-CReportObj* CDiscrepancyObject::Clone(bool autofixable, CConstRef<CObject> data) const
+// need to rewrite as a DiscrepancyContext method
+CReportObj* CDiscrepancyObject::Clone(bool fix, CConstRef<CObject> data) const
 {
     CDiscrepancyObject* obj = new CDiscrepancyObject(*this);
-    obj->m_Autofix = autofixable;
+    if (fix) {
+        obj->m_Fix.Reset(obj->m_Ref);
+    }
     obj->m_More = data;
     return obj;
 }
@@ -312,12 +316,12 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
     }
     catch (CException& e) {
         string ss = "EXCEPTION caught: "; ss += e.what();
-        m_Objs[ss].Add(*context.BioseqObj());
+        m_Objs[ss];
     }
 }
 
 
-CRef<CDiscrepancySet> CDiscrepancySet::New(CScope& scope){ return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope));}
+CRef<CDiscrepancySet> CDiscrepancySet::New(CScope& scope) { return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope)); }
 
 
 string CDiscrepancySet::Format(const string& s, unsigned int count)
@@ -364,241 +368,67 @@ bool CDiscrepancyContext::AddTest(const string& name)
         m_Enable_##type = true;                                                                 \
         return true;                                                                            \
     }
-    REGISTER_DISCREPANCY_TYPE(CSeq_inst)
-    REGISTER_DISCREPANCY_TYPE(CSeqdesc)
-    REGISTER_DISCREPANCY_TYPE(CSeq_feat)
-    REGISTER_DISCREPANCY_TYPE(CSubmit_block)
-    REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
-    REGISTER_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
-    REGISTER_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ)
-    REGISTER_DISCREPANCY_TYPE(COverlappingFeatures)
-    REGISTER_DISCREPANCY_TYPE(CBioSource)
-    REGISTER_DISCREPANCY_TYPE(COrgName)
-    REGISTER_DISCREPANCY_TYPE(CRNA_ref)
-    REGISTER_DISCREPANCY_TYPE(CSeq_annot)
-    REGISTER_DISCREPANCY_TYPE(CPubdesc)
-    REGISTER_DISCREPANCY_TYPE(CAuth_list)
-    REGISTER_DISCREPANCY_TYPE(CPerson_id)
-    REGISTER_DISCREPANCY_TYPE(CBioseq_set)
+    //REGISTER_DISCREPANCY_TYPE(CSeq_inst)
+    //REGISTER_DISCREPANCY_TYPE(CSeqdesc)
+    //REGISTER_DISCREPANCY_TYPE(CSeq_feat)
+    //REGISTER_DISCREPANCY_TYPE(CSubmit_block)
+    //REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
+    //REGISTER_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
+    //REGISTER_DISCREPANCY_TYPE(COverlappingFeatures)
+    //REGISTER_DISCREPANCY_TYPE(CBioSource)
+    //REGISTER_DISCREPANCY_TYPE(COrgName)
+    //REGISTER_DISCREPANCY_TYPE(CSeq_annot)
+    //REGISTER_DISCREPANCY_TYPE(CPubdesc)
+    //REGISTER_DISCREPANCY_TYPE(CAuth_list)
+    //REGISTER_DISCREPANCY_TYPE(CPerson_id)
     REGISTER_DISCREPANCY_TYPE(string)
+
+/// BIG FILE
+REGISTER_DISCREPANCY_TYPE(SEQUENCE)
+REGISTER_DISCREPANCY_TYPE(SEQ_SET)
+REGISTER_DISCREPANCY_TYPE(FEAT)
+REGISTER_DISCREPANCY_TYPE(DESC)
+REGISTER_DISCREPANCY_TYPE(BIOSRC)
+REGISTER_DISCREPANCY_TYPE(PUBDESC)
+REGISTER_DISCREPANCY_TYPE(AUTHORS)
+REGISTER_DISCREPANCY_TYPE(SUBMIT)
+REGISTER_DISCREPANCY_TYPE(STRING)
+
     return false;
 }
 
 
-bool CDiscrepancyContext::SetAutofixHook(const string& name, TAutofixHook func)
+void CDiscrepancyContext::Parse(const CSerialObject& root, const string& fname)
 {
-    string str = GetDiscrepancyCaseName(name);
-    if (str.empty()) {
-        return false; // no such test
-    }
-    if (m_Tests.find(str) == m_Tests.end()) {
-        return false;
-    }
-    return ((CDiscrepancyCore*)m_Tests[str].GetPointer())->SetHook(func);
-}
+    const CBioseq* bs = dynamic_cast<const CBioseq*>(&root);
+    const CBioseq_set* st = dynamic_cast<const CBioseq_set*>(&root);
+    const CSeq_entry* se = dynamic_cast<const CSeq_entry*>(&root);
+    const CSeq_submit* ss = dynamic_cast<const CSeq_submit*>(&root);
+//cout << "Parse bs: " << bs << " st: " << st << " se: " << se << " ss: " << ss << " " << "\n";
 
-
-void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
-{
-    size_t n = 0;
-    CTypesConstIterator::TIteratorContext ctx = it.GetContextData();
-    ITERATE (CTypesConstIterator::TIteratorContext, p, ctx) {
-        if (p->first.GetName() == "Bioseq-set") {
-            n++;
-        }
-    }
-    if (CType<CBioseq_set>::Match(it)) {
-        m_Bioseq_set_Stack.resize(n - 1);
-        m_Bioseq_set_Stack.push_back(CConstRef<CBioseq_set>(CType<CBioseq_set>::Get(it)));
+    if (!fname.empty()) {
+        m_RootNode.Reset(new CParseNode(eFile, 0));
+        m_RootNode->m_Ref->m_Text = fname;
     }
     else {
-        m_Bioseq_set_Stack.resize(n);
+        m_RootNode.Reset(new CParseNode(eNone, 0));
     }
+    m_NodeMap[m_RootNode->m_Ref] = &*m_RootNode;
+    m_CurrentNode.Reset(m_RootNode);
 
-}
-
-
-void CDiscrepancyContext::Parse(const CSerialObject& root)
-{
-    CTypesConstIterator i;
-    CType<CBioseq>::AddTo(i);
-    CType<CBioseq_set>::AddTo(i);
-    CType<CSubmit_block>::AddTo(i);
-    CType<CSeqdesc>::AddTo(i);
-    CType<CSeq_feat>::AddTo(i);
-    CType<CSeq_annot>::AddTo(i);
-    CType<CPub>::AddTo(i);
-    CType<CPub_equiv>::AddTo(i);
-#define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
-    ENABLE_DISCREPANCY_TYPE(CSeq_inst)
-    // ENABLE_DISCREPANCY_TYPE(CSeqdesc) - don't need!
-    // ENABLE_DISCREPANCY_TYPE(CSeq_feat) - don't need!
-    ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
-    // Don't ENABLE_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ), it is handled separately!
-    // Don't ENABLE_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ), it is handled separately!
-    // Don't ENABLE_DISCREPANCY_TYPE(COverlappingFeatures), it is handled separately!
-    ENABLE_DISCREPANCY_TYPE(CBioSource)
-    ENABLE_DISCREPANCY_TYPE(COrgName)
-    ENABLE_DISCREPANCY_TYPE(CRNA_ref)
-    ENABLE_DISCREPANCY_TYPE(CPubdesc)
-    ENABLE_DISCREPANCY_TYPE(CAuth_list)
-    ENABLE_DISCREPANCY_TYPE(CPerson_id)
-    // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
-    // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
-
-    m_DataMap.clear();
-    m_IsPseudoMap.clear();
-    m_GeneForFeatureMap.clear();
-    m_ProdForFeatureMap.clear();
-    m_Current_Submit_block.Reset();
-    m_Current_Submit_block_StringObj.Reset();
-    m_Current_Cit_sub_StringObj.Reset();
-
-    CSeqdesc_CI::TDescChoices desc_choices = {CSeqdesc::e_Source};
-
-    for (i = CConstBeginInfo(root); i; ++i) {
-        CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
-        if (CType<CBioseq>::Match(i)) {
-            m_Current_Bioseq_Handle = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
-            m_Current_Bioseq.Reset(CConstRef<CBioseq>(CType<CBioseq>::Get(i)));
-            m_Count_Bioseq++;
-            Update_Bioseq_set_Stack(i);
-            if (m_Current_Bioseq->GetInst().IsNa()) {
-                m_NaSeqs.push_back(CRef<CReportObj>(BioseqObj()));
-            }
-            if (m_Current_Submit_block_StringObj && m_Current_Submit_block_StringObj->Value.empty()) {
-                string label;
-                string citsub;
-                m_Current_Bioseq->GetLabel(&label, CBioseq::eContent);
-                citsub = "Cit-sub for Set containing " + label;
-                label = "Set containing " + label;
-                m_Current_Submit_block_StringObj->Value = label;
-                m_Current_Cit_sub_StringObj->Value = citsub;
-                m_Current_Submit_block_StringObj.Reset();
-                m_Current_Cit_sub_StringObj.Reset();
-            }
-            // CSeq_feat_BY_BIOSEQ cycle
-            CFeat_CI feat_ci(m_Current_Bioseq_Handle);
-            m_Feat_CI = !!feat_ci;
-            ClearFeatureList();
-            if (m_Enable_CSeq_feat_BY_BIOSEQ || m_Enable_COverlappingFeatures) {
-                m_Current_Seqdesc.Reset();
-                for (; feat_ci; ++feat_ci) {
-                    const CSeq_feat *feat = feat_ci->GetSeq_feat();
-                    CollectFeature(*feat);
-                    m_Current_Seq_feat.Reset(feat);
-                    m_Count_Seq_feat++;
-                    NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
-                        Call(**it, (const CSeq_feat_BY_BIOSEQ&)*feat);
-                    }
-                }
-            }
-            CSeqdesc_CI desc_ci(m_Current_Bioseq_Handle, desc_choices);
-            if (m_Enable_CSeqdesc_BY_BIOSEQ) {
-                for (; desc_ci; ++desc_ci) {
-                    const CSeqdesc& desc = *desc_ci;
-                    NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeqdesc_BY_BIOSEQ>* >, it, m_All_CSeqdesc_BY_BIOSEQ) {
-                        Call(**it, (const CSeqdesc_BY_BIOSEQ&)desc);
-                    }
-                }
-            }
-            // COverlappingFeatures
-            if (m_Enable_COverlappingFeatures) {
-                const COverlappingFeatures& obj = (const COverlappingFeatures&)*m_Current_Bioseq;
-                NON_CONST_ITERATE(vector<CDiscrepancyVisitor<COverlappingFeatures>* >, it, m_All_COverlappingFeatures) {
-                    Call(**it, obj);
-                }
-            }
-        }
-        else if (CType<CBioseq_set>::Match(i)) {
-            m_Current_Bioseq.Reset();
-            m_Count_Bioseq++;
-            Update_Bioseq_set_Stack(i);
-            if (m_Enable_CBioseq_set) {
-                const CBioseq_set & obj = *CType<CBioseq_set>::Get(i);
-                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CBioseq_set>* >, it, m_All_CBioseq_set) {
-                    Call(**it, obj);
-                }
-            }
-        }
-        else if (CType<CSeq_annot>::Match(i)) {
-            // Seq-annots are special because they are the only part of a
-            // Bioseq-set that could appear _after_ its descendents are
-            // traversed.
-            const CSeq_annot & obj = *CType<CSeq_annot>::Get(i);
-            const CSeq_annot_Handle annot_h = m_Scope->GetSeq_annotHandle(obj);
-            if (!annot_h.GetParentEntry().IsSeq()) {
-                m_Current_Bioseq.Reset();
-                m_Count_Bioseq++;
-                // if this annot is not on a Bioseq, then we need to check
-                // that the bioseq-set stack is correct in case
-                // we've left any bioseq-sets
-                Update_Bioseq_set_Stack(i);
-            }
-            if (m_Enable_CSeq_annot) {
-                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_annot>* >, it, m_All_CSeq_annot) {
-                    Call(**it, obj);
-                }
-            }
-        }
-        else if (CType<CSubmit_block>::Match(i)) {
-            m_Current_Submit_block.Reset(CType<CSubmit_block>::Get(i));
-            m_Current_Submit_block_StringObj.Reset(new CSimpleTypeObject<string>);
-            m_Current_Cit_sub_StringObj.Reset(new CSimpleTypeObject<string>);
-            m_Current_Pub.Reset();
-            m_Current_Pub_equiv.Reset();
-            const CSubmit_block & obj = *CType<CSubmit_block>::Get(i);
-            NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSubmit_block>* >, it, m_All_CSubmit_block) {
-                Call(**it, obj);
-            }
-        }
-        else if (CType<CPub>::Match(i)) {
-            m_Current_Pub.Reset(CType<CPub>::Get(i));
-            m_Count_Pub++;
-        }
-        else if (CType<CPub_equiv>::Match(i)) {
-            m_Current_Pub_equiv.Reset(CType<CPub_equiv>::Get(i));
-            m_Count_Pub_equiv++;
-        }
-        else if (CType<CSeqdesc>::Match(i)) {
-            m_Current_Seq_feat.Reset();
-            m_Current_Seqdesc.Reset(CType<CSeqdesc>::Get(i));
-            m_Count_Seqdesc++;
-            if (m_Enable_CSeqdesc) {
-                const CSeqdesc& obj = *CType<CSeqdesc>::Get(i);
-                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeqdesc>* >, it, m_All_CSeqdesc) {
-                    Call(**it, obj);
-                }
-            }
-        }
-        else if (CType<CSeq_feat>::Match(i)) {
-            //m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
-            m_Current_Seq_feat.Reset(CType<CSeq_feat>::Get(i));
-            m_Current_Seqdesc.Reset();
-            m_Count_Seq_feat++;
-            if (m_Enable_CSeq_feat) {
-                const CSeq_feat& obj = *CType<CSeq_feat>::Get(i);
-                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_feat>* >, it, m_All_CSeq_feat) {
-                    Call(**it, obj);
-                }
-            }
-        }
-#define HANDLE_DISCREPANCY_TYPE(type) \
-        else if (m_Enable_##type && CType<type>::Match(i)) {                                    \
-            const type& obj = *CType<type>::Get(i);                                             \
-            NON_CONST_ITERATE (vector<CDiscrepancyVisitor<type>* >, it, m_All_##type) {         \
-                Call(**it, obj);                                                                \
-            }                                                                                   \
-        }
-        HANDLE_DISCREPANCY_TYPE(CSeq_inst)  // no semicolon!
-        HANDLE_DISCREPANCY_TYPE(CSeqFeatData)
-        HANDLE_DISCREPANCY_TYPE(CBioSource)
-        HANDLE_DISCREPANCY_TYPE(COrgName)
-        HANDLE_DISCREPANCY_TYPE(CRNA_ref)
-        HANDLE_DISCREPANCY_TYPE(CPubdesc)
-        HANDLE_DISCREPANCY_TYPE(CAuth_list)
-        HANDLE_DISCREPANCY_TYPE(CPerson_id)
+    if (bs) {
+        ParseObject(*bs);
     }
+    else if (st) {
+        ParseObject(*st);
+    }
+    else if (se) {
+        ParseObject(*se);
+    }
+    else if (ss) {
+        ParseObject(*ss);
+    }
+    ParseAll(*m_RootNode);
 }
 
 
@@ -617,15 +447,15 @@ unsigned CDiscrepancyContext::Summarize()
 }
 
 
-void CDiscrepancyContext::AutofixAll()
-{
-    for (auto& tt : m_Tests) {
-        const TReportItemList& list = tt.second->GetReport();
-        for (auto& it : list) {
-            it->Autofix(*m_Scope);
-        }
-    }
-}
+//void CDiscrepancyContext::AutofixAll()
+//{
+//    for (auto& tt : m_Tests) {
+//        const TReportItemList& list = tt.second->GetReport();
+//        for (auto& it : list) {
+//            it->Autofix(*m_Scope);
+//        }
+//    }
+//}
 
 
 void CDiscrepancyContext::TestString(const string& str)
@@ -691,6 +521,175 @@ TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all)
         }
     }
     return out;
+}
+
+
+void CDiscrepancyContext::RunTests()
+{
+    SEQUENCE dummy_seq;
+    SEQ_SET dummy_set;
+    FEAT dummy_feat;
+    DESC dummy_desc;
+    BIOSRC dummy_biosrc;
+    PUBDESC dummy_pubdesc;
+    AUTHORS dummy_authors;
+    SUBMIT dummy_submit;
+    STRING dummy_string;
+    if (m_CurrentNode->m_Type == eBioseq) {
+        ClearFeatureList();
+        for (auto& feat : GetAllFeat()) {
+            CollectFeature(feat);
+        }
+        for (auto test : m_All_SEQUENCE) {
+            Call(*test, dummy_seq);
+        }
+        for (auto test : m_All_FEAT) {
+            Call(*test, dummy_feat);
+        }
+        for (auto test : m_All_DESC) {
+            Call(*test, dummy_desc);
+        }
+        if (!m_CurrentNode->m_Pubdescs.empty()) {
+            for (auto test : m_All_PUBDESC) {
+                Call(*test, dummy_pubdesc);
+            }
+            for (auto test : m_All_AUTHORS) {
+                Call(*test, dummy_authors);
+            }
+        }
+        if (m_CurrentNode->m_Biosource) {
+            for (auto test : m_All_BIOSRC) {
+                Call(*test, dummy_biosrc);
+            }
+        }
+    }
+    else if (IsSeqSet(m_CurrentNode->m_Type)) {
+        for (auto test : m_All_SEQ_SET) {
+            Call(*test, dummy_set);
+        }
+        for (auto test : m_All_FEAT) {
+            Call(*test, dummy_feat);
+        }
+        for (auto test : m_All_DESC) {
+            Call(*test, dummy_desc);
+        }
+        if (!m_CurrentNode->m_Pubdescs.empty()) {
+            for (auto test : m_All_PUBDESC) {
+                Call(*test, dummy_pubdesc);
+            }
+            for (auto test : m_All_AUTHORS) {
+                Call(*test, dummy_authors);
+            }
+        }
+        if (m_CurrentNode->m_Biosource) {
+            for (auto test : m_All_BIOSRC) {
+                Call(*test, dummy_biosrc);
+            }
+        }
+    }
+    else if (m_CurrentNode->m_Type == eSubmit) {
+        for (auto test : m_All_SUBMIT) {
+            Call(*test, dummy_submit);
+        }
+        if (!m_CurrentNode->m_Authors.empty()) {
+            for (auto test : m_All_AUTHORS) {
+                Call(*test, dummy_authors);
+            }
+        }
+    }
+    else if (m_CurrentNode->m_Type == eString) {
+        for (auto test : m_All_STRING) {
+            Call(*test, dummy_string);
+        }
+    }
+    else if (m_CurrentNode->m_Type == eFile) {
+        return;
+    }
+    else {
+        cout << "Teste for " << TypeName(m_CurrentNode->m_Type) << " are not yet implemented...\n";
+    }
+}
+
+
+string CDiscrepancyContext::CRefNode::GetText() const
+{
+    if (m_Type == eBioseq) {
+        size_t brk = m_Text.find('\n');
+        return brk == string::npos ? m_Text : m_Text.substr(0, brk) + " " + m_Text.substr(brk + 1);
+    }
+    else if (IsSeqSet(m_Type)) {
+        switch (m_Type) {
+            case eSeqSet_NucProt:
+                return "np|" + (m_Text.empty() ? "(EMPTY BIOSEQ-SET)" : m_Text);
+            case eSeqSet_SegSet:
+                return "ss|" + (m_Text.empty() ? "(EMPTY BIOSEQ-SET)" : m_Text);
+            default:
+                return m_Text.empty() ? "BioseqSet" : "Set containing " + m_Text;
+        }
+    }
+    else if (m_Type == eSubmit) {
+        return m_Text.empty() ? "Cit-sub" : "Cit-sub for " + m_Text;
+    }
+    else if (m_Type == eSeqDesc) {
+        string label = GetBioseqLabel();
+        return label.empty() ? m_Text : label + ":" + m_Text;
+    }
+    else if (m_Type == eSeqFeat) {
+        return m_Text;
+    }
+    else if (m_Type == eString) {
+        return m_Text;
+    }
+    return CDiscrepancyContext::TypeName(m_Type) + " - coming soon...";
+}
+
+
+string CDiscrepancyContext::CRefNode::GetBioseqLabel() const
+{
+    for (const CRefNode* node = this; node; node = node->m_Parent) {
+        if (node->m_Type == eBioseq) {
+            size_t brk = node->m_Text.find('\n');
+            return brk == string::npos ? kEmptyStr : node->m_Text.substr(0, brk);
+        }
+        if (IsSeqSet(node->m_Type) || node->m_Type == eSubmit) {
+            return node->m_Text;
+        }
+    }
+    return kEmptyStr;
+}
+
+
+bool CDiscrepancyContext::CompareRefs(CRef<CReportObj> a, CRef<CReportObj> b) {
+    vector<const CRefNode*> A, B;
+    for (const CRefNode* node = static_cast<CDiscrepancyObject&>(*a).m_Ref; node; node = node->m_Parent) {
+        A.push_back(node);
+    }
+    reverse(A.begin(), A.end());
+    for (const CRefNode* node = static_cast<CDiscrepancyObject&>(*b).m_Ref; node; node = node->m_Parent) {
+        B.push_back(node);
+    }
+    reverse(B.begin(), B.end());
+    size_t n = min(A.size(), B.size());
+    for (size_t i = 0; i < n; i++) {
+        if (A[i] != B[i]) {
+            if (A[i]->m_Type == eSeqFeat && B[i]->m_Type != eSeqFeat) {
+                return true;
+            }
+            if (B[i]->m_Type == eSeqFeat && A[i]->m_Type != eSeqFeat) {
+                return false;
+            }
+            if (A[i]->m_Type == eSeqDesc && B[i]->m_Type != eSeqDesc) {
+                return true;
+            }
+            if (B[i]->m_Type == eSeqDesc && A[i]->m_Type != eSeqDesc) {
+                return false;
+            }
+            if (A[i]->m_Index != B[i]->m_Index) {
+                return A[i]->m_Index < B[i]->m_Index;
+            }
+        }
+    }
+    return A.size() == B.size() ? &*a < &*b : A.size() < B.size();
 }
 
 

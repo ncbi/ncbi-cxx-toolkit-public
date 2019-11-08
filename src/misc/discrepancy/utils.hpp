@@ -46,7 +46,7 @@ bool IsAllCaps(const string& str);
 bool IsAllLowerCase(const string& str);
 bool IsAllPunctuation(const string& str);
 string GetTwoFieldSubfield(const string& str, unsigned subfield);
-bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<objects::CBioseq_set> > &bioseq_set_stack);
+//bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<objects::CBioseq_set> > &bioseq_set_stack);
 void AddComment(objects::CSeq_feat& feat, const string& comment);
 string GetProductName(const objects::CSeq_feat& cds, objects::CScope& scope);
 
@@ -55,8 +55,6 @@ template <class T> void GetStringsFromObject(const T& obj, vector <string>& strs
     CTypesConstIterator it(CStdTypeInfo<string>::GetTypeInfo(), CStdTypeInfo<utf8_string_type>::GetTypeInfo());
     for (it = ConstBegin(obj);  it;  ++it) strs.push_back(*static_cast<const string*>(it.GetFoundPtr()));
 }
-
-void FindNRuns(vector<CRange<TSeqPos> >& runs, const objects::CSeq_data& seq_data, const TSeqPos start_pos, const TSeqPos len, const TSeqPos min_run_length);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

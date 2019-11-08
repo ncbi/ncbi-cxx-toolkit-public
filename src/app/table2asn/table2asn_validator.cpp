@@ -204,19 +204,21 @@ void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariot
     m_discrepancy->AddTests(names);
 
     CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));
-    m_discrepancy->SetFile(nm.GetName());
     m_discrepancy->SetLineage(lineage);
-    m_discrepancy->SetEucariote(eucariote);
-    m_discrepancy->Parse(obj);
+    //m_discrepancy->SetEucariote(eucariote);
+    m_discrepancy->Parse(obj, nm.GetName());
 }
 
 void CTable2AsnValidator::ReportDiscrepancies()
 {
     if (m_discrepancy.NotEmpty())
     {
-        m_discrepancy->Summarize();        
-        bool print_fatal = !m_context->m_master_genome_flag.empty();
-        m_discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_base_name), print_fatal, false, true);
+        m_discrepancy->Summarize();
+        unsigned short output_flags = NDiscrepancy::CDiscrepancySet::eOutput_Files;
+        if (!m_context->m_master_genome_flag.empty()) {
+            output_flags |= NDiscrepancy::CDiscrepancySet::eOutput_Fatal;
+        }
+        m_discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_base_name), output_flags);
     }
 }
 

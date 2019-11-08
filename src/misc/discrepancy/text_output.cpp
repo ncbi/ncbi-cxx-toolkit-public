@@ -59,8 +59,10 @@ static inline string deunderscore(const string s)
 }
 
 
-static void RecursiveText(ostream& out, const TReportItemList& list, const vector<string>& fnames, bool fatal, bool ext)
+static void RecursiveText(ostream& out, const TReportItemList& list, unsigned short flags)
 {
+    bool ext = flags & CDiscrepancySet::eOutput_Ext;
+    bool fatal = flags & CDiscrepancySet::eOutput_Fatal;
     for (auto it: list) {
         if (it->IsExtended() && !ext) {
             continue;
@@ -71,13 +73,16 @@ static void RecursiveText(ostream& out, const TReportItemList& list, const vecto
         out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << "\n";
         TReportItemList subs = it->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
-            RecursiveText(out, subs, fnames, fatal, ext);
+            RecursiveText(out, subs, flags);
         }
         else {
             TReportObjectList det = it->GetDetails();
             for (auto obj: det) {
-                if (!fnames.empty()) {
-                    out << fnames[obj->GetFileID()] << ":";
+                if (flags & CDiscrepancySet::eOutput_Files) {
+                    out << obj->GetPath() << ":";
+                }
+                if (obj->IsFixed()) {
+                    out << "[FIXED] ";
                 }
                 out << obj->GetText() << "\n";
             }
@@ -86,8 +91,9 @@ static void RecursiveText(ostream& out, const TReportItemList& list, const vecto
 }
 
 
-static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fatal, size_t level = 0)
+static void RecursiveSummary(ostream& out, const TReportItemList& list, unsigned short flags, size_t level = 0)
 {
+    bool fatal = flags & CDiscrepancySet::eOutput_Fatal;
     for (auto it: list) {
         if (!level) {
             if (fatal && ShowFatal(*it)) {
@@ -107,7 +113,7 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fat
         else {
             continue;
         }
-        RecursiveSummary(out, it->GetSubitems(), fatal, level + 1);
+        RecursiveSummary(out, it->GetSubitems(), flags, level + 1);
     }
 }
 
@@ -139,7 +145,7 @@ static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, siz
 }
 
 
-void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, bool ext, char group)
+void CDiscrepancyContext::OutputText(ostream& out, unsigned short flags, char group)
 {
     switch (group) {
         case 'b':
@@ -161,17 +167,17 @@ void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, boo
         m_Group0 = order[0].Collect(m_Tests, false);
         m_Group1 = order[1].Collect(m_Tests, true);
     }
-    RecursiveSummary(out, m_Group0, fatal);
-    if (fatal) {
-        RecursiveFatalSummary(out, m_Group1);
+    RecursiveSummary(out, m_Group0, flags);
+    if (flags & eOutput_Fatal) {
+        RecursiveFatalSummary(out, m_Group1, flags);
     }
-    RecursiveSummary(out, m_Group1, fatal);
+    RecursiveSummary(out, m_Group1, flags);
 
-    if (summary) return;
+    if (flags & eOutput_Summary) return;
     
     out << "\nDetailed Report\n\n";
-    RecursiveText(out, m_Group0, m_Files, fatal, ext);
-    RecursiveText(out, m_Group1, m_Files, fatal, ext);
+    RecursiveText(out, m_Group0, flags);
+    RecursiveText(out, m_Group1, flags);
 }
 
 
@@ -187,8 +193,9 @@ static void Indent(ostream& out, size_t indent)
 
 static string SevLevel[] = {"INFO", "WARNING", "FATAL"};
 
-static void RecursiveXML(ostream& out, const TReportItemList& list, const vector<string>& fnames, size_t indent, bool ext)
+static void RecursiveXML(ostream& out, const TReportItemList& list, unsigned short flags, size_t indent)
 {
+    bool ext = flags & CDiscrepancySet::eOutput_Ext;
     for (auto it: list) {
         if (it->IsExtended() && !ext) {
             continue;
@@ -209,7 +216,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, const vector
         indent += XML_INDENT;
         TReportItemList subs = it->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
-            RecursiveXML(out, subs, fnames, indent, ext);
+            RecursiveXML(out, subs, flags, indent);
         }
         else {
             for (auto obj: it->GetDetails()) {
@@ -235,8 +242,8 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, const vector
                         out << "\"string\"";
                         break;
                 }
-                if (!fnames.empty()) {
-                    out << " file=\"" << NStr::XmlEncode(fnames[obj->GetFileID()]) << "\"";
+                if (flags & CDiscrepancySet::eOutput_Files) {
+                    out << " file=\"" << NStr::XmlEncode(obj->GetPath()) << "\"";
                 }
                 if (!obj->GetFeatureType().empty()) {
                     out << " feature_type=\"" << NStr::XmlEncode(obj->GetFeatureType()) << "\"";
@@ -261,7 +268,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, const vector
 }
 
 
-void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
+void CDiscrepancyContext::OutputXML(ostream& out, unsigned short flags)
 {
     const TDiscrepancyCaseMap& tests = GetTests();
     out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -282,7 +289,7 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
         TReportObjectList objs = tst.second->GetObjects();
         Indent(out, XML_INDENT);
         out << "<test name=\"" << deunderscore(tst.first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst.first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
-        RecursiveXML(out, rep, m_Files, XML_INDENT * 2, ext);
+        RecursiveXML(out, rep, flags, XML_INDENT * 2);
         Indent(out, XML_INDENT);
         out << "</test>\n";
     }

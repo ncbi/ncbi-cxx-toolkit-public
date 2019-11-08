@@ -64,15 +64,16 @@ static bool Has4Numbers(const string& s)
 };
 
 
-DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart, "Bad gene name")
+DISCREPANCY_CASE(BAD_GENE_NAME, FEAT, eDisc | eSubmitter | eSmart, "Bad gene name")
 {
-    if (!obj.IsGene() || !obj.GetGene().CanGetLocus()) {
-        return;
-    }
-    string locus = obj.GetGene().GetLocus();
-    string word;
-    if (locus.size() > 10 || Has4Numbers(locus) || HasBadWord(locus, word)) {
-        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] [(]" + word].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true));
+    for (auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().IsGene() && feat.GetData().GetGene().CanGetLocus()) {
+            string locus = feat.GetData().GetGene().GetLocus();
+            string word;
+            if (locus.size() > 10 || Has4Numbers(locus) || HasBadWord(locus, word)) {
+                m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] [(]" + word].Add(*context.SeqFeatObjRef(feat, &feat));
+            }
+        }
     }
 }
 
@@ -83,52 +84,36 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_NAME)
 }
 
 
-static bool MoveLocusToNote(const CSeq_feat* sf, CScope& scope)
-{
-    try {
-        CRef<CSeq_feat> new_feat(new CSeq_feat());
-        new_feat->Assign(*sf);
-        AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
-        new_feat->SetData().SetGene().ResetLocus();
-        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-        feh.Replace(*new_feat);
-    }
-    catch (...) {
-        return false;
-    }
-    return true;
-}
-
-
 DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-            if (sf && MoveLocusToNote(sf, scope)) {
-                n++;
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-            }
-        }
-    }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("BAD_GENE_NAME: [n] gene name[s] fixed", n) : 0);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(*sf);
+    AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
+    new_feat->SetData().SetGene().ResetLocus();
+    context.ReplaceSeq_feat(*obj, *sf, *new_feat);
+    obj->SetFixed();
+    return CRef<CAutofixReport>(new CAutofixReport("BAD_GENE_NAME: [n] gene name[s] fixed", 1));
 }
 
 
 // BAD_BACTERIAL_GENE_NAME
-DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Bad bacterial gene name")
+
+DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Bad bacterial gene name")
 {
-    if (!obj.IsGene() || !obj.GetGene().CanGetLocus() || context.HasLineage("Eukaryota") || context.IsViral()) {
-        return;
-    }
-    if (!context.GetCurrentBiosource() || (!context.GetCurrentBiosource()->IsSetLineage() && context.GetLineage().empty())) {
-        return;
-    }
-    string locus = obj.GetGene().GetLocus();
-    if (!isalpha(locus[0]) || !islower(locus[0])) {
-        m_Objs["[n] bacterial gene[s] [does] not start with lowercase letter"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)); // maybe false
+    const CSeqdesc* biosrc = context.GetBiosource();
+    if (biosrc) {
+        const CBioSource* src = &biosrc->GetSource();
+        if ((src->IsSetLineage() || !context.GetLineage().empty()) && !context.HasLineage(src, "Eukaryota") && !context.IsViral(src)) {
+            for (auto& feat : context.GetFeat()) {
+                if (feat.IsSetData() && feat.GetData().IsGene() && feat.GetData().GetGene().CanGetLocus()) {
+                    string locus = feat.GetData().GetGene().GetLocus();
+                    if (!isalpha(locus[0]) || !islower(locus[0])) {
+                        m_Objs["[n] bacterial gene[s] [does] not start with lowercase letter"].Add(*context.SeqFeatObjRef(feat, &feat));
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -141,36 +126,33 @@ DISCREPANCY_SUMMARIZE(BAD_BACTERIAL_GENE_NAME)
 
 DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-            if (sf && MoveLocusToNote(sf, scope)) {
-                n++;
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-            }
-        }
-    }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("BAD_BACTERIAL_GENE_NAME: [n] bacterial gene name[s] fixed", n) : 0);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(*sf);
+    AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
+    new_feat->SetData().SetGene().ResetLocus();
+    context.ReplaceSeq_feat(*obj, *sf, *new_feat);
+    obj->SetFixed();
+    return CRef<CAutofixReport>(new CAutofixReport("BAD_BACTERIAL_GENE_NAME: [n] bacterial gene name[s] fixed", 1));
 }
 
 
 // EC_NUMBER_ON_UNKNOWN_PROTEIN
-DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc | eSubmitter | eSmart | eFatal, "EC number on unknown protein")
+
+DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, FEAT, eDisc | eSubmitter | eSmart | eFatal, "EC number on unknown protein")
 {
-    if (!obj.IsProt() || !obj.GetProt().CanGetName() || !obj.GetProt().CanGetEc() || obj.GetProt().GetEc().empty()) {
-        return;
-    }
-    const list <string>& names = obj.GetProt().GetName();
-    if (names.empty()) {
-        return;
-    }
-    string str = *names.begin();
-    NStr::ToLower(str);
-    //if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != string::npos || NStr::FindNoCase(*names.begin(), "unknown protein") != string::npos) {
-    if (str == "hypothetical protein" || str == "unknown protein") {
-        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)).Fatal();
+    for (auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().IsProt() && feat.GetData().GetProt().CanGetName() && feat.GetData().GetProt().CanGetEc() && !feat.GetData().GetProt().GetEc().empty()) {
+            const list <string>& names = feat.GetData().GetProt().GetName();
+            if (!names.empty()) {
+                string str = *names.begin();
+                NStr::ToLower(str);
+                //if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != string::npos || NStr::FindNoCase(*names.begin(), "unknown protein") != string::npos) {
+                if (str == "hypothetical protein" || str == "unknown protein") {
+                    m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.SeqFeatObjRef(feat, &feat)).Fatal();
+                }
+            }
+        }
     }
 }
 
@@ -183,52 +165,39 @@ DISCREPANCY_SUMMARIZE(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 
 DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-            if (sf) {
-                CRef<CSeq_feat> new_feat(new CSeq_feat());
-                new_feat->Assign(*sf);
-                new_feat->SetData().SetProt().ResetEc();
-                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-                feh.Replace(*new_feat);
-                n++;
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-            }
-        }
-    }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("EC_NUMBER_ON_UNKNOWN_PROTEIN: removed [n] EC number[s] from unknown protein[s]", n) : 0);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(*sf);
+    new_feat->SetData().SetProt().ResetEc();
+    context.ReplaceSeq_feat(*obj, *sf, *new_feat);
+    obj->SetFixed();
+    return CRef<CAutofixReport>(new CAutofixReport("EC_NUMBER_ON_UNKNOWN_PROTEIN: removed [n] EC number[s] from unknown protein[s]", 1));
 }
 
 
 // SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME
-DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart | eFatal, "Hypothetical CDS with gene names")
+
+DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, FEAT, eDisc | eSubmitter | eSmart | eFatal, "Hypothetical CDS with gene names")
 {
-    if (!obj.IsCdregion() || !context.GetCurrentSeq_feat()->CanGetProduct()) {
-        return;
-    }
-    //CConstRef<CSeq_feat> gene = sequence::GetBestGeneForCds(*context.GetCurrentSeq_feat(), context.GetScope());
-    CConstRef<CSeq_feat> gene(context.GetGeneForFeature(*context.GetCurrentSeq_feat()));
-    if (gene.IsNull() || !gene->GetData().GetGene().CanGetLocus() || gene->GetData().GetGene().GetLocus().empty()) {
-        return;
-    }
-    CBioseq_Handle bioseq = sequence::GetBioseqFromSeqLoc(context.GetCurrentSeq_feat()->GetProduct(), context.GetScope());
-    if (!bioseq) {
-        return;
-    }
-    CFeat_CI feat_it(bioseq, CSeqFeatData :: e_Prot);
-    if (!feat_it) {
-        return;
-    }
-    const CProt_ref& prot = feat_it->GetOriginalFeature().GetData().GetProt();
-    if (!prot.CanGetName()) {
-        return;
-    }
-    auto& names = prot.GetName();
-    if (!names.empty() && NStr::FindNoCase(names.front(), "hypothetical protein") != string::npos) {
-        m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true, (CObject*)&*gene));
+    for (auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.CanGetProduct()) {
+            const CSeq_feat* gene = context.GetGeneForFeature(feat);
+            if (gene && gene->GetData().GetGene().CanGetLocus() && !gene->GetData().GetGene().GetLocus().empty()) {
+                CBioseq_Handle bioseq = sequence::GetBioseqFromSeqLoc(feat.GetProduct(), context.GetScope());
+                if (bioseq) {
+                    CFeat_CI feat_it(bioseq, CSeqFeatData::e_Prot); // consider different implementation
+                    if (feat_it) {
+                        const CProt_ref& prot = feat_it->GetOriginalFeature().GetData().GetProt();
+                        if (prot.CanGetName()) {
+                            auto& names = prot.GetName();
+                            if (!names.empty() && NStr::FindNoCase(names.front(), "hypothetical protein") != string::npos) {
+                                m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.SeqFeatObjRef(feat, gene));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -241,19 +210,14 @@ DISCREPANCY_SUMMARIZE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
 
 DISCREPANCY_AUTOFIX(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetMoreInfo().GetPointer());
-            if (sf && MoveLocusToNote(sf, scope)) {
-                n++;
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-            }
-        }
-    }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME: [n] hypothetical CDS fixed", n) : 0);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj, true));
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(*sf);
+    AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
+    new_feat->SetData().SetGene().ResetLocus();
+    context.ReplaceSeq_feat(*obj, *sf, *new_feat, true);
+    obj->SetFixed();
+    return CRef<CAutofixReport>(new CAutofixReport("SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME: [n] hypothetical CDS fixed", 1));
 }
 
 
@@ -263,14 +227,14 @@ const string kDuplicateLocusTagsStart = "[n] gene[s] [has] locus tag ";
 const string kDuplicateAdjacent = "[n] gene[s] [is] adjacent to another gene with the same locus tag.";
 
 
-DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, COverlappingFeatures, eDisc | eOncaller | eSubmitter | eSmart, "Duplicate Locus Tags")
+DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart, "Duplicate Locus Tags")
 {
-    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    auto& genes = context.FeatGenes();
     string last_locus_tag = kEmptyStr;
     CRef<CDiscrepancyObject> last_disc_obj;
     for (auto gene: genes) {
         if (gene->GetData().GetGene().IsSetLocus_tag()) {
-            CRef<CDiscrepancyObject> this_disc_obj(context.DiscrObj(*gene));
+            CRef<CDiscrepancyObject> this_disc_obj(context.SeqFeatObjRef(*gene));
             const string& this_locus_tag = gene->GetData().GetGene().GetLocus_tag();
             m_Objs[kEmptyStr][this_locus_tag].Add(*this_disc_obj);
             if (last_disc_obj && last_locus_tag == this_locus_tag) {

@@ -105,13 +105,74 @@ static void AddObjToQualMap(const string& qual, const string& val, CReportObj& o
     node[qual][val].Add(obj);
 }
 
-DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Some animals are more equal than others...")
+DISCREPANCY_CASE(SOURCE_QUALS, BIOSRC, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Some animals are more equal than others...")
 {
+    for (auto biosrc : context.GetBiosources()) {
+        CRef<CDiscrepancyObject> disc_obj(context.BiosourceObjRef(*biosrc));
+        m_Objs["all"].Add(*disc_obj);
+        if (biosrc->CanGetGenome() && biosrc->GetGenome() != CBioSource::eGenome_unknown) {
+            AddObjToQualMap("location", context.GetGenomeName(biosrc->GetGenome()), *disc_obj, m_Objs);
+        }
+        if (biosrc->CanGetOrg()) {
+            const COrg_ref& org_ref = biosrc->GetOrg();
+            if (org_ref.CanGetTaxname()) {
+                AddObjToQualMap("taxname", org_ref.GetTaxname(), *disc_obj, m_Objs);
+            }
+            if (org_ref.GetTaxId()) {
+                AddObjToQualMap("taxid", NStr::IntToString(org_ref.GetTaxId()), *disc_obj, m_Objs);
+            }
+        }
+        if (biosrc->CanGetSubtype()) {
+            for (auto& it : biosrc->GetSubtype()) {
+                const CSubSource::TSubtype& subtype = it->GetSubtype();
+                if (it->CanGetName()) {
+                    const string& qual = subtype == CSubSource::eSubtype_other ? "note-subsrc" : it->GetSubtypeName(subtype, CSubSource::eVocabulary_raw);
+                    AddObjToQualMap(qual, it->GetName(), *disc_obj, m_Objs);
+                }
+            }
+        }
+        if (biosrc->IsSetOrgMod()) {
+            for (auto& it : biosrc->GetOrgname().GetMod()) {
+                const COrgMod::TSubtype& subtype = it->GetSubtype();
+                if (subtype != COrgMod::eSubtype_old_name && subtype != COrgMod::eSubtype_old_lineage && subtype != COrgMod::eSubtype_gb_acronym && subtype != COrgMod::eSubtype_gb_anamorph && subtype != COrgMod::eSubtype_gb_synonym) {
+                    const string& qual = subtype == COrgMod::eSubtype_other ? "note-orgmod" : subtype == COrgMod::eSubtype_nat_host ? "host" : it->GetSubtypeName(subtype, COrgMod::eVocabulary_raw);
+                    AddObjToQualMap(qual, it->GetSubname(), *disc_obj, m_Objs);
+                }
+            }
+        }
+        if (biosrc->CanGetPcr_primers()) {
+            for (auto& it : biosrc->GetPcr_primers().Get()) {
+                if (it->CanGetForward()) {
+                    for (auto& pr : it->GetForward().Get()) {
+                        if (pr->CanGetName()) {
+                            AddObjToQualMap("fwd-primer-name", pr->GetName(), *disc_obj, m_Objs);
+                        }
+                        if (pr->CanGetSeq()) {
+                            AddObjToQualMap("fwd-primer-seq", pr->GetSeq(), *disc_obj, m_Objs);
+                        }
+                    }
+                }
+                if (it->CanGetReverse()) {
+                    for (auto& pr : it->GetReverse().Get()) {
+                        if (pr->CanGetName()) {
+                            AddObjToQualMap("rev-primer-name", pr->GetName(), *disc_obj, m_Objs);
+                        }
+                        if (pr->CanGetSeq()) {
+                            AddObjToQualMap("rev-primer-seq", pr->GetSeq(), *disc_obj, m_Objs);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+#if 0
     CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
     if (desc.IsNull()) {
         return;
     }
     CRef<CDiscrepancyObject> disc_obj(context.SeqdescObj(*desc));
+
     m_Objs["all"].Add(*disc_obj);
     if (obj.CanGetGenome() && obj.GetGenome() != CBioSource::eGenome_unknown) {
 
@@ -176,6 +237,7 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSma
             }
         }
     }
+#endif
 }
 
 
@@ -193,6 +255,7 @@ typedef map<const CReportObj*, CRef<CReportObj> > TReportObjPtrMap;
 typedef map<string, vector<CRef<CReportObj> > > TStringObjVectorMap;
 typedef map<string, TStringObjVectorMap > TStringStringObjVectorMap;
 
+
 static bool GetSubtypeStr(const string& qual, const string& val, const TReportObjectList& objs, string& subtype)
 {
     bool unique = objs.size() == 1;
@@ -206,6 +269,7 @@ static bool GetSubtypeStr(const string& qual, const string& val, const TReportOb
     return unique;
 }
 
+
 static void AddObjectToReport(const string& subtype, const string& qual, const string& val, bool unique, CReportObj& obj, CReportNode& report)
 {
     if (unique) {
@@ -216,55 +280,51 @@ static void AddObjectToReport(const string& subtype, const string& qual, const s
     }
 }
 
+
 static void AddObjsToReport(const string& diagnosis, CReportNode::TNodeMap& all_objs, const string& qual, CReportNode& report)
 {
-    NON_CONST_ITERATE(CReportNode::TNodeMap, objs, all_objs) {
-
+    for (auto& objs : all_objs) {
         string subtype;
-        bool unique = GetSubtypeStr(qual, objs->first, objs->second->GetObjects(), subtype);
-
-        ITERATE(TReportObjectList, obj, objs->second->GetObjects()) {
-
-            AddObjectToReport(subtype, qual, objs->first, unique, obj->GetNCObject(), report[diagnosis]);
+        bool unique = GetSubtypeStr(qual, objs.first, objs.second->GetObjects(), subtype);
+        for (auto& obj : objs.second->GetObjects()) {
+            AddObjectToReport(subtype, qual, objs.first, unique, obj.GetNCObject(), report[diagnosis]);
         }
     }
 }
+
 
 static void AddObjsToReport(const string& diagnosis, const TStringObjVectorMap& all_objs, const string& qual, CReportNode& report)
 {
-    ITERATE(TStringObjVectorMap, objs, all_objs) {
-
+    for (auto& objs : all_objs) {
         string subtype;
-        bool unique = GetSubtypeStr(qual, objs->first, objs->second, subtype);
-
-        ITERATE(TReportObjectList, obj, objs->second) {
-
-            AddObjectToReport(subtype, qual, objs->first, unique, obj->GetNCObject(), report[diagnosis]);
+        bool unique = GetSubtypeStr(qual, objs.first, objs.second, subtype);
+        for (auto& obj : objs.second) {
+            AddObjectToReport(subtype, qual, objs.first, unique, obj.GetNCObject(), report[diagnosis]);
         }
     }
 }
+
 
 static size_t GetNumOfObjects(CReportNode& root)
 {
     size_t ret = root.GetObjects().size();
-
-    NON_CONST_ITERATE(CReportNode::TNodeMap, child, root.GetMap()) {
-        ret += GetNumOfObjects(*child->second);
+    for (auto& child : root.GetMap()) {
+        ret += GetNumOfObjects(*child.second);
     }
-
     return ret;
 }
+
 
 static size_t GetSortOrderId(const string& subitem, CReportNode& node)
 {
     static const size_t CEILING_VALUE = 1000000000;
-
     size_t ret = NStr::Find(subitem, "[has] missing") != NPOS ||
                  NStr::Find(subitem, "isolate") != NPOS ?
                  GetNumOfObjects(node) : CEILING_VALUE - GetNumOfObjects(node);
 
     return ret;
 }
+
 
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
@@ -401,9 +461,9 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 
 static void SetSubsource(CRef<CBioSource> bs, CSubSource::ESubtype st, const string& s, size_t& added, size_t& changed)
 {
-    ITERATE (CBioSource::TSubtype, it, bs->GetSubtype()) {
-        if ((*it)->GetSubtype() == st) {
-            CRef<CSubSource> ss(*it);
+    for (auto& it : bs->GetSubtype()) {
+        if (it->GetSubtype() == st) {
+            CRef<CSubSource> ss(it);
             if (ss->GetName() != s) {
                 ss->SetName(s);
                 changed++;
@@ -418,9 +478,9 @@ static void SetSubsource(CRef<CBioSource> bs, CSubSource::ESubtype st, const str
 
 static void SetOrgMod(CRef<CBioSource> bs, COrgMod::ESubtype st, const string& s, size_t& added, size_t& changed)
 {
-    ITERATE (COrgName::TMod, it, bs->GetOrgname().GetMod()) {
-        if ((*it)->GetSubtype() == st) {
-            CRef<COrgMod> ss(*it);
+    for (auto& it : bs->GetOrgname().GetMod()) {
+        if (it->GetSubtype() == st) {
+            CRef<COrgMod> ss(it);
             if (ss->GetSubname() != s) {
                 ss->SetSubname(s);
                 changed++;
@@ -435,15 +495,53 @@ static void SetOrgMod(CRef<CBioSource> bs, COrgMod::ESubtype st, const string& s
 
 DISCREPANCY_AUTOFIX(SOURCE_QUALS)
 {
+    CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(context.FindObject(*obj)));
+    CRef<CBioSource> bs(&desc->SetSource());
+    auto fix = dynamic_cast<const CSourseQualsAutofixData*>(obj->GetMoreInfo().GetPointer());
+    string qual = fix->m_Qualifier;
+    string val = fix->m_Value;
+    size_t added = 0;
+    size_t changed = 0;
+
+    if (qual == "host") {
+        SetOrgMod(bs, COrgMod::eSubtype_nat_host, val, added, changed);
+        obj->SetFixed();
+    }
+    else if (qual == "strain") {
+        SetOrgMod(bs, COrgMod::eSubtype_strain, val, added, changed);
+        obj->SetFixed();
+    }
+    else if (qual == "country") {
+        SetSubsource(bs, CSubSource::eSubtype_country, val, added, changed);
+        obj->SetFixed();
+    }
+    else if (qual == "isolation-source") {
+        SetSubsource(bs, CSubSource::eSubtype_isolation_source, val, added, changed);
+        obj->SetFixed();
+    }
+    else if (qual == "collection-date") {
+        SetSubsource(bs, CSubSource::eSubtype_collection_date, val, added, changed);
+        obj->SetFixed();
+    }
+
+    if (changed) {
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] qualifier[s] " + qual + " (" + val + ") fixed", added + changed));
+    }
+    else if (added) {
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + qual + " (" + val + ") added", added));
+    }
+    return CRef<CAutofixReport>(0);
+
+#if 0
     TReportObjectList list = item->GetDetails();
     const CSourseQualsAutofixData* fix = 0;
     size_t added = 0;
     size_t changed = 0;
     string qual;
     string val;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+    for (auto& it : list) {
+        if (it->CanAutofix()) {
+            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer());
             CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer()));
             CRef<CBioSource> bs(&desc->SetSource());
             fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
@@ -461,23 +559,23 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
         
             if (qual == "host") {
                 SetOrgMod(bs, COrgMod::eSubtype_nat_host, val, added, changed);
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
             }
             else if (qual == "strain") {
                 SetOrgMod(bs, COrgMod::eSubtype_strain, val, added, changed);
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
             }
             else if (qual == "country") {
                 SetSubsource(bs, CSubSource::eSubtype_country, val, added, changed);
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
             }
             else if (qual == "isolation-source") {
                 SetSubsource(bs, CSubSource::eSubtype_isolation_source, val, added, changed);
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
             }
             else if (qual == "collection-date") {
                 SetSubsource(bs, CSubSource::eSubtype_collection_date, val, added, changed);
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
             }
         }
     }
@@ -487,6 +585,8 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
     else {
         return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + qual + " (" + val + ") added", added));
     }
+#endif
+    return CRef<CAutofixReport>(0);
 }
 
 

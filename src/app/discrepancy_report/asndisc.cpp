@@ -58,21 +58,20 @@ protected:
     string x_ConstructOutputName(const string& input);
     string x_ConstructAutofixName(const string& input);
     string x_ConstructMacroName(const string& input);
+    string x_DefaultHeader();
     void x_ProcessFile(const string& filename, CDiscrepancySet& tests);
     void x_ParseDirectory(const string& name, bool recursive);
     unsigned x_ProcessOne(const string& filename);
     unsigned x_ProcessAll(const string& outname);
-    void x_Output(const string& filename, CDiscrepancySet& tests);
-    void x_OutputXml(const string& filename, CDiscrepancySet& tests);
-    void x_Autofix(const TDiscrepancyCaseMap& tests);
-    void x_OutputObject(const string& filename, const CSerialObject& obj);
+    void x_Output(const string& filename, CDiscrepancySet& tests, unsigned short flags);
+    void x_OutputXml(const string& filename, CDiscrepancySet& tests, unsigned short flags);
+    void x_Autofix(CDiscrepancySet& tests);
 
     CRef<CScope> m_Scope;
     string m_SuspectRules;
     string m_Lineage;   // override lineage
     vector<string> m_Files;
     vector<string> m_Tests;
-    map<string, CRef<CSerialObject> > m_Objects;
 
     char m_Group;
     bool m_SuspectProductNames;
@@ -232,71 +231,23 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // JIRA: CX
 }
 
 
+string CDiscRepApp::x_DefaultHeader()
+{
+    if (GetArgs()["a"]) {
+        string type = GetArgs()["a"].AsString();
+        if (type == "e") return CSeq_entry::GetTypeInfo()->GetName();
+        else if (type == "m") return CSeq_submit::GetTypeInfo()->GetName();
+        else if (type == "s") return CBioseq_set::GetTypeInfo()->GetName();
+        else if (type == "b") return CBioseq::GetTypeInfo()->GetName();
+    }
+    return kEmptyStr;
+}
+
+
 void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 {
     auto_ptr<CObjectIStream> in = OpenUncompressedStream(fname);
-    while (true) {
-        string header;
-        CRef<CSerialObject> obj;
-        try {
-            header = in->ReadFileHeader();
-            if (header.empty() && GetArgs()["a"]) {
-                string type = GetArgs()["a"].AsString();
-                if (type == "e") header = CSeq_entry::GetTypeInfo()->GetName();
-                else if (type == "m") header = CSeq_submit::GetTypeInfo()->GetName();
-                else if (type == "s") header = CBioseq_set::GetTypeInfo()->GetName();
-                else if (type == "b") header = CBioseq::GetTypeInfo()->GetName();
-            }
-            if (header == CSeq_submit::GetTypeInfo()->GetName()) {
-                CRef<CSeq_submit> ss(new CSeq_submit);
-                in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
-                if (ss->IsSetData() && ss->GetData().IsEntrys()) {
-                    for (auto& it: ss->SetData().SetEntrys()) {
-                        m_Scope->AddTopLevelSeqEntry(*it);
-                    }
-                }
-                obj.Reset(ss);
-            }
-            else if (header == CSeq_entry::GetTypeInfo()->GetName()) {
-                CRef<CSeq_entry> se(new CSeq_entry);
-                in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-                m_Scope->AddTopLevelSeqEntry(*se);
-                obj.Reset(se);
-            }
-            else if (header == CBioseq_set::GetTypeInfo()->GetName()) {
-                CRef<CBioseq_set> set(new CBioseq_set);
-                in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
-                CRef<CSeq_entry> se(new CSeq_entry());
-                se->SetSet().Assign(*set);
-                m_Scope->AddTopLevelSeqEntry(*se);
-                obj.Reset(se);
-            }
-            else if (header == CBioseq::GetTypeInfo()->GetName()) {
-                CRef<CBioseq> seq(new CBioseq);
-                in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
-                CRef<CSeq_entry> se(new CSeq_entry());
-                se->SetSeq().Assign(*seq);
-                m_Scope->AddTopLevelSeqEntry(*se);
-                obj.Reset(se);
-            }
-            else {
-                NCBI_THROW(CException, eUnknown, "Unsupported type " + header);
-            }
-            tests.Parse(*obj);
-            if (m_AutoFix) {
-                m_Objects[fname] = obj;
-            }
-            else {
-                m_Scope->ResetDataAndHistory();
-            }
-            if (!GetArgs()["a"] || GetArgs()["a"].AsString() != "c") {
-                break;
-            }
-        }
-        catch (const CEofException&) {
-            break;
-        }
-    }
+    tests.ParseStream(*in, fname, x_DefaultHeader());
 }
 
 
@@ -324,31 +275,24 @@ unsigned CDiscRepApp::x_ProcessOne(const string& fname)
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
-        CNcbiIfstream istr(fname.c_str());
-        CStreamLineReader line_reader(istr);
-        do {
-            Tests->TestString(*++line_reader);
-        } while (!line_reader.AtEOF());
+        Tests->ParseStrings(fname);
         severity = Tests->Summarize();
     }
     else {
         for (auto& tname : m_Tests) {
             Tests->AddTest(tname);
         }
-        Tests->SetKeepRef(m_AutoFix);
         Tests->SetLineage(m_Lineage);
         x_ProcessFile(fname, *Tests);
         severity = Tests->Summarize();
         if (m_AutoFix) {
-            x_Autofix(Tests->GetTests());
-            x_Autofix(Tests->GetTests());
-            x_OutputObject(x_ConstructAutofixName(fname), *m_Objects.begin()->second);
-            m_Objects.clear();
+            x_Autofix(*Tests);
         }
     }
-    m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests) : x_Output(x_ConstructOutputName(fname), *Tests);
+    unsigned short flags = (GetArgs()["S"].AsBoolean() ? CDiscrepancySet::eOutput_Summary : 0) | (m_Fat ? CDiscrepancySet::eOutput_Fatal : 0) | (m_Ext ? CDiscrepancySet::eOutput_Ext : 0);
+    m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests, flags) : x_Output(x_ConstructOutputName(fname), *Tests, flags);
     if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat, false);
+        m_Xml ? Tests->OutputXML(cout, flags) : Tests->OutputText(cout, m_Fat, false);
     }
     return severity;
 }
@@ -367,12 +311,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
-            Tests->SetFile(fname);
-            CNcbiIfstream istr(fname.c_str());
-            CStreamLineReader line_reader(istr);
-            do {
-                Tests->TestString(*++line_reader);
-            } while (!line_reader.AtEOF());
+            Tests->ParseStrings(fname);
         }
         severity = Tests->Summarize();
     }
@@ -380,62 +319,57 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         for (auto& tname : m_Tests) {
             Tests->AddTest(tname);
         }
-        Tests->SetKeepRef(m_AutoFix);
         Tests->SetLineage(m_Lineage);
         for (auto& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
-            Tests->SetFile(fname);
             x_ProcessFile(fname, *Tests);
         }
         severity = Tests->Summarize();
         if (m_AutoFix) {
-            x_Autofix(Tests->GetTests());
-            for (auto& it : m_Objects) {
-                x_OutputObject(x_ConstructAutofixName(it.first), *it.second);
-            }
+            x_Autofix(*Tests);
         }
     }
-    m_Xml ? x_OutputXml(outname, *Tests) : x_Output(outname, *Tests);
+    unsigned short flags = (GetArgs()["S"].AsBoolean() ? CDiscrepancySet::eOutput_Summary : 0) | (m_Fat ? CDiscrepancySet::eOutput_Fatal : 0) | (m_Ext ? CDiscrepancySet::eOutput_Ext : 0) | CDiscrepancySet::eOutput_Files;
+    m_Xml ? x_OutputXml(outname, *Tests, flags) : x_Output(outname, *Tests, flags);
     if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat, true);
+        m_Xml ? Tests->OutputXML(cout, flags) : Tests->OutputText(cout, m_Fat, true);
     }
     return severity;
 }
 
 
-void CDiscRepApp::x_Output(const string& filename, CDiscrepancySet& tests)
+void CDiscRepApp::x_Output(const string& filename, CDiscrepancySet& tests, unsigned short flags)
 {
-    bool summary = GetArgs()["S"].AsBoolean();
     CNcbiOfstream out(filename.c_str(), ofstream::out);
-    tests.OutputText(out, m_Fat, summary, m_Ext, m_Group);
+    tests.OutputText(out, flags, m_Group);
 }
 
 
-void CDiscRepApp::x_OutputXml(const string& filename, CDiscrepancySet& tests)
+void CDiscRepApp::x_OutputXml(const string& filename, CDiscrepancySet& tests, unsigned short flags)
 {
     CNcbiOfstream out(filename.c_str(), ofstream::out);
-    tests.OutputXML(out);
+    tests.OutputXML(out, flags);
 }
 
 
-void CDiscRepApp::x_Autofix(const TDiscrepancyCaseMap& tests)
+void CDiscRepApp::x_Autofix(CDiscrepancySet& tests)
 {
-    for (auto& tst: tests) {
+    TReportObjectList tofix;
+    map<string, size_t> ignore;
+    for (auto& tst: tests.GetTests()) {
         const TReportItemList& list = tst.second->GetReport();
-        for (auto& it: list) {
-            it->Autofix(*m_Scope);
+        for (auto it: list) {
+            for (auto obj : it->GetDetails()) {
+                if (obj->CanAutofix()) {
+                    tofix.push_back(CRef<CReportObj>(&*obj));
+                }
+            }
         }
     }
-}
-
-
-void CDiscRepApp::x_OutputObject(const string& filename, const CSerialObject& obj)
-{
-    CNcbiOfstream out(filename.c_str(), ofstream::out);
-    out << MSerial_AsnText << obj;
+    tests.Autofix(tofix, ignore);
 }
 
 

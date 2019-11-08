@@ -31,8 +31,8 @@
 #define _MISC_DISCREPANCY_DISCREPANCY_CORE_H_
 
 #include <misc/discrepancy/discrepancy.hpp>
-#include <misc/discrepancy/report_object.hpp>
 #include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Cit_sub.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/pub/Pub.hpp>
@@ -45,6 +45,7 @@
 #include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(NDiscrepancy)
 
 /// Housekeeping classes
@@ -110,45 +111,13 @@ protected:
 
 /// CDiscrepancyItem and CReportObject
 class CDiscrepancyContext;
-class CReportObjectData;
-
-class CDiscrepancyObject : public CReportObject
-{
-protected:
-    CDiscrepancyObject(const CReportObjectData& data, bool autofix = false, CObject* more = 0) : CReportObject(data), m_Autofix(autofix), m_Fixed(false), m_More(more) {}
-    CDiscrepancyObject(const CDiscrepancyObject& other) : CReportObject(other), m_Autofix(other.m_Autofix), m_Case(other.m_Case), m_More(other.m_More) {}
-
-public:
-    bool CanAutofix(void) const { return m_Autofix && !m_Fixed; }
-    void SetFixed(void) { m_Fixed = true; }
-    CConstRef<CObject> GetMoreInfo() { return m_More; }
-    CReportObj* Clone(bool autofixable, CConstRef<CObject> data) const;
-
-protected:
-    bool m_Autofix;
-    bool m_Fixed;
-    CRef<CDiscrepancyCase> m_Case;
-    CConstRef<CObject> m_More;
-friend class CDiscrepancyContext;
-};
-
+class CDiscrepancyObject;
 
 template<typename T> struct CSimpleTypeObject : public CObject
 {
     CSimpleTypeObject() {};
     CSimpleTypeObject(const T& v) : Value(v) {};
     T Value;
-};
-
-
-class CSubmitBlockDiscObject : public CDiscrepancyObject
-{
-protected:
-    CSubmitBlockDiscObject(const CReportObjectData& data, CRef<CSimpleTypeObject<string>> label,  bool autofix = false, CObject* more = 0) : CDiscrepancyObject(data, autofix, more) { m_Label.Reset(label); }
-    CConstRef<CSimpleTypeObject<string> > m_Label;
-public:
-    virtual const string& GetText() const { return m_Label->Value.empty() ? CDiscrepancyObject::GetText() : m_Label->Value; }
-friend class CDiscrepancyContext;
 };
 
 
@@ -174,7 +143,6 @@ public:
     bool IsExtended(void) const { return m_Ext; }
     bool IsSummary(void) const { return m_Summ; }
     bool IsReal(void) const { return !m_Test.Empty(); }
-    CRef<CAutofixReport> Autofix(CScope& scope) const;
     void PushReportObj(CReportObj& obj);
 
 protected:
@@ -193,6 +161,7 @@ protected:
 friend class CReportNode;
 friend class CDiscrepancyGroup;
 friend class CReportItem;
+friend class CDiscrepancyObject;
 };
 
 
@@ -202,7 +171,7 @@ struct CReportObjPtr
 {
     const CReportObj* P;
     CReportObjPtr(const CReportObj* p) : P(p) {}
-    bool operator<(const CReportObjPtr&other) const { return ((const CReportObject*)P)->m_Data < ((const CReportObject*)other.P)->m_Data; }
+    friend bool operator<(const CReportObjPtr& one, const CReportObjPtr& another);
 };
 typedef set<CReportObjPtr> TReportObjectSet;
 
@@ -264,8 +233,7 @@ public:
     virtual void Summarize(CDiscrepancyContext& context){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
     virtual TReportObjectList GetObjects(void) const;
-    virtual CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope) const { return CRef<CAutofixReport>(0); }
-    virtual bool SetHook(TAutofixHook func) { return false;}
+    virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const { return CRef<CAutofixReport>(0); }
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
@@ -273,15 +241,15 @@ protected:
 };
 
 
-inline CRef<CAutofixReport> CDiscrepancyItem::Autofix(CScope& scope) const
-{
-    if (m_Autofix) {
-        CRef<CAutofixReport> ret = ((CDiscrepancyCore&)*m_Test).Autofix(this, scope);
-        m_Autofix = false;
-        return ret;
-    }
-    return CRef<CAutofixReport>(0);
-}
+//inline CRef<CAutofixReport> CDiscrepancyItem::Autofix(CScope& scope) const
+//{
+//    if (m_Autofix) {
+//        CRef<CAutofixReport> ret = ((CDiscrepancyCore&)*m_Test).Autofix(this, scope);
+//        m_Autofix = false;
+//        return ret;
+//    }
+//    return CRef<CAutofixReport>(0);
+//}
 
 
 template<typename T> class CDiscrepancyVisitor : public CDiscrepancyCore
@@ -292,14 +260,31 @@ public:
 };
 
 
-class CSeq_feat_BY_BIOSEQ : public CSeq_feat {};
-class CSeqdesc_BY_BIOSEQ : public CSeqdesc {};
-class COverlappingFeatures : public CBioseq {};
+/// BIG FILE
+/// will change to enum when possible
+class SEQUENCE {};
+class SEQ_SET {};
+class FEAT {};
+class DESC {};
+class BIOSRC {};
+class PUBDESC {};
+class AUTHORS {};
+class SUBMIT {};
+class STRING {};
+
 
 struct CSeqSummary
 {
-    CSeqSummary() : Len(0), A(0), C(0), G(0), T(0), N(0), Other(0), Gaps(0) {}
-    void clear(void) { Len = 0; A = 0; C = 0; G = 0; T = 0; N = 0; Other = 0; Gaps = 0; First = true; StartsWithGap = false; EndsWithGap = false; HasRef = false; Str.clear(); }
+    static const size_t WINDOW_SIZE = 30;
+    CSeqSummary() { clear(); }
+    void clear(void) {
+        Len = 0; A = 0; C = 0; G = 0; T = 0; N = 0; Other = 0; Gaps = 0;
+        First = true; StartsWithGap = false; EndsWithGap = false; HasRef = false;
+        Label.clear(); Stats.clear(); NRuns.clear();
+        MaxN = 0; MinQ = 0;
+        _Pos = 0; _Ns = 0;
+        _QS = 0; _CBscore[0] = 0; _CBposition[0] = 0; _CBread = 0; _CBwrite = 0;
+    }
     size_t Len;
     size_t A;
     size_t C;
@@ -308,13 +293,25 @@ struct CSeqSummary
     size_t N;
     size_t Other;
     size_t Gaps;
+    size_t MaxN;
+    size_t MinQ;
     bool First;
     bool StartsWithGap;
     bool EndsWithGap;
     bool HasRef;
+    string Label;
     // add more counters if needed
-    mutable string Str;
-    string GetStr() const;
+    vector<pair<size_t, size_t>> NRuns;
+    size_t _QS;
+    size_t _CBscore[WINDOW_SIZE];
+    size_t _CBposition[WINDOW_SIZE];
+    size_t _CBread; // read pointer
+    size_t _CBwrite; // write pointer
+    size_t _Pos;
+    size_t _Ns;
+
+    mutable string Stats;
+    string GetStats() const;
 };
 
 /// CDiscrepancyContext - manage and run the list of tests
@@ -323,124 +320,257 @@ struct CSeqSummary
 typedef list<pair<CRef<CDiscrepancyObject>, string>> TGenesList;
 typedef map<string, TGenesList> TGeneLocusMap;
 
+/// BIG FILE
+class CReadHook_Bioseq_set;
+class CReadHook_Bioseq;
+class CCopyHook_Bioseq_set;
+class CCopyHook_Bioseq;
+class CCopyHook_Seq_descr;
+class CCopyHook_Seq_annot;
+
 class CDiscrepancyContext : public CDiscrepancySet
 {
+protected:
+    struct CParseNode;
+    struct CRefNode;
+
 public:
+    enum EFlag {
+        eHasRearranged = 1 << 0,
+        eHasSatFeat = 1 << 1,
+        eHasNonSatFeat = 1 << 2
+    };
+
     CDiscrepancyContext(objects::CScope& scope) :
             m_Scope(&scope),
-            m_Count_Bioseq(0),
-            m_Count_Seq_feat(0),
-            m_Count_Pub(0),
-            m_Count_Pub_equiv(0),
 #define INIT_DISCREPANCY_TYPE(type) m_Enable_##type(false)
-            INIT_DISCREPANCY_TYPE(CSeq_inst),
-            INIT_DISCREPANCY_TYPE(CSeqdesc),
-            INIT_DISCREPANCY_TYPE(CSeq_feat),
-            INIT_DISCREPANCY_TYPE(CSubmit_block),
-            INIT_DISCREPANCY_TYPE(CSeqFeatData),
-            INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
-            INIT_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ),
-            INIT_DISCREPANCY_TYPE(COverlappingFeatures),
-            INIT_DISCREPANCY_TYPE(CBioSource),
-            INIT_DISCREPANCY_TYPE(CRNA_ref),
-            INIT_DISCREPANCY_TYPE(COrgName),
-            INIT_DISCREPANCY_TYPE(CSeq_annot),
-            INIT_DISCREPANCY_TYPE(CPubdesc),
-            INIT_DISCREPANCY_TYPE(CAuth_list),
-            INIT_DISCREPANCY_TYPE(CPerson_id),
-            INIT_DISCREPANCY_TYPE(CBioseq_set),
-            INIT_DISCREPANCY_TYPE(string)
-        { InitStatic(); }
+            INIT_DISCREPANCY_TYPE(string),
+
+// BIG FILE
+INIT_DISCREPANCY_TYPE(SEQUENCE),
+INIT_DISCREPANCY_TYPE(SEQ_SET),
+INIT_DISCREPANCY_TYPE(FEAT),
+INIT_DISCREPANCY_TYPE(DESC),
+INIT_DISCREPANCY_TYPE(BIOSRC),
+INIT_DISCREPANCY_TYPE(PUBDESC),
+INIT_DISCREPANCY_TYPE(AUTHORS),
+INIT_DISCREPANCY_TYPE(SUBMIT),
+INIT_DISCREPANCY_TYPE(STRING)
+    { }
+
     bool AddTest(const string& name);
-    bool SetAutofixHook(const string& name, TAutofixHook func);
-    void Parse(const CSerialObject& root);
+    void Parse(const CSerialObject& root, const string& fname);
+    void ParseObject(const CBioseq& root);
+    void ParseObject(const CBioseq_set& root);
+    void ParseObject(const CSeq_entry& root);
+    void ParseObject(const CSeq_submit& root);
+    void ParseStream(CObjectIStream& stream, const string& fname, const string& default_header = kEmptyStr);
+    void ParseStrings(const string& fname);
     void TestString(const string& str);
     unsigned Summarize(void);
-    void AutofixAll(void);
+    void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr);
+    void AutofixFile(vector<CDiscrepancyObject*>&fixes, const string& default_header);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
-    void OutputText(ostream& out, bool fatal, bool summary, bool ext, char group);
-    void OutputXML(ostream& out, bool ext);
+    void OutputText(CNcbiOstream& out, unsigned short flags, char group);
+    void OutputXML(CNcbiOstream& out, unsigned short flags);
+    CParseNode* FindNode(const CRefNode& obj);
+    const CObject* GetMore(CReportObj& obj);
+    const CSerialObject* FindObject(CReportObj& obj, bool alt = false);
+    void ReplaceObject(CReportObj& obj, CSerialObject*, bool alt = false);
+    void ReplaceSeq_feat(CReportObj& obj, const CSeq_feat& old_feat, CSeq_feat& new_feat, bool alt = false);
+    CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& bss) { return m_Scope->GetBioseq_setHandle(bss); }
+    CBioseq_EditHandle GetBioseqHandle(const CBioseq& bs) { return m_Scope->GetBioseqEditHandle(bs); }
+
+    const string& CurrentText(void) const { return m_CurrentNode->m_Ref->m_Text; }
+    const CBioseq& CurrentBioseq(void) const { return *dynamic_cast<const CBioseq*>(&*m_CurrentNode->m_Obj); }
+    const CBioseq_set& CurrentBioseq_set(void) const { return *dynamic_cast<const CBioseq_set*>(&*m_CurrentNode->m_Obj); }
+    const CSeqSummary& CurrentBioseqSummary(void) const;
+    unsigned char ReadFlags(void) const { return m_CurrentNode->m_Flags; };
+    void PropagateFlags(unsigned char f) { for (CParseNode* node = m_CurrentNode; node; node = node->m_Parent) node->m_Flags |= f; }
 
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
-    string GetCurrentBioseqLabel(void) const;
-    CConstRef<CBioseq> GetCurrentBioseq(void) const;
-    CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Bioseq_set_Stack.empty() ? CConstRef<CBioseq_set>(0) : m_Bioseq_set_Stack.back(); }
-    const vector<CConstRef<CBioseq_set> > &Get_Bioseq_set_Stack(void) const { return m_Bioseq_set_Stack; }
-    CConstRef<CSubmit_block> GetCurrentSubmit_block(void) const { return m_Current_Submit_block; }
-    CConstRef<CSeqdesc> GetCurrentSeqdesc(void) const { return m_Current_Seqdesc; }
-    CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat; }
-    CConstRef<CPub> GetCurrentPub(void) const { return m_Current_Pub; }
-    CConstRef<CPub_equiv> GetCurrentPub_equiv(void) const { return m_Current_Pub_equiv; }
-    size_t GetCountBioseq(void) const { return m_Count_Bioseq; }
-    size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}
     objects::CScope& GetScope(void) const { return const_cast<objects::CScope&>(*m_Scope);}
 
+    void SetFile(const string& fname);
     void SetSuspectRules(const string& name, bool read = true);
     CConstRef<CSuspect_rule_set> GetProductRules(void);
     CConstRef<CSuspect_rule_set> GetOrganelleProductRules(void);
-    const TReportObjectList& GetNaSeqs(void) const { return m_NaSeqs; }
 
     // Lazy
-    const CBioSource* GetCurrentBiosource(void);
-    const CMolInfo* GetCurrentMolInfo(void);
-    bool IsCurrentSequenceMrna(void);
-    CBioSource::TGenome GetCurrentGenome(void);
     static bool IsUnculturedNonOrganelleName(const string& taxname);
     static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type);
-    bool HasLineage(const string& lineage);
-    bool IsDNA(void);
-    bool IsOrganelle(void);
-    bool IsEukaryotic(void);
-    bool IsBacterial(void);
-    bool IsViral(void);
-    bool IsPubMed(void);
-    bool IsCurrentRnaInGenProdSet(void);
-    bool SequenceHasFarPointers(void);
-    const CSeqSummary& GetSeqSummary(void);
-    bool HasFeatures(void) const { return m_Feat_CI; }
+    bool HasLineage(const CBioSource* biosrc, const string& lineage);
+    static bool IsOrganelle(const CBioSource* biosrc);
+    bool IsEukaryotic(const CBioSource* biosrc);
+    bool IsBacterial(const CBioSource* biosrc);
+    bool IsViral(const CBioSource* biosrc);
+    const CSeqSummary& GetSeqSummary(void) { return *m_CurrentNode->m_BioseqSummary; }
+    void BuildSeqSummary(const CBioseq& bs, CSeqSummary& summary);
+    bool InGenProdSet(void) const { return m_CurrentNode->InGenProdSet(); }
+    CConstRef<CSeqdesc> GetTitle() const { return m_CurrentNode->GetTitle(); }
+    CConstRef<CSeqdesc> GetMolinfo() const { return m_CurrentNode->GetMolinfo(); }
+    CConstRef<CSeqdesc> GetBiosource() const { return m_CurrentNode->GetBiosource(); }
+    const vector<CConstRef<CSeqdesc>>& GetSetBiosources() const { return m_CurrentNode->m_SetBiosources; }
+
     static string GetGenomeName(int n);
     static string GetAminoacidName(const CSeq_feat& feat); // from tRNA
     bool IsBadLocusTagFormat(const string& locus_tag);
-    const CSeq_id * GetProteinId(void);
     bool IsRefseq(void);
     bool IsBGPipe(void);
     bool IsPseudo(const CSeq_feat& feat);
     const CSeq_feat* GetGeneForFeature(const CSeq_feat& feat);
     string GetProdForFeature(const CSeq_feat& feat);
-    const CSeq_feat* GetCurrentGene(void);
     void CollectFeature(const CSeq_feat& feat);
     void ClearFeatureList(void);
-    const vector<CConstRef<CSeq_feat> >& FeatAll() { return m_FeatAll; }
-    const vector<CConstRef<CSeq_feat> >& FeatGenes() { return m_FeatGenes; }
-    const vector<CConstRef<CSeq_feat> >& FeatPseudo() { return m_FeatPseudo; }
-    const vector<CConstRef<CSeq_feat> >& FeatCDS() { return m_FeatCDS; }
-    const vector<CConstRef<CSeq_feat> >& FeatMRNAs() { return m_FeatMRNAs; }
-    const vector<CConstRef<CSeq_feat> >& FeatRRNAs() { return m_FeatRRNAs; }
-    const vector<CConstRef<CSeq_feat> >& FeatTRNAs() { return m_FeatTRNAs; }
-    const vector<CConstRef<CSeq_feat> >& Feat_RNAs() { return m_Feat_RNAs; }
-    const vector<CConstRef<CSeq_feat> >& FeatExons() { return m_FeatExons; }
-    const vector<CConstRef<CSeq_feat> >& FeatIntrons() { return m_FeatIntrons; }
-    const vector<CConstRef<CSeq_feat> >& FeatMisc() { return m_FeatMisc; }
+    const vector<const CSeq_feat*>& FeatAll() { return m_FeatAll; }
+    const vector<const CSeq_feat*>& FeatGenes() { return m_FeatGenes; }
+    const vector<const CSeq_feat*>& FeatPseudo() { return m_FeatPseudo; }
+    const vector<const CSeq_feat*>& FeatCDS() { return m_FeatCDS; }
+    const vector<const CSeq_feat*>& FeatMRNAs() { return m_FeatMRNAs; }
+    const vector<const CSeq_feat*>& FeatRRNAs() { return m_FeatRRNAs; }
+    const vector<const CSeq_feat*>& FeatTRNAs() { return m_FeatTRNAs; }
+    const vector<const CSeq_feat*>& Feat_RNAs() { return m_Feat_RNAs; }
+    const vector<const CSeq_feat*>& FeatExons() { return m_FeatExons; }
+    const vector<const CSeq_feat*>& FeatIntrons() { return m_FeatIntrons; }
+    const vector<const CSeq_feat*>& FeatMisc() { return m_FeatMisc; }
 
     sequence::ECompare Compare(const CSeq_loc& loc1, const CSeq_loc& loc2) const;
 
-    CRef<CDiscrepancyObject> BioseqObj(bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> DiscrObj(const CSerialObject& obj, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> SeqdescObj(const CSerialObject& obj, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> SubmitBlockObj(bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> CitSubObj(bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> StringObj(const string& str, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> FeatOrDescObj(bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> FeatOrDescOrSubmitBlockObj(bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> FeatOrDescOrCitSubObj(bool autofix = false, CObject* more = 0);
+/// BIG FILE
+    enum EFixType {
+        eFixNone,
+        eFixSelf,
+        eFixParent,
+        eFixSet
+    };
+
+    CRefNode* ContainingSet(CRefNode& ref);
+    CRef<CDiscrepancyObject> BioseqObjRef(EFixType fix = eFixNone, const CObject* more = 0);
+    CRef<CDiscrepancyObject> BioseqSetObjRef(bool fix = false, const CObject* more = 0);
+    CRef<CDiscrepancyObject> SubmitBlockObjRef(bool fix = false, const CObject* more = 0);
+    CRef<CDiscrepancyObject> SeqFeatObjRef(const CSeq_feat& feat, EFixType fix = eFixNone, const CObject* more = 0);
+    CRef<CDiscrepancyObject> SeqFeatObjRef(const CSeq_feat& feat, const CObject* fix, const CObject* more = 0);
+    CRef<CDiscrepancyObject> SeqdescObjRef(const CSeqdesc& desc, const CObject* fix = 0, const CObject* more = 0);
+    CRef<CDiscrepancyObject> BiosourceObjRef(const CBioSource& biosrc, bool fix = false, const CObject* more = 0);
+    CRef<CDiscrepancyObject> PubdescObjRef(const CPubdesc& pubdesc, bool fix = false, const CObject* more = 0);
+    CRef<CDiscrepancyObject> AuthorsObjRef(const CAuth_list& authors, bool fix = false, const CObject* more = 0);
+    CRef<CDiscrepancyObject> StringObjRef(const CObject* fix = 0, const CObject* more = 0);
+    bool IsBioseq() const { return m_CurrentNode->m_Type == eBioseq; }
+    const CPub* AuthPub(const CAuth_list* a) const { auto& apm = m_CurrentNode->m_AuthorPubMap; auto it = apm.find(a); return it == apm.end() ? 0 : it->second; }
 
     // GENE_PRODUCT_CONFLICT
     TGeneLocusMap& GetGeneLocusMap() { return m_GeneLocusMap;}
 
+    struct CSeqdesc_vec
+    {
+        CParseNode& node;
+        CSeqdesc_vec(CParseNode& n) : node(n) {}
+        struct iterator
+        {
+            vector<CRef<CParseNode>>::iterator it;
+            iterator(vector<CRef<CParseNode>>::iterator x) : it(x) {}
+            void operator++() { ++it; }
+            bool operator!=(const iterator& x) const { return it != x.it; }
+            bool operator==(const iterator& x) const { return !(x != *this); }
+            const CSeqdesc& operator*() { return static_cast<const CSeqdesc&>(*(*it)->m_Obj); }
+        };
+        iterator begin() { return iterator(node.m_Descriptors.begin()); }
+        iterator end() { return iterator(node.m_Descriptors.end()); }
+    };
+
+    struct CSeq_feat_vec
+    {
+        CParseNode& node;
+        CSeq_feat_vec(CParseNode& n) : node(n) {}
+        struct iterator
+        {
+            vector<CRef<CParseNode>>::iterator it;
+            iterator(vector<CRef<CParseNode>>::iterator x) : it(x) {}
+            void operator++() { ++it; }
+            bool operator!=(const iterator& x) const { return it != x.it; }
+            bool operator==(const iterator& x) const { return !(x != *this); }
+            const CSeq_feat& operator*() { return static_cast<const CSeq_feat&>(*(*it)->m_Obj); }
+        };
+        iterator begin() { return iterator(node.m_Features.begin()); }
+        iterator end() { return iterator(node.m_Features.end()); }
+    };
+
+    struct CSeqdesc_run
+    {
+        CParseNode& node;
+        CSeqdesc_run(CParseNode& n) : node(n) {}
+        struct iterator
+        {
+            CParseNode* node;
+            vector<CRef<CParseNode>>::iterator it;
+            iterator(CParseNode* n) : node(n) {
+                while (node) {
+                    it = node->m_Descriptors.begin();
+                    if (it != node->m_Descriptors.end()) return;
+                    node = node->m_Parent;
+                }
+            }
+            void operator++() {
+                ++it;
+                while (node) {
+                    if (it != node->m_Descriptors.end()) return;
+                    node = node->m_Parent;
+                    if (node) it = node->m_Descriptors.begin();
+                }
+            }
+            bool operator!=(const iterator& x) const { return node != x.node || (node && it != x.it); }
+            bool operator==(const iterator& x) const { return !(x != *this); }
+            const CSeqdesc& operator*() { return static_cast<const CSeqdesc&>(*(*it)->m_Obj); }
+        };
+        iterator begin() { return iterator(&node); }
+        iterator end() { return iterator(0); }
+    };
+
+    struct CSeq_feat_run
+    {
+        CParseNode& node;
+        CSeq_feat_run(CParseNode& n) : node(n) {}
+        struct iterator
+        {
+            CParseNode* node;
+            bool follow;
+            vector<CRef<CParseNode>>::iterator it;
+            iterator(CParseNode* n) : node(n), follow(n && n->m_Type == eBioseq && static_cast<const CBioseq&>(*n->m_Obj).IsNa()) {
+                while (node) {
+                    it = node->m_Features.begin();
+                    if (it != node->m_Features.end()) return;
+                    node = follow ? node->m_Parent : 0;
+                }
+            }
+            void operator++() {
+                ++it;
+                while (node) {
+                    if (it != node->m_Features.end()) return;
+                    node = follow ? node->m_Parent : 0;
+                    if (node) it = node->m_Features.begin();
+                }
+            }
+            bool operator!=(const iterator& x) const { return node != x.node || (node && it != x.it); }
+            bool operator==(const iterator& x) const { return !(x != *this); }
+            const CSeq_feat& operator*() { return static_cast<const CSeq_feat&>(*(*it)->m_Obj); }
+        };
+        iterator begin() { return iterator(&node); }
+        iterator end() { return iterator(0); }
+    };
+    CSeqdesc_vec GetSeqdesc() { return CSeqdesc_vec(*m_CurrentNode); }
+    CSeq_feat_vec GetFeat() { return CSeq_feat_vec(*m_CurrentNode); }
+    CSeqdesc_run GetAllSeqdesc() { return CSeqdesc_run(*m_CurrentNode); }
+    CSeq_feat_run GetAllFeat() { return CSeq_feat_run(*m_CurrentNode); }
+    vector<const CBioSource*>& GetBiosources() { return m_CurrentNode->m_Biosources; }
+    vector<const CPubdesc*>& GetPubdescs() { return m_CurrentNode->m_Pubdescs; }
+    vector<const CAuth_list*>& GetAuthors() { return m_CurrentNode->m_Authors; }
+    const CPerson_id* GetPerson_id();
+    const CSubmit_block* GetSubmit_block();
+
 protected:
-    void Update_Bioseq_set_Stack(CTypesConstIterator& it);
     CRef<objects::CScope> m_Scope;
+    CRef<feature::CFeatTree> m_FeatTree;
     TDiscrepancyCaseMap m_Tests;
     vector<CConstRef<CBioseq_set> > m_Bioseq_set_Stack;
     CBioseq_Handle m_Current_Bioseq_Handle;
@@ -455,132 +585,365 @@ protected:
     CConstRef<CSuspect_rule_set> m_ProductRules;
     CConstRef<CSuspect_rule_set> m_OrganelleProductRules;
     string m_SuspectRules;
-    size_t m_Count_Bioseq;
-    size_t m_Count_Seqdesc;
-    size_t m_Count_Seq_feat;
-    size_t m_Count_Pub;
-    size_t m_Count_Pub_equiv;
-    bool m_Feat_CI;
-    TReportObjectList m_NaSeqs;
-    vector<CConstRef<CSeq_feat> > m_FeatAll;
-    vector<CConstRef<CSeq_feat> > m_FeatGenes;
-    vector<CConstRef<CSeq_feat> > m_FeatPseudo;
-    vector<CConstRef<CSeq_feat> > m_FeatCDS;
-    vector<CConstRef<CSeq_feat> > m_FeatMRNAs;
-    vector<CConstRef<CSeq_feat> > m_FeatRRNAs;
-    vector<CConstRef<CSeq_feat> > m_FeatTRNAs;
-    vector<CConstRef<CSeq_feat> > m_Feat_RNAs;  // other RNA
-    vector<CConstRef<CSeq_feat> > m_FeatExons;
-    vector<CConstRef<CSeq_feat> > m_FeatIntrons;
-    vector<CConstRef<CSeq_feat> > m_FeatMisc;
-    map<const CSeq_feat*, bool> m_IsPseudoMap;
-    map<const CSeq_feat*, const CSeq_feat*> m_GeneForFeatureMap;
-    map<const CSeq_feat*, string> m_ProdForFeatureMap;
-    bool x_IsPseudo(const CSeq_feat& feat);
+    vector<const CSeq_feat*> m_FeatAll;
+    vector<const CSeq_feat*> m_FeatGenes;
+    vector<const CSeq_feat*> m_FeatPseudo;
+    vector<const CSeq_feat*> m_FeatCDS;
+    vector<const CSeq_feat*> m_FeatMRNAs;
+    vector<const CSeq_feat*> m_FeatRRNAs;
+    vector<const CSeq_feat*> m_FeatTRNAs;
+    vector<const CSeq_feat*> m_Feat_RNAs;  // other RNA
+    vector<const CSeq_feat*> m_FeatExons;
+    vector<const CSeq_feat*> m_FeatIntrons;
+    vector<const CSeq_feat*> m_FeatMisc;
+    map<const CRefNode*, CParseNode*> m_NodeMap;
+    vector<CDiscrepancyObject*>* m_Fixes;
+
+    CParseNode* FindLocalNode(const CParseNode& node, const CSeq_feat& feat) const;
+    CParseNode* FindNode(const CObject* obj) const;
+    CParseNode* FindNode(const CSeq_feat& feat) const;
+    CParseNode* FindNode(const CSeqdesc& desc) const;
+    static bool InNucProtSet(const CParseNode* node) { for (; node; node = node->m_Parent) if (node->m_Type == eSeqSet_NucProt) return true; return false; }
+    static bool InGenProdSet(const CParseNode* node) { for (; node; node = node->m_Parent) if (node->m_Type == eSeqSet_GenProd) return true; return false; }
+    bool CanFix();
+    bool CanFixBioseq_set();
+    bool CanFixBioseq();
+    bool CanFixSeq_annot();
+    bool CanFixSeqdesc();
+    bool CanFixSubmit_block();
+    bool CanFixBioseq(CRefNode& refnode);
+    bool CanFixBioseq_set(CRefNode& refnode);
+    bool CanFixFeat(CRefNode& refnode);
+    bool CanFixDesc(CRefNode& refnode);
+    bool CanFixSubmit_block(CRefNode& refnode);
+    void AutofixBioseq();
+    void AutofixBioseq_set();
+    void AutofixSeq_annot();
+    void AutofixSeq_descr();
+    void AutofixSubmit_block();
+    CRef<CBioseq_set> m_AF_Bioseq_set;
+    CRef<CBioseq> m_AF_Bioseq;
+    CRef<CSeq_annot> m_AF_Seq_annot;
+    CRef<CSeq_descr> m_AF_Seq_descr;
+    CRef<CSubmit_block> m_AF_Submit_block;
 
     CRef<CDiscrepancyGroup> m_Order;
     const CDiscrepancyGroup& x_OutputOrder();
 
-    map<const CSerialObject*, CConstRef<CReportObjectData>> m_DataMap;
+    //map<const CSerialObject*, CConstRef<CReportObjectData>> m_DataMap;
 
     // GENE_PRODUCT_CONFLICT
     TGeneLocusMap m_GeneLocusMap;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
-    ADD_DISCREPANCY_TYPE(CSeq_inst)
-    ADD_DISCREPANCY_TYPE(CSeqdesc)
-    ADD_DISCREPANCY_TYPE(CSeq_feat)
-    ADD_DISCREPANCY_TYPE(CSubmit_block)
-    ADD_DISCREPANCY_TYPE(CSeqFeatData)
-    ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
-    ADD_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ)
-    ADD_DISCREPANCY_TYPE(COverlappingFeatures)
-    ADD_DISCREPANCY_TYPE(CBioSource)
-    ADD_DISCREPANCY_TYPE(CRNA_ref)
-    ADD_DISCREPANCY_TYPE(COrgName)
-    ADD_DISCREPANCY_TYPE(CSeq_annot)
-    ADD_DISCREPANCY_TYPE(CPubdesc)
-    ADD_DISCREPANCY_TYPE(CAuth_list)
-    ADD_DISCREPANCY_TYPE(CPerson_id)
-    // CBioseq_set should be used only for examining top-level
-    // features of the set, and never to subvert the visitor pattern
-    // by iterating over the contents oneself
-    ADD_DISCREPANCY_TYPE(CBioseq_set)
+    //ADD_DISCREPANCY_TYPE(CSeq_inst)
+    //ADD_DISCREPANCY_TYPE(CSeqdesc)
+    //ADD_DISCREPANCY_TYPE(CSeq_feat)
+    //ADD_DISCREPANCY_TYPE(CSubmit_block)
+    //ADD_DISCREPANCY_TYPE(CSeqFeatData)
+    //ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
+    //ADD_DISCREPANCY_TYPE(COverlappingFeatures)
+    //ADD_DISCREPANCY_TYPE(CBioSource)
+    //ADD_DISCREPANCY_TYPE(COrgName)
+    //ADD_DISCREPANCY_TYPE(CSeq_annot)
+    //ADD_DISCREPANCY_TYPE(CPubdesc)
+    //ADD_DISCREPANCY_TYPE(CAuth_list)
+    //ADD_DISCREPANCY_TYPE(CPerson_id)
     ADD_DISCREPANCY_TYPE(string)
 
-    // moved static members from the functions
-    mutable size_t GetCurrentBioseqLabel_count;
-    mutable string GetCurrentBioseqLabel_str;
-    mutable CConstRef<CBioseq> GetCurrentBioseq_bioseq;
-    mutable size_t GetCurrentBioseq_count;
-    mutable const CBioSource* GetCurrentBiosource_biosrc;
-    mutable size_t GetCurrentBiosource_count;
-    mutable const CMolInfo* GetCurrentMolInfo_mol_info;
-    mutable size_t GetCurrentMolInfo_count;
-    mutable const CBioSource* HasLineage_biosrc;
-    mutable size_t HasLineage_count;
-    mutable bool IsDNA_result;
-    mutable size_t IsDNA_count;
-    mutable bool IsOrganelle_result;
-    mutable size_t IsOrganelle_count;
-    mutable bool IsEukaryotic_result;
-    mutable size_t IsEukaryotic_count;
-    mutable bool IsBacterial_result;
-    mutable size_t IsBacterial_count;
-    mutable bool IsViral_result;
-    mutable size_t IsViral_count;
-    mutable bool IsPubMed_result;
-    mutable size_t IsPubMed_count;
-    mutable CBioSource::TGenome GetCurrentGenome_genome;
-    mutable size_t GetCurrentGenome_count;
-    mutable bool SequenceHasFarPointers_result;
-    mutable size_t SequenceHasFarPointers_count;
-    mutable CSeqSummary GetSeqSummary_ret;
-    mutable size_t GetSeqSummary_count;
-    mutable const CSeq_id* GetProteinId_protein_id;
-    mutable size_t GetProteinId_count;
-    mutable bool IsRefseq_is_refseq;
-    mutable size_t IsRefseq_count;
-    mutable bool IsBGPipe_is_bgpipe;
-    mutable size_t IsBGPipe_count;
-    void InitStatic(void)
-    {
-        GetCurrentBioseqLabel_count = 0;
-        GetCurrentBioseq_count = 0;
-        GetCurrentBiosource_biosrc = 0;
-        GetCurrentBiosource_count = 0;
-        GetCurrentMolInfo_mol_info = 0;
-        GetCurrentMolInfo_count = 0;
-        HasLineage_biosrc = 0;
-        HasLineage_count = 0;
-        IsDNA_result = 0;
-        IsDNA_count = 0;
-        IsOrganelle_result = 0;
-        IsOrganelle_count = 0;
-        IsEukaryotic_result = 0;
-        IsEukaryotic_count = 0;
-        IsBacterial_result = 0;
-        IsBacterial_count = 0;
-        IsViral_result = 0;
-        IsViral_count = 0;
-        IsPubMed_result = 0;
-        IsPubMed_count = 0;
-        GetCurrentGenome_genome = 0;
-        GetCurrentGenome_count = 0;
-        SequenceHasFarPointers_result = 0;
-        SequenceHasFarPointers_count = 0;
-        GetSeqSummary_count = 0;
-        GetProteinId_protein_id = 0;
-        GetProteinId_count = 0;
-        IsRefseq_is_refseq = 0;
-        IsRefseq_count = 0;
-        IsBGPipe_is_bgpipe = 0;
-        IsBGPipe_count = 0;
-    }
+/// BIG FILE
+ADD_DISCREPANCY_TYPE(SEQUENCE)
+ADD_DISCREPANCY_TYPE(SEQ_SET)
+ADD_DISCREPANCY_TYPE(FEAT)
+ADD_DISCREPANCY_TYPE(DESC)
+ADD_DISCREPANCY_TYPE(BIOSRC)
+ADD_DISCREPANCY_TYPE(PUBDESC)
+ADD_DISCREPANCY_TYPE(AUTHORS)
+ADD_DISCREPANCY_TYPE(SUBMIT)
+ADD_DISCREPANCY_TYPE(STRING)
+
     mutable TReportItemList m_Group0;
     mutable TReportItemList m_Group1;
+
+/// BIG FILE
+friend class CReadHook_Bioseq_set;
+friend class CReadHook_Bioseq_set_class;
+friend class CReadHook_Bioseq;
+friend class CCopyHook_Bioseq_set;
+friend class CCopyHook_Bioseq;
+friend class CCopyHook_Seq_descr;
+friend class CCopyHook_Seq_annot;
+friend class CCopyHook_Submit_block;
+
+    enum EObjType {
+        eNone,
+        eFile,
+        eSubmit,
+        eSeqSet,
+        eSeqSet_NucProt,
+        eSeqSet_GenProd,
+        eSeqSet_SegSet,
+        eSeqSet_Genome,
+        eSeqSet_Funny,
+        eBioseq,
+        eSeqFeat,
+        eSeqDesc,
+        eSubmitBlock,
+        eString
+    };
+
+    static bool IsSeqSet(EObjType n) {
+        switch (n) {
+            case eSeqSet:
+            case eSeqSet_NucProt:
+            case eSeqSet_GenProd:
+            case eSeqSet_SegSet:
+            case eSeqSet_Genome:
+            case eSeqSet_Funny:
+                return true;
+            default:
+                return false;
+        }
+    }
+    static string TypeName(EObjType n) {
+        static const char* names[] =
+        {
+            "None",
+            "File",
+            "Submit",
+            "SeqSet",
+            "SeqSet_NucProt",
+            "SeqSet_GenProd",
+            "SeqSet_SegSet",
+            "SeqSet_Genome",
+            "SeqSet_Funny",
+            "Bioseq",
+            "SeqFeat",
+            "SeqDesc",
+            "SubmitBlock",
+            "String"
+        };
+        return names[n];
+    }
+
+    struct CRefNode : public CObject
+    {
+        CRefNode(EObjType type, unsigned index) : m_Type(type), m_Index(index) {}
+
+        EObjType m_Type;
+        size_t m_Index;
+        CRef<CRefNode> m_Parent;
+        mutable string m_Text;
+
+        string GetText() const;
+        string GetBioseqLabel() const;
+        //bool operator<(const CRefNode&) const;
+    };
+
+    struct CParseNode : public CObject
+    {
+        enum EInfo {
+            eIsPseudo = 1 << 0,
+            eKnownPseudo = 1 << 1,
+            eKnownGene = 1 << 2,
+            eKnownProduct = 1 << 3
+        };
+
+        CParseNode(EObjType type, unsigned index, CParseNode* parent = 0) : m_Type(type), m_Index(index), m_Repeat(false), m_Info(0), m_Flags(0), m_Parent(parent) {
+            m_Ref.Reset(new CRefNode(type, index));
+            if (parent) {
+                m_Ref->m_Parent.Reset(parent->m_Ref);
+            }
+        }
+
+        CParseNode& AddDescriptor(const CSeqdesc& seqdesc) {
+            CRef<CParseNode> new_node(new CParseNode(eSeqDesc, m_Descriptors.size(), this));
+            new_node->m_Obj = &seqdesc;
+            m_Descriptors.push_back(new_node);
+            m_DescriptorMap[&seqdesc] = new_node;
+            if (seqdesc.IsSource()) {
+                const CBioSource* biosrc = &seqdesc.GetSource();
+                m_Biosources.push_back(biosrc);
+                m_BiosourceMap[biosrc] = new_node;
+            }
+            if (seqdesc.IsPub()) {
+                const CPubdesc* pub = &seqdesc.GetPub();
+                m_Pubdescs.push_back(pub);
+                m_PubdescMap[pub] = new_node;
+                if (pub->IsSetPub()) {
+                    for (auto& it : pub->GetPub().Get()) {
+                        if (it->IsSetAuthors()) {
+                            const CAuth_list* auth = &it->GetAuthors();
+                            m_Authors.push_back(auth);
+                            m_AuthorMap[auth] = new_node;
+                            m_AuthorPubMap[auth] = &*it;
+                        }
+                    }
+                }
+            }
+            return *new_node;
+        }
+
+        CParseNode& AddFeature(const CSeq_feat& feat) {
+            CRef<CParseNode> new_node(new CParseNode(eSeqFeat, m_Features.size(), this));
+            new_node->m_Obj = &feat;
+            m_Features.push_back(new_node);
+            m_FeatureMap[&feat] = new_node;
+            if (feat.IsSetData() && feat.GetData().IsBiosrc()) {
+                const CBioSource* biosrc = &feat.GetData().GetBiosrc();
+                m_Biosources.push_back(biosrc);
+                m_BiosourceMap[biosrc] = new_node;
+            }
+            if (feat.IsSetData() && feat.GetData().IsPub()) {
+                const CPubdesc* pub = &feat.GetData().GetPub();
+                m_Pubdescs.push_back(pub);
+                m_PubdescMap[pub] = new_node;
+                if (pub->IsSetPub()) {
+                    for (auto& it : pub->GetPub().Get()) {
+                        if (it->IsSetAuthors()) {
+                            const CAuth_list* auth = &it->GetAuthors();
+                            m_Authors.push_back(auth);
+                            m_AuthorMap[auth] = new_node;
+                            m_AuthorPubMap[auth] = &*it;
+                        }
+                    }
+                }
+            }
+            return *new_node;
+        }
+
+        void SetType(EObjType type) { m_Type = type; m_Ref->m_Type = type; }
+
+        CConstRef<CSeqdesc> GetTitle() const { return (m_Title || !m_Parent) ? m_Title : m_Parent->GetTitle(); }
+        CConstRef<CSeqdesc> GetMolinfo() const { return (m_Molinfo || !m_Parent) ? m_Molinfo : m_Parent->GetMolinfo(); }
+        CConstRef<CSeqdesc> GetBiosource() const { return (m_Biosource || !m_Parent) ? m_Biosource : m_Parent->GetBiosource(); }
+        bool InGenProdSet() const { return m_Type == eSeqSet_GenProd ? true : m_Parent ? m_Parent->InGenProdSet() : false; }
+
+        EObjType m_Type;
+        size_t m_Index;
+        bool m_Repeat;
+        mutable unsigned char m_Info;
+        unsigned char m_Flags;
+        CNcbiStreampos m_Pos;
+        CRef<CRefNode> m_Ref;
+        CConstRef<CObject> m_Obj;
+        CParseNode* m_Parent;
+        mutable const CParseNode* m_Gene;
+        mutable string m_Product;
+        vector<CRef<CParseNode>> m_Children;
+        vector<CRef<CParseNode>> m_Descriptors;
+        vector<CRef<CParseNode>> m_Features;
+        vector<const CBioSource*> m_Biosources;
+        vector<const CPubdesc*> m_Pubdescs;
+        vector<const CAuth_list*> m_Authors;
+        map<const CSeqdesc*, CParseNode*> m_DescriptorMap;
+        map<const CSeq_feat*, CParseNode*> m_FeatureMap;
+        map<const CBioSource*, CParseNode*> m_BiosourceMap;
+        map<const CPubdesc*, CParseNode*> m_PubdescMap;
+        map<const CAuth_list*, CParseNode*> m_AuthorMap;
+        map<const CAuth_list*, const CPub*> m_AuthorPubMap;
+        shared_ptr<CSeqSummary> m_BioseqSummary;
+        CConstRef<CSeqdesc> m_Title;
+        CConstRef<CSeqdesc> m_Molinfo;
+        CConstRef<CSeqdesc> m_Biosource;
+        vector<CConstRef<CSeqdesc>> m_SetBiosources;
+
+string Path() { return m_Parent ? m_Parent->Path() + " => " + TypeName(m_Type) + ": " + to_string(m_Index) : TypeName(m_Type) + ": " + to_string(m_Index); }
+    };
+
+    bool Skip();
+    void Extend(CParseNode& node, CObjectIStream& stream);
+    void ParseAll(CParseNode& node);
+    void Populate(CParseNode& node);
+    void PopulateBioseq(CParseNode& node);
+    void PopulateSeqSet(CParseNode& node);
+    void PopulateSubmit(CParseNode& node);
+    void RunTests();
+
+    void PushNode(EObjType);
+    void PopNode() { m_CurrentNode.Reset(m_CurrentNode->m_Parent); }
+
+    CRef<CParseNode> m_RootNode;
+    CRef<CParseNode> m_CurrentNode;
+    bool IsPseudo(const CParseNode& node);
+    const CParseNode* GeneForFeature(const CParseNode& node);
+    string ProdForFeature(const CParseNode& node);
+    static bool CompareRefs(CRef<CReportObj> a, CRef<CReportObj> b);
+
+friend class CDiscrepancyObject;
 };
 
+
+class CDiscrepancyObject : public CReportObj
+{
+protected:
+    CDiscrepancyObject(CDiscrepancyContext::CRefNode* ref, CDiscrepancyContext::CRefNode* fix = 0, const CObject* more = 0) : m_Ref(ref), m_Fix(fix), m_More(more), m_Fixed(false) {}
+
+public:
+    const string GetText() const { return m_Ref->GetText(); }
+    const string GetPath() const { for (auto ref = m_Ref; ref; ref = ref->m_Parent) if (ref->m_Type == CDiscrepancyContext::eFile) return ref->m_Text; return kEmptyStr; }
+    const string& GetFeatureType() const { return kEmptyStr; }
+    const string& GetProductName() const { return kEmptyStr; }
+    const string& GetLocation() const { return kEmptyStr; }
+    const string& GetLocusTag() const { return kEmptyStr; }
+    const string GetShort() const { return m_Ref->GetBioseqLabel(); }
+    virtual void SetMoreInfo(CObject* data) { m_More.Reset(data); }
+
+    EType GetType(void) const // Can we use the same enum?
+    {
+        //eFile,
+        //eSubmit,
+        //eSeqSet,
+        //eSeqSet_NucProt,
+        //eSeqSet_GenProd,
+        //eSeqSet_SegSet,
+        //eBioseq,
+        //eSeqFeat,
+        //eSeqDesc,
+        //eString
+
+        //eType_feature,
+        //eType_descriptor,
+        //eType_sequence,
+        //eType_seq_set,
+        //eType_submit_block,
+        //eType_string
+
+        switch (m_Ref->m_Type) {
+            case CDiscrepancyContext::eBioseq: return eType_sequence;
+            case CDiscrepancyContext::eString: return eType_string;
+            default: break;
+        }
+        return eType_string;
+    }
+
+    bool CanAutofix(void) const { return m_Fix && !m_Fixed; }
+    bool IsFixed(void) const { return m_Fixed; }
+    void SetFixed(void) { m_Fixed = true; }
+    CConstRef<CObject> GetMoreInfo() { return m_More; }
+    CReportObj* Clone(bool fix, CConstRef<CObject> data) const;
+
+    static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
+    static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);
+    static string GetTextObjectDescription(const CSeqdesc& sd);
+    static string GetTextObjectDescription(const CBioseq& bs, CScope& scope);
+    static string GetTextObjectDescription(CBioseq_set_Handle bssh);
+    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &type, string &context, string &location, string &locus_tag);
+    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &type, string &location, string &locus_tag);
+
+protected:
+    CRef<CDiscrepancyCase> m_Case;
+    CRef<CDiscrepancyContext::CRefNode> m_Ref;
+    CRef<CDiscrepancyContext::CRefNode> m_Fix;
+    CConstRef<CObject> m_More;
+    bool m_Fixed;
+    friend class CDiscrepancyContext;
+    friend class CReportNode;
+    friend bool operator<(const CReportObjPtr& one, const CReportObjPtr& another) { return ((const CDiscrepancyObject*)one.P)->m_Ref < ((const CDiscrepancyObject*)another.P)->m_Ref; }
+};
+
+
+inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return static_cast<CDiscrepancyObject*>(&obj)->m_More; }
 
 // MACRO definitions
 
@@ -628,10 +991,8 @@ protected:
     class CDiscrepancyCaseA_##name : public CDiscrepancyCase_##name                                                 \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyCaseA_##name() : m_Hook(0) {}                                                                   \
-        CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope) const;                            \
-        bool SetHook(TAutofixHook func) { m_Hook = func; return true; }                                             \
-        TAutofixHook m_Hook;                                                                                        \
+        CDiscrepancyCaseA_##name() {}                                                                               \
+        CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const;                  \
     };                                                                                                              \
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
@@ -641,7 +1002,7 @@ protected:
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \
     static CDiscrepancyCaseAConstructor_##name DiscrepancyCaseAConstructor_##name;                                  \
-    CRef<CAutofixReport> CDiscrepancyCaseA_##name::Autofix(const CDiscrepancyItem* item, CScope& scope) const
+    CRef<CAutofixReport> CDiscrepancyCaseA_##name::Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const
 
 
 #define DISCREPANCY_ALIAS(name, alias) \

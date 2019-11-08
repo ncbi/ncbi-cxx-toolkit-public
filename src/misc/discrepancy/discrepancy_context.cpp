@@ -31,6 +31,7 @@
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <sstream>
+#include <objects/biblio/Author.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -41,6 +42,9 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
+#include <objects/submit/Contact_info.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <util/xregexp/regexp.hpp>
@@ -51,60 +55,9 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
 
-CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
-
-string CDiscrepancyContext::GetCurrentBioseqLabel(void) const 
+const CSeqSummary& CDiscrepancyContext::CurrentBioseqSummary(void) const
 {
-    if (GetCurrentBioseqLabel_count != m_Count_Bioseq) {
-        GetCurrentBioseqLabel_count = m_Count_Bioseq;
-        GetCurrentBioseqLabel_str.clear();
-        if (m_Current_Bioseq) {
-            GetBestId(*m_Current_Bioseq)->GetLabel(&GetCurrentBioseqLabel_str, NULL, CSeq_id::eContent);
-        }
-        else {
-            CConstRef<CBioseq_set> bss = GetCurrentBioseq_set();
-            if (bss) {
-                bss->GetLabel(&GetCurrentBioseqLabel_str, CBioseq_set::eContent);
-            }
-        }
-    }
-    return GetCurrentBioseqLabel_str;
-}
-
-
-CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const 
-{
-    //static CConstRef<CBioseq> bioseq;
-    //static size_t count = 0;
-    if (GetCurrentBioseq_count != m_Count_Bioseq) {
-        GetCurrentBioseq_count = m_Count_Bioseq;
-        if (m_Current_Bioseq) {
-            GetCurrentBioseq_bioseq = m_Current_Bioseq;
-        }
-        else {
-            GetCurrentBioseq_bioseq.Reset();
-            CConstRef<CBioseq_set> BS = GetCurrentBioseq_set();
-            if (BS && BS->IsSetClass()) {
-                CScope &scope = GetScope();
-                if (BS->GetClass() == CBioseq_set::eClass_nuc_prot) {
-                    GetCurrentBioseq_bioseq.Reset(scope.GetBioseqHandle(BS->GetNucFromNucProtSet()).GetCompleteBioseq());
-                }
-                else if (BS->GetClass() == CBioseq_set::eClass_gen_prod_set) {
-                    GetCurrentBioseq_bioseq.Reset(scope.GetBioseqHandle(BS->GetGenomicFromGenProdSet()).GetCompleteBioseq());
-                }
-                else if (BS->GetClass() == CBioseq_set::eClass_segset) {
-                    GetCurrentBioseq_bioseq.Reset(scope.GetBioseqHandle(BS->GetMasterFromSegSet()).GetCompleteBioseq());
-                }
-                else {
-                    CBioseq_CI bi(scope.GetBioseq_setHandle(*BS), CSeq_inst::eMol_na);
-                    if (bi) {
-                        GetCurrentBioseq_bioseq.Reset(bi->GetCompleteBioseq());
-                    }
-                }
-            }
-        }
-    }
-    return GetCurrentBioseq_bioseq;
+    return *m_CurrentNode->m_BioseqSummary;
 }
 
 
@@ -137,43 +90,6 @@ CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetOrganelleProductRules()
 }
 
 
-const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
-{
-    //static const CBioSource* biosrc;
-    //static size_t count = 0;
-    if (GetCurrentBiosource_count != m_Count_Bioseq) {
-        GetCurrentBiosource_count = m_Count_Bioseq;
-        GetCurrentBiosource_biosrc = 0;
-        CConstRef<CBioseq> bs = GetCurrentBioseq();
-        if (bs) {
-            GetCurrentBiosource_biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*bs));
-        }
-    }
-    return GetCurrentBiosource_biosrc;
-}
-
-const CMolInfo* CDiscrepancyContext::GetCurrentMolInfo()
-{
-    //static const CMolInfo* mol_info;
-    //static size_t count = 0;
-    if (GetCurrentMolInfo_count != m_Count_Bioseq) {
-        GetCurrentMolInfo_count = m_Count_Bioseq;
-        GetCurrentMolInfo_mol_info = sequence::GetMolInfo(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
-    }
-    return GetCurrentMolInfo_mol_info;
-}
-
-bool CDiscrepancyContext::IsCurrentSequenceMrna()
-{
-    const CMolInfo* m = GetCurrentMolInfo();
-    if (m && m->IsSetBiomol() && m->GetBiomol() == CMolInfo::eBiomol_mRNA) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 bool CDiscrepancyContext::IsUnculturedNonOrganelleName(const string& taxname)
 {
     if (NStr::Equal(taxname, "uncultured organism") ||
@@ -194,209 +110,130 @@ bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def
 }
 
 
-bool CDiscrepancyContext::HasLineage(const string& lineage)
+bool CDiscrepancyContext::HasLineage(const CBioSource* biosrc, const string& lineage)
 {
-    //static const CBioSource* biosrc = 0;
-    //static size_t count = 0;
-    if (HasLineage_count != m_Count_Bioseq) {
-        HasLineage_count = m_Count_Bioseq;
-        HasLineage_biosrc = GetCurrentBiosource();
-    }
-    return HasLineage_biosrc ? HasLineage(*HasLineage_biosrc, GetLineage(), lineage) : false;
+    return biosrc ? HasLineage(*biosrc, GetLineage(), lineage) : false;
 }
 
 
-bool CDiscrepancyContext::IsDNA()
-{
-    //static bool result = false;
-    //static size_t count = 0;
-    if (IsDNA_count != m_Count_Bioseq) {
-        IsDNA_count = m_Count_Bioseq;
-        IsDNA_result = false;
-        CConstRef<CBioseq> bioseq = GetCurrentBioseq();
-        if (bioseq && bioseq->IsNa() && bioseq->IsSetInst()) {
-            IsDNA_result = (bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == CSeq_inst::eMol_dna);
-        }
+bool CDiscrepancyContext::IsOrganelle(const CBioSource* biosrc) {
+    if (biosrc && biosrc->IsSetGenome()) {
+        int genome = biosrc->GetGenome();
+        return genome == CBioSource::eGenome_chloroplast
+            || genome == CBioSource::eGenome_chromoplast
+            || genome == CBioSource::eGenome_kinetoplast
+            || genome == CBioSource::eGenome_mitochondrion
+            || genome == CBioSource::eGenome_cyanelle
+            || genome == CBioSource::eGenome_nucleomorph
+            || genome == CBioSource::eGenome_apicoplast
+            || genome == CBioSource::eGenome_leucoplast
+            || genome == CBioSource::eGenome_proplastid
+            || genome == CBioSource::eGenome_hydrogenosome
+            || genome == CBioSource::eGenome_plastid
+            || genome == CBioSource::eGenome_chromatophore;
     }
-    return IsDNA_result;
-}
-
-bool CDiscrepancyContext::IsOrganelle()
-{
-    //static bool result = false;
-    //static size_t count = 0;
-    if (IsOrganelle_count != m_Count_Bioseq) {
-        IsOrganelle_count = m_Count_Bioseq;
-        IsOrganelle_result = false;
-        const CBioSource* biosrc = GetCurrentBiosource();
-        if (biosrc && biosrc->IsSetGenome()) {
-            int genome = biosrc->GetGenome();
-            IsOrganelle_result = ((genome == CBioSource::eGenome_chloroplast
-                || genome == CBioSource::eGenome_chromoplast
-                || genome == CBioSource::eGenome_kinetoplast
-                || genome == CBioSource::eGenome_mitochondrion
-                || genome == CBioSource::eGenome_cyanelle
-                || genome == CBioSource::eGenome_nucleomorph
-                || genome == CBioSource::eGenome_apicoplast
-                || genome == CBioSource::eGenome_leucoplast
-                || genome == CBioSource::eGenome_proplastid
-                || genome == CBioSource::eGenome_hydrogenosome
-                || genome == CBioSource::eGenome_plastid
-                || genome == CBioSource::eGenome_chromatophore));
-        }
-    }
-
-    return IsOrganelle_result;
+    return false;
 }
 
 
-bool CDiscrepancyContext::IsEukaryotic()
-{
-    if (m_Eucariote) {
-        return true;
+bool CDiscrepancyContext::IsEukaryotic(const CBioSource* biosrc) {
+    if (biosrc) {
+        int genome = biosrc->GetGenome();
+        return genome != CBioSource::eGenome_mitochondrion
+            && genome != CBioSource::eGenome_chloroplast
+            && genome != CBioSource::eGenome_plastid
+            && genome != CBioSource::eGenome_apicoplast
+            && HasLineage(*biosrc, GetLineage(), "Eukaryota");
     }
-    if (IsEukaryotic_count != m_Count_Bioseq) {
-        IsEukaryotic_count = m_Count_Bioseq;
-        const CBioSource* biosrc = GetCurrentBiosource();
-        if (biosrc) {
-            CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
-            if (genome != CBioSource::eGenome_mitochondrion
-                && genome != CBioSource::eGenome_chloroplast
-                && genome != CBioSource::eGenome_plastid
-                && genome != CBioSource::eGenome_apicoplast
-                && HasLineage(*biosrc, GetLineage(), "Eukaryota")) {
-                IsEukaryotic_result = true;
-                return IsEukaryotic_result;
-            }
-        }
-        IsEukaryotic_result = false;
-    }
-    return IsEukaryotic_result;
+    return false;
 }
 
 
-bool CDiscrepancyContext::IsBacterial()
+bool CDiscrepancyContext::IsBacterial(const CBioSource* biosrc)
 {
-    //static bool result = false;
-    //static size_t count = 0;
-    if (IsBacterial_count != m_Count_Bioseq) {
-        IsBacterial_count = m_Count_Bioseq;
-        const CBioSource* biosrc = GetCurrentBiosource();
-        if (biosrc) {
-            //CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
-            if (HasLineage(*biosrc, GetLineage(), "Bacteria")) {
-                IsBacterial_result = true;
-                return IsBacterial_result;
-            }
-        }
-        IsBacterial_result = false;
-    }
-    return IsBacterial_result;
+    return biosrc ? HasLineage(biosrc, "Bacteria") : false;
 }
 
 
-bool CDiscrepancyContext::IsViral()
+bool CDiscrepancyContext::IsViral(const CBioSource* biosrc)
 {
-    //static bool result = false;
-    //static size_t count = 0;
-    if (IsViral_count != m_Count_Bioseq) {
-        IsViral_count = m_Count_Bioseq;
-        const CBioSource* biosrc = GetCurrentBiosource();
-        if (biosrc) {
-            if (HasLineage(*biosrc, GetLineage(), "Viruses")) {
-                IsViral_result = true;
-                return IsViral_result;
-            }
-        }
-        IsViral_result = false;
-    }
-    return IsViral_result;
+    return biosrc ? HasLineage(biosrc, "Viruses") : false;
 }
 
 
-bool CDiscrepancyContext::IsPubMed()
+string CSeqSummary::GetStats() const
 {
-    //static bool result = false;
-    //static size_t count = 0;
-    if (IsPubMed_count != m_Count_Pub_equiv) {
-        IsPubMed_count = m_Count_Pub_equiv;
-        IsPubMed_result = false;
-        const CPub_equiv* equiv = GetCurrentPub_equiv();
-        if (equiv) {
-            const CPub_equiv::Tdata& list = equiv->Get();
-            ITERATE (CPub_equiv::Tdata, it, list) {
-                if ((*it)->IsPmid()) {
-                    IsPubMed_result = true;
-                    break;
-                }
-            }
-        }
-    }
-    return IsPubMed_result;
-}
-
-
-bool CDiscrepancyContext::IsCurrentRnaInGenProdSet()
-{
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
-        result = IsmRNASequenceInGenProdSet(GetCurrentBioseq(), Get_Bioseq_set_Stack());
-    }
-    return result;
-}
-
-
-CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
-{
-    //static CBioSource::TGenome genome;
-    //static size_t count = 0;
-    if (GetCurrentGenome_count != m_Count_Bioseq) {
-        GetCurrentGenome_count = m_Count_Bioseq;
-        const CBioSource* biosrc = GetCurrentBiosource();
-        GetCurrentGenome_genome = biosrc ? biosrc->GetGenome() : CBioSource::eGenome_unknown;
-    }
-    return GetCurrentGenome_genome;
-}
-
-
-bool CDiscrepancyContext::SequenceHasFarPointers()
-{
-    //static bool result = false;
-    //static size_t count = 0;
-    if (SequenceHasFarPointers_count != m_Count_Bioseq) {
-        SequenceHasFarPointers_count = m_Count_Bioseq;
-        SequenceHasFarPointers_result = false;
-        if (!GetCurrentBioseq()->CanGetInst() || !GetCurrentBioseq()->GetInst().CanGetExt() || !GetCurrentBioseq()->GetInst().GetExt().IsDelta()) {
-            return SequenceHasFarPointers_result;
-        }
-        FOR_EACH_DELTASEQ_IN_DELTAEXT(it, GetCurrentBioseq()->GetInst().GetExt().GetDelta()) {
-            if ((*it)->IsLoc()) {
-                SequenceHasFarPointers_result = true;
-                return SequenceHasFarPointers_result;
-            }
-        }
-    }
-    return SequenceHasFarPointers_result;
-}
-
-string CSeqSummary::GetStr() const
-{
-    if (Str.empty()) {
-        Str = " (length " + NStr::NumericToString(Len);
-        if (Other) {
-            Str += ", " + NStr::NumericToString(Other) + " other";
+    if (Stats.empty()) {
+        Stats = "(length " + NStr::NumericToString(Len);
+        if (N + Other) {
+            Stats += ", " + NStr::NumericToString(N + Other) + " other";
         }
         if (Gaps > 0) {
-            Str += ", " + NStr::NumericToString(Gaps) + " gap";
+            Stats += ", " + NStr::NumericToString(Gaps) + " gap";
         }
-        Str += ")";
+        Stats += ")";
     }
-    return Str;
+    return Stats;
 }
 
-static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary& ret)
+
+inline static void _notN(CSeqSummary& sum)
+{
+    if (sum._Ns >= 10) {
+        sum.NRuns.push_back({ sum._Pos + 1 - sum._Ns, sum._Pos });
+    }
+    sum._Ns = 0;
+}
+
+inline static void _QualityScore(CSeqSummary& sum)
+{
+    sum._QS++;
+    size_t q = sum._QS;
+    if (sum._Pos > CSeqSummary::WINDOW_SIZE) {
+        for (size_t r = sum._CBread; r != sum._CBwrite && sum._CBposition[r] <= sum._Pos; r = r >= CSeqSummary::WINDOW_SIZE - 1 ? 0 : r + 1) {
+            sum._CBread = r;
+            q = sum._QS - sum._CBscore[r];
+        }
+    }
+    if (q > sum.MinQ) { // yes, ">"!
+        sum.MinQ = q;
+    }
+    sum._CBscore[sum._CBwrite] = sum._QS;
+    sum._CBposition[sum._CBwrite] = sum._Pos + CSeqSummary::WINDOW_SIZE;
+    sum._CBwrite++;
+    if (sum._CBwrite >= CSeqSummary::WINDOW_SIZE) {
+        sum._CBwrite = 0;
+    }
+}
+
+inline static void _A(CSeqSummary& sum) { sum.A++; _notN(sum); }
+inline static void _G(CSeqSummary& sum) { sum.G++; _notN(sum); }
+inline static void _C(CSeqSummary& sum) { sum.C++; _notN(sum); }
+inline static void _T(CSeqSummary& sum) { sum.T++; _notN(sum); }
+
+inline static void _Z(CSeqSummary& sum)
+{
+    sum.Other++;
+    _notN(sum);
+    _QualityScore(sum);
+}
+
+inline static void _N(CSeqSummary& sum)
+{
+    sum.N++;
+    sum._Ns++;
+    if (sum._Ns > sum.MaxN) {
+        sum.MaxN = sum._Ns;
+    }
+    if (sum.First) {
+        sum.StartsWithGap = true;
+    }
+    sum.EndsWithGap = true;
+    _QualityScore(sum);
+}
+
+
+static void CountNucleotides(const CSeq_data& seq_data, TSeqPos pos, TSeqPos len, CSeqSummary& sum)
 {
 /*
     enum E_Choice {
@@ -414,6 +251,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
         e_Gap           ///< gap types
     };
 */
+    sum._Pos = pos;
     switch (seq_data.Which()) {
         case CSeq_data::e_Ncbi2na:
             //cout << "> e_Ncbi2na\n";
@@ -421,7 +259,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                 vector<char>::const_iterator it = seq_data.GetNcbi2na().Get().begin();
                 unsigned char mask = 0xc0;
                 unsigned char shift = 6;
-                for (size_t n = 0; n < len; n++) {
+                for (size_t n = 0; n < len; n++, sum._Pos++) {
                     unsigned char c = ((*it) & mask) >> shift;
                     mask >>= 2;
                     shift -= 2;
@@ -432,22 +270,22 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                     }
                     switch (c) {
                         case 0:
-                            ret.A++;
+                            _A(sum);
                             break;
                         case 1:
-                            ret.C++;
+                            _C(sum);
                             break;
                         case 2:
-                            ret.G++;
+                            _G(sum);
                             break;
                         case 3:
-                            ret.T++;
+                            _T(sum);
                             break;
                     }
                 }
                 if (len) {
-                    ret.First = false;
-                    ret.EndsWithGap = false;
+                    sum.First = false;
+                    sum.EndsWithGap = false;
                 }
             }
             return;
@@ -457,7 +295,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                 vector<char>::const_iterator it = seq_data.GetNcbi4na().Get().begin();
                 unsigned char mask = 0xf0;
                 unsigned char shift = 4;
-                for (size_t n = 0; n < len; n++) {
+                for (size_t n = 0; n < len; n++, sum._Pos++) {
                     unsigned char c = ((*it) & mask) >> shift;
                     mask >>= 4;
                     shift -= 4;
@@ -466,33 +304,28 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                         shift = 4;
                         ++it;
                     }
-                    ret.EndsWithGap = false;
+                    sum.EndsWithGap = false;
                     switch (c) {
                         case 1:
-                            ret.A++;
+                            _A(sum);
                             break;
                         case 2:
-                            ret.C++;
+                            _C(sum);
                             break;
                         case 4:
-                            ret.G++;
+                            _G(sum);
                             break;
                         case 8:
-                            ret.T++;
+                            _T(sum);
                             break;
                         case 15:
-                            ret.N++;
-                            ret.Other++;
-                            if (ret.First) {
-                                ret.StartsWithGap = true;
-                            }
-                            ret.EndsWithGap = true;
+                            _N(sum);
                             break;
                         default:
-                            ret.Other++;
+                            _Z(sum);
                             break;
                     }
-                    ret.First = false;
+                    sum.First = false;
                 }
             }
             return;
@@ -500,34 +333,29 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
             //cout << "> e_Iupacna\n";
             {
                 const string& s = seq_data.GetIupacna().Get();
-                for (size_t n = 0; n < len; n++) {
-                    ret.EndsWithGap = false;
+                for (size_t n = 0; n < len; n++, sum._Pos++) {
+                    sum.EndsWithGap = false;
                     switch (s[n]) {
                         case 'A':
-                            ret.A++;
+                            _A(sum);
                             break;
                         case 'C':
-                            ret.C++;
+                            _C(sum);
                             break;
                         case 'G':
-                            ret.G++;
+                            _G(sum);
                             break;
                         case 'T':
-                            ret.T++;
+                            _T(sum);
                             break;
                         case 'N':
-                            ret.N++;
-                            ret.Other++;
-                            if (ret.First) {
-                                ret.StartsWithGap = true;
-                            }
-                            ret.EndsWithGap = true;
+                            _N(sum);
                             break;
                         default:
-                            ret.Other++;
+                            _Z(sum);
                             break;
                     }
-                    ret.First = false;
+                    sum.First = false;
                 }
             }
             return;
@@ -540,34 +368,29 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                     return;
                 }
                 const string& s = iupacna.GetIupacna().Get();
-                for (size_t n = 0; n < len; n++) {
-                    ret.EndsWithGap = false;
+                for (size_t n = 0; n < len; n++, sum._Pos++) {
+                    sum.EndsWithGap = false;
                     switch (s[n]) {
                         case 'A':
-                            ret.A++;
+                            _A(sum);
                             break;
                         case 'C':
-                            ret.C++;
+                            _C(sum);
                             break;
                         case 'G':
-                            ret.G++;
+                            _G(sum);
                             break;
                         case 'T':
-                            ret.T++;
+                            _T(sum);
                             break;
                         case 'N':
-                            ret.N++;
-                            ret.Other++;
-                            if (ret.First) {
-                                ret.StartsWithGap = true;
-                            }
-                            ret.EndsWithGap = true;
+                            _N(sum);
                             break;
                         default:
-                            ret.Other++;
+                            _Z(sum);
                             break;
                     }
-                    ret.First = false;
+                    sum.First = false;
                 }
             }
             return;
@@ -577,42 +400,57 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
 }
 
 
-const CSeqSummary& CDiscrepancyContext::GetSeqSummary()
+void CDiscrepancyContext::BuildSeqSummary(const CBioseq& bs, CSeqSummary& summary)
 {
-    if (GetSeqSummary_count == m_Count_Bioseq) {
-        return GetSeqSummary_ret;
+    summary.clear();
+
+    // Length
+    summary.Len = bs.GetInst().GetLength();
+
+    // Label
+    CConstRef<CSeq_id> best_id;
+    int best_score = CSeq_id::kMaxScore;
+    for (auto id: bs.GetId()) {
+        if (id->Which() == CSeq_id::e_Genbank || id->Which() == CSeq_id::e_Ddbj || id->Which() == CSeq_id::e_Embl || id->Which() == CSeq_id::e_Other) {
+            best_id = id;
+            break;
+        }
+        else {
+            if (best_score > id->BaseBestRankScore()) {
+                best_id = id;
+                best_score = id->BaseBestRankScore();
+            }
+        }
     }
-    GetSeqSummary_count = m_Count_Bioseq;
-    GetSeqSummary_ret.clear();
-    const CBioseq& bs = *GetCurrentBioseq();
+    best_id->GetLabel(&summary.Label, CSeq_id::eContent);
 
-    GetSeqSummary_ret.Len = bs.GetInst().GetLength();
-
+    // Stats
     const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(bs);
     SSeqMapSelector sel;
     sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap | CSeqMap::fFindLeafRef);
     for (CSeqMap_CI seq_iter(seq_map, &GetScope(), sel); seq_iter; ++seq_iter) {
         switch (seq_iter.GetType()) {
-            case CSeqMap::eSeqData:
-                CountNucleotides(seq_iter.GetData(), seq_iter.GetLength(), GetSeqSummary_ret);
-                break;
-            case CSeqMap::eSeqGap:
-                if (GetSeqSummary_ret.First) {
-                    //GetSeqSummary_ret.StartsWithGap = true;
-                    GetSeqSummary_ret.First = false;
-                }
-                GetSeqSummary_ret.Gaps += seq_iter.GetLength();
-                //GetSeqSummary_ret.EndsWithGap = true;
-                break;
-            case CSeqMap::eSeqRef:
-                GetSeqSummary_ret.First = false;
-                GetSeqSummary_ret.EndsWithGap = false;
-                GetSeqSummary_ret.HasRef = true;
-            default:
-                break;
+        case CSeqMap::eSeqData:
+            CountNucleotides(seq_iter.GetData(), seq_iter.GetPosition(), seq_iter.GetLength(), summary);
+            break;
+        case CSeqMap::eSeqGap:
+            _notN(summary);
+            if (summary.First) {
+                summary.First = false;
+            }
+            summary.Gaps += seq_iter.GetLength();
+            break;
+        case CSeqMap::eSeqRef:
+            _notN(summary);
+            summary.First = false;
+            summary.EndsWithGap = false;
+            summary.HasRef = true;
+        default:
+            _notN(summary);
+            break;
         }
     }
-    return GetSeqSummary_ret;
+    _notN(summary);
 }
 
 
@@ -654,176 +492,142 @@ bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
 }
 
 
-const CSeq_id* CDiscrepancyContext::GetProteinId()
-{
-    //static const CSeq_id* protein_id = NULL;
-    //static size_t count = 0;
-    if (GetProteinId_count == m_Count_Bioseq) {
-        return GetProteinId_protein_id;
-    }
-    GetProteinId_count = m_Count_Bioseq;
-    GetProteinId_protein_id = NULL;
-    if( ! GetCurrentBioseq()->IsSetId() ) {
-        // NULL
-        return GetProteinId_protein_id;
-    }
-    const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
-    ITERATE (CBioseq::TId, id_it, bioseq_ids) {
-        const CSeq_id & seq_id = **id_it;
-        if( seq_id.IsGeneral() && ! seq_id.GetGeneral().IsSkippable() ) {
-            GetProteinId_protein_id = &seq_id;
-            break;
-        }
-    }
-    return GetProteinId_protein_id;
-}
-
-
 bool CDiscrepancyContext::IsRefseq()
 {
-    //static bool is_refseq = false;
-    //static size_t count = 0;
-    if (IsRefseq_count == m_Count_Bioseq) {
-        return IsRefseq_is_refseq;
-    }
-    IsRefseq_count = m_Count_Bioseq;
-
-    IsRefseq_is_refseq = false;
-    if( ! GetCurrentBioseq()->IsSetId() ) {
-        // false
-        return IsRefseq_is_refseq;
-    }
-    const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
-    ITERATE (CBioseq::TId, id_it, bioseq_ids) {
-        const CSeq_id & seq_id = **id_it;
-        if( seq_id.IsOther() ) {
-            // for historical reasons, "other" means "refseq"
-            IsRefseq_is_refseq = true;
-            break;
+    const CBioseq& bioseq = CurrentBioseq();
+    if (bioseq.IsSetId()) {
+        for (auto& id : bioseq.GetId()) {
+            if (id->IsOther()) {
+                return true;
+            }
         }
     }
-
-    return IsRefseq_is_refseq;
+    return false;
 }
 
 
 bool CDiscrepancyContext::IsBGPipe()
 {
-    //static bool is_bgpipe = false;
-    //static size_t count = 0;
-    if (IsBGPipe_count == m_Count_Bioseq) {
-        return IsBGPipe_is_bgpipe;
+    for (auto& desc : GetAllSeqdesc()) {
+        if (desc.IsUser()) {
+            const CUser_object& user = desc.GetUser();
+            if (FIELD_IS_SET_AND_IS(user, Type, Str) && NStr::EqualNocase(user.GetType().GetStr(), "StructuredComment")) {
+                CConstRef<CUser_field> prefix_field = user.GetFieldRef("StructuredCommentPrefix", ".", NStr::eNocase);
+                if (prefix_field && FIELD_IS_SET_AND_IS(*prefix_field, Data, Str) && NStr::EqualNocase(prefix_field->GetData().GetStr(), "##Genome-Annotation-Data-START##")) {
+                    CConstRef<CUser_field> pipeline_field = user.GetFieldRef("Annotation Pipeline", ".", NStr::eNocase);
+                    if (pipeline_field && FIELD_IS_SET_AND_IS(*pipeline_field, Data, Str) && NStr::EqualNocase(pipeline_field->GetData().GetStr(), "NCBI Prokaryotic Genome Annotation Pipeline")) {
+                        return true;
+                    }
+                }
+            }
+        }
     }
-    IsBGPipe_count = m_Count_Bioseq;
-    IsBGPipe_is_bgpipe = false;
-
-    CSeqdesc_CI user_desc_ci(
-        m_Scope->GetBioseqHandle(*GetCurrentBioseq()), CSeqdesc::e_User);
-    for( ; ! IsBGPipe_is_bgpipe && user_desc_ci; ++user_desc_ci) {
-        const CUser_object & user_desc  = user_desc_ci->GetUser();
+    return false;
+#if 0
+    CSeqdesc_CI user_desc_ci(m_Scope->GetBioseqHandle(*GetCurrentBioseq()), CSeqdesc::e_User);
+    for(; !IsBGPipe_is_bgpipe && user_desc_ci; ++user_desc_ci) {
+        const CUser_object& user_desc = user_desc_ci->GetUser();
         // only look at structured comments
-        if( ! FIELD_IS_SET_AND_IS(user_desc, Type, Str) ||
-            ! NStr::EqualNocase(
-                user_desc.GetType().GetStr(), "StructuredComment") )
-        {
+        if(!FIELD_IS_SET_AND_IS(user_desc, Type, Str) || !NStr::EqualNocase(user_desc.GetType().GetStr(), "StructuredComment")) {
             continue;
         }
-
-        CConstRef<CUser_field> struccmt_prefix_field =
-            user_desc.GetFieldRef(
-                "StructuredCommentPrefix", ".", NStr::eNocase);
-        if( ! struccmt_prefix_field ||
-            ! FIELD_IS_SET_AND_IS(*struccmt_prefix_field, Data, Str) ||
-            ! NStr::EqualNocase(
-                struccmt_prefix_field->GetData().GetStr(),
-                "##Genome-Annotation-Data-START##") )
-        {
+        CConstRef<CUser_field> struccmt_prefix_field = user_desc.GetFieldRef("StructuredCommentPrefix", ".", NStr::eNocase);
+        if(!struccmt_prefix_field || !FIELD_IS_SET_AND_IS(*struccmt_prefix_field, Data, Str) || !NStr::EqualNocase(struccmt_prefix_field->GetData().GetStr(), "##Genome-Annotation-Data-START##") ) {
             continue;
         }
-
-        CConstRef<CUser_field> annot_pipeline_field =
-            user_desc.GetFieldRef(
-                "Annotation Pipeline", ".", NStr::eNocase);
-        if( ! annot_pipeline_field ||
-            ! FIELD_IS_SET_AND_IS(*annot_pipeline_field, Data, Str) ||
-            ! NStr::EqualNocase(
-                annot_pipeline_field->GetData().GetStr(),
-                "NCBI Prokaryotic Genome Annotation Pipeline") )
-        {
+        CConstRef<CUser_field> annot_pipeline_field = user_desc.GetFieldRef("Annotation Pipeline", ".", NStr::eNocase);
+        if (!annot_pipeline_field || !FIELD_IS_SET_AND_IS(*annot_pipeline_field, Data, Str) || !NStr::EqualNocase(annot_pipeline_field->GetData().GetStr(), "NCBI Prokaryotic Genome Annotation Pipeline")) {
             continue;
         }
-
         IsBGPipe_is_bgpipe = true;
         return IsBGPipe_is_bgpipe;
     }
-
     return IsBGPipe_is_bgpipe;
-}
-
-
-const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
-{
-    return GetGeneForFeature(*m_Current_Seq_feat);
+#endif
 }
 
 
 const CSeq_feat* CDiscrepancyContext::GetGeneForFeature(const CSeq_feat& feat)
 {
-    if (m_GeneForFeatureMap.find(&feat) == m_GeneForFeatureMap.end()) {
-        m_GeneForFeatureMap[&feat] = sequence::GetGeneForFeature(feat, *m_Scope);
-    }
-    return m_GeneForFeatureMap[&feat];
+    auto gene = GeneForFeature(*FindNode(feat));
+    return gene ? dynamic_cast<const CSeq_feat*>(&*gene->m_Obj) : 0;
 }
 
 
 string CDiscrepancyContext::GetProdForFeature(const CSeq_feat& feat)
 {
-    if (m_ProdForFeatureMap.find(&feat) == m_ProdForFeatureMap.end()) {
-        m_ProdForFeatureMap[&feat] = GetProductName(feat, *m_Scope);
+    return ProdForFeature(*FindNode(feat));
+}
+
+
+const CDiscrepancyContext::CParseNode* CDiscrepancyContext::GeneForFeature(const CDiscrepancyContext::CParseNode& node)
+{
+    if (node.m_Info & CParseNode::eKnownGene) {
+        return node.m_Gene;
     }
-    return m_ProdForFeatureMap[&feat];
+    node.m_Info |= CParseNode::eKnownGene;
+    const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*node.m_Obj);
+    auto gene = sequence::GetGeneForFeature(feat, *m_Scope);
+    node.m_Gene = gene ? FindNode(*gene) : 0;
+    return node.m_Gene;
+}
+
+
+string CDiscrepancyContext::ProdForFeature(const CDiscrepancyContext::CParseNode& node)
+{
+    if (node.m_Info & CParseNode::eKnownProduct) {
+        return node.m_Product;
+    }
+    node.m_Info |= CParseNode::eKnownProduct;
+    const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*node.m_Obj);
+    node.m_Product = GetProductName(feat, *m_Scope);
+    return node.m_Product;
 }
 
 
 bool CDiscrepancyContext::IsPseudo(const CSeq_feat& feat)
 {
-    if (m_IsPseudoMap.find(&feat) == m_IsPseudoMap.end()) {
-        //m_IsPseudoMap[&feat] = sequence::IsPseudo(feat, *m_Scope); // can do more efficiently!
-        m_IsPseudoMap[&feat] = x_IsPseudo(feat);
-    }
-    return m_IsPseudoMap[&feat];
+    return IsPseudo(*FindNode(feat));
 }
 
 
-bool CDiscrepancyContext::x_IsPseudo(const CSeq_feat& feat)
+bool CDiscrepancyContext::IsPseudo(const CParseNode& node)
 {
+    if (node.m_Info & CParseNode::eKnownPseudo) {
+        return node.m_Info & CParseNode::eIsPseudo;
+    }
+    node.m_Info |= CParseNode::eKnownPseudo;
+    const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*node.m_Obj);
     if (feat.IsSetPseudo() && feat.GetPseudo()) {
+        node.m_Info |= CParseNode::eIsPseudo;
         return true;
     }
     if (feat.IsSetQual()) {
-        ITERATE (CSeq_feat::TQual, it, feat.GetQual()) {
-            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudogene")) {
+        for (auto& it : feat.GetQual()) {
+            if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), "pseudogene")) {
+                node.m_Info |= CParseNode::eIsPseudo;
                 return true;
             }
         }
     }
     if (feat.GetData().IsGene()) {
         if (feat.GetData().GetGene().IsSetPseudo() && feat.GetData().GetGene().GetPseudo()) {
+            node.m_Info |= CParseNode::eIsPseudo;
             return true;
         }
     }
     else {
         if (feat.IsSetXref()) {
-            ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
-                if ((*it)->IsSetData() && (*it)->GetData().IsGene() &&
-                    (*it)->GetData().GetGene().IsSetPseudo() &&
-                    (*it)->GetData().GetGene().GetPseudo()) {
+            for (auto& it : feat.GetXref()) {
+                if (it->IsSetData() && it->GetData().IsGene() && it->GetData().GetGene().IsSetPseudo() && it->GetData().GetGene().GetPseudo()) {
+                    node.m_Info |= CParseNode::eIsPseudo;
                     return true;
                 }
             }
         }
-        CConstRef<CSeq_feat> gene(GetGeneForFeature(feat));
+        auto gene = GeneForFeature(node);
         if (gene && IsPseudo(*gene)) {
+            node.m_Info |= CParseNode::eIsPseudo;
             return true;
         }
     }
@@ -851,37 +655,37 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
     m_FeatAll.push_back(CConstRef<CSeq_feat>(&feat));
     switch (feat.GetData().GetSubtype()) {
         case CSeqFeatData::eSubtype_gene:
-            m_FeatGenes.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatGenes.push_back(&feat);
             break;
         case CSeqFeatData::eSubtype_cdregion:
-            m_FeatCDS.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatCDS.push_back(&feat);
             break;
         case CSeqFeatData::eSubtype_mRNA:
-            m_FeatMRNAs.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatMRNAs.push_back(&feat);
             break;
         case CSeqFeatData::eSubtype_tRNA:
-            m_FeatTRNAs.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatTRNAs.push_back(&feat);
             break;
         case CSeqFeatData::eSubtype_rRNA:
-            m_FeatRRNAs.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatRRNAs.push_back(&feat);
             break;
         case CSeqFeatData::eSubtype_exon:
-            m_FeatExons.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatExons.push_back(&feat);
             break;
         case CSeqFeatData::eSubtype_intron:
-            m_FeatIntrons.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatIntrons.push_back(&feat);
             break;
         case CSeqFeatData::eSubtype_misc_feature:
-            m_FeatMisc.push_back(CConstRef<CSeq_feat>(&feat));
+            m_FeatMisc.push_back(&feat);
             break;
         default:
             break;
     }
     if (feat.GetData().IsRna()) {
-        m_Feat_RNAs.push_back(CConstRef<CSeq_feat>(&feat));
+        m_Feat_RNAs.push_back(&feat);
     }
     if (IsPseudo(feat)) {
-        m_FeatPseudo.push_back(CConstRef<CSeq_feat>(&feat));
+        m_FeatPseudo.push_back(&feat);
     }
 }
 
@@ -900,124 +704,257 @@ sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq
 }
 
 
+const CPerson_id* CDiscrepancyContext::GetPerson_id()
+{
+    if (m_CurrentNode->m_Type == eSubmit) {
+        const CSeq_submit* sub = static_cast<const CSeq_submit*>(&*m_CurrentNode->m_Obj);
+        if (sub->IsSetSub() && sub->GetSub().IsSetContact() && sub->GetSub().GetContact().IsSetContact() && sub->GetSub().GetContact().GetContact().IsSetName()) {
+            return &sub->GetSub().GetContact().GetContact().GetName();
+        }
+    }
+    return 0;
+}
+
+
+const CSubmit_block* CDiscrepancyContext::GetSubmit_block()
+{
+    if (m_CurrentNode->m_Type == eSubmit) {
+        const CSeq_submit* sub = static_cast<const CSeq_submit*>(&*m_CurrentNode->m_Obj);
+        if (sub->IsSetSub()) {
+            return &sub->GetSub();
+        }
+    }
+    return 0;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqObj(bool autofix, CObject* more)
+CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CObject* obj) const
 {
-    const CSerialObject* bioseq = &*GetCurrentBioseq();
-    if (m_DataMap.find(bioseq) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(bioseq, *m_Scope, m_KeepRef));
-        data->m_FileID = m_File;
-        data->m_Text += GetSeqSummary().GetStr();
-        m_DataMap[bioseq] = data;
-    }
-    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[bioseq], autofix, more));
-}
-
-
-CRef<CDiscrepancyObject> CDiscrepancyContext::DiscrObj(const CSerialObject& obj, bool autofix, CObject* more)
-{
-    if (m_DataMap.find(&obj) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, m_KeepRef));
-        data->m_FileID = m_File;
-        m_DataMap[&obj] = data;
-    }
-    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[&obj], autofix, more));
-}
-
-
-CRef<CDiscrepancyObject> CDiscrepancyContext::SeqdescObj(const CSerialObject& obj, bool autofix, CObject* more)
-{
-    if (m_DataMap.find(&obj) == m_DataMap.end()) {
-        string label = GetCurrentBioseqLabel();
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, m_KeepRef));
-        data->m_FileID = m_File;
-        if (!label.empty()) {
-            data->m_Text = label + ":" + data->m_Text;
+    if (obj) {
+        const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
+        if (feat) {
+            return FindNode(*feat);
         }
-        m_DataMap[&obj] = data;
+        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj);
+        if (desc) {
+            return FindNode(*desc);
+        }
+        for (auto node = m_CurrentNode; node; node = node->m_Parent) {
+            if (&*node->m_Obj == obj) {
+                return &*node;
+            }
+        }
     }
-    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[&obj], autofix, more));
+    return 0;
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::SubmitBlockObj(bool autofix, CObject* more)
+CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindLocalNode(const CParseNode& node, const CSeq_feat& feat) const
 {
-    const CSerialObject& obj = *m_Current_Submit_block;
-    if (m_DataMap.find(&obj) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, true));
-        data->m_FileID = m_File;
-        m_DataMap[&obj] = data;
-    }
-    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(*m_DataMap[&obj], m_Current_Submit_block_StringObj, autofix, more));
+    auto it = node.m_FeatureMap.find(&feat);
+    return it == node.m_FeatureMap.end() ? 0 : it->second;
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::CitSubObj(bool autofix, CObject* more)
+CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CSeq_feat& feat) const
 {
-    const CSerialObject& obj = *m_Current_Submit_block;
-    if (m_DataMap.find(&obj) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, m_KeepRef));
-        data->m_FileID = m_File;
-        m_DataMap[&obj] = data;
+    for (auto node = m_CurrentNode; node; node = node->m_Parent) {
+        auto it = node->m_FeatureMap.find(&feat);
+        if (it != node->m_FeatureMap.end()) {
+            return it->second;
+        }
+        if (node->m_Type == eSeqSet_NucProt) {
+            for (auto& child : node->m_Children) {
+                CDiscrepancyContext::CParseNode* found = FindLocalNode(*child, feat);
+                if (found) {
+                    return found;
+                }
+            }
+        }
     }
-    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(*m_DataMap[&obj], m_Current_Cit_sub_StringObj, autofix, more));
+    return 0;
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::StringObj(const string& str, bool autofix, CObject* more)
+CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CSeqdesc& desc) const
 {
-    CRef<CReportObjectData> data(new CReportObjectData(str));
-    data->m_FileID = m_File;
-    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*data, autofix, more));
+    for (auto node = m_CurrentNode; node; node = node->m_Parent) {
+        auto it = node->m_DescriptorMap.find(&desc);
+        if (it != node->m_DescriptorMap.end()) {
+            return it->second;
+        }
+    }
+    return 0;
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::FeatOrDescObj(bool autofix, CObject* more)
+CDiscrepancyContext::CRefNode* CDiscrepancyContext::ContainingSet(CDiscrepancyContext::CRefNode& ref)
 {
-    CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
-    CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
-    _ASSERT(!feat != !desc);
-    if (feat) {
-        return DiscrObj(*feat, autofix, more);
+    CRefNode* ret = 0;
+    for (CRefNode* r = &*ref.m_Parent; r; r = &*r->m_Parent) {
+        if (!ret && IsSeqSet(r->m_Type)) {
+            ret = r;
+        }
+        if (r->m_Type == eSeqSet_NucProt || r->m_Type == eSeqSet_GenProd) {
+            return r;
+        }
     }
-    else {
-        return SeqdescObj(*desc, autofix, more);
-    }
+    return ret;
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::FeatOrDescOrSubmitBlockObj(bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqObjRef(EFixType fix, const CObject* more)
 {
-    CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
-    CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
-    _ASSERT(!feat || !desc);
-    if (feat) {
-        return DiscrObj(*feat, autofix, more);
+    CRefNode* fixref = 0;
+    if (fix == eFixSelf) {
+        fixref = &*m_CurrentNode->m_Ref;
     }
-    else if (desc) {
-        return SeqdescObj(*desc, autofix, more);
+    else if (fix == eFixParent) {
+        fixref = &*m_CurrentNode->m_Ref->m_Parent;
     }
-    else {
-        return SubmitBlockObj(autofix, more);
+    else if (fix == eFixSet) {
+        fixref = ContainingSet(*m_CurrentNode->m_Ref);
     }
+    CRef<CDiscrepancyObject> obj(new CDiscrepancyObject(m_CurrentNode->m_Ref, fixref, more));
+    return obj;
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::FeatOrDescOrCitSubObj(bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqSetObjRef(bool fix, const CObject* more)
 {
-    CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
-    CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
-    _ASSERT(!feat || !desc);
-    if (feat) {
-        return DiscrObj(*feat, autofix, more);
+    CRef<CDiscrepancyObject> obj(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*m_CurrentNode->m_Ref : 0, more));
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::SubmitBlockObjRef(bool fix, const CObject* more)
+{
+    _ASSERT(m_CurrentNode->m_Type == eSubmit);
+    CRef<CDiscrepancyObject> obj(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*m_CurrentNode->m_Ref : 0, more));
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::SeqFeatObjRef(const CSeq_feat& feat, EFixType fix, const CObject* more)
+{
+    CRef<CDiscrepancyObject> obj;
+    auto node = FindNode(feat);
+    if (node) {
+        if (node->m_Ref->m_Text.empty()) {
+            node->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(feat, *m_Scope);
+        }
+        CRefNode* fixref = 0;
+        if (fix == eFixSelf) {
+            fixref = &*node->m_Ref;
+        }
+        else if (fix == eFixParent) {
+            fixref = &*node->m_Ref->m_Parent;
+        }
+        else if (fix == eFixSet) {
+            fixref = ContainingSet(*node->m_Ref);
+        }
+        obj.Reset(new CDiscrepancyObject(node->m_Ref, fixref, more));
     }
-    else if (desc) {
-        return SeqdescObj(*desc, autofix, more);
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::SeqFeatObjRef(const CSeq_feat& feat, const CObject* fix, const CObject* more)
+{
+    CRef<CDiscrepancyObject> obj;
+    auto node = FindNode(feat);
+    if (node) {
+        if (node->m_Ref->m_Text.empty()) {
+            node->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(feat, *m_Scope);
+        }
+        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? &*FindNode(fix)->m_Ref : 0, more));
     }
-    else {
-        return CitSubObj(autofix, more);
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::SeqdescObjRef(const CSeqdesc& desc, const CObject* fix, const CObject* more)
+{
+    CRef<CDiscrepancyObject> obj;
+    auto node = FindNode(desc);
+    if (node) {
+        if (node->m_Ref->m_Text.empty()) {
+            node->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(desc);
+        }
+        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? &*FindNode(fix)->m_Ref : 0, more));
     }
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::BiosourceObjRef(const CBioSource& biosrc, bool fix, const CObject* more)
+{
+    CRef<CDiscrepancyObject> obj;
+    for (auto node = m_CurrentNode; node; node = node->m_Parent) {
+        auto it = node->m_BiosourceMap.find(&biosrc);
+        if (it != node->m_BiosourceMap.end()) {
+            if (it->second->m_Ref->m_Text.empty()) {
+                if (it->second->m_Type == eSeqFeat) {
+                    it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeq_feat&>(*it->second->m_Obj), *m_Scope);
+                }
+                else {  // eSeqDesc
+                    it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeqdesc&>(*it->second->m_Obj));
+                }
+            }
+            obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : 0, more));
+            return obj;
+        }
+    }
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::PubdescObjRef(const CPubdesc& pubdesc, bool fix, const CObject* more)
+{
+    CRef<CDiscrepancyObject> obj;
+    auto it = m_CurrentNode->m_PubdescMap.find(&pubdesc);
+    _ASSERT(it != m_CurrentNode->m_PubdescMap.end());
+    if (it->second->m_Ref->m_Text.empty()) {
+        if (it->second->m_Type == eSeqFeat) {
+            it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeq_feat&>(*it->second->m_Obj), *m_Scope);
+        }
+        else if (it->second->m_Type == eSeqDesc) {
+            it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeqdesc&>(*it->second->m_Obj));
+        }
+    }
+    obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : 0, more));
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::AuthorsObjRef(const CAuth_list& authors, bool fix, const CObject* more)
+{
+    CRef<CDiscrepancyObject> obj;
+    auto it = m_CurrentNode->m_AuthorMap.find(&authors);
+    _ASSERT(it != m_CurrentNode->m_AuthorMap.end());
+    if (it->second->m_Ref->m_Text.empty()) {
+        if (it->second->m_Type == eSeqFeat) {
+            it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeq_feat&>(*it->second->m_Obj), *m_Scope);
+        }
+        else if (it->second->m_Type == eSeqDesc) {
+            it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeqdesc&>(*it->second->m_Obj));
+        }
+        else {
+            //cout << "===============================================!\n";
+        }
+    }
+    obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : 0, more));
+    return obj;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::StringObjRef(const CObject* fix, const CObject* more)
+{
+    CRef<CDiscrepancyObject> obj;
+    obj.Reset(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*FindNode(fix)->m_Ref : 0, more));
+    return obj;
 }
 
 

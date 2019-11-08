@@ -41,53 +41,38 @@ DISCREPANCY_MODULE(overlapping_features);
 
 static const string kCDSoverlapTRNA = "[n] Bioseq[s] [has] coding regions that overlap tRNAs";
 
-DISCREPANCY_CASE(CDS_TRNA_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSmart, "CDS tRNA Overlap")
+DISCREPANCY_CASE(CDS_TRNA_OVERLAP, SEQUENCE, eDisc | eSubmitter | eSmart, "CDS tRNA Overlap")
 {
-    const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
-    const vector<CConstRef<CSeq_feat> >& trnas = context.FeatTRNAs();
+    auto& cds = context.FeatCDS();
+    auto& trnas = context.FeatTRNAs();
 
     bool increase_count = false;
-    
-    string cur_bioseq_number = NStr::SizetToString(context.GetCountBioseq());
-    string report_item_str("[n] coding region[s] [has] overlapping tRNAs");
-    report_item_str += "[*" + cur_bioseq_number + "*]";
-
-    string report_cds_trna_pair_str("Coding region overlaps tRNAs");
+    static size_t bs_count = 0;
+    string report_item_str = "[n] coding region[s] [has] overlapping tRNAs[*" + to_string(++bs_count) + "*]";
 
     for (size_t i = 0; i < cds.size(); i++) {
-
         const CSeq_loc& loc_i = cds[i]->GetLocation();
         bool has_overlap = false;
-
-        string cur_idx_str = NStr::SizetToString(i);
-        string cur_report_cds_trna_pair_str = report_cds_trna_pair_str + "[*" + cur_idx_str + "*]";
-
+        string cur_report_cds_trna_pair_str = "Coding region overlaps tRNAs[*" + to_string(i) + "*]";
         ENa_strand cds_strand = loc_i.IsSetStrand() ? loc_i.GetStrand() : eNa_strand_unknown;
         for (size_t j = 0; j < trnas.size(); j++) {
-
             const CSeq_loc& loc_j = trnas[j]->GetLocation();
             sequence::ECompare ovlp = sequence::eNoOverlap;
             ENa_strand trna_strand = loc_j.IsSetStrand() ? loc_j.GetStrand() : eNa_strand_unknown;
-
             bool need_to_compare = (cds_strand == eNa_strand_minus) == (trna_strand == eNa_strand_minus);
-
             if (need_to_compare) {
                 ovlp = context.Compare(loc_i, loc_j);
             }
-
             if (ovlp != sequence::eNoOverlap) {
                 increase_count = true;
-
                 CReportNode& out = m_Objs[kCDSoverlapTRNA][report_item_str].Ext();
                 CReportNode& subitem = out[cur_report_cds_trna_pair_str];
-
                 if (!has_overlap) {
                     out.Incr();
                     has_overlap = true;
-                    subitem.Ext().Add(*context.DiscrObj(*cds[i]));
+                    subitem.Ext().Add(*context.SeqFeatObjRef(*cds[i]));
                 }
-                
-                subitem.Ext().Add(*context.DiscrObj(*trnas[j]));
+                subitem.Ext().Add(*context.SeqFeatObjRef(*trnas[j]));
             }
         }
     }
@@ -105,12 +90,13 @@ DISCREPANCY_SUMMARIZE(CDS_TRNA_OVERLAP)
 
 static const string kCdsTrnaOverlapComment = "TAA stop codon is completed by the addition of 3' A residues to the mRNA";
 
-DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, COverlappingFeatures, 0, "CDS tRNA Overlap - autofix")
+DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, SEQUENCE, 0, "CDS tRNA Overlap - autofix")
 {}
 DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP)
 {}
 DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
 {
+#if 0
     const CSeq_feat& cds = dynamic_cast<const CSeq_feat&>(*item->GetDetails()[0]->GetObject());
     const CSeq_loc& loc = cds.GetLocation();
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
@@ -199,6 +185,8 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: [n] CDS trimmed", 1));
     }
     return CRef<CAutofixReport>();
+#endif
+    return CRef<CAutofixReport>(0);
 }
 
 
@@ -252,29 +240,25 @@ const string kCDSRNAOverlapNoContainSameStrand = "[n/2] coding region[s] overlap
 const string kCDSRNAOverlapNoContainOppStrand = "[n/2] coding region[s] overlap RNA[s] on the opposite strand (no containment)";
 
 
-DISCREPANCY_CASE(RNA_CDS_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSmart | eFatal, "CDS RNA Overlap")
+DISCREPANCY_CASE(RNA_CDS_OVERLAP, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal, "CDS RNA Overlap")
 {
-    const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
-    const vector<CConstRef<CSeq_feat> >& rnas = context.Feat_RNAs();
+    const CSeqdesc* biosrc = context.GetBiosource();
+    bool is_eukariotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0);
+
+    auto& cds = context.FeatCDS();
+    auto& rnas = context.Feat_RNAs();
     for (size_t i = 0; i < rnas.size(); i++) {
         const CSeq_loc& loc_i = rnas[i]->GetLocation();
         CSeqFeatData::ESubtype subtype = rnas[i]->GetData().GetSubtype();
-        if (subtype == CSeqFeatData::eSubtype_tRNA) {
-            if (context.IsEukaryotic()) {
-                continue;
-            }
-        }
-        else if (subtype == CSeqFeatData::eSubtype_mRNA || subtype == CSeqFeatData::eSubtype_ncRNA) {
+        if ((subtype == CSeqFeatData::eSubtype_tRNA && is_eukariotic) || subtype == CSeqFeatData::eSubtype_mRNA || subtype == CSeqFeatData::eSubtype_ncRNA) {
             continue;
         }
         else if (subtype == CSeqFeatData::eSubtype_rRNA) {
             size_t len = sequence::GetLength(loc_i, &context.GetScope());
             string rrna_name = rnas[i]->GetData().GetRna().GetRnaProductName();
             bool is_bad = false;
-            ITERATE (TRNALengthMap, it, kTrnaLengthMap) {
-                if (NStr::FindNoCase(rrna_name, it->first) != string::npos &&
-                        len < it->second.first &&
-                        (!it->second.second || (rnas[i]->IsSetPartial() && rnas[i]->GetPartial())) ) {
+            for (auto& it : kTrnaLengthMap) {
+                if (NStr::FindNoCase(rrna_name, it.first) != string::npos && len < it.second.first && (!it.second.second || (rnas[i]->IsSetPartial() && rnas[i]->GetPartial())) ) {
                     is_bad = true;
                     break;
                 }
@@ -287,30 +271,30 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSm
             const CSeq_loc& loc_j = cds[j]->GetLocation();
             sequence::ECompare compare = context.Compare(loc_j, loc_i);
             if (compare == sequence::eSame) {
-                m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
+                m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Add(*context.SeqFeatObjRef(*rnas[i]), false).Add(*context.SeqFeatObjRef(*cds[j]), false).Fatal();
             }
             else if (compare == sequence::eContained) {
-                m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainedIn].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainedIn].Add(*context.SeqFeatObjRef(*rnas[i]), false).Add(*context.SeqFeatObjRef(*cds[j]), false); // no Fatal();
             }
             else if (compare == sequence::eContains) {
                 if (rnas[i]->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainstRNA].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainstRNA].Add(*context.SeqFeatObjRef(*rnas[i]), false).Add(*context.SeqFeatObjRef(*cds[j]), false).Fatal();
                 }
                 else {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContains].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContains].Add(*context.SeqFeatObjRef(*rnas[i]), false).Add(*context.SeqFeatObjRef(*cds[j]), false).Fatal();
                 }
             }
             else if (compare != sequence::eNoOverlap) {
                 ENa_strand cds_strand = cds[j]->GetLocation().GetStrand();
                 ENa_strand rna_strand = rnas[i]->GetLocation().GetStrand();
                 if (cds_strand == eNa_strand_minus && rna_strand != eNa_strand_minus) {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.SeqFeatObjRef(*rnas[i]), false).Add(*context.SeqFeatObjRef(*cds[j]), false); // no Fatal();
                 }
                 else if (cds_strand != eNa_strand_minus && rna_strand == eNa_strand_minus) {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.SeqFeatObjRef(*rnas[i]), false).Add(*context.SeqFeatObjRef(*cds[j]), false); // no Fatal();
                 }
                 else {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainSameStrand].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainSameStrand].Add(*context.SeqFeatObjRef(*rnas[i]), false).Add(*context.SeqFeatObjRef(*cds[j]), false); // no Fatal();
                 }
             }
         }
@@ -324,15 +308,15 @@ DISCREPANCY_SUMMARIZE(RNA_CDS_OVERLAP)
 }
 
 
-DISCREPANCY_CASE(OVERLAPPING_RRNAS, COverlappingFeatures, eDisc | eSubmitter | eSmart | eFatal, "Overlapping rRNAs")
+DISCREPANCY_CASE(OVERLAPPING_RRNAS, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal, "Overlapping rRNAs")
 {
-    const vector<CConstRef<CSeq_feat> >& rrnas = context.FeatRRNAs();
+    auto& rrnas = context.FeatRRNAs();
     for (size_t i = 0; i < rrnas.size(); i++) {
         const CSeq_loc& loc_i = rrnas[i]->GetLocation();
         for (size_t j = i + 1; j < rrnas.size(); j++) {
             const CSeq_loc& loc_j = rrnas[j]->GetLocation();
             if (context.Compare(loc_j, loc_i) != sequence::eNoOverlap) {
-                m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].Add(*context.DiscrObj(*rrnas[i])).Add(*context.DiscrObj(*rrnas[j])).Fatal();
+                m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].Add(*context.SeqFeatObjRef(*rrnas[i])).Add(*context.SeqFeatObjRef(*rrnas[j])).Fatal();
             }
         }
     }
@@ -347,16 +331,16 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_RRNAS)
 
 // OVERLAPPING_GENES
 
-DISCREPANCY_CASE(OVERLAPPING_GENES, COverlappingFeatures, eDisc, "Overlapping Genes")
+DISCREPANCY_CASE(OVERLAPPING_GENES, SEQUENCE, eDisc, "Overlapping Genes")
 {
-    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    auto& genes = context.FeatGenes();
     for (size_t i = 0; i < genes.size(); i++) {
         const CSeq_loc& loc_i = genes[i]->GetLocation();
         ENa_strand strand_i = loc_i.GetStrand();
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
             if (loc_j.GetStrand() == strand_i && context.Compare(loc_j, loc_i) != sequence::eNoOverlap) {
-                m_Objs["[n] gene[s] overlap[S] another gene on the same strand."].Add(*context.DiscrObj(*genes[i])).Add(*context.DiscrObj(*genes[j]));
+                m_Objs["[n] gene[s] overlap[S] another gene on the same strand."].Add(*context.SeqFeatObjRef(*genes[i])).Add(*context.SeqFeatObjRef(*genes[j]));
             }
         }
     }
@@ -371,9 +355,9 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_GENES)
 
 // FIND_OVERLAPPED_GENES
 
-DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, COverlappingFeatures, eDisc | eSmart, "Genes completely contained by another gene on the same strand")
+DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, SEQUENCE, eDisc | eSmart, "Genes completely contained by another gene on the same strand")
 {
-    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    auto& genes = context.FeatGenes();
     for (size_t i = 0; i < genes.size(); i++) {
         const CSeq_loc& loc_i = genes[i]->GetLocation();
         ENa_strand strand_i = loc_i.IsSetStrand() ? loc_i.GetStrand() : eNa_strand_unknown;
@@ -386,10 +370,10 @@ DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, COverlappingFeatures, eDisc | eSmart, "G
 
                 sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
                 if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
-                    m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.DiscrObj(*genes[i]));
+                    m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.SeqFeatObjRef(*genes[i]));
                 }
                 else if (ovlp == sequence::eContains) {
-                    m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.DiscrObj(*genes[j]));
+                    m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.SeqFeatObjRef(*genes[j]));
                 }
             }
         }
@@ -405,9 +389,9 @@ DISCREPANCY_SUMMARIZE(FIND_OVERLAPPED_GENES)
 
 // DUP_GENES_OPPOSITE_STRANDS
 
-DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, COverlappingFeatures, eDisc | eOncaller | eSubmitter | eSmart, "Genes match other genes in the same location, but on the opposite strand")
+DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart, "Genes match other genes in the same location, but on the opposite strand")
 {
-    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    auto& genes = context.FeatGenes();
     for (size_t i = 0; i < genes.size(); i++) {
         const CSeq_loc& loc_i = genes[i]->GetLocation();
         ENa_strand strand_i = loc_i.GetStrand();
@@ -418,7 +402,7 @@ DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, COverlappingFeatures, eDisc | eOnca
             }
             sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
             if (ovlp == sequence::eSame) {
-                m_Objs["[n] genes match other genes in the same location, but on the opposite strand"].Add(*context.DiscrObj(*genes[i])).Add(*context.DiscrObj(*genes[j]));
+                m_Objs["[n] genes match other genes in the same location, but on the opposite strand"].Add(*context.SeqFeatObjRef(*genes[i])).Add(*context.SeqFeatObjRef(*genes[j]));
             }
         }
     }
@@ -433,17 +417,17 @@ DISCREPANCY_SUMMARIZE(DUP_GENES_OPPOSITE_STRANDS)
 
 // MRNA_OVERLAPPING_PSEUDO_GENE
 
-DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, COverlappingFeatures, eOncaller, "mRNA overlapping pseudo gene")
+DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, SEQUENCE, eOncaller, "mRNA overlapping pseudo gene")
 {
-    const vector<CConstRef<CSeq_feat> >& pseudo = context.FeatPseudo();
-    const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
+    auto& pseudo = context.FeatPseudo();
+    auto& mrnas = context.FeatMRNAs();
     for (size_t i = 0; i < mrnas.size(); i++) {
         const CSeq_loc& loc_i = mrnas[i]->GetLocation();
         for (size_t j = 0; j < pseudo.size(); j++) {
             const CSeq_loc& loc_j = pseudo[j]->GetLocation();
             sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
             if (ovlp != sequence::eNoOverlap) {
-                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.DiscrObj(*mrnas[i], true));  // should say "n mRNAs overlapping pseudogenes", but C Toolkit reports this way.
+                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.SeqFeatObjRef(*mrnas[i], CDiscrepancyContext::eFixSet));  // should say "n mRNAs overlapping pseudogenes", but C Toolkit reports this way.
                 break;
             }
         }
@@ -459,24 +443,17 @@ DISCREPANCY_SUMMARIZE(MRNA_OVERLAPPING_PSEUDO_GENE)
 
 DISCREPANCY_AUTOFIX(MRNA_OVERLAPPING_PSEUDO_GENE)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            CDiscrepancyObject* disc_obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-            const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(disc_obj->GetObject().GetPointer());
-            CSeq_feat_EditHandle eh = CSeq_feat_EditHandle(scope.GetSeq_featHandle(*feat));
-            eh.Remove();
-            n++;
-        }
-    }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("MRNA_OVERLAPPING_PSEUDO_GENE: [n] mRNA[s] removed", n) : 0);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    CSeq_feat_EditHandle eh = CSeq_feat_EditHandle(context.GetScope().GetSeq_featHandle(*sf));
+    eh.Remove();
+    obj->SetFixed();
+    return CRef<CAutofixReport>(new CAutofixReport("MRNA_OVERLAPPING_PSEUDO_GENE: [n] mRNA[s] removed", 1));
 }
 
 
 // EXON_INTRON_CONFLICT
 
-static bool less(CConstRef<CSeq_feat> A, CConstRef<CSeq_feat> B)
+static bool less(const CSeq_feat* A, const CSeq_feat* B)
 {
     unsigned int a = A->GetLocation().GetStart(eExtreme_Positional);
     unsigned int b = B->GetLocation().GetStart(eExtreme_Positional);
@@ -490,12 +467,12 @@ static bool less(CConstRef<CSeq_feat> A, CConstRef<CSeq_feat> B)
 
 static const string kIntronExon = "[n] introns and exons are incorrectly positioned";
 
-static void CollectExonsIntrons(CReportNode& out, CDiscrepancyContext& context, vector<CConstRef<CSeq_feat> >& vex, vector<CConstRef<CSeq_feat> >& vint)
+static void CollectExonsIntrons(CReportNode& out, CDiscrepancyContext& context, vector<const CSeq_feat*>& vex, vector<const CSeq_feat*>& vint)
 {
     sort(vex.begin(), vex.end(), less);
     sort(vint.begin(), vint.end(), less);
-    vector<CConstRef<CSeq_feat> >::const_iterator Iex = vex.begin();
-    vector<CConstRef<CSeq_feat> >::const_iterator Iint = vint.begin();
+    auto Iex = vex.begin();
+    auto Iint = vint.begin();
     while (Iex != vex.end() && Iint != vint.end()) {
         const unsigned int e0 = (*Iex)->GetLocation().GetStart(eExtreme_Positional);
         const unsigned int e1 = (*Iex)->GetLocation().GetStop(eExtreme_Positional);
@@ -503,13 +480,13 @@ static void CollectExonsIntrons(CReportNode& out, CDiscrepancyContext& context, 
         const unsigned int i1 = (*Iint)->GetLocation().GetStop(eExtreme_Positional);
         if (i0 <= e0) {
             if (i1 != e0 - 1) {
-                out[kIntronExon].Add(*context.DiscrObj(**Iint)).Add(*context.DiscrObj(**Iex));
+                out[kIntronExon].Add(*context.SeqFeatObjRef(**Iint)).Add(*context.SeqFeatObjRef(**Iex));
             }
             ++Iint;
         }
         else /*if (e0 < i0)*/ {
             if (e1 != i0 - 1) {
-                out[kIntronExon].Add(*context.DiscrObj(**Iex)).Add(*context.DiscrObj(**Iint));
+                out[kIntronExon].Add(*context.SeqFeatObjRef(**Iex)).Add(*context.SeqFeatObjRef(**Iint));
             }
             ++Iex;
         }
@@ -517,38 +494,38 @@ static void CollectExonsIntrons(CReportNode& out, CDiscrepancyContext& context, 
 }
 
 
-DISCREPANCY_CASE(EXON_INTRON_CONFLICT, COverlappingFeatures, eOncaller | eSubmitter | eSmart, "Exon and intron locations should abut (unless gene is trans-spliced)")
+DISCREPANCY_CASE(EXON_INTRON_CONFLICT, SEQUENCE, eOncaller | eSubmitter | eSmart, "Exon and intron locations should abut (unless gene is trans-spliced)")
 {
-    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
-    const vector<CConstRef<CSeq_feat> >& exons = context.FeatExons();
-    const vector<CConstRef<CSeq_feat> >& introns = context.FeatIntrons();
+    auto& genes = context.FeatGenes();
+    auto& exons = context.FeatExons();
+    auto& introns = context.FeatIntrons();
     if (exons.empty() || introns.empty()) {
         return;
     }
     if (genes.empty()) {
-        vector<CConstRef<CSeq_feat> > vex;
-        vector<CConstRef<CSeq_feat> > vint;
+        vector<const CSeq_feat*> vex;
+        vector<const CSeq_feat*> vint;
         vex.insert(vex.end(), exons.begin(), exons.end());
         vint.insert(vint.end(), introns.begin(), introns.end());
         CollectExonsIntrons(m_Objs, context, vex, vint);
     }
     else {
-        ITERATE (vector<CConstRef<CSeq_feat> >, gg, genes) {
-            if ((*gg)->CanGetExcept_text() && (*gg)->GetExcept_text() == "trans-splicing") {
+        for (auto& gg : genes) {
+            if (gg->CanGetExcept_text() && gg->GetExcept_text() == "trans-splicing") {
                 continue;
             }
-            const unsigned int g0 = (*gg)->GetLocation().GetStart(eExtreme_Positional);
-            const unsigned int g1 = (*gg)->GetLocation().GetStop(eExtreme_Positional);
-            vector<CConstRef<CSeq_feat> > vex;
-            vector<CConstRef<CSeq_feat> > vint;
-            ITERATE (vector<CConstRef<CSeq_feat> >, ff, exons) {
-                if ((*ff)->GetLocation().GetStart(eExtreme_Positional) <= g1 && (*ff)->GetLocation().GetStop(eExtreme_Positional) >= g0) {
-                    vex.push_back(*ff);
+            const unsigned int g0 = gg->GetLocation().GetStart(eExtreme_Positional);
+            const unsigned int g1 = gg->GetLocation().GetStop(eExtreme_Positional);
+            vector<const CSeq_feat*> vex;
+            vector<const CSeq_feat*> vint;
+            for (auto& ff : exons) {
+                if (ff->GetLocation().GetStart(eExtreme_Positional) <= g1 && ff->GetLocation().GetStop(eExtreme_Positional) >= g0) {
+                    vex.push_back(ff);
                 }
             }
-            ITERATE (vector<CConstRef<CSeq_feat> >, ff, introns) {
-                if ((*ff)->GetLocation().GetStart(eExtreme_Positional) <= g1 && (*ff)->GetLocation().GetStop(eExtreme_Positional) >= g0) {
-                    vint.push_back(*ff);
+            for (auto& ff : introns) {
+                if (ff->GetLocation().GetStart(eExtreme_Positional) <= g1 && ff->GetLocation().GetStop(eExtreme_Positional) >= g0) {
+                    vint.push_back(ff);
                 }
             }
             CollectExonsIntrons(m_Objs, context, vex, vint);
@@ -567,24 +544,24 @@ DISCREPANCY_SUMMARIZE(EXON_INTRON_CONFLICT)
 
 static const string kGeneMisc = "[n] gene[s] overlap[S] with IGS misc features";
 
-DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, COverlappingFeatures, eOncaller, "Gene with misc feature overlap")
+DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, SEQUENCE, eOncaller, "Gene with misc feature overlap")
 {
-    ITERATE (vector<CConstRef<CSeq_feat>>, gene, context.FeatGenes()) {
-        if ((*gene)->IsSetLocation() && (*gene)->IsSetData() && (*gene)->GetData().GetGene().IsSetLocus() &&
-            NStr::StartsWith((*gene)->GetData().GetGene().GetLocus(), "trn")) {
+    for (auto& gene : context.FeatGenes()) {
+        if (gene->IsSetLocation() && gene->IsSetData() && gene->GetData().GetGene().IsSetLocus() &&
+            NStr::StartsWith(gene->GetData().GetGene().GetLocus(), "trn")) {
 
-            const CSeq_loc& loc_gene = (*gene)->GetLocation();
+            const CSeq_loc& loc_gene = gene->GetLocation();
             bool gene_added = false;
 
-            ITERATE (vector<CConstRef<CSeq_feat>>, misc, context.FeatMisc()) {
-                if ((*misc)->IsSetLocation() && (*misc)->IsSetComment() && NStr::FindNoCase((*misc)->GetComment(), "intergenic spacer") != NPOS) {
-                    const CSeq_loc& loc_misc = (*misc)->GetLocation();
+            for (auto misc : context.FeatMisc()) {
+                if (misc->IsSetLocation() && misc->IsSetComment() && NStr::FindNoCase(misc->GetComment(), "intergenic spacer") != NPOS) {
+                    const CSeq_loc& loc_misc = misc->GetLocation();
                     if (context.Compare(loc_gene, loc_misc) != sequence::eNoOverlap) {
                         if (!gene_added) {
-                            m_Objs[kGeneMisc].Add(*context.DiscrObj(**gene)).Incr();
+                            m_Objs[kGeneMisc].Add(*context.SeqFeatObjRef(*gene)).Incr();
                             gene_added = true;
                         }
-                        m_Objs[kGeneMisc].Add(*context.DiscrObj(**misc));
+                        m_Objs[kGeneMisc].Add(*context.SeqFeatObjRef(*misc));
                     }
                 }
             }
@@ -601,11 +578,11 @@ DISCREPANCY_SUMMARIZE(GENE_MISC_IGS_OVERLAP)
 
 // GENE_LOCUS_MISSING
 
-DISCREPANCY_CASE(GENE_LOCUS_MISSING, COverlappingFeatures, eOncaller, "Gene locus missing")
+DISCREPANCY_CASE(GENE_LOCUS_MISSING, SEQUENCE, eOncaller, "Gene locus missing")
 {
-    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
-    const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
-    const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
+    auto& genes = context.FeatGenes();
+    auto& cds = context.FeatCDS();
+    auto& mrnas = context.FeatMRNAs();
     for (auto gene: genes) {
         const CGene_ref& gref = gene->GetData().GetGene();
         if (context.IsPseudo(*gene) || !gref.CanGetDesc() || gref.GetDesc().empty() || (gref.CanGetLocus() && !gref.GetLocus().empty())) {
@@ -627,7 +604,7 @@ DISCREPANCY_CASE(GENE_LOCUS_MISSING, COverlappingFeatures, eOncaller, "Gene locu
             }
         }
         if (found) {
-            m_Objs["[n] gene[s] missing locus"].Add(*context.DiscrObj(*gene, true));
+            m_Objs["[n] gene[s] missing locus"].Add(*context.SeqFeatObjRef(*gene, gene));
         }
     }
 }
@@ -641,22 +618,14 @@ DISCREPANCY_SUMMARIZE(GENE_LOCUS_MISSING)
 
 DISCREPANCY_AUTOFIX(GENE_LOCUS_MISSING)
 {
-    unsigned int n = 0;
-    TReportObjectList list = item->GetDetails();
-    for (auto it: list) {
-        if (it->CanAutofix()) {
-            const CSeq_feat& gene = dynamic_cast<const CSeq_feat&>(*it->GetObject());
-            CRef<CSeq_feat> new_gene(new CSeq_feat());
-            new_gene->Assign(gene);
-            new_gene->SetData().SetGene().SetLocus(new_gene->GetData().GetGene().GetDesc());
-            new_gene->SetData().SetGene().ResetDesc();
-            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(gene));
-            feh.Replace(*new_gene);
-            dynamic_cast<CDiscrepancyObject*>(&*it)->SetFixed();
-            ++n;
-        }
-    }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("GENE_LOCUS_MISSING: [n] gene[s] fixed", n) : 0);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(*sf);
+    new_feat->SetData().SetGene().SetLocus(new_feat->GetData().GetGene().GetDesc());
+    new_feat->SetData().SetGene().ResetDesc();
+    context.ReplaceSeq_feat(*obj, *sf, *new_feat);
+    obj->SetFixed();
+    return CRef<CAutofixReport>(new CAutofixReport("GENE_LOCUS_MISSING: [n] gene[s] fixed", 1));
 }
 
 

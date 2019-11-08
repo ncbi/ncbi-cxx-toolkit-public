@@ -64,9 +64,9 @@ DISCREPANCY_MODULE(suspect_product_names);
 static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield = 0, const CString_constraint* str_cons = 0)
 {
     string str;
-    ITERATE (vector <CRef <CGb_qual> >, it, quals) {
-        if (NStr::EqualNocase( (*it)->GetQual(), qual_name)) {
-            str = (*it)->GetVal();
+    for (auto it : quals) {
+        if (NStr::EqualNocase(it->GetQual(), qual_name)) {
+            str = it->GetVal();
             str = GetTwoFieldSubfield(str, subfield);
             if ( str.empty() || (str_cons && !str_cons->Empty() && !(str_cons->Match(str))) ) {
                 str.clear();
@@ -195,52 +195,52 @@ static const string kSuspectProductNames = "[n] product_name[s] contain[S] suspe
 
 static bool ContainsLetters(const string& prod_name)
 {
-    ITERATE(string, symbol, prod_name) {
-        if (isalpha(*symbol)) {
+    for (auto& symbol : prod_name) {
+        if (isalpha(symbol)) {
             return true;
         }
     }
-
     return false;
 }
 
 
-DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart | eTSA | eFatal, "Suspect Product Name")
+DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | eSmart | eTSA | eFatal, "Suspect Product Name")
 {
-    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot || context.IsPseudo(*context.GetCurrentSeq_feat())) {
-        return;
-    }
-    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-    const CProt_ref& prot = obj.GetProt();
-
-    if (prot.IsSetName() && !prot.GetName().empty()) {
-        string prot_name = *prot.GetName().begin();
-        vector<char> Hits(rules->Get().size());
-        std::fill(Hits.begin(), Hits.end(), 0);
-        rules->Screen(prot_name, Hits.data());
-
-        if (!ContainsLetters(prot_name)) {
-            const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
-            CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
-            node.Add(*context.DiscrObj(cds ? *cds : *context.GetCurrentSeq_feat())).Fatal();
-        }
-        else {
-            size_t rule_num = 0;
-            for (auto rule: rules->Get()) {
-                if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
-                    string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
-                    size_t rule_type = rule->GetRule_type();
-                    string rule_name = "[*";
-                    if (rule_type < 10) {
-                        rule_name += " ";
+    for (auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot && feat.GetData().GetProt().IsSetName() && !feat.GetData().GetProt().GetName().empty() && !context.IsPseudo(feat)) {
+            CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
+            string prot_name = *feat.GetData().GetProt().GetName().begin();
+            vector<char> Hits(rules->Get().size());
+            std::fill(Hits.begin(), Hits.end(), 0);
+            rules->Screen(prot_name, Hits.data());
+            if (!ContainsLetters(prot_name)) {
+                const CSeq_feat* cds = sequence::GetCDSForProduct(context.CurrentBioseq(), &(context.GetScope()));    // consider different implementation
+                CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
+                node.Add(*context.SeqFeatObjRef(cds ? *cds : feat)).Fatal();
+            }
+            else {
+                size_t rule_num = 0;
+                for (auto rule : rules->Get()) {
+                    if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
+                        string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
+                        size_t rule_type = rule->GetRule_type();
+                        string rule_name = "[*";
+                        if (rule_type < 10) {
+                            rule_name += " ";
+                        }
+                        rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
+                        string rule_text = leading_space + GetRuleMatch(*rule);
+                        CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+                        const CSeq_feat* cds = sequence::GetCDSForProduct(context.CurrentBioseq(), &(context.GetScope())); // needs to optimize
+                        if (rule->CanGetReplace()) {
+                            node.Add(*context.SeqFeatObjRef(cds ? *cds : feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                        }
+                        else {
+                            node.Add(*context.SeqFeatObjRef(cds ? *cds : feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                        }
                     }
-                    rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
-                    string rule_text = leading_space + GetRuleMatch(*rule);
-                    CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-                    const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope())); // needs to optimize
-                    node.Add(*context.DiscrObj(cds ? *cds : *context.GetCurrentSeq_feat(), rule->CanGetReplace(), (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                    rule_num++;
                 }
-                rule_num++;
             }
         }
     }
@@ -328,47 +328,29 @@ string FixProductName(const CSuspect_rule* rule, CScope& scope, string& prot_nam
 }
 
 
-static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope, vector<CRef<CAutofixReport>>& report) // Same autofix used in 2 tests
-{
-    TReportObjectList list = item->GetDetails();
-    for (auto it: list) {
-        if (it->CanAutofix()) {
-            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer());
-            const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj.GetMoreInfo().GetPointer());
-            const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
-            if (!cds || !rule || !rule->CanGetReplace()) {
-                continue;
-            }
-            CSeq_feat* prot;
-            CSeq_feat* mrna;
-            GetProtAndRnaForCDS(*cds, scope, prot, mrna);
-            if (prot) {
-                string& prot_name = prot->SetData().SetProt().SetName().front();
-                string old_prot_name = FixProductName(rule, scope, 
-                    prot_name,
-                    [&mrna] { return CRef<CSeq_feat>(mrna); }, 
-                    [&cds] { return CRef<CSeq_feat>((CSeq_feat*)cds); });
-
-                if (prot_name != old_prot_name && !prot_name.empty()) {
-                    string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj.GetLocation();
-                    CRef<CAutofixReport> rep(new CAutofixReport(s));
-                    report.push_back(rep);
-                    dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
-                }
-            }
-        }
-    }
-}
-
-
 DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 {
     CRef<CAutofixReport> ret;
-    vector<CRef<CAutofixReport>> report;
-    AutofixProductNames(item, scope, report);
-    if (report.size()) {
-        ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES"));
-        ret->AddSubitems(report);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj->GetMoreInfo().GetPointer());
+    CSeq_feat* prot;
+    CSeq_feat* mrna;
+    GetProtAndRnaForCDS(*sf, context.GetScope(), prot, mrna);
+    if (prot) {
+        string& prot_name = prot->SetData().SetProt().SetName().front();
+        string old_prot_name = FixProductName(rule, context.GetScope(),
+            prot_name,
+            [&mrna] { return CRef<CSeq_feat>(mrna); },
+            [&sf] { return CRef<CSeq_feat>((CSeq_feat*)sf); });
+        if (prot_name != old_prot_name && !prot_name.empty()) {
+            string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj->GetLocation();
+            obj->SetFixed();
+            ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES", 0));
+            CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+            vector<CRef<CAutofixReport>> reports;
+            reports.push_back(report);
+            ret->AddSubitems(reports);
+        }
     }
     return ret;
 }
@@ -376,42 +358,38 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 ///////////////////////////////////// ORGANELLE_PRODUCTS
 
 
-DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
+DISCREPANCY_CASE(ORGANELLE_PRODUCTS, FEAT, eOncaller, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
 {
-    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot || context.IsPseudo(*context.GetCurrentSeq_feat())) {
-        return;
+    const CSeqdesc* biosrc = context.GetBiosource();
+    if (biosrc) {
+        const CBioSource& src = biosrc->GetSource();
+        CBioSource::TGenome genome = src.GetGenome();
+        if (genome == CBioSource::eGenome_mitochondrion || genome == CBioSource::eGenome_chloroplast || genome == CBioSource::eGenome_plastid || context.IsViral(&src) || context.IsBacterial(&src)) {
+            return;
+        }
+        if (src.IsSetOrg() && src.GetOrg().IsSetTaxname() && CDiscrepancyContext::IsUnculturedNonOrganelleName(src.GetOrg().GetTaxname())) {
+            return;
+        }
     }
-    CBioSource::TGenome genome = context.GetCurrentGenome();
-    if (genome == CBioSource::eGenome_mitochondrion || genome == CBioSource::eGenome_chloroplast || genome == CBioSource::eGenome_plastid) {
-        return;
-    }
-
-    // source should not be bacterial or viral
-    if (context.IsBacterial() || context.IsViral()) {
-        return;
-    }
-
-    //source should not be uncultured non-organelle name
-    const CBioSource* src = context.GetCurrentBiosource();
-    if (src && src->IsSetOrg() && src->GetOrg().IsSetTaxname() &&
-        CDiscrepancyContext::IsUnculturedNonOrganelleName(src->GetOrg().GetTaxname())) {
-        return;
-    }
-
-    const CProt_ref& prot = obj.GetProt();
-    if (prot.IsSetName() && !prot.GetName().empty()) {
-        string prot_name = *prot.GetName().begin();
-        CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
-        vector<char> Hits(rules->Get().size());
-        std::fill(Hits.begin(), Hits.end(), 0);
-        rules->Screen(prot_name, Hits.data());
-
-        size_t rule_num = 0;
-        for (auto rule : rules->Get()) {
-            if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
-                m_Objs["[n] suspect product[s] not organelle"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), rule->CanGetReplace(), (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+    for (auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot && feat.GetData().GetProt().IsSetName() && !feat.GetData().GetProt().GetName().empty() && !context.IsPseudo(feat)) {
+            string prot_name = *feat.GetData().GetProt().GetName().begin();
+            CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
+            vector<char> Hits(rules->Get().size());
+            std::fill(Hits.begin(), Hits.end(), 0);
+            rules->Screen(prot_name, Hits.data());
+            size_t rule_num = 0;
+            for (auto rule : rules->Get()) {
+                if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
+                    if (rule->CanGetReplace()) {
+                        m_Objs["[n] suspect product[s] not organelle"].Add(*context.SeqFeatObjRef(feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                    }
+                    else {
+                        m_Objs["[n] suspect product[s] not organelle"].Add(*context.SeqFeatObjRef(feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                    }
+                }
+                rule_num++;
             }
-            rule_num++;
         }
     }
 }
@@ -426,11 +404,26 @@ DISCREPANCY_SUMMARIZE(ORGANELLE_PRODUCTS)
 DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS)
 {
     CRef<CAutofixReport> ret;
-    vector<CRef<CAutofixReport>> report;
-    AutofixProductNames(item, scope, report);
-    if (report.size()) {
-        ret.Reset(new CAutofixReport("ORGANELLE_PRODUCTS"));
-        ret->AddSubitems(report);
+    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj->GetMoreInfo().GetPointer());
+    CSeq_feat* prot;
+    CSeq_feat* mrna;
+    GetProtAndRnaForCDS(*sf, context.GetScope(), prot, mrna);
+    if (prot) {
+        string& prot_name = prot->SetData().SetProt().SetName().front();
+        string old_prot_name = FixProductName(rule, context.GetScope(),
+            prot_name,
+            [&mrna] { return CRef<CSeq_feat>(mrna); },
+            [&sf] { return CRef<CSeq_feat>((CSeq_feat*)sf); });
+        if (prot_name != old_prot_name && !prot_name.empty()) {
+            string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj->GetLocation();
+            obj->SetFixed();
+            ret.Reset(new CAutofixReport("ORGANELLE_PRODUCTS", 0));
+            CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+            vector<CRef<CAutofixReport>> reports;
+            reports.push_back(report);
+            ret->AddSubitems(reports);
+        }
     }
     return ret;
 }
@@ -547,28 +540,27 @@ static void s_SummarizeSuspectRule(
 }
 
 
-DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc | eSubmitter | eSmart, "rRNA product names should not contain 'partial' or 'domain'")
+DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, FEAT, eDisc | eSubmitter | eSmart, "rRNA product names should not contain 'partial' or 'domain'")
 {
-    if( ! obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA ) {
-        return;
-    }
     static const string kMsg = "[n] rRNA product name[s] contain[S] suspect phrase";
-
-    const string product = GetRNAProductString(obj);
-    CConstRef<CSuspect_rule_set> rules = s_GetrRNAProductsSuspectRuleSet();
-    vector<char> Hits(rules->Get().size());
-    std::fill(Hits.begin(), Hits.end(), 0);
-    rules->Screen(product, Hits.data());
-
-    size_t rule_num = 0;
-    for (auto rule : rules->Get()) {
-        if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(product)) {
-            CNcbiOstrstream detailed_msg;
-            detailed_msg << "[n] rRNA product name[s] ";
-            s_SummarizeSuspectRule(detailed_msg, *rule);
-            m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false);
+    for (auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+            const string product = GetRNAProductString(feat);
+            CConstRef<CSuspect_rule_set> rules = s_GetrRNAProductsSuspectRuleSet();
+            vector<char> Hits(rules->Get().size());
+            std::fill(Hits.begin(), Hits.end(), 0);
+            rules->Screen(product, Hits.data());
+            size_t rule_num = 0;
+            for (auto rule : rules->Get()) {
+                if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(product)) {
+                    CNcbiOstrstream detailed_msg;
+                    detailed_msg << "[n] rRNA product name[s] ";
+                    s_SummarizeSuspectRule(detailed_msg, *rule);
+                    m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.SeqFeatObjRef(feat));
+                }
+                rule_num++;
+            }
         }
-        rule_num++;
     }
 }
 
@@ -581,20 +573,21 @@ DISCREPANCY_SUMMARIZE(SUSPECT_RRNA_PRODUCTS)
 
 // _SUSPECT_PRODUCT_NAMES - used for asndisc -N option
 
-DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for asndisc -N option")
+DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, STRING, 0, "Suspect Product Names for asndisc -N option")
 {
     CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
     vector<char> Hits(rules->Get().size());
     std::fill(Hits.begin(), Hits.end(), 0);
-    rules->Screen(obj, Hits.data());
+    const string& str = context.CurrentText();
+    rules->Screen(str, Hits.data());
 
-    if (!ContainsLetters(obj)) {
+    if (!ContainsLetters(str)) {
         CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
-        node.Add(*context.StringObj(obj)).Fatal();
+        node.Add(*context.StringObjRef()).Fatal();
     }
     size_t rule_num = 0;
     for (auto rule : rules->Get()) {
-        if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(obj)) {
+        if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(str)) {
             string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
             size_t rule_type = rule->GetRule_type();
             string rule_name = "[*";
@@ -604,7 +597,7 @@ DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for a
             rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
             string rule_text = leading_space + GetRuleMatch(*rule);
             CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-            node.Add(*context.StringObj(obj)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+            node.Add(*context.StringObjRef()).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
         }
         rule_num++;
     }

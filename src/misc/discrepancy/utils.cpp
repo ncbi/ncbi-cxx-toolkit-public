@@ -119,7 +119,7 @@ static bool x_IsGenProdSet(CConstRef<objects::CBioseq_set> bioseq_set)
     return (bioseq_set && bioseq_set->IsSetClass() && bioseq_set->GetClass() == objects::CBioseq_set::eClass_gen_prod_set);
 }
 
-
+#if 0
 bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<CBioseq_set> > &bioseq_set_stack)
 {
     bool res = false;
@@ -148,6 +148,7 @@ bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector
     }
     return res;
 }
+#endif
 
 
 void AddComment(CSeq_feat& feat, const string& comment)

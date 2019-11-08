@@ -47,7 +47,7 @@ struct CFeatureInspectResults
     bool m_hasException;
 };
 
-CFeatureInspectResults InspectSeqFeat(const CSeq_feat& obj)
+static CFeatureInspectResults InspectSeqFeat(const CSeq_feat& obj)
 {
     CFeatureInspectResults result = { false, false };
     static const string TRANSL_NOTE("TAA stop codon is completed by the addition of 3' A residues to the mRNA");
@@ -57,46 +57,45 @@ CFeatureInspectResults InspectSeqFeat(const CSeq_feat& obj)
     TSeqPos feature_stop;
     if (obj.IsSetData() && obj.CanGetData())
     {
-        if (obj.IsSetLocation())
-        {
+        if (obj.IsSetLocation()) {
             feature_stop = obj.GetLocation().GetStop(eExtreme_Biological);
         }
         const CSeqFeatData &data = obj.GetData();
-        if (data.IsCdregion() && data.GetCdregion().IsSetCode_break())
-        FOR_EACH_CODEBREAK_ON_CDREGION(code_break, data.GetCdregion())
-        {
-            if ((*code_break)->IsSetLoc() && (*code_break)->IsSetAa())
-            {
-                int length = (*code_break)->GetLoc().GetTotalRange().GetLength();
-                TSeqPos stop_pos = (*code_break)->GetLoc().GetStop(eExtreme_Biological);
-                if (length < 3 
-                    && stop_pos == feature_stop) //and the location is at the end of the feature
+        if (data.IsCdregion() && data.GetCdregion().IsSetCode_break()) {
+            FOR_EACH_CODEBREAK_ON_CDREGION(code_break, data.GetCdregion()) {
+                if ((*code_break)->IsSetLoc() && (*code_break)->IsSetAa())
                 {
-                    char aa = 0;
-                    if ((*code_break)->GetAa().IsNcbieaa())
+                    int length = (*code_break)->GetLoc().GetTotalRange().GetLength();
+                    TSeqPos stop_pos = (*code_break)->GetLoc().GetStop(eExtreme_Biological);
+                    if (length < 3
+                        && stop_pos == feature_stop) //and the location is at the end of the feature
                     {
-                        aa = (*code_break)->GetAa().GetNcbieaa();
-                    }
-                    else if ((*code_break)->GetAa().IsNcbi8aa())
-                    {
-                        aa = (*code_break)->GetAa().GetNcbi8aa();
-                        vector<char> n(1, aa);
-                        vector<char> i;
-                        CSeqConvert::Convert(n, CSeqUtil::e_Ncbi8aa, 0, 1, i, CSeqUtil::e_Ncbieaa);
-                        aa = i.front();
-                    }
-                    else if ((*code_break)->GetAa().IsNcbistdaa())
-                    {
-                        aa = (*code_break)->GetAa().GetNcbistdaa();
-                        vector<char> n(1, aa);
-                        vector<char> i;
-                        CSeqConvert::Convert(n, CSeqUtil::e_Ncbistdaa, 0, 1, i, CSeqUtil::e_Ncbieaa);
-                        aa = i.front();
-                    }
-                    if (aa == '*') //Look for coding regions that have a translation exception (Cdregion.code-break) where aa is * (42)
-                    {
-                        result.m_hasException = true;
-                        break;
+                        char aa = 0;
+                        if ((*code_break)->GetAa().IsNcbieaa())
+                        {
+                            aa = (*code_break)->GetAa().GetNcbieaa();
+                        }
+                        else if ((*code_break)->GetAa().IsNcbi8aa())
+                        {
+                            aa = (*code_break)->GetAa().GetNcbi8aa();
+                            vector<char> n(1, aa);
+                            vector<char> i;
+                            CSeqConvert::Convert(n, CSeqUtil::e_Ncbi8aa, 0, 1, i, CSeqUtil::e_Ncbieaa);
+                            aa = i.front();
+                        }
+                        else if ((*code_break)->GetAa().IsNcbistdaa())
+                        {
+                            aa = (*code_break)->GetAa().GetNcbistdaa();
+                            vector<char> n(1, aa);
+                            vector<char> i;
+                            CSeqConvert::Convert(n, CSeqUtil::e_Ncbistdaa, 0, 1, i, CSeqUtil::e_Ncbieaa);
+                            aa = i.front();
+                        }
+                        if (aa == '*') //Look for coding regions that have a translation exception (Cdregion.code-break) where aa is * (42)
+                        {
+                            result.m_hasException = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -107,11 +106,13 @@ CFeatureInspectResults InspectSeqFeat(const CSeq_feat& obj)
 
 // TRANSL_NO_NOTE
 
-DISCREPANCY_CASE(TRANSL_NO_NOTE, CSeq_feat, eDisc, "Transl_except without Note")
+DISCREPANCY_CASE(TRANSL_NO_NOTE, FEAT, eDisc, "Transl_except without Note")
 {
-    CFeatureInspectResults result = InspectSeqFeat(obj);
-    if (result.m_hasException && !result.m_hasNote) {
-        m_Objs["[n] feature[s] [has] a translation exception but no note"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()));
+    for (auto& feat : context.GetFeat()) {
+        CFeatureInspectResults result = InspectSeqFeat(feat);
+        if (result.m_hasException && !result.m_hasNote) {
+            m_Objs["[n] feature[s] [has] a translation exception but no note"].Add(*context.SeqFeatObjRef(feat));
+        }
     }
 }
 
@@ -123,11 +124,14 @@ DISCREPANCY_SUMMARIZE(TRANSL_NO_NOTE)
 
 
 // NOTE_NO_TRANSL
-DISCREPANCY_CASE(NOTE_NO_TRANSL, CSeq_feat, eDisc, "Note without Transl_except")
+
+DISCREPANCY_CASE(NOTE_NO_TRANSL, FEAT, eDisc, "Note without Transl_except")
 {
-    CFeatureInspectResults result = InspectSeqFeat(obj);
-    if (result.m_hasNote && !result.m_hasException) {
-        m_Objs["[n] feature[s] [has] a note but not translation exception"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()));
+    for (auto& feat : context.GetFeat()) {
+        CFeatureInspectResults result = InspectSeqFeat(feat);
+        if (result.m_hasNote && !result.m_hasException) {
+            m_Objs["[n] feature[s] [has] a note but not translation exception"].Add(*context.SeqFeatObjRef(feat));
+        }
     }
 }
 

@@ -28,6 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <sstream>
 #include <objects/general/User_object.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub.hpp>
@@ -217,18 +218,18 @@ void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& autho
 }
 
 
-DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart | eFatal, "Publications with the same titles should have the same authors")
+DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, DESC, eDisc | eOncaller | eSmart | eFatal, "Publications with the same titles should have the same authors")
 {
-    if (!obj.IsPub()) {
-        return;
+    for (auto& desc : context.GetSeqdesc()) {
+        if (desc.IsPub()) {
+            string title;
+            string authors;
+            GetPubTitleAndAuthors(desc.GetPub(), title, authors);
+            if (!title.empty()) {
+                m_Objs[kEmptyStr][title][authors].Add(*context.SeqdescObjRef(desc));
+            }
+        }
     }
-    string title;
-    string authors;
-    GetPubTitleAndAuthors(obj.GetPub(), title, authors);
-    if (NStr::IsBlank(title)) {
-        return;
-    }
-    m_Objs[kEmptyStr][title][authors].Add(*context.SeqdescObj(obj));
 }
 
 
@@ -375,15 +376,11 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
 }
 
 
-const string kUnpubPubWithoutTitle = "[n] unpublished pub[s] [has] no title";
-
-DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Unpublished pubs should have titles")
+DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, PUBDESC, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Unpublished pubs should have titles")
 {
-    if (HasUnpubWithoutTitle(obj)) {
-        if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kUnpubPubWithoutTitle].Add(*context.SeqdescObj(*context.GetCurrentSeqdesc()), false).Fatal();
-        } else if (context.GetCurrentSeq_feat() != NULL) {
-            m_Objs[kUnpubPubWithoutTitle].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false).Fatal();
+    for (auto& pubdesc : context.GetPubdescs()) {
+        if (HasUnpubWithoutTitle(*pubdesc)) {
+            m_Objs["[n] unpublished pub[s] [has] no title"].Add(*context.PubdescObjRef(*pubdesc)).Fatal();
         }
     }
 }
@@ -422,11 +419,11 @@ bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
         return false;
     }
     bool rval = false;
-    ITERATE (CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
-        if ((*it)->IsSub()) {
-            if (!(*it)->GetSub().IsSetAuthors() || 
-                !(*it)->GetSub().GetAuthors().IsSetAffil() ||
-                HasNoAffiliation((*it)->GetSub().GetAuthors().GetAffil())) {
+    for (auto& it : pubdesc.GetPub().Get()) {
+        if (it->IsSub()) {
+            if (!it->GetSub().IsSetAuthors() || 
+                !it->GetSub().GetAuthors().IsSetAffil() ||
+                HasNoAffiliation(it->GetSub().GetAuthors().GetAffil())) {
                 rval = true;
                 break;
             } 
@@ -436,23 +433,17 @@ bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
 }
 
 
-const string kMissingAffil = "[n] citsub[s] [is] missing affiliation";
-
-DISCREPANCY_CASE(MISSING_AFFIL, CPubdesc, eDisc | eOncaller | eFatal, "Missing affiliation")
+DISCREPANCY_CASE(MISSING_AFFIL, PUBDESC, eDisc | eOncaller | eFatal, "Missing affiliation")
 {
-    if (IsCitSubMissingAffiliation(obj)) {
-        if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kMissingAffil].Add(*context.SeqdescObj(*context.GetCurrentSeqdesc()), false).Fatal();
-        } else if (context.GetCurrentSeq_feat() != NULL) {
-            m_Objs[kMissingAffil].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false).Fatal();
+    for (auto& pubdesc : context.GetPubdescs()) {
+        if (IsCitSubMissingAffiliation(*pubdesc)) {
+            m_Objs["[n] citsub[s] [is] missing affiliation"].Add(*context.PubdescObjRef(*pubdesc)).Fatal();
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MISSING_AFFIL)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -504,40 +495,42 @@ const string kCitSubSummary = "Citsub affiliation conflicts found";
 const string kSummaries = "summaries";
 
 
-DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CAuth_list, eDisc | eOncaller | eSmart | eFatal, "All Cit-subs should have identical affiliations")
+DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, AUTHORS, eDisc | eOncaller | eSmart | eFatal, "All Cit-subs should have identical affiliations")
 {
-    CConstRef<CPub> pub = context.GetCurrentPub();
-    if (pub && !pub->IsSub()) {
-        return;
-    }
-    CRef<CDiscrepancyObject> repobj = context.FeatOrDescOrSubmitBlockObj();
-    if (obj.IsSetAffil()) {
-        const CAffil& affil = obj.GetAffil();
-        if (affil.IsStr()) {
-            m_Objs["Affil"][affil.GetStr()].Add(*repobj);
-            m_Objs["Div"][kEmptyStr].Add(*repobj);
-            m_Objs["City"][kEmptyStr].Add(*repobj);
-            m_Objs["Sub"][kEmptyStr].Add(*repobj);
-            m_Objs["Country"][kEmptyStr].Add(*repobj);
-            m_Objs["Street"][kEmptyStr].Add(*repobj);
-            m_Objs["Postal_code"][kEmptyStr].Add(*repobj);
+    for (auto& authors : context.GetAuthors()) {
+        const CPub* pub = context.AuthPub(authors);
+        if (pub && !pub->IsSub()) {
+            continue;
         }
-        else if (affil.IsStd()) {
-            m_Objs["Affil"][affil.GetStd().IsSetAffil() && !NStr::IsBlank(affil.GetStd().GetAffil()) ? affil.GetStd().GetAffil() : kEmptyStr].Add(*repobj);
-            m_Objs["Div"][affil.GetStd().IsSetDiv() && !NStr::IsBlank(affil.GetStd().GetDiv()) ? affil.GetStd().GetDiv() : kEmptyStr].Add(*repobj);
-            m_Objs["City"][affil.GetStd().IsSetCity() && !NStr::IsBlank(affil.GetStd().GetCity()) ? affil.GetStd().GetCity() : kEmptyStr].Add(*repobj);
-            m_Objs["Sub"][affil.GetStd().IsSetSub() && !NStr::IsBlank(affil.GetStd().GetSub()) ? affil.GetStd().GetSub() : kEmptyStr].Add(*repobj);
-            m_Objs["Country"][affil.GetStd().IsSetCountry() && !NStr::IsBlank(affil.GetStd().GetCountry()) ? affil.GetStd().GetCountry() : kEmptyStr].Add(*repobj);
-            m_Objs["Street"][affil.GetStd().IsSetStreet() && !NStr::IsBlank(affil.GetStd().GetStreet()) ? affil.GetStd().GetStreet() : kEmptyStr].Add(*repobj);
-            m_Objs["Postal_code"][affil.GetStd().IsSetPostal_code() && !NStr::IsBlank(affil.GetStd().GetPostal_code()) ? affil.GetStd().GetPostal_code() : kEmptyStr].Add(*repobj);
+        CRef<CDiscrepancyObject> repobj = context.AuthorsObjRef(*authors);
+        if (authors->IsSetAffil()) {
+            const CAffil& affil = authors->GetAffil();
+            if (affil.IsStr()) {
+                m_Objs["Affil"][affil.GetStr()].Add(*repobj);
+                m_Objs["Div"][kEmptyStr].Add(*repobj);
+                m_Objs["City"][kEmptyStr].Add(*repobj);
+                m_Objs["Sub"][kEmptyStr].Add(*repobj);
+                m_Objs["Country"][kEmptyStr].Add(*repobj);
+                m_Objs["Street"][kEmptyStr].Add(*repobj);
+                m_Objs["Postal_code"][kEmptyStr].Add(*repobj);
+            }
+            else if (affil.IsStd()) {
+                m_Objs["Affil"][affil.GetStd().IsSetAffil() && !NStr::IsBlank(affil.GetStd().GetAffil()) ? affil.GetStd().GetAffil() : kEmptyStr].Add(*repobj);
+                m_Objs["Div"][affil.GetStd().IsSetDiv() && !NStr::IsBlank(affil.GetStd().GetDiv()) ? affil.GetStd().GetDiv() : kEmptyStr].Add(*repobj);
+                m_Objs["City"][affil.GetStd().IsSetCity() && !NStr::IsBlank(affil.GetStd().GetCity()) ? affil.GetStd().GetCity() : kEmptyStr].Add(*repobj);
+                m_Objs["Sub"][affil.GetStd().IsSetSub() && !NStr::IsBlank(affil.GetStd().GetSub()) ? affil.GetStd().GetSub() : kEmptyStr].Add(*repobj);
+                m_Objs["Country"][affil.GetStd().IsSetCountry() && !NStr::IsBlank(affil.GetStd().GetCountry()) ? affil.GetStd().GetCountry() : kEmptyStr].Add(*repobj);
+                m_Objs["Street"][affil.GetStd().IsSetStreet() && !NStr::IsBlank(affil.GetStd().GetStreet()) ? affil.GetStd().GetStreet() : kEmptyStr].Add(*repobj);
+                m_Objs["Postal_code"][affil.GetStd().IsSetPostal_code() && !NStr::IsBlank(affil.GetStd().GetPostal_code()) ? affil.GetStd().GetPostal_code() : kEmptyStr].Add(*repobj);
+            }
+            else {
+                m_Objs["Affil"][kEmptyStr].Add(*repobj);
+            }
+            m_Objs[kSummaries][SummarizeAffiliation(affil)].Add(*repobj);
         }
         else {
-            m_Objs["Affil"][kEmptyStr].Add(*repobj);
+            m_Objs[kSummaries][kEmptyStr].Add(*repobj);
         }
-        m_Objs[kSummaries][SummarizeAffiliation(affil)].Add(*repobj);
-    }
-    else {
-        m_Objs[kSummaries][kEmptyStr].Add(*repobj);
     }
 }
 
@@ -578,71 +571,29 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
 
 // SUBMITBLOCK_CONFLICT
 
-DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, CSubmit_block, eDisc | eOncaller | eSmart, "Records should have identical submit-blocks")
+DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, SUBMIT, eDisc | eOncaller | eSmart, "Records should have identical submit-blocks")
 {
-    m_Objs.Add(*context.SubmitBlockObj());
-}
-
-#define COMPARE_FIELD(Field) if (A->CanGet##Field() != B->CanGet##Field() || (A->CanGet##Field() && A->Get##Field() != B->Get##Field())) { return false; }
-#define COMPARE_COMPLEX_FIELD(Field, Func) if (A->CanGet##Field() != B->CanGet##Field() || (A->CanGet##Field() && !Func(&A->Get##Field(), &B->Get##Field()))) { return false; }
-
-static bool ContactInfoMatch(const CContact_info* A, const CContact_info* B)
-{
-    return A->Equals(*B);
-}
-
-
-static bool CitSubMatchExceptDate(const CCit_sub* A, const CCit_sub* B)
-{
-    COMPARE_FIELD(Medium)
-    COMPARE_FIELD(Descr)
-    if (A->CanGetAuthors() != B->CanGetAuthors() || (A->CanGetAuthors() && !A->GetAuthors().SameCitation(B->GetAuthors()))) {
-        return false;
+    const CSubmit_block* sub = context.GetSubmit_block();
+    if (sub) {
+        stringstream ss;
+        ss << MSerial_AsnBinary << *sub;
+        m_Objs[ss.str()].Add(*context.SubmitBlockObjRef());
     }
-    return true;
-}
-
-
-static bool SubmitBlockMatchExceptDate(const CReportObj& a, const CReportObj& b)
-{
-    const CSubmit_block* A = dynamic_cast<const CSubmit_block*>(&*a.GetObject());
-    const CSubmit_block* B = dynamic_cast<const CSubmit_block*>(&*b.GetObject());
-    COMPARE_FIELD(Hup)
-    COMPARE_FIELD(Subtype)
-    COMPARE_FIELD(Comment)
-    COMPARE_FIELD(User_tag)
-    COMPARE_FIELD(Tool)
-    COMPARE_COMPLEX_FIELD(Cit, CitSubMatchExceptDate)
-    COMPARE_COMPLEX_FIELD(Contact, ContactInfoMatch)
-    if (A->GetHup()) {
-        if (A->CanGetReldate() != B->CanGetReldate() || (A->CanGetReldate() && A->GetReldate().Compare(B->GetReldate()) != CDate::eCompare_same))
-        return false;
-    }
-    return true;
 }
 
 
 DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-    CReportNode out;
-    CReportNode& outout = out["SubmitBlock Conflicts"];
-    vector<CReportObj*> V;
-    NON_CONST_ITERATE (TReportObjectList, it, m_Objs.GetObjects()) {
-        size_t n;
-        for (n = 0; n < V.size(); n++) {
-            if (SubmitBlockMatchExceptDate(**it, *V[n])) {
-                break;
+    if (m_Objs.GetMap().size() > 1) {
+        CReportNode out;
+        CReportNode& outout = out["SubmitBlock Conflicts"];
+        size_t count = 0;
+        for (auto& it : m_Objs.GetMap()) {
+            CReportNode& node = outout["[*" + to_string(count++) + "*][n] record[s] [has] identical submit-blocks"];
+            for (auto& obj : it.second->GetObjects()) {
+                node.Add(*obj);
             }
         }
-        if (n == V.size()) {
-            V.push_back(&**it);
-        }
-        outout["[*" + NStr::IntToString((int)n) + "*][n] record[s] [has] identical submit-blocks"].Add(**it);
-    }
-    if (outout.GetMap().size() > 1) {
         m_ReportItems = out.Export(*this)->GetSubitems();
     }
 }
@@ -650,10 +601,22 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
 
 // CONSORTIUM
 
-DISCREPANCY_CASE(CONSORTIUM, CPerson_id, eOncaller, "Submitter blocks and publications have consortiums")
+DISCREPANCY_CASE(CONSORTIUM, AUTHORS, eOncaller, "Submitter blocks and publications have consortiums")
 {
-    if (obj.IsConsortium()) {
-        m_Objs["[n] publication[s]/submitter block[s] [has] consortium"].Add(*context.FeatOrDescOrCitSubObj(true));
+    static const string msg = "[n] publication[s]/submitter block[s] [has] consortium";
+    for (auto& authors : context.GetAuthors()) {
+        if (authors->IsSetNames() && authors->GetNames().IsStd()) {
+            const CAuth_list::C_Names::TStd& names = authors->GetNames().GetStd();
+            for (auto& auth : names) {
+                if (auth->IsSetName() && auth->GetName().IsConsortium()) {
+                    m_Objs[msg].Add(*context.AuthorsObjRef(*authors, true));
+                }
+            }
+        }
+    }
+    const CPerson_id* pid = context.GetPerson_id();
+    if (pid && pid->IsConsortium()) {
+        m_Objs[msg].Add(*context.SubmitBlockObjRef(true));
     }
 }
 
@@ -684,34 +647,27 @@ static int RemoveConsortium(CAuth_list& authors)
 
 DISCREPANCY_AUTOFIX(CONSORTIUM)
 {
-    TReportObjectList list = item->GetDetails();
+    CSerialObject* sobj = const_cast<CSerialObject*>(context.FindObject(*obj));
+    CSeq_feat* feat = dynamic_cast<CSeq_feat*>(sobj);
+    CSeqdesc* desc = dynamic_cast<CSeqdesc*>(sobj);
+    CSubmit_block* subb = dynamic_cast<CSubmit_block*>(sobj);
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CSerialObject* obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer();
-            const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
-            CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj));
-            CSubmit_block* subb = const_cast<CSubmit_block*>(dynamic_cast<const CSubmit_block*>(obj));
-            if (feat) {
-cout << "CONSORTIUM AUTOFIX: on seq_feat is not implemented\n";
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-            }
-            if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
-                CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
-                NON_CONST_ITERATE (CPub_equiv::Tdata, pub, data) {
-                    if ((*pub)->IsSetAuthors()) {
-                        n += RemoveConsortium((*pub)->SetAuthors());
-                    }
-                }
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-            }
-            if (subb && subb->CanGetCit() && subb->GetCit().CanGetAuthors() && subb->GetCit().GetAuthors().CanGetNames()) {
-                n += RemoveConsortium(subb->SetCit().SetAuthors());
-                // we don't autofix in the cit_sub->contact
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+    if (feat) {
+        cout << "CONSORTIUM AUTOFIX: on seq_feat is not implemented\n";
+    }
+    if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
+        CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
+        for (auto pub : data) {
+            if (pub->IsSetAuthors()) {
+                n += RemoveConsortium(pub->SetAuthors());
             }
         }
     }
+    if (subb && subb->CanGetCit() && subb->GetCit().CanGetAuthors() && subb->GetCit().GetAuthors().CanGetNames()) {
+        n += RemoveConsortium(subb->SetCit().SetAuthors());
+        // we don't autofix in the cit_sub->contact
+    }
+    obj->SetFixed();
     return CRef<CAutofixReport>(n ? new CAutofixReport("CONSORTIUM: [n] Consortium[s] [is] removed", n) : 0);
 }
 
@@ -720,22 +676,24 @@ cout << "CONSORTIUM AUTOFIX: on seq_feat is not implemented\n";
 
 const string kMissingAuthorsName = "[n] pub[s] missing author\'s first or last name";
 
-DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eDisc | eOncaller | eSubmitter | eSmart, "Missing authors or first/last author's names")
+DISCREPANCY_CASE(CHECK_AUTH_NAME, AUTHORS, eDisc | eOncaller | eSubmitter | eSmart, "Missing authors or first/last author's names")
 {
-    if (context.IsPubMed()) {
-        return;
-    }
-    if (obj.IsSetNames() && obj.GetNames().IsStd()) {
-        const CAuth_list::C_Names::TStd& names = obj.GetNames().GetStd();
-        if (names.empty()) {
-            m_Objs[kMissingAuthorsName].Add(*context.FeatOrDescOrSubmitBlockObj());
-        }
-        else {
-            ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
-                if (!(*auth)->IsSetName() || ((*auth)->GetName().IsName() &&
-                        (!(*auth)->GetName().GetName().CanGetFirst() || !(*auth)->GetName().GetName().CanGetLast() || (*auth)->GetName().GetName().GetFirst().empty() || (*auth)->GetName().GetName().GetLast().empty()))) {
-                    m_Objs[kMissingAuthorsName].Add(*context.FeatOrDescOrSubmitBlockObj());
-                    break;
+    //if (context.IsPubMed()) { -- need to rewrite context.IsPubMed()
+    //    return;
+    //}
+    for (auto& authors : context.GetAuthors()) {
+        if (authors->IsSetNames() && authors->GetNames().IsStd()) {
+            const CAuth_list::C_Names::TStd& names = authors->GetNames().GetStd();
+            if (names.empty()) {
+                m_Objs[kMissingAuthorsName].Add(*context.AuthorsObjRef(*authors));
+            }
+            else {
+                for (auto& auth : names) {
+                    if (!auth->IsSetName() || (auth->GetName().IsName() &&
+                        (!auth->GetName().GetName().CanGetFirst() || !auth->GetName().GetName().CanGetLast() || auth->GetName().GetName().GetFirst().empty() || auth->GetName().GetName().GetLast().empty()))) {
+                        m_Objs[kMissingAuthorsName].Add(*context.AuthorsObjRef(*authors));
+                        break;
+                    }
                 }
             }
         }
@@ -754,10 +712,9 @@ DISCREPANCY_SUMMARIZE(CHECK_AUTH_NAME)
 static const CCit_sub* GetCitSubFromPub(const CPub& pub)
 {
     const CCit_sub* ret = nullptr;
-
     if (pub.IsEquiv() && pub.GetEquiv().IsSet()) {
-        ITERATE(CPub_equiv::Tdata, cur_pub, pub.GetEquiv().Get()) {
-            ret = GetCitSubFromPub(**cur_pub);
+        for (auto cur_pub : pub.GetEquiv().Get()) {
+            ret = GetCitSubFromPub(*cur_pub);
             if (ret) {
                 break;
             }
@@ -766,7 +723,6 @@ static const CCit_sub* GetCitSubFromPub(const CPub& pub)
     else if (pub.IsSub()) {
         ret = &pub.GetSub();
     }
-
     return ret;
 }
 
@@ -775,7 +731,6 @@ static bool AffilStreetEndsWith(const string& street, const string& tail)
 {
     bool ret = false;
     if (street.size() > tail.size() && NStr::EndsWith(street, tail, NStr::eNocase)) {
-
         size_t delimiter_pos = street.size() - tail.size() - 1;
         if (ispunct(street[delimiter_pos]) || isspace(street[delimiter_pos])) {
             string university_of("University of");
@@ -792,50 +747,42 @@ static bool AffilStreetContainsDup(const CAffil& affil)
 {
     bool ret = false;
     if (affil.IsStd() && affil.GetStd().IsSetStreet() && !affil.GetStd().GetStreet().empty()) {
-
         const CAffil::C_Std& data = affil.GetStd();
         const string& street = data.GetStreet();
-
         if (data.IsSetCountry()) {
             ret = AffilStreetEndsWith(street, data.GetCountry());
         }
-
         if (!ret && data.IsSetPostal_code()) {
             ret = AffilStreetEndsWith(street, data.GetPostal_code());
         }
-
         if (!ret && data.IsSetSub()) {
             ret = AffilStreetEndsWith(street, data.GetSub());
         }
-
         if (!ret && data.IsSetCity()) {
             ret = AffilStreetEndsWith(street, data.GetCity());
         }
     }
-
     return ret;
 }
 
 
-DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, CPubdesc, eOncaller, "Cit-sub affiliation street contains text from other affiliation fields")
+DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, PUBDESC, eOncaller, "Cit-sub affiliation street contains text from other affiliation fields")
 {
-    if (!obj.IsSetPub()) {
-        return;
-    }
-
-    const CCit_sub* cit_sub = nullptr;
-    ITERATE(CPubdesc::TPub::Tdata, it, obj.GetPub().Get()) {
-        cit_sub = GetCitSubFromPub(**it);
-        if (cit_sub) {
-            break;
-        }
-    }
-
-    if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
-
-        const CAffil& affil = cit_sub->GetAuthors().GetAffil();
-        if (AffilStreetContainsDup(affil)) {
-            m_Objs["[n] Cit-sub pubs have duplicate affil text"].Add(*context.FeatOrDescOrSubmitBlockObj(true, const_cast<CCit_sub*>(cit_sub)));
+    for (auto& pubdesc : context.GetPubdescs()) {
+        if (pubdesc->IsSetPub()) {
+            const CCit_sub* cit_sub = 0;
+            for (auto& it : pubdesc->GetPub().Get()) {
+                cit_sub = GetCitSubFromPub(*it);
+                if (cit_sub) {
+                    break;
+                }
+            }
+            if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
+                const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+                if (AffilStreetContainsDup(affil)) {
+                    m_Objs["[n] Cit-sub pubs have duplicate affil text"].Add(*context.PubdescObjRef(*pubdesc, true)); // , const_cast<CCit_sub*>(cit_sub)* / ));
+                }
+            }
         }
     }
 }
@@ -850,67 +797,68 @@ DISCREPANCY_SUMMARIZE(CITSUB_AFFIL_DUP_TEXT)
 static bool RemoveAffilStreetEnd(string& street, const string& tail, bool country)
 {
     bool ret = AffilStreetEndsWith(street, tail);
-
     if (ret) {
-
         size_t off = street.size() - tail.size();
-
         static const string kChina = "China";
         static const string kChinaPR = "P.R. China";
-
         if (country && NStr::EqualNocase(tail, kChina) && NStr::EndsWith(street, kChinaPR, NStr::eNocase)) {
             off = street.size() - kChinaPR.size();
         }
-
         string new_street = street.substr(0, off);
         street = NStr::Sanitize(new_street, NStr::fSS_NoTruncate_Begin | NStr::fSS_alnum);
     }
-
     return ret;
 }
+
 
 static bool RemoveAffilDup(CCit_sub* cit_sub)
 {
     bool ret = false;
     if (cit_sub) {
         CAffil& affil = cit_sub->SetAuthors().SetAffil();
-
         CAffil::C_Std& data = affil.SetStd();
         string& street = data.SetStreet();
-
         if (data.IsSetCountry()) {
             ret = RemoveAffilStreetEnd(street, data.GetCountry(), true);
         }
-
         if (!ret && data.IsSetPostal_code()) {
             ret = RemoveAffilStreetEnd(street, data.GetPostal_code(), false);
         }
-
         if (!ret && data.IsSetSub()) {
             ret = RemoveAffilStreetEnd(street, data.GetSub(), false);
         }
-
         if (!ret && data.IsSetCity()) {
             ret = RemoveAffilStreetEnd(street, data.GetCity(), false);
         }
     }
-
     return ret;
 }
 
+
 DISCREPANCY_AUTOFIX(CITSUB_AFFIL_DUP_TEXT)
 {
-    TReportObjectList list = item->GetDetails();
+    CSerialObject* sobj = const_cast<CSerialObject*>(context.FindObject(*obj));
+    CSeq_feat* feat = dynamic_cast<CSeq_feat*>(sobj);
+    CSeqdesc* desc = dynamic_cast<CSeqdesc*>(sobj);
+
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
-            if (obj) {
-                CCit_sub* cit_sub = dynamic_cast<CCit_sub*>(const_cast<CObject*>(obj));
-                if (RemoveAffilDup(cit_sub)) {
-                    ++n;
-                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-                }
+    if (feat) {
+        cout << "CITSUB_AFFIL_DUP_TEXT AUTOFIX on seq_feat -- coming soon!\n";
+    }
+    if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
+        CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
+        CCit_sub* cit_sub = 0;
+        for (auto pub : data) {
+            cit_sub = const_cast<CCit_sub*>(GetCitSubFromPub(*pub));
+            if (cit_sub) {
+                break;
+            }
+        }
+        if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
+            const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+            if (AffilStreetContainsDup(affil) && RemoveAffilDup(cit_sub)) {
+                obj->SetFixed();
+                n++;
             }
         }
     }
@@ -1030,32 +978,31 @@ static bool IsValidStateAbbreviation(const string& state)
 }
 
 
-DISCREPANCY_CASE(USA_STATE, CPubdesc, eDisc | eOncaller | eSmart, "For country USA, state should be present and abbreviated")
+DISCREPANCY_CASE(USA_STATE, PUBDESC, eDisc | eOncaller | eSmart, "For country USA, state should be present and abbreviated")
 {
-    if (!obj.IsSetPub()) {
-        return;
-    }
-
-    const CCit_sub* cit_sub = nullptr;
-    ITERATE(CPubdesc::TPub::Tdata, it, obj.GetPub().Get()) {
-        cit_sub = GetCitSubFromPub(**it);
-        if (cit_sub) {
-            break;
+    for (auto& pubdesc : context.GetPubdescs()) {
+        if (pubdesc->IsSetPub()) {
         }
-    }
-
-    if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
-        const CAffil& affil = cit_sub->GetAuthors().GetAffil();
-        if (affil.IsStd() && affil.GetStd().IsSetCountry()) {
-            const string& country = affil.GetStd().GetCountry();
-            if (country == "USA") {
-                bool report = !affil.GetStd().IsSetSub();
-                if (!report) {
-                    const string& state = affil.GetStd().GetSub();
-                    report = !IsValidStateAbbreviation(state);
-                }
-                if (report) {
-                    m_Objs["[n] cit-sub[s] [is] missing state abbreviations"].Add(*context.FeatOrDescOrSubmitBlockObj(true, const_cast<CAffil*>(&affil)));
+        const CCit_sub* cit_sub = nullptr;
+        for (auto& it : pubdesc->GetPub().Get()) {
+            cit_sub = GetCitSubFromPub(*it);
+            if (cit_sub) {
+                break;
+            }
+        }
+        if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
+            const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+            if (affil.IsStd() && affil.GetStd().IsSetCountry()) {
+                const string& country = affil.GetStd().GetCountry();
+                if (country == "USA") {
+                    bool report = !affil.GetStd().IsSetSub();
+                    if (!report) {
+                        const string& state = affil.GetStd().GetSub();
+                        report = !IsValidStateAbbreviation(state);
+                    }
+                    if (report) {
+                        m_Objs["[n] cit-sub[s] [is] missing state abbreviations"].Add(*context.PubdescObjRef(*pubdesc, true)); // , const_cast<CAffil*>(&affil)* / ));
+                    }
                 }
             }
         }
@@ -1068,16 +1015,14 @@ DISCREPANCY_SUMMARIZE(USA_STATE)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
 static bool ReplaceStateAbbreviation(CAffil* affil)
 {
     if (affil == nullptr) {
         return false;
     }
-
     if (affil->GetStd().IsSetSub()) {
-
         const string& state = affil->GetStd().GetSub();
-
         for (size_t i = 0; i < kNumOfAbbreviations; ++i) {
             if (NStr::EqualNocase(state, us_state_abbreviations[i].second) || NStr::EqualNocase(state, us_state_abbreviations[i].first)) {
                 affil->SetStd().SetSub(us_state_abbreviations[i].first);
@@ -1085,22 +1030,43 @@ static bool ReplaceStateAbbreviation(CAffil* affil)
             }
         }
     }
-
     return false;
 }
 
+
 DISCREPANCY_AUTOFIX(USA_STATE)
 {
-    TReportObjectList list = item->GetDetails();
+    CSerialObject* sobj = const_cast<CSerialObject*>(context.FindObject(*obj));
+    CSeq_feat* feat = dynamic_cast<CSeq_feat*>(sobj);
+    CSeqdesc* desc = dynamic_cast<CSeqdesc*>(sobj);
+
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
-            if (obj) {
-                CAffil* affil = dynamic_cast<CAffil*>(const_cast<CObject*>(obj));
-                if (ReplaceStateAbbreviation(affil)) {
-                    ++n;
-                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+    if (feat) {
+        cout << "USA_STATE AUTOFIX on seq_feat -- coming soon!\n";
+    }
+    if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
+        CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
+        CCit_sub* cit_sub = 0;
+        for (auto pub : data) {
+            cit_sub = const_cast<CCit_sub*>(GetCitSubFromPub(*pub));
+            if (cit_sub) {
+                break;
+            }
+        }
+        if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
+            CAffil& affil = const_cast<CAffil&>(cit_sub->GetAuthors().GetAffil());
+            if (affil.IsStd() && affil.GetStd().IsSetCountry()) {
+                const string& country = affil.GetStd().GetCountry();
+                if (country == "USA") {
+                    bool report = !affil.GetStd().IsSetSub();
+                    if (!report) {
+                        const string& state = affil.GetStd().GetSub();
+                        report = !IsValidStateAbbreviation(state);
+                    }
+                    if (report && ReplaceStateAbbreviation(&affil)) {
+                        obj->SetFixed();
+                        n++;
+                    }
                 }
             }
         }
@@ -1128,40 +1094,31 @@ static bool IsCapNameCorrect(const string& name)
         "der",
         "den",
         "di", };
-
     bool ret = true;
 
     if (!name.empty()) {
-
         bool need_cap = true;
         bool need_lower = false;
         bool found_lower = true;
-
         size_t len = name.size();
         for (size_t i = 0; i < len; ++i) {
-
             if (isalpha(name[i])) {
                 if (need_cap) {
-
                     if (islower(name[i])) {
-
                         // check if it is a short name
                         string::const_iterator start = name.begin() + i;
                         string::const_iterator end = start + 1;
                         while (end != name.end() && *end != ' ') {
                             ++end;
                         }
-
                         string short_name(start, end);
                         set<string>::const_iterator it = kShortNames.find(short_name);
                         if (it == kShortNames.end()) {
                             ret = false;
                             break;
                         }
-
                         i += it->size() - 1;
                     }
-
                     need_cap = false;
                 }
                 else {
@@ -1174,58 +1131,50 @@ static bool IsCapNameCorrect(const string& name)
                 need_cap = true;
             }
         }
-
         if (need_lower && !found_lower) {
             ret = false;
         }
     }
-
     return ret;
 }
+
 
 static bool IsCapInitialsCorrect(const string& initials)
 {
     bool ret = true;
-
     if (!initials.empty()) {
-
-        ITERATE(string, cur, initials) {
-            if (isalpha(*cur) && islower(*cur)) {
+        for (auto& cur : initials) {
+            if (isalpha(cur) && islower(cur)) {
                 ret = false;
                 break;
             }
         }
     }
-
     return ret;
 }
 
-DISCREPANCY_CASE(CHECK_AUTH_CAPS, CAuth_list, eDisc | eOncaller | eSmart, "Check for correct capitalization in author names")
+
+DISCREPANCY_CASE(CHECK_AUTH_CAPS, AUTHORS, eDisc | eOncaller | eSmart, "Check for correct capitalization in author names")
 {
-    if (obj.IsSetNames() && obj.GetNames().IsStd()) {
-
-        ITERATE(CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
-
-            if ((*auth)->IsSetName() && (*auth)->GetName().IsName()) {
-
-                const CName_std& name = (*auth)->GetName().GetName();
-
-                bool correct = true;
-                if (name.IsSetLast()) {
-                    correct = IsCapNameCorrect(name.GetLast());
-                }
-
-                if (correct && name.IsSetFirst()) {
-                    correct = IsCapNameCorrect(name.GetFirst());
-                }
-
-                if (correct && name.IsSetInitials()) {
-                    correct = IsCapInitialsCorrect(name.GetInitials());
-                }
-
-                if (!correct) {
-                    m_Objs[kIncorrectCap].Add(*context.FeatOrDescOrSubmitBlockObj(true, const_cast<CAuth_list*>(&obj)));
-                    break;
+    for (auto& authors : context.GetAuthors()) {
+        if (authors->IsSetNames() && authors->GetNames().IsStd()) {
+            for (auto& auth : authors->GetNames().GetStd()) {
+                if (auth->IsSetName() && auth->GetName().IsName()) {
+                    const CName_std& name = auth->GetName().GetName();
+                    bool correct = true;
+                    if (name.IsSetLast()) {
+                        correct = IsCapNameCorrect(name.GetLast());
+                    }
+                    if (correct && name.IsSetFirst()) {
+                        correct = IsCapNameCorrect(name.GetFirst());
+                    }
+                    if (correct && name.IsSetInitials()) {
+                        correct = IsCapInitialsCorrect(name.GetInitials());
+                    }
+                    if (!correct) {
+                        m_Objs[kIncorrectCap].Add(*context.AuthorsObjRef(*authors, true));
+                        break;
+                    }
                 }
             }
         }
@@ -1243,74 +1192,80 @@ static bool FixCapitalization(string& name, bool apostroph)
 {
     bool ret = false;
     bool to_lower = false;
-
-    NON_CONST_ITERATE(string, cur, name) {
-        if (isalpha(*cur)) {
-            if (to_lower && isupper(*cur)) {
-                *cur = tolower(*cur);
+    for (auto& cur : name) {
+        if (isalpha(cur)) {
+            if (to_lower && isupper(cur)) {
+                cur = tolower(cur);
                 ret = true;
             }
-
             if (!to_lower) {
-
-                if (islower(*cur)) {
-                    *cur = toupper(*cur);
+                if (islower(cur)) {
+                    cur = toupper(cur);
                     ret = true;
                 }
                 to_lower = true;
             }
         }
-        else if (apostroph && *cur == '\'') {
+        else if (apostroph && cur == '\'') {
+            to_lower = false;
+        }
+        else if (cur == ' ') {
             to_lower = false;
         }
     }
-
     return ret;
 }
+
 
 static bool FixCapitalization(CAuth_list* auth_list)
 {
     bool ret = false;
-    
-    NON_CONST_ITERATE(CAuth_list::C_Names::TStd, auth, auth_list->SetNames().SetStd()) {
-
-        CName_std& name = (*auth)->SetName().SetName();
-
-        if (name.IsSetFirst() && FixCapitalization(name.SetFirst(), false)) {
-            ret = true;
-        }
-
-        if (name.IsSetLast() && FixCapitalization(name.SetLast(), true)) {
-            ret = true;
-        }
-
-        if (name.IsSetInitials()) {
-            NON_CONST_ITERATE(string, cur, name.SetInitials()) {
-                if (isalpha(*cur) && islower(*cur)) {
-                    *cur = toupper(*cur);
-                    ret = true;
+    for (auto auth : auth_list->SetNames().SetStd()) {
+        if (auth->GetName().IsName()) {
+            CName_std& name = auth->SetName().SetName();
+            if (name.IsSetFirst() && !IsCapNameCorrect(name.GetFirst()) && FixCapitalization(name.SetFirst(), false)) {
+                ret = true;
+            }
+            if (name.IsSetLast() && !IsCapNameCorrect(name.GetLast()) && FixCapitalization(name.SetLast(), true)) {
+                ret = true;
+            }
+            if (name.IsSetInitials() && !IsCapInitialsCorrect(name.GetInitials())) {
+                for (auto& cur : name.SetInitials()) {
+                    if (isalpha(cur) && islower(cur)) {
+                        cur = toupper(cur);
+                        ret = true;
+                    }
                 }
             }
         }
     }
-            
     return ret;
 }
 
+
 DISCREPANCY_AUTOFIX(CHECK_AUTH_CAPS)
 {
-    TReportObjectList list = item->GetDetails();
+    CSerialObject* sobj = const_cast<CSerialObject*>(context.FindObject(*obj));
+    CSeq_feat* feat = dynamic_cast<CSeq_feat*>(sobj);
+    CSeqdesc* desc = dynamic_cast<CSeqdesc*>(sobj);
+    CSubmit_block* subb = dynamic_cast<CSubmit_block*>(sobj);
+
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
-            if (obj) {
-                CAuth_list* auth_list = dynamic_cast<CAuth_list*>(const_cast<CObject*>(obj));
-                if (FixCapitalization(auth_list)) {
-                    ++n;
-                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
-                }
+    if (feat) {
+        cout << "CHECK_AUTH_CAPS AUTOFIX on seq_feat -- coming soon!\n";
+    }
+    if (desc) {
+        for (auto& authors : desc->SetPub().SetPub().Set()) {
+            if (FixCapitalization(&authors->SetAuthors())) {
+                obj->SetFixed();
+                n++;
             }
+        }
+    }
+    if (subb) {
+        if (FixCapitalization(&subb->SetCit().SetAuthors())) {
+            obj->SetFixed();
+            n++;
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("CHECK_AUTH_CAPS: capitalization of [n] author[s] is fixed", n) : 0);

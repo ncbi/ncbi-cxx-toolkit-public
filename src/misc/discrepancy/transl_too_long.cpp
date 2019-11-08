@@ -44,48 +44,49 @@ DISCREPANCY_MODULE(transl_too_long);
 
 // TRANSL_TOO_LONG
 
-DISCREPANCY_CASE(TRANSL_TOO_LONG, CSeqFeatData, eDisc, "Transl_except longer than 3")
+DISCREPANCY_CASE(TRANSL_TOO_LONG, FEAT, eDisc, "Transl_except longer than 3")
 {
-
-    if (!obj.IsCdregion() || !obj.GetCdregion().IsSetCode_break()) {
-            return;
-    }
-    bool found = false;
-    FOR_EACH_CODEBREAK_ON_CDREGION(code_break, obj.GetCdregion())
-    {
-        if ((*code_break)->IsSetLoc() && (*code_break)->IsSetAa())
-        {
-            int length = (*code_break)->GetLoc().GetTotalRange().GetLength();
-            char aa = 0;
-            if ((*code_break)->GetAa().IsNcbieaa())
+    for (auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.GetData().GetCdregion().IsSetCode_break()) {
+            bool found = false;
+            FOR_EACH_CODEBREAK_ON_CDREGION(code_break, feat.GetData().GetCdregion())
             {
-                aa = (*code_break)->GetAa().GetNcbieaa();
+                if ((*code_break)->IsSetLoc() && (*code_break)->IsSetAa())
+                {
+                    int length = (*code_break)->GetLoc().GetTotalRange().GetLength();
+                    char aa = 0;
+                    if ((*code_break)->GetAa().IsNcbieaa())
+                    {
+                        aa = (*code_break)->GetAa().GetNcbieaa();
+                    }
+                    else if ((*code_break)->GetAa().IsNcbi8aa())
+                    {
+                        aa = (*code_break)->GetAa().GetNcbi8aa();
+                        vector<char> n(1, aa);
+                        vector<char> i;
+                        CSeqConvert::Convert(n, CSeqUtil::e_Ncbi8aa, 0, 1, i, CSeqUtil::e_Ncbieaa);
+                        aa = i.front();
+                    }
+                    else if ((*code_break)->GetAa().IsNcbistdaa())
+                    {
+                        aa = (*code_break)->GetAa().GetNcbistdaa();
+                        vector<char> n(1, aa);
+                        vector<char> i;
+                        CSeqConvert::Convert(n, CSeqUtil::e_Ncbistdaa, 0, 1, i, CSeqUtil::e_Ncbieaa);
+                        aa = i.front();
+                    }
+                    if (length > 3 && aa == '*')
+                    {
+                        found = true;
+                        break;
+                    }
+                }
             }
-            else if ((*code_break)->GetAa().IsNcbi8aa())
-            {
-                aa = (*code_break)->GetAa().GetNcbi8aa();
-                vector<char> n(1, aa);
-                vector<char> i;
-                CSeqConvert::Convert(n, CSeqUtil::e_Ncbi8aa, 0, 1, i, CSeqUtil::e_Ncbieaa);
-                aa = i.front();
-            }
-            else if ((*code_break)->GetAa().IsNcbistdaa())
-            {
-                aa = (*code_break)->GetAa().GetNcbistdaa();
-                vector<char> n(1, aa);
-                vector<char> i;
-                CSeqConvert::Convert(n, CSeqUtil::e_Ncbistdaa, 0, 1, i, CSeqUtil::e_Ncbieaa);
-                aa = i.front();
-            }
-            if (length > 3 && aa == '*')
-            {
-                found = true;
-                break;
+            if (found) {
+                m_Objs["[n] feature[s] [has] translation exception[s] longer than 3 bp"].Add(*context.SeqFeatObjRef(feat));
             }
         }
     }
-    if (found)
-        m_Objs["[n] feature[s] [has] translation exception[s] longer than 3 bp"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true));
 }
 
 
