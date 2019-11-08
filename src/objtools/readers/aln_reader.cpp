@@ -236,9 +236,7 @@ void CAlnReader::Read(
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
 
-    if (pErrorListener) {
-        theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
-    }
+    theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
     if (m_ReadDone) {
         return;
     }

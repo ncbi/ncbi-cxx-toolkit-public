@@ -84,9 +84,8 @@ ReadAlignmentFile(
     ILineErrorListener* pErrorListener)
 //  ----------------------------------------------------------------------------
 {
-    if (pErrorListener) {
-        theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
-    }
+    theErrorReporter.reset(new CAlnErrorReporter(pErrorListener));
+
     if (sequenceInfo.Alphabet().empty()) {
         return false;
     }
