@@ -4144,6 +4144,15 @@ void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
         out << "</command_groups>" << endl;
     }
 }
+
+list<CArgDescriptions*> CCommandArgDescriptions::GetAllDescriptions(void) {
+    list<CArgDescriptions*> all( CArgDescriptions::GetAllDescriptions() );
+    for (TDescriptions::const_iterator d = m_Description.begin(); d != m_Description.end(); ++d) {
+        all.push_back( d->second.get());
+    }
+    return all;
+}
+
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 // CArgAllow::

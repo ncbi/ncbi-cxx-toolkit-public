@@ -1310,6 +1310,10 @@ public:
         // Extra checks for the consistency of resultant argument values
         x_PostCheck(*args, 0, eConvertKeys);
     }
+
+    virtual list<CArgDescriptions*> GetAllDescriptions(void) {
+        return list<CArgDescriptions*>({this});
+    }
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1389,6 +1393,8 @@ public:
     /// @param out
     ///   Print into this output stream
     virtual void PrintUsageXml(CNcbiOstream& out) const;
+
+    virtual list<CArgDescriptions*> GetAllDescriptions(void);
 
 private:
     // not allowed

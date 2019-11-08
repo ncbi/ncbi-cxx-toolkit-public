@@ -1075,26 +1075,28 @@ void CNcbiApplicationAPI::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
     if ( arg_desc ) {
         if ( !m_DisableArgDesc ) {
+            for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions()) {
             // Add logfile and conffile arguments
-            if (!m_ArgDesc->Exist(s_ArgLogFile + 1) ) {
-                m_ArgDesc->AddOptionalKey
+            if (!desc->Exist(s_ArgLogFile + 1) ) {
+                desc->AddOptionalKey
                     (s_ArgLogFile+1, "File_Name",
                         "File to which the program log should be redirected",
                         CArgDescriptions::eOutputFile);
             }
-            if (!m_ArgDesc->Exist(s_ArgCfgFile + 1) ) {
+            if (!desc->Exist(s_ArgCfgFile + 1) ) {
                 if (m_DefaultConfig.empty()) {
-                    m_ArgDesc->AddOptionalKey
+                    desc->AddOptionalKey
                         (s_ArgCfgFile + 1, "File_Name",
                             "Program's configuration (registry) data file",
                             CArgDescriptions::eInputFile);
                 } else {
-                    m_ArgDesc->AddDefaultKey
+                    desc->AddDefaultKey
                         (s_ArgCfgFile + 1, "File_Name",
                             "Program's configuration (registry) data file",
                             CArgDescriptions::eInputFile,
                             m_DefaultConfig);
                 }
+            }
             }
         }
         m_Args.reset(arg_desc->CreateArgs(GetArguments()));
@@ -1253,79 +1255,81 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
 void CNcbiApplicationAPI::x_AddDefaultArgs(void)
 {
     if ( !m_DisableArgDesc ) {
-        if (m_ArgDesc->IsAutoHelpEnabled()) {
+        for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions()) {
+        if (desc->IsAutoHelpEnabled()) {
             if ((m_HideArgs & fHideHelp) != 0) {
-                if (m_ArgDesc->Exist("h")) {
-                    m_ArgDesc->Delete("h");
+                if (desc->Exist("h")) {
+                    desc->Delete("h");
                 }
             }
         }
         if ((m_HideArgs & fHideFullHelp) != 0) {
-            if (m_ArgDesc->Exist("help")) {
-                m_ArgDesc->Delete("help");
+            if (desc->Exist("help")) {
+                desc->Delete("help");
             }
         }
         if ((m_HideArgs & fHideXmlHelp) != 0) {
-            if (m_ArgDesc->Exist("xmlhelp")) {
-                m_ArgDesc->Delete("xmlhelp");
+            if (desc->Exist("xmlhelp")) {
+                desc->Delete("xmlhelp");
             }
         }
         if ((m_HideArgs & fHideLogfile) != 0) {
-            if (m_ArgDesc->Exist(s_ArgLogFile + 1)) {
-                m_ArgDesc->Delete(s_ArgLogFile + 1);
+            if (desc->Exist(s_ArgLogFile + 1)) {
+                desc->Delete(s_ArgLogFile + 1);
             }
         } else {
-            if (!m_ArgDesc->Exist(s_ArgLogFile + 1)) {
-                m_ArgDesc->AddOptionalKey
+            if (!desc->Exist(s_ArgLogFile + 1)) {
+                desc->AddOptionalKey
                     (s_ArgLogFile+1, "File_Name",
                         "File to which the program log should be redirected",
                         CArgDescriptions::eOutputFile);
             }
         }
         if ((m_HideArgs & fHideConffile) != 0) {
-            if (m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
-                m_ArgDesc->Delete(s_ArgCfgFile + 1);
+            if (desc->Exist(s_ArgCfgFile + 1)) {
+                desc->Delete(s_ArgCfgFile + 1);
             }
         } else {
-            if (!m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
-                m_ArgDesc->AddOptionalKey
+            if (!desc->Exist(s_ArgCfgFile + 1)) {
+                desc->AddOptionalKey
                     (s_ArgCfgFile + 1, "File_Name",
                         "Program's configuration (registry) data file",
                         CArgDescriptions::eInputFile);
             }
         }
         if ((m_HideArgs & fHideVersion) != 0) {
-            if (m_ArgDesc->Exist(s_ArgVersion + 1)) {
-                m_ArgDesc->Delete(s_ArgVersion + 1);
+            if (desc->Exist(s_ArgVersion + 1)) {
+                desc->Delete(s_ArgVersion + 1);
             }
         } else {
-            if (!m_ArgDesc->Exist(s_ArgVersion + 1)) {
-                m_ArgDesc->AddFlag
+            if (!desc->Exist(s_ArgVersion + 1)) {
+                desc->AddFlag
                     (s_ArgVersion + 1,
                         "Print version number;  ignore other arguments");
             }
         }
         if ((m_HideArgs & fHideFullVersion) != 0) {
-            if (m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
-                m_ArgDesc->Delete(s_ArgFullVersion + 1);
+            if (desc->Exist(s_ArgFullVersion + 1)) {
+                desc->Delete(s_ArgFullVersion + 1);
             }
         } else {
-            if (!m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
-                m_ArgDesc->AddFlag
+            if (!desc->Exist(s_ArgFullVersion + 1)) {
+                desc->AddFlag
                     (s_ArgFullVersion + 1,
                         "Print extended version data;  ignore other arguments");
             }
         }
         if ((m_HideArgs & fHideDryRun) != 0) {
-            if (m_ArgDesc->Exist(s_ArgDryRun + 1)) {
-                m_ArgDesc->Delete(s_ArgDryRun + 1);
+            if (desc->Exist(s_ArgDryRun + 1)) {
+                desc->Delete(s_ArgDryRun + 1);
             }
         } else {
-            if (!m_ArgDesc->Exist(s_ArgDryRun + 1)) {
-                m_ArgDesc->AddFlag
+            if (!desc->Exist(s_ArgDryRun + 1)) {
+                desc->AddFlag
                     (s_ArgDryRun + 1,
                         "Dry run the application: do nothing, only test all preconditions");
             }
+        }
         }
     }
 }
