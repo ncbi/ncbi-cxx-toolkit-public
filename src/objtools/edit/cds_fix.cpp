@@ -647,58 +647,91 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
         bool found5 = false;
         CRef<CSeq_loc> loc(new CSeq_loc());
         loc->Assign(new_mrna->GetLocation());
+        CFeat_CI utr1, utr2;
+        if (bsh) 
+        {
+            utr1 = CFeat_CI(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR); 
+            utr2 = CFeat_CI(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR);
+        }
+        else if (sah) 
+        {
+            utr1 = CFeat_CI(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR);
+            utr2 = CFeat_CI(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR);
+        }
 
-        if (bsh) {      
-            for (CFeat_CI utr(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR); utr; ++utr)
+        for (; utr1; ++utr1)
+        {
+            if (utr1->GetLocation().GetStart(eExtreme_Positional) == cd_loc.GetStop(eExtreme_Positional) + 1)
             {
-                if (utr->GetLocation().GetStart(eExtreme_Positional) == cd_loc.GetStop(eExtreme_Positional) + 1)
-                {
-                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
-                    if (cd_loc.IsReverseStrand())
-                        found5 = true;
-                    else
-                        found3 = true;
-                    break;
-                }
+                loc = sequence::Seq_loc_Add(*loc, utr1->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
+                if (cd_loc.IsReverseStrand())
+                    found5 = true;
+                else
+                    found3 = true;
+                break;
             }
-            for (CFeat_CI utr(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR); utr; ++utr)
+        }
+        for (; utr2; ++utr2)
+        {
+            if (utr2->GetLocation().GetStop(eExtreme_Positional) + 1 == cd_loc.GetStart(eExtreme_Positional) )
             {
-                if (utr->GetLocation().GetStop(eExtreme_Positional) + 1 == cd_loc.GetStart(eExtreme_Positional) )
-                {
-                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
-                    if (cd_loc.IsReverseStrand())
-                        found3 = true;
-                    else
-                        found5 = true;
-                    break;
-                }
+                loc = sequence::Seq_loc_Add(*loc, utr2->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
+                if (cd_loc.IsReverseStrand())
+                    found3 = true;
+                else
+                    found5 = true;
+                break;
             }
-        } else if (sah) {
-            for (CFeat_CI utr(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR); utr; ++utr)
+        }
+
+        CConstRef <CSeq_feat> gene = sequence::GetBestGeneForCds(cds, scope);
+        const CSeq_loc *overlap_loc = &cd_loc;
+        if (gene && gene->IsSetLocation())
+        {
+            overlap_loc = &gene->GetLocation();
+        }
+        auto gene_start = overlap_loc->GetStart(eExtreme_Positional);
+        auto gene_stop = overlap_loc->GetStop(eExtreme_Positional);
+
+        CFeat_CI exon;
+        if (bsh)
+            exon = CFeat_CI(bsh, CSeqFeatData::eSubtype_exon);
+        else if (sah)
+            exon = CFeat_CI(sah, CSeqFeatData::eSubtype_exon);
+        for (; exon; ++exon) 
+        {
+            if (!sequence::IsSameBioseq(*exon->GetLocation().GetId(), *overlap_loc->GetId(), &scope))
+                continue;
+            auto exon_start = exon->GetLocation().GetStart(eExtreme_Positional);
+            auto exon_stop = exon->GetLocation().GetStop(eExtreme_Positional);
+            auto mrna_start = loc->GetStart(eExtreme_Positional);
+            auto mrna_stop = loc->GetStop(eExtreme_Positional);
+            if (exon_start >= gene_start && exon_stop <= gene_stop)
             {
-                if (utr->GetLocation().GetStart(eExtreme_Positional) == cd_loc.GetStop(eExtreme_Positional) + 1)
+                bool exon_found = false;
+                if (exon_start < mrna_start )
                 {
-                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
-                    if (cd_loc.IsReverseStrand())
-                        found5 = true;
-                    else
+                    if (loc->IsReverseStrand())
                         found3 = true;
-                    break;
+                    else
+                        found5 = true;
+                    exon_found = true;
                 }
-            }
-            for (CFeat_CI utr(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR); utr; ++utr)
-            {
-                if (utr->GetLocation().GetStop(eExtreme_Positional) + 1 == cd_loc.GetStart(eExtreme_Positional) )
+                if (exon_stop > mrna_stop)
                 {
-                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
-                    if (cd_loc.IsReverseStrand())
-                        found3 = true;
-                    else
+                    if (loc->IsReverseStrand())
                         found5 = true;
-                    break;
+                    else
+                        found3 = true;
+                    exon_found = true;
+                }
+                if (exon_found)
+                {
+                    loc = sequence::Seq_loc_Add(*loc, exon->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
                 }
             }
         }
+
         new_mrna->SetLocation(*loc);
 
         if (!found5)
