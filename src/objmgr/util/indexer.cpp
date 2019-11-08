@@ -2936,6 +2936,41 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
     return CRef<CFeatureIndex> ();
 }
 
+
+// Find CFeatureIndex object for best parent using internal CFeatTree
+CRef<CFeatureIndex> CFeatureIndex::GetBestParent (void)
+
+{
+    try {
+        CMappedFeat best;
+        CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
+        auto bsxl = bsx.Lock();
+        if (bsxl) {
+            CWeakRef<CSeqMasterIndex> idx = bsxl->GetSeqMasterIndex();
+            auto idxl = idx.Lock();
+            if (idxl) {
+				 static const CSeqFeatData::ESubtype sm_SpecialVDJTypes[] = {
+					 CSeqFeatData::eSubtype_C_region,
+					 CSeqFeatData::eSubtype_V_segment,
+					 CSeqFeatData::eSubtype_D_segment,
+					 CSeqFeatData::eSubtype_J_segment,
+                     CSeqFeatData::eSubtype_bad
+				 };
+				 for ( const CSeqFeatData::ESubtype* type_ptr = sm_SpecialVDJTypes;
+				     *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
+                     best = feature::GetBestParentForFeat(m_Mf, *type_ptr, idxl->GetFeatTree(), 0);
+                    if (best) {
+                        return bsxl->GetFeatIndex(best);
+                    }
+				 }
+            }
+        }
+    } catch (CException& e) {
+        LOG_POST_X(8, Error << "Error in CFeatureIndex::GetBestParent: " << e.what());
+    }
+    return CRef<CFeatureIndex> ();
+}
+
 void CFeatureIndex::SetFetchFailure (bool fails)
 
 {

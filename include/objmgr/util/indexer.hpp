@@ -878,6 +878,9 @@ public:
     // Map from feature to CFeatureIndex for best gene using CFeatTree in parent CBioseqIndex
     CRef<CFeatureIndex> GetBestGene (void);
 
+    // Map from feature to CFeatureIndex for best VDJC parent using CFeatTree in parent CBioseqIndex
+    CRef<CFeatureIndex> GetBestParent (void);
+
     // Find CFeatureIndex object for overlapping source feature using internal CFeatTree
     CRef<CFeatureIndex> GetOverlappingSource (void);
 
