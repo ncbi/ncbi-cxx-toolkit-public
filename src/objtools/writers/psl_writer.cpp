@@ -110,7 +110,7 @@ bool CPslWriter::WriteAlign(
 //  ----------------------------------------------------------------------------
 {
     ++mRecordCounter;
-    if (true  ||  m_uFlags & CPslWriter::fDebugOutput) {
+    if (m_uFlags & CPslWriter::fDebugOutput) {
         cerr << ".";
         if (0 == mRecordCounter % 50) {
             cerr << " " << mRecordCounter << endl;
@@ -122,8 +122,9 @@ bool CPslWriter::WriteAlign(
     switch (segType) {
 
     default:
-        cerr << "Unknown record type" << endl;
-        return false;
+        NCBI_THROW(CObjWriterException, 
+            eBadInput, 
+            "Input alignment type not supported");
 
     case CSeq_align::C_Segs::e_Spliced:
         record.Initialize(*m_pScope, align.GetSegs().GetSpliced());

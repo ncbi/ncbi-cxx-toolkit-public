@@ -199,9 +199,6 @@ CPslRecord::xInitializeBlocksStrandPositive(
 
     for (auto pExon: exonList) {
         auto partCount = pExon->GetParts().size();
-        if (partCount != 1) {
-            cerr << "";
-        }
         int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
         int exonStartT = static_cast<int>(pExon->GetGenomic_start());
         mBlockStartsQ.push_back(exonStartQ);
@@ -306,6 +303,14 @@ CPslRecord::xValidateSegment(
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
+    if (!splicedSeg.CanGetProduct_type()  ||  
+            splicedSeg.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
+        // would love to support but need proper sample data first!
+            NCBI_THROW(CObjWriterException, 
+                eBadInput, 
+                "Unsupported product type \"protein\"");
+    }
+
     const auto& exonList = splicedSeg.GetExons();
     for (auto pExon: exonList) {
         if (!pExon->CanGetProduct_start()  || !pExon->CanGetProduct_end()) {
