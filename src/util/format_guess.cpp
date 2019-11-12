@@ -162,6 +162,7 @@ int CFormatGuess::s_CheckOrder[] =
     eBZip2,
     eLzo,
     eSra,
+    ePsl, // must be checked before eRmo!
     eRmo,
     eVcf,
     eGvf,
@@ -233,7 +234,8 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] =
     "VCF",
     "UCSC Region",
     "GFF Augustus",
-    "JSON"
+    "JSON",
+    "PSL",
 };
 
 const char*
@@ -520,6 +522,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatSra( mode );
     case eBam:
         return TestFormatBam( mode );
+    case ePsl:
+        return TestFormatPsl( mode );
     case eVcf:
         return TestFormatVcf( mode );
     case eUCSCRegion:
@@ -1946,6 +1950,40 @@ bool CFormatGuess::TestFormatBam(EMode mode)
 }
 
 
+bool CFormatGuess::TestFormatPsl(EMode mode)
+{
+    // for the most part, following https://genome.ucsc.edu/FAQ/FAQformat.html#format2.
+    // note that UCSC downloads often include one extra column, right at the start
+    // of each line. If that's the case then all records have that extra column. Since 
+    // UCSC downloads are common we will also accept as PSL anything that follows the 
+    // spec after the first column of every line has been tossed.
+    // Note that I have also seen "#" columns but only at the very beginning of a file.
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    bool ignoreFirstColumn = false;
+    unsigned int uPslLineCount = 0;
+    list<string>::iterator it = m_TestLines.begin();
+    while (NStr::StartsWith(*it, "#")) {
+        it++;
+    }
+    if (!IsLinePsl(*it, ignoreFirstColumn)) {
+        ignoreFirstColumn = true;
+        if (!IsLinePsl(*it, ignoreFirstColumn)) {
+            return false;
+        }
+    }
+    it++;
+    for ( ;  it != m_TestLines.end();  ++it) {
+        if ( ! IsLinePsl(*it, ignoreFirstColumn) ) {
+            return false;
+        }
+        ++uPslLineCount;
+    }
+    return (uPslLineCount != 0);
+}
+
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::TestFormatVcf(
     EMode)
@@ -3057,6 +3095,65 @@ bool CFormatGuess::IsLineRmo(
     //  and that's enough for now. But there are at least two more fields 
     //  with values that look testable.
 
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::IsLinePsl(
+    const string& line,
+    bool ignoreFirstLine)
+//  ----------------------------------------------------------------------------
+{
+    vector<string> tokens;
+    int firstColumn = (ignoreFirstLine ? 1 : 0);
+    NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
+    if (tokens.size() - firstColumn != 21) {
+        return false;
+    }
+    // first 8 columns are positive integers:
+    for (auto column = firstColumn; column < firstColumn + 8; ++column) {
+        if (!s_IsTokenPosInt(tokens[column]) ) {
+            return false;
+        }
+    }
+    // next is one or two "+" or "-":
+    const string& token = tokens[firstColumn + 8];
+    if (token.empty()  ||  token.size() > 2) {
+        return false;
+    }
+    if (token.find_first_not_of("-+") != string::npos) {
+        return false;
+    }
+    // columns 11 - 13 are positive integers:
+    for (auto column = firstColumn + 10; column < firstColumn + 13; ++column) {
+        if (!s_IsTokenPosInt(tokens[column]) ) {
+            return false;
+        }
+    }
+    // columns 15 - 18 are positive integers:
+    for (auto column = firstColumn + 14; column < firstColumn + 18; ++column) {
+        if (!s_IsTokenPosInt(tokens[column]) ) {
+            return false;
+        }
+    }
+    
+    int blockCount = NStr::StringToInt(tokens[firstColumn + 17]);
+    // columns 19 - 21 are comma separated lists of positive integers, list size
+    //  must be equal to blockCount
+    for (auto column = firstColumn + 18; column < firstColumn + 21; ++column) {
+        vector<string> hopefullyInts;
+        NStr::Split(tokens[column], ",", hopefullyInts, NStr::fSplit_Tokenize);
+        if (hopefullyInts.size() != blockCount) {
+            return false;
+        }
+        for (auto hopefulInt: hopefullyInts) {
+            if (!s_IsTokenPosInt(hopefulInt) ) {
+                return false;
+            }
+        }
+    }
     return true;
 }
 

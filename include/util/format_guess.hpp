@@ -91,6 +91,7 @@ public:
         eUCSCRegion          = 33, ///< USCS Region file format
         eGffAugustus         = 34, ///< GFFish output of Augustus Gene Prediction
         eJSON                = 35, ///< JSON 
+        ePsl                 = 36, ///< PSL alignment format
         /// Max value of EFormat
         eFormat_max
     };
@@ -256,6 +257,7 @@ protected:
     bool TestFormatVcf(EMode);
     bool TestFormatAugustus(EMode);
     bool TestFormatJson(EMode);
+    bool TestFormatPsl(EMode);
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
@@ -274,6 +276,7 @@ protected:
     static bool IsLineRmo(const std::string&);
     static bool IsAsnComment(const vector<string>&);
     static bool IsLineHgvs(const std::string&);
+    static bool IsLinePsl(const std::string&, bool ignoreFirstColumn);
     
 private:
     static bool x_TestInput( CNcbiIstream& input, EOnError onerror );
