@@ -106,8 +106,7 @@ public:
     virtual bool IsExtended(void) const = 0;
     virtual bool IsSummary(void) const = 0;
     virtual bool IsReal(void) const = 0;
-    static CRef<CReportItem> CreateReportItem(const string& test, const string& msg, bool autofix = false);
-    virtual void PushReportObj(CReportObj& obj) = 0;
+    static CRef<CReportItem> CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix = false);
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 

@@ -280,7 +280,7 @@ TReportObjectList CDiscrepancyCore::GetObjects(void) const
 }
 
 
-CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string& msg, bool autofix)
+CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix)
 {
     CRef<CDiscrepancyCase> t = CDiscrepancyConstructor::GetDiscrepancyConstructor(test)->Create();
     string s = msg;
@@ -288,14 +288,16 @@ CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string
     NStr::ReplaceInPlace(s, "[)]", "");
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, msg, s, s, kEmptyCStr, 0));
     item->m_Autofix = autofix;
+    auto dobj = static_cast<const CDiscrepancyObject&>(obj);
+    auto x = CRef<CDiscrepancyObject>(new CDiscrepancyObject(dobj.m_Ref));
+    x->m_Case = t;
+    if (autofix) {
+        x->m_Fix = dobj.m_Ref;
+    }
+    item->m_Objs.push_back(CRef<CReportObj>(x));
     return CRef<CReportItem>((CReportItem*)item);
 }
 
-
-void CDiscrepancyItem::PushReportObj(CReportObj& obj)
-{
-    m_Objs.push_back(CRef<CReportObj>(&obj));
-}
 
 // need to rewrite as a DiscrepancyContext method
 CReportObj* CDiscrepancyObject::Clone(bool fix, CConstRef<CObject> data) const

@@ -96,10 +96,9 @@ DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP)
 {}
 DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
 {
-#if 0
-    const CSeq_feat& cds = dynamic_cast<const CSeq_feat&>(*item->GetDetails()[0]->GetObject());
+    const CSeq_feat& cds = dynamic_cast<const CSeq_feat&>(*context.FindObject(*obj));
     const CSeq_loc& loc = cds.GetLocation();
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(loc);
     CFeat_CI f(bsh, CSeqFeatData::e_Rna);
     ENa_strand cds_strand = loc.IsSetStrand() ? loc.GetStrand() : eNa_strand_unknown;
     CSeq_loc::TRange r1 = loc.GetTotalRange();
@@ -133,10 +132,10 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         ++f;
     }
     if (ovlp_len) {
-        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(cds, scope);
+        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(cds, context.GetScope());
         CRef<CSeq_feat> new_cds(new CSeq_feat());
         new_cds->Assign(cds);
-        new_cds->SetLocation().Assign(*sequence::Seq_loc_Subtract(new_cds->GetLocation(), *other, CSeq_loc::fStrand_Ignore, &scope));
+        new_cds->SetLocation().Assign(*sequence::Seq_loc_Subtract(new_cds->GetLocation(), *other, CSeq_loc::fStrand_Ignore, &context.GetScope()));
         CRef<CCode_break> code_break(new CCode_break);
         CRef<CSeq_loc> br_loc(new CSeq_loc);
         br_loc->Assign(new_cds->GetLocation());
@@ -172,20 +171,18 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         }
         new_cds->SetComment(comment);
         new_cds->SetData().SetCdregion().SetCode_break().push_back(code_break);
-        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(cds));
+        CSeq_feat_EditHandle feh(context.GetScope().GetSeq_featHandle(cds));
         feh.Replace(*new_cds);
 
         if (gene) {
             CRef<CSeq_feat> new_gene(new CSeq_feat());
             new_gene->Assign(*gene);
-            new_gene->SetLocation().Assign(*sequence::Seq_loc_Subtract(new_gene->GetLocation(), *other, CSeq_loc::fStrand_Ignore, &scope));
-            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*gene));
+            new_gene->SetLocation().Assign(*sequence::Seq_loc_Subtract(new_gene->GetLocation(), *other, CSeq_loc::fStrand_Ignore, &context.GetScope()));
+            CSeq_feat_EditHandle feh(context.GetScope().GetSeq_featHandle(*gene));
             feh.Replace(*new_gene);
         }
         return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: [n] CDS trimmed", 1));
     }
-    return CRef<CAutofixReport>();
-#endif
     return CRef<CAutofixReport>(0);
 }
 

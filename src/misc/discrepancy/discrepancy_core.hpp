@@ -143,7 +143,6 @@ public:
     bool IsExtended(void) const { return m_Ext; }
     bool IsSummary(void) const { return m_Summ; }
     bool IsReal(void) const { return !m_Test.Empty(); }
-    void PushReportObj(CReportObj& obj);
 
 protected:
     string m_Str;
@@ -939,6 +938,7 @@ protected:
     bool m_Fixed;
     friend class CDiscrepancyContext;
     friend class CReportNode;
+    friend class CReportItem;
     friend bool operator<(const CReportObjPtr& one, const CReportObjPtr& another) { return ((const CDiscrepancyObject*)one.P)->m_Ref < ((const CDiscrepancyObject*)another.P)->m_Ref; }
 };
 
