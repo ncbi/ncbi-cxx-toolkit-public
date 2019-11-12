@@ -231,7 +231,7 @@ namespace ct
         {
             return compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<case_sensitive==ncbi::NStr::eNocase, N>(s);
         }
-#if defined(NCBI_SSE)
+#if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
         static type sse42(const char* s, size_t realsize) noexcept;
 #endif
         static type general(const char* s, size_t realsize) noexcept;

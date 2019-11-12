@@ -34,7 +34,7 @@
 
 #include <util/impl/ct_crc32.hpp>
 
-#if defined(NCBI_SSE)
+#if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
     #include <immintrin.h>
 #endif
 
@@ -149,7 +149,7 @@ struct tabled_crc32
     }
 };
 
-#if defined(NCBI_SSE)
+#if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
 struct sse42_crc32
 {
     using type = uint32_t;
@@ -221,7 +221,7 @@ int32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noe
 
 template int32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
 template int32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
-#if defined(NCBI_SSE)
+#if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
 template int32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
 template int32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
 #endif
