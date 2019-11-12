@@ -1958,6 +1958,7 @@ bool CFormatGuess::TestFormatPsl(EMode mode)
     // UCSC downloads are common we will also accept as PSL anything that follows the 
     // spec after the first column of every line has been tossed.
     // Note that I have also seen "#" columns but only at the very beginning of a file.
+    //
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
@@ -1974,12 +1975,13 @@ bool CFormatGuess::TestFormatPsl(EMode mode)
             return false;
         }
     }
+    uPslLineCount++;
     it++;
     for ( ;  it != m_TestLines.end();  ++it) {
         if ( ! IsLinePsl(*it, ignoreFirstColumn) ) {
             return false;
         }
-        ++uPslLineCount;
+        uPslLineCount++;
     }
     return (uPslLineCount != 0);
 }

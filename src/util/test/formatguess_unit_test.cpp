@@ -447,6 +447,28 @@ static const char kData_Bam[] =
     "\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff\x06\x00\x42\x43\x02\x00"
     "\x19\x64\xc4\xbd\x0b\x70\x2c\x6d\x5a\x1e\xd6\xbf\x8e\x8e\x8e\xa4";
     
+static const char kData_Psl[] =
+    "186559	"
+    "44	"
+    "0	"
+    "0	"
+    "5	"
+    "282	"
+    "6	"
+    "65	"
+    "+	"
+    "NW_009646194.1	"
+    "186494	"
+    "0	"
+    "186494	"
+    "NC_000001.11	"
+    "248956422	"
+    "41250327	"
+    "41436604	"
+    "12	"
+    "113384,4962,1189,5577,3627,1816,1275,6064,4707,2536,1724,39351	"
+    "0,113384,118357,119600,125177,128804,130621,132096,138160,142867,145419,147143	"
+    "41250327,41363720,41368682,41369871,41375472,41379109,41380925,41382200,41388270,41392978,41395514,41397253";
 
 BOOST_AUTO_TEST_CASE(TestEmptyFile)
 {
@@ -491,6 +513,13 @@ BOOST_AUTO_TEST_CASE(TestGtf)
     CNcbiIstrstream str(kData_Gtf);
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eGtf);
+}
+
+BOOST_AUTO_TEST_CASE(TestPsl)
+{
+    CNcbiIstrstream str(kData_Psl);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::ePsl);
 }
 
 BOOST_AUTO_TEST_CASE(TestGvf)
