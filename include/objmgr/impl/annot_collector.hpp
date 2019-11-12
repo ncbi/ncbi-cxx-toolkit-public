@@ -705,8 +705,12 @@ void CAnnotMapping_Info::SetMappedSeq_loc(CSeq_loc* loc)
 {
     _ASSERT(!IsMapped());
     m_MappedObject.Reset(loc);
-    m_MappedObjectType = loc ?
-        eMappedObjType_Seq_loc : eMappedObjType_not_set;
+    if ( loc ) {
+        m_MappedObjectType = eMappedObjType_Seq_loc;
+    }
+    else {
+        m_MappedObjectType = eMappedObjType_not_set;
+    }
 }
 
 
