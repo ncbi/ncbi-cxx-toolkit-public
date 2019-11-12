@@ -1165,8 +1165,8 @@ int CDemoApp::Run(void)
         NcbiCout << "Synonyms:" << NcbiEndl;
         CConstRef<CSynonymsSet> syns = scope.GetSynonyms(handle);
         ITERATE ( CSynonymsSet, it, *syns ) {
-            CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(it);
-            NcbiCout << "    " << idh.AsString() << NcbiEndl;
+            CSeq_id_Handle idh2 = CSynonymsSet::GetSeq_id_Handle(it);
+            NcbiCout << "    " << idh2.AsString() << NcbiEndl;
         }
     }
 
@@ -1192,7 +1192,7 @@ int CDemoApp::Run(void)
     bool ignore_strand = args["ignore_strand"];
     TSeqPos range_from, range_to;
     CRange<TSeqPos> range;
-    ENa_strand strand;
+    ENa_strand range_strand;
     if ( plus_strand || minus_strand || args["range_from"] || args["range_to"] ) {
         if ( args["range_from"] ) {
             range_from = args["range_from"].AsInteger();
@@ -1211,25 +1211,25 @@ int CDemoApp::Run(void)
         range_loc->SetInt().SetFrom(range_from);
         range_loc->SetInt().SetTo(range_to);
         range.SetFrom(range_from).SetTo(range_to);
-        strand = eNa_strand_unknown;
+        range_strand = eNa_strand_unknown;
         if ( plus_strand ) {
-            range_loc->SetInt().SetStrand(strand = eNa_strand_plus);
+            range_loc->SetInt().SetStrand(range_strand = eNa_strand_plus);
         }
         else if ( minus_strand ) {
-            range_loc->SetInt().SetStrand(strand = eNa_strand_minus);
+            range_loc->SetInt().SetStrand(range_strand = eNa_strand_minus);
         }
     }
     else if ( range_loc ) {
         range = range_loc->GetTotalRange();
         range_from = range.GetFrom();
         range_to = range.GetTo();
-        strand = range_loc->GetStrand();
+        range_strand = range_loc->GetStrand();
     }
     else {
         range_from = range_to = 0;
         range_loc = whole_loc;
         range = range.GetWhole();
-        strand = eNa_strand_unknown;
+        range_strand = eNa_strand_unknown;
     }
     if ( args["range_loc"] ) {
         CNcbiIstrstream in(args["range_loc"].AsString().c_str());
@@ -1258,17 +1258,17 @@ int CDemoApp::Run(void)
     vector<CRef<CPrefetchRequest> > prefetch_seq;
     set<CSeq_feat_Handle> ff;
     
-    for ( int c = 0; c < repeat_count; ++c ) {
-        if ( c ) {
+    for ( int pass = 0; pass < repeat_count; ++pass ) {
+        if ( pass ) {
             if ( get_ids ) {
                 GetIds(scope, idh);
             }
         }
-        if ( 1+c && pause ) {
+        if ( pass && pause ) {
             SleepSec(pause);
         }
-        if ( c ) {
-            NcbiCout << "Iteration " << c << NcbiEndl;
+        if ( pass ) {
+            NcbiCout << "Iteration " << pass << NcbiEndl;
             if ( args["range_step"] && range_loc != whole_loc ) {
                 TSeqPos step = args["range_step"].AsInteger();
                 range_from += step;
@@ -1739,9 +1739,9 @@ int CDemoApp::Run(void)
                         sel2.IncludeNamedAnnotAccession(*i);
                         CAnnotTypes_CI it(CSeq_annot::C_Data::e_not_set,
                                           scope, *range_loc, &sel2);
-                        ITERATE ( CFeat_CI::TAnnotNames, i, it.GetAnnotNames() ) {
-                            if ( i->IsNamed() ) {
-                                NcbiCout << "Named annot: " << i->GetName()
+                        for ( auto& name : it.GetAnnotNames() ) {
+                            if ( name.IsNamed() ) {
+                                NcbiCout << "Named annot: " << name.GetName()
                                          << NcbiEndl;
                             }
                             else {
@@ -2255,28 +2255,28 @@ int CDemoApp::Run(void)
             }
 
             if ( count_types ) {
-                ITERATE ( vector<int>, it, types_counts ) {
-                    if ( *it ) {
+                ITERATE ( vector<int>, vit, types_counts ) {
+                    if ( *vit ) {
                         CSeqFeatData::E_Choice type =
-                            CSeqFeatData::E_Choice(it-types_counts.begin());
+                            CSeqFeatData::E_Choice(vit-types_counts.begin());
                         NcbiCout << "  type " <<
                             setw(2) << type <<
                             setw(10) << CSeqFeatData::SelectionName(type) <<
-                            " : " << *it << NcbiEndl;
+                            " : " << *vit << NcbiEndl;
                     }
                 }
             }
             if ( count_subtypes ) {
-                ITERATE ( vector<int>, it, subtypes_counts ) {
-                    if ( *it ) {
+                ITERATE ( vector<int>, vit, subtypes_counts ) {
+                    if ( *vit ) {
                         CSeqFeatData::ESubtype subtype =
-                            CSeqFeatData::ESubtype(it-subtypes_counts.begin());
+                            CSeqFeatData::ESubtype(vit-subtypes_counts.begin());
                         CSeqFeatData::E_Choice type =
                             CSeqFeatData::GetTypeFromSubtype(subtype);
                         NcbiCout << "  subtype " <<
                             setw(3) << subtype <<
                             setw(10) << CSeqFeatData::SelectionName(type) <<
-                            " : " << *it << NcbiEndl;
+                            " : " << *vit << NcbiEndl;
                     }
                 }
             }
@@ -2285,9 +2285,9 @@ int CDemoApp::Run(void)
                 feat_tree.SetFeatIdMode(feat_id_mode);
                 feat_tree.SetSNPStrandMode(snp_strand_mode);
                 {{
-                    CFeat_CI it(scope, *range_loc, base_sel);
-                    feat_tree.AddFeatures(it);
-                    NcbiCout << "Added "<<it.GetSize()<<" features."
+                    CFeat_CI it2(scope, *range_loc, base_sel);
+                    feat_tree.AddFeatures(it2);
+                    NcbiCout << "Added "<<it2.GetSize()<<" features."
                              << NcbiEndl;
                 }}
                 NcbiCout << " Root features: "
@@ -2453,7 +2453,7 @@ int CDemoApp::Run(void)
         
         sw.Restart();
         if ( handle ) {
-            for ( CFeat_CI it(handle, range, strand, base_sel); it; ++it ) {
+            for ( CFeat_CI it(handle, range, range_strand, base_sel); it; ++it ) {
                 count++;
             }
             NcbiCout << "Feat count (bh range, " << sel_msg << "):\t"
@@ -2809,10 +2809,10 @@ int CDemoApp::Run(void)
             }
             else {
                 CTSE_Handle tse = handle.GetTopLevelEntry().GetTSE_Handle();
-                CObject_id id; id.SetId(args["feat_id"].AsInteger());
-                for ( CFeat_CI it(tse, CSeqFeatData::e_not_set, id); it; ++it ) {
+                CObject_id oid; oid.SetId(args["feat_id"].AsInteger());
+                for ( CFeat_CI it(tse, CSeqFeatData::e_not_set, oid); it; ++it ) {
                     CSeq_feat_Handle feat = *it;
-                    NcbiCout << "Feature with id " << id;
+                    NcbiCout << "Feature with id " << oid;
                     if ( print_features ) {
                         NcbiCout << MSerial_AsnText << *feat.GetSeq_feat();
                     }
