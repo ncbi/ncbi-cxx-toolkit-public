@@ -1843,6 +1843,7 @@ EMEC	s	Essig Museum of Entomology, University of California at Berkeley		https:/
 EMEC:EMEC	s	Essig Museum of Entomology, University of California at Berkeley, Essig Museum of Entomology	https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=EMEC71410&one=T
 EMEC:UCIS	s	Essig Museum of Entomology, University of California at Berkeley, University of California Insect Survey	https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=UCIS133938&one=T
 EMET	s	Faculty of Agriculture, Entomology Museum			
+EMIT	s	Entomological Museum of Isparta, Turkey			
 EMMA	s	Universidad Politecnica de Madrid, Unidad Docente Botanica, Departamento Silvopascicultura			
 EMNH	s	The Everhart Museum of Natural History, Science & Art			
 EMPARN	c	Empresa de Pesquisa Agropecuaria do Rio Grande do Norte			
@@ -3264,6 +3265,7 @@ JBAG	s	Jardin Botanico Atlantico, Ayuntamiento de Gijon
 JBB	s	Jardin Botanico Jose Celestino Mutis			
 JBC<MEX>	b	Francisco Javier Clavijero Botanic Garden	XAL		
 JBCC	s	Alaska State Museum			
+JBCVC	sb	Jardin Botanico Canario Viera y Clavijo			
 JBG	s	Johannesburg Botanic Garden			
 JBGP	s	Jardin Botanico Guillermo Pineres			
 JBL	s	Jardin Botanico Lankester, Universidad de Costa Rica			
