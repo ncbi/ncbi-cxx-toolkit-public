@@ -44,26 +44,29 @@ BEGIN_SCOPE(objects)
 struct SAnnotTypeSelector
 {
     typedef CSeq_annot::C_Data::E_Choice TAnnotType;
+    typedef Uint1 TAnnotTypeInt;
     typedef CSeqFeatData::E_Choice       TFeatType;
+    typedef Uint1 TFeatTypeInt;
     typedef CSeqFeatData::ESubtype       TFeatSubtype;
+    typedef Uint2 TFeatSubtypeInt;
 
     SAnnotTypeSelector(TAnnotType annot = CSeq_annot::C_Data::e_not_set)
         : m_FeatSubtype(CSeqFeatData::eSubtype_any),
           m_FeatType(CSeqFeatData::e_not_set),
-          m_AnnotType(annot)
+          m_AnnotType(TAnnotTypeInt(annot))
     {
     }
 
     SAnnotTypeSelector(TFeatType  feat)
         : m_FeatSubtype(CSeqFeatData::eSubtype_any),
-          m_FeatType(feat),
+          m_FeatType(TFeatTypeInt(feat)),
           m_AnnotType(CSeq_annot::C_Data::e_Ftable)
     {
     }
 
     SAnnotTypeSelector(TFeatSubtype feat_subtype)
-        : m_FeatSubtype(feat_subtype),
-          m_FeatType(CSeqFeatData::GetTypeFromSubtype(feat_subtype)),
+        : m_FeatSubtype(TFeatSubtypeInt(feat_subtype)),
+          m_FeatType(TFeatTypeInt(CSeqFeatData::GetTypeFromSubtype(feat_subtype))),
           m_AnnotType(CSeq_annot::C_Data::e_Ftable)
     {
     }
@@ -109,7 +112,7 @@ struct SAnnotTypeSelector
     void SetAnnotType(TAnnotType type)
         {
             if ( m_AnnotType != type ) {
-                m_AnnotType = type;
+                m_AnnotType = TAnnotTypeInt(type);
                 // Reset feature type/subtype
                 m_FeatType = CSeqFeatData::e_not_set;
                 m_FeatSubtype = CSeqFeatData::eSubtype_any;
@@ -118,7 +121,7 @@ struct SAnnotTypeSelector
 
     void SetFeatType(TFeatType type)
         {
-            m_FeatType = type;
+            m_FeatType = TFeatTypeInt(type);
             // Adjust annot type and feature subtype
             m_AnnotType = CSeq_annot::C_Data::e_Ftable;
             m_FeatSubtype = CSeqFeatData::eSubtype_any;
@@ -126,19 +129,19 @@ struct SAnnotTypeSelector
 
     void SetFeatSubtype(TFeatSubtype subtype)
         {
-            m_FeatSubtype = subtype;
+            m_FeatSubtype = TFeatSubtypeInt(subtype);
             // Adjust annot type and feature type
             m_AnnotType = CSeq_annot::C_Data::e_Ftable;
             if (m_FeatSubtype != CSeqFeatData::eSubtype_any) {
                 m_FeatType =
-                    CSeqFeatData::GetTypeFromSubtype(GetFeatSubtype());
+                    TFeatTypeInt(CSeqFeatData::GetTypeFromSubtype(GetFeatSubtype()));
             }
         }
 
 private:
-    Uint2           m_FeatSubtype;  // Seq-feat subtype
-    Uint1           m_FeatType;   // Seq-feat type
-    Uint1           m_AnnotType;  // Annotation type
+    TFeatSubtypeInt m_FeatSubtype;  // Seq-feat subtype
+    TFeatTypeInt    m_FeatType;   // Seq-feat type
+    TAnnotTypeInt   m_AnnotType;  // Annotation type
 };
 
 
