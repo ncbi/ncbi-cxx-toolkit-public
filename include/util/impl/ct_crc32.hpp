@@ -43,22 +43,22 @@
 
 namespace compile_time_bits
 {
-    template<size_t N, typename _Ret>
+    template<size_t N, typename _Ret, template<size_t> class _Getter>
     struct forward_sequence
     {
-        using next_t = forward_sequence<N - 1, _Ret>;
+        using next_t = forward_sequence<N - 1, _Ret, _Getter>;
         template<typename T, typename...TArgs>
-        constexpr _Ret operator()(const T& op, TArgs&&...args) const noexcept
+        constexpr _Ret operator()(const T& v, TArgs&&...args) const noexcept
         {
-            return next_t{}(op, op(N - 1), std::forward<TArgs>(args)...);
+            return next_t{}(v, _Getter<N-1>{}(v), std::forward<TArgs>(args)...);
         }
     };
 
-    template<typename _Ret>
-    struct forward_sequence<0, _Ret>
+    template<typename _Ret, template<size_t> class _Getter>
+    struct forward_sequence<0, _Ret, _Getter>
     {
         template<typename T, typename...TArgs>
-        constexpr _Ret operator()(const T&, TArgs&&...args) const noexcept
+        constexpr _Ret operator()(const T& v, TArgs&&...args) const noexcept
         {
             return { {std::forward<TArgs>(args)...} };
         }
@@ -197,9 +197,10 @@ namespace compile_time_bits
         class MakeCRC32Table
         {
         private:
+            template<size_t i>
             struct next_value
             {//should be replaced with C++17 constexpr lambda
-                constexpr uint32_t operator()(size_t i) const noexcept
+                constexpr uint32_t operator()(int) const noexcept
                 {
                     return update(0, (uint8_t)i);
                 }
@@ -212,7 +213,7 @@ namespace compile_time_bits
 
             constexpr cont_t operator()() const noexcept
             {
-                return compile_time_bits::forward_sequence<256, cont_t >{}(next_value{});
+                return compile_time_bits::forward_sequence<256, cont_t, next_value>{}(0);
             }
         };
     }; // ct_crc32
@@ -223,14 +224,16 @@ namespace ct
     template<ncbi::NStr::ECase case_sensitive>
     struct NCBI_XUTIL_EXPORT SaltedCRC32
     {
-        using type = uint32_t;
+        using type = int32_t;
 
         template<size_t N>
         static type constexpr ct(const char(&s)[N]) noexcept
         {
             return compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<case_sensitive==ncbi::NStr::eNocase, N>(s);
         }
+#if defined(NCBI_SSE)
         static type sse42(const char* s, size_t realsize) noexcept;
+#endif
         static type general(const char* s, size_t realsize) noexcept;
     };
 };

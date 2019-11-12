@@ -26,7 +26,7 @@
  * Authors:  Sergiy Gotvyanskyy
  *
  * File Description:
- *   Test for ct::const_map
+ *   Test for ct::const_unordered_map
  *
  */
 
@@ -34,10 +34,10 @@
 
 #include <util/compile_time.hpp>
 //#include <util/cpubound.hpp>
+//#include <util/impl/getmember.h>
 #include <corelib/test_boost.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
-
 
 NCBITEST_AUTO_INIT()
 {
@@ -121,6 +121,8 @@ MAKE_TWOWAY_CONST_MAP(test_two_way2, ncbi::NStr::eNocase, const char*, int,
         {"SO:0000035", 35}
     });
 
+//test_two_way2_init
+
 using bitset = ct::const_bitset<64 * 3, int>;
 using bitset_pair = ct::const_pair<int, bitset>;
 
@@ -164,6 +166,7 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 
 BOOST_AUTO_TEST_CASE(TestConstMap)
 {
+#if 1
     auto t1 = test_two_way1.find("SO:0000001");
     BOOST_CHECK((t1 != test_two_way1.end()) && (ncbi::NStr::CompareCase(t1->second, "region") == 0));
 
@@ -184,7 +187,7 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
     auto t6 = test_two_way2_flipped.find(5);
     BOOST_CHECK((t6 != test_two_way2_flipped.end()) && (ncbi::NStr::CompareNocase(t6->second, "so:0000005") == 0));
-
+#endif
 };
 
 BOOST_AUTO_TEST_CASE(TestCRC32)
@@ -202,66 +205,314 @@ BOOST_AUTO_TEST_CASE(TestCRC32)
     BOOST_CHECK(hash_good_ncs == ct::SaltedCRC32<ncbi::NStr::eNocase>::general("Good", 4));
 }
 
-#if 0
-struct Impl_t
+struct Implementation_via_type
 {
+    struct member
+    {
+        static const char* call()
+        {
+            return "member call";
+        };
+        const char* nscall() const
+        {
+            return "ns member call";
+        };
+    };
     struct general
     {
-        const char* call() const
+        static constexpr int value = 111;
+        static const char* call()
         {
-            return "general";
+            return "general call";
+        };
+        const char* nscall() const
+        {
+            return "ns general call";
+        };
+    };
+    struct sse41
+    {
+        static constexpr int value = 222;
+        static const char* call()
+        {
+            return "sse41 call";
+        };
+        const char* nscall() const
+        {
+            return "ns sse41 call";
+        };
+    };
+    struct avx
+    {
+        static constexpr int value = 333;
+        static const char* call()
+        {
+            return "avx call";
+        };
+        const char* nscall() const
+        {
+            return "ns avx call";
         };
     };
 };
 
-struct Impl
+struct Implementation_via_method
 {
+    static const char* member()
+    {
+        return "general method";
+    };
     static const char* general()
     {
-        return "no general";
+        return "general method";
+    };
+    static const char* sse41()
+    {
+        return "sse41 method";
+    };
+    static const char* avx()
+    {
+        return "avx";
     };
 };
 
-template<class I>
+template<class _Impl>
 struct RebindClass
 {
-    static int rebind(int a)
+    static std::string rebind(int a)
     {
-        auto s = I{}.call();
-        //auto s = "oo";
-        //std::cout << s << ":";
-        return (int)strlen(s);
+        auto s1 = _Impl{}.nscall(); // non static access to _Impl class
+        auto s2 = _Impl::call();
+        return std::string("rebind class + ") + s1 + " + " + s2;
     };
 };
 
-template<class I>
-struct RebindMethod
+template<class _Impl>
+struct RebindDirect
 {
-    static int rebind(int a)
+    static std::string rebind(int a)
     {
-        auto s = I{}();
-        return (int)strlen(s);
+        auto s = _Impl{}(); //call via operator()
+        return std::string("rebind direct + ") + s;
     };
 };
 
+struct NothingImplemented
+{
+};
 
+template<typename I>
+struct empty_rebind
+{
+    using type = I;
+};
+
+#ifdef __CPUBOUND_HPP_INCLUDED__
 BOOST_AUTO_TEST_CASE(TestCPUCaps)
 {
-    using I1 = cpu_bound::SwitchFunc<Impl, const char*>;
-    using I2 = cpu_bound::SwitchFuncEx<RebindMethod, Impl, int, int>;
-    using I3 = cpu_bound::SwitchFuncEx<RebindClass, Impl_t, int, int>;
+    using Type0 = cpu_bound::TCPUSpecific<NothingImplemented, const char*>;
+    using Type1 = cpu_bound::TCPUSpecific<Implementation_via_method, const char*>;
+    using Type2 = cpu_bound::TCPUSpecific<Implementation_via_type, const char*>;
+    using Type3 = cpu_bound::TCPUSpecificEx<RebindDirect, Implementation_via_method, std::string, int>;
+    using Type4 = cpu_bound::TCPUSpecificEx<RebindClass,  Implementation_via_type, std::string, int>;
 
-    I1 inst1;
-    I2 inst2;
-    I3 inst3;
+    Type0 inst0;
+    Type1 inst1;
+    Type2 inst2;
+    Type3 inst3;
+    Type4 inst4;
 
-    //decltype(&strlen) temp = nullptr;
-    //decltype(&std::min<int>) temp2 = nullptr;
-    using f_result = decltype(std::min(2,3)); //f_result is Foo
-    f_result temp = 4;
+    //auto r = inst0();  it should assert
 
-    auto res1 = inst1();
-    auto res2 = inst2(2);
-    auto res3 = inst3(3);
+    std::string res1 = inst1();
+    BOOST_CHECK(res1 == "sse41 method");
+    std::string res2 = inst2();
+    BOOST_CHECK(res2 == "sse41 call");
+    std::string res3 = inst3(3);
+    BOOST_CHECK(res3 == "rebind direct + sse41 method");
+    std::string res4 = inst4(3);
+    BOOST_CHECK(res4 == "rebind class + ns sse41 call + sse41 call");
+}
+#else
+#if 0
+BOOST_AUTO_TEST_CASE(TestCPUCaps)
+{
+    using T0 = GetMember<empty_rebind, NothingImplemented>;
+    using T1 = GetMember<empty_rebind, Implementation_via_type>;
+    using T2 = GetMember<RebindClass, Implementation_via_type>;
+    using T3 = GetMember<empty_rebind, Implementation_via_method>;
+    using T4 = GetMember<RebindDirect, Implementation_via_method>;
+
+    //size_t n0 = sizeof(decltype(T0::Derived::member));
+    //size_t n1 = sizeof(decltype(T1::Derived::member));
+    std::cout << (T0::f == nullptr) << std::endl;
+    std::cout << (T1::f == nullptr) << std::endl;
+    //std::cout << (T2::f == nullptr) << std::endl;
+    //std::cout << (T3::f == nullptr) << std::endl;
+    //std::cout << (T4::f == nullptr) << std::endl;
 }
 #endif
+
+#endif
+
+#if 0
+#include <unordered_set>
+
+#ifdef NCBI_OS_MSWIN
+#include <intrin.h>
+#endif
+
+class CTimeLapsed
+{
+private:
+    uint64_t started = __rdtsc();
+public:
+    uint64_t lapsed() const
+    {
+        return __rdtsc() - started;
+    };
+};
+
+class CTestPerformance
+{
+public:
+    using string_set = std::set<std::string>;
+    using unordered_set = std::unordered_set<std::string>;
+    using hash_vector = std::vector<uint32_t>;
+    using hash_t = cpu_bound::TCPUSpecific<ct::SaltedCRC32<ncbi::NStr::eCase>, uint32_t, const char*, size_t>;
+    static constexpr size_t size = 16384;
+    //static constexpr size_t search_size = size / 16;
+
+    string_set   m_set;
+    unordered_set m_hash_set;
+    hash_vector  m_vector;
+    std::vector<std::string> m_pool;
+    hash_t m_hash;
+
+    void FillData()
+    {
+        char buf[32];
+        m_pool.reserve(size);
+        m_vector.reserve(size);
+        for (size_t i = 0; i < size; ++i)
+        {
+            size_t len = 5 + rand() % 10;
+            for (size_t l = 0; l < len; ++l)
+                buf[l] = '@' + rand() % 64;
+            buf[len] = 0;
+            m_pool.push_back(buf);
+            m_set.emplace(buf);
+            m_hash_set.emplace(buf);
+            auto h = m_hash(buf, len);
+            m_vector.push_back(h);
+        }
+        std::sort(m_vector.begin(), m_vector.end());
+    }
+
+    std::pair<uint64_t, uint64_t> TestMap()
+    {
+        CTimeLapsed lapsed;
+        uint64_t sum = 0;
+        for (auto it : m_pool)
+        {
+            auto found = m_set.find(it);
+            sum += found->size();
+        }
+
+        return { sum, lapsed.lapsed() };
+    }
+
+    std::pair<uint64_t, uint64_t> TestUnordered()
+    {
+        CTimeLapsed lapsed;
+        uint64_t sum = 0;
+        for (auto it : m_pool)
+        {
+            auto found = m_hash_set.find(it);
+            sum += found->size();
+        }
+
+        return { sum, lapsed.lapsed() };
+    }
+
+    std::pair<uint64_t, uint64_t> TestHashes()
+    {
+        CTimeLapsed lapsed;
+        uint64_t sum = 0;
+        for (auto it : m_pool)
+        {
+            auto h = m_hash(it.data(), it.size());
+            auto found = std::lower_bound(m_vector.begin(), m_vector.end(), h);
+            sum += *found;
+        }
+
+        return { sum, lapsed.lapsed() };
+    }
+
+    void RunTest()
+    {
+        FillData();
+        auto res1 = TestMap();
+        auto res2 = TestHashes();
+        auto res3 = TestUnordered();
+
+        std::cout << res1.second/1000 
+            << " vs " << res2.second/1000 
+            << " vs " << res3.second/1000
+            << std::endl;
+    }
+};
+
+BOOST_AUTO_TEST_CASE(TestPerformance)
+{
+    CTestPerformance test;
+    test.RunTest();
+}
+#endif
+
+#if 0
+
+using table_type = ct::const_table<ncbi::NStr::ECase::eCase, const char*, int, int>;
+using D01_t = table_type::MakeIndex<0, 1>;
+using D10_t = table_type::MakeIndex<1, 0>;
+using index01_t = D01_t::index_type;
+using index10_t = D10_t::index_type;
+
+
+constexpr 
+table_type::row_type init_values[] = {
+{ "Test1", 80, 200},
+{ "Test2", 70, 300},
+{ "Test3", 60, 300},
+{ "Test4", 50, 300},
+{ "Test5", 40, 300},
+{ "Test6", 30, 300},
+{ "Test7", 20, 300},
+{ "Test8", 10, 300}
+};
+
+constexpr auto container01 = D01_t{}(init_values);
+constexpr index01_t index01 = container01;
+
+//alignas(std::hardware_constructive_interference_size)
+constexpr auto container10 = D10_t{}(init_values);
+constexpr index10_t index10 = container10;
+
+BOOST_AUTO_TEST_CASE(TestPerformance)
+{
+    //std::cout << container01.first.size() << std::endl;
+    //std::cout << container01.second.size() << std::endl;
+
+    std::cout << std::hex << &container01.first << std::endl;
+    std::cout << std::hex << &container10.first << std::endl;
+    std::cout << container01.first[0] << std::endl;
+
+    auto test1 = index01.at("Test3");
+    auto test2 = index01.at("Test7");
+    std::cout << test1 << ":" << test2 << std::endl;
+    auto test3 = index10.at(60);
+    std::cout << test3 << std::endl;
+}
+
+#endif
+

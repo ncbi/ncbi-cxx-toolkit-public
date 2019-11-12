@@ -32,26 +32,11 @@
 
 #include <ncbi_pch.hpp>
 
-
 #include <util/impl/ct_crc32.hpp>
 
-//#define __ENABLE_SSE42
-
-#ifdef  __ENABLE_SSE42
-#if __has_include (<x86intrin.h>)
-#include <x86intrin.h>
-#elif __has_include (<intrin.h>)
-#include <intrin.h>
-#else
-#error "need Intel/AMD64 intrinsics include"
+#if defined(NCBI_SSE)
+    #include <immintrin.h>
 #endif
-
-#if __has_include (<immintrin.h>)
-#include <immintrin.h>
-#endif
-
-#endif
-
 
 #if 0
 static
@@ -164,7 +149,7 @@ struct tabled_crc32
     }
 };
 
-#ifdef  __ENABLE_SSE42
+#if defined(NCBI_SSE)
 struct sse42_crc32
 {
     using type = uint32_t;
@@ -203,7 +188,7 @@ struct sse42_crc32
 };
 
 template<ncbi::NStr::ECase case_sensitive>
-uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noexcept
+int32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
     uint32_t hash = sse42_crc32::update(0, len);
@@ -220,7 +205,7 @@ uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noex
 #endif
 
 template<ncbi::NStr::ECase case_sensitive>
-uint32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noexcept
+int32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
     uint32_t hash = tabled_crc32::update(0, len);
@@ -234,10 +219,10 @@ uint32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) no
     return hash;
 }
 
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
-#ifdef  __ENABLE_SSE42
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
+template int32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
+template int32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
+#if defined(NCBI_SSE)
+template int32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
+template int32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
 #endif
 

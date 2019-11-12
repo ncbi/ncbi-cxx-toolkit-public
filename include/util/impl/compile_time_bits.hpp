@@ -1,4 +1,3 @@
-
 #ifndef __COMPILE_TIME_BITS_HPP_INCLUDED__
 #define __COMPILE_TIME_BITS_HPP_INCLUDED__
 
@@ -56,43 +55,21 @@ namespace compile_time_bits
         using const_reference = const value_type&;
         using pointer = const value_type*;
         using const_pointer = const value_type*;
-        using cont_t = value_type[N];
+        using container_type = value_type[N];
         using const_iterator = const value_type*;
         using iterator = const value_type*;
 
         static constexpr size_t m_size = N;
 
-        constexpr size_t size() const noexcept
-        {
-            return N;
-        }
-        constexpr size_t capacity() const noexcept
-        {
-            return N;
-        }
+        static constexpr size_t size() noexcept { return N; }
+        static constexpr size_t capacity() noexcept { return N; }
+        constexpr const value_type& operator[](size_t _pos) const noexcept { return m_data[_pos]; }
+        constexpr const_iterator begin() const noexcept { return m_data; }
+        constexpr const_iterator end() const noexcept { return m_data + size(); }
+        constexpr const value_type* data() const noexcept { return m_data; }
+        value_type* data() { return m_data; }
 
-        constexpr const value_type& operator[](size_t _pos) const noexcept
-        {
-            return m_data[_pos];
-        }
-        constexpr const_iterator begin() const noexcept
-        {
-            return m_data;
-        }
-        constexpr const_iterator end() const noexcept
-        {
-            return m_data + N;
-        }
-        constexpr const value_type* data() const noexcept
-        {
-            return m_data;
-        }
-        value_type* data()
-        {
-            return m_data;
-        }
-
-        cont_t m_data;
+        container_type m_data;
     };
 
     template<class T>
@@ -103,27 +80,11 @@ namespace compile_time_bits
 
         static constexpr size_t m_size = 0;
 
-        constexpr size_t size() const noexcept
-        {
-            return 0;
-        }
-        constexpr size_t capacity() const noexcept
-        {
-            return 0;
-        }
-
-        constexpr const_iterator begin() const noexcept
-        {
-            return nullptr;
-        }
-        constexpr const_iterator end() const noexcept
-        {
-            return nullptr;
-        }
-        const value_type* data() const noexcept
-        {
-            return nullptr;
-        }
+        constexpr size_t size() const noexcept { return 0; }
+        constexpr size_t capacity() const noexcept { return 0; }
+        constexpr const_iterator begin() const noexcept { return nullptr; }
+        constexpr const_iterator end() const noexcept { return nullptr; }
+        const value_type* data() const noexcept { return nullptr; }
     };
 
     template<class FirstType, class SecondType>
@@ -156,6 +117,46 @@ namespace compile_time_bits
             return (first < o.first) ||
                 (first == o.first && second < o.second);
         }
+        constexpr const first_type& get(std::integral_constant<size_t, 0>) const noexcept
+        {	// get reference to element 0 in pair _Pr
+            return first;
+        }
+        constexpr const second_type& get(std::integral_constant<size_t, 1>) const noexcept
+        {	// get reference to element 0 in pair _Pr
+            return second;
+        }
+    };
+
+    template<class... _Types>
+    class const_tuple;
+
+    template<>
+    class const_tuple<>
+    {	// empty tuple
+    public:
+    };
+
+    template<class _This,
+        class... _Rest>
+        class const_tuple<_This, _Rest...>
+        : private const_tuple<_Rest...>
+    {	// recursive tuple definition
+    public:
+        typedef _This _This_type;
+        typedef const_tuple<_Rest...> _Mybase;
+        _This   _Myfirst;	// the stored element
+
+
+        constexpr const_tuple() noexcept = default;
+        constexpr const_tuple(const _This& _f, const _Rest&..._rest) noexcept
+            : _Mybase(_rest...), _Myfirst(_f)
+        {
+        }
+        template<typename _T0, typename..._Other>
+        constexpr const_tuple(_T0&& _f0, _Other&&...other) noexcept
+            : _Mybase(std::forward<_Other>(other)...), _Myfirst(std::forward<_T0>(_f0))
+        {
+        }
     };
 
     struct string_view
@@ -175,14 +176,10 @@ namespace compile_time_bits
             :m_len{ view.size() }, m_data{ view.data() }
         {}
 
-        constexpr const char* data() const noexcept
-        {
-            return m_data;
-        }
-        constexpr size_t size() const noexcept
-        {
-            return m_len;
-        }
+        constexpr const char* c_str() const noexcept { return m_data; }
+        constexpr const char* data() const noexcept { return m_data; }
+        constexpr size_t size() const noexcept { return m_len; }
+
         operator ncbi::CTempStringEx() const noexcept
         {
             return ncbi::CTempStringEx(m_data, m_len, ncbi::CTempStringEx::eHasZeroAtEnd);
@@ -204,65 +201,167 @@ namespace compile_time_bits
         const char* m_data{ nullptr };
     };
 
-#if 0
-    template<size_t _cap, class T>
-    struct AssembleArray
-    {
-        using array_t = const_array<T, _cap>;
-
-        template<size_t i, typename _S>
-        struct concat_t
-        {
-            using next_t = concat_t<i - 1, _S>;
-
-            template<typename...TRest>
-            constexpr array_t operator() (const _S* s, size_t N, TRest...rest) const noexcept
-            {
-                return next_t() (s, N, i <= N ? T(s[i - 1]) : T{}, rest...);
-            }
-        };
-
-        template<typename _S>
-        struct concat_t<0, _S>
-        {
-            template<typename...TRest>
-            constexpr array_t operator() (const _S* s, size_t N, TRest...rest) const noexcept
-            {
-                return { { rest... } };
-            }
-        };
-
-        template<class T2>
-        constexpr array_t operator() (const T2* s, size_t realN) const
-        {
-            return concat_t<_cap, T2>()(s, realN);
-        }
-        template<class T2, size_t N>
-        constexpr array_t operator() (const const_array<T2, N>& s) const
-        {
-            return concat_t<_cap, T2>()(s.data(), s.size());
-        }
-    };
-
-    template<typename T, typename...TArgs>
-    constexpr const_array < T, 1 + sizeof...(TArgs)> make_array(T&& first, TArgs&&...rest)
-    {
-        return { { std::forward<T>(first), std::forward<TArgs>(rest)...} };
-    }
-
-    template<typename T, size_t N>
-    constexpr auto make_array(const T(&input)[N]) -> const_array<T, N>
-    {
-        return AssembleArray<N, T>{}(input, N);
-    }
-#endif
-
     template<class...> struct conjunction : std::true_type { };
     template<class B1> struct conjunction<B1> : B1 { };
     template<class B1, class... Bn>
     struct conjunction<B1, Bn...>
         : std::conditional<bool(B1::value), conjunction<Bn...>, B1>::type {};
 
+    template<ncbi::NStr::ECase case_sensitive, class _Hash = ct::SaltedCRC32<case_sensitive>>
+    class CHashString : public string_view
+    {
+    public:
+        using hash_func = _Hash;
+        using hash_type = typename _Hash::type;
+        using sv = ncbi::CTempString;
+
+        constexpr CHashString() noexcept = default;
+        template<size_t N>
+        constexpr CHashString(const char(&s)[N]) noexcept
+            : string_view(s, N - 1), m_hash(hash_func::ct(s))
+        {}
+
+        CHashString(const sv& s) noexcept
+            : string_view(s), m_hash(hash_func::sse42(s.data(), s.size()))
+        {}
+
+        constexpr bool operator<(const CHashString& o) const noexcept
+        {
+            return m_hash < o.m_hash;
+        }
+        constexpr bool operator!=(const CHashString& o) const noexcept
+        {
+            return m_hash != o.m_hash;
+        }
+        constexpr bool operator==(const CHashString& o) const noexcept
+        {
+            return m_hash == o.m_hash;
+        }
+        bool operator!=(const sv& o) const noexcept
+        {
+            return (case_sensitive == ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) != 0;
+        }
+        bool operator==(const sv& o) const noexcept
+        {
+            return (case_sensitive == ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) == 0;
+        }
+        constexpr operator hash_type() const noexcept
+        {
+            return m_hash;
+        }
+
+        hash_type m_hash{ 0 };
+    };
+};
+
+namespace ct
+{
+    using namespace compile_time_bits;
+};
+
+namespace std
+{// these are backported implementations of C++17 methods
+    constexpr size_t hardware_destructive_interference_size = 64;
+    constexpr size_t hardware_constructive_interference_size = 64;
+
+    template<size_t i, class T, size_t N>
+    constexpr const T& get(const ct::const_array<T, N>& in) noexcept
+    {
+        return in[i];
+    };
+    template<class T, size_t N>
+    constexpr size_t size(const ct::const_array<T, N>& in) noexcept
+    {
+        return N;
+    }
+    template<class T, size_t N>
+    constexpr auto begin(const ct::const_array<T, N>& in) noexcept
+        -> typename ct::const_array<T, N>::const_iterator
+    {
+        return in.begin();
+    }
+    template<class T, size_t N>
+    constexpr auto end(const ct::const_array<T, N>& in) noexcept
+        -> typename ct::const_array<T, N>::const_iterator
+    {
+        return in.end();
+    }
+
+    template<std::size_t I, typename T1, typename T2>
+    class tuple_element<I, ct::const_pair<T1, T2> >
+    {
+        static_assert(I < 2, "compile_time_bits::const_pair has only 2 elements!");
+    };
+
+    template<typename T1, typename T2>
+    class tuple_element<0, ct::const_pair<T1, T2> >
+    {
+    public:
+        using type = T1;
+    };
+    template<typename T1, typename T2>
+    class tuple_element<1, ct::const_pair<T1, T2> >
+    {
+    public:
+        using type = T2;
+    };
+
+    //template<class>
+    // false value attached to a dependent name (for static_assert)
+    //constexpr bool always_false = false;
+
+    template<size_t _Index>
+    class tuple_element<_Index, ct::const_tuple<>>
+    {	// enforce bounds checking
+        //static_assert(always_false<integral_constant<size_t, _Index>>,
+        //    "tuple index out of bounds");
+    };
+
+    template<class _This, class... _Rest>
+    class tuple_element<0, ct::const_tuple<_This, _Rest...>>
+    {	// select first element
+    public:
+        using type = _This;
+        using _Ttype = ct::const_tuple<_This, _Rest...>;
+    };
+
+    template<size_t _Index, class _This, class... _Rest>
+    class tuple_element<_Index, ct::const_tuple<_This, _Rest...>>
+        : public tuple_element<_Index - 1, ct::const_tuple<_Rest...>>
+    {	// recursive tuple_element definition
+    };
+
+    template<std::size_t I, typename T1, typename T2>
+    constexpr auto get(const ct::const_pair<T1, T2>& v) noexcept
+        -> const typename tuple_element<I, ct::const_pair<T1, T2>>::type&
+    {
+        return v.get(integral_constant<size_t, I>());
+    }
+
+    template<size_t _Index,
+        class... _Types>
+        constexpr const typename tuple_element<_Index, ct::const_tuple<_Types...>>::type&
+        get(const ct::const_tuple<_Types...>& _Tuple) noexcept
+    {	// get const reference to _Index element of tuple
+        typedef typename tuple_element<_Index, ct::const_tuple<_Types...>>::_Ttype _Ttype;
+        return (((const _Ttype&)_Tuple)._Myfirst);
+    };
+
+    template<class _Traits> inline
+        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const ct::string_view& v)
+    {// Padding is not implemented yet
+        _Ostr.write(v.data(), v.size());
+        return _Ostr;
+    }
+
+    template<class T, size_t N>
+    class tuple_size<ct::const_array<T, N>>:
+        public integral_constant<size_t, N>
+    { };
+};
+
+namespace compile_time_bits
+{
     template<typename _Input, typename _Pair, size_t N>
     struct straight_sort_traits
     {
@@ -412,48 +511,6 @@ namespace compile_time_bits
         return sorter<flipped_sort_traits<decltype(input), T, N>>::order_array(input);
     }
 
-    template<ncbi::NStr::ECase case_sensitive, class _Hash = ct::SaltedCRC32<case_sensitive>>
-    class CHashString : public string_view
-    {
-    public:
-        using hash_func = _Hash;
-        using hash_t = typename _Hash::type;
-        using sv = ncbi::CTempString;
-
-        constexpr CHashString() = default;
-        template<size_t N>
-        constexpr CHashString(const char(&s)[N])
-            : string_view(s, N - 1), m_hash(hash_func::ct(s))
-        {}
-
-        explicit CHashString(const sv& s)
-            : string_view(s), m_hash(hash_func::general(s.data(), s.size()))
-        {}
-
-        constexpr bool operator<(const CHashString& o) const
-        {
-            return m_hash < o.m_hash;
-        }
-        constexpr bool operator!=(const CHashString& o) const
-        {
-            return m_hash != o.m_hash;
-        }
-        constexpr bool operator==(const CHashString& o) const
-        {
-            return m_hash == o.m_hash;
-        }
-        bool operator!=(const sv& o) const
-        {
-            return (case_sensitive==ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) != 0;
-        }
-        bool operator==(const sv& o) const
-        {
-            return (case_sensitive == ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) == 0;
-        }
-
-        hash_t m_hash{ 0 };
-    };
-
     template<typename _TTuple, size_t i>
     struct check_order_t
     {
@@ -479,20 +536,6 @@ namespace compile_time_bits
     {
         return check_order_t<const_array<T, N>, N - 1>{}(tup);
     }
-
-    template<typename T>
-    struct recast
-    {
-        using type = T;
-        using intermediate = T;
-    };
-
-    template<ncbi::NStr::ECase _TC, typename _TH>
-    struct recast<CHashString<_TC, _TH>>
-    {
-        using type = CHashString<_TC, _TH>;
-        using intermediate = typename type::sv;
-    };
 
     // this helper packs set of bits into an array usefull for initialisation of bitset
     // ugly C++11 templates until C++14 or C++17 advanced constexpr becomes available
@@ -628,35 +671,72 @@ namespace compile_time_bits
         //    "Requires: (is_same_v<T, U> && ...) is true. Otherwise the program is ill-formed.");
         using type = _T;
     };
-};
 
-namespace std
-{// these are backported implementations of C++17 methods
-    template<size_t i, class T, size_t N>
-    constexpr const T& get(const compile_time_bits::const_array<T, N>& in) noexcept
+    template<class _T, class _First,
+        class... _Rest>
+        struct enforce_all_constructable
     {
-        return in[i];
+        static_assert(conjunction<std::is_constructible<_First, _Rest>...>::value, "variadic arguments must be of the same type");
+        //    "N4687 26.3.7.2 [array.cons]/2: "
+        //    "Requires: (is_same_v<T, U> && ...) is true. Otherwise the program is ill-formed.");
+        using type = _T;
     };
-    template<class T, size_t N>
-    constexpr size_t size(const compile_time_bits::const_array<T, N>& in) noexcept
-    {
-        return N;
-    }
-    template<class T, size_t N>
-    constexpr auto begin(const compile_time_bits::const_array<T, N>& in) noexcept 
-        -> typename compile_time_bits::const_array<T, N>::const_iterator
-    {
-        return in.begin();
-    }
-    template<class T, size_t N>
-    constexpr auto end(const compile_time_bits::const_array<T, N>& in) noexcept 
-        -> typename compile_time_bits::const_array<T, N>::const_iterator
-    {
-        return in.end();
-    }
-};
 
+    enum class TwoWayMap
+    {
+        no,
+        yes
+    };
+
+    enum class NeedHash
+    {
+        no,
+        yes
+    };
+
+    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, typename _BaseType>
+    struct DeduceHashedType
+    {
+        using type = _BaseType;
+        using intermediate = _BaseType;
+        using hash_type = _BaseType;
+        static constexpr const hash_type& get_hash(const type& v) noexcept
+        {
+            return v;
+        }
+    };
+
+    template<ncbi::NStr::ECase case_sensitive>
+    struct DeduceHashedType<case_sensitive, NeedHash::yes, const char*>
+    {
+        using type = CHashString<case_sensitive>;
+        using intermediate = typename type::sv;
+        using hash_type = typename type::hash_type;
+        static constexpr hash_type get_hash(const type& v) noexcept
+        {
+            return v;
+        }
+    };
+
+    template<ncbi::NStr::ECase case_sensitive>
+    struct DeduceHashedType<case_sensitive, NeedHash::no, const char*>
+    {  // this doesn't have any hashes
+        using type = string_view;
+    };
+
+    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, class CharT, class Traits, class Allocator>
+    struct DeduceHashedType<case_sensitive, need_hash, std::basic_string<CharT, Traits, Allocator>>
+         : DeduceHashedType<case_sensitive, need_hash, const char*>
+    {
+    };   
+
+    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, typename _Hash>
+    struct DeduceHashedType<case_sensitive, need_hash, CHashString<case_sensitive, _Hash>>
+         : DeduceHashedType<case_sensitive, need_hash, const char*>
+    {
+    };
+
+};
 
 #endif
-
 

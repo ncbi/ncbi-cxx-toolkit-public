@@ -39,8 +39,6 @@
 
 namespace ct
 {
-    using namespace compile_time_bits;
-
     // partially backported std::bitset until it's constexpr version becomes available
     template<size_t _Bits, class _T>
     class const_bitset
@@ -59,7 +57,7 @@ namespace ct
             : m_size(1+sizeof...(args)), 
               _Array(bitset_traits<
                   _Words, 
-                  typename enforce_same<unsigned, _T, TArgs...>::type,
+                  typename enforce_all_constructable<unsigned, _T, TArgs...>::type,
                   _Ty,
                   1+sizeof...(args)>::set_bits(first, args...))
         {}
@@ -74,18 +72,10 @@ namespace ct
             return const_bitset(bitset_traits<_Words, _T, _Ty>::set_range(_from, _to), _to - _from + 1);
         }
 
-        constexpr size_t size() const
-        {
-            return m_size;
-        }
-        static constexpr size_t capacity()
-        {
-            return _Bits;
-        }
-        constexpr bool empty() const
-        {
-            return m_size == 0;
-        }
+        constexpr size_t size() const { return m_size; }
+        static constexpr size_t capacity() { return _Bits; }
+        constexpr bool empty() const { return m_size == 0; }
+
         constexpr bool test(size_t _Pos) const
         {
             //if (_Bits <= _Pos)
@@ -96,14 +86,15 @@ namespace ct
         class const_iterator
         {
         public:
+            using difference_type = size_t;
+            using value_type = T;
+            using pointer = const T*;
+            using reference = const T&;
+            using iterator_category = std::forward_iterator_tag;
+
             const_iterator() = default;
-            const_iterator(const const_bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
-            {
-                while (m_index < m_bitset->capacity() && !m_bitset->test(m_index))
-                {
-                    ++m_index;
-                }
-            }
+            friend class const_bitset;
+
             bool operator==(const const_iterator& o) const
             {
                 return m_bitset == o.m_bitset && m_index == o.m_index;
@@ -138,18 +129,29 @@ namespace ct
             }
 
         private:
+            const_iterator(const const_bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
+            {
+                while (m_index < m_bitset->capacity() && !m_bitset->test(m_index))
+                {
+                    ++m_index;
+                }
+            }
             size_t m_index;
             const const_bitset* m_bitset;
         };
 
-        const_iterator begin() const
-        {
-            return const_iterator(this, 0);
-        }
+        const_iterator begin() const {  return const_iterator(this, 0);  }
+        const_iterator end() const {  return const_iterator(this, capacity()); }
+        const_iterator cbegin() const { return const_iterator(this, 0); }
+        const_iterator cend() const { return const_iterator(this, capacity()); }
 
-        const_iterator end() const
+        template<class _Ty, class _Alloc>
+        operator std::vector<_Ty, _Alloc>() const
         {
-            return const_iterator(this, capacity());
+            std::vector<_Ty, _Alloc> vec;
+            vec.reserve(size());
+            vec.assign(begin(), end());
+            return vec;
         }
 
     private:
@@ -168,20 +170,21 @@ namespace ct
     };
 
 
-    template<size_t N, typename _Key, typename _Value>
+    template<size_t N, typename _HashedKey, typename _Value>
     class const_unordered_map
     {
     public:
         static_assert(N > 0, "empty const_map not supported");
-        using key_type = _Key;
+        using hash_type    = typename _HashedKey::hash_type;
+        using intermediate = typename _HashedKey::intermediate;
+        using key_type     = typename _HashedKey::type;
+
         using mapped_type = _Value;
-        using value_type = const_pair<_Key, _Value>;
+        using value_type = const_pair<typename _HashedKey::type, typename _Value::type>;
         using size_type = size_t;
         using array_t = const_array<value_type, N>;
 
         using const_iterator = typename array_t::const_iterator;
-
-        using TRecastKey = recast<key_type>;
 
         constexpr const_unordered_map(const array_t& init)
             : m_array(init)
@@ -191,50 +194,27 @@ namespace ct
         {
             return CheckOrder(m_array);
         }
-        constexpr const_iterator begin() const noexcept
-        {
-            return m_array.begin();
-        }
-        constexpr const_iterator cbegin() const noexcept
-        {
-            return m_array.begin();
-        }
-        constexpr size_t capacity() const noexcept
-        {
-            return N;
-        }
-        constexpr size_t size() const noexcept
-        {
-            return N;
-        }
-        constexpr size_t max_size() const noexcept
-        {
-            return N;
-        }
-        constexpr const_iterator end() const noexcept
-        {
-            return m_array.end();
-        }
-        constexpr const_iterator cend() const noexcept
-        {
-            return m_array.end();
-        }
-        constexpr bool empty() const noexcept
-        {
-            return N == 0;
-        }
+
+        constexpr const_iterator begin() const noexcept { return m_array.begin(); }
+        constexpr const_iterator cbegin() const noexcept { return m_array.begin(); }
+        constexpr size_t capacity() const noexcept { return N; }
+        constexpr size_t size() const noexcept { return N; }
+        constexpr size_t max_size() const noexcept { return N; }
+        constexpr const_iterator end() const noexcept { return m_array.end(); }
+        constexpr const_iterator cend() const noexcept { return m_array.end(); }
+        constexpr bool empty() const noexcept { return N == 0; }
 
         // alias to decide whether _Key can be constructed from _Arg
         template<typename _K, typename _Arg>
         using if_available = typename std::enable_if<
-            std::is_constructible<typename TRecastKey::intermediate, _K>::value, _Arg>::type;
+            std::is_constructible<intermediate, _K>::value, _Arg>::type;
 
         template<typename K>
         if_available<K, const_iterator>
             find(K&& _key) const
         {
-            typename TRecastKey::intermediate temp = std::forward<K>(_key);
-            typename TRecastKey::type key(temp);
+            intermediate temp = std::forward<K>(_key);
+            key_type key(temp);
             auto it = std::lower_bound(begin(), end(), std::move(key), Pred());
             if (it != end())
             {
@@ -266,14 +246,14 @@ namespace ct
         if_available<K, const_iterator>
             lower_bound(K&& _key) const
         {
-            typename TRecastKey::intermediate temp = std::forward<K>(_key);
-            typename TRecastKey::type key(std::move(temp));
+            intermediate temp = std::forward<K>(_key);
+            key_type key(std::move(temp));
             return std::lower_bound(begin(), end(), std::move(key), Pred());
         }
 
         struct Pred
         {
-            bool operator()(const value_type& l, const typename TRecastKey::type& r) const
+            bool operator()(const value_type& l, const hash_type& r) const
             {
                 return l.first < r;
             }
@@ -286,48 +266,12 @@ namespace ct
         array_t m_array = {};
     };
 
-    enum class TwoWayMap
-    {
-        no,
-        yes
-    };
-
-    enum class NeedHash
-    {
-        no,
-        yes
-    };
-
     template<ncbi::NStr::ECase case_sensitive, TwoWayMap two_way, typename T1, typename T2>
     struct MakeConstMap
     {
-        template<NeedHash need_hash, typename T, typename...Unused>
-        struct DeduceType
-        {
-            using type = T;
-        };
-
-        template<typename...Unused>
-        struct DeduceType<NeedHash::yes, const char*, Unused...>
-        {
-            using type = CHashString<case_sensitive>;
-        };
-
-        template<typename...Unused>
-        struct DeduceType<NeedHash::no, const char*, Unused...>
-        {
-            using type = string_view;
-        };
-
-        template<NeedHash need_hash, class C, class T, class A>
-        struct DeduceType<need_hash, std::basic_string<C, T, A>>
-        {
-            using type = typename DeduceType<need_hash, const char*>::type;
-        };
-
-        using first_type = typename DeduceType<NeedHash::yes, T1>::type;
-        using second_type = typename DeduceType<two_way==TwoWayMap::yes ? NeedHash::yes : NeedHash::no, T2>::type;
-        using init_pair_t = const_pair<first_type, second_type>;
+        using first_type = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
+        using second_type = DeduceHashedType<case_sensitive, two_way==TwoWayMap::yes ? NeedHash::yes : NeedHash::no, T2>;
+        using init_pair_t = const_pair<typename first_type::type, typename second_type::type>;
 
         template<size_t N>
         struct DeduceMapType
