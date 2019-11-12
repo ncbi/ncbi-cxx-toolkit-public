@@ -222,7 +222,7 @@ namespace compile_time_bits
         {}
 
         CHashString(const sv& s) noexcept
-            : string_view(s), m_hash(hash_func::sse42(s.data(), s.size()))
+            : string_view(s), m_hash(hash_func::general(s.data(), s.size()))
         {}
 
         constexpr bool operator<(const CHashString& o) const noexcept
