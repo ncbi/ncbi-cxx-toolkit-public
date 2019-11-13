@@ -75,6 +75,9 @@ CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
                                     bioseq_resolution.m_BioseqInfo.GetAccession(),
                                     version, seq_id_type,
                                     bioseq_resolution.m_CacheInfo, gi);
+                    if (cache_hit) {
+                        bioseq_resolution.m_BioseqInfo.SetGI(gi);
+                    }
                 } else {
                     // The cache and Cassandra DB have incompatible data types so
                     // here are temporary value
