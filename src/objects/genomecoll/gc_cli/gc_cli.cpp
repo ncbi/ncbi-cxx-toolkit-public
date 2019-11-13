@@ -205,9 +205,13 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
         arg_desc->AddKey("acc", "ACC_VER", "Comma-separated list of assembly accessions", CArgDescriptions::eString);
         arg_desc->AddKey("acc_file", "acc_file", "File with list of assembly accessions - one per line", CArgDescriptions::eInputFile);
         arg_desc->SetDependency("acc_file", arg_desc->eExcludes, "acc");
-        arg_desc->AddKey("rel_id", "release_id", "Comma-separated list of assembly release id's'", CArgDescriptions::eInteger);
+        arg_desc->AddKey("rel_id", "release_id", "Comma-separated list of assembly release id's'", CArgDescriptions::eString);
         arg_desc->SetDependency("rel_id", arg_desc->eExcludes, "acc");
         arg_desc->SetDependency("rel_id", arg_desc->eExcludes, "acc_file");
+        arg_desc->AddKey("rel_file", "rel_file", "File with list of assembly release_ids - one per line", CArgDescriptions::eInputFile);
+        arg_desc->SetDependency("rel_file", arg_desc->eExcludes, "acc");
+        arg_desc->SetDependency("rel_file", arg_desc->eExcludes, "acc_file");
+        arg_desc->SetDependency("rel_file", arg_desc->eExcludes, "rel_id");
         CGenomicCollectionsService::AddArguments(*arg_desc);
     };
 
@@ -336,6 +340,12 @@ static list<string> GetAccessions(const CArgs& args)
            args["acc_file"].HasValue() ? GetIDsFromFile(args["acc_file"].AsInputFile()) :
                                          list<string>();
 }
+static list<string> GetReleaseIds(const CArgs& args)
+{
+    return args["rel_id"].HasValue()   ? GetIDs(args["rel_id"].AsString()) :
+           args["rel_file"].HasValue() ? GetIDsFromFile(args["rel_file"].AsInputFile()) :
+                                         list<string>();
+}
 
 int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsService& service, const CArgs& args, CNcbiOstream& ostr)
 {
@@ -348,8 +358,8 @@ int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsS
         {
             if (args["acc"] || args["acc_file"])
                 for (auto acc: GetAccessions(args)) ostr << *RemoveVersions(service.GetAssembly(acc, args["-mode"].AsString()));
-            else if (args["rel_id"])
-                for (auto rel_id: GetIDs(args["rel_id"].AsString())) ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-mode"].AsString()));
+            else if (args["rel_id"] || args["rel_file"])
+                for (auto rel_id: GetReleaseIds(args)) ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-mode"].AsString()));
             else
                 ERR_POST(Error << "Either accession or release id should be provided");
         }
