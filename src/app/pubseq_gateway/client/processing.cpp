@@ -871,10 +871,6 @@ shared_ptr<STestingContext> STestingContext::CreateContext(CJson_Document& json_
     return {};
 }
 
-NCBI_PARAM_DECL(string, PSG, service_name);
-typedef NCBI_PARAM_TYPE(PSG, service_name) TPSG_ServiceName;
-NCBI_PARAM_DEF(string, PSG, service_name, "PSG");
-
 struct SExitCode
 {
     enum { eSuccess = 0, eRunError = -1, eTestFail = -2, };
@@ -926,9 +922,9 @@ int s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_R
     return SExitCode::eSuccess;
 }
 
-int CProcessing::Testing()
+int CProcessing::Testing(const string& service)
 {
-    CPSG_Queue queue(TPSG_ServiceName::GetDefault());
+    CPSG_Queue queue(service);
     ifstream input_file("psg_client_test.json");
     SIoRedirector ior(cin, input_file);
 
@@ -1092,10 +1088,9 @@ void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_Cons
     };
 }
 
-int CProcessing::ParallelProcessing(const CArgs& args, bool batch_resolve, bool echo)
+int CProcessing::ParallelProcessing(const string& service, const CArgs& args, bool batch_resolve, bool echo)
 {
     const string input_file = batch_resolve ? "id-file" : "input-file";
-    const auto& service = args["service"].AsString();
     const auto pipe = args[input_file].AsString() == "-";
     auto& is = pipe ? cin : args[input_file].AsInputFile();
 

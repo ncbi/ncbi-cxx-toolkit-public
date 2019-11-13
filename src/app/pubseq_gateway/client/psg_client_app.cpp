@@ -43,7 +43,7 @@ class CPsgClientApp;
 struct SCommand
 {
     using TInit = function<void(CArgDescriptions&)>;
-    using TRun = function<int(CPsgClientApp*, const CArgs&)>;
+    using TRun = function<int(CPsgClientApp*, const string&, const CArgs&)>;
     using TFlags = CCommandArgDescriptions::ECommandFlags;
 
     const string name;
@@ -70,10 +70,10 @@ private:
     static void s_InitRequest(CArgDescriptions& arg_desc);
 
     template <class TRequest>
-    static int s_RunRequest(CPsgClientApp* that, const CArgs& args) { _ASSERT(that); return that->RunRequest<TRequest>(args); }
+    static int s_RunRequest(CPsgClientApp* that, const string& service, const CArgs& args) { _ASSERT(that); return that->RunRequest<TRequest>(service, args); }
 
     template <class TRequest>
-    int RunRequest(const CArgs& args);
+    int RunRequest(const string& service, const CArgs& args);
 
     vector<SCommand> m_Commands;
 };
@@ -85,7 +85,7 @@ struct STesting {};
 struct SIo {};
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc);
-void s_SetPsgDefaults(const CArgs& args);
+const string& s_SetPsgDefaults(const CArgs& args);
 
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
@@ -128,8 +128,8 @@ int CPsgClientApp::Run()
 
     for (const auto& command : m_Commands) {
         if (command.name == name) {
-            s_SetPsgDefaults(args);
-            return command.run(this, args);
+            const auto& service = s_SetPsgDefaults(args);
+            return command.run(this, service, args);
         }
     }
 
@@ -152,6 +152,7 @@ void s_InitDataFlags(CArgDescriptions& arg_desc)
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc)
 {
+    arg_desc.AddDefaultKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString, "PSG");
     arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
@@ -163,7 +164,6 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
 template <class TRequest>
 void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("exclude-blob", "BLOB_ID", "Exclude blob by its ID", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
@@ -175,7 +175,6 @@ void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
 template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddOptionalPositional("ID", "Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("id-file", "FILENAME", "File containing bio IDs to resolve (one per line)", CArgDescriptions::eInputFile);
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
@@ -196,7 +195,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
 template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString);
     arg_desc.AddFlag("blob-only", "Output raw blob data only");
@@ -206,7 +204,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddKey("na", "NAMED_ANNOT", "Named annotation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
@@ -216,7 +213,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&
 template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_TSE_Chunk>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddPositional("ID", "TSE Blob ID", CArgDescriptions::eString);
     arg_desc.AddPositional("CHUNK_NO", "Chunk number", CArgDescriptions::eInteger);
     arg_desc.AddPositional("SPLIT_VER", "Split version", CArgDescriptions::eInteger);
@@ -226,7 +222,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_TSE_Chunk>(CArgDescriptions& arg_
 template<>
 void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing JSON-RPC requests (one per line)", CArgDescriptions::eInputFile, "-");
     arg_desc.AddFlag("echo", "Echo all incoming requests");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of different worker threads", CArgDescriptions::eString, "", CArgDescriptions::fHidden);
@@ -235,7 +230,6 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
 template <>
 void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddDefaultKey("user-threads", "THREADS_NUM", "Number of user threads", CArgDescriptions::eInteger, "1");
     arg_desc.AddFlag("raw-metrics", "No-op, for backward compatibility", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("local-queue", "Whether user threads to use separate queues");
@@ -258,7 +252,6 @@ void CPsgClientApp::s_InitRequest<STesting>(CArgDescriptions&)
 template <>
 void CPsgClientApp::s_InitRequest<SIo>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddPositional("SERVICE", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddPositional("START_TIME", "Start time (time_t)", CArgDescriptions::eInteger);
     arg_desc.AddPositional("DURATION", "Duration (seconds)", CArgDescriptions::eInteger);
     arg_desc.AddPositional("USER_THREADS", "Number of user threads", CArgDescriptions::eInteger);
@@ -273,7 +266,7 @@ typename CParam<TDescription>::TValueType s_GetCParamEnumValue(const CParam<TDes
     return CParam<TDescription>::TParamParser::StringToValue(string_value, TDescription::sm_ParamDescription);
 }
 
-void s_SetPsgDefaults(const CArgs& args)
+const string& s_SetPsgDefaults(const CArgs& args)
 {
     if (args["io-threads"].HasValue()) {
         auto io_threads = static_cast<size_t>(args["io-threads"].AsInteger());
@@ -306,24 +299,24 @@ void s_SetPsgDefaults(const CArgs& args)
         auto debug_printout_value = s_GetCParamEnumValue(TPSG_DebugPrintout(), debug_printout);
         TPSG_DebugPrintout::SetDefault(debug_printout_value);
     }
+
+    return args["service"].AsString();
 }
 
 template <class TRequest>
-int CPsgClientApp::RunRequest(const CArgs& args)
+int CPsgClientApp::RunRequest(const string& service, const CArgs& args)
 {
-    const auto& service = args["service"].AsString();
     auto request = SRequestBuilder::Build<TRequest>(args);
     const auto blob_only = args["blob-only"].HasValue();
     return CProcessing::OneRequest(service, request, blob_only);
 }
 
 template<>
-int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
+int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const string& service, const CArgs& args)
 {
     const auto single_request = args["ID"].HasValue();
 
     if (single_request) {
-        const auto& service = args["service"].AsString();
         auto request = SRequestBuilder::Build<CPSG_Request_Resolve>(args);
         return CProcessing::OneRequest(service, request, false);
     } else {
@@ -333,25 +326,24 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
         ctx.SetSessionID();
         ctx.SetHitID();
 
-        return CProcessing::ParallelProcessing(args, true, false);
+        return CProcessing::ParallelProcessing(service, args, true, false);
     }
 }
 
 template<>
-int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
+int CPsgClientApp::RunRequest<SInteractive>(const string& service, const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
 
     const auto echo = args["echo"].HasValue();
-    return CProcessing::ParallelProcessing(args, false, echo);
+    return CProcessing::ParallelProcessing(service, args, false, echo);
 }
 
 template <>
-int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
+int CPsgClientApp::RunRequest<SPerformance>(const string& service, const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
 
-    const auto& service = args["service"].AsString();
     auto user_threads = static_cast<size_t>(args["user-threads"].AsInteger());
     auto local_queue = args["local-queue"].AsBoolean();
     auto& os = args["output-file"].AsOutputFile();
@@ -359,7 +351,7 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 }
 
 template <>
-int CPsgClientApp::RunRequest<SReport>(const CArgs& args)
+int CPsgClientApp::RunRequest<SReport>(const string&, const CArgs& args)
 {
     const auto pipe = args["input-file"].AsString() == "-";
     auto& is = pipe ? cin : args["input-file"].AsInputFile();
@@ -375,17 +367,16 @@ int CPsgClientApp::RunRequest<SReport>(const CArgs& args)
 }
 
 template <>
-int CPsgClientApp::RunRequest<STesting>(const CArgs&)
+int CPsgClientApp::RunRequest<STesting>(const string& service, const CArgs&)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
 
-    return CProcessing::Testing();
+    return CProcessing::Testing(service);
 }
 
 template <>
-int CPsgClientApp::RunRequest<SIo>(const CArgs& args)
+int CPsgClientApp::RunRequest<SIo>(const string& service, const CArgs& args)
 {
-    const auto& service = args["service"].AsString();
     auto start_time = args["START_TIME"].AsInteger();
     auto duration = args["DURATION"].AsInteger();
     auto user_threads = args["USER_THREADS"].AsInteger();
