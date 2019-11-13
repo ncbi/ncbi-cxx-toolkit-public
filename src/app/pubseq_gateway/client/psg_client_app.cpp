@@ -167,6 +167,7 @@ void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
+    arg_desc.AddFlag("blob-only", "Output raw blob data only");
     s_InitDataFlags(arg_desc);
 }
 
@@ -198,6 +199,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
     arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString);
+    arg_desc.AddFlag("blob-only", "Output raw blob data only");
     s_InitDataFlags(arg_desc);
 }
 
@@ -218,6 +220,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_TSE_Chunk>(CArgDescriptions& arg_
     arg_desc.AddPositional("ID", "TSE Blob ID", CArgDescriptions::eString);
     arg_desc.AddPositional("CHUNK_NO", "Chunk number", CArgDescriptions::eInteger);
     arg_desc.AddPositional("SPLIT_VER", "Split version", CArgDescriptions::eInteger);
+    arg_desc.AddFlag("blob-only", "Output raw blob data only");
 }
 
 template<>
@@ -301,7 +304,8 @@ int CPsgClientApp::RunRequest(const CArgs& args)
 {
     const auto& service = args["service"].AsString();
     auto request = SRequestBuilder::Build<TRequest>(args);
-    return CProcessing::OneRequest(service, request);
+    const auto blob_only = args["blob-only"].HasValue();
+    return CProcessing::OneRequest(service, request, blob_only);
 }
 
 template<>
@@ -312,7 +316,7 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
     if (single_request) {
         const auto& service = args["service"].AsString();
         auto request = SRequestBuilder::Build<CPSG_Request_Resolve>(args);
-        return CProcessing::OneRequest(service, request);
+        return CProcessing::OneRequest(service, request, false);
     } else {
         auto& ctx = CDiagContext::GetRequestContext();
 

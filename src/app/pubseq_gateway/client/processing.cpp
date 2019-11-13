@@ -83,6 +83,17 @@ private:
 string s_GetId(const CJson_Document& req_doc);
 CRequestStatus::ECode s_PsgStatusToRequestStatus(EPSG_Status psg_status);
 
+const char* s_StrStatus(EPSG_Status status)
+{
+    switch (status) {
+        case EPSG_Status::eSuccess:    return "Success";
+        case EPSG_Status::eInProgress: return "InProgress";
+        case EPSG_Status::eNotFound:   return "NotFound";
+        case EPSG_Status::eCanceled:   return "Canceled";
+        case EPSG_Status::eError:      return "Error";
+    }
+}
+
 SJsonOut& SJsonOut::operator<<(const CJson_Document& doc)
 {
     stringstream ss;
@@ -156,12 +167,7 @@ CJsonResponse::CJsonResponse(const string& id) :
 
 void CJsonResponse::Fill(EPSG_Status reply_status, shared_ptr<CPSG_Reply> reply)
 {
-    switch (reply_status) {
-        case EPSG_Status::eNotFound: m_JsonObj["reply"].SetValue().SetString("NotFound"); return;
-        case EPSG_Status::eCanceled: m_JsonObj["reply"].SetValue().SetString("Canceled"); return;
-        case EPSG_Status::eError:    Fill(reply, "Failure");                              return;
-        default: _TROUBLE;
-    }
+    Fill(reply, s_StrStatus(reply_status));
 }
 
 void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
@@ -327,7 +333,23 @@ void CJsonResponse::Fill(TItem item, string type)
     }
 }
 
-int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request)
+template <class TItem, class TStr>
+void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, const char* delim = "\n\t")
+{
+    os << prefix << s_StrStatus(status);
+
+    for (;;) {
+        auto message = item->GetNextMessage();
+
+        if (message.empty()) break;
+
+        os << delim << message;
+    }
+
+    os << '\n';
+}
+
+int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, bool blob_only)
 {
     CPSG_Queue queue(service);
     SJsonOut json_out;
@@ -347,9 +369,16 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
             status = reply->GetStatus(kTryTimeout);
 
             switch (status) {
-                case EPSG_Status::eSuccess:    continue;
-                case EPSG_Status::eInProgress: continue;
-                default: json_out << CJsonResponse(status, reply);
+                case EPSG_Status::eSuccess:    break;
+                case EPSG_Status::eInProgress: break;
+                default:
+                    if (blob_only) {
+                        stringstream ss;
+                        s_ReportErrors(ss, status, reply, "Reply error: ");
+                        cerr << ss.rdbuf();
+                    } else {
+                        json_out << CJsonResponse(status, reply);
+                    }
             }
         }
 
@@ -369,7 +398,19 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
 
             if (reply_item_status != EPSG_Status::eInProgress) {
                 it = reply_items.erase(it);
-                json_out << CJsonResponse(reply_item_status, reply_item);
+
+                if (!blob_only) {
+                    json_out << CJsonResponse(reply_item_status, reply_item);
+
+                } else if (reply_item_status != EPSG_Status::eSuccess) {
+                    stringstream ss;
+                    s_ReportErrors(ss, reply_item_status, reply_item, "Item error: ");
+                    cerr << ss.rdbuf();
+
+                } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
+                    auto blob_data = static_pointer_cast<CPSG_BlobData>(reply_item);
+                    cout << blob_data->GetStream().rdbuf();
+                }
             } else {
                 ++it;
             }
@@ -834,24 +875,6 @@ NCBI_PARAM_DECL(string, PSG, service_name);
 typedef NCBI_PARAM_TYPE(PSG, service_name) TPSG_ServiceName;
 NCBI_PARAM_DEF(string, PSG, service_name, "PSG");
 
-void s_ReportErrors(const string& request_id, shared_ptr<CPSG_Reply> reply)
-{
-    cerr << "Fail for request '" << request_id << "' expected to succeed";
-
-    auto delimiter = ": ";
-
-    for (;;) {
-        auto message = reply->GetNextMessage();
-
-        if (message.empty()) break;
-
-        cerr << delimiter << message;
-        delimiter = ", ";
-    }
-
-    cerr << endl;
-}
-
 struct SExitCode
 {
     enum { eSuccess = 0, eRunError = -1, eTestFail = -2, };
@@ -935,11 +958,15 @@ int CProcessing::Testing()
         _ASSERT(request.get() == received_request.get());
 
         const bool expect_reply_errors = expected_result->expected == STestingContext::eReplyError;
+        auto reply_status = reply->GetStatus(CDeadline::eInfinite);
 
-        if (reply->GetStatus(CDeadline::eInfinite) != EPSG_Status::eSuccess) {
+        if (reply_status != EPSG_Status::eSuccess) {
             if (!expect_reply_errors) {
                 rv = SExitCode::eTestFail;
-                s_ReportErrors(request_id, move(reply));
+                string prefix("Fail for request '" + request_id + "' expected to succeed: ");
+                stringstream ss;
+                s_ReportErrors(ss, reply_status, reply, prefix, ", ");
+                cerr << ss.rdbuf();
             }
 
         } else if (expect_reply_errors) {
@@ -1162,15 +1189,7 @@ void SIoWorker::Do()
         bool success = reply_status == EPSG_Status::eSuccess;
 
         if (!success) {
-            err_stream << "Warning: Reply error status " << (int)reply_status << "\n";
-
-            for (;;) {
-                auto message = reply->GetNextMessage();
-
-                if (message.empty()) break;
-
-                err_stream << "Warning: Reply error message '" << message << "'\n";
-            }
+            s_ReportErrors(err_stream, reply_status, reply, "Warning: Reply error ");
         }
 
         // Items
@@ -1184,15 +1203,7 @@ void SIoWorker::Do()
 
             if (item_status != EPSG_Status::eSuccess) {
                 success = false;
-                err_stream << "Warning: Item error status " << (int)item_status << "\n";
-
-                for (;;) {
-                    auto message = reply->GetNextMessage();
-
-                    if (message.empty()) break;
-
-                    err_stream << "Warning: Item error message '" << message << "'\n";
-                }
+                s_ReportErrors(err_stream, reply_status, reply, "Warning: Item error ");
             }
         }
 
