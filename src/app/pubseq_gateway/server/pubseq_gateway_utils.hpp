@@ -197,9 +197,7 @@ string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
                              EBlobSkipReason  skip_reason);
 
 // Named annotation messages
-string GetNamedAnnotationHeader(size_t  item_id, const string &  accession,
-                                int16_t  version, int16_t  seq_id_type,
-                                const string &  annot_name,
+string GetNamedAnnotationHeader(size_t  item_id, const string &  annot_name,
                                 size_t  annotation_size);
 string GetNamedAnnotationMessageHeader(size_t  item_id, size_t  msg_size,
                                        CRequestStatus::ECode  status, int  code,

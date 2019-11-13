@@ -176,9 +176,6 @@ static string   s_Code = "code=";
 static string   s_Severity = "severity=";
 static string   s_BlobId = "blob_id=";
 static string   s_Fmt = "fmt=";
-static string   s_SecAcc = "seq_acc=";
-static string   s_SeqVer = "seq_ver=";
-static string   s_SeqType = "seq_type=";
 static string   s_NA = "na=";
 static string   s_Reason = "reason=";
 static string   s_NChunksOne = "n_chunks=1";
@@ -509,12 +506,11 @@ string  GetReplyMessageHeader(size_t  msg_size,
 }
 
 
-string GetNamedAnnotationHeader(size_t  item_id, const string &  accession,
-                                int16_t  version, int16_t  seq_id_type,
+string GetNamedAnnotationHeader(size_t  item_id,
                                 const string &  annot_name,
                                 size_t  annotation_size)
 {
-    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_na&chunk_type=data&size=150&na=NA000111.1&seq_acc=ABC123&seq_ver=3&seq_type=11
+    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_na&chunk_type=data&size=150&na=NA000111.1
     string      reply(s_ReplyBegin);
 
     return reply.append(NStr::NumericToString(item_id))
@@ -528,15 +524,6 @@ string GetNamedAnnotationHeader(size_t  item_id, const string &  accession,
                 .append(1, '&')
                 .append(s_NA)
                 .append(annot_name)
-                .append(1, '&')
-                .append(s_SecAcc)
-                .append(accession)
-                .append(1, '&')
-                .append(s_SeqVer)
-                .append(NStr::NumericToString(version))
-                .append(1, '&')
-                .append(s_SeqType)
-                .append(NStr::NumericToString(seq_id_type))
                 .append(1, '\n');
 }
 

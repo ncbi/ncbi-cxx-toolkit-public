@@ -611,7 +611,7 @@ void CPendingOperation::x_ProcessResolveRequest(
                                         bioseq_resolution.m_RequestStartTimestamp);
                 return;
             } else {
-                bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
+                bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
             }
         }
     }
@@ -628,9 +628,14 @@ void CPendingOperation::x_ProcessResolveRequest(
 void CPendingOperation::x_ResolveRequestBioseqInconsistency(
                             const THighResolutionTimePoint &  start_timestamp)
 {
+    // This method is used in case of a resolve and get_na requests
+    auto    seq_id = m_ResolveRequest.m_SeqId;
+    if (m_RequestType == eAnnotationRequest)
+        seq_id = m_AnnotRequest.m_SeqId;
+
     x_ResolveRequestBioseqInconsistency(
         "Data inconsistency: the bioseq key info was resolved for seq_id " +
-        m_ResolveRequest.m_SeqId + " but the bioseq info is not found",
+        seq_id + " but the bioseq info is not found",
         start_timestamp);
 }
 
@@ -697,6 +702,13 @@ void CPendingOperation::OnBioseqDetailsRecord(
                 x_GetRequestBioseqInconsistency(
                                 async_bioseq_info.m_RequestStartTimestamp);
             break;
+        case eAnnotBioseqDetails:
+            if (async_bioseq_info.IsValid())
+                x_CompleteAnnotRequest(async_bioseq_info);
+            else
+                x_ResolveRequestBioseqInconsistency(
+                                async_bioseq_info.m_RequestStartTimestamp);
+            break;
         default:
             ;
     }
@@ -722,6 +734,13 @@ void CPendingOperation::OnBioseqDetailsError(
                     "seq_id " + m_BlobRequest.m_SeqId + " but the "
                     "bioseq info is not found (database error: " + message +
                     ")", start_timestamp);
+            break;
+        case eAnnotBioseqDetails:
+            x_ResolveRequestBioseqInconsistency(
+                    "Data inconsistency: the bioseq key info was resolved for "
+                    "seq_id " + m_AnnotRequest.m_SeqId + " but the "
+                    "bioseq info is not found (database error: " +
+                    message + ")", start_timestamp);
             break;
         default:
             ;
@@ -899,22 +918,61 @@ void CPendingOperation::x_ProcessAnnotRequest(
         return;
     }
 
-    switch (bioseq_resolution.m_ResolutionResult) {
-        case eFromSi2csiCache:
-            ConvertSi2csiToBioseqResolution(
-                    bioseq_resolution.m_CacheInfo, bioseq_resolution);
-            break;
-        case eFromBioseqCache:
-            ConvertBioseqProtobufToBioseqInfo(
-                    bioseq_resolution.m_CacheInfo,
-                    bioseq_resolution.m_BioseqInfo);
-            break;
-        case eFromBioseqDB:
-        case eFromSi2csiDB:
-        default:
-            break;
+    // A few cases here: comes from cache or DB
+    // eFromSi2csiCache, eFromSi2csiDB, eFromBioseqCache, eFromBioseqDB
+
+    if (bioseq_resolution.m_ResolutionResult == eFromSi2csiCache) {
+        ConvertSi2csiToBioseqResolution(
+                bioseq_resolution.m_CacheInfo, bioseq_resolution);
+        bioseq_resolution.m_ResolutionResult = eFromSi2csiDB;
     }
 
+    if (bioseq_resolution.m_ResolutionResult == eFromSi2csiDB) {
+        // We have the following fields at hand:
+        // - accession, version, seq_id_type, gi
+        // However the get_na requires to send back the whole bioseq_info
+        CPSGCache           psg_cache(m_UrlUseCache != eCassandraOnly);
+        ECacheLookupResult  cache_lookup_result =
+                                psg_cache.LookupBioseqInfo(bioseq_resolution);
+        if (cache_lookup_result != eFound) {
+            // No cache hit (or not allowed); need to get to DB if allowed
+            if (m_UrlUseCache != eCacheOnly) {
+                // Async DB query
+                bioseq_resolution.m_CacheInfo.clear();
+                m_AsyncInterruptPoint = eAnnotBioseqDetails;
+                m_AsyncBioseqDetailsQuery.reset(
+                        new CAsyncBioseqQuery(std::move(bioseq_resolution),
+                                              this));
+                m_AsyncBioseqDetailsQuery->MakeRequest();
+                return;
+            }
+
+            // Error message
+            x_ResolveRequestBioseqInconsistency(
+                    bioseq_resolution.m_RequestStartTimestamp);
+            return;
+        } else {
+            bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
+        }
+    }
+
+    if (bioseq_resolution.m_ResolutionResult == eFromBioseqDB) {
+        // just in case
+        bioseq_resolution.m_CacheInfo.clear();
+    }
+
+    x_CompleteAnnotRequest(bioseq_resolution);
+}
+
+
+// Could be called:
+// - synchronously
+// - asynchronously if additional request to bioseq info is required
+void CPendingOperation::x_CompleteAnnotRequest(
+                                        SBioseqResolution &  bioseq_resolution)
+{
+    // At the moment the annotations request supports only json
+    x_SendBioseqInfo(bioseq_resolution, eJsonFormat);
     x_RegisterResolveTiming(bioseq_resolution);
 
     vector<pair<string, int32_t>>  bioseq_na_keyspaces =
@@ -1679,7 +1737,11 @@ void CPendingOperation::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution,
         ConvertSi2csiToBioseqResolution(bioseq_resolution.m_CacheInfo,
                                         bioseq_resolution);
         bioseq_resolution.m_ResolutionResult = eFromSi2csiDB;
-    } else if (bioseq_resolution.m_ResolutionResult == eFromBioseqCache) {
+    }
+
+    if (bioseq_resolution.m_ResolutionResult == eFromBioseqCache &&
+        !CanSkipBioseqInfoCacheUnpacking(bioseq_resolution.m_BioseqInfo,
+                                         effective_output_format)) {
         ConvertBioseqProtobufToBioseqInfo(bioseq_resolution.m_CacheInfo,
                                           bioseq_resolution.m_BioseqInfo);
         bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
@@ -1694,8 +1756,11 @@ void CPendingOperation::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution,
         ConvertBioseqInfoToJson(bioseq_resolution.m_BioseqInfo,
                                 x_GetBioseqInfoFields(), data_to_send);
     } else {
-        ConvertBioseqInfoToBioseqProtobuf(bioseq_resolution.m_BioseqInfo,
-                                          data_to_send);
+        if (bioseq_resolution.m_ResolutionResult != eFromBioseqCache)
+            ConvertBioseqInfoToBioseqProtobuf(bioseq_resolution.m_BioseqInfo,
+                                              data_to_send);
+        else
+            data_to_send = bioseq_resolution.m_CacheInfo;
     }
 
     if (x_UsePsgProtocol()) {
@@ -1828,11 +1893,9 @@ bool CPendingOperation::OnNamedAnnotData(CNAnnotRecord &&        annot_record,
         x_SendReplyCompletion();
     } else {
         CJsonNode   json = ConvertBioseqNAToJson(annot_record, sat);
-        m_ProtocolSupport.PrepareNamedAnnotationData(annot_record.GetAccession(),
-                                                     annot_record.GetVersion(),
-                                                     annot_record.GetSeqIdType(),
-                                                     annot_record.GetAnnotName(),
-                                                     json.Repr(CJsonNode::fStandardJson));
+        m_ProtocolSupport.PrepareNamedAnnotationData(
+                                        annot_record.GetAnnotName(),
+                                        json.Repr(CJsonNode::fStandardJson));
     }
 
     x_PeekIfNeeded();
@@ -2760,6 +2823,8 @@ CPendingOperation::x_GetAccessionSubstitutionOption(void) const
             return m_BlobRequest.m_AccSubstOption;
         case eResolveRequest:
             return m_ResolveRequest.m_AccSubstOption;
+        case eAnnotationRequest:
+            return eDefaultAccSubstitution;
         default:
             break;
     }
@@ -2841,6 +2906,34 @@ CPendingOperation::CanSkipBioseqInfoRetrieval(
 
     if (m_ResolveRequest.m_AccSubstOption == eNeverAccSubstitute)
         return true;    // No accession adjustments anyway so key fields are enough
+
+    if (m_ResolveRequest.m_AccSubstOption == eLimitedAccSubstitution &&
+        seq_id_type != CSeq_id::e_Gi)
+        return true;    // No accession adjustments required
+
+    return false;
+}
+
+
+// Unpacking can be skipped only in case of the resolve requests in protobuf
+// format. In all other cases the bioseq info is sent in json and requires
+// unpacking anyway
+bool
+CPendingOperation::CanSkipBioseqInfoCacheUnpacking(
+                            const CBioseqInfoRecord &  bioseq_info_record,
+                            EOutputFormat  output_format) const
+{
+    if (m_RequestType != eResolveRequest)
+        return false;
+    if (output_format != eProtobufFormat)
+        return false;
+
+    if (m_ResolveRequest.m_AccSubstOption == eNeverAccSubstitute)
+        return true;    // No accession adjustments anyway so the protobuf goes as is
+
+    auto    seq_id_type = bioseq_info_record.GetSeqIdType();
+    if (bioseq_info_record.GetVersion() > 0 && seq_id_type != CSeq_id::e_Gi)
+        return true;    // This combination in data never requires accession adjustments
 
     if (m_ResolveRequest.m_AccSubstOption == eLimitedAccSubstitution &&
         seq_id_type != CSeq_id::e_Gi)

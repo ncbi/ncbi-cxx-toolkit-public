@@ -65,6 +65,7 @@ private:
         eAnnotSeqIdResolution,
         eResolveSeqIdResolution,
         eResolveBioseqDetails,
+        eAnnotBioseqDetails,
         eGetSeqIdResolution,
         eGetBioseqDetails
     };
@@ -154,6 +155,7 @@ private:
     void x_ProcessAnnotRequest(void);
     void x_ProcessAnnotRequest(SResolveInputSeqIdError &  err,
                                SBioseqResolution &  bioseq_resolution);
+    void x_CompleteAnnotRequest(SBioseqResolution &  bioseq_resolution);
     void x_ProcessTSEChunkRequest(void);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
@@ -286,6 +288,9 @@ public:
                                         SBioseqResolution &  bioseq_resolution);
     bool CanSkipBioseqInfoRetrieval(
                             const CBioseqInfoRecord &  bioseq_info_record) const;
+    bool CanSkipBioseqInfoCacheUnpacking(
+                            const CBioseqInfoRecord &  bioseq_info_record,
+                            EOutputFormat  output_format) const;
 
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
     { return m_ProtocolSupport.GetReply()->GetDataReadyCB(); }

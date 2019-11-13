@@ -281,16 +281,12 @@ void CProtocolUtils::PrepareReplyMessage(const string &         msg,
 
 
 
-void CProtocolUtils::PrepareNamedAnnotationData(const string &  accession,
-                                                int16_t         version,
-                                                int16_t         seq_id_type,
-                                                const string &  annot_name,
+void CProtocolUtils::PrepareNamedAnnotationData(const string &  annot_name,
                                                 const string &  content)
 {
     size_t      item_id = GetItemId();
-    string      header = GetNamedAnnotationHeader(item_id, accession,
-                                                  version, seq_id_type,
-                                                  annot_name, content.size());
+    string      header = GetNamedAnnotationHeader(item_id, annot_name,
+                                                  content.size());
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(

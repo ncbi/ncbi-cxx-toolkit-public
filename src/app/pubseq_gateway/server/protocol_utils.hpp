@@ -117,9 +117,7 @@ public:
     void PrepareReplyMessage(const string &  msg,
                              CRequestStatus::ECode  status, int  err_code,
                              EDiagSev  severity);
-    void PrepareNamedAnnotationData(const string &  accession,
-                                    int16_t  version, int16_t  seq_id_type,
-                                    const string &  annot_name,
+    void PrepareNamedAnnotationData(const string &  annot_name,
                                     const string &  content);
     void PrepareReplyCompletion(void);
 
