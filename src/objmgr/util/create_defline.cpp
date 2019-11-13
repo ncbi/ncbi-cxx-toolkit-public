@@ -2766,8 +2766,12 @@ void CDeflineGenerator::x_SetSuffix (
             } else if (m_MainTitle.find ("whole genome shotgun sequence")
                        == NPOS) {
                 if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
-                    type = " ";
-                    type += m_Organelle;
+                    if ((NStr::EqualNocase (m_Organelle, "mitochondrial") || NStr::EqualNocase (m_Organelle, "mitochondrion")) &&
+                        (m_MainTitle.find("mitochondrial") != NPOS || m_MainTitle.find("mitochondrion") != NPOS)) {
+                    } else {
+                      type = " ";
+                      type += m_Organelle;
+                    }
                 }
                 type += ", whole genome shotgun sequence";
             }
