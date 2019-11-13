@@ -84,6 +84,9 @@ struct SReport {};
 struct STesting {};
 struct SIo {};
 
+void s_InitPsgOptions(CArgDescriptions& arg_desc);
+void s_SetPsgDefaults(const CArgs& args);
+
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
             s_GetCommand<CPSG_Request_Biodata>       ("biodata",     "Request biodata info and data by bio ID"),
@@ -110,8 +113,8 @@ void CPsgClientApp::Init()
     for (const auto& command : m_Commands) {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
         arg_desc->SetUsageContext("", command.desc);
+        s_InitPsgOptions(*arg_desc);
         command.init(*arg_desc);
-        arg_desc->AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
         cmd_desc->AddCommand(command.name, arg_desc.release(), kEmptyStr, command.flags);
     }
 
@@ -125,11 +128,7 @@ int CPsgClientApp::Run()
 
     for (const auto& command : m_Commands) {
         if (command.name == name) {
-            if (args["timeout"].HasValue()) {
-                auto timeout = static_cast<unsigned>(args["timeout"].AsInteger());
-                TPSG_RequestTimeout::SetDefault(timeout);
-            }
-
+            s_SetPsgDefaults(args);
             return command.run(this, args);
         }
     }
@@ -151,12 +150,13 @@ void s_InitDataFlags(CArgDescriptions& arg_desc)
     }
 }
 
-void s_InitPsgOptions(CArgDescriptions& arg_desc, int flags = 0)
+void s_InitPsgOptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, flags);
-    arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, flags);
-    arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, flags);
-    arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString, flags);
+    arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
 }
 
 template <class TRequest>
@@ -180,7 +180,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of different worker threads", CArgDescriptions::eString, "", CArgDescriptions::fHidden);
-    s_InitPsgOptions(arg_desc, CArgDescriptions::fHidden);
 
     for (const auto& f : SRequestBuilder::GetInfoFlags()) {
         arg_desc.AddFlag(f.name, f.desc);
@@ -230,7 +229,6 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing JSON-RPC requests (one per line)", CArgDescriptions::eInputFile, "-");
     arg_desc.AddFlag("echo", "Echo all incoming requests");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of different worker threads", CArgDescriptions::eString, "", CArgDescriptions::fHidden);
-    s_InitPsgOptions(arg_desc, CArgDescriptions::fHidden);
 }
 
 template <>
@@ -238,7 +236,6 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddDefaultKey("user-threads", "THREADS_NUM", "Number of user threads", CArgDescriptions::eInteger, "1");
-    s_InitPsgOptions(arg_desc);
     arg_desc.AddFlag("raw-metrics", "No-op, for backward compatibility", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("local-queue", "Whether user threads to use separate queues");
     arg_desc.AddDefaultKey("output-file", "FILENAME", "Output file to contain raw performance metrics", CArgDescriptions::eOutputFile, "psg_client.raw.txt");
@@ -297,6 +294,11 @@ void s_SetPsgDefaults(const CArgs& args)
         auto use_cache_value = s_GetUseCacheValue(TPSG_UseCache(), use_cache);
         TPSG_UseCache::SetDefault(use_cache_value);
     }
+
+    if (args["timeout"].HasValue()) {
+        auto timeout = static_cast<unsigned>(args["timeout"].AsInteger());
+        TPSG_RequestTimeout::SetDefault(timeout);
+    }
 }
 
 template <class TRequest>
@@ -324,7 +326,6 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
         ctx.SetSessionID();
         ctx.SetHitID();
 
-        s_SetPsgDefaults(args);
         return CProcessing::ParallelProcessing(args, true, false);
     }
 }
@@ -332,7 +333,6 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
 template<>
 int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 {
-    s_SetPsgDefaults(args);
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
 
     const auto echo = args["echo"].HasValue();
@@ -342,7 +342,6 @@ int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 template <>
 int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 {
-    s_SetPsgDefaults(args);
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
 
     const auto& service = args["service"].AsString();
