@@ -267,6 +267,10 @@ typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
 NCBI_PARAM_DECL(unsigned, PSG, request_timeout);
 typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
 
+enum class EPSG_DebugPrintout { eNone, eSome, eAll };
+NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
+typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
+
 END_NCBI_SCOPE
 
 #endif

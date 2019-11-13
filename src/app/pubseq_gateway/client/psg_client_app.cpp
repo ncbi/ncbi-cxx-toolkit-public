@@ -157,6 +157,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
+    arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
 }
 
 template <class TRequest>
@@ -267,9 +268,9 @@ void CPsgClientApp::s_InitRequest<SIo>(CArgDescriptions& arg_desc)
 // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
 // This templated function circumvents that shortcoming.
 template <class TDescription>
-EPSG_UseCache s_GetUseCacheValue(const CParam<TDescription>&, const string& use_cache)
+typename CParam<TDescription>::TValueType s_GetCParamEnumValue(const CParam<TDescription>&, const string& string_value)
 {
-    return CParam<TDescription>::TParamParser::StringToValue(use_cache, TDescription::sm_ParamDescription);
+    return CParam<TDescription>::TParamParser::StringToValue(string_value, TDescription::sm_ParamDescription);
 }
 
 void s_SetPsgDefaults(const CArgs& args)
@@ -291,13 +292,19 @@ void s_SetPsgDefaults(const CArgs& args)
 
     if (args["use-cache"].HasValue()) {
         auto use_cache = args["use-cache"].AsString();
-        auto use_cache_value = s_GetUseCacheValue(TPSG_UseCache(), use_cache);
+        auto use_cache_value = s_GetCParamEnumValue(TPSG_UseCache(), use_cache);
         TPSG_UseCache::SetDefault(use_cache_value);
     }
 
     if (args["timeout"].HasValue()) {
         auto timeout = static_cast<unsigned>(args["timeout"].AsInteger());
         TPSG_RequestTimeout::SetDefault(timeout);
+    }
+
+    if (args["debug-printout"].HasValue()) {
+        auto debug_printout = args["debug-printout"].AsString();
+        auto debug_printout_value = s_GetCParamEnumValue(TPSG_DebugPrintout(), debug_printout);
+        TPSG_DebugPrintout::SetDefault(debug_printout_value);
     }
 }
 
