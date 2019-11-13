@@ -206,13 +206,13 @@ string SPSG_Error::Build(int error, const char* details)
     return ss.str();
 }
 
-void SPSG_Reply::SState::AddError(string message)
+void SPSG_Reply::SState::AddError(string message, EState new_state)
 {
     const auto state = m_State.load();
 
     switch (state) {
         case eInProgress:
-            SetState(eError);
+            SetState(new_state);
             /* FALL THROUGH */
 
         case eError:
@@ -463,7 +463,9 @@ void SPSG_Request::Add()
             } else if (severity == "trace") {
                 ERR_POST(Trace << chunk);
             } else {
-                item.state.AddError(move(chunk));
+                bool not_found = args->GetValue("status") == "404";
+                auto new_state = not_found ? SPSG_Reply::SState::eNotFound : SPSG_Reply::SState::eError;
+                item.state.AddError(move(chunk), new_state);
             }
 
         } else if (chunk_type == "data") {

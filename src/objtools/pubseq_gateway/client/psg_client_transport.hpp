@@ -355,7 +355,7 @@ struct SPSG_Reply
             }
         }
 
-        void AddError(string message);
+        void AddError(string message, EState new_state = eError);
         void SetReturned() volatile { bool expected = false; m_Returned.compare_exchange_strong(expected, true); }
         void SetNotEmpty() volatile { bool expected = true; m_Empty.compare_exchange_strong(expected, false); }
 

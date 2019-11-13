@@ -174,7 +174,7 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 {
     auto reply_item_type = reply_item->GetType();
 
-    if (reply_item_status == EPSG_Status::eError) {
+    if (reply_item_status != EPSG_Status::eSuccess) {
         switch (reply_item_type) {
             case CPSG_ReplyItem::eBlobData:       return Fill(reply_item, "BlobData");
             case CPSG_ReplyItem::eBlobInfo:       return Fill(reply_item, "BlobInfo");
