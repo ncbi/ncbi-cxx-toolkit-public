@@ -193,6 +193,7 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
 BOOST_AUTO_TEST_CASE(TestConstSet)
 {
+#if 0
     MAKE_CONST_SET(ts1, ncbi::NStr::eCase, const char*,
         { "a2", "a1", "a3" });
 
@@ -233,6 +234,7 @@ BOOST_AUTO_TEST_CASE(TestConstSet)
     auto b1_it = ts2.find("B1");
     BOOST_CHECK((*b1_it) == std::string("b1"));
     BOOST_CHECK((*b1_it) == std::string("B1"));
+#endif
 };
 
 BOOST_AUTO_TEST_CASE(TestCRC32)

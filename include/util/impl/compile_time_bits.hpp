@@ -389,7 +389,7 @@ namespace compile_time_bits
 
         static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
         {
-            return input[l] < input[r];
+            return input[l].first < input[r].first;
         }
         template<class...TArgs>
         static constexpr sorted_t construct(const _Input& input, TArgs...ordered)
