@@ -62,21 +62,6 @@ g_InitModNameOriginMap(void);
 
 
 extern const 
-TStringToEnumMap<CSeq_inst::EStrand> 
-g_StrandStringToEnum;
-
-
-extern 
-const TStringToEnumMap<CSeq_inst::EMol>
-g_MolStringToEnum;
-
-
-extern const 
-TStringToEnumMap<CSeq_inst::ETopology> 
-g_TopologyStringToEnum;
-
-
-extern const 
 TStringToEnumMap<CMolInfo::TBiomol> 
 g_BiomolStringToEnum;
 
@@ -85,15 +70,6 @@ extern const
 unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> 
 g_BiomolEnumToMolEnum;
 
-
-extern const 
-TStringToEnumMap<CMolInfo::TTech>
-g_TechStringToEnum;
-
-
-extern const 
-unordered_map<string, CMolInfo::TCompleteness> 
-g_CompletenessStringToEnum;
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

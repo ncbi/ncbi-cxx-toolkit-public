@@ -47,6 +47,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <cassert>
+#include <util/compile_time.hpp>
 
 #include "mod_to_enum.hpp"
 #include "descr_mod_apply.hpp"
@@ -55,7 +56,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-const CModHandler::TNameMap CModHandler::sm_NameMap = 
+MAKE_CONST_MAP(s_ModNameMap, NStr::eCase, const char*, const char*,
 {{"top","topology"},
  {"mol","molecule"},
  {"moltype", "mol-type"},
@@ -92,7 +93,7 @@ const CModHandler::TNameMap CModHandler::sm_NameMap =
  {"pubmed", "pmid"},
  {"ft-url-mod", "ft-mod"},
  {"ft-url", "ft-map"}
-};
+ });
 
 
 const CModHandler::TNameSet CModHandler::sm_DeprecatedModifiers
@@ -133,6 +134,52 @@ const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
     "mgcode",
     "pgcode"
 };
+
+
+MAKE_CONST_MAP(s_StrandStringToEnum, NStr::eCase, const char*, CSeq_inst::EStrand,
+{{"single", CSeq_inst::eStrand_ss},
+ {"double", CSeq_inst::eStrand_ds},
+ {"mixed", CSeq_inst::eStrand_mixed},
+ {"other", CSeq_inst::eStrand_other}
+ });
+
+
+MAKE_CONST_MAP(s_MolStringToEnum, NStr::eCase, const char*, CSeq_inst::EMol,
+{{"dna", CSeq_inst::eMol_dna},
+ {"rna", CSeq_inst::eMol_rna},
+ {"aa", CSeq_inst::eMol_aa},
+ {"na", CSeq_inst::eMol_na},
+ {"other", CSeq_inst::eMol_other}
+ });
+
+
+MAKE_CONST_MAP(s_TopologyStringToEnum, NStr::eCase, const char*, CSeq_inst::ETopology,
+{{"linear", CSeq_inst::eTopology_linear},
+ {"circular", CSeq_inst::eTopology_circular},
+ {"tandem", CSeq_inst::eTopology_tandem},
+ {"other", CSeq_inst::eTopology_other}
+ });
+
+/*
+MAKE_CONST_MAP(s_BiomolEnumToMolEnum, NStr::eNocase, CMolInfo::TBiomol, CSeq_inst::EMol,
+{{ CMolInfo::eBiomol_genomic, CSeq_inst::eMol_dna},
+ { CMolInfo::eBiomol_pre_RNA,  CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_mRNA,  CSeq_inst::eMol_rna },
+ { CMolInfo::eBiomol_rRNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_tRNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_snRNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_scRNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_genomic_mRNA, CSeq_inst::eMol_rna },
+ { CMolInfo::eBiomol_cRNA, CSeq_inst::eMol_rna },
+ { CMolInfo::eBiomol_snoRNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_ncRNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_tmRNA, CSeq_inst::eMol_rna},
+ { CMolInfo::eBiomol_peptide, CSeq_inst::eMol_aa},
+ { CMolInfo::eBiomol_other_genetic, CSeq_inst::eMol_other},
+ { CMolInfo::eBiomol_other, CSeq_inst::eMol_other}
+});
+*/
 
 
 CModHandler::CModHandler(){}
@@ -333,9 +380,9 @@ const string& CModHandler::AssertReturnSingleValue(const TModEntry& mod_entry)
 
 string CModHandler::GetCanonicalName(const string& name) 
 {
-    const auto& normalized_name = x_GetNormalizedString(name);
-    const auto& it = sm_NameMap.find(normalized_name);
-    if (it != sm_NameMap.end()) {
+    const auto normalized_name = x_GetNormalizedString(name);
+    const auto it = s_ModNameMap.find(normalized_name);
+    if (it != s_ModNameMap.end()) {
         return it->second;
     }
 
@@ -519,8 +566,8 @@ void CModAdder::x_SetStrand(const TModEntry& mod_entry,
                             FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
-    const auto it = g_StrandStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it == g_StrandStringToEnum.end()) {
+    const auto it = s_StrandStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it == s_StrandStringToEnum.end()) {
         x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
         return;
     }
@@ -534,8 +581,8 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
                               FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
-    const auto it = g_MolStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it == g_MolStringToEnum.end()) {
+    const auto it = s_MolStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it == s_MolStringToEnum.end()) {
         x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
         return;
     }
@@ -552,7 +599,7 @@ void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& 
         // The error is reported in x_SetMolInfoType
         return; 
     }
-    auto mol =  g_BiomolEnumToMolEnum.at(it->second);
+    CSeq_inst::EMol mol = g_BiomolEnumToMolEnum.at(it->second);
     seq_inst.SetMol(mol);
 }
 
@@ -563,8 +610,8 @@ void CModAdder::x_SetTopology(const TModEntry& mod_entry,
                               FReportError fReportError)
 {
     string value = x_GetModValue(mod_entry);
-    const auto it = g_TopologyStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it == g_TopologyStringToEnum.end()) {
+    const auto it = s_TopologyStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it == s_TopologyStringToEnum.end()) {
         x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
         return;
     }

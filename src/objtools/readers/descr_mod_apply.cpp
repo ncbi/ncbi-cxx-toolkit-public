@@ -67,9 +67,49 @@
 #include <objtools/readers/mod_error.hpp>
 #include "mod_to_enum.hpp"
 #include "descr_mod_apply.hpp"
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+MAKE_CONST_MAP(s_TechStringToEnum, NStr::eCase, const char*, CMolInfo::TTech,
+{   { "?",                  CMolInfo::eTech_unknown },
+    { "barcode",            CMolInfo::eTech_barcode },
+    { "both",               CMolInfo::eTech_both },
+    { "compositewgshtgs",   CMolInfo::eTech_composite_wgs_htgs },
+    { "concepttrans",       CMolInfo::eTech_concept_trans },
+    { "concepttransa",      CMolInfo::eTech_concept_trans_a },
+    { "derived",            CMolInfo::eTech_derived },
+    { "est",                CMolInfo::eTech_est },
+    { "flicdna",            CMolInfo::eTech_fli_cdna },
+    { "geneticmap",         CMolInfo::eTech_genemap },
+    { "htc",                CMolInfo::eTech_htc },
+    { "htgs0",              CMolInfo::eTech_htgs_0 },
+    { "htgs1",              CMolInfo::eTech_htgs_1 },
+    { "htgs2",              CMolInfo::eTech_htgs_2 },
+    { "htgs3",              CMolInfo::eTech_htgs_3 },
+    { "physicalmap",        CMolInfo::eTech_physmap },
+    { "seqpept",            CMolInfo::eTech_seq_pept },
+    { "seqpepthomol",       CMolInfo::eTech_seq_pept_homol },
+    { "seqpeptoverlap",     CMolInfo::eTech_seq_pept_overlap },
+    { "standard",           CMolInfo::eTech_standard },
+    { "sts",                CMolInfo::eTech_sts },
+    { "survey",             CMolInfo::eTech_survey },
+    { "targeted",           CMolInfo::eTech_targeted },
+    { "tsa",                CMolInfo::eTech_tsa },
+    { "wgs",                CMolInfo::eTech_wgs }
+});
+
+
+MAKE_CONST_MAP(s_CompletenessStringToEnum, NStr::eCase, const char*, CMolInfo::TCompleteness,
+{   { "complete",  CMolInfo::eCompleteness_complete  },
+    { "hasleft",   CMolInfo::eCompleteness_has_left  },
+    { "hasright",  CMolInfo::eCompleteness_has_right  },
+    { "noends",    CMolInfo::eCompleteness_no_ends  },
+    { "noleft",    CMolInfo::eCompleteness_no_left  },
+    { "noright",   CMolInfo::eCompleteness_no_right  },
+    { "partial",   CMolInfo::eCompleteness_partial  }
+});
 
 
 static const auto s_OrgModStringToEnum = g_InitModNameOrgSubtypeMap();
@@ -693,8 +733,8 @@ void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = g_TechStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it != g_TechStringToEnum.end()) {
+    auto it = s_TechStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it != s_TechStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetTech(it->second);
         return;
     }
@@ -705,8 +745,8 @@ void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = g_CompletenessStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it != g_CompletenessStringToEnum.end()) {
+    auto it = s_CompletenessStringToEnum.find(g_GetNormalizedModVal(value));
+    if (it != s_CompletenessStringToEnum.end()) {
         m_pDescrCache->SetMolInfo().SetCompleteness(it->second);
         return;
     }
