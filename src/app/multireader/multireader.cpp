@@ -64,6 +64,7 @@
 #include <objtools/readers/gtf_reader.hpp>
 #include <objtools/readers/gvf_reader.hpp>
 #include <objtools/readers/aln_reader.hpp>
+#include <objtools/readers/psl_reader.hpp>
 #include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/fasta.hpp>
@@ -144,6 +145,7 @@ private:
     void xProcess5ColFeatTable(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessFasta(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     //void xProcessHgvs(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessPsl(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, const string&);
@@ -339,6 +341,7 @@ void CMultiReaderApp::Init(void)
             "5colftbl",
             "ucsc",
             "hgvs",
+            "psl",
             "guess") );
 
     arg_desc->AddDefaultKey("out-format", "FORMAT", 
@@ -724,9 +727,6 @@ CMultiReaderApp::xProcessSingleFile(
 {
     xSetFlags(args, args["input"].AsString());
 
-    CRef< CSerialObject> object;
-    vector< CRef< CSeq_annot > > annots;
-
     bool retCode = true;
     try {
         switch( m_uFormat ) {
@@ -783,6 +783,9 @@ CMultiReaderApp::xProcessSingleFile(
                 break;
             case CFormatGuess::eFasta:
                 xProcessFasta(args, istr, ostr);
+                break;
+            case CFormatGuess::ePsl:
+                xProcessPsl(args, istr, ostr);
                 break;
             //case CFormatGuess::eHgvs:
             //    xProcessHgvs(args, istr, ostr);
@@ -1142,6 +1145,26 @@ void CMultiReaderApp::xProcessFasta(
 }
 
 //  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessPsl(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    CPslReader reader( m_iFlags );
+    if (ShowingProgress()) {
+        reader.SetProgressReportInterval(10);
+    }
+   //TestCanceler canceler;
+   //reader.SetCanceler(&canceler);
+    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(istr, m_pErrors.get());
+    if (!pAnnot) {
+        return;
+    }
+    xWriteObject(args, *pAnnot, ostr);
+}
+
+//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessAlignment(
     const CArgs& args,
     CNcbiIstream& istr,
@@ -1236,6 +1259,10 @@ void CMultiReaderApp::xSetFormat(
     if( NStr::StartsWith(strProgramName, "ucsc") ||
         format == "ucsc" ) {
             m_uFormat = CFormatGuess::eUCSCRegion;
+    }
+    if ( NStr::StartsWith(strProgramName, "psl") ||
+        format == "psl" ) {
+            m_uFormat = CFormatGuess::ePsl;
     }
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);
