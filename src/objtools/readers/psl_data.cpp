@@ -74,7 +74,7 @@ CPslData::Initialize(
 //  https://genome.ucsc.edu/FAQ/FAQformat.html#format2
 //  ----------------------------------------------------------------------------
 {
-    const INT PSL_COLUMN_COUNT(21);
+    const int PSL_COLUMN_COUNT(21);
 
     vector<string> columns;
     NStr::Split(pslLine, "\t", columns, NStr::fSplit_Tokenize);
@@ -186,6 +186,45 @@ CPslData::Dump(
         ostr << "blockStartsT   : " << blockStartsT << endl;
     }
     ostr << endl;
+    if (mBlockCount < 5) {
+        cerr << "";
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CPslData::ConvertBlocksToSegments(
+    vector<SAlignSegment>& segments) const
+//  ----------------------------------------------------------------------------
+{
+    segments.clear();
+    if (mBlockCount == 0) {
+        return;
+    }
+    segments.push_back(SAlignSegment{
+        mBlockSizes[0], 
+        mBlockStartsQ[0], mBlockStartsT[0], 
+        eNa_strand_plus, mStrandT});
+    int currentPosQ = mBlockStartsQ[0] + mBlockSizes[0];
+    int currentPosT = mBlockStartsT[0] + mBlockSizes[0];
+    for (int i=1; i < mBlockCount; ++i) {
+        auto diffQ = mBlockStartsQ[i] - currentPosQ;
+        if (diffQ) {
+            segments.push_back(SAlignSegment{
+                diffQ, currentPosQ, -1, eNa_strand_plus, mStrandT});
+        }
+        auto diffT = mBlockStartsT[i] - currentPosT;
+        if (diffT) {
+            segments.push_back(SAlignSegment{
+                diffT, -1, currentPosT, eNa_strand_plus, mStrandT});
+        }
+        segments.push_back(SAlignSegment{
+            mBlockSizes[i],
+            mBlockStartsQ[i], mBlockStartsT[i],
+            eNa_strand_plus, mStrandT});
+        currentPosQ = mBlockStartsQ[i] + mBlockSizes[i];
+        currentPosT = mBlockStartsT[i] + mBlockSizes[i];
+    }
 }
 
 END_objects_SCOPE

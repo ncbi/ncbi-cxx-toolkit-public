@@ -52,6 +52,8 @@ class CGFFReader;
 class CGff2Record;
 class SRecord;
 
+class CPslData;
+
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CPslReader
 //  ----------------------------------------------------------------------------
@@ -60,10 +62,6 @@ class NCBI_XOBJREAD_EXPORT CPslReader
 public:
     typedef int TFlags;
 
-
-    //
-    //  object management:
-    //
 public:
     CPslReader(
         int iFlags);
@@ -85,10 +83,10 @@ public:
         CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
 
-
-    //  data:
-    //
 protected:
+    CRef<CSeq_align> xCreateSeqAlign(
+        const CPslData&);
+
     ILineErrorListener* m_pErrors;
     unsigned int mCurrentRecordCount;
 };

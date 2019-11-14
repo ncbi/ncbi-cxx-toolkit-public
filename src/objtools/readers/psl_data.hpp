@@ -39,6 +39,17 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+struct SAlignSegment
+//  ----------------------------------------------------------------------------
+{
+    int mLen;
+    int mStartQ;
+    int mStartT;
+    ENa_strand mStrandQ;
+    ENa_strand mStrandT;
+};
+
+//  ----------------------------------------------------------------------------
 class CPslData
 //  ----------------------------------------------------------------------------
 {
@@ -53,6 +64,16 @@ public:
 
     void Dump(
         ostream& ostr);
+
+    int Matches() const { return mMatches; };
+    int MisMatches() const { return mMisMatches; };
+    int RepMatches() const { return mRepMatches; };
+    int CountN() const { return mCountN; };
+    string NameQ() const { return mNameQ; };
+    string NameT() const { return mNameT; };
+
+    void ConvertBlocksToSegments(
+        vector<SAlignSegment>&) const;
 
 private:
     void xReset();

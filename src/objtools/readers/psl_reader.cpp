@@ -45,7 +45,12 @@
 #include <serial/objistrasn.hpp>
 
 // Objects includes
+#include <objects/general/Object_id.hpp>
+
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
 
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
@@ -97,29 +102,77 @@ CPslReader::ReadSeqAnnot(
     xProgressInit(lineReader);
 
     CRef<CSeq_annot> pAnnot(new CSeq_annot);;
-    pAnnot->SetData().SetAlign();
+    auto& alignData = pAnnot->SetData().SetAlign();
 
     string line;
     CPslData pslData;
+    CRef<CSeq_align> pAlign;
     while (xGetLine(lineReader, line)) {
-        //pslData.Initialize(line);
+        CRef<CSeq_align> pAlign(new CSeq_align);
+        pslData.Initialize(line);
         //pslData.Dump(cerr);
+        alignData.push_back(xCreateSeqAlign(pslData));
     }
     return pAnnot;
 }
 
-//  ----------------------------------------------------------------------------                
-CRef< CSerialObject >
+//  ----------------------------------------------------------------------------
+CRef<CSerialObject>
 CPslReader::ReadObject(
     ILineReader& lr,
     ILineErrorListener* pMessageListener ) 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 { 
     CRef<CSerialObject> object( 
         ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
     return object;
 }
 
+//  ----------------------------------------------------------------------------
+CRef<CSeq_align>
+CPslReader::xCreateSeqAlign(
+    const CPslData& pslData)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_align> pSeqAlign(new CSeq_align);
+    
+    pSeqAlign->SetType(CSeq_align::eType_partial);
+    CDense_seg& denseSeg = pSeqAlign->SetSegs().SetDenseg();
+
+    auto& ids = denseSeg.SetIds();
+    ids.push_back(CReadUtil::AsSeqId(pslData.NameQ()));
+    ids.push_back(CReadUtil::AsSeqId(pslData.NameT()));
+    
+    vector<SAlignSegment> segments;
+    pslData.ConvertBlocksToSegments(segments);
+    for (const auto& segment: segments) {
+        denseSeg.SetLens().push_back(segment.mLen);
+        denseSeg.SetStarts().push_back(segment.mStartQ);
+        denseSeg.SetStarts().push_back(segment.mStartT);
+        denseSeg.SetStrands().push_back(segment.mStrandQ);
+        denseSeg.SetStrands().push_back(segment.mStrandT);
+    }
+    denseSeg.SetNumseg(segments.size());
+
+    
+    CRef<CScore>  pMatches(new CScore);
+    pMatches->SetId().SetStr("num_match");
+    pMatches->SetValue().SetInt(pslData.Matches());
+    denseSeg.SetScores().push_back(pMatches);
+    CRef<CScore>  pMisMatches(new CScore);
+    pMisMatches->SetId().SetStr("num_mismatch");
+    pMisMatches->SetValue().SetInt(pslData.MisMatches());
+    denseSeg.SetScores().push_back(pMisMatches);
+    CRef<CScore> pRepMatches(new CScore);
+    pRepMatches->SetId().SetStr("num_repmatch");
+    pRepMatches->SetValue().SetInt(pslData.RepMatches());
+    denseSeg.SetScores().push_back(pRepMatches);
+    CRef<CScore> pCountN(new CScore);
+    pCountN->SetId().SetStr("num_n");
+    pCountN->SetValue().SetInt(pslData.CountN());
+    denseSeg.SetScores().push_back(pCountN);
+    return pSeqAlign;
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE
