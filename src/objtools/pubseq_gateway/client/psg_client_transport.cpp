@@ -746,7 +746,7 @@ SUserAgent::SUserAgent()
         ".SC" NCBI_AS_STRING(NCBI_SC_VERSION)
 #endif
 #else
-        "UNKNOWN";
+        "UNKNOWN"
 #endif
         );
 }
