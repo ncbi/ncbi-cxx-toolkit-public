@@ -70,6 +70,15 @@ namespace compile_time_bits
         value_type* data() { return m_data; }
 
         container_type m_data;
+
+        template<typename _Alloc>
+        operator std::vector<value_type, _Alloc>() const
+        {
+            std::vector<value_type, _Alloc> vec;
+            vec.reserve(size());
+            vec.assign(begin(), end());
+            return vec;
+        }
     };
 
     template<class T>
@@ -85,6 +94,12 @@ namespace compile_time_bits
         constexpr const_iterator begin() const noexcept { return nullptr; }
         constexpr const_iterator end() const noexcept { return nullptr; }
         const value_type* data() const noexcept { return nullptr; }
+
+        template<typename _Alloc>
+        operator std::vector<value_type, _Alloc>() const
+        {
+            return std::vector<value_type, _Alloc>();
+        }
     };
 
     template<class FirstType, class SecondType>
@@ -182,7 +197,7 @@ namespace compile_time_bits
 
         operator ncbi::CTempStringEx() const noexcept
         {
-            return ncbi::CTempStringEx(m_data, m_len, ncbi::CTempStringEx::eHasZeroAtEnd);
+            return ncbi::CTempStringEx(m_data, m_len, ncbi::CTempStringEx::eNoZeroAtEnd);
         }
         operator ncbi::CTempString() const noexcept
         {
@@ -216,6 +231,7 @@ namespace compile_time_bits
         using sv = ncbi::CTempString;
 
         constexpr CHashString() noexcept = default;
+
         template<size_t N>
         constexpr CHashString(const char(&s)[N]) noexcept
             : string_view(s, N - 1), m_hash(hash_func::ct(s))
@@ -373,7 +389,7 @@ namespace compile_time_bits
 
         static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
         {
-            return input[l].first < input[r].first;
+            return input[l] < input[r];
         }
         template<class...TArgs>
         static constexpr sorted_t construct(const _Input& input, TArgs...ordered)
@@ -517,7 +533,7 @@ namespace compile_time_bits
         using next_t = check_order_t<_TTuple, i - 1>;
         constexpr bool operator() (const _TTuple& tup) const
         {
-            return (std::get<i - 1>(tup).first < std::get<i>(tup).first) &&
+            return (std::get<i - 1>(tup) < std::get<i>(tup)) &&
                 next_t {}(tup);
         }
     };

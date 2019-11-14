@@ -177,8 +177,8 @@ namespace ct
         static_assert(N > 0, "empty const_map not supported");
         using hash_type    = typename _HashedKey::hash_type;
         using intermediate = typename _HashedKey::intermediate;
-        using key_type     = typename _HashedKey::type;
 
+        using key_type     = typename _HashedKey::type;
         using mapped_type = _Value;
         using value_type = const_pair<typename _HashedKey::type, typename _Value::type>;
         using size_type = size_t;
@@ -295,7 +295,107 @@ namespace ct
             return typename DeduceMapType<N>::map_type(input);
         }
     };
+    template<size_t N, typename _HashedKey, typename _Value>
+    class const_unordered_set
+    {
+    public:
+        static_assert(N > 0, "empty const_set not supported");
+        using hash_type = typename _HashedKey::hash_type;
+        using intermediate = typename _HashedKey::intermediate;
 
+        using key_type = typename _HashedKey::type;
+        using value_type = typename _Value::type;
+        using size_type = size_t;
+
+        using array_t = const_array<value_type, N>;
+        using const_iterator = typename array_t::const_iterator;
+
+        constexpr const_unordered_set(const array_t& init)
+            : m_array(init)
+        {}
+
+        constexpr bool in_order() const
+        {
+            return CheckOrder(m_array);
+        }
+
+        constexpr const_iterator begin() const noexcept { return m_array.begin(); }
+        constexpr const_iterator cbegin() const noexcept { return m_array.begin(); }
+        constexpr size_t capacity() const noexcept { return N; }
+        constexpr size_t size() const noexcept { return N; }
+        constexpr size_t max_size() const noexcept { return N; }
+        constexpr const_iterator end() const noexcept { return m_array.end(); }
+        constexpr const_iterator cend() const noexcept { return m_array.end(); }
+        constexpr bool empty() const noexcept { return N == 0; }
+
+        // alias to decide whether _Key can be constructed from _Arg
+        template<typename _K, typename _Arg>
+        using if_available = typename std::enable_if<
+            std::is_constructible<intermediate, _K>::value, _Arg>::type;
+
+        template<typename K>
+        if_available<K, const_iterator>
+            find(K&& _key) const
+        {
+            intermediate temp = std::forward<K>(_key);
+            key_type key(temp);
+            auto it = std::lower_bound(begin(), end(), std::move(key), Pred());
+            if (it != end())
+            {
+                if (*it != temp)
+                    it = end();
+            }
+            return it;
+        }
+
+    protected:
+        struct Pred
+        {
+            bool operator() (const key_type& l, const key_type& r) const
+            {
+                return l < r;
+            }
+        };
+
+        template<typename K>
+        if_available<K, const_iterator>
+            lower_bound(K&& _key) const
+        {
+            intermediate temp = std::forward<K>(_key);
+            key_type key(std::move(temp));
+            return std::lower_bound(begin(), end(), std::move(key), Pred());
+        }
+
+        array_t m_array = {};
+    };
+    template<ncbi::NStr::ECase case_sensitive, typename _T>
+    struct MakeConstSet
+    {
+        using value_type = DeduceHashedType<case_sensitive, NeedHash::yes, _T>;
+        using init_t = typename value_type::type;
+
+        template<size_t N>
+        struct DeduceType
+        {
+            static constexpr size_t size = N;
+            static_assert(size > 0, "empty const_set not supported");
+
+            using type = ct::const_unordered_set<size, value_type, value_type>;
+        };
+
+        template<size_t N>
+        constexpr auto operator()(const init_t(&input)[N]) const ->
+            typename DeduceType<N>::type
+        {
+            return typename DeduceType<N>::type(input);
+        }
+        template<size_t N>
+        constexpr auto operator()(const const_array<init_t, N> &input) const ->
+            typename DeduceType<N>::type
+        {
+            return typename DeduceType<N>::type(input);
+        }
+    };
 };
 
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
@@ -313,7 +413,16 @@ namespace ct
     static constexpr auto name ## _flipped = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type2, type1>{}            \
         (ct::FlipReorder(name ## _init));
 
-/*static_assert(name.in_order(), "const map " #name "is not in order");*/
+//static_assert(name.in_order(), "const map " #name "is not in order");
+
+#define MAKE_CONST_SET(name, case_sensitive, type, ...)                                                                      \
+    static constexpr ct::MakeConstSet<case_sensitive, type>::init_t                                                          \
+        name ## _init[]  __VA_ARGS__;                                                                                        \
+        static constexpr auto name = ct::MakeConstSet<case_sensitive, type>{}                                                \
+        (ct::Reorder(name ## _init)); 
+
+//static_assert(name.in_order(), "const set " #name "is not in order");
+
 
 
 #endif

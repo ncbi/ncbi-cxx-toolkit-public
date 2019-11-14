@@ -27,6 +27,7 @@
  *
  * File Description:
  *   Test for ct::const_unordered_map
+ *            ct::const_unordered_set
  *
  */
 
@@ -188,6 +189,50 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
     auto t6 = test_two_way2_flipped.find(5);
     BOOST_CHECK((t6 != test_two_way2_flipped.end()) && (ncbi::NStr::CompareNocase(t6->second, "so:0000005") == 0));
 #endif
+};
+
+BOOST_AUTO_TEST_CASE(TestConstSet)
+{
+    MAKE_CONST_SET(ts1, ncbi::NStr::eCase, const char*,
+        { "a2", "a1", "a3" });
+
+    MAKE_CONST_SET(ts2, ncbi::NStr::eNocase, const char*,
+        { "b1", "b3", "B2"});
+
+    for (auto r : ts1)
+    {
+        std::cout << r << std::endl;
+    }
+    for (auto r : ts2)
+    {
+        std::cout << r << std::endl;
+    }
+
+    BOOST_CHECK(ts1.find("A1") == ts1.end());
+    BOOST_CHECK(ts1.find(std::string("A1")) == ts1.end());
+    BOOST_CHECK(ts1.find("a1") != ts1.end());
+    BOOST_CHECK(ts1.find(std::string("a1")) != ts1.end());
+    BOOST_CHECK(ts1.find("a2") != ts1.end());
+    BOOST_CHECK(ts1.find("a3") != ts1.end());
+    BOOST_CHECK(ncbi::NStr::Compare(*ts1.find("a1"), "a1") == 0);
+    BOOST_CHECK(ncbi::NStr::Compare(*ts1.find("a2"), "a2") == 0);
+    BOOST_CHECK(ncbi::NStr::Compare(*ts1.find("a3"), "a3") == 0);
+    BOOST_CHECK(ncbi::NStr::Compare(*ts1.find("a1"), "b1") != 0);
+    BOOST_CHECK(ncbi::NStr::Compare(*ts1.find("a2"), "b2") != 0);
+    BOOST_CHECK(ncbi::NStr::Compare(*ts1.find("a3"), "b3") != 0);
+
+    BOOST_CHECK(ts2.find("A1") == ts2.end());
+    BOOST_CHECK(ts2.find("a1") == ts2.end());
+    BOOST_CHECK(ts2.find("b1") != ts2.end());
+    BOOST_CHECK(ts2.find("B1") != ts2.end());
+    BOOST_CHECK(ts2.find("b2") != ts2.end());
+    BOOST_CHECK(ts2.find("B2") != ts2.end());
+    BOOST_CHECK(ts2.find("b3") != ts2.end());
+    BOOST_CHECK(ts2.find("B3") != ts2.end());
+
+    auto b1_it = ts2.find("B1");
+    BOOST_CHECK((*b1_it) == std::string("b1"));
+    BOOST_CHECK((*b1_it) == std::string("B1"));
 };
 
 BOOST_AUTO_TEST_CASE(TestCRC32)
