@@ -52,26 +52,7 @@ class CPslRecord
 public:
     CPslRecord(
         CWriterListener* pMessageListener = nullptr):
-        mpMessageListener(pMessageListener),
-        mMatches(-1),
-        mMisMatches(-1),
-        mRepMatches(-1),
-        mCountN(-1),
-        mNumInsertQ(-1),
-        mBaseInsertQ(-1),
-        mNumInsertT(-1),
-        mBaseInsertT(-1),
-        mStrandQ(eNa_strand_unknown),
-        mStrandT(eNa_strand_unknown),
-        mNameQ(""),
-        mSizeQ(-1),
-        mStartQ(-1),
-        mEndQ(-1),
-        mNameT(""),
-        mSizeT(-1),
-        mStartT(-1),
-        mEndT(-1),
-        mBlockCount(-1)
+        mpMessageListener(pMessageListener)
     {};
 
     ~CPslRecord() = default;
@@ -155,28 +136,28 @@ protected:
         EDiagSev severity);
         
     CWriterListener* mpMessageListener;
-    int mMatches;               // number of bases that match that aren't repeats
-    int mMisMatches;            // number of bases that don't match
-    int mRepMatches;            // number of bases that match but are part of repeats
-    int mCountN;                // number of "N" bases
-    int mNumInsertQ;            // number of inserts in query
-    int mBaseInsertQ;           // number of bases inserted in query
-    int mNumInsertT;            // number of inserts in target
-    int mBaseInsertT;           // number of bases inserted in target
-    ENa_strand mStrandQ;        // + or - for query strand.
-    ENa_strand mStrandT;        // if translated, second + or - for target genomic strand
-    string mNameQ;              // query sequence name
-    int mSizeQ;                 // query sequence size
-    int mStartQ;                // alignment start position in query
-    int mEndQ;                  // alignment end position in query
-    string mNameT;              // target sequence name
-    int mSizeT;                 // target sequence size
-    int mStartT;                // alignment start position in target
-    int mEndT;                  // alignment end position in target
-    int mBlockCount;            // number of blocks in the alignment
-    vector<int> mBlockSizes;    // list of block sizes
-    vector<int> mBlockStartsQ;  // list of block starting positions in query
-    vector<int> mBlockStartsT;  // list of block starting positions in target
+    int mMatches = -1;                          // number of bases that match that aren't repeats
+    int mMisMatches = -1;                       // number of bases that don't match
+    int mRepMatches = -1;                       // number of bases that match but are part of repeats
+    int mCountN = -1;                           // number of "N" bases
+    int mNumInsertQ = -1;                       // number of inserts in query
+    int mBaseInsertQ = -1;                      // number of bases inserted in query
+    int mNumInsertT = -1 ;                      // number of inserts in target
+    int mBaseInsertT = -1;                      // number of bases inserted in target
+    ENa_strand mStrandQ = eNa_strand_unknown;   // + or - for query strand.
+    ENa_strand mStrandT = eNa_strand_unknown;   // if translated, second + or - for target genomic strand
+    string mNameQ;                              // query sequence name
+    int mSizeQ = -1;                            // query sequence size
+    int mStartQ = -1;                           // alignment start position in query
+    int mEndQ = -1;                             // alignment end position in query
+    string mNameT;                              // target sequence name
+    int mSizeT = -1;                            // target sequence size
+    int mStartT = -1;                           // alignment start position in target
+    int mEndT = -1;                             // alignment end position in target
+    int mBlockCount = -1;                       // number of blocks in the alignment
+    vector<int> mBlockSizes;                    // list of block sizes
+    vector<int> mBlockStartsQ;                  // list of block starting positions in query
+    vector<int> mBlockStartsT;                  // list of block starting positions in target
 };
  
 
