@@ -668,7 +668,9 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
     Uint4 length;
     Int4 oid;
     while ((oid = BlastSeqSrcIteratorNext(seq_src, it)) != BLAST_SEQSRC_EOF) {
-        GetSequenceLengthAndId(seqinfo_src, oid, seqid, &length);
+        GetSequenceLengthAndId(seqinfo_src, oid, CSeq_id::BlastRank, seqid,
+                               &length);
+
         ostr << "@SQ\t" << "SN:" << s_GetBareId(*seqid) << "\tLN:" << length
              << endl;
     }

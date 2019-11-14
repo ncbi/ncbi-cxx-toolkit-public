@@ -58,6 +58,20 @@ void GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src,
                         int oid,
                         CRef<objects::CSeq_id>& seqid, 
                         TSeqPos* length);
+
+/// Retrieves subject sequence Seq-id and length, using the provided sequence
+/// id ranking function.
+/// @param seqinfo_src Source of subject sequences information [in]
+/// @param oid Ordinal id (index) of the subject sequence [in]
+/// @param rank_func Sequence id ranking function [in]
+/// @param seqid Subject sequence identifier to fill [out]
+/// @param length Subject sequence length [out]
+NCBI_XBLAST_EXPORT
+void GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, 
+                        int oid,
+                        int (*rank_func)(const CRef<objects::CSeq_id>&),
+                        CRef<objects::CSeq_id>& seqid, 
+                        TSeqPos* length);
  
 /// Get GIs for a sequence in a redundant database.
 ///

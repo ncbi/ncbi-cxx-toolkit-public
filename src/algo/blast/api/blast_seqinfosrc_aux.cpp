@@ -69,6 +69,25 @@ void GetSequenceLengthAndId(const blast::IBlastSeqInfoSrc * seqinfo_src,
     return;
 }
 
+void GetSequenceLengthAndId(const blast::IBlastSeqInfoSrc * seqinfo_src,
+                            int                      oid,
+                            int (*rank_func)(const CRef<CSeq_id>&),
+                            CRef<CSeq_id>          & seqid,
+                            TSeqPos                * length)
+{
+    _ASSERT(length);
+    list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
+    
+    CRef<CSeq_id> id = FindBestChoice(seqid_list, rank_func);
+    if (id.NotEmpty()) {
+        seqid.Reset(new CSeq_id);
+        SerialAssign(*seqid, *id);
+    }
+    *length = seqinfo_src->GetLength(oid);
+
+    return;
+}
+
 void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
                              int                      oid,
                              vector<TGi>            & gis)

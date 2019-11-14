@@ -321,8 +321,8 @@ static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
 
     CRef<CSeq_id> subject_id;
     TSeqPos subj_length;
-    GetSequenceLengthAndId(seqinfo_src, chain->oid, subject_id,
-                           &subj_length);
+    GetSequenceLengthAndId(seqinfo_src, chain->oid, CSeq_id::BlastRank,
+                           subject_id, &subj_length);
 
 
     MakeSplicedSeg(align->SetSegs().SetSpliced(), query_id, subject_id,
