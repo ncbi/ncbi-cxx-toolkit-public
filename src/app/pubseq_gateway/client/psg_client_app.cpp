@@ -32,6 +32,7 @@
 #include <unordered_map>
 
 #include <corelib/ncbiapp.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include "processing.hpp"
 #include "performance.hpp"
@@ -392,5 +393,5 @@ SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags 
 
 int main(int argc, const char* argv[])
 {
-    return CPsgClientApp().AppMain(argc, argv);
+    return grid::CVersionReporting<CPsgClientApp>().AppMain(argc, argv);
 }

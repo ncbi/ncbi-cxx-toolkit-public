@@ -718,6 +718,39 @@ void SPSG_NgHttp2Session::SHeader::operator=(const string& v)
     valuelen = v.size();
 }
 
+struct SUserAgent : string
+{
+    SUserAgent();
+
+    static const string& Get() { static const SUserAgent user_agent; return user_agent; }
+};
+
+SUserAgent::SUserAgent()
+{
+    if (auto app = CNcbiApplication::InstanceGuard()) {
+        assign(app->GetProgramDisplayName());
+        append(1, '/');
+        append(app->GetVersion().Print());
+    } else {
+        assign("UNKNOWN/UNKNOWN");
+    }
+
+    append(" NcbiCxxToolkit/"
+#if defined(NCBI_PRODUCTION_VER)
+        "P" NCBI_AS_STRING(NCBI_PRODUCTION_VER)
+#elif defined(NCBI_SUBVERSION_REVISION)
+        "r" NCBI_AS_STRING(NCBI_SUBVERSION_REVISION)
+#if defined(NCBI_DEVELOPMENT_VER)
+        ".D" NCBI_AS_STRING(NCBI_DEVELOPMENT_VER)
+#elif defined(NCBI_SC_VERSION)
+        ".SC" NCBI_AS_STRING(NCBI_SC_VERSION)
+#endif
+#else
+        "UNKNOWN";
+#endif
+        );
+}
+
 SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_data,
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
@@ -728,6 +761,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
         { ":scheme", "http" },
         { ":authority", authority },
         { ":path" },
+        { "user-agent", SUserAgent::Get() },
         { "http_ncbi_sid", NGHTTP2_NV_FLAG_NONE },
         { "http_ncbi_phid", NGHTTP2_NV_FLAG_NONE },
         { "x-forwarded-for", NGHTTP2_NV_FLAG_NONE }
@@ -804,6 +838,7 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
     auto headers_size = m_Headers.size();
 
     m_Headers[ePath] = path;
+    m_Headers[eUserAgent] = SUserAgent::Get();
     m_Headers[eSessionID] = session_id;
     m_Headers[eSubHitID] = sub_hit_id;
 
