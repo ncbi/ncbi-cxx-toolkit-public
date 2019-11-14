@@ -54,6 +54,7 @@
 #include <objtools/readers/psl_reader.hpp>
 #include <objtools/error_codes.hpp>
 
+#include "psl_data.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
@@ -99,8 +100,10 @@ CPslReader::ReadSeqAnnot(
     pAnnot->SetData().SetAlign();
 
     string line;
+    CPslData pslData;
     while (xGetLine(lineReader, line)) {
-        //cerr << line.substr(0, 80) << endl;
+        //pslData.Initialize(line);
+        //pslData.Dump(cerr);
     }
     return pAnnot;
 }

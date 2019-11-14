@@ -1,0 +1,92 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Frank Ludwig
+ *
+ * File Description:
+ *   PSL intermediate representation
+ *
+ */
+
+#ifndef OBJTOOLS_READERS___PSL_DATA__HPP
+#define OBJTOOLS_READERS___PSL_DATA__HPP
+
+#include <objects/seqloc/Na_strand.hpp>
+
+BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+//  ----------------------------------------------------------------------------
+class CPslData
+//  ----------------------------------------------------------------------------
+{
+public:
+    CPslData();
+
+    //
+    //  Input/output:
+    //
+    void Initialize(
+        const string& );
+
+    void Dump(
+        ostream& ostr);
+
+private:
+    void xReset();
+
+    //
+    // Data:
+    //
+private:
+    int mFirstDataColumn;
+
+    int mMatches;
+    int mMisMatches;
+    int mRepMatches;
+    int mCountN;
+    int mNumInsertQ;
+    int mBaseInsertQ;
+    int mNumInsertT;
+    int mBaseInsertT;
+    ENa_strand mStrandT;
+    string mNameQ;
+    int mSizeQ;
+    int mStartQ;
+    int mEndQ;
+    string mNameT;
+    int mSizeT;
+    int mStartT;
+    int mEndT;
+    int mBlockCount;
+    vector<int> mBlockSizes;
+    vector<int> mBlockStartsQ;
+    vector<int> mBlockStartsT;
+};
+
+END_objects_SCOPE
+END_NCBI_SCOPE
+
+#endif // OBJTOOLS_READERS___PSL_DATA__HPP
