@@ -35,6 +35,7 @@ objects/seqtable
 objtools$
 objtools/pubseq_gateway$
 objtools/pubseq_gateway/client$
+objtools/pubseq_gateway/client/impl$
 app$
 app/pubseq_gateway$
 app/pubseq_gateway/client$
