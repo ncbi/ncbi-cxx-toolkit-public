@@ -50,6 +50,8 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objtools/writers/writer_listener.hpp>
+#include <objtools/writers/writer_message.hpp>
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/psl_writer.hpp>
@@ -117,37 +119,50 @@ bool CPslWriter::WriteAlign(
         }
     }
 
-    CPslRecord record;
-    auto segType = align.GetSegs().Which();
-    switch (segType) {
+    try {
+        CPslRecord record(mpMessageListener);
+        auto segType = align.GetSegs().Which();
+        switch (segType) {
 
-    default:
-        NCBI_THROW(CObjWriterException, 
-            eBadInput, 
-            "Input alignment type not supported");
+        default:
+            throw CWriterMessage(
+                "Input alignment type not supported", eDiag_Error);
 
-    case CSeq_align::C_Segs::e_Spliced:
-        record.Initialize(*m_pScope, align.GetSegs().GetSpliced());
-        break;
+        case CSeq_align::C_Segs::e_Spliced:
+            record.Initialize(*m_pScope, align.GetSegs().GetSpliced());
+            break;
 
-    case CSeq_align::C_Segs::e_Denseg:
-        record.Initialize(*m_pScope, align.GetSegs().GetDenseg());
-        if (align.CanGetScore()) {
-            record.Initialize(*m_pScope, align.GetScore());
+        case CSeq_align::C_Segs::e_Denseg:
+            record.Initialize(*m_pScope, align.GetSegs().GetDenseg());
+            if (align.CanGetScore()) {
+                record.Initialize(*m_pScope, align.GetScore());
+            }
+            break;
+
+        case CSeq_align::C_Segs::e_Disc:
+            const auto& data = align.GetSegs().GetDisc().Get();
+            for (const auto& pAlign: data) {
+                WriteAlign(*pAlign);
+            }
+            return true;
         }
-        break;
+        record.Finalize();
 
-    case CSeq_align::C_Segs::e_Disc:
-        const auto& data = align.GetSegs().GetDisc().Get();
-        for (const auto& pAlign: data) {
-            WriteAlign(*pAlign);
-        }
-        return true;
+        CPslFormatter formatter(m_Os, m_uFlags);
+        formatter.Format(record);
     }
-    record.Finalize();
-
-    CPslFormatter formatter(m_Os, m_uFlags);
-    formatter.Format(record);
+    catch(CWriterMessage& writerMessage) {
+        switch(writerMessage.GetSeverity()) {
+            case eDiag_Fatal:
+                throw;
+            default:
+                PutMessage(writerMessage);
+                break;
+        }
+    }
+    catch(CException& e) {
+        throw CWriterMessage("Exception thrown: " + e.GetMsg(), eDiag_Error);
+    }
     return true;
 }
 

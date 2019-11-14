@@ -43,13 +43,16 @@ class CDense_seg;
 class CScope;
 class CSparse_align;
 class CSparse_seg;
+class CWriterListener;
 
 //  ----------------------------------------------------------------------------
 class CPslRecord
 //  ----------------------------------------------------------------------------
 {
 public:
-    CPslRecord():
+    CPslRecord(
+        CWriterListener* pMessageListener = nullptr):
+        mpMessageListener(pMessageListener),
         mMatches(-1),
         mMisMatches(-1),
         mRepMatches(-1),
@@ -147,7 +150,11 @@ protected:
         CScope&,
         const CDense_seg&);
 
-
+    void xPutMessage(
+        const string& message,
+        EDiagSev severity);
+        
+    CWriterListener* mpMessageListener;
     int mMatches;               // number of bases that match that aren't repeats
     int mMisMatches;            // number of bases that don't match
     int mRepMatches;            // number of bases that match but are part of repeats

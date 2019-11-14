@@ -40,6 +40,9 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 
+#include <objtools/writers/writer_message.hpp>
+#include <objtools/writers/writer_listener.hpp>
+#include <objtools/writers/writer_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -71,7 +74,8 @@ protected:
         m_Os( ostr ),
         m_uFlags( uFlags ),
         mpCancelled(0), 
-        m_Range(CRange<TSeqPos>::GetWhole())
+        m_Range(CRange<TSeqPos>::GetWhole()),
+        mpMessageListener(nullptr)
     {};
 public:
     virtual ~CWriterBase()
@@ -186,6 +190,29 @@ public:
     ///
     virtual bool WriteFooter() { return true; };
 
+    // Attach an optional message listener.
+    // This message listener will be used to deal with error and warnings
+    // encountered during input processing.
+    /// @param pMessageListener
+    ///   ptr to message listener to attach. nullptr to detach the current
+    ///   handler without attaching a new one.
+    void SetMessageListener(
+        CWriterListener* pMessageListener) {mpMessageListener = pMessageListener;};
+
+    // Report errors and warnings in form as a CWriterMessage
+    // If a message listener is attached then the attached listener will be used
+    // to deal with the message. Otherwise, aa equivalent  CObjWriterException will
+    // be thrown. 
+    /// @param message
+    ///   message to process.
+    virtual void PutMessage(const CWriterMessage& message) {
+        if (mpMessageListener) {
+            mpMessageListener->PutMessage(message);
+            return;
+        }
+        NCBI_THROW(CObjWriterException, eBadInput, message.GetText());
+    };
+
     virtual SAnnotSelector& SetAnnotSelector(void) {
         if ( !m_Selector.get() ) {
             m_Selector.reset(new SAnnotSelector());
@@ -222,6 +249,7 @@ protected:
     ICanceled* mpCancelled;
     unique_ptr<SAnnotSelector> m_Selector;
     CRange<TSeqPos> m_Range;
+    CWriterListener* mpMessageListener;
 };
 
 

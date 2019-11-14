@@ -306,22 +306,19 @@ CPslRecord::xValidateSegment(
     if (!splicedSeg.CanGetProduct_type()  ||  
             splicedSeg.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
         // would love to support but need proper sample data first!
-            NCBI_THROW(CObjWriterException, 
-                eBadInput, 
-                "Unsupported product type \"protein\"");
+        throw CWriterMessage(
+            "Unsupported alignment product type \"protein\"", eDiag_Error);
     }
 
     const auto& exonList = splicedSeg.GetExons();
     for (auto pExon: exonList) {
         if (!pExon->CanGetProduct_start()  || !pExon->CanGetProduct_end()) {
-            NCBI_THROW(CObjWriterException, 
-                eBadInput, 
-                "Mandatory product information missing");
+            throw CWriterMessage(
+                "Mandatory product information missing", eDiag_Error);
         }
         if (!pExon->CanGetGenomic_start()  || !pExon->CanGetGenomic_end()) {
-            NCBI_THROW(CObjWriterException, 
-                eBadInput, 
-                "Mandatory target information missing");
+            throw CWriterMessage(
+                "Mandatory target information missing", eDiag_Error);
         }
     }
 }
@@ -388,9 +385,8 @@ CPslRecord::xValidateSegment(
 //  ----------------------------------------------------------------------------
 {
     if (denseSeg.GetDim() != 2) {
-        NCBI_THROW(CObjWriterException, 
-            eBadInput, 
-            "PSL supports only pairwaise alignments");
+        throw CWriterMessage(
+            "PSL supports only pairwaise alignments", eDiag_Error);
     }
 }
 
@@ -504,6 +500,20 @@ CPslRecord::Initialize(
     xInitializeSequenceInfo(scope, denseSeg);
     xInitializeStatsAndBlocks(scope, denseSeg);
 }
+
+//  ----------------------------------------------------------------------------
+void
+CPslRecord::xPutMessage(
+    const string& message,
+    EDiagSev severity)
+//  ----------------------------------------------------------------------------
+{
+    if (mpMessageListener) {
+        mpMessageListener->PutMessage(CWriterMessage(message, severity));
+        return;
+    }
+    NCBI_THROW(CObjWriterException, eBadInput, message);
+};
 
 END_NCBI_SCOPE
 

@@ -75,6 +75,8 @@
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objtools/writers/writer_message.hpp>
+#include <objtools/writers/writer_listener.hpp>
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/gff3_writer.hpp>
@@ -106,6 +108,41 @@ class TestCanceler: public ICanceled
     };
 };
 #endif
+
+CWriterMessage InternalError(
+        "annotwriter: unrecoverable internal error",
+        eDiag_Fatal);
+
+//  ----------------------------------------------------------------------------
+class CAnnotWriterLogger: public CWriterListener
+//  ----------------------------------------------------------------------------
+{
+public:
+    CAnnotWriterLogger() = default;
+
+    bool PutMessage(
+        const IObjtoolsMessage& message)
+    {
+        const auto* pWriterMessage = dynamic_cast<const CWriterMessage*>(&message);
+        if (!pWriterMessage) {
+            throw(InternalError);
+        }
+        if (pWriterMessage->GetSeverity() == eDiag_Fatal) {
+            throw(*pWriterMessage);
+        }
+        DumpMessage(*pWriterMessage, cerr);
+        return true;
+    }
+
+    static void DumpMessage(const CWriterMessage& message, ostream& ostr)
+    {
+        ostr << CNcbiDiag::SeverityName(message.GetSeverity()) << ":" << endl;
+        ostr << message.GetText() << endl;
+        ostr << endl;
+    }
+
+private:
+};
 
 //  ----------------------------------------------------------------------------
 class CAnnotWriterApp : public CNcbiApplication
@@ -169,6 +206,7 @@ private:
     CRef<CObjectManager> m_pObjMngr;
     CRef<CScope> m_pScope;
     CRef<CWriterBase> m_pWriter;
+    unique_ptr<CAnnotWriterLogger> m_pErrorHandler;
 };
 
 //  ----------------------------------------------------------------------------
@@ -306,12 +344,14 @@ int CAnnotWriterApp::Run()
     m_pObjMngr = CObjectManager::GetInstance();
     //CGBDataLoader::RegisterInObjectManager(*m_pObjMngr);
 
-static const CDataLoadersUtil::TLoaders default_loaders =
+    static const CDataLoadersUtil::TLoaders default_loaders =
     CDataLoadersUtil::fAsnCache | CDataLoadersUtil::fGenbank;
-CDataLoadersUtil::SetupObjectManager(args, *m_pObjMngr, default_loaders);
+    CDataLoadersUtil::SetupObjectManager(args, *m_pObjMngr, default_loaders);
 
     m_pScope.Reset(new CScope(*m_pObjMngr));
     m_pScope->AddDefaults();
+
+    m_pErrorHandler.reset(new CAnnotWriterLogger);
 
     try {
         CNcbiOstream* pOs = xInitOutputStream(args);
@@ -337,13 +377,14 @@ CDataLoadersUtil::SetupObjectManager(args, *m_pObjMngr, default_loaders);
             return 0;
         }
     }
-    catch(CObjWriterException& e) {
-        cerr << e.GetMsg() << endl;
+    catch(CWriterMessage& writerMessage) {
+        m_pErrorHandler->DumpMessage(writerMessage, cerr);
         return 1;
     }
     catch (CException& e) {
-        cerr << "Internal runtime error " << e.GetErrCodeString() << ": " 
-            << e.GetMsg() << " (" << e.GetFile() << ":" << e.GetLine() << ")";
+        CWriterMessage writerMessage(
+            "Exception thrown: " + e.GetMsg(), eDiag_Fatal);
+        m_pErrorHandler->DumpMessage(writerMessage, cerr);
         return 1;
     }
     return 0;
@@ -694,8 +735,8 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
     CObjectIStream* pI = CObjectIStream::Open( 
         serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     if (!pI) {
-        NCBI_THROW(CObjWriterException, eArgErr, 
-            "annotwriter: Unable to open input file");
+        throw CWriterMessage(
+            "annotwriter: Unable to open input file", eDiag_Fatal);
     }
     return pI;
 }
@@ -757,8 +798,9 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
 //  ----------------------------------------------------------------------------
 {
     if (!m_pScope  || !pOs) {
-        NCBI_THROW(CObjWriterException, eArgErr, 
-            "xInitWriter: Writer object needs valid scope and output stream");
+        throw CWriterMessage(
+            "annotwriter: Format writer object needs valid scope and output stream",
+            eDiag_Fatal);
     }
 
     const string strFormat = args["format"].AsString();
@@ -811,10 +853,13 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         if (args["debug-output"].AsBoolean()) {
             flags |= CPslWriter::fDebugOutput;
         }
-        return new CPslWriter(*m_pScope, *pOs, flags);
+        CWriterBase* pWriter = new CPslWriter(*m_pScope, *pOs, flags);
+        pWriter->SetMessageListener(m_pErrorHandler.get());
+        return pWriter;
     }
-    NCBI_THROW(CObjWriterException, eArgErr, 
-        "xInitWriter: No suitable writer for format \"" + strFormat + "\"");
+    throw CWriterMessage(
+        "annotwriter: No suitable writer for format \"" + strFormat + "\"", 
+        eDiag_Fatal);
 }
 
 //  ----------------------------------------------------------------------------
