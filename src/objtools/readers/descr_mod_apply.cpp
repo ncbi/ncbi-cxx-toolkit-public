@@ -67,12 +67,13 @@
 #include <objtools/readers/mod_error.hpp>
 #include "mod_to_enum.hpp"
 #include "descr_mod_apply.hpp"
-#include <util/compile_time.hpp>
+//#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-MAKE_CONST_MAP(s_TechStringToEnum, NStr::eCase, const char*, CMolInfo::TTech,
+//MAKE_CONST_MAP(s_TechStringToEnum, NStr::eCase, const char*, CMolInfo::TTech,
+static const unordered_map<string,CMolInfo::TTech> s_TechStringToEnum =
 {   { "?",                  CMolInfo::eTech_unknown },
     { "barcode",            CMolInfo::eTech_barcode },
     { "both",               CMolInfo::eTech_both },
@@ -98,10 +99,13 @@ MAKE_CONST_MAP(s_TechStringToEnum, NStr::eCase, const char*, CMolInfo::TTech,
     { "targeted",           CMolInfo::eTech_targeted },
     { "tsa",                CMolInfo::eTech_tsa },
     { "wgs",                CMolInfo::eTech_wgs }
-});
+};
+//);
 
 
-MAKE_CONST_MAP(s_CompletenessStringToEnum, NStr::eCase, const char*, CMolInfo::TCompleteness,
+//MAKE_CONST_MAP(s_CompletenessStringToEnum, NStr::eCase, const char*, CMolInfo::TCompleteness,
+
+static const unordered_map<string,CMolInfo::TCompleteness> s_CompletenessStringToEnum =
 {   { "complete",  CMolInfo::eCompleteness_complete  },
     { "hasleft",   CMolInfo::eCompleteness_has_left  },
     { "hasright",  CMolInfo::eCompleteness_has_right  },
@@ -109,7 +113,8 @@ MAKE_CONST_MAP(s_CompletenessStringToEnum, NStr::eCase, const char*, CMolInfo::T
     { "noleft",    CMolInfo::eCompleteness_no_left  },
     { "noright",   CMolInfo::eCompleteness_no_right  },
     { "partial",   CMolInfo::eCompleteness_partial  }
-});
+};
+//);
 
 
 static const auto s_OrgModStringToEnum = g_InitModNameOrgSubtypeMap();

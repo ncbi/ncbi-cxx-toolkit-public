@@ -47,7 +47,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <cassert>
-#include <util/compile_time.hpp>
+//#include <util/compile_time.hpp>
 
 #include "mod_to_enum.hpp"
 #include "descr_mod_apply.hpp"
@@ -56,7 +56,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-MAKE_CONST_MAP(s_ModNameMap, NStr::eCase, const char*, const char*,
+//MAKE_CONST_MAP(s_ModNameMap, NStr::eCase, const char*, const char*,
+
+static const unordered_map<string, string> s_ModNameMap =
 {{"top","topology"},
  {"mol","molecule"},
  {"moltype", "mol-type"},
@@ -93,7 +95,8 @@ MAKE_CONST_MAP(s_ModNameMap, NStr::eCase, const char*, const char*,
  {"pubmed", "pmid"},
  {"ft-url-mod", "ft-mod"},
  {"ft-url", "ft-map"}
- });
+ };
+//);
 
 
 const CModHandler::TNameSet CModHandler::sm_DeprecatedModifiers
@@ -136,29 +139,35 @@ const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
 };
 
 
-MAKE_CONST_MAP(s_StrandStringToEnum, NStr::eCase, const char*, CSeq_inst::EStrand,
+//MAKE_CONST_MAP(s_StrandStringToEnum, NStr::eCase, const char*, CSeq_inst::EStrand,
+static const unordered_map<string, CSeq_inst::EStrand> s_StrandStringToEnum =
 {{"single", CSeq_inst::eStrand_ss},
  {"double", CSeq_inst::eStrand_ds},
  {"mixed", CSeq_inst::eStrand_mixed},
  {"other", CSeq_inst::eStrand_other}
- });
+ };
+//);
 
 
-MAKE_CONST_MAP(s_MolStringToEnum, NStr::eCase, const char*, CSeq_inst::EMol,
+//MAKE_CONST_MAP(s_MolStringToEnum, NStr::eCase, const char*, CSeq_inst::EMol,
+static const unordered_map<string, CSeq_inst::EMol> s_MolStringToEnum =
 {{"dna", CSeq_inst::eMol_dna},
  {"rna", CSeq_inst::eMol_rna},
  {"aa", CSeq_inst::eMol_aa},
  {"na", CSeq_inst::eMol_na},
  {"other", CSeq_inst::eMol_other}
- });
+ };
+ //);
 
 
-MAKE_CONST_MAP(s_TopologyStringToEnum, NStr::eCase, const char*, CSeq_inst::ETopology,
+//MAKE_CONST_MAP(s_TopologyStringToEnum, NStr::eCase, const char*, CSeq_inst::ETopology,
+static const unordered_map<string, CSeq_inst::ETopology> s_TopologyStringToEnum =
 {{"linear", CSeq_inst::eTopology_linear},
  {"circular", CSeq_inst::eTopology_circular},
  {"tandem", CSeq_inst::eTopology_tandem},
  {"other", CSeq_inst::eTopology_other}
- });
+ };
+ //);
 
 /*
 MAKE_CONST_MAP(s_BiomolEnumToMolEnum, NStr::eNocase, CMolInfo::TBiomol, CSeq_inst::EMol,
