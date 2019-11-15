@@ -300,11 +300,12 @@ struct const_table
 
 namespace compile_time_bits
 {
-    template<class _FwdIt,
+    template<class _Array,
+        class _FwdIt,
         class _Ty,
         class _Pr>
         //[[nodiscard]] 
-        constexpr _FwdIt const_lower_bound(_FwdIt _First, const _FwdIt _Last, const _Ty& _Val, _Pr _Pred)
+        constexpr _FwdIt const_lower_bound(const _Array& ar, _FwdIt _First, const _FwdIt _Last, const _Ty& _Val, _Pr _Pred)
     {	// find first element not before _Val, using _Pred
         //_Adl_verify_range(_First, _Last);
         auto _UFirst = _First; // _Get_unwrapped(_First);
@@ -314,7 +315,7 @@ namespace compile_time_bits
         {	// divide and conquer, find half that contains answer
             const auto _Count2 = _Count >> 1; // TRANSITION, VSO#433486
             const auto _UMid = _UFirst + _Count2; // std::next(_UFirst, _Count2);
-            if (_Pred(*_UMid, _Val))
+            if (_Pred(ar[_UMid], _Val))
             {	// try top half
                 _UFirst = (_UMid + 1); // _Next_iter(_UMid);
                 _Count -= _Count2 + 1;
@@ -329,21 +330,21 @@ namespace compile_time_bits
         return (_First);
     }
 
-    template<typename _Iterator>
-    constexpr void move_down(_Iterator head, _Iterator tail, _Iterator current)
+    template<typename _Array, typename _Iterator>
+    constexpr void move_down(_Array& ar, _Iterator head, _Iterator tail, _Iterator current)
     {
-        auto saved = *current;
+        auto saved = ar[current];
         while (head != tail)
         {
             auto prev = tail--;
-            *prev = *tail;
+            ar[prev] = ar[tail];
         }
-        *head = saved;
+        ar[head] = saved;
     }
 
-    template<bool unique = true, typename _iterator, typename _pred>
+    template<bool unique = true, typename _array, typename _iterator, typename _pred>
     //[[nodiscard]]
-    constexpr auto insert_sort(const _iterator begin, const _iterator end, _pred pred)
+    constexpr auto insert_sort(_array& ar, const _iterator begin, const _iterator end, _pred pred)
     {
         auto size = end - begin; // std::distance(begin, end);
         if (size < 2)
@@ -357,56 +358,70 @@ namespace compile_time_bits
 
         while (current != end)
         {
-            if (pred(*last, *current))
+            if (pred(ar[last], ar[current]))
             {   // optimization for presorted arrays, don't move anything if things are 
                 // already in order or identical
                 // the two adjacent elements not in order reinsert the current
                 ++last;
                 if (last != current)
-                    *last = *current;
+                    ar[last] = ar[current];
             }
             else {
-                auto fit = const_lower_bound(begin, last, *current, pred);
+                auto fit = const_lower_bound(ar, begin, last, ar[current], pred);
                 // no need to check the fit result
                 // since it's already known the current is less then last
                 bool move{};
                 if (unique)
-                    move = pred(*current, *fit);
+                    move = pred(ar[current], ar[fit]);
                 else
                     move = true;
                 if (move)
                 {	// *fit is greater or equal to *current
                     // identical elements are rejected
                     ++last;
-                    move_down(fit, last, current);
+                    move_down(ar, fit, last, current);
                 }
             }
             ++current;
         }
         return 1 + (last - begin); // std::distance(begin, last);
     }
+    class CompareLess
+    {
+    public:
+        template<typename T1, typename T2>
+        constexpr bool operator()(const ct::const_pair<T1, T2>& l, const ct::const_pair<T1, T2>& r) const
+        {
+            return l.first < r.first;
+        }
+        template<typename T>
+        constexpr bool operator()(const T& l, const T& r) const
+        {
+            return l < r;
+        }
+    };
 
-    template<typename _array, typename _pred = std::less<typename _array::value_type>>
+    template<typename _array, typename _pred = CompareLess>
     //[[nodiscard]]
     constexpr auto insert_sort(const _array& ar, _pred pred = _pred()) -> typename std::remove_cv<_array>::type
     {
         using non_const = typename std::remove_cv<_array>::type;
         non_const copied = ar;
-        insert_sort<true, typename non_const::iterator, _pred>(copied.begin(), copied.end(), pred);
+        insert_sort<true, non_const, size_t,_pred>(copied, 0, copied.size(), pred);
         return copied;
-    }
+    };
 
 };
 
-#undef MAKE_CONST_MAP
+//#undef MAKE_CONST_MAP
 //#undef MAKE_TWOWAY_CONST_MAP
 
-#define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
+#define MAKE_CONST_MAP_NEW(name, case_sensitive, type1, type2, ...)                                                              \
     using name ## _deduce_type = typename ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>;                 \
     static constexpr size_t name ## _init_size = name ## _deduce_type::get_size(__VA_ARGS__);                                \
     using name ## _map_type = typename name ## _deduce_type::DeduceType<name ## _init_size>::type;                           \
     static constexpr name ## _map_type name (                                                                                \
-        compile_time_bits::insert_sort<typename name ## _map_type :: array_t>({__VA_ARGS__}));
+        compile_time_bits::insert_sort<typename name ## _map_type :: array_t>({__VA_ARGS__}));  
 
 NCBITEST_AUTO_INIT()
 {
@@ -536,7 +551,7 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 BOOST_AUTO_TEST_CASE(TestConstMap)
 {
 #if 1
-    for (auto& rec: test_two_way1)
+    for (auto& rec : test_two_way1)
         std::cout << rec.first.m_hash << ":" << rec.first << ":" << rec.second << std::endl;
 
     auto t1 = test_two_way1.find("SO:0000001");
@@ -960,6 +975,7 @@ BOOST_AUTO_TEST_CASE(TestCompileTimeSort)
         std::cout << rec.first << std::endl;
     }
 
+#if 0
     static constexpr ct::const_array<ct::const_pair<ct::CHashString<ncbi::NStr::eCase>, int>, 5> ts3 = { {
         {"a5", 50},
         {"a1", 10},
@@ -973,7 +989,7 @@ BOOST_AUTO_TEST_CASE(TestCompileTimeSort)
         std::cout << rec.first << std::endl;
     }
 
-    MAKE_CONST_MAP(ts4, ncbi::NStr::eCase, const char*, int,
+    MAKE_CONST_MAP_NEW(ts4, ncbi::NStr::eCase, const char*, int,
       { { "a5", 50 },
         { "a1", 10 },
         { "a3", 30 },
@@ -982,30 +998,7 @@ BOOST_AUTO_TEST_CASE(TestCompileTimeSort)
         });
  
     for (auto& rec : ts4)
-        std::cout << rec.first << std::endl;
-
+        std::cout << rec.first << ":" << rec.second << std::endl;
+#endif
 };
-
-template<typename _T>
-void print_sorted(const _T& ar)
-{
-    _T sorted = ar;
-    std::sort(sorted.begin(), sorted.end());
-}
-
-BOOST_AUTO_TEST_CASE(TestInt32)
-{
-    #define DATA_SET 630712407, 1180324275, 1203668661, 1426760263, 1925052714, 2792857025, 2808160580, 2925005853, 3039260213, 4054837055
-    //std::array<int32_t, 10> ar_int32 = { DATA_SET };
-    std::array<uint32_t, 10> ar_uint32 = { DATA_SET };
-    //std::array<int, 10> ar_int = { DATA_SET };
-    std::array<unsigned int, 10> ar_uint = { DATA_SET };
-
-    //print_sorted(ar_int32);
-    print_sorted(ar_uint32);
-    //print_sorted(ar_int);
-    print_sorted(ar_uint);
-    
-}
-
 
