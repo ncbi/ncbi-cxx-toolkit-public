@@ -45,15 +45,15 @@ struct SCommand
 {
     using TInit = function<void(CArgDescriptions&)>;
     using TRun = function<int(CPsgClientApp*, const string&, const CArgs&)>;
-    using TFlags = CCommandArgDescriptions::ECommandFlags;
+    enum EFlags { eDefault, fHidden = 1 << 0, fParallel = 1 << 1 };
 
     const string name;
     const string desc;
     TInit init;
     TRun run;
-    TFlags flags;
+    EFlags flags;
 
-    SCommand(string n, string d, TInit i, TRun r, TFlags f) : name(n), desc(d), init(i), run(r), flags(f) {}
+    SCommand(string n, string d, TInit i, TRun r, EFlags f) : name(n), desc(d), init(i), run(r), flags(f) {}
 };
 
 class CPsgClientApp : public CNcbiApplication
@@ -65,7 +65,7 @@ public:
 
 private:
     template <class TRequest>
-    static SCommand s_GetCommand(string name, string desc, SCommand::TFlags flags = SCommand::TFlags::eDefault);
+    static SCommand s_GetCommand(string name, string desc, SCommand::EFlags flags = SCommand::eDefault);
 
     template <class TRequest>
     static void s_InitRequest(CArgDescriptions& arg_desc);
@@ -86,20 +86,20 @@ struct STesting {};
 struct SIo {};
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc);
-const string& s_SetPsgDefaults(const CArgs& args);
+const string& s_SetPsgDefaults(const CArgs& args, bool parallel);
 
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
             s_GetCommand<CPSG_Request_Biodata>       ("biodata",     "Request biodata info and data by bio ID"),
             s_GetCommand<CPSG_Request_Blob>          ("blob",        "Request blob by blob ID"),
-            s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID"),
+            s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID", SCommand::fParallel),
             s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID"),
             s_GetCommand<CPSG_Request_TSE_Chunk>     ("tse_chunk",   "Request particular version of split by TSE blob ID and chunk number"),
-            s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode"),
-            s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::TFlags::eHidden),
-            s_GetCommand<SReport>                    ("report",      "Performance reporting", SCommand::TFlags::eHidden),
-            s_GetCommand<STesting>                   ("test",        "Testing mode", SCommand::TFlags::eHidden),
-            s_GetCommand<SIo>                        ("io",          "IO mode", SCommand::TFlags::eHidden),
+            s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
+            s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
+            s_GetCommand<SReport>                    ("report",      "Performance reporting", SCommand::fHidden),
+            s_GetCommand<STesting>                   ("test",        "Testing mode", SCommand::fHidden),
+            s_GetCommand<SIo>                        ("io",          "IO mode", SCommand::fHidden),
         })
 {
 }
@@ -116,7 +116,9 @@ void CPsgClientApp::Init()
         arg_desc->SetUsageContext("", command.desc);
         s_InitPsgOptions(*arg_desc);
         command.init(*arg_desc);
-        cmd_desc->AddCommand(command.name, arg_desc.release(), kEmptyStr, command.flags);
+        const auto hidden = command.flags & SCommand::fHidden;
+        const auto flags = hidden ? CCommandArgDescriptions::eHidden : CCommandArgDescriptions::eDefault;
+        cmd_desc->AddCommand(command.name, arg_desc.release(), kEmptyStr, flags);
     }
 
     SetupArgDescriptions(cmd_desc.release());
@@ -129,7 +131,8 @@ int CPsgClientApp::Run()
 
     for (const auto& command : m_Commands) {
         if (command.name == name) {
-            const auto& service = s_SetPsgDefaults(args);
+            const bool parallel = command.flags & SCommand::fParallel;
+            const auto& service = s_SetPsgDefaults(args, parallel);
             return command.run(this, service, args);
         }
     }
@@ -267,11 +270,13 @@ typename CParam<TDescription>::TValueType s_GetCParamEnumValue(const CParam<TDes
     return CParam<TDescription>::TParamParser::StringToValue(string_value, TDescription::sm_ParamDescription);
 }
 
-const string& s_SetPsgDefaults(const CArgs& args)
+const string& s_SetPsgDefaults(const CArgs& args, bool parallel)
 {
     if (args["io-threads"].HasValue()) {
         auto io_threads = static_cast<size_t>(args["io-threads"].AsInteger());
         TPSG_NumIo::SetDefault(io_threads);
+    } else if (parallel) {
+        TPSG_NumIo::SetDefault(6);
     }
 
     if (args["requests-per-io"].HasValue()) {
@@ -386,7 +391,7 @@ int CPsgClientApp::RunRequest<SIo>(const string& service, const CArgs& args)
 }
 
 template <class TRequest>
-SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::TFlags flags)
+SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::EFlags flags)
 {
     return { move(name), move(desc), s_InitRequest<TRequest>, s_RunRequest<TRequest>, flags };
 }
