@@ -536,6 +536,9 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 BOOST_AUTO_TEST_CASE(TestConstMap)
 {
 #if 1
+    for (auto& rec: test_two_way1)
+        std::cout << rec.first.m_hash << ":" << rec.first << ":" << rec.second << std::endl;
+
     auto t1 = test_two_way1.find("SO:0000001");
     BOOST_CHECK((t1 != test_two_way1.end()) && (ncbi::NStr::CompareCase(t1->second, "region") == 0));
 
@@ -982,4 +985,27 @@ BOOST_AUTO_TEST_CASE(TestCompileTimeSort)
         std::cout << rec.first << std::endl;
 
 };
+
+template<typename _T>
+void print_sorted(const _T& ar)
+{
+    _T sorted = ar;
+    std::sort(sorted.begin(), sorted.end());
+}
+
+BOOST_AUTO_TEST_CASE(TestInt32)
+{
+    #define DATA_SET 630712407, 1180324275, 1203668661, 1426760263, 1925052714, 2792857025, 2808160580, 2925005853, 3039260213, 4054837055
+    //std::array<int32_t, 10> ar_int32 = { DATA_SET };
+    std::array<uint32_t, 10> ar_uint32 = { DATA_SET };
+    //std::array<int, 10> ar_int = { DATA_SET };
+    std::array<unsigned int, 10> ar_uint = { DATA_SET };
+
+    //print_sorted(ar_int32);
+    print_sorted(ar_uint32);
+    //print_sorted(ar_int);
+    print_sorted(ar_uint);
+    
+}
+
 

@@ -188,7 +188,7 @@ struct sse42_crc32
 };
 
 template<ncbi::NStr::ECase case_sensitive>
-int32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noexcept
+uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
     uint32_t hash = sse42_crc32::update(0, len);
@@ -205,7 +205,7 @@ int32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noexc
 #endif
 
 template<ncbi::NStr::ECase case_sensitive>
-int32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noexcept
+uint32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
     uint32_t hash = tabled_crc32::update(0, len);
@@ -219,10 +219,10 @@ int32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noe
     return hash;
 }
 
-template int32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
-template int32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
 #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
-template int32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
-template int32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
 #endif
 

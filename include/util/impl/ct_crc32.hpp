@@ -224,7 +224,7 @@ namespace ct
     template<ncbi::NStr::ECase case_sensitive>
     struct NCBI_XUTIL_EXPORT SaltedCRC32
     {
-        using type = int32_t;
+        using type = uint32_t;
 
         template<size_t N>
         static type constexpr ct(const char(&s)[N]) noexcept
