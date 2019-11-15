@@ -3,7 +3,7 @@ set(_foo_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
 if (WIN32)
     set(CMAKE_PREFIX_PATH ${WXWIDGETS_ROOT})
 else()
-    set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/${CMAKE_BUILD_TYPE}/bin")
+    set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}/bin")
 endif()
 
 set(wxWidgets_USE_UNICODE ON)
@@ -20,11 +20,11 @@ if (NCBI_EXPERIMENTAL_CFG)
   find_package(GTK2)
   if (GTK2_FOUND)
     set(WXWIDGETS_INCLUDE
-      ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2/${CMAKE_BUILD_TYPE}MT64/lib/wx/include/gtk2-ansi-3.1
-      ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2/include/wx-3.1
+      ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}MT64/lib/wx/include/gtk2-ansi-3.1
+      ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/include/wx-3.1
       ${GTK2_INCLUDE_DIRS}
     )
-    set(_wxp ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.0-ncbi2/${CMAKE_BUILD_TYPE}MT64/lib/lib)
+    set(_wxp ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}MT64/lib/lib)
     set(_wxs -3.1.so)
     set(WXWIDGETS_LIBS
       ${_wxp}wx_gtk2_gl${_wxs}
@@ -44,14 +44,14 @@ if (NCBI_EXPERIMENTAL_CFG)
     set(WXWIDGETS_FOUND YES)
   endif()
 else()
-if (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
+if (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1)
 
-  set(WXWIDGETS_INCLUDE ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/include)
-  set(WXWIDGETS_LIBS "${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/${CMAKE_BUILD_TYPE}MT64/libs")
-  set(WXWIDGETS_STATIC_LIBS "${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/${CMAKE_BUILD_TYPE}MT64/libs")
-  set(WXWIDGETS_GL_LIBS -lwx_gtk2_gl-2.9 -lwx_base-2.9)
+  set(WXWIDGETS_INCLUDE ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/include)
+  set(WXWIDGETS_LIBS "${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}MT64/libs")
+  set(WXWIDGETS_STATIC_LIBS "${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}MT64/libs")
+  set(WXWIDGETS_GL_LIBS -lwx_gtk2_gl-3.1 -lwx_base-3.1)
 
-else (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
+else (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1)
 
   include(FindwxWidgets)
   FIND_PACKAGE(wxWidgets
@@ -59,9 +59,9 @@ else (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
   set(WXWIDGETS_INCLUDE "${wxWidgets_INCLUDE_DIRS}")
   set(WXWIDGETS_LIBS "${wxWidgets_LIBRARIES}")
   set(WXWIDGETS_STATIC_LIBS ${WXWIDGETS_LIBS})
-  set(WXWIDGETS_GL_LIBS -lwx_gtk2_gl-2.9 -lwx_base-2.9)
+  set(WXWIDGETS_GL_LIBS -lwx_gtk2_gl-3.1 -lwx_base-3.1)
 
-endif (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
+endif (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1)
 
 endif()
 set(CMAKE_PREFIX_PATH "${_foo_CMAKE_PREFIX_PATH}")
