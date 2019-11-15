@@ -1151,7 +1151,7 @@ void CMultiReaderApp::xProcessPsl(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    CPslReader reader( m_iFlags );
+    CPslReader reader(m_iFlags, args["name"].AsString(), args["title"].AsString());
     if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }

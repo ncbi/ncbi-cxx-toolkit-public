@@ -64,7 +64,10 @@ public:
 
 public:
     CPslReader(
-        int iFlags);
+        TReaderFlags iFlags,
+        const string& name = "",
+        const string& title = "",
+        SeqIdResolver seqResolver = CReadUtil::AsSeqId);
 
     virtual ~CPslReader();
     
@@ -86,6 +89,8 @@ public:
 protected:
     CRef<CSeq_align> xCreateSeqAlign(
         const CPslData&);
+
+    CRef<CSeq_annot> xCreateSeqAnnot();
 
     ILineErrorListener* m_pErrors;
     unsigned int mCurrentRecordCount;

@@ -68,9 +68,12 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 CPslReader::CPslReader(
-    int flags) :
+    TReaderFlags flags,
+    const string& name,
+    const string& title,
+    SeqIdResolver seqResolver) :
 //  ----------------------------------------------------------------------------
-    CReaderBase(flags)
+    CReaderBase(flags, name, title, seqResolver)
 {
 }
 
@@ -101,7 +104,7 @@ CPslReader::ReadSeqAnnot(
 {
     xProgressInit(lineReader);
 
-    CRef<CSeq_annot> pAnnot(new CSeq_annot);;
+    CRef<CSeq_annot> pAnnot = xCreateSeqAnnot();
     auto& alignData = pAnnot->SetData().SetAlign();
 
     string line;
@@ -129,6 +132,21 @@ CPslReader::ReadObject(
 }
 
 //  ----------------------------------------------------------------------------
+CRef<CSeq_annot>
+CPslReader::xCreateSeqAnnot()
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_annot> pAnnot(new CSeq_annot);
+    if (!m_AnnotName.empty()) {
+        pAnnot->SetNameDesc(m_AnnotName);
+    }
+    if (!m_AnnotTitle.empty()) {
+        pAnnot->SetTitleDesc(m_AnnotTitle);
+    }
+    return pAnnot;
+}
+
+//  ----------------------------------------------------------------------------
 CRef<CSeq_align>
 CPslReader::xCreateSeqAlign(
     const CPslData& pslData)
@@ -140,8 +158,8 @@ CPslReader::xCreateSeqAlign(
     CDense_seg& denseSeg = pSeqAlign->SetSegs().SetDenseg();
 
     auto& ids = denseSeg.SetIds();
-    ids.push_back(CReadUtil::AsSeqId(pslData.NameQ()));
-    ids.push_back(CReadUtil::AsSeqId(pslData.NameT()));
+    ids.push_back(mSeqIdResolve(pslData.NameQ(), 0, true));
+    ids.push_back(mSeqIdResolve(pslData.NameT(), 0, true));
     
     vector<SAlignSegment> segments;
     pslData.ConvertBlocksToSegments(segments);
