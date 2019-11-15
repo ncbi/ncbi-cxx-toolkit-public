@@ -1597,6 +1597,7 @@ xctools needs xncbi
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
+xdiscrepancy needs $(COMPRESS_LIBS)
 xdiscrepancy needs macro
 xdiscrepancy needs xcleanup
 xerces-c needs $(Z_LIB)
