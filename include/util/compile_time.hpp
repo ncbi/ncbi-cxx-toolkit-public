@@ -274,25 +274,30 @@ namespace ct
         using init_pair_t = const_pair<typename first_type::type, typename second_type::type>;
 
         template<size_t N>
-        struct DeduceMapType
+        struct DeduceType
         {
             static constexpr size_t size = N;
             static_assert(size > 0, "empty const_map not supported");
 
-            using map_type = ct::const_unordered_map<size, first_type, second_type>;
+            using type = ct::const_unordered_map<size, first_type, second_type>;
         };
 
         template<size_t N>
         constexpr auto operator()(const init_pair_t(&input)[N]) const ->
-            typename DeduceMapType<N>::map_type
+            typename DeduceType<N>::type
         {
-            return typename DeduceMapType<N>::map_type(input);
+            return typename DeduceType<N>::type(input);
         }
         template<size_t N>
         constexpr auto operator()(const const_array<init_pair_t, N> &input) const ->
-            typename DeduceMapType<N>::map_type
+            typename DeduceType<N>::type
         {
-            return typename DeduceMapType<N>::map_type(input);
+            return typename DeduceType<N>::type(input);
+        }
+        template<size_t N>
+        static constexpr size_t get_size(const init_pair_t(&input)[N])
+        {
+            return N;
         }
     };
     template<size_t N, typename _HashedKey, typename _Value>
@@ -396,6 +401,7 @@ namespace ct
             return typename DeduceType<N>::type(input);
         }
     };
+
 };
 
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \

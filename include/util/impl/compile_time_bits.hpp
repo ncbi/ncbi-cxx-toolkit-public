@@ -48,26 +48,32 @@ namespace compile_time_bits
     template<class T, size_t N>
     struct const_array
     {
+        using _MyT = const_array<T, N>;
         using value_type = T;
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
-        using reference = const value_type&;
+        using reference = value_type&;
         using const_reference = const value_type&;
-        using pointer = const value_type*;
+        using pointer = value_type*;
         using const_pointer = const value_type*;
         using container_type = value_type[N];
         using const_iterator = const value_type*;
-        using iterator = const value_type*;
+        using iterator = value_type*;
 
         static constexpr size_t m_size = N;
 
         static constexpr size_t size() noexcept { return N; }
         static constexpr size_t capacity() noexcept { return N; }
         constexpr const value_type& operator[](size_t _pos) const noexcept { return m_data[_pos]; }
+        constexpr value_type& operator[](size_t _pos) noexcept { return m_data[_pos]; }
         constexpr const_iterator begin() const noexcept { return m_data; }
         constexpr const_iterator end() const noexcept { return m_data + size(); }
+        constexpr const_iterator cbegin() const noexcept { return m_data; }
+        constexpr const_iterator cend() const noexcept { return m_data + size(); }
+        constexpr iterator begin() noexcept { return m_data; }
+        constexpr iterator end() noexcept { return m_data + size(); }
         constexpr const value_type* data() const noexcept { return m_data; }
-        value_type* data() { return m_data; }
+
 
         container_type m_data;
 
