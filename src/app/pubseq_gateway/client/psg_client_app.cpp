@@ -308,7 +308,7 @@ template <class TRequest>
 int CPsgClientApp::RunRequest(const string& service, const CArgs& args)
 {
     auto request = SRequestBuilder::Build<TRequest>(args);
-    const auto blob_only = args["blob-only"].HasValue();
+    const auto blob_only = args.Exist("blob-only") && args["blob-only"].HasValue();
     return CProcessing::OneRequest(service, request, blob_only);
 }
 
