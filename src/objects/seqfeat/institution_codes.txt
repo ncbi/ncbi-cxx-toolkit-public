@@ -5958,6 +5958,7 @@ SALK	s	University of South Carolina Salkehatchie
 SALLE	s	Instituto Geobiologico La Salle			
 SAM<ZAF>	s	South African Museum	SAMK		
 SAMA	sb	South Australian Museum	SAM		
+SAMA:Herpetology	s	South Australian Museum, Herpetology Collection	
 SAMC	s	Iziko Museum of Capetown			
 SAMES	s	Universidade Federal do Espirito Santo			
 SAMF	s	Samford University			
@@ -6607,7 +6608,7 @@ SYRF	s	State University of New York
 SYS	s	Sun Yatsen University, Biology Department			
 SYS:Z	s	Sun Yatsen University, Biology Department, Zoology Collection	
 SYSBM	s	The Museum of Biology Sun Yat-sen University			
-SYSU	s	National Sun Yat-Sen University, Department of Biological Sciences			
+SYSU	sc	National Sun Yat-Sen University, Department of Biological Sciences			
 SYT	s	Stonyhurst College			
 SZ	s	Sichuan University, Biological Department			
 SZB	s	Haus der Natur			
