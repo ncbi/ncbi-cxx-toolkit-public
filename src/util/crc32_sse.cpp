@@ -219,10 +219,11 @@ uint32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) no
     return hash;
 }
 
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::rt(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::rt(const char* s, size_t size) noexcept;
 template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
 template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
 #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
 template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
 template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
 #endif
-
