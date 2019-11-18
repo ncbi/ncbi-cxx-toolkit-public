@@ -218,6 +218,7 @@ CCDDDataLoader::GetBlobById(const TBlobId& blob_id)
         const CCDDBlobId& cdd_id = dynamic_cast<const CCDDBlobId&>(*blob_id);
         CRef<CSeq_entry> entry = m_Impl->GetBlobById(cdd_id);
         if ( entry ) {
+            load_lock->SetName("CDD");
             load_lock->SetSeq_entry(*entry);
         }
         load_lock.SetLoaded();
