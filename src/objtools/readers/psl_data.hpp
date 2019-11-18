@@ -34,9 +34,14 @@
 #define OBJTOOLS_READERS___PSL_DATA__HPP
 
 #include <objects/seqloc/Na_strand.hpp>
+//#include <objtools/readers/message_listener.hpp>
+
+#include <objtools/readers/psl_reader.hpp>
+#include "reader_message_handler.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 //  ----------------------------------------------------------------------------
 struct SAlignSegment
@@ -48,41 +53,40 @@ struct SAlignSegment
     ENa_strand mStrandQ;
     ENa_strand mStrandT;
 };
-
+ 
 //  ----------------------------------------------------------------------------
 class CPslData
 //  ----------------------------------------------------------------------------
 {
 public:
-    CPslData();
+    CPslData(
+        CReaderMessageHandler* = nullptr);
 
     //
     //  Input/output:
     //
     void Initialize(
-        const string& );
+        const CPslReader::TReaderLine& );
 
     void Dump(
         ostream& ostr);
 
-    int Matches() const { return mMatches; };
-    int MisMatches() const { return mMisMatches; };
-    int RepMatches() const { return mRepMatches; };
-    int CountN() const { return mCountN; };
-    string NameQ() const { return mNameQ; };
-    string NameT() const { return mNameT; };
-
-    void ConvertBlocksToSegments(
-        vector<SAlignSegment>&) const;
+    void ExportToSeqAlign(
+        CPslReader::SeqIdResolver,
+        CSeq_align& seqAlign);
 
 private:
     void xReset();
+
+    void xConvertBlocksToSegments(
+        vector<SAlignSegment>&) const;
 
     //
     // Data:
     //
 private:
-    int mFirstDataColumn;
+    CReaderMessageHandler* mpEL;
+    int mFirstDataColumn = -1;
 
     int mMatches;
     int mMisMatches;

@@ -54,6 +54,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/reader_listener.hpp>
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
@@ -104,6 +105,24 @@ class TestCanceler: public ICanceled
     bool IsCanceled() const { return false; };
 };
 
+
+//  ============================================================================
+class CMultiReaderMessageListener:
+    public CReaderListener
+{
+public:
+    bool PutMessage(
+        const IObjtoolsMessage& message)
+    {
+        const CReaderMessage* pReaderMessage = 
+            dynamic_cast<const CReaderMessage*>(&message);
+        if (!pReaderMessage  ||  pReaderMessage->Severity() == eDiag_Fatal) {
+            throw;
+        }
+        pReaderMessage->Write(cerr);
+    };
+};
+    
 //  ============================================================================
 class CMultiReaderApp
 //  ============================================================================
@@ -271,7 +290,11 @@ protected:
     int m_iMaxLevel;
     CMultiReaderApp & m_multi_reader_app;
 };    
-        
+
+//  ============================================================================
+CMultiReaderMessageListener newStyleMessageListener;
+//  ============================================================================
+
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::Init(void)
 //  ----------------------------------------------------------------------------
@@ -796,8 +819,8 @@ CMultiReaderApp::xProcessSingleFile(
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
                 eDiag_Fatal, "Reading aborted due to fatal error.");
-        m_pErrors->PutError(*line_error_p);
         m_pErrors->PutError(reader_ex);
+        m_pErrors->PutError(*line_error_p);
         retCode = false;
     } catch(const std::exception & std_ex) {
         AutoPtr<ILineError> line_error_p =
@@ -1151,7 +1174,11 @@ void CMultiReaderApp::xProcessPsl(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    CPslReader reader(m_iFlags, args["name"].AsString(), args["title"].AsString());
+    CPslReader reader(
+        m_iFlags, 
+        args["name"].AsString(), args["title"].AsString(), 
+        CReadUtil::AsSeqId, 
+        &newStyleMessageListener);
     if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }

@@ -26,22 +26,26 @@
  * Author:  Frank Ludwig
  *
  * File Description:
- *   GFF file reader
+ *   PSL data handling
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
-
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objtools/readers/read_util.hpp>
 #include "psl_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CPslData::CPslData():
-    mFirstDataColumn(-1)
+CPslData::CPslData( 
+    CReaderMessageHandler* pEL):
+    mpEL(pEL)
 //  ----------------------------------------------------------------------------
 {
     xReset();
@@ -69,7 +73,7 @@ CPslData::xReset()
 //  ----------------------------------------------------------------------------
 void
 CPslData::Initialize(
-    const string& pslLine)
+    const CPslReader::TReaderLine& readerLine)
 // 
 //  https://genome.ucsc.edu/FAQ/FAQformat.html#format2
 //  ----------------------------------------------------------------------------
@@ -77,11 +81,14 @@ CPslData::Initialize(
     const int PSL_COLUMN_COUNT(21);
 
     vector<string> columns;
-    NStr::Split(pslLine, "\t", columns, NStr::fSplit_Tokenize);
+    NStr::Split(readerLine.mData, "\t", columns, NStr::fSplit_Tokenize);
     if (-1 == mFirstDataColumn) {
         auto columnCount = columns.size();
         if (columnCount != PSL_COLUMN_COUNT  &&  columnCount != PSL_COLUMN_COUNT+1) {
-            // error: bad column count
+        throw CReaderMessage(
+            eDiag_Error, 
+            readerLine.mLine,
+            "PSL Error: Record has invalid column count.");
         }
         mFirstDataColumn = static_cast<int>(columnCount - PSL_COLUMN_COUNT);
     }
@@ -135,13 +142,22 @@ CPslData::Initialize(
 
     // some basic validation:
     if (mBlockCount != mBlockSizes.size()) {
-        // error: bad count of blockSizes
+        throw CReaderMessage(
+            eDiag_Error, 
+            readerLine.mLine,
+            "PSL Error: Number of blockSizes does not match blockCount.");
     }
     if (mBlockCount != mBlockStartsQ.size()) {
-        // error: bad count of qStarts
+        throw CReaderMessage(
+            eDiag_Error, 
+            readerLine.mLine,
+            "PSL Error: Number of blockStartsQ does not match blockCount.");
     }
     if (mBlockCount != mBlockStartsT.size()) {
-        // error: bad count of tStarts
+        throw CReaderMessage(
+            eDiag_Error, 
+            readerLine.mLine,
+            "PSL Error: Number of blockStartsT does not match blockCount.");
     } 
 }
 
@@ -193,7 +209,52 @@ CPslData::Dump(
 
 //  ----------------------------------------------------------------------------
 void
-CPslData::ConvertBlocksToSegments(
+CPslData::ExportToSeqAlign(
+    CPslReader::SeqIdResolver idResolver,
+    CSeq_align& seqAlign)
+//  ----------------------------------------------------------------------------
+{
+    seqAlign.SetType(CSeq_align::eType_partial);
+    CDense_seg& denseSeg = seqAlign.SetSegs().SetDenseg();
+
+    auto& ids = denseSeg.SetIds();
+    ids.push_back(idResolver(mNameQ, 0, true));
+    ids.push_back(idResolver(mNameT, 0, true));
+    
+    vector<SAlignSegment> segments;
+    xConvertBlocksToSegments(segments);
+    for (const auto& segment: segments) {
+        denseSeg.SetLens().push_back(segment.mLen);
+        denseSeg.SetStarts().push_back(segment.mStartQ);
+        denseSeg.SetStarts().push_back(segment.mStartT);
+        denseSeg.SetStrands().push_back(segment.mStrandQ);
+        denseSeg.SetStrands().push_back(segment.mStrandT);
+    }
+    denseSeg.SetNumseg(static_cast<int>(segments.size()));
+
+    // cram whatever hasn't been disposed of otherwise into
+    //  scores
+    CRef<CScore>  pMatches(new CScore);
+    pMatches->SetId().SetStr("num_match");
+    pMatches->SetValue().SetInt(mMatches);
+    denseSeg.SetScores().push_back(pMatches);
+    CRef<CScore>  pMisMatches(new CScore);
+    pMisMatches->SetId().SetStr("num_mismatch");
+    pMisMatches->SetValue().SetInt(mMisMatches);
+    denseSeg.SetScores().push_back(pMisMatches);
+    CRef<CScore> pRepMatches(new CScore);
+    pRepMatches->SetId().SetStr("num_repmatch");
+    pRepMatches->SetValue().SetInt(mRepMatches);
+    denseSeg.SetScores().push_back(pRepMatches);
+    CRef<CScore> pCountN(new CScore);
+    pCountN->SetId().SetStr("num_n");
+    pCountN->SetValue().SetInt(mCountN);
+    denseSeg.SetScores().push_back(pCountN);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CPslData::xConvertBlocksToSegments(
     vector<SAlignSegment>& segments) const
 //  ----------------------------------------------------------------------------
 {

@@ -53,21 +53,29 @@ class CGff2Record;
 class SRecord;
 
 class CPslData;
-
+class CReaderListener;
+class CReaderMessageHandler;
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CPslReader
 //  ----------------------------------------------------------------------------
     : public CReaderBase
 {
 public:
-    typedef int TFlags;
-
+    using TFlags = int;
+    using TReaderLine = struct SReaderLine {
+        //TReaderLine(int line, string data): mLine(line), mData(data) {};
+        unsigned int mLine;
+        string mData;
+    };
+    using TReaderData = vector<TReaderLine>;
+    
 public:
     CPslReader(
         TReaderFlags iFlags,
         const string& name = "",
         const string& title = "",
-        SeqIdResolver seqResolver = CReadUtil::AsSeqId);
+        SeqIdResolver seqResolver = CReadUtil::AsSeqId,
+        CReaderListener* pListener = nullptr);
 
     virtual ~CPslReader();
     
@@ -87,12 +95,17 @@ public:
         ILineErrorListener* pErrors=0 );
 
 protected:
-    CRef<CSeq_align> xCreateSeqAlign(
-        const CPslData&);
+    void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    void xProcessData(
+        const TReaderData&,
+        CSeq_annot::TData&);
 
     CRef<CSeq_annot> xCreateSeqAnnot();
 
-    ILineErrorListener* m_pErrors;
+    CReaderMessageHandler* m_pMessageHandler;
     unsigned int mCurrentRecordCount;
 };
 
