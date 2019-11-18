@@ -26,8 +26,8 @@
 
 #include <ncbi_pch.hpp>
 
-#include <internal/cppcore/os_gateway/plugins/snp/snpptis.hpp>
-#include <internal/cppcore/os_gateway/plugins/snp/impl/snpptis_impl.hpp>
+#include <objects/dbsnp/primary_track/snpptis.hpp>
+#include <objects/dbsnp/primary_track/impl/snpptis_impl.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbi_param.hpp>
 

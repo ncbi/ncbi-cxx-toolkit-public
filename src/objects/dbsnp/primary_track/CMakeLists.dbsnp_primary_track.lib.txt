@@ -4,7 +4,7 @@
 # 
 #
 
-NCBI_begin_lib(dbsnp_primary_track)
+NCBI_begin_lib(dbsnp_ptis)
   NCBI_dataspecs(dbsnp.proto)
   NCBI_requires(PROTOBUF)
   NCBI_disable_pch()

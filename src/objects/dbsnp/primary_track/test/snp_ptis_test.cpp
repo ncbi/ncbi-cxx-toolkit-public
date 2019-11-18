@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <util/random_gen.hpp>
 #include <internal/cppcore/os_gateway/plugins/snp/snpptis.hpp>
 #include <thread>
 
@@ -135,8 +136,9 @@ int CSnpPtisTestApp::Run(void)
                    (size_t thread_id, vector<string> ids, vector<string>* out_tracks)
                    {
                        if ( thread_id % 2 ) {
+                           CRandom random(thread_id);
                            for ( size_t i = 0; i < ids.size(); ++i ) {
-                               swap(ids[i], ids[random()%(i+1)]);
+                               swap(ids[i], ids[random.GetRandIndex(i+1)]);
                            }
                        }
                        vector<string> tracks;
