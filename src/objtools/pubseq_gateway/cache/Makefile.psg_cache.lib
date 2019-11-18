@@ -10,3 +10,6 @@ CPPFLAGS = $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS) $(COVERAGE_FLAGS
 WATCHERS = satskyse saprykin
 ASN_DEP = psg_protobuf
 REQUIRES = MT Linux LMDB PROTOBUF
+
+#user_homedir = $(shell readlink -e ~)
+#LOCAL_CPPFLAGS = -I$(user_homedir)/trunk/c++/include

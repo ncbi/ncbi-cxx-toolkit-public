@@ -42,9 +42,10 @@
 
 #include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
+USING_NCBI_SCOPE;
 
 class CPubseqGatewayCacheBioseqInfo;
 class CPubseqGatewayCacheSi2Csi;
@@ -115,6 +116,6 @@ class CPubseqGatewayCache
     TRuntimeErrorList m_RuntimeErrors;
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__CACHE__PSG_CACHE_HPP_

@@ -32,6 +32,7 @@
  *
  */
 
+#include <functional>
 #include <memory>
 #include <set>
 #include <string>
@@ -41,7 +42,7 @@
 
 #include "psg_cache_base.hpp"
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 class CPubseqGatewayCacheBlobProp
     : public CPubseqGatewayCacheBase
@@ -62,6 +63,6 @@ class CPubseqGatewayCacheBlobProp
     vector<unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>> m_Dbis;
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // PSG_CACHE_BLOB_PROP__HPP

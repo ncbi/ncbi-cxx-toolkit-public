@@ -36,9 +36,9 @@
 
 #include <string>
 
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 class CPubseqGatewayCachePackBytes
 {
@@ -99,6 +99,6 @@ class CPubseqGatewayCacheUnpackBytes
     }
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // PSG_CACHE_BYTES_UTIL__HPP_

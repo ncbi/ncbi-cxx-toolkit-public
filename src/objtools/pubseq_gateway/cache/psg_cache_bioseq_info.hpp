@@ -39,10 +39,10 @@
 #include "psg_cache_base.hpp"
 
 #include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 class CPubseqGatewayCacheBioseqInfo
     : public CPubseqGatewayCacheBase
@@ -88,6 +88,6 @@ class CPubseqGatewayCacheBioseqInfo
     unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // PSG_CACHE_BIOSEQ_INFO__HPP

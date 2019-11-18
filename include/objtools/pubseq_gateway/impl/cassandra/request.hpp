@@ -36,10 +36,10 @@
 
 #include <string>
 
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 class CBioseqInfoFetchRequest
 {
@@ -146,7 +146,7 @@ class CBioseqInfoFetchRequest
     TFields m_State = 0;
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__REQUEST_HPP
 

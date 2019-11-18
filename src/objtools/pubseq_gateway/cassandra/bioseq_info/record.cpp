@@ -37,7 +37,7 @@
 #include <utility>
 #include <string>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 void CBioseqInfoRecord::Reset(void)
@@ -91,4 +91,4 @@ string CBioseqInfoRecord::ToString(void) const
             .append(NStr::NumericToString(m_TaxId));
 }
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE

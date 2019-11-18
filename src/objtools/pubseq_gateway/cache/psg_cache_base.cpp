@@ -43,8 +43,7 @@ BEGIN_SCOPE()
     static const size_t kMaxReaders = 1024UL;
 END_SCOPE()
 
-BEGIN_PSG_SCOPE
-USING_NCBI_SCOPE;
+BEGIN_IDBLOB_SCOPE
 
 CPubseqGatewayCacheBase::CPubseqGatewayCacheBase(const string& file_name)
     : m_FileName(file_name)
@@ -75,4 +74,4 @@ void CPubseqGatewayCacheBase::Open()
     m_Env->open(m_FileName.c_str(), MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC, 0664);
 }
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE

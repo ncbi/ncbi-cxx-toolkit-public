@@ -53,7 +53,7 @@
 BEGIN_SCOPE()
 
 USING_NCBI_SCOPE;
-USING_PSG_SCOPE;
+USING_IDBLOB_SCOPE;
 
 class CPsgCacheBioseqInfoTest
     : public testing::Test

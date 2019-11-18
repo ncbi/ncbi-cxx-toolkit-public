@@ -37,10 +37,10 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 struct SBioseqInfoCacheRecord {
     string accession;
@@ -52,6 +52,6 @@ struct SBioseqInfoCacheRecord {
 
 using TBioseqInfoCacheResponse = vector<SBioseqInfoCacheRecord>;
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__CACHE__RESPONSE_HPP_

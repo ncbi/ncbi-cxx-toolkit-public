@@ -37,7 +37,7 @@
 
 #include <gtest/gtest.h>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 bool operator==(const CPubseqGatewayCache::TRuntimeError a, const CPubseqGatewayCache::TRuntimeError b)
 {
@@ -48,11 +48,11 @@ std::ostream& operator<<(std::ostream& os, const CPubseqGatewayCache::TRuntimeEr
   return os << "'" << error.message << "'";  // whatever needed to print bar to os
 }
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 BEGIN_SCOPE()
 USING_NCBI_SCOPE;
-USING_PSG_SCOPE;
+USING_IDBLOB_SCOPE;
 
 TEST(PubseqGatewayCacheRuntimeErrors, EmptyOnStart) {
     CPubseqGatewayCache cache("", "", "");

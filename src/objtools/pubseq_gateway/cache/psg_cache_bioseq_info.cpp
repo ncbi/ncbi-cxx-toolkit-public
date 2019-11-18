@@ -41,7 +41,7 @@
 #include "psg_cache_bytes_util.hpp"
 
 BEGIN_SCOPE()
-USING_PSG_SCOPE;
+USING_IDBLOB_SCOPE;
 
 using TPackBytes = CPubseqGatewayCachePackBytes;
 using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
@@ -75,7 +75,7 @@ void PrintKey(const string& rv)
 END_SCOPE()
 
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 CPubseqGatewayCacheBioseqInfo::CPubseqGatewayCacheBioseqInfo(const string& file_name)
     : CPubseqGatewayCacheBase(file_name)
@@ -241,4 +241,4 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(
     return rv;
 }
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE

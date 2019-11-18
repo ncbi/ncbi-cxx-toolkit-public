@@ -43,7 +43,7 @@
 #include "psg_cache_bytes_util.hpp"
 
 BEGIN_SCOPE()
-USING_PSG_SCOPE;
+USING_IDBLOB_SCOPE;
 
 using TPackBytes = CPubseqGatewayCachePackBytes;
 using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
@@ -54,7 +54,8 @@ static const constexpr unsigned kPackedKeySize = (kPackedSatKeySize + kPackedLas
 
 END_SCOPE()
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
+USING_NCBI_SCOPE;
 
 CPubseqGatewayCacheBlobProp::CPubseqGatewayCacheBlobProp(const string& file_name)
     : CPubseqGatewayCacheBase(file_name)
@@ -185,4 +186,4 @@ bool CPubseqGatewayCacheBlobProp::UnpackKey(const char* key, size_t key_sz, int6
     return rv;
 }
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE

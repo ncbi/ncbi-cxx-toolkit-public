@@ -44,10 +44,10 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 USING_IDBLOB_SCOPE;
 
 class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
@@ -100,6 +100,6 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     unsigned int m_RestartCounter;
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BIOSEQ_INFO_TASK__FETCH_HPP_

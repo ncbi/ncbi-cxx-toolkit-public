@@ -14,3 +14,6 @@ LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(COVERAGE_FLAGS) $(LOCAL_LDFLAGS)
 REQUIRES = MT Linux LMDB PROTOBUF
 
 WATCHERS = satskyse saprykin
+
+user_homedir = $(shell readlink -e ~)
+LOCAL_CPPFLAGS = -I$(user_homedir)/trunk/c++/include

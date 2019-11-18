@@ -45,7 +45,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 BEGIN_SCOPE()
     const CassConsistency kBioSeqInfoConsistency = CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM;
@@ -374,4 +374,4 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
     } while(restarted);
 }
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE

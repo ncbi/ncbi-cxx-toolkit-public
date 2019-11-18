@@ -48,7 +48,7 @@
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 BEGIN_SCOPE()
-USING_PSG_SCOPE;
+USING_IDBLOB_SCOPE;
 USING_NCBI_SCOPE;
 
 void sAddRuntimeError(
@@ -72,17 +72,17 @@ void ApplyInheritedSeqIds(
     string& data)
 {
     if (cache) {
-        ::psg::retrieval::BioseqInfoValue record;
-        if (record.ParseFromString(data) && record.state() != ::psg::retrieval::SEQ_STATE_LIVE) {
+        ncbi::psg::retrieval::BioseqInfoValue record;
+        if (record.ParseFromString(data) && record.state() != ncbi::psg::retrieval::SEQ_STATE_LIVE) {
             CPubseqGatewayCache::TBioseqInfoRequest request;
             CPubseqGatewayCache::TBioseqInfoResponse response;
             request.SetAccession(accession).SetSeqIdType(seq_id_type);
             cache->Fetch(request, response);
             if (!response.empty()) {
-                ::psg::retrieval::BioseqInfoValue latest_record;
+                ncbi::psg::retrieval::BioseqInfoValue latest_record;
                 if (
                     latest_record.ParseFromString(response[0].data)
-                    && latest_record.state() == ::psg::retrieval::SEQ_STATE_LIVE
+                    && latest_record.state() == ncbi::psg::retrieval::SEQ_STATE_LIVE
                 ) {
                     set<int16_t> seq_id_types;
                     for (auto const & seq_id : record.seq_ids()) {
@@ -112,7 +112,8 @@ void ApplyInheritedSeqIds(
 
 END_SCOPE()
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
+USING_NCBI_SCOPE;
 
 const size_t CPubseqGatewayCache::kRuntimeErrorLimit = 10;
 
@@ -268,4 +269,4 @@ bool CPubseqGatewayCache::UnpackBlobPropKey(const char* key, size_t key_sz, int6
     return CPubseqGatewayCacheBlobProp::UnpackKey(key, key_sz, last_modified, sat_key);
 }
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE

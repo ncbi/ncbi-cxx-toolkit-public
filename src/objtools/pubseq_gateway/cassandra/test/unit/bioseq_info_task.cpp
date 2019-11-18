@@ -52,7 +52,7 @@
 namespace {
 
 USING_NCBI_SCOPE;
-USING_PSG_SCOPE;
+USING_IDBLOB_SCOPE;
 
 class CBioseqInfoTaskFetchTest
     : public testing::Test

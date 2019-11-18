@@ -40,9 +40,10 @@
 #include <utility>
 #include <vector>
 
-#include "../psg_scope.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
+USING_NCBI_SCOPE;
 
 class CBioseqInfoRecord
 {
@@ -283,6 +284,6 @@ class CBioseqInfoRecord
 
 using TBioseqInfoConsumeCallback = function<void(vector<CBioseqInfoRecord> &&)>;
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__BIOSEQ_INFO__RECORD_HPP

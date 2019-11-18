@@ -32,19 +32,20 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
-
 #include <memory>
 #include <string>
 
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <corelib/ncbistd.hpp>
+
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
 BEGIN_SCOPE(lmdb)
     class env;
     class dbi;
 END_SCOPE()
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
+USING_NCBI_SCOPE;
 
 class CPubseqGatewayCacheBase
 {
@@ -59,6 +60,6 @@ class CPubseqGatewayCacheBase
     unique_ptr<lmdb::env> m_Env;
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // PSG_CACHE_BASE__HPP

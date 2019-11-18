@@ -34,10 +34,12 @@
 
 #include "psg_cache_base.hpp"
 
-#include <string>
+#include <functional>
 #include <memory>
+#include <string>
 
-BEGIN_PSG_SCOPE
+BEGIN_IDBLOB_SCOPE
+USING_NCBI_SCOPE;
 
 class CPubseqGatewayCacheSi2Csi
     : public CPubseqGatewayCacheBase
@@ -56,6 +58,6 @@ class CPubseqGatewayCacheSi2Csi
     unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };
 
-END_PSG_SCOPE
+END_IDBLOB_SCOPE
 
 #endif  // PSG_CACHE_SI2CSI__HPP

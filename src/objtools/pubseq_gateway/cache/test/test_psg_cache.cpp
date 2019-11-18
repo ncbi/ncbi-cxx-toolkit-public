@@ -48,9 +48,9 @@
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 USING_NCBI_SCOPE;
-USING_PSG_SCOPE;
+USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
-USING_SCOPE(::psg::retrieval);
+USING_SCOPE(ncbi::psg::retrieval);
 USING_SCOPE(::google::protobuf);
 
 BEGIN_SCOPE()
