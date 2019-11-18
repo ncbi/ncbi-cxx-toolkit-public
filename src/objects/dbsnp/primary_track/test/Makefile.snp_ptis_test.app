@@ -10,7 +10,7 @@ APP = snp_ptis_test
 SRC = snp_ptis_test
 
 LIB = dbsnp_ptis grpc_integration $(SOBJMGR_LIBS)
-LIBS = $(GRPC_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(GRPC_INCLUDE)
 
