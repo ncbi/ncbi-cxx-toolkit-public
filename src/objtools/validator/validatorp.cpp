@@ -236,6 +236,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_genomeSubmission = (options & CValidator::eVal_genome_submission) != 0;
     m_CollectLocusTags = (options & CValidator::eVal_collect_locus_tags) != 0;
     m_GenerateGoldenFile = (options & CValidator::eVal_generate_golden_file) != 0;
+    m_CompareVDJCtoCDS = (options & CValidator::eVal_compare_vdjc_to_cds) != 0;
 }
 
 

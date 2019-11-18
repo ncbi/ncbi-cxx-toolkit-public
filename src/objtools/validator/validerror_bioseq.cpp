@@ -121,6 +121,7 @@
 #include <objmgr/util/create_defline.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/indexer.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_entry_ci.hpp>
@@ -5825,7 +5826,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
     }
 
     try {
-        unsigned int nummrna = 0, numcds = 0;
+        unsigned int nummrna = 0, numcds = 0, numcrgn = 0, numvseg = 0, numdseg = 0, numjseg = 0;
         int          numgene = 0, num_pseudomrna = 0, num_pseudocds = 0, num_rearrangedcds = 0;
         vector< CConstRef < CSeq_id > > cds_products, mrna_products;
         
@@ -5854,6 +5855,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                 const CSeq_feat& feat = fi->GetOriginalFeature();
                 
                 CSeqFeatData::E_Choice ftype = feat.GetData().Which();
+                CSeqFeatData::ESubtype subtype = fi->GetFeatSubtype();
 
                 if (ftype == CSeqFeatData::e_Gene) {
                     numgene++;
@@ -5935,6 +5937,14 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                             }
                         }
                     }
+                } else if (subtype == CSeqFeatData::eSubtype_C_region) {
+                    numcrgn++;
+                } else if (subtype == CSeqFeatData::eSubtype_V_segment) {
+                    numvseg++;
+                } else if (subtype == CSeqFeatData::eSubtype_D_segment) {
+                    numdseg++;
+                } else if (subtype == CSeqFeatData::eSubtype_J_segment) {
+                    numjseg++;
                 }
 
                 m_FeatValidator.ValidateSeqFeatContext(feat, seq);
@@ -6179,6 +6189,18 @@ void CValidError_bioseq::ValidateSeqFeatContext(
 
         x_ValidateCDSmRNAmatch(
             m_CurrentHandle, numgene, numcds, nummrna);
+
+        if (numcds > 0 && numcrgn + numvseg + numdseg + numjseg > 0 && m_Imp.DoCompareVDJCtoCDS()) {
+            /*
+            LOG_POST_XX(Corelib_App, 1, "numcds: " + NStr::IntToString(numcds) + "\n");
+            LOG_POST_XX(Corelib_App, 1, "nummrna: " + NStr::IntToString(nummrna) + "\n");
+            LOG_POST_XX(Corelib_App, 1, "numcrgn: " + NStr::IntToString(numcrgn) + "\n");
+            LOG_POST_XX(Corelib_App, 1, "numvseg: " + NStr::IntToString(numvseg) + "\n");
+            LOG_POST_XX(Corelib_App, 1, "numdseg: " + NStr::IntToString(numdseg) + "\n");
+            LOG_POST_XX(Corelib_App, 1, "numjseg: " + NStr::IntToString(numjseg) + "\n");
+            */
+            x_ValidateCDSVDJCmatch(m_CurrentHandle, numcds, numcrgn, numvseg, numdseg, numjseg);
+        }
 
         if (!SeqIsPatent(seq)) {
             ValidateMultipleGeneOverlap (m_CurrentHandle);
@@ -6818,6 +6840,82 @@ void CValidError_bioseq::x_CheckOrigProteinAndTranscriptIds(const CCdsMatchInfo&
 
 }
 
+
+void CValidError_bioseq::x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq,  int numcds,
+                                                int numcrgn, int numvseg,
+                                                int numdseg, int numjseg)
+{
+    unsigned int lclcds = 0, lclcrgn = 0, lclvseg = 0, lcldseg = 0, lcljseg = 0, lclnone = 0, lclothr = 0;
+
+    CSeq_entry_Handle topseh = seq.GetTopLevelEntry();
+    CSeqEntryIndex idx(topseh);
+    CRef<CBioseqIndex> bsx = idx.GetBioseqIndex(seq);
+    bsx->IterateFeatures([this, &bsx, &lclcds, &lclcrgn, &lclvseg, &lcldseg, &lcljseg, &lclnone, &lclothr](CFeatureIndex& sfx) {
+        CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
+        if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
+            lclcds++;
+            CConstRef<CSeq_loc> cloc = sfx.GetMappedLocation();
+            CRef<CFeatureIndex> prnt = sfx.GetBestParent();
+            if (prnt) {
+                CSeqFeatData::ESubtype ptyp = prnt->GetSubtype();
+                // CConstRef<CSeq_loc> ploc = prnt->GetMappedLocation();
+                if (ptyp == CSeqFeatData::ESubtype::eSubtype_C_region) {
+                    lclcrgn++;
+                } else if (ptyp == CSeqFeatData::ESubtype::eSubtype_V_segment) {
+                    lclvseg++;
+                } else if (ptyp == CSeqFeatData::ESubtype::eSubtype_D_segment) {
+                    lcldseg++;
+                } else if (ptyp == CSeqFeatData::ESubtype::eSubtype_J_segment) {
+                    lcljseg++;
+                } else {
+                    lclothr++;
+                }
+            } else {
+                lclnone++;
+                string sloc_str;
+                cloc->GetLabel(&sloc_str);
+                // LOG_POST_XX(Corelib_App, 1, "No parent for CdRegion at: " + sloc_str + "\n");
+                CSeq_feat_Handle sfh = sfx.GetSeqFeatHandle();
+                CConstRef<CSeq_feat> sf = sfh.GetOriginalSeq_feat();
+                if (sf) {
+                    string locus;
+                    CRef<CFeatureIndex> gne = sfx.GetBestGene();
+                    if (gne) {
+                        const CGene_ref& gene = gne->GetMappedFeat().GetData().GetGene();
+                        if (gene.IsSetLocus()) {
+                           locus = gene.GetLocus();
+                        } else if (gene.IsSetLocus_tag()) {
+                            locus = gene.GetLocus_tag();
+                        } else {
+                            CConstRef<CSeq_loc> gloc = gne->GetMappedLocation();
+                            if (gloc) {
+                                // string gloc_str;
+                                gloc->GetLabel(&locus);
+                                // LOG_POST_XX(Corelib_App, 1, "  but GetBestGene is: " + gloc_str + "\n");
+                            }
+                        }
+                    }
+                    if (locus.length() > 0) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                            "No parent for CdRegion (gene is " + locus + ")", *sf);
+                    } else {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                            "No parent for CdRegion", *sf);
+                    }
+                }
+            }
+        }
+    });
+    /*
+    LOG_POST_XX(Corelib_App, 1, "lclcds: " + NStr::IntToString(lclcds) + "\n");
+    LOG_POST_XX(Corelib_App, 1, "lclcrgn: " + NStr::IntToString(lclcrgn) + "\n");
+    LOG_POST_XX(Corelib_App, 1, "lclvseg: " + NStr::IntToString(lclvseg) + "\n");
+    LOG_POST_XX(Corelib_App, 1, "lcldseg: " + NStr::IntToString(lcldseg) + "\n");
+    LOG_POST_XX(Corelib_App, 1, "lcljseg: " + NStr::IntToString(lcljseg) + "\n");
+    LOG_POST_XX(Corelib_App, 1, "lclothr: " + NStr::IntToString(lclothr) + "\n");
+    LOG_POST_XX(Corelib_App, 1, "lclnone: " + NStr::IntToString(lclnone) + "\n");
+    */
+}
 
 void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, 
                                                 int numgene, 

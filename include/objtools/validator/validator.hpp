@@ -98,6 +98,7 @@ public:
         eVal_refseq_conventions      = 0x800000,
         eVal_collect_locus_tags      = 0x1000000,
         eVal_generate_golden_file    = 0x2000000,
+        eVal_compare_vdjc_to_cds     = 0x4000000,
     };
 
     // Constructor / Destructor

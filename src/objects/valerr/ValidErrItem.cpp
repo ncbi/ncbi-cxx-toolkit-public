@@ -2202,6 +2202,9 @@ same id type" } },
    { eErr_SEQ_FEAT_IncorrectQualifierCapitalization,
    { "IncorrectQualifierCapitalization",
      "The qualifier name is incorrectly capitalized" } },
+   { eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+   { "CDSdoesNotMatchVDJC",
+     "The CDS does not have a parent VDJ or C segment" } },
 
 /* SEQ_ALIGN */
 

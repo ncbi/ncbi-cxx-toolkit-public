@@ -290,6 +290,7 @@ public:
     bool IsLatLonIgnoreWater(void)    const { return m_LatLonIgnoreWater; }
     bool IsRefSeqConventions(void)    const { return m_RefSeqConventions; }
     bool GenerateGoldenFile(void)    const { return m_GenerateGoldenFile; }
+    bool DoCompareVDJCtoCDS(void)    const { return m_CompareVDJCtoCDS; }
 
 
     // flags calculated by examining data in record
@@ -532,6 +533,7 @@ private:
     bool m_CollectLocusTags; // collect locus tags for use in special formatted reports
     bool m_SeqSubmitParent; // some errors are suppressed if this is run on a newly created submission
     bool m_GenerateGoldenFile;
+    bool m_CompareVDJCtoCDS;
 
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;

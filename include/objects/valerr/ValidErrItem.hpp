@@ -716,6 +716,7 @@ enum EErrType {
     eErr_SEQ_FEAT_BadTranssplicedInterval,
     eErr_SEQ_FEAT_TRNAinsideTMRNA,
     eErr_SEQ_FEAT_IncorrectQualifierCapitalization,
+    eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,
