@@ -1463,6 +1463,15 @@
 #endif
 
 
+/* Export specifier for library dbsnp_ptis
+ */
+#ifdef NCBI_DBSNP_PTIS_EXPORTS
+#  define NCBI_DBSNP_PTIS_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_DBSNP_PTIS_EXPORT NCBI_DLL_IMPORT
+#endif
+
+
 /* Export specifier for library ncbi_xloader_snp
  */
 #ifdef NCBI_XLOADER_SNP_EXPORTS
