@@ -3141,6 +3141,11 @@ CFormatGuess::IsLinePsl(
         }
     }
     
+    // the following is disabled because we want to allow incorrect but recognizable
+    //  PSL to pass as PSL.
+    //  This will hopefully give the user a better error message as to what is wrong
+    //  with the data than we can do within the constraints of the format guesser.
+#if 0
     int blockCount = NStr::StringToInt(tokens[firstColumn + 17]);
     // columns 19 - 21 are comma separated lists of positive integers, list size
     //  must be equal to blockCount
@@ -3156,6 +3161,7 @@ CFormatGuess::IsLinePsl(
             }
         }
     }
+#endif
     return true;
 }
 
