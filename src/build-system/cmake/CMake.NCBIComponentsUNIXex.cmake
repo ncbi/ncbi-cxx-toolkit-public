@@ -499,6 +499,7 @@ if (WXWIDGETS_FOUND)
 endif()
 else()
     find_package(GTK2)
+    NCBI_find_library(FONTCONFIG fontconfig)
     if (GTK2_FOUND)
         NCBI_define_component(wxWidgets
             wx_gtk2_gl-3.1
@@ -513,12 +514,13 @@ else()
             wx_base_xml-3.1
             wx_base_net-3.1
             wx_base-3.1
+            wxscintilla-3.1
         )
         if(NCBI_COMPONENT_wxWidgets_FOUND)
             list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
             get_filename_component(_libdir ${_lib} DIRECTORY)
             set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-3.1 ${_libdir}/wx/include/gtk2-ansi-3.1 ${GTK2_INCLUDE_DIRS})
-            set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} ${GTK2_LIBRARIES} -lXxf86vm -lSM -lexpat)
+            set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} ${NCBI_COMPONENT_FONTCONFIG_LIBS} ${GTK2_LIBRARIES} -lXxf86vm -lSM -lexpat)
             if(BUILD_SHARED_LIBS)
                 set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
             else()
