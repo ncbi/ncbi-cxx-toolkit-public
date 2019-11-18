@@ -90,8 +90,10 @@ const char* s_StrStatus(EPSG_Status status)
         case EPSG_Status::eInProgress: return "InProgress";
         case EPSG_Status::eNotFound:   return "NotFound";
         case EPSG_Status::eCanceled:   return "Canceled";
-        case EPSG_Status::eError:      return "Error";
+        case EPSG_Status::eError:      break;
     }
+
+    return "Error";
 }
 
 SJsonOut& SJsonOut::operator<<(const CJson_Document& doc)
