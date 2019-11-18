@@ -40,7 +40,7 @@ BEGIN_NAMESPACE(objects);
 
 class CSeq_id;
 
-class NCBI_ID2PROC_SNP_EXPORT CSnpPtisClient : public CObject
+class CSnpPtisClient : public CObject
 {
 public:
     CSnpPtisClient();

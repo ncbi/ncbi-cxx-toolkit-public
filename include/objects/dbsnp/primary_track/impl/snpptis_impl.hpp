@@ -35,11 +35,11 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <internal/cppcore/os_gateway/plugins/snp/snpptis.hpp>
+#include <objects/dbsnp/primary_track/snpptis.hpp>
 
 #include <grpc++/grpc++.h>
-#include <internal/grpcapi/ncbi/grpcapi/dbsnp/primary_track/dbsnp.pb.h>
-#include <internal/grpcapi/ncbi/grpcapi/dbsnp/primary_track/dbsnp.grpc.pb.h>
+#include <objects/dbsnp/primary_track/dbsnp.pb.h>
+#include <objects/dbsnp/primary_track/dbsnp.grpc.pb.h>
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
