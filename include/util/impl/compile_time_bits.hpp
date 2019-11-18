@@ -87,6 +87,24 @@ namespace compile_time_bits
         }
     };
 
+    template <class T, std::size_t N, std::size_t... I>
+    constexpr const_array<std::remove_cv_t<T>, N>
+        to_array_impl(T(&a)[N], std::index_sequence<I...>)
+        {
+            return { {a[I]...} };
+        }
+
+    template <class T, std::size_t N>
+    constexpr const_array<std::remove_cv_t<T>, N> to_array(T(&&a)[N])
+    {
+        return to_array_impl(a, std::make_index_sequence<N>{});
+    }
+    template <class T, std::size_t N>
+    constexpr const_array<std::remove_cv_t<T>, N> to_array(T(&a)[N])
+    {
+        return to_array_impl(a, std::make_index_sequence<N>{});
+    }
+
     template<class T>
     struct const_array<T, 0>
     {
@@ -384,170 +402,138 @@ namespace std
 
 namespace compile_time_bits
 {
-    template<typename _Input, typename _Value, size_t N>
+    template<typename _Value>
     struct simple_sort_traits
     {
-        static constexpr size_t size = N;
+        using value_type = _Value;
 
-        using sorted_t = const_array<_Value, N>;
-        using unsorted_t = _Input;
-
+        template<typename _Input>
         static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
         {
             return input[l] < input[r];
         }
-        template<class...TArgs>
-        static constexpr sorted_t construct(const _Input& input, TArgs...ordered)
+        template<typename _Input>
+        static constexpr auto construct(const _Input& input)
         {
-            return { { input[ordered]...} };
+            return input;
         }
     };
 
-    template<typename _Input, typename _Pair, size_t N>
+    template<typename _Pair>
     struct straight_sort_traits
     {
-        static constexpr size_t size = N;
+        using value_type = _Pair;
 
-        using inpair_t = _Pair;
-        using sorted_t = const_array<_Pair, N>;
-        using unsorted_t = _Input;
-
+        template<typename _Input>
         static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
         {
             return input[l].first < input[r].first;
         }
-        template<class...TArgs>
-        static constexpr sorted_t construct(const _Input& input, TArgs...ordered)
+        template<typename _Input>
+        static constexpr auto construct(const _Input& input)
         {
-            return { { input[ordered]...} };
+            return input;
         }
     };
 
-    template<typename _Input, typename _Pair, size_t N>
+    template<typename _Pair>
     struct flipped_sort_traits
     {
-        static constexpr size_t size = N;
-        using inpair_t = _Pair;
-        using pair_t = const_pair<typename _Pair::second_type, typename _Pair::first_type>;
-        using sorted_t = const_array<pair_t, N>;
-        using unsorted_t = _Input;
+        using value_type = const_pair<typename _Pair::second_type, typename _Pair::first_type>;
 
-        static constexpr pair_t make_pair(const _Input& input, size_t i)
-        {
-            return pair_t{ input[i].second, input[i].first };
-        }
+        template<typename _Input>
         static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
         {
             return input[l].second < input[r].second;
         }
-        template<class...TArgs>
-        static constexpr sorted_t construct(const _Input& input, TArgs...ordered)
+        template<typename _Input>
+        static constexpr value_type construct(const _Input& input)
         {
-            return { { make_pair(input, ordered)...} };
+            return value_type{ input.second, input.first };
         }
     };
 
-    template<typename _Traits>
+    template<typename _Traits, typename _Input, size_t N>
     struct sorter
     {
+        static constexpr size_t size = N;
         static constexpr size_t max_size = std::numeric_limits<size_t>::max();
 
-        using outarray_t = typename _Traits::sorted_t;
-        using inarray_t  = typename _Traits::unsorted_t;
+        using TIndices   = typename ct::const_array<size_t, size>;
 
-        struct min_t
+        constexpr size_t select_min(size_t i, size_t _min, size_t _thresold) const
         {
-            constexpr size_t select_min(const inarray_t& input, size_t i, size_t _min, size_t _thresold) const
-            {
-                return (
-                    (i != _min) &&
-                    ((_thresold == max_size) || (_Traits::compare_less(input, _thresold, i))) &&
-                    ((_min == max_size) || (_Traits::compare_less(input, i, _min))))
-                    ? i : _min;
-            }
-
-            constexpr size_t operator()(const inarray_t& input, size_t _min, size_t _thresold)
-            {
-                for (size_t i=0; i<_Traits::size; ++i)
-                {
-                    _min = select_min(input, i, _min, _thresold);
-                }
-                return _min;
-            }
-        };
-
-        template<size_t i, class _Pred>
-        struct unroll_t
-        {
-            using next_t = unroll_t<i - 1, _Pred>;
-            template<class _Input, class _Indices, class...TArgs>
-            constexpr auto operator()(const _Input& input, const _Indices& indices, TArgs...unrolled) const
-            {
-                return next_t{}(input, indices, indices[i-1], unrolled...);
-            }
-        };
-        template<class _Pred>
-        struct unroll_t<0, _Pred>
-        {
-            template<class _Input, class _Indices, class...TArgs>
-            constexpr auto operator()(const _Input& input, const _Indices& indices, TArgs...unrolled) const
-            {
-                return _Pred::construct(input, unrolled...);
-            }
-        };
-
-        static constexpr outarray_t order_array(const inarray_t& input)
-        {
-            ct::const_array<size_t, _Traits::size> indices{};
-            size_t _min = max_size;
-            for (size_t i=0; i< _Traits::size; ++i)
-            {
-                _min = min_t{}(input, max_size, _min);
-                indices[i] = _min;
-            }
-            return unroll_t<_Traits::size, _Traits>{}(input, indices);
+            return (
+                (i != _min) &&
+                ((_thresold == max_size) || (_Traits::compare_less(m_input, _thresold, i))) &&
+                ((_min == max_size) || (_Traits::compare_less(m_input, i, _min))))
+                ? i : _min;
         }
 
+        constexpr size_t find_min(size_t _min, size_t _thresold) const
+        {
+            for (size_t i=0; i<size; ++i)
+            {
+                _min = select_min(i, _min, _thresold);
+            }
+            return _min;
+        }
+
+        template <std::size_t... I>
+        constexpr auto unroll(const TIndices& indices, std::index_sequence<I...>) const
+        {
+            return const_array<typename _Traits::value_type, size>
+                { {_Traits::construct(m_input[indices[I]])...} };
+        }
+
+        constexpr auto operator()() const
+        {
+            TIndices indices{};
+            size_t _min = max_size;
+            for (size_t i=0; i<size; ++i)
+            {
+                _min = find_min(max_size, _min);
+                indices[i] = _min;
+            }
+            return unroll(indices, std::make_index_sequence<size>{});
+        }
+        const _Input& m_input;
     };
 
     template<typename T, size_t N>
     constexpr auto SimpleReorder(const T(&input)[N])
     {
-        return sorter<simple_sort_traits<decltype(input), T, N>>::order_array(input);
+        return sorter<simple_sort_traits<T>, decltype(input), N>{input}();
     }
 
     template<typename T, size_t N>
     constexpr auto SimpleReorder(const const_array<T, N>& input)
     {
-        return sorter<simple_sort_traits<decltype(input), T, N>>::order_array(input);
+        return sorter<simple_sort_traits<T>, decltype(input), N>{input}();
     }
 
     template<typename T, size_t N>
     constexpr auto Reorder(const const_array<T, N>& input)
-        -> typename straight_sort_traits<decltype(input), T, N>::sorted_t
     {
-        return sorter<straight_sort_traits<decltype(input), T, N>>::order_array(input);
+        return sorter<straight_sort_traits<T>, decltype(input), N>{input}();
     }
 
     template<typename T, size_t N>
     constexpr auto Reorder(const T(&input)[N])
-        -> typename straight_sort_traits<decltype(input), T, N>::sorted_t
     {
-        return sorter<straight_sort_traits<decltype(input), T, N>>::order_array(input);
+        return sorter<straight_sort_traits<T>, decltype(input), N>{input}();
     }
 
     template<typename T, size_t N>
     constexpr auto FlipReorder(const const_array<T, N>& input)
-        -> typename flipped_sort_traits<decltype(input), T, N>::sorted_t
     {
-        return sorter<flipped_sort_traits<decltype(input), T, N>>::order_array(input);
+        return sorter<flipped_sort_traits<T>, decltype(input), N>{input}();
     }
 
     template<typename T, size_t N>
     constexpr auto FlipReorder(const T(&input)[N])
-        -> typename flipped_sort_traits<decltype(input), T, N>::sorted_t
     {
-        return sorter<flipped_sort_traits<decltype(input), T, N>>::order_array(input);
+        return sorter<flipped_sort_traits<T>, decltype(input), N>{input}();
     }
 
     template<typename T, size_t N>

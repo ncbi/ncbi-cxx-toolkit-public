@@ -146,10 +146,10 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 BOOST_AUTO_TEST_CASE(TestConstSet)
 {
     MAKE_CONST_SET(ts1, ncbi::NStr::eCase, const char*,
-        { "a2", "a1", "a3" });
+      { "a2", "a1", "a3" });
 
     MAKE_CONST_SET(ts2, ncbi::NStr::eNocase, const char*,
-        { "b1", "b3", "B2"});
+      { "b1", "b3", "B2"});
 
     for (auto r : ts1)
     {
@@ -532,4 +532,8 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
 }
 
 #endif
+
+BOOST_AUTO_TEST_CASE(TestSorter)
+{
+}
 

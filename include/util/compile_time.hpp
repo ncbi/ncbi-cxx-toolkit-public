@@ -266,7 +266,7 @@ namespace ct
         array_t m_array = {};
     };
 
-    template<ncbi::NStr::ECase case_sensitive, TwoWayMap two_way, typename T1, typename T2>
+    template<typename T1, typename T2, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase, TwoWayMap two_way = TwoWayMap::no>
     struct MakeConstMap
     {
         using first_type = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
@@ -279,7 +279,7 @@ namespace ct
             static constexpr size_t size = N;
             static_assert(size > 0, "empty const_map not supported");
 
-            using type = ct::const_unordered_map<size, first_type, second_type>;
+            using type = const_unordered_map<size, first_type, second_type>;
         };
 
         template<size_t N>
@@ -289,6 +289,7 @@ namespace ct
             return typename DeduceType<N>::type(input);
         }
     };
+
     template<size_t N, typename _HashedKey, typename _Value>
     class const_unordered_set
     {
@@ -362,7 +363,7 @@ namespace ct
 
         array_t m_array = {};
     };
-    template<ncbi::NStr::ECase case_sensitive, typename _T>
+    template<typename _T, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
     struct MakeConstSet
     {
         using value_type = DeduceHashedType<case_sensitive, NeedHash::yes, _T>;
@@ -374,43 +375,40 @@ namespace ct
             static constexpr size_t size = N;
             static_assert(size > 0, "empty const_set not supported");
 
-            using type = ct::const_unordered_set<size, value_type, value_type>;
+            using type = const_unordered_set<size, value_type, value_type>;
         };
 
         template<size_t N>
-        constexpr auto operator()(const init_t(&input)[N]) const
+        constexpr auto operator()(const init_t (&input)[N]) const -> typename DeduceType<N>::type
         {
-            return typename DeduceType<N>::type(ct::SimpleReorder(input));
+            return SimpleReorder(input);
         }
     };
-
 };
 
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
-    static constexpr ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>::init_pair_t                          \
+    static constexpr ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::no>::init_pair_t                          \
         name ## _init[]  __VA_ARGS__;                                                                                        \
-    static constexpr auto name = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>{}                         \
+    static constexpr auto name = ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::no>{}                         \
         (ct::Reorder(name ## _init));                                                                                        \
     static_assert(name.in_order(), "const map " #name "is not in order");
 
 
 #define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \
-    static constexpr ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type1, type2>::init_pair_t                         \
+    static constexpr ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::yes>::init_pair_t                         \
         name ## _init[]  __VA_ARGS__;                                                                                        \
-    static constexpr auto name = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type1, type2>{}                        \
+    static constexpr auto name = ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::yes>{}                        \
         (ct::Reorder(name ## _init));                                                                                        \
-    static constexpr auto name ## _flipped = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type2, type1>{}            \
+    static constexpr auto name ## _flipped = ct::MakeConstMap<type2, type1, case_sensitive, ct::TwoWayMap::yes>{}            \
         (ct::FlipReorder(name ## _init));                                                                                    \
     static_assert(name.in_order(), "const map " #name "is not in order");                                                    \
     static_assert(name ## _flipped.in_order(), "const map " #name "_flipped is not in order");
 
 #define MAKE_CONST_SET(name, case_sensitive, type, ...)                                                                      \
-    static constexpr ct::MakeConstSet<case_sensitive, type>::init_t                                                          \
-        name ## _init[]  __VA_ARGS__;                                                                                        \
-    static constexpr auto name = ct::MakeConstSet<case_sensitive, type>{}                                                    \
-        (name ## _init);   \
+    static constexpr ct::MakeConstSet<type, case_sensitive>::init_t name ## _init[]= __VA_ARGS__;                            \
+    static constexpr auto name = ct::MakeConstSet<type, case_sensitive>{}                                                    \
+        (name ## _init);                                                                                                     \
     static_assert(name.in_order(), "const set " #name "is not in order");
-
 
 #endif
 
