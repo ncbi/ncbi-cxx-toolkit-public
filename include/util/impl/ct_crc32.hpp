@@ -43,38 +43,16 @@
 
 namespace compile_time_bits
 {
-    template<size_t N, typename _Ret, template<size_t> class _Getter>
-    struct forward_sequence
-    {
-        using next_t = forward_sequence<N - 1, _Ret, _Getter>;
-        template<typename T, typename...TArgs>
-        constexpr _Ret operator()(const T& v, TArgs&&...args) const noexcept
-        {
-            return next_t{}(v, _Getter<N-1>{}(v), std::forward<TArgs>(args)...);
-        }
-    };
-
-    template<typename _Ret, template<size_t> class _Getter>
-    struct forward_sequence<0, _Ret, _Getter>
-    {
-        template<typename T, typename...TArgs>
-        constexpr _Ret operator()(const T& v, TArgs&&...args) const noexcept
-        {
-            return { {std::forward<TArgs>(args)...} };
-        }
-    };
-
     constexpr uint32_t sse42_poly = 0x82f63b78;
     constexpr uint32_t armv8_poly = 0x04c11db7;
     constexpr uint32_t platform_poly = sse42_poly;
 
     template<uint32_t poly>
     struct ct_crc32
-    { // compile time CRC32, C++11 compatible
+    { // compile time CRC32, C++14 compatible
         using type = uint32_t;
 
-#ifdef NCBI_CPP17
-        static constexpr type update17(type crc, uint8_t b)
+        static constexpr type update(type crc, uint8_t b)
         {
             crc ^= b;
             for (int k{ 0 }; k < 8; k++)
@@ -83,128 +61,32 @@ namespace compile_time_bits
             return crc;
         }
 
-        static constexpr type update17(type crc, type d32)
+        static constexpr type update4(type crc, type d32)
         {
             size_t len = 4;
             while (len--) {
                 uint8_t b = d32;
                 d32 = d32 >> 8;
-                crc = update17(crc, b);
+                crc = update(crc, b);
             }
             return crc;
         }
-        template<size_t N>
-        static constexpr type SaltedHash17(const char(&base)[N])
-        {
-            type hash = update17(type(0), type(N - 1));
-            for (size_t o{ 0 }; base[o] != 0; ++o)
-            {
-                hash = update17(hash, static_cast<uint8_t>(base[o]));
-            }
-            return hash;
-        }
-#endif
 
-        static constexpr type iterate(type crc) noexcept
-        {
-            return crc & 1 ? (crc >> 1) ^ poly : crc >> 1;
-        }
-
-        template<size_t i, typename...Unused>
-        struct update_t
-        {
-            using next_t = update_t<i - 1, Unused...>;
-            constexpr type operator()(type crc) const noexcept
-            {
-                return next_t{}(iterate(crc));
-            }
-        };
-
-        template<typename...Unused>
-        struct update_t<0, Unused...>
-        {
-            constexpr type operator()(type crc) const noexcept
-            {
-                return crc;
-            }
-        };
-
-        static constexpr type update(type crc, uint8_t b) noexcept
-        {
-            return update_t<8>{}(crc ^ b);
-        }
-
-        template<size_t i, typename...Unused>
-        struct update4_t
-        {
-            using next_t = update4_t<i - 1>;
-            constexpr type operator()(type crc, uint32_t rest) const noexcept
-            {
-                return next_t{}(update(crc, rest & 255), rest >> 8);
-            }
-        };
-        template<typename...Unused>
-        struct update4_t<0, Unused...>
-        {
-            constexpr type operator()(type crc, uint32_t rest) const noexcept
-            {
-                return crc;
-            }
-        };
-
-        template<size_t N, bool _lowercase>
-        struct fetch_t
-        {
-            static constexpr char lower_case(char c) noexcept
-            {
-                return (_lowercase && 'A' <= c && c <= 'Z') ? c + 'a' - 'A' : c;
-            }
-            constexpr uint8_t operator()(const char* in, size_t i) const noexcept
-            {
-                return static_cast<uint8_t>(lower_case(in[N - i]));
-            }
-        };
-
-        template<size_t i, typename _Fetch>
-        struct ct_hash_t
-        {
-            using next_t = ct_hash_t<i - 1, _Fetch>;
-
-            constexpr type operator()(type hash, const char* s) const noexcept
-            {
-                return (_Fetch{}(s, i) == 0) ? hash :
-                    next_t{}(update(hash, _Fetch{}(s, i)), s);
-            }
-        };
-
-        template<typename _Fetch>
-        struct ct_hash_t<0, _Fetch>
-        {
-            constexpr type operator()(type hash, const char* s) const noexcept
-            {
-                return hash;
-            };
-        };
-
-        template<bool lower_case, size_t N>
+        template<bool _lowercase, size_t N>
         static constexpr type SaltedHash(const char(&s)[N]) noexcept
         {
-            return ct_hash_t<N, fetch_t<N, lower_case>>{}(
-                update4_t<4>{}(type(0), type(N - 1)),
-                s);
+            type hash{ update4(type(0), type(N - 1))};
+            for (size_t i=0; i<N-1; ++i)
+            {
+                char c = s[i];
+                uint8_t b = static_cast<uint8_t>((_lowercase && 'A' <= c && c <= 'Z') ? c + 'a' - 'A' : c);
+                hash = update(hash, b);
+            }
+            return hash;
         }
 
         class MakeCRC32Table
         {
-        private:
-            template<size_t i>
-            struct next_value
-            {//should be replaced with C++17 constexpr lambda
-                constexpr uint32_t operator()(int) const noexcept
-                {
-                    return update(0, (uint8_t)i);
-                }
-            };
         public:
             struct cont_t
             {
@@ -213,7 +95,10 @@ namespace compile_time_bits
 
             constexpr cont_t operator()() const noexcept
             {
-                return compile_time_bits::forward_sequence<256, cont_t, next_value>{}(0);
+                cont_t ret{};
+                for (size_t i=0; i<256; ++i)
+                    ret.m_data[i] = update(0, (uint8_t)i);
+                return ret;
             }
         };
     }; // ct_crc32
@@ -229,12 +114,32 @@ namespace ct
         template<size_t N>
         static type constexpr ct(const char(&s)[N]) noexcept
         {
-            return compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<case_sensitive==ncbi::NStr::eNocase, N>(s);
-        }
-#if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
-        static type sse42(const char* s, size_t realsize) noexcept;
+            auto hash = compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<case_sensitive==ncbi::NStr::eNocase, N>(s);
+#if 0 
+//def NCBI_COMPILER_ICC
+// Intel compiler ignores uint32_to int32_t conversion at compile time
+            if (hash >= 0x8000'0000)
+            {
+                int64_t h64 = hash-1;
+                h64 ^= 0xFFFF'FFFF;
+                return -h64;
+            }
 #endif
-        static type general(const char* s, size_t realsize) noexcept;
+            return hash;
+        }
+        static type rt(const char* s, size_t realsize) noexcept
+        {
+#if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
+            auto hash = sse42(s, realsize);
+#else
+            auto hash = general(s, realsize);
+#endif
+            return hash;
+        }
+        static uint32_t general(const char* s, size_t realsize) noexcept;
+#if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
+        static uint32_t sse42(const char* s, size_t realsize) noexcept;
+#endif
     };
 };
 

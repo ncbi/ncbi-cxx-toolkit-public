@@ -41,445 +41,11 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-#if 0
-template<typename _Row, class _Hash, size_t N_key, size_t N_value>
-struct const_index_traits
-{
-    using key_type = typename std::tuple_element<N_key, _Row>::type;
-    using value_type = typename std::tuple_element<N_value, _Row>::type;
-
-    using hash_type = typename _Hash::hash_type;
-    using hash_value_pair = const_pair<hash_type, value_type>;
-
-    template<size_t N, typename _T>
-    struct alignment
-    {
-        static constexpr size_t mem_align = std::hardware_constructive_interference_size;
-
-        static_assert(N > 0, "cannot align zero size");
-        static constexpr size_t min_size = sizeof(_T[N]);
-        static constexpr size_t aligned_size = ((min_size + mem_align - 1) / mem_align) * mem_align;
-
-        static constexpr size_t align = mem_align;
-
-        static constexpr size_t padded_size = aligned_size / sizeof(_T);
-
-        static_assert(sizeof(_T[padded_size]) % align == 0, "alignment calculated failed");
-    };
-
-    template<size_t N>
-    struct combined_container_type
-    {
-        using align = alignment<N, hash_type>;
-        using index_type = const_array<hash_type, align::padded_size> alignas(align::align);
-        using pair_type = const_pair<index_type, const_array<value_type, N>>;
-    };
-
-    template<size_t index>
-    struct select_two_columns
-    {
-        using type = hash_value_pair;
-        template<typename _T>
-        constexpr type operator()(const _T& rows) const noexcept
-        {
-            return {
-                     std::get<N_key>(rows[index]),
-                     std::get<N_value>(rows[index])
-            };
-        }
-    };
-
-    template<size_t N>
-    static constexpr const_array<hash_value_pair, N>
-        slice_pair(const _Row(&input)[N]) noexcept
-    {
-        return Reorder(compile_time_bits::forward_sequence<N, const_array<hash_value_pair, N>, select_two_columns>{}(input));
-    }
-
-    template<size_t _index, typename _Input_type, typename return_type>
-    struct slice_array_column
-    {
-        using input_type = typename std::remove_reference<_Input_type>::type;
-        using col_type = typename std::tuple_element<_index, typename input_type::value_type>::type;
-
-        static constexpr size_t max_size = std::tuple_size<input_type>::value;
-        static constexpr size_t size = std::tuple_size<return_type>::value;
-
-        template<size_t i>
-        struct get_tuple_member
-        {
-            constexpr auto operator()(const input_type& rows) const noexcept
-                -> col_type
-            {
-                return std::get<_index>(std::get < i<max_size ? i : max_size - 1>(rows));
-            }
-        };
-
-        constexpr auto operator()(const input_type& input) const noexcept
-            -> return_type
-        {
-            using sequence_type = compile_time_bits::forward_sequence<size, return_type, get_tuple_member>;
-            return sequence_type{}(input);
-        }
-    };
-
-    template<typename _T, size_t N>
-    static constexpr auto CombineIndexPair(const const_array<_T, N>& input) noexcept
-        -> typename combined_container_type<N>::pair_type
-    {
-        using return_type = combined_container_type<N>;
-        return {
-            slice_array_column<0, decltype(input), typename return_type::pair_type::first_type  >{}(input),
-            slice_array_column<1, decltype(input), typename return_type::pair_type::second_type >{}(input)
-        };
-    }
-};
-
-template<typename _Ty>
-class const_vector
-{
-public:
-    using value_type = _Ty;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
-    using reference = const value_type&;
-    using const_reference = const value_type&;
-    using pointer = const value_type*;
-    using const_pointer = const value_type*;
-    using const_iterator = const value_type*;
-    using iterator = const value_type*;
-
-    constexpr const_vector() noexcept = default;
-    constexpr const_vector(const_pointer* _data, size_t _size) :
-        m_data{ _data }, m_size{ _size }
-    {
-    }
-    template<size_t N>
-    constexpr const_vector(const const_array<_Ty, N>& _ar) :
-        m_data{ _ar.data() }, m_size{ _ar.size() }
-    {
-    }
-    template<size_t N>
-    constexpr const_vector(const _Ty(&_ar)[N]) :
-        m_data{ _ar }, m_size{ N }
-    {
-    }
-    constexpr size_t size() const noexcept
-    {
-        return m_size;
-    }
-    constexpr size_t capacity() const noexcept
-    {
-        return m_size;
-    }
-
-    constexpr const value_type& operator[](size_t _pos) const noexcept
-    {
-        return m_data[_pos];
-    }
-    constexpr const_iterator begin() const noexcept
-    {
-        return m_data;
-    }
-    constexpr const_iterator end() const noexcept
-    {
-        return m_data + size();
-    }
-    constexpr const value_type* data() const noexcept
-    {
-        return m_data;
-    }
-    value_type* data()
-    {
-        return m_data;
-    }
-
-protected:
-    size_t m_size = 0;
-    const_pointer m_data = nullptr;
-};
-
-template<typename _KeyType, typename _ValueType, typename _Hash>
-class const_index
-{
-public:
-    using hash_type = typename _Hash::hash_type;
-    using intermediate = typename _Hash::intermediate;
-    //using key_type = _KeyType;
-    using mapped_type = _ValueType;
-
-    using mapped_values_type = const_vector<mapped_type>;
-
-    // alias to decide whether _Key can be constructed from _Arg
-    constexpr const_index() noexcept = default;
-    template<typename _Container>
-    constexpr const_index(const _Container& data) noexcept
-        : m_hashes{ data.first },
-        m_values{ data.second }
-    {
-    }
-
-    constexpr const mapped_values_type& values() const noexcept
-    {
-        return m_values;
-    }
-
-    template<typename _K, typename _Arg>
-    using if_available = typename std::enable_if<
-        std::is_constructible<intermediate, _K>::value, _Arg>::type;
-
-    template<typename _Ret, typename _Arg>
-    using if_returnable = typename std::enable_if<
-        std::is_assignable<_Ret, _Arg>::value, _Arg>::type;
-
-    template<typename K>
-    if_available<K, const mapped_type&>
-        at(K&& _key) const
-    {
-        intermediate temp = std::forward<K>(_key);
-        typename _Hash::type key(temp);
-        auto it = std::lower_bound(m_hashes.begin(), m_hashes.end(), std::move(key));
-        if (it == m_hashes.end())
-            throw std::out_of_range("invalid const_index<K, T> key");
-
-        return m_values[std::distance(m_hashes.begin(), it)];
-    }
-
-    template<typename K>
-    if_available<K, const mapped_type&>
-        operator[](K&& _key) const
-    {
-        return at(std::forward<K>(_key));
-    }
-
-    template<typename _Ret, typename _KeyTy>
-    if_available<_KeyTy, bool>
-        find_any(_Ret& o_value, _KeyTy&& _key) const
-        //if_returnable<_Ret, _Ret>& o_value, _KeyTy&& _key) const
-    {
-        intermediate temp = std::forward<_KeyTy>(_key);
-        typename _Hash::type key(temp);
-        auto it = std::lower_bound(m_hashes.begin(), m_hashes.end(), std::move(key));
-        if (it == m_hashes.end())
-            return false;
-        else
-            o_value = m_values[std::distance(m_hashes.begin(), it)];
-
-        return true;
-    }
-
-protected:
-    const_vector<hash_type>   m_hashes = {  };
-    mapped_values_type m_values = {  };
-};
-
-template<ncbi::NStr::ECase case_sensitive, typename..._Types>
-struct const_table
-{
-    using row_type = const_tuple<typename DeduceHashedType<case_sensitive, NeedHash::yes, _Types>::type...>;
-
-    template<size_t N_key, size_t N_value>
-    struct MakeIndex
-    {
-        using hash_type = DeduceHashedType<case_sensitive, NeedHash::yes, typename std::tuple_element<N_key, row_type>::type>;
-        using traits = const_index_traits<row_type, hash_type, N_key, N_value>;
-        using key_type = typename traits::key_type;
-        using value_type = typename traits::value_type;
-
-        using index_type = const_index<key_type, value_type, hash_type>;
-
-        template<size_t N>
-        constexpr auto operator()(const row_type(&input)[N]) const noexcept
-            -> decltype(traits::CombineIndexPair(traits::slice_pair(input)))
-        {
-            return traits::CombineIndexPair(traits::slice_pair(input));
-        }
-    };
-};
-#endif
-
-namespace compile_time_bits
-{
-    template<class _Array,
-        class _FwdIt,
-        class _Ty,
-        class _Pr>
-        //[[nodiscard]] 
-        constexpr _FwdIt const_lower_bound(const _Array& ar, _FwdIt _First, const _FwdIt _Last, const _Ty& _Val, _Pr _Pred)
-    {	// find first element not before _Val, using _Pred
-        //_Adl_verify_range(_First, _Last);
-        auto _UFirst = _First; // _Get_unwrapped(_First);
-        auto _Count = _Last - _UFirst; // std::distance(_UFirst, _Last); // _Get_unwrapped(_Last));
-
-        while (0 < _Count)
-        {	// divide and conquer, find half that contains answer
-            const auto _Count2 = _Count >> 1; // TRANSITION, VSO#433486
-            const auto _UMid = _UFirst + _Count2; // std::next(_UFirst, _Count2);
-            if (_Pred(ar[_UMid], _Val))
-            {	// try top half
-                _UFirst = (_UMid + 1); // _Next_iter(_UMid);
-                _Count -= _Count2 + 1;
-            }
-            else
-            {
-                _Count = _Count2;
-            }
-        }
-
-        _First = _UFirst;
-        return (_First);
-    }
-
-    template<typename _Array, typename _Iterator>
-    constexpr void move_down(_Array& ar, _Iterator head, _Iterator tail, _Iterator current)
-    {
-        auto saved = ar[current];
-        while (head != tail)
-        {
-            auto prev = tail--;
-            ar[prev] = ar[tail];
-        }
-        ar[head] = saved;
-    }
-
-    template<bool unique = true, typename _array, typename _iterator, typename _pred>
-    //[[nodiscard]]
-    constexpr auto insert_sort(_array& ar, const _iterator begin, const _iterator end, _pred pred)
-    {
-        auto size = end - begin; // std::distance(begin, end);
-        if (size < 2)
-            return size;
-
-        // current is the first element of the unsorted part of the array
-        auto current = begin;
-        // the last inserted element into sorted part of the array
-        auto last = current;
-        ++current;
-
-        while (current != end)
-        {
-            if (pred(ar[last], ar[current]))
-            {   // optimization for presorted arrays, don't move anything if things are 
-                // already in order or identical
-                // the two adjacent elements not in order reinsert the current
-                ++last;
-                if (last != current)
-                    ar[last] = ar[current];
-            }
-            else {
-                auto fit = const_lower_bound(ar, begin, last, ar[current], pred);
-                // no need to check the fit result
-                // since it's already known the current is less then last
-                bool move{};
-                if (unique)
-                    move = pred(ar[current], ar[fit]);
-                else
-                    move = true;
-                if (move)
-                {	// *fit is greater or equal to *current
-                    // identical elements are rejected
-                    ++last;
-                    move_down(ar, fit, last, current);
-                }
-            }
-            ++current;
-        }
-        return 1 + (last - begin); // std::distance(begin, last);
-    }
-    class CompareLess
-    {
-    public:
-        template<typename T1, typename T2>
-        constexpr bool operator()(const ct::const_pair<T1, T2>& l, const ct::const_pair<T1, T2>& r) const
-        {
-            return l.first < r.first;
-        }
-        template<typename T>
-        constexpr bool operator()(const T& l, const T& r) const
-        {
-            return l < r;
-        }
-    };
-
-    template<typename _array, typename _pred = CompareLess>
-    //[[nodiscard]]
-    constexpr auto insert_sort(const _array& ar, _pred pred = _pred()) -> typename std::remove_cv<_array>::type
-    {
-        using non_const = typename std::remove_cv<_array>::type;
-        non_const copied = ar;
-        insert_sort<true, non_const, size_t,_pred>(copied, 0, copied.size(), pred);
-        return copied;
-    };
-
-};
-
-//#undef MAKE_CONST_MAP
-//#undef MAKE_TWOWAY_CONST_MAP
-
-#define MAKE_CONST_MAP_NEW(name, case_sensitive, type1, type2, ...)                                                              \
-    using name ## _deduce_type = typename ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>;                 \
-    static constexpr size_t name ## _init_size = name ## _deduce_type::get_size(__VA_ARGS__);                                \
-    using name ## _map_type = typename name ## _deduce_type::DeduceType<name ## _init_size>::type;                           \
-    static constexpr name ## _map_type name (                                                                                \
-        compile_time_bits::insert_sort<typename name ## _map_type :: array_t>({__VA_ARGS__}));  
-
 NCBITEST_AUTO_INIT()
 {
     boost::unit_test::framework::master_test_suite().p_name->assign(
         "compile time const_map Unit Test");
 }
-
-#if 0
-BOOST_AUTO_TEST_CASE(TestConstCharset1)
-{
-    constexpr
-        ct::const_translate_table<int>::init_pair_t init_charset[] = {
-            {500, {'A', 'B', 'C'}},
-            {700, {'x', 'y', 'z'}},
-            {400, {"OPRS"}}
-    };
-
-    constexpr
-        ct::const_translate_table<int> test_xlate(100, init_charset);
-
-    BOOST_CHECK(test_xlate['A'] == 500);
-    BOOST_CHECK(test_xlate['B'] == 500);
-    BOOST_CHECK(test_xlate['C'] == 500);
-    BOOST_CHECK(test_xlate['D'] == 100);
-    BOOST_CHECK(test_xlate['E'] == 100);
-    BOOST_CHECK(test_xlate[0] == 100);
-    BOOST_CHECK(test_xlate['X'] == 100);
-    BOOST_CHECK(test_xlate['x'] == 700);
-    BOOST_CHECK(test_xlate['P'] == 400);
-}
-
-using xlat_call = std::string(*)(const char*);
-
-static std::string call1(const char* s)
-{
-    return s;
-}
-static std::string call2(const char* s)
-{
-    return std::string(s) + ":" + s;
-}
-
-BOOST_AUTO_TEST_CASE(TestConstCharset2)
-{
-    //xlate_call c1 = [](const char*s)->std::string { return s; };
-    //xlate_call c2 = [](const char*s)->std::string { return std::string(s) + ":" + s; };
-
-    constexpr ct::const_translate_table<xlat_call>::init_pair_t init_charset[] = {
-            {call1, {'A', 'B', 'c'} },
-            {call2, {'x', 'y', 'z'} }
-    };
-    constexpr ct::const_translate_table<xlat_call> test_xlat(nullptr, init_charset);
-
-    BOOST_CHECK(test_xlat['P'] == nullptr);
-    BOOST_CHECK(test_xlat['A']("alpha") == "alpha");
-    BOOST_CHECK(test_xlat['x']("beta") == "beta:beta");
-}
-#endif
 
 MAKE_TWOWAY_CONST_MAP(test_two_way1, ncbi::NStr::eNocase, const char*, const char*,
     {
@@ -579,7 +145,6 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
 BOOST_AUTO_TEST_CASE(TestConstSet)
 {
-#if 0
     MAKE_CONST_SET(ts1, ncbi::NStr::eCase, const char*,
         { "a2", "a1", "a3" });
 
@@ -620,22 +185,41 @@ BOOST_AUTO_TEST_CASE(TestConstSet)
     auto b1_it = ts2.find("B1");
     BOOST_CHECK((*b1_it) == std::string("b1"));
     BOOST_CHECK((*b1_it) == std::string("B1"));
-#endif
 };
 
 BOOST_AUTO_TEST_CASE(TestCRC32)
 {
+    using hash_type = ct::SaltedCRC32<ncbi::NStr::eCase>::type;
+
+    constexpr hash_type good_cs = 0x38826fa7;
+    constexpr hash_type good_ncs = 0xefa77b2c;
     constexpr auto hash_good_cs = ct::SaltedCRC32<ncbi::NStr::eCase>::ct("Good");
     constexpr auto hash_good_ncs = ct::SaltedCRC32<ncbi::NStr::eNocase>::ct("Good");
-    static_assert(hash_good_cs != hash_good_ncs, "not good");
 
-    static_assert(948072359 == hash_good_cs, "not good");
+    auto hash_good_cs_rt = ct::SaltedCRC32<ncbi::NStr::eCase>::rt("Good", 4);
+    auto hash_good_ncs_rt = ct::SaltedCRC32<ncbi::NStr::eNocase>::rt("Good", 4);
+
+    static_assert(hash_good_cs != hash_good_ncs, "not good");
+    static_assert(good_cs == hash_good_cs, "not good");
+    static_assert(good_ncs == hash_good_ncs, "not good");
+
+    std::cout << std::hex
+              << "Hash values:" << std::endl
+              << hash_good_cs << std::endl
+              << hash_good_ncs << std::endl
+              << hash_good_cs_rt << std::endl
+              << hash_good_ncs_rt << std::endl
+              << good_cs << std::endl
+              << good_ncs << std::endl
+              << std::dec
+    ;
+
     static_assert(
         ct::SaltedCRC32<ncbi::NStr::eNocase>::ct("Good") == ct::SaltedCRC32<ncbi::NStr::eCase>::ct("good"),
         "not good");
 
-    BOOST_CHECK(hash_good_cs  == ct::SaltedCRC32<ncbi::NStr::eCase>::general("Good", 4));
-    BOOST_CHECK(hash_good_ncs == ct::SaltedCRC32<ncbi::NStr::eNocase>::general("Good", 4));
+    BOOST_CHECK(hash_good_cs  == hash_good_cs_rt);
+    BOOST_CHECK(hash_good_ncs == hash_good_ncs_rt);
 }
 
 struct Implementation_via_type
@@ -948,57 +532,4 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
 }
 
 #endif
-
-
-BOOST_AUTO_TEST_CASE(TestCompileTimeSort)
-{
-    static constexpr ct::const_array<int, 5> pre_sorted = { 1, 2, 3, 4, 5 };
-    static constexpr ct::const_array<int, 5> ts1 = { 5, 4, 1, 3, 2 };
-    constexpr auto sorted = compile_time_bits::insert_sort(ts1);
-    for (auto& rec : sorted)
-    {
-        std::cout << rec << std::endl;
-    }
-    BOOST_CHECK(0 != memcmp(sorted.data(), ts1.data(), sizeof(sorted)));
-    BOOST_CHECK(0 == memcmp(sorted.data(), pre_sorted.data(), sizeof(sorted)));
-
-    static constexpr ct::const_array<ct::const_pair<int, int>, 5> ts2 = { {
-        {5, 50},
-        {1, 10},
-        {3, 30},
-        {4, 40},
-        {2, 20}
-    } };
-    constexpr auto ts2_sorted = compile_time_bits::insert_sort(ts2);
-    for (auto& rec : ts2_sorted)
-    {
-        std::cout << rec.first << std::endl;
-    }
-
-#if 0
-    static constexpr ct::const_array<ct::const_pair<ct::CHashString<ncbi::NStr::eCase>, int>, 5> ts3 = { {
-        {"a5", 50},
-        {"a1", 10},
-        {"a3", 30},
-        {"a4", 40},
-        {"a2", 20}
-    } };
-    constexpr auto ts3_sorted = compile_time_bits::insert_sort(ts3);
-    for (auto& rec : ts3_sorted)
-    {
-        std::cout << rec.first << std::endl;
-    }
-
-    MAKE_CONST_MAP_NEW(ts4, ncbi::NStr::eCase, const char*, int,
-      { { "a5", 50 },
-        { "a1", 10 },
-        { "a3", 30 },
-        { "a4", 40 },
-        { "a2", 20 }
-        });
- 
-    for (auto& rec : ts4)
-        std::cout << rec.first << ":" << rec.second << std::endl;
-#endif
-};
 

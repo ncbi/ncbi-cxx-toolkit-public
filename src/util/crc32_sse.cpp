@@ -38,7 +38,7 @@
     #include <immintrin.h>
 #endif
 
-#if 0
+#if 1
 static
 constexpr
 auto g_crc32_table = compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::MakeCRC32Table{}();

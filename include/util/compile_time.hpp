@@ -283,21 +283,10 @@ namespace ct
         };
 
         template<size_t N>
-        constexpr auto operator()(const init_pair_t(&input)[N]) const ->
-            typename DeduceType<N>::type
-        {
-            return typename DeduceType<N>::type(input);
-        }
-        template<size_t N>
         constexpr auto operator()(const const_array<init_pair_t, N> &input) const ->
             typename DeduceType<N>::type
         {
             return typename DeduceType<N>::type(input);
-        }
-        template<size_t N>
-        static constexpr size_t get_size(const init_pair_t(&input)[N])
-        {
-            return N;
         }
     };
     template<size_t N, typename _HashedKey, typename _Value>
@@ -389,16 +378,9 @@ namespace ct
         };
 
         template<size_t N>
-        constexpr auto operator()(const init_t(&input)[N]) const ->
-            typename DeduceType<N>::type
+        constexpr auto operator()(const init_t(&input)[N]) const
         {
-            return typename DeduceType<N>::type(input);
-        }
-        template<size_t N>
-        constexpr auto operator()(const const_array<init_t, N> &input) const ->
-            typename DeduceType<N>::type
-        {
-            return typename DeduceType<N>::type(input);
+            return typename DeduceType<N>::type(ct::SimpleReorder(input));
         }
     };
 
@@ -408,7 +390,8 @@ namespace ct
     static constexpr ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>::init_pair_t                          \
         name ## _init[]  __VA_ARGS__;                                                                                        \
     static constexpr auto name = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::no, type1, type2>{}                         \
-        (ct::Reorder(name ## _init));
+        (ct::Reorder(name ## _init));                                                                                        \
+    static_assert(name.in_order(), "const map " #name "is not in order");
 
 
 #define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \
@@ -417,18 +400,16 @@ namespace ct
     static constexpr auto name = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type1, type2>{}                        \
         (ct::Reorder(name ## _init));                                                                                        \
     static constexpr auto name ## _flipped = ct::MakeConstMap<case_sensitive, ct::TwoWayMap::yes, type2, type1>{}            \
-        (ct::FlipReorder(name ## _init));
-
-//static_assert(name.in_order(), "const map " #name "is not in order");
+        (ct::FlipReorder(name ## _init));                                                                                    \
+    static_assert(name.in_order(), "const map " #name "is not in order");                                                    \
+    static_assert(name ## _flipped.in_order(), "const map " #name "_flipped is not in order");
 
 #define MAKE_CONST_SET(name, case_sensitive, type, ...)                                                                      \
     static constexpr ct::MakeConstSet<case_sensitive, type>::init_t                                                          \
         name ## _init[]  __VA_ARGS__;                                                                                        \
-        static constexpr auto name = ct::MakeConstSet<case_sensitive, type>{}                                                \
-        (ct::Reorder(name ## _init)); 
-
-//static_assert(name.in_order(), "const set " #name "is not in order");
-
+    static constexpr auto name = ct::MakeConstSet<case_sensitive, type>{}                                                    \
+        (name ## _init);   \
+    static_assert(name.in_order(), "const set " #name "is not in order");
 
 
 #endif
