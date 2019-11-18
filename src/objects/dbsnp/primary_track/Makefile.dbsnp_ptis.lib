@@ -1,0 +1,11 @@
+# $Id$
+
+LIB = dbsnp_ptis
+SRC = snpptis dbsnp.pb dbsnp.grpc.pb
+
+PROJ_TAG = gbench,lib,public
+REQUIRES = GRPC
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -DNCBI_DBSNP_PTIS_EXPORTS $(GRPC_INCLUDE)
+
+WATCHERS = vasilche

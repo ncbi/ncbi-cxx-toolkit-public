@@ -15,6 +15,7 @@ NCBI_add_subdirectory(
   cdd
   cn3d
   coords
+  dbsnp
   docsum
   entrez2
   entrezgene

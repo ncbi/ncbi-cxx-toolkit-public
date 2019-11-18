@@ -1,0 +1,9 @@
+# $Id$
+
+LIB = dbsnp_primary_track
+SRC = dbsnp.pb dbsnp.grpc.pb
+
+PROJ_TAG = gbench,lib,public
+REQUIRES = GRPC
+
+CPPFLAGS = $(GRPC_INCLUDE) $(ORIG_CPPFLAGS)

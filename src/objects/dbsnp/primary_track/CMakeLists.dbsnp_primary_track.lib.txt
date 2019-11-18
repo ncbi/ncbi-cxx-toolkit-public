@@ -1,0 +1,12 @@
+#############################################################################
+# $Id$
+#############################################################################
+# 
+#
+
+NCBI_begin_lib(dbsnp_primary_track)
+  NCBI_dataspecs(dbsnp.proto)
+  NCBI_requires(PROTOBUF)
+  NCBI_disable_pch()
+  NCBI_uses_external_libraries(${ORIG_LIBS})
+NCBI_end_lib()

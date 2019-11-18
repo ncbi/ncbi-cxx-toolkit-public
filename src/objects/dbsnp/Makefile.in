@@ -1,0 +1,5 @@
+# $Id$
+SUB_PROJ = primary_track
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
