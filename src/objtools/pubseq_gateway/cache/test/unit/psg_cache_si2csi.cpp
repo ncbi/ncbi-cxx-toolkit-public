@@ -47,9 +47,10 @@
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
-namespace {
+BEGIN_SCOPE()
 
 USING_NCBI_SCOPE;
+USING_PSG_SCOPE;
 
 class CPsgCacheSi2CsiTest
     : public testing::Test
@@ -140,5 +141,5 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqIdSeqIdType)
     EXPECT_EQ(3643631, value.gi());
 }
 
-}  // namespace
+END_SCOPE()
 

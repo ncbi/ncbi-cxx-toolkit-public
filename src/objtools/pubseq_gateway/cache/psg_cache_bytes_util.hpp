@@ -36,7 +36,9 @@
 
 #include <string>
 
-BEGIN_NCBI_SCOPE
+#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+
+BEGIN_PSG_SCOPE
 
 class CPubseqGatewayCachePackBytes
 {
@@ -97,6 +99,6 @@ class CPubseqGatewayCacheUnpackBytes
     }
 };
 
-END_NCBI_SCOPE
+END_PSG_SCOPE
 
 #endif  // PSG_CACHE_BYTES_UTIL__HPP_

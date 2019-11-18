@@ -40,12 +40,12 @@
 
 #include "psg_cache_bytes_util.hpp"
 
-USING_NCBI_SCOPE;
-
 BEGIN_SCOPE()
+USING_PSG_SCOPE;
 
 using TPackBytes = CPubseqGatewayCachePackBytes;
 using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
+using TField = CBioseqInfoFetchRequest::EFields;
 
 static const unsigned kPackedZeroSz = 1;
 static const unsigned kPackedVersionSz = 3;
@@ -74,6 +74,9 @@ void PrintKey(const string& rv)
 
 END_SCOPE()
 
+
+BEGIN_PSG_SCOPE
+
 CPubseqGatewayCacheBioseqInfo::CPubseqGatewayCacheBioseqInfo(const string& file_name)
     : CPubseqGatewayCacheBase(file_name)
 {
@@ -94,6 +97,80 @@ void CPubseqGatewayCacheBioseqInfo::Open()
             delete(dbi);
         }
     );
+    rdtxn.commit();
+}
+
+string CPubseqGatewayCacheBioseqInfo::x_MakeLookupKey(CBioseqInfoFetchRequest const& request) const
+{
+    string accession = request.GetAccession();
+    if (
+        request.HasField(TField::eVersion)
+        && request.HasField(TField::eSeqIdType)
+        && request.HasField(TField::eGI))
+    {
+        return PackKey(accession, request.GetVersion(), request.GetSeqIdType(), request.GetGI());
+    } else if (request.HasField(TField::eVersion) && request.HasField(TField::eSeqIdType)) {
+        return PackKey(accession, request.GetVersion(), request.GetSeqIdType());
+    } else if (request.HasField(TField::eVersion)) {
+        return PackKey(accession, request.GetVersion());
+    }
+
+    return accession;
+}
+
+bool CPubseqGatewayCacheBioseqInfo::x_IsMatchingRecord(
+    CBioseqInfoFetchRequest const& request,
+    int version, int seq_id_type, int64_t gi
+) const
+{
+    bool acceptable = true;
+    if (request.HasField(TField::eGI)) {
+        acceptable = acceptable && (gi == request.GetGI());
+    }
+    if (request.HasField(TField::eVersion)) {
+        acceptable = acceptable && (version == request.GetVersion());
+    }
+    if (request.HasField(TField::eSeqIdType)) {
+        acceptable = acceptable && (seq_id_type == request.GetSeqIdType());
+    }
+    return acceptable;
+}
+
+void CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchRequest const& request, TBioseqInfoResponse& response)
+{
+    string filter = x_MakeLookupKey(request);
+    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
+    {
+        lmdb::val val;
+        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
+        if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
+            lmdb::val key;
+            string accession = request.GetAccession();
+            while (cursor.get(key, val, MDB_GET_CURRENT)) {
+                int seq_id_type{-1}, version{-1};
+                int64_t gi{-1};
+                if (
+                    key.size() != PackedKeySize(accession.size())
+                    || accession.compare(key.data<const char>()) != 0
+                ) {
+                    break;
+                }
+
+                bool rv = UnpackKey(key.data<const char>(), key.size(), version, seq_id_type, gi);
+                if (rv && x_IsMatchingRecord(request, version, seq_id_type, gi)) {
+                    response.resize(response.size() + 1);
+                    auto& last_record = response[response.size() - 1];
+                    last_record.accession = accession;
+                    last_record.version = version;
+                    last_record.seq_id_type = seq_id_type;
+                    last_record.gi = gi;
+                    last_record.data.assign(val.data(), val.size());
+                }
+                rv = cursor.get(key, val, MDB_NEXT);
+            }
+        }
+    }
+
     rdtxn.commit();
 }
 
@@ -400,5 +477,4 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(
     return rv;
 }
 
-USING_NCBI_SCOPE;
-
+END_PSG_SCOPE

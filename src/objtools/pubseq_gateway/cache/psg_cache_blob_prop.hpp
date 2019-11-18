@@ -41,7 +41,7 @@
 
 #include "psg_cache_base.hpp"
 
-BEGIN_NCBI_SCOPE
+BEGIN_PSG_SCOPE
 
 class CPubseqGatewayCacheBlobProp
     : public CPubseqGatewayCacheBase
@@ -62,6 +62,6 @@ class CPubseqGatewayCacheBlobProp
     vector<unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>> m_Dbis;
 };
 
-END_NCBI_SCOPE
+END_PSG_SCOPE
 
 #endif  // PSG_CACHE_BLOB_PROP__HPP

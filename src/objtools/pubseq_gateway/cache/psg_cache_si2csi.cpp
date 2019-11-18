@@ -41,9 +41,8 @@
 
 #include "psg_cache_bytes_util.hpp"
 
-USING_NCBI_SCOPE;
-
 BEGIN_SCOPE()
+USING_PSG_SCOPE;
 
 using TPackBytes = CPubseqGatewayCachePackBytes;
 using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
@@ -57,6 +56,8 @@ size_t PackedKeySize(size_t acc_sz)
 }
 
 END_SCOPE()
+
+BEGIN_PSG_SCOPE
 
 CPubseqGatewayCacheSi2Csi::CPubseqGatewayCacheSi2Csi(const string& file_name)
     : CPubseqGatewayCacheBase(file_name)
@@ -152,5 +153,4 @@ bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& s
     return rv;
 }
 
-USING_NCBI_SCOPE;
-
+END_PSG_SCOPE

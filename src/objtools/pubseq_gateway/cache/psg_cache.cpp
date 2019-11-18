@@ -47,9 +47,9 @@
 
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
-USING_NCBI_SCOPE;
-
 BEGIN_SCOPE()
+USING_PSG_SCOPE;
+USING_NCBI_SCOPE;
 
 void sAddRuntimeError(
     CPubseqGatewayCache::TRuntimeErrorList& error_list,
@@ -74,15 +74,14 @@ void ApplyInheritedSeqIds(
     if (cache) {
         ::psg::retrieval::BioseqInfoValue record;
         if (record.ParseFromString(data) && record.state() != ::psg::retrieval::SEQ_STATE_LIVE) {
-            int found_version, found_seq_id_type;
-            int64_t found_gi;
-            string latest_data;
-            if (cache->LookupByAccessionVersionSeqIdType(
-                accession, -1, seq_id_type, latest_data, found_version, found_seq_id_type, found_gi)
-            ) {
+            CPubseqGatewayCache::TBioseqInfoRequest request;
+            CPubseqGatewayCache::TBioseqInfoResponse response;
+            request.SetAccession(accession).SetSeqIdType(seq_id_type);
+            cache->Fetch(request, response);
+            if (!response.empty()) {
                 ::psg::retrieval::BioseqInfoValue latest_record;
                 if (
-                    latest_record.ParseFromString(latest_data)
+                    latest_record.ParseFromString(response[0].data)
                     && latest_record.state() == ::psg::retrieval::SEQ_STATE_LIVE
                 ) {
                     set<int16_t> seq_id_types;
@@ -112,8 +111,9 @@ void ApplyInheritedSeqIds(
 
 }
 
-
 END_SCOPE()
+
+BEGIN_PSG_SCOPE
 
 const size_t CPubseqGatewayCache::kRuntimeErrorLimit = 10;
 
@@ -175,6 +175,16 @@ void CPubseqGatewayCache::Open(const set<int>& sat_ids)
 void CPubseqGatewayCache::ResetErrors()
 {
     m_RuntimeErrors.clear();
+}
+
+void CPubseqGatewayCache::FetchBioseqInfo(TBioseqInfoRequest const& request, TBioseqInfoResponse & response)
+{
+    if (m_BioseqInfoCache) {
+        m_BioseqInfoCache->Fetch(request, response);
+        for (auto & record : response) {
+            ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record.accession, record.seq_id_type, record.data);
+        }
+    }
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccession(
@@ -337,3 +347,4 @@ bool CPubseqGatewayCache::UnpackBlobPropKey(const char* key, size_t key_sz, int6
     return CPubseqGatewayCacheBlobProp::UnpackKey(key, key_sz, last_modified, sat_key);
 }
 
+END_PSG_SCOPE

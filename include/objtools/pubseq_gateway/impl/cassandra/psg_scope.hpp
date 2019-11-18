@@ -1,5 +1,5 @@
-#ifndef PSG_CACHE_BASE__HPP
-#define PSG_CACHE_BASE__HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__PSG_SCOPE_HPP_
+#define OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__PSG_SCOPE_HPP_
 
 /*  $Id$
  * ===========================================================================
@@ -26,39 +26,16 @@
  *
  * ===========================================================================
  *
- * Authors: Dmitri Dmitrienko
- *
- * File Description: Base class for all cache subclasses
+ * Authors: Dmitrii Saprykin
  *
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
 
-#include <memory>
-#include <string>
+#define NCBI_NS_PSG NCBI_NS_NCBI::psg
 
-#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#define BEGIN_PSG_SCOPE BEGIN_SCOPE(NCBI_NS_PSG)
+#define END_PSG_SCOPE END_SCOPE(NCBI_NS_PSG)
+#define USING_PSG_SCOPE USING_SCOPE(NCBI_NS_PSG)
 
-BEGIN_SCOPE(lmdb)
-    class env;
-    class dbi;
-END_SCOPE()
-
-BEGIN_PSG_SCOPE
-
-class CPubseqGatewayCacheBase
-{
- public:
-    explicit CPubseqGatewayCacheBase(const string& file_name);
-    virtual ~CPubseqGatewayCacheBase();
-    // @throws lmdb::error
-    void Open();
-
- protected:
-    string m_FileName;
-    unique_ptr<lmdb::env> m_Env;
-};
-
-END_PSG_SCOPE
-
-#endif  // PSG_CACHE_BASE__HPP
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__PSG_SCOPE_HPP_

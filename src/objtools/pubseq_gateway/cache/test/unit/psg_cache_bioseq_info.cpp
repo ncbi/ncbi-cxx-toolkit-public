@@ -50,9 +50,10 @@
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
-namespace {
+BEGIN_SCOPE()
 
 USING_NCBI_SCOPE;
+USING_PSG_SCOPE;
 
 class CPsgCacheBioseqInfoTest
     : public testing::Test
@@ -251,5 +252,5 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionWithSeqIdsInhe
     EXPECT_EQ(expected_seq_ids, actual_seq_ids);
 }
 
-}  // namespace
+END_SCOPE()
 

@@ -1,5 +1,5 @@
-#ifndef PSG_CACHE__HPP
-#define PSG_CACHE__HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CACHE__PSG_CACHE_HPP_
+#define OBJTOOLS__PUBSEQ_GATEWAY__CACHE__PSG_CACHE_HPP_
 
 /*  $Id$
  * ===========================================================================
@@ -40,7 +40,11 @@
 #include <string>
 #include <vector>
 
-BEGIN_NCBI_SCOPE
+#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+
+BEGIN_PSG_SCOPE
 
 class CPubseqGatewayCacheBioseqInfo;
 class CPubseqGatewayCacheSi2Csi;
@@ -58,6 +62,8 @@ class CPubseqGatewayCache
  public:
     using TRuntimeError = SRuntimeError;
     using TRuntimeErrorList = deque<SRuntimeError>;
+    using TBioseqInfoResponse = TBioseqInfoCacheResponse;
+    using TBioseqInfoRequest = CBioseqInfoFetchRequest;
 
     static const size_t kRuntimeErrorLimit;
 
@@ -74,17 +80,30 @@ class CPubseqGatewayCache
     }
 
 /* bioseq_info */
+    void FetchBioseqInfo(TBioseqInfoRequest const& request, TBioseqInfoResponse & response);
+
+    NCBI_DEPRECATED
     bool LookupBioseqInfoByAccession(
         const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+
+    NCBI_DEPRECATED
     bool LookupBioseqInfoByAccessionVersion(
         const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi);
+
+    NCBI_DEPRECATED
     bool LookupBioseqInfoByAccessionVersionSeqIdType(
         const string& accession, int version, int seq_id_type, string& data, int64_t& found_gi);
+
+    NCBI_DEPRECATED
     bool LookupBioseqInfoByAccessionVersionSeqIdType(
         const string& accession, int version, int seq_id_type,
         string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
+
+    NCBI_DEPRECATED
     bool LookupBioseqInfoByAccessionGi(
         const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
+
+    NCBI_DEPRECATED
     bool LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
         const string& accession, int version, int seq_id_type, int64_t gi, string& data);
 
@@ -122,6 +141,6 @@ class CPubseqGatewayCache
     TRuntimeErrorList m_RuntimeErrors;
 };
 
-END_NCBI_SCOPE
+END_PSG_SCOPE
 
-#endif  // PSG_CACHE__HPP
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CACHE__PSG_CACHE_HPP_

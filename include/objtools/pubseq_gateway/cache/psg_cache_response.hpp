@@ -1,5 +1,5 @@
-#ifndef PSG_CACHE_BASE__HPP
-#define PSG_CACHE_BASE__HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CACHE__RESPONSE_HPP_
+#define OBJTOOLS__PUBSEQ_GATEWAY__CACHE__RESPONSE_HPP_
 
 /*  $Id$
  * ===========================================================================
@@ -26,39 +26,32 @@
  *
  * ===========================================================================
  *
- * Authors: Dmitri Dmitrienko
+ * Authors: Dmitrii Saprykin
  *
- * File Description: Base class for all cache subclasses
+ * Response structures for PSG cache
  *
  */
 
+#include <string>
+#include <vector>
+
 #include <corelib/ncbistd.hpp>
 
-#include <memory>
-#include <string>
-
 #include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
-
-BEGIN_SCOPE(lmdb)
-    class env;
-    class dbi;
-END_SCOPE()
+#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
 BEGIN_PSG_SCOPE
 
-class CPubseqGatewayCacheBase
-{
- public:
-    explicit CPubseqGatewayCacheBase(const string& file_name);
-    virtual ~CPubseqGatewayCacheBase();
-    // @throws lmdb::error
-    void Open();
-
- protected:
-    string m_FileName;
-    unique_ptr<lmdb::env> m_Env;
+struct SBioseqInfoCacheRecord {
+    string accession;
+    CBioseqInfoRecord::TVersion version;
+    CBioseqInfoRecord::TSeqIdType seq_id_type;
+    CBioseqInfoRecord::TGI gi;
+    string data;
 };
+
+using TBioseqInfoCacheResponse = vector<SBioseqInfoCacheRecord>;
 
 END_PSG_SCOPE
 
-#endif  // PSG_CACHE_BASE__HPP
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CACHE__RESPONSE_HPP_

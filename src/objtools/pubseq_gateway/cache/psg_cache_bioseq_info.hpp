@@ -34,18 +34,28 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "psg_cache_base.hpp"
 
-BEGIN_NCBI_SCOPE
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
+#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
+
+BEGIN_PSG_SCOPE
 
 class CPubseqGatewayCacheBioseqInfo
     : public CPubseqGatewayCacheBase
 {
  public:
+    using TBioseqInfoResponse = TBioseqInfoCacheResponse;
+
     explicit CPubseqGatewayCacheBioseqInfo(const string& file_name);
     virtual ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
+
+    void Fetch(CBioseqInfoFetchRequest const& request, TBioseqInfoResponse& response);
+
     bool LookupByAccession(
         const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
     bool LookupByAccessionVersion(
@@ -72,11 +82,12 @@ class CPubseqGatewayCacheBioseqInfo
         const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi);
 
  private:
+    string x_MakeLookupKey(CBioseqInfoFetchRequest const& request) const;
+    bool x_IsMatchingRecord(CBioseqInfoFetchRequest const& request, int version, int seq_id_type, int64_t gi) const;
     void ResetDbi();
     unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };
 
-END_NCBI_SCOPE
-
+END_PSG_SCOPE
 
 #endif  // PSG_CACHE_BIOSEQ_INFO__HPP

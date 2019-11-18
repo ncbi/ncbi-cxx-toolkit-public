@@ -33,13 +33,17 @@
  */
 
 #include "psg_cache_base.hpp"
- 
-BEGIN_NCBI_SCOPE
 
-class CPubseqGatewayCacheSi2Csi : public CPubseqGatewayCacheBase
+#include <string>
+#include <memory>
+
+BEGIN_PSG_SCOPE
+
+class CPubseqGatewayCacheSi2Csi
+    : public CPubseqGatewayCacheBase
 {
-public:
-	CPubseqGatewayCacheSi2Csi(const string& file_name);
+ public:
+    explicit CPubseqGatewayCacheSi2Csi(const string& file_name);
     virtual ~CPubseqGatewayCacheSi2Csi() override;
     void Open();
     bool LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);
@@ -47,11 +51,11 @@ public:
 
     static string PackKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type);
-private:
+
+ private:
     unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };
 
-END_NCBI_SCOPE
+END_PSG_SCOPE
 
-
-#endif
+#endif  // PSG_CACHE_SI2CSI__HPP

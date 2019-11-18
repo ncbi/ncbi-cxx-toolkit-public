@@ -47,9 +47,10 @@
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
-namespace {
+BEGIN_SCOPE()
 
 USING_NCBI_SCOPE;
+USING_PSG_SCOPE;
 
 class CPsgCachePackUnpackTest
     : public testing::Test
@@ -174,6 +175,4 @@ TEST_F(CPsgCachePackUnpackTest, BioseqInfo)
     }
 }
 
-
-}  // namespace
-
+END_SCOPE()

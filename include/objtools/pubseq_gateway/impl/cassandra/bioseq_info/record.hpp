@@ -40,10 +40,9 @@
 #include <utility>
 #include <vector>
 
-#include "../IdCassScope.hpp"
+#include "../psg_scope.hpp"
 
-BEGIN_IDBLOB_SCOPE
-USING_NCBI_SCOPE;
+BEGIN_PSG_SCOPE
 
 class CBioseqInfoRecord
 {
@@ -282,12 +281,8 @@ class CBioseqInfoRecord
     TTaxId              m_TaxId;
 };
 
-// e200_Ok: exactly one record found
-// e404_NotFound: no records found
-// e300_MultipleChoices: more than one record found
-using TBioseqInfoConsumeCallback =
-    function<void(CBioseqInfoRecord &&, CRequestStatus::ECode)>;
+using TBioseqInfoConsumeCallback = function<void(vector<CBioseqInfoRecord> &&)>;
 
-END_IDBLOB_SCOPE
+END_PSG_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__BIOSEQ_INFO__RECORD_HPP

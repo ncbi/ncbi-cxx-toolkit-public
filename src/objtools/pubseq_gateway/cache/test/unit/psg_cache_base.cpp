@@ -37,7 +37,7 @@
 
 #include <gtest/gtest.h>
 
-BEGIN_NCBI_SCOPE
+BEGIN_PSG_SCOPE
 
 bool operator==(const CPubseqGatewayCache::TRuntimeError a, const CPubseqGatewayCache::TRuntimeError b)
 {
@@ -48,39 +48,40 @@ std::ostream& operator<<(std::ostream& os, const CPubseqGatewayCache::TRuntimeEr
   return os << "'" << error.message << "'";  // whatever needed to print bar to os
 }
 
-END_NCBI_SCOPE
+END_PSG_SCOPE
 
-namespace {
-    USING_NCBI_SCOPE;
+BEGIN_SCOPE()
+USING_NCBI_SCOPE;
+USING_PSG_SCOPE;
 
-    TEST(PubseqGatewayCacheRuntimeErrors, EmptyOnStart) {
-        CPubseqGatewayCache cache("", "", "");
-        EXPECT_TRUE(cache.GetErrors().empty());
-    }
+TEST(PubseqGatewayCacheRuntimeErrors, EmptyOnStart) {
+    CPubseqGatewayCache cache("", "", "");
+    EXPECT_TRUE(cache.GetErrors().empty());
+}
 
-    TEST(PubseqGatewayCacheRuntimeErrors, WrongFileNames) {
-        CPubseqGatewayCache::TRuntimeErrorList expected_error_list{
-            CPubseqGatewayCache::TRuntimeError("Failed to open 'wrong si2sci' cache: No such file or directory: "
-                "No such file or directory, si2csi cache will not be used."),
-            CPubseqGatewayCache::TRuntimeError("Failed to open '/really_wrong_blob_prop' cache: "
-                "List of satellites is empty: Successful return: 0, blob prop cache will not be used."),
-        };
-        CPubseqGatewayCache cache("", "wrong si2sci", "/really_wrong_blob_prop");
+TEST(PubseqGatewayCacheRuntimeErrors, WrongFileNames) {
+    CPubseqGatewayCache::TRuntimeErrorList expected_error_list{
+        CPubseqGatewayCache::TRuntimeError("Failed to open 'wrong si2sci' cache: No such file or directory: "
+            "No such file or directory, si2csi cache will not be used."),
+        CPubseqGatewayCache::TRuntimeError("Failed to open '/really_wrong_blob_prop' cache: "
+            "List of satellites is empty: Successful return: 0, blob prop cache will not be used."),
+    };
+    CPubseqGatewayCache cache("", "wrong si2sci", "/really_wrong_blob_prop");
+    cache.Open({});
+    EXPECT_EQ(2UL, cache.GetErrors().size());
+    EXPECT_EQ(expected_error_list, cache.GetErrors());
+    cache.ResetErrors();
+    EXPECT_TRUE(cache.GetErrors().empty());
+}
+
+TEST(PubseqGatewayCacheRuntimeErrors, ErrorLimit) {
+    CPubseqGatewayCache cache("1", "2", "3");
+    for (size_t i = 0; i < CPubseqGatewayCache::kRuntimeErrorLimit; ++i) {
         cache.Open({});
-        EXPECT_EQ(2UL, cache.GetErrors().size());
-        EXPECT_EQ(expected_error_list, cache.GetErrors());
-        cache.ResetErrors();
-        EXPECT_TRUE(cache.GetErrors().empty());
     }
+    EXPECT_EQ(CPubseqGatewayCache::kRuntimeErrorLimit, cache.GetErrors().size());
+    cache.ResetErrors();
+    EXPECT_TRUE(cache.GetErrors().empty());
+}
 
-    TEST(PubseqGatewayCacheRuntimeErrors, ErrorLimit) {
-        CPubseqGatewayCache cache("1", "2", "3");
-        for (size_t i = 0; i < CPubseqGatewayCache::kRuntimeErrorLimit; ++i) {
-            cache.Open({});
-        }
-        EXPECT_EQ(CPubseqGatewayCache::kRuntimeErrorLimit, cache.GetErrors().size());
-        cache.ResetErrors();
-        EXPECT_TRUE(cache.GetErrors().empty());
-    }
-
-}  // namespace
+END_SCOPE()

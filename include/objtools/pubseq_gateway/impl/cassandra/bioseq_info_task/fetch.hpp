@@ -35,18 +35,20 @@
  */
 
 #include <functional>
-#include <string>
 #include <memory>
+#include <set>
+#include <string>
 #include <vector>
 
 #include <corelib/ncbistr.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/psg_scope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
-BEGIN_IDBLOB_SCOPE
-USING_NCBI_SCOPE;
+BEGIN_PSG_SCOPE
+USING_IDBLOB_SCOPE;
 
 class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
 {
@@ -59,19 +61,13 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     };
 
  public:
-    CCassBioseqInfoTaskFetch(unsigned int                           timeout_ms,
-                             unsigned int                           max_retries,
-                             shared_ptr<CCassConnection>            connection,
-                             const string &                         keyspace,
-                             const CBioseqInfoRecord::TAccession &  accession,
-                             CBioseqInfoRecord::TVersion            version,
-                             bool                                   version_provided,
-                             CBioseqInfoRecord::TSeqIdType          seq_id_type,
-                             bool                                   seq_id_type_provided,
-                             CBioseqInfoRecord::TGI                 gi,
-                             bool                                   gi_provided,
-                             TBioseqInfoConsumeCallback             consume_callback,
-                             TDataErrorCallback                     data_error_cb);
+    CCassBioseqInfoTaskFetch(unsigned int timeout_ms,
+                             unsigned int max_retries,
+                             shared_ptr<CCassConnection> connection,
+                             const string & keyspace,
+                             CBioseqInfoFetchRequest const& request,
+                             TBioseqInfoConsumeCallback consume_callback,
+                             TDataErrorCallback data_error_cb);
 
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
@@ -86,35 +82,24 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     void x_InitializeAliveRecordQuery(void);
     void x_PopulateRecord(CBioseqInfoRecord& record) const;
     bool x_IsMatchingRecord(void);
-    bool x_IsMatchingAliveRecord();
+    bool x_IsMatchingNewRecord(CBioseqInfoRecord const& old_record, CBioseqInfoRecord const& new_record);
     void x_ReadingLoop(void);
     void x_StartQuery(void);
-    void x_MergeSeqIds(void);
+    void x_MergeSeqIds(CBioseqInfoRecord& target, CBioseqInfoRecord const& source);
+    bool x_InheritanceRequired();
 
  private:
-    CBioseqInfoRecord::TAccession       m_Accession;
-    CBioseqInfoRecord::TVersion         m_Version;
-    bool                                m_VersionProvided;
-    CBioseqInfoRecord::TSeqIdType       m_SeqIdType;
-    bool                                m_SeqIdTypeProvided;
-    CBioseqInfoRecord::TGI              m_GI;
-    bool                                m_GIProvided;
-    TBioseqInfoConsumeCallback          m_ConsumeCallback;
-
- private:
-    size_t                              m_RecordCount;
-    CBioseqInfoRecord                   m_Record;
-
-    // Record containing alive BioseqInfo record with the same accession and seq_id_type as main record
-    // in case main record is Dead.
-    // Required to merge secondary identifiers set.
-    CBioseqInfoRecord                   m_LatestRecord;
+    CBioseqInfoFetchRequest m_Request;
+    string m_Accession;
+    TBioseqInfoConsumeCallback m_ConsumeCallback;
+    vector<CBioseqInfoRecord> m_Records;
+    set<size_t> m_InheritanceRequired;
 
  protected:
-    unsigned int                        m_PageSize;
-    unsigned int                        m_RestartCounter;
+    unsigned int m_PageSize;
+    unsigned int m_RestartCounter;
 };
 
-END_IDBLOB_SCOPE
+END_PSG_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BIOSEQ_INFO_TASK__FETCH_HPP_
