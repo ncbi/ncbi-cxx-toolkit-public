@@ -8,7 +8,6 @@ FeatureName:    first data line
                 Warning:
 Problem:        FASTA-Reader: Ignoring invalid residues at position(s): On line 2: 38
 SeqId:          lcl|seq_id
-Line:           0
 
 
                 Warning:
