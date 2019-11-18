@@ -108,7 +108,6 @@ void ApplyInheritedSeqIds(
             }
         }
     }
-
 }
 
 END_SCOPE()
@@ -180,93 +179,15 @@ void CPubseqGatewayCache::ResetErrors()
 void CPubseqGatewayCache::FetchBioseqInfo(TBioseqInfoRequest const& request, TBioseqInfoResponse & response)
 {
     if (m_BioseqInfoCache) {
-        m_BioseqInfoCache->Fetch(request, response);
-        for (auto & record : response) {
-            ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record.accession, record.seq_id_type, record.data);
+        if (request.HasField(TBioseqInfoRequest::EFields::eAccession)) {
+            TBioseqInfoResponse result;
+            m_BioseqInfoCache->Fetch(request, result);
+            for (auto & record : result) {
+                ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record.accession, record.seq_id_type, record.data);
+            }
+            swap(result, response);
         }
     }
-}
-
-bool CPubseqGatewayCache::LookupBioseqInfoByAccession(
-    const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
-{
-    if (
-        m_BioseqInfoCache
-        && m_BioseqInfoCache->LookupByAccession(accession, data, found_version, found_seq_id_type, found_gi)
-    ) {
-        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
-        return true;
-    }
-    return false;
-}
-
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(
-    const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi)
-{
-    if (
-        m_BioseqInfoCache
-        && m_BioseqInfoCache->LookupByAccessionVersion(accession, version, data, found_seq_id_type, found_gi)
-    ) {
-        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
-        return true;
-    }
-    return false;
-}
-
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
-    const string& accession, int version, int seq_id_type, string& data, int64_t& found_gi)
-{
-    int found_version, found_seq_id_type;
-    if (
-        m_BioseqInfoCache
-        && m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
-            accession, version, seq_id_type, data, found_version, found_seq_id_type, found_gi)
-    ) {
-        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
-        return true;
-    }
-    return false;
-}
-
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(
-    const string& accession, int version, int seq_id_type,
-    string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi)
-{
-    if (
-        m_BioseqInfoCache
-        && m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(
-            accession, version, seq_id_type, data, found_version, found_seq_id_type, found_gi)
-    ) {
-        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
-        return true;
-    }
-    return false;
-}
-
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionGi(
-    const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type)
-{
-    if (
-        m_BioseqInfoCache
-        && m_BioseqInfoCache->LookupBioseqInfoByAccessionGi(accession, gi, data, found_version, found_seq_id_type)
-    ) {
-        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, found_seq_id_type, data);
-        return true;
-    }
-    return false;
-}
-
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
-        const string& accession, int version, int seq_id_type, int64_t gi, string& data)
-{
-    if (
-        m_BioseqInfoCache
-        && m_BioseqInfoCache->LookupBioseqInfoByAccessionVersionSeqIdTypeGi(accession, version, seq_id_type, gi, data)
-    ) {
-        ApplyInheritedSeqIds(m_BioseqInfoCache.get(), accession, seq_id_type, data);
-        return true;
-    }
-    return false;
 }
 
 string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version)

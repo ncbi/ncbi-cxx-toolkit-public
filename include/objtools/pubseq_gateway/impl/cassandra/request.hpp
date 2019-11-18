@@ -123,13 +123,14 @@ class CBioseqInfoFetchRequest
         return m_State & static_cast<TFields>(field);
     }
 
-    void Reset()
+    CBioseqInfoFetchRequest& Reset()
     {
         m_Accession.clear();
         m_GI = 0;
         m_Version = 0;
         m_SeqIdType = 0;
         m_State = 0;
+        return *this;
     }
 
  private:

@@ -444,25 +444,22 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid, int for
 
 void CTestPsgCache::LookupBioseqInfoByPrimaryAVT(const string& accession, int version, int seq_id_type)
 {
-    string data;
-    bool res = false;
-    int64_t gi = -1;
+    CPubseqGatewayCache::TBioseqInfoRequest request;
+    request.SetAccession(accession);
     if (version >= 0) {
-        if (seq_id_type >= 0) {
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(
-                accession, version, seq_id_type, data, version, seq_id_type, gi);
-        } else {
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersion(accession, version, data, seq_id_type, gi);
-        }
-    } else {
-        if (seq_id_type >= 0) {
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(
-                accession, -1, seq_id_type, data, version, seq_id_type, gi);
-        } else {
-            res = m_LookupCache->LookupBioseqInfoByAccession(accession, data, version, seq_id_type, gi);
-        }
+        request.SetVersion(version);
     }
-    PrintBioseqInfo(res, accession, version, seq_id_type, gi, data);
+    if (seq_id_type >= 0) {
+        request.SetSeqIdType(seq_id_type);
+    }
+    CPubseqGatewayCache::TBioseqInfoResponse response;
+    m_LookupCache->FetchBioseqInfo(request, response);
+    if (response.empty()) {
+        PrintBioseqInfo(false, accession, 0, 0, 0, "");
+    }
+    for (auto & item : response) {
+        PrintBioseqInfo(true, accession, item.version, item.seq_id_type, item.gi, item.data);
+    }
 }
 
 void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int force_seq_id_type)

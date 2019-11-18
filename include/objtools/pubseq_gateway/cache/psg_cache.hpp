@@ -79,33 +79,7 @@ class CPubseqGatewayCache
         return m_RuntimeErrors;
     }
 
-/* bioseq_info */
     void FetchBioseqInfo(TBioseqInfoRequest const& request, TBioseqInfoResponse & response);
-
-    NCBI_DEPRECATED
-    bool LookupBioseqInfoByAccession(
-        const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
-
-    NCBI_DEPRECATED
-    bool LookupBioseqInfoByAccessionVersion(
-        const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi);
-
-    NCBI_DEPRECATED
-    bool LookupBioseqInfoByAccessionVersionSeqIdType(
-        const string& accession, int version, int seq_id_type, string& data, int64_t& found_gi);
-
-    NCBI_DEPRECATED
-    bool LookupBioseqInfoByAccessionVersionSeqIdType(
-        const string& accession, int version, int seq_id_type,
-        string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
-
-    NCBI_DEPRECATED
-    bool LookupBioseqInfoByAccessionGi(
-        const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
-
-    NCBI_DEPRECATED
-    bool LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
-        const string& accession, int version, int seq_id_type, int64_t gi, string& data);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
