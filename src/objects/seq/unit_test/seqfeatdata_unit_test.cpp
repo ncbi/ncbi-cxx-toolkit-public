@@ -2336,5 +2336,8 @@ BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
 {
     auto all_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_any);
     BOOST_CHECK_EQUAL(all_quals.size(), 133);
+    auto empty_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_clone);
+    BOOST_CHECK_EQUAL(empty_quals.size(), 0);
+
 
 }

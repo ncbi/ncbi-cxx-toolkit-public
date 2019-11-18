@@ -52,24 +52,14 @@ namespace ct
 
         constexpr const_bitset() = default;
 
-        template<typename...TArgs>
-        constexpr const_bitset(_T first, TArgs...args)
-            : m_size(1+sizeof...(args)), 
-              _Array(bitset_traits<
-                  _Words, 
-                  typename enforce_all_constructable<unsigned, _T, TArgs...>::type,
-                  _Ty,
-                  1+sizeof...(args)>::set_bits(first, args...))
+        constexpr const_bitset(std::initializer_list<T> _init)
+            :m_size{_init.size()},
+            _Array(bitset_traits<_Ty, _Words>::set_bits(_init))
         {}
 
-        template<size_t N>
-        constexpr const_bitset(const char(&s)[N])
-            :m_size(N-1),
-            _Array(bitset_traits<_Words, unsigned, _Ty, N-1>::set_bits(s))
-        {}
         static constexpr const_bitset set_range(T _from, T _to)
         {//this uses private constructor
-            return const_bitset(bitset_traits<_Words, _T, _Ty>::set_range(_from, _to), _to - _from + 1);
+            return const_bitset(bitset_traits<_Ty, _Words>::set_range(_from, _to), _to - _from + 1);
         }
 
         constexpr size_t size() const { return m_size; }
@@ -390,8 +380,8 @@ namespace ct
     static constexpr ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::no>::init_pair_t                          \
         name ## _init[]  __VA_ARGS__;                                                                                        \
     static constexpr auto name = ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::no>{}                         \
-        (ct::Reorder(name ## _init));                                                                                        \
-    static_assert(name.in_order(), "const map " #name "is not in order");
+        (ct::Reorder(name ## _init));                                                                                        
+//    static_assert(name.in_order(), "const map " #name "is not in order");
 
 
 #define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \

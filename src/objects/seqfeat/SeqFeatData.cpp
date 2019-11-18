@@ -48,185 +48,13 @@
 
 #include <algorithm>
 #include <util/static_map.hpp>
-#include <array>
 #include <cassert>
-#include <bitset>
 
 // generated classes
-
-namespace cstd
-{
-    template<typename T, typename...TArgs>
-    constexpr auto make_array(T first, TArgs...args)->std::array<T, 1 + sizeof...(TArgs)>
-    {
-        return { { first, args... } };
-    }
-};
-
-namespace detail
-{
-
-    // this helper packs set of bits into an array usefull for initialisation of bitset
-    // ugly C++11 templates until C++14 or C++17 advanced constexpr becomes available
-
-    template<size_t array_size, class _Ty = uint64_t, size_t bit_count = array_size * sizeof(_Ty) * 8, class TIndex = unsigned>
-    struct bitset_helper
-    {
-        struct const_input_array
-        {
-            TIndex m_data[bit_count];
-        };
-
-        using array_t = std::array<_Ty, array_size>;
-
-        static constexpr int width = 8 * sizeof(_Ty);
-
-        template<size_t index>
-        static constexpr _Ty set_bit(size_t high, unsigned char low)
-        { // set only bit if high size is equal to index
-            return (index == high) ? (_Ty(1) << (low & (width - 1))) : 0;
-        }
-
-        template<size_t index>
-        static constexpr _Ty set_bit(TIndex v)
-        {
-            return set_bit<index>(v / width, v % width);
-        }
-
-        struct range_t
-        {
-            size_t m_from;
-            size_t m_to;
-        };
-
-        template<size_t index, size_t i, typename...TArgs>
-        static constexpr _Ty getbits(const std::tuple<TArgs...>& tup)
-        {
-            return set_bit<index>(std::get<i>(tup));
-        }
-
-        template<size_t index, size_t i>
-        static constexpr _Ty getbits(const const_input_array& tup)
-        {
-            return set_bit<index>(tup.m_data[i]);
-        }
-
-        template<size_t index, size_t i>
-        static constexpr _Ty getbits(const range_t& tup)
-        {
-            return (tup.m_from <= i && i <= tup.m_to) ? set_bit<index>(i) : 0;
-        }
-
-        template<size_t index, size_t i>
-        struct assemble_mask
-        {
-            using next_t = assemble_mask<index, i - 1>;
-
-            template<class _TTuple>
-            constexpr _Ty operator()(const _TTuple& tup) const
-            {
-                return getbits<index, i - 1>(tup) | next_t()(tup);
-            }
-        };
-
-        template<size_t index>
-        struct assemble_mask<index, 0>
-        {
-            template<class _TTuple>
-            constexpr _Ty operator()(const _TTuple& tup) const
-            {
-                return 0;
-            }
-        };
-
-        template<size_t N, size_t i>
-        struct assemble_bitset
-        {
-            using next_t = assemble_bitset<N, i - 1>;
-
-            template<class _TTuple, typename...TArgs>
-            constexpr array_t operator()(const _TTuple& tup, TArgs...args) const
-            {
-                return next_t()(
-                    tup,
-                    assemble_mask<i - 1, bit_count>()(tup),
-                    args...);
-            }
-        };
-
-        template<size_t N>
-        struct assemble_bitset<N, 0>
-        {
-            template<class _TTuple, typename...TArgs>
-            constexpr array_t operator()(const _TTuple& tup, TArgs...args) const
-            {
-                return array_t{{ args... }};
-            }
-        };
-
-        template<typename...TArgs>
-        static constexpr array_t set_bits(TArgs...args)
-        {
-            return assemble_bitset<0, array_size>()(const_input_array{{static_cast<TIndex>(args)...}});
-            //return assemble_bitset<0, array_size>()(std::tuple<TArgs...>(args...));
-        }
-
-        template<typename _T>
-        static constexpr array_t set_range(_T from, _T to)
-        {
-            return assemble_bitset<0, array_size>() (range_t{ static_cast<size_t>(from), static_cast<size_t>(to) });
-        }
-    };
-};
-
-namespace
-{
-    template<class _bitset>
-    struct BitsetHelper
-    {
-        using _Ty = typename _bitset::_Ty;
-        using T = typename _bitset::T;
-
-        template<typename...TArgs>
-        static constexpr _bitset set_bits(TArgs...args)
-        {
-            return _bitset(sizeof...(args), detail::bitset_helper<_bitset::_Words, _Ty, sizeof...(args)>::set_bits(args...));
-        }
-        static constexpr _bitset set_range(T _from, T _to)
-        {
-            return _bitset(_to - _from + 1, detail::bitset_helper<_bitset::_Words, _Ty>::set_range(_from, _to));
-        }
-    };
-};
-
-
-namespace
-{
-    template<typename _It, typename _Pred>
-    bool check_sorted_table(_It begin, _It end, _Pred pred)
-    {
-#ifdef _DEBUG
-        if (begin != end)
-        {
-            _It prev = begin++;
-            while (begin != end)
-            {
-                //std::cout << current->first << std::endl;
-                assert(pred(*prev, *begin));
-                prev = begin++;
-            }
-        }
-#endif
-        return true;
-    }
-}
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-using TLegalQualBitsetHelper = BitsetHelper<CSeqFeatData::TLegalQualifiers>;
-using TLegalQualMapRecord = SStaticPair<CSeqFeatData::ESubtype, CSeqFeatData::TLegalQualifiers>;
 
 // constructor
 CSeqFeatData::CSeqFeatData(void)
@@ -987,11 +815,10 @@ namespace
 #define ADD_QUAL(n) CSeqFeatData::eQual_##n
 
 #define START_SUBTYPE(name, ...) \
-    TLegalQualMapRecord{ CSeqFeatData::eSubtype_##name, TLegalQualBitsetHelper::set_bits(__VA_ARGS__) }
+    { CSeqFeatData::eSubtype_##name, {__VA_ARGS__} }
 
-    static
-    constexpr
-    auto g_legal_quals = cstd::make_array(
+    MAKE_CONST_MAP(g_legal_quals, NStr::ECase::eCase, CSeqFeatData::ESubtype, CSeqFeatData::TLegalQualifiers,
+        {
 START_SUBTYPE(gene
    ,ADD_QUAL(allele)
    ,ADD_QUAL(citation)
@@ -3171,32 +2998,20 @@ START_SUBTYPE(propeptide_aa
    ,ADD_QUAL(standard_name)
    ,ADD_QUAL(usedin)
 ),
-TLegalQualMapRecord{ CSeqFeatData::eSubtype_any, TLegalQualBitsetHelper::set_range(CSeqFeatData::eQual_allele, CSeqFeatData::eQual_whole_replicon)}
-);
+{ CSeqFeatData::eSubtype_any, CSeqFeatData::TLegalQualifiers::set_range(CSeqFeatData::eQual_allele, CSeqFeatData::eQual_whole_replicon)}
+});
 
 #undef START_SUBTYPE
 #undef ADD_QUAL
-
-
-struct LegalQualPred
-{
-    bool operator()(const TLegalQualMapRecord& l, CSeqFeatData::ESubtype r) const
-    {
-        return l.first < r;
-    }
-    bool operator()(const TLegalQualMapRecord& l, const TLegalQualMapRecord& r) const
-    {
-        return l.first < r.first;
-    }
-};
 
 } // anonymous namespace
 
 const CSeqFeatData::TLegalQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
 {
-    static CSeqFeatData::TLegalQualifiers empty;
-    auto it = std::lower_bound(g_legal_quals.begin(), g_legal_quals.end(), subtype, LegalQualPred());
-    if (it == g_legal_quals.end() || it->first != subtype)
+    static constexpr CSeqFeatData::TLegalQualifiers empty{};
+
+    auto it = g_legal_quals.find(subtype);
+    if (it == g_legal_quals.end())
         return empty;
 
     return it->second;
@@ -3204,12 +3019,8 @@ const CSeqFeatData::TLegalQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype 
 
 bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 {
-#ifdef _DEBUG
-    static auto test_sort = check_sorted_table(g_legal_quals.begin(), g_legal_quals.end(), LegalQualPred());
-#endif
-
-    auto it = std::lower_bound(g_legal_quals.begin(), g_legal_quals.end(), subtype, LegalQualPred());
-    if (it == g_legal_quals.end() || it->first != subtype)
+    auto it = g_legal_quals.find(subtype);
+    if (it == g_legal_quals.end())
         return false;
 
     return it->second.test(qual);

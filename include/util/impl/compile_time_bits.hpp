@@ -546,27 +546,14 @@ namespace compile_time_bits
     }
 
     // this helper packs set of bits into an array usefull for initialisation of bitset
-    // ugly C++11 templates until C++14 or C++17 advanced constexpr becomes available
+    // using C++14
 
-    template<size_t array_size, class TIndex, class _Ty, size_t bit_count = array_size * sizeof(_Ty) * 8>
+    template<class _Ty, size_t array_size>
     struct bitset_traits
     {
-        using const_input_array = const_array<TIndex, bit_count>;
         using array_t = const_array<_Ty, array_size>;
 
         static constexpr int width = 8 * sizeof(_Ty);
-
-        template<size_t index>
-        static constexpr _Ty set_bit(size_t high, unsigned char low)
-        { // set only bit if high size is equal to index
-            return (index == high) ? (_Ty(1) << (low & (width - 1))) : 0;
-        }
-
-        template<size_t index>
-        static constexpr _Ty set_bit(TIndex v)
-        {
-            return set_bit<index>(v / width, v % width);
-        }
 
         struct range_t
         {
@@ -574,99 +561,45 @@ namespace compile_time_bits
             size_t m_to;
         };
 
-        template<size_t index, size_t i, typename...TArgs>
-        static constexpr _Ty getbits(const std::tuple<TArgs...>& tup)
+        static constexpr bool check_bit(const range_t& range, size_t i)
         {
-            return set_bit<index>(std::get<i>(tup));
+            return (range.m_from <= i && i <= range.m_to);
         }
 
-        template<size_t index, size_t i>
-        static constexpr _Ty getbits(const const_input_array& tup)
+        template<typename _O>
+        static constexpr bool check_bit(const std::initializer_list<_O>& args, size_t index)
         {
-            return set_bit<index>(tup.m_data[i]);
+            for (auto rec : args)
+                if (static_cast<size_t>(rec) == index)
+                    return true;
+            return false;
         }
-
-        template<size_t index, size_t i>
-        static constexpr _Ty getbits(const range_t& tup)
+        template <size_t I, typename _Input>
+        static constexpr _Ty assemble_mask(const _Input& _init)
         {
-            return (tup.m_from <= i && i <= tup.m_to) ? set_bit<index>(static_cast<TIndex>(i)) : 0;
-        }
-        template<size_t index, size_t i, typename _O>
-        static constexpr _Ty getbits(const std::initializer_list<_O>& tup)
-        {
-            return (i < tup.size()) ? set_bit<index>(static_cast<TIndex>(*(tup.begin() + i))) : 0;
-        }
-        template<size_t index, size_t i>
-        static constexpr _Ty getbits(const char (&tup)[bit_count+1])
-        {
-            return set_bit<index>(static_cast<TIndex>(tup[i]));
-        }
-        template<size_t index, size_t i>
-        struct assemble_mask
-        {
-            using next_t = assemble_mask<index, i - 1>;
-
-            template<class _TTuple>
-            constexpr _Ty operator()(const _TTuple& tup) const
+            _Ty ret  = 0;
+            for (size_t j = 0; j < width; ++j)
             {
-                return getbits<index, i - 1>(tup) | next_t()(tup);
+                bool is_set = check_bit(_init, j + I * width);
+                if (is_set)
+                    ret |= (_Ty(1) << j);
             }
-        };
-
-        template<size_t index>
-        struct assemble_mask<index, 0>
-        {
-            template<class _TTuple>
-            constexpr _Ty operator()(const _TTuple& tup) const
-            {
-                return 0;
-            }
-        };
-
-        template<size_t i, typename...Unused>
-        struct assemble_bitset
-        {
-            using next_t = assemble_bitset<i - 1, Unused...>;
-
-            template<class _TTuple, typename...TArgs>
-            constexpr array_t operator()(const _TTuple& tup, TArgs...args) const
-            {
-                return next_t()(
-                    tup,
-                    assemble_mask<i - 1, bit_count>()(tup),
-                    args...);
-            }
-        };
-
-        template<typename...Unused>
-        struct assemble_bitset<0, Unused...>
-        {
-            template<class _TTuple, typename...TArgs>
-            constexpr array_t operator()(const _TTuple& tup, TArgs...args) const
-            {
-                return array_t{ { args... } };
-            }
-        };
-
-        template<typename...TArgs>
-        static constexpr array_t set_bits(TArgs...args)
-        {
-            return std::move(assemble_bitset<array_size>{}(const_input_array{ {static_cast<TIndex>(args)...} }));
+            return ret;
         }
-        static constexpr array_t set_bits(const char (&s)[bit_count+1])
+        template <typename _Input, std::size_t... I>
+        static constexpr array_t assemble_bitset(const _Input& _init, std::index_sequence<I...>)
         {
-            return assemble_bitset<array_size>{}(s);
+            return { {assemble_mask<I>(_init)...} };
         }
         template<typename _O>
-        static constexpr array_t set_bits(const std::initializer_list<_O>& args)
+        static constexpr array_t set_bits(std::initializer_list<_O> args)
         {
-            return assemble_bitset<array_size>{}(args);
+            return assemble_bitset(args, std::make_index_sequence<array_size>{});
         }
-
         template<typename _T>
         static constexpr array_t set_range(_T from, _T to)
         {
-            return assemble_bitset<array_size>{} (range_t{ static_cast<size_t>(from), static_cast<size_t>(to) });
+            return assemble_bitset(range_t{ static_cast<size_t>(from), static_cast<size_t>(to) }, std::make_index_sequence<array_size>{});
         }
     };
 

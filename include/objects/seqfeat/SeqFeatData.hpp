@@ -96,141 +96,9 @@
 #include <corelib/ncbistr.hpp>
 #include <util/static_map.hpp>
 #include <array>
+#include <util/compile_time.hpp>
 
 // generated classes
-
-namespace cstd
-{
-    template<typename _T>
-    struct const_vector
-    {
-        using value_type = _T;
-        using const_iterator = const value_type*;
-        size_t size() const
-        {
-            return std::distance(m_begin, m_end);
-        }
-        const_iterator begin() const
-        {
-            return m_begin;
-        }
-        const_iterator end() const
-        {
-            return m_end;
-        }
-
-        const value_type* m_begin = nullptr;
-        const value_type* m_end = nullptr;
-    };
-
-    // partially backported std::bitset until it's constexpr version becomes available
-    template<size_t _Bits, class _T>
-    class bitset
-    {
-    public:
-        using _Ty = uint64_t;
-        using T = _T;
-        static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
-        static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
-        using _Array_t = std::array<_Ty, _Words>;
-
-        constexpr bitset() = default;
-        constexpr bitset(const bitset&) = default;
-
-        constexpr size_t size() const
-        {
-            return m_size;
-        }
-        static constexpr size_t capacity()
-        {
-            return _Bits;
-        }
-
-        constexpr bool empty() const
-        {
-            return m_size == 0;
-        }
-        constexpr bool test(size_t _Pos) const
-        {
-            //if (_Bits <= _Pos)
-            //    _Xran();    // _Pos off end
-            return _Subscript(_Pos);
-        }
-
-        class const_iterator
-        {
-        public:
-            const_iterator() = default;
-            const_iterator(const bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
-            {
-                while (m_index < m_bitset->capacity() && !m_bitset->test(m_index))
-                {
-                    ++m_index;
-                }
-            }
-            bool operator==(const const_iterator& o) const
-            {
-                return m_bitset == o.m_bitset && m_index == o.m_index;
-            }
-            bool operator!=(const const_iterator& o) const
-            {
-                return m_bitset != o.m_bitset || m_index != o.m_index;
-            }
-            const_iterator& operator++()
-            {
-                while (m_index < m_bitset->capacity())
-                {
-                    ++m_index;
-                    if (m_bitset->test(m_index))
-                        break;
-                }
-                return *this;
-            }
-            const_iterator operator++(int)
-            {
-                const_iterator _this(*this);
-                operator++();
-                return _this;
-            }
-            T operator*() const
-            {
-                return static_cast<T>(m_index);
-            }
-            T operator->() const
-            {
-                return static_cast<T>(m_index);
-            }
-
-        private:
-            size_t m_index;
-            const bitset* m_bitset;
-        };
-
-        const_iterator begin() const
-        {
-            return const_iterator(this, 0);
-        }
-
-        const_iterator end() const
-        {
-            return const_iterator(this, capacity());
-        }
-
-        constexpr bitset(size_t _size, const _Array_t& args) : m_size(_size), _Array(args)
-        {
-        }
-
-    private:
-        size_t m_size {0};
-        _Array_t _Array {};    // the set of bits
-
-        constexpr bool _Subscript(size_t _Pos) const
-        {    // subscript nonmutable sequence
-            return ((_Array[_Pos / _Bitsperword]
-                & ((_Ty)1 << _Pos % _Bitsperword)) != 0);
-        }
-    };
-}
 
 BEGIN_NCBI_SCOPE
 
@@ -592,7 +460,7 @@ public:
         eQual_whole_replicon
     };
     using TQualifiers = vector<EQualifier>;
-    using TLegalQualifiers = cstd::bitset<eQual_whole_replicon + 1, EQualifier>;
+    using TLegalQualifiers = ct::const_bitset<eQual_whole_replicon + 1, EQualifier>;
 
     /// Test wheather a certain qualifier is legal for the feature
     bool IsLegalQualifier(EQualifier qual) const;

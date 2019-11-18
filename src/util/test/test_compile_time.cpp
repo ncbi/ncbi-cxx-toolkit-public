@@ -79,14 +79,16 @@ using bitset_pair = ct::const_pair<int, bitset>;
 BOOST_AUTO_TEST_CASE(TestConstBitset)
 {
     // this test ensures various approaches of instantiating const bitsets
-    constexpr bitset t1(1, 10, 20, 30);
+//#define constexpr
+    constexpr bitset t1{ 1, 10, 20, 30 };
+
     constexpr bitset t2{ 1, 10, 20, 30 };
 
     constexpr bitset t3[] = { { 5,10}, {15, 10} };
     constexpr bitset_pair t4{ 4, t1 };
     constexpr bitset_pair t5(t4);
     constexpr bitset_pair t6[] = { {4, t1}, {5, t2} };
-    constexpr bitset_pair t7[] = { {4, bitset(1, 2)}, {5, t3[0]} };
+    constexpr bitset_pair t7[] = { {4, {1, 2}}, {5, t3[0]} };
 
     constexpr bitset t8 = bitset::set_range(5, 12);
 
@@ -112,6 +114,9 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
     };
 
     BOOST_CHECK(t9[1].second.test(5));
+#ifdef constexpr
+#undef constexpr
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(TestConstMap)
