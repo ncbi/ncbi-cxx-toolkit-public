@@ -287,7 +287,9 @@ public:
         if (!seqid.empty()) {
             out << "SeqId:          " << seqid << endl;
         }
-        out << "Line:           " << Line() << endl;
+        if (Line()) {
+            out << "Line:           " << Line() << endl;
+        }
         const string & feature = FeatureName();
         if (!feature.empty()) {
             out << "FeatureName:    " << feature << endl;
