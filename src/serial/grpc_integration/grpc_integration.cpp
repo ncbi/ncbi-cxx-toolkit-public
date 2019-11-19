@@ -34,14 +34,14 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <misc/grpc_integration/grpc_integration.hpp>
+#include <serial/grpc_integration/grpc_integration.hpp>
 #include <util/static_map.hpp>
-#include <misc/error_codes.hpp>
+#include <serial/error_codes.hpp>
 #include <grpc++/server_context.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#define NCBI_USE_ERRCODE_X Misc_GrpcIntegration
+#define NCBI_USE_ERRCODE_X Serial_GRPCIntegration
 
 BEGIN_NCBI_SCOPE
 
