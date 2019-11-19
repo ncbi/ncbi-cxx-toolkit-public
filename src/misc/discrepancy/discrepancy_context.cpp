@@ -206,19 +206,19 @@ inline static void _QualityScore(CSeqSummary& sum)
     }
 }
 
-inline static void _A(CSeqSummary& sum) { sum.A++; _notN(sum); }
-inline static void _G(CSeqSummary& sum) { sum.G++; _notN(sum); }
-inline static void _C(CSeqSummary& sum) { sum.C++; _notN(sum); }
-inline static void _T(CSeqSummary& sum) { sum.T++; _notN(sum); }
+inline static void sA(CSeqSummary& sum) { sum.A++; _notN(sum); }
+inline static void sG(CSeqSummary& sum) { sum.G++; _notN(sum); }
+inline static void sC(CSeqSummary& sum) { sum.C++; _notN(sum); }
+inline static void sT(CSeqSummary& sum) { sum.T++; _notN(sum); }
 
-inline static void _Z(CSeqSummary& sum)
+inline static void sZ(CSeqSummary& sum)
 {
     sum.Other++;
     _notN(sum);
     _QualityScore(sum);
 }
 
-inline static void _N(CSeqSummary& sum)
+inline static void sN(CSeqSummary& sum)
 {
     sum.N++;
     sum._Ns++;
@@ -270,16 +270,16 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos pos, TSeqPos len
                     }
                     switch (c) {
                         case 0:
-                            _A(sum);
+                            sA(sum);
                             break;
                         case 1:
-                            _C(sum);
+                            sC(sum);
                             break;
                         case 2:
-                            _G(sum);
+                            sG(sum);
                             break;
                         case 3:
-                            _T(sum);
+                            sT(sum);
                             break;
                     }
                 }
@@ -307,22 +307,22 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos pos, TSeqPos len
                     sum.EndsWithGap = false;
                     switch (c) {
                         case 1:
-                            _A(sum);
+                            sA(sum);
                             break;
                         case 2:
-                            _C(sum);
+                            sC(sum);
                             break;
                         case 4:
-                            _G(sum);
+                            sG(sum);
                             break;
                         case 8:
-                            _T(sum);
+                            sT(sum);
                             break;
                         case 15:
-                            _N(sum);
+                            sN(sum);
                             break;
                         default:
-                            _Z(sum);
+                            sZ(sum);
                             break;
                     }
                     sum.First = false;
@@ -337,22 +337,22 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos pos, TSeqPos len
                     sum.EndsWithGap = false;
                     switch (s[n]) {
                         case 'A':
-                            _A(sum);
+                            sA(sum);
                             break;
                         case 'C':
-                            _C(sum);
+                            sC(sum);
                             break;
                         case 'G':
-                            _G(sum);
+                            sG(sum);
                             break;
                         case 'T':
-                            _T(sum);
+                            sT(sum);
                             break;
                         case 'N':
-                            _N(sum);
+                            sN(sum);
                             break;
                         default:
-                            _Z(sum);
+                            sZ(sum);
                             break;
                     }
                     sum.First = false;
@@ -372,22 +372,22 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos pos, TSeqPos len
                     sum.EndsWithGap = false;
                     switch (s[n]) {
                         case 'A':
-                            _A(sum);
+                            sA(sum);
                             break;
                         case 'C':
-                            _C(sum);
+                            sC(sum);
                             break;
                         case 'G':
-                            _G(sum);
+                            sG(sum);
                             break;
                         case 'T':
-                            _T(sum);
+                            sT(sum);
                             break;
                         case 'N':
-                            _N(sum);
+                            sN(sum);
                             break;
                         default:
-                            _Z(sum);
+                            sZ(sum);
                             break;
                     }
                     sum.First = false;
