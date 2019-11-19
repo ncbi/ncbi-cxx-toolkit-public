@@ -830,7 +830,14 @@ void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
 {
     size_t length = str.size(), fixed = 0;
     WriteStringTag(type);
-    WriteLength(length);
+    if ( type == eStringTypeVisible && x_FixCharsMethod() == eFNP_Skip ) {
+        for ( size_t i = 0; i < length; ++i ) {
+            if ( !GoodVisibleChar(str[i]) ) {
+                ++fixed;
+            }
+        }
+    }
+    WriteLength(length - fixed);
     if ( type == eStringTypeVisible && x_FixCharsMethod() != eFNP_Allow ) {
         size_t done = 0;
         for ( size_t i = 0; i < length; ++i ) {
@@ -849,17 +856,12 @@ void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
                 c = ReplaceVisibleChar(c, x_FixCharsMethod(), this, str, x_FixCharsSubst());
                 if (c != 0) {
                     WriteByte(c);
-                } else {
-                    ++fixed;
                 }
                 done = i + 1;
             }
         }
         if ( done < length ) {
             WriteBytes(str.data() + done, length - done);
-        }
-        while (fixed--) {
-            WriteByte(0);
         }
     }
     else {
