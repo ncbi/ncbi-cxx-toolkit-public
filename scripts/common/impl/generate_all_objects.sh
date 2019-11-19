@@ -37,6 +37,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/sample/lib/asn_lib/asn_sample_lib.asn \
   src/sample/lib/dtd/dtd_sample_lib.dtd \
   src/sample/lib/xsd/xsd_sample_lib.xsd \
+  src/sample/lib/jsd/jsd_sample_lib.dtd \
   src/internal/objects/*/*.asn src/internal/objects/*/*.xsd \
   src/internal/stax/taxon/taxon.dtd \
   src/internal/ncbils2/asn/login.asn src/internal/ncbils2/auth/*xml/*.dtd \
@@ -64,6 +65,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
             *.asn               ) ext=.asn; flag= ;;
             *.dtd               ) ext=.dtd; flag=--dtd ;;
             *.xsd               ) ext=.xsd; flag=--xsd ;;
+            *.jsd               ) ext=.jsd; flag=--jsd ;;
             *.proto             ) ext=.proto; flag=--protobuf ;;
         esac
         dir=`dirname $spec`
