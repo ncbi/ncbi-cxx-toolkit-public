@@ -283,7 +283,7 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
 
 /** This is a helper call that can improve I/O behavior.
  * @param timeslice
- *  [in]  Break down long waits on I/O into smaller intervals of at most
+ *  [in]  Break down long waits for I/O into smaller intervals of at most
  *  "timeslice" duration each.  This can help recover "hanging" sockets from
  *  indefinite wait and allow them to report an exceptional I/O condition.
  * @return
@@ -308,7 +308,7 @@ typedef enum {
 
 /** This is a helper call that can improve I/O behavior (ignored for Windows).
  * @param api
- *  [in]  Default behavior is to wait on I/O such a way that accomodates the
+ *  [in]  Default behavior is to wait for I/O such a way that accomodates the
  *  requested sockets accordingly.  There is a known limitation of the select()
  *  API that requires all sockets to have low-level IO descriptors less than
  *  1024, but works faster than the poll() API that does not have limits on the
@@ -1524,7 +1524,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Connect
  );
 
 
-/** Wait for a datagram on a datagram socket.
+/** Wait for a datagram in a datagram socket.
  * @param sock
  *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param timeout

@@ -122,7 +122,7 @@ static int s_Server(const char* sport)
 
     for (;;) {
         if ((status = DSOCK_WaitMsg(server, 0/*infinite*/)) != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Server]  Failed waiting on DSOCK: %s",
+            CORE_LOGF(eLOG_Error, ("[Server]  Failed waiting for DSOCK: %s",
                                    IO_StatusStr(status)));
             break;
         }

@@ -219,8 +219,8 @@ public:
     ///  SOCK_CloseEx
     EIO_Status Close(void);
 
-    /// Wait for I/O availability on the socket.
-    /// @note  Use CSocketAPI::Poll() to wait on multiple sockets at once.
+    /// Wait for I/O availability in the socket.
+    /// @note  Use CSocketAPI::Poll() to wait for multiple sockets at once.
     ///
     /// @param event
     ///  either of eIO_Read, eIO_Write or eIO_ReadWrite
@@ -734,7 +734,7 @@ public:
     ///        the array of elements, then pass vector::data() and
     ///        vector::size() when making the SOCK_Poll() call).
     ///
-    /// @note  Use CSocket::Wait() to wait for I/O event(s) on a single socket.
+    /// @note  Use CSocket::Wait() to wait for I/O event(s) in a single socket.
     ///
     static EIO_Status Poll(vector<SPoll>&  polls,
                            const STimeout* timeout,

@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "Cannot write FTP command");
 
     if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_NotSupported)
-        CORE_LOG(eLOG_Fatal, "Test failed in waiting on READ");
+        CORE_LOG(eLOG_Fatal, "Test failed in waiting for READ");
     CORE_LOG(eLOG_Note, "Unrecognized command correctly rejected");
 
     if (CONN_Write(conn, "LIST\nSIZE", 9, &n, eIO_WritePlain) != eIO_Unknown)
