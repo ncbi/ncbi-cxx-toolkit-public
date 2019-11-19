@@ -36,7 +36,6 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/readers/reader_base.hpp>
@@ -271,11 +270,6 @@ public:
         ILineReader&,
         ILineErrorListener* =0 );
 
-    virtual CRef< CSerialObject >
-    ReadObject(
-        ILineReader&,
-        ILineErrorListener* =0 );
-         
     virtual bool 
     ReadTrackData(
         ILineReader&,

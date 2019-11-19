@@ -33,36 +33,19 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/stream_utils.hpp>
 
 #include <util/line_reader.hpp>
-
-// Objects includes
-#include <objects/general/Object_id.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
-#include <objects/seqtable/seqtable__.hpp>
-
-#include <objtools/readers/read_util.hpp>
-#include <objtools/readers/line_error.hpp>
-#include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/track_data.hpp>
-#include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/wiggle_reader.hpp>
-
+#include <objects/seqtable/Seq_table.hpp>
+#include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqres/Real_graph.hpp>
 #include <objects/seqres/Byte_graph.hpp>
 
-#include "reader_data.hpp"
+#include <objtools/readers/wiggle_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -103,18 +86,6 @@ CWiggleReader::CWiggleReader(
 CWiggleReader::~CWiggleReader()
 //  ----------------------------------------------------------------------------
 {
-}
-
-//  ----------------------------------------------------------------------------                
-CRef< CSerialObject >
-CWiggleReader::ReadObject(
-    ILineReader& lr,
-    ILineErrorListener* pMessageListener ) 
-//  ----------------------------------------------------------------------------                
-{ 
-    CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );
-    return object; 
 }
 
 //  ----------------------------------------------------------------------------                
@@ -523,7 +494,7 @@ CRef<CSeq_table> CWiggleReader::xMakeTable(void)
     
     xSetTotalLoc(*table_loc, *chrom_id);
 
-    table->SetNum_rows(size);
+    table->SetNum_rows(static_cast<TSeqPos>(size));
     pos.reserve(size);
 
     CSeqTable_multi_data::TInt* span_ptr = 0;
@@ -644,7 +615,7 @@ CRef<CSeq_graph> CWiggleReader::xMakeGraph(void)
         TSeqPos start = m_Values[0].m_Pos;
         TSeqPos end = m_Values.back().GetEnd();
         size_t size = (end-start)/stat.m_Span;
-        graph->SetNumval(size);
+        graph->SetNumval(static_cast<TSeqPos>(size));
         bytes.resize(size, stat.AsByte(m_GapValue));
         ITERATE ( TValues, it, m_Values ) {
             TSeqPos pos = it->m_Pos - start;
