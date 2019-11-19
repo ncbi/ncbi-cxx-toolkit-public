@@ -64,8 +64,8 @@ namespace compile_time_bits
 
         static constexpr size_t size() noexcept { return N; }
         static constexpr size_t capacity() noexcept { return N; }
-        constexpr const value_type& operator[](size_t _pos) const noexcept { return m_data[_pos]; }
-        constexpr value_type& operator[](size_t _pos) noexcept { return m_data[_pos]; }
+        constexpr const_reference operator[](size_t _pos) const noexcept { return m_data[_pos]; }
+        constexpr reference operator[](size_t _pos) noexcept { return m_data[_pos]; }
         constexpr const_iterator begin() const noexcept { return m_data; }
         constexpr const_iterator end() const noexcept { return m_data + size(); }
         constexpr const_iterator cbegin() const noexcept { return m_data; }
