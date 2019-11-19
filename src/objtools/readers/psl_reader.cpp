@@ -74,9 +74,8 @@ CPslReader::CPslReader(
     SeqIdResolver seqResolver,
     CReaderListener* pListener) :
 //  ----------------------------------------------------------------------------
-    CReaderBase(flags, name, title, seqResolver)
+    CReaderBase(flags, name, title, seqResolver, pListener)
 {
-    m_pMessageHandler = new CReaderMessageHandler(pListener);
 }
 
 
@@ -84,100 +83,6 @@ CPslReader::CPslReader(
 CPslReader::~CPslReader()
 //  ----------------------------------------------------------------------------
 {
-}
-
-//  ----------------------------------------------------------------------------
-CRef< CSeq_annot >
-CPslReader::ReadSeqAnnot(
-    CNcbiIstream& istr,
-    ILineErrorListener* pMessageListener ) 
-//  ----------------------------------------------------------------------------
-{
-    CStreamLineReader lr( istr );
-    return ReadSeqAnnot( lr, pMessageListener );
-}
-
-//  ----------------------------------------------------------------------------                
-CRef< CSeq_annot >
-CPslReader::ReadSeqAnnot(
-    ILineReader& lineReader,
-    ILineErrorListener* pEL) 
-//  ----------------------------------------------------------------------------                
-{
-    xProgressInit(lineReader);
-
-    CRef<CSeq_annot> pAnnot = xCreateSeqAnnot();
-    auto& annotData = pAnnot->SetData();
-
-    TReaderData readerData;
-    xGetData(lineReader, readerData);
-    while (!readerData.empty()) {
-        try {
-            xProcessData(readerData, annotData);
-        }
-        catch (CReaderMessage& err) {
-            if (err.Severity() == eDiag_Fatal) {
-                throw;
-            }
-            m_pMessageHandler->Report(err);
-        }
-        catch (ILineError& err) {
-            if (!pEL  ||  err.GetSeverity() == eDiag_Fatal) {
-                throw;
-            }
-            pEL->PutMessage(err);
-        }
-        catch (CException& err) {
-            CReaderMessage terminator(
-                eDiag_Fatal, 
-                m_uLineNumber,
-                "Exception: " + err.GetMsg());
-            throw(terminator);
-        }
-        xGetData(lineReader, readerData);
-    }
-    return pAnnot;
-}
-
-//  ----------------------------------------------------------------------------
-CRef<CSerialObject>
-CPslReader::ReadObject(
-    ILineReader& lr,
-    ILineErrorListener* pMessageListener ) 
-//  ----------------------------------------------------------------------------
-{ 
-    CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
-    return object;
-}
-
-//  ----------------------------------------------------------------------------
-CRef<CSeq_annot>
-CPslReader::xCreateSeqAnnot() 
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_annot> pAnnot(new CSeq_annot);
-    if (!m_AnnotName.empty()) {
-        pAnnot->SetNameDesc(m_AnnotName);
-    }
-    if (!m_AnnotTitle.empty()) {
-        pAnnot->SetTitleDesc(m_AnnotTitle);
-    }
-    return pAnnot;
-}
-
-//  ----------------------------------------------------------------------------
-void
-CPslReader::xGetData(
-    ILineReader& lr,
-    TReaderData& readerData)
-//  ----------------------------------------------------------------------------
-{
-    readerData.clear();
-    string line;
-    if (xGetLine(lr, line)) {
-        readerData.push_back(TReaderLine{m_uLineNumber, line});
-    }
 }
 
 //  ----------------------------------------------------------------------------

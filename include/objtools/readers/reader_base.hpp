@@ -50,6 +50,8 @@ class CSeq_entry;
 class ILineErrorListener;
 class CObjReaderLineException;
 class CTrackData;
+class CReaderListener;
+class CReaderMessageHandler;
 
 //  ----------------------------------------------------------------------------
 /// Defines and provides stubs for a general interface to a variety of file
@@ -60,6 +62,12 @@ class NCBI_XOBJREAD_EXPORT CReaderBase
 //  ----------------------------------------------------------------------------
 {
 public:
+    using TReaderLine = struct SReaderLine {
+        //TReaderLine(int line, string data): mLine(line), mData(data) {};
+        unsigned int mLine;
+        string mData;
+    };
+    using TReaderData = vector<TReaderLine>;
     /// Customization flags that are relevant to all CReaderBase derived readers.
     ///
     enum EFlags {
@@ -92,7 +100,8 @@ protected:
         TReaderFlags flags = 0,     //flags
         const string& name = "",    //annot name
         const string& title = "",   //annot title
-        SeqIdResolver seqresolver = CReadUtil::AsSeqId);
+        SeqIdResolver seqresolver = CReadUtil::AsSeqId,
+        CReaderListener* pListener = nullptr);
 
 
 public:
@@ -122,7 +131,9 @@ public:
         ILineErrorListener* pErrors=0 );
                 
     /// Read an object from a given line reader, render it as the most
-    /// appropriate Genbank object.
+    /// appropriate Genbank object. This will be Seq-annot by default
+    /// but may be something else (Bioseq, Seq-entry, ...) in derived
+    /// classes.
     /// This is the only function that does not come with a default 
     /// implementation. That is, an implementation must be provided in the
     /// derived class.
@@ -134,7 +145,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 ) =0;
+        ILineErrorListener* pErrors=0 );
     
     /// Read an object from a given input stream, render it as a single
     /// Seq-annot. Return empty Seq-annot otherwise.
@@ -226,6 +237,8 @@ public:
     IsCanceled() const { return m_pCanceler && m_pCanceler->IsCanceled(); };
 
 protected:
+    virtual CRef<CSeq_annot> xCreateSeqAnnot();
+
     virtual bool xGetLine(
         ILineReader&,
         string&);
@@ -314,6 +327,14 @@ protected:
         CLineError&,
         ILineErrorListener* );
         
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot::TData&);
+
     //
     //  Data:
     //
@@ -330,6 +351,7 @@ protected:
     ILineReader* m_pReader;
     ICanceled* m_pCanceler;
     SeqIdResolver mSeqIdResolve;
+    CReaderMessageHandler* m_pMessageHandler;
 };
 
 END_objects_SCOPE

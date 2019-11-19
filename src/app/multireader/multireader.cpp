@@ -120,6 +120,7 @@ public:
             throw;
         }
         pReaderMessage->Write(cerr);
+        return true;
     };
 };
     

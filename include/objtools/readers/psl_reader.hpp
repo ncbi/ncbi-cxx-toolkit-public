@@ -61,15 +61,6 @@ class NCBI_XOBJREAD_EXPORT CPslReader
     : public CReaderBase
 {
 public:
-    using TFlags = int;
-    using TReaderLine = struct SReaderLine {
-        //TReaderLine(int line, string data): mLine(line), mData(data) {};
-        unsigned int mLine;
-        string mData;
-    };
-    using TReaderData = vector<TReaderLine>;
-    
-public:
     CPslReader(
         TReaderFlags iFlags,
         const string& name = "",
@@ -79,34 +70,10 @@ public:
 
     virtual ~CPslReader();
     
-    virtual CRef< CSerialObject >
-    ReadObject(
-        ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
-                
-    virtual CRef< CSeq_annot >
-    ReadSeqAnnot(
-        ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
-
-    virtual CRef< CSeq_annot >
-    ReadSeqAnnot(
-        CNcbiIstream& istr,
-        ILineErrorListener* pErrors=0 );
-
 protected:
-    void xGetData(
-        ILineReader&,
-        TReaderData&);
-
     void xProcessData(
         const TReaderData&,
         CSeq_annot::TData&);
-
-    CRef<CSeq_annot> xCreateSeqAnnot();
-
-    CReaderMessageHandler* m_pMessageHandler;
-    unsigned int mCurrentRecordCount;
 };
 
 END_SCOPE(objects)

@@ -86,6 +86,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/track_data.hpp>
 #include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/reader_message.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/microarray_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
@@ -102,6 +103,7 @@
 #include <ctime>
 
 #include "reader_data.hpp"
+#include "reader_message_handler.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
@@ -149,7 +151,8 @@ CReaderBase::CReaderBase(
     TReaderFlags flags,
     const string& annotName,
     const string& annotTitle,
-    SeqIdResolver seqidresolver) :
+    SeqIdResolver seqidresolver,
+    CReaderListener* pListener) :
 //  ----------------------------------------------------------------------------
     m_uLineNumber(0),
     m_uProgressReportInterval(0),
@@ -162,7 +165,9 @@ CReaderBase::CReaderBase(
     mSeqIdResolve(seqidresolver)
 {
     m_pTrackDefaults = new CTrackData;
+    m_pMessageHandler = new CReaderMessageHandler(pListener);
 }
+
 
 //  ----------------------------------------------------------------------------
 CReaderBase::~CReaderBase()
@@ -183,6 +188,18 @@ CReaderBase::ReadObject(
 }
 
 //  ----------------------------------------------------------------------------
+CRef<CSerialObject>
+CReaderBase::ReadObject(
+    ILineReader& lr,
+    ILineErrorListener* pMessageListener ) 
+//  ----------------------------------------------------------------------------
+{ 
+    CRef<CSerialObject> object( 
+        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
+    return object;
+}
+
+//  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     CNcbiIstream& istr,
@@ -197,13 +214,84 @@ CReaderBase::ReadSeqAnnot(
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* ) 
+    ILineErrorListener* pEL) 
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
-    return CRef<CSeq_annot>();
+
+    CRef<CSeq_annot> pAnnot = xCreateSeqAnnot();
+    auto& annotData = pAnnot->SetData();
+
+    TReaderData readerData;
+    xGetData(lr, readerData);
+    while (!readerData.empty()) {
+        try {
+            xProcessData(readerData, annotData);
+        }
+        catch (CReaderMessage& err) {
+            if (err.Severity() == eDiag_Fatal) {
+                throw;
+            }
+            m_pMessageHandler->Report(err);
+        }
+        catch (ILineError& err) {
+            if (!pEL  ||  err.GetSeverity() == eDiag_Fatal) {
+                throw;
+            }
+            pEL->PutMessage(err);
+        }
+        catch (CException& err) {
+            CReaderMessage terminator(
+                eDiag_Fatal, 
+                m_uLineNumber,
+                "Exception: " + err.GetMsg());
+            throw(terminator);
+        }
+        xGetData(lr, readerData);
+    }
+    return pAnnot;
+//    xProgressInit(lr);
+//    return CRef<CSeq_annot>();
 }
                 
+//  ----------------------------------------------------------------------------
+CRef<CSeq_annot>
+CReaderBase::xCreateSeqAnnot() 
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_annot> pAnnot(new CSeq_annot);
+    if (!m_AnnotName.empty()) {
+        pAnnot->SetNameDesc(m_AnnotName);
+    }
+    if (!m_AnnotTitle.empty()) {
+        pAnnot->SetTitleDesc(m_AnnotTitle);
+    }
+    return pAnnot;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::xGetData(
+    ILineReader& lr,
+    TReaderData& readerData)
+//  ----------------------------------------------------------------------------
+{
+    readerData.clear();
+    string line;
+    if (xGetLine(lr, line)) {
+        readerData.push_back(TReaderLine{m_uLineNumber, line});
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::xProcessData(
+    const TReaderData& readerData,
+    CSeq_annot::TData& annotData) 
+//  ----------------------------------------------------------------------------
+{
+}
+
 //  --------------------------------------------------------------------------- 
 void
 CReaderBase::ReadSeqAnnots(
