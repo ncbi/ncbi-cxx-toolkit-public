@@ -160,7 +160,7 @@ AM	sb	Australian Museum	AMS
 AM:Arachnology	s	Australian Museum, Invertebrate Collections: Arachnology	
 AM:EBU	sb	Australian Museum, Evolutionary Biology Unit Tissue Collection		
 AM:Entomology	s	Australian Museum, Invertebrate Collections: Entomology	
-AM:Herpetology	s	Australian Museum, Vertebrate Collections: Herpetology		
+AM:Herpetology	s	Australian Museum, Vertebrate Collections: Herpetology	
 AM:Ichthyology	s	Australian Museum, Vertebrate Collections: Ichthyology		
 AM:Malacology	s	Australian Museum, Invertebrate Collections: Malacology		
 AM:Mammalogy	s	Australian Museum, Vertebrate Collections: Mammalogy		

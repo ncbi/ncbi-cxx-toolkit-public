@@ -193,7 +193,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AM:Arachnology\ts\tAustralian Museum, Invertebrate Collections: Arachnology\t",
 "AM:EBU\tsb\tAustralian Museum, Evolutionary Biology Unit Tissue Collection\t\t",
 "AM:Entomology\ts\tAustralian Museum, Invertebrate Collections: Entomology\t",
-"AM:Herpetology\ts\tAustralian Museum, Vertebrate Collections: Herpetology\t\t",
+"AM:Herpetology\ts\tAustralian Museum, Vertebrate Collections: Herpetology\t",
 "AM:Ichthyology\ts\tAustralian Museum, Vertebrate Collections: Ichthyology\t\t",
 "AM:Malacology\ts\tAustralian Museum, Invertebrate Collections: Malacology\t\t",
 "AM:Mammalogy\ts\tAustralian Museum, Vertebrate Collections: Mammalogy\t\t",
