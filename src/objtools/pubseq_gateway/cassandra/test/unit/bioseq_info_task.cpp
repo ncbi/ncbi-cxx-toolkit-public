@@ -115,7 +115,6 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionNotFound) {
         m_Timeout, 0, m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_code](vector<CBioseqInfoRecord> &&) {
             ++call_count;
-            actual_code = code;
         },
         error_function
     );
