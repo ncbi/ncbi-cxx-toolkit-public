@@ -8254,15 +8254,21 @@ else
 fi
 
 if test -f "$GRPC_PATH/lib/libboringssl.a"; then
-   GRPC_SSL_LIBS="-lboringssl -lboringcrypto"
+   GRPC_LDEP="-lboringssl -lboringcrypto"
 else
-   GRPC_SSL_LIBS=$OPENSSL_LIBS
+   GRPC_LDEP=$OPENSSL_LIBS
+fi
+# In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
+# GRPC is always threaded, and may need explicit THREAD_LIBS when
+# used statically.
+if test "$with_mt" = no; then
+   GRPC_LDEP="$GRPC_LDEP $THREAD_LIBS"
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
    [AC_LANG_PROGRAM([[#include <grpc++/grpc++.h>]],
        [[return grpc::Version().size();]])],
-   [-lgrpc -lgpr $PROTOBUF_LIBS -lcares], [$GRPC_SSL_LIBS $Z_LIBS],
+   [-lgrpc -lgpr $PROTOBUF_LIBS -lcares], [$GRPC_LDEP $Z_LIBS],
    [$PROTOBUF_INCLUDE])
 if test -n "$GRPC_LIBS"; then
    LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
@@ -8270,7 +8276,7 @@ if test -n "$GRPC_LIBS"; then
       [GRPC_LIBS="$GRPC_LIBS -laddress_sorting"], [])
    LDFLAGS=$orig_LDFLAGS
    GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
-   GRPC_LIBS="$GRPC_LIBS $GRPC_SSL_LIBS"
+   GRPC_LIBS="$GRPC_LIBS $GRPC_LDEP"
    GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
