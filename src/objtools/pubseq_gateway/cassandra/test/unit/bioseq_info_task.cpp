@@ -107,25 +107,25 @@ static auto wait_function = [](CCassBioseqInfoTaskFetch& task){
 };
 
 TEST_F(CBioseqInfoTaskFetchTest, AccessionNotFound) {
+    vector<CBioseqInfoRecord> actual_records;
     size_t call_count{0};
-    CRequestStatus::ECode actual_code;
     CBioseqInfoFetchRequest request;
     request.SetAccession("FAKEACCESSION");
     CCassBioseqInfoTaskFetch fetch(
         m_Timeout, 0, m_Connection, m_KeyspaceName, request,
-        [&call_count, &actual_code](vector<CBioseqInfoRecord> &&) {
+        [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
+            actual_records = move(records);
         },
         error_function
     );
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
-    EXPECT_EQ(CRequestStatus::e404_NotFound, actual_code);
+    EXPECT_EQ(0UL, actual_records.size());
 }
 
 TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
     size_t call_count{0};
-    CRequestStatus::ECode actual_code;
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299");
@@ -139,7 +139,6 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
     );
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
-    EXPECT_EQ(CRequestStatus::e300_MultipleChoices, actual_code);
     ASSERT_EQ(6UL, actual_records.size());
 
     EXPECT_EQ("AC005299", actual_records[0].GetAccession());
@@ -155,7 +154,6 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
 
 TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionMultiple) {
     size_t call_count{0};
-    CRequestStatus::ECode actual_code;
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetVersion(0);
@@ -169,7 +167,6 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionMultiple) {
     );
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
-    EXPECT_EQ(CRequestStatus::e300_MultipleChoices, actual_code);
     ASSERT_EQ(5UL, actual_records.size());
 
     EXPECT_EQ("AC005299", actual_records[0].GetAccession());
@@ -185,7 +182,6 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionMultiple) {
 
 TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
     size_t call_count{0};
-    CRequestStatus::ECode actual_code;
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetVersion(1);
@@ -199,7 +195,6 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
     );
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
-    EXPECT_EQ(CRequestStatus::e200_Ok, actual_code);
     ASSERT_EQ(1UL, actual_records.size());
 
     EXPECT_EQ("AC005299", actual_records[0].GetAccession());
@@ -293,7 +288,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGIWrongVersion) {
     request.SetAccession("AC005299").SetVersion(5).SetGI(3643631);
     CCassBioseqInfoTaskFetch fetch(
         m_Timeout, 0, m_Connection, m_KeyspaceName, request,
-        [&call_count](vector<CBioseqInfoRecord> &&records, CRequestStatus::ECode code) {
+        [&call_count](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             EXPECT_EQ(0UL, records.size());
         },
