@@ -2334,10 +2334,20 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
 
 BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
 {
+    size_t count = 0;
     auto all_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_any);
     BOOST_CHECK_EQUAL(all_quals.size(), 133);
+    for (auto b : all_quals)
+        ++count;
+    BOOST_CHECK_EQUAL(count, 133);
+
     auto empty_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_clone);
     BOOST_CHECK_EQUAL(empty_quals.size(), 0);
+    count = 0;
+    for (auto b : empty_quals)
+        ++count;
+    BOOST_CHECK_EQUAL(count, 0);
+
 
 
 }

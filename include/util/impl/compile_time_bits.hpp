@@ -561,28 +561,40 @@ namespace compile_time_bits
             size_t m_to;
         };
 
-        static constexpr bool check_bit(const range_t& range, size_t i)
+        static constexpr bool check_range(const range_t& range, size_t i)
         {
             return (range.m_from <= i && i <= range.m_to);
         }
 
-        template<typename _O>
-        static constexpr bool check_bit(const std::initializer_list<_O>& args, size_t index)
+        template <size_t I>
+        static constexpr _Ty assemble_mask(const range_t& _init)
         {
-            for (auto rec : args)
-                if (static_cast<size_t>(rec) == index)
-                    return true;
-            return false;
-        }
-        template <size_t I, typename _Input>
-        static constexpr _Ty assemble_mask(const _Input& _init)
-        {
-            _Ty ret  = 0;
+            constexpr auto _min = I * width;
+            constexpr auto _max = I * width + width - 1;
+            if (check_range(_init, _min) && check_range(_init, _max))
+                return std::numeric_limits<_Ty>::max();
+
+            _Ty ret = 0;
             for (size_t j = 0; j < width; ++j)
             {
-                bool is_set = check_bit(_init, j + I * width);
+                bool is_set = check_range(_init, j + _min);
                 if (is_set)
                     ret |= (_Ty(1) << j);
+            }
+            return ret;
+        }
+        template <size_t I, typename _O>
+        static constexpr _Ty assemble_mask(const std::initializer_list<_O>& _init)
+        {
+            _Ty ret = 0;
+            constexpr auto _min = I * width;
+            constexpr auto _max = I * width + width - 1;
+            for (unsigned rec : _init)
+            {
+                if (_min <= rec && rec <= _max)
+                {
+                    ret |= _Ty(1) << (rec % width);
+                }
             }
             return ret;
         }
