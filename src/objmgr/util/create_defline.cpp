@@ -1176,6 +1176,34 @@ void CDeflineGenerator::x_SetBioSrcIdx (
     m_Breed = bsx->GetBreed();
 
     m_Organelle = bsx->GetOrganelle();
+
+    if (m_has_clone) return;
+
+    try {
+        CFeat_CI feat_it(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc));
+        while (feat_it) {
+            const CSeq_feat& feat = feat_it->GetOriginalFeature();
+            if (! feat.IsSetData ()) continue;
+            const CSeqFeatData& sfdata = feat.GetData ();
+            const CBioSource& source = sfdata.GetBiosrc();
+
+            // process SubSource
+            FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, source) {
+                const CSubSource& sbs = **sbs_itr;
+                if (! sbs.IsSetName()) continue;
+                SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
+                    case NCBI_SUBSOURCE(clone):
+                        m_has_clone = true;
+                        return;
+                    default:
+                        break;
+                }
+            }
+            ++feat_it;
+        }
+    } catch ( const exception&  ) {
+        // ERR_POST(Error << "Unable to iterate source features while constructing default definition line");
+    }
 }
 
 // set instance variables from BioSource
@@ -1322,7 +1350,6 @@ void CDeflineGenerator::x_SetBioSrc (
 
     m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
 
-
     if (m_has_clone) return;
 
     try {
@@ -1340,7 +1367,7 @@ void CDeflineGenerator::x_SetBioSrc (
                 SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
                     case NCBI_SUBSOURCE(clone):
                         m_has_clone = true;
-                        break;
+                        return;
                     default:
                         break;
                 }
