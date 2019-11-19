@@ -34,10 +34,10 @@
 #define OBJTOOLS_READERS___VCFREADER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/message_listener.hpp>
-#include <objects/seq/Seq_annot.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -158,11 +158,6 @@ public:
     //  object interface:
     //
 public:
-    virtual CRef< CSerialObject >
-    ReadObject(
-        ILineReader&,
-        ILineErrorListener* =0 );
-                
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,

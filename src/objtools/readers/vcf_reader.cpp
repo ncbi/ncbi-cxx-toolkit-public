@@ -32,49 +32,25 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>              
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/stream_utils.hpp>
 
-#include <util/static_map.hpp>
 #include <util/line_reader.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistrasn.hpp>
-
-// Objects includes
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp> 
 #include <objects/general/Dbtag.hpp>
 
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/Seq_data.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 
-#include <objtools/readers/read_util.hpp>
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/line_error.hpp>
-#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/vcf_reader.hpp>
-#include <objtools/error_codes.hpp>
 
 #include <algorithm>
 
@@ -253,18 +229,6 @@ CVcfReader::ReadSeqAnnot(
     xAssignTrackData(annot);
     xAssignVcfMeta(annot, pEC);
     return annot;
-}
-
-//  ----------------------------------------------------------------------------                
-CRef< CSerialObject >
-CVcfReader::ReadObject(
-    ILineReader& lr,
-    ILineErrorListener* pMessageListener ) 
-//  ----------------------------------------------------------------------------                
-{ 
-    CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
-    return object;
 }
 
 //  ----------------------------------------------------------------------------
@@ -774,7 +738,8 @@ CVcfReader::xAssignVariantIns(
         string insertion(data.m_Alt[index]);
         CRef<CSeq_literal> pLiteral(new CSeq_literal);
         pLiteral->SetSeq_data().SetIupacna().Set(insertion);
-        pLiteral->SetLength(insertion.size());
+        pLiteral->SetLength(
+            static_cast<TSeqPos>(insertion.size()));
         CRef<CDelta_item> pItem(new CDelta_item);
         pItem->SetAction(CDelta_item::eAction_ins_before);
         pItem->SetSeq().SetLiteral(*pLiteral); 
@@ -815,7 +780,7 @@ CVcfReader::xAssignVariantDelins(
     // Must be a SNV or delins
     CRef<CSeq_literal> pLiteral(new CSeq_literal);
     pLiteral->SetSeq_data().SetIupacna().Set(insertion);
-    pLiteral->SetLength(insertion.size());
+    pLiteral->SetLength(static_cast<TSeqPos>(insertion.size()));
     
     CRef<CDelta_item> pItem(new CDelta_item);
     pItem->SetSeq().SetLiteral(*pLiteral);
@@ -1068,7 +1033,8 @@ CVcfReader::xAssignFeatureLocationSet(
     if (data.m_SetType == CVcfData::ST_ALL_MNV) {
         //set location for MNV. This will be the location of the reference
         pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
-        pFeat->SetLocation().SetInt().SetTo(data.m_iPos + data.m_strRef.size() - 2);
+        pFeat->SetLocation().SetInt().SetTo(
+            static_cast<TSeqPos>(data.m_iPos + data.m_strRef.size() - 2));
         pFeat->SetLocation().SetInt().SetId(*pId);
         return true;
     }
@@ -1091,7 +1057,7 @@ CVcfReader::xAssignFeatureLocationSet(
             //-1 for 0-based, 
             //another -1 for inclusive end-point ( i.e. [], not [) )
             pFeat->SetLocation().SetInt().SetTo( 
-                 data.m_iPos -1 + data.m_strRef.length() - 1); 
+                 static_cast<TSeqPos>(data.m_iPos -1 + data.m_strRef.length() - 1)); 
             pFeat->SetLocation().SetInt().SetId(*pId);
         }
         return true;
@@ -1110,7 +1076,7 @@ CVcfReader::xAssignFeatureLocationSet(
     else {
         pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
         pFeat->SetLocation().SetInt().SetTo( 
-            data.m_iPos -1 + data.m_strRef.length() - 1); 
+            static_cast<TSeqPos>(data.m_iPos -1 + data.m_strRef.length() - 1)); 
         pFeat->SetLocation().SetInt().SetId(*pId);
     }
     return true;
