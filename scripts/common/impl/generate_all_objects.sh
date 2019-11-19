@@ -27,6 +27,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/build-system/project_tree_builder/msvc71_project.dtd \
   src/build-system/project_tree_builder/property_list.xsd \
   src/build-system/project_tree_builder/msbuild/msbuild_dataobj.xsd \
+  src/objects/dbsnp/primary_track/dbsnp.proto \
   src/objects/variation_libs/dbsnp/*/*.asn \
   src/objtools/data_loaders/asn_cache/cache_blob.asn \
   src/objtools/data_loaders/cdd/cdd_access/cdd_access.asn \
@@ -56,8 +57,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/gpipe/gpexec/queue/lib/gpxapi.asn \
   src/internal/peptides/objects/unimod/unimod.xsd \
   src/internal/variation/lib/objects/*/*.asn \
-  src/internal/variation/snp/objects/rsm/rsm.asn \
-  src/internal/grpcapi/ncbi/grpcapi/dbsnp/primary_track/dbsnp.proto; do
+  src/internal/variation/snp/objects/rsm/rsm.asn; do
     if test -f "$spec"; then
         case $spec in
             */seq_annot_ref.asn ) continue ;; # sample data, not a spec
