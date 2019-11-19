@@ -171,8 +171,9 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         }
         new_cds->SetComment(comment);
         new_cds->SetData().SetCdregion().SetCode_break().push_back(code_break);
-        CSeq_feat_EditHandle feh(context.GetScope().GetSeq_featHandle(cds));
-        feh.Replace(*new_cds);
+        context.ReplaceSeq_feat(*obj, cds, *new_cds);
+        //CSeq_feat_EditHandle feh(context.GetScope().GetSeq_featHandle(cds));
+        //feh.Replace(*new_cds);
 
         if (gene) {
             CRef<CSeq_feat> new_gene(new CSeq_feat());
