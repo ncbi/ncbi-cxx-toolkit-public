@@ -728,9 +728,19 @@ struct SUserAgent : string
 SUserAgent::SUserAgent()
 {
     if (auto app = CNcbiApplication::InstanceGuard()) {
+        const auto& full_version = app->GetFullVersion();
+        const auto& app_version = full_version.GetVersionInfo();
+        const auto pkg_version = full_version.GetPackageVersion();
+
         assign(app->GetProgramDisplayName());
         append(1, '/');
-        append(app->GetVersion().Print());
+
+        if (app_version.IsAny() && !pkg_version.IsAny()) {
+            append(1, 'p');
+            append(pkg_version.Print());
+        } else {
+            append(app_version.Print());
+        }
     } else {
         assign("UNKNOWN/UNKNOWN");
     }
