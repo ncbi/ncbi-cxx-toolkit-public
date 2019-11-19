@@ -102,7 +102,7 @@ namespace compile_time_bits
             }
         };
     }; // ct_crc32
-}; // namespace compile_time_bits
+} // namespace compile_time_bits
 
 namespace ct
 {
@@ -141,7 +141,7 @@ namespace ct
         static uint32_t sse42(const char* s, size_t realsize) noexcept;
 #endif
     };
-};
+}
 
 #endif
 

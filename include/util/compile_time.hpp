@@ -374,7 +374,7 @@ namespace ct
             return SimpleReorder(input);
         }
     };
-};
+}
 
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
     static constexpr ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::no>::init_pair_t                          \

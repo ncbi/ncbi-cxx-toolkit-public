@@ -292,12 +292,12 @@ namespace compile_time_bits
 
         hash_type m_hash{ 0 };
     };
-};
+}
 
 namespace ct
 {
     using namespace compile_time_bits;
-};
+}
 
 namespace std
 {// these are backported implementations of C++17 methods
@@ -308,7 +308,7 @@ namespace std
     constexpr const T& get(const ct::const_array<T, N>& in) noexcept
     {
         return in[i];
-    };
+    }
     template<class T, size_t N>
     constexpr size_t size(const ct::const_array<T, N>& in) noexcept
     {
@@ -385,7 +385,7 @@ namespace std
     {	// get const reference to _Index element of tuple
         typedef typename tuple_element<_Index, ct::const_tuple<_Types...>>::_Ttype _Ttype;
         return (((const _Ttype&)_Tuple)._Myfirst);
-    };
+    }
 
     template<class _Traits> inline
         basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const ct::string_view& v)
@@ -398,7 +398,7 @@ namespace std
     class tuple_size<ct::const_array<T, N>>:
         public integral_constant<size_t, N>
     { };
-};
+}
 
 namespace compile_time_bits
 {
@@ -689,7 +689,7 @@ namespace compile_time_bits
     {
     };
 
-};
+}
 
 #endif
 
