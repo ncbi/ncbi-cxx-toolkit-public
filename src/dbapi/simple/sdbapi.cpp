@@ -2853,12 +2853,14 @@ CQueryImpl::x_Close(void)
 {
     m_DBImpl->ResetTimeout();
     if (m_CurRS != NULL) {
+        auto orig_row_no = m_CurRowNo;
         try {
             VerifyDone(CQuery::eAllResultSets);
         } catch (CSDB_Exception& e) {
             ERR_POST_X(14, Critical << e <<
                            "Problem while closing DB query "
-                           "(result is at row number " << m_CurRowNo << ").");
+                           "(result was at row number " << orig_row_no <<
+                           " and is now at row number " << m_CurRowNo << ").");
         }
         if (m_CurRSNo != 0) {
             _TRACE(m_CurRowNo << " row(s) from query.");
