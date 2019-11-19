@@ -26,83 +26,34 @@
  * Author:  Frank Ludwig
  *
  * File Description:
- *   GFF file reader
+ *   GVF file reader
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/stream_utils.hpp>
 
-#include <util/static_map.hpp>
 #include <util/line_reader.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistrasn.hpp>
-
-// Objects includes
-#include <objects/general/Int_fuzz.hpp>
-#include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
-
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_id.hpp>
-#include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/Gene_ref.hpp>
-#include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seqfeat/Delta_item.hpp>
 
-#include <objtools/readers/read_util.hpp>
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/track_data.hpp>
-#include <objtools/readers/line_error.hpp>
-#include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/gff2_reader.hpp>
-#include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gvf_reader.hpp>
-#include <objtools/error_codes.hpp>
 
 #include <algorithm>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 typedef map<string, CVariantProperties::EAllele_state> TAlleleStateMap;
@@ -387,7 +338,7 @@ bool CGvfReader::x_SetLocationInterval(
     //  deal with fuzzy range indicators / lower end:
     string strRange;
     list<string> range_borders;
-    size_t lower, upper;
+    TSeqPos lower, upper;
     if (record.GetAttribute( "Start_range", strRange ) )
     {
         NStr::Split( strRange, ",", range_borders, 0 );
@@ -516,7 +467,7 @@ bool CGvfReader::x_SetLocationPoint(
     }
 
     list<string> bounds;
-    size_t lower, upper;
+    TSeqPos lower, upper;
     NStr::Split( strRangeLower, ",", bounds, 0 );
     if (bounds.size() != 2) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -576,7 +527,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
     //  deal with fuzzy range indicators / lower end:
     string strRange;
     list<string> range_borders;
-    size_t lower, upper;
+    TSeqPos lower, upper;
     if (record.GetAttribute( "Start_range", strRange ) )
     {
         NStr::Split( strRange, ",", range_borders, 0 );
@@ -707,7 +658,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
     }
 
     list<string> bounds;
-    size_t lower, upper;
+    TSeqPos lower, upper;
     NStr::Split( strRangeLower, ",", bounds, 0 );
     if (bounds.size() != 2) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -717,7 +668,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
             string("CGvfReader::x_FeatureSetLocation: Bad \"XXX_range\" attribute") +
                 " (XXX_range=" + strRangeLower + ").",
             ILineError::eProblem_QualifierBadValue) );
-pErr->Throw();
+        pErr->Throw();
     }
     try {
         if (bounds.back() == ".") {
@@ -928,7 +879,8 @@ bool CGvfReader::xVariationSetInsertions(
             }
             ///pAllele->SetInsertion(allele, CVariation_ref::eSeqType_na);
             CRef<CDelta_item> pDelta(new CDelta_item);
-            pDelta->SetSeq().SetLiteral().SetLength(allele.size());
+            pDelta->SetSeq().SetLiteral().SetLength(
+                static_cast<TSeqPos>(allele.size()));
             pDelta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
             pDelta->SetAction(CDelta_item::eAction_ins_before);
             pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
@@ -1268,7 +1220,8 @@ bool CGvfReader::xVariationSetDeletions(
     pReference->SetData().SetInstance().SetType(
         CVariation_inst::eType_identity);
     CRef<CDelta_item> pDelta(new CDelta_item);
-    pDelta->SetSeq().SetLiteral().SetLength(strReference.size());
+    pDelta->SetSeq().SetLiteral().SetLength(
+        static_cast<TSeqPos>(strReference.size()));
     pDelta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(
         strReference);
     pReference->SetData().SetInstance().SetDelta().push_back(pDelta);
@@ -1331,7 +1284,8 @@ bool CGvfReader::xVariationSetSnvs(
         pReference->SetData().SetInstance().SetType(
             CVariation_inst::eType_identity);
         CRef<CDelta_item> pDelta(new CDelta_item);
-        pDelta->SetSeq().SetLiteral().SetLength(strReference.size());
+        pDelta->SetSeq().SetLiteral().SetLength(
+            static_cast<TSeqPos>(strReference.size()));
         pDelta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(
             strReference);
         pReference->SetData().SetInstance().SetDelta().push_back(pDelta);

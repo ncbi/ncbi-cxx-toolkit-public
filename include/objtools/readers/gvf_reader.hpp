@@ -26,7 +26,7 @@
  * Author: Frank Ludwig
  *
  * File Description:
- *   BED file reader
+ *   GVF file reader
  *
  */
 
@@ -36,19 +36,13 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
 
-#include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
-BEGIN_SCOPE(objects) // namespace ncbi::objects::
-
-class CGFFReader;
 class CGff3ReadRecord;
-class SRecord;
 
 //  ============================================================================
 class CGvfReadRecord
