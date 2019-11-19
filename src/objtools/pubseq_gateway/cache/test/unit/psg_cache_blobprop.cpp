@@ -91,35 +91,41 @@ unique_ptr<CPubseqGatewayCache> CPsgCacheBlobPropTest::m_Cache(nullptr);
 
 TEST_F(CPsgCacheBlobPropTest, LookupUninitialized)
 {
-    string data;
-    int64_t last_modified;
-
+    CPubseqGatewayCache::TBlobPropRequest request;
+    CPubseqGatewayCache::TBlobPropResponse response;
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
     cache->Open({0, 4});
-    EXPECT_FALSE(cache->LookupBlobPropBySatKey(0, 2054006, last_modified, data));
+
+    request.SetSat(0).SetSatKey(2054006);
+    cache->FetchBlobProp(request, response);
+    EXPECT_TRUE(response.empty());
 }
 
 TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
 {
-    string data;
-    int64_t last_modified;
+    CPubseqGatewayCache::TBlobPropRequest request;
+    CPubseqGatewayCache::TBlobPropResponse response;
 
-    bool result = m_Cache->LookupBlobPropBySatKey(-10, 2054006, last_modified, data);
-    EXPECT_FALSE(result);
+    request.SetSat(-10).SetSatKey(2054006);
+    m_Cache->FetchBlobProp(request, response);
+    EXPECT_TRUE(response.empty());
 
-    result = m_Cache->LookupBlobPropBySatKey(0, -500, last_modified, data);
-    EXPECT_FALSE(result);
+    request.Reset().SetSat(0).SetSatKey(-500);
+    m_Cache->FetchBlobProp(request, response);
+    EXPECT_TRUE(response.empty());
 
-    result = m_Cache->LookupBlobPropBySatKey(4, 128921745, last_modified, data);
-    ASSERT_TRUE(result);
-    EXPECT_EQ(1418291395270, last_modified);
+    request.Reset().SetSat(4).SetSatKey(9965740);
+    m_Cache->FetchBlobProp(request, response);
+    ASSERT_EQ(1UL, response.size());
+    EXPECT_EQ(1114019083516, response[0].last_modified);
 
-    result = m_Cache->LookupBlobPropBySatKey(0, 2054006, last_modified, data);
-    ASSERT_TRUE(result);
-    EXPECT_EQ(823387172086, last_modified);
+    request.Reset().SetSat(0).SetSatKey(2054006);
+    m_Cache->FetchBlobProp(request, response);
+    ASSERT_EQ(1UL, response.size());
+    EXPECT_EQ(823387172086, response[0].last_modified);
 
     ::psg::retrieval::BlobPropValue value;
-    EXPECT_TRUE(value.ParseFromString(data));
+    EXPECT_TRUE(value.ParseFromString(response[0].data));
     EXPECT_EQ(0, value.class_());
     EXPECT_EQ(823387172086L, value.date_asn1());
     EXPECT_EQ("SPT", value.div());
@@ -135,21 +141,30 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
 
 TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKeyLastModified)
 {
-    string data;
-    bool result = m_Cache->LookupBlobPropBySatKeyLastModified(-10, 2054006, 823387172086, data);
-    EXPECT_FALSE(result);
+    CPubseqGatewayCache::TBlobPropRequest request;
+    CPubseqGatewayCache::TBlobPropResponse response;
 
-    result = m_Cache->LookupBlobPropBySatKeyLastModified(0, -500, 823387172086, data);
-    EXPECT_FALSE(result);
+    request.SetSat(-10).SetSatKey(2054006).SetLastModified(823387172086);
+    m_Cache->FetchBlobProp(request, response);
+    EXPECT_TRUE(response.empty());
 
-    result = m_Cache->LookupBlobPropBySatKeyLastModified(0, 2054006, 20, data);
-    EXPECT_FALSE(result);
+    request.Reset().SetSat(0).SetSatKey(-500).SetLastModified(823387172086);
+    m_Cache->FetchBlobProp(request, response);
+    EXPECT_TRUE(response.empty());
 
-    result = m_Cache->LookupBlobPropBySatKeyLastModified(0, 2054006, 823387172086, data);
-    ASSERT_TRUE(result);
+    request.Reset().SetSat(0).SetSatKey(2054006).SetLastModified(20);
+    m_Cache->FetchBlobProp(request, response);
+    EXPECT_TRUE(response.empty());
+
+    request.Reset().SetSat(0).SetSatKey(2054006).SetLastModified(823387172086);
+    m_Cache->FetchBlobProp(request, response);
+    ASSERT_EQ(1UL, response.size());
+    EXPECT_EQ(823387172086, response[0].last_modified);
+    EXPECT_EQ(0, response[0].sat);
+    EXPECT_EQ(2054006, response[0].sat_key);
 
     ::psg::retrieval::BlobPropValue value;
-    EXPECT_TRUE(value.ParseFromString(data));
+    EXPECT_TRUE(value.ParseFromString(response[0].data));
     EXPECT_EQ(823387172086L, value.date_asn1());
     EXPECT_EQ("SPT", value.div());
     EXPECT_EQ("", value.id2_info());

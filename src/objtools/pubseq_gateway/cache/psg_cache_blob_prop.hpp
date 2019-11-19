@@ -40,6 +40,9 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
+#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
+
 #include "psg_cache_base.hpp"
 
 BEGIN_IDBLOB_SCOPE
@@ -48,11 +51,14 @@ class CPubseqGatewayCacheBlobProp
     : public CPubseqGatewayCacheBase
 {
  public:
+    using TBlobPropResponse = TBlobPropCacheResponse;
+    using TBlobPropRequest = CBlobFetchRequest;
+
     explicit CPubseqGatewayCacheBlobProp(const string& file_name);
     virtual ~CPubseqGatewayCacheBlobProp() override;
     void Open(const set<int>& sat_ids);
-    bool LookupBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data);
-    bool LookupBySatKeyLastModified(int32_t sat, int32_t sat_key, int64_t last_modified, string& data);
+
+    void Fetch(CBlobFetchRequest const& request, TBlobPropResponse& response);
 
     static string PackKey(int32_t sat_key);
     static string PackKey(int32_t sat_key, int64_t last_modified);

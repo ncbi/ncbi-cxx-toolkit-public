@@ -99,53 +99,46 @@ void CPubseqGatewayCacheBlobProp::Open(const set<int>& sat_ids)
     rdtxn.commit();
 }
 
-bool CPubseqGatewayCacheBlobProp::LookupBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data)
+void CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& request, TBlobPropResponse& response)
 {
-    if (!m_Env || sat < 0 || (size_t)sat >= m_Dbis.size() || !m_Dbis[sat]) {
-        return false;
+    auto sat = request.GetSat();
+    if (!m_Env || sat < 0 || static_cast<size_t>(sat) >= m_Dbis.size() || !m_Dbis[sat]) {
+        return;
     }
-    bool rv = false;
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
-    {
-        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbis[sat]);
-        string skey = PackKey(sat_key);
-        rv = cursor.get(lmdb::val(skey), MDB_SET_RANGE);
-        if (rv) {
-            lmdb::val key, val;
-            rv = cursor.get(key, val, MDB_GET_CURRENT);
-            rv = rv && key.size() == kPackedKeySize && memcmp(key.data<const char>(), skey.c_str(), skey.size()) == 0;
-            if (rv) {
-                rv = UnpackKey(key.data<const char>(), key.size(), last_modified);
-            }
-            if (rv) {
-                data.assign(val.data(), val.size());
-            }
-        }
-    }
-    rdtxn.commit();
-    return rv;
-}
 
-bool CPubseqGatewayCacheBlobProp::LookupBySatKeyLastModified(
-    int32_t sat, int32_t sat_key, int64_t last_modified, string& data)
-{
-    if (!m_Env || sat < 0 || (size_t)sat >= m_Dbis.size() || !m_Dbis[sat]) {
-        return false;
-    }
-    bool rv = false;
+    auto sat_key = request.GetSatKey();
+    bool with_modified = request.HasField(CBlobFetchRequest::EFields::eLastModified);
+    string filter = with_modified ? PackKey(sat_key, request.GetLastModified()) : PackKey(sat_key);
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
-        string skey = PackKey(sat_key, last_modified);
         lmdb::val val;
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbis[sat]);
-        rv = cursor.get(lmdb::val(skey), val, MDB_SET);
-        if (rv) {
-            data.assign(val.data(), val.size());
+        if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
+            lmdb::val key;
+            while (cursor.get(key, val, MDB_GET_CURRENT)) {
+                int64_t last_modified{-1};
+                if (
+                    key.size() != kPackedKeySize
+                    || memcmp(key.data<const char>(), filter.c_str(), filter.size()) != 0
+                ) {
+                    break;
+                }
+
+                bool rv = UnpackKey(key.data<const char>(), key.size(), last_modified);
+                if (rv && (!with_modified || last_modified == request.GetLastModified())) {
+                    response.resize(response.size() + 1);
+                    auto& last_record = response[response.size() - 1];
+                    last_record.sat = sat;
+                    last_record.sat_key = sat_key;
+                    last_record.last_modified = last_modified;
+                    last_record.data.assign(val.data(), val.size());
+                }
+                rv = cursor.get(key, val, MDB_NEXT);
+            }
         }
     }
 
     rdtxn.commit();
-    return rv;
 }
 
 string CPubseqGatewayCacheBlobProp::PackKey(int32_t sat_key)

@@ -525,14 +525,19 @@ void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid, int forc
 
 void CTestPsgCache::LookupBlobProp(int sat, int sat_key, int64_t last_modified)
 {
-    bool res;
-    string data;
+    CPubseqGatewayCache::TBlobPropRequest request;
+    request.SetSat(sat).SetSatKey(sat_key);
     if (last_modified > 0) {
-        res = m_LookupCache->LookupBlobPropBySatKeyLastModified(sat, sat_key, last_modified, data);
-    } else {
-        res = m_LookupCache->LookupBlobPropBySatKey(sat, sat_key, last_modified, data);
+        request.SetLastModified(last_modified);
     }
-    PrintBlobProp(res, sat, sat_key, last_modified, data);
+    CPubseqGatewayCache::TBlobPropResponse response;
+    m_LookupCache->FetchBlobProp(request, response);
+    if (response.empty()) {
+        PrintBlobProp(false, 0, 0, 0, "");
+    }
+    for (auto & item : response) {
+        PrintBlobProp(true, sat, sat_key, item.last_modified, item.data);
+    }
 }
 
 int main(int argc, const char* argv[])

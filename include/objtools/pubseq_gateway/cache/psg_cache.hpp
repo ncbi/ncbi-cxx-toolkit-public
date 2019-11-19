@@ -63,8 +63,12 @@ class CPubseqGatewayCache
  public:
     using TRuntimeError = SRuntimeError;
     using TRuntimeErrorList = deque<SRuntimeError>;
+
     using TBioseqInfoResponse = TBioseqInfoCacheResponse;
     using TBioseqInfoRequest = CBioseqInfoFetchRequest;
+
+    using TBlobPropResponse = TBlobPropCacheResponse;
+    using TBlobPropRequest = CBlobFetchRequest;
 
     static const size_t kRuntimeErrorLimit;
 
@@ -81,6 +85,7 @@ class CPubseqGatewayCache
     }
 
     void FetchBioseqInfo(TBioseqInfoRequest const& request, TBioseqInfoResponse & response);
+    void FetchBlobProp(TBlobPropRequest const& request, TBlobPropResponse & response);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
@@ -96,10 +101,6 @@ class CPubseqGatewayCache
 
     static string PackSiKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackSiKey(const char* key, size_t key_sz, int& sec_seq_id_type);
-
-/* blob_prop */
-    bool LookupBlobPropBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data);
-    bool LookupBlobPropBySatKeyLastModified(int32_t sat, int32_t sat_key, int64_t last_modified, string& data);
 
     static string PackBlobPropKey(int32_t sat_key);
     static string PackBlobPropKey(int32_t sat_key, int64_t last_modified);

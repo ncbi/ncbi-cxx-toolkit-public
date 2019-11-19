@@ -39,6 +39,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
+#include "blob_record.hpp"
+
 BEGIN_IDBLOB_SCOPE
 
 class CBioseqInfoFetchRequest
@@ -143,6 +145,93 @@ class CBioseqInfoFetchRequest
     CBioseqInfoRecord::TGI m_GI = 0;
     CBioseqInfoRecord::TVersion m_Version = 0;
     CBioseqInfoRecord::TSeqIdType m_SeqIdType = 0;
+    TFields m_State = 0;
+};
+
+class CBlobFetchRequest
+{
+    using TFields = uint8_t;
+ public:
+    enum class EFields : TFields {
+        eSat = 1,
+        eSatKey = 2,
+        eLastModified = 4,
+    };
+
+    CBlobFetchRequest() = default;
+    CBlobFetchRequest(CBlobFetchRequest const&) = default;
+    CBlobFetchRequest(CBlobFetchRequest &&) = default;
+    CBlobFetchRequest& operator=(CBlobFetchRequest const&) = default;
+    CBlobFetchRequest& operator=(CBlobFetchRequest &&) = default;
+
+    CBlobFetchRequest& SetSat(int32_t value)
+    {
+        m_Sat = value;
+        SetField(EFields::eSat);
+        return *this;
+    }
+
+    CBlobFetchRequest& SetSatKey(CBlobRecord::TSatKey value)
+    {
+        m_SatKey = value;
+        SetField(EFields::eSatKey);
+        return *this;
+    }
+
+    CBlobFetchRequest& SetLastModified(CBlobRecord::TTimestamp value)
+    {
+        m_LastModified = value;
+        SetField(EFields::eLastModified);
+        return *this;
+    }
+
+    int32_t GetSat() const
+    {
+        if (!HasField(EFields::eSat)) {
+            NCBI_USER_THROW("CBlobFetchRequest field Sat is missing");
+        }
+        return m_Sat;
+    }
+
+    CBlobRecord::TSatKey GetSatKey() const
+    {
+        if (!HasField(EFields::eSatKey)) {
+            NCBI_USER_THROW("CBlobFetchRequest field SatKey is missing");
+        }
+        return m_SatKey;
+    }
+
+    CBlobRecord::TTimestamp GetLastModified() const
+    {
+        if (!HasField(EFields::eLastModified)) {
+            NCBI_USER_THROW("CBlobFetchRequest field LastModified is missing");
+        }
+        return m_LastModified;
+    }
+
+    bool HasField(EFields field) const
+    {
+        return m_State & static_cast<TFields>(field);
+    }
+
+    CBlobFetchRequest& Reset()
+    {
+        m_Sat = 0;
+        m_SatKey = 0;
+        m_LastModified = 0;
+        m_State = 0;
+        return *this;
+    }
+
+ private:
+    void SetField(EFields value)
+    {
+        m_State |= static_cast<TFields>(value);
+    }
+
+    int32_t m_Sat = 0;
+    CBlobRecord::TSatKey m_SatKey = 0;
+    CBlobRecord::TTimestamp m_LastModified = 0;
     TFields m_State = 0;
 };
 

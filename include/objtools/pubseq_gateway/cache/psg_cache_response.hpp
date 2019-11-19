@@ -39,18 +39,27 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 
 BEGIN_IDBLOB_SCOPE
 
 struct SBioseqInfoCacheRecord {
     string accession;
-    CBioseqInfoRecord::TVersion version;
-    CBioseqInfoRecord::TSeqIdType seq_id_type;
-    CBioseqInfoRecord::TGI gi;
+    CBioseqInfoRecord::TVersion version = 0;
+    CBioseqInfoRecord::TSeqIdType seq_id_type = 0;
+    CBioseqInfoRecord::TGI gi = 0;
+    string data;
+};
+
+struct SBlobPropCacheRecord {
+    int32_t sat;
+    CBlobRecord::TSatKey sat_key = 0;
+    CBlobRecord::TTimestamp last_modified = 0;
     string data;
 };
 
 using TBioseqInfoCacheResponse = vector<SBioseqInfoCacheRecord>;
+using TBlobPropCacheResponse = vector<SBlobPropCacheRecord>;
 
 END_IDBLOB_SCOPE
 

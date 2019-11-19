@@ -191,6 +191,20 @@ void CPubseqGatewayCache::FetchBioseqInfo(TBioseqInfoRequest const& request, TBi
     }
 }
 
+void CPubseqGatewayCache::FetchBlobProp(TBlobPropRequest const& request, TBlobPropResponse & response)
+{
+    if (m_BlobPropCache) {
+        if (
+            request.HasField(TBlobPropRequest::EFields::eSat)
+            && request.HasField(TBlobPropRequest::EFields::eSatKey)
+        ) {
+            TBlobPropResponse result;
+            m_BlobPropCache->Fetch(request, result);
+            swap(result, response);
+        }
+    }
+}
+
 string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version)
 {
     return CPubseqGatewayCacheBioseqInfo::PackKey(accession, version);
@@ -236,17 +250,6 @@ string CPubseqGatewayCache::PackSiKey(const string& sec_seqid, int sec_seq_id_ty
 bool CPubseqGatewayCache::UnpackSiKey(const char* key, size_t key_sz, int& sec_seq_id_type)
 {
     return CPubseqGatewayCacheSi2Csi::UnpackKey(key, key_sz, sec_seq_id_type);
-}
-
-bool CPubseqGatewayCache::LookupBlobPropBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data)
-{
-    return m_BlobPropCache ? m_BlobPropCache->LookupBySatKey(sat, sat_key, last_modified, data) : false;
-}
-
-bool CPubseqGatewayCache::LookupBlobPropBySatKeyLastModified(
-    int32_t sat, int32_t sat_key, int64_t last_modified, string& data)
-{
-    return m_BlobPropCache ? m_BlobPropCache->LookupBySatKeyLastModified(sat, sat_key, last_modified, data) : false;
 }
 
 string CPubseqGatewayCache::PackBlobPropKey(int32_t sat_key)
