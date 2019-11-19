@@ -590,17 +590,6 @@ void CReaderBase::xAddConversionInfo(
         return;
     }
 
-
-    CRef<CAnnotdesc> user(new CAnnotdesc());
-    user->SetUser(*xMakeAsnConversionInfo(pMessageListener));
-    annot->SetDesc().Set().push_back(user);
-}
-
-//  ----------------------------------------------------------------------------
-CRef<CUser_object> CReaderBase::xMakeAsnConversionInfo(
-    ILineErrorListener* pMessageListener )
-//  ----------------------------------------------------------------------------
-{
     CRef<CUser_object> conversioninfo(new CUser_object());
     conversioninfo->SetType().SetStr("Conversion Info");    
     conversioninfo->AddField( 
@@ -611,7 +600,10 @@ CRef<CUser_object> CReaderBase::xMakeAsnConversionInfo(
         "warnings", int(pMessageListener->LevelCount(eDiag_Warning)));
     conversioninfo->AddField( 
         "notes", int(pMessageListener->LevelCount(eDiag_Info)));
-    return conversioninfo;
+
+    CRef<CAnnotdesc> user(new CAnnotdesc());
+    user->SetUser(*conversioninfo);
+    annot->SetDesc().Set().push_back(user);
 }
 
 //  ----------------------------------------------------------------------------

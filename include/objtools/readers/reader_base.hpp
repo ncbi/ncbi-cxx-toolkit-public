@@ -287,9 +287,6 @@ protected:
         CRef< CSeq_annot >&,
         ILineErrorListener* );
                     
-    virtual CRef<CUser_object> xMakeAsnConversionInfo(
-        ILineErrorListener*);
-
     bool xParseComment(
         const CTempString&,
         CRef<CSeq_annot>&);

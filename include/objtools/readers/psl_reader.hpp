@@ -34,27 +34,17 @@
 #define OBJTOOLS_READERS___PSL_READER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqalign/Spliced_exon.hpp>
-#include <objects/seqalign/Score.hpp>
 
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/gff2_data.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
-
-class CGFFReader;
-class CGff2Record;
-class SRecord;
 
 class CPslData;
 class CReaderListener;
 class CReaderMessageHandler;
+
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CPslReader
 //  ----------------------------------------------------------------------------

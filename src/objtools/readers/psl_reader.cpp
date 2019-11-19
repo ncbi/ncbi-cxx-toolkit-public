@@ -26,42 +26,18 @@
  * Author:  Frank Ludwig
  *
  * File Description:
- *   BED file reader
+ *   PSL file reader
  *
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>              
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/stream_utils.hpp>
-
-#include <util/static_map.hpp>
-#include <util/line_reader.hpp>
-
-#include <serial/iterator.hpp>
-#include <serial/objistrasn.hpp>
-
-// Objects includes
-#include <objects/general/Object_id.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
-#include <objtools/readers/read_util.hpp>
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/line_error.hpp>
-#include <objtools/readers/reader_message.hpp>
-#include <objtools/readers/reader_listener.hpp>
-#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/psl_reader.hpp>
-#include <objtools/error_codes.hpp>
-
 #include "psl_data.hpp"
-#include "reader_message_handler.hpp"
-
-#define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
