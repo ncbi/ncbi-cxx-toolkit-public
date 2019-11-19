@@ -36,68 +36,44 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_SCOPE(objects) // namespace ncbi::objects::
+BEGIN_SCOPE(objects)
 
 class CLinePreBuffer;
 
 //  ----------------------------------------------------------------------------
-class CRawBedRecord
+class NCBI_XOBJREAD_EXPORT CRawBedRecord
 //  ----------------------------------------------------------------------------
 {
 public:
     CRawBedRecord(): m_score(-1) {};
 
+    virtual ~CRawBedRecord() {};
+
     void SetInterval(
         CSeq_id& id,
         unsigned int start,
         unsigned int stop,
-        ENa_strand strand)
-    {
-        m_pInterval.Reset(new CSeq_interval());
-        m_pInterval->SetId(id);
-        m_pInterval->SetFrom(start);
-        m_pInterval->SetTo(stop-1);
-        m_pInterval->SetStrand(strand);
-    };
+        ENa_strand strand);
 
     void SetScore(
-        unsigned int score)
-    {
-        m_score = score;
-    };
-
-    ~CRawBedRecord() {};
+        unsigned int score);
 
     void Dump(
-        CNcbiOstream& ostr) const
-    {
-        ostr << "  [CRawBedRecord" << endl;
-        ostr << "id=\"" << m_pInterval->GetId().AsFastaString() << "\" ";
-        ostr << "start=" << m_pInterval->GetFrom() << " ";
-        ostr << "stop=" << m_pInterval->GetTo() << " ";
-        ostr << "strand=" << 
-            (m_pInterval->GetStrand() == eNa_strand_minus ? "-" : "+") << " ";
-        if (m_score >= 0) {
-            ostr << "score=" << m_score << " ";
-        }
-        ostr << "]" << endl;
-    }
+        CNcbiOstream& ostr) const;
 
 public:
     CRef<CSeq_interval> m_pInterval;
     int m_score;
 };
 
+
 //  ----------------------------------------------------------------------------
-class CRawBedTrack
+class NCBI_XOBJREAD_EXPORT CRawBedTrack
 //  ----------------------------------------------------------------------------
 {
 public:
@@ -105,37 +81,14 @@ public:
     ~CRawBedTrack() {};
 
 public:
-    void Reset() 
-    {
-        m_Records.clear();
-    };
-
     void Dump(
-        CNcbiOstream& ostr) const
-    {
-        ostr << "[CRawBedTrack" << endl;
-        for (vector<CRawBedRecord>::const_iterator it = m_Records.begin();
-                it != m_Records.end(); ++it) {
-            it->Dump(ostr);
-        }
-        ostr << "]" << std::endl;
-    }
+        CNcbiOstream& ostr) const;
 
+    void Reset() { m_Records.clear(); };
     void AddRecord(
-        CRawBedRecord& record)
-    {
-        m_Records.push_back(record);
-    }
-
-    const vector<CRawBedRecord>& Records() const
-    {
-        return m_Records;
-    }
-
-    bool HasData() const
-    {
-        return (!m_Records.empty());
-    }
+        CRawBedRecord& record) { m_Records.push_back(record); };
+    const vector<CRawBedRecord>& Records() const { return m_Records; };
+    bool HasData() const { return (!m_Records.empty()); };
 
 public:
     CRef<CSeq_id> m_pId;
@@ -173,18 +126,6 @@ public:
     };
     typedef int TFlags;
 
-    /// Read object from line reader containing BED data, rendering it as a
-    /// Seq-annot
-    /// @param lr
-    ///   line reader to read from.
-    /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///
-    virtual CRef< CSerialObject >
-    ReadObject(
-        ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
-                
     /// Read a single object from given line reader containing BED data. The
     /// resulting Seq-annot will contain a feature table.
     /// @param lr
@@ -195,11 +136,6 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
-
-    virtual CRef< CSeq_annot >
-    ReadSeqAnnot(
-        CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
 
     virtual bool 
