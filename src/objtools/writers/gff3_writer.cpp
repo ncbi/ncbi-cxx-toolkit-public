@@ -2178,6 +2178,10 @@ bool CGff3Writer::xAssignSourceEndpoints(
 {
     unsigned int seqStart = 0;//always for source
     unsigned int seqStop = bsh.GetBioseqLength() - 1;
+    if (!m_Range.IsWhole()) {
+        seqStart = m_Range.GetFrom();
+        seqStop = m_Range.GetTo();
+    } 
     ENa_strand seqStrand = eNa_strand_plus;
     if (bsh.CanGetInst_Strand()) {
         //now that's nuts- how should we act on GetInst_Strand() ???
