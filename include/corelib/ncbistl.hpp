@@ -36,7 +36,7 @@
 
 
 #include <common/ncbi_export.h>
-#include <string>
+#include <iosfwd>
 #include <type_traits>
 #include <typeinfo>
 
@@ -176,7 +176,8 @@ namespace DummyNS { class CDummyClassToEatSemicolon; }
 #endif
 
 #if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP)
-#  if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 400
+#  if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 400  \
+      &&  !defined(__clang__)
 #    include <algorithm>
 #  endif
 // This template is used by some stl algorithms (sort, reverse...)
@@ -203,19 +204,17 @@ END_STD_SCOPE
 
 #endif
 
-BEGIN_NCBI_SCOPE
-typedef std::string CStringUTF8;
-END_NCBI_SCOPE
-
 #ifdef NCBI_HAVE_CXX11
 // Avoid (copious) warnings from using auto_ptr in C++ '11.
 #  if defined(_GLIBCXX_DEPRECATED_ATTR)
+#    include <string>
 #    undef _GLIBCXX_DEPRECATED_ATTR
 #    define _GLIBCXX_DEPRECATED_ATTR /* temporarily empty */
 #    include <backward/auto_ptr.h>
 #    undef _GLIBCXX_DEPRECATED_ATTR
 #    define _GLIBCXX_DEPRECATED_ATTR NCBI_DEPRECATED
 #  elif defined(_GLIBCXX_DEPRECATED)
+#    include <string>
 #    include <ext/concurrence.h>
 #    ifdef _GLIBCXX_THROW_OR_ABORT /* using libstdc++ from GCC 4.8 or later */
 #      include <typeinfo>
@@ -228,8 +227,24 @@ END_NCBI_SCOPE
 #    include <backward/auto_ptr.h>
 #    undef _GLIBCXX_DEPRECATED
 #    define _GLIBCXX_DEPRECATED NCBI_DEPRECATED
+#  elif defined(_LIBCPP_DEPRECATED_IN_CXX11)
+#    include <atomic>
+#    include <cassert>
+#    include <iterator>
+#    include <stdexcept>
+#    include <tuple>
+#    undef _LIBCPP_DEPRECATED_IN_CXX11
+#    define _LIBCPP_DEPRECATED_IN_CXX11 /**/
+#    include <memory>
+#    undef _LIBCPP_DEPRECATED_IN_CXX11
+#    define _LIBCPP_DEPRECATED_IN_CXX11 _LIBCPP_DEPRECATED
 #  endif
 #endif
+
+#include <string>
+BEGIN_NCBI_SCOPE
+typedef std::string CStringUTF8;
+END_NCBI_SCOPE
 
 
 /// Helper template to check that type Type have some method declared
