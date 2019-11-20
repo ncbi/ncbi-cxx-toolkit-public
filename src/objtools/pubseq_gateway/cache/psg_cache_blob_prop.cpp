@@ -71,7 +71,7 @@ void CPubseqGatewayCacheBlobProp::Open(const set<int>& sat_ids)
     }
 
     CPubseqGatewayCacheBase::Open();
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
+    auto rdtxn = BeginReadTxn();
     for (const auto & sat_id : sat_ids) {
         unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> pdbi;
         string sat_dbi = string("#DATA[") + to_string(sat_id) + "]";
@@ -96,21 +96,30 @@ void CPubseqGatewayCacheBlobProp::Open(const set<int>& sat_ids)
         }
         m_Dbis.push_back(move(pdbi));
     }
-    rdtxn.commit();
 }
 
-void CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& request, TBlobPropResponse& response)
+CPubseqGatewayCacheBlobProp::TBlobPropResponse CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& request)
 {
-    auto sat = request.GetSat();
-    if (!m_Env || sat < 0 || static_cast<size_t>(sat) >= m_Dbis.size() || !m_Dbis[sat]) {
-        return;
+    if (
+        !request.HasField(TBlobPropRequest::EFields::eSat)
+        || !request.HasField(TBlobPropRequest::EFields::eSatKey)
+    ) {
+        return TBlobPropResponse();
     }
 
+
+    auto sat = request.GetSat();
+    if (!m_Env || sat < 0 || static_cast<size_t>(sat) >= m_Dbis.size() || !m_Dbis[sat]) {
+        return TBlobPropResponse();
+    }
+
+    TBlobPropResponse response;
     auto sat_key = request.GetSatKey();
     bool with_modified = request.HasField(CBlobFetchRequest::EFields::eLastModified);
     string filter = with_modified ? PackKey(sat_key, request.GetLastModified()) : PackKey(sat_key);
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
+
     {
+        auto rdtxn = BeginReadTxn();
         lmdb::val val;
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbis[sat]);
         if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
@@ -138,7 +147,7 @@ void CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& request, TBlobP
         }
     }
 
-    rdtxn.commit();
+    return response;
 }
 
 string CPubseqGatewayCacheBlobProp::PackKey(int32_t sat_key)

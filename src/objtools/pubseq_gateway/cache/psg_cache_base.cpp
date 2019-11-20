@@ -55,6 +55,11 @@ CPubseqGatewayCacheBase::~CPubseqGatewayCacheBase()
 {
 }
 
+CLMDBReadOnlyTxn CPubseqGatewayCacheBase::BeginReadTxn()
+{
+    return CLMDBReadOnlyTxn(lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY));
+}
+
 void CPubseqGatewayCacheBase::Open()
 {
     struct stat st;

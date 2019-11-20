@@ -87,17 +87,18 @@ CPubseqGatewayCacheBioseqInfo::~CPubseqGatewayCacheBioseqInfo() = default;
 void CPubseqGatewayCacheBioseqInfo::Open()
 {
     CPubseqGatewayCacheBase::Open();
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
-    m_Dbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
-        new lmdb::dbi({lmdb::dbi::open(rdtxn, "#DATA", 0)}),
-        [this](lmdb::dbi* dbi){
-            if (dbi && *dbi) {
-                dbi->close(*m_Env);
+    {
+        auto rdtxn = BeginReadTxn();
+        m_Dbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
+            new lmdb::dbi({lmdb::dbi::open(rdtxn, "#DATA", 0)}),
+            [this](lmdb::dbi* dbi){
+                if (dbi && *dbi) {
+                    dbi->close(*m_Env);
+                }
+                delete(dbi);
             }
-            delete(dbi);
-        }
-    );
-    rdtxn.commit();
+        );
+    }
 }
 
 string CPubseqGatewayCacheBioseqInfo::x_MakeLookupKey(CBioseqInfoFetchRequest const& request) const
@@ -136,11 +137,17 @@ bool CPubseqGatewayCacheBioseqInfo::x_IsMatchingRecord(
     return acceptable;
 }
 
-void CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchRequest const& request, TBioseqInfoResponse& response)
+CPubseqGatewayCacheBioseqInfo::TBioseqInfoResponse
+CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchRequest const& request)
 {
+    if (!request.HasField(CBioseqInfoFetchRequest::EFields::eAccession)) {
+        return TBioseqInfoResponse();
+    }
+
+    TBioseqInfoResponse response;
     string filter = x_MakeLookupKey(request);
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
+        auto rdtxn = BeginReadTxn();
         lmdb::val val;
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
         if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
@@ -171,7 +178,7 @@ void CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchRequest const& request
         }
     }
 
-    rdtxn.commit();
+    return response;
 }
 
 string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int version)

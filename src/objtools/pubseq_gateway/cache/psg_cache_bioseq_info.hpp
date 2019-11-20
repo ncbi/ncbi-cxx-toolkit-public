@@ -54,25 +54,7 @@ class CPubseqGatewayCacheBioseqInfo
     virtual ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
 
-    void Fetch(CBioseqInfoFetchRequest const& request, TBioseqInfoResponse& response);
-
-    bool LookupByAccession(
-        const string& accession, string& data, int& found_version, int& found_seq_id_type, int64_t& found_gi);
-    bool LookupByAccessionVersion(
-        const string& accession, int version, string& data, int& found_seq_id_type, int64_t& found_gi);
-    bool LookupByAccessionVersionSeqIdType(
-        const string& accession,
-        int version,
-        int seq_id_type,
-        string& data,
-        int& found_version,
-        int& found_saq_id_type,
-        int64_t& found_gi
-    );
-    bool LookupBioseqInfoByAccessionGi(
-        const string& accession, int64_t gi, string& data, int& found_version, int& found_seq_id_type);
-    bool LookupBioseqInfoByAccessionVersionSeqIdTypeGi(
-        const string& accession, int version, int seq_id_type, int64_t gi, string& data);
+    TBioseqInfoResponse Fetch(CBioseqInfoFetchRequest const& request);
 
     static string PackKey(const string& accession, int version);
     static string PackKey(const string& accession, int version, int seq_id_type);

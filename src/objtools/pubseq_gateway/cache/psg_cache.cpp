@@ -75,9 +75,8 @@ void ApplyInheritedSeqIds(
         ncbi::psg::retrieval::BioseqInfoValue record;
         if (record.ParseFromString(data) && record.state() != ncbi::psg::retrieval::SEQ_STATE_LIVE) {
             CPubseqGatewayCache::TBioseqInfoRequest request;
-            CPubseqGatewayCache::TBioseqInfoResponse response;
             request.SetAccession(accession).SetSeqIdType(seq_id_type);
-            cache->Fetch(request, response);
+            CPubseqGatewayCache::TBioseqInfoResponse response = cache->Fetch(request);
             if (!response.empty()) {
                 ncbi::psg::retrieval::BioseqInfoValue latest_record;
                 if (
@@ -177,32 +176,34 @@ void CPubseqGatewayCache::ResetErrors()
     m_RuntimeErrors.clear();
 }
 
-void CPubseqGatewayCache::FetchBioseqInfo(TBioseqInfoRequest const& request, TBioseqInfoResponse & response)
+CPubseqGatewayCache::TBioseqInfoResponse CPubseqGatewayCache::FetchBioseqInfo(TBioseqInfoRequest const& request)
 {
-    if (m_BioseqInfoCache) {
-        if (request.HasField(TBioseqInfoRequest::EFields::eAccession)) {
-            TBioseqInfoResponse result;
-            m_BioseqInfoCache->Fetch(request, result);
-            for (auto & record : result) {
-                ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record.accession, record.seq_id_type, record.data);
-            }
-            swap(result, response);
+    if (m_BioseqInfoCache && request.HasField(TBioseqInfoRequest::EFields::eAccession)) {
+        TBioseqInfoResponse response = m_BioseqInfoCache->Fetch(request);
+        for (auto & record : response) {
+            ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record.accession, record.seq_id_type, record.data);
         }
+        return response;
     }
+    return TBioseqInfoResponse();
 }
 
-void CPubseqGatewayCache::FetchBlobProp(TBlobPropRequest const& request, TBlobPropResponse & response)
+CPubseqGatewayCache::TBlobPropResponse CPubseqGatewayCache::FetchBlobProp(TBlobPropRequest const& request)
 {
     if (m_BlobPropCache) {
-        if (
-            request.HasField(TBlobPropRequest::EFields::eSat)
-            && request.HasField(TBlobPropRequest::EFields::eSatKey)
-        ) {
-            TBlobPropResponse result;
-            m_BlobPropCache->Fetch(request, result);
-            swap(result, response);
-        }
+        return m_BlobPropCache->Fetch(request);
     }
+
+    return TBlobPropResponse();
+}
+
+CPubseqGatewayCache::TSi2CsiResponse CPubseqGatewayCache::FetchSi2Csi(TSi2CsiRequest const& request)
+{
+    if (m_Si2CsiCache && request.HasField(TSi2CsiRequest::EFields::eSecSeqId)) {
+        return m_Si2CsiCache->Fetch(request);
+    }
+
+    return TSi2CsiResponse();
 }
 
 string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version)
@@ -230,16 +231,6 @@ bool CPubseqGatewayCache::UnpackBioseqInfoKey(
     const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi)
 {
     return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, accession, version, seq_id_type, gi);
-}
-
-bool CPubseqGatewayCache::LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data)
-{
-    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqId(sec_seqid, sec_seq_id_type, data) : false;
-}
-
-bool CPubseqGatewayCache::LookupCsiBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data)
-{
-    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqIdSeqIdType(sec_seqid, sec_seq_id_type, data) : false;
 }
 
 string CPubseqGatewayCache::PackSiKey(const string& sec_seqid, int sec_seq_id_type)

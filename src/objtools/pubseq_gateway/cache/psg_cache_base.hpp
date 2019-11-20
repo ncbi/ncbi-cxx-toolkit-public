@@ -34,18 +34,48 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+
+#include <util/lmdbxx/lmdb++.h>
 
 #include <corelib/ncbistd.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-BEGIN_SCOPE(lmdb)
-    class env;
-    class dbi;
-END_SCOPE()
-
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
+
+class CLMDBReadOnlyTxn
+{
+ public:
+    CLMDBReadOnlyTxn()
+        : m_Txn(nullptr)
+    {
+    }
+
+    explicit CLMDBReadOnlyTxn(lmdb::txn&& txn)
+        : m_Txn(move(txn))
+    {
+    }
+
+    ~CLMDBReadOnlyTxn()
+    {
+        m_Txn.commit();
+    }
+
+    CLMDBReadOnlyTxn(CLMDBReadOnlyTxn&&) = default;
+    CLMDBReadOnlyTxn(const CLMDBReadOnlyTxn&) = delete;
+    CLMDBReadOnlyTxn& operator=(CLMDBReadOnlyTxn&&) = default;
+    CLMDBReadOnlyTxn& operator=(const CLMDBReadOnlyTxn&) = delete;
+
+    operator MDB_txn*() const
+    {
+        return m_Txn.handle();
+    }
+
+ private:
+    lmdb::txn m_Txn;
+};
 
 class CPubseqGatewayCacheBase
 {
@@ -56,6 +86,7 @@ class CPubseqGatewayCacheBase
     void Open();
 
  protected:
+    CLMDBReadOnlyTxn BeginReadTxn();
     string m_FileName;
     unique_ptr<lmdb::env> m_Env;
 };

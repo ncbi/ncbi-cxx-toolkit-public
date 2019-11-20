@@ -41,6 +41,9 @@
 
 #include "psg_cache_bytes_util.hpp"
 
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
+#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
+
 BEGIN_SCOPE()
 USING_IDBLOB_SCOPE;
 
@@ -70,65 +73,58 @@ CPubseqGatewayCacheSi2Csi::~CPubseqGatewayCacheSi2Csi() = default;
 void CPubseqGatewayCacheSi2Csi::Open()
 {
     CPubseqGatewayCacheBase::Open();
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
-    m_Dbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
-        new lmdb::dbi({lmdb::dbi::open(rdtxn, "#DATA", 0)}),
-        [this](lmdb::dbi* dbi){
-            if (dbi && *dbi) {
-                dbi->close(*m_Env);
+    {
+        auto rdtxn = BeginReadTxn();
+        m_Dbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
+            new lmdb::dbi({lmdb::dbi::open(rdtxn, "#DATA", 0)}),
+            [this](lmdb::dbi* dbi){
+                if (dbi && *dbi) {
+                    dbi->close(*m_Env);
+                }
+                delete(dbi);
             }
-            delete(dbi);
-        }
-    );
-    rdtxn.commit();
+        );
+    }
 }
 
-bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data)
+CPubseqGatewayCacheSi2Csi::TSi2CsiResponse CPubseqGatewayCacheSi2Csi::Fetch(TSi2CsiRequest const& request)
 {
-    if (!m_Env || sec_seqid.empty()) {
-        return false;
+    if (!m_Env || !request.HasField(TSi2CsiRequest::EFields::eSecSeqId)) {
+        return TSi2CsiResponse();
     }
-    bool rv = false;
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
+    TSi2CsiResponse response;
+    string sec_seqid = request.GetSecSeqId();
+    bool with_type = request.HasField(TSi2CsiRequest::EFields::eSecSeqIdType);
+    string filter = with_type ? PackKey(sec_seqid, request.GetSecSeqIdType()) : sec_seqid;
     {
-        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
-        rv = cursor.get(lmdb::val(sec_seqid), MDB_SET_RANGE);
-        if (rv) {
-            lmdb::val key, val;
-            rv = cursor.get(key, val, MDB_GET_CURRENT);
-            rv = rv && key.size() == PackedKeySize(sec_seqid.size()) && sec_seqid.compare(key.data<const char>()) == 0;
-            if (rv) {
-                rv = UnpackKey(key.data<const char>(), key.size(), sec_seq_id_type);
-            }
-            if (rv) {
-                data.assign(val.data(), val.size());
-            }
-        }
-    }
-
-    rdtxn.commit();
-    return rv;
-}
-
-bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data)
-{
-    if (!m_Env || sec_seqid.empty()) {
-        return false;
-    }
-    bool rv = false;
-    auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
-    {
-        string skey = PackKey(sec_seqid, sec_seq_id_type);
+        auto rdtxn = BeginReadTxn();
         lmdb::val val;
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
-        rv = cursor.get(lmdb::val(skey), val, MDB_SET);
-        if (rv) {
-            data.assign(val.data(), val.size());
+        if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
+            lmdb::val key;
+            while (cursor.get(key, val, MDB_GET_CURRENT)) {
+                int sec_seq_it_type{-1};
+                if (
+                    key.size() != PackedKeySize(sec_seqid.size())
+                    || sec_seqid.compare(key.data<const char>()) != 0
+                ) {
+                    break;
+                }
+
+                bool rv = UnpackKey(key.data<const char>(), key.size(), sec_seq_it_type);
+                if (rv && (!with_type || sec_seq_it_type == request.GetSecSeqIdType())) {
+                    response.resize(response.size() + 1);
+                    auto& last_record = response[response.size() - 1];
+                    last_record.sec_seqid = sec_seqid;
+                    last_record.sec_seqid_type = sec_seq_it_type;
+                    last_record.data.assign(val.data(), val.size());
+                }
+                rv = cursor.get(key, val, MDB_NEXT);
+            }
         }
     }
 
-    rdtxn.commit();
-    return rv;
+    return response;
 }
 
 string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_id_type)

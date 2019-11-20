@@ -41,6 +41,7 @@
 
 #include <corelib/ncbistr.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/si2csi/record.hpp>
@@ -57,41 +58,33 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
         eError = CCassBlobWaiter::eError
     };
 
-public:
-    CCassSI2CSITaskFetch(unsigned int                       timeout_ms,
-                         unsigned int                       max_retries,
-                         shared_ptr<CCassConnection>        connection,
-                         const string &                     keyspace,
-                         const CSI2CSIRecord::TSecSeqId &   sec_seq_id,
-                         CSI2CSIRecord::TSecSeqIdType       sec_seq_id_type,
-                         bool                               sec_seq_id_type_provided,
-                         TSI2CSIConsumeCallback             consume_callback,
-                         TDataErrorCallback                 data_error_cb);
+ public:
+    CCassSI2CSITaskFetch(unsigned int                timeout_ms,
+                         unsigned int                max_retries,
+                         shared_ptr<CCassConnection> connection,
+                         const string &              keyspace,
+                         CSi2CsiFetchRequest const&  request,
+                         TSI2CSIConsumeCallback      consume_callback,
+                         TDataErrorCallback          data_error_cb);
 
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TSI2CSIConsumeCallback callback);
     void Cancel(void);
 
-protected:
+ protected:
     virtual void Wait1(void) override;
 
-private:
+ private:
     void x_InitializeQuery(void);
 
-private:
-    CSI2CSIRecord::TSecSeqId            m_SecSeqId;
-    CSI2CSIRecord::TSecSeqIdType        m_SecSeqIdType;
-    bool                                m_SecSeqIdTypeProvided;
-    TSI2CSIConsumeCallback              m_ConsumeCallback;
+    CSi2CsiFetchRequest    m_Request;
+    TSI2CSIConsumeCallback m_ConsumeCallback;
+    vector<CSI2CSIRecord>  m_Records;
 
-private:
-    size_t                              m_RecordCount;
-    CSI2CSIRecord                       m_Record;
-
-protected:
-    unsigned int                        m_PageSize;
-    unsigned int                        m_RestartCounter;
+ protected:
+    unsigned int m_PageSize;
+    unsigned int m_RestartCounter;
 };
 
 END_IDBLOB_SCOPE

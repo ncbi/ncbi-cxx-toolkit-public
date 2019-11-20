@@ -87,31 +87,31 @@ unique_ptr<CPubseqGatewayCache> CPsgCacheSi2CsiTest::m_Cache(nullptr);
 
 TEST_F(CPsgCacheSi2CsiTest, LookupUninitialized)
 {
-    string data;
-    int sec_seq_id_type;
+    CPubseqGatewayCache::TSi2CsiRequest request;
 
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
     cache->Open({});
-    EXPECT_FALSE(cache->LookupCsiBySeqId("3643631", sec_seq_id_type, data));
+    request.SetSecSeqId("3643631");
+    EXPECT_TRUE(cache->FetchSi2Csi(request).empty());
 }
 
 TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqId)
 {
-    string data;
-    int sec_seq_id_type;
+    CPubseqGatewayCache::TSi2CsiRequest request;
 
-    bool result = m_Cache->LookupCsiBySeqId("FAKE", sec_seq_id_type, data);
-    EXPECT_FALSE(result);
+    request.SetSecSeqId("FAKE");
+    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
 
-    result = m_Cache->LookupCsiBySeqId("", sec_seq_id_type, data);
-    EXPECT_FALSE(result);
+    request.Reset().SetSecSeqId("");
+    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
 
-    result = m_Cache->LookupCsiBySeqId("3643631", sec_seq_id_type, data);
-    ASSERT_TRUE(result);
-    EXPECT_EQ(12, sec_seq_id_type);
+    request.Reset().SetSecSeqId("3643631");
+    auto response = m_Cache->FetchSi2Csi(request);
+    ASSERT_EQ(1UL, response.size());
+    EXPECT_EQ(12, response[0].sec_seqid_type);
 
     ::psg::retrieval::BioseqInfoKey value;
-    EXPECT_TRUE(value.ParseFromString(data));
+    EXPECT_TRUE(value.ParseFromString(response[0].data));
     EXPECT_EQ("AC005299", value.accession());
     EXPECT_EQ(0, value.version());
     EXPECT_EQ(5, value.seq_id_type());
@@ -120,21 +120,23 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqId)
 
 TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqIdSeqIdType)
 {
-    string data;
-    bool result = m_Cache->LookupCsiBySeqIdSeqIdType("FAKE", 0, data);
-    EXPECT_FALSE(result);
+    CPubseqGatewayCache::TSi2CsiRequest request;
 
-    result = m_Cache->LookupCsiBySeqIdSeqIdType("", 0, data);
-    EXPECT_FALSE(result);
+    request.SetSecSeqId("FAKE").SetSecSeqIdType(0);
+    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
 
-    result = m_Cache->LookupCsiBySeqIdSeqIdType("3643631", 0, data);
-    EXPECT_FALSE(result);
+    request.Reset().SetSecSeqId("").SetSecSeqIdType(0);
+    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
 
-    result = m_Cache->LookupCsiBySeqIdSeqIdType("3643631", 12, data);
-    ASSERT_TRUE(result);
+    request.Reset().SetSecSeqId("3643631").SetSecSeqIdType(0);
+    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
+
+    request.Reset().SetSecSeqId("3643631").SetSecSeqIdType(12);
+    auto response = m_Cache->FetchSi2Csi(request);
+    ASSERT_EQ(1UL, response.size());
 
     ::psg::retrieval::BioseqInfoKey value;
-    EXPECT_TRUE(value.ParseFromString(data));
+    EXPECT_TRUE(value.ParseFromString(response[0].data));
     EXPECT_EQ("AC005299", value.accession());
     EXPECT_EQ(0, value.version());
     EXPECT_EQ(5, value.seq_id_type());

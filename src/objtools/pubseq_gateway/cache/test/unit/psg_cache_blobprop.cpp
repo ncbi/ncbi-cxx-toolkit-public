@@ -92,35 +92,33 @@ unique_ptr<CPubseqGatewayCache> CPsgCacheBlobPropTest::m_Cache(nullptr);
 TEST_F(CPsgCacheBlobPropTest, LookupUninitialized)
 {
     CPubseqGatewayCache::TBlobPropRequest request;
-    CPubseqGatewayCache::TBlobPropResponse response;
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
     cache->Open({0, 4});
 
     request.SetSat(0).SetSatKey(2054006);
-    cache->FetchBlobProp(request, response);
+    auto response = cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 }
 
 TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
 {
     CPubseqGatewayCache::TBlobPropRequest request;
-    CPubseqGatewayCache::TBlobPropResponse response;
 
     request.SetSat(-10).SetSatKey(2054006);
-    m_Cache->FetchBlobProp(request, response);
+    auto response = m_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(-500);
-    m_Cache->FetchBlobProp(request, response);
+    response = m_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(4).SetSatKey(9965740);
-    m_Cache->FetchBlobProp(request, response);
+    response = m_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(1114019083516, response[0].last_modified);
 
     request.Reset().SetSat(0).SetSatKey(2054006);
-    m_Cache->FetchBlobProp(request, response);
+    response = m_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(823387172086, response[0].last_modified);
 
@@ -142,22 +140,21 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
 TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKeyLastModified)
 {
     CPubseqGatewayCache::TBlobPropRequest request;
-    CPubseqGatewayCache::TBlobPropResponse response;
 
     request.SetSat(-10).SetSatKey(2054006).SetLastModified(823387172086);
-    m_Cache->FetchBlobProp(request, response);
+    auto response = m_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(-500).SetLastModified(823387172086);
-    m_Cache->FetchBlobProp(request, response);
+    response = m_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(2054006).SetLastModified(20);
-    m_Cache->FetchBlobProp(request, response);
+    response = m_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(2054006).SetLastModified(823387172086);
-    m_Cache->FetchBlobProp(request, response);
+    response = m_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(823387172086, response[0].last_modified);
     EXPECT_EQ(0, response[0].sat);

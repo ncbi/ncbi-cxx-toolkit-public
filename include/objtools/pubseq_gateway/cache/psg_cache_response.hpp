@@ -39,6 +39,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/si2csi/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 
 BEGIN_IDBLOB_SCOPE
@@ -58,8 +59,15 @@ struct SBlobPropCacheRecord {
     string data;
 };
 
+struct SSi2CsiCacheRecord {
+    CSI2CSIRecord::TSecSeqId sec_seqid;
+    CSI2CSIRecord::TSecSeqIdType sec_seqid_type = 0;
+    string data;
+};
+
 using TBioseqInfoCacheResponse = vector<SBioseqInfoCacheRecord>;
 using TBlobPropCacheResponse = vector<SBlobPropCacheRecord>;
+using TSi2CsiCacheResponse = vector<SSi2CsiCacheRecord>;
 
 END_IDBLOB_SCOPE
 

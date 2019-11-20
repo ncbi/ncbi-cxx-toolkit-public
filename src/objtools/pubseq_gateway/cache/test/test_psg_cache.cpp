@@ -452,8 +452,7 @@ void CTestPsgCache::LookupBioseqInfoByPrimaryAVT(const string& accession, int ve
     if (seq_id_type >= 0) {
         request.SetSeqIdType(seq_id_type);
     }
-    CPubseqGatewayCache::TBioseqInfoResponse response;
-    m_LookupCache->FetchBioseqInfo(request, response);
+    auto response = m_LookupCache->FetchBioseqInfo(request);
     if (response.empty()) {
         PrintBioseqInfo(false, accession, 0, 0, 0, "");
     }
@@ -464,9 +463,9 @@ void CTestPsgCache::LookupBioseqInfoByPrimaryAVT(const string& accession, int ve
 
 void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int force_seq_id_type)
 {
+    CPubseqGatewayCache::TSi2CsiRequest request;
     int seq_id_type = -1;
     string seq_id;
-    string data;
     bool res = ParseSecondarySeqId(fasta_seqid, seq_id, seq_id_type);
     if (!res) {
         // fallback to direct lookup
@@ -478,17 +477,16 @@ void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int f
         seq_id_type = force_seq_id_type;
     }
 
+    request.SetSecSeqId(fasta_seqid);
     if (seq_id_type >= 0) {
-        res = m_LookupCache->LookupCsiBySeqIdSeqIdType(seq_id, seq_id_type, data);
-    } else {
-        res = m_LookupCache->LookupCsiBySeqId(seq_id, seq_id_type, data);
+        request.SetSecSeqIdType(seq_id_type);
     }
-
-    if (!res) {
+    auto response = m_LookupCache->FetchSi2Csi(request);
+    if (response.empty()) {
         cout << "result: si2csi cache miss" << endl;
     } else {
         BioseqInfoKey value;
-        bool b = value.ParseFromString(data);
+        bool b = value.ParseFromString(response[0].data);
         if (b) {
             LookupBioseqInfoByPrimaryAVT(value.accession(), value.version(), value.seq_id_type());
         } else {
@@ -499,10 +497,9 @@ void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int f
 
 void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid, int force_seq_id_type)
 {
+    CPubseqGatewayCache::TSi2CsiRequest request;
     int seq_id_type = -1;
     string seq_id;
-    string data;
-
     bool res = ParseSecondarySeqId(fasta_seqid, seq_id, seq_id_type);
     if (!res) {
         // fallback to direct lookup
@@ -514,13 +511,16 @@ void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid, int forc
         seq_id_type = force_seq_id_type;
     }
 
+    request.SetSecSeqId(fasta_seqid);
     if (seq_id_type >= 0) {
-        res = m_LookupCache->LookupCsiBySeqIdSeqIdType(seq_id, seq_id_type, data);
-    } else {
-        res = m_LookupCache->LookupCsiBySeqId(seq_id, seq_id_type, data);
+        request.SetSecSeqIdType(seq_id_type);
     }
-
-    PrintPrimaryId(res, seq_id, seq_id_type, data);
+    auto response = m_LookupCache->FetchSi2Csi(request);
+    if (response.empty()) {
+        PrintPrimaryId(false, "", 0, "");
+    } else {
+        PrintPrimaryId(true, response[0].sec_seqid, response[0].sec_seqid_type, response[0].data);
+    }
 }
 
 void CTestPsgCache::LookupBlobProp(int sat, int sat_key, int64_t last_modified)
@@ -530,8 +530,7 @@ void CTestPsgCache::LookupBlobProp(int sat, int sat_key, int64_t last_modified)
     if (last_modified > 0) {
         request.SetLastModified(last_modified);
     }
-    CPubseqGatewayCache::TBlobPropResponse response;
-    m_LookupCache->FetchBlobProp(request, response);
+    auto response = m_LookupCache->FetchBlobProp(request);
     if (response.empty()) {
         PrintBlobProp(false, 0, 0, 0, "");
     }

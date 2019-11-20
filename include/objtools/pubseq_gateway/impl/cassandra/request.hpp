@@ -38,6 +38,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/si2csi/record.hpp>
 
 #include "blob_record.hpp"
 
@@ -62,8 +63,10 @@ class CBioseqInfoFetchRequest
 
     CBioseqInfoFetchRequest& SetAccession(string const& value)
     {
-        m_Accession = value;
-        SetField(EFields::eAccession);
+        if (!value.empty()) {
+            m_Accession = value;
+            SetField(EFields::eAccession);
+        }
         return *this;
     }
 
@@ -232,6 +235,77 @@ class CBlobFetchRequest
     int32_t m_Sat = 0;
     CBlobRecord::TSatKey m_SatKey = 0;
     CBlobRecord::TTimestamp m_LastModified = 0;
+    TFields m_State = 0;
+};
+
+class CSi2CsiFetchRequest
+{
+    using TFields = uint8_t;
+ public:
+    enum class EFields : TFields {
+        eSecSeqId = 1,
+        eSecSeqIdType = 2,
+    };
+
+    CSi2CsiFetchRequest() = default;
+    CSi2CsiFetchRequest(CSi2CsiFetchRequest const&) = default;
+    CSi2CsiFetchRequest(CSi2CsiFetchRequest &&) = default;
+    CSi2CsiFetchRequest& operator=(CSi2CsiFetchRequest const&) = default;
+    CSi2CsiFetchRequest& operator=(CSi2CsiFetchRequest &&) = default;
+
+    CSi2CsiFetchRequest& SetSecSeqId(CSI2CSIRecord::TSecSeqId value)
+    {
+        if (!value.empty()) {
+            m_SecSeqId = value;
+            SetField(EFields::eSecSeqId);
+        }
+        return *this;
+    }
+
+    CSi2CsiFetchRequest& SetSecSeqIdType(CSI2CSIRecord::TSecSeqIdType value)
+    {
+        m_SecSeqIdType = value;
+        SetField(EFields::eSecSeqIdType);
+        return *this;
+    }
+
+    CSI2CSIRecord::TSecSeqId GetSecSeqId() const
+    {
+        if (!HasField(EFields::eSecSeqId)) {
+            NCBI_USER_THROW("CSi2CsiFetchRequest field SecSeqId is missing");
+        }
+        return m_SecSeqId;
+    }
+
+    CSI2CSIRecord::TSecSeqIdType GetSecSeqIdType() const
+    {
+        if (!HasField(EFields::eSecSeqIdType)) {
+            NCBI_USER_THROW("CSi2CsiFetchRequest field SecSeqIdType is missing");
+        }
+        return m_SecSeqIdType;
+    }
+
+    bool HasField(EFields field) const
+    {
+        return m_State & static_cast<TFields>(field);
+    }
+
+    CSi2CsiFetchRequest& Reset()
+    {
+        m_SecSeqId.clear();
+        m_SecSeqIdType = 0;
+        m_State = 0;
+        return *this;
+    }
+
+ private:
+    void SetField(EFields value)
+    {
+        m_State |= static_cast<TFields>(value);
+    }
+
+    CSI2CSIRecord::TSecSeqId m_SecSeqId;
+    CSI2CSIRecord::TSecSeqIdType m_SecSeqIdType = 0;
     TFields m_State = 0;
 };
 

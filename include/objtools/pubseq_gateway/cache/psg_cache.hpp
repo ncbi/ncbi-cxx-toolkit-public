@@ -70,6 +70,9 @@ class CPubseqGatewayCache
     using TBlobPropResponse = TBlobPropCacheResponse;
     using TBlobPropRequest = CBlobFetchRequest;
 
+    using TSi2CsiResponse = TSi2CsiCacheResponse;
+    using TSi2CsiRequest = CSi2CsiFetchRequest;
+
     static const size_t kRuntimeErrorLimit;
 
     CPubseqGatewayCache(
@@ -84,20 +87,16 @@ class CPubseqGatewayCache
         return m_RuntimeErrors;
     }
 
-    void FetchBioseqInfo(TBioseqInfoRequest const& request, TBioseqInfoResponse & response);
-    void FetchBlobProp(TBlobPropRequest const& request, TBlobPropResponse & response);
+    TBioseqInfoResponse FetchBioseqInfo(TBioseqInfoRequest const& request);
+    TBlobPropResponse FetchBlobProp(TBlobPropRequest const& request);
+    TSi2CsiCacheResponse FetchSi2Csi(CSi2CsiFetchRequest const& request);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type, int64_t gi);
-    static bool UnpackBioseqInfoKey(
-        const char* key, size_t key_sz, int& version, int& seq_id_type, int64_t& gi);
+    static bool UnpackBioseqInfoKey(const char* key, size_t key_sz, int& version, int& seq_id_type, int64_t& gi);
     static bool UnpackBioseqInfoKey(
         const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi);
-
-/* si2csi */
-    bool LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);
-    bool LookupCsiBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data);
 
     static string PackSiKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackSiKey(const char* key, size_t key_sz, int& sec_seq_id_type);

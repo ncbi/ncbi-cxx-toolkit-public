@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 
 class CSI2CSIRecord
 {
-public:
+ public:
     using TSecSeqId = string;
     using TSecSeqIdType = int16_t;
 
@@ -57,7 +57,6 @@ public:
     using TSeqIdType = int16_t;
     using TVersion = int16_t;
 
- public:
     CSI2CSIRecord() :
         m_SecSeqIdType(-1),
         m_GI(-1),
@@ -66,6 +65,8 @@ public:
         m_Version(-1)
     {}
 
+    CSI2CSIRecord(CSI2CSIRecord const &) = default;
+    CSI2CSIRecord(CSI2CSIRecord &&) = default;
     CSI2CSIRecord & operator=(CSI2CSIRecord const &) = default;
     CSI2CSIRecord & operator=(CSI2CSIRecord &&) = default;
 
@@ -161,11 +162,7 @@ public:
     TVersion            m_Version;
 };
 
-// e200_Ok: exactly one record found
-// e404_NotFound: no records found
-// e300_MultipleChoices: more than one record found
-using TSI2CSIConsumeCallback =
-    function<void(CSI2CSIRecord &&, CRequestStatus::ECode)>;
+using TSI2CSIConsumeCallback = function<void(vector<CSI2CSIRecord> &&)>;
 
 END_IDBLOB_SCOPE
 

@@ -93,36 +93,33 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupUninitialized)
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
     cache->Open({});
     CPubseqGatewayCache::TBioseqInfoRequest request;
-    CPubseqGatewayCache::TBioseqInfoResponse response;
-    cache->FetchBioseqInfo(request, response);
+    auto response = cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupWithoutResult)
 {
     CPubseqGatewayCache::TBioseqInfoRequest request;
-    CPubseqGatewayCache::TBioseqInfoResponse response;
 
     request.SetAccession("FAKE");
-    m_Cache->FetchBioseqInfo(request, response);
+    auto response = m_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset();
-    m_Cache->FetchBioseqInfo(request, response);
+    response = m_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetVersion(0);
-    m_Cache->FetchBioseqInfo(request, response);
+    response = m_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupByAccession)
 {
     CPubseqGatewayCache::TBioseqInfoRequest request;
-    CPubseqGatewayCache::TBioseqInfoResponse response;
 
     request.Reset().SetAccession("AC005299");
-    m_Cache->FetchBioseqInfo(request, response);
+    auto response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 6UL);
     EXPECT_EQ("AC005299", response[0].accession);
     EXPECT_EQ(1, response[0].version);
@@ -133,10 +130,9 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupByAccession)
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersion)
 {
     CPubseqGatewayCache::TBioseqInfoRequest request;
-    CPubseqGatewayCache::TBioseqInfoResponse response;
 
     request.SetAccession("AC005299").SetVersion(0);
-    m_Cache->FetchBioseqInfo(request, response);
+    auto response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
     EXPECT_EQ("AC005299", response[0].accession);
     EXPECT_EQ(0, response[0].version);
@@ -147,19 +143,18 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersion)
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdType)
 {
     CPubseqGatewayCache::TBioseqInfoRequest request;
-    CPubseqGatewayCache::TBioseqInfoResponse response;
 
     request.SetAccession("AC005299").SetVersion(0).SetSeqIdType(3);
-    m_Cache->FetchBioseqInfo(request, response);
+    auto response = m_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetAccession("AC005299").SetVersion(77).SetSeqIdType(5);
-    m_Cache->FetchBioseqInfo(request, response);
+    response = m_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     // version >= 0 && no seq_id_type
     request.Reset().SetAccession("AC005299").SetVersion(0);
-    m_Cache->FetchBioseqInfo(request, response);
+    response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
     EXPECT_EQ("AC005299", response[0].accession);
     EXPECT_EQ(0, response[0].version);
@@ -168,7 +163,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdType)
 
     // version >= 0 && seq_id_type > 0
     request.Reset().SetAccession("AC005299").SetVersion(0).SetSeqIdType(5);
-    m_Cache->FetchBioseqInfo(request, response);
+    response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
     EXPECT_EQ("AC005299", response[0].accession);
     EXPECT_EQ(0, response[0].version);
@@ -179,10 +174,9 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdType)
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionGi)
 {
     CPubseqGatewayCache::TBioseqInfoRequest request;
-    CPubseqGatewayCache::TBioseqInfoResponse response;
 
     request.Reset().SetAccession("AC005299").SetGI(3643631);
-    m_Cache->FetchBioseqInfo(request, response);
+    auto response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 1UL);
     EXPECT_EQ("AC005299", response[0].accession);
     EXPECT_EQ(0, response[0].version);
@@ -196,11 +190,11 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
     CPubseqGatewayCache::TBioseqInfoResponse response;
 
     request.SetAccession("AC005299").SetVersion(0).SetSeqIdType(5).SetGI(888);
-    m_Cache->FetchBioseqInfo(request, response);
+    response = m_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetAccession("AC005299").SetVersion(0).SetSeqIdType(5).SetGI(3643631);
-    m_Cache->FetchBioseqInfo(request, response);
+    response = m_Cache->FetchBioseqInfo(request);
 
     ASSERT_EQ(response.size(), 1UL);
     ::psg::retrieval::BioseqInfoValue value;
@@ -216,33 +210,34 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
     EXPECT_EQ("", value.name());
 }
 
-TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionWithSeqIdsInheritance)
+TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
 {
     CPubseqGatewayCache::TBioseqInfoRequest request;
-    CPubseqGatewayCache::TBioseqInfoResponse response;
 
-    request.SetAccession("AH015101").SetVersion(1);
-    m_Cache->FetchBioseqInfo(request, response);
+    request.SetAccession("NC_000001").SetVersion(5);
+    auto response = m_Cache->FetchBioseqInfo(request);
 
     ASSERT_EQ(response.size(), 1UL);
     ::psg::retrieval::BioseqInfoValue value;
     EXPECT_TRUE(value.ParseFromString(response[0].data));
-    EXPECT_EQ(-1984866248, value.hash());
-    EXPECT_EQ(821, value.length());
+    EXPECT_EQ(-785904429, value.hash());
+    EXPECT_EQ(246127941, value.length());
     EXPECT_EQ(1, value.mol());
-    EXPECT_EQ(4, value.blob_key().sat());
-    EXPECT_EQ(10756063, value.blob_key().sat_key());
+    EXPECT_EQ(24, value.blob_key().sat());
+    EXPECT_EQ(5622604, value.blob_key().sat_key());
     EXPECT_EQ(0, value.state());
     EXPECT_EQ(9606UL, value.tax_id());
-    EXPECT_EQ(2, value.seq_ids_size());
+    EXPECT_EQ(4, value.seq_ids_size());
 
     set<tuple<int16_t, string>> expected_seq_ids, actual_seq_ids;
 
     // Inherited
-    expected_seq_ids.insert(make_tuple<int16_t, string>(5, "SEG_DQ123855S"));
+    expected_seq_ids.insert(make_tuple<int16_t, string>(11, "ASM:GCF_000001305|1"));
+    expected_seq_ids.insert(make_tuple<int16_t, string>(11, "NCBI_GENOMES|1"));
+    expected_seq_ids.insert(make_tuple<int16_t, string>(19, "GPC_000001293.1"));
 
     // Own
-    expected_seq_ids.insert(make_tuple<int16_t, string>(12, "71493118"));
+    expected_seq_ids.insert(make_tuple<int16_t, string>(12, "37623929"));
 
     for (auto const & item : value.seq_ids()) {
         actual_seq_ids.insert(make_tuple(static_cast<int16_t>(item.sec_seq_id_type()), item.sec_seq_id()));

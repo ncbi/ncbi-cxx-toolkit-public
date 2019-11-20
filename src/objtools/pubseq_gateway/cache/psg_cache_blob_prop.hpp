@@ -58,7 +58,7 @@ class CPubseqGatewayCacheBlobProp
     virtual ~CPubseqGatewayCacheBlobProp() override;
     void Open(const set<int>& sat_ids);
 
-    void Fetch(CBlobFetchRequest const& request, TBlobPropResponse& response);
+    TBlobPropResponse Fetch(CBlobFetchRequest const& request);
 
     static string PackKey(int32_t sat_key);
     static string PackKey(int32_t sat_key, int64_t last_modified);
