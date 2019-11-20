@@ -339,7 +339,7 @@ protected:
     unsigned int m_uProgressReportInterval;
     unsigned int m_uNextProgressReport;
 
-    TReaderFlags       m_iFlags;
+    TReaderFlags m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
     string m_PendingLine;

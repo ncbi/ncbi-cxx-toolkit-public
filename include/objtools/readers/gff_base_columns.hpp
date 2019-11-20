@@ -33,8 +33,10 @@
 #ifndef OBJTOOLS_READERS___GFF_BASE_COLUMNS__HPP
 #define OBJTOOLS_READERS___GFF_BASE_COLUMNS__HPP
 
+#include <objects/seqfeat/Cdregion.hpp>
+
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_objects_SCOPE
 
 //  ============================================================================
 class CGffBaseColumns

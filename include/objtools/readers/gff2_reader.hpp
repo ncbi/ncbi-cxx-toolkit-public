@@ -36,7 +36,6 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Score.hpp>
 
@@ -45,12 +44,9 @@
 #include <objtools/readers/gff2_data.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
-BEGIN_SCOPE(objects) // namespace ncbi::objects::
-
-class CGFFReader;
 class CGff2Record;
-class SRecord;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff2Reader
@@ -64,8 +60,7 @@ public:
         fRetainLocusIds = 1 << 5,
     } TFlags;
 
-    typedef map<string, CRef<CSeq_feat> > IdToFeatureMap;
-    
+    using IdToFeatureMap = map<string, CRef<CSeq_feat>>;
     using TScoreValueMap = map<string, CRef<CScore::TValue>>;
 
 public:

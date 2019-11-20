@@ -156,7 +156,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     try {
         reader.ReadSeqAnnots(annots, ifstr, &logger);
     }
-    catch (std::exception& excpt) {
+    catch (std::exception&) {
         // succeeding by failing in the expected manner.
         //  should we fail for the wrong reason, or fail to fail then the captured 
         //  error log will tell.

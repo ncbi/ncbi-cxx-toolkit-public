@@ -32,85 +32,48 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/stream_utils.hpp>
 
-#include <util/static_map.hpp>
 #include <util/line_reader.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistrasn.hpp>
-
-// Objects includes
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_id.hpp>
-#include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
 
 #include <objects/seqalign/Dense_seg.hpp>
-#include <objects/seqalign/Score.hpp>
-
-#include <objmgr/feat_ci.hpp>
-
-#include <objtools/readers/read_util.hpp>
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/line_error.hpp>
-#include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/gff2_reader.hpp>
-#include <objtools/readers/gff2_data.hpp>
-#include <objtools/error_codes.hpp>
-
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 
+#include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/gff2_reader.hpp>
 
 #include <algorithm>
 
-//#include "gff3_data.hpp"
-
-#define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
-
 BEGIN_NCBI_SCOPE
-
-BEGIN_objects_SCOPE // namespace ncbi::objects::
-
+BEGIN_objects_SCOPE
 
 //  ----------------------------------------------------------------------------
 CGff2Reader::CGff2Reader(
