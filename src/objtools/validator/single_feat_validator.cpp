@@ -1832,11 +1832,12 @@ void CSingleFeatValidator::x_ValidateNonImpFeat ()
     // look for mandatory qualifiers
     EDiagSev sev = eDiag_Warning;
 
-    ITERATE (CSeqFeatData::TQualifiers, required, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
+    for (auto required : CSeqFeatData::GetMandatoryQualifiers(subtype))
+    {
         bool found = false;
         if (m_Feat.IsSetQual()) {
             for (auto qual : m_Feat.GetQual()) {
-                if (qual->IsSetQual() && CSeqFeatData::GetQualifierType(qual->GetQual()) == *required) {
+                if (qual->IsSetQual() && CSeqFeatData::GetQualifierType(qual->GetQual()) == required) {
                     found = true;
                     break;
                 }
@@ -1844,7 +1845,7 @@ void CSingleFeatValidator::x_ValidateNonImpFeat ()
         }
 
         if (!found) {
-            if (*required == CSeqFeatData::eQual_citation) {
+            if (required == CSeqFeatData::eQual_citation) {
                 if (m_Feat.IsSetCit()) {
                     found = true;
                 } else if (m_Feat.IsSetComment() && NStr::EqualNocase (key, "conflict")) {
@@ -1869,7 +1870,7 @@ void CSingleFeatValidator::x_ValidateNonImpFeat ()
                 }
             }
         }
-        if (!found && *required == CSeqFeatData::eQual_ncRNA_class) {
+        if (!found && required == CSeqFeatData::eQual_ncRNA_class) {
             sev = eDiag_Error;
             if (m_Feat.GetData().IsRna() && m_Feat.GetData().GetRna().IsSetExt()
                 && m_Feat.GetData().GetRna().GetExt().IsGen()
@@ -1881,7 +1882,7 @@ void CSingleFeatValidator::x_ValidateNonImpFeat ()
 
         if (!found) {
             PostErr(sev, eErr_SEQ_FEAT_MissingQualOnFeature,
-                "Missing qualifier " + CSeqFeatData::GetQualifierAsString(*required) +
+                "Missing qualifier " + CSeqFeatData::GetQualifierAsString(required) +
                 " for feature " + key);
         }
     }

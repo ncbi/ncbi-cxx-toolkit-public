@@ -459,8 +459,9 @@ public:
         eQual_virion,
         eQual_whole_replicon
     };
-    using TQualifiers = vector<EQualifier>;
+
     using TLegalQualifiers = ct::const_bitset<eQual_whole_replicon + 1, EQualifier>;
+    using TQualifiers = TLegalQualifiers;
 
     /// Test wheather a certain qualifier is legal for the feature
     bool IsLegalQualifier(EQualifier qual) const;
@@ -534,8 +535,6 @@ private:
     mutable SFeatDataInfo m_FeatDataInfo; // cached
 
     static void s_InitSubtypesTable(void);
-    static void s_InitLegalQuals(void);
-    static void s_InitMandatoryQuals(void);
 
     // Prohibit copy constructor and assignment operator
     CSeqFeatData(const CSeqFeatData& value);

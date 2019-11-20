@@ -388,13 +388,6 @@ typedef vector<CSeqFeatData::E_Choice> TSubtypesTable;
 static CSafeStatic<TSubtypesTable> sx_SubtypesTable;
 static bool sx_SubtypesTableInitialized = false;
 
-// these maps contain sorted vectors for faster lookup
-typedef map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> TFeatQuals;
-static CSafeStatic<TFeatQuals> sx_MandatoryQuals;
-static bool sx_MandatoryQualsInitialized = false;
-static CSafeStatic<CSeqFeatData::TQualifiers> sx_EmptyQuals;
-
-
 CSeqFeatData::E_Choice CSeqFeatData::GetTypeFromSubtype(ESubtype subtype)
 {
     if ( !sx_SubtypesTableInitialized ) {
@@ -591,16 +584,36 @@ CSeqFeatData::SubtypeValueToName(ESubtype eSubtype)
     return find_iter->second;
 }
 
+namespace
+{
+    static constexpr CSeqFeatData::TLegalQualifiers empty_quals{};
+}
+
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(ESubtype subtype)
 {
-    if ( !sx_MandatoryQualsInitialized ) {
-        s_InitMandatoryQuals();  // does nothing if already intialized
+    MAKE_CONST_MAP(sx_MandatoryQuals, NStr::eCase, CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers,
+        {
+        {eSubtype_assembly_gap,   {eQual_estimated_length, eQual_gap_type}},
+        {eSubtype_conflict,       {eQual_citation}},
+        {eSubtype_gap,            {eQual_estimated_length}},
+        {eSubtype_misc_binding,   {eQual_bound_moiety}},
+        {eSubtype_protein_bind,   {eQual_bound_moiety}},
+        {eSubtype_modified_base,  {eQual_mod_base}},
+        {eSubtype_old_sequence,   {eQual_citation}},
+        {eSubtype_operon,         {eQual_operon}},
+        {eSubtype_source,         {eQual_organism}},
+        // although INSDC indicates that mol_type should be mandatory on
+        // source subtype, we do not do so since there are legacy
+        // records for which a mol_type could cause loss of information.
+        {eSubtype_ncRNA,         {eQual_ncRNA_class}},
+        {eSubtype_regulatory,    {eQual_regulatory_class}},
+        {eSubtype_mobile_element, {eQual_mobile_element_type}},
+        });
+
+    auto iter = sx_MandatoryQuals.find(subtype);
+    if (iter == sx_MandatoryQuals.end()) {
+        return empty_quals;
     }
-    TFeatQuals::const_iterator iter = sx_MandatoryQuals->find(subtype);
-    if ( iter == sx_MandatoryQuals->end() ) {
-        return *sx_EmptyQuals;
-    }
-    return iter->second;
 }
 
 
@@ -3008,11 +3021,9 @@ START_SUBTYPE(propeptide_aa
 
 const CSeqFeatData::TLegalQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
 {
-    static constexpr CSeqFeatData::TLegalQualifiers empty{};
-
     auto it = g_legal_quals.find(subtype);
     if (it == g_legal_quals.end())
-        return empty;
+        return empty_quals;
 
     return it->second;
 }
@@ -3025,45 +3036,6 @@ bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 
     return it->second.test(qual);
 }
-
-
-void CSeqFeatData::s_InitMandatoryQuals(void)
-{
-    if (sx_MandatoryQualsInitialized) {
-        return;
-    }
-    CMutexGuard guard(sx_InitTablesMutex);
-    if (sx_MandatoryQualsInitialized) {
-        return;
-    }
-
-    TFeatQuals& table = *sx_MandatoryQuals;
-
-    table[eSubtype_assembly_gap].push_back(eQual_estimated_length);
-    table[eSubtype_assembly_gap].push_back(eQual_gap_type);
-    table[eSubtype_conflict].push_back(eQual_citation);
-    table[eSubtype_gap].push_back(eQual_estimated_length);
-    table[eSubtype_misc_binding].push_back(eQual_bound_moiety);
-    table[eSubtype_protein_bind].push_back(eQual_bound_moiety);
-    table[eSubtype_modified_base].push_back(eQual_mod_base);
-    table[eSubtype_old_sequence].push_back(eQual_citation);
-    table[eSubtype_operon].push_back(eQual_operon);
-    table[eSubtype_source].push_back(eQual_organism);
-    // although INSDC indicates that mol_type should be mandatory on
-    // source subtype, we do not do so since there are legacy
-    // records for which a mol_type could cause loss of information.
-    table[eSubtype_ncRNA].push_back(eQual_ncRNA_class);
-    table[eSubtype_regulatory].push_back(eQual_regulatory_class);
-    table[eSubtype_mobile_element].push_back(eQual_mobile_element_type);
-
-    // sort for binary_search
-    NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
-        sort(iter->second.begin(), iter->second.end());
-    }
-
-    sx_MandatoryQualsInitialized = true;
-}
-
 
 typedef SStaticPair<CSeqFeatData::EQualifier, const char*> TQualPair;
 static const TQualPair kQualPairs[] = {
