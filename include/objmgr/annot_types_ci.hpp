@@ -33,9 +33,9 @@
 *
 */
 
+#include <objmgr/impl/annot_collector.hpp>
 #include <set>
 #include <vector>
-#include <objmgr/impl/annot_collector.hpp>
 
 BEGIN_NCBI_SCOPE
 
