@@ -20,10 +20,11 @@ APP_PROJ = \
     unit_test_vcfreader \
     unit_test_ucscreader \
     unit_test_gtfreader \
-	unit_test_alnreader \
+    unit_test_alnreader \
     unit_test_5colftblreader \
-	unit_test_mod_adder \
-	unit_test_title_parser
+    unit_test_mod_adder \
+    unit_test_title_parser \
+    unit_test_pslreader
 
 PROJ_TAG = test
 

@@ -69,11 +69,12 @@ CPslReader::xProcessData(
 //  ----------------------------------------------------------------------------
 {
     CPslData pslData(m_pMessageHandler);
+    auto& aligns = annotData.SetAlign();
     for (auto line: readerData) {
         CRef<CSeq_align> pSeqAlign(new CSeq_align);
         pslData.Initialize(line);
         pslData.ExportToSeqAlign(mSeqIdResolve, *pSeqAlign);
-        annotData.SetAlign().push_back(pSeqAlign);
+        aligns.push_back(pSeqAlign);
     }
 }
 

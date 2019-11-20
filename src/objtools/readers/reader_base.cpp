@@ -224,6 +224,10 @@ CReaderBase::ReadSeqAnnot(
 
     TReaderData readerData;
     xGetData(lr, readerData);
+    if (readerData.empty()) {
+        pAnnot.Reset();
+        return pAnnot;
+    }
     while (!readerData.empty()) {
         try {
             xProcessData(readerData, annotData);
@@ -232,7 +236,14 @@ CReaderBase::ReadSeqAnnot(
             if (err.Severity() == eDiag_Fatal) {
                 throw;
             }
-            m_pMessageHandler->Report(err);
+            try {
+                m_pMessageHandler->Report(err);
+            }
+            catch(ILineError& err) {
+                if (!pEL  ||  !pEL->PutMessage(err)) {
+                    throw;
+                }
+            }
         }
         catch (ILineError& err) {
             if (!pEL  ||  err.GetSeverity() == eDiag_Fatal) {
@@ -249,9 +260,8 @@ CReaderBase::ReadSeqAnnot(
         }
         xGetData(lr, readerData);
     }
+    const auto& aligns = pAnnot->GetData().GetAlign();
     return pAnnot;
-//    xProgressInit(lr);
-//    return CRef<CSeq_annot>();
 }
                 
 //  ----------------------------------------------------------------------------
