@@ -210,8 +210,8 @@ void CAlnBuildApp::LoadInputAlns(void)
     string asn_type = args["b"].AsString();
     bool binary = !asn_type.empty();
     auto_ptr<CObjectIStream> in
-        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText,
-                              args["in"].AsInputFile()));
+        (CObjectIStream::Open(binary ? eSerial_AsnBinary : eSerial_AsnText,
+                              args["in"].AsInputFile(binary ? CArgValue::fBinary : CArgValue::fText)));
     
     CAlnAsnReader reader(&GetScope());
     reader.Read(in.get(),
