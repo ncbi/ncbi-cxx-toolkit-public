@@ -481,6 +481,8 @@ void CDataHistogramDemoApp::CustomDataType(void)
     //   - operator >()
     //
     struct SValue {
+        // Default constructor
+        SValue() : v1(0), v2(0) {};
         // Constructor
         SValue(size_t p1, size_t p2) : v1(p1), v2(p2) {};
         // Conversion to double (scale type).
@@ -582,7 +584,6 @@ void CDataHistogramDemoApp::Clone(void)
         h.StealCountersFrom(hclone);
         PRINT_STATS(h);
     }}
-
 }
 
 

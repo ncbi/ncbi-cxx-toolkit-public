@@ -34,13 +34,13 @@
 /// Frequency histogram for data distribution of the numerical samples.
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
 
 #define _USE_MATH_DEFINES // to define math constants in math.h
 #include <math.h>         // log/pow functions
 #include <cmath>          // additional overloads for pow()
 #include <memory>
 #include <mutex>
-#include <type_traits>
 
 
 /** @addtogroup Statistics
@@ -50,6 +50,24 @@
 
 BEGIN_NCBI_SCOPE
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Helper types for CHistogram<>::GetSum() support
+//
+
+// if T doesn't have foo method with the signature that allows to compile the bellow
+// expression then instantiating this template is Substitution Failure (SF)
+// which Is Not An Error (INAE) if this happens during overload resolution
+template <typename T>
+using T_HistogramValueTypeHavePlus = decltype((T&)(std::declval<T>().operator+=(std::declval<const T&>())));
+
+// Checks that T is arithmetic type or have operator+= implemented
+template <typename T>
+constexpr bool g_HistogramValueTypeHavePlus()
+{
+    return cxx_is_supported<T_HistogramValueTypeHavePlus, T>::value  ||  std::is_arithmetic<T>::value;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -73,6 +91,7 @@ BEGIN_NCBI_SCOPE
 /// @note
 ///   TValue and TScale types should be equal, or allow comparison and conversion
 ///   between them. Any types can ve used as TValue if it have:
+///   = default constructor: TValue()  -- for initialization;
 ///   - operator TScale() const        -- to convert to scale type TScale;
 ///   - bool operator >(const TValue&) -- for comparison.
 
@@ -164,10 +183,45 @@ public:
     /////////////////////////////////////////////////////////////////////////
     // Populating
 
+    /// Sum type: double for all floating points TValue types, int64_t/uint64_t for integral, and TValue otherwise.
+    using TIntegral   = typename std::conditional<std::numeric_limits   <TValue>::is_signed, int64_t,     uint64_t >::type;
+    using TArithmetic = typename std::conditional<std::is_floating_point<TValue>::value,     double,      TIntegral>::type;
+    using TSum        = typename std::conditional<std::is_arithmetic    <TValue>::value,     TArithmetic, TValue   >::type;
+
     /// Add value to the data distribution.
     /// Try to find an appropriate bin for a specified value and increase its counter on 1.
+    /// Also, calculates a sum of all added values it TValue type have addition support.
     /// @sa GetStarts, GetCounters, GetSum
-    void Add(TValue value);
+    ///
+    template <typename V, typename S = TSum,
+              std::enable_if_t<g_HistogramValueTypeHavePlus<S>(), int> = 0>
+    void Add(const V& v) {
+        x_Add(v);
+        // Calculate sum, TSum have operator+=
+        m_Sum += v;
+    }
+    template <typename V, typename S = TSum, 
+             std::enable_if_t<!g_HistogramValueTypeHavePlus<S>(), int> = 0>
+    void Add(const V& v) {
+        x_Add(v);
+    }
+
+    /// Return the sum of all added values.
+    /// @return
+    ///   Returned type depends on TValue type, and converts to:
+    ///     - double   -- for all floating point types;
+    ///     - int64_t  -- signed integral types;
+    ///     - uint64_t -- unsigned integral types;
+    ///     - TValue   -- for all other types.
+    ///   The sum can be calculated for floating, integral types and all other
+    ///   TValue types that have 'operator +=' defined.
+    ///   If TValue type doesn't have such operator defined, empty value {} is returned.
+    ///   Note, compiler can convert this empty {} value to TScale type, because every TValue
+    ///   should have 'operator TScale() const' by design.
+    /// @note 
+    ///   This method doesn't check calculated sum on overflow.
+    /// @sa Add, TSum
+    TSum GetSum(void) const { return m_Sum; }
 
     /// Reset all data counters.
     void Reset();
@@ -177,19 +231,6 @@ public:
     /// @note Both histograms should have the same structure.
     /// @sa Clone, Reset
     void StealCountersFrom(CHistogram& other);
-
-    /// Sum type. double for all floating points TValue types, and Int8 otherwise.
-    using TSum = typename std::conditional<std::is_floating_point<TValue>::value, double, Int8>::type;
-
-    /// Return the sum of all added values.
-    /// @return
-    ///   Returned type is 'double' or 'Int8', depends on TValue type.
-    ///   The sum can be calculated for arithmetic TValue types only.
-    ///   If TValue is not integral or floating point Int8(0) will be returned.
-    /// @note 
-    ///   Add() doesn't check calculated sum on overflow.
-    /// @sa Add, TSum
-    TSum GetSum(void) const { return m_Sum; };
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -203,7 +244,7 @@ public:
 
     /// Return the number ot bins on the combined scale.
     /// @sa GetBinStarts, GetBinCounters
-    unsigned GetNumberOfBins() const { return m_NumBins; };
+    unsigned GetNumberOfBins() const { return m_NumBins; }
 
     /// Get starting positions for bins on the combined scale.
     /// Returns a pointer to array. The number of bins can be obtained with GetNumberOfBins().
@@ -350,6 +391,10 @@ protected:
     /// Calculates a data value on a base of scale value/position.
     TScale x_FuncInverse(EScaleType scale_type, TScale scale_value);
 
+
+    /// Add value to the data distribution.
+    void x_Add(TValue value);
+
     /// Add value to the data distribution using a linear search method.
     /// Usually faster than bisection method on a small number of bins,
     /// or if the values have a tendency to fall into the starting bins
@@ -377,7 +422,7 @@ protected:
     TValue    m_Min;         ///< Minimum value (the lower bound of combined scale)
     TValue    m_Max;         ///< Maximum value (the upper bound of combined scale)
     unsigned  m_NumBins;     ///< Number of bins (m_Starts[]/m_Counts[] length)
-    TSum      m_Sum;         ///< Sum of the all added values
+    TSum      m_Sum = {};    ///< Sum of the all added values (if applicable for TValue)
 
     std::unique_ptr<TScale[]>   m_Starts;    ///< Combined scale: starting bins positions
     std::unique_ptr<TCounter[]> m_Counters;  ///< Combined scale: counters - the number of measurements for each bin
@@ -474,7 +519,7 @@ CHistogram<TValue, TScale, TCounter>::CHistogram
     EScaleType  scale_type, 
     EScaleView  scale_view
 )
-    : m_Min(min_value), m_Max(max_value), m_NumBins(n_bins), m_Sum(0)
+    : m_Min(min_value), m_Max(max_value), m_NumBins(n_bins)
 {
     if ( m_Min > m_Max ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Minimum value cannot exceed maximum value");
@@ -583,12 +628,21 @@ CHistogram<TValue, TScale, TCounter>::EstimateNumberOfBins(size_t n, EEstimateNu
 
 template <typename TValue, typename TScale, typename TCounter>
 void 
-CHistogram<TValue, TScale, TCounter>::Add(TValue value)
+CHistogram<TValue, TScale, TCounter>::Reset(void)
 {
-    if (std::is_integral<TValue>::value ||
-        std::is_floating_point<TValue>::value) {
-        m_Sum += (TSum)value;
-    }
+    // Reset counters
+    m_Count = m_LowerAnomalyCount = m_UpperAnomalyCount = 0;
+    // Reset bins
+    memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
+    // Reset sum (it can be any type, so use default constructor)
+    m_Sum = {};
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void 
+CHistogram<TValue, TScale, TCounter>::x_Add(TValue value)
+{
     if (value < m_Min) {
         m_LowerAnomalyCount++;
         return;
@@ -602,18 +656,6 @@ CHistogram<TValue, TScale, TCounter>::Add(TValue value)
         return;
     }
     x_AddBisection(value);
-}
-
-
-template <typename TValue, typename TScale, typename TCounter>
-void 
-CHistogram<TValue, TScale, TCounter>::Reset(void)
-{
-    // Reset counters
-    m_Count = m_LowerAnomalyCount = m_UpperAnomalyCount = 0;
-    // Reset bins
-    memset(m_Counters.get(), 0, m_NumBins * sizeof(TCounter));
-    m_Sum = 0;
 }
 
 
