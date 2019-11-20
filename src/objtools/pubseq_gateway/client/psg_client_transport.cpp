@@ -848,7 +848,6 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
     auto headers_size = m_Headers.size();
 
     m_Headers[ePath] = path;
-    m_Headers[eUserAgent] = SUserAgent::Get();
     m_Headers[eSessionID] = session_id;
     m_Headers[eSubHitID] = sub_hit_id;
 
