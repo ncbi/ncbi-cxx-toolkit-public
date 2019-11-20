@@ -159,40 +159,40 @@ namespace ct
         }
     };
 
-
     template<size_t N, typename _HashedKey, typename _Value>
+    class const_unordered_map_proxy;
+    template<size_t N, typename _HashedKey, typename _Value>
+    class const_unordered_set_proxy;
+
+    template<typename _HashedKey, typename _Value>
     class const_unordered_map
     {
     public:
-        static_assert(N > 0, "empty const_map not supported");
-        using hash_type    = typename _HashedKey::hash_type;
-        using intermediate = typename _HashedKey::intermediate;
+        using value_type = const_pair<typename _HashedKey::type, typename _Value::type>;
+        using size_type  = size_t;
+        using const_iterator = const value_type*;
+        using hash_type      = typename _HashedKey::hash_type;
+        using intermediate   = typename _HashedKey::intermediate;
+        using key_type       = typename _HashedKey::type;
+        using mapped_type    = typename _Value::type;
 
-        using key_type     = typename _HashedKey::type;
-        using mapped_type  = typename _Value::type;
-        using value_type   = const_pair<typename _HashedKey::type, typename _Value::type>;
-        using size_type    = size_t;
-        using array_t      = const_array<value_type, N>;
+        constexpr const_unordered_map() = default;
 
-        using const_iterator = typename array_t::const_iterator;
-
-        constexpr const_unordered_map(const array_t& init)
-            : m_array(init)
-        {}
-
-        constexpr bool in_order() const
+        template<size_t N>
+        constexpr const_unordered_map(const const_unordered_map_proxy< N, _HashedKey, _Value>& _proxy)
+            : m_values{ _proxy.m_array.data() }, m_realsize{ _proxy.realsize() }
         {
-            return CheckOrder(m_array, Pred());
         }
 
-        constexpr const_iterator begin() const noexcept { return m_array.begin(); }
-        constexpr const_iterator cbegin() const noexcept { return m_array.begin(); }
-        constexpr size_t capacity() const noexcept { return N; }
-        constexpr size_t size() const noexcept { return N; }
-        constexpr size_t max_size() const noexcept { return N; }
-        constexpr const_iterator end() const noexcept { return m_array.end(); }
-        constexpr const_iterator cend() const noexcept { return m_array.end(); }
-        constexpr bool empty() const noexcept { return N == 0; }
+        constexpr const_iterator begin()    const noexcept { return m_values; }
+        constexpr const_iterator cbegin()   const noexcept { return m_values; }
+        constexpr size_type      capacity() const noexcept { return m_realsize; }
+        constexpr size_type      size()     const noexcept { return m_realsize; }
+        constexpr size_type      max_size() const noexcept { return m_realsize; }
+        constexpr const_iterator end()      const noexcept { return m_values + m_realsize; }
+        constexpr const_iterator cend()     const noexcept { return m_values + m_realsize; }
+        constexpr bool           empty()    const noexcept { return m_realsize == 0; }
+
 
         // alias to decide whether _Key can be constructed from _Arg
         template<typename _K, typename _Arg>
@@ -231,6 +231,22 @@ namespace ct
             return at(std::forward<K>(_key));
         }
 
+        struct Pred
+        {
+            constexpr bool operator()(const value_type& l, const hash_type& r) const
+            {
+                return l.first < r;
+            }
+            constexpr bool operator()(const value_type& l, const value_type& r) const
+            {
+                return l.first < r.first;
+            }
+            constexpr bool operator() (const key_type& l, const key_type& r) const
+            {
+                return l < r;
+            }
+        };
+
     protected:
         template<typename K>
         if_available<K, const_iterator>
@@ -241,21 +257,32 @@ namespace ct
             return std::lower_bound(begin(), end(), std::move(key), Pred());
         }
 
-        struct Pred
+        const value_type* m_values = nullptr;
+        size_type         m_realsize = 0;
+    };
+
+    template<size_t N, typename _HashedKey, typename _Value>
+    class const_unordered_map_proxy
+    {
+    public:
+        static_assert(N > 0, "empty const_map not supported");
+        using map_type = const_unordered_map< _HashedKey, _Value>;
+        using array_t  = const_array<typename map_type::value_type, N>;
+
+        friend class const_unordered_map< _HashedKey, _Value>;
+
+        constexpr const_unordered_map_proxy(const array_t& init)
+            : m_array( init )
         {
-            constexpr bool operator()(const value_type& l, const hash_type& r) const
-            {
-                return l.first < r;
-            }
-            constexpr bool operator()(const value_type& l, const value_type& r) const
-            {
-                return l.first < r.first;
-            }            
-            constexpr bool operator() (const key_type& l, const key_type& r) const
-            {
-                return l < r;
-            }
-        };
+        }
+
+        constexpr bool in_order() const
+        {
+            return CheckOrder(m_array, typename map_type::Pred());
+        }
+        constexpr size_t realsize() const noexcept { return N; };
+
+    protected:
 
         array_t m_array = {};
     };
@@ -269,11 +296,13 @@ namespace ct
 
         using sorter_t = TInsertSorter<ct::straight_sort_traits<init_type>, true>;
 
-        template<size_t N>
-        using map_type = const_unordered_map<N, first_type, second_type>;
+        using map_type = const_unordered_map<first_type, second_type>;
 
         template<size_t N>
-        constexpr auto operator()(const init_type (&input)[N]) const -> map_type<N>
+        using proxy_type = const_unordered_map_proxy<N, first_type, second_type>;
+
+        template<size_t N>
+        constexpr auto operator()(const init_type (&input)[N]) const -> proxy_type<N>
         {
             return sorter_t{}(input).second;
         }
@@ -290,52 +319,49 @@ namespace ct
         using flipped_sorter_t = TInsertSorter<flipped_sort_traits<init_type>, true>;
 
         template<size_t N>
+        using proxy_type = std::pair<
+            const_unordered_map_proxy<N, first_type, second_type>,
+            const_unordered_map_proxy<N, second_type, first_type>>;
+
         using map_type = std::pair<
-            const_unordered_map<N, first_type, second_type>,
-            const_unordered_map<N, second_type, first_type>>;
+            const_unordered_map<first_type, second_type>,
+            const_unordered_map<second_type, first_type>>;
 
         template<size_t N>
-        constexpr auto operator()(const init_type(&input)[N]) const -> map_type<N>
+        constexpr auto operator()(const init_type(&input)[N]) const -> proxy_type<N>
         {
-            return map_type<N>{
+            return proxy_type<N>{
                 straight_sorter_t{}(input).second,
                 flipped_sorter_t{}(input).second};
         }
     };
 
-
-    template<size_t N, typename _HashedKey, typename _Value>
+    template<typename _HashedKey, typename _Value>
     class const_unordered_set
     {
     public:
-        static_assert(N > 0, "empty const_set not supported");
-        using hash_type    = typename _HashedKey::hash_type;
-        using intermediate = typename _HashedKey::intermediate;
-
-        using key_type     = typename _HashedKey::type;
         using value_type   = typename _Value::type;
-        using size_type    = size_t;
+        using size_type = size_t;
+        using const_iterator = const value_type*;
+        using hash_type = typename _HashedKey::hash_type;
+        using intermediate = typename _HashedKey::intermediate;
+        using key_type = typename _HashedKey::type;
 
-        using array_t = const_array<value_type, N>;
-        using const_iterator = typename array_t::const_iterator;
+        constexpr const_unordered_set() = default;
 
-        constexpr const_unordered_set(const array_t& init)
-            : m_array(init)
+        template<size_t N>
+        constexpr const_unordered_set(const const_unordered_set_proxy<N, _HashedKey, _Value>& _proxy)
+            : m_values{_proxy.m_array.data()}, m_realsize{_proxy.realsize()}
         {}
 
-        constexpr bool in_order() const
-        {
-            return CheckOrder(m_array, Pred());
-        }
-
-        constexpr const_iterator begin() const noexcept { return m_array.begin(); }
-        constexpr const_iterator cbegin() const noexcept { return m_array.begin(); }
-        constexpr size_t capacity() const noexcept { return N; }
-        constexpr size_t size() const noexcept { return N; }
-        constexpr size_t max_size() const noexcept { return N; }
-        constexpr const_iterator end() const noexcept { return m_array.end(); }
-        constexpr const_iterator cend() const noexcept { return m_array.end(); }
-        constexpr bool empty() const noexcept { return N == 0; }
+        constexpr const_iterator begin()    const noexcept { return m_values; }
+        constexpr const_iterator cbegin()   const noexcept { return m_values; }
+        constexpr size_type      capacity() const noexcept { return m_realsize; }
+        constexpr size_type      size()     const noexcept { return m_realsize; }
+        constexpr size_type      max_size() const noexcept { return m_realsize; }
+        constexpr const_iterator end()      const noexcept { return m_values + m_realsize; }
+        constexpr const_iterator cend()     const noexcept { return m_values + m_realsize; }
+        constexpr bool           empty()    const noexcept { return m_realsize == 0; }
 
         // alias to decide whether _Key can be constructed from _Arg
         template<typename _K, typename _Arg>
@@ -357,7 +383,6 @@ namespace ct
             return it;
         }
 
-    protected:
         struct Pred
         {
             constexpr bool operator() (const key_type& l, const key_type& r) const
@@ -366,6 +391,7 @@ namespace ct
             }
         };
 
+    protected:
         template<typename K>
         if_available<K, const_iterator>
             lower_bound(K&& _key) const
@@ -375,8 +401,33 @@ namespace ct
             return std::lower_bound(begin(), end(), std::move(key), Pred());
         }
 
+        const value_type* m_values = nullptr;
+        size_type         m_realsize = 0;
+    };
+
+    template<size_t N, typename _HashedKey, typename _Value>
+    class const_unordered_set_proxy
+    {
+    public:
+        static_assert(N > 0, "empty const_set not supported");
+        using set_type = const_unordered_set< _HashedKey, _Value>;
+        using array_t = const_array<typename set_type::value_type, N>;
+        friend class const_unordered_set<_HashedKey, _Value>;
+
+        constexpr const_unordered_set_proxy(const array_t& init)
+            : m_array( init )
+        {}
+
+        constexpr bool in_order() const
+        {
+            return CheckOrder(m_array, typename set_type::Pred());
+        }
+        constexpr size_t realsize() const noexcept { return N; };
+
+    protected:
         array_t m_array = {};
     };
+
     template<typename _T, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
     struct MakeConstSet
     {
@@ -385,11 +436,12 @@ namespace ct
 
         using sorter_t = TInsertSorter<simple_sort_traits<init_type>, true>;
 
+        using set_type = const_unordered_set<value_type, value_type>;
         template<size_t N>
-        using set_type = const_unordered_set<N, value_type, value_type>;
+        using proxy_type = const_unordered_set_proxy<N, value_type, value_type>;
 
         template<size_t N>
-        constexpr auto operator()(const init_type(&input)[N]) const -> set_type<N>
+        constexpr auto operator()(const init_type(&input)[N]) const -> proxy_type<N>
         {
             return sorter_t{}(input).second;
         }
@@ -398,22 +450,25 @@ namespace ct
 
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
     static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                \
-    static constexpr auto name = ct::MakeConstMap<type1, type2, case_sensitive>{}                                            \
+    static constexpr auto name ## _proxy = ct::MakeConstMap<type1, type2, case_sensitive>{}                                  \
         (name ## _init);                                                                                                     \
-    static_assert(name.in_order(), "ct::const_unordered_map " #name "is not in order");
+    static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::map_type name = name ## _proxy;                         \
+    static_assert(name ## _proxy.in_order(), "ct::const_unordered_map " #name "is not in order");
 
 #define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \
     static constexpr ct::MakeConstMapTwoWay<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;          \
-    static constexpr auto name = ct::MakeConstMapTwoWay<type1, type2, case_sensitive>{}                                      \
+    static constexpr auto name ## _proxy = ct::MakeConstMapTwoWay<type1, type2, case_sensitive>{}                            \
         (name ## _init);                                                                                                     \
-    static_assert(name.first.in_order(), "ct::const_unordered_map " #name "is not in order");                                \
-    static_assert(name.second.in_order(), "flipped ct::const_unordered_map " #name " is not in order");
+    static constexpr ct::MakeConstMapTwoWay<type1, type2, case_sensitive>::map_type name = name ## _proxy;                   \
+    static_assert(name ## _proxy.first.in_order(), "ct::const_unordered_map " #name "is not in order");                      \
+    static_assert(name ## _proxy.second.in_order(), "flipped ct::const_unordered_map " #name " is not in order");
 
 #define MAKE_CONST_SET(name, case_sensitive, type, ...)                                                                      \
     static constexpr ct::MakeConstSet<type, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                        \
-    static constexpr auto name = ct::MakeConstSet<type, case_sensitive>{}                                                    \
+    static constexpr auto name ## _proxy = ct::MakeConstSet<type, case_sensitive>{}                                          \
         (name ## _init);                                                                                                     \
-    static_assert(name.in_order(), "ct::const_unordered_set " #name "is not in order");
+    static constexpr ct::MakeConstSet<type, case_sensitive>::set_type name = name ## _proxy;                                 \
+    static_assert(name ## _proxy.in_order(), "ct::const_unordered_set " #name "is not in order");
 
 #endif
 
