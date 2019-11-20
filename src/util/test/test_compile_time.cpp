@@ -41,6 +41,135 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#define SO_MAP_DATA {\
+        { "SO:0000001", "region"},\
+        { "SO:0000002", "sequece_secondary_structure"},\
+        { "SO:0000005", "satellite_DNA"},\
+        { "SO:0000013", "scRNA"},\
+        { "SO:0000035", "riboswitch"},\
+        { "SO:0000036", "matrix_attachment_site"},\
+        { "SO:0000037", "locus_control_region"},\
+        { "SO:0000104", "polypeptide"},\
+        { "SO:0000110", "sequence_feature"},\
+        { "SO:0000139", "ribosome_entry_site"},\
+        { "SO:0000140", "attenuator"},\
+        { "SO:0000141", "terminator"},\
+        { "SO:0000147", "exon"},\
+        { "SO:0000165", "enhancer"},\
+        { "SO:0000167", "promoter"},\
+        { "SO:0000172", "CAAT_signal"},\
+        { "SO:0000173", "GC_rich_promoter_region"},\
+        { "SO:0000174", "TATA_box"},\
+        { "SO:0000175", "minus_10_signal"},\
+        { "SO:0000176", "minus_35_signal"},\
+        { "SO:0000178", "operon"},\
+        { "SO:0000185", "primary_transcript"},\
+        { "SO:0000188", "intron"},\
+        { "SO:0000204", "five_prime_UTR"},\
+        { "SO:0000205", "three_prime_UTR"},\
+        { "SO:0000234", "mRNA"},\
+        { "SO:0000252", "rRNA"},\
+        { "SO:0000253", "tRNA"},\
+        { "SO:0000274", "snRNA"},\
+        { "SO:0000275", "snoRNA"},\
+        { "SO:0000276", "miRNA"},\
+        { "SO:0000286", "long_terminal_repeat"},\
+        { "SO:0000289", "microsatellite"},\
+        { "SO:0000294", "inverted_repeat"},\
+        { "SO:0000296", "origin_of_replication"},\
+        { "SO:0000297", "D_loop"},\
+        { "SO:0000298", "recombination_feature"},\
+        { "SO:0000305", "modified_DNA_base"},\
+        { "SO:0000313", "stem_loop"},\
+        { "SO:0000314", "direct_repeat"},\
+        { "SO:0000315", "TSS"},\
+        { "SO:0000316", "CDS"},\
+        { "SO:0000330", "conserved_region"},\
+        { "SO:0000331", "STS"},\
+        { "SO:0000336", "pseudogene"},\
+        { "SO:0000374", "ribozyme"},\
+        { "SO:0000380", "hammerhead_ribozyme"},\
+        { "SO:0000385", "RNase_MRP_RNA"},\
+        { "SO:0000386", "RNase_P_RNA"},\
+        { "SO:0000404", "vault_RNA"},\
+        { "SO:0000405", "Y_RNA"},\
+        { "SO:0000409", "binding_site"},\
+        { "SO:0000410", "protein_binding_site"},\
+        { "SO:0000413", "sequence_difference"},\
+        { "SO:0000418", "signal_peptide"},\
+        { "SO:0000419", "mature_protein_region"},\
+        { "SO:0000433", "non_LTR_retrotransposon_polymeric_tract"},\
+        { "SO:0000454", "rasiRNA"},\
+        { "SO:0000458", "D_gene_segment"},\
+        { "SO:0000466", "V_gene_segment"},\
+        { "SO:0000470", "J_gene_segment"},\
+        { "SO:0000478", "C_gene_segment"},\
+        { "SO:0000507", "pseudogenic_exon"},\
+        { "SO:0000516", "pseudogenic_transcript"},\
+        { "SO:0000551", "polyA_signal_sequence"},\
+        { "SO:0000553", "polyA_site"},\
+        { "SO:0000577", "centromere"},\
+        { "SO:0000584", "tmRNA"},\
+        { "SO:0000588", "autocatalytically_spliced_intron"},\
+        { "SO:0000590", "SRP_RNA"},\
+        { "SO:0000602", "guide_RNA"},\
+        { "SO:0000624", "telomere"},\
+        { "SO:0000625", "silencer"},\
+        { "SO:0000627", "insulator"},\
+        { "SO:0000644", "antisense_RNA"},\
+        { "SO:0000646", "siRNA"},\
+        { "SO:0000655", "ncRNA"},\
+        { "SO:0000657", "repeat_region"},\
+        { "SO:0000658", "dispersed_repeat"},\
+        { "SO:0000673", "transcript"},\
+        { "SO:0000685", "DNAsel_hypersensitive_site"},\
+        { "SO:0000704", "gene"},\
+        { "SO:0000705", "tandem_repeat"},\
+        { "SO:0000714", "nucleotide_motif"},\
+        { "SO:0000723", "iDNA"},\
+        { "SO:0000724", "oriT"},\
+        { "SO:0000725", "transit_peptide"},\
+        { "SO:0000730", "gap"},\
+        { "SO:0000777", "pseudogenic_rRNA"},\
+        { "SO:0000778", "pseudogenic_tRNA"},\
+        { "SO:0001021", "chromosome_preakpoint"},\
+        { "SO:0001035", "piRNA"},\
+        { "SO:0001037", "mobile_genetic_element"},\
+        { "SO:0001055", "transcriptional_cis_regulatory_region"},\
+        { "SO:0001059", "sequence_alteration"},\
+        { "SO:0001062", "propeptide"},\
+        { "SO:0001086", "sequence_uncertainty"},\
+        { "SO:0001087", "cross_link"},\
+        { "SO:0001088", "disulfide_bond"},\
+        { "SO:0001268", "recoding_stimulatory_region"},\
+        { "SO:0001411", "biological_region"},\
+        { "SO:0001484", "X_element_combinatorical_repeat"},\
+        { "SO:0001485", "Y_prime_element"},\
+        { "SO:0001496", "telomeric_repeat"},\
+        { "SO:0001649", "nested_repeat"},\
+        { "SO:0001682", "replication_regulatory_region"},\
+        { "SO:0001720", "epigenetically_modified_region"},\
+        { "SO:0001797", "centromeric_repeat"},\
+        { "SO:0001833", "V_region"},\
+        { "SO:0001835", "N_region"},\
+        { "SO:0001836", "S_region"},\
+        { "SO:0001877", "lnc_RNA"},\
+        { "SO:0001917", "CAGE_cluster"},\
+        { "SO:0002020", "boundary_element"},\
+        { "SO:0002072", "sequence_comparison"},\
+        { "SO:0002087", "pseudogenic_CDS"},\
+        { "SO:0002094", "non_allelic_homologous_recombination_region"},\
+        { "SO:0002154", "mitotic_recombination_region"},\
+        { "SO:0002155", "meiotic_recombination_region"},\
+        { "SO:0002190", "enhancer_blocking_element"},\
+        { "SO:0002191", "imprinting_control_region"},\
+        { "SO:0002205", "response_element"},\
+        { "SO:0005836", "regulatory_region"},\
+        { "SO:0005850", "primary_binding_site"},\
+        { "SO:0000000", ""}\
+}
+
+
 NCBITEST_AUTO_INIT()
 {
     boost::unit_test::framework::master_test_suite().p_name->assign(
@@ -62,7 +191,7 @@ MAKE_TWOWAY_CONST_MAP(test_two_way1, ncbi::NStr::eNocase, const char*, const cha
     });
 
 
-MAKE_TWOWAY_CONST_MAP(test_two_way2, ncbi::NStr::eNocase, const char*, int,
+MAKE_TWOWAY_CONST_MAP(test_two_way2, ncbi::NStr::eNocase, const char*, int, 
     {
         {"SO:0000001", 1},
         {"SO:0000002", 2},
@@ -122,29 +251,29 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 BOOST_AUTO_TEST_CASE(TestConstMap)
 {
 #if 1
-    for (auto& rec : test_two_way1)
+    for (auto& rec : test_two_way1.first)
         std::cout << rec.first.m_hash << ":" << rec.first << ":" << rec.second << std::endl;
 
-    auto t1 = test_two_way1.find("SO:0000001");
-    BOOST_CHECK((t1 != test_two_way1.end()) && (ncbi::NStr::CompareCase(t1->second, "region") == 0));
+    auto t1 = test_two_way1.first.find("SO:0000001");
+    BOOST_CHECK((t1 != test_two_way1.first.end()) && (ncbi::NStr::CompareCase(t1->second, "region") == 0));
 
-    auto t2 = test_two_way1.find("SO:0000003");
-    BOOST_CHECK(t2 == test_two_way1.end());
+    auto t2 = test_two_way1.first.find("SO:0000003");
+    BOOST_CHECK(t2 == test_two_way1.first.end());
 
-    auto t3 = test_two_way1_flipped.find("RegioN");
-    BOOST_CHECK((t3 != test_two_way1_flipped.end()) && (ncbi::NStr::CompareNocase(t3->second, "so:0000001") == 0));
+    auto t3 = test_two_way1.second.find("RegioN");
+    BOOST_CHECK((t3 != test_two_way1.second.end()) && (ncbi::NStr::CompareNocase(t3->second, "so:0000001") == 0));
 
-    assert(test_two_way1.size() == 10);
-    BOOST_CHECK(test_two_way1_flipped.size() == 10);
+    assert(test_two_way1.first.size() == 10);
+    BOOST_CHECK(test_two_way1.second.size() == 10);
 
-    auto t4 = test_two_way2.find("SO:0000002");
-    BOOST_CHECK((t4 != test_two_way2.end()) && (t4->second == 2));
+    auto t4 = test_two_way2.first.find("SO:0000002");
+    BOOST_CHECK((t4 != test_two_way2.first.end()) && (t4->second == 2));
 
-    auto t5 = test_two_way2.find("SO:0000003");
-    BOOST_CHECK((t5 == test_two_way2.end()));
+    auto t5 = test_two_way2.first.find("SO:0000003");
+    BOOST_CHECK((t5 == test_two_way2.first.end()));
 
-    auto t6 = test_two_way2_flipped.find(5);
-    BOOST_CHECK((t6 != test_two_way2_flipped.end()) && (ncbi::NStr::CompareNocase(t6->second, "so:0000005") == 0));
+    auto t6 = test_two_way2.second.find(5);
+    BOOST_CHECK((t6 != test_two_way2.second.end()) && (ncbi::NStr::CompareNocase(t6->second, "so:0000005") == 0));
 #endif
 };
 
@@ -538,308 +667,50 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
 
 #endif
 
-template<typename _Traits, bool remove_duplicates>
-class TInsertSorter
+template<typename _Left, typename _Right>
+void CompareArray(const _Left& l, const _Right& r)
 {
-public:
-
-    template<typename _Indices, typename _Value>
-    static constexpr void insert_down(_Indices& indices, size_t head, size_t tail, _Value current)
+    for (const auto& rec : l)
     {
-        auto saved = current;
-        while (head != tail)
+        auto it = r.find(rec.first);
+        bool found = it != r.end();
+        BOOST_CHECK(found);
+        if (found)
         {
-            auto prev = tail--;
-            indices[prev] = indices[tail];
+            BOOST_CHECK(0 == ncbi::NStr::CompareNocase(rec.first, it->first));
+            BOOST_CHECK(0 == ncbi::NStr::CompareNocase(rec.second, it->second));
         }
-        indices[head] = saved;
     }
-    template<typename _Indices, typename _Input>
-    static constexpr size_t const_lower_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
-    {
-        size_t _UFirst = 0;
-        auto _Count = last;
-
-        while (0 < _Count)
-        {	// divide and conquer, find half that contains answer
-            const auto _Count2 = _Count >> 1; // TRANSITION, VSO#433486
-            const auto _UMid = _UFirst + _Count2;
-            if (_Traits::compare_less(input, indices[_UMid], value))
-            {	// try top half
-                _UFirst = (_UMid + 1); // _Next_iter(_UMid);
-                _Count -= _Count2 + 1;
-            }
-            else
-            {
-                _Count = _Count2;
-            }
-        }
-
-        return _UFirst;
-    }
-    template<typename _Indices, typename _Input>
-    static constexpr size_t insert_sort_indices(_Indices& result, const _Input& input)
-    {
-        auto size = result.size();
-        if (size < 2)
-            return size;
-
-        // current is the first element of the unsorted part of the array
-        auto current = 0;
-        // the last inserted element into sorted part of the array
-        auto last = current;
-        result[0] = 0;
-        current++;
-
-        while (current != result.size())
-        {
-            if (_Traits::compare_less(input, result[last], current))
-            {// optimization for presorted arrays
-                result[++last] = current;
-            }
-            else {
-                // we may exclude last element since it's already known as smaller then current
-                auto fit = const_lower_bound(result, input, last, current);
-                bool move_it = remove_duplicates;
-                if (remove_duplicates)
-                {
-                    move_it = _Traits::compare_less(input, current, result[fit]);
-                }
-                if (move_it)
-                {
-                    ++last;
-                    insert_down(result, fit, last, current);
-                }
-            }
-            ++current;
-        }
-        if (remove_duplicates)
-        {// fill the rest of the indices with maximum value
-            current = last;
-            while (++current != result.size())
-            {
-                result[current] = result[last];
-            }
-        }
-        return 1 + last;
-    }
-
-    template <class T, std::size_t... I>
-    static constexpr auto fill_array(std::index_sequence<I...>)
-    {
-        return ct::const_array<std::remove_cv_t<T>, sizeof...(I)>{ {(I+1000)...} };
-    }
-
-    template<typename T, size_t N>
-    static constexpr auto make_indices(const T(&input)[N])
-    {
-        ct::const_array<size_t, N> indices{};
-        //auto indices = fill_array<size_t>(std::make_index_sequence<N>{});
-        auto real_size = insert_sort_indices(indices, input);
-        return std::make_pair(real_size, indices);
-    }
-
-    template<typename _Input, typename _Indices, std::size_t... I>
-    static constexpr auto construct(const _Input& input, const _Indices& indices, std::index_sequence<I...>) 
-        -> ct::const_array<typename _Traits::value_type, sizeof...(I)>
-    {
-        auto real_size = indices.first;
-        auto _max = indices.second[real_size - 1];
-        return { { _Traits::construct(input[I < real_size ? indices.second[I] : _max]) ...} };
-    }
-    template<typename T, size_t N>
-    constexpr auto operator()(const T(&input)[N])
-    {
-        auto indices = make_indices(input);
-        return std::make_pair(indices.first, construct(input, indices, std::make_index_sequence<N>{}));
-    }
-};
-
-BOOST_AUTO_TEST_CASE(TestSorter)
+}
+template<typename _Left, typename _Right>
+void CompareArrayFlipped(const _Left& l, const _Right& r)
 {
-    using type = ct::MakeConstMap<const char*, const char*, ncbi::NStr::ECase::eNocase, ct::TwoWayMap::yes>;
-    using sorter = TInsertSorter<ct::straight_sort_traits<type::init_pair_t>, true>;
-    using flipped_sorter = TInsertSorter<ct::flipped_sort_traits<type::init_pair_t>, true>;
-    constexpr type::init_pair_t init[] =
+    for (const auto& rec : l)
     {
-        //  ----------------------------------------------------------------------------
-        {"SO:0000001", "region"},
-        {"SO:0000002", "sequece_secondary_structure"},
-        {"SO:0000005", "satellite_DNA"},
-        {"SO:0000013", "scRNA"},
-        {"SO:0000035", "riboswitch"},
-        {"SO:0000036", "matrix_attachment_site"},
-        {"SO:0000037", "locus_control_region"},
-        {"SO:0000104", "polypeptide"},
-        {"SO:0000110", "sequence_feature"},
-        {"SO:0000139", "ribosome_entry_site"},
-        {"SO:0000140", "attenuator"},
-        {"SO:0000141", "terminator"},
-        {"SO:0000147", "exon"},
-        {"SO:0000165", "enhancer"},
-        {"SO:0000167", "promoter"},
-        {"SO:0000172", "CAAT_signal"},
-        {"SO:0000173", "GC_rich_promoter_region"},
-        {"SO:0000174", "TATA_box"},
-        {"SO:0000175", "minus_10_signal"},
-        {"SO:0000176", "minus_35_signal"},
-        {"SO:0000178", "operon"},
-        {"SO:0000185", "primary_transcript"},
-        {"SO:0000188", "intron"},
-        {"SO:0000204", "five_prime_UTR"},
-        {"SO:0000205", "three_prime_UTR"},
-        {"SO:0000234", "mRNA"},
-        {"SO:0000252", "rRNA"},
-        {"SO:0000253", "tRNA"},
-        {"SO:0000274", "snRNA"},
-        {"SO:0000275", "snoRNA"},
-        {"SO:0000276", "miRNA"},
-        {"SO:0000286", "long_terminal_repeat"},
-        {"SO:0000289", "microsatellite"},
-        {"SO:0000294", "inverted_repeat"},
-        {"SO:0000296", "origin_of_replication"},
-        {"SO:0000297", "D_loop"},
-        {"SO:0000298", "recombination_feature"},
-        {"SO:0000305", "modified_DNA_base"},
-        {"SO:0000313", "stem_loop"},
-        {"SO:0000314", "direct_repeat"},
-        {"SO:0000315", "TSS"},
-        {"SO:0000316", "CDS"},
-        {"SO:0000330", "conserved_region"},
-        {"SO:0000331", "STS"},
-        {"SO:0000336", "pseudogene"},
-        {"SO:0000374", "ribozyme"},
-        {"SO:0000380", "hammerhead_ribozyme"},
-        {"SO:0000385", "RNase_MRP_RNA"},
-        {"SO:0000386", "RNase_P_RNA"},
-        {"SO:0000404", "vault_RNA"},
-        {"SO:0000405", "Y_RNA"},
-        {"SO:0000409", "binding_site"},
-        {"SO:0000410", "protein_binding_site"},
-        {"SO:0000413", "sequence_difference"},
-        {"SO:0000418", "signal_peptide"},
-        {"SO:0000419", "mature_protein_region"},
-        {"SO:0000433", "non_LTR_retrotransposon_polymeric_tract"},
-        {"SO:0000454", "rasiRNA"},
-        {"SO:0000458", "D_gene_segment"},
-        {"SO:0000466", "V_gene_segment"},
-        {"SO:0000470", "J_gene_segment"},
-        {"SO:0000478", "C_gene_segment"},
-        {"SO:0000507", "pseudogenic_exon"},
-        {"SO:0000516", "pseudogenic_transcript"},
-        {"SO:0000551", "polyA_signal_sequence"},
-        {"SO:0000553", "polyA_site"},
-        {"SO:0000577", "centromere"},
-        {"SO:0000584", "tmRNA"},
-        {"SO:0000588", "autocatalytically_spliced_intron"},
-        {"SO:0000590", "SRP_RNA"},
-        {"SO:0000602", "guide_RNA"},
-        {"SO:0000624", "telomere"},
-        {"SO:0000625", "silencer"},
-        {"SO:0000627", "insulator"},
-        {"SO:0000644", "antisense_RNA"},
-        {"SO:0000646", "siRNA"},
-        {"SO:0000655", "ncRNA"},
-        {"SO:0000657", "repeat_region"},
-        {"SO:0000658", "dispersed_repeat"},
-        {"SO:0000673", "transcript"},
-        {"SO:0000685", "DNAsel_hypersensitive_site"},
-        {"SO:0000704", "gene"},
-        {"SO:0000705", "tandem_repeat"},
-        {"SO:0000714", "nucleotide_motif"},
-        {"SO:0000723", "iDNA"},
-        {"SO:0000724", "oriT"},
-        {"SO:0000725", "transit_peptide"},
-        {"SO:0000730", "gap"},
-        {"SO:0000777", "pseudogenic_rRNA"},
-        {"SO:0000778", "pseudogenic_tRNA"},
-        {"SO:0001021", "chromosome_preakpoint"},
-        {"SO:0001035", "piRNA"},
-        {"SO:0001037", "mobile_genetic_element"},
-        {"SO:0001055", "transcriptional_cis_regulatory_region"},
-        {"SO:0001059", "sequence_alteration"},
-        {"SO:0001062", "propeptide"},
-        {"SO:0001086", "sequence_uncertainty"},
-        {"SO:0001087", "cross_link"},
-        {"SO:0001088", "disulfide_bond"},
-        {"SO:0001268", "recoding_stimulatory_region"},
-        {"SO:0001411", "biological_region"},
-        {"SO:0001484", "X_element_combinatorical_repeat"},
-        {"SO:0001485", "Y_prime_element"},
-        {"SO:0001496", "telomeric_repeat"},
-        {"SO:0001649", "nested_repeat"},
-        {"SO:0001682", "replication_regulatory_region"},
-        {"SO:0001720", "epigenetically_modified_region"},
-        {"SO:0001797", "centromeric_repeat"},
-        {"SO:0001833", "V_region"},
-        {"SO:0001835", "N_region"},
-        {"SO:0001836", "S_region"},
-        {"SO:0001877", "lnc_RNA"},
-        {"SO:0001917", "CAGE_cluster"},
-        {"SO:0002020", "boundary_element"},
-        {"SO:0002072", "sequence_comparison"},
-        {"SO:0002087", "pseudogenic_CDS"},
-        {"SO:0002094", "non_allelic_homologous_recombination_region"},
-        {"SO:0002154", "mitotic_recombination_region"},
-        {"SO:0002155", "meiotic_recombination_region"},
-        {"SO:0002190", "enhancer_blocking_element"},
-        {"SO:0002191", "imprinting_control_region"},
-        {"SO:0002205", "response_element"},
-        {"SO:0005836", "regulatory_region"},
-        {"SO:0005850", "primary_binding_site"},
-
-        {"SO:0000000", ""},
-        //{"SO:UNKNOWN", "replication_start_site"},
-        //{"SO:UNKNOWN", "nucleotide_site"},
-        //{"SO:UNKNOWN", "nucleotide_cleavage_site"},
-        //{"SO:UNKNOWN", "repeat_instability_region"},
-    };
-
-#if 0
-    auto sorted_indices = sorter::make_indices(init);
-    for (auto rec : sorted_indices)
-    {
-        std::cout << rec << std::endl;
-    }
-#endif
-    constexpr auto straight_sorted = sorter{}(init);
-    constexpr auto flipped_sorted = flipped_sorter{}(init);
-    static_assert(straight_sorted.first == straight_sorted.second.size(), "the array is not unique");
-    static_assert(flipped_sorted.first  == flipped_sorted.second.size(), "the array is not unique");
-    constexpr auto straight_map = type{}(straight_sorted.second);
-    constexpr auto flipped_map = type{}(flipped_sorted.second);
-    for (auto rec : init)
-    {
-        ncbi::CTempString s1 = rec.first;
-        ncbi::CTempString s2 = rec.second;
-        auto found1 = straight_map.find(s1);
-        BOOST_CHECK(found1 != straight_map.end());
-        auto found2 = flipped_map.find(s2);
-        BOOST_CHECK(found2 != flipped_map.end());
-        //std::cout << rec.first << ":" << rec.second << std::endl;
-    }
-
-    {
-        constexpr int nu_numbers[] = { 100, 200, 300, 400, 500, 600 };
-        using nu_sorter = TInsertSorter<ct::simple_sort_traits<int>, true>;
-        constexpr auto sorted = nu_sorter{}(nu_numbers);
-        static_assert(sorted.first == sorted.second.size(), "the array is not unique");
-        for (auto rec : sorted.second)
+        auto it = r.find(rec.second);
+        bool found = it != r.end();
+        BOOST_CHECK(found);
+        if (found)
         {
-            std::cout << rec << std::endl;
-        }
-    }
-    //static_assert(!remove_duplicates || real_size == N, "the array is not unique");
-
-    {
-        constexpr int nu_numbers[] = { 100, 200, 300, 200, 300, 100 };
-        using nu_sorter = TInsertSorter<ct::simple_sort_traits<int>, true>;
-        constexpr auto sorted = nu_sorter{}(nu_numbers);
-        //static_assert(sorted.first == sorted.second.size(), "the array is not unique");
-        for (auto rec : sorted.second)
-        {
-            std::cout << rec << std::endl;
+            BOOST_CHECK(0 == ncbi::NStr::CompareNocase(rec.first, it->second));
+            BOOST_CHECK(0 == ncbi::NStr::CompareNocase(rec.second, it->first));
         }
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestConstMap2)
+{
+    MAKE_CONST_MAP(cm1, ncbi::NStr::eNocase, const char*, const char*, SO_MAP_DATA);
+    MAKE_TWOWAY_CONST_MAP(cm2, ncbi::NStr::eNocase, const char*, const char*, SO_MAP_DATA);
+
+    std::cout << "Const map sizes:" << std::endl
+        << "Record size:" << sizeof(decltype(cm1)::value_type) << std::endl
+        << "Straight map:" << cm1.size() << ":" << sizeof(cm1) << std::endl
+        << "Two way map:" << cm2.first.size() << ":" << sizeof(cm2) << std::endl;
+
+    const std::pair<const char*, const char*> init[] = SO_MAP_DATA;
+
+    CompareArray(init, cm1);
+    CompareArray(init, cm2.first);
+    CompareArrayFlipped(init, cm2.second);
+}

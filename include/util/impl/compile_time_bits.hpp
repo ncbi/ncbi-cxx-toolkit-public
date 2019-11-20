@@ -95,12 +95,12 @@ namespace compile_time_bits
         }
 
     template <class T, std::size_t N>
-    constexpr const_array<std::remove_cv_t<T>, N> to_array(T(&&a)[N])
+    constexpr auto to_array(T(&&a)[N])
     {
         return to_array_impl(a, std::make_index_sequence<N>{});
     }
     template <class T, std::size_t N>
-    constexpr const_array<std::remove_cv_t<T>, N> to_array(T(&a)[N])
+    constexpr auto to_array(T(&a)[N])
     {
         return to_array_impl(a, std::make_index_sequence<N>{});
     }
@@ -407,11 +407,14 @@ namespace compile_time_bits
     {
         using value_type = _Value;
 
-        template<typename _Input>
-        static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
+        struct Pred
         {
-            return input[l] < input[r];
-        }
+            template<typename _Input>
+            constexpr bool operator()(const _Input& input, size_t l, size_t r)
+            {
+                return input[l] < input[r];
+            };
+        };
         template<typename _Input>
         static constexpr auto construct(const _Input& input)
         {
@@ -424,11 +427,14 @@ namespace compile_time_bits
     {
         using value_type = _Pair;
 
-        template<typename _Input>
-        static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
+        struct Pred
         {
-            return input[l].first < input[r].first;
-        }
+            template<typename _Input>
+            constexpr bool operator()(const _Input& input, size_t l, size_t r)
+            {
+                return input[l].first < input[r].first;
+            }
+        };
         template<typename _Input>
         static constexpr auto construct(const _Input& input)
         {
@@ -441,11 +447,14 @@ namespace compile_time_bits
     {
         using value_type = const_pair<typename _Pair::second_type, typename _Pair::first_type>;
 
-        template<typename _Input>
-        static constexpr bool compare_less(const _Input& input, size_t l, size_t r)
+        struct Pred
         {
-            return input[l].second < input[r].second;
-        }
+            template<typename _Input>
+            constexpr bool operator()(const _Input& input, size_t l, size_t r)
+            {
+                return input[l].second < input[r].second;
+            }
+        };
         template<typename _Input>
         static constexpr value_type construct(const _Input& input)
         {
@@ -453,94 +462,130 @@ namespace compile_time_bits
         }
     };
 
-    template<typename _Traits, typename _Input, size_t N>
-    struct sorter
+    template<typename _Traits, bool remove_duplicates>
+    class TInsertSorter
     {
-        static constexpr size_t size = N;
-        static constexpr size_t max_size = std::numeric_limits<size_t>::max();
+    public:
 
-        using TIndices   = typename ct::const_array<size_t, size>;
-
-        constexpr size_t select_min(size_t i, size_t _min, size_t _thresold) const
+        template<typename _Indices, typename _Value>
+        static constexpr void insert_down(_Indices& indices, size_t head, size_t tail, _Value current)
         {
-            return (
-                (i != _min) &&
-                ((_thresold == max_size) || (_Traits::compare_less(m_input, _thresold, i))) &&
-                ((_min == max_size) || (_Traits::compare_less(m_input, i, _min))))
-                ? i : _min;
-        }
-
-        constexpr size_t find_min(size_t _min, size_t _thresold) const
-        {
-            for (size_t i=0; i<size; ++i)
+            auto saved = current;
+            while (head != tail)
             {
-                _min = select_min(i, _min, _thresold);
+                auto prev = tail--;
+                indices[prev] = indices[tail];
             }
-            return _min;
+            indices[head] = saved;
         }
-
-        template <std::size_t... I>
-        constexpr auto unroll(const TIndices& indices, std::index_sequence<I...>) const
+        template<typename _Indices, typename _Input>
+        static constexpr size_t const_lower_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
         {
-            return const_array<typename _Traits::value_type, size>
-                { {_Traits::construct(m_input[indices[I]])...} };
+            typename _Traits::Pred pred;
+            size_t _UFirst = 0;
+            auto _Count = last;
+
+            while (0 < _Count)
+            {	// divide and conquer, find half that contains answer
+                const auto _Count2 = _Count >> 1; // TRANSITION, VSO#433486
+                const auto _UMid = _UFirst + _Count2;
+                if (pred(input, indices[_UMid], value))
+                {	// try top half
+                    _UFirst = (_UMid + 1); // _Next_iter(_UMid);
+                    _Count -= _Count2 + 1;
+                }
+                else
+                {
+                    _Count = _Count2;
+                }
+            }
+
+            return _UFirst;
         }
-
-        constexpr auto operator()() const
+        template<typename _Indices, typename _Input>
+        static constexpr size_t insert_sort_indices(_Indices& result, const _Input& input)
         {
-            TIndices indices{};
-            size_t _min = max_size;
-            for (size_t i=0; i<size; ++i)
+            typename _Traits::Pred pred;
+            auto size = result.size();
+            if (size < 2)
+                return size;
+
+            // current is the first element of the unsorted part of the array
+            auto current = 0;
+            // the last inserted element into sorted part of the array
+            auto last = current;
+            result[0] = 0;
+            current++;
+
+            while (current != result.size())
             {
-                _min = find_min(max_size, _min);
-                indices[i] = _min;
+                if (pred(input, result[last], current))
+                {// optimization for presorted arrays
+                    result[++last] = current;
+                }
+                else {
+                    // we may exclude last element since it's already known as smaller then current
+                    auto fit = const_lower_bound(result, input, last, current);
+                    bool move_it = remove_duplicates;
+                    if (remove_duplicates)
+                    {
+                        move_it = pred(input, current, result[fit]);
+                    }
+                    if (move_it)
+                    {
+                        ++last;
+                        insert_down(result, fit, last, current);
+                    }
+                }
+                ++current;
             }
-            return unroll(indices, std::make_index_sequence<size>{});
+            if (remove_duplicates)
+            {// fill the rest of the indices with maximum value
+                current = last;
+                while (++current != result.size())
+                {
+                    result[current] = result[last];
+                }
+            }
+            return 1 + last;
         }
-        const _Input& m_input;
+
+        template <class T, std::size_t... I>
+        static constexpr auto fill_array(std::index_sequence<I...>)
+        {
+            return const_array<std::remove_cv_t<T>, sizeof...(I)>{ {(I + 1000)...} };
+        }
+
+        template<typename T, size_t N>
+        static constexpr auto make_indices(const T(&input)[N])
+        {
+            const_array<size_t, N> indices{};
+            //auto indices = fill_array<size_t>(std::make_index_sequence<N>{});
+            auto real_size = insert_sort_indices(indices, input);
+            return std::make_pair(real_size, indices);
+        }
+
+        template<typename _Input, typename _Indices, std::size_t... I>
+        static constexpr auto construct(const _Input& input, const _Indices& indices, std::index_sequence<I...>)
+            -> const_array<typename _Traits::value_type, sizeof...(I)>
+        {
+            auto real_size = indices.first;
+            auto _max = indices.second[real_size - 1];
+            return { { _Traits::construct(input[I < real_size ? indices.second[I] : _max]) ...} };
+        }
+        template<typename T, size_t N>
+        constexpr auto operator()(const T(&input)[N])
+        {
+            auto indices = make_indices(input);
+            return std::make_pair(indices.first, construct(input, indices, std::make_index_sequence<N>{}));
+        }
     };
 
-    template<typename T, size_t N>
-    constexpr auto SimpleReorder(const T(&input)[N])
+    template<typename _A, typename _P>
+    static constexpr bool CheckOrder(const _A& c, _P pred)
     {
-        return sorter<simple_sort_traits<T>, decltype(input), N>{input}();
-    }
-
-    template<typename T, size_t N>
-    constexpr auto SimpleReorder(const const_array<T, N>& input)
-    {
-        return sorter<simple_sort_traits<T>, decltype(input), N>{input}();
-    }
-
-    template<typename T, size_t N>
-    constexpr auto Reorder(const const_array<T, N>& input)
-    {
-        return sorter<straight_sort_traits<T>, decltype(input), N>{input}();
-    }
-
-    template<typename T, size_t N>
-    constexpr auto Reorder(const T(&input)[N])
-    {
-        return sorter<straight_sort_traits<T>, decltype(input), N>{input}();
-    }
-
-    template<typename T, size_t N>
-    constexpr auto FlipReorder(const const_array<T, N>& input)
-    {
-        return sorter<flipped_sort_traits<T>, decltype(input), N>{input}();
-    }
-
-    template<typename T, size_t N>
-    constexpr auto FlipReorder(const T(&input)[N])
-    {
-        return sorter<flipped_sort_traits<T>, decltype(input), N>{input}();
-    }
-
-    template<typename T, size_t N>
-    constexpr bool CheckOrder(const const_array<T, N>& tup)
-    {
-        for (size_t i=1; i<N; ++i)
-            if (!(tup[i-1]<tup[i]))
+        for (size_t i = c.size()-1; i > 0; --i)
+            if (!pred(c[i - 1], c[i]))
                 return false;
         return true;
     }

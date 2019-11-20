@@ -169,10 +169,10 @@ namespace ct
         using intermediate = typename _HashedKey::intermediate;
 
         using key_type     = typename _HashedKey::type;
-        using mapped_type = _Value;
-        using value_type = const_pair<typename _HashedKey::type, typename _Value::type>;
-        using size_type = size_t;
-        using array_t = const_array<value_type, N>;
+        using mapped_type  = typename _Value::type;
+        using value_type   = const_pair<typename _HashedKey::type, typename _Value::type>;
+        using size_type    = size_t;
+        using array_t      = const_array<value_type, N>;
 
         using const_iterator = typename array_t::const_iterator;
 
@@ -182,7 +182,7 @@ namespace ct
 
         constexpr bool in_order() const
         {
-            return CheckOrder(m_array);
+            return CheckOrder(m_array, Pred());
         }
 
         constexpr const_iterator begin() const noexcept { return m_array.begin(); }
@@ -243,11 +243,15 @@ namespace ct
 
         struct Pred
         {
-            bool operator()(const value_type& l, const hash_type& r) const
+            constexpr bool operator()(const value_type& l, const hash_type& r) const
             {
                 return l.first < r;
             }
-            bool operator() (const key_type& l, const key_type& r) const
+            constexpr bool operator()(const value_type& l, const value_type& r) const
+            {
+                return l.first < r.first;
+            }            
+            constexpr bool operator() (const key_type& l, const key_type& r) const
             {
                 return l < r;
             }
@@ -256,41 +260,61 @@ namespace ct
         array_t m_array = {};
     };
 
-    template<typename T1, typename T2, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase, TwoWayMap two_way = TwoWayMap::no>
+    template<typename T1, typename T2, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
     struct MakeConstMap
     {
-        using first_type = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
-        using second_type = DeduceHashedType<case_sensitive, two_way==TwoWayMap::yes ? NeedHash::yes : NeedHash::no, T2>;
-        using init_pair_t = const_pair<typename first_type::type, typename second_type::type>;
+        using first_type  = ct::DeduceHashedType<case_sensitive, ct::NeedHash::yes, T1>;
+        using second_type = ct::DeduceHashedType<case_sensitive, ct::NeedHash::no, T2>;
+        using init_type   = ct::const_pair<typename first_type::type, typename second_type::type>;
+
+        using sorter_t = TInsertSorter<ct::straight_sort_traits<init_type>, true>;
 
         template<size_t N>
-        struct DeduceType
-        {
-            static constexpr size_t size = N;
-            static_assert(size > 0, "empty const_map not supported");
-
-            using type = const_unordered_map<size, first_type, second_type>;
-        };
+        using map_type = const_unordered_map<N, first_type, second_type>;
 
         template<size_t N>
-        constexpr auto operator()(const const_array<init_pair_t, N> &input) const ->
-            typename DeduceType<N>::type
+        constexpr auto operator()(const init_type (&input)[N]) const -> map_type<N>
         {
-            return typename DeduceType<N>::type(input);
+            return sorter_t{}(input).second;
         }
     };
+
+    template<typename T1, typename T2, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
+    struct MakeConstMapTwoWay
+    {
+        using first_type  = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
+        using second_type = DeduceHashedType<case_sensitive, NeedHash::yes, T2>;
+        using init_type   = const_pair<typename first_type::type, typename second_type::type>;
+
+        using straight_sorter_t = TInsertSorter<straight_sort_traits<init_type>, true>;
+        using flipped_sorter_t = TInsertSorter<flipped_sort_traits<init_type>, true>;
+
+        template<size_t N>
+        using map_type = std::pair<
+            const_unordered_map<N, first_type, second_type>,
+            const_unordered_map<N, second_type, first_type>>;
+
+        template<size_t N>
+        constexpr auto operator()(const init_type(&input)[N]) const -> map_type<N>
+        {
+            return map_type<N>{
+                straight_sorter_t{}(input).second,
+                flipped_sorter_t{}(input).second};
+        }
+    };
+
 
     template<size_t N, typename _HashedKey, typename _Value>
     class const_unordered_set
     {
     public:
         static_assert(N > 0, "empty const_set not supported");
-        using hash_type = typename _HashedKey::hash_type;
+        using hash_type    = typename _HashedKey::hash_type;
         using intermediate = typename _HashedKey::intermediate;
 
-        using key_type = typename _HashedKey::type;
-        using value_type = typename _Value::type;
-        using size_type = size_t;
+        using key_type     = typename _HashedKey::type;
+        using value_type   = typename _Value::type;
+        using size_type    = size_t;
 
         using array_t = const_array<value_type, N>;
         using const_iterator = typename array_t::const_iterator;
@@ -301,7 +325,7 @@ namespace ct
 
         constexpr bool in_order() const
         {
-            return CheckOrder(m_array);
+            return CheckOrder(m_array, Pred());
         }
 
         constexpr const_iterator begin() const noexcept { return m_array.begin(); }
@@ -336,7 +360,7 @@ namespace ct
     protected:
         struct Pred
         {
-            bool operator() (const key_type& l, const key_type& r) const
+            constexpr bool operator() (const key_type& l, const key_type& r) const
             {
                 return l < r;
             }
@@ -356,49 +380,40 @@ namespace ct
     template<typename _T, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
     struct MakeConstSet
     {
-        using value_type = DeduceHashedType<case_sensitive, NeedHash::yes, _T>;
-        using init_t = typename value_type::type;
+        using value_type = DeduceHashedType<case_sensitive, ct::NeedHash::yes, _T>;
+        using init_type  = typename value_type::type;
+
+        using sorter_t = TInsertSorter<simple_sort_traits<init_type>, true>;
 
         template<size_t N>
-        struct DeduceType
-        {
-            static constexpr size_t size = N;
-            static_assert(size > 0, "empty const_set not supported");
-
-            using type = const_unordered_set<size, value_type, value_type>;
-        };
+        using set_type = const_unordered_set<N, value_type, value_type>;
 
         template<size_t N>
-        constexpr auto operator()(const init_t (&input)[N]) const -> typename DeduceType<N>::type
+        constexpr auto operator()(const init_type(&input)[N]) const -> set_type<N>
         {
-            return SimpleReorder(input);
+            return sorter_t{}(input).second;
         }
     };
 }
 
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
-    static constexpr ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::no>::init_pair_t                          \
-        name ## _init[]  __VA_ARGS__;                                                                                        \
-    static constexpr auto name = ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::no>{}                         \
-        (ct::Reorder(name ## _init));                                                                                        
-//    static_assert(name.in_order(), "const map " #name "is not in order");
-
+    static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                \
+    static constexpr auto name = ct::MakeConstMap<type1, type2, case_sensitive>{}                                            \
+        (name ## _init);                                                                                                     \
+    static_assert(name.in_order(), "ct::const_unordered_map " #name "is not in order");
 
 #define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \
-    static constexpr ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::yes>::init_pair_t                         \
-        name ## _init[]  __VA_ARGS__;                                                                                        \
-    static constexpr auto name = ct::MakeConstMap<type1, type2, case_sensitive, ct::TwoWayMap::yes>{}                        \
-        (ct::Reorder(name ## _init));                                                                                        \
-    static constexpr auto name ## _flipped = ct::MakeConstMap<type2, type1, case_sensitive, ct::TwoWayMap::yes>{}            \
-        (ct::FlipReorder(name ## _init));                                                                                    \
-    static_assert(name.in_order(), "const map " #name "is not in order");                                                    \
-    static_assert(name ## _flipped.in_order(), "const map " #name "_flipped is not in order");
+    static constexpr ct::MakeConstMapTwoWay<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;          \
+    static constexpr auto name = ct::MakeConstMapTwoWay<type1, type2, case_sensitive>{}                                      \
+        (name ## _init);                                                                                                     \
+    static_assert(name.first.in_order(), "ct::const_unordered_map " #name "is not in order");                                \
+    static_assert(name.second.in_order(), "flipped ct::const_unordered_map " #name " is not in order");
 
 #define MAKE_CONST_SET(name, case_sensitive, type, ...)                                                                      \
-    static constexpr ct::MakeConstSet<type, case_sensitive>::init_t name ## _init[]= __VA_ARGS__;                            \
+    static constexpr ct::MakeConstSet<type, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                        \
     static constexpr auto name = ct::MakeConstSet<type, case_sensitive>{}                                                    \
         (name ## _init);                                                                                                     \
-    static_assert(name.in_order(), "const set " #name "is not in order");
+    static_assert(name.in_order(), "ct::const_unordered_set " #name "is not in order");
 
 #endif
 
