@@ -253,7 +253,7 @@ TEST_F(CBioseqInfoTaskFetchTest, SeqIdsInheritance) {
     size_t call_count{0};
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
-    request.SetAccession("NC_000001").SetVersion(10);
+    request.SetAccession("NC_000001").SetVersion(5);
     CCassBioseqInfoTaskFetch fetch(
         m_Timeout, 0, m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
@@ -267,18 +267,18 @@ TEST_F(CBioseqInfoTaskFetchTest, SeqIdsInheritance) {
     ASSERT_EQ(1UL, actual_records.size());
 
     EXPECT_EQ("NC_000001", actual_records[0].GetAccession());
-    EXPECT_EQ(10, actual_records[0].GetVersion());
+    EXPECT_EQ(5, actual_records[0].GetVersion());
     EXPECT_EQ(10, actual_records[0].GetSeqIdType());
-    EXPECT_EQ(224589800, actual_records[0].GetGI());
+    EXPECT_EQ(37623929, actual_records[0].GetGI());
     EXPECT_EQ(4, actual_records[0].GetSeqIds().size());
     set<tuple<int16_t, string>> expected_seq_ids;
     // Own
-    expected_seq_ids.insert(make_tuple<int16_t, string>(19, "GPC_000000025.1"));
-    expected_seq_ids.insert(make_tuple<int16_t, string>(12, "224589800"));
+    expected_seq_ids.insert(make_tuple<int16_t, string>(12, "37623929"));
 
     // Inherited
     expected_seq_ids.insert(make_tuple<int16_t, string>(11, "ASM:GCF_000001305|1"));
     expected_seq_ids.insert(make_tuple<int16_t, string>(11, "NCBI_GENOMES|1"));
+    expected_seq_ids.insert(make_tuple<int16_t, string>(19, "GPC_000001293.1"));
     EXPECT_EQ(expected_seq_ids, actual_records[0].GetSeqIds());
 }
 
