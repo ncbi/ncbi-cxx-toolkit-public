@@ -481,7 +481,7 @@ namespace compile_time_bits
         template<typename _Indices, typename _Input>
         static constexpr size_t const_lower_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
         {
-            typename _Traits::Pred pred;
+            typename _Traits::Pred pred{};
             size_t _UFirst = 0;
             auto _Count = last;
 
@@ -505,7 +505,7 @@ namespace compile_time_bits
         template<typename _Indices, typename _Input>
         static constexpr size_t insert_sort_indices(_Indices& result, const _Input& input)
         {
-            typename _Traits::Pred pred;
+            typename _Traits::Pred pred{};
             auto size = result.size();
             if (size < 2)
                 return size;
