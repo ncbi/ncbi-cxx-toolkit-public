@@ -37,6 +37,8 @@
 
 #include <common/ncbi_export.h>
 #include <string>
+#include <type_traits>
+#include <typeinfo>
 
 
 // Get rid of some warnings in MSVC++
@@ -228,6 +230,35 @@ END_NCBI_SCOPE
 #    define _GLIBCXX_DEPRECATED NCBI_DEPRECATED
 #  endif
 #endif
+
+
+/// Helper template to check that type Type have some method declared
+/// using TypeChecker<Type>.
+/// 
+template <template <typename> class TypeChecker, typename Type>
+struct cxx_is_supported
+{
+    // these structs are used to recognize which version
+    // of the two functions was chosen during overload resolution
+    struct supported {};
+    struct not_supported {};
+
+    // this overload of chk will be ignored by SFINAE principle
+    // if TypeChecker<Type_> is invalid type
+    template <typename Type_>
+    static supported chk(typename std::decay<TypeChecker<Type_>>::type *);
+
+    // ellipsis has the lowest conversion rank, so this overload will be
+    // chosen during overload resolution only if the template overload above is ignored
+    template <typename Type_>
+    static not_supported chk(...);
+
+    // if the template overload of chk is chosen during
+    // overload resolution then the feature is supported
+    // if the ellipses overload is chosen the the feature is not supported
+    static constexpr bool value = std::is_same<decltype(chk<Type>(nullptr)), supported>::value;
+};
+
 
 /* @} */
 
