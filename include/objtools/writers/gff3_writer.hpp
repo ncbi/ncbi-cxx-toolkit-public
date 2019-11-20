@@ -199,8 +199,6 @@ protected:
 
     virtual bool xWriteSequenceHeader(
         CBioseq_Handle );
-    virtual bool xWriteSequenceHeader(
-        CSeq_id_Handle );
     virtual bool xWriteSource(
         CBioseq_Handle);
     virtual bool xWriteFeature(

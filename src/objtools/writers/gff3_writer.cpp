@@ -1120,19 +1120,6 @@ bool CGff3Writer::WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteSequenceHeader(
-    CSeq_id_Handle idh)
-//  ----------------------------------------------------------------------------
-{
-    string id;
-    if (!CWriteUtil::GetBestId(idh, *m_pScope, id)) {
-        id = "<unknown>";
-    }
-    m_Os << "##sequence-region " << id << '\n';
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xWriteSequenceHeader(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -1145,8 +1132,12 @@ bool CGff3Writer::xWriteSequenceHeader(
         }
     }
 
-    string start = "1";
-    string stop = NStr::IntToString(bsh.GetBioseqLength());
+    TSeqPos start = 1;
+    TSeqPos stop = bsh.GetBioseqLength();
+    if (!m_Range.IsWhole()) {
+        start = m_Range.GetFrom() + 1;
+        stop = m_Range.GetTo() + 1;
+    }
     m_Os << "##sequence-region " << id << " " << start << " " << stop << '\n';
 
     //species
