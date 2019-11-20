@@ -40,7 +40,7 @@ use File::stat;
 use Digest::MD5;
 use Archive::Tar;
 use File::Temp;
-use JSON;
+use JSON::PP;
 
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
 use constant BLAST_DB_DIR => "/blast/db";
@@ -137,7 +137,7 @@ if ($location eq "GCP") {
         exit(EXIT_FAILURE);
     }
     print "Connected to $location\n" if $opt_verbose;
-    my $metadata = from_json($json);
+    my $metadata = decode_json($json);
     unless (exists($$metadata{version}) and ($$metadata{version} eq GCP_MANIFEST_VERSION)) {
         print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
         exit(EXIT_FAILURE);
