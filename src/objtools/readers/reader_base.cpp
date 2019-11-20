@@ -233,30 +233,13 @@ CReaderBase::ReadSeqAnnot(
             xProcessData(readerData, annotData);
         }
         catch (CReaderMessage& err) {
-            if (err.Severity() == eDiag_Fatal) {
-                throw;
-            }
-            try {
-                m_pMessageHandler->Report(err);
-            }
-            catch(ILineError& err) {
-                if (!pEL  ||  !pEL->PutMessage(err)) {
-                    throw;
-                }
-            }
+            xProcessReaderMessage(err, pEL);
         }
         catch (ILineError& err) {
-            if (!pEL  ||  err.GetSeverity() == eDiag_Fatal) {
-                throw;
-            }
-            pEL->PutMessage(err);
+            xProcessLineError(err, pEL);
         }
         catch (CException& err) {
-            CReaderMessage terminator(
-                eDiag_Fatal, 
-                m_uLineNumber,
-                "Exception: " + err.GetMsg());
-            throw(terminator);
+            xProcessUnknownException(err);
         }
         xGetData(lr, readerData);
     }
@@ -435,12 +418,11 @@ void CReaderBase::xSetBrowserRegion(
     string strChrom;
     string strInterval;
     if ( ! NStr::SplitInTwo( strRaw, ":", strChrom, strInterval ) ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad browser line: cannot parse browser position" ) );
-        ProcessError(*pErr, pEC);
+        CReaderMessage error(
+            eDiag_Error, 
+            m_uLineNumber, 
+            "Bad browser line: invalid position directive");
+        throw(error);
     }
     CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
 
@@ -453,12 +435,11 @@ void CReaderBase::xSetBrowserRegion(
         string strFrom;
         string strTo;
         if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad browser line: cannot parse browser position" ) );
-            ProcessError(*pErr, pEC);
+            CReaderMessage error(
+                eDiag_Error, 
+                m_uLineNumber, 
+                "Bad browser line: invalid position directive");
+            throw(error);
         }  
         try
         {
@@ -476,12 +457,11 @@ void CReaderBase::xSetBrowserRegion(
         }
         catch (const CStringException&)
         {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad browser line: cannot parse browser position" ) );
-            ProcessError(*pErr, pEC);
+            CReaderMessage error(
+                eDiag_Error, 
+                m_uLineNumber, 
+                "Bad browser line: invalid position directive");
+            throw(error);
             location.Reset();
         }
     }
@@ -512,12 +492,11 @@ bool CReaderBase::xParseBrowserLine(
         if ( *it == "position" ) {
             ++it;
             if ( it == fields.end() ) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                    eDiag_Error,
-                    0,
-                    "Bad browser line: incomplete position directive" ) );
-                ProcessError(*pErr, pEC);
+                CReaderMessage error(
+                    eDiag_Error, 
+                    m_uLineNumber, 
+                    "Bad browser line: incomplete position directive");
+                throw(error);
             }
             xSetBrowserRegion(*it, desc, pEC);
         }
@@ -567,7 +546,7 @@ bool CReaderBase::xParseBrowserLine(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseComment(
     const CTempString& record,
-    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
+    CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
     if (NStr::StartsWith(record, "#")) {
@@ -772,5 +751,74 @@ bool CReaderBase::xUngetLine(
     --m_uLineNumber;
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::xProcessReaderMessage(
+    const CReaderMessage& readerMessage,
+    ILineErrorListener* pEL)
+//
+//  Strategy:
+//  (0) Above all, don't swallow FATAl errors as they are guaranteed to stop
+//      the program on the spot.
+//  (1) Give readerMessage to internal message handler. If configured properly
+//      it will handle readerMessage.Otherwise, it will emit an ILineError.
+//  (2) If an ILineError is emitted and we have an actual ILineErrorListener
+//      then give it a shot.
+//  (3) If we don't have an ILineErrorListener or it the ILineErrorListener
+//      does not want the ILineError then rethrow the ILineError and hope for 
+//      the best.
+//  ----------------------------------------------------------------------------
+{
+    if (readerMessage.Severity() == eDiag_Fatal) {
+        throw;
+    }
+    try {
+        m_pMessageHandler->Report(readerMessage);
+    }
+    catch(ILineError& lineError) {
+        xProcessLineError(lineError, pEL);
+    }
+};
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::xProcessLineError(
+    const ILineError& lineError,
+    ILineErrorListener* pEL)
+//
+//  This is to deal with legacy format readers that may throw ILIneError instead
+//  of the preferred CReaderMessage.
+//
+//  Strategy:
+//  (1) If pEL is good, then give the lineError to pEL.
+//  (2) If pEL doesn't accept the lineError then throw it (and hope some upper
+//      layer knows what to do with it).
+//  ----------------------------------------------------------------------------
+{
+    if (!pEL  ||  !pEL->PutMessage(lineError)) {
+        throw;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::xProcessUnknownException(
+    const CException& error)
+//
+//  If we get errors outside of the established type system then there is no way 
+//  of knowing what happened, how it happened, how much data is bad, or even 
+//  whether there is any way of continuing at all. 
+//  We therefore turn all such errors into a FATAL CReaderMessage and rethrow
+//  it.
+//  ----------------------------------------------------------------------------
+{
+    CReaderMessage terminator(
+        eDiag_Fatal, 
+        m_uLineNumber,
+        "Exception: " + error.GetMsg());
+    throw(terminator);
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -40,11 +40,11 @@
 #include <util/icanceled.hpp>
 #include <objtools/readers/track_data.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <objtools/readers/reader_message.hpp>
 #include <objtools/readers/read_util.hpp>
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_objects_SCOPE
 
 class CSeq_entry;
 class ILineErrorListener;
@@ -331,6 +331,20 @@ protected:
     virtual void xProcessData(
         const TReaderData&,
         CSeq_annot::TData&);
+
+    void
+    xProcessReaderMessage(
+        const CReaderMessage&,
+        ILineErrorListener*);
+
+    void
+    xProcessLineError(
+        const ILineError&,
+        ILineErrorListener*);
+
+    void
+    xProcessUnknownException(
+        const CException&);
 
     //
     //  Data:
