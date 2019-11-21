@@ -2348,6 +2348,13 @@ BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
         ++count;
     BOOST_CHECK_EQUAL(count, 0);
 
+    auto mandatory = CSeqFeatData::GetMandatoryQualifiers(CSeqFeatData::eSubtype_assembly_gap);
+
+    for (auto rec: mandatory)
+    {
+        std::cout << rec << std::endl;
+    }
+
 
 
 }

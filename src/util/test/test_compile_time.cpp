@@ -251,8 +251,8 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 BOOST_AUTO_TEST_CASE(TestConstMap)
 {
 #if 1
-    for (auto& rec : test_two_way1.first)
-        std::cout << rec.first.m_hash << ":" << rec.first << ":" << rec.second << std::endl;
+    //or (auto& rec : test_two_way1.first)
+    //    std::cout << rec.first.m_hash << ":" << rec.first << ":" << rec.second << std::endl;
 
     auto t1 = test_two_way1.first.find("SO:0000001");
     BOOST_CHECK((t1 != test_two_way1.first.end()) && (ncbi::NStr::CompareCase(t1->second, "region") == 0));
@@ -713,6 +713,17 @@ BOOST_AUTO_TEST_CASE(TestConstMap2)
     CompareArray(init, cm1);
     CompareArray(init, cm2.first);
     CompareArrayFlipped(init, cm2.second);
+
+    auto ret1 = cm1.equal_range("A");
+    BOOST_CHECK(ret1.first == ret1.second);
+    BOOST_CHECK(ret1.first != cm1.end() && ret1.first->first != "A");
+
+
+    auto ret2 = cm1.equal_range("SO:0000013");
+    BOOST_CHECK(ret2.first != ret2.second);
+    BOOST_CHECK(ret2.first != cm1.end()
+        && ret2.first->first == "SO:0000013"
+        && ret2.second->first != "SO:0000013");
 }
 
 BOOST_AUTO_TEST_CASE(TestConstMap3)
@@ -720,26 +731,30 @@ BOOST_AUTO_TEST_CASE(TestConstMap3)
     using type = ct::MakeConstMap<const char*, const char*>;
     constexpr type::init_type init[] = SO_MAP_DATA;
 
-    auto index = type::sorter_t::BuildHashIndex(init);
+    auto index = type::sorter_t{}(init);
 
     for (auto rec : index.first)
     {
         //std::cout << rec << std::endl;
     }
+
 }
 BOOST_AUTO_TEST_CASE(TestConstMap4)
 {
     using type = ct::MakeConstMapTwoWay<const char*, const char*>;
     constexpr type::init_type init[] = SO_MAP_DATA;
 
-    auto index1 = type::straight_sorter_t::BuildHashIndex(init);
-    auto index2 = type::flipped_sorter_t::BuildHashIndex(init);
+    auto index1 = type::straight_sorter_t{}(init);
+    auto index2 = type::flipped_sorter_t{}(init);
 
     for (auto rec : index1.first)
     {
         //std::cout << rec << std::endl;
     }
-
+    for (auto rec : index2.first)
+    {
+        //std::cout << rec << std::endl;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(TestConstMap5)
@@ -751,11 +766,11 @@ BOOST_AUTO_TEST_CASE(TestConstMap5)
         { 50, "Fifty"}
     };
 
-    auto index = type::sorter_t::BuildHashIndex(init);
+    auto index = type::sorter_t{}(init);
 
     for (auto rec : index.first)
     {
-        std::cout << rec << std::endl;
+        //std::cout << rec << std::endl;
     }
 
 }
