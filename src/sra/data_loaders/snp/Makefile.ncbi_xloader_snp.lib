@@ -8,14 +8,14 @@ PROJ_TAG = gbench,lib,public
 LIB = ncbi_xloader_snp
 SRC = snploader snploader_impl
 
-REQUIRES = objects
+REQUIRES = objects GRPC
 
 ASN_DEP = seqset seq
 
-LIB_OR_DLL = dll
+LIB_OR_DLL = both
 
 DLL_LIB = $(SOBJMGR_LIBS) sraread$(STATIC) $(SRAREAD_LDEP) dbsnp_ptis grpc_integration $(CMPRS_LIB)
-LIBS = $(SRA_SDK_SYSLIBS) $(GRPC_LIBS) $(ORIG_LIBS)
+LIBS = $(SRA_SDK_SYSLIBS) $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 POST_LINK = $(VDB_POST_LINK)
 
 CPPFLAGS = $(SRA_INCLUDE) -DNCBI_XLOADER_SNP_EXPORTS $(ORIG_CPPFLAGS)
