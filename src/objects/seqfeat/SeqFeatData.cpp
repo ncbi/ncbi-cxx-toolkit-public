@@ -593,27 +593,28 @@ const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(ESubtype s
 {
     MAKE_CONST_MAP(sx_MandatoryQuals, NStr::eCase, CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers,
         {
-        {eSubtype_assembly_gap,   {eQual_estimated_length, eQual_gap_type}},
         {eSubtype_conflict,       {eQual_citation}},
-        {eSubtype_gap,            {eQual_estimated_length}},
         {eSubtype_misc_binding,   {eQual_bound_moiety}},
-        {eSubtype_protein_bind,   {eQual_bound_moiety}},
         {eSubtype_modified_base,  {eQual_mod_base}},
         {eSubtype_old_sequence,   {eQual_citation}},
-        {eSubtype_operon,         {eQual_operon}},
+        {eSubtype_protein_bind,   {eQual_bound_moiety}},
         {eSubtype_source,         {eQual_organism}},
+        {eSubtype_gap,            {eQual_estimated_length}},
+        {eSubtype_operon,         {eQual_operon}},
         // although INSDC indicates that mol_type should be mandatory on
         // source subtype, we do not do so since there are legacy
         // records for which a mol_type could cause loss of information.
-        {eSubtype_ncRNA,         {eQual_ncRNA_class}},
-        {eSubtype_regulatory,    {eQual_regulatory_class}},
+        {eSubtype_ncRNA,          {eQual_ncRNA_class}},
         {eSubtype_mobile_element, {eQual_mobile_element_type}},
+        {eSubtype_assembly_gap,   {eQual_estimated_length, eQual_gap_type}},
+        {eSubtype_regulatory,     {eQual_regulatory_class}},
         });
 
     auto iter = sx_MandatoryQuals.find(subtype);
     if (iter == sx_MandatoryQuals.end()) {
         return empty_quals;
     }
+    return iter->second;
 }
 
 
