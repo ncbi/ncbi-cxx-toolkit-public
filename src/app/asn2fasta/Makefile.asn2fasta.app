@@ -8,14 +8,14 @@
 
 APP = asn2fasta
 SRC = asn2fasta
-LIB = $(ncbi_xloader_wgs) $(SRAREAD_LIBS) \
-          xobjwrite variation_utils $(OBJREAD_LIBS) $(XFORMAT_LIBS) \
-          xalnmgr xobjutil valerr xregexp \
-	  ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \
-          entrez2cli entrez2 tables $(OBJMGR_LIBS) xregexp $(PCRE_LIB)
+LIB = $(DATA_LOADERS_UTIL_LIB) \
+	  xobjwrite variation_utils $(XFORMAT_LIBS) \
+	  xalnmgr xobjutil valerr xregexp \
+	  $(OBJMGR_LIBS) xregexp $(PCRE_LIB)
 
-LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
-       $(FTDS_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) \
+
+LIBS = $(DATA_LOADERS_UTIL_LIBS) $(SRA_SDK_SYSLIBS) \
+	   $(CMPRS_LIBS) $(NETWORK_LIBS) \
        $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)

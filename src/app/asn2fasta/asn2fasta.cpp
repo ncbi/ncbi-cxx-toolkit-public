@@ -41,8 +41,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers.hpp>
+//#include <objtools/data_loaders/genbank/gbloader.hpp>
+//#include <objtools/data_loaders/genbank/readers.hpp>
 
 #include <objects/seqset/gb_release_file.hpp>
 #include <objects/seqres/Seq_graph.hpp>
@@ -52,9 +52,9 @@
 
 #include <objects/submit/Seq_submit.hpp>
 
-#ifdef HAVE_NCBI_VDB
-#  include <sra/data_loaders/wgs/wgsloader.hpp>
-#endif
+//#ifdef HAVE_NCBI_VDB
+//#  include <sra/data_loaders/wgs/wgsloader.hpp>
+//#endif
 
 #include <objtools/cleanup/cleanup.hpp>
 
@@ -63,6 +63,7 @@
 #include <util/compress/stream.hpp>
 #include <dbapi/driver/drivers.hpp>
 
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <objtools/writers/fasta_writer.hpp>
 
 
@@ -301,6 +302,8 @@ void CAsn2FastaApp::Init(void)
                            "Do internal data cleanup prior to formatting");
      }}
 
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -389,6 +392,7 @@ int CAsn2FastaApp::Run(void)
 {
     // initialize conn library
     CONNECT_Init(&GetConfig());
+/*
 #ifdef HAVE_PUBSEQ_OS
     // we may require PubSeqOS readers at some point, so go ahead and make
     // sure they are properly registered
@@ -396,24 +400,34 @@ int CAsn2FastaApp::Run(void)
     GenBankReaders_Register_Pubseq2();
     DBAPI_RegisterDriver_FTDS();
 #endif
-
+*/
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
         NCBI_THROW(CException, eUnknown,
                    "Could not create object manager");
     }
+/*
+
     CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
 #ifdef HAVE_NCBI_VDB
     CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
                                             CObjectManager::eDefault,
                                             88);
 #endif
-    m_Scope.Reset(new CScope(*m_Objmgr));
-    m_Scope->AddDefaults();
-
+*/
+    static const CDataLoadersUtil::TLoaders default_loaders = 
+        CDataLoadersUtil::fGenbank | 
+        CDataLoadersUtil::fVDB |
+        CDataLoadersUtil::fSRA;
+        
     try {
         const CArgs& args = GetArgs();
+        CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
+
+        m_Scope.Reset(new CScope(*m_Objmgr));
+        m_Scope->AddDefaults();
+
         m_OnlyNucs = args["nucs-only"];
         m_OnlyProts = args["prots-only"];
 
