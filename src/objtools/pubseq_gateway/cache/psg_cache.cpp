@@ -65,42 +65,23 @@ void sAddRuntimeError(
     error_list.emplace_back(error);
 }
 
-void ApplyInheritedSeqIds(
-    CPubseqGatewayCacheBioseqInfo* cache,
-    string const & accession,
-    int seq_id_type,
-    string& data)
+void ApplyInheritedSeqIds(CPubseqGatewayCacheBioseqInfo* cache, CBioseqInfoRecord& record)
 {
     if (cache) {
-        ncbi::psg::retrieval::BioseqInfoValue record;
-        if (record.ParseFromString(data) && record.state() != ncbi::psg::retrieval::SEQ_STATE_LIVE) {
+        if (record.GetState() != ncbi::psg::retrieval::SEQ_STATE_LIVE) {
             CPubseqGatewayCache::TBioseqInfoRequest request;
-            request.SetAccession(accession).SetSeqIdType(seq_id_type);
+            request.SetAccession(record.GetAccession()).SetSeqIdType(record.GetSeqIdType());
             CPubseqGatewayCache::TBioseqInfoResponse response = cache->Fetch(request);
             if (!response.empty()) {
-                ncbi::psg::retrieval::BioseqInfoValue latest_record;
-                if (
-                    latest_record.ParseFromString(response[0].data)
-                    && latest_record.state() == ncbi::psg::retrieval::SEQ_STATE_LIVE
-                ) {
+                auto& latest_record = response[0];
+                if (latest_record.GetState() == ncbi::psg::retrieval::SEQ_STATE_LIVE) {
                     set<int16_t> seq_id_types;
-                    for (auto const & seq_id : record.seq_ids()) {
-                        seq_id_types.insert(seq_id.sec_seq_id_type());
+                    for (auto const & seq_id : record.GetSeqIds()) {
+                        seq_id_types.insert(get<0>(seq_id));
                     }
-                    bool needs_update{false};
-                    for (auto const & seq_id : latest_record.seq_ids()) {
-                        if (seq_id_types.count(seq_id.sec_seq_id_type()) == 0) {
-                            auto item = record.mutable_seq_ids()->Add();
-                            item->set_sec_seq_id_type(seq_id.sec_seq_id_type());
-                            item->set_sec_seq_id(seq_id.sec_seq_id());
-                            needs_update = true;
-                        }
-                    }
-
-                    if (needs_update) {
-                        string updated_data;
-                        if (record.SerializeToString(&updated_data)) {
-                            swap(data, updated_data);
+                    for (auto const & seq_id : latest_record.GetSeqIds()) {
+                        if (seq_id_types.count(get<0>(seq_id)) == 0) {
+                            record.GetSeqIds().insert(seq_id);
                         }
                     }
                 }
@@ -181,7 +162,7 @@ CPubseqGatewayCache::TBioseqInfoResponse CPubseqGatewayCache::FetchBioseqInfo(TB
     if (m_BioseqInfoCache && request.HasField(TBioseqInfoRequest::EFields::eAccession)) {
         TBioseqInfoResponse response = m_BioseqInfoCache->Fetch(request);
         for (auto & record : response) {
-            ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record.accession, record.seq_id_type, record.data);
+            ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record);
         }
         return response;
     }

@@ -8,8 +8,8 @@ REQUIRES = MT Linux LMDB PROTOBUF GMOCK
 #COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
 
 LOCAL_CPPFLAGS=-I$(import_root)/../include
-CPPFLAGS = $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(GMOCK_INCLUDE) $(ORIG_CPPFLAGS) $(COVERAGE_FLAGS)
-LIB = $(SEQ_LIBS) pub medline biblio general psg_protobuf psg_cache  xser xutil $(LOCAL_LIB) xncbi
+CPPFLAGS = $(LMDB_INCLUDE) $(GMOCK_INCLUDE) $(ORIG_CPPFLAGS) $(COVERAGE_FLAGS)
+LIB = $(SEQ_LIBS) pub medline biblio general psg_cache psg_cassandra psg_protobuf xser xutil $(LOCAL_LIB) xncbi
 LIBS = $(LMDB_LIBS) $(PROTOBUF_LIBS) $(GMOCK_LIBS) $(ORIG_LIBS)
 LOCAL_CPPFLAGS += -fno-delete-null-pointer-checks
 

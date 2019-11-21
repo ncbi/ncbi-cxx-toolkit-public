@@ -45,7 +45,6 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 BEGIN_SCOPE()
 
@@ -115,26 +114,24 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
     request.Reset().SetSat(4).SetSatKey(9965740);
     response = m_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
-    EXPECT_EQ(1114019083516, response[0].last_modified);
+    EXPECT_EQ(1114019083516, response[0].GetModified());
 
     request.Reset().SetSat(0).SetSatKey(2054006);
     response = m_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
-    EXPECT_EQ(823387172086, response[0].last_modified);
+    EXPECT_EQ(823387172086, response[0].GetModified());
 
-    ::psg::retrieval::BlobPropValue value;
-    EXPECT_TRUE(value.ParseFromString(response[0].data));
-    EXPECT_EQ(0, value.class_());
-    EXPECT_EQ(823387172086L, value.date_asn1());
-    EXPECT_EQ("SPT", value.div());
-    EXPECT_EQ(36UL, value.flags());
-    EXPECT_EQ(-2208970800000L, value.hup_date());
-    EXPECT_EQ("", value.id2_info());
-    EXPECT_EQ(1, value.n_chunks());
-    EXPECT_EQ(6, value.owner());
-    EXPECT_EQ(1145L, value.size());
-    EXPECT_EQ(1145L, value.size_unpacked());
-    EXPECT_EQ("cavanaug", value.username());
+    EXPECT_EQ(0, response[0].GetClass());
+    EXPECT_EQ(823387172086L, response[0].GetDateAsn1());
+    EXPECT_EQ("SPT", response[0].GetDiv());
+    EXPECT_EQ(36UL, response[0].GetFlags());
+    EXPECT_EQ(-2208970800000L, response[0].GetHupDate());
+    EXPECT_EQ("", response[0].GetId2Info());
+    EXPECT_EQ(1, response[0].GetNChunks());
+    EXPECT_EQ(6, response[0].GetOwner());
+    EXPECT_EQ(1145L, response[0].GetSize());
+    EXPECT_EQ(1145L, response[0].GetSizeUnpacked());
+    EXPECT_EQ("cavanaug", response[0].GetUserName());
 }
 
 TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKeyLastModified)
@@ -156,18 +153,15 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKeyLastModified)
     request.Reset().SetSat(0).SetSatKey(2054006).SetLastModified(823387172086);
     response = m_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
-    EXPECT_EQ(823387172086, response[0].last_modified);
-    EXPECT_EQ(0, response[0].sat);
-    EXPECT_EQ(2054006, response[0].sat_key);
+    EXPECT_EQ(823387172086, response[0].GetModified());
+    EXPECT_EQ(2054006, response[0].GetKey());
 
-    ::psg::retrieval::BlobPropValue value;
-    EXPECT_TRUE(value.ParseFromString(response[0].data));
-    EXPECT_EQ(823387172086L, value.date_asn1());
-    EXPECT_EQ("SPT", value.div());
-    EXPECT_EQ("", value.id2_info());
-    EXPECT_EQ(1, value.n_chunks());
-    EXPECT_EQ(1145L, value.size());
-    EXPECT_EQ("cavanaug", value.username());
+    EXPECT_EQ(823387172086L, response[0].GetDateAsn1());
+    EXPECT_EQ("SPT", response[0].GetDiv());
+    EXPECT_EQ("", response[0].GetId2Info());
+    EXPECT_EQ(1, response[0].GetNChunks());
+    EXPECT_EQ(1145L, response[0].GetSize());
+    EXPECT_EQ("cavanaug", response[0].GetUserName());
 }
 
 END_SCOPE()

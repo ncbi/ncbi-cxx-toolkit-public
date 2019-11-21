@@ -41,7 +41,7 @@
 #include <corelib/ncbistl.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
-#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 
 #include "psg_cache_base.hpp"
 
@@ -51,14 +51,11 @@ class CPubseqGatewayCacheBlobProp
     : public CPubseqGatewayCacheBase
 {
  public:
-    using TBlobPropResponse = TBlobPropCacheResponse;
-    using TBlobPropRequest = CBlobFetchRequest;
-
     explicit CPubseqGatewayCacheBlobProp(const string& file_name);
     virtual ~CPubseqGatewayCacheBlobProp() override;
     void Open(const set<int>& sat_ids);
 
-    TBlobPropResponse Fetch(CBlobFetchRequest const& request);
+    vector<CBlobRecord> Fetch(CBlobFetchRequest const& request);
 
     static string PackKey(int32_t sat_key);
     static string PackKey(int32_t sat_key, int64_t last_modified);
@@ -66,6 +63,7 @@ class CPubseqGatewayCacheBlobProp
     static bool UnpackKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key);
 
  private:
+    bool x_ExtractRecord(CBlobRecord& record, lmdb::val const& value) const;
     vector<unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>> m_Dbis;
 };
 

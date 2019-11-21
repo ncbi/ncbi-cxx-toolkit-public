@@ -38,7 +38,7 @@
 #include <utility>
 #include <vector>
 
-#include <util/lmdbxx/lmdb++.h>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 #include "psg_cache_bytes_util.hpp"
 
@@ -98,26 +98,43 @@ void CPubseqGatewayCacheBlobProp::Open(const set<int>& sat_ids)
     }
 }
 
-CPubseqGatewayCacheBlobProp::TBlobPropResponse CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& request)
+bool CPubseqGatewayCacheBlobProp::x_ExtractRecord(CBlobRecord& record, lmdb::val const& value) const
 {
-    if (
-        !request.HasField(TBlobPropRequest::EFields::eSat)
-        || !request.HasField(TBlobPropRequest::EFields::eSatKey)
-    ) {
-        return TBlobPropResponse();
+    ::psg::retrieval::BlobPropValue info;
+    if (!info.ParseFromArray(value.data(), value.size())) {
+        return false;
     }
+    record
+        .SetClass(info.class_())
+        .SetDateAsn1(info.date_asn1())
+        .SetHupDate(info.hup_date())
+        .SetDiv(info.div())
+        .SetFlags(info.flags())
+        .SetNChunks(info.n_chunks())
+        .SetId2Info(info.id2_info())
+        .SetOwner(info.owner())
+        .SetSize(info.size())
+        .SetSizeUnpacked(info.size_unpacked())
+        .SetUserName(info.username());
+    return true;
+}
 
-
+vector<CBlobRecord> CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& request)
+{
+    vector<CBlobRecord> response;
+    if (
+        !request.HasField(CBlobFetchRequest::EFields::eSat)
+        || !request.HasField(CBlobFetchRequest::EFields::eSatKey)
+    ) {
+        return response;
+    }
     auto sat = request.GetSat();
     if (!m_Env || sat < 0 || static_cast<size_t>(sat) >= m_Dbis.size() || !m_Dbis[sat]) {
-        return TBlobPropResponse();
+        return response;
     }
-
-    TBlobPropResponse response;
     auto sat_key = request.GetSatKey();
     bool with_modified = request.HasField(CBlobFetchRequest::EFields::eLastModified);
     string filter = with_modified ? PackKey(sat_key, request.GetLastModified()) : PackKey(sat_key);
-
     {
         auto rdtxn = BeginReadTxn();
         lmdb::val val;
@@ -137,16 +154,17 @@ CPubseqGatewayCacheBlobProp::TBlobPropResponse CPubseqGatewayCacheBlobProp::Fetc
                 if (rv && (!with_modified || last_modified == request.GetLastModified())) {
                     response.resize(response.size() + 1);
                     auto& last_record = response[response.size() - 1];
-                    last_record.sat = sat;
-                    last_record.sat_key = sat_key;
-                    last_record.last_modified = last_modified;
-                    last_record.data.assign(val.data(), val.size());
+                    last_record.SetKey(sat_key);
+                    last_record.SetModified(last_modified);
+                    // Skip record if we cannot parse protobuf data
+                    if (!x_ExtractRecord(last_record, val)) {
+                        response.resize(response.size() - 1);
+                    }
                 }
                 rv = cursor.get(key, val, MDB_NEXT);
             }
         }
     }
-
     return response;
 }
 

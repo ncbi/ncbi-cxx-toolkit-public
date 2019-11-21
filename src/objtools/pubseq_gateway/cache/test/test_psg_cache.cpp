@@ -45,13 +45,10 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
-USING_SCOPE(ncbi::psg::retrieval);
-USING_SCOPE(::google::protobuf);
 
 BEGIN_SCOPE()
 
@@ -95,7 +92,7 @@ string PrintableToHext(const string& str)
     return ss.str();
 }
 
-string GetListOfSeqIds(const RepeatedPtrField<BioseqInfoValue_SecondaryId>& seq_ids)
+string GetListOfSeqIds(CBioseqInfoRecord::TSeqIds const& seq_ids)
 {
     stringstream ss;
     bool empty = true;
@@ -103,7 +100,7 @@ string GetListOfSeqIds(const RepeatedPtrField<BioseqInfoValue_SecondaryId>& seq_
         if (!empty) {
             ss << ", ";
         }
-        ss << "{" << it.sec_seq_id_type() << ", " << it.sec_seq_id() << "}";
+        ss << "{" << get<0>(it) << ", " << get<1>(it) << "}";
         empty = false;
     }
     return ss.str();
@@ -129,15 +126,17 @@ class CTestPsgCache
  private:
     bool ParsePrimarySeqId(const string& fasta_seqid, string& accession, int& version, int& seq_id_type);
     bool ParseSecondarySeqId(const string& fasta_seqid, string& seq_id_str, int& seq_id_type);
-    void PrintBioseqInfo(
-        bool lookup_res, const string& accession, int version, int seq_id_type, int64_t gi, const string& data);
-    void PrintPrimaryId(bool lookup_res, const string& seq_id, int seq_id_type, const string& data);
-    void PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t last_modified, const string& data);
+
+    void PrintBioseqInfo(CBioseqInfoRecord const& record) const;
+    void PrintPrimaryId(CSI2CSIRecord const& record) const;
+    void PrintBlobProp(CBlobRecord const& record) const;
+
     void LookupBioseqInfoByPrimary(const string& fasta_seqid, int force_version, int force_seq_id_type);
     void LookupBioseqInfoByPrimaryAVT(const string& accession, int version, int seq_id_type);
     void LookupBioseqInfoBySecondary(const string& fasta_seqid, int force_seq_id_type);
     void LookupPrimaryBySecondary(const string& fasta_seqid, int force_seq_id_type);
     void LookupBlobProp(int sat, int sat_key, int64_t last_modified = -1);
+
     string m_BioseqInfoDbFile;
     string m_Si2csiDbFile;
     string m_BlobPropDbFile;
@@ -340,83 +339,51 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
     return true;
 }
 
-void CTestPsgCache::PrintBioseqInfo(
-    bool lookup_res, const string& accession, int version, int seq_id_type, int64_t gi, const string& data)
+void CTestPsgCache::PrintBioseqInfo(const CBioseqInfoRecord& record) const
 {
-    if (lookup_res) {
-        BioseqInfoValue value;
-        bool b = value.ParseFromString(data);
-        if (b) {
-            cout << "result: bioseq_info cache hit" << endl
-                 << "accession: " << accession << endl
-                 << "version: " << version << endl
-                 << "seq_id_type: " << seq_id_type << endl
-                 << "gi: " << gi << endl
-                 << "sat: " << value.blob_key().sat() << endl
-                 << "sat_key: " << value.blob_key().sat_key() << endl
-                 << "state: " << value.state() << endl
-                 << "mol: " << value.mol() << endl
-                 << "hash: " << value.hash() << endl
-                 << "length: " << value.length() << endl
-                 << "date_changed: " << value.date_changed() << endl
-                 << "tax_id: " << value.tax_id() << endl
-                 << "seq_ids: {" << GetListOfSeqIds(value.seq_ids()) << "}" << endl;
-        } else {
-            cout << "result: bioseq_info cache error: data corrupted" << endl;
-        }
-    } else {
-        cout << "result: bioseq_info cache miss" << endl;
-    }
+    cout << "result: bioseq_info cache hit" << endl
+         << "accession: " << record.GetAccession() << endl
+         << "version: " << record.GetVersion() << endl
+         << "seq_id_type: " << record.GetSeqIdType() << endl
+         << "gi: " << record.GetGI() << endl
+         << "sat: " << record.GetSat() << endl
+         << "sat_key: " << record.GetSatKey() << endl
+         << "state: " << record.GetState() << endl
+         << "mol: " << record.GetMol() << endl
+         << "hash: " << record.GetHash() << endl
+         << "length: " << record.GetLength() << endl
+         << "date_changed: " << record.GetDateChanged() << endl
+         << "tax_id: " << record.GetTaxId() << endl
+         << "seq_ids: {" << GetListOfSeqIds(record.GetSeqIds()) << "}" << endl;
 }
 
-void CTestPsgCache::PrintPrimaryId(bool lookup_res, const string& seq_id, int seq_id_type, const string& data)
+void CTestPsgCache::PrintPrimaryId(CSI2CSIRecord const& record) const
 {
-    if (lookup_res) {
-        BioseqInfoKey value;
-        bool b = value.ParseFromString(data);
-        if (b) {
-            cout << "result: si2csi cache hit" << endl
-                 << "sec_seq_id: " << seq_id << endl
-                 << "sec_seq_id_type: " << seq_id_type << endl
-                 << "accession: " << value.accession() << endl
-                 << "version: " << value.version() << endl
-                 << "seq_id_type: " << value.seq_id_type() << endl
-                 << "gi: " << value.gi() << endl;
-        } else {
-            cout << "result: si2csi cache error: data corrupted" << endl;
-        }
-    } else {
-        cout << "result: si2csi cache miss" << endl;
-    }
+    cout << "result: si2csi cache hit" << endl
+         << "sec_seq_id: " << record.GetSecSeqId() << endl
+         << "sec_seq_id_type: " << record.GetSecSeqIdType() << endl
+         << "accession: " << record.GetAccession() << endl
+         << "version: " << record.GetVersion() << endl
+         << "seq_id_type: " << record.GetSeqIdType() << endl
+         << "gi: " << record.GetGI() << endl;
 }
 
-void CTestPsgCache::PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t last_modified, const string& data)
+void CTestPsgCache::PrintBlobProp(CBlobRecord const& record) const
 {
-    if (lookup_res) {
-        BlobPropValue value;
-        bool b = value.ParseFromString(data);
-        if (b) {
-            cout << "result: blob_prop cache hit" << endl
-                 << "sat: " << sat << endl
-                 << "sat_key: " << sat_key << endl
-                 << "last_modified: " << last_modified << endl
-                 << "class: " << value.class_() << endl
-                 << "date_asn1: " << value.date_asn1() << endl
-                 << "div: " << value.div() << endl
-                 << "flags: " << value.flags() << endl
-                 << "hup_date: " << value.hup_date() << endl
-                 << "id2_info: " << value.id2_info() << endl
-                 << "n_chunks: " << value.n_chunks() << endl
-                 << "owner: " << value.owner() << endl
-                 << "size: " << value.size() << endl
-                 << "size_unpacked: " << value.size_unpacked() << endl
-                 << "username: " << value.username() << endl;
-        } else {
-            cout << "result: blob_prop cache error: data corrupted" << endl;
-        }
-    } else {
-        cout << "result: blob_prop cache miss" << endl;
-    }
+    cout << "result: blob_prop cache hit" << endl
+         << "sat_key: " << record.GetKey() << endl
+         << "last_modified: " << record.GetModified() << endl
+         << "class: " << record.GetClass() << endl
+         << "date_asn1: " << record.GetDateAsn1() << endl
+         << "div: " << record.GetDiv() << endl
+         << "flags: " << record.GetFlags() << endl
+         << "hup_date: " << record.GetHupDate() << endl
+         << "id2_info: " << record.GetId2Info() << endl
+         << "n_chunks: " << record.GetNChunks() << endl
+         << "owner: " << record.GetOwner() << endl
+         << "size: " << record.GetSize() << endl
+         << "size_unpacked: " << record.GetSizeUnpacked() << endl
+         << "username: " << record.GetUserName() << endl;
 }
 
 void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid, int force_version, int force_seq_id_type)
@@ -454,10 +421,10 @@ void CTestPsgCache::LookupBioseqInfoByPrimaryAVT(const string& accession, int ve
     }
     auto response = m_LookupCache->FetchBioseqInfo(request);
     if (response.empty()) {
-        PrintBioseqInfo(false, accession, 0, 0, 0, "");
+        cout << "result: bioseq_info cache miss" << endl;
     }
     for (auto & item : response) {
-        PrintBioseqInfo(true, accession, item.version, item.seq_id_type, item.gi, item.data);
+        PrintBioseqInfo(item);
     }
 }
 
@@ -483,15 +450,9 @@ void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int f
     }
     auto response = m_LookupCache->FetchSi2Csi(request);
     if (response.empty()) {
-        cout << "result: si2csi cache miss" << endl;
+        cout << "result: si2csi cache miss or si2csi data corrupted" << endl;
     } else {
-        BioseqInfoKey value;
-        bool b = value.ParseFromString(response[0].data);
-        if (b) {
-            LookupBioseqInfoByPrimaryAVT(value.accession(), value.version(), value.seq_id_type());
-        } else {
-            cout << "result: si2csi cache error: data corrupted" << endl;
-        }
+        LookupBioseqInfoByPrimaryAVT(response[0].GetAccession(), response[0].GetVersion(), response[0].GetSeqIdType());
     }
 }
 
@@ -506,20 +467,18 @@ void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid, int forc
         seq_id = fasta_seqid;
         seq_id_type = -1;
     }
-
     if (force_seq_id_type != INT_MIN) {
         seq_id_type = force_seq_id_type;
     }
-
     request.SetSecSeqId(fasta_seqid);
     if (seq_id_type >= 0) {
         request.SetSecSeqIdType(seq_id_type);
     }
     auto response = m_LookupCache->FetchSi2Csi(request);
     if (response.empty()) {
-        PrintPrimaryId(false, "", 0, "");
+        cout << "result: si2csi cache miss" << endl;
     } else {
-        PrintPrimaryId(true, response[0].sec_seqid, response[0].sec_seqid_type, response[0].data);
+        PrintPrimaryId(response[0]);
     }
 }
 
@@ -532,10 +491,10 @@ void CTestPsgCache::LookupBlobProp(int sat, int sat_key, int64_t last_modified)
     }
     auto response = m_LookupCache->FetchBlobProp(request);
     if (response.empty()) {
-        PrintBlobProp(false, 0, 0, 0, "");
+        cout << "result: blob_prop cache miss" << endl;
     }
     for (auto & item : response) {
-        PrintBlobProp(true, sat, sat_key, item.last_modified, item.data);
+        PrintBlobProp(item);
     }
 }
 

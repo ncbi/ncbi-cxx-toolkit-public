@@ -270,7 +270,7 @@ TEST_F(CBioseqInfoTaskFetchTest, SeqIdsInheritance) {
     EXPECT_EQ(5, actual_records[0].GetVersion());
     EXPECT_EQ(10, actual_records[0].GetSeqIdType());
     EXPECT_EQ(37623929, actual_records[0].GetGI());
-    EXPECT_EQ(4, actual_records[0].GetSeqIds().size());
+    EXPECT_EQ(4UL, actual_records[0].GetSeqIds().size());
     set<tuple<int16_t, string>> expected_seq_ids;
     // Own
     expected_seq_ids.insert(make_tuple<int16_t, string>(12, "37623929"));

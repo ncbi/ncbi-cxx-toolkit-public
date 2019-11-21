@@ -45,7 +45,6 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 BEGIN_SCOPE()
 

@@ -45,7 +45,6 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 BEGIN_SCOPE()
 
@@ -108,14 +107,12 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqId)
     request.Reset().SetSecSeqId("3643631");
     auto response = m_Cache->FetchSi2Csi(request);
     ASSERT_EQ(1UL, response.size());
-    EXPECT_EQ(12, response[0].sec_seqid_type);
+    EXPECT_EQ(12, response[0].GetSecSeqIdType());
 
-    ::psg::retrieval::BioseqInfoKey value;
-    EXPECT_TRUE(value.ParseFromString(response[0].data));
-    EXPECT_EQ("AC005299", value.accession());
-    EXPECT_EQ(0, value.version());
-    EXPECT_EQ(5, value.seq_id_type());
-    EXPECT_EQ(3643631, value.gi());
+    EXPECT_EQ("AC005299", response[0].GetAccession());
+    EXPECT_EQ(0, response[0].GetVersion());
+    EXPECT_EQ(5, response[0].GetSeqIdType());
+    EXPECT_EQ(3643631, response[0].GetGI());
 }
 
 TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqIdSeqIdType)
@@ -135,12 +132,10 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqIdSeqIdType)
     auto response = m_Cache->FetchSi2Csi(request);
     ASSERT_EQ(1UL, response.size());
 
-    ::psg::retrieval::BioseqInfoKey value;
-    EXPECT_TRUE(value.ParseFromString(response[0].data));
-    EXPECT_EQ("AC005299", value.accession());
-    EXPECT_EQ(0, value.version());
-    EXPECT_EQ(5, value.seq_id_type());
-    EXPECT_EQ(3643631, value.gi());
+    EXPECT_EQ("AC005299", response[0].GetAccession());
+    EXPECT_EQ(0, response[0].GetVersion());
+    EXPECT_EQ(5, response[0].GetSeqIdType());
+    EXPECT_EQ(3643631, response[0].GetGI());
 }
 
 END_SCOPE()

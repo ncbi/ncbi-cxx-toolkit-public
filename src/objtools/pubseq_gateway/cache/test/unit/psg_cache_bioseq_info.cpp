@@ -48,7 +48,6 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 BEGIN_SCOPE()
 
@@ -121,10 +120,10 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupByAccession)
     request.Reset().SetAccession("AC005299");
     auto response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 6UL);
-    EXPECT_EQ("AC005299", response[0].accession);
-    EXPECT_EQ(1, response[0].version);
-    EXPECT_EQ(5, response[0].seq_id_type);
-    EXPECT_EQ(3786039, response[0].gi);
+    EXPECT_EQ("AC005299", response[0].GetAccession());
+    EXPECT_EQ(1, response[0].GetVersion());
+    EXPECT_EQ(5, response[0].GetSeqIdType());
+    EXPECT_EQ(3786039, response[0].GetGI());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersion)
@@ -134,10 +133,10 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersion)
     request.SetAccession("AC005299").SetVersion(0);
     auto response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
-    EXPECT_EQ("AC005299", response[0].accession);
-    EXPECT_EQ(0, response[0].version);
-    EXPECT_EQ(5, response[0].seq_id_type);
-    EXPECT_EQ(3746100, response[0].gi);
+    EXPECT_EQ("AC005299", response[0].GetAccession());
+    EXPECT_EQ(0, response[0].GetVersion());
+    EXPECT_EQ(5, response[0].GetSeqIdType());
+    EXPECT_EQ(3746100, response[0].GetGI());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdType)
@@ -156,19 +155,19 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdType)
     request.Reset().SetAccession("AC005299").SetVersion(0);
     response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
-    EXPECT_EQ("AC005299", response[0].accession);
-    EXPECT_EQ(0, response[0].version);
-    EXPECT_EQ(5, response[0].seq_id_type);
-    EXPECT_EQ(3746100, response[0].gi);
+    EXPECT_EQ("AC005299", response[0].GetAccession());
+    EXPECT_EQ(0, response[0].GetVersion());
+    EXPECT_EQ(5, response[0].GetSeqIdType());
+    EXPECT_EQ(3746100, response[0].GetGI());
 
     // version >= 0 && seq_id_type > 0
     request.Reset().SetAccession("AC005299").SetVersion(0).SetSeqIdType(5);
     response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
-    EXPECT_EQ("AC005299", response[0].accession);
-    EXPECT_EQ(0, response[0].version);
-    EXPECT_EQ(5, response[0].seq_id_type);
-    EXPECT_EQ(3746100, response[0].gi);
+    EXPECT_EQ("AC005299", response[0].GetAccession());
+    EXPECT_EQ(0, response[0].GetVersion());
+    EXPECT_EQ(5, response[0].GetSeqIdType());
+    EXPECT_EQ(3746100, response[0].GetGI());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionGi)
@@ -178,10 +177,10 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionGi)
     request.Reset().SetAccession("AC005299").SetGI(3643631);
     auto response = m_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 1UL);
-    EXPECT_EQ("AC005299", response[0].accession);
-    EXPECT_EQ(0, response[0].version);
-    EXPECT_EQ(5, response[0].seq_id_type);
-    EXPECT_EQ(3643631, response[0].gi);
+    EXPECT_EQ("AC005299", response[0].GetAccession());
+    EXPECT_EQ(0, response[0].GetVersion());
+    EXPECT_EQ(5, response[0].GetSeqIdType());
+    EXPECT_EQ(3643631, response[0].GetGI());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
@@ -197,17 +196,15 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
     response = m_Cache->FetchBioseqInfo(request);
 
     ASSERT_EQ(response.size(), 1UL);
-    ::psg::retrieval::BioseqInfoValue value;
-    EXPECT_TRUE(value.ParseFromString(response[0].data));
-    EXPECT_EQ(907538716500, value.date_changed());
-    EXPECT_EQ(1310387125, value.hash());
-    EXPECT_EQ(40756, value.length());
-    EXPECT_EQ(1, value.mol());
-    EXPECT_EQ(0, value.blob_key().sat());
-    EXPECT_EQ(5985907, value.blob_key().sat_key());
-    EXPECT_EQ(0, value.state());
-    EXPECT_EQ(5072UL, value.tax_id());
-    EXPECT_EQ("", value.name());
+    EXPECT_EQ(907538716500, response[0].GetDateChanged());
+    EXPECT_EQ(1310387125, response[0].GetHash());
+    EXPECT_EQ(40756, response[0].GetLength());
+    EXPECT_EQ(1, response[0].GetMol());
+    EXPECT_EQ(0, response[0].GetSat());
+    EXPECT_EQ(5985907, response[0].GetSatKey());
+    EXPECT_EQ(0, response[0].GetState());
+    EXPECT_EQ(5072UL, response[0].GetTaxId());
+    EXPECT_EQ("", response[0].GetName());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
@@ -218,18 +215,16 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
     auto response = m_Cache->FetchBioseqInfo(request);
 
     ASSERT_EQ(response.size(), 1UL);
-    ::psg::retrieval::BioseqInfoValue value;
-    EXPECT_TRUE(value.ParseFromString(response[0].data));
-    EXPECT_EQ(-785904429, value.hash());
-    EXPECT_EQ(246127941, value.length());
-    EXPECT_EQ(1, value.mol());
-    EXPECT_EQ(24, value.blob_key().sat());
-    EXPECT_EQ(5622604, value.blob_key().sat_key());
-    EXPECT_EQ(0, value.state());
-    EXPECT_EQ(9606UL, value.tax_id());
-    EXPECT_EQ(4, value.seq_ids_size());
+    EXPECT_EQ(-785904429, response[0].GetHash());
+    EXPECT_EQ(246127941, response[0].GetLength());
+    EXPECT_EQ(1, response[0].GetMol());
+    EXPECT_EQ(24, response[0].GetSat());
+    EXPECT_EQ(5622604, response[0].GetSatKey());
+    EXPECT_EQ(0, response[0].GetState());
+    EXPECT_EQ(9606UL, response[0].GetTaxId());
+    EXPECT_EQ(4, response[0].GetSeqIds().size());
 
-    set<tuple<int16_t, string>> expected_seq_ids, actual_seq_ids;
+    set<tuple<int16_t, string>> expected_seq_ids;
 
     // Inherited
     expected_seq_ids.insert(make_tuple<int16_t, string>(11, "ASM:GCF_000001305|1"));
@@ -239,10 +234,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
     // Own
     expected_seq_ids.insert(make_tuple<int16_t, string>(12, "37623929"));
 
-    for (auto const & item : value.seq_ids()) {
-        actual_seq_ids.insert(make_tuple(static_cast<int16_t>(item.sec_seq_id_type()), item.sec_seq_id()));
-    }
-    EXPECT_EQ(expected_seq_ids, actual_seq_ids);
+    EXPECT_EQ(expected_seq_ids, response[0].GetSeqIds());
 }
 
 END_SCOPE()

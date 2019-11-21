@@ -35,8 +35,10 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include <util/lmdbxx/lmdb++.h>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 #include "psg_cache_bytes_util.hpp"
 
@@ -137,14 +139,37 @@ bool CPubseqGatewayCacheBioseqInfo::x_IsMatchingRecord(
     return acceptable;
 }
 
-CPubseqGatewayCacheBioseqInfo::TBioseqInfoResponse
-CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchRequest const& request)
+bool CPubseqGatewayCacheBioseqInfo::x_ExtractRecord(CBioseqInfoRecord& record, lmdb::val const& value) const
 {
+    ::psg::retrieval::BioseqInfoValue info;
+    if (!info.ParseFromArray(value.data(), value.size())) {
+        return false;
+    }
+    CBioseqInfoRecord::TSeqIds seq_ids;
+    for (auto const & item : info.seq_ids()) {
+        seq_ids.insert(make_tuple(static_cast<int16_t>(item.sec_seq_id_type()), item.sec_seq_id()));
+    }
+    record
+        .SetHash(info.hash())
+        .SetLength(info.length())
+        .SetMol(info.mol())
+        .SetName(info.name())
+        .SetSat(info.blob_key().sat())
+        .SetSatKey(info.blob_key().sat_key())
+        .SetState(info.state())
+        .SetTaxId(info.tax_id())
+        .SetDateChanged(info.date_changed())
+        .SetSeqIds(move(seq_ids));
+    return true;
+}
+
+vector<CBioseqInfoRecord> CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchRequest const& request)
+{
+    vector<CBioseqInfoRecord> response;
     if (!request.HasField(CBioseqInfoFetchRequest::EFields::eAccession)) {
-        return TBioseqInfoResponse();
+        return response;
     }
 
-    TBioseqInfoResponse response;
     string filter = x_MakeLookupKey(request);
     {
         auto rdtxn = BeginReadTxn();
@@ -167,11 +192,15 @@ CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchRequest const& request)
                 if (rv && x_IsMatchingRecord(request, version, seq_id_type, gi)) {
                     response.resize(response.size() + 1);
                     auto& last_record = response[response.size() - 1];
-                    last_record.accession = accession;
-                    last_record.version = version;
-                    last_record.seq_id_type = seq_id_type;
-                    last_record.gi = gi;
-                    last_record.data.assign(val.data(), val.size());
+                    last_record
+                        .SetAccession(accession)
+                        .SetVersion(version)
+                        .SetSeqIdType(seq_id_type)
+                        .SetGI(gi);
+                    // Skip record if we cannot parse protobuf data
+                    if (!x_ExtractRecord(last_record, val)) {
+                        response.resize(response.size() - 1);
+                    }
                 }
                 rv = cursor.get(key, val, MDB_NEXT);
             }

@@ -155,6 +155,12 @@ class CBioseqInfoRecord
         return *this;
     }
 
+    CBioseqInfoRecord & SetSeqIds(TSeqIds&& value)
+    {
+        m_SeqIds = move(value);
+        return *this;
+    }
+
     CBioseqInfoRecord & SetSeqState(TSeqState  value)
     {
         m_SeqState = value;

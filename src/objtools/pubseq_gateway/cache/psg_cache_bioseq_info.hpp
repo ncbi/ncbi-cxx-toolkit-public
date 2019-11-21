@@ -38,9 +38,9 @@
 
 #include "psg_cache_base.hpp"
 
-#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
-#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
 BEGIN_IDBLOB_SCOPE
 
@@ -48,13 +48,11 @@ class CPubseqGatewayCacheBioseqInfo
     : public CPubseqGatewayCacheBase
 {
  public:
-    using TBioseqInfoResponse = TBioseqInfoCacheResponse;
-
     explicit CPubseqGatewayCacheBioseqInfo(const string& file_name);
     virtual ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
 
-    TBioseqInfoResponse Fetch(CBioseqInfoFetchRequest const& request);
+    vector<CBioseqInfoRecord> Fetch(CBioseqInfoFetchRequest const& request);
 
     static string PackKey(const string& accession, int version);
     static string PackKey(const string& accession, int version, int seq_id_type);
@@ -64,6 +62,7 @@ class CPubseqGatewayCacheBioseqInfo
         const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type, int64_t& gi);
 
  private:
+    bool x_ExtractRecord(CBioseqInfoRecord& record, lmdb::val const& value) const;
     string x_MakeLookupKey(CBioseqInfoFetchRequest const& request) const;
     bool x_IsMatchingRecord(CBioseqInfoFetchRequest const& request, int version, int seq_id_type, int64_t gi) const;
     void ResetDbi();

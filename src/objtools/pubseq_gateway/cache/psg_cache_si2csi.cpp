@@ -36,13 +36,11 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include <util/lmdbxx/lmdb++.h>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 #include "psg_cache_bytes_util.hpp"
-
-#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
-#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
 
 BEGIN_SCOPE()
 USING_IDBLOB_SCOPE;
@@ -87,14 +85,28 @@ void CPubseqGatewayCacheSi2Csi::Open()
     }
 }
 
-CPubseqGatewayCacheSi2Csi::TSi2CsiResponse CPubseqGatewayCacheSi2Csi::Fetch(TSi2CsiRequest const& request)
+bool CPubseqGatewayCacheSi2Csi::x_ExtractRecord(CSI2CSIRecord& record, lmdb::val const& value) const
 {
-    if (!m_Env || !request.HasField(TSi2CsiRequest::EFields::eSecSeqId)) {
-        return TSi2CsiResponse();
+    ::psg::retrieval::BioseqInfoKey info;
+    if (!info.ParseFromArray(value.data(), value.size())) {
+        return false;
     }
-    TSi2CsiResponse response;
+    record
+        .SetAccession(info.accession())
+        .SetVersion(info.version())
+        .SetSeqIdType(info.seq_id_type())
+        .SetGI(info.gi());
+    return true;
+}
+
+vector<CSI2CSIRecord> CPubseqGatewayCacheSi2Csi::Fetch(CSi2CsiFetchRequest const& request)
+{
+    vector<CSI2CSIRecord> response;
+    if (!m_Env || !request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqId)) {
+        return response;
+    }
     string sec_seqid = request.GetSecSeqId();
-    bool with_type = request.HasField(TSi2CsiRequest::EFields::eSecSeqIdType);
+    bool with_type = request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqIdType);
     string filter = with_type ? PackKey(sec_seqid, request.GetSecSeqIdType()) : sec_seqid;
     {
         auto rdtxn = BeginReadTxn();
@@ -110,20 +122,22 @@ CPubseqGatewayCacheSi2Csi::TSi2CsiResponse CPubseqGatewayCacheSi2Csi::Fetch(TSi2
                 ) {
                     break;
                 }
-
                 bool rv = UnpackKey(key.data<const char>(), key.size(), sec_seq_it_type);
                 if (rv && (!with_type || sec_seq_it_type == request.GetSecSeqIdType())) {
                     response.resize(response.size() + 1);
                     auto& last_record = response[response.size() - 1];
-                    last_record.sec_seqid = sec_seqid;
-                    last_record.sec_seqid_type = sec_seq_it_type;
-                    last_record.data.assign(val.data(), val.size());
+                    last_record
+                        .SetSecSeqId(sec_seqid)
+                        .SetSecSeqIdType(sec_seq_it_type);
+                    // Skip record if we cannot parse protobuf data
+                    if (!x_ExtractRecord(last_record, val)) {
+                        response.resize(response.size() - 1);
+                    }
                 }
                 rv = cursor.get(key, val, MDB_NEXT);
             }
         }
     }
-
     return response;
 }
 

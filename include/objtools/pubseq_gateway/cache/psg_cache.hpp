@@ -40,9 +40,11 @@
 #include <string>
 #include <vector>
 
-#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/si2csi/record.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -64,13 +66,13 @@ class CPubseqGatewayCache
     using TRuntimeError = SRuntimeError;
     using TRuntimeErrorList = deque<SRuntimeError>;
 
-    using TBioseqInfoResponse = TBioseqInfoCacheResponse;
+    using TBioseqInfoResponse = vector<CBioseqInfoRecord>;
     using TBioseqInfoRequest = CBioseqInfoFetchRequest;
 
-    using TBlobPropResponse = TBlobPropCacheResponse;
+    using TBlobPropResponse = vector<CBlobRecord>;
     using TBlobPropRequest = CBlobFetchRequest;
 
-    using TSi2CsiResponse = TSi2CsiCacheResponse;
+    using TSi2CsiResponse = vector<CSI2CSIRecord>;
     using TSi2CsiRequest = CSi2CsiFetchRequest;
 
     static const size_t kRuntimeErrorLimit;
@@ -89,7 +91,7 @@ class CPubseqGatewayCache
 
     TBioseqInfoResponse FetchBioseqInfo(TBioseqInfoRequest const& request);
     TBlobPropResponse FetchBlobProp(TBlobPropRequest const& request);
-    TSi2CsiCacheResponse FetchSi2Csi(CSi2CsiFetchRequest const& request);
+    TSi2CsiResponse FetchSi2Csi(CSi2CsiFetchRequest const& request);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);

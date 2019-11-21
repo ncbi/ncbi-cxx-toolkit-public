@@ -37,9 +37,10 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <objtools/pubseq_gateway/impl/cassandra/request.hpp>
-#include <objtools/pubseq_gateway/cache/psg_cache_response.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/si2csi/record.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -48,19 +49,17 @@ class CPubseqGatewayCacheSi2Csi
     : public CPubseqGatewayCacheBase
 {
  public:
-    using TSi2CsiResponse = TSi2CsiCacheResponse;
-    using TSi2CsiRequest = CSi2CsiFetchRequest;
-
     explicit CPubseqGatewayCacheSi2Csi(const string& file_name);
     virtual ~CPubseqGatewayCacheSi2Csi() override;
     void Open();
 
-    TSi2CsiResponse Fetch(TSi2CsiRequest const& request);
+    vector<CSI2CSIRecord> Fetch(CSi2CsiFetchRequest const& request);
 
     static string PackKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type);
 
  private:
+    bool x_ExtractRecord(CSI2CSIRecord& record, lmdb::val const& value) const;
     unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> m_Dbi;
 };
 
