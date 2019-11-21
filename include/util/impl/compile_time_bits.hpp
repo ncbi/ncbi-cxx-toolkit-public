@@ -405,7 +405,9 @@ namespace compile_time_bits
     template<typename _Value>
     struct simple_sort_traits
     {
-        using value_type = _Value;
+        using value_type = typename _Value::type;
+        using hash_type  = typename _Value::hash_type;
+        using init_type  = value_type;
 
         struct Pred
         {
@@ -422,10 +424,12 @@ namespace compile_time_bits
         }
     };
 
-    template<typename _Pair>
+    template<typename _T1, typename _T2>
     struct straight_sort_traits
     {
-        using value_type = _Pair;
+        using value_type = const_pair<typename _T1::type, typename _T2::type>;
+        using init_type = value_type;
+        using hash_type = typename _T1::hash_type;
 
         struct Pred
         {
@@ -435,6 +439,10 @@ namespace compile_time_bits
                 return input[l].first < input[r].first;
             }
         };
+        static constexpr hash_type get_hash(const value_type& v)
+        {
+            return v.first;
+        }
         template<typename _Input>
         static constexpr auto construct(const _Input& input)
         {
@@ -442,10 +450,12 @@ namespace compile_time_bits
         }
     };
 
-    template<typename _Pair>
+    template<typename _T1, typename _T2>
     struct flipped_sort_traits
     {
-        using value_type = const_pair<typename _Pair::second_type, typename _Pair::first_type>;
+        using value_type = const_pair<typename _T2::type, typename _T1::type>;
+        using init_type  = const_pair<typename _T1::type, typename _T2::type>;
+        using hash_type = typename _T2::hash_type;
 
         struct Pred
         {
@@ -455,6 +465,10 @@ namespace compile_time_bits
                 return input[l].second < input[r].second;
             }
         };
+        static constexpr hash_type get_hash(const value_type& v)
+        {
+            return v.second;
+        }
         template<typename _Input>
         static constexpr value_type construct(const _Input& input)
         {
@@ -466,6 +480,10 @@ namespace compile_time_bits
     class TInsertSorter
     {
     public:
+        using sort_traits = _Traits;
+        using init_type = typename _Traits::init_type;
+        using value_type = typename _Traits::value_type;
+        using hash_type  = typename _Traits::hash_type;
 
         template<typename _Indices, typename _Value>
         static constexpr void insert_down(_Indices& indices, size_t head, size_t tail, _Value current)
@@ -567,7 +585,7 @@ namespace compile_time_bits
 
         template<typename _Input, typename _Indices, std::size_t... I>
         static constexpr auto construct(const _Input& input, const _Indices& indices, std::index_sequence<I...>)
-            -> const_array<typename _Traits::value_type, sizeof...(I)>
+            -> const_array<value_type, sizeof...(I)>
         {
             auto real_size = indices.first;
             auto _max = indices.second[real_size - 1];
@@ -578,6 +596,30 @@ namespace compile_time_bits
         {
             auto indices = make_indices(input);
             return std::make_pair(indices.first, construct(input, indices, std::make_index_sequence<N>{}));
+        }
+
+        template<typename _Input, typename _Indices, std::size_t... I>
+        static auto construct_hashes(const _Input& input, const _Indices& indices, std::index_sequence<I...>)
+            -> const_array<hash_type, sizeof...(I)>
+        {
+            auto real_size = indices.first;
+            return { { sort_traits::get_hash(input[indices.second[I < real_size ? I : real_size - 1]]) ...} };
+        }
+        template<typename _Input, typename _Indices, std::size_t... I>
+        static auto construct_values(const _Input& input, const _Indices& indices, std::index_sequence<I...>)
+            -> const_array<value_type, sizeof...(I)>
+        {
+            auto real_size = indices.first;
+            return { { sort_traits::construct(input[indices.second[I < real_size ? I : real_size - 1]]) ...} };
+        }
+
+        template<size_t N>
+        static auto BuildHashIndex(const init_type(&init)[N])
+        {
+            auto indices = make_indices(init);
+            auto hashes = construct_hashes(init, indices, std::make_index_sequence<N>{});
+            auto values = construct_values(init, indices, std::make_index_sequence<N>{});
+            return std::make_pair(hashes, values);
         }
     };
 

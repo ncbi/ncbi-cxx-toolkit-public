@@ -290,11 +290,11 @@ namespace ct
     template<typename T1, typename T2, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
     struct MakeConstMap
     {
-        using first_type  = ct::DeduceHashedType<case_sensitive, ct::NeedHash::yes, T1>;
-        using second_type = ct::DeduceHashedType<case_sensitive, ct::NeedHash::no, T2>;
-        using init_type   = ct::const_pair<typename first_type::type, typename second_type::type>;
+        using first_type  = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
+        using second_type = DeduceHashedType<case_sensitive, NeedHash::no, T2>;
 
-        using sorter_t = TInsertSorter<ct::straight_sort_traits<init_type>, true>;
+        using sorter_t = TInsertSorter<straight_sort_traits<first_type, second_type>, true>;
+        using init_type = typename sorter_t::init_type;
 
         using map_type = const_unordered_map<first_type, second_type>;
 
@@ -313,10 +313,10 @@ namespace ct
     {
         using first_type  = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
         using second_type = DeduceHashedType<case_sensitive, NeedHash::yes, T2>;
-        using init_type   = const_pair<typename first_type::type, typename second_type::type>;
 
-        using straight_sorter_t = TInsertSorter<straight_sort_traits<init_type>, true>;
-        using flipped_sorter_t = TInsertSorter<flipped_sort_traits<init_type>, true>;
+        using straight_sorter_t = TInsertSorter<straight_sort_traits<first_type, second_type>, true>;
+        using flipped_sorter_t = TInsertSorter<flipped_sort_traits<first_type, second_type>, true>;
+        using init_type = typename straight_sorter_t::init_type;
 
         template<size_t N>
         using proxy_type = std::pair<
@@ -431,10 +431,10 @@ namespace ct
     template<typename _T, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
     struct MakeConstSet
     {
-        using value_type = DeduceHashedType<case_sensitive, ct::NeedHash::yes, _T>;
-        using init_type  = typename value_type::type;
+        using value_type = DeduceHashedType<case_sensitive, NeedHash::yes, _T>;
 
-        using sorter_t = TInsertSorter<simple_sort_traits<init_type>, true>;
+        using sorter_t = TInsertSorter<simple_sort_traits<value_type>, true>;
+        using init_type = typename sorter_t::init_type;
 
         using set_type = const_unordered_set<value_type, value_type>;
         template<size_t N>

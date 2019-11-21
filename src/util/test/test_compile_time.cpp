@@ -714,3 +714,48 @@ BOOST_AUTO_TEST_CASE(TestConstMap2)
     CompareArray(init, cm2.first);
     CompareArrayFlipped(init, cm2.second);
 }
+
+BOOST_AUTO_TEST_CASE(TestConstMap3)
+{
+    using type = ct::MakeConstMap<const char*, const char*>;
+    constexpr type::init_type init[] = SO_MAP_DATA;
+
+    auto index = type::sorter_t::BuildHashIndex(init);
+
+    for (auto rec : index.first)
+    {
+        //std::cout << rec << std::endl;
+    }
+}
+BOOST_AUTO_TEST_CASE(TestConstMap4)
+{
+    using type = ct::MakeConstMapTwoWay<const char*, const char*>;
+    constexpr type::init_type init[] = SO_MAP_DATA;
+
+    auto index1 = type::straight_sorter_t::BuildHashIndex(init);
+    auto index2 = type::flipped_sorter_t::BuildHashIndex(init);
+
+    for (auto rec : index1.first)
+    {
+        //std::cout << rec << std::endl;
+    }
+
+}
+
+BOOST_AUTO_TEST_CASE(TestConstMap5)
+{
+    using type = ct::MakeConstMap<int, const char*>;
+    constexpr type::init_type init[] = {
+        { 1,  "One"},
+        { 100, "Hundred"},
+        { 50, "Fifty"}
+    };
+
+    auto index = type::sorter_t::BuildHashIndex(init);
+
+    for (auto rec : index.first)
+    {
+        std::cout << rec << std::endl;
+    }
+
+}
