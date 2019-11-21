@@ -70,13 +70,16 @@ extern NCBI_XCONNECT_EXPORT
 const char* NcbiDumpIPRange(const SIPRange* range, char* buf, size_t bufsize);
 
 
-/* Acceptable forms (masked IPv4s may omit trailing .0s):
+/** Acceptable forms (netmasked IPv4s may omit trailing .0s before '/'):
  * 4 quad full IP:  123.123.123.123
- * IP range:        123.123.1-123   (meaning 123.123.1.0 thru 123.123.123.255)
- * Masked:          123.123/255.255.240.0  (equivalent to the following line)
- * CIDR:            123.123/20      (meaning 123.123.0.0 thru 123.123.15.255)
- * Wildcard:        123.123.*       (meaning 123.123.0.0 thru 123.123.255.255)
+ * IPv4 range:      123.123.1-123   (meaning 123.123.1.0 thru 123.123.123.255)
+ * IPv4 w/netmask:  123.123/255.255.240.0  (equivalent to the following line)
+ * IPv4 CIDR:       123.123/20      (meaning 123.123.0.0 thru 123.123.15.255)
+ * IPv4 wildcard:   123.123.*       (meaning 123.123.0.0 thru 123.123.255.255)
  * IPv6[/CIDR]:     aa:bb::cc/64    (IPv6 addr must be complete,/CIDR optional)
+ * @return
+ *   0 (false) if failed;  non-zero (true) if successful and the parsed range
+ *   stored at the location pointed to by "range".
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* s);

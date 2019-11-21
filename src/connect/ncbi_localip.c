@@ -102,8 +102,9 @@ static const SIPRange* x_IsOverlappingRange(const SIPRange* range, size_t n)
     size_t i;
     assert(n < SizeOf(s_LocalIP));
     for (i = 0;  i < n;  ++i) {
-        if (NcbiIsInIPRange(&s_LocalIP[i], &range->a)  ||
-            NcbiIsInIPRange(range, &s_LocalIP[i].a)) {
+        if (s_LocalIP[i].type != eIPRange_Application
+            &&  (NcbiIsInIPRange(&s_LocalIP[i], &range->a)  ||
+                 NcbiIsInIPRange(range, &s_LocalIP[i].a))) {
             return &s_LocalIP[i];
         }
     }
