@@ -1,2 +1,2 @@
-[UsePsh]
-UsePsh = FALSE
+[UsePch]
+UsePch = FALSE
