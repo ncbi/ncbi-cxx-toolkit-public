@@ -359,8 +359,6 @@ int CNCBITestConnStreamApp::Run(void)
     ConnNetInfo_Destroy(net_info);
     LOG_POST(Info << "Test 2 passed\n");
 
-    return 0;
-
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create("_FTP")))
@@ -754,9 +752,11 @@ int CNCBITestConnStreamApp::Run(void)
     LOG_POST(Info << "Test 10 of 11: HTTP status code and text");
 
     CConn_HttpStream bad_http("https://www.ncbi.nlm.nih.gov/blah");
+    int    code = bad_http.GetStatusCode();
+    assert(!code);
     bad_http >> ftpfile/*dummy*/;
 
-    int    code = bad_http.GetStatusCode();
+    code        = bad_http.GetStatusCode();
     string text = bad_http.GetStatusText();
     NcbiCout << "Status(bad) = " << code << ' ' << text << NcbiEndl;
     if (code != 404  ||  text.empty())
