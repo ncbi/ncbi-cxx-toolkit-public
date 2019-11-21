@@ -144,17 +144,32 @@ void CCdregionValidator::x_ValidateExceptText(const string& text)
 }
 
 
+#define FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(Itr, Var) \
+ITERATE (CBioseq_Handle::TId, Itr, Var.GetId())
+
 void s_LocIdType(CBioseq_Handle bsh,
     bool& is_nt, bool& is_ng, bool& is_nw, bool& is_nc)
 {
     is_nt = is_ng = is_nw = is_nc = false;
     if (bsh) {
-        FOR_EACH_SEQID_ON_BIOSEQ(it, *(bsh.GetBioseqCore())) {
-            CSeq_id::EAccessionInfo info = (*it)->IdentifyAccession();
-            is_nt |= (info == CSeq_id::eAcc_refseq_contig);
-            is_ng |= (info == CSeq_id::eAcc_refseq_genomic);
-            is_nw |= (info == CSeq_id::eAcc_refseq_wgs_intermed);
-            is_nc |= (info == CSeq_id::eAcc_refseq_chromosome);
+        FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(it, bsh) {
+            CSeq_id_Handle sid = *it;
+            switch (sid.Which()) {
+            case NCBI_SEQID(Embl):
+            case NCBI_SEQID(Ddbj):
+            case NCBI_SEQID(Other):
+            case NCBI_SEQID(Genbank):
+            {
+                CSeq_id::EAccessionInfo info = sid.IdentifyAccession();
+                is_nt |= (info == CSeq_id::eAcc_refseq_contig);
+                is_ng |= (info == CSeq_id::eAcc_refseq_genomic);
+                is_nw |= (info == CSeq_id::eAcc_refseq_wgs_intermed);
+                is_nc |= (info == CSeq_id::eAcc_refseq_chromosome);
+                break;
+            }
+            default:
+                break;
+            }
         }
     }
 }
@@ -168,15 +183,12 @@ void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& tse,
         return;
     }
     const CSeq_id& id = GetId(loc, &scope);
-    CBioseq_Handle bsh = scope.GetBioseqHandleFromTSE(id, tse);
-    if (bsh) {
-        FOR_EACH_SEQID_ON_BIOSEQ(it, *(bsh.GetBioseqCore())) {
-            CSeq_id::EAccessionInfo info = (*it)->IdentifyAccession();
-            is_nt |= (info == CSeq_id::eAcc_refseq_contig);
-            is_ng |= (info == CSeq_id::eAcc_refseq_genomic);
-            is_nw |= (info == CSeq_id::eAcc_refseq_wgs_intermed);
-            is_nc |= (info == CSeq_id::eAcc_refseq_chromosome);
+    try {
+        CBioseq_Handle bsh = scope.GetBioseqHandleFromTSE(id, tse);
+        if (bsh) {
+            s_LocIdType(bsh, is_nt, is_ng, is_nw, is_nc);
         }
+    } catch (CException&) {
     }
 }
 
