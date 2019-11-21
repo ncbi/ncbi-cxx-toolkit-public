@@ -315,7 +315,7 @@ CBedReader::ReadSeqAnnot(
                 //xDetermineLikelyColumnCount(*mLinePreBuffer, pEC);
                 break;
             }
-            if (xParseBrowserLine(line, annot, pEC)) {
+            if (xParseBrowserLine(line, *annot, pEC)) {
                 continue;
             }
             if (xParseFeature(line, annot, pEC)) {

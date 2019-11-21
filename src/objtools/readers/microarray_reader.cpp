@@ -148,7 +148,7 @@ CMicroArrayReader::ReadSeqAnnot(
             xUngetLine(lr);
             break;
         }
-        if (xParseBrowserLine(line, annot, pEC)) {
+        if (xParseBrowserLine(line, *annot, pEC)) {
             continue;
         }
         if (xParseTrackLine(line, pEC)) {

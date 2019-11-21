@@ -263,7 +263,7 @@ protected:
                 
     virtual bool xParseBrowserLine(
         const string&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
         
     virtual bool xParseTrackLine(
@@ -296,13 +296,11 @@ protected:
     virtual bool xProgressInit(
         ILineReader& istr);
 
-    void xReportProgress(
-        ILineErrorListener* =0 );
-
     bool xIsReportingProgress() const;
 
-    
     bool xIsOperationCanceled() const;
+    void xReportProgress(
+        ILineErrorListener* = nullptr );
 
     void
     ProcessError(
@@ -330,7 +328,7 @@ protected:
 
     virtual void xProcessData(
         const TReaderData&,
-        CSeq_annot::TData&);
+        CSeq_annot&);
 
     void
     xProcessReaderMessage(
@@ -350,6 +348,7 @@ protected:
     //  Data:
     //
     unsigned int m_uLineNumber;
+    unsigned int m_uDataCount = 0;
     unsigned int m_uProgressReportInterval;
     unsigned int m_uNextProgressReport;
 

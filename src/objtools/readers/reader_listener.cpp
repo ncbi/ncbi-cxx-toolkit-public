@@ -36,4 +36,18 @@
 #include  <ncbi_pch.hpp>
 #include <objtools/readers/reader_listener.hpp>
 
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+//  ============================================================================
+void
+CReaderListener::Progress(
+    const CReaderProgress& progress)
+//  ============================================================================
+{
+    CObjtoolsListener::PutProgress("progress", progress.Done(), progress.Total());
+};
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
 

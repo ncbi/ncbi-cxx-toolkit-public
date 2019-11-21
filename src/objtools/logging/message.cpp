@@ -108,6 +108,32 @@ int CObjtoolsMessage::GetSubCode(void) const
     return 0;
 }
 
+
+CProgressMessage::CProgressMessage(
+    int done,
+    int total): CObjtoolsMessage("", eDiag_Info)
+{
+    if (total) {
+        m_Text = NStr::IntToString(mDone) + " of " + NStr::IntToString(mTotal) + " done.";
+    }
+    else {
+        m_Text = NStr::IntToString(mDone) + " done.";
+    }
+};
+
+CObjtoolsMessage* CProgressMessage::Clone() const 
+{
+    return new CProgressMessage(mDone, mTotal);
+}
+
+void CProgressMessage::Write(CNcbiOstream& ostr) const
+{
+    ostr << "                " <<  s_GetSeverityName(GetSeverity()) << ":" << endl;
+    ostr << "Progress:       " <<  GetText() << endl;
+    ostr << endl;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

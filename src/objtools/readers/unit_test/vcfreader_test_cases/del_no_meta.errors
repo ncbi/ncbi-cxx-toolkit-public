@@ -1,4 +1,4 @@
-Line No    : 2
-Severity   : Warning
-Message    : CVcfReader::xAssignVcfMeta: Missing VCF header data.
+                Warning
+Line:           2
+Problem:        CVcfReader::xAssignVcfMeta: Missing VCF header data.
 

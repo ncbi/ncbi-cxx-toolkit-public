@@ -39,27 +39,40 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) 
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT CReaderMessage : public CObjtoolsMessage 
+class NCBI_XOBJUTIL_EXPORT CReaderMessage: 
+    public CObjtoolsMessage 
 //  ============================================================================
 {
 public:
     CReaderMessage(
-        EDiagSev severity,
-        int lineNumber,
-        const string& message):
-        CObjtoolsMessage(message, severity), m_LineNumber(lineNumber) {};
+        EDiagSev severity, int lineNumber, const string& message)
+        :
+        CObjtoolsMessage(message, severity), m_LineNumber(lineNumber) 
+    {};
 
     virtual CObjtoolsMessage *Clone() const;
 
     virtual void Write(CNcbiOstream& out) const;
-    virtual void WriteAsXML(CNcbiOstream& out) const {};
-    virtual void DumpAsXML(CNcbiOstream& out) const {};
+    //virtual void WriteAsXML(CNcbiOstream& out) const;
+    //virtual void DumpAsXML(CNcbiOstream& out) const;
 
     virtual string Message() const { return GetText(); };
     virtual EDiagSev Severity() const { return GetSeverity(); };
     virtual int LineNumber() const { return m_LineNumber; };
-private:
+protected:
     int m_LineNumber;
+};
+
+//  ============================================================================
+class NCBI_XOBJUTIL_EXPORT CReaderProgress:
+    public CProgressMessage
+//  ============================================================================
+{
+public:
+    CReaderProgress(int done, int total):
+        CProgressMessage(done, total) {};
+
+    virtual void Write(CNcbiOstream& out) const;
 };
 
 END_SCOPE(objects)

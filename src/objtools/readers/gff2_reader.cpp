@@ -153,7 +153,7 @@ CGff2Reader::ReadSeqAnnot(
                 break;
             }
            
-            if (xParseBrowserLine(line, pAnnot, pEC)) {
+            if (xParseBrowserLine(line, *pAnnot, pEC)) {
                 continue;
             }
 

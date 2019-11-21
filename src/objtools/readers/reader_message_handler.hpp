@@ -54,6 +54,10 @@ public:
     Report(
         const CReaderMessage&);
 
+    void
+    Progress(
+        const CReaderProgress&);
+
 protected:
     CReaderListener* mpRL;
 };

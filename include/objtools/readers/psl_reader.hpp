@@ -63,7 +63,7 @@ public:
 protected:
     void xProcessData(
         const TReaderData&,
-        CSeq_annot::TData&);
+        CSeq_annot&);
 };
 
 END_SCOPE(objects)

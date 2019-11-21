@@ -78,10 +78,31 @@ public:
     virtual int GetCode(void) const;
     virtual int GetSubCode(void) const;
 
-private:
+protected:
     string m_Text;
     EDiagSev m_Severity;
 };
+
+
+//  ============================================================================
+class NCBI_XOBJUTIL_EXPORT CProgressMessage : public CObjtoolsMessage 
+//  ============================================================================
+{
+public:
+    CProgressMessage(
+        int numDone, int numTotal);
+
+    virtual CObjtoolsMessage *Clone() const;
+    virtual void Write(CNcbiOstream& out) const;
+  
+    virtual int Done() const { return mDone; };
+    virtual int Total() const { return mTotal; };
+
+protected:
+    int mDone;
+    int mTotal;
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

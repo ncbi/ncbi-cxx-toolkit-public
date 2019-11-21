@@ -38,6 +38,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 
+#include <objtools/readers/reader_listener.hpp>
 #include <objtools/readers/vcf_reader.hpp>
 #include "error_logger.hpp"
 
@@ -52,13 +53,41 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
-#define READERCLASS CVcfReader
 const string extInput("vcf");
 const string extOutput("asn");
 const string extErrors("errors");
 const string extKeep("new");
 const string dirTestFiles("vcfreader_test_cases");
 //  ============================================================================
+
+
+//  ============================================================================
+class CTeamCityMessageListener:
+    public CReaderListener
+//  ============================================================================
+{
+public:
+    CTeamCityMessageListener(
+        const string& fileName) { mOstr = ofstream(fileName); };
+    
+    ~CTeamCityMessageListener() { mOstr.close(); };
+
+    bool PutMessage(
+        const IObjtoolsMessage& message)
+    {
+        const CReaderMessage* pReaderMessage = 
+            dynamic_cast<const CReaderMessage*>(&message);
+        if (!pReaderMessage  ||  pReaderMessage->Severity() == eDiag_Fatal) {
+            throw;
+        }
+        pReaderMessage->Write(mOstr);
+        return true;
+    };
+
+protected:
+    ofstream mOstr;
+};
+    
 
 struct STestInfo {
     CFile mInFile;
@@ -143,14 +172,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CErrorLogger logger(errors);
-    READERCLASS reader(0);
-    CNcbiIfstream ifstr(input.c_str());
 
     typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
+    CNcbiIfstream ifstr(input.c_str());
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CTeamCityMessageListener ml(errors);
+        CVcfReader reader(0, &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         ifstr.close();
@@ -196,15 +225,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mErrorFile.GetName() << endl;
 
     string logName = CDirEntry::GetTmpName();
-    CErrorLogger logger(logName);
 
-    READERCLASS reader(0);
+    CTeamCityMessageListener ml(logName);
+    CVcfReader reader(0, &ml);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");

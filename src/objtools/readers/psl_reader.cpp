@@ -65,11 +65,11 @@ CPslReader::~CPslReader()
 void
 CPslReader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot::TData& annotData) 
+    CSeq_annot& annot) 
 //  ----------------------------------------------------------------------------
 {
     CPslData pslData(m_pMessageHandler);
-    auto& aligns = annotData.SetAlign();
+    auto& aligns = annot.SetData().SetAlign();
     for (auto line: readerData) {
         CRef<CSeq_align> pSeqAlign(new CSeq_align);
         pslData.Initialize(line);

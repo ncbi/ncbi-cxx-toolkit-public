@@ -48,6 +48,9 @@ class NCBI_XOBJUTIL_EXPORT CReaderListener : public CObjtoolsListener
 public:
     CReaderListener() = default;
     virtual ~CReaderListener(void) {};
+
+    virtual void Progress(
+        const CReaderProgress&);
 };
 
 

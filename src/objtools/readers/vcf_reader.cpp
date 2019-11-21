@@ -54,6 +54,8 @@
 
 #include <algorithm>
 
+#include "reader_message_handler.hpp"
+
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
@@ -151,8 +153,9 @@ ESpecNumber SpecNumber(
 
 //  ----------------------------------------------------------------------------
 CVcfReader::CVcfReader(
-    int flags ):
-    CReaderBase(flags),
+    int flags,
+    CReaderListener* pRL):
+    CReaderBase(flags, "", "", CReadUtil::AsSeqId, pRL),
     m_MetaHandled(false)
 //  ----------------------------------------------------------------------------
 {
@@ -172,71 +175,85 @@ CVcfReader::ReadSeqAnnot(
     ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
-    xProgressInit(lr);
-    if (lr.AtEOF()) {
-        return CRef<CSeq_annot>();
-    }
-    CRef< CSeq_annot > annot( new CSeq_annot );
-    annot->SetData().SetFtable();
     if (!m_Meta) {
         m_Meta.Reset( new CAnnotdesc );
         m_Meta->SetUser().SetType().SetStr( "vcf-meta-info" );
     }
+    CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
+    if (pAnnot) {
+        xAssignTrackData(pAnnot);
+        xAssignVcfMeta(*pAnnot);
+    }
+    return pAnnot;
+}
 
+//  ----------------------------------------------------------------------------
+CRef<CSeq_annot>
+CVcfReader::xCreateSeqAnnot() 
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_annot> pAnnot = CReaderBase::xCreateSeqAnnot();
+    pAnnot->SetData().SetFtable();
+    return pAnnot;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CVcfReader::xGetData(
+    ILineReader& lr,
+    TReaderData& readerData)
+//  ----------------------------------------------------------------------------
+{
+    readerData.clear();
     string line;
-    unsigned int dataCount = 0;
-    while (xGetLine(lr, line)) {
-        if (IsCanceled()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Info,
-                0,
-                "Reader stopped by user.",
-                ILineError::eProblem_ProgressInfo));
-            ProcessError(*pErr, pEC);
-            return CRef<CSeq_annot>();
+    if (!xGetLine(lr, line)) {
+        return;
+    }
+    if (xIsTrackLine(line)  &&  m_uDataCount) {
+        xUngetLine(lr);
+        return;
+    }
+    readerData.push_back(TReaderLine{m_uLineNumber, line});
+}
+
+//  ----------------------------------------------------------------------------
+void
+CVcfReader::xProcessData(
+    const TReaderData& readerData,
+    CSeq_annot& annot) 
+//  ----------------------------------------------------------------------------
+{
+    for (auto lineInfo: readerData) {
+        const auto& line = lineInfo.mData; 
+        if (xParseBrowserLine(line, annot, nullptr)) {
+            return;
         }
-        xReportProgress(pEC);
-        if (xIsTrackLine(line)  &&  dataCount) {
-            xUngetLine(lr);
-            break;
+        if (xProcessTrackLine(line, annot)) {
+            return;
         }
-        if (xParseBrowserLine(line, annot, pEC)) {
-            continue;
-        }
-        if (xProcessTrackLine(line, annot, pEC)) {
-            continue;
-        }
-        if (xProcessMetaLine(line, annot, pEC)) {
-            continue;
+        if (xProcessMetaLine(line, annot)) {
+            return;
         }
         if (xProcessHeaderLine(line, annot)) {
-            continue;
+            return;
         }
-        if (xProcessDataLine(line, annot, pEC)) {
-            ++dataCount;
-            continue;
+        if (xProcessDataLine(line, annot)) {
+            ++m_uDataCount;
+            return;
         }
-        // still here? not good!
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage warning(
             eDiag_Warning,
-            0,
-            "CVcfReader::ReadSeqAnnot: Unrecognized line or record type.",
-            ILineError::eProblem_GeneralParsingError) );
-        ProcessWarning(*pErr, pEC);
+            m_uLineNumber,
+            "CVcfReader::ReadSeqAnnot: Unrecognized line or record type.");
+        m_pMessageHandler->Report(warning);
     }
-    xAssignTrackData(annot);
-    xAssignVcfMeta(annot, pEC);
-    return annot;
 }
 
 //  ----------------------------------------------------------------------------
 bool
 CVcfReader::xProcessMetaLine(
     const string& line,
-    CRef<CSeq_annot> pAnnot,
-    ILineErrorListener* pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( line, "##" ) ) {
@@ -248,13 +265,13 @@ CVcfReader::xProcessMetaLine(
     }
     m_MetaDirectives.push_back(line.substr(2));
 
-    if (xProcessMetaLineInfo(line, pAnnot, pEC)) {
+    if (xProcessMetaLineInfo(line, annot)) {
         return true;
     }
-    if (xProcessMetaLineFilter(line, pAnnot, pEC)) {
+    if (xProcessMetaLineFilter(line, annot)) {
         return true;
     }
-    if (xProcessMetaLineFormat(line, pAnnot, pEC)) {
+    if (xProcessMetaLineFormat(line, annot)) {
         return true;
     }
     return true;
@@ -264,8 +281,7 @@ CVcfReader::xProcessMetaLine(
 bool
 CVcfReader::xProcessMetaLineInfo(
     const string& line,
-    CRef<CSeq_annot> pAnnot,
-    ILineErrorListener* pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##INFO=<";
@@ -324,7 +340,7 @@ CVcfReader::xProcessMetaLineInfo(
         m_InfoSpecs[id] = CVcfInfoSpec( id, numcount, type, description );        
     }
     catch (CObjReaderLineException& err) {
-        ProcessError(err, pEC);
+        ProcessError(err, nullptr);
     }
     return true;
 }
@@ -333,8 +349,7 @@ CVcfReader::xProcessMetaLineInfo(
 bool
 CVcfReader::xProcessMetaLineFilter(
     const string& line,
-    CRef<CSeq_annot> pAnnot,
-    ILineErrorListener* pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FILTER=<";
@@ -373,7 +388,7 @@ CVcfReader::xProcessMetaLineFilter(
         m_FilterSpecs[id] = CVcfFilterSpec( id, description );        
     }
     catch (CObjReaderLineException& err) {
-        ProcessError(err, pEC);
+        ProcessError(err, nullptr);
     }
     return true;
 }
@@ -382,8 +397,7 @@ CVcfReader::xProcessMetaLineFilter(
 bool
 CVcfReader::xProcessMetaLineFormat(
     const string& line,
-    CRef<CSeq_annot> pAnnot,
-    ILineErrorListener* pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FORMAT=<";
@@ -445,7 +459,7 @@ CVcfReader::xProcessMetaLineFormat(
         m_FormatSpecs[id] = CVcfFormatSpec( id, numcount, type, description );        
     }
     catch (CObjReaderLineException& err) {
-        ProcessError(err, pEC);
+        ProcessError(err, nullptr);
     }
     return true;
 }
@@ -454,7 +468,7 @@ CVcfReader::xProcessMetaLineFormat(
 bool
 CVcfReader::xProcessHeaderLine(
     const string& line,
-    CRef<CSeq_annot> pAnnot )
+    CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( line, "#CHROM" ) ) {
@@ -490,26 +504,21 @@ CVcfReader::xProcessHeaderLine(
 //  ----------------------------------------------------------------------------
 bool
 CVcfReader::xAssignVcfMeta(
-    CRef<CSeq_annot> pAnnot,
-    ILineErrorListener* pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Meta &&
-        m_Meta->IsUser() &&
-        m_Meta->GetUser().IsSetData()) {
-        if (!pAnnot->IsSetDesc()) {
+    if (m_Meta  &&  m_Meta->IsUser() &&  m_Meta->GetUser().IsSetData()) {
+        if (!annot.IsSetDesc()) {
             CRef< CAnnot_descr > desc( new CAnnot_descr );
-            pAnnot->SetDesc(*desc);
+            annot.SetDesc(*desc);
         }
-        pAnnot->SetDesc().Set().push_back( m_Meta );
+        annot.SetDesc().Set().push_back( m_Meta );
     } else { // VCF input ought to include a header
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage warning(
             eDiag_Warning,
-            0,
-            "CVcfReader::xAssignVcfMeta: Missing VCF header data.",
-            ILineError::eProblem_GeneralParsingError) );
-        ProcessWarning(*pErr, pEC);
+            m_uLineNumber,
+            "CVcfReader::xAssignVcfMeta: Missing VCF header data.");
+        m_pMessageHandler->Report(warning);
     }
     return true;
 }
@@ -518,15 +527,15 @@ CVcfReader::xAssignVcfMeta(
 bool
 CVcfReader::xProcessDataLine(
     const string& line,
-    CRef<CSeq_annot> pAnnot,
-    ILineErrorListener* pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     if ( NStr::StartsWith( line, "#" ) ) {
         return false;
     }
+
     CVcfData data;
-    if (!xParseData(line, data, pEC)) {
+    if (!xParseData(line, data, nullptr)) {
         return false;
     }
     CRef<CSeq_feat> pFeat( new CSeq_feat );
@@ -551,7 +560,7 @@ CVcfReader::xProcessDataLine(
     if (!xProcessFilter(data, pFeat)) {
         return false;
     }
-    if (!xProcessInfo( data, pFeat, pEC)) {
+    if (!xProcessInfo( data, pFeat)) {
         return false;
     }
     if (!xProcessFormat(data, pFeat)) {
@@ -561,7 +570,7 @@ CVcfReader::xProcessDataLine(
     if ( pFeat->GetExt().GetData().empty() ) {
         pFeat->ResetExt();
     }
-    pAnnot->SetData().SetFtable().push_back( pFeat );
+    annot.SetData().SetFtable().push_back(pFeat);
     return true;
 }
 
@@ -1114,11 +1123,10 @@ CVcfReader::xProcessFilter(
 bool 
 CVcfReader::xProcessInfo(
     CVcfData& data,
-    CRef<CSeq_feat> pFeature,
-    ILineErrorListener* pEC)
+    CRef<CSeq_feat> pFeature)
 //  ----------------------------------------------------------------------------
 {
-    if (!xAssignVariantProps(data, pFeature, pEC)) {
+    if (!xAssignVariantProps(data, pFeature)) {
         return false;
     }
     CSeq_feat::TExt& ext = pFeature->SetExt();
@@ -1147,8 +1155,7 @@ CVcfReader::xProcessInfo(
 bool
 CVcfReader::xProcessTrackLine(
     const string& strLine,
-    CRef< CSeq_annot >& current,
-    ILineErrorListener* pEC)
+    CSeq_annot& current)
 //  ----------------------------------------------------------------------------
 {
     if (!xIsTrackLine(strLine)) {
@@ -1166,14 +1173,12 @@ CVcfReader::xProcessTrackLine(
             return false;
         }
     }
-    if (!CReaderBase::xParseTrackLine(strLine, pEC)) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Warning,
-            0,
-            "Bad track line: Expected \"track key1=value1 key2=value2 ...\". Ignored.",
-            ILineError::eProblem_BadTrackLine) );
-        ProcessWarning(*pErr , pEC);    
+    if (!CReaderBase::xParseTrackLine(strLine, nullptr)) {
+        CReaderMessage warning(
+            eDiag_Warning, 
+            m_uLineNumber, 
+            "Bad track line: Expected \"track key1=value1 key2=value2 ...\". Ignored.");
+        m_pMessageHandler->Report(warning);
     }
     return true;
 }
@@ -1296,8 +1301,7 @@ CVcfReader::xAssignVariationIds(
 bool
 CVcfReader::xAssignVariantProps(
     CVcfData& data,
-    CRef<CSeq_feat> pFeat,
-    ILineErrorListener* pEC)
+    CRef<CSeq_feat> pFeat)
 //  ----------------------------------------------------------------------------
 {
     typedef CVariantProperties VP;
@@ -1358,13 +1362,11 @@ CVcfReader::xAssignVariantProps(
                 string db, tag;
                 NStr::SplitInTwo(*cit, ":", db, tag);
                 if (db != "PM") {
-                    AutoPtr<CObjReaderLineException> pErr(
-                        CObjReaderLineException::Create(
-                        eDiag_Warning,
-                        0,
-                        "CVcfReader::xAssignVariantProps: Invalid PMID database ID.",
-                        ILineError::eProblem_GeneralParsingError) );
-                    ProcessWarning(*pErr, pEC);
+                    CReaderMessage warning(
+                        eDiag_Warning, 
+                        m_uLineNumber,
+                        "CVcfReader::xAssignVariantProps: Invalid PMID database ID.");
+                    m_pMessageHandler->Report(warning);
                     continue;
                 }
                 CRef<CDbtag> pDbtag(new CDbtag);
@@ -1378,7 +1380,7 @@ CVcfReader::xAssignVariantProps(
         infos.erase(it);
     }
 
-    xAssignVariantSource(data, pFeat, pEC);
+    xAssignVariantSource(data, pFeat);
 
     //superbyte F2
     it = infos.find("R5");
@@ -1564,8 +1566,7 @@ CVcfReader::xAssignVariantProps(
 
 //  ----------------------------------------------------------------------------
 void CVcfReader::xAssignVariantSource(CVcfData& data,
-    CRef<CSeq_feat> pFeat,
-    ILineErrorListener* pEC)
+    CRef<CSeq_feat> pFeat)
 //  ----------------------------------------------------------------------------
 {
     CVcfData::INFOS& infos = data.m_Info;
@@ -1583,13 +1584,11 @@ void CVcfReader::xAssignVariantSource(CVcfData& data,
             }
 
             if (!valid_id) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                        eDiag_Warning,
-                        0,
-                        "CVcfReader::xAssignVariantProps: No valid dbSNP identifier",
-                        ILineError::eProblem_GeneralParsingError) );
-                        ProcessWarning(*pErr, pEC);
+                CReaderMessage warning(
+                    eDiag_Warning, 
+                    m_uLineNumber,
+                    "CVcfReader::xAssignVariantProps: No valid dbSNP identifier");
+                m_pMessageHandler->Report(warning);
             }
             infos.erase(it);
         }

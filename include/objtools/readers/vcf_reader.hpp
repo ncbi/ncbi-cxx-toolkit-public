@@ -46,6 +46,7 @@ BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CVcfData;
 class CDbtag;
+class CReaderListener;
 
 //  ----------------------------------------------------------------------------
 enum ESpecType
@@ -151,7 +152,8 @@ public:
     };
 
     CVcfReader( 
-        int =0 );
+        int = 0,
+        CReaderListener* = nullptr);
     virtual ~CVcfReader();
     
     //
@@ -167,6 +169,16 @@ public:
     //  helpers:
     //
 protected:
+    virtual CRef<CSeq_annot> xCreateSeqAnnot();
+
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
+
     virtual bool 
     xIsCommentLine(
         const CTempString& );
@@ -174,48 +186,41 @@ protected:
     virtual bool 
     xProcessTrackLine(
         const string&,
-        CRef< CSeq_annot >&,
-        ILineErrorListener*);
+        CSeq_annot&);
         
     virtual bool
     xProcessMetaLine(
         const string&,
-        CRef<CSeq_annot>,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     virtual bool
     xProcessMetaLineInfo(
         const string&,
-        CRef<CSeq_annot>,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     virtual bool
     xProcessMetaLineFilter(
         const string&,
-        CRef<CSeq_annot>,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     virtual bool
     xProcessMetaLineFormat(
         const string&,
-        CRef<CSeq_annot>,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     virtual bool
     xProcessHeaderLine(
         const string&,
-        CRef<CSeq_annot> );
+        CSeq_annot& );
 
     virtual bool
     xProcessDataLine(
         const string&,
-        CRef<CSeq_annot>,
-        ILineErrorListener*);
+        CSeq_annot&);
         
     virtual bool
     xAssignVcfMeta(
-        CRef<CSeq_annot>,
-        ILineErrorListener* );
+        CSeq_annot&);
 
     virtual bool
     xAssignVariationAlleleSet(
@@ -265,13 +270,11 @@ protected:
     virtual bool
     xAssignVariantProps(
         CVcfData&,
-        CRef<CSeq_feat>,
-        ILineErrorListener*);
+        CRef<CSeq_feat>);
 
     void xAssignVariantSource(
         CVcfData&,
-        CRef<CSeq_feat>,
-        ILineErrorListener*);
+        CRef<CSeq_feat>);
 
     virtual bool
     xProcessScore(
@@ -286,8 +289,7 @@ protected:
     virtual bool
     xProcessInfo(
         CVcfData&,
-        CRef<CSeq_feat>,
-        ILineErrorListener*);
+        CRef<CSeq_feat>);
 
     virtual bool
     xProcessFormat(

@@ -219,6 +219,7 @@ CReaderBase::ReadSeqAnnot(
 {
     xProgressInit(lr);
 
+    m_uDataCount = 0;
     CRef<CSeq_annot> pAnnot = xCreateSeqAnnot();
     auto& annotData = pAnnot->SetData();
 
@@ -229,8 +230,17 @@ CReaderBase::ReadSeqAnnot(
         return pAnnot;
     }
     while (!readerData.empty()) {
+        if (IsCanceled()) {
+            CReaderMessage cancelled(
+                eDiag_Fatal,
+                m_uLineNumber,
+                "Data import interrupted by user.");
+            xProcessReaderMessage(cancelled, pEL);
+        }
+        xReportProgress();
+
         try {
-            xProcessData(readerData, annotData);
+            xProcessData(readerData, *pAnnot);
         }
         catch (CReaderMessage& err) {
             xProcessReaderMessage(err, pEL);
@@ -243,7 +253,6 @@ CReaderBase::ReadSeqAnnot(
         }
         xGetData(lr, readerData);
     }
-    const auto& aligns = pAnnot->GetData().GetAlign();
     return pAnnot;
 }
                 
@@ -274,13 +283,14 @@ CReaderBase::xGetData(
     if (xGetLine(lr, line)) {
         readerData.push_back(TReaderLine{m_uLineNumber, line});
     }
+    ++m_uDataCount;
 }
 
 //  ----------------------------------------------------------------------------
 void
 CReaderBase::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot::TData& annotData) 
+    CSeq_annot& annot) 
 //  ----------------------------------------------------------------------------
 {
 }
@@ -418,11 +428,12 @@ void CReaderBase::xSetBrowserRegion(
     string strChrom;
     string strInterval;
     if ( ! NStr::SplitInTwo( strRaw, ":", strChrom, strInterval ) ) {
-        CReaderMessage error(
-            eDiag_Error, 
-            m_uLineNumber, 
-            "Bad browser line: invalid position directive");
-        throw(error);
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad browser line: cannot parse browser position" ) );
+        ProcessError(*pErr, pEC);
     }
     CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
 
@@ -435,11 +446,12 @@ void CReaderBase::xSetBrowserRegion(
         string strFrom;
         string strTo;
         if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
-            CReaderMessage error(
-                eDiag_Error, 
-                m_uLineNumber, 
-                "Bad browser line: invalid position directive");
-            throw(error);
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad browser line: cannot parse browser position" ) );
+            ProcessError(*pErr, pEC);
         }  
         try
         {
@@ -457,11 +469,12 @@ void CReaderBase::xSetBrowserRegion(
         }
         catch (const CStringException&)
         {
-            CReaderMessage error(
-                eDiag_Error, 
-                m_uLineNumber, 
-                "Bad browser line: invalid position directive");
-            throw(error);
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad browser line: cannot parse browser position" ) );
+            ProcessError(*pErr, pEC);
             location.Reset();
         }
     }
@@ -477,14 +490,14 @@ void CReaderBase::xSetBrowserRegion(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseBrowserLine(
     const string& strLine,
-    CRef<CSeq_annot>& annot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "browser" ) ) {
         return false;
     }
-    CAnnot_descr& desc = annot->SetDesc();
+    CAnnot_descr& desc = annot.SetDesc();
     
     vector<string> fields;
     NStr::Split(strLine, " \t", fields, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
@@ -492,16 +505,16 @@ bool CReaderBase::xParseBrowserLine(
         if ( *it == "position" ) {
             ++it;
             if ( it == fields.end() ) {
-                CReaderMessage error(
-                    eDiag_Error, 
-                    m_uLineNumber, 
-                    "Bad browser line: incomplete position directive");
-                throw(error);
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Error,
+                    0,
+                    "Bad browser line: incomplete position directive" ) );
+                ProcessError(*pErr, pEC);
             }
             xSetBrowserRegion(*it, desc, pEC);
         }
     }
-
     return true;
 }
 
@@ -629,9 +642,10 @@ void CReaderBase::xReportProgress(
     if (uCurrentTime < m_uNextProgressReport) { // not time yet
         return;
     }
+
     // report something
-    ios::streampos curPos = m_pReader->GetPosition();
-    pProgress->PutProgress("Progress", Uint8(curPos), 0);
+    int curPos = static_cast<int>(m_pReader->GetPosition());
+    m_pMessageHandler->Progress(CReaderProgress(curPos, 0));
 
     m_uNextProgressReport += m_uProgressReportInterval;
 }

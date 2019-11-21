@@ -41,13 +41,16 @@ static string sGetSeverityName(EDiagSev severity)
     return CNcbiDiag::SeverityName(severity);
 }
 
-CObjtoolsMessage* CReaderMessage::Clone(void) const 
+//  ============================================================================
+CObjtoolsMessage* CReaderMessage::Clone() const 
+//  ============================================================================
 {
     return new CReaderMessage(GetSeverity(), m_LineNumber, GetText());
 }
 
-
+//  ============================================================================
 void CReaderMessage::Write(CNcbiOstream& ostr) const
+//  ============================================================================
 {
     ostr << "                " <<  sGetSeverityName(Severity()) << endl;
     ostr << "Line:           " << LineNumber() << endl;
@@ -55,6 +58,14 @@ void CReaderMessage::Write(CNcbiOstream& ostr) const
     ostr << endl;
 }
 
+//  ============================================================================
+void CReaderProgress::Write(CNcbiOstream& ostr) const
+//  ============================================================================
+{
+    ostr << "                " <<  sGetSeverityName(GetSeverity()) << endl;
+    ostr << "Progress:       " <<  GetText() << endl;
+    ostr << endl;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

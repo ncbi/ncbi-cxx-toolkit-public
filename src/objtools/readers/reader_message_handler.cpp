@@ -58,6 +58,19 @@ CReaderMessageHandler::Report(
 }
 
 
+//  ============================================================================
+void
+CReaderMessageHandler::Progress( 
+    const CReaderProgress& readerProgress)
+//  ============================================================================
+{
+    if (mpRL) {
+        mpRL->Progress(readerProgress);
+        return;
+    }
+}
+
+
 END_SCOPE(objects);
 END_NCBI_SCOPE;
 
