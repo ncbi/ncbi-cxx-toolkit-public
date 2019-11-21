@@ -2795,6 +2795,8 @@ void CDeflineGenerator::x_SetSuffix (
                 if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
                     if ((NStr::EqualNocase (m_Organelle, "mitochondrial") || NStr::EqualNocase (m_Organelle, "mitochondrion")) &&
                         (m_MainTitle.find("mitochondrial") != NPOS || m_MainTitle.find("mitochondrion") != NPOS)) {
+                    } else if (NStr::EqualNocase (m_Organelle, "chromosome") &&
+                        (m_MainTitle.find("linkage group") != NPOS || m_MainTitle.find("chromosome") != NPOS)) {
                     } else {
                       type = " ";
                       type += m_Organelle;
