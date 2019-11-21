@@ -39,6 +39,7 @@
 #include <sra/data_loaders/snp/snploader.hpp>
 #include <sra/readers/sra/snpread.hpp>
 #include <util/limited_size_map.hpp>
+#include <objects/dbsnp/primary_track/snpptis.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -74,19 +75,11 @@ public:
     bool operator<(const CBlobId& id) const;
     bool operator==(const CBlobId& id) const;
 
-    bool IsSatId(void) const {
-        return m_Sat != 0;
-    }
+    bool IsSatId(void) const;
 
-    Int4 GetSat(void) const {
-        return m_Sat;
-    }
-    Int4 GetSubSat(void) const {
-        return m_SubSat;
-    }
-    Int4 GetSatKey(void) const {
-        return m_SatKey;
-    }
+    Int4 GetSat(void) const;
+    Int4 GetSubSat(void) const;
+    Int4 GetSatKey(void) const;
 
     bool IsValidSat(void) const;
     bool IsValidSubSat(void) const;
@@ -106,10 +99,25 @@ public:
     }
 
     string GetSatNA(void) const;
-    size_t GetNAIndex(void) const;
-    size_t GetNAVersion(void) const;
-    size_t GetSeqIndex(void) const;
-    size_t GetFilterIndex(void) const;
+    int GetSatBase(void) const;
+    int GetSubSatBase(void) const;
+    
+    size_t GetNAIndex(void) const
+        {
+            return m_NAIndex;
+        }
+    size_t GetNAVersion(void) const
+        {
+            return m_NAVersion;
+        }
+    size_t GetSeqIndex(void) const
+        {
+            return m_SeqIndex;
+        }
+    size_t GetFilterIndex(void) const
+        {
+            return m_FilterIndex;
+        }
 
     void SetSatNA(CTempString acc);
     void SetNAIndex(size_t na_index);
@@ -120,11 +128,30 @@ public:
     CSeq_id_Handle GetSeqId(void) const;
     string GetAccession(void) const;
 
+    bool IsPrimaryTrack() const
+        {
+            return m_IsPrimaryTrack;
+        }
+    bool IsPrimaryTrackGraph() const
+        {
+            return m_IsPrimaryTrackGraph;
+        }
+    bool IsPrimaryTrackFeat() const
+        {
+            return IsPrimaryTrack() && !IsPrimaryTrackGraph();
+        }
+
+    void SetPrimaryTrackFeat();
+    void SetPrimaryTrackGraph();
+
 protected:
     // ID2 blob id
-    Int4 m_Sat; // NA accession version
-    Int4 m_SubSat; // NA accession number
-    Int4 m_SatKey; // seq & filter indexes
+    Uint4 m_NAIndex;
+    Uint2 m_NAVersion;
+    bool m_IsPrimaryTrack;
+    bool m_IsPrimaryTrackGraph;
+    Uint4 m_SeqIndex;
+    Uint4 m_FilterIndex;
     
     // SNP file name or VDB accession
     string m_Accession;
@@ -143,13 +170,14 @@ class CSNPSeqInfo : public CObject
 {
 public:
     CSNPSeqInfo(CSNPFileInfo* file,
-                const CSNPDbSeqIterator& it,
-                size_t filter_index);
+                const CSNPDbSeqIterator& it);
 
     CSNPDbSeqIterator GetSeqIterator(void) const;
 
     CRef<CSNPBlobId> GetAnnotBlobId(void) const;
     int GetAnnotChunkId(TSeqPos ref_pos) const;
+
+    string GetAnnotName(void) const;
 
     void LoadRanges(void);
 
@@ -167,8 +195,17 @@ public:
     void LoadSeqMainEntry(CTSE_LoadLock& load_lock);
 
     CRef<CSNPBlobId> GetBlobId(void) const;
-    void SetBlobId(CRef<CSNPBlobId>& ret,
-                   const CSeq_id_Handle& idh) const;
+    void SetFilterIndex(size_t filter_index);
+    void SetFromBlobId(const CSNPBlobId& blob_id);
+
+    bool IncludeFeat(void) const
+        {
+            return !m_IsPrimaryTrack || !m_IsPrimaryTrackGraph;
+        }
+    bool IncludeGraph(void) const
+        {
+            return !m_IsPrimaryTrack || m_IsPrimaryTrackGraph;
+        }
 
 protected:
     friend class CSNPDataLoader_Impl;
@@ -177,6 +214,8 @@ protected:
     size_t m_SeqIndex;
     size_t m_FilterIndex;
     CSeq_id_Handle m_SeqId;
+    bool m_IsPrimaryTrack;
+    bool m_IsPrimaryTrackGraph;
 };
 
 
@@ -206,10 +245,8 @@ public:
 
     CRef<CSNPBlobId> GetAnnotBlobId(const CSeq_id_Handle& id) const;
 
-    CRef<CSNPSeqInfo> GetSeqInfo(const CSeq_id_Handle& seq_id,
-                                 size_t filter_index);
-    CRef<CSNPSeqInfo> GetSeqInfo(size_t seq_index,
-                                 size_t filter_index);
+    CRef<CSNPSeqInfo> GetSeqInfo(const CSeq_id_Handle& seq_id);
+    CRef<CSNPSeqInfo> GetSeqInfo(size_t seq_index);
     CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
 
     CMutex& GetMutex(void) const
@@ -307,6 +344,8 @@ private:
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     TMissingFiles m_MissingFiles;
+    bool m_AddPTIS;
+    CRef<CSnpPtisClient> m_PTISClient;
 };
 
 END_SCOPE(objects)

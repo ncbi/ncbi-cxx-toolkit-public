@@ -87,6 +87,16 @@ NCBI_PARAM_DEF_EX(string, SNP, ACCESSIONS, "",
                   eParam_NoThread, SNP_ACCESSIONS);
 
 
+NCBI_PARAM_DECL(bool, SNP_LOADER, PTIS);
+NCBI_PARAM_DEF_EX(bool, SNP_LOADER, PTIS, true,
+                  eParam_NoThread, SNP_LOADER_PTIS);
+
+
+CSNPDataLoader::SLoaderParams::SLoaderParams(void)
+    : m_AddPTIS(NCBI_PARAM_TYPE(SNP_LOADER, PTIS)::GetDefault())
+{
+}
+
 string CSNPDataLoader::SLoaderParams::GetLoaderName(void) const
 {
     CNcbiOstrstream str;

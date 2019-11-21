@@ -56,6 +56,8 @@
 
 #include <util/sequtil/sequtil_manip.hpp>
 
+#include <objects/dbsnp/primary_track/snpptis.hpp>
+
 #include <algorithm>
 #include <cmath>
 
@@ -90,7 +92,8 @@ enum {
     eDebug_open = 1,
     eDebug_open_time = 2,
     eDebug_load = 3,
-    eDebug_load_time = 4
+    eDebug_load_time = 4,
+    eDebug_resolve = 5
 };
 
 static int GetDebugLevel(void)
@@ -150,13 +153,19 @@ static bool IsSplitEnabled(void)
 // CSNPBlobId
 /////////////////////////////////////////////////////////////////////////////
 
-// Blob id
+// Blob id:
 // sat = 2001-2099 : SNP NA version 1 - 99
+// or, for primary SNP track:
+// sat = 3001-3099 : SNP NA version 1 - 99
 // subsat : NA accession number
+// or, for primary SNP graph track:
+// NA accession number + kSNPSubSatGraph(=1000000000)
 // satkey : SequenceIndex + 1000000*FilterIndex;
 // satkey bits 24-30: 
 
 const int kSNPSatBase = 2000;
+const int kSNPSatPrimary = 3000;
+const int kSNPSubSatGraph = 1000000000;
 const int kNAVersionMin = 1;
 const int kNAVersionMax = 99;
 const int kSeqIndexCount = 1000000;
@@ -172,27 +181,34 @@ CSNPBlobId::CSNPBlobId(const CTempString& str)
 CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
                        const CSeq_id_Handle& seq_id,
                        size_t filter_index)
-    : m_Sat(0),
-      m_SubSat(0),
-      m_SatKey(0),
+    : m_NAIndex(0),
+      m_NAVersion(0),
+      m_IsPrimaryTrack(false),
+      m_IsPrimaryTrackGraph(false),
+      m_SeqIndex(0),
+      m_FilterIndex(filter_index),
       m_Accession(file.GetAccession()),
       m_SeqId(seq_id)
 {
-    SetSeqAndFilterIndex(0, filter_index);
+    // non-SatId
 }
 
 
 CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
                        size_t seq_index,
                        size_t filter_index)
-    : m_Sat(0),
-      m_SubSat(0),
-      m_SatKey(0)
+    : m_NAIndex(0),
+      m_NAVersion(0),
+      m_IsPrimaryTrack(false),
+      m_IsPrimaryTrackGraph(false),
+      m_SeqIndex(seq_index),
+      m_FilterIndex(filter_index)
 {
     if ( file.IsValidNA() ) {
         SetSatNA(file.GetAccession());
     }
     else {
+        // non-SatId
         m_Accession = file.GetAccession();
     }
     SetSeqAndFilterIndex(seq_index, filter_index);
@@ -236,17 +252,10 @@ bool CSNPBlobId::IsValidFilterIndex(size_t filter_index)
 }
 
 
-size_t CSNPBlobId::GetNAIndex(void) const
-{
-    _ASSERT(IsSatId());
-    return GetSubSat();
-}
-
-
 void CSNPBlobId::SetNAIndex(size_t na_index)
 {
     _ASSERT(IsValidNAIndex(na_index));
-    m_SubSat = int(na_index);
+    m_NAIndex = Uint4(na_index);
 }
 
 
@@ -256,17 +265,50 @@ bool CSNPBlobId::IsValidSubSat(void) const
 }
 
 
-size_t CSNPBlobId::GetNAVersion(void) const
+int CSNPBlobId::GetSatBase(void) const
 {
-    _ASSERT(IsSatId());
-    return GetSat() - kSNPSatBase;
+    return IsPrimaryTrack()? kSNPSatPrimary: kSNPSatBase;
+}
+
+
+int CSNPBlobId::GetSubSatBase(void) const
+{
+    return IsPrimaryTrackGraph()? kSNPSubSatGraph: 0;
 }
 
 
 void CSNPBlobId::SetNAVersion(size_t na_version)
 {
     _ASSERT(IsValidNAVersion(na_version));
-    m_Sat = int(kSNPSatBase + na_version);
+    m_NAVersion = Uint2(na_version);
+}
+
+
+bool CSNPBlobId::IsSatId(void) const
+{
+    return m_NAIndex != 0;
+}
+
+
+Int4 CSNPBlobId::GetSat(void) const
+{
+    _ASSERT(IsValidNAVersion(GetNAVersion()));
+    return Int4(GetSatBase() + GetNAVersion());
+}
+
+
+Int4 CSNPBlobId::GetSubSat(void) const
+{
+    _ASSERT(IsValidNAIndex(GetNAIndex()));
+    return Int4(GetSubSatBase() + GetNAIndex());
+}
+
+
+Int4 CSNPBlobId::GetSatKey(void) const
+{
+    _ASSERT(IsValidSeqIndex(GetSeqIndex()));
+    _ASSERT(IsValidFilterIndex(GetFilterIndex()));
+    return GetSeqIndex() + GetFilterIndex()*kSeqIndexCount;
 }
 
 
@@ -317,26 +359,13 @@ void CSNPBlobId::SetSatNA(CTempString acc)
 }
 
 
-size_t CSNPBlobId::GetSeqIndex(void) const
-{
-    _ASSERT(IsSatId());
-    return GetSatKey() % kSeqIndexCount;
-}
-
-
-size_t CSNPBlobId::GetFilterIndex(void) const
-{
-    _ASSERT(IsSatId() || GetSatKey() % kSeqIndexCount == 0);
-    return GetSatKey() / kSeqIndexCount;
-}
-
-
 void CSNPBlobId::SetSeqAndFilterIndex(size_t seq_index,
                                       size_t filter_index)
 {
     _ASSERT(IsValidSeqIndex(seq_index));
     _ASSERT(IsValidFilterIndex(filter_index));
-    m_SatKey = int(seq_index + filter_index * kSeqIndexCount);
+    m_SeqIndex = Uint4(seq_index);
+    m_FilterIndex = Uint4(filter_index);
 }
 
 
@@ -356,12 +385,28 @@ CSeq_id_Handle CSNPBlobId::GetSeqId(void) const
 
 string CSNPBlobId::GetAccession(void) const
 {
-    if ( IsSatId() ) {
+    if ( m_Accession.empty() ) {
         return GetSatNA();
     }
     else {
         return m_Accession;
     }
+}
+
+
+void CSNPBlobId::SetPrimaryTrackFeat(void)
+{
+    _ASSERT(!IsPrimaryTrack());
+    m_IsPrimaryTrack = true;
+    m_IsPrimaryTrackGraph = false;
+}
+
+
+void CSNPBlobId::SetPrimaryTrackGraph(void)
+{
+    _ASSERT(!IsPrimaryTrack());
+    m_IsPrimaryTrack = true;
+    m_IsPrimaryTrackGraph = true;
 }
 
 
@@ -407,7 +452,7 @@ string CSNPBlobId::ToString(void) const
 {
     CNcbiOstrstream out;
     if ( IsSatId() ) {
-        out << m_Sat << '.' << m_SubSat << '.' << m_SatKey;
+        out << GetSat() << '.' << GetSubSat() << '.' << GetSatKey();
     }
     else {
         out << m_Accession;
@@ -432,23 +477,37 @@ bool CSNPBlobId::FromSatString(CTempString str)
     if ( dot2 == NPOS ) {
         return false;
     }
-    m_Sat = NStr::StringToNumeric<int>(str.substr(0, dot1),
-                                       NStr::fConvErr_NoThrow);
-    if ( !IsValidSat() ) {
+    size_t sat = NStr::StringToNumeric<size_t>(str.substr(0, dot1),
+                                               NStr::fConvErr_NoThrow);
+    bool is_primary_track = sat >= kSNPSatPrimary;
+    size_t na_version = sat - (is_primary_track? kSNPSatPrimary: kSNPSatBase);
+    if ( !IsValidNAVersion(na_version) ) {
         return false;
     }
-    m_SubSat = NStr::StringToNumeric<int>(str.substr(dot1+1, dot2-dot1-1),
-                                          NStr::fConvErr_NoThrow);
-
-    if ( !IsValidSubSat() ) {
+    size_t subsat = NStr::StringToNumeric<size_t>(str.substr(dot1+1, dot2-dot1-1),
+                                                  NStr::fConvErr_NoThrow);
+    bool is_primary_track_graph = is_primary_track && subsat >= kSNPSubSatGraph;
+    size_t na_index = subsat - (is_primary_track_graph? kSNPSubSatGraph: 0);
+    if ( !IsValidNAIndex(na_index) ) {
         return false;
     }
     
-    m_SatKey = NStr::StringToNumeric<int>(str.substr(dot2+1),
-                                          NStr::fConvErr_NoThrow);
-    if ( !IsValidSatKey() ) {
+    size_t satkey = NStr::StringToNumeric<size_t>(str.substr(dot2+1),
+                                                  NStr::fConvErr_NoThrow);
+    size_t seq_index = satkey % kSeqIndexCount;
+    size_t filter_index = satkey / kSeqIndexCount;
+    if ( !IsValidSeqIndex(seq_index) || !IsValidFilterIndex(filter_index) ) {
         return false;
     }
+
+    m_NAIndex = Uint4(na_index);
+    m_NAVersion = Uint2(na_version);
+    m_SeqIndex = Uint4(seq_index);
+    m_FilterIndex = Uint4(filter_index);
+    m_IsPrimaryTrack = is_primary_track;
+    m_IsPrimaryTrackGraph = is_primary_track_graph;
+    m_Accession.clear();
+    m_SeqId.Reset();
     
     _ASSERT(IsSatId());
     return true;
@@ -460,9 +519,14 @@ void CSNPBlobId::FromString(CTempString str)
     if ( FromSatString(str) ) {
         return;
     }
-    m_Sat = 0;
-    m_SubSat = 0;
-    m_SatKey = 0;
+    m_NAIndex = 0;
+    m_NAVersion = 0;
+    m_SeqIndex = 0;
+    m_FilterIndex = 0;
+    m_IsPrimaryTrack = false;
+    m_IsPrimaryTrackGraph = false;
+    m_Accession.clear();
+    m_SeqId.Reset();
     _ASSERT(!IsSatId());
 
     SIZE_TYPE div = str.rfind(kFileEnd);
@@ -479,14 +543,23 @@ void CSNPBlobId::FromString(CTempString str)
 bool CSNPBlobId::operator<(const CBlobId& id) const
 {
     const CSNPBlobId& id2 = dynamic_cast<const CSNPBlobId&>(id);
-    if ( m_Sat != id2.m_Sat ) {
-        return m_Sat < id2.m_Sat;
+    if ( m_NAIndex != id2.m_NAIndex ) {
+        return m_NAIndex < id2.m_NAIndex;
     }
-    if ( m_SubSat != id2.m_SubSat ) {
-        return m_SubSat < id2.m_SubSat;
+    if ( m_NAVersion != id2.m_NAVersion ) {
+        return m_NAVersion < id2.m_NAVersion;
     }
-    if ( m_SatKey != id2.m_SatKey ) {
-        return m_SatKey < id2.m_SatKey;
+    if ( m_SeqIndex != id2.m_SeqIndex ) {
+        return m_SeqIndex < id2.m_SeqIndex;
+    }
+    if ( m_FilterIndex != id2.m_FilterIndex ) {
+        return m_FilterIndex < id2.m_FilterIndex;
+    }
+    if ( m_IsPrimaryTrack != id2.m_IsPrimaryTrack ) {
+        return m_IsPrimaryTrack < id2.m_IsPrimaryTrack;
+    }
+    if ( m_IsPrimaryTrackGraph != id2.m_IsPrimaryTrackGraph ) {
+        return m_IsPrimaryTrackGraph < id2.m_IsPrimaryTrackGraph;
     }
     if ( m_Accession != id2.m_Accession ) {
         return m_Accession < id2.m_Accession;
@@ -498,11 +571,14 @@ bool CSNPBlobId::operator<(const CBlobId& id) const
 bool CSNPBlobId::operator==(const CBlobId& id) const
 {
     const CSNPBlobId& id2 = dynamic_cast<const CSNPBlobId&>(id);
-    return m_Sat == id2.m_Sat &&
-        m_SubSat == id2.m_SubSat &&
-        m_SatKey == id2.m_SatKey &&
-        m_SeqId == id2.m_SeqId &&
-        m_Accession == id2.m_Accession;
+    return m_NAIndex == id2.m_NAIndex &&
+        m_NAVersion == id2.m_NAVersion &&
+        m_SeqIndex == id2.m_SeqIndex &&
+        m_FilterIndex == id2.m_FilterIndex &&
+        m_IsPrimaryTrack == id2.m_IsPrimaryTrack &&
+        m_IsPrimaryTrackGraph == id2.m_IsPrimaryTrackGraph &&
+        m_Accession == id2.m_Accession &&
+        m_SeqId == id2.m_SeqId;
 }
 
 
@@ -518,6 +594,10 @@ CSNPDataLoader_Impl::CSNPDataLoader_Impl(
 {
     m_DirPath = params.m_DirPath;
     m_AnnotName = params.m_AnnotName;
+    m_AddPTIS = params.m_AddPTIS;
+    if ( m_AddPTIS ) {
+        m_PTISClient = CSnpPtisClient::CreateClient();
+    }
     
     if ( params.m_VDBFiles.empty() ) {
         if ( !m_DirPath.empty() ) {
@@ -642,6 +722,24 @@ CSNPDataLoader_Impl::GetRecords(CDataSource* data_source,
 }
 
 
+static string s_GetAccVer(const CSeq_id_Handle& id)
+{
+    if ( !id ) {
+        return string();
+    }
+    if ( auto seq_id = id.GetSeqId() ) {
+        if ( const CTextseq_id* text_id = seq_id->GetTextseq_Id() ) {
+            if ( text_id->IsSetAccession() && !text_id->GetAccession().empty() &&
+                 text_id->IsSetVersion() && text_id->GetVersion() > 0 ) {
+                // fully qualified text id, no more information is necessary
+                return text_id->GetAccession()+'.'+NStr::NumericToString(text_id->GetVersion());
+            }
+        }
+    }
+    return string();
+}
+
+
 CDataLoader::TTSE_LockSet
 CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                            const CSeq_id_Handle& id,
@@ -664,6 +762,46 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
             }
         }
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
+            if ( m_AddPTIS && it->first == "SNP" ) {
+                // default SNP track
+                string acc_ver = s_GetAccVer(id);
+                if ( !acc_ver.empty() ) {
+                    string na_acc;
+                    try {
+                        // add default SNP track
+                        if ( GetDebugLevel() >= eDebug_resolve ) {
+                            LOG_POST_X(13, Info<<"CSNPDataLoader:PTIS: resolving "<<acc_ver);
+                        }
+                        na_acc = m_PTISClient->GetPrimarySnpTrackForAccVer(acc_ver);
+                        if ( GetDebugLevel() >= eDebug_resolve ) {
+                            LOG_POST_X(13, Info<<"CSNPDataLoader:PTIS: "<<acc_ver<<" primary SNP track is "<<na_acc);
+                        }
+                    }
+                    catch ( CException& exc ) {
+                        ERR_POST_X(2, "CSNPDataLoader: failed to add PTIS track for "<<acc_ver<<": "<<exc);
+                    }
+                    if ( !na_acc.empty() ) {
+                        size_t filter_index = sx_ExtractFilterIndex(na_acc);
+                        if ( CRef<CSNPFileInfo> info = GetFileInfo(na_acc) ) {
+                            if ( CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id) ) {
+                                seq->SetFilterIndex(filter_index);
+                                {
+                                    auto blob_id = seq->GetBlobId();
+                                    blob_id->SetPrimaryTrackFeat();
+                                    locks.insert(GetBlobById(ds, *blob_id));
+                                }
+                                {
+                                    auto blob_id = seq->GetBlobId();
+                                    blob_id->SetPrimaryTrackGraph();
+                                    locks.insert(GetBlobById(ds, *blob_id));
+                                }
+                            }
+                        }
+                    }
+                }
+                CDataLoader::SetProcessedNA(it->first, processed_nas);
+                continue;
+            }
             string acc = it->first;
             size_t filter_index = sx_ExtractFilterIndex(acc);
             if ( filter_index == 0 && acc.size() == it->first.size() ) {
@@ -672,7 +810,8 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
             }
             if ( CRef<CSNPFileInfo> info = GetFileInfo(acc) ) {
                 CDataLoader::SetProcessedNA(it->first, processed_nas);
-                if ( CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id, filter_index) ) {
+                if ( CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id) ) {
+                    seq->SetFilterIndex(filter_index);
                     locks.insert(GetBlobById(ds, *seq->GetBlobId()));
                 }
             }
@@ -796,23 +935,23 @@ void CSNPFileInfo::GetPossibleAnnotNames(TAnnotNames& names) const
 
 
 CRef<CSNPSeqInfo>
-CSNPFileInfo::GetSeqInfo(const CSeq_id_Handle& seq_id, size_t filter_index)
+CSNPFileInfo::GetSeqInfo(const CSeq_id_Handle& seq_id)
 {
     CRef<CSNPSeqInfo> ret;
     CSNPDbSeqIterator seq_it(m_SNPDb, seq_id);
     if ( seq_it ) {
-        ret = new CSNPSeqInfo(this, seq_it, filter_index);
+        ret = new CSNPSeqInfo(this, seq_it);
     }
     return ret;
 }
 
 
 CRef<CSNPSeqInfo>
-CSNPFileInfo::GetSeqInfo(size_t seq_index, size_t filter_index)
+CSNPFileInfo::GetSeqInfo(size_t seq_index)
 {
     CSNPDbSeqIterator seq_it(m_SNPDb, seq_index);
     _ASSERT(seq_it);
-    CRef<CSNPSeqInfo> ret(new CSNPSeqInfo(this, seq_it, filter_index));
+    CRef<CSNPSeqInfo> ret(new CSNPSeqInfo(this, seq_it));
     return ret;
 }
 
@@ -820,12 +959,17 @@ CSNPFileInfo::GetSeqInfo(size_t seq_index, size_t filter_index)
 CRef<CSNPSeqInfo>
 CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
 {
+    CRef<CSNPSeqInfo> ret;
     if ( blob_id.IsSatId() ) {
-        return GetSeqInfo(blob_id.GetSeqIndex(), blob_id.GetFilterIndex());
+        ret = GetSeqInfo(blob_id.GetSeqIndex());
     }
     else {
-        return GetSeqInfo(blob_id.GetSeqId(), blob_id.GetFilterIndex());
+        ret = GetSeqInfo(blob_id.GetSeqId());
     }
+    if ( ret ) {
+        ret->SetFromBlobId(blob_id);
+    }
+    return ret;
 }
 
 
@@ -835,15 +979,13 @@ CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
 
 
 CSNPSeqInfo::CSNPSeqInfo(CSNPFileInfo* file,
-                         const CSNPDbSeqIterator& it,
-                         size_t filter_index)
+                         const CSNPDbSeqIterator& it)
     : m_File(file),
       m_SeqIndex(it.GetVDBSeqIndex()),
-      m_FilterIndex(filter_index)
+      m_FilterIndex(0),
+      m_IsPrimaryTrack(false),
+      m_IsPrimaryTrackGraph(false)
 {
-    if ( !CSNPBlobId::IsValidFilterIndex(m_FilterIndex) ) {
-        m_FilterIndex = 0;
-    }
     if ( !file->IsValidNA() ) {
         m_SeqId = it.GetSeqIdHandle();
     }
@@ -860,18 +1002,20 @@ CRef<CSNPBlobId> CSNPSeqInfo::GetBlobId(void) const
 }
 
 
-void CSNPSeqInfo::SetBlobId(CRef<CSNPBlobId>& ret,
-                            const CSeq_id_Handle& idh) const
+void CSNPSeqInfo::SetFilterIndex(size_t filter_index)
 {
-    CRef<CSNPBlobId> id = GetBlobId();
-    if ( ret ) {
-        ERR_POST_X(3, "CSNPDataLoader::GetBlobId: "
-                   "Seq-id "<<idh<<" appears in two files: "
-                   <<ret->ToString()<<" & "<<id->ToString());
+    if ( !CSNPBlobId::IsValidFilterIndex(filter_index) ) {
+        filter_index = 0;
     }
-    else {
-        ret = id;
-    }
+    m_FilterIndex = filter_index;
+}
+
+
+void CSNPSeqInfo::SetFromBlobId(const CSNPBlobId& blob_id)
+{
+    SetFilterIndex(blob_id.GetFilterIndex());
+    m_IsPrimaryTrack = blob_id.IsPrimaryTrack();
+    m_IsPrimaryTrackGraph = blob_id.IsPrimaryTrackGraph();
 }
 
 
@@ -956,20 +1100,33 @@ void sx_AddBits(vector<char>& bits,
     }
 }
 
+
+string CSNPSeqInfo::GetAnnotName(void) const
+{
+    // primary SNP track features have hard-coded name from EADB
+    if ( m_IsPrimaryTrack ) {
+        return "SNP";
+    }
+    else {
+        return m_File->GetSNPAnnotName(m_FilterIndex);
+    }
+}
+
+
 void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
 {
     CSNPDbSeqIterator it = GetSeqIterator();
     CRange<TSeqPos> total_range = it.GetSNPRange();
+    string base_name = GetAnnotName();
     if ( IsSplitEnabled() ) {
         // split
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSet().SetId().SetId(kTSEId);
         entry->SetSet().SetSeq_set();
-        string base_name = m_File->GetSNPAnnotName(m_FilterIndex);
-        string feat_name = base_name;
-        string overvew_name = base_name + +kOverviewNameSuffix;
-        string graph_name = base_name + +kGraphNameSuffix;
-        SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
+        string overvew_name = base_name;
+        if ( !m_IsPrimaryTrack ) {
+            overvew_name += kOverviewNameSuffix;
+        }
         CRef<CSeq_annot> overvew_annot =
             it.GetOverviewAnnot(total_range, overvew_name);
         vector<char> feat_chunks(total_range.GetTo()/kFeatChunkSize+1);
@@ -977,46 +1134,54 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
             for ( auto& g : overvew_annot->GetData().GetGraph() ) {
                 sx_AddBits(feat_chunks, kFeatChunkSize, *g);
             }
-            entry->SetSet().SetAnnot().push_back(overvew_annot);
+            if ( !m_IsPrimaryTrack || m_IsPrimaryTrackGraph ) {
+                entry->SetSet().SetAnnot().push_back(overvew_annot);
+            }
         }
         load_lock->SetSeq_entry(*entry);
         CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
         CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-        _ASSERT(kGraphChunkSize % kFeatChunkSize == 0);
-        const TSeqPos feat_per_graph = kGraphChunkSize/kFeatChunkSize;
-        for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
-            if ( !sx_HasNonZero(feat_chunks, i*feat_per_graph, feat_per_graph) ) {
-                continue;
+        if ( !m_IsPrimaryTrack || m_IsPrimaryTrackGraph ) {
+            string graph_name = base_name + +kGraphNameSuffix;
+            _ASSERT(kGraphChunkSize % kFeatChunkSize == 0);
+            SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
+            const TSeqPos feat_per_graph = kGraphChunkSize/kFeatChunkSize;
+            for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
+                if ( !sx_HasNonZero(feat_chunks, i*feat_per_graph, feat_per_graph) ) {
+                    continue;
+                }
+                CRange<TSeqPos> range;
+                range.SetFrom(i*kGraphChunkSize);
+                range.SetToOpen((i+1)*kGraphChunkSize);
+                int chunk_id = i*kChunkIdMul+kChunkIdGraph;
+                CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
+                chunk->x_AddAnnotType(graph_name, type, it.GetSeqIdHandle(), range);
+                chunk->x_AddAnnotPlace(place);
+                split_info.AddChunk(*chunk);
             }
-            CRange<TSeqPos> range;
-            range.SetFrom(i*kGraphChunkSize);
-            range.SetToOpen((i+1)*kGraphChunkSize);
-            int chunk_id = i*kChunkIdMul+kChunkIdGraph;
-            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-            chunk->x_AddAnnotType(graph_name, type, it.GetSeqIdHandle(), range);
-            chunk->x_AddAnnotPlace(place);
-            split_info.AddChunk(*chunk);
         }
-        type = CSeqFeatData::eSubtype_variation;
-        TSeqPos overflow = it.GetMaxSNPLength()-1;
-        for ( int i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
-            if ( !feat_chunks[i] ) {
-                continue;
+        if ( !m_IsPrimaryTrack || !m_IsPrimaryTrackGraph ) {
+            string feat_name = base_name;
+            SAnnotTypeSelector type(CSeqFeatData::eSubtype_variation);
+            TSeqPos overflow = it.GetMaxSNPLength()-1;
+            for ( int i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
+                if ( !feat_chunks[i] ) {
+                    continue;
+                }
+                CRange<TSeqPos> range;
+                range.SetFrom(i*kFeatChunkSize);
+                range.SetToOpen((i+1)*kFeatChunkSize+overflow);
+                int chunk_id = i*kChunkIdMul+kChunkIdFeat;
+                CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
+                chunk->x_AddAnnotType(feat_name, type, it.GetSeqIdHandle(), range);
+                chunk->x_AddAnnotPlace(place);
+                split_info.AddChunk(*chunk);
             }
-            CRange<TSeqPos> range;
-            range.SetFrom(i*kFeatChunkSize);
-            range.SetToOpen((i+1)*kFeatChunkSize+overflow);
-            int chunk_id = i*kChunkIdMul+kChunkIdFeat;
-            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-            chunk->x_AddAnnotType(feat_name, type, it.GetSeqIdHandle(), range);
-            chunk->x_AddAnnotPlace(place);
-            split_info.AddChunk(*chunk);
         }
     }
     else {
-        string name = m_File->GetSNPAnnotName(m_FilterIndex);
         CRef<CSeq_entry> entry(new CSeq_entry);
-        for ( auto& annot : it.GetTableFeatAnnots(total_range, name) ) {
+        for ( auto& annot : it.GetTableFeatAnnots(total_range, base_name) ) {
             entry->SetSet().SetAnnot().push_back(annot);
         }
         load_lock->SetSeq_entry(*entry);
@@ -1030,7 +1195,7 @@ void CSNPSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
     int chunk_type = chunk_id%kChunkIdMul;
     int i = chunk_id/kChunkIdMul;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-    string base_name = m_File->GetSNPAnnotName(m_FilterIndex);
+    string base_name = GetAnnotName();
     CSNPDbSeqIterator it = GetSeqIterator();
     if ( chunk_type == kChunkIdFeat ) {
         CRange<TSeqPos> range;

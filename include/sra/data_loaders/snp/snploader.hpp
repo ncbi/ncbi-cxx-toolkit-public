@@ -52,11 +52,14 @@ public:
     typedef vector<string> TVDBFiles;
     struct NCBI_XLOADER_SNP_EXPORT SLoaderParams
     {
+        SLoaderParams();
+        
         string GetLoaderName(void) const;
 
         string m_DirPath;
         TVDBFiles m_VDBFiles;
         string          m_AnnotName;
+        bool m_AddPTIS;
     };
 
 

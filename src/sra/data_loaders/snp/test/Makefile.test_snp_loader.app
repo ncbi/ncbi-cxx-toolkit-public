@@ -5,9 +5,9 @@ REQUIRES = Boost.Test.Included
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = ncbi_xloader_snp $(SRAREAD_LIBS) test_boost $(SOBJMGR_LIBS) $(CMPRS_LIB)
+LIB = ncbi_xloader_snp $(SRAREAD_LIBS) dbsnp_ptis grpc_integration test_boost $(OBJMGR_LIBS) $(CMPRS_LIB)
 
-LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(GRPC_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
 
