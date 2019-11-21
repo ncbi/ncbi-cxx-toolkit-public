@@ -51,8 +51,17 @@ public:
     // optionally specify linkage evidence or leave it default
     //CLinkage_evidence::EType
     typedef set<int> TEvidenceSet;
-    CGapsEditor(CSeq_gap::EType gap_type, const TEvidenceSet& evidences,
-        TSeqPos gapNmin, TSeqPos gap_Unknown_length);
+    using TCountToEvidenceMap = map<TSeqPos, TEvidenceSet>;
+
+    CGapsEditor(CSeq_gap::EType gap_type, 
+                const TEvidenceSet& evidences,
+                TSeqPos gapNmin, 
+                TSeqPos gap_Unknown_length);
+
+    CGapsEditor(CSeq_gap::EType gap_type, 
+                const TCountToEvidenceMap& countToEvidenceMap,
+                TSeqPos m_gapNmin,
+                TSeqPos m_gap_Unknown_length);
 
     void ConvertNs2Gaps(CSeq_entry& entry);
 
@@ -70,7 +79,7 @@ private:
     void x_SetGapParameters(CDelta_seq& gap);
 
     CSeq_gap::EType m_gap_type;
-    TEvidenceSet    m_evidences;
+    TCountToEvidenceMap m_CountToEvidenceMap;
     TSeqPos         m_gapNmin;
     TSeqPos         m_gap_Unknown_length;
 };
