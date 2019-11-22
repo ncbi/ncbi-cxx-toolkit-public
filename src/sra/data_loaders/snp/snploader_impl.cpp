@@ -186,7 +186,7 @@ CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
       m_IsPrimaryTrack(false),
       m_IsPrimaryTrackGraph(false),
       m_SeqIndex(0),
-      m_FilterIndex(filter_index),
+      m_FilterIndex(Uint4(filter_index)),
       m_Accession(file.GetAccession()),
       m_SeqId(seq_id)
 {
@@ -201,8 +201,8 @@ CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
       m_NAVersion(0),
       m_IsPrimaryTrack(false),
       m_IsPrimaryTrackGraph(false),
-      m_SeqIndex(seq_index),
-      m_FilterIndex(filter_index)
+      m_SeqIndex(Uint4(seq_index)),
+      m_FilterIndex(Uint4(filter_index))
 {
     if ( file.IsValidNA() ) {
         SetSatNA(file.GetAccession());
@@ -308,7 +308,7 @@ Int4 CSNPBlobId::GetSatKey(void) const
 {
     _ASSERT(IsValidSeqIndex(GetSeqIndex()));
     _ASSERT(IsValidFilterIndex(GetFilterIndex()));
-    return GetSeqIndex() + GetFilterIndex()*kSeqIndexCount;
+    return Int4(GetSeqIndex() + GetFilterIndex()*kSeqIndexCount);
 }
 
 
