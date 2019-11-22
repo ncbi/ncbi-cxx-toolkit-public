@@ -9,6 +9,8 @@
 APP = snp_ptis_test
 SRC = snp_ptis_test
 
+REQUIRES = GRPC
+
 LIB = dbsnp_ptis grpc_integration $(SEQ_LIBS) pub medline biblio general \
       xser xutil xncbi
 LIBS = $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
