@@ -33,11 +33,26 @@
 
 #include <ncbi_pch.hpp>
 
+#define DEBUG_MAKE_CONST_MAP(name)                                                    \
+    BOOST_CHECK(name.get_alignment() == 0);
+
+#define DEBUG_MAKE_TWOWAY_CONST_MAP(name)                                                   \
+    BOOST_CHECK(name.first.get_alignment() == 0 && name.second.get_alignment()==0);
+
+ //#define DEBUG_MAKE_CONST_SET(name)
+
 #include <util/compile_time.hpp>
 //#include <util/cpubound.hpp>
 //#include <util/impl/getmember.h>
 #include <array>
 #include <corelib/test_boost.hpp>
+
+//#include <cassert>
+
+
+//static_assert(name ## _proxy.in_order(), "ct::const_unordered_map " #name "is not in order");
+
+
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -176,30 +191,6 @@ NCBITEST_AUTO_INIT()
         "compile time const_map Unit Test");
 }
 
-MAKE_TWOWAY_CONST_MAP(test_two_way1, ncbi::NStr::eNocase, const char*, const char*,
-    {
-        {"SO:0000001", "region"},
-        {"SO:0000002", "sequece_secondary_structure"},
-        {"SO:0000005", "satellite_DNA"},
-        {"SO:0000013", "scRNA"},
-        {"SO:0000035", "riboswitch"},
-        {"SO:0000036", "matrix_attachment_site"},
-        {"SO:0000037", "locus_control_region"},
-        {"SO:0000104", "polypeptide"},
-        {"SO:0000110", "sequence_feature"},
-        {"SO:0000139", "ribosome_entry_site"}
-    });
-
-
-MAKE_TWOWAY_CONST_MAP(test_two_way2, ncbi::NStr::eNocase, const char*, int, 
-    {
-        {"SO:0000001", 1},
-        {"SO:0000002", 2},
-        {"SO:0000005", 5},
-        {"SO:0000013", 13},
-        {"SO:0000035", 35}
-    });
-
 //test_two_way2_init
 
 using bitset = ct::const_bitset<64 * 3, int>;
@@ -250,9 +241,33 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 
 BOOST_AUTO_TEST_CASE(TestConstMap)
 {
-#if 1
-    //or (auto& rec : test_two_way1.first)
-    //    std::cout << rec.first.m_hash << ":" << rec.first << ":" << rec.second << std::endl;
+    MAKE_TWOWAY_CONST_MAP(test_two_way1, ncbi::NStr::eNocase, const char*, const char*,
+        {
+            {"SO:0000001", "region"},
+            {"SO:0000002", "sequece_secondary_structure"},
+            {"SO:0000005", "satellite_DNA"},
+            {"SO:0000013", "scRNA"},
+            {"SO:0000035", "riboswitch"},
+            {"SO:0000036", "matrix_attachment_site"},
+            {"SO:0000037", "locus_control_region"},
+            {"SO:0000104", "polypeptide"},
+            {"SO:0000110", "sequence_feature"},
+            {"SO:0000139", "ribosome_entry_site"}
+        });
+
+
+    MAKE_TWOWAY_CONST_MAP(test_two_way2, ncbi::NStr::eNocase, const char*, int,
+        {
+            {"SO:0000001", 1},
+            {"SO:0000002", 2},
+            {"SO:0000005", 5},
+            {"SO:0000013", 13},
+            {"SO:0000035", 35}
+        });
+
+    test_two_way1.first.find("SO:0000001");
+    test_two_way1.first.find(ncbi::CTempString("SO:0000001"));
+    test_two_way1.first.find(std::string("SO:0000001"));
 
     auto t1 = test_two_way1.first.find("SO:0000001");
     BOOST_CHECK((t1 != test_two_way1.first.end()) && (ncbi::NStr::CompareCase(t1->second, "region") == 0));
@@ -274,7 +289,6 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
     auto t6 = test_two_way2.second.find(5);
     BOOST_CHECK((t6 != test_two_way2.second.end()) && (ncbi::NStr::CompareNocase(t6->second, "so:0000005") == 0));
-#endif
 };
 
 BOOST_AUTO_TEST_CASE(TestConstSet)
@@ -728,49 +742,38 @@ BOOST_AUTO_TEST_CASE(TestConstMap2)
 
 BOOST_AUTO_TEST_CASE(TestConstMap3)
 {
-    using type = ct::MakeConstMap<const char*, const char*>;
-    constexpr type::init_type init[] = SO_MAP_DATA;
-
-    auto index = type::sorter_t{}(init);
-
-    for (auto rec : index.first)
+    enum eEnum
     {
-        //std::cout << rec << std::endl;
-    }
-
-}
-BOOST_AUTO_TEST_CASE(TestConstMap4)
-{
-    using type = ct::MakeConstMapTwoWay<const char*, const char*>;
-    constexpr type::init_type init[] = SO_MAP_DATA;
-
-    auto index1 = type::straight_sorter_t{}(init);
-    auto index2 = type::flipped_sorter_t{}(init);
-
-    for (auto rec : index1.first)
-    {
-        //std::cout << rec << std::endl;
-    }
-    for (auto rec : index2.first)
-    {
-        //std::cout << rec << std::endl;
-    }
-}
-
-BOOST_AUTO_TEST_CASE(TestConstMap5)
-{
-    using type = ct::MakeConstMap<int, const char*>;
-    constexpr type::init_type init[] = {
-        { 1,  "One"},
-        { 100, "Hundred"},
-        { 50, "Fifty"}
+        a, b, c
     };
 
-    auto index = type::sorter_t{}(init);
-
-    for (auto rec : index.first)
+    enum class cEnum: char
     {
-        //std::cout << rec << std::endl;
+        one,
+        two,
+        three,
+        many
+    };
+    static_assert(std::is_enum<cEnum>::value, "Not enum");
+    static_assert(std::is_enum<eEnum>::value, "Not enum");
+    static_assert(!std::numeric_limits<cEnum>::is_integer, "Why integer");
+    static_assert(!std::numeric_limits<eEnum>::is_integer, "Why integer");
+
+    using deduce1 = ct::DeduceHashedType<ncbi::NStr::eNocase, ct::NeedHash::yes, eEnum>;
+    using deduce2 = ct::DeduceHashedType<ncbi::NStr::eNocase, ct::NeedHash::no, eEnum>;
+    using deduce3 = ct::DeduceHashedType<ncbi::NStr::eNocase, ct::NeedHash::yes, uint32_t>;
+
+    MAKE_TWOWAY_CONST_MAP(cm1, ncbi::NStr::eNocase, cEnum, std::string, //const char*,
+        {
+        {cEnum::one, "One"},
+        {cEnum::two, "Two"},
+        {cEnum::three, "Three"},
+        {cEnum::many, "Many"}
+        });
+
+    for (auto rec : cm1.first)
+    {
+        std::cout << rec.second << std::endl;
     }
 
 }

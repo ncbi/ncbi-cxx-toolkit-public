@@ -161,24 +161,23 @@ namespace ct
 
     template<typename _HashedKey, typename _Value>
     class const_unordered_map: public 
-        const_set_map_base<_HashedKey, const_pair<typename _HashedKey::intermediate, typename _Value::intermediate>>
+        const_set_map_base<_HashedKey, const_pair<typename _HashedKey::value_type, typename _Value::value_type>>
     {
     public:
-        using _MyBase = const_set_map_base<_HashedKey, const_pair<typename _HashedKey::intermediate, typename _Value::intermediate>>;
+        using _MyBase = const_set_map_base<_HashedKey, const_pair<typename _HashedKey::value_type, typename _Value::value_type>>;
         using value_type = typename _MyBase::value_type;
 
         using const_iterator = typename _MyBase::const_iterator;
         using iterator       = typename _MyBase::iterator;
         using key_type       = typename value_type::first_type;
         using mapped_type    = typename value_type::second_type;
-        using intermediate   = typename _MyBase::intermediate;
 
         using _MyBase::_MyBase;
 
         template<typename K>
         const_iterator find(K&& _key) const
         {
-            intermediate temp(std::forward<K>(_key));
+            key_type temp(std::forward<K>(_key));
             auto it = _MyBase::lower_bound(temp);
             if (it == _MyBase::end() || (it->first != temp))
                 return _MyBase::end();
@@ -247,23 +246,22 @@ namespace ct
 
     template<typename _HashedType>
     class const_unordered_set: public
-        const_set_map_base<_HashedType, typename _HashedType::intermediate>
+        const_set_map_base<_HashedType, typename _HashedType::value_type>
     {
     public:
-        using _MyBase = const_set_map_base<_HashedType, typename _HashedType::intermediate>;
+        using _MyBase = const_set_map_base<_HashedType, typename _HashedType::value_type>;
 
         using value_type     = typename _MyBase::value_type;
         using const_iterator = typename _MyBase::const_iterator;
         using iterator       = typename _MyBase::iterator;
         using key_type       = value_type;
-        using intermediate   = typename _MyBase::intermediate;
 
         using _MyBase::_MyBase;
 
         template<typename K>
         const_iterator find(K&& _key) const
         {
-            intermediate temp(std::forward<K>(_key));
+            key_type temp(std::forward<K>(_key));
             auto it = _MyBase::lower_bound(temp);
             if (it == _MyBase::end() || (*it != temp))
                 return _MyBase::end();
@@ -290,27 +288,37 @@ namespace ct
     };
 }
 
+// used can define some specific debug instructions
+#ifndef DEBUG_MAKE_CONST_MAP
+    #define DEBUG_MAKE_CONST_MAP(name)
+#endif
+#ifndef DEBUG_MAKE_TWOWAY_CONST_MAP
+    #define DEBUG_MAKE_TWOWAY_CONST_MAP(name)
+#endif
+#ifndef DEBUG_MAKE_CONST_SET
+    #define DEBUG_MAKE_CONST_SET(name)
+#endif
+
 #define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
     static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                \
     static constexpr auto name ## _proxy = ct::MakeConstMap<type1, type2, case_sensitive>{}                                  \
         (name ## _init);                                                                                                     \
-    static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::map_type name = name ## _proxy;                         
-    //static_assert(name ## _proxy.in_order(), "ct::const_unordered_map " #name "is not in order");
+    static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::map_type name = name ## _proxy;                         \
+    DEBUG_MAKE_CONST_MAP(name)
 
 #define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \
     static constexpr ct::MakeConstMapTwoWay<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;          \
     static constexpr auto name ## _proxy = ct::MakeConstMapTwoWay<type1, type2, case_sensitive>{}                            \
         (name ## _init);                                                                                                     \
     static constexpr ct::MakeConstMapTwoWay<type1, type2, case_sensitive>::map_type name = name ## _proxy;                   \
-    //static_assert(name ## _proxy.first.in_order(), "ct::const_unordered_map " #name "is not in order");                      
-    //static_assert(name ## _proxy.second.in_order(), "flipped ct::const_unordered_map " #name " is not in order");
+    DEBUG_MAKE_TWOWAY_CONST_MAP(name)
 
 #define MAKE_CONST_SET(name, case_sensitive, type, ...)                                                                      \
     static constexpr ct::MakeConstSet<type, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                        \
     static constexpr auto name ## _proxy = ct::MakeConstSet<type, case_sensitive>{}                                          \
         (name ## _init);                                                                                                     \
-    static constexpr ct::MakeConstSet<type, case_sensitive>::set_type name = name ## _proxy;                                 
-    //static_assert(name ## _proxy.in_order(), "ct::const_unordered_set " #name "is not in order");
+    static constexpr ct::MakeConstSet<type, case_sensitive>::set_type name = name ## _proxy;                                 \
+    DEBUG_MAKE_CONST_SET(name)
 
 #endif
 

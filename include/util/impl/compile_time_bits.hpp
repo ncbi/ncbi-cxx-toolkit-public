@@ -413,9 +413,9 @@ namespace compile_time_bits
     template<typename _Value>
     struct simple_sort_traits
     {
-        using value_type = typename _Value::intermediate;
+        using value_type = typename _Value::value_type;
         using hash_type  = typename _Value::hash_type;
-        using init_type  = typename _Value::type;
+        using init_type  = typename _Value::init_type;
 
         struct Pred
         {
@@ -439,8 +439,8 @@ namespace compile_time_bits
     template<typename _T1, typename _T2>
     struct straight_sort_traits
     {
-        using init_type  = const_pair<typename _T1::type, typename _T2::type>;
-        using value_type = const_pair<typename _T1::intermediate, typename _T2::intermediate>;
+        using init_type  = const_pair<typename _T1::init_type, typename _T2::init_type>;
+        using value_type = const_pair<typename _T1::value_type, typename _T2::value_type>;
         using hash_type = typename _T1::hash_type;
 
         struct Pred
@@ -453,7 +453,7 @@ namespace compile_time_bits
         };
         static constexpr hash_type get_hash(const init_type& v)
         {
-            return v.first;
+            return static_cast<hash_type>(v.first);
         }
         template<typename _Input>
         static constexpr value_type construct(const _Input& input)
@@ -465,8 +465,8 @@ namespace compile_time_bits
     template<typename _T1, typename _T2>
     struct flipped_sort_traits
     {
-        using init_type = const_pair<typename _T1::type, typename _T2::type>;
-        using value_type = const_pair<typename _T2::intermediate, typename _T1::intermediate>;
+        using init_type = const_pair<typename _T1::init_type, typename _T2::init_type>;
+        using value_type = const_pair<typename _T2::value_type, typename _T1::value_type>;
         using hash_type = typename _T2::hash_type;
 
         struct Pred
@@ -488,8 +488,28 @@ namespace compile_time_bits
         }
     };
 
+    // array that is aligned within CPU cache lines
+    // its base address and size are both aligned to fit cache lines
     template<typename _HashType, size_t N>
-    using const_index_proxy = const_array<_HashType, N>;
+    class aligned_index
+    {
+    public:
+        static constexpr size_t alignment = std::hardware_constructive_interference_size;
+
+        static constexpr size_t get_aligned_size(size_t align) noexcept
+        {
+            size_t requested_memory = sizeof(const_array<_HashType, N>);
+            size_t aligned_blocks = (requested_memory + align - 1) / align;
+            size_t aligned_size = (aligned_blocks * align) / sizeof(_HashType);
+            return aligned_size;
+        }
+        static const size_t aligned_size = get_aligned_size(alignment);
+        static const size_t size = N;
+
+        // uncomment this alignment statement to observe test_compile_time unit test failure
+        alignas(alignment)
+        const_array<_HashType, aligned_size> m_array{};
+    };
 
     template<typename _HashType>
     class const_index
@@ -497,9 +517,11 @@ namespace compile_time_bits
     public:
         constexpr const_index() = default;
 
-        template<typename _Init>
-        constexpr const_index(const _Init& _init) 
-            : m_values{ _init.data() }, m_realsize{ _init.size() }
+        template<size_t N>
+        constexpr const_index(const aligned_index<_HashType, N>& _init)
+            : m_values{ _init.m_array.data() }, 
+              m_realsize{ N },
+              m_aligned_size{ _init.m_array.size() }
         {
         }
         size_t lower_bound(_HashType value) const noexcept
@@ -521,16 +543,29 @@ namespace compile_time_bits
         }
         const _HashType* m_values = nullptr;
         const size_t     m_realsize = 0;
+        const size_t     m_aligned_size = 0;
     };
 
+    // compile time sort algorithm
+    // uses insertion sort https://en.wikipedia.org/wiki/Insertion_sort
     template<typename _Traits, bool remove_duplicates>
     class TInsertSorter
     {
     public:
         using sort_traits = _Traits;
-        using init_type = typename _Traits::init_type;
+        using init_type  = typename _Traits::init_type;
         using value_type = typename _Traits::value_type;
         using hash_type  = typename _Traits::hash_type;
+
+        template<size_t N>
+        constexpr auto operator()(const init_type(&init)[N]) const noexcept
+        {
+            auto indices = make_indices(init);
+            auto hashes = construct_hashes(init, indices, std::make_index_sequence<aligned_index<hash_type, N>::aligned_size > {});
+            auto values = construct_values(init, indices, std::make_index_sequence<N>{});
+            return std::make_pair(hashes, values);
+        }
+    protected:
 
         template<typename _Indices, typename _Value>
         static constexpr void insert_down(_Indices& indices, size_t head, size_t tail, _Value current)
@@ -615,27 +650,29 @@ namespace compile_time_bits
             return 1 + last;
         }
 
-        template <class T, std::size_t... I>
-        static constexpr auto fill_array(std::index_sequence<I...>) noexcept
-        {
-            return const_array<std::remove_cv_t<T>, sizeof...(I)>{ {(I + 1000)...} };
-        }
-
         template<typename T, size_t N>
         static constexpr auto make_indices(const T(&input)[N]) noexcept
         {
             const_array<size_t, N> indices{};
-            //auto indices = fill_array<size_t>(std::make_index_sequence<N>{});
             auto real_size = insert_sort_indices(indices, input);
             return std::make_pair(real_size, indices);
         }
 
-        template<typename _Input, typename _Indices, std::size_t... I>
-        static constexpr auto construct_hashes(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
-            -> const_index_proxy<hash_type, sizeof...(I)> 
+        template<size_t I, typename _Input, typename _Indices>
+        static constexpr hash_type select_hash(const _Input& init, const _Indices& indices) noexcept
         {
-            auto real_size = indices.first;
-            return { { sort_traits::get_hash(input[indices.second[I < real_size ? I : real_size - 1]]) ...} };
+            size_t real_size = indices.first;
+            if (I < real_size)
+                return sort_traits::get_hash(init[indices.second[I]]);
+            else
+                return std::numeric_limits<hash_type>::max();
+        }
+
+        template<size_t N, typename _Indices, std::size_t... I>
+        static constexpr auto construct_hashes(const init_type(&init)[N], const _Indices& indices, std::index_sequence<I...> is) noexcept
+            -> aligned_index<hash_type, N>
+        {
+            return { { select_hash<I>(init, indices)...} };
         }
         template<typename _Input, typename _Indices, std::size_t... I>
         static constexpr auto construct_values(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
@@ -645,14 +682,6 @@ namespace compile_time_bits
             return { { sort_traits::construct(input[indices.second[I < real_size ? I : real_size - 1]]) ...} };
         }
 
-        template<size_t N>
-        constexpr auto operator()(const init_type(&init)[N]) const noexcept
-        {
-            auto indices = make_indices(init);
-            auto hashes = construct_hashes(init, indices, std::make_index_sequence<N>{});
-            auto values = construct_values(init, indices, std::make_index_sequence<N>{});
-            return std::make_pair(hashes, values);
-        }
     };
 
     template<typename _HashedKey, typename _Value>
@@ -669,15 +698,15 @@ namespace compile_time_bits
         using pointer         = const value_type*;
         using const_pointer   = const value_type*;
 
-        using intermediate = typename _HashedKey::intermediate;
+        using intermediate = typename _HashedKey::value_type;
 
         constexpr const_set_map_base() = default;
 
         template<typename _InitProxy>
         constexpr const_set_map_base(const _InitProxy& _proxy)
             : m_values{ _proxy.second.data() },
-            m_index{ _proxy.first },
-            m_realsize{ _proxy.second.size() }
+              m_index{ _proxy.first },
+              m_realsize{ _proxy.second.size() }
         {}
 
         constexpr const_iterator begin()    const noexcept { return m_values; }
@@ -699,7 +728,7 @@ namespace compile_time_bits
             lower_bound(K&& _key) const
         {
             intermediate temp = std::forward<K>(_key);
-            typename _HashedKey::type key(temp);
+            typename _HashedKey::init_type key(temp);
             hash_type hash(std::move(key));
             auto offset = m_index.lower_bound(hash);
             return begin() + offset;
@@ -709,7 +738,7 @@ namespace compile_time_bits
             upped_bound(K&& _key) const
         {
             intermediate temp = std::forward<K>(_key);
-            typename _HashedKey::type key(temp);
+            typename _HashedKey::init_type key(temp);
             hash_type hash(std::move(key));
             auto offset = m_index.upped_bound(hash);
             return begin() + offset;
@@ -720,12 +749,16 @@ namespace compile_time_bits
             equal_range(K&& _key) const
         {
             intermediate temp = std::forward<K>(_key);
-            typename _HashedKey::type key(temp);
+            typename _HashedKey::init_type key(temp);
             hash_type hash(std::move(key));
             auto _range = m_index.equal_range(hash);
             return std::make_pair(
                 begin() + _range.first,
                 begin() + _range.second);
+        }
+        size_t get_alignment() const
+        {
+            return std::uintptr_t(m_index.m_values) % std::hardware_constructive_interference_size;
         }
     protected:
 
@@ -735,8 +768,8 @@ namespace compile_time_bits
         size_type         m_realsize = 0;
     };
 
-    template<typename _A, typename _P>
-    static constexpr bool CheckOrder(const _A& c, _P pred)
+    template<typename _Array, typename _Pred>
+    static constexpr bool CheckOrder(const _Array& c, _Pred pred)
     {
         for (size_t i = c.size()-1; i > 0; --i)
             if (!pred(c[i - 1], c[i]))
@@ -840,50 +873,54 @@ namespace compile_time_bits
         yes
     };
 
-    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, typename _BaseType>
+    // we only support strings, integral types and enums
+    // write your own DeduceHashedType specialization if required
+    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, typename _BaseType, class _Enabled = _BaseType>
     struct DeduceHashedType
     {
-        using type = _BaseType;
-        using intermediate = _BaseType;
+        using init_type = _BaseType;
+        using value_type = _BaseType;
+        //using hash_type = _BaseType;
+    };
+
+    template<ncbi::NStr::ECase case_sensitive, typename _BaseType>
+    struct DeduceHashedType<case_sensitive, NeedHash::yes, _BaseType,
+        typename std::enable_if<std::is_enum<_BaseType>::value, _BaseType>::type>
+    {
+        using init_type = _BaseType;
+        using value_type = _BaseType;
+        using hash_type = typename std::underlying_type<_BaseType>::type;
+    };
+
+    template<ncbi::NStr::ECase case_sensitive, typename _BaseType>
+    struct DeduceHashedType<case_sensitive, NeedHash::yes, _BaseType,
+        typename std::enable_if<std::numeric_limits<_BaseType>::is_integer, _BaseType>::type>
+    {
+        using init_type = _BaseType;
+        using value_type = _BaseType;
         using hash_type = _BaseType;
-        static constexpr const hash_type& get_hash(const type& v) noexcept
-        {
-            return v;
-        }
     };
 
     template<ncbi::NStr::ECase case_sensitive>
     struct DeduceHashedType<case_sensitive, NeedHash::yes, const char*>
     {
-        using type = CHashString<case_sensitive>;
-        //using intermediate = typename type::sv;
-        using intermediate = string_view<case_sensitive>;
-        using hash_type = typename type::hash_type;
-        static constexpr hash_type get_hash(const type& v) noexcept
-        {
-            return v;
-        }
+        using init_type = CHashString<case_sensitive>;
+        using value_type = string_view<case_sensitive>;
+        using hash_type = typename init_type::hash_type;
     };
 
     template<ncbi::NStr::ECase case_sensitive>
     struct DeduceHashedType<case_sensitive, NeedHash::no, const char*>
-    {  // this doesn't have any hashes
-        using type = string_view<case_sensitive>;
-        using intermediate = type;
+    {
+        using value_type = string_view<case_sensitive>;
+        using init_type  = value_type;
     };
 
-    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, class CharT, class Traits, class Allocator>
-    struct DeduceHashedType<case_sensitive, need_hash, std::basic_string<CharT, Traits, Allocator>>
-         : DeduceHashedType<case_sensitive, need_hash, const char*>
-    {
-    };   
-
-    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, typename _Hash>
-    struct DeduceHashedType<case_sensitive, need_hash, CHashString<case_sensitive, _Hash>>
-         : DeduceHashedType<case_sensitive, need_hash, const char*>
+    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, class Traits, class Allocator>
+    struct DeduceHashedType<case_sensitive, need_hash, std::basic_string<char, Traits, Allocator>>
+        : DeduceHashedType<case_sensitive, need_hash, const char*>
     {
     };
-
 }
 
 #endif
