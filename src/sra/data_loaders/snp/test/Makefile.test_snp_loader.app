@@ -1,13 +1,13 @@
 APP = test_snp_loader
 SRC = test_snp_loader
 
-REQUIRES = Boost.Test.Included
+REQUIRES = Boost.Test.Included GRPC
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = ncbi_xloader_snp $(SRAREAD_LIBS) dbsnp_ptis grpc_integration test_boost $(OBJMGR_LIBS) $(CMPRS_LIB)
 
-LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(GRPC_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(GRPC_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
 
