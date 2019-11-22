@@ -52,6 +52,7 @@ public:
     string GetPrimarySnpTrackForId(const string& id);
     string GetPrimarySnpTrackForId(const CSeq_id& id);
 
+    static bool IsEnabled();
     static CRef<CSnpPtisClient> CreateClient();
 };
 

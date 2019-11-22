@@ -25,13 +25,16 @@
 
 
 #include <ncbi_pch.hpp>
+#include <ncbiconf.h>
 
 #include <objects/dbsnp/primary_track/snpptis.hpp>
-#include <objects/dbsnp/primary_track/impl/snpptis_impl.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <corelib/ncbi_param.hpp>
 
-#include <misc/grpc_integration/grpc_integration.hpp>
+#ifdef HAVE_LIBGRPC
+# include <objects/dbsnp/primary_track/impl/snpptis_impl.hpp>
+# include <corelib/ncbi_param.hpp>
+# include <misc/grpc_integration/grpc_integration.hpp>
+#endif
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
@@ -47,14 +50,50 @@ CSnpPtisClient::~CSnpPtisClient()
 }
 
 
-CRef<CSnpPtisClient> CSnpPtisClient::CreateClient()
+bool CSnpPtisClient::IsEnabled()
 {
-    CRef<CSnpPtisClient> client;
-    client = new CSnpPtisClient_Impl();
-    return client;
+#ifdef HAVE_LIBGRPC
+    return true;
+#else
+    return false;
+#endif
 }
 
 
+CRef<CSnpPtisClient> CSnpPtisClient::CreateClient()
+{
+#ifdef HAVE_LIBGRPC
+    CRef<CSnpPtisClient> client;
+    client = new CSnpPtisClient_Impl();
+    return client;
+#else
+    ERR_POST_ONCE("CSnpPtisClient is desabled due to lack of GRPC support");
+    NCBI_THROW(CException, eUnsupported, "CSnpPtisClient is desabled due to lack of GRPC support");
+#endif
+}
+
+
+string CSnpPtisClient::GetPrimarySnpTrackForId(const string& id)
+{
+    return GetPrimarySnpTrackForId(CSeq_id(id));
+}
+
+
+string CSnpPtisClient::GetPrimarySnpTrackForId(const CSeq_id& id)
+{
+    if ( id.IsGi() ) {
+        return GetPrimarySnpTrackForGi(id.GetGi());
+    }
+    else if ( const CTextseq_id* text_id = id.GetTextseq_Id() ) {
+        return GetPrimarySnpTrackForAccVer(text_id->GetAccession()+'.'+NStr::NumericToString(text_id->GetVersion()));
+    }
+    else {
+        NCBI_THROW_FMT(CException, eUnknown, "Invalid Seq-id type: "<<id.AsFastaString());
+    }
+}
+
+
+#ifdef HAVE_LIBGRPC
 CSnpPtisClient_Impl::CSnpPtisClient_Impl()
 {
     channel = grpc::CreateChannel(g_NCBI_GRPC_GetAddress("ID2SNP", "PTIS_NAME"),
@@ -84,26 +123,6 @@ string CSnpPtisClient_Impl::GetPrimarySnpTrackForAccVer(const string& acc_ver)
 }
 
 
-string CSnpPtisClient::GetPrimarySnpTrackForId(const string& id)
-{
-    return GetPrimarySnpTrackForId(CSeq_id(id));
-}
-
-
-string CSnpPtisClient::GetPrimarySnpTrackForId(const CSeq_id& id)
-{
-    if ( id.IsGi() ) {
-        return GetPrimarySnpTrackForGi(id.GetGi());
-    }
-    else if ( const CTextseq_id* text_id = id.GetTextseq_Id() ) {
-        return GetPrimarySnpTrackForAccVer(text_id->GetAccession()+'.'+NStr::NumericToString(text_id->GetVersion()));
-    }
-    else {
-        NCBI_THROW_FMT(CException, eUnknown, "Invalid Seq-id type: "<<id.AsFastaString());
-    }
-}
-
-
 string CSnpPtisClient_Impl::x_GetPrimarySnpTrack(const TRequest& request)
 {
     CGRPCClientContext context;
@@ -123,7 +142,7 @@ string CSnpPtisClient_Impl::x_GetPrimarySnpTrack(const TRequest& request)
 
     return reply.na_track_acc_with_filter();
 }
-
+#endif
 
 END_NAMESPACE(objects);
 END_NCBI_NAMESPACE;
