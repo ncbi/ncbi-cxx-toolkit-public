@@ -760,6 +760,9 @@ GRPC_LIBS            = @GRPC_LIBS@
 GRPC_UNSECURE_LIBS   = @GRPC_UNSECURE_LIBS@
 GRPC_REFLECTION_LIBS = @GRPC_REFLECTION_LIBS@
 GRPC_BIN             = @GRPC_BIN@
+# Macro indicating optional use of PROTOBUF and GRPC
+PROTOBUF_OPT = protobuf
+GRPC_OPT     = GRPC
 
 # Microsoft Guidelines Support Library
 MSGSL_INCLUDE = @MSGSL_INCLUDE@
