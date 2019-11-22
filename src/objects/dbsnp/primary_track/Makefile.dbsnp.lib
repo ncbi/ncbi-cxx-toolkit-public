@@ -4,7 +4,7 @@ LIB = dbsnp_ptis
 SRC = dbsnp.pb dbsnp.grpc.pb snpptis 
 
 PROJ_TAG = gbench,lib,public
-REQUIRES = GRPC
+REQUIRES = GRPC_OPT
 
 CPPFLAGS = $(GRPC_INCLUDE) -DNCBI_DBSNP_PTIS_EXPORTS $(ORIG_CPPFLAGS)
 
