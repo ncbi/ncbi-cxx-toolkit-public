@@ -91,9 +91,11 @@
 #include <objtools/readers/microarray_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
+#include <objtools/readers/gtf_reader.hpp>
 #include <objtools/readers/gvf_reader.hpp>
 #include <objtools/readers/vcf_reader.hpp>
 #include <objtools/readers/rm_reader.hpp>
+#include <objtools/readers/psl_reader.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/error_codes.hpp>
@@ -114,7 +116,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CReaderBase*
 CReaderBase::GetReader(
     CFormatGuess::EFormat format,
-    TReaderFlags flags )
+    TReaderFlags flags,
+    CReaderListener* pRL )
 //  ----------------------------------------------------------------------------
 {
     switch ( format ) {
@@ -123,18 +126,18 @@ CReaderBase::GetReader(
     case CFormatGuess::eBed:
         return new CBedReader(flags);
     case CFormatGuess::eBed15:
-        return new CMicroArrayReader(flags);
+        return new CMicroArrayReader(flags, pRL);
     case CFormatGuess::eWiggle:
         return new CWiggleReader(flags);
     case CFormatGuess::eGtf:
     case CFormatGuess::eGtf_POISENED:
-        return new CGff3Reader(flags);
+        return new CGtfReader(flags);
     case CFormatGuess::eGff3:
         return new CGff3Reader(flags);
     case CFormatGuess::eGvf:
         return new CGvfReader(flags);
     case CFormatGuess::eVcf:
-        return new CVcfReader(flags);
+        return new CVcfReader(flags, pRL);
     case CFormatGuess::eRmo:
         return new CRepeatMaskerReader(flags);
     case CFormatGuess::eFasta:
@@ -143,6 +146,8 @@ CReaderBase::GetReader(
         return new CFeature_table_reader(flags);
     case CFormatGuess::eUCSCRegion:
         return new CUCSCRegionReader(flags);
+    case CFormatGuess::ePsl:
+        return new CPslReader(flags, pRL);
     }
 }
 

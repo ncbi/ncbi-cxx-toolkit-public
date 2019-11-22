@@ -52,11 +52,15 @@ class NCBI_XOBJREAD_EXPORT CPslReader
 {
 public:
     CPslReader(
-        TReaderFlags iFlags,
+        TReaderFlags flags,
         const string& name = "",
         const string& title = "",
         SeqIdResolver seqResolver = CReadUtil::AsSeqId,
         CReaderListener* pListener = nullptr);
+
+    CPslReader(
+        TReaderFlags flags,
+        CReaderListener* pRL): CPslReader(flags, "", "", CReadUtil::AsSeqId, pRL) {};
 
     virtual ~CPslReader();
     

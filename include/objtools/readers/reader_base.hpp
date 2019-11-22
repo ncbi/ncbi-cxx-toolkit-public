@@ -103,7 +103,6 @@ protected:
         SeqIdResolver seqresolver = CReadUtil::AsSeqId,
         CReaderListener* pListener = nullptr);
 
-
 public:
     virtual ~CReaderBase();
 
@@ -116,7 +115,8 @@ public:
     ///
     static CReaderBase* GetReader(
         CFormatGuess::EFormat format,
-        TReaderFlags flags =0 );
+        TReaderFlags flags = 0,
+        CReaderListener* = nullptr );
 
     /// Read an object from a given input stream, render it as the most
     /// appropriate Genbank object.

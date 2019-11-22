@@ -155,7 +155,6 @@ private:
     void xProcessUCSCRegion(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessBedRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGtf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessVcf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessNewick(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGff3(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGff2(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -165,7 +164,6 @@ private:
     void xProcess5ColFeatTable(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessFasta(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     //void xProcessHgvs(const CArgs&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessPsl(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, const string&);
@@ -773,6 +771,9 @@ CMultiReaderApp::xProcessSingleFile(
                     xProcessBed(args, istr, ostr);
                 }
                 break;
+            case CFormatGuess::eBed15:
+                xProcessDefault(args, istr, ostr);
+                break;
             case CFormatGuess::eUCSCRegion:
                 xProcessUCSCRegion(args, istr, ostr);
                 break;
@@ -782,7 +783,7 @@ CMultiReaderApp::xProcessSingleFile(
                 xProcessGtf(args, istr, ostr);
                 break;
             case CFormatGuess::eVcf:
-                xProcessVcf(args, istr, ostr);
+                xProcessDefault(args, istr, ostr);
                 break;
             case CFormatGuess::eNewick:
                 xProcessNewick(args, istr, ostr);
@@ -809,12 +810,16 @@ CMultiReaderApp::xProcessSingleFile(
                 xProcessFasta(args, istr, ostr);
                 break;
             case CFormatGuess::ePsl:
-                xProcessPsl(args, istr, ostr);
+                xProcessDefault(args, istr, ostr);
                 break;
             //case CFormatGuess::eHgvs:
             //    xProcessHgvs(args, istr, ostr);
             //    break;
         }
+    }
+    catch(const CReaderMessage& message) {
+        message.Dump(cerr);
+        retCode = false;
     }
     catch(const ILineError & reader_ex) {
         AutoPtr<ILineError> line_error_p =
@@ -831,10 +836,12 @@ CMultiReaderApp::xProcessSingleFile(
                     "Reading aborted due to fatal error: " << std_ex.what()));
         m_pErrors->PutError(*line_error_p);
         retCode = false;
-    } catch(int) {
+    } 
+    catch(int) {
         // hack on top of hackish reporting system
         retCode = false;
-    } catch(...) {
+    } 
+    catch(...) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
                 eDiag_Fatal, "Unknown Fatal Error occurred");
@@ -852,13 +859,25 @@ void CMultiReaderApp::xProcessDefault(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CReaderBase> pReader(CReaderBase::GetReader(m_uFormat, m_iFlags));
+    typedef list<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+
+    unique_ptr<CReaderBase> pReader(
+        CReaderBase::GetReader(m_uFormat, m_iFlags, &newStyleMessageListener));
     if (!pReader.get()) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "File format not supported", 0);
+        CReaderMessage fatal(
+            eDiag_Fatal, 1, "File format not supported");
+        throw(fatal);
     }
-    CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors.get());
-    xWriteObject(args, *object, ostr);
+    if (ShowingProgress()) {
+        pReader->SetProgressReportInterval(10);
+    }
+    //TestCanceler canceler;
+    //pReader->SetCanceler(&canceler);
+    pReader->ReadSeqAnnots(annots, istr, m_pErrors.get());
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xWriteObject(args, **cit, ostr);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -1065,28 +1084,6 @@ void CMultiReaderApp::xProcessGvf(
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReaderApp::xProcessVcf(
-    const CArgs& args,
-    CNcbiIstream& istr,
-    CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
-{
-    typedef list<CRef<CSeq_annot> > ANNOTS;
-    ANNOTS annots;
-
-    CVcfReader reader( m_iFlags );
-    if (ShowingProgress()) {
-        reader.SetProgressReportInterval(10);
-    }
-   //TestCanceler canceler;
-   //reader.SetCanceler(&canceler);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(args, **cit, ostr);
-    }
-}
-
-//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessNewick(
     const CArgs& args,
     CNcbiIstream& istr,
@@ -1166,30 +1163,6 @@ void CMultiReaderApp::xProcessFasta(
     CFastaReader reader(line_reader, fFlags);
     CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors.get());
     xWriteObject(args, *pSeqEntry, ostr);
-}
-
-//  ----------------------------------------------------------------------------
-void CMultiReaderApp::xProcessPsl(
-    const CArgs& args,
-    CNcbiIstream& istr,
-    CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
-{
-    CPslReader reader(
-        m_iFlags, 
-        args["name"].AsString(), args["title"].AsString(), 
-        CReadUtil::AsSeqId, 
-        &newStyleMessageListener);
-    if (ShowingProgress()) {
-        reader.SetProgressReportInterval(10);
-    }
-   //TestCanceler canceler;
-   //reader.SetCanceler(&canceler);
-    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(istr);
-    if (!pAnnot) {
-        return;
-    }
-    xWriteObject(args, *pAnnot, ostr);
 }
 
 //  ----------------------------------------------------------------------------
