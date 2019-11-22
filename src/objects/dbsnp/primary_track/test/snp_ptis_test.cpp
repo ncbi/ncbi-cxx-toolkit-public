@@ -90,6 +90,10 @@ void CSnpPtisTestApp::Init(void)
 
 int CSnpPtisTestApp::Run(void)
 {
+    if ( !CSnpPtisClient::IsEnabled() ) {
+        ERR_POST("Test is disabled due to lack of GRPC support");
+        return 0;
+    }
     const CArgs& args = GetArgs();
 
     vector<string> ids;

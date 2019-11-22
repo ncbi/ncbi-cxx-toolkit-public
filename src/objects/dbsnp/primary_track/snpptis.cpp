@@ -67,8 +67,8 @@ CRef<CSnpPtisClient> CSnpPtisClient::CreateClient()
     client = new CSnpPtisClient_Impl();
     return client;
 #else
-    ERR_POST_ONCE("CSnpPtisClient is desabled due to lack of GRPC support");
-    NCBI_THROW(CException, eUnsupported, "CSnpPtisClient is desabled due to lack of GRPC support");
+    ERR_POST_ONCE("CSnpPtisClient is disabled due to lack of GRPC support");
+    NCBI_THROW(CException, eUnknown, "CSnpPtisClient is disabled due to lack of GRPC support");
 #endif
 }
 
