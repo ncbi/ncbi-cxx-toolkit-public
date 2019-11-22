@@ -123,6 +123,8 @@ public:
     virtual void GetChunk(TChunk chunk) override;
     virtual void GetChunks(const TChunkSet& chunks) override;
 
+    static bool IsUsingPTIS();
+
 private:
     typedef CParamLoaderMaker<CSNPDataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CSNPDataLoader, SLoaderParams>;

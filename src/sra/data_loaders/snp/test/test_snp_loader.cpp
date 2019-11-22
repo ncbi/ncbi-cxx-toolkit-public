@@ -240,10 +240,6 @@ void s_TestPTIS(const string& descr,
 BOOST_AUTO_TEST_CASE(GBImplicitNA)
 {
     CRef<CScope> scope = s_MakeScope0();
-    if ( CGBDataLoader::IsUsingPSGLoader() ) {
-        LOG_POST("Skipping GBLoader SNP test in PSG mode");
-        return;
-    }
     string na_acc = "NA000124713.8#1";
     string na_acc2 = "NA000193272.4#17";
     string seq_id = "NC_000001.11";
@@ -263,10 +259,6 @@ BOOST_AUTO_TEST_CASE(GBImplicitNA)
 BOOST_AUTO_TEST_CASE(GBImplicitSNP)
 {
     CRef<CScope> scope = s_MakeScope0();
-    if ( CGBDataLoader::IsUsingPSGLoader() ) {
-        LOG_POST("Skipping GBLoader SNP test in PSG mode");
-        return;
-    }
     string seq_id = "NC_000001.11";
     TSeqPos range_from = 0;
     TSeqPos range_to = 100000;
@@ -344,4 +336,16 @@ BOOST_AUTO_TEST_CASE(SNPImplicitSNP)
 
     s_TestPTIS("SNPImplicitSNP 1", eFromSNP, bh, range_from, range_to, snp_count);
     s_TestPTIS("SNPImplicitSNP 2", eFromSNP, bh2, range_from2, range_to2, snp_count2);
+}
+
+
+NCBITEST_INIT_TREE()
+{
+    if ( CGBDataLoader::IsUsingPSGLoader() ) {
+        NCBITEST_DISABLE(GBImplicitNA);
+        NCBITEST_DISABLE(GBImplicitSNP);
+    }
+    if ( !CSNPDataLoader::IsUsingPTIS() ) {
+        NCBITEST_DISABLE(SNPImplicitSNP);
+    }
 }

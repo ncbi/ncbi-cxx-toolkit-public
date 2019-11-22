@@ -344,6 +344,12 @@ CSNPDataLoader::TAnnotNames CSNPDataLoader::GetPossibleAnnotNames(void) const
 }
 
 
+bool CSNPDataLoader::IsUsingPTIS()
+{
+    return CSnpPtisClient::IsEnabled();
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================
