@@ -1,0 +1,136 @@
+Seq-annot ::= {
+  desc {
+    title "Microarray custom track",
+    name "Microarray",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "Microarray custom track"
+        },
+        {
+          label str "expNames",
+          data str "breast_A,breast_B,breast_C,cerebellum_A,cerebellum_B,"
+        },
+        {
+          label str "expScale",
+          data str "3.0"
+        },
+        {
+          label str "expStep",
+          data str "0.5"
+        },
+        {
+          label str "name",
+          data str "Microarray"
+        },
+        {
+          label str "type",
+          data str "array"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 15
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data user {
+        type str "Display Data",
+        data {
+          {
+            label str "name",
+            data str "2440848"
+          },
+          {
+            label str "score",
+            data int 500
+          },
+          {
+            label str "thickStart",
+            data int 159639972
+          },
+          {
+            label str "thickEnd",
+            data int 159640030
+          },
+          {
+            label str "itemRGB",
+            data int 0
+          },
+          {
+            label str "blockCount",
+            data int 1
+          },
+          {
+            label str "blockSizes",
+            data str "59,"
+          },
+          {
+            label str "blockStarts",
+            data str "0,"
+          }
+        }
+      },
+      location int {
+        from 159639972,
+        to 159640030,
+        strand minus,
+        id local str "chr1"
+      }
+    },
+    {
+      data user {
+        type str "Display Data",
+        data {
+          {
+            label str "name",
+            data str "2440849"
+          },
+          {
+            label str "score",
+            data int 500
+          },
+          {
+            label str "thickStart",
+            data int 159640161
+          },
+          {
+            label str "thickEnd",
+            data int 159640189
+          },
+          {
+            label str "itemRGB",
+            data int 0
+          },
+          {
+            label str "blockCount",
+            data int 1
+          },
+          {
+            label str "blockSizes",
+            data str "29,"
+          },
+          {
+            label str "blockStarts",
+            data str "0,"
+          }
+        }
+      },
+      location int {
+        from 159640161,
+        to 159640189,
+        strand minus,
+        id local str "chr1"
+      }
+    }
+  }
+}

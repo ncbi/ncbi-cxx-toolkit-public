@@ -24,6 +24,7 @@ APP_PROJ = \
     unit_test_5colftblreader \
     unit_test_mod_adder \
     unit_test_title_parser \
+    unit_test_microarrayreader \
     unit_test_pslreader
 
 PROJ_TAG = test
