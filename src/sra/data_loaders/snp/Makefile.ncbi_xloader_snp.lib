@@ -8,7 +8,7 @@ PROJ_TAG = gbench,lib,public
 LIB = ncbi_xloader_snp
 SRC = snploader snploader_impl
 
-REQUIRES = objects
+REQUIRES = objects GRPC
 
 ASN_DEP = seqset seq
 
