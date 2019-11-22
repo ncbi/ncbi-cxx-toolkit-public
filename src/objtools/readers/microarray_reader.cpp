@@ -31,79 +31,36 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/stream_utils.hpp>
-
-#include <util/static_map.hpp>
 #include <util/line_reader.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistrasn.hpp>
-
-// Objects includes
-#include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/general/Dbtag.hpp>
-
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-
-#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/Gene_ref.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
 
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/line_error.hpp>
-#include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/microarray_reader.hpp>
-#include <objtools/error_codes.hpp>
 
-#include <algorithm>
-
-
-#define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
+#include "reader_message_handler.hpp"
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_objects_SCOPE
 
 //  ----------------------------------------------------------------------------
 CMicroArrayReader::CMicroArrayReader(
-    int flags )
+    int flags,
+    CReaderListener* pRL)
 //  ----------------------------------------------------------------------------
-    : CReaderBase(flags),
+    : CReaderBase(flags, "", "", CReadUtil::AsSeqId, pRL),
       m_currentId(""),
       m_columncount(15),
       m_usescore(false)
 {
+    m_iFlags |= fReadAsBed;
 }
 
 //  ----------------------------------------------------------------------------
@@ -113,132 +70,133 @@ CMicroArrayReader::~CMicroArrayReader()
 }
 
 //  ----------------------------------------------------------------------------                
-CRef< CSerialObject >
-CMicroArrayReader::ReadObject(
-    ILineReader& lr,
-    ILineErrorListener* pMessageListener ) 
-//  ----------------------------------------------------------------------------                
-{ 
-    CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );
-    return object;
-}
-    
-//  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
     ILineErrorListener* pEC) 
 //  ----------------------------------------------------------------------------                
 {
-    const int MAX_RECORDS = 100000;
+    CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
+    if (pAnnot) {
+        xAssignTrackData(pAnnot);
 
-    CRef<CSeq_annot> annot;
-    CRef<CAnnot_descr> desc;
-
-    annot.Reset(new CSeq_annot);
-    desc.Reset(new CAnnot_descr);
-    annot->SetDesc(*desc);
-    CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
-
-    string line;
-    int featureCount = 0;
-    while (xGetLine(lr, line)) {
-        if (xIsTrackLine(line)  &&  featureCount) {
-            xUngetLine(lr);
-            break;
-        }
-        if (xParseBrowserLine(line, *annot, pEC)) {
-            continue;
-        }
-        if (xParseTrackLine(line, pEC)) {
-            continue;
-        }
-
-	    string record_copy = line;
-	    NStr::TruncateSpacesInPlace(record_copy);
-
-        //  parse
-        vector<string> fields;
-        NStr::Split(record_copy, " \t", fields, NStr::fSplit_MergeDelimiters);
-        try {
-            xCleanColumnValues(fields);
-        }
-        catch(CObjReaderLineException& err) {
-            ProcessError(err, pEC);
-            continue;
-        }
-        if (fields[0] != m_currentId) {
-            //record id has changed
-            if (featureCount > 0) {
-                --m_uLineNumber;
-                lr.UngetLine();
-                break;
-            }
-        }
-        if (xParseFeature(fields, annot, pEC)) {
-            ++featureCount;
-            continue;
-        }
-        if (tbl.size() >= MAX_RECORDS) {
-            break;
-        }
-    }
-    //  Only return a valid object if there was at least one feature
-    if (0 == featureCount) {
-        return CRef<CSeq_annot>();
-    }
-    xAddConversionInfo(annot, pEC);
-    xAssignTrackData( annot );
-
-    if(m_columncount >= 3) {
-        CRef<CUser_object> columnCountUser( new CUser_object() );
-        columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
-        columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
+        if(m_columncount >= 3) {
+            CRef<CUser_object> columnCountUser( new CUser_object() );
+            columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
+            columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
     
-        CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
-        userDesc->SetUser().Assign( *columnCountUser );
-        annot->SetDesc().Set().push_back( userDesc );
+            CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
+            userDesc->SetUser().Assign( *columnCountUser );
+            pAnnot->SetDesc().Set().push_back( userDesc );
+        }
     }
-    return annot;
+    return pAnnot;
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::xParseFeature(
-    const vector<string>& fields,
-    CRef<CSeq_annot>& annot,
-    ILineErrorListener* pEC)
+CRef<CSeq_annot>
+CMicroArrayReader::xCreateSeqAnnot() 
 //  ----------------------------------------------------------------------------
 {
-    const size_t columncount = 15;
+    CRef<CSeq_annot> pAnnot = CReaderBase::xCreateSeqAnnot();
+    CRef<CAnnot_descr> desc(new CAnnot_descr);
+    pAnnot->SetDesc(*desc);
+    pAnnot->SetData().SetFtable();
+    return pAnnot;
+}
+
+
+//  ----------------------------------------------------------------------------
+void
+CMicroArrayReader::xProcessData(
+    const TReaderData& readerData,
+    CSeq_annot& annot) 
+//  ----------------------------------------------------------------------------
+{
+    for (const auto& lineInfo: readerData) {
+        const auto& line = lineInfo.mData; 
+        if (xParseBrowserLine(line, annot, nullptr)) {
+            return;
+        }
+        if (xProcessTrackLine(line)) {
+            return;
+        }
+        xProcessFeature(line, annot);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CMicroArrayReader::xGetData(
+    ILineReader& lr,
+    TReaderData& readerData)
+//  ----------------------------------------------------------------------------
+{
+    const int MAX_RECORDS = 100000;
+
+    readerData.clear();
+    if (m_uDataCount == MAX_RECORDS) {
+        m_uDataCount = 0;
+        m_currentId.clear();
+        return;
+    }
+
+    string line, head, tail;
+    if (!xGetLine( lr, line)) {
+        return;
+    }
+    if (xIsTrackLine(line)) {
+        if (!m_currentId.empty()) {
+            xUngetLine(lr);
+            m_uDataCount = 0;
+            m_currentId.clear();
+            return;
+        }
+        else {
+            readerData.push_back(TReaderLine{m_uLineNumber, line});
+            ++m_uDataCount;
+            return;
+        } 
+    }
+
+    NStr::SplitInTwo(line, "\t", head, tail);
+    if (!m_currentId.empty()  &&  head != m_currentId) {
+        xUngetLine(lr);
+        m_uDataCount = 0;
+        m_currentId.clear();
+        return;
+    }
+    readerData.push_back(TReaderLine{m_uLineNumber, line});
+    if (m_currentId.empty()) {
+        m_currentId = head;
+    }
+    ++m_uDataCount;
+}
+
+//  ----------------------------------------------------------------------------
+bool CMicroArrayReader::xProcessFeature(
+    const string& line,
+    CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    const size_t COLUMNCOUNT = 15;
+
+    vector<string> fields;
+    NStr::Split(line, " \t", fields, NStr::fSplit_MergeDelimiters);
+    xCleanColumnValues(fields);
+    if (fields.size() != COLUMNCOUNT) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Feature Processing: Bad column count. Should be 15." );
+        throw(error);
+    }
+
     CRef<CSeq_feat> feature;
-
-    if (fields.size() != columncount) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Feature Processing: Bad column count. Should be 15." ) );
-        ProcessError(*pErr, pEC );
-        return false;
-    }
-
-    //  assign
-    feature.Reset( new CSeq_feat );
-    try {
-        xSetFeatureLocation( feature, fields );
-        xSetFeatureDisplayData( feature, fields );
-    }
-    catch (...) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Feature Processing: General Parse Error." ) );
-        ProcessError(*pErr, pEC );
-        return false;
-    }
-    annot->SetData().SetFtable().push_back( feature );
+    feature.Reset(new CSeq_feat);
+    xSetFeatureLocation(feature, fields);
+    xSetFeatureDisplayData(feature, fields);
+    annot.SetData().SetFtable().push_back(feature);
     return true;
 }
 
@@ -303,16 +261,15 @@ void CMicroArrayReader::xSetFeatureDisplayData(
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::xParseTrackLine(
-    const string& strLine,
-    ILineErrorListener* pEC)
+bool CMicroArrayReader::xProcessTrackLine(
+    const string& strLine)
 //  ----------------------------------------------------------------------------
 {
     m_strExpNames = "";
     m_iExpScale = -1;
     m_iExpStep = -1;
     
-    if (!CReaderBase::xParseTrackLine( strLine, pEC)) {
+    if (!CReaderBase::xParseTrackLine(strLine, nullptr)) {
         return false;
     }
     if ( m_iFlags & fReadAsBed ) {
@@ -320,31 +277,25 @@ bool CMicroArrayReader::xParseTrackLine(
     }
     
     if ( m_strExpNames.empty() ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage error(
             eDiag_Warning,
-            0,
-            "Track Line Processing: Missing \"expName\" parameter." ) );
-        ProcessError(*pErr, pEC );
-        return false;
+            m_uLineNumber,
+            "Track Line Processing: Missing \"expName\" parameter.");
+        m_pMessageHandler->Report(error);
     }
     if ( m_iExpScale == -1 ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+         CReaderMessage error(
             eDiag_Warning,
-            0,
-            "Track Line Processing: Missing \"expScale\" parameter." ) );
-        ProcessError(*pErr, pEC );
-        return false;
+            m_uLineNumber,
+            "Track Line Processing: Missing \"expScale\" parameter." );
+        m_pMessageHandler->Report(error);
     }
     if ( m_iExpStep == -1 ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+         CReaderMessage error(
             eDiag_Warning,
-            0,
-            "Track Line Processing: Missing \"expStep\" parameter." ) );
-        ProcessError(*pErr, pEC );
-        return false;
+            m_uLineNumber,
+            "Track Line Processing: Missing \"expStep\" parameter." );
+        m_pMessageHandler->Report(error);
     }
     
     return true;
@@ -362,39 +313,29 @@ CMicroArrayReader::xCleanColumnValues(
         columns[1] = columns[0] + columns[1];
         columns.erase(columns.begin());
     }
-    if (columns.size() < 3) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Bad data line: Insufficient column count." ) );
-        pErr->Throw();
-    }
 
     try {
         NStr::Replace(columns[1], ",", "", fixup);
         columns[1] = fixup;
     }
-    catch (...) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+    catch (CException&) {
+        CReaderMessage error(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStart\" (column 2) value." ) );
-        pErr->Throw();
+            "Bad data line: Invalid \"SeqStart\" (column 2) value." );
+        throw(error);
     }
 
     try {
         NStr::Replace(columns[2], ",", "", fixup);
         columns[2] = fixup;
     }
-    catch (...) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+    catch (CException&) {
+        CReaderMessage error(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStop\" (column 3) value." ) );
-        pErr->Throw();
+            "Bad data line: Invalid \"SeqStop\" (column 3) value." );
+        throw(error);
     }
 }
 

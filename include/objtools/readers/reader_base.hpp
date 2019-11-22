@@ -332,7 +332,7 @@ protected:
 
     void
     xProcessReaderMessage(
-        const CReaderMessage&,
+        CReaderMessage&,
         ILineErrorListener*);
 
     void

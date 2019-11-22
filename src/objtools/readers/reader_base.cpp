@@ -467,8 +467,7 @@ void CReaderBase::xSetBrowserRegion(
             location->SetId( *id );
 
         }
-        catch (const CStringException&)
-        {
+        catch (const CStringException&) {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
@@ -769,7 +768,7 @@ bool CReaderBase::xUngetLine(
 //  ----------------------------------------------------------------------------
 void
 CReaderBase::xProcessReaderMessage(
-    const CReaderMessage& readerMessage,
+    CReaderMessage& readerMessage,
     ILineErrorListener* pEL)
 //
 //  Strategy:
@@ -784,6 +783,7 @@ CReaderBase::xProcessReaderMessage(
 //      the best.
 //  ----------------------------------------------------------------------------
 {
+    readerMessage.SetLineNumber(m_uLineNumber);
     if (readerMessage.Severity() == eDiag_Fatal) {
         throw;
     }

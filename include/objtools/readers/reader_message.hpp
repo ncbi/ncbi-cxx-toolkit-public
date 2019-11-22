@@ -59,6 +59,11 @@ public:
     virtual string Message() const { return GetText(); };
     virtual EDiagSev Severity() const { return GetSeverity(); };
     virtual int LineNumber() const { return m_LineNumber; };
+
+    void SetLineNumber(int lineNumber) { 
+        if (m_LineNumber == 0) m_LineNumber = lineNumber; 
+    };
+
 protected:
     int m_LineNumber;
 };

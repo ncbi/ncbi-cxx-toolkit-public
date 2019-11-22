@@ -1185,7 +1185,7 @@ void CMultiReaderApp::xProcessPsl(
     }
    //TestCanceler canceler;
    //reader.SetCanceler(&canceler);
-    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(istr, m_pErrors.get());
+    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(istr);
     if (!pAnnot) {
         return;
     }

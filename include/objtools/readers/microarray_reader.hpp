@@ -35,11 +35,12 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
-
+#include <objtools/readers/reader_base.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+class CReaderListener;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CMicroArrayReader
@@ -53,40 +54,35 @@ public:
                                         //  and produce regular BED seq-annot
     };
 
-    //
-    //  object management:
-    //
 public:
     CMicroArrayReader( 
-        int =fDefaults );
+        int =fDefaults,
+        CReaderListener* = nullptr );
         
     virtual ~CMicroArrayReader();
     
-    //
-    //  interface:
-    //
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* = nullptr );
                 
-    virtual CRef< CSerialObject >
-    ReadObject(
-        ILineReader&,
-        ILineErrorListener* =0 );
-                
-    //
-    //  helpers:
-    //
 protected:
-    virtual bool xParseTrackLine(
-        const string&,
-        ILineErrorListener*);
+    virtual CRef<CSeq_annot> xCreateSeqAnnot();
+
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
+
+    virtual bool xProcessTrackLine(
+        const string&);
         
-    bool xParseFeature(
-        const vector<string>&,
-        CRef<CSeq_annot>&,
-        ILineErrorListener*);
+    bool xProcessFeature(
+        const string&,
+        CSeq_annot&);
 
     void xSetFeatureLocation(
         CRef<CSeq_feat>&,
@@ -99,14 +95,10 @@ protected:
     static void xCleanColumnValues(
         vector<string>&);
 
-    //
-    //  data:
-    //
 protected:
     string m_currentId;
     vector<string>::size_type m_columncount;
     bool m_usescore;
-//    int m_flags;
     string m_strExpNames;
     int m_iExpScale;
     int m_iExpStep;
