@@ -24,5 +24,7 @@ NCBI_add_app(
   unit_test_5colftblreader
   unit_test_mod_adder
   unit_test_title_parser
+  unit_test_pslreader
+  unit_test_microarrayreader
 )
 

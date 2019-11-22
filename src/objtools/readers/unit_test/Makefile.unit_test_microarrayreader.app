@@ -11,6 +11,6 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD  =
-CHECK_COPY = vcfreader_test_cases
+CHECK_COPY = microarrayreader_test_cases
 
 WATCHERS = ludwigf
