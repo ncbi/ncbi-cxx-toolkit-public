@@ -111,6 +111,7 @@ message BioseqInfoValue {
     }
     repeated SecondaryId  seq_ids       =   8;
     string                name          =   9;
+    EnumSeqState          seq_state     =  10;
 }
  
  

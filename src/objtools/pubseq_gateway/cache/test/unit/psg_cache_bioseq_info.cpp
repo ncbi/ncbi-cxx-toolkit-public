@@ -203,7 +203,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
     EXPECT_EQ(0, response[0].GetSat());
     EXPECT_EQ(5985907, response[0].GetSatKey());
     EXPECT_EQ(0, response[0].GetState());
-    EXPECT_EQ(5072UL, response[0].GetTaxId());
+    EXPECT_EQ(5072, response[0].GetTaxId());
     EXPECT_EQ("", response[0].GetName());
 }
 
@@ -221,8 +221,9 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
     EXPECT_EQ(24, response[0].GetSat());
     EXPECT_EQ(5622604, response[0].GetSatKey());
     EXPECT_EQ(0, response[0].GetState());
-    EXPECT_EQ(9606UL, response[0].GetTaxId());
-    EXPECT_EQ(4, response[0].GetSeqIds().size());
+    EXPECT_EQ(10, response[0].GetSeqState());
+    EXPECT_EQ(9606, response[0].GetTaxId());
+    EXPECT_EQ(4UL, response[0].GetSeqIds().size());
 
     set<tuple<int16_t, string>> expected_seq_ids;
 

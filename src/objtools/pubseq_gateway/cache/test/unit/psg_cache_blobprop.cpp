@@ -124,7 +124,7 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
     EXPECT_EQ(0, response[0].GetClass());
     EXPECT_EQ(823387172086L, response[0].GetDateAsn1());
     EXPECT_EQ("SPT", response[0].GetDiv());
-    EXPECT_EQ(36UL, response[0].GetFlags());
+    EXPECT_EQ(36, response[0].GetFlags());
     EXPECT_EQ(-2208970800000L, response[0].GetHupDate());
     EXPECT_EQ("", response[0].GetId2Info());
     EXPECT_EQ(1, response[0].GetNChunks());

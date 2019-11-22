@@ -157,6 +157,7 @@ bool CPubseqGatewayCacheBioseqInfo::x_ExtractRecord(CBioseqInfoRecord& record, l
         .SetSat(info.blob_key().sat())
         .SetSatKey(info.blob_key().sat_key())
         .SetState(info.state())
+        .SetSeqState(info.seq_state())
         .SetTaxId(info.tax_id())
         .SetDateChanged(info.date_changed())
         .SetSeqIds(move(seq_ids));
