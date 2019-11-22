@@ -596,7 +596,13 @@ CSNPDataLoader_Impl::CSNPDataLoader_Impl(
     m_AnnotName = params.m_AnnotName;
     m_AddPTIS = params.m_AddPTIS;
     if ( m_AddPTIS ) {
-        m_PTISClient = CSnpPtisClient::CreateClient();
+        if ( CSnpPtisClient::IsEnabled() ) {
+            m_PTISClient = CSnpPtisClient::CreateClient();
+        }
+        else {
+            ERR_POST_ONCE("CSNPDataLoader: SNP primary track is disabled due to lack of GRPC support");
+            m_AddPTIS = false;
+        }
     }
     
     if ( params.m_VDBFiles.empty() ) {
