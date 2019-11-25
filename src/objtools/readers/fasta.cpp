@@ -1094,13 +1094,27 @@ void CFastaReader::x_CloseGap(
                 }
             }
         }
+        
+        const auto cit = find_if(
+            m_GapsizeToLinkageEvidence.rbegin(),
+            m_GapsizeToLinkageEvidence.rend(),
+            [len](const auto& key_val) {
+                return key_val.first <= len;
+            });
+
+        const auto gap_linkage_evidence = 
+            (cit != m_GapsizeToLinkageEvidence.rend()) ?
+            cit->second :
+            SGap::TLinkEvidSet();  
+
 
         TGapRef pGap( new SGap(
             pos, len,
             eKnownSize,
             LineNumber(),
             m_gap_type,
-            m_gap_linkage_evidence));
+            gap_linkage_evidence));
+ 
 
         m_Gaps.push_back(pGap);
         m_TotalGapLength += len;
@@ -1229,7 +1243,9 @@ bool CFastaReader::ParseGapLine(
     if (m_gap_type && modKeyValueMultiMap.empty()) // fall back to default values coming from caller
     {
         pGapType = m_gap_type;
-        setOfLinkageEvidence = m_gap_linkage_evidence;
+        if (!m_GapsizeToLinkageEvidence.empty()) {
+            setOfLinkageEvidence = m_GapsizeToLinkageEvidence.begin()->second;
+        }
         for (const auto& rec : CSeq_gap::GetNameToGapTypeInfoMap())
         {
             if (rec.second.m_eType == *pGapType)
@@ -1266,9 +1282,11 @@ bool CFastaReader::ParseGapLine(
                     "gap-type",
                     sValue );
             }
+            continue;
 
-        } else if( canonicalKey == "linkage-evidence") {
-
+        } 
+        
+        if( canonicalKey == "linkage-evidence") {
             // could be semi-colon separated
             vector<CTempString> arrLinkageEvidences;
             NStr::Split(sValue, ";", arrLinkageEvidences, 
@@ -1292,15 +1310,15 @@ bool CFastaReader::ParseGapLine(
                         sValue );
                 }
             }
+            continue;
+        } 
 
-        } else {
-            // unknown mod.
-            FASTA_WARNING_EX(
-                LineNumber(),
-                "Unknown gap modifier name(s): " << sKey,
-                ILineError::eProblem_UnrecognizedQualifierName,
-                "gapline", sKey, kEmptyStr );
-        }
+        // unknown mod.
+        FASTA_WARNING_EX(
+            LineNumber(),
+            "Unknown gap modifier name(s): " << sKey,
+            ILineError::eProblem_UnrecognizedQualifierName,
+            "gapline", sKey, kEmptyStr );
     }
 
     if( bConflictingGapTypes ) {
@@ -1518,12 +1536,12 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
                             CSeq_gap::TLinkage_evidence::value_type pNewLinkEvid(
                                 new CLinkage_evidence );
                             pNewLinkEvid->SetType( *link_evid_it );
-                            vecLinkEvids.push_back(pNewLinkEvid);
+                            vecLinkEvids.push_back(move(pNewLinkEvid));
                         }
                     }
                 }
             }
-            delta_ext.Set().push_back(gap_ds);
+            delta_ext.Set().push_back(move(gap_ds));
 
             TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1]->m_uPos;
             if (next_start != m_Gaps[i]->m_uPos) {
@@ -2183,67 +2201,6 @@ void CFastaReader::x_ApplyMods(
 }
 
 
-/*
-void CFastaReader::x_ApplyAllMods( 
-    CBioseq & bioseq,
-    TSeqPos iLineNum,
-    ILineErrorListener * pMessageListener )
-{
-    // this is called even if there the user did not request
-    // mods to be added because we want to give a warning if there
-    // are mods when not expected.
-    if (!bioseq.IsSetDescr() || !bioseq.GetDescr().IsSet()) {
-        return;
-    }
-
-    auto& descriptors = bioseq.SetDescr().Set();
-    auto title_it = find_if(descriptors.begin(), descriptors.end(),
-            [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
-    if (title_it == descriptors.end()) {
-        return;
-    }
-    string& title = (*title_it)->SetTitle();
-
-    auto_ptr<CSourceModParser> pSmp(xCreateSourceModeParser(pMessageListener));
-    pSmp->SetModFilter(m_pModFilter_DEPRECATED);
-
-
-    if( TestFlag(fAddMods) ) {
-        title = pSmp->ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
-        pSmp->ApplyAllMods(bioseq);
-        pSmp->GetLabel(&title, CSourceModParser::fUnusedMods);
-
-        copy( pSmp->GetBadMods().begin(), pSmp->GetBadMods().end(),
-            inserter(m_BadMods, m_BadMods.begin()) );
-        CSourceModParser::TMods unused_mods = 
-            pSmp->GetMods(CSourceModParser::fUnusedMods);
-        copy( unused_mods.begin(), unused_mods.end(),
-            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
-    } else {
-        // user did not request fAddMods, so we warn if we found
-        // mods anyway
-        pSmp->ParseTitle(
-            title, 
-            CConstRef<CSeq_id>(bioseq.GetFirstId()),
-            1 // "1" since we only care whether or not there are mods, not how many
-            );
-        CSourceModParser::TMods unused_mods = pSmp->GetMods(CSourceModParser::fUnusedMods);
-        if( ! unused_mods.empty() ) {
-            FASTA_WARNING(iLineNum,
-                "FASTA-Reader: Ignoring FASTA modifier(s) found because "
-                "the input was not expected to have any.",
-                ILineError::eProblem_ModifierFoundButNoneExpected,
-                "defline");
-        }
-    }
-
-    NStr::TruncateSpacesInPlace(title);
-    if (title.empty()) {
-        descriptors.erase(title_it);
-    }
-}
-*/
-
 std::string CFastaReader::x_NucOrProt(void) const
 {
     if( m_CurrentSeq && m_CurrentSeq->IsSetInst() && 
@@ -2275,7 +2232,7 @@ string CFastaReader::CanonicalizeString(const TStr & sValue)
     return newString;
 }
 
-// static
+  
 CFastaReader::SGap::SGap(
     TSeqPos uPos,
     TSignedSeqPos uLen,
@@ -2292,18 +2249,30 @@ CFastaReader::SGap::SGap(
 {
 }
 
+void CFastaReader::SetGapLinkageEvidence(
+    CSeq_gap::EType type,
+    const map<TSeqPos, set<int>>& countToEvidenceMap 
+)
+{
+    if (type == -1)
+        m_gap_type.Release();
+    else 
+         m_gap_type.Reset(new SGap::TGapTypeObj(type));
+    
+    m_GapsizeToLinkageEvidence.clear();
+    for (const auto& key_val : countToEvidenceMap) {
+        const auto& input_evidence_set = key_val.second;
+        auto& evidence_set = m_GapsizeToLinkageEvidence[key_val.first];
+        for (const auto& evidence : input_evidence_set) {
+            evidence_set.insert(static_cast<CLinkage_evidence::EType>(evidence));
+        }
+    }
+}
+
 void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& evidences)
 {
-   if (type == -1)
-      m_gap_type.Release();
-   else
-      m_gap_type.Reset(new SGap::TGapTypeObj(type));
-
-   m_gap_linkage_evidence.clear();
-   ITERATE(set<int>, it, evidences)
-   {
-       m_gap_linkage_evidence.insert((CLinkage_evidence::EType)*it);
-   }
+   map<TSeqPos, set<int>> gapCountToLinkageEvidence = {{0, evidences}};
+   SetGapLinkageEvidence(type, gapCountToLinkageEvidence);
 }
 
 

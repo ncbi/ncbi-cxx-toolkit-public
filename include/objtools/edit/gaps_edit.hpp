@@ -33,6 +33,7 @@
 /// @file fasta.hpp
 /// Operators to edit gaps in sequences
 
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Linkage_evidence.hpp>
 #include <objects/seq/Bioseq.hpp>
 

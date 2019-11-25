@@ -2,6 +2,7 @@
 #define __TABLE2ASN_CONTEXT_HPP_INCLUDED__
 
 #include <corelib/ncbistl.hpp>
+#include <objtools/edit/gaps_edit.hpp>
 
 #include "suspect_feat.hpp"
 
@@ -122,7 +123,11 @@ public:
     TSeqPos m_gapNmin{ 0 };
     TSeqPos m_gap_Unknown_length{ 0 };
     TSeqPos m_minimal_sequence_length{ 0 };
-    set<int> m_gap_evidences;
+    objects::CGapsEditor::TCountToEvidenceMap m_GapsizeToEvidence;
+
+
+
+
     int    m_gap_type{ -1 };
     bool   m_fcs_trim{ false };
     bool   m_split_log_files{ false };

@@ -222,7 +222,11 @@ CRef<CSerialObject> CMultiReader::xReadASN1(CObjectIStream& pObjIstrm)
 
     if (m_context.m_gapNmin > 0)
     {
-        CGapsEditor gap_edit((CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences, m_context.m_gapNmin, m_context.m_gap_Unknown_length);
+        CGapsEditor gap_edit(
+                (CSeq_gap::EType)m_context.m_gap_type, 
+                m_context.m_GapsizeToEvidence, 
+                m_context.m_gapNmin, 
+                m_context.m_gap_Unknown_length);
         gap_edit.ConvertNs2Gaps(*entry);
     }
 
@@ -315,8 +319,13 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
     }
-    if (m_context.m_gap_evidences.size() > 0 || m_context.m_gap_type >= 0)
-        pReader->SetGapLinkageEvidences((CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences);
+
+    //if (m_context.m_gap_evidences.size() > 0 || m_context.m_gap_type >= 0)
+    if (!m_context.m_GapsizeToEvidence.empty() || m_context.m_gap_type >= 0) {
+        pReader->SetGapLinkageEvidence(
+                (CSeq_gap::EType)m_context.m_gap_type, 
+                m_context.m_GapsizeToEvidence);
+    }
 
     int max_seqs = kMax_Int;
     CRef<CSeq_entry> result;

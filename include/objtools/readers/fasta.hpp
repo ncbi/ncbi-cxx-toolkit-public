@@ -202,7 +202,14 @@ public:
     static string CanonicalizeString(const CTempString & sValue);
 
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
-    void SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& evidences);
+
+    void SetGapLinkageEvidence(
+            CSeq_gap::EType type, 
+            const map<TSeqPos, set<int>>& countToEvidenceMap);
+
+    void SetGapLinkageEvidences(
+        CSeq_gap::EType type, 
+        const set<int>& evidences);
 
     void IgnoreProblem(ILineError::EProblem problem);
 
@@ -350,9 +357,8 @@ protected:
             TSeqPos uLineNumber,
             TNullableGapType pGapType =
                 TNullableGapType(),
-            const set<CLinkage_evidence::EType> & setOfLinkageEvidence =
-                set<CLinkage_evidence::EType>() );
-
+            const set<CLinkage_evidence::EType>& setOfLinkageEvidence = 
+                set<CLinkage_evidence::EType>());
         // immutable once created
 
         // 0-based, and NOT counting previous gaps
@@ -412,6 +418,8 @@ protected:
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
 
+    using TCountToLinkEvidMap = map<TSeqPos, SGap::TLinkEvidSet>;
+    TCountToLinkEvidMap     m_GapsizeToLinkageEvidence;
     SGap::TLinkEvidSet      m_gap_linkage_evidence;
     SGap::TNullableGapType  m_gap_type;
 
