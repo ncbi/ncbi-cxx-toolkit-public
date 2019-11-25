@@ -26,7 +26,9 @@ GRPC_BIN = @GRPC_BIN@
 PROTOC = $(PROTOBUF_BIN)/protoc
 GRPC_CPP_PLUGIN = $(GRPC_BIN)/grpc_cpp_plugin
 
-PROTOC_VERSION := $(lastword $(shell $(PROTOC) --version))
+ifneq "" "$(wildcard $(PROTOC))"
+  PROTOC_VERSION := $(lastword $(shell $(PROTOC) --version))
+endif
 VERSION_MARKER_BASE = $(MODULE).using-protoc-
 VERSION_MARKER = $(VERSION_MARKER_BASE)$(PROTOC_VERSION)
 
@@ -57,9 +59,15 @@ purge_all_sources:
 purge_all_files:
 	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
 
+ifneq "" "$(wildcard $(PROTOC))"
 $(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
 	$(RM) $(MODULE).pb.cpp $(MODULE).grpc.pb.cpp
 	@$(TOUCH) $@
+else
+$(FILES):
+	@echo Warning: Skipping code generation for $(MODULE_ASN) >&2
+	@echo because protoc is unavailable here. >&2
+endif
 
 $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
 	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
