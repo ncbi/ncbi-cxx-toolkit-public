@@ -213,6 +213,8 @@ private:
     map<string, pair<string, unique_ptr<CNcbiOstream>>> m_outputs;
 };
 
+void g_LoadLinkageEvidence(CNcbiIstream& istr, 
+        objects::CGapsEditor::TCountToEvidenceMap& gapsizeToEvidence);
 
 END_NCBI_SCOPE
 

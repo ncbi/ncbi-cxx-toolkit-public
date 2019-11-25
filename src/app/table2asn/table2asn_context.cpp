@@ -787,6 +787,7 @@ void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_entry& entry)
     );
 }
 
+
 void CTable2AsnContext::ApplyComments(objects::CSeq_entry& entry)
 {
     if (m_Comment.empty())
@@ -813,6 +814,69 @@ void CTable2AsnContext::ApplyComments(objects::CSeq_entry& entry)
             bioseq.SetDescr().Set().push_back(comment_desc);
         }
     );
+}
+
+
+static void s_NormalizeLinkageEvidenceString(string& linkage_evidence)
+{
+    NStr::TruncateSpacesInPlace(linkage_evidence);
+    replace_if(begin(linkage_evidence), end(linkage_evidence), 
+            [](char c) { return (isspace(c) || c == '_'); }, '-');
+
+    const auto it = 
+        unique(begin(linkage_evidence), end(linkage_evidence), 
+            [](char a, char b) {return (a == b && b == '-');});
+    
+    linkage_evidence.erase(it, linkage_evidence.end()-1);
+
+    NStr::ToLower(linkage_evidence);
+}
+
+
+static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(const string& evidenceString)
+{
+    CGapsEditor::TEvidenceSet evidenceSet;
+    list<string> evidenceList;
+    NStr::Split(evidenceString, ",;", evidenceList, NStr::fSplit_Tokenize);
+
+    for (auto evidence : evidenceList) {
+        string unnormalized_evidence = evidence;
+        s_NormalizeLinkageEvidenceString(evidence);
+        try {
+            auto enum_val = CLinkage_evidence::GetTypeInfo_enum_EType()->FindValue(evidence);
+            evidenceSet.insert(enum_val);
+        }
+        catch (...) {
+            // report an error
+        }
+    }
+    return evidenceSet;
+}
+
+
+void g_LoadLinkageEvidence(CNcbiIstream& istr, 
+        CGapsEditor::TCountToEvidenceMap& gapsizeToEvidence) {
+    size_t lineNumber = 0;
+    while (istr.good() && !istr.eof()) {
+        ++lineNumber;
+        string line;
+        getline(istr, line);
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
+        
+        string countStr, evidenceStr;
+        NStr::SplitInTwo(line, " \t", countStr, evidenceStr);
+        
+        int count;
+        if (!NStr::StringToNumeric(countStr, &count, NStr::fConvErr_NoThrow)) {
+            // report an error continue
+        }
+
+        auto evidenceSet = s_ProcessEvidenceString(evidenceStr);
+        gapsizeToEvidence.emplace(count, move(evidenceSet));
+    }
 }
 
 END_NCBI_SCOPE
