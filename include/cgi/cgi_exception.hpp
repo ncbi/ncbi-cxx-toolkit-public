@@ -102,6 +102,7 @@ public:
         e415_UnsupportedMediaType   = CRequestStatus::e415_UnsupportedMediaType,
         e416_RangeNotSatisfiable    = CRequestStatus::e416_RangeNotSatisfiable,
         e417_ExpectationFailed      = CRequestStatus::e417_ExpectationFailed,
+        e422_UnprocessableEntity    = CRequestStatus::e422_UnprocessableEntity,
 
         e500_InternalServerError    = CRequestStatus::e500_InternalServerError,
         e501_NotImplemented         = CRequestStatus::e501_NotImplemented,
