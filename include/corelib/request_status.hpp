@@ -96,6 +96,7 @@ public:
         e415_UnsupportedMediaType   = 415,
         e416_RangeNotSatisfiable    = 416,
         e417_ExpectationFailed      = 417,
+        e422_UnprocessableEntity    = 422,
 
         /// Non-standard status code - used to indicate broken connection
         /// while serving normal request.

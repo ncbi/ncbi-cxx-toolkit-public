@@ -80,6 +80,7 @@ string CRequestStatus::GetStdStatusMessage(ECode code)
     case e415_UnsupportedMediaType: return "Unsupported Media Type";
     case e416_RangeNotSatisfiable: return "Requested Range Not Satisfiable";
     case e417_ExpectationFailed: return "Expectation Failed";
+    case e422_UnprocessableEntity: return "Unprocessable Entity";
     case e499_BrokenConnection: return "Broken Connection";
     case e500_InternalServerError: return "Internal Server Error";
     case e501_NotImplemented: return "Not Implemented";
