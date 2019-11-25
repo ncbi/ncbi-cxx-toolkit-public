@@ -17,7 +17,8 @@ LIBS = $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(GRPC_INCLUDE)
 
+CHECK_COPY = fix_ptis_url.sh
 CHECK_REQUIRES = in-house-resources -MSWin -Solaris
-CHECK_CMD = snp_ptis_test
+CHECK_CMD = fix_ptis_url.sh snp_ptis_test
 
 WATCHERS = vasilche
