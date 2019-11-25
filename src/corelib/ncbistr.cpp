@@ -2814,22 +2814,16 @@ const string NStr::BoolToString(bool value)
 
 bool NStr::StringToBool(const CTempString str)
 {
-    if (str == "1") {
-        errno = 0;
-        return true;
-    }
-    if (str == "0") {
-        errno = 0;
-        return false;
-    }
-    if ( AStrEquiv(str, s_kTrueString,  PNocase())  ||
+    if ( str == "1"  || 
+         AStrEquiv(str, s_kTrueString,  PNocase())  ||
          AStrEquiv(str, s_kTString,     PNocase())  ||
          AStrEquiv(str, s_kYesString,   PNocase())  ||
          AStrEquiv(str, s_kYString,     PNocase()) ) {
         errno = 0;
         return true;
     }
-    if ( AStrEquiv(str, s_kFalseString, PNocase())  ||
+    if ( str == "0"  || 
+         AStrEquiv(str, s_kFalseString, PNocase())  ||
          AStrEquiv(str, s_kFString,     PNocase())  ||
          AStrEquiv(str, s_kNoString,    PNocase())  ||
          AStrEquiv(str, s_kNString,     PNocase()) ) {
