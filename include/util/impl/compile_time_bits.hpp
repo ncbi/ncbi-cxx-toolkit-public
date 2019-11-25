@@ -425,7 +425,7 @@ namespace compile_time_bits
             constexpr bool operator()(const _Input& input, size_t l, size_t r)
             {
                 return input[l] < input[r];
-            };
+            }
         };
         template<typename _Input>
         static constexpr value_type construct(const _Input& input, size_t I)
