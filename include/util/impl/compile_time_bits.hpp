@@ -325,11 +325,6 @@ namespace std
         return N;
     }
     template<class T, size_t N>
-    constexpr size_t size(const T(&in)[N]) noexcept
-    {
-        return N;
-    }
-    template<class T, size_t N>
     constexpr auto begin(const ct::const_array<T, N>& in) noexcept
         -> typename ct::const_array<T, N>::const_iterator
     {

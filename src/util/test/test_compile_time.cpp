@@ -766,7 +766,6 @@ BOOST_AUTO_TEST_CASE(TestConstSorter)
 
 }
 
-#if 0
     struct EmptyIndex
     {
     };
@@ -797,37 +796,43 @@ BOOST_AUTO_TEST_CASE(TestConstSorter)
         }
     };
 
-template<size_t I, size_t _First, size_t..._Rest>
-struct check_selected
-{
-    static constexpr bool value = (I == _First) | check_selected<I, _Rest...>::value;
-};
+    // is_selected template searches std::index_sequence for a presence of I value
+    // _T must be void, or std::index_sequence<...> of any length, including empty
+    // this template generates no CPU code and can be used in expressions
+    template<size_t I, typename _T>
+    struct is_included
+    { }; // random types are not supported
 
-template<size_t I, size_t _First>
-struct check_selected<I, _First>
-{
-    static constexpr bool value = (I == _First);
-};
+    template<size_t I, size_t...Ints>
+    struct is_included<I, std::index_sequence<Ints...> >
+    {
+        template<size_t _First, size_t..._Rest>
+        struct check_selected
+        {
+            static constexpr bool value = (I == _First) | check_selected<_Rest...>::value;
+        };
+        template<size_t _First>
+        struct check_selected<_First>
+        {
+            static constexpr bool value = (I == _First);
+        };
 
-template<size_t I, typename _T>
-struct is_selected
-{ };
+        static constexpr bool value = check_selected<Ints...>::value;
+    };
+    // any selected
+    template<size_t I>
+    struct is_included<I, void>
+    {
+        static constexpr bool value = true;
+    };
+    // any selected
+    template<size_t I>
+    struct is_included<I, std::index_sequence<>>: is_included<I, void>
+    { };
 
-template<size_t I, size_t...Ints>
-struct is_selected<I, std::index_sequence<Ints...> >
-{
-    static constexpr bool value = check_selected<I, Ints...>::value;
-};
-
-template<size_t I>
-struct is_selected<I, void>
-{
-    static constexpr bool value = true; // any selected
-};
-template<size_t I>
-struct is_selected<I, std::index_sequence<>>: is_selected<I, void>
-{ };
-
+// _Selected parameter limit which columns will receive an searchable index
+// _Selected parameter can be void or empty std::index_sequence<> (that means that all columns should receive index if it can)
+//  or non empty std::index_sequence with enlisted number of columns in free order
 template<typename _Selected, typename..._Types>
 struct MakeConstTable
 {
@@ -838,34 +843,40 @@ struct MakeConstTable
     using value_types = std::tuple<
         typename ct::DeduceHashedType<_Types>::value_type ...>;
 
-    template<typename _Init, size_t I>
+    template<typename _Init, size_t _Column>
     static constexpr auto make_table_index(const _Init& init, 
-         std::integral_constant<size_t, I>,
-         std::integral_constant<bool, false>)
+         std::integral_constant<size_t, _Column>,
+         std::integral_constant<bool, false> can_sort)
     {
         return EmptyIndex{};
     }
-    template<typename _Init, size_t I,
-        class _SortTraits = tuple_sort_traits<I, init_types, hash_types>,
+    // indices are constucted only for those columns that set can_index and
+    // its number is included in _Selected parameter
+    template<
+        typename _Init, 
+        size_t _Column,
+        class _SortTraits = tuple_sort_traits<_Column, init_types, hash_types>,
         class _Sorter = ct::TInsertSorter<_SortTraits, false>>
     static constexpr auto make_table_index(const _Init& init, 
-         std::integral_constant<size_t, I>,
-         std::integral_constant<bool, true>)
+         std::integral_constant<size_t, _Column>,
+         std::integral_constant<bool, true> can_sort)
     {
         return _Sorter{}(init);
     }
-    template<typename _Init, size_t I,
+    template<
+        typename _Init, 
+        size_t _Column,
         bool _CanIndex = 
-            std::tuple_element<I, hash_types>::type::can_index &&
-            is_selected<I, _Selected>::value>
-    static constexpr auto make_table_index(const _Init& init, std::integral_constant<size_t, I> i)
+            std::tuple_element<_Column, hash_types>::type::can_index &&
+            is_included<_Column, _Selected>::value>
+    static constexpr auto make_table_index(const _Init& init, std::integral_constant<size_t, _Column> column)
     {   
-        return make_table_index(init, i, std::integral_constant<bool, _CanIndex>{});
+        return make_table_index(init, column, std::integral_constant<bool, _CanIndex>{});
     }
-    template<typename _Init, std::size_t... I>
-    static constexpr auto make_indices(const _Init& init, std::index_sequence<I...>)
+    template<typename _Init, std::size_t... _Columns>
+    static constexpr auto make_indices(const _Init& init, std::index_sequence<_Columns...>)
     {
-        return std::make_tuple(make_table_index(init, std::integral_constant<size_t, I>{}) ...);
+        return std::make_tuple(make_table_index(init, std::integral_constant<size_t, _Columns>{}) ...);
     }
 
     template<size_t N>
@@ -907,7 +918,8 @@ BOOST_AUTO_TEST_CASE(TestConstTable)
         {100, 1'000'000, "Many", "Million", SomeFunc},
     };
 
-    constexpr auto sorted = type{}(init);
+    //constexpr 
+        auto sorted = type{}(init);
     std::cout << sizeof(sorted) << std::endl;
     //ReportTableIndex(std::get<0>(sorted));
     //ReportTableIndex(std::get<1>(sorted));
@@ -917,7 +929,36 @@ BOOST_AUTO_TEST_CASE(TestConstTable)
     
 }
 
+template<typename _Selected, size_t...Ints>
+static auto make_selected(std::index_sequence<Ints...>)
+->std::array<bool, sizeof...(Ints)>
+{
+    return { { is_included<Ints, _Selected>::value ... } };
+}
+BOOST_AUTO_TEST_CASE(TestIntSequence)
+{
+    using select = std::index_sequence<0, 5, 9>;
+    //using select = void;
 
+    auto ar = make_selected<select>(std::make_index_sequence<10>{});
+    for (auto rec: ar)
+    {
+        std::cout << rec << " ";
+    }
+    std::cout << std::endl;
+    BOOST_CHECK(ar[0]);
+    BOOST_CHECK(ar[5]);
+    BOOST_CHECK(ar[9]);
+    BOOST_CHECK(!ar[1]);
+    BOOST_CHECK(!ar[2]);
+    BOOST_CHECK(!ar[3]);
+    BOOST_CHECK(!ar[4]);
+    BOOST_CHECK(!ar[6]);
+    BOOST_CHECK(!ar[7]);
+    BOOST_CHECK(!ar[8]);
+}
+
+#if 0
 template<bool _If, typename _T1, typename _T2>
 struct choose_type
 {
@@ -925,12 +966,12 @@ struct choose_type
 template<typename _T1, typename _T2>
 struct choose_type<true, _T1, _T2>
 {
-    using type=_T1;
+    using type = _T1;
 };
 template<typename _T1, typename _T2>
 struct choose_type<false, _T1, _T2>
 {
-    using type=_T2;
+    using type = _T2;
 };
 
 template<typename _Selected, typename _Tuple, typename _Sequence>
@@ -949,30 +990,7 @@ struct selected_tuple
 {
     using tuple_type = std::tuple<_Types...>;
     using type = typename build_tuple<_Selected, tuple_type, std::make_index_sequence<sizeof...(_Types)>>::type;
-    //typename choose_type<
-    //    is_selected
-    //    _Types, void>::type
 };
 
-template<typename _Selected, size_t...Ints>
-auto make_selected(std::index_sequence<Ints...>)
-    -> std::array<bool, sizeof...(Ints)>
-{
-    //return { { check_selected<Ints>(_Selected{}) ...} }; 
-    return { { is_selected<Ints, _Selected>::value ... } };
-}
-BOOST_AUTO_TEST_CASE(TestIntSequence)
-{
-    using select = std::index_sequence<0, 5, 9>;
-    //using select = void;
-
-    auto ar = make_selected<select>(std::make_index_sequence<10>{});
-    for (auto rec: ar)
-    {
-        std::cout << rec << " ";
-    }
-    std::cout << std::endl;
-    using tuple_type = selected_tuple<select, int, int, int>::type;
-}
-
+//using tuple_type = selected_tuple<select, int, int, int>::type;
 #endif
