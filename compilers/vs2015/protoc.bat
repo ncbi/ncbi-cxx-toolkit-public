@@ -48,18 +48,9 @@ for %%v in ("%GENERATOR_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%
   )
 )
 
+
 set PROTOC_EXE=%GENERATOR_PATH%\%PROTOC_APP%
 set GRPC_PLUGIN=%GENERATOR_PATH%\%GRPC_APP%
-
-if not exist "%PROTOC_EXE%" (
-  echo ERROR: "%PROTOC_EXE%" not found
-  exit /b 1
-)
-if not exist "%GRPC_PLUGIN%" (
-  echo ERROR: "%GRPC_PLUGIN%" not found
-  exit /b 1
-)
-
 
 set input_spec_path=
 set input_spec_name=
@@ -90,11 +81,39 @@ cd %initial_dir%
 for %%i in ("%input_spec_path%") do set input_spec_spec=%%~nxi
 
 cd %TREE_ROOT%\src
-%PROTOC_EXE% --version
-%PROTOC_EXE% --cpp_out=. -I. %subtree%%input_spec_spec%
-%PROTOC_EXE% --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc="%GRPC_PLUGIN%" -I. %subtree%%input_spec_spec%
+
+set have_protoc=no
+set have_grpc=no
+if exist "%PROTOC_EXE%" (
+  set have_protoc=yes
+  if exist "%GRPC_PLUGIN%" (
+    set have_grpc=yes
+  )
+)
+
+if "%have_protoc%"=="yes" (
+  %PROTOC_EXE% --version
+  %PROTOC_EXE% --cpp_out=. -I. %subtree%%input_spec_spec%
+) else (
+  if not exist %subtree%%input_spec_name%.pb.cc (
+    type nul > %subtree%%input_spec_name%.pb.cc
+    type nul > %subtree%%input_spec_name%.pb.h
+  )
+)
+
+if "%have_grpc%"=="yes" (
+  %PROTOC_EXE% --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc="%GRPC_PLUGIN%" -I. %subtree%%input_spec_spec%
+) else (
+    if not exist %subtree%%input_spec_name%.grpc.pb.cc (
+      type nul > %subtree%%input_spec_name%.grpc.pb.cc
+      type nul > %subtree%%input_spec_name%.grpc.pb.h
+      type nul > %subtree%%input_spec_name%_mock.grpc.pb.h
+  )
+)
+
 if not exist "%TREE_ROOT%\include\%subtree%" (
   mkdir "%TREE_ROOT%\include\%subtree%"
 )
 xcopy /Y /D /F "%input_spec_dir%\*.h" "%TREE_ROOT%\include\%subtree%"
 del "%input_spec_dir%\*.h"
+cd %initial_dir%
