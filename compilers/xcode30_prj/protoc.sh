@@ -52,13 +52,6 @@ esac
 PROTOC=$GENERATOR_PATH/$PROTOC_APP
 GRPC_PLUGIN=$GENERATOR_PATH/$GRPC_APP
 
-for x in "$PROTOC" "$GRPC_PLUGIN"; do
-    if [ ! -x "$x" ]; then
-        echo "$0: ERROR: $x not found" >&2
-        exit 1
-    fi
-done
-
 input_spec_path=
 input_spec_name=
 input_def_path=
@@ -69,6 +62,7 @@ while [ $# != 0 ]; do
     case "$1" in
         -m )
             input_spec_name="$(basename "$2")"
+	    input_spec_base="$(basename "$2" .proto)"
             shift 2
             ;;
         -od )
@@ -101,10 +95,21 @@ done
 
 (
     cd "$TREE_ROOT/src"
-    "$PROTOC" --cpp_out=. -I. "$subtree/$input_spec_name"
-    "$PROTOC" --grpc_out=generate_mock_code=true:. \
-              --plugin=protoc-gen-grpc="$GRPC_PLUGIN" -I. \
-              "$subtree/$input_spec_name"
+    if [ -x "$PROTOC" ]; then
+        "$PROTOC" --cpp_out=. -I. "$subtree/$input_spec_name"
+    else
+        touch $subtree/$input_spec_name.pb.cc \
+              ../include/$subtree/$input_spec_name.pb.h
+    fi
+    if [ -x "$PROTOC" -a -x "$GRPC_PLUGIN" ]; then
+        "$PROTOC" --grpc_out=generate_mock_code=true:. \
+                  --plugin=protoc-gen-grpc="$GRPC_PLUGIN" -I. \
+                  "$subtree/$input_spec_name"
+    else
+        touch $subtree/$input_spec_name.grpc.pb.cc \
+              ../include/$subtree/$input_spec_name.grpc.pb.h \
+              ../include/$subtree/$input_spec_name_mock.grpc.pb.h
+    fi
     )
 mkdir -p "$TREE_ROOT/include/$subtree"
 mv -f "$TREE_ROOT/src/$subtree/"*.pb.h "$TREE_ROOT/include/$subtree/"
