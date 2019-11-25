@@ -126,46 +126,6 @@ namespace compile_time_bits
         }
     };
 
-    template<class FirstType, class SecondType>
-    struct const_pair
-    {
-        typedef FirstType first_type;
-        typedef SecondType second_type;
-
-        first_type first {};
-        second_type second {};
-
-        // GCC 4.9.3 and 5.3.0 doesn't forward correctly arguments types
-        // when aggregated initialised
-
-#if defined(__GNUC__) && (__GNUC__ < 6) && !defined(__clang__)
-        constexpr const_pair() = default;
-
-        template<typename T1, typename T2>
-        constexpr const_pair(T1&& v1, T2&& v2)
-            : first(std::forward<T1>(v1)), second(std::forward<T2>(v2))
-        {}
-        constexpr const_pair(const first_type& f, const second_type& s)
-            : first(f), second(s)
-        {
-        }
-#endif
-
-        constexpr bool operator <(const const_pair& o) const
-        {
-            return (first < o.first) ||
-                (first == o.first && second < o.second);
-        }
-        constexpr const first_type& get(std::integral_constant<size_t, 0>) const noexcept
-        {	// get reference to element 0 in pair _Pr
-            return first;
-        }
-        constexpr const second_type& get(std::integral_constant<size_t, 1>) const noexcept
-        {	// get reference to element 0 in pair _Pr
-            return second;
-        }
-    };
-
     template<class... _Types>
     class const_tuple;
 
@@ -251,12 +211,6 @@ namespace compile_time_bits
         const char* m_data{ nullptr };
     };
 
-    template<class...> struct conjunction : std::true_type { };
-    template<class B1> struct conjunction<B1> : B1 { };
-    template<class B1, class... Bn>
-    struct conjunction<B1, Bn...>
-        : std::conditional<bool(B1::value), conjunction<Bn...>, B1>::type {};
-
     template<ncbi::NStr::ECase case_sensitive, class _Hash = ct::SaltedCRC32<case_sensitive>>
     class CHashString
     {
@@ -337,25 +291,6 @@ namespace std
         return in.end();
     }
 
-    template<std::size_t I, typename T1, typename T2>
-    class tuple_element<I, ct::const_pair<T1, T2> >
-    {
-        static_assert(I < 2, "compile_time_bits::const_pair has only 2 elements!");
-    };
-
-    template<typename T1, typename T2>
-    class tuple_element<0, ct::const_pair<T1, T2> >
-    {
-    public:
-        using type = T1;
-    };
-    template<typename T1, typename T2>
-    class tuple_element<1, ct::const_pair<T1, T2> >
-    {
-    public:
-        using type = T2;
-    };
-
     //template<class>
     // false value attached to a dependent name (for static_assert)
     //constexpr bool always_false = false;
@@ -380,13 +315,6 @@ namespace std
         : public tuple_element<_Index - 1, ct::const_tuple<_Rest...>>
     {	// recursive tuple_element definition
     };
-
-    template<std::size_t I, typename T1, typename T2>
-    constexpr auto get(const ct::const_pair<T1, T2>& v) noexcept
-        -> const typename tuple_element<I, ct::const_pair<T1, T2>>::type&
-    {
-        return v.get(integral_constant<size_t, I>());
-    }
 
     template<size_t _Index,
         class... _Types>
@@ -586,12 +514,12 @@ namespace compile_time_bits
         {
             typename _Traits::Pred pred{};
             size_t _UFirst = 0;
-            auto _Count = last;
+            size_t _Count = last;
 
             while (0 < _Count)
             {	// divide and conquer, find half that contains answer
-                const auto _Count2 = _Count >> 1; // TRANSITION, VSO#433486
-                const auto _UMid = _UFirst + _Count2;
+                const size_t _Count2 = _Count >> 1; // TRANSITION, VSO#433486
+                const size_t _UMid = _UFirst + _Count2;
                 if (pred(input, indices[_UMid], value))
                 {	// try top half
                     _UFirst = (_UMid + 1); // _Next_iter(_UMid);
@@ -606,6 +534,31 @@ namespace compile_time_bits
             return _UFirst;
         }
         template<typename _Indices, typename _Input>
+        static constexpr size_t const_upper_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
+        {
+            typename _Traits::Pred pred{};
+            size_t _UFirst = 0;
+            size_t _Count = last;
+
+            while (0 < _Count)
+            {	// divide and conquer, find half that contains answer
+                const size_t _Count2 = _Count >> 1; // TRANSITION, VSO#433486
+                const size_t _UMid = _UFirst + _Count2;
+                if (pred(input, value, indices[_UMid]))
+                {
+                    _Count = _Count2;
+                }
+                else
+                {	// try top half
+                    _UFirst = (_UMid + 1); // _Next_iter(_UMid);
+                    _Count -= _Count2 + 1;
+                }
+            }
+
+            return (_UFirst);
+        }
+
+        template<typename _Indices, typename _Input>
         static constexpr size_t insert_sort_indices(_Indices& result, const _Input& input)
         {
             typename _Traits::Pred pred{};
@@ -614,9 +567,9 @@ namespace compile_time_bits
                 return size;
 
             // current is the first element of the unsorted part of the array
-            auto current = 0;
+            size_t current = 0;
             // the last inserted element into sorted part of the array
-            auto last = current;
+            size_t last = current;
             result[0] = 0;
             current++;
 
@@ -628,11 +581,13 @@ namespace compile_time_bits
                 }
                 else {
                     // we may exclude last element since it's already known as smaller then current
-                    auto fit = const_lower_bound(result, input, last, current);
+                    // using const_upper_bound helps to preserve the order of rows with identical hash values
+                    // using const_upper_bound will reverse that order
+                    auto fit = const_upper_bound(result, input, last, current);
                     bool move_it = !remove_duplicates;
                     if (remove_duplicates)
                     {
-                        move_it = pred(input, current, result[fit]);
+                        move_it = (fit == 0) || pred(input, result[fit-1], current);
                     }
                     if (move_it)
                     {
@@ -773,15 +728,6 @@ namespace compile_time_bits
         size_type         m_realsize = 0;
     };
 
-    template<typename _Array, typename _Pred>
-    static constexpr bool CheckOrder(const _Array& c, _Pred pred)
-    {
-        for (size_t i = c.size()-1; i > 0; --i)
-            if (!pred(c[i - 1], c[i]))
-                return false;
-        return true;
-    }
-
     // this helper packs set of bits into an array usefull for initialisation of bitset
     // using C++14
 
@@ -852,26 +798,6 @@ namespace compile_time_bits
         }
     };
 
-    template<class _T, class _First,
-        class... _Rest>
-        struct enforce_same
-    {
-        static_assert(conjunction<std::is_same<_First, _Rest>...>::value, "variadic arguments must be of the same type");
-        //    "N4687 26.3.7.2 [array.cons]/2: "
-        //    "Requires: (is_same_v<T, U> && ...) is true. Otherwise the program is ill-formed.");
-        using type = _T;
-    };
-
-    template<class _T, class _First,
-        class... _Rest>
-        struct enforce_all_constructable
-    {
-        static_assert(conjunction<std::is_constructible<_First, _Rest>...>::value, "variadic arguments must be of the same type");
-        //    "N4687 26.3.7.2 [array.cons]/2: "
-        //    "Requires: (is_same_v<T, U> && ...) is true. Otherwise the program is ill-formed.");
-        using type = _T;
-    };
-
     using tagStrCase   = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
     using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
     struct tagNeedNoHash { };
@@ -925,7 +851,7 @@ namespace compile_time_bits
         using value_type = typename DeduceHashedType<_BaseType>::value_type;
         using init_type  = value_type;
     };
-}
+    }
 
 #endif
 

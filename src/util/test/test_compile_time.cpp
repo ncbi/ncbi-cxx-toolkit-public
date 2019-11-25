@@ -194,7 +194,7 @@ NCBITEST_AUTO_INIT()
 //test_two_way2_init
 
 using bitset = ct::const_bitset<64 * 3, int>;
-using bitset_pair = ct::const_pair<int, bitset>;
+using bitset_pair = std::pair<int, bitset>;
 
 BOOST_AUTO_TEST_CASE(TestConstBitset)
 {
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
     auto t6 = test_two_way2.second.find(5);
     BOOST_CHECK((t6 != test_two_way2.second.end()) && (ncbi::NStr::CompareNocase(t6->second, "so:0000005") == 0));
-};
+}
 
 BOOST_AUTO_TEST_CASE(TestConstSet)
 {
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(TestConstSet)
     auto b1_it = ts2.find("B1");
     BOOST_CHECK((*b1_it) == std::string("b1"));
     BOOST_CHECK((*b1_it) == std::string("B1"));
-};
+}
 
 BOOST_AUTO_TEST_CASE(TestCRC32)
 {
@@ -783,7 +783,7 @@ BOOST_AUTO_TEST_CASE(TestConstSorter)
             constexpr bool operator()(const _Input& input, size_t l, size_t r)
             {
                 return std::get<I>(input[l]) < std::get<I>(input[r]);
-            };
+            }
         };
         template<typename _Input>
         static constexpr auto construct(const _Input&, size_t J)
@@ -830,19 +830,78 @@ BOOST_AUTO_TEST_CASE(TestConstSorter)
     struct is_included<I, std::index_sequence<>>: is_included<I, void>
     { };
 
+
+template<typename _HashTypes, typename _Rows, typename _Indices>
+class const_indexed_table_proxy: public _Rows
+{
+public:
+    using rows_t = _Rows;
+    using indices_t = typename std::remove_cv<_Indices>::type;
+    static constexpr size_t m_width = std::tuple_size<indices_t>::value;
+
+    using const_iterator = typename rows_t::const_iterator;
+    using iterator       = typename rows_t::iterator;
+
+    constexpr const_indexed_table_proxy() = default;
+    constexpr const_indexed_table_proxy(const _Rows& rows, const indices_t& indices)
+        : _Rows(rows), m_indices{ indices }
+    {}
+
+    static constexpr size_t width() noexcept { return m_width; }
+
+    template<size_t i, typename _K, typename _ColumnType = typename std::tuple_element<i, _HashTypes>::type>
+    typename std::enable_if<
+            std::is_constructible<typename _ColumnType::value_type, _K>::value &&
+            !std::is_same<EmptyIndex, typename std::tuple_element<i, indices_t>::type>::value,
+            const_iterator>::type
+        find(_K&& _key) const
+    {
+        typename _ColumnType::value_type temp = std::forward<_K>(_key);
+        typename _ColumnType::init_type  key(temp);
+        const auto& hashes = std::get<i>(m_indices).first;
+        auto hash_it = std::distance(hashes.m_array.begin(), std::lower_bound(hashes.m_array.begin(), hashes.m_array.begin() + _Rows::size(), key));
+        if (hash_it != _Rows::size())
+        {
+            if (hashes.m_array[hash_it] == key)
+            {
+                const auto& row_index = std::get<i>(m_indices).second;
+                auto row_offset = row_index[hash_it];
+                auto row_it = _Rows::begin() + row_offset;
+                typename _ColumnType::value_type found = std::get<i>(*row_it);
+                if (found == temp)
+                    return row_it;
+            }
+        }
+        return _Rows::end();
+    }
+protected:
+    indices_t m_indices{};
+};
+
 // _Selected parameter limit which columns will receive an searchable index
 // _Selected parameter can be void or empty std::index_sequence<> (that means that all columns should receive index if it can)
 //  or non empty std::index_sequence with enlisted number of columns in free order
 template<typename _Selected, typename..._Types>
-struct MakeConstTable
+class MakeConstTable
 {
-    using hash_types = std::tuple<
+public:
+    using hash_types = ct::const_tuple<
         typename ct::DeduceHashedType<_Types> ...>;
     using init_types = ct::const_tuple<
         typename ct::DeduceHashedType<_Types>::init_type ...>;
-    using value_types = std::tuple<
+    using value_types = ct::const_tuple<
         typename ct::DeduceHashedType<_Types>::value_type ...>;
 
+    template<size_t N>
+    constexpr auto operator()(const init_types(&init)[N]) const
+    {
+        auto indices = make_indices(init, std::make_index_sequence<sizeof...(_Types)>{});
+        auto rows = fill_rows(init, std::make_index_sequence<N>{});
+        return const_indexed_table_proxy<hash_types, decltype(rows), decltype(indices)>(rows, indices);
+    }
+private:
+
+    // empty index for a column that cannot be indexed or not needed
     template<typename _Init, size_t _Column>
     static constexpr auto make_table_index(const _Init& init, 
          std::integral_constant<size_t, _Column>,
@@ -864,7 +923,7 @@ struct MakeConstTable
         return _Sorter{}(init);
     }
     template<
-        typename _Init, 
+        typename _Init,
         size_t _Column,
         bool _CanIndex = 
             std::tuple_element<_Column, hash_types>::type::can_index &&
@@ -879,10 +938,22 @@ struct MakeConstTable
         return std::make_tuple(make_table_index(init, std::integral_constant<size_t, _Columns>{}) ...);
     }
 
-    template<size_t N>
-    constexpr auto operator()(const init_types(&init)[N]) const
+    template<size_t...Ints>
+    static constexpr value_types convert_tuple(const init_types& tup, std::index_sequence<Ints...>)
     {
-        return make_indices(init, std::make_index_sequence<sizeof...(_Types)>{});
+        return value_types(std::get<Ints>(tup)...);
+    }
+    static constexpr value_types convert_tuple(const init_types& tup)
+    {
+        return convert_tuple(tup, std::make_index_sequence<sizeof...(_Types)>{});
+    }
+
+    // this needed to convert 'init' tuples into 'values' tuples
+    template<typename _Input, size_t...Ints>
+    static constexpr auto fill_rows(const _Input& input, std::index_sequence<Ints...>)
+        -> ct::const_array<value_types, sizeof...(Ints)>
+    {
+        return { { convert_tuple(input[Ints])...} };
     }
 };
 
@@ -907,26 +978,38 @@ void ReportTableIndex(const _Index& index)
 
 BOOST_AUTO_TEST_CASE(TestConstTable)
 {
-    //using selected = void;
-    using selected = std::index_sequence<1, 3>;
+    using selected = void;
+    //using selected = std::index_sequence<1, 3>;
     //using selected = std::index_sequence<>;
-    using type = MakeConstTable<selected, uint8_t, int, const char*, const char*, func_ptr>;
+
+    using type = MakeConstTable<selected, uint8_t, int, ct::tagStrNocase, ct::tagStrNocase, func_ptr > ;
 
     static constexpr type::init_types init[] = {
-        {5, 500, "Five", "Five hundred", SomeFunc},
+        {5, 500, "Five", "Five hundred", SomeFunc },
         {1, 100, "One", "Hundred", SomeFunc },
         {100, 1'000'000, "Many", "Million", SomeFunc},
     };
+    constexpr auto sorted = type{}(init);
 
-    //constexpr 
-        auto sorted = type{}(init);
     std::cout << sizeof(sorted) << std::endl;
+    auto it1 = sorted.find<1>(500);
+    auto it2 = sorted.find<1>(501);
+    auto it3 = sorted.find<1>(1);
+    auto it4 = sorted.find<1>(1'000'000);
+    auto it5 = sorted.find<1>(1'000'001);
+    auto it6 = sorted.find<1>(std::numeric_limits<int>::max());
+
+    auto it7 = sorted.find<2>("five");
+
+    //auto it8 = sorted.find<4>(&SomeFunc);
+#if 0
     //ReportTableIndex(std::get<0>(sorted));
     //ReportTableIndex(std::get<1>(sorted));
     //ReportTableIndex(std::get<2>(sorted));
     //ReportTableIndex(std::get<3>(sorted));
     //ReportTableIndex(std::get<4>(sorted));
-    
+#endif
+
 }
 
 template<typename _Selected, size_t...Ints>
