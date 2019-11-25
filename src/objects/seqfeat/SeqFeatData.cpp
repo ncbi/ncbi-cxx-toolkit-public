@@ -591,7 +591,7 @@ namespace
 
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(ESubtype subtype)
 {
-    MAKE_CONST_MAP(sx_MandatoryQuals, NStr::eCase, CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers,
+    MAKE_CONST_MAP(sx_MandatoryQuals, CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers,
         {
         {eSubtype_conflict,       {eQual_citation}},
         {eSubtype_misc_binding,   {eQual_bound_moiety}},
@@ -831,7 +831,7 @@ namespace
 #define START_SUBTYPE(name, ...) \
     { CSeqFeatData::eSubtype_##name, {__VA_ARGS__} }
 
-    MAKE_CONST_MAP(g_legal_quals, NStr::ECase::eCase, CSeqFeatData::ESubtype, CSeqFeatData::TLegalQualifiers,
+    MAKE_CONST_MAP(g_legal_quals, CSeqFeatData::ESubtype, CSeqFeatData::TLegalQualifiers,
         {
 START_SUBTYPE(gene
    ,ADD_QUAL(allele)

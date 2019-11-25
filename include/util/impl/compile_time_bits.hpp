@@ -258,27 +258,22 @@ namespace compile_time_bits
         : std::conditional<bool(B1::value), conjunction<Bn...>, B1>::type {};
 
     template<ncbi::NStr::ECase case_sensitive, class _Hash = ct::SaltedCRC32<case_sensitive>>
-    class CHashString : public string_view<case_sensitive>
+    class CHashString
     {
     public:
         using hash_func = _Hash;
         using hash_type = typename _Hash::type;
-        using _MyBase = string_view<case_sensitive>;
-        using sv = typename _MyBase::sv;
+        using sv = string_view<case_sensitive>;
 
         constexpr CHashString() noexcept = default;
 
         template<size_t N>
         constexpr CHashString(const char(&s)[N]) noexcept
-            : _MyBase(s, N - 1), m_hash(hash_func::ct(s))
+            : m_data{s}, m_len{N-1},  m_hash{hash_func::ct(s)}
         {}
 
         CHashString(const sv& s) noexcept
-            : _MyBase(s), m_hash(hash_func::rt(s.data(), s.size()))
-        {}
-
-        CHashString(const _MyBase& s) noexcept
-            : _MyBase(s), m_hash(hash_func::rt(s.data(), s.size()))
+            : m_data{s.data()}, m_len{s.size()}, m_hash(hash_func::rt(s.data(), s.size()))
         {}
 
         constexpr bool operator<(const CHashString& o) const noexcept
@@ -297,7 +292,14 @@ namespace compile_time_bits
         {
             return m_hash;
         }
-
+        constexpr operator sv() const noexcept
+        {
+            return sv(m_data, m_len);
+        }
+    protected:
+ 
+        const char* m_data{nullptr};
+        size_t m_len{ 0 };
         hash_type m_hash{ 0 };
     };
 }
@@ -319,6 +321,11 @@ namespace std
     }
     template<class T, size_t N>
     constexpr size_t size(const ct::const_array<T, N>& in) noexcept
+    {
+        return N;
+    }
+    template<class T, size_t N>
+    constexpr size_t size(const T(&in)[N]) noexcept
     {
         return N;
     }
@@ -426,9 +433,9 @@ namespace compile_time_bits
             };
         };
         template<typename _Input>
-        static constexpr value_type construct(const _Input& input)
+        static constexpr value_type construct(const _Input& input, size_t I)
         {
-            return input;
+            return input[I];
         }
         static constexpr hash_type get_hash(const init_type& v)
         {
@@ -439,8 +446,8 @@ namespace compile_time_bits
     template<typename _T1, typename _T2>
     struct straight_sort_traits
     {
-        using init_type  = const_pair<typename _T1::init_type, typename _T2::init_type>;
-        using value_type = const_pair<typename _T1::value_type, typename _T2::value_type>;
+        using init_type  = std::pair<typename _T1::init_type, typename _T2::init_type>;
+        using value_type = std::pair<typename _T1::value_type, typename _T2::value_type>;
         using hash_type = typename _T1::hash_type;
 
         struct Pred
@@ -456,17 +463,17 @@ namespace compile_time_bits
             return static_cast<hash_type>(v.first);
         }
         template<typename _Input>
-        static constexpr value_type construct(const _Input& input)
+        static constexpr value_type construct(const _Input& input, size_t I)
         {
-            return value_type{ input.first, input.second };
+            return value_type{ input[I].first, input[I].second };
         }
     };
 
     template<typename _T1, typename _T2>
     struct flipped_sort_traits
     {
-        using init_type = const_pair<typename _T1::init_type, typename _T2::init_type>;
-        using value_type = const_pair<typename _T2::value_type, typename _T1::value_type>;
+        using init_type = std::pair<typename _T1::init_type, typename _T2::init_type>;
+        using value_type = std::pair<typename _T2::value_type, typename _T1::value_type>;
         using hash_type = typename _T2::hash_type;
 
         struct Pred
@@ -482,9 +489,9 @@ namespace compile_time_bits
             return v.second;
         }
         template<typename _Input>
-        static constexpr value_type construct(const _Input& input)
+        static constexpr value_type construct(const _Input& input, size_t I)
         {
-            return value_type{ input.second, input.first };
+            return value_type{ input[I].second, input[I].first };
         }
     };
 
@@ -565,6 +572,7 @@ namespace compile_time_bits
             auto values = construct_values(init, indices, std::make_index_sequence<N>{});
             return std::make_pair(hashes, values);
         }
+
     protected:
 
         template<typename _Indices, typename _Value>
@@ -626,7 +634,7 @@ namespace compile_time_bits
                 else {
                     // we may exclude last element since it's already known as smaller then current
                     auto fit = const_lower_bound(result, input, last, current);
-                    bool move_it = remove_duplicates;
+                    bool move_it = !remove_duplicates;
                     if (remove_duplicates)
                     {
                         move_it = pred(input, current, result[fit]);
@@ -672,16 +680,16 @@ namespace compile_time_bits
         static constexpr auto construct_hashes(const init_type(&init)[N], const _Indices& indices, std::index_sequence<I...> is) noexcept
             -> aligned_index<hash_type, N>
         {
-            return { { select_hash<I>(init, indices)...} };
+            return { { select_hash<I>(init, indices) ...} };
         }
+
         template<typename _Input, typename _Indices, std::size_t... I>
         static constexpr auto construct_values(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
             -> const_array<value_type, sizeof...(I)> 
         {
             auto real_size = indices.first;
-            return { { sort_traits::construct(input[indices.second[I < real_size ? I : real_size - 1]]) ...} };
+            return { { sort_traits::construct(input, indices.second[I < real_size ? I : real_size - 1]) ...} };
         }
-
     };
 
     template<typename _HashedKey, typename _Value>
@@ -689,14 +697,16 @@ namespace compile_time_bits
     {
     public:
         using value_type      = _Value;
-        using size_type       = size_t;
-        using const_iterator  = const value_type*;
-        using iterator        = const value_type*;
+        using size_type       = std::size_t;
         using difference_type = std::ptrdiff_t;
         using reference       = const value_type&;
         using const_reference = const value_type&;
         using pointer         = const value_type*;
         using const_pointer   = const value_type*;
+        using iterator        = const value_type*;
+        using const_iterator  = const value_type*;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         using intermediate = typename _HashedKey::value_type;
 
@@ -867,59 +877,58 @@ namespace compile_time_bits
         using type = _T;
     };
 
-    enum class NeedHash
-    {
-        no,
-        yes
-    };
+    using tagStrCase   = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
+    using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
+    struct tagNeedNoHash { };
 
     // we only support strings, integral types and enums
     // write your own DeduceHashedType specialization if required
-    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, typename _BaseType, class _Enabled = _BaseType>
+    template<typename _BaseType, typename _InitType=_BaseType, typename _HashType=void>
     struct DeduceHashedType
     {
-        using init_type = _BaseType;
         using value_type = _BaseType;
-        //using hash_type = _BaseType;
+        using init_type  = _InitType;
+        using hash_type  = _HashType;
+        static constexpr bool can_index = std::numeric_limits<hash_type>::is_integer;
     };
 
-    template<ncbi::NStr::ECase case_sensitive, typename _BaseType>
-    struct DeduceHashedType<case_sensitive, NeedHash::yes, _BaseType,
+    template<typename _BaseType>
+    struct DeduceHashedType<_BaseType,
         typename std::enable_if<std::is_enum<_BaseType>::value, _BaseType>::type>
+        : DeduceHashedType<_BaseType, _BaseType, typename std::underlying_type<_BaseType>::type>
     {
-        using init_type = _BaseType;
-        using value_type = _BaseType;
-        using hash_type = typename std::underlying_type<_BaseType>::type;
     };
 
-    template<ncbi::NStr::ECase case_sensitive, typename _BaseType>
-    struct DeduceHashedType<case_sensitive, NeedHash::yes, _BaseType,
+    template<typename _BaseType>
+    struct DeduceHashedType<_BaseType,
         typename std::enable_if<std::numeric_limits<_BaseType>::is_integer, _BaseType>::type>
+        : DeduceHashedType<_BaseType, _BaseType, _BaseType>
     {
-        using init_type = _BaseType;
-        using value_type = _BaseType;
-        using hash_type = _BaseType;
     };
 
     template<ncbi::NStr::ECase case_sensitive>
-    struct DeduceHashedType<case_sensitive, NeedHash::yes, const char*>
+    struct DeduceHashedType<std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
+        : DeduceHashedType<string_view<case_sensitive>, CHashString<case_sensitive>, typename CHashString<case_sensitive>::hash_type>
     {
-        using init_type = CHashString<case_sensitive>;
-        using value_type = string_view<case_sensitive>;
-        using hash_type = typename init_type::hash_type;
     };
 
-    template<ncbi::NStr::ECase case_sensitive>
-    struct DeduceHashedType<case_sensitive, NeedHash::no, const char*>
+    template<>
+    struct DeduceHashedType<const char*>
+        : DeduceHashedType<tagStrCase>
     {
-        using value_type = string_view<case_sensitive>;
+    };
+
+    template<class Traits, class Allocator>
+    struct DeduceHashedType<std::basic_string<char, Traits, Allocator>>
+        : DeduceHashedType<tagStrCase>
+    {
+    };
+
+    template<typename _BaseType>
+    struct DeduceHashedType<_BaseType, tagNeedNoHash>
+    {
+        using value_type = typename DeduceHashedType<_BaseType>::value_type;
         using init_type  = value_type;
-    };
-
-    template<ncbi::NStr::ECase case_sensitive, NeedHash need_hash, class Traits, class Allocator>
-    struct DeduceHashedType<case_sensitive, need_hash, std::basic_string<char, Traits, Allocator>>
-        : DeduceHashedType<case_sensitive, need_hash, const char*>
-    {
     };
 }
 

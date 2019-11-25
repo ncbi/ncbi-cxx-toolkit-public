@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 
 BOOST_AUTO_TEST_CASE(TestConstMap)
 {
-    MAKE_TWOWAY_CONST_MAP(test_two_way1, ncbi::NStr::eNocase, const char*, const char*,
+    MAKE_TWOWAY_CONST_MAP(test_two_way1, ct::tagStrNocase, ct::tagStrNocase,
         {
             {"SO:0000001", "region"},
             {"SO:0000002", "sequece_secondary_structure"},
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
         });
 
 
-    MAKE_TWOWAY_CONST_MAP(test_two_way2, ncbi::NStr::eNocase, const char*, int,
+    MAKE_TWOWAY_CONST_MAP(test_two_way2, ct::tagStrNocase, int,
         {
             {"SO:0000001", 1},
             {"SO:0000002", 2},
@@ -293,11 +293,11 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
 BOOST_AUTO_TEST_CASE(TestConstSet)
 {
-    MAKE_CONST_SET(ts1, ncbi::NStr::eCase, const char*,
-      { "a2", "a1", "a3" });
+    MAKE_CONST_SET(ts1, ct::tagStrCase, 
+      { {"a2"}, {"a1"}, {"a3"} });
 
-    MAKE_CONST_SET(ts2, ncbi::NStr::eNocase, const char*,
-      { "b1", "b3", "B2"});
+    MAKE_CONST_SET(ts2, ct::tagStrNocase,
+      { {"b1"}, {"b3"}, {"B2"} });
 
     for (auto r : ts1)
     {
@@ -635,51 +635,6 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
 }
 #endif
 
-#if 0
-
-using table_type = ct::const_table<ncbi::NStr::ECase::eCase, const char*, int, int>;
-using D01_t = table_type::MakeIndex<0, 1>;
-using D10_t = table_type::MakeIndex<1, 0>;
-using index01_t = D01_t::index_type;
-using index10_t = D10_t::index_type;
-
-
-constexpr 
-table_type::row_type init_values[] = {
-{ "Test1", 80, 200},
-{ "Test2", 70, 300},
-{ "Test3", 60, 300},
-{ "Test4", 50, 300},
-{ "Test5", 40, 300},
-{ "Test6", 30, 300},
-{ "Test7", 20, 300},
-{ "Test8", 10, 300}
-};
-
-constexpr auto container01 = D01_t{}(init_values);
-constexpr index01_t index01 = container01;
-
-//alignas(std::hardware_constructive_interference_size)
-constexpr auto container10 = D10_t{}(init_values);
-constexpr index10_t index10 = container10;
-
-BOOST_AUTO_TEST_CASE(TestPerformance)
-{
-    //std::cout << container01.first.size() << std::endl;
-    //std::cout << container01.second.size() << std::endl;
-
-    std::cout << std::hex << &container01.first << std::endl;
-    std::cout << std::hex << &container10.first << std::endl;
-    std::cout << container01.first[0] << std::endl;
-
-    auto test1 = index01.at("Test3");
-    auto test2 = index01.at("Test7");
-    std::cout << test1 << ":" << test2 << std::endl;
-    auto test3 = index10.at(60);
-    std::cout << test3 << std::endl;
-}
-
-#endif
 
 template<typename _Left, typename _Right>
 void CompareArray(const _Left& l, const _Right& r)
@@ -714,8 +669,8 @@ void CompareArrayFlipped(const _Left& l, const _Right& r)
 
 BOOST_AUTO_TEST_CASE(TestConstMap2)
 {
-    MAKE_CONST_MAP(cm1, ncbi::NStr::eNocase, const char*, const char*, SO_MAP_DATA);
-    MAKE_TWOWAY_CONST_MAP(cm2, ncbi::NStr::eNocase, const char*, const char*, SO_MAP_DATA);
+    MAKE_CONST_MAP(cm1, ct::tagStrNocase, ct::tagStrNocase, SO_MAP_DATA);
+    MAKE_TWOWAY_CONST_MAP(cm2, ct::tagStrNocase, ct::tagStrNocase, SO_MAP_DATA);
 
     std::cout << "Const map sizes:" << std::endl
         << "Record size:" << sizeof(decltype(cm1)::value_type) << std::endl
@@ -759,11 +714,7 @@ BOOST_AUTO_TEST_CASE(TestConstMap3)
     static_assert(!std::numeric_limits<cEnum>::is_integer, "Why integer");
     static_assert(!std::numeric_limits<eEnum>::is_integer, "Why integer");
 
-    using deduce1 = ct::DeduceHashedType<ncbi::NStr::eNocase, ct::NeedHash::yes, eEnum>;
-    using deduce2 = ct::DeduceHashedType<ncbi::NStr::eNocase, ct::NeedHash::no, eEnum>;
-    using deduce3 = ct::DeduceHashedType<ncbi::NStr::eNocase, ct::NeedHash::yes, uint32_t>;
-
-    MAKE_TWOWAY_CONST_MAP(cm1, ncbi::NStr::eNocase, cEnum, std::string, //const char*,
+    MAKE_TWOWAY_CONST_MAP(cm1, cEnum, std::string,
         {
         {cEnum::one, "One"},
         {cEnum::two, "Two"},
@@ -777,3 +728,251 @@ BOOST_AUTO_TEST_CASE(TestConstMap3)
     }
 
 }
+
+template<typename _T>
+static
+void ReportSortList(const _T& input)
+{
+    std::cout << input.first.size << std::endl;
+    std::cout << input.second.size() << std::endl;
+    std::cout << "Hashtable: ";
+    for (auto rec: input.first.m_array)
+    {
+        std::cout << rec << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "Values: ";
+    for (auto rec: input.second)
+    {
+        std::cout << rec << " ";
+    }
+    std::cout << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(TestConstSorter)
+{
+    constexpr int data[] = { 100, 90, 50, 90, 1 };
+
+    using deduce1 = ct::DeduceHashedType<int>;
+    using traits = ct::simple_sort_traits<deduce1>;
+    using sorter_unique = ct::TInsertSorter<traits, true>;
+    using sorter_non_unique = ct::TInsertSorter<traits, false>;
+
+    auto sorted_u = sorter_unique{}(data);
+    auto sorted_nu = sorter_non_unique{}(data);
+
+    ReportSortList(sorted_u);
+    ReportSortList(sorted_nu);
+
+}
+
+#if 0
+    struct EmptyIndex
+    {
+    };
+
+    template<size_t I, typename _InitTypes, typename _HashTypes>
+    struct tuple_sort_traits
+    {
+        using hash_type = typename std::tuple_element<I, _HashTypes>::type::hash_type;
+        using value_type = size_t;
+        using init_type = _InitTypes;
+
+        struct Pred
+        {
+            template<typename _Input>
+            constexpr bool operator()(const _Input& input, size_t l, size_t r)
+            {
+                return std::get<I>(input[l]) < std::get<I>(input[r]);
+            };
+        };
+        template<typename _Input>
+        static constexpr auto construct(const _Input&, size_t J)
+        {
+            return J;
+        }
+        static constexpr hash_type get_hash(const init_type& v)
+        {
+            return std::get<I>(v);
+        }
+    };
+
+template<size_t I, size_t _First, size_t..._Rest>
+struct check_selected
+{
+    static constexpr bool value = (I == _First) | check_selected<I, _Rest...>::value;
+};
+
+template<size_t I, size_t _First>
+struct check_selected<I, _First>
+{
+    static constexpr bool value = (I == _First);
+};
+
+template<size_t I, typename _T>
+struct is_selected
+{ };
+
+template<size_t I, size_t...Ints>
+struct is_selected<I, std::index_sequence<Ints...> >
+{
+    static constexpr bool value = check_selected<I, Ints...>::value;
+};
+
+template<size_t I>
+struct is_selected<I, void>
+{
+    static constexpr bool value = true; // any selected
+};
+template<size_t I>
+struct is_selected<I, std::index_sequence<>>: is_selected<I, void>
+{ };
+
+template<typename _Selected, typename..._Types>
+struct MakeConstTable
+{
+    using hash_types = std::tuple<
+        typename ct::DeduceHashedType<_Types> ...>;
+    using init_types = ct::const_tuple<
+        typename ct::DeduceHashedType<_Types>::init_type ...>;
+    using value_types = std::tuple<
+        typename ct::DeduceHashedType<_Types>::value_type ...>;
+
+    template<typename _Init, size_t I>
+    static constexpr auto make_table_index(const _Init& init, 
+         std::integral_constant<size_t, I>,
+         std::integral_constant<bool, false>)
+    {
+        return EmptyIndex{};
+    }
+    template<typename _Init, size_t I,
+        class _SortTraits = tuple_sort_traits<I, init_types, hash_types>,
+        class _Sorter = ct::TInsertSorter<_SortTraits, false>>
+    static constexpr auto make_table_index(const _Init& init, 
+         std::integral_constant<size_t, I>,
+         std::integral_constant<bool, true>)
+    {
+        return _Sorter{}(init);
+    }
+    template<typename _Init, size_t I,
+        bool _CanIndex = 
+            std::tuple_element<I, hash_types>::type::can_index &&
+            is_selected<I, _Selected>::value>
+    static constexpr auto make_table_index(const _Init& init, std::integral_constant<size_t, I> i)
+    {   
+        return make_table_index(init, i, std::integral_constant<bool, _CanIndex>{});
+    }
+    template<typename _Init, std::size_t... I>
+    static constexpr auto make_indices(const _Init& init, std::index_sequence<I...>)
+    {
+        return std::make_tuple(make_table_index(init, std::integral_constant<size_t, I>{}) ...);
+    }
+
+    template<size_t N>
+    constexpr auto operator()(const init_types(&init)[N]) const
+    {
+        return make_indices(init, std::make_index_sequence<sizeof...(_Types)>{});
+    }
+};
+
+typedef int (*func_ptr)(int);
+static int SomeFunc(int i)
+{
+    return i * 2;
+}
+
+template<typename _Index>
+void ReportTableIndex(const _Index& index)
+{
+    std::cout << sizeof(index) << std::endl;
+    std::cout << "  " << index.first.size << std::endl;
+    std::cout << "  " << index.first.m_array.size() << std::endl;
+    std::cout << "  " << index.second.size() << std::endl;
+    for (auto rec: index.second)
+    {
+        std::cout << "    " << rec << std::endl;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestConstTable)
+{
+    //using selected = void;
+    using selected = std::index_sequence<1, 3>;
+    //using selected = std::index_sequence<>;
+    using type = MakeConstTable<selected, uint8_t, int, const char*, const char*, func_ptr>;
+
+    static constexpr type::init_types init[] = {
+        {5, 500, "Five", "Five hundred", SomeFunc},
+        {1, 100, "One", "Hundred", SomeFunc },
+        {100, 1'000'000, "Many", "Million", SomeFunc},
+    };
+
+    constexpr auto sorted = type{}(init);
+    std::cout << sizeof(sorted) << std::endl;
+    //ReportTableIndex(std::get<0>(sorted));
+    //ReportTableIndex(std::get<1>(sorted));
+    //ReportTableIndex(std::get<2>(sorted));
+    //ReportTableIndex(std::get<3>(sorted));
+    //ReportTableIndex(std::get<4>(sorted));
+    
+}
+
+
+template<bool _If, typename _T1, typename _T2>
+struct choose_type
+{
+};
+template<typename _T1, typename _T2>
+struct choose_type<true, _T1, _T2>
+{
+    using type=_T1;
+};
+template<typename _T1, typename _T2>
+struct choose_type<false, _T1, _T2>
+{
+    using type=_T2;
+};
+
+template<typename _Selected, typename _Tuple, typename _Sequence>
+struct build_tuple
+{
+};
+template<typename _Selected, typename _Tuple, size_t...Ints>
+struct build_tuple<_Selected, _Tuple, std::index_sequence<Ints...>>
+{
+    using type = _Tuple;
+    //using type = std::tuple<
+    //    std::tuple_element<Ints, _Tuple>::type ...>;
+};
+template<typename _Selected, typename..._Types>
+struct selected_tuple
+{
+    using tuple_type = std::tuple<_Types...>;
+    using type = typename build_tuple<_Selected, tuple_type, std::make_index_sequence<sizeof...(_Types)>>::type;
+    //typename choose_type<
+    //    is_selected
+    //    _Types, void>::type
+};
+
+template<typename _Selected, size_t...Ints>
+auto make_selected(std::index_sequence<Ints...>)
+    -> std::array<bool, sizeof...(Ints)>
+{
+    //return { { check_selected<Ints>(_Selected{}) ...} }; 
+    return { { is_selected<Ints, _Selected>::value ... } };
+}
+BOOST_AUTO_TEST_CASE(TestIntSequence)
+{
+    using select = std::index_sequence<0, 5, 9>;
+    //using select = void;
+
+    auto ar = make_selected<select>(std::make_index_sequence<10>{});
+    for (auto rec: ar)
+    {
+        std::cout << rec << " ";
+    }
+    std::cout << std::endl;
+    using tuple_type = selected_tuple<select, int, int, int>::type;
+}
+
+#endif

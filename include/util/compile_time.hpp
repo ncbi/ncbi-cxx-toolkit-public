@@ -161,16 +161,24 @@ namespace ct
 
     template<typename _HashedKey, typename _Value>
     class const_unordered_map: public 
-        const_set_map_base<_HashedKey, const_pair<typename _HashedKey::value_type, typename _Value::value_type>>
+        const_set_map_base<_HashedKey, std::pair<typename _HashedKey::value_type, typename _Value::value_type>>
     {
     public:
-        using _MyBase = const_set_map_base<_HashedKey, const_pair<typename _HashedKey::value_type, typename _Value::value_type>>;
-        using value_type = typename _MyBase::value_type;
+        using _MyBase = const_set_map_base<_HashedKey, std::pair<typename _HashedKey::value_type, typename _Value::value_type>>;
 
-        using const_iterator = typename _MyBase::const_iterator;
-        using iterator       = typename _MyBase::iterator;
-        using key_type       = typename value_type::first_type;
-        using mapped_type    = typename value_type::second_type;
+        using value_type      = typename _MyBase::value_type;
+        using key_type        = typename value_type::first_type;
+        using mapped_type     = typename value_type::second_type;
+        using size_type       = typename _MyBase::size_type;
+        using difference_type = typename _MyBase::difference_type;
+        using reference       = typename _MyBase::reference;
+        using const_reference = typename _MyBase::const_reference;
+        using pointer         = typename _MyBase::pointer;
+        using const_pointer   = typename _MyBase::const_pointer;
+        using iterator        = typename _MyBase::iterator;
+        using const_iterator  = typename _MyBase::const_iterator;
+        using reverse_iterator = typename _MyBase::reverse_iterator;
+        using const_reverse_iterator = typename _MyBase::const_reverse_iterator;
 
         using _MyBase::_MyBase;
 
@@ -203,16 +211,16 @@ namespace ct
     protected:
     };
 
-    template<typename T1, typename T2, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
+    template<typename T1, typename T2>
     struct MakeConstMap
     {
-        using first_type  = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
-        using second_type = DeduceHashedType<case_sensitive, NeedHash::no, T2>;
+        using first_type  = DeduceHashedType<T1>;
+        using second_type = DeduceHashedType<T2, tagNeedNoHash>;
 
         using sorter_t = TInsertSorter<straight_sort_traits<first_type, second_type>, true>;
         using init_type = typename sorter_t::init_type;
 
-        using map_type = const_unordered_map<first_type, second_type>;
+        using type = const_unordered_map<first_type, second_type>;
 
         template<size_t N>
         constexpr auto operator()(const init_type (&input)[N]) const
@@ -221,17 +229,17 @@ namespace ct
         }
     };
 
-    template<typename T1, typename T2, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
+    template<typename T1, typename T2>
     struct MakeConstMapTwoWay
     {
-        using first_type  = DeduceHashedType<case_sensitive, NeedHash::yes, T1>;
-        using second_type = DeduceHashedType<case_sensitive, NeedHash::yes, T2>;
+        using first_type  = DeduceHashedType<T1>;
+        using second_type = DeduceHashedType<T2>;
 
         using straight_sorter_t = TInsertSorter<straight_sort_traits<first_type, second_type>, true>;
         using flipped_sorter_t = TInsertSorter<flipped_sort_traits<first_type, second_type>, true>;
         using init_type = typename straight_sorter_t::init_type;
 
-        using map_type = std::pair<
+        using type = std::pair<
             const_unordered_map<first_type, second_type>,
             const_unordered_map<second_type, first_type>>;
 
@@ -270,15 +278,15 @@ namespace ct
         }
     };
 
-    template<typename _T, ncbi::NStr::ECase case_sensitive = ncbi::NStr::eCase>
+    template<typename _T>
     struct MakeConstSet
     {
-        using hashed_type = DeduceHashedType<case_sensitive, NeedHash::yes, _T>;
+        using hashed_type = DeduceHashedType<_T>;
 
         using sorter_t = TInsertSorter<simple_sort_traits<hashed_type>, true>;
         using init_type = typename sorter_t::init_type;
 
-        using set_type = const_unordered_set<hashed_type>;
+        using type = const_unordered_set<hashed_type>;
 
         template<size_t N>
         constexpr auto operator()(const init_type(&input)[N]) const 
@@ -288,7 +296,7 @@ namespace ct
     };
 }
 
-// used can define some specific debug instructions
+// user can define some specific debug instructions
 #ifndef DEBUG_MAKE_CONST_MAP
     #define DEBUG_MAKE_CONST_MAP(name)
 #endif
@@ -299,25 +307,27 @@ namespace ct
     #define DEBUG_MAKE_CONST_SET(name)
 #endif
 
-#define MAKE_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                              \
-    static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                \
-    static constexpr auto name ## _proxy = ct::MakeConstMap<type1, type2, case_sensitive>{}                                  \
-        (name ## _init);                                                                                                     \
-    static constexpr ct::MakeConstMap<type1, type2, case_sensitive>::map_type name = name ## _proxy;                         \
+// Some compilers (Clang < 3.9) still cannot deduce template parameter N for aggregate initialiazed arrays
+// so we have to use two step initialization. This doesn't impact neither either of compile time, run time and memory footprint
+//
+
+#define MAKE_CONST_CONTAINER(name, maker, ...) \
+    static constexpr maker ::init_type name ## _init[] = __VA_ARGS__;                                                        \
+    static constexpr auto name ## _proxy = maker {}(name ## _init);                                                          \
+    static constexpr maker ::type name = name ## _proxy;
+
+#define MAKE_CONST_MAP(name, type1, type2, ...)                                                                              \
+    using name ## _maker_type = ct::MakeConstMap<type1, type2>;                                                              \
+    MAKE_CONST_CONTAINER(name, name ## _maker_type, __VA_ARGS__)                                                             \
     DEBUG_MAKE_CONST_MAP(name)
 
-#define MAKE_TWOWAY_CONST_MAP(name, case_sensitive, type1, type2, ...)                                                       \
-    static constexpr ct::MakeConstMapTwoWay<type1, type2, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;          \
-    static constexpr auto name ## _proxy = ct::MakeConstMapTwoWay<type1, type2, case_sensitive>{}                            \
-        (name ## _init);                                                                                                     \
-    static constexpr ct::MakeConstMapTwoWay<type1, type2, case_sensitive>::map_type name = name ## _proxy;                   \
+#define MAKE_TWOWAY_CONST_MAP(name, type1, type2, ...)                                                                       \
+    using name ## _maker_type = ct::MakeConstMapTwoWay<type1, type2>;                                                        \
+    MAKE_CONST_CONTAINER(name, name ## _maker_type, __VA_ARGS__)                                                             \
     DEBUG_MAKE_TWOWAY_CONST_MAP(name)
 
-#define MAKE_CONST_SET(name, case_sensitive, type, ...)                                                                      \
-    static constexpr ct::MakeConstSet<type, case_sensitive>::init_type name ## _init[] = __VA_ARGS__;                        \
-    static constexpr auto name ## _proxy = ct::MakeConstSet<type, case_sensitive>{}                                          \
-        (name ## _init);                                                                                                     \
-    static constexpr ct::MakeConstSet<type, case_sensitive>::set_type name = name ## _proxy;                                 \
+#define MAKE_CONST_SET(name, type, ...)                                                                                      \
+    MAKE_CONST_CONTAINER(name, ct::MakeConstSet<type>, __VA_ARGS__)                                                          \
     DEBUG_MAKE_CONST_SET(name)
 
 #endif
