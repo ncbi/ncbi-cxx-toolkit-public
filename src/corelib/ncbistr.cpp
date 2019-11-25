@@ -2814,6 +2814,14 @@ const string NStr::BoolToString(bool value)
 
 bool NStr::StringToBool(const CTempString str)
 {
+    if (str == "1") {
+        errno = 0;
+        return true;
+    }
+    if (str == "0") {
+        errno = 0;
+        return false;
+    }
     if ( AStrEquiv(str, s_kTrueString,  PNocase())  ||
          AStrEquiv(str, s_kTString,     PNocase())  ||
          AStrEquiv(str, s_kYesString,   PNocase())  ||

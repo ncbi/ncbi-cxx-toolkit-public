@@ -1801,9 +1801,11 @@ static const SStringBoolValues s_StrToBoolTests[] = {
     { "no",     true,   false },
     { "y",      true,   true  },
     { "n",      true,   false },
-    { "0",      false,  false },
-    { "1",      false,  false },
+    { "1",      true,   true  },
+    { "0",      true,   false },
     { "truee",  false,  false },
+    { "10",     false,  false },
+    { "00",     false,  false }
 };
 
 BOOST_AUTO_TEST_CASE(s_BoolToString)
