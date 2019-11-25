@@ -392,30 +392,13 @@ int CAsn2FastaApp::Run(void)
 {
     // initialize conn library
     CONNECT_Init(&GetConfig());
-/*
-#ifdef HAVE_PUBSEQ_OS
-    // we may require PubSeqOS readers at some point, so go ahead and make
-    // sure they are properly registered
-    GenBankReaders_Register_Pubseq();
-    GenBankReaders_Register_Pubseq2();
-    DBAPI_RegisterDriver_FTDS();
-#endif
-*/
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
         NCBI_THROW(CException, eUnknown,
                    "Could not create object manager");
     }
-/*
 
-    CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-#ifdef HAVE_NCBI_VDB
-    CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
-                                            CObjectManager::eDefault,
-                                            88);
-#endif
-*/
     static const CDataLoadersUtil::TLoaders default_loaders = 
         CDataLoadersUtil::fGenbank | 
         CDataLoadersUtil::fVDB |
