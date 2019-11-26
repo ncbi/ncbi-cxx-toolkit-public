@@ -888,7 +888,7 @@ void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,
 
     auto pLEStream = make_unique<CNcbiIfstream>(linkageEvidenceFilename.c_str(), ios::binary);
 
-    if (!pLEStream) {
+    if (!pLEStream || !pLEStream->is_open()) {
         s_PostError(pEC, "Failed to open " + linkageEvidenceFilename);
         return;
     }
