@@ -62,10 +62,10 @@ $(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
 	$(RM) $(MODULE).pb.cpp $(MODULE).grpc.pb.cpp
 	@$(TOUCH) $@
 else
-$(FILES):
+$(FILES): $(GRPC_FILES)
 	@echo Warning: Skipping code generation for $(MODULE_ASN) >&2
 	@echo because protoc is unavailable here. >&2
-	@$(TOUCH) $^
+	@$(TOUCH) $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h
 endif
 
 $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
