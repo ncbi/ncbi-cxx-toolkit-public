@@ -461,7 +461,9 @@ public:
     };
 
     using TLegalQualifiers = ct::const_bitset<eQual_whole_replicon + 1, EQualifier>;
+    using TSubtypes = ct::const_bitset<eSubtype_max, ESubtype>;
     using TQualifiers = TLegalQualifiers;
+    using TSubTypeQualifiersMap = ct::const_unordered_map<ESubtype, TQualifiers>;
 
     /// Test wheather a certain qualifier is legal for the feature
     bool IsLegalQualifier(EQualifier qual) const;
@@ -480,8 +482,7 @@ public:
     static CTempString GetQualifierAsString(EQualifier qual);
 
     /// convert qual string to enumerated value
-    static EQualifier GetQualifierType(
-        const string& qual, NStr::ECase search_case = NStr::eNocase);
+    static EQualifier GetQualifierType(CTempString qual, NStr::ECase search_case = NStr::eNocase);
 
     static const CFeatList* GetFeatList();
     static const CBondList* GetBondList();
@@ -490,10 +491,10 @@ public:
     static bool IsRegulatory(ESubtype subtype);
     static const string & GetRegulatoryClass(ESubtype subtype);
     static ESubtype GetRegulatoryClass(const string & class_name );
-    static vector<string> GetRegulatoryClassList();
+    static const vector<string>& GetRegulatoryClassList();
     static bool FixRegulatoryClassValue(string& val);
 
-    static vector<string> GetRecombinationClassList();
+    static const vector<string>& GetRecombinationClassList();
 
     static bool IsDiscouragedSubtype(ESubtype subtype);
     static bool IsDiscouragedQual(EQualifier qual);
@@ -535,6 +536,7 @@ private:
     mutable SFeatDataInfo m_FeatDataInfo; // cached
 
     static void s_InitSubtypesTable(void);
+    static const TSubTypeQualifiersMap& s_GetLegalQualMap() noexcept;
 
     // Prohibit copy constructor and assignment operator
     CSeqFeatData(const CSeqFeatData& value);

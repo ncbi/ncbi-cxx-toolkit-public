@@ -823,7 +823,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
 #endif    
 }
 
-namespace
+const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noexcept
 {
 
 #define ADD_QUAL(n) CSeqFeatData::eQual_##n
@@ -3018,12 +3018,14 @@ START_SUBTYPE(propeptide_aa
 #undef START_SUBTYPE
 #undef ADD_QUAL
 
-} // anonymous namespace
+    return g_legal_quals;
+}
+
 
 const CSeqFeatData::TLegalQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
 {
-    auto it = g_legal_quals.find(subtype);
-    if (it == g_legal_quals.end())
+    auto it = s_GetLegalQualMap().find(subtype);
+    if (it == s_GetLegalQualMap().end())
         return empty_quals;
 
     return it->second;
@@ -3031,15 +3033,17 @@ const CSeqFeatData::TLegalQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype 
 
 bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 {
-    auto it = g_legal_quals.find(subtype);
-    if (it == g_legal_quals.end())
+    auto it = s_GetLegalQualMap().find(subtype);
+    if (it == s_GetLegalQualMap().end())
         return false;
 
     return it->second.test(qual);
 }
 
-typedef SStaticPair<CSeqFeatData::EQualifier, const char*> TQualPair;
-static const TQualPair kQualPairs[] = {
+// this is compile time dual map
+// there is no need to pre-sort item in any particular order
+MAKE_TWOWAY_CONST_MAP(sc_QualPairs, CSeqFeatData::EQualifier, ct::tagStrNocase,
+{
     { CSeqFeatData::eQual_bad, "bad" },
     { CSeqFeatData::eQual_allele, "allele" },
     { CSeqFeatData::eQual_altitude, "altitude" },
@@ -3174,55 +3178,33 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_variety, "variety" },
     { CSeqFeatData::eQual_virion, "virion" },
     { CSeqFeatData::eQual_whole_replicon, "whole_replicon" }
-};
-
-typedef CStaticPairArrayMap<CSeqFeatData::EQualifier, const char*> TQualsMap;
-DEFINE_STATIC_ARRAY_MAP(TQualsMap, sc_QualPairs, kQualPairs);
-
-// inverse of sc_QualPairs
-typedef map<
-    string, CSeqFeatData::EQualifier, PNocase> TQualsInverseMap;
-
-static
-TQualsInverseMap *s_CreateNameToQualsMap()
-{
-    AutoPtr<TQualsInverseMap> pNewMap(new TQualsInverseMap);
-
-    ITERATE(TQualsMap, pair_it, sc_QualPairs) {
-        // if dups, only the last is used
-        (*pNewMap)[pair_it->second] = pair_it->first;
-    }
-
-    return pNewMap.release();
-}
+});
 
 CTempString CSeqFeatData::GetQualifierAsString(EQualifier qual)
 {
-    TQualsMap::const_iterator iter = sc_QualPairs.find(qual);
-    return (iter != sc_QualPairs.end()) ? CTempString(iter->second) : CTempString(kEmptyStr);
+    auto iter = sc_QualPairs.first.find(qual);
+    if (iter == sc_QualPairs.first.end())
+        return kEmptyStr;
+    else
+        return iter->second;
 }
 
-
-CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual, NStr::ECase search_case)
+CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(CTempString qual, NStr::ECase search_case)
 {
-    // create inverse of sc_QualPairs if not already created
-    static CSafeStatic<TQualsInverseMap> pNameToQualsMap(
-        s_CreateNameToQualsMap, 0);
-
-    TQualsInverseMap::const_iterator find_iter =
-        pNameToQualsMap->find(qual);
-    if( find_iter != pNameToQualsMap->end() && NStr::Equal(qual, find_iter->first, search_case) ) {
-        return find_iter->second;
+    auto iter = sc_QualPairs.second.lower_bound(qual);
+    if (iter != sc_QualPairs.second.end())
+    {// additional strict compare 
+        if (NStr::Equal(qual, iter->first, search_case)) {
+            return iter->second;
+        }
     }
-
     // special case
-    if( NStr::Equal(qual, "specific_host", search_case) ) {
+    if (NStr::Equal(qual, "specific_host", search_case)) {
         return CSeqFeatData::eQual_host;
     }
 
     return CSeqFeatData::eQual_bad;
 }
-
 
 // xref info table
 DEFINE_STATIC_MUTEX(sx_InitXrefTablesMutex);
@@ -3904,33 +3886,33 @@ CSeqFeatData::GetRegulatoryClass(const string & class_name )
 }
 
 
-vector<string> CSeqFeatData::GetRegulatoryClassList()
+const vector<string>& CSeqFeatData::GetRegulatoryClassList()
 {
-    vector<string> choices;
-
-    choices.push_back("promoter");
-    choices.push_back("ribosome_binding_site");
-    choices.push_back("attenuator");
-    choices.push_back("CAAT_signal");
-    choices.push_back("DNase_I_hypersensitive_site");
-    choices.push_back("enhancer");
-    choices.push_back("enhancer_blocking_element");
-    choices.push_back("GC_signal");
-    choices.push_back("imprinting_control_region");
-    choices.push_back("insulator");
-    choices.push_back("locus_control_region");
-    choices.push_back("matrix_attachment_region");
-    choices.push_back("minus_10_signal");
-    choices.push_back("minus_35_signal");
-    choices.push_back("polyA_signal_sequence");
-    choices.push_back("recoding_stimulatory_region");
-    choices.push_back("replication_regulatory_region");
-    choices.push_back("response_element");
-    choices.push_back("riboswitch");
-    choices.push_back("silencer");
-    choices.push_back("TATA_box");
-    choices.push_back("terminator");
-    choices.push_back("transcriptional_cis_regulatory_region");
+    static vector<string> choices = {
+        "promoter",
+        "ribosome_binding_site",
+        "attenuator",
+        "CAAT_signal",
+        "DNase_I_hypersensitive_site",
+        "enhancer",
+        "enhancer_blocking_element",
+        "GC_signal",
+        "imprinting_control_region",
+        "insulator",
+        "locus_control_region",
+        "matrix_attachment_region",
+        "minus_10_signal",
+        "minus_35_signal",
+        "polyA_signal_sequence",
+        "recoding_stimulatory_region",
+        "replication_regulatory_region",
+        "response_element",
+        "riboswitch",
+        "silencer",
+        "TATA_box",
+        "terminator",
+        "transcriptional_cis_regulatory_region",
+    };
 
     return choices;
 }
@@ -3952,62 +3934,65 @@ bool CSeqFeatData::FixRegulatoryClassValue(string& val)
     return original != val;
 }
 
-vector<string> CSeqFeatData::GetRecombinationClassList()
+const vector<string>& CSeqFeatData::GetRecombinationClassList()
 {
-    vector<string> choices;
-
-    choices.push_back("meiotic");
-    choices.push_back("mitotic");
-    choices.push_back("non_allelic_homologous");
-    choices.push_back("chromosome_breakpoint");
+    static vector<string> choices = {
+        "meiotic",
+        "mitotic",
+        "non_allelic_homologous",
+        "chromosome_breakpoint",
+    };
 
     return choices;
 }
 
 bool CSeqFeatData::IsDiscouragedSubtype(ESubtype subtype)
 {
-    switch(subtype) {
-        case eSubtype_10_signal:
-        case eSubtype_35_signal:
-        case eSubtype_allele:
-        case eSubtype_attenuator:
-        case eSubtype_CAAT_signal:
-        case eSubtype_conflict:
-        case eSubtype_enhancer:
-        case eSubtype_GC_signal:
-        case eSubtype_LTR:
-        case eSubtype_misc_binding:
-        case eSubtype_mutation:
-        case eSubtype_polyA_signal:
-        case eSubtype_promoter:
-        case eSubtype_RBS:
-        case eSubtype_repeat_unit:
-        case eSubtype_satellite:
-        case eSubtype_scRNA:
-        case eSubtype_site_ref:
-        case eSubtype_snoRNA:
-        case eSubtype_snRNA:
-        case eSubtype_TATA_signal:
-        case eSubtype_terminator:
-        case eSubtype_virion:
-            return true;
-        default:
-            return false;
-    }
-}
+    static constexpr TSubtypes discouraged_subtypes {
+        eSubtype_10_signal,
+        eSubtype_35_signal,
+        eSubtype_allele,
+        eSubtype_attenuator,
+        eSubtype_CAAT_signal,
+        eSubtype_conflict,
+        eSubtype_enhancer,
+        eSubtype_GC_signal,
+        eSubtype_LTR,
+        eSubtype_misc_binding,
+        eSubtype_mutation,
+        eSubtype_polyA_signal,
+        eSubtype_promoter,
+        eSubtype_RBS,
+        eSubtype_repeat_unit,
+        eSubtype_satellite,
+        eSubtype_scRNA,
+        eSubtype_site_ref,
+        eSubtype_snoRNA,
+        eSubtype_snRNA,
+        eSubtype_TATA_signal,
+        eSubtype_terminator,
+        eSubtype_virion,
+    };
 
+    if (discouraged_subtypes.test(subtype))
+            return true;
+    else
+            return false;
+}
 
 bool CSeqFeatData::IsDiscouragedQual(EQualifier qual)
 {
-    switch(qual) {
-    case eQual_insertion_seq:
-    case eQual_mobile_element:
-    case eQual_rpt_unit:
-    case eQual_transposon:
+    static constexpr TQualifiers discouraged_quals {
+        eQual_insertion_seq,
+        eQual_mobile_element,
+        eQual_rpt_unit,
+        eQual_transposon,
+    };
+
+    if (discouraged_quals.test(qual))
         return true;
-    default:
+    else
         return false;
-    }
 }
 
 
