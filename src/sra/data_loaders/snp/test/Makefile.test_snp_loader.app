@@ -1,7 +1,7 @@
 APP = test_snp_loader
 SRC = test_snp_loader
 
-REQUIRES = Boost.Test.Included GRPC
+REQUIRES = Boost.Test.Included $(GRPC_OPT)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
