@@ -83,9 +83,6 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, true, false, true));
     m_Args.push_back(arg);
 
-    arg.Reset(new CNuclArgs);
-    m_Args.push_back(arg);
-
     arg.Reset(new CGappedArgs);
     m_Args.push_back(arg);
 

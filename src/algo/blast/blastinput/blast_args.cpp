@@ -1600,10 +1600,17 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eString);
 
         arg_desc.AddOptionalKey(kArgMinDMatch, "min_D_match",
-                                "Required minimal number of D gene matches ",
+                                "Required minimal consecutive nucleotide base matches for D genes ",
                                 CArgDescriptions::eInteger);
         arg_desc.SetConstraint(kArgMinDMatch,
                                new CArgAllowValuesGreaterThanOrEqual(5));
+
+        arg_desc.AddDefaultKey(kArgVPenalty, "V_penalty",
+                                "Penalty for a nucleotide mismatch in V gene",
+                                CArgDescriptions::eInteger, "-1");
+        arg_desc.SetConstraint(kArgVPenalty,
+                               new CArgAllowValuesBetween(-4, 0));
+
 
         arg_desc.AddDefaultKey(kArgDPenalty, "D_penalty",
                                 "Penalty for a nucleotide mismatch in D gene",
@@ -1781,6 +1788,10 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args.Exist(kArgMinDMatch) && args[kArgMinDMatch]) {
         m_IgOptions->m_Min_D_match = args[kArgMinDMatch].AsInteger();
     }
+
+   if (args.Exist(kArgVPenalty) && args[kArgVPenalty]) {
+        m_IgOptions->m_V_penalty = args[kArgVPenalty].AsInteger();
+   }
 
     if (args.Exist(kArgDPenalty) && args[kArgDPenalty]) {
         m_IgOptions->m_D_penalty = args[kArgDPenalty].AsInteger();
