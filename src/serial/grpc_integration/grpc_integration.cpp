@@ -223,6 +223,7 @@ static const TStatusCodePair sc_ErrorCodes[] = {
     TSCP(e415_UnsupportedMediaType,  UNIMPLEMENTED), // INVALID_ARGUMENT?
     TSCP(e416_RangeNotSatisfiable,   OUT_OF_RANGE),
     TSCP(e417_ExpectationFailed,     FAILED_PRECONDITION),
+    TSCP(e422_UnprocessableEntity,   UNIMPLEMENTED), // INVALID_ARGUMENT?
     TSCP(e499_BrokenConnection,      CANCELLED),
     TSCP(e500_InternalServerError,   INTERNAL),
     TSCP(e501_NotImplemented,        UNIMPLEMENTED),
