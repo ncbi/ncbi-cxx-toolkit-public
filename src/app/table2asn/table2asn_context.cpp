@@ -90,6 +90,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#include <sstream>
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
