@@ -5,7 +5,7 @@
 
 LIB_PROJ = grpc_integration
 
-REQUIRES = GRPC
+REQUIRES = $(GRPC_OPT)
 WATCHERS = ucko
 
 srcdir = @srcdir@

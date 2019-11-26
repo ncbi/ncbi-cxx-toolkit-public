@@ -37,7 +37,14 @@
 
 
 #include <serial/grpc_integration/impl/grpc_support.hpp>
-#include <grpc++/client_context.h>
+#ifdef HAVE_LIBGRPC
+#  include <grpc++/client_context.h>
+#else
+namespace grpc {
+    class ClientContext      {};
+    class PropagationOptions {};
+}
+#endif
 
 
 /** @addtogroup Miscellaneous
@@ -71,6 +78,8 @@ public:
                                                  = grpc::PropagationOptions());
 
     static void AddStandardNCBIMetadata(TParent& cctx);
+
+    static bool IsImplemented(void);
 };
 
 

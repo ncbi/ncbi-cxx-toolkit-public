@@ -38,8 +38,37 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/request_status.hpp>
-#include <google/protobuf/message.h>
-#include <grpc++/server.h>
+#ifdef HAVE_LIBPROTOBUF
+#  include <google/protobuf/message.h>
+#else
+namespace google {
+    namespace protobuf {
+        class Message
+        {
+        public:
+            long ByteSizeLong(void) const { return 0L; }
+        };
+    }
+}
+#endif
+#ifdef HAVE_LIBGRPC
+#  include <grpc++/server.h>
+#else
+namespace grpc {
+    typedef int Status;
+    typedef int StatusCode;
+    class ServerContext {};
+    class Server
+    {
+    public:
+        class GlobalCallbacks
+        {
+            virtual void PreSynchronousRequest (grpc::ServerContext* sctx) = 0;
+            virtual void PostSynchronousRequest(grpc::ServerContext* sctx) = 0;
+        };
+    };
+}
+#endif
 
 
 /** @addtogroup Miscellaneous
@@ -91,6 +120,7 @@ public:
 inline
 grpc::Status g_AsGRPCStatus(CRequestStatus::ECode status_code)
 {
+#ifdef HAVE_LIBGRPC   
     if (status_code >= CRequestStatus::e100_Continue
         &&  status_code < CRequestStatus::e400_BadRequest) {
         return grpc::Status::OK;
@@ -98,6 +128,9 @@ grpc::Status g_AsGRPCStatus(CRequestStatus::ECode status_code)
         return grpc::Status(g_AsGRPCStatusCode(status_code),
                             CRequestStatus::GetStdStatusMessage(status_code));
     }
+#else
+    return status_code;
+#endif
 }
 
 

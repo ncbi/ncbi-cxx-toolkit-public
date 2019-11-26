@@ -37,13 +37,17 @@
 #include <serial/grpc_integration/grpc_integration.hpp>
 #include <util/static_map.hpp>
 #include <serial/error_codes.hpp>
-#include <grpc++/server_context.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#ifdef HAVE_LIBGRPC
+#  include <grpc++/server_context.h>
+#  include <grpc/support/alloc.h>
+#  include <grpc/support/log.h>
+#endif
 
 #define NCBI_USE_ERRCODE_X Serial_GRPCIntegration
 
 BEGIN_NCBI_SCOPE
+
+#ifdef HAVE_LIBGRPC
 
 static string s_EncodeMetadataName(const string& name)
 {
@@ -129,21 +133,28 @@ CGRPCInitializer::CGRPCInitializer(void)
     // avoid sending inappropriate metadata to non-NCBI services.
 }
 
+#endif
+
 
 unique_ptr<grpc::ClientContext>
 CGRPCClientContext::FromServerContext(const grpc::ServerContext& sctx,
                                       grpc::PropagationOptions options)
 {
+#ifdef HAVE_LIBGRPC
     unique_ptr<grpc::ClientContext> result
         (grpc::ClientContext::FromServerContext(sctx, options));
     if (result.get() != NULL) {
         AddStandardNCBIMetadata(*result);
     }
     return result;
+#else
+    return make_unique<CGRPCClientContext>();
+#endif    
 }
 
 void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
 {
+#ifdef HAVE_LIBGRPC
     CDiagContext&    dctx = GetDiagContext();
     CRequestContext& rctx = dctx.GetRequestContext();
     cctx.set_initial_metadata_corked(true);
@@ -176,8 +187,20 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
              }
              return true;
          });
+#endif
 }
 
+bool CGRPCClientContext::IsImplemented(void)
+{
+#ifdef HAVE_LIBGRPC
+    return true;
+#else
+    return false;
+#endif
+}
+
+
+#ifdef HAVE_LIBGRPC
 
 typedef SStaticPair<CRequestStatus::ECode, grpc::StatusCode> TStatusCodePair;
 #define TSCP(x, y) { CRequestStatus::x, grpc::y }
@@ -211,8 +234,11 @@ static const TStatusCodePair sc_ErrorCodes[] = {
 typedef CStaticArrayMap<CRequestStatus::ECode, grpc::StatusCode> TStatusCodeMap;
 DEFINE_STATIC_ARRAY_MAP(TStatusCodeMap, sc_ErrorCodeMap, sc_ErrorCodes);
 
+#endif
+
 grpc::StatusCode g_AsGRPCStatusCode(CRequestStatus::ECode status_code)
 {
+#ifdef HAVE_LIBGRPC
     TStatusCodeMap::const_iterator it = sc_ErrorCodeMap.find(status_code);
     if (it != sc_ErrorCodeMap.end()) {
         return it->second;
@@ -222,7 +248,12 @@ grpc::StatusCode g_AsGRPCStatusCode(CRequestStatus::ECode status_code)
     } else {
         return grpc::UNKNOWN;
     }
+#else
+    return status_code;
+#endif
 }
+
+#ifdef HAVE_LIBGRPC
 
 // Work around inability to compare pointers to members.
 static void s_SetDtab(CRequestContext& r, const string& s)
@@ -259,6 +290,8 @@ static const TRCSetterPair sc_RCSetters[] = {
 typedef CStaticArrayMap<const char*, FRCSetter, PCase_CStr> TRCSetterMap;
 DEFINE_STATIC_ARRAY_MAP(TRCSetterMap, sc_RCSetterMap, sc_RCSetters);
 
+#endif
+
 // TODO - can either of these log any more information, such as the
 // service name, the status code, or the number of bytes in and/or out?
 // (Byte counts appear to be tracked internally but not exposed. :-/)
@@ -269,6 +302,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
     CRequestContext& rctx = dctx.GetRequestContext();
     string           client_name, peer_ip, port;
     rctx.SetRequestID();
+#ifdef HAVE_LIBGRPC
     if (sctx != NULL) {
         SIZE_TYPE pos = sctx->peer().find(':');
         if (pos != NPOS) {
@@ -332,6 +366,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
             (*(it.first))(rctx, *value);
         }
     }
+#endif
     CDiagContext_Extra extra = dctx.PrintRequestStart();
     if ( !client_name.empty() ) {
         extra.Print("client_name", client_name);
