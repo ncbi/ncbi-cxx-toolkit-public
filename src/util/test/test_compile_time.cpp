@@ -766,6 +766,30 @@ BOOST_AUTO_TEST_CASE(TestConstSorter)
 
 }
 
+BOOST_AUTO_TEST_CASE(TestMapOfPair)
+{
+    using Pair1 = std::pair<int, int>;
+    using Tuple1 = std::tuple<int, const char*, int>;
+
+    MAKE_CONST_MAP(mp, std::string, Pair1,
+        {
+            { "one", {1, 1}},
+            { "two", {2, 2}},
+            { "many", {3, 3}},
+        }
+        )
+
+    MAKE_CONST_MAP(tp, ct::tagStrNocase, Tuple1,
+        {
+            {"one", { 1, "word", 1}},
+            {"two", { 2, "another", 2}},
+        }
+        )
+
+}
+
+
+
     struct EmptyIndex
     {
     };
@@ -836,6 +860,7 @@ class const_indexed_table_proxy: public _Rows
 {
 public:
     using rows_t = _Rows;
+    using row_t = typename _Rows::value_type;
     using indices_t = typename std::remove_cv<_Indices>::type;
     static constexpr size_t m_width = std::tuple_size<indices_t>::value;
 
@@ -854,7 +879,7 @@ public:
             std::is_constructible<typename _ColumnType::value_type, _K>::value &&
             !std::is_same<EmptyIndex, typename std::tuple_element<i, indices_t>::type>::value,
             const_iterator>::type
-        find(_K&& _key) const
+    find(_K&& _key) const
     {
         typename _ColumnType::value_type temp = std::forward<_K>(_key);
         typename _ColumnType::init_type  key(temp);
@@ -874,7 +899,21 @@ public:
         }
         return _Rows::end();
     }
-protected:
+    template<size_t i, size_t col, typename _K, 
+        typename _ColumnType = typename std::tuple_element<i, _HashTypes>::type,
+        typename _ResultType = typename std::tuple_element<col, row_t>::type>
+    typename std::enable_if<
+        std::is_constructible<typename _ColumnType::value_type, _K>::value &&
+        !std::is_same<EmptyIndex, typename std::tuple_element<i, indices_t>::type>::value,
+        const _ResultType&>::type
+    get(_K&& _key) const
+    {
+        auto it = find<i>(std::forward<_K>(_key));
+        if (it == _Rows::end())
+            throw std::out_of_range("invalid const_table record");
+        return std::get<col>(*it);
+    }
+    protected:
     indices_t m_indices{};
 };
 
@@ -995,7 +1034,8 @@ BOOST_AUTO_TEST_CASE(TestConstTable)
     auto it1 = sorted.find<1>(500);
     auto it2 = sorted.find<1>(501);
     auto it3 = sorted.find<1>(1);
-    auto it4 = sorted.find<1>(1'000'000);
+    auto it4 = std::get<4>(*sorted.find<1>(1'000'000));
+    auto it4_1 = sorted.get<1, 4>(1'000'000)(50);
     auto it5 = sorted.find<1>(1'000'001);
     auto it6 = sorted.find<1>(std::numeric_limits<int>::max());
 

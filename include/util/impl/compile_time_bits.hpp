@@ -148,12 +148,12 @@ namespace compile_time_bits
 
         constexpr const_tuple() noexcept = default;
         constexpr const_tuple(const _This& _f, const _Rest&..._rest) noexcept
-            : _Mybase(_rest...), _Myfirst(_f)
+            : _Mybase(_rest...), _Myfirst( _f )
         {
         }
         template<typename _T0, typename..._Other>
         constexpr const_tuple(_T0&& _f0, _Other&&...other) noexcept
-            : _Mybase(std::forward<_Other>(other)...), _Myfirst(std::forward<_T0>(_f0))
+            : _Mybase(std::forward<_Other>(other)...), _Myfirst( std::forward<_T0>(_f0) )
         {
         }
     };
@@ -642,11 +642,82 @@ namespace compile_time_bits
         }
     };
 
-    template<typename _HashedKey, typename _Value>
+    using tagStrCase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
+    using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
+
+    // we only support strings, integral types and enums
+    // write your own DeduceHashedType specialization if required
+    template<typename _BaseType, typename _InitType = _BaseType, typename _HashType = void>
+    struct DeduceHashedType
+    {
+        using value_type = _BaseType;
+        using init_type = _InitType;
+        using hash_type = _HashType;
+        static constexpr bool can_index = std::numeric_limits<hash_type>::is_integer;
+    };
+
+    template<typename _BaseType>
+    struct DeduceHashedType<_BaseType,
+        typename std::enable_if<std::is_enum<_BaseType>::value, _BaseType>::type>
+        : DeduceHashedType<_BaseType, _BaseType, typename std::underlying_type<_BaseType>::type>
+    {
+    };
+
+    template<typename _BaseType>
+    struct DeduceHashedType<_BaseType,
+        typename std::enable_if<std::numeric_limits<_BaseType>::is_integer, _BaseType>::type>
+        : DeduceHashedType<_BaseType, _BaseType, _BaseType>
+    {
+    };
+
+    template<ncbi::NStr::ECase case_sensitive>
+    struct DeduceHashedType<std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
+        : DeduceHashedType<string_view<case_sensitive>, CHashString<case_sensitive>, typename CHashString<case_sensitive>::hash_type>
+    {
+    };
+
+    template<>
+    struct DeduceHashedType<const char*>
+        : DeduceHashedType<tagStrCase>
+    {
+    };
+
+    template<>
+    struct DeduceHashedType<char*>
+        : DeduceHashedType<tagStrCase>
+    {
+    };
+
+    template<class Traits, class Allocator>
+    struct DeduceHashedType<std::basic_string<char, Traits, Allocator>>
+        : DeduceHashedType<tagStrCase>
+    {
+    };
+
+    template<typename _First, typename _Second>
+    struct DeduceHashedType<std::pair<_First, _Second>>
+    {
+        using first_type = DeduceHashedType<_First>;
+        using second_type = DeduceHashedType<_Second>;
+        using value_type = std::pair<typename first_type::value_type, typename second_type::value_type>;
+        using init_type = value_type;
+    };
+    template<typename..._Types>
+    struct DeduceHashedType<std::tuple<_Types...>>
+    {
+        using hashed_type = ct::const_tuple<DeduceHashedType<_Types>...>;
+        using value_type  = ct::const_tuple<typename DeduceHashedType<_Types>::value_type...>;
+        using init_type   = value_type;
+    };
+
+    template<typename _Key, typename _Value>
     class const_set_map_base
     {
     public:
-        using value_type      = _Value;
+        using hashed_key      = DeduceHashedType<_Key>;
+        using hashed_value    = DeduceHashedType<_Value>;
+
+        using value_type      = typename hashed_value::value_type;
         using size_type       = std::size_t;
         using difference_type = std::ptrdiff_t;
         using reference       = const value_type&;
@@ -658,7 +729,7 @@ namespace compile_time_bits
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        using intermediate = typename _HashedKey::value_type;
+        using intermediate = typename hashed_key::value_type;
 
         constexpr const_set_map_base() = default;
 
@@ -688,7 +759,7 @@ namespace compile_time_bits
             lower_bound(K&& _key) const
         {
             intermediate temp = std::forward<K>(_key);
-            typename _HashedKey::init_type key(temp);
+            typename hashed_key::init_type key(temp);
             hash_type hash(std::move(key));
             auto offset = m_index.lower_bound(hash);
             return begin() + offset;
@@ -698,7 +769,7 @@ namespace compile_time_bits
             upped_bound(K&& _key) const
         {
             intermediate temp = std::forward<K>(_key);
-            typename _HashedKey::init_type key(temp);
+            typename hashed_key::init_type key(temp);
             hash_type hash(std::move(key));
             auto offset = m_index.upped_bound(hash);
             return begin() + offset;
@@ -709,7 +780,7 @@ namespace compile_time_bits
             equal_range(K&& _key) const
         {
             intermediate temp = std::forward<K>(_key);
-            typename _HashedKey::init_type key(temp);
+            typename hashed_key::init_type key(temp);
             hash_type hash(std::move(key));
             auto _range = m_index.equal_range(hash);
             return std::make_pair(
@@ -722,7 +793,7 @@ namespace compile_time_bits
         }
     protected:
 
-        using hash_type = typename _HashedKey::hash_type;
+        using hash_type = typename hashed_key::hash_type;
         const value_type* m_values = nullptr;
         const_index<hash_type> m_index{};
         size_type         m_realsize = 0;
@@ -798,60 +869,7 @@ namespace compile_time_bits
         }
     };
 
-    using tagStrCase   = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
-    using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
-    struct tagNeedNoHash { };
-
-    // we only support strings, integral types and enums
-    // write your own DeduceHashedType specialization if required
-    template<typename _BaseType, typename _InitType=_BaseType, typename _HashType=void>
-    struct DeduceHashedType
-    {
-        using value_type = _BaseType;
-        using init_type  = _InitType;
-        using hash_type  = _HashType;
-        static constexpr bool can_index = std::numeric_limits<hash_type>::is_integer;
-    };
-
-    template<typename _BaseType>
-    struct DeduceHashedType<_BaseType,
-        typename std::enable_if<std::is_enum<_BaseType>::value, _BaseType>::type>
-        : DeduceHashedType<_BaseType, _BaseType, typename std::underlying_type<_BaseType>::type>
-    {
-    };
-
-    template<typename _BaseType>
-    struct DeduceHashedType<_BaseType,
-        typename std::enable_if<std::numeric_limits<_BaseType>::is_integer, _BaseType>::type>
-        : DeduceHashedType<_BaseType, _BaseType, _BaseType>
-    {
-    };
-
-    template<ncbi::NStr::ECase case_sensitive>
-    struct DeduceHashedType<std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
-        : DeduceHashedType<string_view<case_sensitive>, CHashString<case_sensitive>, typename CHashString<case_sensitive>::hash_type>
-    {
-    };
-
-    template<>
-    struct DeduceHashedType<const char*>
-        : DeduceHashedType<tagStrCase>
-    {
-    };
-
-    template<class Traits, class Allocator>
-    struct DeduceHashedType<std::basic_string<char, Traits, Allocator>>
-        : DeduceHashedType<tagStrCase>
-    {
-    };
-
-    template<typename _BaseType>
-    struct DeduceHashedType<_BaseType, tagNeedNoHash>
-    {
-        using value_type = typename DeduceHashedType<_BaseType>::value_type;
-        using init_type  = value_type;
-    };
-    }
+}
 
 #endif
 

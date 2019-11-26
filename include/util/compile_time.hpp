@@ -159,12 +159,13 @@ namespace ct
         }
     };
 
-    template<typename _HashedKey, typename _Value>
-    class const_unordered_map: public 
-        const_set_map_base<_HashedKey, std::pair<typename _HashedKey::value_type, typename _Value::value_type>>
+    template<typename _Key, typename _T, typename _Pair = std::pair<_Key, _T>>
+    class const_unordered_map: public const_set_map_base<_Key, _Pair>
     {
     public:
-        using _MyBase = const_set_map_base<_HashedKey, std::pair<typename _HashedKey::value_type, typename _Value::value_type>>;
+        using _MyBase = const_set_map_base<_Key, _Pair>;
+
+        using hashed_key      = typename _MyBase::hashed_key;
 
         using value_type      = typename _MyBase::value_type;
         using key_type        = typename value_type::first_type;
@@ -211,16 +212,16 @@ namespace ct
     protected:
     };
 
-    template<typename T1, typename T2>
+    template<typename _Key, typename _T>
     struct MakeConstMap
     {
-        using first_type  = DeduceHashedType<T1>;
-        using second_type = DeduceHashedType<T2, tagNeedNoHash>;
+        using type = const_unordered_map<_Key, _T>;
 
-        using sorter_t = TInsertSorter<straight_sort_traits<first_type, second_type>, true>;
+        using key_type = typename type::hashed_key;
+        using mapped_type = typename type::hashed_value::second_type;
+
+        using sorter_t = TInsertSorter<straight_sort_traits<key_type, mapped_type>, true>;
         using init_type = typename sorter_t::init_type;
-
-        using type = const_unordered_map<first_type, second_type>;
 
         template<size_t N>
         constexpr auto operator()(const init_type (&input)[N]) const
@@ -232,16 +233,16 @@ namespace ct
     template<typename T1, typename T2>
     struct MakeConstMapTwoWay
     {
-        using first_type  = DeduceHashedType<T1>;
-        using second_type = DeduceHashedType<T2>;
+        using type = std::pair<
+            const_unordered_map<T1, T2>,
+            const_unordered_map<T2, T1>>;
+
+        using first_type  = typename type::first_type::hashed_key;
+        using second_type = typename type::second_type::hashed_key;
 
         using straight_sorter_t = TInsertSorter<straight_sort_traits<first_type, second_type>, true>;
         using flipped_sorter_t = TInsertSorter<flipped_sort_traits<first_type, second_type>, true>;
         using init_type = typename straight_sorter_t::init_type;
-
-        using type = std::pair<
-            const_unordered_map<first_type, second_type>,
-            const_unordered_map<second_type, first_type>>;
 
         template<size_t N>
         constexpr auto operator()(const init_type(&input)[N]) const
@@ -252,13 +253,13 @@ namespace ct
         }
     };
 
-    template<typename _HashedType>
-    class const_unordered_set: public
-        const_set_map_base<_HashedType, typename _HashedType::value_type>
+    template<typename _T>
+    class const_unordered_set: public const_set_map_base<_T, _T>
     {
     public:
-        using _MyBase = const_set_map_base<_HashedType, typename _HashedType::value_type>;
+        using _MyBase = const_set_map_base<_T, _T>;
 
+        using hashed_key     = typename _MyBase::hashed_key;
         using value_type     = typename _MyBase::value_type;
         using const_iterator = typename _MyBase::const_iterator;
         using iterator       = typename _MyBase::iterator;
@@ -281,12 +282,10 @@ namespace ct
     template<typename _T>
     struct MakeConstSet
     {
-        using hashed_type = DeduceHashedType<_T>;
+        using type = const_unordered_set<_T>;
 
-        using sorter_t = TInsertSorter<simple_sort_traits<hashed_type>, true>;
+        using sorter_t = TInsertSorter<simple_sort_traits<typename type::hashed_key>, true>;
         using init_type = typename sorter_t::init_type;
-
-        using type = const_unordered_set<hashed_type>;
 
         template<size_t N>
         constexpr auto operator()(const init_type(&input)[N]) const 
@@ -308,7 +307,7 @@ namespace ct
 #endif
 
 // Some compilers (Clang < 3.9) still cannot deduce template parameter N for aggregate initialiazed arrays
-// so we have to use two step initialization. This doesn't impact neither either of compile time, run time and memory footprint
+// so we have to use two step initialization. This doesn't impact neither of compile time, run time or memory footprint
 //
 
 #define MAKE_CONST_CONTAINER(name, maker, ...) \
