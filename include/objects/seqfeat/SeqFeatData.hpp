@@ -307,13 +307,13 @@ public:
     ///
     /// @return
     ///   empty string on bad input
-    static const string & SubtypeValueToName(ESubtype eSubtype);
+    static CTempString SubtypeValueToName(ESubtype eSubtype);
     /// Turn a string into its ESubtype which is NOT necessarily
     /// related to the identifier of the enum.
     ///
     /// @return
     ///   eSubtype_bad on bad input
-    static ESubtype SubtypeNameToValue(const string & sName);
+    static ESubtype SubtypeNameToValue(CTempString sName);
 
 
     static bool CanHaveGene(ESubtype subtype);
@@ -482,7 +482,8 @@ public:
     static CTempString GetQualifierAsString(EQualifier qual);
 
     /// convert qual string to enumerated value
-    static EQualifier GetQualifierType(CTempString qual, NStr::ECase search_case = NStr::eNocase);
+    static EQualifier GetQualifierType(CTempString qual);
+    static std::pair<EQualifier, CTempString> GetQualifierTypeAndValue(CTempString qual);
 
     static const CFeatList* GetFeatList();
     static const CBondList* GetBondList();

@@ -768,10 +768,12 @@ BOOST_AUTO_TEST_CASE(TestConstSorter)
 
 BOOST_AUTO_TEST_CASE(TestMapOfPair)
 {
+    using bitset1 = ct::const_bitset<100, int>;
     using Pair1 = std::pair<int, int>;
     using Tuple1 = std::tuple<int, const char*, int>;
+    using Tuple2 = std::tuple<int, const char*, bitset1>;
 
-    MAKE_CONST_MAP(mp, std::string, Pair1,
+    MAKE_CONST_MAP(m1, std::string, Pair1,
         {
             { "one", {1, 1}},
             { "two", {2, 2}},
@@ -779,13 +781,18 @@ BOOST_AUTO_TEST_CASE(TestMapOfPair)
         }
         )
 
-    MAKE_CONST_MAP(tp, ct::tagStrNocase, Tuple1,
+    MAKE_CONST_MAP(m2, ct::tagStrNocase, Tuple1,
         {
             {"one", { 1, "word", 1}},
             {"two", { 2, "another", 2}},
         }
         )
 
+    MAKE_CONST_MAP(m3, ct::tagStrNocase, Tuple2,
+        {
+            {"one", {1, "ABC", {1,3,5}}},
+            {"two", {2, "abc", {2,4,6}}},
+        })
 }
 
 

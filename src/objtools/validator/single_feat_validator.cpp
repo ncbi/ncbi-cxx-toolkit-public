@@ -1341,9 +1341,11 @@ void CSingleFeatValidator::x_ValidateGbquals()
         if ( NStr::Equal (qual_str, "gsdb_id")) {
             continue;
         }
-        CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
-        CSeqFeatData::EQualifier spqual = CSeqFeatData::GetQualifierType(qual_str, NStr::eCase);
-        if ( gbqual != spqual ) {
+        auto gbqual_and_value = CSeqFeatData::GetQualifierTypeAndValue(qual_str);
+        auto gbqual = gbqual_and_value.first;
+        bool same_case = (gbqual == CSeqFeatData::eQual_bad) || NStr::EqualCase(gbqual_and_value.second, qual_str);
+
+        if ( !same_case ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_IncorrectQualifierCapitalization,
                 qual_str + " is improperly capitalized");
         }

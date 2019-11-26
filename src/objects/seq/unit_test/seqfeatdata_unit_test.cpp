@@ -2354,7 +2354,23 @@ BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
     {
         std::cout << rec << std::endl;
     }
+}
 
+BOOST_AUTO_TEST_CASE(Test_GetQualifierTypeAndCheckCase)
+{
+    auto test1 = CSeqFeatData::GetQualifierTypeAndValue("host");
+    BOOST_CHECK(test1.first == CSeqFeatData::eQual_host);
+    BOOST_CHECK_EQUAL(test1.second, "host");
+    auto test2 = CSeqFeatData::GetQualifierTypeAndValue("Host");
+    BOOST_CHECK(test2.first == CSeqFeatData::eQual_host);
+    BOOST_CHECK_EQUAL(test2.second, "host");
+    auto test3 = CSeqFeatData::GetQualifierTypeAndValue("specific_host");
+    BOOST_CHECK(test3.first == CSeqFeatData::eQual_host);
+    BOOST_CHECK_EQUAL(test3.second, "specific_host");
+    auto test4 = CSeqFeatData::GetQualifierTypeAndValue("Specific_host");
+    BOOST_CHECK(test4.first == CSeqFeatData::eQual_host);
+    BOOST_CHECK_EQUAL(test4.second, "specific_host");
 
-
+    auto test5 = CSeqFeatData::GetQualifierAsString(CSeqFeatData::eQual_host);
+    BOOST_CHECK_EQUAL(test5, "host");
 }
