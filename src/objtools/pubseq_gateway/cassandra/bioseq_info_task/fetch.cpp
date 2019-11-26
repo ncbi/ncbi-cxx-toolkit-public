@@ -351,7 +351,7 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
                                 }
                             }
                         }
-                        if (m_QueryArr[0].query->IsEOF()) {
+                        if (m_QueryArr[0].query->IsEOF() || m_InheritanceRequired.empty()) {
                             m_ConsumeCallback(move(m_Records));
                             CloseAll();
                             m_State = eDone;
