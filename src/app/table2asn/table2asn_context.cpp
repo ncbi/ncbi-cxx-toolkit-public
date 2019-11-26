@@ -827,13 +827,36 @@ static void s_NormalizeLinkageEvidenceString(string& linkage_evidence)
         unique(begin(linkage_evidence), end(linkage_evidence), 
             [](char a, char b) {return (a == b && b == '-');});
     
-    linkage_evidence.erase(it, linkage_evidence.end()-1);
+    linkage_evidence.erase(it, linkage_evidence.end());
 
     NStr::ToLower(linkage_evidence);
 }
+static void s_PostError(
+        ILineErrorListener* pEC,
+        const string& message,
+        size_t lineNum=0) 
+{
+    _ASSERT(pEC);
+
+    AutoPtr<CLineErrorEx> pErr(
+        CLineErrorEx::Create(
+            ILineError::eProblem_GeneralParsingError,
+            eDiag_Error,
+            0, 0,
+            "",
+            lineNum,
+            message));
+
+    pEC->PutError(*pErr);
+}
 
 
-static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(const string& evidenceString)
+
+static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(
+    const string& evidenceString, 
+    const string& filename,
+    const size_t& lineNum,
+    ILineErrorListener* pEC)
 {
     CGapsEditor::TEvidenceSet evidenceSet;
     list<string> evidenceList;
@@ -847,20 +870,35 @@ static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(const string& evidenceS
             evidenceSet.insert(enum_val);
         }
         catch (...) {
-            // report an error
+            stringstream msgStream;
+            msgStream << "On line " << lineNum << " of " << filename << ". ";
+            msgStream << "Unrecognized linkage-evidence value: " << unnormalized_evidence << ".";           
+            s_PostError(pEC, msgStream.str(), lineNum);
+            continue;
         }
     }
     return evidenceSet;
 }
 
 
-void g_LoadLinkageEvidence(CNcbiIstream& istr, 
-        CGapsEditor::TCountToEvidenceMap& gapsizeToEvidence) {
+
+void g_LoadLinkageEvidence(const string& linkageEvidenceFilename, 
+        CGapsEditor::TCountToEvidenceMap& gapsizeToEvidence,
+        ILineErrorListener* pEC) {
+
+    auto pLEStream = make_unique<CNcbiIfstream>(linkageEvidenceFilename.c_str(), ios::binary);
+
+    if (!pLEStream) {
+        s_PostError(pEC, "Failed to open " + linkageEvidenceFilename);
+        return;
+    }
+    
+
     size_t lineNumber = 0;
-    while (istr.good() && !istr.eof()) {
+    while (pLEStream->good() && !pLEStream->eof()) {
         ++lineNumber;
         string line;
-        getline(istr, line);
+        getline(*pLEStream, line);
         NStr::TruncateSpacesInPlace(line);
         if (line.empty()) {
             continue;
@@ -869,13 +907,20 @@ void g_LoadLinkageEvidence(CNcbiIstream& istr,
         string countStr, evidenceStr;
         NStr::SplitInTwo(line, " \t", countStr, evidenceStr);
         
-        int count;
+        TSeqPos count;
         if (!NStr::StringToNumeric(countStr, &count, NStr::fConvErr_NoThrow)) {
-            // report an error continue
+            stringstream msgStream;
+            msgStream <<  "On line " << lineNumber << " of " << linkageEvidenceFilename << ". ";
+            msgStream << countStr << " is not a valid gap size.";
+            s_PostError(pEC, msgStream.str(), lineNumber);
+            continue;
         }
 
-        auto evidenceSet = s_ProcessEvidenceString(evidenceStr);
-        gapsizeToEvidence.emplace(count, move(evidenceSet));
+        auto evidenceSet = 
+            s_ProcessEvidenceString(evidenceStr, linkageEvidenceFilename, lineNumber, pEC);
+        if (!evidenceSet.empty()) {
+            gapsizeToEvidence.emplace(count, move(evidenceSet));
+        }
     }
 }
 

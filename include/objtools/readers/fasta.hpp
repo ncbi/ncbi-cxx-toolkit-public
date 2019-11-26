@@ -355,8 +355,7 @@ protected:
             TSignedSeqPos len, // signed so we can catch negative numbers and throw an exception
             EKnownSize eKnownSize,
             TSeqPos uLineNumber,
-            TNullableGapType pGapType =
-                TNullableGapType(),
+            TNullableGapType pGapType = TNullableGapType(),
             const set<CLinkage_evidence::EType>& setOfLinkageEvidence = 
                 set<CLinkage_evidence::EType>());
         // immutable once created

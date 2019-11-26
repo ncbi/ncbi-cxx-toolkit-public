@@ -591,6 +591,17 @@ int CTbl2AsnApp::Run(void)
         m_context.m_gapNmin = m_context.m_gap_Unknown_length;
     }
 
+    if (args["linkage-evidence-file"]) 
+    {
+        //auto lefile_cstr = args["linkage-evidence-file"].AsString().c_str();
+        //auto pLEStream = make_unique<CNcbiIfstream>(lefile_cstr,ios::binary);
+
+        g_LoadLinkageEvidence(args["linkage-evidence-file"].AsString(), 
+                m_context.m_GapsizeToEvidence,
+                m_context.m_logger);
+        m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
+    }
+
 
     if (args["l"])
     {

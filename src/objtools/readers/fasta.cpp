@@ -1094,7 +1094,7 @@ void CFastaReader::x_CloseGap(
                 }
             }
         }
-        
+       
         const auto cit = find_if(
             m_GapsizeToLinkageEvidence.rbegin(),
             m_GapsizeToLinkageEvidence.rend(),
