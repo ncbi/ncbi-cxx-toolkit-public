@@ -24,13 +24,13 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
     set(_specfiles  ${DT_DATASPEC})
     set(_pb_srcfiles "")
     set(_pb_incfiles "")
-    if ("PROTOBUF" IN_LIST DT_REQUIRES)
+    if (EXISTS "${NCBI_PROTOC_APP}" AND "PROTOBUF" IN_LIST DT_REQUIRES)
         set(_pb_srcfiles ${_path}/${_basename}.pb.cc)
         set(_pb_incfiles ${NCBI_INC_ROOT}/${_relpath}/${_basename}.pb.h)
     endif()
     set(_gr_srcfiles "")
     set(_gr_incfiles "")
-    if ("GRPC" IN_LIST DT_REQUIRES)
+    if (EXISTS "${NCBI_PROTOC_APP}" AND EXISTS "${NCBI_GRPC_PLUGIN}" AND "GRPC" IN_LIST DT_REQUIRES)
         set(_gr_srcfiles ${_path}/${_basename}.grpc.pb.cc)
         set(_gr_incfiles ${NCBI_INC_ROOT}/${_relpath}/${_basename}.grpc.pb.h)
     endif()
@@ -43,7 +43,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
         return()
     endif()
 
-    if ("PROTOBUF" IN_LIST DT_REQUIRES)
+    if (EXISTS "${NCBI_PROTOC_APP}" AND "PROTOBUF" IN_LIST DT_REQUIRES)
         set(_cmd ${NCBI_PROTOC_APP} --cpp_out=. -I. ${_relpath}/${_basename}${_ext})
         add_custom_command(
             OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
@@ -57,7 +57,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
             VERBATIM
         )
     endif()
-    if ("GRPC" IN_LIST DT_REQUIRES)
+    if (EXISTS "${NCBI_PROTOC_APP}" AND EXISTS "${NCBI_GRPC_PLUGIN}" AND "GRPC" IN_LIST DT_REQUIRES)
         set(_cmd ${NCBI_PROTOC_APP} --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN} -I. ${_relpath}/${_basename}${_ext})
         add_custom_command(
             OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
