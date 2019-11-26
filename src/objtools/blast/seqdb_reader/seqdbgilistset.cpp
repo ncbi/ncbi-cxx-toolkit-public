@@ -145,10 +145,71 @@ private:
     CSeqDBMemReg m_VectorMemory;
 };
 
-void s_VerifySeqidlist(const SBlastSeqIdListInfo & list_info, const CSeqDBVolSet & volset, const CSeqDBLMDBSet & lmdb_set)
+void s_ProcessSeqIDsForV5 (vector<string> & idlist)
+{
+	 vector<string> tmplist;
+	 tmplist.reserve(idlist.size());
+    for(unsigned int i=0; i < idlist.size(); i++) {
+            try {
+            CSeq_id seqid(idlist[i], CSeq_id::fParse_RawText | CSeq_id::fParse_AnyLocal | CSeq_id::fParse_PartialOK);
+            if(seqid.IsGi()) {
+                    continue;
+            }
+
+            if(seqid.IsPir() || seqid.IsPrf()) {
+                    string id = seqid.AsFastaString();
+                    tmplist.push_back(id);
+                    continue;
+            }
+            tmplist.push_back(seqid.GetSeqIdString(true));
+            } catch (CException & e) {
+                    LOG_POST(e.GetMsg());
+                    NCBI_THROW(CSeqDBException, eArgErr, "Invalid seq id: " + idlist[i]);
+
+            }
+    }
+
+    if (tmplist.size() == 0) {
+        ERR_POST(Warning << "Empty seqid list");
+    }
+    else {
+    	sort(tmplist.begin(), tmplist.end());
+    	vector<string>::iterator it = unique (tmplist.begin(), tmplist.end());
+    	tmplist.resize(distance(tmplist.begin(),it));
+    }
+   	idlist.swap(tmplist);
+}
+
+void s_ProcessPositiveSeqIDsForV5(CRef<CSeqDBGiList> & user_list)
+{
+	SBlastSeqIdListInfo newInfo = user_list->GetListInfo();
+	newInfo.is_v4 = false;
+	user_list->SetListInfo (newInfo);
+
+	vector<string> idlist;
+	user_list->GetSiList(idlist);
+	s_ProcessSeqIDsForV5(idlist);
+	user_list->SetSiList(idlist);
+}
+
+void s_ProcessNegativeSeqIDsForV5(CRef<CSeqDBNegativeList> & user_list)
+{
+	SBlastSeqIdListInfo newInfo = user_list->GetListInfo();
+	newInfo.is_v4 = false;
+	user_list->SetListInfo (newInfo);
+
+	vector<string> idlist = user_list->GetSiList();
+	s_ProcessSeqIDsForV5 (idlist);
+	user_list->SetSiList(idlist);
+}
+
+bool s_VerifySeqidlist(const SBlastSeqIdListInfo & list_info, const CSeqDBVolSet & volset, const CSeqDBLMDBSet & lmdb_set)
 {
 	if(list_info.is_v4 && lmdb_set.IsBlastDBVersion5()) {
-		NCBI_THROW(CSeqDBException, eArgErr, "Seqidlist is not in BLAST db v5 format");
+		ERR_POST(Warning << "To obtain better run time performance, " \
+				            "please run blastdb_aliastool -seqid_file_in <INPUT_FILE_NAME> " \
+				            "-seqid_file_out <OUT_FILE_NAME> and use <OUT_FILE_NAME> as the argument to -seqidlist");
+		return true;
 	}
 
 	if((!list_info.is_v4) && (!lmdb_set.IsBlastDBVersion5())) {
@@ -161,7 +222,7 @@ void s_VerifySeqidlist(const SBlastSeqIdListInfo & list_info, const CSeqDBVolSet
 		ERR_POST(Warning << "Seqidlist file db info does not match input db");
 	}
 
-	 return;
+	 return false;
 }
 
 void
@@ -173,7 +234,9 @@ CSeqDBGiListSet::x_ResolvePositiveList(CSeqDBAtlas            & atlas,
 {
     if (m_UserList.NotEmpty() && m_UserList->NotEmpty()) {
     	if(user_list->GetNumSis() > 0) {
-    		s_VerifySeqidlist(user_list->GetListInfo(), volset, lmdb_set);
+    		if(s_VerifySeqidlist(user_list->GetListInfo(), volset, lmdb_set)) {
+
+    		}
     	}
 
     	if((user_list->GetNumTaxIds() > 0) && !(lmdb_set.IsBlastDBVersion5())) {
@@ -251,7 +314,9 @@ CSeqDBGiListSet::x_ResolveNegativeList(CSeqDBAtlas            & atlas,
         // We don't bother to sort these since every ISAM mapping must
         // be examined for the negative ID list case.
     	if(m_NegativeList->GetNumSis() > 0) {
-    		s_VerifySeqidlist(m_NegativeList->GetListInfo(), volset, lmdb_set);
+    		if (s_VerifySeqidlist(m_NegativeList->GetListInfo(), volset, lmdb_set)) {
+
+    		}
     	}
 
     	if((m_NegativeList->GetNumTaxIds() > 0) && !(lmdb_set.IsBlastDBVersion5())) {

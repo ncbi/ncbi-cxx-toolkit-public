@@ -559,6 +559,13 @@ public:
     	return m_ListInfo;
     }
 
+    void SetSiList( const vector<string> & new_list )
+    {
+        m_SisOids.clear();
+        ITERATE(vector<string>, itr, new_list) {
+        	m_SisOids.push_back(*itr);
+        }
+    }
 protected:
     /// Indicates the current sort order, if any, of this container.
     ESortOrder m_CurrentOrder;
@@ -1021,6 +1028,13 @@ public:
         m_Pigs.clear();
     	m_Pigs.reserve( new_list.size() );
         m_Pigs = new_list;
+    }
+
+    void SetSiList( const vector<string> & new_list )
+    {
+        m_Sis.clear();
+        m_Sis.reserve( new_list.size() );
+        m_Sis = new_list;
     }
 
     /// Build ID set for this negative list.
