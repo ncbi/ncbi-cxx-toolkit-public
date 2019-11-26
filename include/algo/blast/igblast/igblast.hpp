@@ -68,6 +68,7 @@ public:
     string m_DomainSystem;           // domain system for annotation
     string m_SequenceType;           //ig or tcr?
     int m_Min_D_match;               //the word size for D gene search
+    int m_V_penalty;                 //the mismatch penalty for V gene search
     int m_D_penalty;                 //the mismatch penalty for D gene search
     int m_J_penalty;                 //the mismatch penalty for J gene search
     string m_AuxFilename;            // auxulary file name
@@ -156,6 +157,13 @@ public:
 
     }
 
+    int GetFwr4End(const string& sid) {
+        if (m_Fwr4End.find(sid) != m_Fwr4End.end()) {
+            return m_Fwr4End[sid];
+        }
+        return -1;
+
+    }
 
     const string GetDJChainType(const string sid) {
         if (m_DJChainType.find(sid) != m_DJChainType.end()) {
@@ -170,7 +178,8 @@ private:
     map<string, string> m_DomainChainType;
     map<string, int> m_FrameOffset;
     map<string, string> m_DJChainType;    
-    map<string, int>  m_JDomainInfo; 
+    map<string, int>  m_JDomainInfo;   
+    map<string, int>  m_Fwr4End;
 };
 
 class CIgBlastResults : public CSearchResults 

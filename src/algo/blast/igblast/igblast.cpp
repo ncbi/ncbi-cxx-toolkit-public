@@ -130,7 +130,12 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             } else if (tokens.size() == 4) { //just backward compatible as there was no such field
                 m_DJChainType[tokens[0]] = tokens[2];
                 m_JDomainInfo[tokens[0]] = NStr::StringToInt(tokens[3]);
-            }
+            }  else if (tokens.size() == 5) { //just backward compatible as there was no such field
+                m_DJChainType[tokens[0]] = tokens[2];
+                m_JDomainInfo[tokens[0]] = NStr::StringToInt(tokens[3]);
+                m_Fwr4End[tokens[0]] = NStr::StringToInt(tokens[4]);
+            } 
+            
         }
     }
 };
@@ -397,7 +402,7 @@ void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
     if (m_IgOptions->m_IsProtein) {
         opts.SetCompositionBasedStats(eNoCompositionBasedStats);
     } else {
-        int penalty = m_Options->GetOptions().GetMismatchPenalty();
+        int penalty = m_IgOptions->m_V_penalty;
         opts.SetMatchReward(1);
         opts.SetMismatchPenalty(penalty);
         opts.SetWordSize(m_Options->GetOptions().GetWordSize());

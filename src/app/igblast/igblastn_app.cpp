@@ -673,7 +673,7 @@ int CIgBlastnApp::Run(void)
         const CArgs& args = GetArgs();
        
         m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
-        
+
         //const CBlastOptions& opt = m_opts_hndl->GetOptions();
 	m_worker_thread_num = m_CmdLineArgs->GetNumThreads();
 
@@ -736,6 +736,11 @@ int CIgBlastnApp::Run(void)
         /*** Initialize igblast database/subject and options ***/
         m_ig_args.Reset(m_CmdLineArgs->GetIgBlastArgs());
         m_ig_opts =  m_ig_args->GetIgBlastOptions();
+        
+        //this is just for formatter to print out correct penalty info since
+        //igblast does not have standard penalty parameter
+        m_opts_hndl->SetOptions().SetMismatchPenalty(m_ig_opts->m_V_penalty);
+
 
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
