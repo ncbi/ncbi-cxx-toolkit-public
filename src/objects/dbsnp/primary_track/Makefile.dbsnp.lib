@@ -1,7 +1,7 @@
 # $Id$
 
 LIB = dbsnp_ptis
-SRC = dbsnp.pb dbsnp.grpc.pb snpptis 
+SRC = dbsnp.pb.wrapper dbsnp.grpc.pb.wrapper snpptis 
 
 PROJ_TAG = gbench,lib,public
 REQUIRES = $(GRPC_OPT)
