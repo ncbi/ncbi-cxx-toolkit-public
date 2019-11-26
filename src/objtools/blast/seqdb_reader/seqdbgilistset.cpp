@@ -235,7 +235,7 @@ CSeqDBGiListSet::x_ResolvePositiveList(CSeqDBAtlas            & atlas,
     if (m_UserList.NotEmpty() && m_UserList->NotEmpty()) {
     	if(user_list->GetNumSis() > 0) {
     		if(s_VerifySeqidlist(user_list->GetListInfo(), volset, lmdb_set)) {
-
+    			s_ProcessPositiveSeqIDsForV5(user_list);
     		}
     	}
 
@@ -315,7 +315,7 @@ CSeqDBGiListSet::x_ResolveNegativeList(CSeqDBAtlas            & atlas,
         // be examined for the negative ID list case.
     	if(m_NegativeList->GetNumSis() > 0) {
     		if (s_VerifySeqidlist(m_NegativeList->GetListInfo(), volset, lmdb_set)) {
-
+    			s_ProcessNegativeSeqIDsForV5(neg_list);
     		}
     	}
 
