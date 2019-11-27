@@ -337,7 +337,7 @@ void CTbl2AsnApp::Init(void)
       pcr\n\
       proximity-ligation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);  //done
 
-    arg_desc->AddOptionalKey("linkage-evidence-file", "String", "File listing linkage evidence for gaps of different lengths",  CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("linkage-evidence-file", "InFile", "File listing linkage evidence for gaps of different lengths",  CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey("gap-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
       unknown\n\
