@@ -838,6 +838,11 @@ CFlatFileConfig::ECustom x_GetCustom(const CArgs& args)
 {
     int custom = args["custom"].AsInteger();
 
+    // ID-5865 : Set the "show SNP" and "show CDD" bits based on the value of the
+    // "enable-external" flag.
+    if (args["enable-external"])
+        custom |= (CFlatFileConfig::fShowSNPFeatures | CFlatFileConfig::fShowCDDFeatures);
+
     return (CFlatFileConfig::ECustom)custom;
 }
 
