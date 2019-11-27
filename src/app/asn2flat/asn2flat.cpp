@@ -533,8 +533,13 @@ int CAsn2FlatApp::Run(void)
             ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
         CRef<CSNPDataLoader> snp_data_loader(CSNPDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
         m_Scope->AddDataLoader(snp_data_loader->GetLoaderNameFromArgs());
-        CRef<CCDDDataLoader> cdd_data_loader(CCDDDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
-        m_Scope->AddDataLoader(cdd_data_loader->GetLoaderNameFromArgs());
+        bool use_mongo_cdd =
+            cfg.GetBool("genbank", "vdb_cdd", false, 0, CNcbiRegistry::eReturn) &&
+            cfg.GetBool("genbank", "always_load_external", false, 0, CNcbiRegistry::eReturn);
+        if (use_mongo_cdd) {
+            CRef<CCDDDataLoader> cdd_data_loader(CCDDDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
+            m_Scope->AddDataLoader(cdd_data_loader->GetLoaderNameFromArgs());
+        }
     }
 
     // open the output streams
