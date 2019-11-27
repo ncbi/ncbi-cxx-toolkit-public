@@ -793,7 +793,7 @@ CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CSeqdesc& d
 CDiscrepancyContext::CRefNode* CDiscrepancyContext::ContainingSet(CDiscrepancyContext::CRefNode& ref)
 {
     CRefNode* ret = 0;
-    for (CRefNode* r = &*ref.m_Parent; r; r = &*r->m_Parent) {
+    for (CRefNode* r = ref.m_Parent.GetPointer(); r; r = r->m_Parent.GetPointer()) {
         if (!ret && IsSeqSet(r->m_Type)) {
             ret = r;
         }
@@ -801,7 +801,7 @@ CDiscrepancyContext::CRefNode* CDiscrepancyContext::ContainingSet(CDiscrepancyCo
             return r;
         }
     }
-    return ret;
+    return ret ? ret : ref.m_Parent.GetPointer();
 }
 
 
@@ -869,7 +869,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::SeqFeatObjRef(const CSeq_feat& fea
         if (node->m_Ref->m_Text.empty()) {
             node->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(feat, *m_Scope);
         }
-        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? &*FindNode(fix)->m_Ref : 0, more));
+        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? FindNode(fix)->m_Ref.GetPointer() : 0, more));
     }
     return obj;
 }
