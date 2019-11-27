@@ -64,6 +64,15 @@
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <sra/data_loaders/snp/snploader.hpp>
+#include <objtools/data_loaders/cdd/cdd_loader/cdd_loader.hpp>
+
+// ID-5865 : For SNP retrieval in PSG mode via SNP data loader
+#include <misc/grpc_integration/grpc_integration.hpp>
+#include <grpc++/grpc++.h>
+#include <objects/dbsnp/primary_track/dbsnp.grpc.pb.h>
+#include <objects/dbsnp/primary_track/dbsnp.pb.h>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -325,6 +334,7 @@ private:
         const CArgs& args, CSeq_loc& loc);
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
     void x_CreateCancelBenchmarkCallback(void);
+    int x_AddSNPAnnots(CBioseq_Handle& bsh);
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -345,6 +355,10 @@ private:
     bool                        m_do_cleanup;
     bool                        m_Exception;
     bool                        m_FetchFail;
+    bool                        m_PSGMode;
+    CRef<CSNPDataLoader>        m_SNPDataLoader;
+    unique_ptr<ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::Stub> m_SNPTrackStub;
+    CRef<CCDDDataLoader>        m_CDDDataLoader;
 };
 
 
@@ -502,8 +516,26 @@ int CAsn2FlatApp::Run(void)
             }
         }
     }
+
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
+
+    const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
+    m_PSGMode = cfg.GetBool("genbank", "loader_psg", false, 0, CNcbiRegistry::eReturn);
+    if (m_PSGMode) {
+        string host = cfg.GetString("SNPAccess", "host", "");
+        string port = cfg.GetString("SNPAccess", "port", "");
+        string hostport = host + ":" + port;
+        
+        auto channel = 
+            grpc::CreateChannel(hostport, grpc::InsecureChannelCredentials());
+        m_SNPTrackStub =
+            ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
+        CRef<CSNPDataLoader> snp_data_loader(CSNPDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
+        m_Scope->AddDataLoader(snp_data_loader->GetLoaderNameFromArgs());
+        CRef<CCDDDataLoader> cdd_data_loader(CCDDDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
+        m_Scope->AddDataLoader(cdd_data_loader->GetLoaderNameFromArgs());
+    }
 
     // open the output streams
     m_Os = OpenFlatfileOstream ("o");
@@ -918,6 +950,9 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 
         if ( flatfile_os == NULL ) continue;
 
+        if (m_PSGMode && args["enable-external"])
+            x_AddSNPAnnots(bsh);
+
         // generate flat file
         if ( args["from"]  ||  args["to"]  ||  args["strand"] ) {
             CSeq_loc loc;
@@ -1092,7 +1127,15 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     //    format, mode, style, flags, view, gff_options, genbank_blocks,
     //    genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get(),
     //    args["cleanup"] );
-    return new CFlatFileGenerator(cfg);
+    CFlatFileGenerator* generator = new CFlatFileGenerator(cfg);
+
+    // ID-5865 : SNP annotations must be explicitly added to the annot selector
+    if (!m_PSGMode && cfg.ShowSNPFeatures()) {
+        cfg.SetHideSNPFeatures(false);
+        generator->SetAnnotSelector().IncludeNamedAnnotAccession("SNP");
+    }
+
+    return generator;
 }
 
 CAsn2FlatApp::TGenbankBlockCallback*
@@ -1472,6 +1515,54 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
     m_pCanceledCallback.reset( new CCancelBenchmarking );
 }
 
+int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
+{
+    int rc = 0;
+
+    // SNP annotations can be available only for nucleotide human RefSeq records
+    if (bsh.GetInst_Mol() == CSeq_inst::eMol_aa ||
+        sequence::GetTaxId(bsh) != 9606)
+        return 0;
+
+    // Also skip large scaffolds and chromosomes
+    CConstRef<CSeq_id> accid =
+        FindBestChoice(bsh.GetBioseqCore()->GetId(), CSeq_id::Score);
+    
+    bool skip = (accid->Which() != CSeq_id::e_Other);
+    if (!skip) {
+        string acc;
+        accid->GetLabel(&acc, CSeq_id::eContent);
+        string acc_prefix = acc.substr(0,2);
+        if (acc_prefix == "NC" || acc_prefix == "AC" ||
+            acc_prefix == "NT" || acc_prefix == "NW") {
+            skip = true;
+        }
+    }
+    if (skip)
+        return 0;
+    
+    // If GenBank loader is connecting to PubSeqOS, it's sufficient to add the 'SNP'
+    // named annot type to the scope.
+    // Otherwise (in PSG mode), use a separate SNP data loader. For that to work, 
+    // it is necessary to find the actual NA accession corresponding to this record's
+    // SNP annotation and add it to the SAnnotSelector used by the flatfile generator.
+    TGi gi = FindGi(bsh.GetBioseqCore()->GetId());
+    if (gi > ZERO_GI) {
+        ncbi::grpcapi::dbsnp::primary_track::SeqIdRequestStringAccverUnion request;
+        request.set_gi(gi);
+        ncbi::grpcapi::dbsnp::primary_track::PrimaryTrackReply reply;
+        CGRPCClientContext context;
+        auto snp_status = m_SNPTrackStub->ForSeqId(&context, request, &reply);
+        if (snp_status.ok()) {
+            string na_acc = reply.na_track_acc_with_filter();
+            if (!na_acc.empty())
+                m_FFGenerator->SetAnnotSelector().IncludeNamedAnnotAccession(na_acc);
+        }
+    } 
+
+    return rc;
+}
+
 END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
@@ -1483,6 +1574,7 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
+    CScope::SetDefaultKeepExternalAnnotsForEdit(true);
     return CAsn2FlatApp().AppMain(argc, argv);
 }
 
