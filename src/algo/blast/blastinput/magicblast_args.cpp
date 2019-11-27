@@ -140,9 +140,7 @@ public:
         arg_desc.SetCurrentGroup("General search options");
         // largest intron length
         arg_desc.AddDefaultKey(kArgMaxIntronLength, "length",
-                    "Length of the largest intron allowed in a translated "
-                    "nucleotide sequence when linking multiple distinct "
-                    "alignments",
+                    "Maximum allowed intron length",
                     CArgDescriptions::eInteger,
                     NStr::IntToString(500000));
         arg_desc.SetConstraint(kArgMaxIntronLength,
