@@ -212,6 +212,17 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
 
     constexpr bitset t8 = bitset::set_range(5, 12);
 
+    // array of pairs, all via aggregate initialization
+    constexpr
+        bitset_pair t9[] = {
+            {4,                //first
+                {5, 6, 7, 8}}, //second
+            {5,                //first
+                {4, 5}}        //second
+    };
+
+    constexpr bitset t10{ "010101" };
+
     BOOST_CHECK(t1.test(10));
     BOOST_CHECK(t2.test(20));
     BOOST_CHECK(!t3[1].test(11));
@@ -224,16 +235,19 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
     BOOST_CHECK(!t8.test(4));
     BOOST_CHECK(!t8.test(13));
 
-    // array of pairs, all via aggregate initialization
-    constexpr 
-    bitset_pair t9[] = {
-        {4,                //first
-            {5, 6, 7, 8}}, //second
-        {5,                //first
-            {4, 5}}        //second
-    };
-
     BOOST_CHECK(t9[1].second.test(5));
+
+    BOOST_CHECK(t10.size() == 3);
+    BOOST_CHECK(!t10.test(0));
+    BOOST_CHECK(t10.test(1));
+    BOOST_CHECK(!t10.test(2));
+    BOOST_CHECK(t10.test(3));
+    BOOST_CHECK(!t10.test(4));
+    BOOST_CHECK(t10.test(5));
+    BOOST_CHECK(!t10.test(6));
+    BOOST_CHECK(!t10.test(7));
+    BOOST_CHECK(!t10.test(8));
+    BOOST_CHECK(!t10.test(9));
 #ifdef constexpr
 #undef constexpr
 #endif

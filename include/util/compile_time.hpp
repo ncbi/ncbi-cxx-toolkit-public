@@ -49,17 +49,24 @@ namespace ct
         static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
         static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
         using _Array_t = const_array<_Ty, _Words>;
+        using traits = bitset_traits<_Ty, _Words>;
 
         constexpr const_bitset() = default;
 
         constexpr const_bitset(std::initializer_list<T> _init)
             :m_size{_init.size()},
-            _Array(bitset_traits<_Ty, _Words>::set_bits(_init))
+            _Array(traits::set_bits(_init))
+        {}
+
+        template<size_t N>
+        constexpr const_bitset(const char(&init)[N])
+            : m_size{ traits::count_bits(init) },
+              _Array(traits::set_bits(init))
         {}
 
         static constexpr const_bitset set_range(T _from, T _to)
         {//this uses private constructor
-            return const_bitset(bitset_traits<_Ty, _Words>::set_range(_from, _to), _to - _from + 1);
+            return const_bitset(traits::set_range(_from, _to), _to - _from + 1);
         }
 
         constexpr size_t size() const { return m_size; }
@@ -310,23 +317,23 @@ namespace ct
 // so we have to use two step initialization. This doesn't impact neither of compile time, run time or memory footprint
 //
 
-#define MAKE_CONST_CONTAINER(name, maker, ...) \
-    static constexpr maker ::init_type name ## _init[] = __VA_ARGS__;                                                        \
-    static constexpr auto name ## _proxy = maker {}(name ## _init);                                                          \
-    static constexpr maker ::type name = name ## _proxy;
+#define MAKE_CONST_CONTAINER(debug, name, maker, ...) \
+    static debug maker ::init_type name ## _init[] = __VA_ARGS__;                                                        \
+    static debug auto name ## _proxy = maker {}(name ## _init);                                                          \
+    static debug maker ::type name = name ## _proxy;
 
 #define MAKE_CONST_MAP(name, type1, type2, ...)                                                                              \
     using name ## _maker_type = ct::MakeConstMap<type1, type2>;                                                              \
-    MAKE_CONST_CONTAINER(name, name ## _maker_type, __VA_ARGS__)                                                             \
+    MAKE_CONST_CONTAINER(constexpr, name, name ## _maker_type, __VA_ARGS__)                                                  \
     DEBUG_MAKE_CONST_MAP(name)
 
 #define MAKE_TWOWAY_CONST_MAP(name, type1, type2, ...)                                                                       \
     using name ## _maker_type = ct::MakeConstMapTwoWay<type1, type2>;                                                        \
-    MAKE_CONST_CONTAINER(name, name ## _maker_type, __VA_ARGS__)                                                             \
+    MAKE_CONST_CONTAINER(constexpr, name, name ## _maker_type, __VA_ARGS__)                                                  \
     DEBUG_MAKE_TWOWAY_CONST_MAP(name)
 
 #define MAKE_CONST_SET(name, type, ...)                                                                                      \
-    MAKE_CONST_CONTAINER(name, ct::MakeConstSet<type>, __VA_ARGS__)                                                          \
+    MAKE_CONST_CONTAINER(constexpr, name, ct::MakeConstSet<type>, __VA_ARGS__)                                               \
     DEBUG_MAKE_CONST_SET(name)
 
 #endif

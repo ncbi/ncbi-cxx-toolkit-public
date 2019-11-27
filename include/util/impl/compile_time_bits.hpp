@@ -852,11 +852,26 @@ namespace compile_time_bits
             }
             return ret;
         }
+        template <size_t I, size_t N>
+        static constexpr _Ty assemble_mask(const char(&_init)[N])
+        {
+            _Ty ret = 0;
+            _Ty mask = 1;
+            constexpr auto _min = I * width;
+            constexpr auto _max = I * width + width;
+            for (size_t pos = _min; pos < _max && pos < N; ++pos)
+            {
+                if (_init[pos] == '1') ret |= mask;
+                mask = mask << 1;
+            }
+            return ret;
+        }
         template <typename _Input, std::size_t... I>
         static constexpr array_t assemble_bitset(const _Input& _init, std::index_sequence<I...>)
         {
             return { {assemble_mask<I>(_init)...} };
         }
+
         template<typename _O>
         static constexpr array_t set_bits(std::initializer_list<_O> args)
         {
@@ -867,8 +882,22 @@ namespace compile_time_bits
         {
             return assemble_bitset(range_t{ static_cast<size_t>(from), static_cast<size_t>(to) }, std::make_index_sequence<array_size>{});
         }
+        template<size_t N>
+        static constexpr size_t count_bits(const char(&in)[N])
+        {
+            size_t ret{ 0 };
+            for (size_t i = 0; i < N; ++i)
+            {
+                if (in[i]=='1') ++ret;
+            }
+            return ret;
+        }
+        template<size_t N>
+        static constexpr array_t set_bits(const char(&in)[N])
+        {
+            return assemble_bitset(in, std::make_index_sequence<array_size>{});
+        }
     };
-
 }
 
 #endif
