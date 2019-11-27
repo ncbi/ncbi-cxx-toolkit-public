@@ -106,7 +106,7 @@ CGff3AnnotAssembler::xProcessFeatureDefault(
     CSeq_annot& annot)
 //  ============================================================================
 {
-    auto featureType = CSeqFeatData::SubtypeValueToName(
+    string featureType = CSeqFeatData::SubtypeValueToName(
         pFeature->GetData().GetSubtype());
     NStr::ToLower(featureType);
     pFeature->SetId(*mIdGenerator.GetIdFor(featureType));
