@@ -59,7 +59,7 @@ public:
 
     /// Constructor for LMDB write access
     /// @param dbname Database name
-    CWriteDB_LMDB(const string& dbname, Uint8 map_size = 1000000000000, Uint8 capacity = 500000);
+    CWriteDB_LMDB(const string& dbname, Uint8 map_size = 300000000000, Uint8 capacity = 500000);
 
     // Destructor
     ~CWriteDB_LMDB();
@@ -130,7 +130,7 @@ public:
 
     /// Constructor for LMDB write access
     /// @param dbname Database name
-    CWriteDB_TaxID(const string& dbname, Uint8 map_size = 1000000000000, Uint8 capacity = 500000);
+    CWriteDB_TaxID(const string& dbname, Uint8 map_size = 300000000000, Uint8 capacity = 500000);
 
     // Destructor
     ~CWriteDB_TaxID();
