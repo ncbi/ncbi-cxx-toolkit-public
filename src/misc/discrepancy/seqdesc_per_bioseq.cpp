@@ -367,11 +367,8 @@ DISCREPANCY_CASE(AUTODEF_USER_OBJECT, SEQUENCE, eOncaller, "Nucleotide sequence 
         if (!count) {
             m_Objs["[n] nucleotide sequence[s] [has] no autodef user objects"].Add(*context.BioseqObjRef());
         }
-        else {
-            m_Objs[kEmptyStr].Incr();
-            if (count > 1) {
-                m_Objs["[n] nucleotide sequence[s] [has] multiple autodef user objects"].Add(*context.BioseqObjRef());
-            }
+        else if (count > 1) {
+            m_Objs["[n] nucleotide sequence[s] [has] multiple autodef user objects"].Add(*context.BioseqObjRef());
         }
     }
 }
@@ -380,10 +377,7 @@ DISCREPANCY_CASE(AUTODEF_USER_OBJECT, SEQUENCE, eOncaller, "Nucleotide sequence 
 DISCREPANCY_SUMMARIZE(AUTODEF_USER_OBJECT)
 {
     auto& M = m_Objs.GetMap();
-    if (M.find(kEmptyStr) != M.end()) {
-        M.erase(kEmptyStr);
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
