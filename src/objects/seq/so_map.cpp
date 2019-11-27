@@ -63,7 +63,7 @@ bool CompareNoCase::operator()(
         return false;
     }
     return (tolower(*pLhs) < tolower(*pRhs)); 
-};
+}
 
 //  ----------------------------------------------------------------------------
 CSoMap::TYPEMAP CSoMap::mMapSoTypeToId;

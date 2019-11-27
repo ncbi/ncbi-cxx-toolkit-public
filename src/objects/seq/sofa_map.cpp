@@ -299,7 +299,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Variation, eSubtype_variation_ref ) ]  = SofaType( 1059, "sequence_alteration" );
 
     //m_Map[ GT( e_Site, eSubtype_site ) ]  = SofaType( 408, "site" );
-};
+}
 
 
 //  ----------------------------------------------------------------------------

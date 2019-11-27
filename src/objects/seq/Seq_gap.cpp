@@ -68,7 +68,7 @@ namespace
 
         return newString;
     }
-};
+}
 
 // destructor
 CSeq_gap::~CSeq_gap(void)
