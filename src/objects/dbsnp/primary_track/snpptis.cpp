@@ -30,10 +30,10 @@
 #include <objects/dbsnp/primary_track/snpptis.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <serial/grpc_integration/grpc_integration.hpp>
 #ifdef HAVE_LIBGRPC
 # include <objects/dbsnp/primary_track/impl/snpptis_impl.hpp>
 # include <corelib/ncbi_param.hpp>
-# include <misc/grpc_integration/grpc_integration.hpp>
 #endif
 
 BEGIN_NCBI_NAMESPACE;
@@ -53,7 +53,7 @@ CSnpPtisClient::~CSnpPtisClient()
 bool CSnpPtisClient::IsEnabled()
 {
 #ifdef HAVE_LIBGRPC
-    return true;
+    return CGRPCClientContext::IsImplemented();
 #else
     return false;
 #endif

@@ -11,7 +11,7 @@ SRC = snp_ptis_test
 
 REQUIRES = $(GRPC_OPT)
 
-LIB = dbsnp_ptis $(SNP_LOADER_LDEP) $(SEQ_LIBS) pub medline biblio general \
+LIB = dbsnp_ptis grpc_integration $(SEQ_LIBS) pub medline biblio general \
       xser xutil xncbi
 LIBS = $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
