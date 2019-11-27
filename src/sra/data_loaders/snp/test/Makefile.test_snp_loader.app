@@ -13,6 +13,6 @@ POST_LINK = $(VDB_POST_LINK)
 
 CHECK_COPY = fix_ptis_url.sh test_snp_loader.ini
 CHECK_CMD = fix_ptis_url.sh test_snp_loader
-CHECK_REQUIRES = in-house-resources -MSWin -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche
