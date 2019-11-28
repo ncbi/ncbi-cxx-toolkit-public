@@ -67,11 +67,13 @@
 #include <sra/data_loaders/snp/snploader.hpp>
 #include <objtools/data_loaders/cdd/cdd_loader/cdd_loader.hpp>
 
+#ifdef HAVE_LIBGRPC
 // ID-5865 : For SNP retrieval in PSG mode via SNP data loader
-#include <misc/grpc_integration/grpc_integration.hpp>
-#include <grpc++/grpc++.h>
-#include <objects/dbsnp/primary_track/dbsnp.grpc.pb.h>
-#include <objects/dbsnp/primary_track/dbsnp.pb.h>
+#  include <misc/grpc_integration/grpc_integration.hpp>
+#  include <grpc++/grpc++.h>
+#  include <objects/dbsnp/primary_track/dbsnp.grpc.pb.h>
+#  include <objects/dbsnp/primary_track/dbsnp.pb.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -356,8 +358,10 @@ private:
     bool                        m_Exception;
     bool                        m_FetchFail;
     bool                        m_PSGMode;
+#ifdef HAVE_LIBGRPC
     CRef<CSNPDataLoader>        m_SNPDataLoader;
     unique_ptr<ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::Stub> m_SNPTrackStub;
+#endif
     CRef<CCDDDataLoader>        m_CDDDataLoader;
 };
 
@@ -523,6 +527,7 @@ int CAsn2FlatApp::Run(void)
     const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
     m_PSGMode = cfg.GetBool("genbank", "loader_psg", false, 0, CNcbiRegistry::eReturn);
     if (m_PSGMode) {
+#ifdef HAVE_LIBGRPC
         string host = cfg.GetString("SNPAccess", "host", "");
         string port = cfg.GetString("SNPAccess", "port", "");
         string hostport = host + ":" + port;
@@ -533,6 +538,7 @@ int CAsn2FlatApp::Run(void)
             ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
         CRef<CSNPDataLoader> snp_data_loader(CSNPDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
         m_Scope->AddDataLoader(snp_data_loader->GetLoaderNameFromArgs());
+#endif
         bool use_mongo_cdd =
             cfg.GetBool("genbank", "vdb_cdd", false, 0, CNcbiRegistry::eReturn) &&
             cfg.GetBool("genbank", "always_load_external", false, 0, CNcbiRegistry::eReturn);
@@ -1551,6 +1557,7 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
     // Otherwise (in PSG mode), use a separate SNP data loader. For that to work, 
     // it is necessary to find the actual NA accession corresponding to this record's
     // SNP annotation and add it to the SAnnotSelector used by the flatfile generator.
+#ifdef HAVE_LIBGRPC
     TGi gi = FindGi(bsh.GetBioseqCore()->GetId());
     if (gi > ZERO_GI) {
         ncbi::grpcapi::dbsnp::primary_track::SeqIdRequestStringAccverUnion request;
@@ -1563,7 +1570,8 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
             if (!na_acc.empty())
                 m_FFGenerator->SetAnnotSelector().IncludeNamedAnnotAccession(na_acc);
         }
-    } 
+    }
+#endif
 
     return rc;
 }
