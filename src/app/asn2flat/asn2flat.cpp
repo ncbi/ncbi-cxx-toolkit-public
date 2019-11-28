@@ -1554,7 +1554,7 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
     TGi gi = FindGi(bsh.GetBioseqCore()->GetId());
     if (gi > ZERO_GI) {
         ncbi::grpcapi::dbsnp::primary_track::SeqIdRequestStringAccverUnion request;
-        request.set_gi(gi);
+        request.set_gi(GI_TO(::google::protobuf::uint64, gi));
         ncbi::grpcapi::dbsnp::primary_track::PrimaryTrackReply reply;
         CGRPCClientContext context;
         auto snp_status = m_SNPTrackStub->ForSeqId(&context, request, &reply);
