@@ -3050,10 +3050,15 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
             if (tsid->CanGetAccession())
                 primary_id = tsid->GetAccession();
             if ( secondary_id_list ) {
-                if (seqid_type == e_Gpipe  &&  tsid->IsSetVersion()) {
-                    secondary_id = GetSeqIdString(true/*with_version*/);
+                if (seqid_type == e_Gpipe
+                    &&  (parse_flags & fGpipeAddSecondary) != 0
+                    &&  !primary_id.empty()) {
+                    if ( tsid->IsSetVersion() )
+                        secondary_id = primary_id + "." + to_string(tsid->GetVersion());
+                    else
+                        secondary_id = primary_id + ".1";
                 }
-                else if( tsid->CanGetName() && !tsid->GetName().empty()) {
+                else if (tsid->CanGetName() && !tsid->GetName().empty()) {
                     secondary_id = tsid->GetName();
                 }
             }

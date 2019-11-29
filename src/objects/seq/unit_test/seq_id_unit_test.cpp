@@ -2179,7 +2179,7 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "tpe|BN000123|", { "BN000123" } },
     { "tpd|FAA00017|", { "FAA00017" } },
     { "gpp|GPC_123456789.1|", { "GPC_123456789", "GPC_123456789.1" } },
-    { "gpp|GPC_123456789|"  , { "GPC_123456789" } },
+    { "gpp|GPC_123456789|"  , { "GPC_123456789", "GPC_123456789.1" } },
     { "nat|AT_123456789.1|", { "AT_123456789" } },
     { "gnl|REF_WGS:ACJF|NECHADRAFT_MRNA79537", { "", "REF_WGS:ACJF|NECHADRAFT_MRNA79537" } }
 };
@@ -2200,10 +2200,12 @@ BOOST_AUTO_TEST_CASE(s_TestOSLT)
         if (has_secondary_ids)
             secondary_id_ref = it->second[1];
         list<string> secondary_ids;
-        string primary_id = id.ComposeOSLT(&secondary_ids);
+        string primary_id = id.ComposeOSLT(&secondary_ids,
+                                           CSeq_id::fGpipeAddSecondary);
         BOOST_CHECK_EQUAL(primary_id, primary_id_ref);
-        BOOST_CHECK_EQUAL((secondary_ids.size() > 0), has_secondary_ids);
-        if (has_secondary_ids)
+        size_t secondary_ids_size = secondary_ids.size();
+        BOOST_CHECK_EQUAL((secondary_ids_size > 0), has_secondary_ids);
+        if (secondary_ids_size  &&  has_secondary_ids)
             BOOST_CHECK_EQUAL(secondary_ids.front(), secondary_id_ref);
     }
 }
