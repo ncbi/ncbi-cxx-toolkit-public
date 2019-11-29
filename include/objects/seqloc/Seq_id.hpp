@@ -721,7 +721,8 @@ public:
     /// ComposeOSLT().
     /// @sa ComposeOSLT
     enum EComposeOSLTFlags {
-        fAllowLocalId = 0x1
+        fAllowLocalId      = (1 << 0),  ///< 
+        fGpipeAddSecondary = (1 << 1)   ///< Add "ACC.VER(=1)" for a 2ndary id
     };
     typedef int TComposeOSLTFlags;
 
