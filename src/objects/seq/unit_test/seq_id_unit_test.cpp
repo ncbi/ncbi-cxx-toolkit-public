@@ -2178,7 +2178,8 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "tpg|BK003456|", { "BK003456" } },
     { "tpe|BN000123|", { "BN000123" } },
     { "tpd|FAA00017|", { "FAA00017" } },
-    { "gpp|GPC_123456789|", { "GPC_123456789" } },
+    { "gpp|GPC_123456789.1|", { "GPC_123456789", "GPC_123456789.1" } },
+    { "gpp|GPC_123456789|"  , { "GPC_123456789" } },
     { "nat|AT_123456789.1|", { "AT_123456789" } },
     { "gnl|REF_WGS:ACJF|NECHADRAFT_MRNA79537", { "", "REF_WGS:ACJF|NECHADRAFT_MRNA79537" } }
 };

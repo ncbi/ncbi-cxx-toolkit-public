@@ -3049,8 +3049,14 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
         if (tsid) {
             if (tsid->CanGetAccession())
                 primary_id = tsid->GetAccession();
-            if (secondary_id_list && tsid->CanGetName() && !tsid->GetName().empty())
-                secondary_id = tsid->GetName();
+            if ( secondary_id_list ) {
+                if (seqid_type == e_Gpipe  &&  tsid->IsSetVersion()) {
+                    secondary_id = GetSeqIdString(true/*with_version*/);
+                }
+                else if( tsid->CanGetName() && !tsid->GetName().empty()) {
+                    secondary_id = tsid->GetName();
+                }
+            }
         }
         break;
     }
