@@ -59,12 +59,14 @@
 BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
-NCBI_PARAM_DEF(unsigned, PSG, write_hiwater,          64 * 1024);
+NCBI_PARAM_DEF(size_t, PSG, write_hiwater,            64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 1);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
+NCBI_PARAM_DEF(size_t, PSG, requests_per_io,          1);
+NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 
 NCBI_PARAM_ENUM_ARRAY(EPSG_DebugPrintout, PSG, debug_printout)
 {
@@ -73,9 +75,6 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_DebugPrintout, PSG, debug_printout)
     { "all",  EPSG_DebugPrintout::eAll  }
 };
 NCBI_PARAM_ENUM_DEF(EPSG_DebugPrintout, PSG, debug_printout, EPSG_DebugPrintout::eNone);
-
-NCBI_PARAM_DEF(unsigned, PSG, requests_per_io,        1);
-NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 
 NCBI_PARAM_ENUM_ARRAY(EPSG_UseCache, PSG, use_cache)
 {
@@ -116,7 +115,7 @@ void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
 
     os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
 
-    if ((m_DebugOutput.level == EPSG_DebugPrintout::eAll) ||
+    if ((m_Params.debug_printout == EPSG_DebugPrintout::eAll) ||
             (args.GetValue("item_type") != "blob") || (args.GetValue("chunk_type") != "data")) {
         os << chunk;
     } else {
@@ -152,7 +151,7 @@ void SDebugPrintout::Print(const SPSG_Error& error)
 
 SDebugPrintout::~SDebugPrintout()
 {
-    if (m_DebugOutput.perf) {
+    if (IsPerf()) {
         ostringstream os;
 
         for (const auto& event : m_Events) {
@@ -162,27 +161,11 @@ SDebugPrintout::~SDebugPrintout()
             os << fixed << id << '\t' << ms << '\t' << type << '\t' << thread_id << '\n';
         }
 
-        lock_guard<mutex> lock(m_DebugOutput.cout_mutex);
+        static mutex cout_mutex;
+        lock_guard<mutex> lock(cout_mutex);
         cout << os.str();
         cout.flush();
     }
-}
-
-bool SDebugOutput::IsPerf()
-{
-    switch (TPSG_PsgClientMode::GetDefault()) {
-        case EPSG_PsgClientMode::eOff:         return false;
-        case EPSG_PsgClientMode::eInteractive: return false;
-        case EPSG_PsgClientMode::ePerformance: return true;
-        case EPSG_PsgClientMode::eIo:          return true;
-    }
-
-    return false;
-}
-
-EPSG_DebugPrintout SDebugOutput::GetLevel()
-{
-    return IsPerf() ? EPSG_DebugPrintout::eSome : TPSG_DebugPrintout::GetDefault();
 }
 
 string SPSG_Error::Build(EError error, const char* details)
@@ -257,17 +240,17 @@ void SPSG_Reply::SetSuccess()
     }
 }
 
-SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c) :
+SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
     full_path(move(p)),
     reply(r),
     context(c ? c->Clone() : null),
-    m_State(TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo ?
+    m_State(params.client_mode == EPSG_PsgClientMode::eIo ?
             &SPSG_Request::StateIo : &SPSG_Request::StatePrefix),
-    m_Retries(TPSG_RequestRetries::GetDefault())
+    m_Retries(params.request_retries)
 {
     _ASSERT(reply);
 
-    if (TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eIo) AddIo();
+    if (params.client_mode == EPSG_PsgClientMode::eIo) AddIo();
 }
 
 void SPSG_Request::StatePrefix(const char*& data, size_t& len)
@@ -489,13 +472,13 @@ void SPSG_Request::Add()
 }
 
 
-SPSG_UvWrite::SPSG_UvWrite(void* user_data)
+SPSG_UvWrite::SPSG_UvWrite(void* user_data) :
+    m_WriteHiwater(TPSG_WriteHiwater::eGetDefault)
 {
     m_Request.data = user_data;
 
-    const auto kSize = TPSG_WriteHiwater::GetDefault();
-    m_Buffers[0].reserve(kSize);
-    m_Buffers[1].reserve(kSize);
+    m_Buffers[0].reserve(m_WriteHiwater);
+    m_Buffers[1].reserve(m_WriteHiwater);
 
     _TRACE(this << " created");
 }
@@ -932,6 +915,7 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 /** SPSG_IoSession */
 
 SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* io, uv_loop_t* loop, const CNetServer::SAddress& address) :
+    m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
     m_Io(io),
     m_Tcp(loop, address,
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
@@ -1109,11 +1093,10 @@ bool SPSG_IoSession::ProcessRequest()
 
 void SPSG_IoSession::CheckRequestExpiration()
 {
-    const auto now = chrono::system_clock::now();
     const SPSG_Error error(SPSG_Error::eTimeout, "request timeout");
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
-        if (it->second.Expiration() < now) {
+        if (it->second.AddSecond() >= m_RequestTimeout) {
             Retry(it->second, error);
             it = m_Requests.erase(it);
         } else {
@@ -1247,7 +1230,10 @@ void SPSG_IoThread::Execute(SPSG_UvBarrier& barrier)
     queue.Init(this, &loop, s_OnQueue);
     m_Shutdown.Init(this, &loop, s_OnShutdown);
     m_Timer.Init(this, &loop, s_OnTimer, 0, TPSG_RebalanceTime::GetDefault() * milli::den);
+
+    // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
     m_RequestTimer.Init(this, &loop, s_OnRequestTimer, milli::den, milli::den);
+
     barrier.Wait();
 
     loop.Run();
@@ -1276,9 +1262,8 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
     if (m_Io.size() == 0)
         NCBI_THROW(CPSG_Exception, eInternalError, "IO is not open");
 
-    const auto requests_per_io = TPSG_RequestsPerIo::GetDefault();
     auto counter = m_RequestCounter++;
-    const auto first = (counter++ / requests_per_io) % m_Io.size();
+    const auto first = (counter++ / params.requests_per_io) % m_Io.size();
     auto idx = first;
 
     do {
@@ -1289,7 +1274,7 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
 
             // Try to update request counter once so the next IO thread would be tried for new requests
             if (idx == first) {
-                m_RequestCounter.compare_exchange_weak(counter, counter + requests_per_io);
+                m_RequestCounter.compare_exchange_weak(counter, counter + params.requests_per_io);
             }
 
             // Try next IO thread for this request, too

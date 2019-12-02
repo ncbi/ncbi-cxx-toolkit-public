@@ -262,48 +262,38 @@ void CPsgClientApp::s_InitRequest<SIo>(CArgDescriptions& arg_desc)
     arg_desc.AddPositional("DOWNLOAD_SIZE", "Download size", CArgDescriptions::eInteger);
 }
 
-// TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
-// This templated function circumvents that shortcoming.
-template <class TDescription>
-typename CParam<TDescription>::TValueType s_GetCParamEnumValue(const CParam<TDescription>&, const string& string_value)
-{
-    return CParam<TDescription>::TParamParser::StringToValue(string_value, TDescription::sm_ParamDescription);
-}
-
 const string& s_SetPsgDefaults(const CArgs& args, bool parallel)
 {
     if (args["io-threads"].HasValue()) {
-        auto io_threads = static_cast<size_t>(args["io-threads"].AsInteger());
+        auto io_threads = args["io-threads"].AsInteger();
         TPSG_NumIo::SetDefault(io_threads);
     } else if (parallel) {
         TPSG_NumIo::SetDefault(6);
     }
 
     if (args["requests-per-io"].HasValue()) {
-        auto requests_per_io = static_cast<size_t>(args["requests-per-io"].AsInteger());
+        auto requests_per_io = args["requests-per-io"].AsInteger();
         TPSG_RequestsPerIo::SetDefault(requests_per_io);
     }
 
     if (args["max-streams"].HasValue()) {
-        auto max_streams = static_cast<size_t>(args["max-streams"].AsInteger());
+        auto max_streams = args["max-streams"].AsInteger();
         TPSG_MaxConcurrentStreams::SetDefault(max_streams);
     }
 
     if (args["use-cache"].HasValue()) {
         auto use_cache = args["use-cache"].AsString();
-        auto use_cache_value = s_GetCParamEnumValue(TPSG_UseCache(), use_cache);
-        TPSG_UseCache::SetDefault(use_cache_value);
+        TPSG_UseCache::SetDefault(use_cache);
     }
 
     if (args["timeout"].HasValue()) {
-        auto timeout = static_cast<unsigned>(args["timeout"].AsInteger());
+        auto timeout = args["timeout"].AsInteger();
         TPSG_RequestTimeout::SetDefault(timeout);
     }
 
     if (args["debug-printout"].HasValue()) {
         auto debug_printout = args["debug-printout"].AsString();
-        auto debug_printout_value = s_GetCParamEnumValue(TPSG_DebugPrintout(), debug_printout);
-        TPSG_DebugPrintout::SetDefault(debug_printout_value);
+        TPSG_DebugPrintout::SetDefault(debug_printout);
     }
 
     return args["service"].AsString();

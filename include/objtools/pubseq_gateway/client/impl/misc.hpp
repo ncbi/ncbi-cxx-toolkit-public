@@ -302,11 +302,53 @@ private:
     atomic_bool m_Stopped;
 };
 
+template <class TParam>
+struct SPSG_ParamValue
+{
+    using TValue = typename TParam::TValueType;
+
+    // Getting default incurs some performance penalty, so this ctor is explicit
+    enum EGetDefault { eGetDefault };
+    explicit SPSG_ParamValue(EGetDefault) : m_Value(TParam::GetDefault()) { _DEBUG_ARG(sm_Used = true); }
+
+    operator TValue() const { return m_Value; }
+
+    template <typename T>
+    static void SetDefault(const T& value)
+    {
+        // Forbid setting after it's already used
+        _ASSERT(!sm_Used);
+
+        TParam::SetDefault(static_cast<TValue>(value));
+    }
+
+    static void SetDefault(const string& value)
+    {
+        SetDefaultImpl(TParam(), value);
+    }
+
+private:
+    // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
+    // This templated method circumvents that shortcoming.
+    template <class TDescription>
+    static void SetDefaultImpl(const CParam<TDescription>&, const string& value)
+    {
+        SetDefault(CParam<TDescription>::TParamParser::StringToValue(value, TDescription::sm_ParamDescription));
+    }
+
+    TValue m_Value;
+    _DEBUG_ARG(static bool sm_Used);
+};
+
+_DEBUG_ARG(template <class TParam> bool SPSG_ParamValue<TParam>::sm_Used = false);
+
+#define PSG_PARAM_VALUE_TYPE(section, name) SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>
+
 NCBI_PARAM_DECL(unsigned, PSG, rd_buf_size);
 typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;
 
-NCBI_PARAM_DECL(unsigned, PSG, write_hiwater);
-typedef NCBI_PARAM_TYPE(PSG, write_hiwater) TPSG_WriteHiwater;
+NCBI_PARAM_DECL(size_t, PSG, write_hiwater);
+using TPSG_WriteHiwater = PSG_PARAM_VALUE_TYPE(PSG, write_hiwater);
 
 NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
 typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
@@ -321,26 +363,26 @@ NCBI_PARAM_DECL(double, PSG, rebalance_time);
 typedef NCBI_PARAM_TYPE(PSG, rebalance_time) TPSG_RebalanceTime;
 
 NCBI_PARAM_DECL(unsigned, PSG, request_timeout);
-typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
+using TPSG_RequestTimeout = PSG_PARAM_VALUE_TYPE(PSG, request_timeout);
+
+NCBI_PARAM_DECL(size_t, PSG, requests_per_io);
+using TPSG_RequestsPerIo = PSG_PARAM_VALUE_TYPE(PSG, requests_per_io);
+
+NCBI_PARAM_DECL(unsigned, PSG, request_retries);
+using TPSG_RequestRetries = PSG_PARAM_VALUE_TYPE(PSG, request_retries);
 
 enum class EPSG_DebugPrintout { eNone, eSome, eAll };
 NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
-typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
-
-NCBI_PARAM_DECL(unsigned, PSG, requests_per_io);
-typedef NCBI_PARAM_TYPE(PSG, requests_per_io) TPSG_RequestsPerIo;
+using TPSG_DebugPrintout = PSG_PARAM_VALUE_TYPE(PSG, debug_printout);
 
 enum class EPSG_UseCache { eDefault, eNo, eYes };
 NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
-typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
-
-NCBI_PARAM_DECL(unsigned, PSG, request_retries);
-typedef NCBI_PARAM_TYPE(PSG, request_retries) TPSG_RequestRetries;
+using TPSG_UseCache = PSG_PARAM_VALUE_TYPE(PSG, use_cache);
 
 // Performance reporting/request IDs for psg_client app
 enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
 NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
-typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
+using TPSG_PsgClientMode = PSG_PARAM_VALUE_TYPE(PSG, internal_psg_client_mode);
 
 END_NCBI_SCOPE
 

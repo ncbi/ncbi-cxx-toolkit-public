@@ -156,33 +156,32 @@ struct SPSG_Chunk : string
     SPSG_Chunk& operator=(const SPSG_Chunk&) = delete;
 };
 
-struct SDebugOutput
+struct SPSG_Params
 {
-    const EPSG_DebugPrintout level;
-    const bool perf;
-    mutex cout_mutex;
+    TPSG_DebugPrintout debug_printout;
+    TPSG_RequestsPerIo requests_per_io;
+    TPSG_UseCache use_cache;
+    TPSG_RequestRetries request_retries;
+    TPSG_PsgClientMode client_mode;
 
-    SDebugOutput() :
-        level(GetLevel()),
-        perf(IsPerf())
+    SPSG_Params() :
+        debug_printout(TPSG_DebugPrintout::eGetDefault),
+        requests_per_io(TPSG_RequestsPerIo::eGetDefault),
+        use_cache(TPSG_UseCache::eGetDefault),
+        request_retries(TPSG_RequestRetries::eGetDefault),
+        client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
-
-    static SDebugOutput& GetInstance() { static SDebugOutput instance; return instance; }
-
-private:
-    static EPSG_DebugPrintout GetLevel();
-    static bool IsPerf();
 };
 
 struct SDebugPrintout
 {
     const string id;
 
-    SDebugPrintout(string i) :
+    SDebugPrintout(string i, const SPSG_Params& params) :
         id(move(i)),
-        m_DebugOutput(SDebugOutput::GetInstance())
+        m_Params(params)
     {
-        if (m_DebugOutput.perf) m_Events.reserve(20);
+        if (IsPerf()) m_Events.reserve(20);
     }
 
     ~SDebugPrintout();
@@ -197,9 +196,9 @@ private:
     template <class ...TArgs>
     void Process(TArgs&&... args)
     {
-        if (m_DebugOutput.level == EPSG_DebugPrintout::eNone) return;
+        if (IsPerf()) return Event(forward<TArgs>(args)...);
 
-        if (m_DebugOutput.perf) return Event(forward<TArgs>(args)...);
+        if (m_Params.debug_printout == EPSG_DebugPrintout::eNone) return;
 
         Print(forward<TArgs>(args)...);
     }
@@ -225,7 +224,13 @@ private:
     void Print(unsigned retries, const SPSG_Error& error);
     void Print(const SPSG_Error& error);
 
-    SDebugOutput& m_DebugOutput;
+    bool IsPerf() const
+    {
+        return (m_Params.client_mode == EPSG_PsgClientMode::ePerformance) ||
+            (m_Params.client_mode == EPSG_PsgClientMode::eIo);
+    }
+
+    SPSG_Params m_Params;
     vector<tuple<double, EType, thread::id>> m_Events;
 };
 
@@ -349,7 +354,7 @@ struct SPSG_Reply
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
 
-    SPSG_Reply(string id) : debug_printout(move(id)) {}
+    SPSG_Reply(string id, const SPSG_Params& params) : debug_printout(move(id), params) {}
     void SetSuccess();
 };
 
@@ -359,7 +364,7 @@ struct SPSG_Request
     shared_ptr<SPSG_Reply> reply;
     CRef<CRequestContext> context;
 
-    SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c);
+    SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
     void OnReplyData(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
 
@@ -417,7 +422,7 @@ struct SPSG_UvWrite
     SPSG_UvWrite(void* user_data);
 
     vector<char>& GetBuffer() { return m_Buffers[m_Index]; }
-    bool IsBufferFull() const { return m_Buffers[m_Index].size() >= TPSG_WriteHiwater::GetDefault(); }
+    bool IsBufferFull() const { return m_Buffers[m_Index].size() >= m_WriteHiwater; }
 
     int operator()(uv_stream_t* handle, uv_write_cb cb);
 
@@ -437,6 +442,7 @@ struct SPSG_UvWrite
     }
 
 private:
+    const TPSG_WriteHiwater m_WriteHiwater;
     uv_write_t m_Request;
     array<vector<char>, 2> m_Buffers;
     bool m_Index = false;
@@ -648,20 +654,15 @@ private:
 
 struct SPSG_TimedRequest
 {
-    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Request(move(r)) { Prolong(); }
+    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Request(move(r)) {}
 
-    shared_ptr<SPSG_Request> operator->() { Prolong(); return m_Request; }
-    operator shared_ptr<SPSG_Request>()   { Prolong(); return m_Request; }
-    chrono::system_clock::time_point Expiration() const { return m_Expiration; }
+    shared_ptr<SPSG_Request> operator->() { m_Seconds = 0; return m_Request; }
+    operator shared_ptr<SPSG_Request>()   { m_Seconds = 0; return m_Request; }
+    unsigned AddSecond() { return m_Seconds++; }
 
 private:
-    void Prolong()
-    {
-        m_Expiration = chrono::system_clock::now() + chrono::seconds(TPSG_RequestTimeout::GetDefault());
-    }
-
     shared_ptr<SPSG_Request> m_Request;
-    chrono::system_clock::time_point m_Expiration;
+    unsigned m_Seconds = 0;
 };
 
 struct SPSG_IoThread;
@@ -749,6 +750,7 @@ private:
         return 0;
     }
 
+    const TPSG_RequestTimeout m_RequestTimeout;
     SPSG_IoThread* m_Io;
     SPSG_UvTcp m_Tcp;
     SPSG_NgHttp2Session m_Session;
@@ -856,6 +858,8 @@ struct SPSG_IoThread::SSession : SPSG_IoSession
 
 struct SPSG_IoCoordinator
 {
+    SPSG_Params params;
+
     SPSG_IoCoordinator(const string& service_name);
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }

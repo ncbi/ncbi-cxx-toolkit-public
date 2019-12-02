@@ -267,7 +267,8 @@ void SFixture::MtReading()
     const size_t kSleepMax = 13;
     const unsigned kReadingDeadline = 300;
 
-    auto reply = make_shared<SPSG_Reply>("");
+    const SPSG_Params params;
+    auto reply = make_shared<SPSG_Reply>("", params);
     map<SPSG_Reply::SItem::TTS*, thread> readers;
 
 
@@ -370,7 +371,7 @@ void SFixture::MtReading()
     // Sending
 
     vector<char> buf(kSizeMax);
-    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone());
+    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
 
     for (auto& chunk_stream : src_chunks) {
         do {
@@ -402,13 +403,14 @@ BOOST_AUTO_TEST_CASE(Request)
     const size_t kSizeMin = 100 * 1024;
     const size_t kSizeMax = 1024 * 1024;
 
-    auto reply = make_shared<SPSG_Reply>("");
+    const SPSG_Params params;
+    auto reply = make_shared<SPSG_Reply>("", params);
 
 
     // Reading
 
     vector<char> buf(kSizeMax);
-    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone());
+    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
 
     for (auto& chunk_stream : src_chunks) {
         do {

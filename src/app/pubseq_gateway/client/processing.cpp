@@ -1117,7 +1117,7 @@ public:
 private:
     string x_GetType() const override { return "io"; }
     string x_GetId() const override { return ""; }
-    string x_GetAbsPathRef() const override { return m_AbsPathRef; }
+    void x_GetAbsPathRef(ostream& os) const override { os << m_AbsPathRef; }
 
     const string m_AbsPathRef;
 };

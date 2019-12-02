@@ -295,14 +295,19 @@ const char* s_GetTSE(CPSG_Request_Biodata::EIncludeData include_data)
     return nullptr;
 }
 
-string s_AddUseCache(ostringstream& os)
+string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request)
 {
-    switch (TPSG_UseCache::GetDefault()) {
+    auto& ioc = m_Service.ioc;
+    ostringstream os;
+    user_request->x_GetAbsPathRef(os);
+
+    switch (ioc.params.use_cache) {
         case EPSG_UseCache::eDefault:                         break;
         case EPSG_UseCache::eNo:      os << "&use_cache=no";  break;
         case EPSG_UseCache::eYes:     os << "&use_cache=yes"; break;
     }
 
+    os << ioc.GetClientId();
     return os.str();
 }
 
@@ -333,10 +338,8 @@ struct CPSG_Request::x_GetBioIdParams
 };
 
 
-string CPSG_Request_Biodata::x_GetAbsPathRef() const
+void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
 {
-    ostringstream os;
-
     os << "/ID/get?" << x_GetBioIdParams(m_BioId);
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
@@ -352,14 +355,10 @@ string CPSG_Request_Biodata::x_GetAbsPathRef() const
     }
 
     os << s_GetAccSubstitution(m_AccSubstitution);
-
-    return s_AddUseCache(os);
 }
 
-string CPSG_Request_Resolve::x_GetAbsPathRef() const
+void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
 {
-    ostringstream os;
-
     os << "/ID/resolve?" << x_GetBioIdParams(m_BioId) << "&fmt=json&psg_protocol=yes";
 
     auto value = "yes";
@@ -385,27 +384,19 @@ string CPSG_Request_Resolve::x_GetAbsPathRef() const
     if (include_info & CPSG_Request_Resolve::fGi)           os << "&gi=" << value;
 
     os << s_GetAccSubstitution(m_AccSubstitution);
-
-    return s_AddUseCache(os);
 }
 
-string CPSG_Request_Blob::x_GetAbsPathRef() const
+void CPSG_Request_Blob::x_GetAbsPathRef(ostream& os) const
 {
-    ostringstream os;
-
     os << "/ID/getblob?blob_id=" << m_BlobId.Get();
 
     if (!m_LastModified.empty()) os << "&last_modified=" << m_LastModified;
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
-
-    return s_AddUseCache(os);
 }
 
-string CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef() const
+void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 {
-    ostringstream os;
-
     os << "/ID/get_na?" << x_GetBioIdParams(m_BioId) << "&names=";
 
     for (const auto& name : m_AnnotNames) {
@@ -416,30 +407,25 @@ string CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef() const
     os.seekp(-1, ios_base::cur);
     os << "&fmt=json&psg_protocol=yes";
     os << s_GetAccSubstitution(m_AccSubstitution);
-
-    return s_AddUseCache(os);
 }
 
-string CPSG_Request_TSE_Chunk::x_GetAbsPathRef() const
+void CPSG_Request_TSE_Chunk::x_GetAbsPathRef(ostream& os) const
 {
-    ostringstream os;
-
     os << "/ID/get_tse_chunk?tse_id=" << m_TSE_BlobId.Get() <<
         "&chunk=" << m_ChunkNo << "&split_version=" << m_SplitVersion;
-
-    return s_AddUseCache(os);
 }
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, const CDeadline& deadline)
 {
     auto& ioc = m_Service.ioc;
+    auto& params = ioc.params;
 
-    auto user_context = TPSG_PsgClientMode::GetDefault() == EPSG_PsgClientMode::eOff ?
+    auto user_context = params.client_mode == EPSG_PsgClientMode::eOff ?
         nullptr : user_request->GetUserContext<string>();
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
-    auto reply = make_shared<SPSG_Reply>(move(request_id));
-    auto abs_path_ref = user_request->x_GetAbsPathRef() + ioc.GetClientId();
-    auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, user_request->m_RequestContext);
+    auto reply = make_shared<SPSG_Reply>(move(request_id), params);
+    auto abs_path_ref = x_GetAbsPathRef(user_request);
+    auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, user_request->m_RequestContext, params);
 
     if (ioc.AddRequest(request, Stopped(), deadline)) {
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);

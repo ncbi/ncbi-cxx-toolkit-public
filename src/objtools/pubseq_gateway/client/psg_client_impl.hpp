@@ -111,6 +111,8 @@ private:
         CService(const string& service) : m_Map(GetMap()), ioc(GetIoC(service)) {}
     };
 
+    string x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request);
+
     CService m_Service;
 };
 

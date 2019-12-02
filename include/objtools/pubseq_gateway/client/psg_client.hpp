@@ -101,7 +101,7 @@ protected:
 private:
     virtual string x_GetType() const = 0;
     virtual string x_GetId() const = 0;
-    virtual string x_GetAbsPathRef() const = 0;
+    virtual void x_GetAbsPathRef(ostream&) const = 0;
 
     shared_ptr<void> m_UserContext;
     CRef<CRequestContext> m_RequestContext;
@@ -222,7 +222,7 @@ public:
 private:
     string x_GetType() const override { return "biodata"; }
     string x_GetId() const override { return GetBioId().Get(); }
-    string x_GetAbsPathRef() const override;
+    void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId    m_BioId;
     EIncludeData  m_IncludeData = EIncludeData::eDefault;
@@ -275,7 +275,7 @@ public:
 private:
     string x_GetType() const override { return "resolve"; }
     string x_GetId() const override { return GetBioId().Get(); }
-    string x_GetAbsPathRef() const override;
+    void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId    m_BioId;
     TIncludeInfo  m_IncludeInfo = 0;
@@ -312,7 +312,7 @@ public:
 private:
     string x_GetType() const override { return "blob"; }
     string x_GetId() const override { return GetBlobId().Get(); }
-    string x_GetAbsPathRef() const override;
+    void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BlobId  m_BlobId;
     string       m_LastModified;
@@ -353,7 +353,7 @@ public:
 private:
     string x_GetType() const override { return "annot"; }
     string x_GetId() const override { return GetBioId().Get(); }
-    string x_GetAbsPathRef() const override;
+    void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId  m_BioId;
     TAnnotNames m_AnnotNames;
@@ -390,7 +390,7 @@ public:
 private:
     string x_GetType() const override { return "tse_chunk"; }
     string x_GetId() const override { return GetTSE_BlobId().Get(); }
-    string x_GetAbsPathRef() const override;
+    void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BlobId    m_TSE_BlobId;
     TChunkNo       m_ChunkNo;
