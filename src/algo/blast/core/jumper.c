@@ -4565,11 +4565,8 @@ Int4 GetCutoffScore(Int4 query_length)
     if (query_length <= 20) {
         return query_length;
     }
-    else if (query_length <= 30) {
+    else if (query_length <= 34) {
         return 20;
-    }
-    else if (query_length <= 50) {
-        return query_length - 10;
     }
     else if (query_length < 200) {
         return (Int4)(0.6 * query_length);
