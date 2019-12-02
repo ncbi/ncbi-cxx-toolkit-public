@@ -2374,3 +2374,31 @@ BOOST_AUTO_TEST_CASE(Test_GetQualifierTypeAndCheckCase)
     auto test5 = CSeqFeatData::GetQualifierAsString(CSeqFeatData::eQual_host);
     BOOST_CHECK_EQUAL(test5, "host");
 }
+BOOST_AUTO_TEST_CASE(Test_x_ExhonerateQualifier)
+{
+    auto& orig = CSeqFeatData::GetMandatoryQualifiers(CSeqFeatData::eSubtype_assembly_gap);
+    size_t orig_size = orig.size();
+    BOOST_CHECK(orig_size == 2);
+    std::vector<CSeqFeatData::EQualifier> mandatory = orig;
+    CSeqFeatData::EQualifier not_mandatory = CSeqFeatData::eQual_estimated_length;
+    bool res = false;
+    ERASE_ITERATE(std::vector<CSeqFeatData::EQualifier>, it, mandatory) {
+        if (*it == not_mandatory) {
+            res = true;
+            VECTOR_ERASE(it, mandatory);
+        }
+    }
+
+    BOOST_CHECK(mandatory.size() == 1);
+
+    auto mandatory_copy = orig;
+    bool res2 = mandatory_copy.reset(not_mandatory);
+    BOOST_CHECK(res == res2);
+    BOOST_CHECK(mandatory_copy.size() == 1);
+
+    bool res3 = mandatory_copy.set(not_mandatory);
+    BOOST_CHECK(res != res3);
+    BOOST_CHECK(mandatory_copy.size() == 2);
+
+}
+

@@ -80,6 +80,33 @@ namespace ct
             return _Subscript(_Pos);
         }
 
+        bool reset(size_t _Pos)
+        {
+            if (_Bits <= _Pos)
+                _Xran();    // _Pos off end
+            auto& val = _Array[_Pos / _Bitsperword];
+            _Ty mask = (_Ty)1 << _Pos % _Bitsperword;
+            bool previous = (val & mask) != 0;
+            if (previous) {
+                m_size--;
+                val ^= mask;
+            }
+            return previous;
+        }
+        bool set(size_t _Pos)
+        {
+            if (_Bits <= _Pos)
+                _Xran();    // _Pos off end
+            auto& val = _Array[_Pos / _Bitsperword];
+            _Ty mask = (_Ty)1 << _Pos % _Bitsperword;
+            bool previous = (val & mask) != 0;
+            if (!previous) {
+                m_size++;
+                val |= mask;
+            }
+            return previous;
+        }
+
         class const_iterator
         {
         public:
@@ -164,6 +191,11 @@ namespace ct
             return ((_Array[_Pos / _Bitsperword]
                 & ((_Ty)1 << _Pos % _Bitsperword)) != 0);
         }
+        [[noreturn]] void _Xran() const
+        {
+            throw std::out_of_range("invalid const_bitset<_Bits,_T> position");
+        }
+
     };
 
     template<typename _Key, typename _T, typename _Pair = std::pair<_Key, _T>>
