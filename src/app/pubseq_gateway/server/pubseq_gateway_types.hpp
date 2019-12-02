@@ -55,6 +55,7 @@ enum EPubseqGatewayErrorCode {
     eBioseqInfoNotFoundForGi,       // whole bioseq_info record not found
     eBioseqInfoGiNotFoundForGi,     // gi is not found in in the seq_ids field
                                     // in the bioseq_info record
+    eBioseqInfoMultipleRecords,
     eServerLogicError,
     eBioseqInfoAccessionAdjustmentError
 };
@@ -90,11 +91,12 @@ enum EServIncludeData {
     fServDateChanged = (1 << 9),
     fServGi = (1 << 10),
     fServName = (1 << 11),
+    fServSeqState = (1 << 12),
 
     fServAllBioseqFields = fServCanonicalId | fServSeqIds | fServMoleculeType |
                            fServLength | fServState | fServBlobId |
                            fServTaxId | fServHash | fServDateChanged |
-                           fServGi | fServName,
+                           fServGi | fServName | fServSeqState,
     fBioseqKeyFields = fServCanonicalId | fServGi
 };
 
@@ -123,10 +125,10 @@ enum ETSEOption {
 
 
 enum EResolutionResult {
-    eFromSi2csiCache,
-    eFromSi2csiDB,
-    eFromBioseqCache,
-    eFromBioseqDB,
+    eSi2csiCache,
+    eSi2csiDB,
+    eBioseqCache,
+    eBioseqDB,
     eNotResolved,
     ePostponedForDB
 };

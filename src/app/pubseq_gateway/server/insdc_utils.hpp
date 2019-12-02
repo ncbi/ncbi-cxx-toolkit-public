@@ -1,5 +1,5 @@
-#ifndef ASYNC_BIOSEQ_QUERY__HPP
-#define ASYNC_BIOSEQ_QUERY__HPP
+#ifndef PUBSEQ_GATEWAY_INSDC_UTILS__HPP
+#define PUBSEQ_GATEWAY_INSDC_UTILS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -32,39 +32,34 @@
  *
  */
 
-
 #include <corelib/request_status.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
+#include "pubseq_gateway_types.hpp"
 
-class CPendingOperation;
+USING_NCBI_SCOPE;
+USING_IDBLOB_SCOPE;
+
+#include <string>
+#include <vector>
+using namespace std;
 
 
-
-class CAsyncBioseqQuery
+struct SINSDCDecision
 {
-public:
-    CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                      CPendingOperation *   pending_op,
-                      bool  need_trace);
-
-public:
-    void MakeRequest(bool  with_seq_id_type);
-
-public:
-    void x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records);
-    void x_OnBioseqInfoWithoutSeqIdType(vector<CBioseqInfoRecord>&&  records);
-    void x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
-                             EDiagSev  severity, const string &  message);
-
-private:
-    SBioseqResolution                   m_BioseqResolution;
-    CPendingOperation *                 m_PendingOp;
-    bool                                m_NeedTrace;
-
-    CCassFetch *                        m_Fetch;
-    CCassFetch *                        m_NoSeqIdTypeFetch;
-    chrono::system_clock::time_point    m_BioseqRequestStart;
+    CRequestStatus::ECode   status;     // 200, 404, 500
+    size_t                  index;      // If 200 then the vector index to take
+    string                  message;    // In case of errors
 };
+
+
+bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type);
+string GetBioseqRecordId(const CBioseqInfoRecord &  record);
+
+// version is from the lookup request
+// if version is -1 => the lookup was without version
+SINSDCDecision DecideINSDC(const vector<CBioseqInfoRecord>&  records,
+                           CBioseqInfoRecord::TVersion  version);
 
 #endif

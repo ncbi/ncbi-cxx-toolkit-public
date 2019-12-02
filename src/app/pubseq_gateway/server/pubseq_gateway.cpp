@@ -567,9 +567,9 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_HttpPort < kHttpPortMin || m_HttpPort > kHttpPortMax) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "[SERVER]/port value is out of range. Allowed range: " +
-                   NStr::NumericToString(kHttpPortMin) + "..." +
-                   NStr::NumericToString(kHttpPortMax) + ". Received: " +
-                   NStr::NumericToString(m_HttpPort));
+                   to_string(kHttpPortMin) + "..." +
+                   to_string(kHttpPortMax) + ". Received: " +
+                   to_string(m_HttpPort));
     }
 
     if (m_Si2csiDbFile.empty()) {
@@ -590,10 +590,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
         string  err_msg =
             "The number of HTTP workers is out of range. Allowed "
-            "range: " + NStr::NumericToString(kWorkersMin) + "..." +
-            NStr::NumericToString(kWorkersMax) + ". Received: " +
-            NStr::NumericToString(m_HttpWorkers) + ". Reset to "
-            "default: " + NStr::NumericToString(kWorkersDefault);
+            "range: " + to_string(kWorkersMin) + "..." +
+            to_string(kWorkersMax) + ". Received: " +
+            to_string(m_HttpWorkers) + ". Reset to "
+            "default: " + to_string(kWorkersDefault);
         m_Alerts.Register(eConfigHttpWorkers, err_msg);
         PSG_ERROR(err_msg);
         m_HttpWorkers = kWorkersDefault;
@@ -603,10 +603,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         m_ListenerBacklog > kListenerBacklogMax) {
         string  err_msg =
             "The listener backlog is out of range. Allowed "
-            "range: " + NStr::NumericToString(kListenerBacklogMin) + "..." +
-            NStr::NumericToString(kListenerBacklogMax) + ". Received: " +
-            NStr::NumericToString(m_ListenerBacklog) + ". Reset to "
-            "default: " + NStr::NumericToString(kListenerBacklogDefault);
+            "range: " + to_string(kListenerBacklogMin) + "..." +
+            to_string(kListenerBacklogMax) + ". Received: " +
+            to_string(m_ListenerBacklog) + ". Reset to "
+            "default: " + to_string(kListenerBacklogDefault);
         m_Alerts.Register(eConfigListenerBacklog, err_msg);
         PSG_ERROR(err_msg);
         m_ListenerBacklog = kListenerBacklogDefault;
@@ -615,10 +615,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_TcpMaxConn < kTcpMaxConnMin || m_TcpMaxConn > kTcpMaxConnMax) {
         string  err_msg =
             "The max number of connections is out of range. Allowed "
-            "range: " + NStr::NumericToString(kTcpMaxConnMin) + "..." +
-            NStr::NumericToString(kTcpMaxConnMax) + ". Received: " +
-            NStr::NumericToString(m_TcpMaxConn) + ". Reset to "
-            "default: " + NStr::NumericToString(kTcpMaxConnDefault);
+            "range: " + to_string(kTcpMaxConnMin) + "..." +
+            to_string(kTcpMaxConnMax) + ". Received: " +
+            to_string(m_TcpMaxConn) + ". Reset to "
+            "default: " + to_string(kTcpMaxConnDefault);
         m_Alerts.Register(eConfigMaxConnections, err_msg);
         PSG_ERROR(err_msg);
         m_TcpMaxConn = kTcpMaxConnDefault;
@@ -627,10 +627,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_TimeoutMs < kTimeoutMsMin || m_TimeoutMs > kTimeoutMsMax) {
         string  err_msg =
             "The operation timeout is out of range. Allowed "
-            "range: " + NStr::NumericToString(kTimeoutMsMin) + "..." +
-            NStr::NumericToString(kTimeoutMsMax) + ". Received: " +
-            NStr::NumericToString(m_TimeoutMs) + ". Reset to "
-            "default: " + NStr::NumericToString(kTimeoutDefault);
+            "range: " + to_string(kTimeoutMsMin) + "..." +
+            to_string(kTimeoutMsMax) + ". Received: " +
+            to_string(m_TimeoutMs) + ". Reset to "
+            "default: " + to_string(kTimeoutDefault);
         m_Alerts.Register(eConfigTimeout, err_msg);
         PSG_ERROR(err_msg);
         m_TimeoutMs = kTimeoutDefault;
@@ -639,10 +639,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_MaxRetries < kMaxRetriesMin || m_MaxRetries > kMaxRetriesMax) {
         string  err_msg =
             "The max retries is out of range. Allowed "
-            "range: " + NStr::NumericToString(kMaxRetriesMin) + "..." +
-            NStr::NumericToString(kMaxRetriesMax) + ". Received: " +
-            NStr::NumericToString(m_MaxRetries) + ". Reset to "
-            "default: " + NStr::NumericToString(kMaxRetriesDefault);
+            "range: " + to_string(kMaxRetriesMin) + "..." +
+            to_string(kMaxRetriesMax) + ". Received: " +
+            to_string(m_MaxRetries) + ". Reset to "
+            "default: " + to_string(kMaxRetriesDefault);
         m_Alerts.Register(eConfigRetries, err_msg);
         PSG_ERROR(err_msg);
         m_MaxRetries = kMaxRetriesDefault;
@@ -651,7 +651,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_ExcludeCacheMaxSize < 0) {
         string  err_msg =
             "The max exclude cache size must be a positive integer. "
-            "Received: " + NStr::NumericToString(m_ExcludeCacheMaxSize) + ". "
+            "Received: " + to_string(m_ExcludeCacheMaxSize) + ". "
             "Reset to 0 (exclude blobs cache is disabled)";
         m_Alerts.Register(eConfigExcludeCacheSize, err_msg);
         PSG_ERROR(err_msg);
@@ -661,10 +661,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_ExcludeCachePurgePercentage < 0 || m_ExcludeCachePurgePercentage > 100) {
         string  err_msg = "The exclude cache purge percentage is out of range. "
             "Allowed: 0...100. Received: " +
-            NStr::NumericToString(m_ExcludeCachePurgePercentage) + ". ";
+            to_string(m_ExcludeCachePurgePercentage) + ". ";
         if (m_ExcludeCacheMaxSize > 0) {
             err_msg += "Reset to " +
-                NStr::NumericToString(kDefaultExcludeCachePurgePercentage);
+                to_string(kDefaultExcludeCachePurgePercentage);
             PSG_ERROR(err_msg);
         } else {
             err_msg += "The provided value has no effect "
@@ -678,10 +678,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     if (m_ExcludeCacheInactivityPurge <= 0) {
         string  err_msg = "The exclude cache inactivity purge timeout must be "
             "a positive integer greater than zero. Received: " +
-            NStr::NumericToString(m_ExcludeCacheInactivityPurge) + ". ";
+            to_string(m_ExcludeCacheInactivityPurge) + ". ";
         if (m_ExcludeCacheMaxSize > 0) {
             err_msg += "Reset to " +
-                NStr::NumericToString(kDefaultExcludeCacheInactivityPurge);
+                to_string(kDefaultExcludeCacheInactivityPurge);
             PSG_ERROR(err_msg);
         } else {
             err_msg += "The provided value has no effect "
@@ -964,6 +964,28 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
               limited_option + "', '" +
               never_option + "'.";
     return eUnknownAccSubstitution;
+}
+
+
+bool CPubseqGatewayApp::x_GetResolveTraceParameter(HST::CHttpRequest &  req,
+                                                   const string &  param_name,
+                                                   bool &  resolve_trace,
+                                                   string &  err_msg)
+{
+    resolve_trace = false;
+    SRequestParameter   resolve_trace_protocol_param = x_GetParam(req,
+                                                                  param_name);
+
+    if (resolve_trace_protocol_param.m_Found) {
+        if (!x_IsBoolParamValid(param_name,
+                                resolve_trace_protocol_param.m_Value, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            PSG_WARNING(err_msg);
+            return false;
+        }
+        resolve_trace = resolve_trace_protocol_param.m_Value == "yes";
+    }
+    return true;
 }
 
 

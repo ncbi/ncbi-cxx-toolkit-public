@@ -45,6 +45,7 @@ static const string     kSeqIdType = "seq_id_type";
 static const string     kGi = "gi";
 static const string     kMol = "mol";
 static const string     kLength = "length";
+static const string     kSeqState = "seq_state";
 static const string     kState = "state";
 static const string     kSat = "sat";
 static const string     kSatKey = "sat_key";
@@ -102,6 +103,8 @@ void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
     protobuf_blob_prop_key->set_sat(bioseq_info.GetSat());
     protobuf_blob_prop_key->set_sat_key(bioseq_info.GetSatKey());
 
+    protobuf_bioseq_info_value->set_seq_state(
+            static_cast<psg::retrieval::EnumSeqState>(bioseq_info.GetSeqState()));
     protobuf_bioseq_info_value->set_state(
             static_cast<psg::retrieval::EnumSeqState>(bioseq_info.GetState()));
     protobuf_bioseq_info_value->set_mol(
@@ -123,43 +126,6 @@ void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
 
     // Convert to binary
     protobuf_bioseq_info_reply.SerializeToString(&bioseq_protobuf);
-}
-
-
-void ConvertBioseqProtobufToBioseqInfo(const string &  bioseq_protobuf,
-                                       CBioseqInfoRecord &  bioseq_info)
-{
-    // These fields must be already populated in bioseq_info
-    //    bioseq_info.m_Accession
-    //    bioseq_info.m_Version
-    //    bioseq_info.m_SeqIdType
-    //    bioseq_info.m_GI
-
-    psg::retrieval::BioseqInfoValue     protobuf_bioseq_info_value;
-    protobuf_bioseq_info_value.ParseFromString(bioseq_protobuf);
-
-    bioseq_info.SetName(protobuf_bioseq_info_value.name());
-    bioseq_info.SetDateChanged(protobuf_bioseq_info_value.date_changed());
-    bioseq_info.SetHash(protobuf_bioseq_info_value.hash());
-    bioseq_info.SetLength(protobuf_bioseq_info_value.length());
-    bioseq_info.SetMol(protobuf_bioseq_info_value.mol());
-
-    const psg::retrieval::BlobPropKey &  blob_key =
-        protobuf_bioseq_info_value.blob_key();
-
-    bioseq_info.SetSat(blob_key.sat());
-    bioseq_info.SetSatKey(blob_key.sat_key());
-
-    int     seq_id_size = protobuf_bioseq_info_value.seq_ids_size();
-    for (int  index = 0; index < seq_id_size; ++index) {
-        const psg::retrieval::BioseqInfoValue_SecondaryId &   seq_id =
-            protobuf_bioseq_info_value.seq_ids(index);
-        bioseq_info.GetSeqIds().insert(make_tuple(seq_id.sec_seq_id_type(),
-                                                  seq_id.sec_seq_id()));
-    }
-
-    bioseq_info.SetState(protobuf_bioseq_info_value.state());
-    bioseq_info.SetTaxId(protobuf_bioseq_info_value.tax_id());
 }
 
 
@@ -209,8 +175,8 @@ CJsonNode  ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
         json.SetByKey(kSeqIds, seq_ids);
     }
 
-    // seq_state is skipped; it is specific for the DB and is not in cache
-
+    if (include_data_flags & fServSeqState)
+        json.SetInteger(kSeqState, bioseq_info.GetSeqState());
     if (include_data_flags & fServState)
         json.SetInteger(kState, bioseq_info.GetState());
     if (include_data_flags & fServTaxId)
@@ -239,43 +205,6 @@ CJsonNode  ConvertBlobPropToJson(const CBlobRecord &  blob_prop)
     json.SetInteger(kNChunks, blob_prop.GetNChunks());
 
     return json;
-}
-
-
-void ConvertSi2csiToBioseqResolution(const string &  si2csi_protobuf,
-                                     SBioseqResolution &  bioseq_resolution)
-{
-    psg::retrieval::BioseqInfoKey       protobuf_si2csi_value;
-    protobuf_si2csi_value.ParseFromString(si2csi_protobuf);
-
-    bioseq_resolution.m_BioseqInfo.SetAccession(protobuf_si2csi_value.accession());
-    bioseq_resolution.m_BioseqInfo.SetVersion(protobuf_si2csi_value.version());
-    bioseq_resolution.m_BioseqInfo.SetSeqIdType(protobuf_si2csi_value.seq_id_type());
-    bioseq_resolution.m_BioseqInfo.SetGI(protobuf_si2csi_value.gi());
-}
-
-
-void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
-                                         int64_t  last_modified,
-                                         const string &  blob_prop_protobuf,
-                                         CBlobRecord &  blob_record)
-{
-    psg::retrieval::BlobPropValue       protobuf_blob_prop_value;
-    protobuf_blob_prop_value.ParseFromString(blob_prop_protobuf);
-
-    blob_record.SetModified(last_modified);
-    blob_record.SetKey(sat_key);
-    blob_record.SetClass(protobuf_blob_prop_value.class_());
-    blob_record.SetDateAsn1(protobuf_blob_prop_value.date_asn1());
-    blob_record.SetDiv(protobuf_blob_prop_value.div());
-    blob_record.SetFlags(protobuf_blob_prop_value.flags());
-    blob_record.SetHupDate(protobuf_blob_prop_value.hup_date());
-    blob_record.SetId2Info(protobuf_blob_prop_value.id2_info());
-    blob_record.SetNChunks(protobuf_blob_prop_value.n_chunks());
-    blob_record.SetOwner(protobuf_blob_prop_value.owner());
-    blob_record.SetSize(protobuf_blob_prop_value.size());
-    blob_record.SetSizeUnpacked(protobuf_blob_prop_value.size_unpacked());
-    blob_record.SetUserName(protobuf_blob_prop_value.username());
 }
 
 

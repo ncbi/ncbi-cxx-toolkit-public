@@ -75,10 +75,11 @@ public:
     void Process(void);
 
 private:
-    void x_PreparePrimaryBioseqInfoQuery(const string &  seq_id,
-                                         int16_t  version,
-                                         int16_t  seq_id_type,
-                                         int64_t  gi);
+    void x_PreparePrimaryBioseqInfoQuery(const CBioseqInfoRecord::TAccession &  seq_id,
+                                         CBioseqInfoRecord::TVersion  version,
+                                         CBioseqInfoRecord::TSeqIdType  seq_id_type,
+                                         CBioseqInfoRecord::TGI  gi,
+                                         bool  with_seq_id_type);
     void x_PreparePrimarySi2csiQuery(void);
     void x_PrepareSecondarySi2csiQuery(void);
     void x_PrepareSecondaryAsIsSi2csiQuery(void);
@@ -87,12 +88,11 @@ private:
                               int16_t  effective_seq_id_type);
 
 public:
-    void x_OnBioseqInfoRecord(CBioseqInfoRecord &&  record,
-                              CRequestStatus::ECode  ret_code);
+    void x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records);
+    void x_OnBioseqInfoWithoutSeqIdType(vector<CBioseqInfoRecord>&&  records);
     void x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity, const string &  message);
-    void x_OnSi2csiRecord(CSI2CSIRecord &&  record,
-                          CRequestStatus::ECode  ret_code);
+    void x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records);
     void x_OnSi2csiError(CRequestStatus::ECode  status, int  code,
                          EDiagSev  severity, const string &  message);
 
@@ -108,9 +108,15 @@ private:
 
     EResolveStage               m_ResolveStage;
     CCassFetch *                m_CurrentFetch;
+    CCassFetch *                m_NoSeqIdTypeFetch;
 
     size_t                      m_SecondaryIndex;
     int16_t                     m_EffectiveVersion;
+
+    CBioseqInfoRecord::TAccession   m_BioseqInfoRequestedAccession;
+    CBioseqInfoRecord::TVersion     m_BioseqInfoRequestedVersion;
+    CBioseqInfoRecord::TSeqIdType   m_BioseqInfoRequestedSeqIdType;
+    CBioseqInfoRecord::TGI          m_BioseqInfoRequestedGI;
 
     THighResolutionTimePoint    m_Si2csiStart;
     THighResolutionTimePoint    m_BioseqInfoStart;

@@ -50,17 +50,19 @@ public:
         x_Allowed(allowed)
     {}
 
-    ECacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
+    ECacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
+                                         bool  need_trace)
     {
         if (x_Allowed)
-            return s_LookupBioseqInfo(bioseq_resolution);
+            return s_LookupBioseqInfo(bioseq_resolution, need_trace);
         return eNotFound;
     }
 
-    ECacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution)
+    ECacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution,
+                                     bool  need_trace)
     {
         if (x_Allowed)
-            return s_LookupSi2csi(bioseq_resolution);
+            return s_LookupSi2csi(bioseq_resolution, need_trace);
         return eNotFound;
     }
 
@@ -76,10 +78,17 @@ public:
 
 public:
     static
-    ECacheLookupResult  s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution);
+    ECacheLookupResult  s_LookupBioseqInfo(
+                                SBioseqResolution &  bioseq_resolution,
+                                bool  need_trace);
+    static
+    ECacheLookupResult s_LookupINSDCBioseqInfo(
+                                SBioseqResolution &  bioseq_resolution,
+                                bool  need_trace);
 
     static
-    ECacheLookupResult  s_LookupSi2csi(SBioseqResolution &  bioseq_resolution);
+    ECacheLookupResult  s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
+                                       bool  need_trace);
 
     static
     ECacheLookupResult  s_LookupBlobProp(int  sat,

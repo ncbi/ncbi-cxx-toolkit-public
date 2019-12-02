@@ -186,7 +186,8 @@ private:
     bool x_ComposeOSLT(CSeq_id &  parsed_seq_id, int16_t &  effective_seq_id_type,
                        list<string> &  secondary_id_list, string &  primary_id);
     ECacheLookupResult x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution,
-                                            SResolveInputSeqIdError &  err);
+                                            SResolveInputSeqIdError &  err,
+                                            bool  need_as_is=true);
     void x_ResolveViaComposeOSLTInCache(CSeq_id &  parsed_seq_id,
                                         int16_t  effective_seq_id_type,
                                         const list<string> &  secondary_id_list,
@@ -276,6 +277,7 @@ private:
     EAccessionSubstitutionOption x_GetAccessionSubstitutionOption(void) const;
     TServIncludeData x_GetBioseqInfoFields(void) const;
     bool x_NonKeyBioseqInfoFieldsRequested(void) const;
+    bool x_ResolveTrace(void) const;
 
     unique_ptr<CPSGId2Info>     m_Id2Info;
 
@@ -288,9 +290,6 @@ public:
                                         SBioseqResolution &  bioseq_resolution);
     bool CanSkipBioseqInfoRetrieval(
                             const CBioseqInfoRecord &  bioseq_info_record) const;
-    bool CanSkipBioseqInfoCacheUnpacking(
-                            const CBioseqInfoRecord &  bioseq_info_record,
-                            EOutputFormat  output_format) const;
 
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
     { return m_ProtocolSupport.GetReply()->GetDataReadyCB(); }

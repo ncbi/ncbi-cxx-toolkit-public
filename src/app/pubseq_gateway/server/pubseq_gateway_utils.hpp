@@ -139,7 +139,6 @@ struct SBioseqResolution
     void Reset(void)
     {
         m_ResolutionResult = eNotResolved;
-        m_CacheInfo.clear();
         m_BioseqInfo.Reset();
 
         m_AdjustmentTried = false;
@@ -153,8 +152,8 @@ struct SBioseqResolution
     THighResolutionTimePoint    m_RequestStartTimestamp;
     size_t                      m_CassQueryCount;
 
+    // In case of the SI2CSI the only key fields are filled
     CBioseqInfoRecord           m_BioseqInfo;
-    string                      m_CacheInfo;    // Bioseq or si2csi cache
 
     // Most likely parsing error if so
     SResolveInputSeqIdError     m_PostponedError;
@@ -223,6 +222,5 @@ public:
 
 string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
 string GetCassStartupDataStateMessage(EStartupDataState  state);
-
 
 #endif

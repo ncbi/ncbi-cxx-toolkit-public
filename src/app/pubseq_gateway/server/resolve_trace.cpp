@@ -1,6 +1,3 @@
-#ifndef ASYNC_BIOSEQ_QUERY__HPP
-#define ASYNC_BIOSEQ_QUERY__HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -31,40 +28,17 @@
  * File Description:
  *
  */
+#include <ncbi_pch.hpp>
 
+#include "resolve_trace.hpp"
 
-#include <corelib/request_status.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+USING_NCBI_SCOPE;
 
+#include <iostream>
 
-class CPendingOperation;
-
-
-
-class CAsyncBioseqQuery
+void  ResolveTrace(const string &  value)
 {
-public:
-    CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                      CPendingOperation *   pending_op,
-                      bool  need_trace);
+    // Timestamp?
+    cout << " " << value << endl;
+}
 
-public:
-    void MakeRequest(bool  with_seq_id_type);
-
-public:
-    void x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records);
-    void x_OnBioseqInfoWithoutSeqIdType(vector<CBioseqInfoRecord>&&  records);
-    void x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
-                             EDiagSev  severity, const string &  message);
-
-private:
-    SBioseqResolution                   m_BioseqResolution;
-    CPendingOperation *                 m_PendingOp;
-    bool                                m_NeedTrace;
-
-    CCassFetch *                        m_Fetch;
-    CCassFetch *                        m_NoSeqIdTypeFetch;
-    chrono::system_clock::time_point    m_BioseqRequestStart;
-};
-
-#endif

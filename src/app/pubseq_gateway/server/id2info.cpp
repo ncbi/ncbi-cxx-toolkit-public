@@ -53,7 +53,7 @@ CPSGId2Info::CPSGId2Info(const string &  id2_info) :
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    "Invalid id2 info '" + id2_info +
                    "'. Expected 3 or more parts, found " +
-                   NStr::NumericToString(parts.size()) + " parts.");
+                   to_string(parts.size()) + " parts.");
     }
 
     try {
@@ -76,21 +76,21 @@ CPSGId2Info::CPSGId2Info(const string &  id2_info) :
     if (m_Sat <= 0)
         validate_message = "Invalid id2 info SAT value. "
             "Expected to be > 0. Received: " +
-            NStr::NumericToString(m_Sat) + ".";
+            to_string(m_Sat) + ".";
 
     if (m_Info <= 0) {
         if (!validate_message.empty())
             validate_message += " ";
         validate_message += "Invalid id2 info INFO value. "
             "Expected to be > 0. Received: " +
-            NStr::NumericToString(m_Info) + ".";
+            to_string(m_Info) + ".";
     }
     if (m_Chunks <= 0) {
         if (!validate_message.empty())
             validate_message += " ";
         validate_message += "Invalid id2 info NCHUNKS value. "
             "Expected to be > 0. Received: " +
-            NStr::NumericToString(m_Chunks) + ".";
+            to_string(m_Chunks) + ".";
     }
 
     if (!validate_message.empty()) {

@@ -51,17 +51,9 @@ using namespace std;
 
 void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
                                        string &  bioseq_protobuf);
-void ConvertBioseqProtobufToBioseqInfo(const string &  bioseq_protobuf,
-                                       CBioseqInfoRecord &  bioseq_info);
 void ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
                              TServIncludeData  include_data_flags,
                              string &  bioseq_json);
-void ConvertSi2csiToBioseqResolution(const string &  si2csi_protobuf,
-                                     SBioseqResolution &  bioseq_resolution);
-void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
-                                         int64_t  last_modified,
-                                         const string &  blob_prop_protobuf,
-                                         CBlobRecord &  blob_record);
 
 CJsonNode ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
                                   TServIncludeData  include_data_flags);

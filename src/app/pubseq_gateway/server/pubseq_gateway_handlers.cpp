@@ -68,6 +68,7 @@ static string  kTSEIdParam = "tse_id";
 static string  kChunkParam = "chunk";
 static string  kSplitVersionParam = "split_version";
 static string  kAccSubstitutionParam = "acc_substitution";
+static string  kResolveTraceParam = "resolve_trace";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -83,6 +84,7 @@ static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
     make_pair("date_changed", fServDateChanged),
     make_pair("gi", fServGi),
     make_pair("name", fServName),
+    make_pair("seq_state", fServSeqState)
 };
 static string  kBadUrlMessage = "Unknown request, the provided URL "
                                 "is not recognized";
@@ -188,6 +190,16 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
 
         SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
+        bool                resolve_trace = false;
+        if (!x_GetResolveTraceParameter(req, kResolveTraceParam,
+                                        resolve_trace, err_msg)) {
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         m_RequestCounters.IncGetBlobBySeqId();
         resp.Postpone(
                 CPendingOperation(
@@ -195,7 +207,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                  tse_option, use_cache, subst_option,
                                  string(client_id_param.m_Value.data(),
                                         client_id_param.m_Value.size()),
-                                 now),
+                                 resolve_trace, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -295,7 +307,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
 
             m_ErrorCounters.IncClientSatToSatName();
             string      message = string("Unknown satellite number ") +
-                                  NStr::NumericToString(blob_id.m_Sat);
+                                  to_string(blob_id.m_Sat);
             x_SendUnknownClientSatelliteError(resp, blob_id, message);
             PSG_WARNING(message);
             x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
@@ -442,6 +454,20 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             }
         }
 
+        bool                resolve_trace = false;
+        if (!x_GetResolveTraceParameter(req, kResolveTraceParam,
+                                        resolve_trace, err_msg)) {
+            if (use_psg_protocol) {
+                x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 eMalformedParameter, eDiag_Error);
+            } else {
+                resp.SetContentType(ePlainTextMime);
+                resp.Send400("Bad Request", err_msg.c_str());
+            }
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
 
         // Parameters processing has finished
         m_RequestCounters.IncResolve();
@@ -449,7 +475,7 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
                 CPendingOperation(
                     SResolveRequest(seq_id, seq_id_type, include_data_flags,
                                     output_format, use_cache, use_psg_protocol,
-                                    subst_option, now),
+                                    subst_option, resolve_trace, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -517,7 +543,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(HST::CHttpRequest &  req,
         if (!SatToSatName(tse_id.m_Sat, tse_id.m_SatName)) {
             m_ErrorCounters.IncClientSatToSatName();
             string      message = string("Unknown satellite number ") +
-                                  NStr::NumericToString(tse_id.m_Sat);
+                                  to_string(tse_id.m_Sat);
             x_SendUnknownClientSatelliteError(resp, tse_id, message);
             PSG_WARNING(message);
             x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
@@ -678,11 +704,27 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
             return 0;
         }
 
+        bool                resolve_trace = false;
+        if (!x_GetResolveTraceParameter(req, kResolveTraceParam,
+                                        resolve_trace, err_msg)) {
+            if (use_psg_protocol) {
+                x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 eMalformedParameter, eDiag_Error);
+            } else {
+                resp.SetContentType(ePlainTextMime);
+                resp.Send400("Bad Request", err_msg.c_str());
+            }
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         // Parameters processing has finished
         m_RequestCounters.IncGetNA();
         resp.Postpone(
                 CPendingOperation(
-                    SAnnotRequest(seq_id, seq_id_type, names, use_cache, now),
+                    SAnnotRequest(seq_id, seq_id_type, names,
+                                  use_cache, resolve_trace, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -1309,7 +1351,7 @@ int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
             if (data_size < 0 || data_size > kMaxTestIOSize) {
                 err_msg = "Invalid range of the " + kDataSizeParam +
                           " parameter. Accepted values are 0..." +
-                          NStr::NumericToString(kMaxTestIOSize);
+                          to_string(kMaxTestIOSize);
                 resp.SetContentType(ePlainTextMime);
                 resp.Send400("Bad Request", err_msg.c_str());
                 if (need_log) {
@@ -1417,8 +1459,9 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
             return false;
         }
 
-        if (seq_id_type < 0) {
-            err_msg = "seq_id_type value must be >= 0";
+        if (seq_id_type < 0 || seq_id_type >= CSeq_id::e_MaxChoice) {
+            err_msg = "seq_id_type value must be >= 0 and less than " +
+                      to_string(CSeq_id::e_MaxChoice);
             m_ErrorCounters.IncMalformedArguments();
             if (use_psg_protocol) {
                 x_SendMessageAndCompletionChunks(resp, err_msg,
