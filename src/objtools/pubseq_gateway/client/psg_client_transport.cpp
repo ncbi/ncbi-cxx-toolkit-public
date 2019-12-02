@@ -1030,14 +1030,19 @@ void SPSG_IoSession::StartClose()
     m_Tcp.Close();
 }
 
-void SPSG_IoSession::Send()
+bool SPSG_IoSession::Send()
 {
     if (auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
         Reset(send_rv);
-
-    } else if (auto write_rv = m_Tcp.Write()) {
-        Reset(write_rv, "Failed to write");
+        return false;
     }
+
+    if (auto write_rv = m_Tcp.Write()) {
+        Reset(write_rv, "Failed to write");
+        return false;
+    }
+
+    return true;
 }
 
 void SPSG_IoSession::OnConnect(int status)
@@ -1076,44 +1081,30 @@ void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
 
 bool SPSG_IoSession::ProcessRequest()
 {
-    for (;;) {
-        if ((m_Requests.size() >= m_Session.GetMaxStreams()) || m_Tcp.IsWriteBufferFull()) {
-            // Continue processing of remaining requests on the next callback
-            m_Io->queue.Send();
-            break;
-        }
-
-        shared_ptr<SPSG_Request> req;
-
-        if (!m_Io->queue.Pop(req)) {
-            break;
-        }
-
-        m_Io->space->NotifyOne();
-
-        auto stream_id = m_Session.Submit(req);
-
-        if (stream_id < 0) {
-            Retry(req, stream_id);
-            Reset(stream_id);
-            return false;
-        }
-
-        m_Requests.emplace(stream_id, move(req));
-
-        if (auto rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
-            Reset(rv);
-            return false;
-        }
-
-        return true;
+    if ((m_Requests.size() >= m_Session.GetMaxStreams()) || m_Tcp.IsWriteBufferFull()) {
+        // Continue processing of remaining requests on the next callback
+        m_Io->queue.Send();
+        return false;
     }
 
-    if (auto rv = m_Tcp.Write()) {
-        Reset(rv, "Failed to write");
+    shared_ptr<SPSG_Request> req;
+
+    if (!m_Io->queue.Pop(req)) {
+        return false;
     }
 
-    return false;
+    m_Io->space->NotifyOne();
+
+    auto stream_id = m_Session.Submit(req);
+
+    if (stream_id < 0) {
+        Retry(req, stream_id);
+        Reset(stream_id);
+        return false;
+    }
+
+    m_Requests.emplace(stream_id, move(req));
+    return Send();
 }
 
 void SPSG_IoSession::CheckRequestExpiration()

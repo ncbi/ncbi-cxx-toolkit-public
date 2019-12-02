@@ -701,7 +701,7 @@ private:
     void OnWrite(int status);
     void OnRead(const char* buf, ssize_t nread);
 
-    void Send();
+    bool Send();
     bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
 
     void Reset(SPSG_Error error);
