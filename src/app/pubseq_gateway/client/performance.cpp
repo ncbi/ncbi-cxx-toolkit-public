@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <algorithm>
 #include <numeric>
 
 #include "performance.hpp"
