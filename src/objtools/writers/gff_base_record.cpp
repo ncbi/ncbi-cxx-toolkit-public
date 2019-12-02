@@ -59,7 +59,7 @@ CGffBaseRecord::CGffBaseRecord(
     mPhase(".")
 //  ----------------------------------------------------------------------------
 {
-};
+}
 
 //  ----------------------------------------------------------------------------
 CGffBaseRecord::CGffBaseRecord(
@@ -77,13 +77,13 @@ CGffBaseRecord::CGffBaseRecord(
     m_pLoc = other.m_pLoc;
     mAttributes.insert( 
         other.mAttributes.begin(), other.mAttributes.end());
-};
+}
 
 //  ----------------------------------------------------------------------------
 CGffBaseRecord::~CGffBaseRecord()
 //  ----------------------------------------------------------------------------
 {
-};
+}
 
 //  ----------------------------------------------------------------------------
 bool CGffBaseRecord::AddAttribute(
@@ -442,47 +442,37 @@ string CGffBaseRecord::StrAttributes() const
 }
 
 //  ----------------------------------------------------------------------------
-string CGffBaseRecord::xEscapedString(
-    const string& str) const
-//  ----------------------------------------------------------------------------
-{
-    string escapedStr = xEscapedValue("", str);
-    return escapedStr;
-}
-
-//  ----------------------------------------------------------------------------
 string CGffBaseRecord::xEscapedValue(
-    const string& key,
-    const string& value) const
+    CTempString key,
+    CTempString value) const
 //  ----------------------------------------------------------------------------
 {
-    string escapedValue(value);
-    NStr::ReplaceInPlace(escapedValue, "%", "%25");
+    // unfortunately, const_bitset has no better method to set the values yet, maybe improve it later
+    using charset = ct::const_bitset<256, char>;
+    static constexpr auto escaped_no_range    = charset{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        '%', ';', '=', '%', '=', '&', 0x7F, ',' };
+    static constexpr auto escaped_range_value = charset{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        '%', ';', '=', '%', '=', '&', 0x7F };
 
-    char original[2];
-    original[1] = 0;
-    char replacement[4];
-    for (char c=1; c < 0x20; ++c) {
-        original[0] = c;
-        ::sprintf(replacement, "%%%2.2X", c);
-        NStr::ReplaceInPlace(escapedValue, original, replacement);
-    }
-    for (size_t t=0; t < escapedValue.size(); ++t) {
-        if (escapedValue[t] == 0) {
-            escapedValue[t] = 1;
+    auto& escaped = (key == "start_range" || key == "end_range") ? escaped_range_value : escaped_no_range;
+
+    char replacement[10];
+
+    string result;
+    result.reserve(value.size()*2);
+
+    for (size_t i = 0; i < value.size(); ++i)
+    {
+        char c = value[i];
+        if (escaped.test(c))
+        {
+            sprintf(replacement, "%%%2.2X", c);
+            result.append(replacement);
+        }  else  {
+            result.push_back(c);
         }
     }
-    original[0] = 1;
-    NStr::ReplaceInPlace(escapedValue, original, "%00");
-    original[0] = 0x7F;
-    NStr::ReplaceInPlace(escapedValue, original, "%7F");
-    NStr::ReplaceInPlace(escapedValue, ";", "%3B");
-    NStr::ReplaceInPlace(escapedValue, "=", "%3D");
-    NStr::ReplaceInPlace(escapedValue, "&", "%26");
-    if (key != "start_range"  &&  key != "end_range") {
-        NStr::ReplaceInPlace(escapedValue, ",", "%2C");
-    }
-    return escapedValue;
+    return result;
 }
 
 END_objects_SCOPE
