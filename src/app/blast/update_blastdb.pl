@@ -50,11 +50,16 @@ use constant DEBUG => 0;
 use constant MAX_DOWNLOAD_ATTEMPTS => 3;
 use constant EXIT_FAILURE => 2;
 
+use constant AWS_URL => "http://s3.amazonaws.com";
+use constant AMI_URL => "http://169.254.169.254/latest/meta-data/local-hostname";
+use constant AWS_BUCKET => "ncbi-blast-databases";
+
 use constant GCS_URL => "https://storage.googleapis.com";
 use constant GCP_URL => "http://metadata.google.internal/computeMetadata/v1/instance/id";
 use constant GCP_BUCKET => "blast-db";
-use constant GCP_MANIFEST => "blastdb-manifest.json";
-use constant GCP_MANIFEST_VERSION => "1.0";
+
+use constant BLASTDB_MANIFEST => "blastdb-manifest.json";
+use constant BLASTDB_MANIFEST_VERSION => "1.0";
 
 # Process command line options
 my $opt_verbose = 1;
@@ -106,19 +111,6 @@ if (length($opt_passive) and $opt_passive =~ /n|no/i) {
 my $exit_code = 0;
 $|++;
 
-my $location = "NCBI";
-unless ($^O =~ /mswin/i) {
-    $location = system("/usr/bin/curl -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL) == 0 ? "GCP" : "NCBI";
-}
-# Override data source, only for testing
-if (defined($opt_source)) {
-    if ($opt_source =~ /^ncbi/i) {
-        $location = "NCBI";
-    } elsif ($opt_source =~ /^gc/i and $^O !~ /mswin/i) {
-        $location = "GCP";
-    }
-}
-
 if ($opt_show_version) {
     my $revision = '$Revision$';
     $revision =~ s/\$Revision: | \$//g;
@@ -126,19 +118,41 @@ if ($opt_show_version) {
     exit($exit_code);
 }
 
+my $location = "NCBI";
+# If provided, the source takes precedence over any attempts to determine the closest location
+if (defined($opt_source)) {
+    if ($opt_source =~ /^ncbi/i) {
+        $location = "NCBI";
+    } elsif ($opt_source =~ /^gc/i and $^O !~ /mswin/i) {
+        $location = "GCP";
+    } elsif ($opt_source =~ /^aws/i and $^O !~ /mswin/i) {
+        $location = "AWS";
+    }
+} else {
+    # We use UNIX CLI tools to get data from AWS/GCP, so not supported on windows for now
+    unless ($^O =~ /mswin/i) {
+        my $gcp_cmd = "/usr/bin/curl --connect-timeout 1 -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL;
+        my $aws_cmd = "/usr/bin/curl --connect-timeout 1 -sfo /dev/null " . AMI_URL;
+        print "$gcp_cmd\n" if DEBUG;
+        $location = "GCP" if (system($gcp_cmd) == 0);
+        print "$aws_cmd\n" if DEBUG;
+        $location = "AWS" if (system($aws_cmd) == 0);
+    }
+}
+
 my $ftp;
 
-if ($location eq "GCP") {
-    #die "Only BLASTDB vesion 5 is supported at GCP\n" if ($opt_blastdb_ver == 4);
-    my $latest_dir = &get_gcs_latest_dir();
-    my ($json, $url) = &get_gcs_blastdb_metadata($latest_dir);
+if ($location ne "NCBI") {
+    die "Only BLASTDB version 5 is supported at GCP and AWS\n" if (defined $opt_blastdb_ver and $opt_blastdb_ver != 5);
+    my $latest_dir = &get_latest_dir($location);
+    my ($json, $url) = &get_blastdb_metadata($location, $latest_dir);
     unless (length($json)) {
         print STDERR "ERROR: Missing manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
         exit(EXIT_FAILURE);
     }
     print "Connected to $location\n" if $opt_verbose;
     my $metadata = decode_json($json);
-    unless (exists($$metadata{version}) and ($$metadata{version} eq GCP_MANIFEST_VERSION)) {
+    unless (exists($$metadata{version}) and ($$metadata{version} eq BLASTDB_MANIFEST_VERSION)) {
         print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
         exit(EXIT_FAILURE);
     }
@@ -172,16 +186,27 @@ if ($location eq "GCP") {
         }
         if (@files2download) {
             my $gsutil = &get_gsutil_path();
+            my $awscli = &get_awscli_path();
             my $cmd;
             my $fh = File::Temp->new();
-            if (defined($gsutil)) {
+            if ($location eq "GCP" and defined($gsutil)) {
                 $cmd = "$gsutil " . ($opt_nt > 1 ? "-m" : "" ) . " -q cp ";
                 $cmd .= join(" ", @files2download) . " .";
+            } elsif ($location eq "AWS" and defined ($awscli)) {
+                my $aws_cmd = "$awscli s3 cp ";
+                $aws_cmd .= "--only-show-errors " unless $opt_verbose >= 3;
+                print $fh join("\n", @files2download);
+                # FIXME xargs -a only works on linux
+                $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -n 1 -I{}";
+                $cmd .= " -t" if $opt_verbose > 3;
+                $cmd .= " $aws_cmd {} .";
             } else { # fall back to  curl
-                my $url = GCS_URL;
+                my $url = $location eq "AWS" ? AWS_URL : GCS_URL;
                 s,gs://,$url/, foreach (@files2download);
+                s,s3://,$url/, foreach (@files2download);
                 if ($opt_nt > 1 and -f "/usr/bin/xargs") {
                     print $fh join("\n", @files2download);
+                    # FIXME xargs -a only works on linux
                     $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -n 1";
                     $cmd .= " -t" if $opt_verbose > 3;
                     $cmd .= " /usr/bin/curl -sOR";
@@ -448,10 +473,13 @@ sub get_num_volumes
 }
 
 # Retrieves the name of the 'subdirectory' where the latest BLASTDBs residue in GCP
-sub get_gcs_latest_dir
+sub get_latest_dir
 {
+    my $source = shift;
     my $url = GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
+    $url = AWS_URL . "/" . AWS_BUCKET . "/latest-dir" if ($source eq "AWS");
     my $cmd = "/usr/bin/curl -s $url";
+    print "$cmd\n" if DEBUG;
     chomp(my $retval = `$cmd`);
     unless (length($retval)) {
         print STDERR "ERROR: Missing file $url, please try again or report to blast-help\@ncbi.nlm.nih.gov\n";
@@ -461,19 +489,33 @@ sub get_gcs_latest_dir
 }
 
 # Fetches the JSON text containing the BLASTDB metadata in GCS
-sub get_gcs_blastdb_metadata
+sub get_blastdb_metadata
 {
+    my $source = shift;
     my $latest_dir = shift;
-    my $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . GCP_MANIFEST;
-    chomp(my $retval = `/usr/bin/curl -sf $url`);
+    my $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST;
+    $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST if ($source eq "AWS");
+    my $cmd = "/usr/bin/curl -sf $url";
+    print "$cmd\n" if DEBUG;
+    chomp(my $retval = `$cmd`);
     return ($retval, $url);
 }
 
-# Returns the path to the gsutil utility or undef  if it is not found
+# Returns the path to the gsutil utility or undef if it is not found
 sub get_gsutil_path
 {
     foreach (qw(/google/google-cloud-sdk/bin /usr/local/bin /usr/bin /snap/bin)) {
         my $path = "$_/gsutil";
+        return $path if (-f $path);
+    }
+    return undef;
+}
+
+# Returns the path to the aws CLI utility or undef if it is not found
+sub get_awscli_path
+{
+    foreach (qw(/usr/local/bin /usr/bin)) {
+        my $path = "$_/aws";
         return $path if (-f $path);
     }
     return undef;
