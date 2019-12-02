@@ -188,6 +188,7 @@ BOOST_AUTO_TEST_CASE(MappingNoPairs)
     CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(*m_Db));
     m_OptHandle->SetMismatchPenalty(-8);
     m_OptHandle->SetGapExtensionCost(8);
+    m_OptHandle->SetCutoffScore(49);
     CMagicBlast magicblast(query_factory, db_adapter, m_OptHandle);
     CRef<CSeq_align_set> results = magicblast.Run();
 
