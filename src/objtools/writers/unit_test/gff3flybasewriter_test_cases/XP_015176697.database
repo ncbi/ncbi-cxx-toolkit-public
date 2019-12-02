@@ -1,0 +1,607 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Annotation-Data-START##"
+        },
+        {
+          label str "Annotation Provider",
+          data str "NCBI"
+        },
+        {
+          label str "Annotation Status",
+          data str "Full annotation"
+        },
+        {
+          label str "Annotation Version",
+          data str "Polistes dominula Annotation Release 100"
+        },
+        {
+          label str "Annotation Pipeline",
+          data str "NCBI eukaryotic genome annotation pipeline"
+        },
+        {
+          label str "Annotation Software Version",
+          data str "6.5"
+        },
+        {
+          label str "Annotation Method",
+          data str "Best-placed RefSeq; Gnomon"
+        },
+        {
+          label str "Features Annotated",
+          data str "Gene; mRNA; CDS; ncRNA"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Annotation-Data-END##"
+        },
+        {
+          label str "Annotation Release Number",
+          data int 100
+        },
+        {
+          label str "Gpipe BuildRun ID",
+          data int 3583027
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA307991"
+          }
+        }
+      }
+    },
+    user {
+      type str "GenomeBuild",
+      data {
+        {
+          label str "Assembly",
+          data str "Pdom r1.2"
+        },
+        {
+          label str "NcbiAnnotation",
+          data str "1"
+        },
+        {
+          label str "NcbiVersion",
+          data str "1"
+        }
+      }
+    },
+    source {
+      genome genomic,
+      org {
+        taxname "Polistes dominula",
+        common "European paper wasp",
+        db {
+          {
+            db "taxon",
+            tag id 743375
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Polistes",
+            species "dominula"
+          },
+          mod {
+            {
+              subtype isolate,
+              subname "PdomPennStateAug2009"
+            }
+          },
+          lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda;
+ Insecta; Pterygota; Neoptera; Holometabola; Hymenoptera; Apocrita; Aculeata;
+ Vespoidea; Vespidae; Polistinae; Polistini; Polistes",
+          gcode 1,
+          mgcode 5,
+          div "INV"
+        }
+      },
+      subtype {
+        {
+          subtype sex,
+          name "male"
+        },
+        {
+          subtype tissue-type,
+          name "whole body"
+        },
+        {
+          subtype dev-stage,
+          name "pupa"
+        },
+        {
+          subtype country,
+          name "USA: State College, Pennsylvania"
+        },
+        {
+          subtype collection-date,
+          name "30-Aug-2009"
+        },
+        {
+          subtype other,
+          name "introduced population from Pennsylvania USA"
+        },
+        {
+          subtype chromosome,
+          name "Unknown"
+        }
+      }
+    },
+    user {
+      type str "ModelEvidence",
+      data {
+        {
+          label str "Method",
+          data str "Gnomon"
+        },
+        {
+          label str "CDS support",
+          data str "full"
+        },
+        {
+          label str "NMD",
+          data bool FALSE
+        },
+        {
+          label str "avg_base_coverage",
+          data real { 985583, 10, -3 }
+        },
+        {
+          label str "avg_intron_coverage",
+          data real { 835275, 10, -3 }
+        },
+        {
+          label str "coding_propensity",
+          data real { 145899, 10, -2 }
+        },
+        {
+          label str "minimum_alignments_introns_same_species",
+          data int 39
+        },
+        {
+          label str "pct_ab_initio",
+          data int 0
+        },
+        {
+          label str "pct_introns_with_transcripts",
+          data real { 1, 10, 2 }
+        },
+        {
+          label str "protein_len",
+          data int 3395
+        },
+        {
+          label str "rnaseq_base_coverage",
+          data int 100
+        },
+        {
+          label str "rnaseq_base_coverage_unambiguous",
+          data int 100
+        },
+        {
+          label str "rnaseq_biosamples_introns_full",
+          data int 9
+        },
+        {
+          label str "rnaseq_biosamples_introns_partial",
+          data int 2
+        },
+        {
+          label str "Contig Name",
+          data str "NW_015148999"
+        },
+        {
+          label str "Contig Gi",
+          data int 971533106
+        },
+        {
+          label str "Contig Span",
+          num 2,
+          data ints {
+            700823,
+            721168
+          }
+        },
+        {
+          label str "Counts",
+          data fields {
+            {
+              label str "Protein",
+              data int 2
+            }
+          }
+        }
+      }
+    },
+    update-date std {
+      year 2016,
+      month 1,
+      day 6
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "XM_015321211",
+          version 1
+        },
+        gi 972190052
+      },
+      descr {
+        molinfo {
+          biomol mRNA
+        },
+        title "PREDICTED: Polistes dominula dmX-like protein 2 (LOC107066527),
+ transcript variant X1, mRNA",
+        create-date std {
+          year 2016,
+          month 1,
+          day 6
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 12859,
+        seq-data ncbi2na '4366E2794BD814FF337FCC9CCCFCF33ECBD8C860833310230C2E
+F2E408FF37C4F3C6CAEF937223EC77FFF38D23D3C8C080A080CCB8C80F4FC08E9645F669E8F1EE
+D1B43FC6ED5F6A3E6228BCB278F0F6E6E31F33EBC80F00DBCF0038DE36430C6364C383ED340CF0
+9AA5E43929859EF19EDAF7B60A0CDFF167C659EBE413ED33E9C107F899BD03CC52B9EC441CCD28
+F2FBFA3ECB1A312808F9E49F380342DECCFE058459D3132C7EF74D0FA0CDBEAF404A4BF10122DC
+334BDDCD3A0FC82818A73C12BA627FC43CE934033C653D4208031EE0A4006F12D208039C42E80E
+34033C4911DF54235E892E03FD4FA2B82780B5E85E88F70C19438E7A64E83EECE80EDB127194BD
+37CE23F2D78E81FCFE4104A4E0E123CB4037AFE00C040FFD4F182CC8D0D03FF7434F342632F127
+DBB3B244D46E7B0747CDBA20010903139502BD2CDC13BEB07D3B6A30CFED8BBA92014C51780C82
+BFA70CE2D0F60AF78C84E84D3A004D94D30CE4C04C8FCE4187804CE004EFF4CF6D94E601041342
+6A539E45C5F941FC5F4133DEE4E3FD30C3CD02F7A53CD4A8E47F47C92424F0E48878CF5BCB142F
+C305A235E0220501FCFF13E9F0C1020393FC53929E02CFF1081F11802CB200A08A8F1041082F8D
+3B23463F228E0CE4F8002A0D8D900E448242ABEBA181442D082344B2638134C71D31C7D774D327
+E9F32E44F74D02DF2411C4DCC0F73E41239045F63834E4523DBE8C400C804F3C223E934C3523F9
+FF743D35CC86827FF8CE93320EBC860CD35EBD3F2109123F4FF415B3140E4FD77E98E4DC738944
+3B373B3DD30C7A285FCF833D882F1C0DF41C0DC48D0FFF0271E0B04114F1425F3604218A243613
+C1F4224A1083CF832ED4031E340B4030041F412BBC30E480BA020D0837BC38FEF074D72D43ACD0
+EBB4011D43A06F037FA41C13D9E300503DDD2B9C24CAD193B227DEA4DBFC8B0384F1FB4D7BDF53
+EFAE107D914C33158BFDC11FB1D00F48C7D208E48D30128CC3C0D0084ED369ECECC0EBFF92E0F0
+F7FA62E8E4B285FEDC02EBAAFDE0F2660F0F75203F793F2C3BE5E8F504F3C509106F290DCDC3DD
+7267EFFBE52E3A20EDF22FCD09ED3639C81FCFA482CDCF2E020A25838E8F4FA52DFDC48CED378E
+3ACF213DCC46300C08CBF7410D049C8528ECC3127239CF8E39C74E3E900C743D7D3B3D4204BC3C
+7AE02098E0090E68B239741C38FCADF3A0D04F239CEBA37D043790FFE0814FF136FB3C8081D042
+8104B113BA6FEBCF934497804128F34A3438ECED5A3DD3F2C4238238A0A045E92372D3420AC023
+76C850B403A3320B21980B42783E8C41FF7D34584432D3BDF3C41C502FE47420F14F16868B22B0
+C4E4914924A11F0B2F4D0CCD79FBFE453134FB069392632C5319FFA03B02F1001DC52349F8F183
+AE60EA03BD2008D083710F8CF12B414F013C9927CC9AD93E7E64CC0C69034FC46D51002E35E3D0
+8CEF0DFEEF90CCE0EE02C4AE92E0E8C7228C43D3F020CF4FC5D83D4B23413F237C9CFECE12C8F7
+C40009029F190BFC4877C94608CC63410A0EB803A222470350E4AFEF24BD4D3F2C77D2DFC600D0
+F3200EB046ED4F8440247EBD0723EACDC28A3AF64CCF04BE9BEBDC03CEF3F114BFBD637644260C
+E0243808374092C121633C2001F4D3C910510FEC8E03D8E8E03C280360F071258E8F945FC5CE40
+CD7AB888EB3FCBEFACE8F480E46FCF443A0140D41008F9F53DC3F104D28368E0FD090B203F0886
+08FC207F274201B641823E9C1B34DCE513F346EF2CB3C3F0639F8E708001BA0E403803BCBF63C4
+E5E3CEB7FF824D08325ED7B3C592CD35C043C3A0FBC0F7A403D8EAD0273FCD93F2F23B3282F6EF
+7F88BE18E00DEBC2408AE9EB72342043B4B4BCEFAC41F659D81422BD04110314822707FA3CE580
+C1F73345BC5DFE877FC3248C08040E73934100608C0463CC383CFE32C1FA082B8F6FA18FCF2282
+3CE3EC76D00A12189F6B148084283374FDAD5212AC83BED9B7FC1931D3F17AFCDCB7E340E4DF7E
+4F278C5BB417B06F8FD9206FF94C8E49C22E73E40200FC12B3158EA824BF73A3D3C8E1EE87C8FD
+FF273804F30F3F0C6FB7D4FA4408910F52010ACFD770437ECEA7FD3DE2DE08E0F9CA3C3D4D7390
+2A10542EB7B3C0227EBBEBEBA3C82C33EE70063B36008D9C09E4FD04034235FE8E79CFCF3F2738
+20020FCB3AA3EFC80C0023808385D3DFE40C1FC480123A202924F800E4FE571FA02408FE04E796
+4FFDF3C92B93E02394F8ECE7C8C0F838CF49F90EBCF9087F182384F1B59133882DE7F38A03FCAF
+98C282B40342338303B4D78D7FDC60B3A473A31F0234F6A3778313E7FC1C3BEB1CE4D44330E383
+78405E2AE71E40D40EDF43FF3B31F1B1135DCF0F212CCF9F71E44230020284F4B2F374A3F2F1AC
+48EE0854148C04DF1BC8212CD117F20210F33F461E74674FD024A7B5E77E77E0BFEDC0F172C0B4
+E8C70FB803D152DDF832D4140D481108E448C8C4A0C3E7E89A201C0107DE3AD0836D27DDF8FAA2
+7163EB64173CE6201E083CBBC0FA8E38C39630E00E38CB5D4F093803AB9034038E7BC303CB0082
+48A07E70375E84BE84F3A4410F02FEF9FBF003DD3A083ED07F271EBFE0B21A2841F6F343ECEEEB
+E81882C8E4F0849FEC3CC9B431A3AE3B010E7920C60AE83AC8E0B175FB227A2041413C4E033CBE
+5802F23FE09C0B102279C020203AF80943807FBC204F3CD33EF77D1A24DEBA2BF24D6C20E83CB1
+F73C420F1042200749243C7CB51F5FD5C71DF5FEF0B909BE7E43004BAC9E35EF213F12DFE9118C
+EF1013CBA0F180D750E5C3203133E5B82CFCC3888FC92F9DF2E7ECFCD0DFCEE3DE31FFBCE0134D
+052327D5A4BA480C804FF7AE84FCBE7DC36734D8633D04863A2CE4C1C5D17DC0E94A6C10371B93
+CFA466002382311703E0CF7DFEE01FFB241F3389F3FBF19FCD09EE325337CCC87EFA506FF843EC
+5EB7EDFF68AEBBC003CF98B242461CB48B9C39031CF8809223760E01D02C71CBBCEE8314E134F8
+70106CE03E0CE03EF2853F1284105033808210141F322043DBF45D23893AFDB3FFE3825DB32026
+2CE68E03E1C63DB48F79ECD21F23DF58238A08ECFE3103D805020C05028413224F70D40744CBEB
+934C23E90FBC033C40043E423F7C0EF9E932039083C5AC2C953C3D3A06F2B36C912E90805F1882
+0F20D00A149D7303CCC52BEC45235245465E80949CF4C2CDB93CF200280465FF0C564E9359275E
+40DBF3AE73F2F21083EBD08CCF4C224B7FA00208D3ED3731D8C10D03273230FC0D8A228C0A0984
+BAC410BB37897B483CF4408108C93CB93DE5E0D2B83A28F0E9FC9075DB8AF4A0383335F9DF207D
+4DBA7208E0E60F6330F0FC2C04168E4897B105072FDF2F3121249236D4F1F9102D44360CB5D05D
+2D2B3262522E922B9CBB8E0AA3979FF5E9D5185E6FDED2FEF9E3289011FBE4963DE09300D8EB34
+828FDB74D673C51EC7C1E8D108E8D2DD3EEA0EAB4D0127BE4194216D2B13D9C0BC76EC6FDDD04E
+B040FE8BA58778EA47C2FCFD0B27E488281246D4F7F0F34B94C902C1278FDB7F7E893B2DC3271E
+4AD3AF6828643BE47FA8C673C5900C0DDC310AFF1BB4604289CBDDFB3C9164134BCF0C2EBA8002
+884D0CCF63B184084106D323D424462DE7340EFC93C8D546283FFEF2E99E88E88CF00CEA8F05B5
+3EDF711DFF5E78115D8D0BFFD0033E84A9BC443C4EC8749AA6DCFF6EE8923AF4380BDB4BC5206E
+1F2FBD313CCF200CC83003FB9F740C2C02E99840FBF39FCE08322E853C48C3E4CEF3CD1344444C
+C66660C2C3CCCF3E50CCF3C447DEFCCE1F04CE4260FA039ECD0031EF0392700C4BC4ECC00304B7
+8DFC880FB2C93E1038FDF480FD4C40330D7C2CC333333CCCF3CCCCCCCCCCCF33F30FF10CC6444E
+78CBBA44BBFC103C3BBCCA032F4433820000E3000E008000C30C00000C063B3D4CE834CCC9B65C
+0142BDC8370F0080FF4FF2F2F480F272F49FE7B0CDFD2CC3F9CCC5FC010ECFF6502ECCCD306300
+6C3F3CF0434F5FDD3380B03F3E3E18F03770DCE60F10C7F0EC23340F7BA032F73D80880F7FE0F1
+005C0434FDD920ECC9C108110D07B13CF4CE24FBF30C13E0E64FF40CF03EFF5F3F2900D03BE3B7
+FEDECB13CC03800F3CC33DBCCB2D3C2C9030DEEC000001374CC220301CF038C32638F8C1863863
+8E38E38E38E338E98E03303F7000B1190BE40C4FFA1E80C3BC10000ADFC0A7000E030FF0C2F0F8
+8F8CEF3F3DDE81E0CE92BD7307833F01C3F6CC4309E6DC020310300D3C050EC23CC1E013F3D437
+C333330CC00CF3E0EC470CFE43FBCDBEF1BE092024CCF3A530D1B31113003337F0CCC00E304EF5
+EC0283CC383CFEF00020010F5433F4F07C07F7EC401C2C353ED000830B33033C00E579F4FCF3E6
+ECD313E6F738FF0F20F602C4CCEF833C333C00C130F30BC73030FBCF2CEFAC3904EE0C3E002D00
+B27EF0E3FC0EFF40ECFC4FCF87CA933FF030F06CD0B0C360E710DDFBE703AC43C7BCCFCEC1C08B
+C1CEC3D1CCBC1C0C046F80BC8FF9332CC739F36330800303CCF852EDE1C0'H
+      },
+      annot {
+        {
+          desc {
+            create-date std {
+              year 2016,
+              month 1,
+              day 6
+            }
+          },
+          data ftable {
+            {
+              id local id 2,
+              data gene {
+                locus "LOC107066527"
+              },
+              location int {
+                from 0,
+                to 12858,
+                strand plus,
+                id gi 972190052
+              },
+              ext {
+                type str "CombinedFeatureUserObjects",
+                data {
+                  {
+                    label str "TrackingId",
+                    data int 23342
+                  },
+                  {
+                    label str "ModelEvidence",
+                    data object {
+                      type str "ModelEvidence",
+                      data {
+                        {
+                          label str "Method",
+                          data str "Gnomon"
+                        },
+                        {
+                          label str "CDS support",
+                          data str "full"
+                        },
+                        {
+                          label str "NMD",
+                          data bool FALSE
+                        },
+                        {
+                          label str "avg_base_coverage",
+                          data real { 985583, 10, -3 }
+                        },
+                        {
+                          label str "avg_intron_coverage",
+                          data real { 835275, 10, -3 }
+                        },
+                        {
+                          label str "coding_propensity",
+                          data real { 145899, 10, -2 }
+                        },
+                        {
+                          label str "minimum_alignments_introns_same_species",
+                          data int 39
+                        },
+                        {
+                          label str "pct_ab_initio",
+                          data int 0
+                        },
+                        {
+                          label str "pct_introns_with_transcripts",
+                          data real { 1, 10, 2 }
+                        },
+                        {
+                          label str "protein_len",
+                          data int 3395
+                        },
+                        {
+                          label str "rnaseq_base_coverage",
+                          data int 100
+                        },
+                        {
+                          label str "rnaseq_base_coverage_unambiguous",
+                          data int 100
+                        },
+                        {
+                          label str "rnaseq_biosamples_introns_full",
+                          data int 9
+                        },
+                        {
+                          label str "rnaseq_biosamples_introns_partial",
+                          data int 2
+                        },
+                        {
+                          label str "Contig Name",
+                          data str "NW_015148999"
+                        },
+                        {
+                          label str "Contig Gi",
+                          data int 971533106
+                        },
+                        {
+                          label str "Contig Span",
+                          num 2,
+                          data ints {
+                            700823,
+                            721168
+                          }
+                        },
+                        {
+                          label str "Counts",
+                          data fields {
+                            {
+                              label str "Protein",
+                              data int 2
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              dbxref {
+                {
+                  db "GeneID",
+                  tag id 107066527
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "XP_015176697",
+          version 1
+        },
+        gi 972190053
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        },
+        title "PREDICTED: dmX-like protein 2 isoform X1 [Polistes dominula]",
+        create-date std {
+          year 2016,
+          month 1,
+          day 6
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 3395,
+        seq-data ncbieaa "MNCHQILSGACNAGDRCYAVGSVEGISFTAYAAGCNIVILANNFERVQIIPG
+AVHNYIRISCLDCSTDTGKIAAAYENQVCIFEPTPLIHSTCSHQLEYRWVQTGSLQTESNISSLSWNLEGTRLLTGGE
+LLQLWHQNITPFQEENTVKAKTLQSEENATSGNDQNITAHSSQDPGAVKFSIGGEAESPGPGDSNNANDAGAWNCVWK
+CRTATPVHLMRFSPDGTLFATTGMNDRLVKIWFENKQIFPLRSIDQSNFSQSLSSDSYSFVYVAHPRAVTHLSWRKTS
+KYMPKGSVSNMLVTSCRDNICRVWAETIPPEIEGLANMSQFEGSDRHGHHGKHRHHNMHKHRFMQRLKHMKTCFHIRR
+HAKQQHQAGHAAPTLPTLPSTYSVHDFHNNYQSSGHYPGMHFHLAASINAETDIPLVPSLITGDPEREPNFILHWLNN
+KEMHFTMQAESILQELTRKVVEKEEGLQQQEVDHVDHDLEDEYALKKGNRSQNAQKQGVGGRTTSQEDHSSDEHHTTH
+TTSSHHSLAYSAHSHQSLSNTTSINSIATDATPSMNHAPDSLDTKIETLLRDWHHNPDLLFSIHPIDGSFLIWHIEWL
+DEYHPGSFRQAQISFSTRIPNAFPLGDASTMSHNVSMYSHNTGGPLLNIREVTKSSTKSTDQFFKATEVTTPLPSLIE
+QDEEQSTLTSRAGQELLNSVQNTDQSQNKTTSTGVNNAESGKNQESVNDLLTHPSPMVSMVSKHSNGTLNLWQLTFAD
+KTKFSQVLSIGHACRASGHRFRVNDITCHPVLPLLVTTSHHNIPEFSNTCTQNSDTSEDADHKQDIIKSKDMSSAVCI
+NGFCSELILWRVDAVGPLSKSGGVSELARINSPEISAFSNVAWIPTLLPSTTLGNLSNSPSACFVASDGECLRVYQAV
+IDARTLLAEVSISERRSRMMDSLASLSTDMSSDDGIRHSIHDKIKIVSQQSTARPGCIIQLDAIDDATHDWQNTQFLH
+VFQEQLITGERSDEKQCGVDASTNDLGLMESTLDAMVDLQQSAIFEEPFYIVVLERTQQGTTVHMWRLVIASQPETTG
+LSGSMMYVPDSHLVQDEDEEGTPGRSSHQEGKRSRRPSQNGYRSRRESQAELDTTFLHHRHNSHVLITTTKVCTQELP
+LPDGVEVIHAAPAAGHLSSSSIYPACFAPYIIVTACSDSTIRFWKCKVTKTLPDQLDYEWCEWEMFRKDQESTIDITG
+QPLNISAAYSGRIACAYKYGKSFTRPTKSDPDSRYVNLCVAIYECESTGGSEWILEDTIHLKNIHLPRIPVDQHLDLS
+YLYDSRFLQKKQRLTQVLQTLSHEDIRSTRNGENGESTKSNAGLLAVPSFSTLQSLRKSIIENGNTCPLTQKHLVQLD
+WVSKEDGSHILTVGVGSKIMLFTPVCSDLAQANMKAMKESQSSNRPILRKTSSLAQPQFVDEIRWMKLRKIELTTADG
+LPPLPMQISWVRDGILVVGMDSEMHVYSQWKPNPTKDCFHSNLQHQESDEFQASRNLRDEDLRTLAQETSQRRLANVS
+SMPHLSRVSSINLTMLDAKKKRGMQNENVSFDYMPDYGLFEASRIACPVLPQYHPKQLMELLNSGKIRWVKAILSHLV
+RCIGSSCSLRVDDENLVKQRGGWSRSRTMSVSYVGTTSPLEPRGSTTQIPEELTLDYAEITSISPLPLWTLLIADKET
+NAMHQQNEDKHDYNELFDSNLEEGDSLDDLLEEDYDCTRQKDRRASVPERQGISHFGPRQGRMLSRLLTHTHLPGLSS
+LDQMHLLALADTVSTCNVDFAERFAIDAAKSAIAKENLTGIPDGEAVSMDSLDDCGLRFLLAMKHYNYLIRCLPLAQR
+AQFQKQGISSNNLVWAFHSESEDELLGLIPSYAKGQPKWSVLKELGVGWWIRSNIVLKRCIEKIAKAAFQQNQDPLDA
+AIYYLAMKKKNLVWGLFRNKKDERMTSFFANNFTENRWRKAALKNAFALLGKQRFEHAAAFFLLAGALKDAIDVCLDK
+LNDIQLAMVIARLYEDDITSAHMRSLLYEEILGCDKEGQNQDMNKCHPDPFLRSMALWILKDHSGSLNTLLLTNVGTM
+HPQYNDESDKPEGATANPNVFNFYVYLRTHPLLIRQYIASTAQDKKKGHSVVISGFSYGTDVKTQPDKHLTLEDSITP
+LERQLYFTTAHAHFKAGCPALALEVLSKLPSKVMDTNCENSPSLLNSPTKSRTQDAQIDTGIIAWSGETKTTSDGQES
+SASLDWGATDWSQPIMRETEELVLNWDDDNADNENDDSPPLSMKMGANQNDAVNKLVKEAEELAKSPGQLDIMAQQLK
+FVACLKILMEELSTLATGFEVDGGQLRYQLYVWLEREVDALRQLCNYSVNTDGDVNNAAEYEGGMVDEVPPCRAGEQP
+TLHEILVAEKLDFEAKVQRAAKRKKWLKANETLLRTLLSYCSLHGASGGGLASVRMELVLLLQELQQEKTQQQLLSPL
+PFPTTLPLLSASVACNKTVVADPVRHLQSLAHDMLQTLVELRNPPMPNRNTYCREVFIMRDLAVALSACIYQSLCDSD
+TFVMKHHQPDSFPAVAEIETFSGGHLVASNRYHRRYSTDDGVCITTSPSKWPGVTNLRALLAREKDEDTPKLNILLCE
+TFVATYMSLFVYALSSCDSHILYRLVGQRFDNCTWSCLFGGGVKKLLRVASTTSQSANANTIEKAEISNETQSTTSVM
+WNTMTSLTKQRMKLNMKLLGPFTGQQPNMKEDKPTYREQFVSPQMSMVSYFLMKPRIESEYADEIDYDSSDSAVSDLD
+SSEDEEDVFDTNSKPKNKPKDNIEHSNPNSHSWCIIRLAIVKILQKQLQDFLNVAGIEMQELPVSSPLIHGTLGIVAQ
+WQETLREELESKGPAPINYIPGCTPDPAPTPGKPAIHKYRALLEKGNTPFNTRMASAAPANRLWCYLVRQELVQDIFI
+RAVFGKRRSLSSILDNNQIAIDNLNRGEDKGSDSGTTSVSEPVRIIHKEQDSISAFCLNQVNGGLMALATPREVQEMN
+ISLLLELPSWLEDECEFDIINLSKQPDAEPVQPTSFLVIQTAADRPLLAQSPQSNSPQPQSGIASQSGRGASVMKGMP
+AFPGSHDLRFCQFVADRSKHLLQPILKHKIDGIRRISSHPLLPLYLTGSQDGSVSLWEWGHQTAVATPRPSGTFAKVT
+RVRFSQHGNKFGVADSDGHLSLFQVACREGTARPFFNYQCHSKVTADFVFLGACSLIATAGHGSEGRNVALWDTLLPQ
+NKSLIQGFTCHEQGASSLVLAPQHQLLISGGKKGDINIFDVRQRQQRHRFQAHESAIKCLALDPHEEFFVSGAGDGDI
+KIWGLTVHCLLHSFPAEHPRSSFFKNIGQGVTQLHVDSAGRLFSCGADGSMKVRQLPERDLVVHTLY"
+      },
+      annot {
+        {
+          desc {
+            create-date std {
+              year 2016,
+              month 1,
+              day 6
+            }
+          },
+          data ftable {
+            {
+              id local id 3,
+              data prot {
+                name {
+                  "dmX-like protein 2 isoform X1"
+                }
+              },
+              location int {
+                from 0,
+                to 3394,
+                strand plus,
+                id gi 972190053
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        create-date std {
+          year 2016,
+          month 1,
+          day 6
+        }
+      },
+      data ftable {
+        {
+          id local id 1,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 972190053,
+          location int {
+            from 394,
+            to 10581,
+            strand plus,
+            id gi 972190052
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 107066527
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -40,6 +40,7 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
+#include <serial/streamiter.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -64,9 +65,11 @@ USING_SCOPE(objects);
 //  ============================================================================
 //  Customization data:
 const string extInput("asn");
+const string extDatabase("database");
 const string extOutput("gff3");
 const string extErrors("errors");
 const string extKeep("new");
+
 const string dirTestFiles("gff3flybasewriter_test_cases");
 // !!!
 // !!! Must also customize reader type in sRunTest !!!
@@ -77,6 +80,7 @@ struct STestInfo {
     CFile mInFile;
     CFile mOutFile;
     CFile mErrorFile;
+    CFile mDatabaseFile;
     string mObjType;
 };
 typedef string TTestName;
@@ -88,11 +92,13 @@ public:
         TTestNameToInfoMap * pTestNameToInfoMap,
         const string& extInput,
         const string& extOutput,
-        const string& extErrors)
+        const string& extErrors,
+        const string& extDatabase)
         : m_pTestNameToInfoMap(pTestNameToInfoMap),
           mExtInput(extInput),
           mExtOutput(extOutput),
-          mExtErrors(extErrors)
+          mExtErrors(extErrors),
+          mExtDatabase(extDatabase)
     { }
 
     void operator()( const CDirEntry & dirEntry ) {
@@ -130,6 +136,10 @@ public:
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
         } 
+        else if (sFileType == mExtDatabase) {
+            BOOST_REQUIRE( test_info_to_load.mDatabaseFile.GetPath().empty() );
+            test_info_to_load.mDatabaseFile = file;
+        }
         else if (sFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
@@ -150,6 +160,7 @@ private:
     string mExtInput;
     string mExtOutput;
     string mExtErrors;
+    string mExtDatabase;
 };
 
 CGff3FlybaseWriter* sGetWriter(CScope& scope, CNcbiOstream& ostr)
@@ -160,6 +171,7 @@ CGff3FlybaseWriter* sGetWriter(CScope& scope, CNcbiOstream& ostr)
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
+    string database = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extDatabase);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
     if (!CFile(input).Exists()) {
@@ -173,13 +185,22 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     //get a scope
     CRef<CObjectManager> pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*pObjMngr).GetLoader()->SetAlwaysLoadExternal(false);
-    CRef<CScope> pScope(new CScope(*pObjMngr));
-    pScope->AddDefaults();
+   // CGBDataLoader::RegisterInObjectManager(*pObjMngr).GetLoader()->SetAlwaysLoadExternal(false);
+   // pScope->AddDefaults();
 
     //get a writer object
     CNcbiIfstream ifstr(input.c_str(), ios::binary);
     unique_ptr<CObjectIStream> pI(CObjectIStream::Open(eSerial_AsnText, ifstr));
+
+    CNcbiIfstream dbstr(database.c_str(), ios::binary);
+    unique_ptr<CObjectIStream> pDB(CObjectIStream::Open(eSerial_AsnText, dbstr));
+    CRef<CScope> pScope(new CScope(*pObjMngr));
+    {
+        CObjectIStreamIterator<CSeq_entry> entry_it(*pDB);
+        for (const auto& entry : entry_it) {
+            pScope->AddTopLevelSeqEntry(entry);
+        }
+    }
 
     CNcbiOfstream ofstr(output.c_str());
     CGff3FlybaseWriter* pWriter = sGetWriter(*pScope, ofstr);
@@ -212,7 +233,7 @@ void sUpdateAll(CDir& test_cases_dir)
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        &testNameToInfoMap, extInput, extOutput, extErrors);
+        &testNameToInfoMap, extInput, extOutput, extErrors, extDatabase);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,
@@ -231,7 +252,9 @@ void sUpdateAll(CDir& test_cases_dir)
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 //  ----------------------------------------------------------------------------
 {
-    cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
+    cerr << "Testing " << testInfo.mInFile.GetName() << " and " <<
+        testInfo.mDatabaseFile.GetName() << " " 
+        << " against " <<
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
@@ -240,14 +263,22 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     //get a scope
     CRef<CObjectManager> pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*pObjMngr).GetLoader()->SetAlwaysLoadExternal(false);
-    CRef<CScope> pScope(new CScope(*pObjMngr));
-    pScope->AddDefaults();
+ //   CGBDataLoader::RegisterInObjectManager(*pObjMngr).GetLoader()->SetAlwaysLoadExternal(false);
+  //  pScope->AddDefaults();
 
     //get a writer object
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str(), ios::binary);
     unique_ptr<CObjectIStream> pI(CObjectIStream::Open(eSerial_AsnText, ifstr));
 
+    CNcbiIfstream dbstr(testInfo.mDatabaseFile.GetPath().c_str(), ios::binary);
+    unique_ptr<CObjectIStream> pDB(CObjectIStream::Open(eSerial_AsnText, dbstr));
+    CRef<CScope> pScope(new CScope(*pObjMngr));
+    {
+        CObjectIStreamIterator<CSeq_entry> entry_it(*pDB);
+        for (const auto& entry :entry_it) {
+            pScope->AddTopLevelSeqEntry(entry);
+        }
+    }
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
     CGff3FlybaseWriter* pWriter = sGetWriter(*pScope, ofstr);
@@ -346,7 +377,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        &testNameToInfoMap, extInput, extOutput, extErrors);
+        &testNameToInfoMap, extInput, extOutput, extErrors, extDatabase);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,
@@ -360,6 +391,8 @@ BOOST_AUTO_TEST_CASE(RunTests)
         cout << "Verifying: " << sName << endl;
         BOOST_REQUIRE_MESSAGE( testInfo.mInFile.Exists(),
             extInput + " file does not exist: " << testInfo.mInFile.GetPath() );
+        BOOST_REQUIRE_MESSAGE( testInfo.mDatabaseFile.Exists(),
+            extDatabase + " file does not exist: " << testInfo.mInFile.GetPath() );
         BOOST_REQUIRE_MESSAGE( testInfo.mOutFile.Exists(),
             extOutput + " file does not exist: " << testInfo.mOutFile.GetPath() );
         BOOST_REQUIRE_MESSAGE( testInfo.mErrorFile.Exists(),

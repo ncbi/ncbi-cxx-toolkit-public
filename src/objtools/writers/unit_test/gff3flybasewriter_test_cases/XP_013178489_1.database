@@ -1,0 +1,574 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Annotation-Data-START##"
+        },
+        {
+          label str "Annotation Provider",
+          data str "NCBI"
+        },
+        {
+          label str "Annotation Status",
+          data str "Full annotation"
+        },
+        {
+          label str "Annotation Version",
+          data str "Papilio xuthus Annotation Release 100"
+        },
+        {
+          label str "Annotation Pipeline",
+          data str "NCBI eukaryotic genome annotation pipeline"
+        },
+        {
+          label str "Annotation Software Version",
+          data str "6.4"
+        },
+        {
+          label str "Annotation Method",
+          data str "Best-placed RefSeq; Gnomon"
+        },
+        {
+          label str "Features Annotated",
+          data str "Gene; mRNA; CDS; ncRNA"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Annotation-Data-END##"
+        },
+        {
+          label str "Annotation Release Number",
+          data int 100
+        },
+        {
+          label str "Gpipe BuildRun ID",
+          data int 3503517
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA291600"
+          }
+        }
+      }
+    },
+    user {
+      type str "GenomeBuild",
+      data {
+        {
+          label str "Assembly",
+          data str "Pxut_1.0"
+        },
+        {
+          label str "NcbiAnnotation",
+          data str "1"
+        },
+        {
+          label str "NcbiVersion",
+          data str "1"
+        }
+      }
+    },
+    source {
+      genome genomic,
+      org {
+        taxname "Papilio xuthus",
+        common "Asian swallowtail",
+        db {
+          {
+            db "taxon",
+            tag id 66420
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Papilio",
+            species "xuthus"
+          },
+          lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda;
+ Insecta; Pterygota; Neoptera; Holometabola; Lepidoptera; Glossata; Ditrysia;
+ Papilionoidea; Papilionidae; Papilioninae; Papilio",
+          gcode 1,
+          mgcode 5,
+          div "INV"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "Unknown"
+        }
+      }
+    },
+    user {
+      type str "ModelEvidence",
+      data {
+        {
+          label str "Method",
+          data str "Gnomon"
+        },
+        {
+          label str "CDS support",
+          data str "full"
+        },
+        {
+          label str "NMD",
+          data bool FALSE
+        },
+        {
+          label str "avg_base_coverage",
+          data real { 499924, 10, -3 }
+        },
+        {
+          label str "avg_intron_coverage",
+          data real { 499214, 10, -3 }
+        },
+        {
+          label str "coding_propensity",
+          data real { 448334, 10, -3 }
+        },
+        {
+          label str "minimum_alignments_introns_same_species",
+          data int 13
+        },
+        {
+          label str "pct_ab_initio",
+          data int 0
+        },
+        {
+          label str "pct_introns_with_transcripts",
+          data real { 1, 10, 2 }
+        },
+        {
+          label str "protein_len",
+          data int 3010
+        },
+        {
+          label str "rnaseq_base_coverage",
+          data int 100
+        },
+        {
+          label str "rnaseq_base_coverage_unambiguous",
+          data int 100
+        },
+        {
+          label str "rnaseq_biosamples_introns_full",
+          data int 13
+        },
+        {
+          label str "rnaseq_biosamples_introns_partial",
+          data int 5
+        },
+        {
+          label str "Contig Name",
+          data str "NW_013529697"
+        },
+        {
+          label str "Contig Gi",
+          data int 909161943
+        },
+        {
+          label str "Contig Span",
+          num 2,
+          data ints {
+            1409029,
+            1437898
+          }
+        },
+        {
+          label str "Counts",
+          data fields {
+            {
+              label str "Protein",
+              data int 1
+            },
+            {
+              label str "mRNA",
+              data int 2
+            },
+            {
+              label str "EST",
+              data int 2
+            }
+          }
+        }
+      }
+    },
+    update-date std {
+      year 2015,
+      month 8,
+      day 4
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "XM_013323035",
+          version 1
+        },
+        gi 910313988
+      },
+      descr {
+        molinfo {
+          biomol mRNA
+        },
+        title "PREDICTED: Papilio xuthus uncharacterized LOC106125730
+ (LOC106125730), transcript variant X1, mRNA",
+        create-date std {
+          year 2015,
+          month 8,
+          day 4
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 10441,
+        seq-data ncbi2na '2A4A8A2807102C06C401694061FEF41AD997C9997FD9F3FDEF35
+45517FBC0FBFF3FE2EECD0303CF7FCF03F517F3F3003AEEC2F4B0BB63B1333AEFD5CAEFBEC289A
+C900B80E0CFFEEC4BCBE30E839DC084EAFC4822112D2FCB8C70B103A287B1DBBFBCEFE7BF1BFB0
+68427B3A2E01A35F3F1C042DFCA1E1E2F17A2BBBC9EAA58113E80F2BA0B53379F2238DD7AE80A8
+278BEB8C817AAE83E0BD9553AFA0F12C66A01E364BA80D388B08C13F18B120814B02D3443C5653
+487AF8EB537B5D9E922E48D7930AA43A234B39183D880FA1CF0613A2166E4A43CAFD3A9A06F710
+7A3A12125AB6919597BCC628950BB029162C6333D4BB87A0F4210769D6BB798F145485CA4F43BF
+144518E30E03000FDA104FA228F08FE00E4B7380A31C1A798113CC4F5C5D8ED4C7804ECBEC2039
+E8F2B6230C39072E5F21B0FAEC517BCE8213003040F593D067301B07DF70E75CCBCF043EC73100
+C3228CEBB31B03D44C693A720F801EFE3F5883A698EBB02C6FBD381C9CF0E003D8D92E033F8FCE
+C5724D075CB404F543103B5360437231D83BA0223E51400F731C852346C7C4F09F7E09FF060C70
+411E880CC4FC63AFC14486303CF3EDFFACF2034C565740BBC4D872036CECEE23F4E50462048CFB
+A8FFC67C136A3E2C017187E0CFD2310F3348430EB229BEF3E004C23440D4CD4D81343360C10D3B
+E6A1F4EFF01A24A23B43BC488920CD3D0D0A63AEC0CC1EF1E8A012833376091EF2F70CBAF3A4F9
+ECE8C0C11C08078333D430340416E3E2CF480FFC005C8EEACCF91A01FFBAE12FABC3F87A01EBD0
+F62EF8091EF8CC937EFA2BF06355703C7D1F9032B44303FCD00DF6AF50C01C4949FC0EDFA800F8
+B30F3FE04EB8F1AE532F30E0DB320A40CFC820FE035F5F423FCCF413073FF1A4122B57FBED05CA
+FCD14C4B87C4B333CFF6203CDF223040308817FE053C8283D5DDB7475C8248B249043EFFA4D0B0
+CC86CFC80CC30305682643180DA3446F82140B00F701EC7C43E9FAFFA2082002FCC323CFD36008
+D9C43FA420C3F3396CDC7D32CB0D7AE71103C3C41DFCF6F510FC3314A34FEFBEBA60BA0A0C80FF
+084288338EE8428CC04F297A2B01CB1C4B4AEF13E03D59490CA0E30F92B01F82622B01B5C38CF1
+FF19C0228EF34E2C18CB3F18048C782C8941C752BCEE814B4C5CF21D7E9A181D0CE0A08710B9A7
+E3AC0EA81AFEC3CEBE8334C0E79FCBF90D0728F27F0350B8FAFFC8170E03D62E5AC51E084F3DFD
+C1BE0EC483F8C38CC1C0EC09221EF813FE00F7E444630E1BEB758EF388427A9AB708FCBBCF9E06
+7784E4313013E0027A5EF23CF5D833FD0149DC40C8FFDD84E9FA02EF02CDC30F34E3AFEA4FF31D
+23F33AE78E7303BCF281D20FCB0430282E830BFC243EA1E00C44BDCC3200410CC9283744C35133
+06A1F492220F25A3AFC3F2352BF83BE381F0F361630E3D48F38048CC2FEB83AE011A4FCBBD0C04
+F3A600CFB4017104D639054AF1BDFA3C41FF835CF441FF41222CDECFF63D100CF0E090B1C0EBB7
+23623F341FF54710B2CBFE83ECF03CE22EB6079FCAE8BAFF2FB0910D1E652C4013080D83ED0295
+EC58479232F0F400D02804402B34091FC730DBC7C062FA88D1FFC6009C380430073F0FB80C9D10
+4082094FF6F0C4531EA33538090CF1E030730EB4304BF8D1210E92283334FF9C88FC209D030DEC
+D3CEC7D08C110F80A0C2CEBA7F8EDDDC5F3BFA4310E20FD113DCFFCECC10C7E8A0C3402FE0FAC3
+E1AD3F6782D0CF1C20CCF46841FFB001A7C30731AACE80200E00D8E90F7BD020306B4313AE43F0
+CE84948980C3A8FEEC64BFFBF10503400C3CF3DB724F2C8AE6FB3007701504CEF369FC0A0C480B
+C0B4B2037FFA01065F90C47FAC9A93C01E700D8C3F1C86E1E00FAEA82E58E20203C01123FD8FD8
+E1E8305190F9C7CDC533F1F82327D8F42EEDCC1FF1C4883D0F8CD8E476BA88703923707FA0518D
+645F330C0378CD12E39482C13D1CC254A6C37C83D9148ECACC72C3AA13C6A63EB7E641154FF8E2
+1433CF818012E0B0B08F882220BEB433DF42534424C0690FA20FE3AC400DCC21CE46A080F9DCF0
+E33C31E0044060AFDFA2C710C21C4F90EAC58EEE105BF4488806442DBFB222F28FE350F06FF7F9
+D18D922C8334CB277F3720FEB7E97897F10EEDA078336B18A3ED63C8F81A907F1A1321383903A8
+F48FFBBF311E6B8080DC820ADD8F3EABACC6FF1F1520FE2C7477189320F4E14531D18053800AF8
+89BBC803B9330EA27ACFF110600B7527B902CC1000D424D4033433476399D34EA34134DD971231
+CF07E3B70F63018CF72B82830B9CCD3C1EB82B220D208B72FF197F828FC0DC5F14DEF77B4F84FE
+612F702C306BA0818B5F7F3CC0C630C352C0FBB8237D0893BD62E016FEBFD879F43F07EFC34C4F
+01CE801B8F578B7F18E88CFC433449D474FAF1FA04E8D1786208077D204828909F09B80FBD903A
+67D36B53A3F3E582DB477973349CCA1E05B8ED4110CCD812E2F4F0812A3A67346C52D2DA20B035
+3CB2634720388C1E107B742F33A41F4517B5259ED22F8EE4831121BEBBD60107EB8A081BA8ADEF
+1C6658F5629D671F77D9A7A311041FBDFE20538DCD7B7C8BE0A1B437DD7C5082F14DC5B071F476
+C16274B1021B0CBFC4D2BEDD43FC4443CEE4E20C6A1220DF21B35A7D840B597963314871F64C3A
+3FC4007191E8DBB286651ECB25A479E8411C6C8C137FF415E10E3CE038D1ED05BDCDFEF8730D50
+E738991C81EE8A1DB3639C0441CFA2710E027C9ED96920F6636368E153EF1D8AE8F1494CD13810
+DE1AC7E9A2B03B595A7A866B75AC7E733B1B68914384CE042421FF79FB78419B4394C6E2EB0718
+247B383D3486D2250EBD4B3AA166DEAD0513E1C6E192E47D7D97DD673223078FB0D008393F33B8
+0F8D408CD0D856734E9AAA119E96E9BD369B9EBA79EEB9EBAB9E774DE7AC750B40112133D06FE8
+986C1D0C612DBE4F4B5AD0FA093C3AE9F578C113120A01D91238B118D07844787029DA1C5B08C7
+67D451353A0DCE880250F43D75320841409FE33718244415490ED31074044B13D0C0014D14831D
+6C520105214C41FAAC58060AF30200F52C532011438B9C412083C58C3D3454AE87B4D178E3807F
+34583063DD0C7D1368C4F14F885BC0F78D7F07F00623F22022A02331A56C6B1D7071AC449409ED
+FF74E8BC2B700E5A2417414A65B161C713FA122848C45234924BDC618C6366D875905D2C718744
+348A57662F18752D4075D8113153485E4752B50B782471D8070FD87D8E010654450E1608C9637C
+4B414FA01253B2C0FFF0304F23C91C0006FC310E4340CE3C7CC08DC2C3F636FB383C0030F906C0
+F00C020FEC230D30C0B90F07D1C2297C3003DF320FC3833C3C3DFFC30CCFEC71E1B1BCF0BF9660
+07DD12343BE7343CF3750C3EEB00EC0CC03C3BEFE80BFE0C9F3D0202C80DF3C4CEDF6FCA0CB6F1
+C3C2CDF83A4CBEABA080D0EF02090200878433FF47C3B06C73E4FCCCFC9F4FCBBD3CF39F5397CB
+F54CCFE0CF1C03300FFA4FCC0FF00365E7D031C706F7DD037E7DE40002C112809C073B3FCCA000
+8908DD3E0B00433FEDBCFCC243CECF0B020CF03EFF50AFA00FFE7DF000D00419C2B06F0CF07F2B
+A3332EE292F0BC0C3FF307F32CC70B53F0FED6D7CAF0380CCC080CCF0CC47BFFB4EC78FDFF13FA
+FD0C52FF3F0C3C0D1344C0'H
+      },
+      annot {
+        {
+          desc {
+            create-date std {
+              year 2015,
+              month 8,
+              day 4
+            }
+          },
+          data ftable {
+            {
+              id local id 2,
+              data gene {
+                locus "LOC106125730"
+              },
+              location int {
+                from 0,
+                to 10440,
+                strand plus,
+                id gi 910313988
+              },
+              ext {
+                type str "CombinedFeatureUserObjects",
+                data {
+                  {
+                    label str "TrackingId",
+                    data int 5549
+                  },
+                  {
+                    label str "ModelEvidence",
+                    data object {
+                      type str "ModelEvidence",
+                      data {
+                        {
+                          label str "Method",
+                          data str "Gnomon"
+                        },
+                        {
+                          label str "CDS support",
+                          data str "full"
+                        },
+                        {
+                          label str "NMD",
+                          data bool FALSE
+                        },
+                        {
+                          label str "avg_base_coverage",
+                          data real { 499924, 10, -3 }
+                        },
+                        {
+                          label str "avg_intron_coverage",
+                          data real { 499214, 10, -3 }
+                        },
+                        {
+                          label str "coding_propensity",
+                          data real { 448334, 10, -3 }
+                        },
+                        {
+                          label str "minimum_alignments_introns_same_species",
+                          data int 13
+                        },
+                        {
+                          label str "pct_ab_initio",
+                          data int 0
+                        },
+                        {
+                          label str "pct_introns_with_transcripts",
+                          data real { 1, 10, 2 }
+                        },
+                        {
+                          label str "protein_len",
+                          data int 3010
+                        },
+                        {
+                          label str "rnaseq_base_coverage",
+                          data int 100
+                        },
+                        {
+                          label str "rnaseq_base_coverage_unambiguous",
+                          data int 100
+                        },
+                        {
+                          label str "rnaseq_biosamples_introns_full",
+                          data int 13
+                        },
+                        {
+                          label str "rnaseq_biosamples_introns_partial",
+                          data int 5
+                        },
+                        {
+                          label str "Contig Name",
+                          data str "NW_013529697"
+                        },
+                        {
+                          label str "Contig Gi",
+                          data int 909161943
+                        },
+                        {
+                          label str "Contig Span",
+                          num 2,
+                          data ints {
+                            1409029,
+                            1437898
+                          }
+                        },
+                        {
+                          label str "Counts",
+                          data fields {
+                            {
+                              label str "Protein",
+                              data int 1
+                            },
+                            {
+                              label str "mRNA",
+                              data int 2
+                            },
+                            {
+                              label str "EST",
+                              data int 2
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              dbxref {
+                {
+                  db "GeneID",
+                  tag id 106125730
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "XP_013178489",
+          version 1
+        },
+        gi 910313989
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        },
+        title "PREDICTED: uncharacterized protein LOC106125730 isoform X1
+ [Papilio xuthus]",
+        create-date std {
+          year 2015,
+          month 8,
+          day 4
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 3010,
+        seq-data ncbieaa "MECSKDMGLQKRHSQFSDTKYKWRTVLVFVMFAVYVCNGQAVWSETDPYLLN
+KSLGLTELPGGVLAGGRTHWKLGGSPYLLRDDLLVEREAELVIEPGVELKFAPMVGITVRGKLIAVGNHESKITFTST
+EEPVKSSQLPAIRLVDGPSVLAGRVQILHKGQWRSVCTNSRNWTINDMETACRQLGFMGGTFYNWMDRQPGRHARLLY
+EEPKCKGTEYDIFQCDWNSRQLGSGVCDYHPDLGIQCLPHHDDNEIKNFGQHWRGLRFENAVYERILTAANTLYIPTS
+MSILKHVVVRNAGLGRDNNATSALDVIGVPPVMEDIKITNSAFNAINVTSSNAPIVINNCTIQNNRGYGVYVNSTYGM
+ARIENCLISENGGDGVKYVVHELAINEKFDRSEIFDLCTLASTPSQTFPIQMSIEQSRYSNVERDCHQKFYTRPDHVL
+TLSFLKLLTNTNNTGEIYIYDGLTTDDKLLLSFGIRNHTRPQSVTSTRNRMYVRFHANTRTDIVGFLRLTSGLSKTYD
+LNISDTIISDNNGRGVVIENIRSQIHIHRTSISNNNHVAGLHVLNGAGDVNVTESRISFNQGDGVNITVTGGNRNISR
+STVSSNSGYGIAVWINNTKETEYIPINQTTVIEYSEIFKNLDVGILHGNFCGDSWVNLTGNWFNSSVESTVDIASCWR
+FNDPPKLLHLQIGHNKFYQNLRVPIKLQPALNVLGKIEYNYFEHGDYGAIVIMNRIEGKYLEEFEILPSRFYIQHNYF
+YGNRGPFVVNLGLSPYSDLQYILFSRNYLRDNKIREPFEPLEGIPSRLTPRSRVAATIVLASSNIDVFRNIINNPEAQ
+YEIGSHVEDQSKILNCTYNWLGFGEEEKVYNRLFHRKDRYNLARIIYMPYLLHSSNPGATQINYNSLFVPQFNIPGSF
+VVGGEVEGIEILRQGEYDVDKDINIRPGGKLVLQSGVTLKFPPAIGMIIAGKLEARGKRPNDITFTLKEDVIMSNDSI
+YETDTEVEPTTPGYVEPVIPIRLLGGRTQYEGRLQVRLDGKWGTVCNYGWNIINAALVCNQLGLALNPSDWFLEPNEI
+PSAGTTEDIILSNVECTEFDNDITKCKAETVEHFENSCTHDNDVGLRCYETSWAGLRFSVIAERSDMQYINIEKAGLL
+DYSSNIFKPALQIDFSRHGLESVKVSNNYHDGLGILYSDLYGADAINVIRNSEFSNNKGSGISFKQLGLKIHSSIIEN
+NNIAGISHNPHITGLQQRELAGWFNLDPGLNVDELNYRPIMIPDYETDISLVNGETRHLVFNKHYGENIVKTYNIRCN
+PGYVLGLQLLNPIHNFSTESICIFDSQNINEASTKWCLDRDLSTFPTTSSSFGIVLNYESGRTALGGVVLVVSTITAP
+VQNIRNRIVKGPVPTLQIVNSKIKGNTKGIKALYYNRYLNELGDHFLRKANETIKLFNCEIAHNKEEAIFVNTPYWDI
+HESNITEITIMVNNSLITDNGRGIYHFARDLRSSNNLYHYVLQDNTIERNKYGGFDVSLPYVWQYNENFTHSIFMYNN
+TWRNNQKFELVIDGHFAEVNITKNIFTDNFCKNGLITIRGMEKKMKIDGNSVQRNNGQYMVQFNMDSQSEIMGFVYAV
+FVYNQIKNNYYSSSISRGALYKTLNPTYVIGFKGIQKVKVSRNLFGNNALQYTLVAGIKTAKIDNLLDVTENWWGSAD
+EKEIKTQIFDFDDWNNHAIATYLPYLLEDSFDSSVSITFTTENSIDIDALGGRLNADLTLEPRSAPYIIKSDITVMPE
+VTFTISPGVILEFAPDVGILVMGTLRAIGLAQHPILMRPILLNENSEVSKIEKREVGQYSSSHHKHKRQLENLMVQKS
+IRLCTGRNCSINDINTENTNEGFLEYYNKTTLQWVPMCDNRFTERNAQVVCRELGFDPINVFFAHDRRVEYHSSSLSR
+IWSWPEPLQCVGTEYRYEDCPIRLNGQLYGHRHECKWDSDFVFIHCGERNLEEGLDYWGGIRFTYPEFEYSLYEHRIH
+DHHTHETMKKVESVLENVHIMGAGILHNEKSPAVQSITKNPSIQNINITRCAHHGINIISPTDTINLMSNSINDILGE
+GISAISLTGEGRESEESSFTPLKDLNLPYHLFSVIDICDSSKVITVEERVLLYYKYDNNPVNCVKIFKSMFRVKPFGF
+RLLQFNLFNHTLNYGKRDSLSLYDGDIYNITAPLIGYLEHGSPDEKKLFRTEGASLSVKLFANGASSVHGFIAEVVTL
+PISAIGLNRDVQHNISNSEFIKNRDGAITYQSVGEVNPLVAITRNEITDNCLKLYGNFTTCPAAVRVDVQNTQTLVFR
+NNLVRKNVGGLLLRADSRGSATSLRGWIHNNLFFENHDLSCLRVEGRQSSPYQEVTIYRNYFTRNRAQYKDVIVLHQV
+VSNFTHNYVHENTGQRILDVSGFDKVRLPIYQTTSHNGFYKNYALDRVGRATVVAGTAGQHYVDNIFFNPDNDYEMIT
+VNRSIFVDYNPNAMSALELWRTRIDAKHNYWSYNESLAVAGRIRDRSDDPLLLEVDYQPYHMNNLTVLGGGKCPPGWD
+AVSGTCYMYVGAPMTYEQARLFCLSDNASMPYVSGNYEALYEFIRRQSQWFQYGDRVWVNHIDYVTQCTSFAFSAIEI
+TDCNQKNAFICEIDPKISIDPLSWRGDTLAVAFIGVLVAAVVLVGAALICWYSKSKHRHIQRLERRNSIRQSLHSVRS
+IGSINGGFPDNTYRRKLAQMSTRSTDTLTKGSDYRKILASTTSMESMEKSQFNSSIEDNQSFDIYEAHNPSNVIQLKH
+STFNKKPSPEYSVPETTRPYNLGYRNEGYKENSSTIETPMSATTEELPIIHHPGGLSSPDDETLSPNNDSQYFTSDTL
+PLRPLNSDPLTLKRDLEKEGKIYGPYGTPNYGTQPKLSFLMELRSKMPEQPQPGAVPTTTFGQRTDTPDQQQFYDDTI
+ASTPQPQYYDSQSEALASYDSSPNSSNTYPSDLHSRSKSEALLETNFDFDETTPTPMTEDSRSYSQPLETAM"
+      },
+      annot {
+        {
+          desc {
+            create-date std {
+              year 2015,
+              month 8,
+              day 4
+            }
+          },
+          data ftable {
+            {
+              id local id 3,
+              data prot {
+                name {
+                  "uncharacterized protein LOC106125730 isoform X1"
+                }
+              },
+              location int {
+                from 0,
+                to 3009,
+                strand plus,
+                id gi 910313989
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        create-date std {
+          year 2015,
+          month 8,
+          day 4
+        }
+      },
+      data ftable {
+        {
+          id local id 1,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 910313989,
+          location int {
+            from 303,
+            to 9335,
+            strand plus,
+            id gi 910313988
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 106125730
+            }
+          }
+        }
+      }
+    }
+  }
+}
