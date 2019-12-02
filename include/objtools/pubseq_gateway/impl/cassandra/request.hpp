@@ -138,6 +138,36 @@ class CBioseqInfoFetchRequest
         return *this;
     }
 
+    string ToString() const
+    {
+        string result("CBioseqInfoRecord");
+
+        result.append(" Accession: ");
+        if (HasField(EFields::eAccession))
+            result.append(m_Accession);
+        else
+            result.append("not set");
+
+        result.append(" Version: ");
+        if (HasField(EFields::eVersion))
+            result.append(to_string(m_Version));
+        else
+            result.append("not set");
+
+        result.append(" Seq id type: ");
+        if (HasField(EFields::eSeqIdType))
+            result.append(to_string(m_SeqIdType));
+        else
+            result.append("not set");
+
+        result.append(" GI: ");
+        if (HasField(EFields::eGI))
+            result.append(to_string(m_GI));
+        else
+            result.append("not set");
+        return result;
+    }
+
  private:
     void SetField(EFields value)
     {
@@ -226,6 +256,31 @@ class CBlobFetchRequest
         return *this;
     }
 
+    string ToString() const
+    {
+        string result("CBlobFetchRequest");
+
+        result.append(" Sat: ");
+        if (HasField(EFields::eSat))
+            result.append(to_string(m_Sat));
+        else
+            result.append("not set");
+
+        result.append(" Sat key: ");
+        if (HasField(EFields::eSatKey))
+            result.append(to_string(m_SatKey));
+        else
+            result.append("not set");
+
+        result.append(" Last modified: ");
+        if (HasField(EFields::eLastModified))
+            result.append(to_string(m_LastModified));
+        else
+            result.append("not set");
+
+        return result;
+    }
+
  private:
     void SetField(EFields value)
     {
@@ -296,6 +351,24 @@ class CSi2CsiFetchRequest
         m_SecSeqIdType = 0;
         m_State = 0;
         return *this;
+    }
+
+    string ToString() const
+    {
+        string result("CSi2CsiFetchRequest");
+
+        result.append(" Sec seq id: ");
+        if (HasField(EFields::eSecSeqId))
+            result.append(m_SecSeqId);
+        else
+            result.append("not set");
+
+        result.append(" Sec seq id type: ");
+        if (HasField(EFields::eSecSeqIdType))
+            result.append(to_string(m_SecSeqIdType));
+        else
+            result.append("not set");
+        return result;
     }
 
  private:
