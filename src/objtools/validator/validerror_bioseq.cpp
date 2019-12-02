@@ -3164,6 +3164,42 @@ int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
 }
 
 
+bool s_GetFlankingGapTypes(const CSeq_inst& inst, CSeq_gap::TType& fst, CSeq_gap::TType& lst)
+{
+    CSeq_gap::TType first = CSeq_gap::eType_unknown;
+    CSeq_gap::TType last = CSeq_gap::eType_unknown;
+    bool is_first = true;
+
+    if ( inst.CanGetExt()  &&  inst.GetExt().IsDelta() ) {
+        ITERATE(CDelta_ext::Tdata, iter, inst.GetExt().GetDelta().Get()) {
+            if ( (*iter)->IsLoc() ) {
+                return false;
+            }
+            if ( (*iter)->IsLiteral() ) {
+                const CSeq_literal& lit = (*iter)->GetLiteral();
+                if (lit.IsSetSeq_data() && lit.GetSeq_data().IsGap()) {
+                    const CSeq_gap& gap = lit.GetSeq_data().GetGap();
+                    int gaptype = 0;
+                    if (gap.IsSetType()) {
+                        gaptype = gap.GetType();
+                    }
+                    if (is_first) {
+                        first = gaptype;
+                    } else {
+                        last = gaptype;
+                    }
+                } else {
+                    last = 0;
+                }
+            }
+            is_first = false;
+        }
+    }
+    fst = first;
+    lst = last;
+    return true;
+}
+
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
@@ -3206,8 +3242,11 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         EBioseqEndIsType end_n = eBioseqEndIsType_None;
         EBioseqEndIsType end_gap = eBioseqEndIsType_None;
         bool begin_ambig = false, end_ambig = false;
+        CSeq_gap::TType fst = CSeq_gap::eType_unknown;
+        CSeq_gap::TType lst = CSeq_gap::eType_unknown;
         if (ShouldCheckForNsAndGap(bsh) && x_IsDeltaLitOnly(seq.GetInst())) {
             CheckBioseqEndsForNAndGap(vec, begin_n, begin_gap, end_n, end_gap, begin_ambig, end_ambig);
+            s_GetFlankingGapTypes(seq.GetInst(), fst, lst);
         }
 
         bool is_circular = false;
@@ -3218,7 +3257,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         if (begin_n != eBioseqEndIsType_None) {
             sev = GetBioseqEndWarning(seq, is_circular, begin_n);
             PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at beginning of sequence", seq);
-        } else if (begin_gap != eBioseqEndIsType_None) {
+        } else if (begin_gap != eBioseqEndIsType_None && fst != CSeq_gap::eType_contamination) {
             sev = GetBioseqEndWarning(seq, is_circular, begin_gap);
             PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at beginning of sequence", seq);
         }
@@ -3226,7 +3265,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         if (end_n != eBioseqEndIsType_None) {
             sev = GetBioseqEndWarning(seq, is_circular, end_n);
             PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at end of sequence", seq);
-        } else if (end_gap != eBioseqEndIsType_None) {
+        } else if (end_gap != eBioseqEndIsType_None &&  lst != CSeq_gap::eType_contamination) {
             sev = GetBioseqEndWarning(seq, is_circular, end_gap);
             PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at end of sequence", seq);
         }
