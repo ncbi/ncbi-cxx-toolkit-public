@@ -38,6 +38,7 @@
 #include <thread>
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_param.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -300,6 +301,46 @@ private:
     SPSG_CV<0> m_CV;
     atomic_bool m_Stopped;
 };
+
+NCBI_PARAM_DECL(unsigned, PSG, rd_buf_size);
+typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;
+
+NCBI_PARAM_DECL(unsigned, PSG, write_hiwater);
+typedef NCBI_PARAM_TYPE(PSG, write_hiwater) TPSG_WriteHiwater;
+
+NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
+typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
+
+NCBI_PARAM_DECL(unsigned, PSG, num_io);
+typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
+
+NCBI_PARAM_DECL(unsigned, PSG, reader_timeout);
+typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
+
+NCBI_PARAM_DECL(double, PSG, rebalance_time);
+typedef NCBI_PARAM_TYPE(PSG, rebalance_time) TPSG_RebalanceTime;
+
+NCBI_PARAM_DECL(unsigned, PSG, request_timeout);
+typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
+
+enum class EPSG_DebugPrintout { eNone, eSome, eAll };
+NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
+typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
+
+NCBI_PARAM_DECL(unsigned, PSG, requests_per_io);
+typedef NCBI_PARAM_TYPE(PSG, requests_per_io) TPSG_RequestsPerIo;
+
+enum class EPSG_UseCache { eDefault, eNo, eYes };
+NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
+typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
+
+NCBI_PARAM_DECL(unsigned, PSG, request_retries);
+typedef NCBI_PARAM_TYPE(PSG, request_retries) TPSG_RequestRetries;
+
+// Performance reporting/request IDs for psg_client app
+enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
+NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
+typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
 
 END_NCBI_SCOPE
 

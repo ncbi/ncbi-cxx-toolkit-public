@@ -34,8 +34,9 @@
 #include <chrono>
 #include <sstream>
 #include <thread>
+#include <vector>
 
-#include <corelib/ncbi_param.hpp>
+#include <corelib/ncbidbg.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -242,34 +243,6 @@ private:
     ios& m_To;
     streambuf* m_Buf;
 };
-
-
-// These CParam declarations are copied from psg_client_transport.hpp and must be kept in sync.
-// We did not want to expose them, so they were not moved to a publicly available header.
-
-NCBI_PARAM_DECL(unsigned, PSG, num_io);
-typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
-
-enum class EPSG_UseCache { eDefault, eNo, eYes };
-NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
-typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
-
-enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
-NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
-typedef NCBI_PARAM_TYPE(PSG, internal_psg_client_mode) TPSG_PsgClientMode;
-
-NCBI_PARAM_DECL(unsigned, PSG, requests_per_io);
-typedef NCBI_PARAM_TYPE(PSG, requests_per_io) TPSG_RequestsPerIo;
-
-NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
-typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
-
-NCBI_PARAM_DECL(unsigned, PSG, request_timeout);
-typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
-
-enum class EPSG_DebugPrintout { eNone, eSome, eAll };
-NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
-typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
 
 END_NCBI_SCOPE
 
