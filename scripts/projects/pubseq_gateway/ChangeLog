@@ -1,3 +1,18 @@
+Release 1.8.2 (2019-12-02)
+
+    * PSG - allow to resolve accessions with wrong types (INSDC ones only)
+      (CXX-11031)
+    * PSG -- if primary id is substituted, then move it to "seq_ids"
+      (CXX-11029)
+    * PSG: adjust bioseq accession in case of protobuf src and protobuf dst
+      (CXX-11025)
+    * PSG -- in "get_na", also send back full bioseq info (CXX-11021)
+    * PSG -- BIOSEQ_INFO += "name" field (CXX-10990)
+    * PSG -- avoid duplication when substituting primary id with a secondary id
+      (CXX-10981)
+    * PSG -- substitute seq_id_type when substituting primary seq-ids
+      (CXX-10980)
+
 Release 1.8.1 (2019-10-09)
 
     * CCassBlobWaiter trace output affect performance (ID-5874)
