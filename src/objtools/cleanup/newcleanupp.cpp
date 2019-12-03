@@ -1527,6 +1527,45 @@ void CNewCleanup_imp::SubSourceListBC(CBioSource& biosrc)
     }
 }
 
+static string s_RepairISOCollDateTimeString (string& date_string)
+{
+    vector<string> components;
+    NStr::Split(date_string, "T", components);
+
+    if (components.size() == 1) {
+        return date_string;
+    }
+
+    if (components.size() == 2) {
+        string dat = components[0];
+        string tim = components[1];
+        size_t zee = tim.length();
+        if (zee > 4 && tim[zee-1] == 'Z' && tim[1] == ':') {
+            return dat + "T" + "0" + tim;
+        }
+    }
+
+    return date_string;
+}
+
+static string s_RepairISOCollDateTimePair (string& coll_date)
+{
+    vector<string> pieces;
+    NStr::Split(coll_date, "/", pieces);
+
+    if (pieces.size() == 1) {
+        string newdate = s_RepairISOCollDateTimeString(pieces[0]);
+    }
+
+    if (pieces.size() == 2) {
+        string fstdate = s_RepairISOCollDateTimeString(pieces[0]);
+        string scddate = s_RepairISOCollDateTimeString(pieces[1]);
+        return fstdate + "/" + scddate;
+    }
+
+    return coll_date;
+}
+
 void CNewCleanup_imp::BiosourceBC (
     CBioSource& biosrc
 )
@@ -1632,7 +1671,16 @@ void CNewCleanup_imp::BiosourceBC (
             }
             */
 
-            if ( chs == NCBI_SUBSOURCE(fwd_primer_seq) ||
+            if ( chs == NCBI_SUBSOURCE(collection_date) ) {
+                string &coll_date = GET_MUTABLE(sbs, Name);
+                string new_date = s_RepairISOCollDateTimePair(coll_date);
+                if (!NStr::Equal(new_date, coll_date)) {
+                    coll_date = new_date;
+                    ChangeMade(CCleanupChange::eCleanSubsource);
+                }
+            }
+
+           if ( chs == NCBI_SUBSOURCE(fwd_primer_seq) ||
                 chs == NCBI_SUBSOURCE(rev_primer_seq) )
             {
                 const string before = GET_FIELD (sbs, Name);
