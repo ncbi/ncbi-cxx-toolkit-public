@@ -311,8 +311,11 @@ int CMagicBlastApp::Run(void)
             dynamic_cast<CMapperQueryOptionsArgs*>(
                    m_CmdLineArgs->GetQueryOptionsArgs().GetNonNullPointer()));
 
-        if(!args["sra"] && s_IsIStreamEmpty(m_CmdLineArgs->GetInputStream()))
+        if(query_opts->GetInputFormat() != CMapperQueryOptionsArgs::eSra &&
+           s_IsIStreamEmpty(m_CmdLineArgs->GetInputStream())) {
+
            	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
+        }
 
         /*** Get the formatting options ***/
         CRef<CMapperFormattingArgs> fmt_args(

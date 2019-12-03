@@ -447,6 +447,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgRefType;
 NCBI_BLASTINPUT_EXPORT extern const string kArgOutputGzip;
 /// Argument to specify SRA accessions
 NCBI_BLASTINPUT_EXPORT extern const string kArgSraAccession;
+/// Argument to specify a file with a list of SRA accessions
+NCBI_BLASTINPUT_EXPORT extern const string kArgSraAccessionBatch;
 /// Argument to specify not trimming of '.1' and '.2' at the end of read ids
 /// in SAM format for paired reads
 NCBI_BLASTINPUT_EXPORT extern const string kArgNoReadIdTrim;

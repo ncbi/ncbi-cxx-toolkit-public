@@ -1965,6 +1965,16 @@ CMapperQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgSraAccession, CArgDescriptions::eExcludes,
                           kArgInputFormat);
 
+    arg_desc.AddOptionalKey(kArgSraAccessionBatch, "file",
+                            "File with a list of SRA accessions, one per line",
+                            CArgDescriptions::eInputFile);
+    arg_desc.SetDependency(kArgSraAccessionBatch, CArgDescriptions::eExcludes,
+                           kArgSraAccession);
+    arg_desc.SetDependency(kArgSraAccessionBatch, CArgDescriptions::eExcludes,
+                           kArgQuery);
+    arg_desc.SetDependency(kArgSraAccessionBatch, CArgDescriptions::eExcludes,
+                           kArgInputFormat);
+
     arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddDefaultKey(kArgParseDeflines, "TF", "Should the query and "
                            "subject defline(s) be parsed?",
@@ -2041,9 +2051,29 @@ CMapperQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_IsPaired = true;
     }
 
-    if (args.Exist(kArgSraAccession) && args[kArgSraAccession]) {
-        NStr::Split((CTempString)args[kArgSraAccession].AsString(), ",",
-                    m_SraAccessions);
+    if ((args.Exist(kArgSraAccession) && args[kArgSraAccession]) ||
+        (args.Exist(kArgSraAccessionBatch) && args[kArgSraAccessionBatch])) {
+
+        if (args[kArgSraAccession]) {
+            // accessions given in the command-line
+            NStr::Split((CTempString)args[kArgSraAccession].AsString(), ",",
+                        m_SraAccessions);
+        }
+        else {
+            // accessions given in a file
+            while (!args[kArgSraAccessionBatch].AsInputFile().eof()) {
+                string line;
+                args[kArgSraAccessionBatch].AsInputFile() >> line;
+                if (!line.empty()) {
+                    m_SraAccessions.push_back(line);
+                }
+            }
+        }
+
+        if (m_SraAccessions.empty()) {
+            NCBI_THROW(CInputException, eInvalidInput,
+                       "No SRA accessions provided");
+        }
 
         m_InputFormat = eSra;
         // assume SRA input is paired, that information for each read is in

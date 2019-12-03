@@ -257,6 +257,7 @@ const string kArgQueryMate("query_mate");
 const string kArgRefType("reftype");
 const string kArgOutputGzip("gzo");
 const string kArgSraAccession("sra");
+const string kArgSraAccessionBatch("sra_batch");
 const string kArgNoReadIdTrim("no_query_id_trim");
 const string kArgNoUnaligned("no_unaligned");
 const string kArgEnableSraCache("sra_cache");
