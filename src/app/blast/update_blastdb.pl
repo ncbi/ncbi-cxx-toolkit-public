@@ -186,7 +186,7 @@ if ($location ne "NCBI") {
         }
         if (@files2download) {
             my $gsutil = &get_gsutil_path();
-            my $awscli = &get_awscli_path();
+            my $awscli = undef; # &get_awscli_path(); # aws s3 required credentials, fall back to curl
             my $cmd;
             my $fh = File::Temp->new();
             if ($location eq "GCP" and defined($gsutil)) {
