@@ -449,7 +449,7 @@ private:
 
     bool x_StringIsJustQuotes (const string& str);
 
-    int x_ParseTrnaString (const string& val);
+    string x_TrnaToAaString(const string& val);
 
     bool x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str);
     SIZE_TYPE x_MatchingParenPos( const string &str, SIZE_TYPE open_paren_pos );
@@ -797,6 +797,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "His",            'H'  },
     {  "Histidine",      'H'  },
     {  "Ile",            'I'  },
+    {  "Ile2",           'I'  },
     {  "Isoleucine",     'I'  },
     {  "Leu",            'L'  },
     {  "Leu or Ile",     'J'  },
@@ -1497,10 +1498,9 @@ s_LocationJoinToOrder( const CSeq_loc & loc )
 }
 
 
-int CFeatureTableReader_Imp::x_ParseTrnaString (
+string CFeatureTableReader_Imp::x_TrnaToAaString(
     const string& val
 )
-
 {
     CTempString value(val);
 
@@ -1514,13 +1514,9 @@ int CFeatureTableReader_Imp::x_ParseTrnaString (
         NStr::TruncateSpacesInPlace(value);
     }
 
-    TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find(string(value).c_str());
-    if (t_iter != sm_TrnaKeys.end()) {
-        return t_iter->second;
-    }
-
-    return 0;
+    return string(value);
 }
+
 
 bool
 CFeatureTableReader_Imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str)
@@ -1739,13 +1735,19 @@ bool CFeatureTableReader_Imp::x_AddQualifierToRna (
                         if (rrp.IsSetExt() && rrp.GetExt().Which() == CRNA_ref::C_Ext::e_Name) 
                             return false;
 
-                       // sfp->SetComment(val);
-                        int aaval = x_ParseTrnaString(val);
-                        if (aaval > 0) {
+                
+                        const string& aa_string = x_TrnaToAaString(val);
+                        const auto aaval_it = sm_TrnaKeys.find(aa_string.c_str());
+
+                        if (aaval_it != sm_TrnaKeys.end()) {
                             CRNA_ref::TExt& tex = rrp.SetExt ();
                             CTrna_ext& trx = tex.SetTRNA();
                             CTrna_ext::TAa& taa = trx.SetAa();
-                            taa.SetNcbieaa(aaval);
+                            taa.SetNcbieaa(aaval_it->second);
+                            if (aa_string == "fMet" ||
+                                aa_string == "Ile2") {
+                               x_AddGBQualToFeature(sfp, "product", val); 
+                            }
                         }
                         else {
                             x_ProcessMsg(
