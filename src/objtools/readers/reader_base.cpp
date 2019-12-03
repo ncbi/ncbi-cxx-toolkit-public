@@ -596,8 +596,8 @@ bool CReaderBase::xParseComment(
  
 //  ----------------------------------------------------------------------------
 void CReaderBase::xPostProcessAnnot(
-    CRef<CSeq_annot>& annot,
-    ILineErrorListener *pMessageListener)
+    CSeq_annot&,
+    ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
 }

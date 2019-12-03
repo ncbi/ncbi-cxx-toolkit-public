@@ -154,14 +154,14 @@ CGtfReader::~CGtfReader()
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xUpdateAnnotFeature(
     const CGff2Record& record,
-    CRef< CSeq_annot > pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const CGtfReadRecord& gff = dynamic_cast<const CGtfReadRecord&>(record);
     string strType = gff.Type();
 
-    using TYPEHANDLER = bool (CGtfReader::*)(const CGtfReadRecord&, CRef< CSeq_annot >);
+    using TYPEHANDLER = bool (CGtfReader::*)(const CGtfReadRecord&, CSeq_annot&);
     using HANDLERMAP = map<string, TYPEHANDLER>;
 
     HANDLERMAP typeHandlers = {
@@ -183,7 +183,7 @@ bool CGtfReader::xUpdateAnnotFeature(
     HANDLERMAP::iterator it = typeHandlers.find(strType);
     if (it != typeHandlers.end()) {
         TYPEHANDLER handler = it->second;
-        return (this->*handler)(gff, pAnnot);
+        return (this->*handler)(gff, annot);
     }
  
     //
@@ -192,10 +192,10 @@ bool CGtfReader::xUpdateAnnotFeature(
     //  try to salvage some of it anyway.
     //
     if ( strType == "gene" ) {
-        return x_CreateParentGene(gff, pAnnot);
+        return x_CreateParentGene(gff, annot);
     }
     if (strType == "mRNA") {
-        return x_CreateParentMrna(gff, pAnnot);
+        return x_CreateParentMrna(gff, annot);
     }
     return true;
 }
@@ -203,7 +203,7 @@ bool CGtfReader::xUpdateAnnotFeature(
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotCds(
     const CGtfReadRecord& gff,
-    CRef< CSeq_annot > pAnnot )
+    CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
     bool needXref = false;
@@ -219,7 +219,7 @@ bool CGtfReader::x_UpdateAnnotCds(
     //
     CRef<CSeq_feat> pGene;
     if (!x_FindParentGene(gff, pGene)) {
-        if (!x_CreateParentGene(gff, pAnnot)  ||  !x_FindParentGene(gff, pGene)) {
+        if (!x_CreateParentGene(gff, annot)  ||  !x_FindParentGene(gff, pGene)) {
             return false;
         }
     }
@@ -238,7 +238,7 @@ bool CGtfReader::x_UpdateAnnotCds(
         //
         // Create a brand new CDS feature:
         //
-        if (!x_CreateParentCds(gff, pAnnot)  ||  !x_FindParentCds(gff, pCds)) {
+        if (!x_CreateParentCds(gff, annot)  ||  !x_FindParentCds(gff, pCds)) {
             return false;
         }
     }
@@ -276,7 +276,7 @@ bool CGtfReader::x_UpdateAnnotCds(
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotTranscript(
     const CGtfReadRecord& gff,
-    CRef< CSeq_annot > pAnnot )
+    CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
     //
@@ -284,13 +284,13 @@ bool CGtfReader::x_UpdateAnnotTranscript(
     //  make sure the existing gene feature includes the location of the CDS.
     //
     CRef< CSeq_feat > pGene;
-    if ( ! x_FindParentGene( gff, pGene ) ) {
-        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
+    if (!x_FindParentGene(gff, pGene)) {
+        if (!x_CreateParentGene(gff, annot)) {
             return false;
         }
     }
     else {
-        if ( ! x_MergeParentGene( gff, pGene ) ) {
+        if (!x_MergeParentGene(gff, pGene)) {
             return false;
         }
         if (!x_FeatureTrimQualifiers(gff, pGene)) {
@@ -303,11 +303,11 @@ bool CGtfReader::x_UpdateAnnotTranscript(
     //  Otherwise, fix up the location of the existing one.
     //
     CRef< CSeq_feat > pMrna;
-    if ( ! x_FindParentMrna( gff, pMrna ) ) {
+    if (!x_FindParentMrna( gff, pMrna)) {
         //
         // Create a brand new CDS feature:
         //
-        if ( ! x_CreateParentMrna( gff, pAnnot ) ) {
+        if (!x_CreateParentMrna(gff, annot)) {
             return false;
         }
     }
@@ -315,7 +315,7 @@ bool CGtfReader::x_UpdateAnnotTranscript(
         //
         // Update an already existing CDS features:
         //
-        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
+        if (!x_MergeFeatureLocationMultiInterval(gff, pMrna)) {
             return false;
         }
         if (!x_FeatureTrimQualifiers(gff, pMrna)) {
@@ -487,7 +487,7 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentGene(
     const CGtfReadRecord& gff,
-    CRef< CSeq_annot > pAnnot )
+    CSeq_annot& annot )
 //  -----------------------------------------------------------------------------
 {
     //
@@ -509,7 +509,7 @@ bool CGtfReader::x_CreateParentGene(
     }
     m_GeneMap[gff.GeneKey()] = pFeature;
 
-    xAddFeatureToAnnot( pFeature, pAnnot );
+    xAddFeatureToAnnot( pFeature, annot );
     return true;
 }
     
@@ -615,7 +615,7 @@ bool CGtfReader::xFeatureSetQualifiersCds(
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentCds(
     const CGtfReadRecord& gff,
-    CRef< CSeq_annot > pAnnot )
+    CSeq_annot& annot )
 //  -----------------------------------------------------------------------------
 {
     //
@@ -654,13 +654,13 @@ bool CGtfReader::x_CreateParentCds(
         return false;
     }
 
-    return xAddFeatureToAnnot( pFeature, pAnnot );
+    return xAddFeatureToAnnot( pFeature, annot );
 }
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentMrna(
     const CGtfReadRecord& gff,
-    CRef< CSeq_annot > pAnnot )
+    CSeq_annot& annot )
 //  -----------------------------------------------------------------------------
 {
     //
@@ -689,7 +689,7 @@ bool CGtfReader::x_CreateParentMrna(
 
     m_MrnaMap[gff.FeatureKey()] = pFeature;
 
-    return xAddFeatureToAnnot( pFeature, pAnnot );
+    return xAddFeatureToAnnot( pFeature, annot );
 }
 
 //  ----------------------------------------------------------------------------

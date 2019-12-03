@@ -298,7 +298,7 @@ protected:
         ILineErrorListener*);
 
     virtual void xPostProcessAnnot(
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual void xAddConversionInfo(

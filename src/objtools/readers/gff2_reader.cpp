@@ -169,7 +169,7 @@ CGff2Reader::ReadSeqAnnot(
                 }
             }
 
-            if (xParseFeature(line, pAnnot, pEC)) {
+            if (xParseFeature(line, *pAnnot, pEC)) {
                 continue;
             }
         }
@@ -185,7 +185,7 @@ CGff2Reader::ReadSeqAnnot(
     if (!alignments.empty()) {
         x_ProcessAlignmentsGff(id_list, alignments, pAnnot);
     }
-    xPostProcessAnnot(pAnnot, pEC);
+    xPostProcessAnnot(*pAnnot, pEC);
     return pAnnot;
 }
 
@@ -266,25 +266,25 @@ CGff2Reader::ReadObject(
  
 //  ----------------------------------------------------------------------------
 void CGff2Reader::xPostProcessAnnot(
-    CRef<CSeq_annot>& pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener *pEC)
 //  ----------------------------------------------------------------------------
 {
-    xAssignAnnotId(pAnnot);
+    xAssignAnnotId(annot);
     if (!(m_iFlags & fGenbankMode)) {
         //xAssignTrackData(pAnnot);
-        xAddConversionInfo(*pAnnot, pEC);
-        xGenerateParentChildXrefs(pAnnot);
+        xAddConversionInfo(annot, pEC);
+        xGenerateParentChildXrefs(annot);
     }
 }
 
 //  ----------------------------------------------------------------------------
 void CGff2Reader::xAssignAnnotId(
-    CRef<CSeq_annot>& pAnnot,
+    CSeq_annot& annot,
     const string& givenId)
 //  ----------------------------------------------------------------------------
 {
-    if (givenId.empty() && pAnnot->GetData().IsAlign()) {
+    if (givenId.empty() && annot.GetData().IsAlign()) {
         return;
     }
 
@@ -299,7 +299,7 @@ void CGff2Reader::xAssignAnnotId(
     }    
     CRef< CAnnot_id > pAnnotId(new CAnnot_id);
     pAnnotId->SetLocal().SetStr(annotId);
-    pAnnot->SetId().push_back(pAnnotId);   
+    annot.SetId().push_back(pAnnotId);   
 }
 
 
@@ -321,7 +321,7 @@ bool CGff2Reader::xParseStructuredComment(
 bool
 CGff2Reader::xParseFeature(
     const string& line,
-    CRef<CSeq_annot>& pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -350,7 +350,7 @@ CGff2Reader::xParseFeature(
     }
 
     //append feature to annot:
-    if (!xUpdateAnnotFeature(*pRecord, pAnnot, pEC)) {
+    if (!xUpdateAnnotFeature(*pRecord, annot, pEC)) {
         return false;
     }
 
@@ -662,7 +662,7 @@ bool CGff2Reader::x_MergeAlignments(
 bool
 CGff2Reader::xParseAlignment(
     const string& line,
-    CRef<CSeq_annot>& pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -682,7 +682,7 @@ CGff2Reader::xParseAlignment(
         return false;
     }
 
-    if (!x_UpdateAnnotAlignment(*pRecord, pAnnot, pEC)) {
+    if (!x_UpdateAnnotAlignment(*pRecord, annot, pEC)) {
         return false;
     }
 
@@ -705,9 +705,9 @@ CGff2Reader::xIsCurrentDataType(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xUpdateAnnotFeature(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot,
-    ILineErrorListener* pEC)
+    const CGff2Record&,
+    CSeq_annot&,
+    ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     return false;
@@ -738,7 +738,7 @@ bool CGff2Reader::x_CreateAlignment(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_UpdateAnnotAlignment(
     const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -753,7 +753,7 @@ bool CGff2Reader::x_UpdateAnnotAlignment(
     if (!xAlignmentSetSegment(gff, pAlign)) {
         return false;
     }
-    pAnnot->SetData().SetAlign().push_back( pAlign ) ;
+    annot.SetData().SetAlign().push_back( pAlign ) ;
     return true;
 }
 
@@ -1296,10 +1296,10 @@ bool CGff2Reader::x_GetFeatureById(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xAddFeatureToAnnot(
     CRef< CSeq_feat > pFeature,
-    CRef< CSeq_annot > pAnnot )
+    CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    pAnnot->SetData().SetFtable().push_back(pFeature);
+    annot.SetData().SetFtable().push_back(pFeature);
     return true;
 }
 
@@ -1339,10 +1339,10 @@ CGff2Reader::x_ParseDbtag(
 
 //  ============================================================================
 bool CGff2Reader::xAnnotPostProcess(
-    CRef<CSeq_annot> pAnnot)
+    CSeq_annot& annot)
 //  ============================================================================
 {
-    if (!xGenerateParentChildXrefs(pAnnot)) {
+    if (!xGenerateParentChildXrefs(annot)) {
         return false;
     }
     return true;
@@ -1350,22 +1350,22 @@ bool CGff2Reader::xAnnotPostProcess(
 
 //  ============================================================================
 bool CGff2Reader::xGenerateParentChildXrefs(
-    CRef<CSeq_annot> pAnnot)
+    CSeq_annot& annot)
 //  ============================================================================
 {
     typedef list<CRef<CSeq_feat> > FTABLE;
     typedef list<string> PARENTS;
 
-    if (!pAnnot->IsFtable()) {
+    if (!annot.IsFtable()) {
         return true;
     }
-    FTABLE& ftable = pAnnot->SetData().SetFtable();
-    for (FTABLE::iterator featIt = ftable.begin(); featIt != ftable.end(); ++featIt) {
+    FTABLE& ftable = annot.SetData().SetFtable();
+    for (auto featIt = ftable.begin(); featIt != ftable.end(); ++featIt) {
         CSeq_feat& feat = **featIt;
         const string& parentStr = feat.GetNamedQual("Parent");
         PARENTS parents;
         NStr::Split(parentStr, ",", parents, 0);
-        for (PARENTS::iterator parentIt = parents.begin(); parentIt != parents.end(); ++parentIt) {
+        for (auto parentIt = parents.begin(); parentIt != parents.end(); ++parentIt) {
             const string& parent = *parentIt; 
             xSetAncestryLine(feat, parent);
         }

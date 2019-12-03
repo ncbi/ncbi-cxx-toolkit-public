@@ -94,132 +94,135 @@ protected:
                                 
     bool xParseFeature(
         const string&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
       
     virtual void xPostProcessAnnot(
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
     CRef<CSeq_annot> x_GetAnnotById(
         TAnnots& annots,
         const string& strId );
 
-    virtual bool x_MergeRecord(
+    virtual bool xMergeRecord(
         const CGvfReadRecord&,
-        CRef<CSeq_annot>,
+        CSeq_annot&,
         ILineErrorListener*);
 
-    bool x_FeatureSetLocation(
+    bool xFeatureSetLocation(
         const CGff2Record&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
     
     bool xFeatureSetLocationInterval(
         const CGff2Record&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
     
     bool xFeatureSetLocationPoint(
         const CGff2Record&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    bool x_SetLocation(
+    bool xSetLocation(
         const CGff2Record&,
-        CRef<CSeq_loc> );
+        CSeq_loc&);
     
-    bool x_SetLocationInterval(
+    bool xSetLocationInterval(
         const CGff2Record&,
-        CRef<CSeq_loc> );
+        CSeq_loc&);
 
-    bool x_SetLocationPoint(
+    bool xSetLocationPoint(
         const CGff2Record&,
-        CRef<CSeq_loc> );
+        CSeq_loc&);
     
-    bool x_FeatureSetVariation(
+    bool xFeatureSetVariation(
         const CGvfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    virtual bool x_FeatureSetExt(
+    virtual bool xFeatureSetExt(
         const CGvfReadRecord&,
-        CRef<CSeq_feat>,
+        CSeq_feat&,
         ILineErrorListener*);
 
     bool xVariationMakeSNV(
         const CGvfReadRecord&,
-         CRef<CVariation_ref> );
+         CVariation_ref&);
 
     bool xVariationMakeCNV(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationMakeInsertions(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationMakeDeletions(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationMakeIndels(
         const CGvfReadRecord&,
-        CRef<CVariation_ref>);
+        CVariation_ref&);
 
     bool xVariationMakeInversions(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationMakeEversions(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationMakeTranslocations(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationMakeComplex(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationMakeUnknown(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationSetInsertions(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationSetDeletions(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     bool xVariationSetCommon(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     virtual bool xVariationSetId(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     virtual bool xVariationSetParent(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     virtual bool xVariationSetName(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     virtual bool xVariationSetSnvs(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     virtual bool xVariationSetProperties(
         const CGvfReadRecord&,
-        CRef<CVariation_ref> );
+        CVariation_ref&);
 
     virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
 
-    bool x_IsDbvarCall(const string& nameAttr) const;
+    bool x_IsDbvarCall(
+        const string& nameAttr) const;
 
-    bool x_GetNameAttribute(const CGvfReadRecord& record, string& name) const;
+    bool x_GetNameAttribute(
+        const CGvfReadRecord& record, 
+        string& name) const;
     
 protected:
     CRef< CAnnotdesc > m_Pragmas;

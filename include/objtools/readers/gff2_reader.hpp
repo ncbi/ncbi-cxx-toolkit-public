@@ -126,23 +126,23 @@ public:
     
     virtual bool xParseFeature(
         const string&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
       
     virtual bool xParseAlignment(
         const string&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
       
     virtual bool xIsCurrentDataType(
         const string&);
 
     virtual void xPostProcessAnnot(
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual void xAssignAnnotId(
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         const string& = "");
 
     virtual bool x_ParseAlignmentGff(
@@ -181,17 +181,17 @@ public:
 
     virtual bool xUpdateAnnotFeature(
         const CGff2Record&,
-        CRef< CSeq_annot >,
+        CSeq_annot&,
         ILineErrorListener* =0);
 
     virtual bool x_UpdateAnnotAlignment(
         const CGff2Record&,
-        CRef< CSeq_annot >,
+        CSeq_annot&,
         ILineErrorListener* =0);
 
     virtual bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
-        CRef< CSeq_annot > );
+        CSeq_annot& );
                             
     bool xFeatureSetQualifier(
         const string&,
@@ -230,10 +230,10 @@ public:
         vector<int>& starts) const;
 
     virtual bool xAnnotPostProcess(
-        CRef<CSeq_annot>);
-    virtual bool xGenerateParentChildXrefs(
-        CRef<CSeq_annot>);
+        CSeq_annot&);
 
+    virtual bool xGenerateParentChildXrefs(
+        CSeq_annot&);
 
     bool xUpdateSplicedAlignment(const CGff2Record& gff, 
                                  CRef<CSeq_align> pAlign) const;

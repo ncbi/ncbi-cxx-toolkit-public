@@ -70,7 +70,7 @@ protected:
 
     bool xParseFeature(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 };
 //  ----------------------------------------------------------------------------

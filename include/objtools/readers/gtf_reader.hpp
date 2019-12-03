@@ -188,16 +188,16 @@ protected:
 
     virtual bool xUpdateAnnotFeature(
         const CGff2Record&,
-        CRef< CSeq_annot >,
+        CSeq_annot&,
         ILineErrorListener* =0);
 
     virtual bool x_UpdateAnnotCds(
         const CGtfReadRecord&,
-        CRef< CSeq_annot > );
+        CSeq_annot&);
 
     virtual bool x_UpdateAnnotTranscript(
         const CGtfReadRecord&,
-        CRef< CSeq_annot > );
+        CSeq_annot&);
 
     bool x_CreateFeatureId(
         const CGtfReadRecord&,
@@ -230,7 +230,7 @@ protected:
 
     bool x_CreateParentGene(
         const CGtfReadRecord&,
-        CRef< CSeq_annot > );
+        CSeq_annot&);
         
     bool x_MergeParentGene(
         const CGtfReadRecord&,
@@ -250,11 +250,11 @@ protected:
 
     bool x_CreateParentCds(
         const CGtfReadRecord&,
-        CRef< CSeq_annot > );
+        CSeq_annot&);
         
     bool x_CreateParentMrna(
         const CGtfReadRecord&,
-        CRef< CSeq_annot > );
+        CSeq_annot&);
         
     bool x_FeatureSetDataGene(
         const CGtfReadRecord&,

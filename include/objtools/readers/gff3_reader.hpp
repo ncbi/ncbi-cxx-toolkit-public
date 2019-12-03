@@ -94,41 +94,41 @@ protected:
 
     virtual bool xUpdateAnnotFeature(
         const CGff2Record&,
-        CRef< CSeq_annot >,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
-        CRef< CSeq_annot > );
+        CSeq_annot& );
 
     virtual bool xUpdateAnnotExon(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual bool xUpdateAnnotCds(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual bool xUpdateAnnotGene(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual bool xUpdateAnnotGeneric(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual bool xUpdateAnnotMrna(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>,
+        CSeq_annot&,
         ILineErrorListener*);
 
     virtual bool xFindFeatureUnderConstruction(
@@ -165,7 +165,7 @@ protected:
         const string&,
         list<CGff2Record>&);
     virtual void xPostProcessAnnot(
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
 

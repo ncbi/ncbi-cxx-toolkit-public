@@ -201,12 +201,12 @@ void CUCSCRegionReader::xSmartFieldSplit(vector<string>& fields, CTempString lin
 //  ----------------------------------------------------------------------------
 bool CUCSCRegionReader::xParseFeature(
     const vector<string>& fields,
-    CRef<CSeq_annot>& annot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 {
     //  assign
     string str_line_number = NStr::IntToString(m_uLineNumber);
-    CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
+    CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
     CRef<CSeq_feat> feature;
     feature.Reset( new CSeq_feat );
     try {
@@ -315,12 +315,16 @@ void CUCSCRegionReader::x_SetFeatureLocation(
     }
     
 }
+
+
 //  ----------------------------------------------------------------------------
 CRef<CSerialObject> CUCSCRegionReader::ReadObject(ILineReader& lr, ILineErrorListener* pErrors)
 {
     CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pErrors);
     return CRef<CSerialObject>(annot);
 }
+
+
 //  ----------------------------------------------------------------------------                
 CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
     ILineReader& lr,
@@ -328,13 +332,13 @@ CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
 {
     const size_t MAX_RECORDS = 100000;
 
-    CRef<CSeq_annot> annot;
+    CRef<CSeq_annot> pAnnot;
     CRef<CAnnot_descr> desc;
 
-    annot.Reset(new CSeq_annot);
+    pAnnot.Reset(new CSeq_annot);
     desc.Reset(new CAnnot_descr);
-    annot->SetDesc(*desc);
-    CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
+    pAnnot->SetDesc(*desc);
+    CSeq_annot::C_Data::TFtable& tbl = pAnnot->SetData().SetFtable();
 
     int featureCount = 0;
 
@@ -347,27 +351,15 @@ CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
         if (NStr::TruncateSpaces_Unsafe(line).empty()) {
             continue;
         }
-        if (xParseComment(line, annot)) {
+        if (xParseComment(line, pAnnot)) {
             continue;
         }
 	    CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
 
         //  parse
         vector<string> fields;
-
         xSmartFieldSplit(fields, record_copy);
-
-#if 0
-        try {
-            xCleanColumnValues(fields);
-        }
-        catch(CObjReaderLineException& err) {
-            ProcessError(err, pEC);
-            continue;
-        }
-#endif
-
-        if (xParseFeature(fields, annot, pEC)) {
+        if (xParseFeature(fields, *pAnnot, pEC)) {
             ++featureCount;
             continue;
         }
@@ -379,21 +371,7 @@ CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
     if (0 == featureCount) {
         return CRef<CSeq_annot>();
     }
-    //x_AddConversionInfo(annot, pEC);
-    //x_AssignTrackData( annot );
-
-#if 0
-    if(m_columncount >= 3) {
-        CRef<CUser_object> columnCountUser( new CUser_object() );
-        columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
-        columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
-    
-        CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
-        userDesc->SetUser().Assign( *columnCountUser );
-        annot->SetDesc().Set().push_back( userDesc );
-    }
-#endif
-    return annot;
+    return pAnnot;
 }
 
 

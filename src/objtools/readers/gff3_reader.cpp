@@ -183,7 +183,7 @@ bool CGff3Reader::IsInGenbankMode() const
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotFeature(
     const CGff2Record& record,
-    CRef< CSeq_annot > pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -192,18 +192,18 @@ bool CGff3Reader::xUpdateAnnotFeature(
     string type = record.Type();
     NStr::ToLower(type);
     if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
-        return xUpdateAnnotExon(record, pFeature, pAnnot, pEC);
+        return xUpdateAnnotExon(record, pFeature, annot, pEC);
     }
     if (type == "cds"  ||  type == "start_codon"  || type == "stop_codon") {
-        return xUpdateAnnotCds(record, pFeature, pAnnot, pEC);
+        return xUpdateAnnotCds(record, pFeature, annot, pEC);
     }
     if (type == "gene") {
-        return xUpdateAnnotGene(record, pFeature, pAnnot, pEC);
+        return xUpdateAnnotGene(record, pFeature, annot, pEC);
     }
     if (type == "mrna") {
-        return xUpdateAnnotMrna(record, pFeature, pAnnot, pEC);
+        return xUpdateAnnotMrna(record, pFeature, annot, pEC);
     }
-    return xUpdateAnnotGeneric(record, pFeature, pAnnot, pEC);
+    return xUpdateAnnotGeneric(record, pFeature, annot, pEC);
 }
 
 //  ----------------------------------------------------------------------------
@@ -252,7 +252,7 @@ bool CGff3Reader::xVerifyExonLocation(
 bool CGff3Reader::xUpdateAnnotExon(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -273,7 +273,7 @@ bool CGff3Reader::xUpdateAnnotExon(
                 if  (!xInitializeFeature(record, pFeature)) {
                     return false;
                 }
-                return xAddFeatureToAnnot(pFeature, pAnnot);            
+                return xAddFeatureToAnnot(pFeature, annot);            
             }
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
@@ -292,7 +292,7 @@ bool CGff3Reader::xUpdateAnnotExon(
 bool CGff3Reader::xUpdateAnnotCds(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -402,7 +402,7 @@ bool CGff3Reader::xUpdateAnnotCds(
                     xFeatureSetXrefGrandParent(parentId, pFeature);
                 }
             }
-            xAddFeatureToAnnot(pFeature, pAnnot);
+            xAddFeatureToAnnot(pFeature, annot);
             m_MapIdToFeature[cdsId] = pFeature;
         }
     }
@@ -518,7 +518,7 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
 bool CGff3Reader::xUpdateAnnotGeneric(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -572,7 +572,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if (!xInitializeFeature(record, pFeature)) {
         return false;
     }
-    if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
+    if (! xAddFeatureToAnnot(pFeature, annot)) {
         return false;
     }
     string strId;
@@ -591,7 +591,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
 bool CGff3Reader::xUpdateAnnotMrna(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -643,9 +643,9 @@ bool CGff3Reader::xUpdateAnnotMrna(
     xGetPendingExons(strId, pendingExons);
     for (auto exonRecord: pendingExons) {
         CRef< CSeq_feat > pFeature(new CSeq_feat);
-        xUpdateAnnotExon(exonRecord, pFeature, pAnnot, pEC);
+        xUpdateAnnotExon(exonRecord, pFeature, annot, pEC);
     }
-    if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
+    if (! xAddFeatureToAnnot(pFeature, annot)) {
         return false;
     }
     return true;
@@ -655,20 +655,20 @@ bool CGff3Reader::xUpdateAnnotMrna(
 bool CGff3Reader::xUpdateAnnotGene(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    return xUpdateAnnotGeneric(record, pFeature, pAnnot, pEC);
+    return xUpdateAnnotGeneric(record, pFeature, annot, pEC);
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xAddFeatureToAnnot(
     CRef< CSeq_feat > pFeature,
-    CRef< CSeq_annot > pAnnot )
+    CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    annot.SetData().SetFtable().push_back( pFeature ) ;
     return true;
 }
 
@@ -845,7 +845,7 @@ CGff3Reader::xGetPendingExons(
 
 //  ----------------------------------------------------------------------------
 void CGff3Reader::xPostProcessAnnot(
-    CRef<CSeq_annot>& pAnnot,
+    CSeq_annot& annot,
     ILineErrorListener *pEC)
     //  ----------------------------------------------------------------------------
 {
@@ -857,7 +857,7 @@ void CGff3Reader::xPostProcessAnnot(
             ILineError::eProblem_MissingContext) );
         ProcessError(*pErr, pEC);
     }
-    return CGff2Reader::xPostProcessAnnot(pAnnot, pEC);
+    return CGff2Reader::xPostProcessAnnot(annot, pEC);
 }
 
 
