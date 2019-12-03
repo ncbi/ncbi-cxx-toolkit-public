@@ -33,19 +33,13 @@
 */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbi_system.hpp>
+#include <corelib/test_boost.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
 
-#include <objtools/readers/reader_listener.hpp>
 #include <objtools/readers/bed_reader.hpp>
+#include "tc_message_listener.hpp"
 
 #include <cstdio>
-
-// This header must be included before all Boost.Test headers if there are any
-#include <corelib/test_boost.hpp>
-
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -61,45 +55,6 @@ const string dirTestFiles("bedreader_test_cases");
 // !!! Must also customize reader type in sRunTest !!!
 // !!!
 //  ============================================================================
-
-//  ============================================================================
-class CTeamCityMessageListener:
-    public CReaderListener
-//  ============================================================================
-{
-public:
-    CTeamCityMessageListener(
-        const string& fileName) { mOstr = ofstream(fileName); };
-    
-    ~CTeamCityMessageListener() { mOstr.close(); };
-
-    bool PutMessage(
-        const IObjtoolsMessage& message)
-    {
-        const CReaderMessage* pReaderMessage = 
-            dynamic_cast<const CReaderMessage*>(&message);
-        mLevelCounts[pReaderMessage->Severity()]++;
-        if (!pReaderMessage) {
-            throw;
-        }
-        pReaderMessage->Write(mOstr);
-        if (pReaderMessage->Severity() == eDiag_Fatal) {
-            throw;
-        }
-        return true;
-    };
-
-    size_t LevelCount(
-        EDiagSev severity) const override { return mLevelCounts.at(severity); };
-
-protected:
-    ofstream mOstr;
-    using LEVELCOUNT = map<EDiagSev, size_t>;
-    LEVELCOUNT mLevelCounts = {
-        {eDiag_Info, 0}, {eDiag_Warning, 0}, {eDiag_Error, 0}, {eDiag_Critical, 0},
-        {eDiag_Fatal, 0}, {eDiag_Trace, 0}};
-};
-    
 
 
 struct STestInfo {

@@ -33,20 +33,13 @@
 */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbi_system.hpp>
+#include <corelib/test_boost.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
 
-#include <objtools/readers/reader_listener.hpp>
 #include <objtools/readers/microarray_reader.hpp>
-#include "error_logger.hpp"
+#include "tc_message_listener.hpp"
 
 #include <cstdio>
-
-// This header must be included before all Boost.Test headers if there are any
-#include <corelib/test_boost.hpp>
-
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -60,34 +53,6 @@ const string extKeep("new");
 const string dirTestFiles("microarrayreader_test_cases");
 //  ============================================================================
 
-
-//  ============================================================================
-class CTeamCityMessageListener:
-    public CReaderListener
-//  ============================================================================
-{
-public:
-    CTeamCityMessageListener(
-        const string& fileName) { mOstr = ofstream(fileName); };
-    
-    ~CTeamCityMessageListener() { mOstr.close(); };
-
-    bool PutMessage(
-        const IObjtoolsMessage& message)
-    {
-        const CReaderMessage* pReaderMessage = 
-            dynamic_cast<const CReaderMessage*>(&message);
-        if (!pReaderMessage  ||  pReaderMessage->Severity() == eDiag_Fatal) {
-            throw;
-        }
-        pReaderMessage->Write(mOstr);
-        return true;
-    };
-
-protected:
-    ofstream mOstr;
-};
-    
 
 struct STestInfo {
     CFile mInFile;

@@ -33,20 +33,13 @@
 */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
-
-#include <objtools/readers/reader_listener.hpp>
-#include <objtools/readers/vcf_reader.hpp>
-#include "error_logger.hpp"
-
-#include <cstdio>
-
-// This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <objtools/readers/vcf_reader.hpp>
+#include "tc_message_listener.hpp"
+
+#include <cstdio>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -59,35 +52,6 @@ const string extErrors("errors");
 const string extKeep("new");
 const string dirTestFiles("vcfreader_test_cases");
 //  ============================================================================
-
-
-//  ============================================================================
-class CTeamCityMessageListener:
-    public CReaderListener
-//  ============================================================================
-{
-public:
-    CTeamCityMessageListener(
-        const string& fileName) { mOstr = ofstream(fileName); };
-    
-    ~CTeamCityMessageListener() { mOstr.close(); };
-
-    bool PutMessage(
-        const IObjtoolsMessage& message)
-    {
-        const CReaderMessage* pReaderMessage = 
-            dynamic_cast<const CReaderMessage*>(&message);
-        if (!pReaderMessage  ||  pReaderMessage->Severity() == eDiag_Fatal) {
-            throw;
-        }
-        pReaderMessage->Write(mOstr);
-        return true;
-    };
-
-protected:
-    ofstream mOstr;
-};
-    
 
 struct STestInfo {
     CFile mInFile;

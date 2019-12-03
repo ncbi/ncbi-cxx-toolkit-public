@@ -33,19 +33,13 @@
 */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
-
-#include <objtools/readers/psl_reader.hpp>
-#include "error_logger.hpp"
-
-#include <cstdio>
-
-// This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <objtools/readers/psl_reader.hpp>
+#include "tc_message_listener.hpp"
+
+#include <cstdio>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -146,14 +140,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CErrorLogger logger(errors);
-    CPslReader reader(0);
+    CTeamCityMessageListener logger(errors);
+    CPslReader reader(0, &logger);
     CNcbiIfstream ifstr(input.c_str());
 
     using ANNOTS = list<CRef<CSeq_annot>>;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         // succeeding by failing in the expected manner.
@@ -200,15 +194,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mErrorFile.GetName() << endl;
 
     string logName = CDirEntry::GetTmpName();
-    CErrorLogger logger(logName);
+    CTeamCityMessageListener logger(logName);
 
-    CPslReader reader(0);
+    CPslReader reader(0, &logger);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     using ANNOTS = list<CRef<CSeq_annot>>;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         // succeeding by failing in the expected manner.
