@@ -34,7 +34,6 @@
 #ifndef _IDLOGUTL_HPP_
 #define _IDLOGUTL_HPP_
 
-
 #include <csignal>
 #include <sys/time.h>
 #include <map>
@@ -44,17 +43,13 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbimtx.hpp>
 
-namespace IdLogUtil {
+BEGIN_SCOPE(IdLogUtil)
 
 USING_NCBI_SCOPE;
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName)	\
 	TypeName(const TypeName&);				\
 	TypeName& operator=(const TypeName&)
-
-
-#define SON(a) ((a) ? (a) : "(NULL)")
-
 
 class EError: public CException { 
 public:
@@ -108,48 +103,6 @@ string TrimRight(const string& s, const string& delimiters = " \f\n\r\t\v");
 string TrimLeft(const string& s, const string& delimiters = " \f\n\r\t\v");
 string Trim(const string& s, const string& delimiters = " \f\n\r\t\v" );
 
+END_SCOPE(IdLogUtil)
 
-template<typename T> class CStrMap {
-private:
-	typedef map<string, T> map_to_t;
-	typedef map<T, string> map_from_t;
-	map_to_t m_strtot;
-	map_from_t m_ttostr;
-public:
-	void insert(const string& str, const T& val) {
-		m_strtot.insert(pair<string, T>(str, val));
-		m_ttostr.insert(pair<T, string>(val, str));
-	}
-	bool find(const string& str, T* val) const {
-		bool rv;
-		typename map_to_t::const_iterator it;
-
-		it = m_strtot.find(str);
-		rv = (it != m_strtot.end());
-		if (rv)
-			*val = 	it->second;
-		return rv;
-	}
-	string find(T val) const {
-		typename map_from_t::const_iterator it = m_ttostr.find(val);
-		if (it != m_ttostr.end())
-			return it->second;
-		else
-			return "";
-	}
-	string GetList() const {
-		string rv;
-		ITERATE(typename map_to_t, it, m_strtot) {
-			if (!rv.empty())
-				rv.append(", ");
-			rv.append(it->first);
-		}
-		return rv;
-	}
-	typedef pair<const string, T> value_type;
-};
-
-
-}
-
-#endif
+#endif  // _IDLOGUTL_HPP_

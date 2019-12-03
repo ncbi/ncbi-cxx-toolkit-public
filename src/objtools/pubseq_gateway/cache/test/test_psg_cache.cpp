@@ -346,9 +346,11 @@ void CTestPsgCache::PrintBioseqInfo(const CBioseqInfoRecord& record) const
          << "version: " << record.GetVersion() << endl
          << "seq_id_type: " << record.GetSeqIdType() << endl
          << "gi: " << record.GetGI() << endl
+         << "name: " << record.GetName() << endl
          << "sat: " << record.GetSat() << endl
          << "sat_key: " << record.GetSatKey() << endl
-         << "state: " << record.GetState() << endl
+         << "state: " << static_cast<int32_t>(record.GetState()) << endl
+         << "seq_state: " << static_cast<int32_t>(record.GetSeqState()) << endl
          << "mol: " << record.GetMol() << endl
          << "hash: " << record.GetHash() << endl
          << "length: " << record.GetLength() << endl
