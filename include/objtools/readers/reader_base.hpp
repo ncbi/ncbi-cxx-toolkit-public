@@ -237,7 +237,25 @@ public:
     IsCanceled() const { return m_pCanceler && m_pCanceler->IsCanceled(); };
 
 protected:
+    void xGuardedGetData(
+        ILineReader&,
+        TReaderData&,
+        ILineErrorListener*);
+
+    virtual void xGuardedProcessData(
+        const TReaderData&,
+        CSeq_annot&,
+        ILineErrorListener*);
+
     virtual CRef<CSeq_annot> xCreateSeqAnnot();
+
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
 
     virtual bool xGetLine(
         ILineReader&,
@@ -259,7 +277,7 @@ protected:
         const CTempString& );
 
     virtual void xAssignTrackData(
-        CRef<CSeq_annot>& );
+        CSeq_annot& );
                 
     virtual bool xParseBrowserLine(
         const string&,
@@ -284,7 +302,7 @@ protected:
         ILineErrorListener*);
 
     virtual void xAddConversionInfo(
-        CRef< CSeq_annot >&,
+        CSeq_annot&,
         ILineErrorListener* );
                     
     bool xParseComment(
@@ -322,14 +340,6 @@ protected:
         CLineError&,
         ILineErrorListener* );
         
-    virtual void xGetData(
-        ILineReader&,
-        TReaderData&);
-
-    virtual void xProcessData(
-        const TReaderData&,
-        CSeq_annot&);
-
     void
     xProcessReaderMessage(
         CReaderMessage&,

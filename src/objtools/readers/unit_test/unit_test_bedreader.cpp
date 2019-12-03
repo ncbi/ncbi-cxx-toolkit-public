@@ -38,8 +38,8 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 
+#include <objtools/readers/reader_listener.hpp>
 #include <objtools/readers/bed_reader.hpp>
-#include "error_logger.hpp"
 
 #include <cstdio>
 
@@ -61,6 +61,46 @@ const string dirTestFiles("bedreader_test_cases");
 // !!! Must also customize reader type in sRunTest !!!
 // !!!
 //  ============================================================================
+
+//  ============================================================================
+class CTeamCityMessageListener:
+    public CReaderListener
+//  ============================================================================
+{
+public:
+    CTeamCityMessageListener(
+        const string& fileName) { mOstr = ofstream(fileName); };
+    
+    ~CTeamCityMessageListener() { mOstr.close(); };
+
+    bool PutMessage(
+        const IObjtoolsMessage& message)
+    {
+        const CReaderMessage* pReaderMessage = 
+            dynamic_cast<const CReaderMessage*>(&message);
+        mLevelCounts[pReaderMessage->Severity()]++;
+        if (!pReaderMessage) {
+            throw;
+        }
+        pReaderMessage->Write(mOstr);
+        if (pReaderMessage->Severity() == eDiag_Fatal) {
+            throw;
+        }
+        return true;
+    };
+
+    size_t LevelCount(
+        EDiagSev severity) const override { return mLevelCounts.at(severity); };
+
+protected:
+    ofstream mOstr;
+    using LEVELCOUNT = map<EDiagSev, size_t>;
+    LEVELCOUNT mLevelCounts = {
+        {eDiag_Info, 0}, {eDiag_Warning, 0}, {eDiag_Error, 0}, {eDiag_Critical, 0},
+        {eDiag_Fatal, 0}, {eDiag_Trace, 0}};
+};
+    
+
 
 struct STestInfo {
     CFile mInFile;
@@ -93,7 +133,6 @@ public:
         if (NStr::EndsWith(name, ".txt")  ||  NStr::StartsWith(name, ".")) {
             return;
         }
-
         // extract info from the file name
         const string sFileName = file.GetName();
         vector<CTempString> vecFileNamePieces;
@@ -145,19 +184,17 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CErrorLogger logger(errors);
-    CBedReader reader(CBedReader::fDirectedFeatureModel);
-    CNcbiIfstream ifstr(input.c_str());
-
+    CTeamCityMessageListener ml(errors);
     typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
+    CNcbiIfstream ifstr(input.c_str());
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CBedReader reader(CBedReader::fDirectedFeatureModel, "", "", &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
-    catch (const std::exception&) {
-        // succeeding by failing in the expected manner.
-        //  should we fail for the wrong reason, or fail to fail then the captured 
-        //  error log will tell.
+    catch (CReaderMessage&) {
+    }
+    catch (CObjReaderParseException&) {
     }
     ifstr.close();
     cerr << "    Produced new error listing " << output << "." << endl;
@@ -199,26 +236,24 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mErrorFile.GetName() << endl;
 
     string logName = CDirEntry::GetTmpName();
-    CErrorLogger logger(logName);
 
-    CBedReader reader(CBedReader::fDirectedFeatureModel);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CTeamCityMessageListener ml(logName);
+        CBedReader reader(CBedReader::fDirectedFeatureModel, "", "", &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
-    catch (const std::exception&) {
-        // succeeding by failing in the expected manner.
-        //  should we fail for the wrong reason, or fail to fail then the captured 
-        //  error log will tell.
+    catch (CReaderMessage&) {
     }
     ifstr.close();
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        const auto& obj = **cit;
         ofstr << MSerial_AsnText << **cit;
         ofstr.flush();
     }

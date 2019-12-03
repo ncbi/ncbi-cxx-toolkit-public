@@ -226,10 +226,9 @@ CReaderBase::ReadSeqAnnot(
 
     m_uDataCount = 0;
     CRef<CSeq_annot> pAnnot = xCreateSeqAnnot();
-    auto& annotData = pAnnot->SetData();
 
     TReaderData readerData;
-    xGetData(lr, readerData);
+    xGuardedGetData(lr, readerData, pEL);
     if (readerData.empty()) {
         pAnnot.Reset();
         return pAnnot;
@@ -244,19 +243,8 @@ CReaderBase::ReadSeqAnnot(
         }
         xReportProgress();
 
-        try {
-            xProcessData(readerData, *pAnnot);
-        }
-        catch (CReaderMessage& err) {
-            xProcessReaderMessage(err, pEL);
-        }
-        catch (ILineError& err) {
-            xProcessLineError(err, pEL);
-        }
-        catch (CException& err) {
-            xProcessUnknownException(err);
-        }
-        xGetData(lr, readerData);
+        xGuardedProcessData(readerData, *pAnnot, pEL);
+        xGuardedGetData(lr, readerData, pEL);
     }
     return pAnnot;
 }
@@ -274,6 +262,50 @@ CReaderBase::xCreateSeqAnnot()
         pAnnot->SetTitleDesc(m_AnnotTitle);
     }
     return pAnnot;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::xGuardedGetData(
+    ILineReader& lr,
+    TReaderData& readerData,
+    ILineErrorListener* pEL) 
+//  ----------------------------------------------------------------------------
+{
+    try {
+        xGetData(lr, readerData);
+    }
+    catch (CReaderMessage& err) {
+        xProcessReaderMessage(err, pEL);
+    }
+    catch (ILineError& err) {
+        xProcessLineError(err, pEL);
+    }
+    catch (CException& err) {
+        xProcessUnknownException(err);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::xGuardedProcessData(
+    const TReaderData& readerData,
+    CSeq_annot& annot,
+    ILineErrorListener* pEL) 
+//  ----------------------------------------------------------------------------
+{
+    try {
+        xProcessData(readerData, annot);
+    }
+    catch (CReaderMessage& err) {
+        xProcessReaderMessage(err, pEL);
+    }
+    catch (ILineError& err) {
+        xProcessLineError(err, pEL);
+    }
+    catch (CException& err) {
+        xProcessUnknownException(err);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -428,17 +460,17 @@ void CReaderBase::xSetBrowserRegion(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    CReaderMessage error(
+        eDiag_Error, 
+        m_uLineNumber,
+        "Bad browser line: cannot parse browser position.");
+
     CRef<CSeq_loc> location( new CSeq_loc );
 
     string strChrom;
     string strInterval;
     if ( ! NStr::SplitInTwo( strRaw, ":", strChrom, strInterval ) ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad browser line: cannot parse browser position" ) );
-        ProcessError(*pErr, pEC);
+        throw error;
     }
     CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
 
@@ -451,12 +483,7 @@ void CReaderBase::xSetBrowserRegion(
         string strFrom;
         string strTo;
         if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad browser line: cannot parse browser position" ) );
-            ProcessError(*pErr, pEC);
+            throw error;
         }  
         try
         {
@@ -473,13 +500,8 @@ void CReaderBase::xSetBrowserRegion(
 
         }
         catch (const CStringException&) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad browser line: cannot parse browser position" ) );
-            ProcessError(*pErr, pEC);
             location.Reset();
+            throw error;
         }
     }
 
@@ -498,6 +520,11 @@ bool CReaderBase::xParseBrowserLine(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    CReaderMessage error(
+        eDiag_Error, 
+        m_uLineNumber,
+        "Bad browser line: incomplete position directive.");
+
     if ( ! NStr::StartsWith( strLine, "browser" ) ) {
         return false;
     }
@@ -509,12 +536,7 @@ bool CReaderBase::xParseBrowserLine(
         if ( *it == "position" ) {
             ++it;
             if ( it == fields.end() ) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                    eDiag_Error,
-                    0,
-                    "Bad browser line: incomplete position directive" ) );
-                ProcessError(*pErr, pEC);
+               throw error;
             }
             xSetBrowserRegion(*it, desc, pEC);
         }
@@ -524,16 +546,16 @@ bool CReaderBase::xParseBrowserLine(
 
 //  ----------------------------------------------------------------------------
 void CReaderBase::xAssignTrackData(
-    CRef<CSeq_annot>& annot )
+    CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
     if (!m_AnnotName.empty()) {
-        annot->SetNameDesc(m_AnnotName);
+        annot.SetNameDesc(m_AnnotName);
     }
     if (!m_AnnotTitle.empty()) {
-        annot->SetTitleDesc(m_AnnotTitle);
+        annot.SetTitleDesc(m_AnnotTitle);
     }
-    m_pTrackDefaults->WriteToAnnot(*annot);
+    m_pTrackDefaults->WriteToAnnot(annot);
 }
 
 //  ----------------------------------------------------------------------------
@@ -582,34 +604,33 @@ void CReaderBase::xPostProcessAnnot(
 
 //  ----------------------------------------------------------------------------
 void CReaderBase::xAddConversionInfo(
-    CRef<CSeq_annot >& annot,
+    CSeq_annot& annot,
     ILineErrorListener *pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    if (!annot || !pMessageListener) {
+    size_t countInfos = m_pMessageHandler->LevelCount(eDiag_Info);
+    size_t countWarnings = m_pMessageHandler->LevelCount(eDiag_Warning);
+    size_t countErrors = m_pMessageHandler->LevelCount(eDiag_Error);
+    size_t countCritical = m_pMessageHandler->LevelCount(eDiag_Critical);
+    if (pMessageListener) {
+        countCritical += pMessageListener->LevelCount(eDiag_Critical);
+        countErrors += pMessageListener->LevelCount(eDiag_Error);
+        countWarnings += pMessageListener->LevelCount(eDiag_Warning);
+        countInfos += pMessageListener->LevelCount(eDiag_Info);
+    }
+    if (countInfos + countWarnings + countErrors + countCritical == 0) {
         return;
     }
-    if (0 == pMessageListener->LevelCount(eDiag_Critical)  &&
-        0 == pMessageListener->LevelCount(eDiag_Error) &&
-        0 == pMessageListener->LevelCount(eDiag_Warning) &&
-        0 == pMessageListener->LevelCount(eDiag_Info)) {
-        return;
-    }
-
     CRef<CUser_object> conversioninfo(new CUser_object());
     conversioninfo->SetType().SetStr("Conversion Info");    
-    conversioninfo->AddField( 
-        "critical errors", int(pMessageListener->LevelCount(eDiag_Critical)));
-    conversioninfo->AddField( 
-        "errors", int(pMessageListener->LevelCount(eDiag_Error)));
-    conversioninfo->AddField( 
-        "warnings", int(pMessageListener->LevelCount(eDiag_Warning)));
-    conversioninfo->AddField( 
-        "notes", int(pMessageListener->LevelCount(eDiag_Info)));
+    conversioninfo->AddField( "critical errors", static_cast<int>(countCritical));
+    conversioninfo->AddField( "errors", static_cast<int>(countErrors));
+    conversioninfo->AddField( "warnings", static_cast<int>(countWarnings));
+    conversioninfo->AddField( "notes", static_cast<int>(countInfos));
 
     CRef<CAnnotdesc> user(new CAnnotdesc());
     user->SetUser(*conversioninfo);
-    annot->SetDesc().Set().push_back(user);
+    annot.SetDesc().Set().push_back(user);
 }
 
 //  ----------------------------------------------------------------------------
@@ -650,7 +671,6 @@ void CReaderBase::xReportProgress(
     // report something
     int curPos = static_cast<int>(m_pReader->GetPosition());
     m_pMessageHandler->Progress(CReaderProgress(curPos, 0));
-
     m_uNextProgressReport += m_uProgressReportInterval;
 }
 
@@ -789,11 +809,11 @@ CReaderBase::xProcessReaderMessage(
 //  ----------------------------------------------------------------------------
 {
     readerMessage.SetLineNumber(m_uLineNumber);
-    if (readerMessage.Severity() == eDiag_Fatal) {
-        throw;
-    }
     try {
         m_pMessageHandler->Report(readerMessage);
+        if (readerMessage.Severity() == eDiag_Fatal) {
+            throw;
+        }
     }
     catch(ILineError& lineError) {
         xProcessLineError(lineError, pEL);

@@ -201,8 +201,8 @@ void CGvfReader::xPostProcessAnnot(
     ILineErrorListener *pEC)
 //  ----------------------------------------------------------------------------
 {
-    xAddConversionInfo(pAnnot, pEC);
-    xAssignTrackData(pAnnot);
+    xAddConversionInfo(*pAnnot, pEC);
+    xAssignTrackData(*pAnnot);
     xAssignAnnotId(pAnnot);
     if (m_Pragmas) {
         pAnnot->SetDesc().Set().push_back(m_Pragmas);
@@ -246,7 +246,7 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
 
     // if available, add current track information
     if (m_pTrackDefaults->ContainsData()) {
-        xAssignTrackData(pNewAnnot);
+        xAssignTrackData(*pNewAnnot);
     }
 
     if ( !m_AnnotName.empty() ) {

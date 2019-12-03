@@ -104,7 +104,7 @@ CWiggleReader::ReadSeqAnnot(
         pAnnot = xReadSeqAnnotTable(lr, pMessageListener);
     }
     if (pAnnot) {
-        xAssignTrackData(pAnnot);
+        xAssignTrackData(*pAnnot);
     }
     return pAnnot;
 }

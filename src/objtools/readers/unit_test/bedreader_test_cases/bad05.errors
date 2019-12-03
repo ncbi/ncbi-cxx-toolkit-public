@@ -1,4 +1,4 @@
-Line No    : None (Encountered during pre or post processing)
-Severity   : Fatal
-Message    : Bad data line: Inconsistent column count.
+                Fatal
+Line:           6
+Problem:        Bad data line: Inconsistent column count.
 

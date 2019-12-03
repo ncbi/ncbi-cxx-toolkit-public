@@ -113,7 +113,8 @@ public:
     CBedReader( 
         int = fNormal,
         const string& = "",
-        const string& = "" );
+        const string& = "",
+        CReaderListener* = nullptr);
     virtual ~CBedReader();
     
     //
@@ -145,6 +146,16 @@ public:
         ILineErrorListener* =0 );
 
 protected:
+    virtual CRef<CSeq_annot> xCreateSeqAnnot();
+
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
+
     virtual bool xDetermineLikelyColumnCount(
         CLinePreBuffer&,
         ILineErrorListener*);
@@ -162,66 +173,66 @@ protected:
   
     bool xParseFeature(
         const string&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
       
     bool xParseFeature(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
     bool xParseFeatureUserFormat(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
     bool xParseFeatureThreeFeatFormat(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
     bool xAppendFeatureChrom(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     bool xAppendFeatureThick(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     bool xAppendFeatureBlock(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     bool xParseFeatureGeneModelFormat(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         ILineErrorListener*);
 
     CRef<CSeq_feat> xAppendFeatureGene(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     CRef<CSeq_feat> xAppendFeatureRna(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     CRef<CSeq_feat> xAppendFeatureCds(
         const vector<string>&,
-        CRef<CSeq_annot>&,
+        CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
-    void x_SetFeatureLocation(
+    void xSetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>&);
         
@@ -323,12 +334,12 @@ protected:
     virtual void xAssignBedColumnCount(
         CSeq_annot&);
                     
-    void x_SetFeatureDisplayData(
+    void xSetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const vector<string>&);
 
-    virtual void xPostProcessAnnot(
-        CRef<CSeq_annot>&,
+    virtual void xFinalizeAnnot(
+        CSeq_annot&,
         ILineErrorListener*);
 
     bool

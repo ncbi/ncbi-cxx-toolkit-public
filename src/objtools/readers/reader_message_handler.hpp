@@ -58,6 +58,9 @@ public:
     Progress(
         const CReaderProgress&);
 
+    size_t LevelCount(
+        EDiagSev severity) const;
+
 protected:
     CReaderListener* mpRL;
 };

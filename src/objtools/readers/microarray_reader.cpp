@@ -78,7 +78,7 @@ CMicroArrayReader::ReadSeqAnnot(
 {
     CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
     if (pAnnot) {
-        xAssignTrackData(pAnnot);
+        xAssignTrackData(*pAnnot);
 
         if(m_columncount >= 3) {
             CRef<CUser_object> columnCountUser( new CUser_object() );

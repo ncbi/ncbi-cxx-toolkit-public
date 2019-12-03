@@ -181,7 +181,7 @@ CVcfReader::ReadSeqAnnot(
     }
     CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
     if (pAnnot) {
-        xAssignTrackData(pAnnot);
+        xAssignTrackData(*pAnnot);
         xAssignVcfMeta(*pAnnot);
     }
     return pAnnot;

@@ -71,6 +71,18 @@ CReaderMessageHandler::Progress(
 }
 
 
+//  =============================================================================
+size_t
+CReaderMessageHandler::LevelCount(
+    EDiagSev severity) const
+//  =============================================================================
+{
+    if (!mpRL) {
+        return 0;
+    }
+    return mpRL->LevelCount(severity);
+}
+
 END_SCOPE(objects);
 END_NCBI_SCOPE;
 

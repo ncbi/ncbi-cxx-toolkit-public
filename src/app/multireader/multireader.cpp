@@ -771,9 +771,6 @@ CMultiReaderApp::xProcessSingleFile(
                     xProcessBed(args, istr, ostr);
                 }
                 break;
-            case CFormatGuess::eBed15:
-                xProcessDefault(args, istr, ostr);
-                break;
             case CFormatGuess::eUCSCRegion:
                 xProcessUCSCRegion(args, istr, ostr);
                 break;
@@ -781,9 +778,6 @@ CMultiReaderApp::xProcessSingleFile(
             case CFormatGuess::eGtf_POISENED:
             case CFormatGuess::eGffAugustus:
                 xProcessGtf(args, istr, ostr);
-                break;
-            case CFormatGuess::eVcf:
-                xProcessDefault(args, istr, ostr);
                 break;
             case CFormatGuess::eNewick:
                 xProcessNewick(args, istr, ostr);
@@ -808,9 +802,6 @@ CMultiReaderApp::xProcessSingleFile(
                 break;
             case CFormatGuess::eFasta:
                 xProcessFasta(args, istr, ostr);
-                break;
-            case CFormatGuess::ePsl:
-                xProcessDefault(args, istr, ostr);
                 break;
             //case CFormatGuess::eHgvs:
             //    xProcessHgvs(args, istr, ostr);
