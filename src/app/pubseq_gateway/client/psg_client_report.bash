@@ -1,49 +1,63 @@
 #!/bin/bash
 
-if [ $# -lt 7 ] || [ $# -gt 8 ]; then
-    echo "Usage: $0 REQUESTS ITERATIONS OLD_BINARY NEW_BINARY USER_THREADS IO_THREADS INPUT_FILE [OUTPUT_SUBDIR]";
+if [ $# -lt 8 ]; then
+    echo "Usage: $0 SERVICE REQUESTS ITERATIONS USER_THREADS IO_THREADS INPUT_FILE BINARY BINARY [BINARY ...]";
     exit 1;
 fi
 
-REQUESTS=$1
-ITERATIONS=$2
-OLD_BINARY=$3
-NEW_BINARY=$4
-USER_THREADS=$5
-IO_THREADS=$6
-INPUT_FILE=$7
-OUTPUT_SUBDIR=$8
+SERVICE="$1"
+REQUESTS="$2"
+ITERATIONS="$3"
+USER_THREADS="$4"
+IO_THREADS="$5"
+INPUT_FILE="$6"
+shift 6
+BINARIES=($@)
+
+function create_path
+{
+    local IFS="-"
+    OUTPUT_PATH="$*/$SERVICE/$TYPE/$USER_THREADS-$IO_THREADS/$REQUESTS-$ITERATIONS"
+    mkdir -p "$OUTPUT_PATH"
+}
+
+function run
+{
+    head -$REQUESTS $INPUT_FILE |$1/psg_client performance -service $SERVICE -user-threads $USER_THREADS -io-threads $IO_THREADS -local-queue -use-cache yes -raw-metrics;
+}
+
 TYPE=$(basename $INPUT_FILE .json)
-OUTPUT_DIR="$NEW_BINARY-$OLD_BINARY/$USER_THREADS-$IO_THREADS/$TYPE/$OUTPUT_SUBDIR"
 
-if [ ! -x $OLD_BINARY/psg_client ]; then
-    echo "$OLD_BINARY/psg_client does not exist or is not executable"
-    exit 2;
-fi
-
-if [ ! -x $NEW_BINARY/psg_client ]; then
-    echo "$NEW_BINARY/psg_client does not exist or is not executable"
-    exit 3;
-fi
+for bin in "${BINARIES[@]}"; do
+    if [ ! -x $bin/psg_client ]; then
+        echo "$bin/psg_client does not exist or is not executable"
+        exit 2;
+    fi;
+done
 
 if [ ! -f $INPUT_FILE ]; then
     echo "$INPUT_FILE does not exist or is not a file"
-    exit 4;
+    exit 3;
 fi
 
-if [ -a $OUTPUT_DIR ]; then
-    echo "$OUTPUT_DIR already exists"
-    exit 5;
-else
-    mkdir -p $OUTPUT_DIR
-fi
+create_path ${BINARIES[@]}
 
-for i in $(seq 1 $ITERATIONS); do
-    for bin in $OLD_BINARY $NEW_BINARY; do
+for ((i = 1; 1000; ++i)); do
+    OUTPUT_DIR="$OUTPUT_PATH/$i"
+
+    if [ ! -e "$OUTPUT_DIR" ]; then
+        mkdir "$OUTPUT_DIR"
+        break;
+    fi;
+done
+
+# A warm-up
+run ${BINARIES[0]}
+
+for ((i = 1; $i <= $ITERATIONS; ++i)); do
+    for bin in "${BINARIES[@]}"; do
         sleep 0.25;
-
-        $bin/psg_client performance -service psg -user-threads $USER_THREADS -io-threads $IO_THREADS -local-queue -use-cache yes -raw-metrics < <(head -$REQUESTS $INPUT_FILE);
-
+        run $bin
         sleep 0.25;
 
         # Old binaries print named events, so need to replace names
@@ -57,9 +71,9 @@ for i in $(seq 1 $ITERATIONS); do
     done;
 done;
 
-for bin in $OLD_BINARY $NEW_BINARY; do
+for bin in "${BINARIES[@]}"; do
     # Old binaries do not have report command, so need to use new binary
-    $NEW_BINARY/psg_client report -input-file $OUTPUT_DIR/raw.${bin}.txt -output-file $OUTPUT_DIR/table.${bin}.txt;
+    ${BINARIES[0]}/psg_client report -input-file $OUTPUT_DIR/raw.${bin}.txt -output-file $OUTPUT_DIR/table.${bin}.txt;
 done;
 
 echo "vim -R -O -c ':windo :set nowrap' -c ':windo normal ggG' -c ':windo :set scb' $OUTPUT_DIR/table.*"
