@@ -487,7 +487,7 @@ namespace {
             BOOST_REQUIRE(pEntry->IsSeq());
             pRetvalBioseq.Reset( & pEntry->SetSeq() );
 
-            CSourceModParser::TMods unused_mods = fasta_reader.GetUnusedMods();
+            CSourceModParser::TMods unused_mods;
             set<string> unused_mods_as_strings;
             ITERATE(CSourceModParser::TMods, unused_mod_it, unused_mods) {
                 unused_mods_as_strings.insert( unused_mod_it->key );
