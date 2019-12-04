@@ -9,7 +9,7 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(OR
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-REQUIRES = Boost.Test.Included
+REQUIRES = Boost.Test.Included MT
 
 CHECK_CMD  =
 CHECK_COPY = gff3flybasewriter_test_cases
