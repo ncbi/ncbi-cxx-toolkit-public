@@ -279,7 +279,7 @@ protected:
             ILineError::EProblem _eProblem, 
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
-    CSourceModParser* xCreateSourceModeParser(ILineErrorListener* pErrorListener);
+    NCBI_DEPRECATED CSourceModParser* xCreateSourceModeParser(ILineErrorListener* pErrorListener);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
