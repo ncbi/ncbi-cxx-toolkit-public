@@ -53,7 +53,7 @@ struct SPsgBioseqInfo
     typedef vector<CSeq_id_Handle> TIds;
     CSeq_inst::TMol molecule_type;
     Uint8 length;
-    CPSG_BioseqInfo::TBioseqState state;
+    CPSG_BioseqInfo::TState state;
     TTaxId tax_id;
     int hash;
     TIds ids;
