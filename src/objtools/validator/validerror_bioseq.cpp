@@ -4597,10 +4597,15 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
                 gaptype != CSeq_gap::eType_scaffold) {
                 if (gaptype == CSeq_gap::eType_unknown && is_unspec) {
                     /* suppress for legacy records */
-                } else if (gaptype == CSeq_gap::eType_contamination && linkevarray[8] > 0 && linkcount == linkevarray[8]) {
-                    /* contamination can only have linked unspecified */
+                } else if (gaptype == CSeq_gap::eType_contamination) {
+                    if (linkevarray[8] > 0 && linkcount == linkevarray[8]) {
+                        /* contamination can only have linked unspecified */
+                    } else {
+                        PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapBadLinkage,
+                           "Contamination gaps must have linkage evidence 'unspecified'", seq);
+                    }
                 } else {
-                   PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapBadLinkage,
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapBadLinkage,
                        "Seq-gap of type " + NStr::IntToString(gaptype) +
                        " should not have linkage evidence", seq);
                 }
@@ -4634,6 +4639,10 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
                     PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
                     "Seq-gap type == repeat and linkage == linked is missing required linkage evidence", seq);
 
+            }
+            if (gaptype == CSeq_gap::eType_contamination) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapBadLinkage,
+                    "Contamination gap-types must be linked and have linkage-evidence of type 'unspecified'", seq);
             }
         }
     }
