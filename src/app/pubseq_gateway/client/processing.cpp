@@ -286,6 +286,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 
     if (included_info & CPSG_Request_Resolve::fMoleculeType) m_JsonObj["molecule_type"].SetValue().SetString(objects::CSeq_inst::ENUM_METHOD_NAME(EMol)()->FindName(bioseq_info->GetMoleculeType(), true));
     if (included_info & CPSG_Request_Resolve::fLength)       m_JsonObj["length"].SetValue().SetUint8(bioseq_info->GetLength());
+    if (included_info & CPSG_Request_Resolve::fChainState)   m_JsonObj["chain_state"].SetValue().SetInt8(bioseq_info->GetChainState());
     if (included_info & CPSG_Request_Resolve::fState)        m_JsonObj["state"].SetValue().SetInt8(bioseq_info->GetState());
     if (included_info & CPSG_Request_Resolve::fBlobId)       m_JsonObj["blob_id"].SetValue().SetString(bioseq_info->GetBlobId().Get());
     if (included_info & CPSG_Request_Resolve::fTaxId)        m_JsonObj["tax_id"].SetValue().SetInt8(bioseq_info->GetTaxId());
@@ -1453,6 +1454,7 @@ const initializer_list<SInfoFlag> kInfoFlags =
     { "other-ids",       "Return other IDs info",                       CPSG_Request_Resolve::fOtherIds     },
     { "molecule-type",   "Return molecule type info",                   CPSG_Request_Resolve::fMoleculeType },
     { "length",          "Return length info",                          CPSG_Request_Resolve::fLength       },
+    { "chain-state",     "Return chain state info",                     CPSG_Request_Resolve::fChainState   },
     { "state",           "Return state info",                           CPSG_Request_Resolve::fState        },
     { "blob-id",         "Return blob ID info",                         CPSG_Request_Resolve::fBlobId       },
     { "tax-id",          "Return tax ID info",                          CPSG_Request_Resolve::fTaxId        },
@@ -1512,6 +1514,7 @@ CJson_Document CProcessing::RequestSchema()
                     "other-ids",
                     "molecule-type",
                     "length",
+                    "chain-state",
                     "state",
                     "blob-id",
                     "tax-id",

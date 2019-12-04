@@ -256,12 +256,13 @@ public:
         fOtherIds         = (1 << 3),
         fMoleculeType     = (1 << 4),
         fLength           = (1 << 5),
-        fState            = (1 << 6),
-        fBlobId           = (1 << 7),
-        fTaxId            = (1 << 8),
-        fHash             = (1 << 9),
-        fDateChanged      = (1 << 10),
-        fGi               = (1 << 11),
+        fChainState       = (1 << 6),
+        fState            = (1 << 7),
+        fBlobId           = (1 << 8),
+        fTaxId            = (1 << 9),
+        fHash             = (1 << 10),
+        fDateChanged      = (1 << 11),
+        fGi               = (1 << 12),
         fAllInfo          = numeric_limits<unsigned>::max()
     };
     DECLARE_SAFE_FLAGS_TYPE(EIncludeInfo, TIncludeInfo);
@@ -626,9 +627,24 @@ public:
     /// Length of bio-sequence
     Uint8 GetLength() const;
 
-    /// State of bio-sequence
-    typedef int TBioseqState;
-    TBioseqState GetState() const;
+    /// State of the bio-sequence's seq-id
+    enum EState {
+        eDead     =  0,
+        eSought   =  1,
+        eReserved =  5,
+        eMerged   =  7,
+        eLive     = 10
+    };
+    typedef int TState;  ///< @sa EState
+
+    /// State of the bio-sequence's seq-id chain, i.e. the state of the very
+    /// latest seq-id in this bio-sequence's seq-id chain
+    TState GetChainState() const;
+
+    /// State of this exact bio-sequence's seq-id.
+    /// I.e., for the latest seq-id in a chain it is equal to GetState(), and
+    /// for all other seq-ids in a chain it's zero (eDead).
+    TState GetState() const;
 
     /// Get coordinates of the TSE blob that contains the bioseq itself
     CPSG_BlobId GetBlobId() const;

@@ -376,6 +376,7 @@ void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
     if (include_info & CPSG_Request_Resolve::fOtherIds)     os << "&seq_ids=" << value;
     if (include_info & CPSG_Request_Resolve::fMoleculeType) os << "&mol_type=" << value;
     if (include_info & CPSG_Request_Resolve::fLength)       os << "&length=" << value;
+    if (include_info & CPSG_Request_Resolve::fChainState)   os << "&seq_state=" << value;
     if (include_info & CPSG_Request_Resolve::fState)        os << "&state=" << value;
     if (include_info & CPSG_Request_Resolve::fBlobId)       os << "&blob_id=" << value;
     if (include_info & CPSG_Request_Resolve::fTaxId)        os << "&tax_id=" << value;
@@ -727,9 +728,14 @@ Uint8 CPSG_BioseqInfo::GetLength() const
     return m_Data.GetInteger("length");
 }
 
-CPSG_BioseqInfo::TBioseqState CPSG_BioseqInfo::GetState() const
+CPSG_BioseqInfo::TState CPSG_BioseqInfo::GetChainState() const
 {
-    return static_cast<TBioseqState>(m_Data.GetInteger("state"));
+    return static_cast<TState>(m_Data.GetInteger("seq_state"));
+}
+
+CPSG_BioseqInfo::TState CPSG_BioseqInfo::GetState() const
+{
+    return static_cast<TState>(m_Data.GetInteger("state"));
 }
 
 CPSG_BlobId CPSG_BioseqInfo::GetBlobId() const
@@ -768,6 +774,7 @@ CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
     if (m_Data.HasKey("seq_ids") && m_Data.GetByKey("seq_ids").GetSize()) rv |= CPSG_Request_Resolve::fOtherIds;
     if (m_Data.HasKey("mol"))                                             rv |= CPSG_Request_Resolve::fMoleculeType;
     if (m_Data.HasKey("length"))                                          rv |= CPSG_Request_Resolve::fLength;
+    if (m_Data.HasKey("seq_state"))                                       rv |= CPSG_Request_Resolve::fChainState;
     if (m_Data.HasKey("state"))                                           rv |= CPSG_Request_Resolve::fState;
     if (m_Data.HasKey("sat") && m_Data.HasKey("sat_key"))                 rv |= CPSG_Request_Resolve::fBlobId;
     if (m_Data.HasKey("tax_id"))                                          rv |= CPSG_Request_Resolve::fTaxId;
