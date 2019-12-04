@@ -3501,6 +3501,7 @@ static const char* const kBuiltInGuide[] = {
     "special  LT631550-LT631670  embl_tpa_nuc",
     "special  LT906301-LT906358  embl_tpa_nuc",
     "special  LT962964-LT963174  embl_tpa_nuc",
+    "special  LT990249-LT990597  embl_tpa_nuc",
     "",
     "# Nominally (conservatively) embl_other_nuc.",
     "special  OB000001-OB660024  embl_con",
