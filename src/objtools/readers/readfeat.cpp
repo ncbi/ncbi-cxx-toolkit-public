@@ -2559,9 +2559,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                 {
                     if (CSeqFeatData::CanHaveGene(sfdata.GetSubtype())) {
                         CGene_ref& grp = sfp->SetGeneXref ();
-                        if (val == "-") {
-                        grp.SetLocus ("");
-                        } else {
+                        if (val != "-") {
                             grp.SetLocus (val);
                         }
                         return true;
