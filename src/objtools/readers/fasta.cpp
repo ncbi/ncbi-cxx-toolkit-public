@@ -2080,55 +2080,6 @@ CSourceModParser* CFastaReader::xCreateSourceModeParser(
     return new CSourceModParser(CSourceModParser::eHandleBadMod_Ignore);
 }
 
-/*
-void CFastaReader::x_ApplyMods(     
-     const string& title, 
-     TSeqPos line_number, 
-     CBioseq& bioseq,
-     ILineErrorListener * pMessageListener )
-{
-    auto_ptr<CSourceModParser> pSmp(xCreateSourceModeParser(pMessageListener));
-    pSmp->SetModFilter(m_pModFilter_DEPRECATED);
-
-
-    string processed_title = title;
-    if( TestFlag(fAddMods) ) {
-        processed_title = pSmp->ParseTitle(processed_title, CConstRef<CSeq_id>(bioseq.GetFirstId()));
-        pSmp->ApplyAllMods(bioseq);
-        pSmp->GetLabel(&processed_title, CSourceModParser::fUnusedMods);
-
-        copy( pSmp->GetBadMods().begin(), pSmp->GetBadMods().end(),
-            inserter(m_BadMods, m_BadMods.begin()) );
-        CSourceModParser::TMods unused_mods = 
-            pSmp->GetMods(CSourceModParser::fUnusedMods);
-        copy( unused_mods.begin(), unused_mods.end(),
-            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
-    } else if (!TestFlag(fIgnoreMods)) {
-        // user did not request fAddMods, so we warn if we found
-        // mods anyway
-        pSmp->ParseTitle(
-            processed_title, 
-            CConstRef<CSeq_id>(bioseq.GetFirstId()),
-            1 // "1" since we only care whether or not there are mods, not how many
-            );
-        CSourceModParser::TMods unused_mods = pSmp->GetMods(CSourceModParser::fUnusedMods);
-        if( ! unused_mods.empty() ) {
-            FASTA_WARNING(line_number,
-                "FASTA-Reader: Ignoring FASTA modifier(s) found because "
-                "the input was not expected to have any.",
-                ILineError::eProblem_ModifierFoundButNoneExpected,
-                "defline");
-        }
-    }
-
-    NStr::TruncateSpacesInPlace(processed_title);
-    if (!processed_title.empty()) {
-        auto pDesc = Ref(new CSeqdesc());
-        pDesc->SetTitle() = processed_title;
-        bioseq.SetDescr().Set().push_back(move(pDesc));
-    }
-}
-*/
 
 static void s_AppendMods(
         const CModHandler::TModList& mods, 
