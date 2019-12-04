@@ -1197,6 +1197,7 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
     string locus_name = kEmptyStr;
     string allele = kEmptyStr;
     string repeat = kEmptyStr;
+    string assay = kEmptyStr;
 
     if (comment.IsSetData()) {
         ITERATE(CUser_object::TData, it, comment.GetData()) {
@@ -1209,6 +1210,8 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
                     allele = (*it)->GetData().GetStr();
                 } else if (NStr::EqualNocase(label, "Bracketed repeat")) {
                     repeat = (*it)->GetData().GetStr();
+                } else if (NStr::EqualNocase(label, "Sequencing assay code")) {
+                    assay = (*it)->GetData().GetStr();
                 }
             }
         }
@@ -1230,6 +1233,9 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
             }             
         }
         ++f;
+    }
+    if (assay != "") {
+        clause += " " + assay;
     }
     clause += " sequence";
     return clause;
