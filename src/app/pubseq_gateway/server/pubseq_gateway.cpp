@@ -351,8 +351,14 @@ int CPubseqGatewayApp::Run(void)
     }
 
     if (GetArgs()[kDaemonizeArgName]) {
+        // NOTE: if the stdin/stdout are not kept (default daemonize behavior)
+        // then libuv fails to close its events loop. There are some asserts
+        // with fds, one of them fails so a core dump is generated.
+        // With stdin/stdout kept open libuv stays happy and does not crash
         bool    is_good = CCurrentProcess::Daemonize(kEmptyCStr,
-                                                     CCurrentProcess::fDF_KeepCWD);
+                                                     CCurrentProcess::fDF_KeepCWD |
+                                                     CCurrentProcess::fDF_KeepStdin |
+                                                     CCurrentProcess::fDF_KeepStdout);
         if (!is_good)
             NCBI_THROW(CPubseqGatewayException, eDaemonizationFailed,
                        "Error during daemonization");
@@ -513,21 +519,42 @@ int CPubseqGatewayApp::Run(void)
                                                     m_TcpMaxConn));
 
 
+
     // Run the monitoring thread
+    int             ret_code = 0;
     std::thread     monitoring_thread(CassMonitorThreadedFunction);
 
+    try {
+        m_TcpDaemon->Run([this](TSL::CTcpDaemon<HST::CHttpProto<CPendingOperation>,
+                           HST::CHttpConnection<CPendingOperation>,
+                           HST::CHttpDaemon<CPendingOperation>> &  tcp_daemon)
+                {
+                    // This lambda is called once per second.
+                    // Earlier implementations printed counters on stdout.
+                });
+    } catch (const CException &  exc) {
+        ERR_POST(Critical << exc);
+        ret_code = 1;
+        g_ShutdownData.m_ShutdownRequested = true;
+        monitoring_thread.detach();     // to avoid up to 60 sec delay
+    } catch (const exception &  exc) {
+        ERR_POST(Critical << exc);
+        ret_code = 1;
+        g_ShutdownData.m_ShutdownRequested = true;
+        monitoring_thread.detach();     // to avoid up to 60 sec delay
+    } catch (...) {
+        ERR_POST(Critical << "Unknown exception while running TCP daemon");
+        ret_code = 1;
+        g_ShutdownData.m_ShutdownRequested = true;
+        monitoring_thread.detach();     // to avoid up to 60 sec delay
+    }
 
-    m_TcpDaemon->Run([this](TSL::CTcpDaemon<HST::CHttpProto<CPendingOperation>,
-                       HST::CHttpConnection<CPendingOperation>,
-                       HST::CHttpDaemon<CPendingOperation>> &  tcp_daemon)
-            {
-                // This lambda is called once per second.
-                // Earlier implementations printed counters on stdout.
-            });
+    if (monitoring_thread.joinable()) {
+        monitoring_thread.join();
+    }
 
-    monitoring_thread.join();
     CloseCass();
-    return 0;
+    return ret_code;
 }
 
 
