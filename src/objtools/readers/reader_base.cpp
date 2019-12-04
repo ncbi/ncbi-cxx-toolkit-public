@@ -457,7 +457,7 @@ CReaderBase::ProcessWarning(
 void CReaderBase::xSetBrowserRegion(
     const string& strRaw,
     CAnnot_descr& desc,
-    ILineErrorListener* pEC)
+    ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage error(

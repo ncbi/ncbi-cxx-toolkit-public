@@ -33,19 +33,13 @@
 */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
-
-#include <objtools/readers/gvf_reader.hpp>
-#include "error_logger.hpp"
-
-#include <cstdio>
-
-// This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <objtools/readers/gvf_reader.hpp>
+#include "tc_message_listener.hpp"
+
+#include <cstdio>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -145,14 +139,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CErrorLogger logger(errors);
-    CGvfReader reader(0);
+    CTeamCityMessageListener ml(errors);
     CNcbiIfstream ifstr(input.c_str());
 
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CGvfReader reader(0, "", "", &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         ifstr.close();
@@ -198,15 +192,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mErrorFile.GetName() << endl;
 
     string logName = CDirEntry::GetTmpName();
-    CErrorLogger logger(logName);
+    CTeamCityMessageListener ml(logName);
 
-    CGvfReader reader(0);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CGvfReader reader(0, "", "", &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");

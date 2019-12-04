@@ -43,6 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CGff3ReadRecord;
+class CReaderListener;
 
 //  ============================================================================
 class CGvfReadRecord
@@ -67,9 +68,6 @@ protected:
     virtual bool xAssignAttributesFromGff(
         const string&,
         const string& );
-    void xTraceError(
-        EDiagSev,
-        const string&);
 
     unsigned int mLineNumber;
     ILineErrorListener* mpMessageListener;
@@ -84,11 +82,21 @@ public:
     CGvfReader(
         unsigned int uFlags,
         const string& name = "",
-        const string& title = "" );
+        const string& title = "",
+        CReaderListener* = nullptr);
 
     virtual ~CGvfReader();
 
+    virtual CRef<CSeq_annot>
+    ReadSeqAnnot(
+        ILineReader&,
+        ILineErrorListener* = nullptr );
+
 protected:
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
+
     virtual bool xParseStructuredComment(
         const string&);
                                 
@@ -217,16 +225,15 @@ protected:
 
     virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
 
-    bool x_IsDbvarCall(
+    bool xIsDbvarCall(
         const string& nameAttr) const;
 
-    bool x_GetNameAttribute(
+    bool xGetNameAttribute(
         const CGvfReadRecord& record, 
         string& name) const;
-    
+ 
 protected:
     CRef< CAnnotdesc > m_Pragmas;
- 
 };
 
 END_SCOPE(objects)

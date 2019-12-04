@@ -282,11 +282,11 @@ protected:
     virtual bool xParseBrowserLine(
         const string&,
         CSeq_annot&,
-        ILineErrorListener*);
+        ILineErrorListener* = nullptr);
         
     virtual bool xParseTrackLine(
         const string&,
-        ILineErrorListener*);
+        ILineErrorListener* = nullptr);
         
     virtual bool xParseBrowserLine(
         const string&,
@@ -295,7 +295,7 @@ protected:
     virtual void xSetBrowserRegion(
         const string&,
         CAnnot_descr&,
-        ILineErrorListener*);
+        ILineErrorListener* = nullptr);
 
     virtual void xPostProcessAnnot(
         CSeq_annot&,

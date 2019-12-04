@@ -48,6 +48,7 @@
 #include <objects/seqfeat/Variation_inst.hpp>
 
 #include <objtools/readers/gvf_reader.hpp>
+#include "reader_message_handler.hpp"
 
 #include <algorithm>
 
@@ -83,18 +84,20 @@ bool CGvfReadRecord::AssignFromGff(
     // GVF specific fixup goes here ...
     TAttrIt idIt = m_Attributes.find("ID");
     if (idIt == m_Attributes.end()) {
-        string errMessage(
-            "Required attribute ID missing. Import aborted.");
-        xTraceError(eDiag_Critical, errMessage);
-        return false;
+        CReaderMessage fatal(
+            eDiag_Error,
+            0,
+            "Mandatory attribute ID missing.");
+        throw fatal;
     }
     TAttrIt variantSeqIt = m_Attributes.find("Variant_seq");
     TAttrIt referenceSeqIt = m_Attributes.find("Reference_seq");
     if (variantSeqIt == m_Attributes.end()  ||  referenceSeqIt == m_Attributes.end()) {
-        string errMessage(
-            "Required attribute Reference_seq and/or Variant_seq missing. Import aborted.");
-        xTraceError(eDiag_Critical, errMessage);
-        return false;
+        CReaderMessage fatal(
+            eDiag_Error,
+            0,
+            "Mandatory attribute Reference_seq and/or Variant_seq missing.");
+        throw fatal;
     }
     return true;
 }
@@ -145,35 +148,54 @@ bool CGvfReadRecord::SanityCheck() const
 }
 
 //  ----------------------------------------------------------------------------
-void CGvfReadRecord::xTraceError(
-    EDiagSev severity,
-    const string& msg)
-//  ----------------------------------------------------------------------------
-{
-    AutoPtr<CObjReaderLineException> pErr(
-        CObjReaderLineException::Create(
-        severity,
-        mLineNumber,
-        msg) );
-    if (!mpMessageListener  ||  !mpMessageListener->PutError(*pErr)) {
-        pErr->Throw();
-    }
-}
-
-//  ----------------------------------------------------------------------------
 CGvfReader::CGvfReader(
     unsigned int uFlags,
     const string& name,
-    const string& title ):
+    const string& title,
+    CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
     CGff3Reader( uFlags, name, title )
 {
+    m_pMessageHandler = new CReaderMessageHandler(pRL);
 }
 
 //  ----------------------------------------------------------------------------
 CGvfReader::~CGvfReader()
 //  ----------------------------------------------------------------------------
 {
+}
+
+//  ----------------------------------------------------------------------------                
+CRef<CSeq_annot>
+CGvfReader::ReadSeqAnnot(
+    ILineReader& lr,
+    ILineErrorListener* pEC ) 
+//  ----------------------------------------------------------------------------                
+{
+    CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
+    xPostProcessAnnot(*pAnnot, pEC);
+    return pAnnot;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CGvfReader::xProcessData(
+    const TReaderData& readerData,
+    CSeq_annot& annot) 
+//  ----------------------------------------------------------------------------
+{
+    for (const auto& lineData: readerData) {
+        const auto& line = lineData.mData;
+        if (xParseStructuredComment(line)) {
+            continue;
+        }
+        if (xParseBrowserLine(line, annot)) {
+            continue;
+        }
+        if (xParseFeature(line, annot, nullptr)) {
+            continue;
+        }
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -342,14 +364,11 @@ bool CGvfReader::xSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders, 0 );
         if ( range_borders.size() != 2 ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_SetLocation: Bad \"Start_range\" attribute") +
-                    " (Start_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+                m_uLineNumber,
+                "Bad Start_range attribute: Start_range=" + strRange + ".");
+            throw error;
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -368,14 +387,11 @@ bool CGvfReader::xSetLocationInterval(
             }        
         }
         catch ( std::exception& ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_SetLocation: Bad \"Start_range\" attribute") +
-                    " (Start_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+                m_uLineNumber,
+                "Bad Start_range attribute: Start_range=" + strRange + ".");
+            throw error;
         }
     }
 
@@ -385,14 +401,11 @@ bool CGvfReader::xSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders, 0 );
         if ( range_borders.size() != 2 ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_SetLocation: Bad \"End_range\" attribute") +
-                    " (End_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+                m_uLineNumber,
+                "Bad End_range attribute: End_range=" + strRange + ".");
+            throw error;
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -411,14 +424,11 @@ bool CGvfReader::xSetLocationInterval(
             }        
         }
         catch (std::exception&) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_SetLocation: Bad \"End_range\" attribute") +
-                    " (End_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-            pErr->Throw();
+                m_uLineNumber,
+                "Bad End_range attribute: End_range=" + strRange + ".");
+            throw error;
         }
     }
 
@@ -449,14 +459,11 @@ bool CGvfReader::xSetLocationPoint(
     bool hasLower = record.GetAttribute("Start_range", strRangeLower);
     bool hasUpper = record.GetAttribute("End_range", strRangeUpper);
     if (hasLower  &&  hasUpper  &&  strRangeLower != strRangeUpper) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage error(
             eDiag_Error,
-            0,
-            string("CGvfReader::x_SetLocation: Bad range attribute:") +
-                " Conflicting fuzz ranges for single point location.",
-            ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+            m_uLineNumber,
+            "Bad range attribute: Conflicting fuzz ranges for single point location.");
+        throw error;
     }
     if (!hasLower  &&  !hasUpper) {
         return true;
@@ -469,14 +476,11 @@ bool CGvfReader::xSetLocationPoint(
     TSeqPos lower, upper;
     NStr::Split( strRangeLower, ",", bounds, 0 );
     if (bounds.size() != 2) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage error(
             eDiag_Error,
-            0,
-            string("CGvfReader::x_SetLocation: Bad \"XXX_range\" attribute") +
-                " (XXX_range=" + strRangeLower + ").",
-            ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+            m_uLineNumber,
+            "Bad range attribute: XXX_range=" + strRangeLower + ".");
+        throw error;
     }
     try {
         if (bounds.back() == ".") {
@@ -494,15 +498,12 @@ bool CGvfReader::xSetLocationPoint(
             location.SetPnt().SetFuzz().SetRange().SetMax(upper-1);
         }        
     }
-    catch ( ... ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+    catch (std::exception&) {
+        CReaderMessage error(
             eDiag_Error,
-            0,
-            string("CGvfReader::x_SetLocation: Bad \"XXX_range\" attribute") +
-                " (XXX_range=" + strRangeLower + ").",
-            ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+            m_uLineNumber,
+            "Bad range attribute: XXX_range=" + strRangeLower + ".");
+        throw error;
     }
     return true;
 }
@@ -531,14 +532,11 @@ bool CGvfReader::xFeatureSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders, 0 );
         if ( range_borders.size() != 2 ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute") +
-                    " (Start_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+                m_uLineNumber,
+                "Bad Start_range attribute: Start_range=" + strRange + ".");
+            throw error;
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -557,14 +555,11 @@ bool CGvfReader::xFeatureSetLocationInterval(
             }        
         }
         catch ( std::exception& ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute") +
-                    " (Start_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+                m_uLineNumber,
+                "Bad Start_range attribute: Start_range=" + strRange + ".");
+            throw error;
         }
     }
 
@@ -574,14 +569,11 @@ bool CGvfReader::xFeatureSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders, 0 );
         if ( range_borders.size() != 2 ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute") +
-                    " (End_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+                m_uLineNumber,
+                "Bad End_range attribute: End_range=" + strRange + ".");
+            throw error;
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -600,14 +592,11 @@ bool CGvfReader::xFeatureSetLocationInterval(
             }        
         }
         catch (std::exception&) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                string("CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute") +
-                    " (End_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue) );
-pErr->Throw();
+                m_uLineNumber,
+                "Bad End_range attribute: End_range=" + strRange + ".");
+            throw error;
         }
     }
 
@@ -639,14 +628,11 @@ bool CGvfReader::xFeatureSetLocationPoint(
     bool hasLower = record.GetAttribute("Start_range", strRangeLower);
     bool hasUpper = record.GetAttribute("End_range", strRangeUpper);
     if (hasLower  &&  hasUpper  &&  strRangeLower != strRangeUpper) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage error(
             eDiag_Error,
-            0,
-            string("CGvfReader::x_FeatureSetLocation: Bad range attribute:") +
-                " Conflicting fuzz ranges for single point location.",
-            ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+            m_uLineNumber,
+            "Bad range attribute: Conflicting fuzz ranges for single point location.");
+        throw error;
     }
     if (!hasLower  &&  !hasUpper) {
         feature.SetLocation(*pLocation);
@@ -660,14 +646,11 @@ bool CGvfReader::xFeatureSetLocationPoint(
     TSeqPos lower, upper;
     NStr::Split( strRangeLower, ",", bounds, 0 );
     if (bounds.size() != 2) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage error(
             eDiag_Error,
-            0,
-            string("CGvfReader::x_FeatureSetLocation: Bad \"XXX_range\" attribute") +
-                " (XXX_range=" + strRangeLower + ").",
-            ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+            m_uLineNumber,
+            "Bad range attribute: XXX_range=" + strRangeLower + ".");
+        throw error;
     }
     try {
         if (bounds.back() == ".") {
@@ -685,29 +668,26 @@ bool CGvfReader::xFeatureSetLocationPoint(
             pLocation->SetPnt().SetFuzz().SetRange().SetMax(upper-1);
         }        
     }
-    catch ( ... ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+    catch (std::exception&) {
+        CReaderMessage error(
             eDiag_Error,
-            0,
-            string("CGvfReader::x_FeatureSetLocation: Bad \"XXX_range\" attribute") +
-                " (XXX_range=" + strRangeLower + ").",
-            ILineError::eProblem_QualifierBadValue) );
-        pErr->Throw();
+            m_uLineNumber,
+            "Bad range attribute: XXX_range=" + strRangeLower + ".");
+        throw error;
     }
     feature.SetLocation( *pLocation );
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfReader::x_IsDbvarCall(const string& nameAttr) const
+bool CGvfReader::xIsDbvarCall(const string& nameAttr) const
 //  ----------------------------------------------------------------------------
 {
     return (nameAttr.find("ssv") != string::npos);
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfReader::x_GetNameAttribute(const CGvfReadRecord& record, string& name) const
+bool CGvfReader::xGetNameAttribute(const CGvfReadRecord& record, string& name) const
 //  ----------------------------------------------------------------------------
 {
     if ( record.GetAttribute( "Name", name ) ) {
@@ -729,7 +709,7 @@ bool CGvfReader::xFeatureSetVariation(
     NStr::ToLower( strType );
 
     string nameAttr;
-    x_GetNameAttribute(record, nameAttr);
+    xGetNameAttribute(record, nameAttr);
 
     if ( strType == "snv" ) {
         if (!xVariationMakeSNV( record, *pVariation )) {
@@ -753,7 +733,7 @@ bool CGvfReader::xFeatureSetVariation(
              strType == "sva_deletion" || 
              strType == "herv_deletion" ||
              (strType == "mobile_element_deletion" && 
-              x_IsDbvarCall(nameAttr))) {
+              xIsDbvarCall(nameAttr))) {
         if (!xVariationMakeDeletions( record, *pVariation )) {
             return false;
         }
@@ -821,9 +801,10 @@ bool CGvfReader::xParseStructuredComment(
         m_Pragmas.Reset( new CAnnotdesc );
         m_Pragmas->SetUser().SetType().SetStr( "gvf-import-pragmas" );
     }
+
     string key, value;
-    NStr::SplitInTwo( strLine.substr(2), " ", key, value );
-    m_Pragmas->SetUser().AddField( key, value );
+    NStr::SplitInTwo(strLine.substr(2), " ", key, value);
+    m_Pragmas->SetUser().AddField(key, value);
     return true;
 }
 
@@ -912,7 +893,7 @@ bool CGvfReader::xVariationMakeCNV(
     }
 
     string nameAttr;
-    x_GetNameAttribute(record, nameAttr);
+    xGetNameAttribute(record, nameAttr);
 
     string strType = record.Type();
     NStr::ToLower( strType );
@@ -929,7 +910,7 @@ bool CGvfReader::xVariationMakeCNV(
     }
     if ( strType == "loss" || 
          strType == "copy_number_loss" ||
-         (strType == "mobile_element_deletion" && !x_IsDbvarCall(nameAttr)) ) {
+         (strType == "mobile_element_deletion" && !xIsDbvarCall(nameAttr)) ) {
         variation.SetLoss();
         return true;
     }
@@ -942,14 +923,11 @@ bool CGvfReader::xVariationMakeCNV(
         return true;
     }
 
-    AutoPtr<CObjReaderLineException> pErr(
-        CObjReaderLineException::Create(
+    CReaderMessage error(
         eDiag_Error,
-        0,
-        string("GVF record error: Unknown type \"") + strType + "\"",
-        ILineError::eProblem_QualifierBadValue) );
-    pErr->Throw();
-    return false;
+        m_uLineNumber,
+        "Bad data line: Unknown type \"" + strType + "\".");
+    throw error;
 }
 
 
@@ -1353,14 +1331,11 @@ bool CGvfReader::xFeatureSetExt(
 
         string strAttribute;
         if ( ! record.GetAttribute( cit->first, strAttribute ) ) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage warning(
                 eDiag_Warning,
                 m_uLineNumber,
-                "CGvfReader::x_FeatureSetExt: Funny attribute \"" + cit->first + "\"") );
-            if (!pMessageListener->PutError(*pErr)) {
-                pErr->Throw();
-            }
+                "Suspicious data line: Funny attribute \"" + cit->first + "\".");
+            m_pMessageHandler->Report(warning);
             continue;
         }
         if ( cit->first == "ID" ) {

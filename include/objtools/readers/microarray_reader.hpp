@@ -61,7 +61,7 @@ public:
         
     virtual ~CMicroArrayReader();
     
-    virtual CRef< CSeq_annot >
+    virtual CRef<CSeq_annot>
     ReadSeqAnnot(
         ILineReader&,
         ILineErrorListener* = nullptr );
