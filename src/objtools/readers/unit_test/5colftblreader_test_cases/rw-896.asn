@@ -16,7 +16,6 @@ Seq-annot ::= {
       xref {
         {
           data gene {
-            locus ""
           }
         }
       }
