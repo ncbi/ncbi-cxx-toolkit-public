@@ -179,7 +179,12 @@ public:
         unsigned int =0, 
         const string& = "", 
         const string& = "",
-        SeqIdResolver = CReadUtil::AsSeqId );
+        SeqIdResolver = CReadUtil::AsSeqId,
+        CReaderListener* = nullptr);
+
+    CGtfReader( 
+        unsigned int, 
+        CReaderListener*);
 
     virtual ~CGtfReader();
     

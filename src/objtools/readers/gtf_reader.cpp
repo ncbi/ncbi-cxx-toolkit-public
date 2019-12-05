@@ -58,6 +58,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/gtf_reader.hpp>
+#include "reader_message_handler.hpp"
 
 #include <algorithm>
 
@@ -139,11 +140,22 @@ CGtfReader::CGtfReader(
     unsigned int uFlags,
     const string& strAnnotName,
     const string& strAnnotTitle,
-    SeqIdResolver resolver ):
+    SeqIdResolver resolver,
+    CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
-    CGff2Reader( uFlags, strAnnotName, strAnnotTitle, resolver )
+    CGff2Reader( uFlags, strAnnotName, strAnnotTitle, resolver)
+{
+    m_pMessageHandler = new CReaderMessageHandler(pRL);
+}
+//  ----------------------------------------------------------------------------
+CGtfReader::CGtfReader( 
+    unsigned int uFlags,
+    CReaderListener* pRL):
+//  ----------------------------------------------------------------------------
+    CGtfReader( uFlags, "", "", CReadUtil::AsSeqId, pRL)
 {
 }
+
 
 //  ----------------------------------------------------------------------------
 CGtfReader::~CGtfReader()

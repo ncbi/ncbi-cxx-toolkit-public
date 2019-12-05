@@ -39,7 +39,7 @@
 #include <corelib/ncbifile.hpp>
 
 #include <objtools/readers/gtf_reader.hpp>
-#include "error_logger.hpp"
+#include "tc_message_listener.hpp"
 
 #include <cstdio>
 
@@ -52,7 +52,6 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
-#define READERCLASS CGtfReader
 const string extInput("gtf");
 const string extOutput("asn");
 const string extErrors("errors");
@@ -147,14 +146,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CErrorLogger logger(errors);
-    READERCLASS reader(0);
+    CTeamCityMessageListener ml(errors);
     CNcbiIfstream ifstr(input.c_str());
 
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CGtfReader reader(0, &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         // succeeding by failing in the expected manner.
@@ -201,15 +200,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mErrorFile.GetName() << endl;
 
     string logName = CDirEntry::GetTmpName();
-    CErrorLogger logger(logName);
+    CTeamCityMessageListener ml(logName);
 
-    READERCLASS reader(0);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CGtfReader reader(0, &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         // succeeding by failing in the expected manner.
