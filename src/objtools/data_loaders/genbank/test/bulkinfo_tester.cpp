@@ -160,8 +160,7 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]) ||
-                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+            return (data[i] == data_verify[i]);
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -233,9 +232,6 @@ public:
     bool Correct(size_t i) const
         {
             if ( data[i] == data_verify[i] ) {
-                return true;
-            }
-            if (CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId())) {
                 return true;
             }
             if ( report_all_errors ) {
@@ -342,8 +338,7 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]) ||
-                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+            return (data[i] == data_verify[i]);
     }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -427,8 +422,7 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]) ||
-                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+            return (data[i] == data_verify[i]);
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -498,9 +492,6 @@ public:
     bool Correct(size_t i) const
         {
             if ( data[i] == data_verify[i] ) {
-                return true;
-            }
-            if (CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId())) {
                 return true;
             }
             if ( report_all_errors ) {
@@ -582,8 +573,7 @@ public:
     }
     bool Correct(size_t i) const
     {
-        return (data[i] == data_verify[i]) ||
-            CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+        return (data[i] == data_verify[i]);
     }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -660,8 +650,7 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]) || !data[i] ||
-                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+            return (data[i] == data_verify[i]) || !data[i];
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -732,8 +721,7 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]) ||
-                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+            return (data[i] == data_verify[i]);
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -804,8 +792,7 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]) ||
-                CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId());
+            return (data[i] == data_verify[i]);
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -876,7 +863,6 @@ public:
         }
     bool Correct(size_t i) const
         {
-            if (CGBDataLoader::IsIgnoredId(*ids[i].GetSeqId())) return true;
             int data_sup = data[i] & CBioseq_Handle::fState_suppress;
             int verify_sup = data_verify[i] & CBioseq_Handle::fState_suppress;
             if ((data_sup == 0) != (verify_sup == 0)) return false;

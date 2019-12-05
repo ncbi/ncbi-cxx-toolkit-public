@@ -90,7 +90,12 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
         CDataLoader* loader =
             om->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
         if ( loader ) {
-            BOOST_CHECK(om->RevokeDataLoader(*loader));
+            if (CGBDataLoader::IsUsingPSGLoader()) {
+                om->RevokeAllDataLoaders();
+            }
+            else {
+                BOOST_CHECK(om->RevokeDataLoader(*loader));
+            }
         }
     }
 #ifdef HAVE_PUBSEQ_OS
@@ -98,8 +103,15 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
     GenBankReaders_Register_Pubseq();
 #endif
     CGBDataLoader::RegisterInObjectManager(*om);
+
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
+    if (CGBDataLoader::IsUsingPSGLoader()) {
+        // Add SNP/CDD/WGS loaders.
+        scope->AddDataLoader(om->RegisterDataLoader(0, "cdd")->GetName());
+        scope->AddDataLoader(om->RegisterDataLoader(0, "snp")->GetName());
+        scope->AddDataLoader(om->RegisterDataLoader(0, "wgs")->GetName());
+    }
     return scope;
 }
 
@@ -339,13 +351,6 @@ void s_CheckGraph(const SAnnotSelector& sel,
     CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
     BOOST_REQUIRE(bh);
     BOOST_CHECK(CGraph_CI(bh, range, sel));
-}
-
-
-BOOST_AUTO_TEST_CASE(CheckPSGLoader)
-{
-    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
-        "\n\n*****************************************************\n* The test is expected to fail with PSG data loader *\n*****************************************************\n");
 }
 
 
@@ -629,6 +634,7 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 
 BOOST_AUTO_TEST_CASE(CheckExtSTS)
 {
+    if (CGBDataLoader::IsUsingPSGLoader()) return;
     LOG_POST("Checking ExtAnnot STS");
     SAnnotSelector sel(CSeqFeatData::eSubtype_STS);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -935,6 +941,7 @@ BOOST_AUTO_TEST_CASE(TestHistory)
 
 BOOST_AUTO_TEST_CASE(TestGBLoaderName)
 {
+    if (CGBDataLoader::IsUsingPSGLoader()) return;
     LOG_POST("Checking CGBDataLoader user-defined name");
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CGBLoaderParams params;

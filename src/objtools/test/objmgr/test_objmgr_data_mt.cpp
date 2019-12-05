@@ -657,7 +657,6 @@ bool CTestOM::TestApp_Init(void)
         TIntId gi_to    = args["togi"]? args["togi"].AsInteger(): g_gi_to;
         TIntId delta = gi_to > gi_from? 1: -1;
         for ( TIntId gi = gi_from; gi != gi_to+delta; gi += delta ) {
-            if (CGBDataLoader::IsIgnoredGi(gi)) continue;
             m_Ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
         }
         NcbiCout << "Testing ObjectManager ("
@@ -667,7 +666,6 @@ bool CTestOM::TestApp_Init(void)
         TIntId count = g_gi_to-g_gi_from+1;
         for ( TIntId i = 0; i < count; ++i ) {
             if ( i % 3 != 0 ) {
-                if (CGBDataLoader::IsIgnoredGi(i + g_gi_from)) continue;
                 m_Ids.push_back(CSeq_id_Handle::GetGiHandle(i+g_gi_from));
             }
             else {
@@ -682,7 +680,6 @@ bool CTestOM::TestApp_Init(void)
                     str << "a";
                 str << setfill('0') << setw(6) << (i/3+g_acc_from);
                 string acc = CNcbiOstrstreamToString(str);
-                if (CGBDataLoader::IsIgnoredAcc(acc)) continue;
                 CSeq_id seq_id(acc);
                 m_Ids.push_back(CSeq_id_Handle::GetHandle(seq_id));
             }

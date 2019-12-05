@@ -566,45 +566,10 @@ CGBDataLoader::GetRealBlobId(const CTSE_Info& tse_info) const
 }
 
 
-static set<TGi> s_IgnoreGis = {
-    GI_CONST(156232), GI_CONST(156323)
-};
-
 bool CGBDataLoader::IsUsingPSGLoader(void)
 {
 #if defined(HAVE_PSG_LOADER)
     return TGenbankLoaderPsg::GetDefault();
-#else
-    return false;
-#endif
-}
-
-bool CGBDataLoader::IsIgnoredGi(TGi gi)
-{
-#if defined(HAVE_PSG_LOADER)
-    if (!TGenbankLoaderPsg::GetDefault()) return false;
-#  if NCBI_DEVELOPMENT_VER > 20191001
-    NCBI_THROW(CLoaderException, eOtherError, "GI not supported by PSG data loader: " + NStr::NumericToString(gi));
-#  endif
-    return s_IgnoreGis.find(gi) != s_IgnoreGis.end();
-#else
-    return false;
-#endif
-}
-
-bool CGBDataLoader::IsIgnoredAcc(const string& acc)
-{
-    return false;
-}
-
-bool CGBDataLoader::IsIgnoredId(const CSeq_id& id)
-{
-#if defined(HAVE_PSG_LOADER)
-    if (!TGenbankLoaderPsg::GetDefault()) return false;
-#  if NCBI_DEVELOPMENT_VER > 20191001
-    NCBI_THROW(CLoaderException, eOtherError, "Seq-id not supported by PSG data loader: " + id.AsFastaString());
-#  endif
-    return id.IsGi() && IsIgnoredGi(id.GetGi());
 #else
     return false;
 #endif

@@ -81,12 +81,6 @@ USING_SCOPE(objects);
 
 BOOST_AUTO_TEST_SUITE(bl2seq)
 
-BOOST_AUTO_TEST_CASE(CheckPSGLoader)
-{
-    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
-        "\n\n*****************************************************\n* The test is expected to fail with PSG data loader *\n*****************************************************\n");
-}
-
 CRef<CSeq_loc> s_MakePackedInt2(CRef<CSeq_id> id, vector<TSeqRange>& range_vec)
 {
      CRef<CSeq_loc> retval(new CSeq_loc());
@@ -886,9 +880,6 @@ BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
 // In the case of multiple queries and one being masked, only emit a warning
 // N.B.: this doesn't test the MT case as MT unit tests aren't supported
 BOOST_AUTO_TEST_CASE(MultipleQueries1FullyMasked) {
-    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
-        "The test is known to fail with PSG data loader.");
-
     const bool kHasProteinQuery(true);
     CBlastInputSourceConfig iconfig(kHasProteinQuery);
     const CSearchDatabase dbinfo("data/nt.41646578", CSearchDatabase::eBlastDbIsNucleotide);

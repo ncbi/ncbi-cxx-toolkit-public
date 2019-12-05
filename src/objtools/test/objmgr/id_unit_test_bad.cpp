@@ -400,13 +400,6 @@ private:
 };
 
 
-BOOST_AUTO_TEST_CASE(CheckPSGLoader)
-{
-    BOOST_REQUIRE_MESSAGE(!CGBDataLoader::IsUsingPSGLoader(),
-        "\n\n*****************************************************\n* The test is expected to fail with PSG data loader *\n*****************************************************\n");
-}
-
-
 BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
 {
     // no sequence, check GI loading methods
@@ -554,76 +547,6 @@ BOOST_AUTO_TEST_CASE(CheckNoAcc)
             BOOST_CHECK(!op->GetIds(id).empty());
             TRACE_POST("GetBioseqHandle");
             BOOST_CHECK(op->GetBioseqHandle(id));
-        }
-    }
-}
-
-
-BOOST_AUTO_TEST_CASE(CheckNoGi)
-{
-    // have accession, have no GI
-    // shouldn't work with ID1 reader
-    CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:CDD|1786183");
-    //CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:SNP|568802115");
-    //CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|SRA|SRR000010.1.2");
-    vector<CSeq_id_Handle> idvec(1, id);
-    LOG_POST("CheckNoGi: "<<id);
-    for ( auto op : random_orders<4>(10) ) {
-        switch ( op.op ) {
-        case 0:
-            TRACE_POST("GetGi");
-            if ( s_HaveID1() ) {
-                // id1 treat no-data as no-seq
-                BOOST_CHECK_THROW(op->GetGi(id, kThrowNoSeq), CObjMgrException);
-            }
-            else {
-                // non-id1 distinguish no-data/no-seq
-                BOOST_CHECK(!op->GetGi(id, kThrowNoSeq));
-            }
-            break;
-        case 1:
-            TRACE_POST("GetGi");
-            if ( s_HaveID1() ) {
-                // id1 treat no-data as no-seq
-                BOOST_CHECK(!op->GetGi(id, kThrowNoData));
-            }
-            else {
-                // non-id1 distinguish no-data/no-seq
-                BOOST_CHECK_THROW(op->GetGi(id, kThrowNoData), CObjMgrException);
-            }
-            break;
-        case 2:
-            TRACE_POST("GetGiBulk");
-            if ( s_HaveID1() ) {
-                // id1 treat no-data as no-seq
-                BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoSeq), CObjMgrException);
-            }
-            else {
-                // non-id1 distinguish no-data/no-seq
-                BOOST_CHECK(!op->GetGis(idvec, kThrowNoSeq)[0]);
-            }
-            break;
-        case 3:
-            TRACE_POST("GetGiBulkThrow");
-            if ( s_HaveID1() ) {
-                // id1 treat no-data as no-seq
-                BOOST_CHECK(!op->GetGis(idvec, kThrowNoData)[0]);
-            }
-            else {
-                // non-id1 distinguish no-data/no-seq
-                BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoData), CObjMgrException);
-            }
-            break;
-        }
-        if ( op.last ) {
-            TRACE_POST("GetAcc");
-            BOOST_CHECK(!op->GetAccVer(id));
-            if ( s_HaveID2() ) { // doesn't work with pubseqos reader
-                TRACE_POST("GetIds");
-                BOOST_CHECK(!op->GetIds(id).empty());
-                TRACE_POST("GetBioseqHandle");
-                BOOST_CHECK(op->GetBioseqHandle(id));
-            }
         }
     }
 }
