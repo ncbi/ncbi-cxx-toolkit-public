@@ -84,11 +84,6 @@ public:
     unsigned int 
     ObjectType() const { return OT_SEQENTRY; };
     
-    virtual CRef< CSeq_annot >
-    ReadSeqAnnot(
-        ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
-
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
@@ -125,11 +120,6 @@ public:
         const string&);
     
     virtual bool xParseFeature(
-        const string&,
-        CSeq_annot&,
-        ILineErrorListener*);
-      
-    virtual bool xParseAlignment(
         const string&,
         CSeq_annot&,
         ILineErrorListener*);

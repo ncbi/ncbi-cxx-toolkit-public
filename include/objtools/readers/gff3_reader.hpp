@@ -59,9 +59,22 @@ protected:
         const string& );
 };
 
-//  ----------------------------------------------------------------------------
+//  ============================================================================
+struct SAlignmentData
+//  ============================================================================
+{
+    using MAP_ID_TO_ALIGN = map<string, list<CRef<CSeq_align>>>;
+    MAP_ID_TO_ALIGN mAlignments;
+    using LIST_IDS = list<string>;
+    LIST_IDS mIds;
+
+    void Reset() { mAlignments.clear(); mIds.clear(); };
+    operator bool() const { return !mAlignments.empty(); };
+};
+
+//  ============================================================================
 class NCBI_XOBJREAD_EXPORT CGff3Reader
-//  ----------------------------------------------------------------------------
+//  ============================================================================
     : public CGff2Reader
 {
 public:
@@ -79,9 +92,19 @@ public:
         unsigned int uFlags,
         const string& name = "",
         const string& title = "",
-        SeqIdResolver resolver = CReadUtil::AsSeqId);
+        SeqIdResolver resolver = CReadUtil::AsSeqId,
+        CReaderListener* = nullptr);
+
+    CGff3Reader(
+        unsigned int uFlags,
+        CReaderListener*);
 
     virtual ~CGff3Reader();
+
+    virtual CRef<CSeq_annot>
+    ReadSeqAnnot(
+        ILineReader& lr,
+        ILineErrorListener* pErrors=nullptr);
 
     bool IsInGenbankMode() const;
 
@@ -168,11 +191,22 @@ protected:
         CSeq_annot&,
         ILineErrorListener*);
 
+    void xProcessAlignmentData(
+        CSeq_annot& pAnnot);
+
+    virtual bool xParseFeature(
+        const string&,
+        CSeq_annot&,
+        ILineErrorListener*);
+      
+    virtual bool xParseAlignment(
+        const string& strLine);
 
     // Data:
     map<string, string> mCdsParentMap;
     map<string, CRef<CSeq_interval> > mMrnaLocs;
     map<string, string> mIdToSeqIdMap;
+    SAlignmentData mAlignmentData;
 
     using PENDING_EXONS = map<string, list<CGff2Record> >;
     PENDING_EXONS mPendingExons;

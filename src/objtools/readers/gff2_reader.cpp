@@ -95,101 +95,6 @@ CGff2Reader::~CGff2Reader()
 {
 }
 
-
-//  ----------------------------------------------------------------------------                
-CRef<CSeq_annot>
-CGff2Reader::ReadSeqAnnot(
-    ILineReader& lr,
-    ILineErrorListener* pEC ) 
-//  ----------------------------------------------------------------------------                
-{
-    CRef<CSeq_annot> pAnnot;
-    pAnnot.Reset(new CSeq_annot);
-
-    mCurrentFeatureCount = 0;
-    mParsingAlignment = false;
-
-    map<string, list<CRef<CSeq_align>>> alignments;
-    list<string> id_list;
-   
-
-    string line;
-    while (xGetLine(lr, line)) {
-
-        if (IsCanceled()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Info,
-                0,
-                "Reader stopped by user.",
-                ILineError::eProblem_ProgressInfo));
-            ProcessError(*pErr, pEC);
-            return pAnnot;
-        }
-        xReportProgress(pEC);
-        if ( xParseStructuredComment(line)  
-                &&  !NStr::StartsWith(line, "##sequence-region") ) {
-            continue;
-        }
-
-        try {
-            if (xIsTrackLine(line)) {
-                if (!mCurrentFeatureCount) {
-                    xParseTrackLine(line, pEC);
-                    continue;
-                }
-                m_PendingLine = line;
-                break;
-            }
-            if (xIsTrackTerminator(line)) {
-                if (!mCurrentFeatureCount) {
-                    xParseTrackLine("track", pEC);
-                    continue;
-                }
-                break;
-            }
-
-            if (xNeedsNewSeqAnnot(line)) {
-                break;
-            }
-           
-            if (xParseBrowserLine(line, *pAnnot, pEC)) {
-                continue;
-            }
-
-            if (!xIsCurrentDataType(line)) {
-                xUngetLine(lr);
-                break;
-            }
-
-            if ( CGff2Reader::IsAlignmentData(line)) {
-                if ((m_iFlags & fGenbankMode)  ||  
-                        x_ParseAlignmentGff(line, id_list, alignments)) {
-                    continue;
-                }
-            }
-
-            if (xParseFeature(line, *pAnnot, pEC)) {
-                continue;
-            }
-        }
-        catch (CObjReaderLineException& err) {
-            ProcessError(err, pEC);
-        }
-    }
-
-    if (!mCurrentFeatureCount) {
-        return CRef<CSeq_annot>();
-    }
-
-    if (!alignments.empty()) {
-        x_ProcessAlignmentsGff(id_list, alignments, pAnnot);
-    }
-    xPostProcessAnnot(*pAnnot, pEC);
-    return pAnnot;
-}
-
-
 //  --------------------------------------------------------------------------- 
 void
 CGff2Reader::ReadSeqAnnots(
@@ -230,7 +135,6 @@ CGff2Reader::ReadSeqEntry(
     xProgressInit(lr);
 
     TAnnots annots;
-    //ReadSeqAnnotsNew( annots, lr, pMessageListener );
     ReadSeqAnnots( annots, lr, pMessageListener );
     
     CRef<CSeq_entry> pSeqEntry(new CSeq_entry());
@@ -654,40 +558,6 @@ bool CGff2Reader::x_MergeAlignments(
         processed->SetSegs().SetDisc().Set().push_back(new_align);
     }
 
-    return true;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool
-CGff2Reader::xParseAlignment(
-    const string& line,
-    CSeq_annot& annot,
-    ILineErrorListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    if (!CGff2Reader::IsAlignmentData(line)) {
-        return false;
-    }
-
-    //parse record:
-    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
-    try {
-        if ( ! pRecord->AssignFromGff(line) ) {
-            return false;
-        }
-    }
-    catch(CObjReaderLineException& err) {
-        ProcessError(err, pEC);
-        return false;
-    }
-
-    if (!x_UpdateAnnotAlignment(*pRecord, annot, pEC)) {
-        return false;
-    }
-
-    ++mCurrentFeatureCount;
-    mParsingAlignment = true;
     return true;
 }
 

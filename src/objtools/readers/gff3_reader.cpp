@@ -46,6 +46,7 @@
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_id.hpp>
+#include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/so_map.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
@@ -56,6 +57,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
+#include "reader_message_handler.hpp"
 
 #include <algorithm>
 
@@ -160,11 +162,22 @@ CGff3Reader::CGff3Reader(
     unsigned int uFlags,
     const string& name,
     const string& title,
-    SeqIdResolver resolver ):
+    SeqIdResolver resolver,
+    CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
     CGff2Reader( uFlags, name, title, resolver )
 {
+    m_pMessageHandler = new CReaderMessageHandler(pRL);
     CGff2Record::ResetId();
+}
+
+//  ----------------------------------------------------------------------------
+CGff3Reader::CGff3Reader(
+    unsigned int uFlags,
+    CReaderListener* pRL):
+//  ----------------------------------------------------------------------------
+    CGff3Reader(uFlags, "", "", CReadUtil::AsSeqId, pRL)
+{
 }
 
 //  ----------------------------------------------------------------------------
@@ -173,12 +186,204 @@ CGff3Reader::~CGff3Reader()
 {
 }
 
+//  ----------------------------------------------------------------------------                
+CRef<CSeq_annot>
+CGff3Reader::ReadSeqAnnot(
+    ILineReader& lr,
+    ILineErrorListener* pEC ) 
+//  ----------------------------------------------------------------------------                
+{
+    CRef<CSeq_annot> pAnnot;
+    pAnnot.Reset(new CSeq_annot);
+
+    mCurrentFeatureCount = 0;
+    mParsingAlignment = false;
+
+    //map<string, list<CRef<CSeq_align>>> alignments;
+    //list<string> id_list;
+    mAlignmentData.Reset();
+
+    string line;
+    while (xGetLine(lr, line)) {
+
+        if (IsCanceled()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Info,
+                0,
+                "Reader stopped by user.",
+                ILineError::eProblem_ProgressInfo));
+            ProcessError(*pErr, pEC);
+            return pAnnot;
+        }
+        xReportProgress(pEC);
+        if ( xParseStructuredComment(line)  
+                &&  !NStr::StartsWith(line, "##sequence-region") ) {
+            continue;
+        }
+
+        try {
+            if (xIsTrackLine(line)) {
+                if (!mCurrentFeatureCount) {
+                    xParseTrackLine(line, pEC);
+                    continue;
+                }
+                m_PendingLine = line;
+                break;
+            }
+            if (xIsTrackTerminator(line)) {
+                if (!mCurrentFeatureCount) {
+                    xParseTrackLine("track", pEC);
+                    continue;
+                }
+                break;
+            }
+
+            if (xNeedsNewSeqAnnot(line)) {
+                break;
+            }
+           
+            if (xParseBrowserLine(line, *pAnnot, pEC)) {
+                continue;
+            }
+
+            if (!xIsCurrentDataType(line)) {
+                xUngetLine(lr);
+                break;
+            }
+
+            if (xParseFeature(line, *pAnnot, pEC)) {
+                continue;
+            }
+        }
+        catch (CObjReaderLineException& err) {
+            ProcessError(err, pEC);
+        }
+    }
+
+    if (!mCurrentFeatureCount) {
+        return CRef<CSeq_annot>();
+    }
+
+    if (mAlignmentData) {
+        xProcessAlignmentData(*pAnnot);
+    }
+    xPostProcessAnnot(*pAnnot, pEC);
+    return pAnnot;
+}
+
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::IsInGenbankMode() const
 //  ----------------------------------------------------------------------------
 {
     return (m_iFlags & CGff3Reader::fGenbankMode);
 }
+
+//  ----------------------------------------------------------------------------
+void CGff3Reader::xProcessAlignmentData(
+    CSeq_annot& annot) 
+//  ----------------------------------------------------------------------------
+{
+    for (const auto id : mAlignmentData.mIds) {
+        CRef<CSeq_align> pAlign = Ref(new CSeq_align());
+        if (x_MergeAlignments(mAlignmentData.mAlignments.at(id), pAlign)) {
+            // if available, add current browser information
+            if ( m_CurrentBrowserInfo ) {
+                annot.SetDesc().Set().push_back( m_CurrentBrowserInfo );
+            }
+
+            annot.SetNameDesc("alignments");
+
+            if ( !m_AnnotTitle.empty() ) {
+                annot.SetTitleDesc(m_AnnotTitle);
+            }
+            // Add alignment
+            annot.SetData().SetAlign().push_back(pAlign);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CGff3Reader::xParseFeature(
+    const string& line,
+    CSeq_annot& annot,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    if (CGff2Reader::IsAlignmentData(line)) {
+        return xParseAlignment(line);
+    }
+
+    //parse record:
+    shared_ptr<CGff2Record> pRecord(x_CreateRecord());
+    try {
+        if (!pRecord->AssignFromGff(line)) {
+			return false;
+		}
+    }
+    catch(CObjReaderLineException& err) {
+        ProcessError(err, pEC);
+        return false;
+    }
+
+    //make sure we are interested:
+    if (xIsIgnoredFeatureType(pRecord->Type())) {
+        return true;
+    }
+    if (xIsIgnoredFeatureId(pRecord->Id())) {
+        return true;
+    }
+
+    //append feature to annot:
+    if (!xUpdateAnnotFeature(*pRecord, annot, pEC)) {
+        return false;
+    }
+
+    ++mCurrentFeatureCount;
+    mParsingAlignment = false;
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xParseAlignment(
+    const string& strLine)
+//  ----------------------------------------------------------------------------
+{
+    if (IsInGenbankMode()) {
+        return true;
+    }
+    auto& ids = mAlignmentData.mIds;
+    auto& alignments = mAlignmentData.mAlignments;
+
+    unique_ptr<CGff2Record> pRecord(x_CreateRecord());
+
+    if ( !pRecord->AssignFromGff(strLine) ) {
+        return false;
+    }
+    
+    string id;
+    if ( !pRecord->GetAttribute("ID", id) ) {
+        id = pRecord->Id();
+    }
+
+    if (alignments.find(id) == alignments.end()) {
+       ids.push_back(id);
+    }
+
+    CRef<CSeq_align> alignment;
+    if (!x_CreateAlignment(*pRecord, alignment)) {
+        return false;
+    }
+
+    alignments[id].push_back(alignment);
+
+    ++mCurrentFeatureCount;
+    mParsingAlignment = true;
+    return true;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotFeature(
