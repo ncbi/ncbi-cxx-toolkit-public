@@ -1349,27 +1349,5 @@ bool CGff2Reader::xIsIgnoredFeatureId(
     return false;
 }
 
-//  ---------------------------------------------------------------------------
-bool
-CGff2Reader::xNeedsNewSeqAnnot(
-    const string& line)
-//  ---------------------------------------------------------------------------
-{
-    if (m_iFlags & CGff2Reader::fGenbankMode) {
-        vector<string> columns;
-        NStr::Split(line, "\t ", columns, NStr::eMergeDelims);
-        string seqId = columns[0];
-        if (m_CurrentSeqId == seqId) {
-            return false;
-        }
-        m_CurrentSeqId = seqId;
-        m_PendingLine = line;
-        return true;
-    }
-    //in normal mode, segmentation is driven by track line markers rather than 
-    // Seq-ids, and that test has already been done
-    return false;
-}
-
 END_objects_SCOPE
 END_NCBI_SCOPE

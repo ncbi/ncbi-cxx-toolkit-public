@@ -277,9 +277,6 @@ protected:
         CSeq_feat&,
         CSeq_feat&);
 
-    bool xNeedsNewSeqAnnot(
-        const string&);
-
     //  data:
     //
 protected:

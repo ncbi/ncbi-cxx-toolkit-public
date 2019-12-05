@@ -193,83 +193,32 @@ CGff3Reader::ReadSeqAnnot(
     ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
-    CRef<CSeq_annot> pAnnot;
-    pAnnot.Reset(new CSeq_annot);
-
+ 
     mCurrentFeatureCount = 0;
     mParsingAlignment = false;
+    return CReaderBase::ReadSeqAnnot(lr, pEC);
+}
 
-    //map<string, list<CRef<CSeq_align>>> alignments;
-    //list<string> id_list;
-    mAlignmentData.Reset();
-
-    string line;
-    while (xGetLine(lr, line)) {
-
-        if (IsCanceled()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Info,
-                0,
-                "Reader stopped by user.",
-                ILineError::eProblem_ProgressInfo));
-            ProcessError(*pErr, pEC);
-            return pAnnot;
-        }
-        xReportProgress(pEC);
-        if ( xParseStructuredComment(line)  
-                &&  !NStr::StartsWith(line, "##sequence-region") ) {
+//  ----------------------------------------------------------------------------
+void
+CGff3Reader::xProcessData(
+    const TReaderData& readerData,
+    CSeq_annot& annot) 
+//  ----------------------------------------------------------------------------
+{
+    for (const auto& lineData: readerData) {
+        const auto& line = lineData.mData;
+        if (xParseStructuredComment(line)  &&  
+                !NStr::StartsWith(line, "##sequence-region") ) {
             continue;
         }
-
-        try {
-            if (xIsTrackLine(line)) {
-                if (!mCurrentFeatureCount) {
-                    xParseTrackLine(line, pEC);
-                    continue;
-                }
-                m_PendingLine = line;
-                break;
-            }
-            if (xIsTrackTerminator(line)) {
-                if (!mCurrentFeatureCount) {
-                    xParseTrackLine("track", pEC);
-                    continue;
-                }
-                break;
-            }
-
-            if (xNeedsNewSeqAnnot(line)) {
-                break;
-            }
-           
-            if (xParseBrowserLine(line, *pAnnot, pEC)) {
-                continue;
-            }
-
-            if (!xIsCurrentDataType(line)) {
-                xUngetLine(lr);
-                break;
-            }
-
-            if (xParseFeature(line, *pAnnot, pEC)) {
-                continue;
-            }
+        if (xParseBrowserLine(line, annot)) {
+            continue;
         }
-        catch (CObjReaderLineException& err) {
-            ProcessError(err, pEC);
+        if (xParseFeature(line, annot, nullptr)) {
+            continue;
         }
     }
-
-    if (!mCurrentFeatureCount) {
-        return CRef<CSeq_annot>();
-    }
-
-    if (mAlignmentData) {
-        xProcessAlignmentData(*pAnnot);
-    }
-    xPostProcessAnnot(*pAnnot, pEC);
-    return pAnnot;
 }
 
 //  ----------------------------------------------------------------------------
@@ -277,6 +226,45 @@ bool CGff3Reader::IsInGenbankMode() const
 //  ----------------------------------------------------------------------------
 {
     return (m_iFlags & CGff3Reader::fGenbankMode);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CGff3Reader::xGetData(
+    ILineReader& lr,
+    TReaderData& readerData)
+//  ----------------------------------------------------------------------------
+{
+    readerData.clear();
+    string line;
+    if (xGetLine(lr, line)) {
+        if (xNeedsNewSeqAnnot(line)) {
+            lr.UngetLine();
+            return;
+        }
+        if (xIsTrackLine(line)) {
+            if (!mCurrentFeatureCount) {
+                xParseTrackLine(line, nullptr);
+                xGetData(lr, readerData);
+                return;
+            }
+            m_PendingLine = line;
+            return;
+        }
+        if (xIsTrackTerminator(line)) {
+            if (!mCurrentFeatureCount) {
+                xParseTrackLine("track", nullptr);
+                xGetData(lr, readerData);
+            }
+            return;
+        }
+        if (!xIsCurrentDataType(line)) {
+            xUngetLine(lr);
+            return;
+        }
+    readerData.push_back(TReaderLine{m_uLineNumber, line});
+    }
+    ++m_uDataCount;
 }
 
 //  ----------------------------------------------------------------------------
@@ -699,7 +687,7 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
 
     AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
         eDiag_Fatal,
-        0,
+        m_uLineNumber,
         string("Bad data line: Duplicate feature ID \"") + id + "\"",
         ILineError::eProblem_DuplicateIDs) );
     if (record.Id() != mIdToSeqIdMap[id]) {
@@ -1054,6 +1042,14 @@ void CGff3Reader::xPostProcessAnnot(
     ILineErrorListener *pEC)
     //  ----------------------------------------------------------------------------
 {
+    if (mAlignmentData) {
+        xProcessAlignmentData(annot);
+        return;
+    }
+    if (!mCurrentFeatureCount) {
+        return;
+    }
+
     for (const auto& it: mPendingExons) {
         AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
             eDiag_Warning,
@@ -1063,6 +1059,28 @@ void CGff3Reader::xPostProcessAnnot(
         ProcessError(*pErr, pEC);
     }
     return CGff2Reader::xPostProcessAnnot(annot, pEC);
+}
+
+//  ---------------------------------------------------------------------------
+bool
+CGff3Reader::xNeedsNewSeqAnnot(
+    const string& line)
+//  ---------------------------------------------------------------------------
+{
+    if (IsInGenbankMode()) {
+        vector<string> columns;
+        NStr::Split(line, "\t ", columns, NStr::eMergeDelims);
+        string seqId = columns[0];
+        if (m_CurrentSeqId == seqId) {
+            return false;
+        }
+        m_CurrentSeqId = seqId;
+        m_PendingLine = line;
+        return true;
+    }
+    //in normal mode, segmentation is driven by track line markers rather than 
+    // Seq-ids, and that test has already been done
+    return false;
 }
 
 

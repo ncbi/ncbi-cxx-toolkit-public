@@ -109,6 +109,14 @@ public:
     bool IsInGenbankMode() const;
 
 protected:
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
+
     virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
 
     virtual bool xInitializeFeature(
@@ -201,6 +209,9 @@ protected:
       
     virtual bool xParseAlignment(
         const string& strLine);
+
+    bool xNeedsNewSeqAnnot(
+        const string&);
 
     // Data:
     map<string, string> mCdsParentMap;

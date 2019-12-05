@@ -177,6 +177,16 @@ CGvfReader::ReadSeqAnnot(
 
 //  ----------------------------------------------------------------------------
 void
+CGvfReader::xGetData(
+    ILineReader& lr,
+    TReaderData& readerData)
+//  ----------------------------------------------------------------------------
+{
+    return CReaderBase::xGetData(lr, readerData);
+}
+
+//  ----------------------------------------------------------------------------
+void
 CGvfReader::xProcessData(
     const TReaderData& readerData,
     CSeq_annot& annot) 

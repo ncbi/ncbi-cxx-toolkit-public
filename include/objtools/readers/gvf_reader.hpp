@@ -93,6 +93,10 @@ public:
         ILineErrorListener* = nullptr );
 
 protected:
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
     virtual void xProcessData(
         const TReaderData&,
         CSeq_annot&);
