@@ -309,6 +309,7 @@ int CBlastdbConvertApp::Run(void)
     SetDiagPostPrefix("blastdb_convert");
 
     int status = 0;
+    bool cleanup = false;
     try {
 
     	if ( !CMemoryFileMap::IsSupported()) {
@@ -322,9 +323,6 @@ int CBlastdbConvertApp::Run(void)
     		            "changing the output name, please provide a (different) database name ");
     	}
 
-    	if (DeleteBlastDb(kOutputAbsPath, seqtype)) {
-    	        	*m_LogFile << "Deleted existing BLAST database with identical name." << endl;
-        }
     	CBuildDatabase::CreateDirectories(kOutput);
     	m_LogFile = & (args["logfile"].HasValue() ? args["logfile"].AsOutputFile() : cout);
 
@@ -353,6 +351,12 @@ int CBlastdbConvertApp::Run(void)
         if(alias_files.size() == 1) {
         	s_LookForOidlistInAliasFile (alias_files[0]);
         }
+
+    	if (DeleteBlastDb(kOutputAbsPath, seqtype)) {
+    		cerr << kOutputAbsPath << endl;
+    	        	*m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+        }
+
         if(alias_files.size() == 0) {
         	use_index_in_filename = false;
         }
@@ -379,6 +383,7 @@ int CBlastdbConvertApp::Run(void)
         unique_ptr<CWriteDB_TaxID> taxdb (new CWriteDB_TaxID(
         		                              GetFileNameFromExistingLMDBFile(lmdb_fname_w_path, ELMDBFileType::eTaxId2Offsets),
         		                              kMemoryMapSize));
+        cleanup = true;
         for (unsigned int p=0; p < paths.size(); p++) {
         	string & vol_path = paths[p];
             _TRACE("Processing " << vol_path);
@@ -460,7 +465,7 @@ int CBlastdbConvertApp::Run(void)
 
     } CATCH_ALL(status)
 
-    if(status != 0) {
+    if((status != 0) && cleanup) {
     	DeleteBlastDb(kOutputAbsPath, seqtype);
     }
     return status;
