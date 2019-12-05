@@ -61,7 +61,7 @@ class CBioseqInfoFetchRequest
     CBioseqInfoFetchRequest& operator=(CBioseqInfoFetchRequest const&) = default;
     CBioseqInfoFetchRequest& operator=(CBioseqInfoFetchRequest &&) = default;
 
-    CBioseqInfoFetchRequest& SetAccession(string const& value)
+    CBioseqInfoFetchRequest& SetAccession(CBioseqInfoRecord::TAccession const& value)
     {
         if (!value.empty()) {
             m_Accession = value;
@@ -91,7 +91,7 @@ class CBioseqInfoFetchRequest
         return *this;
     }
 
-    string const& GetAccession() const
+    CBioseqInfoRecord::TAccession GetAccession() const
     {
         if (!HasField(EFields::eAccession)) {
             NCBI_USER_THROW("CBioseqInfoFetchRequest field Accession is missing");
@@ -308,7 +308,7 @@ class CSi2CsiFetchRequest
     CSi2CsiFetchRequest& operator=(CSi2CsiFetchRequest const&) = default;
     CSi2CsiFetchRequest& operator=(CSi2CsiFetchRequest &&) = default;
 
-    CSi2CsiFetchRequest& SetSecSeqId(CSI2CSIRecord::TSecSeqId value)
+    CSi2CsiFetchRequest& SetSecSeqId(CSI2CSIRecord::TSecSeqId const& value)
     {
         if (!value.empty()) {
             m_SecSeqId = value;
