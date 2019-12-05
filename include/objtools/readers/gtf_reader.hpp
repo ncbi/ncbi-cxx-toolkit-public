@@ -183,7 +183,16 @@ public:
 
     virtual ~CGtfReader();
     
+    virtual CRef< CSeq_annot >
+    ReadSeqAnnot(
+        ILineReader& lr,
+        ILineErrorListener* pErrors=0 );
+
 protected:
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
+
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
 
     virtual bool xUpdateAnnotFeature(
@@ -191,113 +200,110 @@ protected:
         CSeq_annot&,
         ILineErrorListener* =0);
 
-    virtual bool x_UpdateAnnotCds(
+    virtual bool xUpdateAnnotCds(
         const CGtfReadRecord&,
         CSeq_annot&);
 
-    virtual bool x_UpdateAnnotTranscript(
+    virtual bool xUpdateAnnotTranscript(
         const CGtfReadRecord&,
         CSeq_annot&);
 
-    bool x_CreateFeatureId(
+    bool xCreateFeatureId(
         const CGtfReadRecord&,
         const string&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    bool x_CreateFeatureLocation(
+    bool xCreateFeatureLocation(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
     
-    bool x_CreateGeneXrefs(
+    bool xCreateGeneXrefs(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
     
-    bool x_CreateMrnaXrefs(
+    bool xCreateMrnaXrefs(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
     
-    bool x_CreateCdsXrefs(
+    bool xCreateCdsXrefs(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
     
-    bool x_MergeFeatureLocationSingleInterval(
+    bool xMergeFeatureLocationSingleInterval(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
     
-    bool x_MergeFeatureLocationMultiInterval(
+    bool xMergeFeatureLocationMultiInterval(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    bool x_CreateParentGene(
+    bool xCreateParentGene(
         const CGtfReadRecord&,
         CSeq_annot&);
         
-    bool x_MergeParentGene(
+    bool xMergeParentGene(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
             
     bool xFeatureSetQualifiersGene(
         const CGtfReadRecord& record,
-        CRef<CSeq_feat>);
+        CSeq_feat&);
 
     bool xFeatureSetQualifiersRna(
         const CGtfReadRecord& record,
-        CRef<CSeq_feat>);
+        CSeq_feat&);
 
     bool xFeatureSetQualifiersCds(
         const CGtfReadRecord& record,
-        CRef<CSeq_feat>);
+        CSeq_feat&);
 
-    bool x_CreateParentCds(
+    bool xCreateParentCds(
         const CGtfReadRecord&,
         CSeq_annot&);
         
-    bool x_CreateParentMrna(
+    bool xCreateParentMrna(
         const CGtfReadRecord&,
         CSeq_annot&);
         
-    bool x_FeatureSetDataGene(
+    bool xFeatureSetDataGene(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    virtual bool x_FeatureSetDataRna(
+    virtual bool xFeatureSetDataRna(
         const CGtfReadRecord&,
-        CRef< CSeq_feat >,
+        CSeq_feat&,
         CSeqFeatData::ESubtype );
 
-    bool x_FeatureSetDataMRNA(
+    bool xFeatureSetDataMrna(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    bool x_FeatureSetDataCDS(
+    bool xFeatureSetDataCds(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    bool x_FeatureTrimQualifiers(
+    bool xFeatureTrimQualifiers(
         const CGtfReadRecord&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
-    bool x_FindParentGene(
-        const CGtfReadRecord&,
-        CRef< CSeq_feat >& );
+    CRef<CSeq_feat> xFindParentGene(
+        const CGtfReadRecord&);
 
-    bool x_FindParentCds(
-        const CGtfReadRecord&,
-        CRef< CSeq_feat >& );
+    CRef<CSeq_feat> xFindParentCds(
+        const CGtfReadRecord&);
 
-    bool x_FindParentMrna(
-        const CGtfReadRecord&,
-        CRef< CSeq_feat >& );
+    CRef<CSeq_feat> xFindParentMrna(
+        const CGtfReadRecord&);
 
     bool xProcessQualifierSpecialCase(
         const string&,
         const CGtfAttributes::MultiValue&,
-        CRef< CSeq_feat > );
+        CSeq_feat&);
 
     void xFeatureAddQualifiers(
         const string& key,
         const CGtfAttributes::MultiValue&,
-        CRef<CSeq_feat>);
+        CSeq_feat&);
 
     bool xCdsIsPartial(
         const CGtfReadRecord& );

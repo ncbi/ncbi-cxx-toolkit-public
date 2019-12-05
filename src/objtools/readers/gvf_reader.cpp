@@ -168,13 +168,11 @@ CGvfReader::~CGvfReader()
 //  ----------------------------------------------------------------------------                
 CRef<CSeq_annot>
 CGvfReader::ReadSeqAnnot(
-    ILineReader& lr,
+    ILineReader& lineReader,
     ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
-    CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
-    xPostProcessAnnot(*pAnnot, pEC);
-    return pAnnot;
+    return CReaderBase::ReadSeqAnnot(lineReader, pEC);
 }
 
 //  ----------------------------------------------------------------------------

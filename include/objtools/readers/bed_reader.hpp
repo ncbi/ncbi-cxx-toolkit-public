@@ -338,7 +338,7 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>&);
 
-    virtual void xFinalizeAnnot(
+    virtual void xPostProcessAnnot(
         CSeq_annot&,
         ILineErrorListener*);
 

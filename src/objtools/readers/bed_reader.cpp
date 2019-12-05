@@ -267,11 +267,7 @@ CBedReader::ReadSeqAnnot(
 //  ----------------------------------------------------------------------------                
 {
     m_CurrentFeatureCount = 0;
-    CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lineReader, pEC);
-    if (pAnnot) {
-        xFinalizeAnnot(*pAnnot, pEC);
-    }
-    return pAnnot;
+    return CReaderBase::ReadSeqAnnot(lineReader, pEC);
 }
 
 //  ----------------------------------------------------------------------------
@@ -557,7 +553,7 @@ bool CBedReader::xDetermineLikelyColumnCount(
 }
 
 //  ----------------------------------------------------------------------------
-void CBedReader::xFinalizeAnnot(
+void CBedReader::xPostProcessAnnot(
     CSeq_annot& annot,
     ILineErrorListener *pEC)
 //  ----------------------------------------------------------------------------
