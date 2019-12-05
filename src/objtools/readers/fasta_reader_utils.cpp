@@ -553,8 +553,13 @@ void CSeqIdCheck::operator()(const TIds& ids,
     for (const auto& pId : ids) {
         if (pId->IsLocal() && 
             !x_IsValidLocalID(*pId, info)) {
-            NCBI_THROW2(CObjReaderParseException, eInvalidID, 
-                "'" + pId->GetSeqIdString() + "' is not a valid local ID", 0);
+
+            string msg = "'" + pId->GetSeqIdString() + "' is not a valid local ID";
+            s_PostError(listener,
+                info.lineNumber,
+                msg,
+                ILineError::eProblem_GeneralParsingError,
+                CObjReaderParseException::eInvalidID);
         }
         x_CheckIDLength(*pId, info, listener);
     }
