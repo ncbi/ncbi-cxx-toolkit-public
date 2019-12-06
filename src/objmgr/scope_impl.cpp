@@ -89,7 +89,7 @@ NCBI_PARAM_DECL(bool, OBJMGR, KEEP_EXTERNAL_FOR_EDIT);
 NCBI_PARAM_DEF(bool, OBJMGR, KEEP_EXTERNAL_FOR_EDIT, false);
 
 
-#define EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
+//#define EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1075,14 +1075,14 @@ void CScope_Impl::x_ClearCacheOnEdit(const CTSE_ScopeInfo& replaced_tse)
                     m_Seq_idMap.erase(it++);
                     continue;
                 }
-                binfo.m_BioseqAnnotRef_Info.Reset();
+                binfo.x_ResetAnnotRef_Info();
             }
             else {
                 // try to resolve again
                 binfo.m_UnresolvedTimestamp = m_BioseqChangeCounter-1;
             }
         }
-        it->second.m_AllAnnotRef_Info.Reset();
+        it->second.x_ResetAnnotRef_Info();
         ++it;
     }
 }
@@ -1097,9 +1097,9 @@ void CScope_Impl::x_ClearAnnotCache(void)
     NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
         if ( it->second.m_Bioseq_Info ) {
             CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
-            binfo.m_BioseqAnnotRef_Info.Reset();
+            binfo.x_ResetAnnotRef_Info();
         }
-        it->second.m_AllAnnotRef_Info.Reset();
+        it->second.x_ResetAnnotRef_Info();
     }
 }
 
@@ -1130,10 +1130,10 @@ void CScope_Impl::x_ClearCacheOnRemoveData(const CTSE_Info* /*old_tse*/)
     // Clear removed bioseq handles
     for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
           it != m_Seq_idMap.end(); ) {
-        it->second.m_AllAnnotRef_Info.Reset();
+        it->second.x_ResetAnnotRef_Info();
         if ( it->second.m_Bioseq_Info ) {
             CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
-            binfo.m_BioseqAnnotRef_Info.Reset();
+            binfo.x_ResetAnnotRef_Info();
             if ( binfo.IsDetached() ) {
                 binfo.m_SynCache.Reset();
                 m_Seq_idMap.erase(it++);
@@ -2271,10 +2271,10 @@ void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
     CRef<CBioseq_ScopeInfo> binfo =
         x_InitBioseq_Info(info, CScope::eGetBioseq_All, seq_match);
     if ( binfo->HasBioseq() ) {
-        x_GetTSESetWithAnnots(lock, 0, *binfo, &sel);
+        x_GetTSESetWithAnnots(lock, *binfo, &sel);
     }
     else {
-        x_GetTSESetWithAnnots(lock, 0, info, &sel);
+        x_GetTSESetWithAnnots(lock, info, &sel);
     }
 }
 
@@ -2289,41 +2289,56 @@ void CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh,
             (&const_cast<CBioseq_ScopeInfo&>(bh.x_GetScopeInfo()));
         
         _ASSERT(binfo->HasBioseq());
-        x_GetTSESetWithAnnots(lock, 0, *binfo, &sel);
+        x_GetTSESetWithAnnots(lock, *binfo, &sel);
+    }
+}
+
+
+CBioseq_ScopeInfo::TAnnotRefInfo&
+CScope_Impl::x_GetAnnotRef_Info(const SAnnotSelector* sel,
+                                CBioseq_ScopeInfo::TAnnotRefInfo& main_info,
+                                CBioseq_ScopeInfo::TNAAnnotRefInfo& na_info)
+{
+    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+        TSeq_idMapLock::TWriteLockGuard guard(m_Seq_idMapLock);
+        return na_info[sel->GetNamedAnnotAccessions()];
+    }
+    else {
+        return main_info;
     }
 }
 
 
 void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
-                                        CBioseq_ScopeInfo& binfo)
+                                        CBioseq_ScopeInfo& binfo,
+                                        const SAnnotSelector* sel)
 {
-    if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() ) {
-        // do not use cached TSE set for modified sequences
-        x_GetTSESetWithAnnots(lock, 0, binfo, 0);
-        return;
-    }
-
+    CBioseq_ScopeInfo::TAnnotRefInfo& annot_ref_info =
+        x_GetAnnotRef_Info(sel, binfo.m_BioseqAnnotRef_Info, binfo.m_NABioseqAnnotRef_Info);
     {{
-        CInitGuard init(binfo.m_BioseqAnnotRef_Info, m_MutexPool, CInitGuard::force);
-        if ( init || binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
-            CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = binfo.m_BioseqAnnotRef_Info;
+        CInitGuard init(annot_ref_info, m_MutexPool, CInitGuard::force);
+        if ( init ||
+             (annot_ref_info->m_SearchTimestamp !=
+              (m_AnnotChangeCounter+binfo.GetObjectInfo().m_IdChangeCounter)) ) {
+            CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = annot_ref_info;
             if ( !cache ) {
                 cache = new CBioseq_ScopeInfo::SAnnotSetCache;
             }
             else {
                 cache->match.clear();
             }
-            x_GetTSESetWithAnnots(lock, &cache->match, binfo);
-            cache->m_SearchTimestamp = m_AnnotChangeCounter;
-            binfo.m_BioseqAnnotRef_Info = cache;
+            x_GetTSESetWithAnnots(lock, &cache->match, binfo, sel);
+            cache->m_SearchTimestamp = m_AnnotChangeCounter+binfo.GetObjectInfo().m_IdChangeCounter;
+            annot_ref_info = cache;
             return;
         }
     }}
     // use cached set
-    x_LockMatchSet(lock, binfo.m_BioseqAnnotRef_Info->match);
+    x_LockMatchSet(lock, annot_ref_info->match);
+
 #ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
     if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() ) {
-        x_GetTSESetWithBioseqAnnots(lock, binfo, 0);
+        x_GetTSESetWithBioseqAnnots(lock, binfo, sel);
         return;
     }
 #endif
@@ -2331,26 +2346,29 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
 
 
 void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
-                                        TSeq_idMapValue& info)
+                                        TSeq_idMapValue& info,
+                                        const SAnnotSelector* sel)
 {
+    CBioseq_ScopeInfo::TAnnotRefInfo& annot_ref_info =
+        x_GetAnnotRef_Info(sel, info.second.m_AllAnnotRef_Info, info.second.m_NAAllAnnotRef_Info);
     {{
-        CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool, CInitGuard::force);
-        if ( init || info.second.m_AllAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
-            CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = info.second.m_AllAnnotRef_Info;
+        CInitGuard init(annot_ref_info, m_MutexPool, CInitGuard::force);
+        if ( init || annot_ref_info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+            CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = annot_ref_info;
             if ( !cache ) {
                 cache = new CBioseq_ScopeInfo::SAnnotSetCache;
             }
             else {
                 cache->match.clear();
             }
-            x_GetTSESetWithAnnots(lock, &cache->match, info);
+            x_GetTSESetWithAnnots(lock, &cache->match, info, sel);
             cache->m_SearchTimestamp = m_AnnotChangeCounter;
-            info.second.m_AllAnnotRef_Info = cache;
+            annot_ref_info = cache;
             return;
         }
     }}
     // use cached set
-    x_LockMatchSet(lock, info.second.m_AllAnnotRef_Info->match);
+    x_LockMatchSet(lock, annot_ref_info->match);
 }
 
 
@@ -2489,13 +2507,7 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
         CDataSource& ds = it->GetDataSource();
         TTSE_LockMatchSet_DS ds_lock;
 
-        bool save_matches = true;
         if ( &*it == ds_info ) {
-#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
-            if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() ) {
-                save_matches = false;
-            }
-#endif
             // load from 
             ds_info->GetDataSource()
                 .GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
@@ -2528,7 +2540,7 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
             }
             processed_nas.clear();
         }
-        x_AddTSESetWithAnnots(lock, save_matches? save_match: 0, ds_lock, *it);
+        x_AddTSESetWithAnnots(lock, save_match, ds_lock, *it);
     }
     sort(lock.begin(), lock.end());
     lock.erase(unique(lock.begin(), lock.end()), lock.end());

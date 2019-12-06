@@ -2087,7 +2087,7 @@ void CBioseq_ScopeInfo::x_DetachTSE(CTSE_ScopeInfo* tse)
 {
     BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_DetachTSE "<<tse);
     m_SynCache.Reset();
-    m_BioseqAnnotRef_Info.Reset();
+    x_ResetAnnotRef_Info();
     ITERATE ( TIds, it, GetIds() ) {
         tse->x_UnindexBioseq(*it, this);
     }

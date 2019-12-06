@@ -295,6 +295,7 @@ private:
     TChunkIds               m_Seq_dataChunks;
     TChunkId                m_AssemblyChunk;
     mutable int             m_FeatureFetchPolicy;
+    volatile int            m_IdChangeCounter;
 };
 
 

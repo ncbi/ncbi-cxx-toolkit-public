@@ -85,7 +85,8 @@ BEGIN_SCOPE(objects)
 
 CBioseq_Info::CBioseq_Info(CBioseq& seq)
     : m_AssemblyChunk(-1),
-      m_FeatureFetchPolicy(-1)
+      m_FeatureFetchPolicy(-1),
+      m_IdChangeCounter(0)
 {
     x_SetObject(seq);
 }
@@ -95,7 +96,8 @@ CBioseq_Info::CBioseq_Info(const CBioseq_Info& info, TObjectCopyMap* copy_map)
     : TParent(info, copy_map),
       m_Seq_dataChunks(info.m_Seq_dataChunks),
       m_AssemblyChunk(info.m_AssemblyChunk),
-      m_FeatureFetchPolicy(info.m_FeatureFetchPolicy)
+      m_FeatureFetchPolicy(info.m_FeatureFetchPolicy),
+      m_IdChangeCounter(0)
 {
     if ( !copy_map ) {
         info.x_UpdateComplete();
@@ -414,6 +416,7 @@ void CBioseq_Info::ResetId(void)
     m_Id.clear();
     m_Object->ResetId();
     SetBioObjectId(GetTSE_Info().x_RegisterBioObject(*this));
+    ++m_IdChangeCounter;
 }
 
 
@@ -434,6 +437,7 @@ bool CBioseq_Info::AddId(const CSeq_id_Handle& id)
     seq_id->Assign(*id.GetSeqId());
     m_Object->SetId().push_back(seq_id);
     GetTSE_Info().x_SetBioseqId(id,this);
+    ++m_IdChangeCounter;
     return true;
 }
 
@@ -455,6 +459,7 @@ bool CBioseq_Info::RemoveId(const CSeq_id_Handle& id)
     if (GetBioObjectId() == CBioObjectId(id)) {
         SetBioObjectId(GetTSE_Info().x_RegisterBioObject(*this));
     }
+    ++m_IdChangeCounter;
     return true;
 }
 

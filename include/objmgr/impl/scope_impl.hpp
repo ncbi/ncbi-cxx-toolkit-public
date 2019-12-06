@@ -577,14 +577,21 @@ private:
     typedef CBioseq_ScopeInfo::TTSE_MatchSet TTSE_MatchSet;
     typedef CDataSource::TTSE_LockMatchSet TTSE_LockMatchSet_DS;
 
+    CBioseq_ScopeInfo::TAnnotRefInfo&
+        x_GetAnnotRef_Info(const SAnnotSelector* sel,
+                           CBioseq_ScopeInfo::TAnnotRefInfo& main_info,
+                           CBioseq_ScopeInfo::TNAAnnotRefInfo& na_info);
+    
     void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
-                               CBioseq_ScopeInfo& binfo);
+                               CBioseq_ScopeInfo& binfo,
+                               const SAnnotSelector* sel = 0);
     void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                TTSE_MatchSet* save_match,
                                CBioseq_ScopeInfo& binfo,
                                const SAnnotSelector* sel = 0);
     void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
-                               TSeq_idMapValue& info);
+                               TSeq_idMapValue& info,
+                               const SAnnotSelector* sel = 0);
     void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                TTSE_MatchSet* save_match,
                                TSeq_idMapValue& info,
@@ -632,8 +639,8 @@ private:
 
     IScopeTransaction_Impl* m_Transaction;
 
-    int m_BioseqChangeCounter;
-    int m_AnnotChangeCounter;
+    volatile int m_BioseqChangeCounter;
+    volatile int m_AnnotChangeCounter;
     bool m_KeepExternalAnnotsForEdit;
 
     friend class CScope;

@@ -43,6 +43,7 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objmgr/blob_id.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <set>
 #include <map>
@@ -524,7 +525,9 @@ public:
         volatile int m_SearchTimestamp;
         TTSE_MatchSet match;
     };
+    typedef SAnnotSelector::TNamedAnnotAccessions       TNASetKey;
     typedef CInitMutex<SAnnotSetCache>                  TAnnotRefInfo;
+    typedef map<TNASetKey, TAnnotRefInfo>               TNAAnnotRefInfo;
     typedef TIndexIds                                   TIds;
     typedef int                                         TBlobStateFlags;
     typedef CScopeInfo_Ref<CBioseq_ScopeInfo>           TBioseq_Lock;
@@ -582,6 +585,12 @@ protected: // protected object manager interface
     void x_AttachTSE(CTSE_ScopeInfo* tse);
     void x_DetachTSE(CTSE_ScopeInfo* tse);
 
+    void x_ResetAnnotRef_Info()
+    {
+        m_BioseqAnnotRef_Info.Reset();
+        m_NABioseqAnnotRef_Info.clear();
+    }
+
 private: // members
     // Real Seq-ids of the bioseq.
     TIds                            m_Ids;
@@ -594,7 +603,8 @@ private: // members
     // All synonyms share the same CBioseq_ScopeInfo object.
     CInitMutex<CSynonymsSet>        m_SynCache;
     // Cache TSEs with external annotations on this Bioseq.
-    CInitMutex<SAnnotSetCache>      m_BioseqAnnotRef_Info;
+    TAnnotRefInfo                   m_BioseqAnnotRef_Info;
+    TNAAnnotRefInfo                 m_NABioseqAnnotRef_Info;
 
 private: // to prevent copying
     CBioseq_ScopeInfo(const CBioseq_ScopeInfo& info);
@@ -622,7 +632,14 @@ struct SSeq_id_ScopeInfo
     CInitMutex<CBioseq_ScopeInfo>   m_Bioseq_Info;
 
     // Caches other (not main) TSEs with annotations on this Seq-id.
-    CInitMutex<CBioseq_ScopeInfo::SAnnotSetCache> m_AllAnnotRef_Info;
+    CBioseq_ScopeInfo::TAnnotRefInfo   m_AllAnnotRef_Info;
+    CBioseq_ScopeInfo::TNAAnnotRefInfo m_NAAllAnnotRef_Info;
+
+    void x_ResetAnnotRef_Info()
+    {
+        m_AllAnnotRef_Info.Reset();
+        m_NAAllAnnotRef_Info.clear();
+    }
 };
 
 
