@@ -1417,7 +1417,7 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
             mptr += seglen;
             seqpos += seglen;
         }
-        else if ( type == 'I' ) {
+        else if ( type == 'I' || type == 'S' ) {
             if ( seqpos + seglen > has_mismatch.size() ) {
                 NCBI_THROW_FMT(CSraException, eDataError,
                                "CIGAR insert segment beyond HAS_MISMATCH: "
@@ -1440,32 +1440,6 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
                 ret += c;
             }
         }
-        else if ( type == 'S' ) {
-            if ( seqpos == 0 ) {
-                // soft clip at the beginning may have mismatches
-                if ( seqpos + seglen > has_mismatch.size() ) {
-                    NCBI_THROW_FMT(CSraException, eDataError,
-                                   "CIGAR insert segment beyond HAS_MISMATCH: "
-                                   <<cigar<<" vs "<<mismatch);
-                }
-                for ( TSeqPos i = 0; i < seglen; ++i, ++seqpos ) {
-                    if ( has_mismatch[seqpos] == '1' ) {
-                        if ( mptr == mend ) {
-                            NCBI_THROW_FMT(CSraException, eDataError,
-                                           "CIGAR insert/mismatch segment beyond MISMATCH: "
-                                           <<cigar<<" vs "<<mismatch);
-                            
-                        }
-                        ++mptr;
-                    }
-                }
-                continue;
-            }
-            else {
-                // soft clip at the end
-                break;
-            }
-        }
         else if ( type == 'D' || type == 'N' || type == 'P' ) {
             continue;
         }
@@ -1474,12 +1448,10 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
                            "Bad CIGAR char: " <<type<< " in " <<cigar);
         }
     }
-    /* soft clips S are not accounted yet
     if ( mptr != mend ) {
         NCBI_THROW_FMT(CSraException, eDataError,
                        "Extra mismatch chars: " <<cigar<< " vs " <<mismatch);
     }
-    */
 }
 
 
@@ -1561,11 +1533,11 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
             seqpos += seglen;
         }
         else if ( type == 'I' || type == 'S' ) {
+            insert_size += seglen;
             if ( type == 'S' ) {
                 // soft clipping already accounted in seqpos
                 continue;
             }
-            insert_size += seglen;
             refstart = kInvalidSeqPos;
             seqstart = seqpos;
             seqpos += seglen;
@@ -1656,6 +1628,8 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
                    cache.m_ObjectIdCIGAR,
                    cache.m_UserFieldCacheCigar, 8, 8192);
         if ( insert_size == 0 ) {
+            // all mismatches are explicit 'X', so there are no '=' to add
+            // use the VDB privided MISMATCHE string without modifications
             x_AddField(*obj, "MISMATCH", mismatch,
                        cache.m_ObjectIdMISMATCH,
                        cache.m_UserFieldCacheMismatch, 8, 8192);
