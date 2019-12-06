@@ -385,22 +385,24 @@ string CGffBaseRecord::StrAttributes() const
     sort(sortedAttrs.begin(), sortedAttrs.end(), lessAttrCit);
     for (SORTATTRS::const_iterator cit = sortedAttrs.begin(); 
             cit != sortedAttrs.end(); ++cit) { 
-        string key = (*cit)->first;
+        const string& key = (*cit)->first;
 
-        vector<string> escapedValues;
-        for (vector<string>::const_iterator vit = (*cit)->second.begin();
-                vit != (*cit)->second.end(); ++vit) {
-            auto singleValue = xEscapedValue(key, *vit);
-            if (!singleValue.empty()) {
-                escapedValues.push_back(xEscapedValue(key, *vit));
-            }
-        }
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
         }
         attributes += xEscapedString(key);
         attributes += "=";
-		attributes += NStr::Join(escapedValues, ",");;
+        bool got_values = false;
+        for (auto vit : (*cit)->second) 
+        {
+            auto singleValue = xEscapedValue(key, vit);
+            if (!singleValue.empty()) {
+                if (got_values)
+                    attributes += ",";
+                attributes += singleValue;
+                got_values = true;
+            }
+        }
     }
 
     typedef vector<TScoreCit> SORTSCORES;
@@ -411,29 +413,26 @@ string CGffBaseRecord::StrAttributes() const
     }
    
     sort(sortedScores.begin(), sortedScores.end(), lessScoreCit);
-    for (SORTSCORES::const_iterator cit = sortedScores.begin(); 
-            cit != sortedScores.end(); ++cit) { 
-        string key = (*cit)->first;
+    for (auto cit : sortedScores) 
+    { 
+        const string& key = cit->first;
 
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
         }
         attributes += xEscapedString(key);
-        attributes += "=";
-		
-        string value = (*cit)->second;
-		attributes += xEscapedValue(key, value);
+        attributes += "=";	
+		attributes += xEscapedValue(key, cit->second);
     }
     if (gapAttr != mAttributes.end()) {
-        string key = gapAttr->first;
+        const string& key = gapAttr->first;
 
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
         }
         attributes += xEscapedString(key);
         attributes += "=";
-        string value = gapAttr->second[0];
-		attributes += xEscapedValue(key, value);
+		attributes += xEscapedValue(key, gapAttr->second[0]);
     }
     if ( attributes.empty() ) {
         attributes = ".";
@@ -442,9 +441,9 @@ string CGffBaseRecord::StrAttributes() const
 }
 
 //  ----------------------------------------------------------------------------
-string CGffBaseRecord::xEscapedValue(
-    CTempString key,
-    CTempString value) const
+const string& CGffBaseRecord::xEscapedValue(
+    const string& key,
+    const string& value) const
 //  ----------------------------------------------------------------------------
 {
     // unfortunately, const_bitset has no better method to set the values yet, maybe improve it later
@@ -454,25 +453,39 @@ string CGffBaseRecord::xEscapedValue(
     static constexpr auto escaped_range_value = charset{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
         '%', ';', '=', '%', '=', '&', 0x7F };
 
-    auto& escaped = (key == "start_range" || key == "end_range") ? escaped_range_value : escaped_no_range;
+    const auto& escaped = (key == "start_range" || key == "end_range") ? escaped_range_value : escaped_no_range;
 
-    char replacement[10];
+    // we need it really fast
+    static constexpr char hexa_numbers[] = "0123456789ABCDEF";
 
-    string result;
-    result.reserve(value.size()*2);
+    char replacement[4];
+    replacement[0] = '%';
+    replacement[3] = 0;
 
+    // this is the local storage for escaped string
+    static thread_local string result;
+    result.clear();
+
+    // last_pos show how many of the original input has been added to the result
+    size_t last_pos = 0;
     for (size_t i = 0; i < value.size(); ++i)
     {
         char c = value[i];
         if (escaped.test(c))
         {
-            sprintf(replacement, "%%%2.2X", c);
-            result.append(replacement);
-        }  else  {
-            result.push_back(c);
+            replacement[1] = hexa_numbers[c / 16];
+            replacement[2] = hexa_numbers[c % 16];
+            result.append(value.data() + last_pos, i - last_pos);
+            result.append(replacement, 3);
+            last_pos = i+1;
         }
     }
-    return result;
+    if (last_pos == 0) {
+        return value;
+    } else {
+        result.append(value.data() + last_pos, value.size() - last_pos);
+        return result;
+    }
 }
 
 END_objects_SCOPE

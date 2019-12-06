@@ -118,8 +118,13 @@ public:
 
 
 protected:
-    string xEscapedValue(CTempString key, CTempString value) const;
-    string xEscapedString(CTempString value) const
+    // xEscapedValue returns either reference to unmodified string
+    // or the reference to thread local storage of escaped string
+    // next call within the same thread will return the same reference
+    // effectively making previus call invalid
+    // its safe to call the method concurently in multiple threads
+    const string& xEscapedValue(const string& key, const string& value) const;
+    const string& xEscapedString(const string& value) const
     {
         return xEscapedValue(kEmptyStr, value);
     }
