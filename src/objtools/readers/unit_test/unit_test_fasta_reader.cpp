@@ -117,6 +117,11 @@ struct SConfigInfo
 {
     list<CFastaReader::TFlags> flags;
     vector<string> excluded_mods;
+    enum class EEntryType {
+        eBioseq,
+        eBioset
+    };
+    EEntryType entry_type = EEntryType::eBioseq;
 };
 
 
@@ -140,6 +145,12 @@ static void s_ReadConfig(CNcbiIfstream& ifstr, SConfigInfo& config)
             copy(next(begin(tokens)), end(tokens), 
                     back_inserter(config.excluded_mods));
             continue;
+        }
+
+        if (tokens.front() == "ENTRY_TYPE") {
+            if (tokens.back() == "Bioset") {
+                config.entry_type = SConfigInfo::EEntryType::eBioset;
+            }
         }
     }
 }
@@ -253,12 +264,17 @@ sReadInputAndGenerateAsn(
         if (!config_info.excluded_mods.empty()) {
             fasta_reader.SetExcludedMods(config_info.excluded_mods);
         }
-        pSeqEntry = fasta_reader.ReadOneSeq(pMessageListener); 
+        if (config_info.entry_type == SConfigInfo::EEntryType::eBioseq) {
+            pSeqEntry = fasta_reader.ReadOneSeq(pMessageListener); 
+        }
+        else {
+            pSeqEntry = fasta_reader.ReadSet(100, pMessageListener); 
+        }
     }
     catch (...) {
         ifstr.close();
         cfgstr.close();
-        return false;
+        throw;
     }
     return true;
 }
@@ -337,7 +353,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CNcbiOfstream ofstr(resultName.c_str());
 
 
-    //CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     unique_ptr<CMessageListenerBase> pMessageListener(new CMessageListenerLenient());
     CRef<CSeq_entry> pSeqEntry;
 
@@ -369,7 +384,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
     }
     CDirEntry(resultName).Remove();
-
 
     success = testInfo.mErrorFile.CompareTextContents(logName, CFile::eIgnoreWs);
     if (!success) {
