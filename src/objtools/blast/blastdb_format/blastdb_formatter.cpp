@@ -99,6 +99,11 @@ public:
         x_InitBlastDb();
         return NStr::UInt8ToString((Uint8)m_BlastDb->GetDiskUsage());
     }
+    string GetVersion() {
+        x_InitBlastDb();
+	int db_version = ( m_BlastDb->GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5?5:4 );
+        return NStr::IntToString( db_version );
+    }
 
 private:
     /// Information to initialize the BLAST DB handle
@@ -143,6 +148,9 @@ CBlastDbFormatter::Write(const SSeqDBInitInfo& db_init_info)
             break;
         case 'U':   // Disk usage
             data2write.push_back(dbmeta.GetDiskUsage());
+            break;
+        case 'v':   // version
+            data2write.push_back(dbmeta.GetVersion());
             break;
         default:
             CNcbiOstrstream os;

@@ -1043,6 +1043,7 @@ void CBlastDBCmdApp::Init()
             "\t\t%l means the number of bases/residues in the BLAST database\n"
             "\t\t%n means the number of sequences in the BLAST database\n"
             "\t\t%U means the number of bytes used by the BLAST database\n"
+            "\t\t%v means the BLAST database format version\n"
             "\tFor every format each line of output will "
             "correspond to a BLAST database.\n",
             CArgDescriptions::eString, "%f %p");
