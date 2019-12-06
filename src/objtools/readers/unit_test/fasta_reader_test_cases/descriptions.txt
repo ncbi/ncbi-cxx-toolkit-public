@@ -1,0 +1,12 @@
+rw709a - local id containing square brackets. Default flags. Error reported.
+rw709b - local id containing square brackets. fQuickIDCheck. Error is not reported.
+rw709c - id string 'abc,def'. Interpreted as local ID. ',' converted to underscore. Warning emitted. 
+rw709d - id string 'lcl|abc,def'. ',' is not converted to underscore. No warning emitted.
+rw709e - id string 'gb|ab,1234'. Interpreted as accession. ','  is NOT converted to underscore. No warning emitted.
+rw709f - local id string exceeding max local id length. Error reported.
+rw709g - general id tag exceeding max length. Error reported.
+rw709h - gb accession exceeding max length. Error reported.
+rw709i - gb accession 21 nuc chars at end. Warning.
+rw709j - gb accession 26 nuc chars at end. Error.
+rw709k - gb accession with 26 nuc chars at end followed by lcl|abcd. No Error.
+rw709l - single id containing 51 characters that could be interpreted as amino acid codes. Interpreted as local ID. ID length error reported. Possible sequence data warning reported.
