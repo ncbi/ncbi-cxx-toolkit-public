@@ -96,6 +96,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fAsnCache | CDataLoadersUtil::fGenbank;
+
 //#define CANCELER_CODE
 #if defined(CANCELER_CODE)
 #include <conio.h>
@@ -330,6 +332,8 @@ void CAnnotWriterApp::Init()
         "input file is binary ASN.1",
         true );
     }}
+
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
     
     SetupArgDescriptions(arg_desc.release());
 }
@@ -342,10 +346,7 @@ int CAnnotWriterApp::Run()
 
 	CONNECT_Init(&GetConfig());
     m_pObjMngr = CObjectManager::GetInstance();
-    //CGBDataLoader::RegisterInObjectManager(*m_pObjMngr);
 
-    static const CDataLoadersUtil::TLoaders default_loaders =
-    CDataLoadersUtil::fAsnCache | CDataLoadersUtil::fGenbank;
     CDataLoadersUtil::SetupObjectManager(args, *m_pObjMngr, default_loaders);
 
     m_pScope.Reset(new CScope(*m_pObjMngr));
