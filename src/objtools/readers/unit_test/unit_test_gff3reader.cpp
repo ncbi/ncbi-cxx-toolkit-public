@@ -33,20 +33,14 @@
 */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
+#include <corelib/test_boost.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/read_util.hpp>
-#include "error_logger.hpp"
+#include "tc_message_listener.hpp"
 
 #include <cstdio>
-
-// This header must be included before all Boost.Test headers if there are any
-#include <corelib/test_boost.hpp>
-
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -147,14 +141,16 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
-    CErrorLogger logger(errors);
-    CGff3Reader reader(0, "", "", CReadUtil::AsSeqId);
+    CTeamCityMessageListener ml(errors);
     CNcbiIfstream ifstr(input.c_str());
 
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CGff3Reader reader(0, &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
+    }
+    catch (CReaderMessage&) {
     }
     catch (std::exception&) {
         // succeeding by failing in the expected manner.
@@ -201,15 +197,17 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mErrorFile.GetName() << endl;
 
     string logName = CDirEntry::GetTmpName();
-    CErrorLogger logger(logName);
+    CTeamCityMessageListener ml(logName);
 
-    CGff3Reader reader(0);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        CGff3Reader reader(0, &ml);
+        reader.ReadSeqAnnots(annots, ifstr);
+    }
+    catch (CReaderMessage&) {
     }
     catch (const std::exception&) {
         // succeeding by failing in the expected manner.

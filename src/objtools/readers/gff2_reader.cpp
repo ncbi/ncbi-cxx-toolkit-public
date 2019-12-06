@@ -660,7 +660,7 @@ bool CGff2Reader::xUpdateSplicedSegment(
         return false;
     }
 
-   segment.SetExons().push_back(pExon);
+    segment.SetExons().push_back(pExon);
 
     return true;
 }
@@ -678,13 +678,11 @@ bool CGff2Reader::xSetSplicedExon(
         return false;
     }
 
-
     pExon->SetGenomic_start(static_cast<TSeqPos>(gff.SeqStart()-1));
     pExon->SetGenomic_end(static_cast<TSeqPos>(gff.SeqStop()-1));
     if (gff.IsSetStrand()) {
         pExon->SetGenomic_strand(gff.Strand());
     }
-
 
     const int product_start = NStr::StringToInt(targetParts[1])-1;
     const int product_end = NStr::StringToInt(targetParts[2])-1;

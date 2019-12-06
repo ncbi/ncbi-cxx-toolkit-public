@@ -53,7 +53,9 @@ void CReaderMessage::Write(CNcbiOstream& ostr) const
 //  ============================================================================
 {
     ostr << "                " <<  sGetSeverityName(Severity()) << endl;
-    ostr << "Line:           " << LineNumber() << endl;
+    if (LineNumber()) {
+        ostr << "Line:           " << LineNumber() << endl;
+    }
     ostr << "Problem:        " <<  Message() << endl;
     ostr << endl;
 }

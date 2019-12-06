@@ -166,7 +166,7 @@ protected:
         const CGff2Record&,
         CRef<CSeq_feat>&);
 
-    virtual bool xVerifyCdsParents(
+    void xVerifyCdsParents(
         const CGff2Record&);
 
     virtual bool xFeatureSetXrefGrandParent(
@@ -181,10 +181,9 @@ protected:
 
     string xNextGenericId();
 
-    bool xVerifyExonLocation(
+    void xVerifyExonLocation(
         const string&,
-        const CGff2Record&,
-        ILineErrorListener*);
+        const CGff2Record&);
 
     virtual bool xIsIgnoredFeatureType(
         const string&);
@@ -192,9 +191,11 @@ protected:
     virtual void xAddPendingExon(
         const string&,
         const CGff2Record&);
+
     virtual void xGetPendingExons(
         const string&,
         list<CGff2Record>&);
+
     virtual void xPostProcessAnnot(
         CSeq_annot&,
         ILineErrorListener*);

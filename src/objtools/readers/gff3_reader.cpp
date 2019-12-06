@@ -400,10 +400,9 @@ bool CGff3Reader::xUpdateAnnotFeature(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::xVerifyExonLocation(
+void CGff3Reader::xVerifyExonLocation(
     const string& mrnaId,
-    const CGff2Record& exon,
-    ILineErrorListener* pEC)
+    const CGff2Record& exon)
 //  ----------------------------------------------------------------------------
 {
     map<string,CRef<CSeq_interval> >::const_iterator cit = mMrnaLocs.find(mrnaId);
@@ -411,14 +410,11 @@ bool CGff3Reader::xVerifyExonLocation(
         string message = "Bad data line: ";
         message += exon.Type();
         message += " referring to non-existent parent feature.";
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                message,
-                ILineError::eProblem_FeatureBadStartAndOrStop));
-        ProcessError(*pErr, pEC);
-        return false;
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            message);
+        throw error;
     }
     const CSeq_interval& containingInt = cit->second.GetObject();
     const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags, mSeqIdResolve);
@@ -428,17 +424,12 @@ bool CGff3Reader::xVerifyExonLocation(
         string message = "Bad data line: ";
         message += exon.Type();
         message += " extends beyond parent feature.";
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                message,
-                ILineError::eProblem_FeatureBadStartAndOrStop));
-        ProcessError(*pErr, pEC);
-        return false;
-        return false;
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            message);
+        throw error;
     }
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -459,8 +450,8 @@ bool CGff3Reader::xUpdateAnnotExon(
                 xAddPendingExon(parentId, record);
                 return true;
             }
-            if (pParent->GetData().IsRna()  &&  !xVerifyExonLocation(parentId, record, pEC)) {
-                return false;
+            if (pParent->GetData().IsRna()) {
+                xVerifyExonLocation(parentId, record);
             }
             if (pParent->GetData().IsGene()) {
                 if  (!xInitializeFeature(record, pFeature)) {
@@ -489,16 +480,7 @@ bool CGff3Reader::xUpdateAnnotCds(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    if (!xVerifyCdsParents(record)) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Bad data line: CDS record with bad parent assignments.",
-            ILineError::eProblem_GeneralParsingError) );
-        ProcessError(*pErr, pEC);
-        return false;
-    }
+    xVerifyCdsParents(record);
 
     list<string> parents;
     record.GetAttribute("Parent", parents);
@@ -507,14 +489,11 @@ bool CGff3Reader::xUpdateAnnotCds(
     // Preliminary:
     //  We do not support multiparented CDS features in -genbank mode yet.
     if (IsInGenbankMode()  &&  parents.size() > 1){
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        CReaderMessage error(
             eDiag_Error,
-            0,
-            "Unsupported: CDS record with multiple parents.",
-            ILineError::eProblem_GeneralParsingError) );
-        ProcessError(*pErr, pEC);
-        return false;
+            m_uLineNumber,
+            "Unsupported: CDS record with multiple parents.");
+        throw error;
     }
 
     // Step 1:
@@ -685,21 +664,20 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
         return false;
     }
 
-    AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
+    CReaderMessage fatal(
         eDiag_Fatal,
         m_uLineNumber,
-        string("Bad data line: Duplicate feature ID \"") + id + "\"",
-        ILineError::eProblem_DuplicateIDs) );
+        "Bad data line:  Duplicate feature ID \"" + id + "\".");
     if (record.Id() != mIdToSeqIdMap[id]) {
-        pErr->Throw();
+        throw fatal;
     }
     if (it->second->GetData().IsRna()) {
-        pErr->Throw();
+        throw fatal;
     }
     CSeq_feat tempFeat;
     if (CSoMap::SoTypeToFeature(record.Type(), tempFeat)) {
         if (it->second->GetData().GetSubtype() != tempFeat.GetData().GetSubtype()) {
-            pErr->Throw();
+            throw fatal;
         }
     }
 
@@ -724,25 +702,19 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if (featType == "stop_codon_read_through"  ||  featType == "selenocysteine") {
         string cdsParent;
         if (!record.GetAttribute("Parent", cdsParent)) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                "Bad data line: Unassigned code break.",
-                ILineError::eProblem_GeneralParsingError) );
-            ProcessError(*pErr, pEC);
-            return false;
+                m_uLineNumber,
+                "Bad data line: Unassigned code break.");
+            throw error;
         }
         IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsParent);
         if (it == m_MapIdToFeature.end()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CReaderMessage error(
                 eDiag_Error,
-                0,
-                "Bad data line: Code break assigned to missing feature.",
-                ILineError::eProblem_GeneralParsingError) );
-            ProcessError(*pErr, pEC);
-            return false;
+                m_uLineNumber,
+                "Bad data line: Code break assigned to missing feature.");
+            throw error;
         }
 
         CRef<CCode_break> pCodeBreak(new CCode_break); 
@@ -772,7 +744,8 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
-    if (pFeature->GetData().IsRna()  ||  pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_RNA) {
+    if (pFeature->GetData().IsRna()  ||  
+            pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_RNA) {
         CRef<CSeq_interval> rnaLoc(new CSeq_interval);
         rnaLoc->Assign(pFeature->GetLocation().GetInt());
         mMrnaLocs[strId] = rnaLoc;
@@ -804,30 +777,27 @@ bool CGff3Reader::xUpdateAnnotMrna(
                 cit != parents.end();
                 ++cit) {
             if (!xFeatureSetXrefParent(*cit, pFeature)) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                    eDiag_Warning,
-                    0,
-                    "Bad data line: mRNA record with bad parent assignment.",
-                    ILineError::eProblem_MissingContext) );
-                ProcessError(*pErr, pEC);
+                CReaderMessage error(
+                    eDiag_Error,
+                    m_uLineNumber,
+                    "Bad data line: mRNA record with bad parent assignment.");
+                throw error;
             }
         }
     }
 
-    string strId;
+    string strId;   
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
     CRef<CSeq_interval> mrnaLoc(new CSeq_interval);
     CSeq_loc::E_Choice choice = pFeature->GetLocation().Which();
     if (choice != CSeq_loc::e_Int) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Internal error: Unexpected location type.",
-                ILineError::eProblem_BadFeatureInterval));
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Internal error: Unexpected location type.");
+        throw error;
     }
     mrnaLoc->Assign(pFeature->GetLocation().GetInt());
     mMrnaLocs[strId] = mrnaLoc;
@@ -866,22 +836,29 @@ bool CGff3Reader::xAddFeatureToAnnot(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::xVerifyCdsParents(
+void CGff3Reader::xVerifyCdsParents(
     const CGff2Record& record)
 //  ----------------------------------------------------------------------------
 {
     string id;
     string parents;
     if (!record.GetAttribute("ID", id)) {
-        return true;
+        return;
     }
     record.GetAttribute("Parent", parents);
     map<string, string>::iterator it = mCdsParentMap.find(id);
     if (it == mCdsParentMap.end()) {
         mCdsParentMap[id] = parents;
-        return true;
+        return;
     }
-    return (it->second == parents);
+    if (it->second == parents) {
+        return;
+    }
+    CReaderMessage error(
+        eDiag_Error,
+        m_uLineNumber,
+        "Bad data line: CDS record with bad parent assignments.");
+    throw error;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1040,7 +1017,7 @@ CGff3Reader::xGetPendingExons(
 void CGff3Reader::xPostProcessAnnot(
     CSeq_annot& annot,
     ILineErrorListener *pEC)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     if (mAlignmentData) {
         xProcessAlignmentData(annot);
@@ -1051,12 +1028,11 @@ void CGff3Reader::xPostProcessAnnot(
     }
 
     for (const auto& it: mPendingExons) {
-        AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
+        CReaderMessage warning(
             eDiag_Warning,
-            0,
-            "Bad data line: Record references non-existant Parent=" + it.first,
-            ILineError::eProblem_MissingContext) );
-        ProcessError(*pErr, pEC);
+            m_uLineNumber,
+            "Bad data line: Record references non-existant Parent=" + it.first);
+        m_pMessageHandler->Report(warning);
     }
     return CGff2Reader::xPostProcessAnnot(annot, pEC);
 }
@@ -1078,8 +1054,6 @@ CGff3Reader::xNeedsNewSeqAnnot(
         m_PendingLine = line;
         return true;
     }
-    //in normal mode, segmentation is driven by track line markers rather than 
-    // Seq-ids, and that test has already been done
     return false;
 }
 
