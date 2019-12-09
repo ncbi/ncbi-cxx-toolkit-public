@@ -4854,6 +4854,7 @@ NGI	s	Nanjing Geographical Institute	NIG
 NGM	s	Bromley House Library			
 NGMC	s	National Geological Museum of China			
 NGR	c	Plant Pathology			
+NGU	s	Faculty of Education, Niigata University			
 NH	s	South African National Biodiversity Institute			
 NHA	s	University of New Hampshire, Plant Biology Department			
 NHCP	s	National Bureau of Plant Genetic Resources (NBPGR)			

@@ -4887,6 +4887,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NGM\ts\tBromley House Library\t\t\t",
 "NGMC\ts\tNational Geological Museum of China\t\t\t",
 "NGR\tc\tPlant Pathology\t\t\t",
+"NGU\ts\tFaculty of Education, Niigata University\t\t\t",
 "NH\ts\tSouth African National Biodiversity Institute\t\t\t",
 "NHA\ts\tUniversity of New Hampshire, Plant Biology Department\t\t\t",
 "NHCP\ts\tNational Bureau of Plant Genetic Resources (NBPGR)\t\t\t",
