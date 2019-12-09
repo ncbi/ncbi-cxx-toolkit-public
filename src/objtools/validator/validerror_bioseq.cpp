@@ -3200,6 +3200,36 @@ bool s_GetFlankingGapTypes(const CSeq_inst& inst, CSeq_gap::TType& fst, CSeq_gap
     return true;
 }
 
+static bool s_WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
+{
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
+        return false;
+    }
+    if (!seq.GetInst().IsSetMol() || seq.GetInst().GetMol() == CSeq_inst::eMol_aa) {
+        return false;
+    }
+    CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
+
+    if (repr != CSeq_inst::eRepr_delta) {
+        return false;
+    }
+
+    if ( !bsh ) {
+        return false;
+    }    
+
+    if (!seq.GetInst().IsSetLength() || seq.GetInst().GetLength() < 10) {
+        return false;
+    }
+
+    if (!ShouldCheckForNsAndGap(bsh)) {
+        return false;
+    }
+
+    return true;
+}
+
+
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
@@ -3270,12 +3300,12 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at end of sequence", seq);
         }
 
-        if (begin_ambig) {
+        if (begin_ambig && !s_WillReportTerminalGap(seq, bsh)) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_HighNpercent5Prime,
                 "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases",
                 seq);
         }
-        if (end_ambig) {
+        if (end_ambig && !s_WillReportTerminalGap(seq, bsh)) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_HighNpercent3Prime,
                 "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases",
                 seq);
@@ -4144,36 +4174,6 @@ bool CValidError_bioseq::x_IgnoreEndGap(CBioseq_Handle bsh, CSeq_gap::TType gap_
 }
 
 
-static bool WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
-{
-    if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
-        return false;
-    }
-    if (!seq.GetInst().IsSetMol() || seq.GetInst().GetMol() == CSeq_inst::eMol_aa) {
-        return false;
-    }
-    CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
-
-    if (repr != CSeq_inst::eRepr_delta) {
-        return false;
-    }
-
-    if ( !bsh ) {
-        return false;
-    }    
-
-    if (!seq.GetInst().IsSetLength() || seq.GetInst().GetLength() < 10) {
-        return false;
-    }
-
-    if (!ShouldCheckForNsAndGap(bsh)) {
-        return false;
-    }
-
-    return true;
-}
-
-
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
@@ -4354,7 +4354,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                             gap_linkage = gap.GetLinkage();
                     }
                 }
-                if (first  && !x_IgnoreEndGap(bsh, gap_type) && !WillReportTerminalGap(seq, bsh)) {
+                if (first  && !x_IgnoreEndGap(bsh, gap_type) && !s_WillReportTerminalGap(seq, bsh)) {
                     EDiagSev sev = eDiag_Error;
                     if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
                         && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
@@ -4445,7 +4445,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             " adjacent gaps in delta seq";
         PostErr(m_Imp.IsRefSeq() ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
     }
-    if (last_is_gap && !x_IgnoreEndGap(bsh, gap_type) && !WillReportTerminalGap(seq, bsh)) {
+    if (last_is_gap && !x_IgnoreEndGap(bsh, gap_type) && !s_WillReportTerminalGap(seq, bsh)) {
         EDiagSev sev = eDiag_Error;
         if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
             && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
