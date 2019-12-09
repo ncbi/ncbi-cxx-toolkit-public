@@ -89,7 +89,7 @@ public:
         fNoParseID            = 1<< 3, ///< Generate an ID (whole defline -&gt; title)
         fParseGaps            = 1<< 4, ///< Make a delta sequence if gaps found
         fOneSeq               = 1<< 5, ///< Just read the first sequence found
-        fAllSeqIds            = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
+        fAllSeqIds [[deprecated ("This flag is no longer used in CFastaReader.")]]   = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
         fNoSeqData            = 1<< 7, ///< Parse the deflines but skip the data
         fRequireID            = 1<< 8, ///< Reject deflines that lack IDs
         fDLOptional           = 1<< 9, ///< Don't require a leading defline
@@ -103,8 +103,8 @@ public:
         fAddMods              = 1<<17, ///< Parse defline mods and add to SeqEntry
         fLetterGaps           = 1<<18, ///< Parse runs of Ns when splitting data
         fNoUserObjs           = 1<<19, ///< Don't save raw deflines in User-objects
-        fBadModThrow          = 1<<20, ///< Throw an exception if there's a bad modifier value (e.g. "[topology=nonsense]")
-        fUnknModThrow         = 1<<21, ///< Throw if there are any unknown (unused) mods left over
+        fBadModThrow [[deprecated ("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")]]     = 1<<20, 
+        fUnknModThrow [[deprecated ("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")]]    = 1<<21, 
         fLeaveAsText          = 1<<22, ///< Don't reencode at all, just parse
         fQuickIDCheck         = 1<<23, ///< Just check local IDs' first characters
         fUseIupacaa           = 1<<24, ///< If Prot, use iupacaa instead of the default ncbieaa.
@@ -429,14 +429,14 @@ protected:
 };
 
 
-enum EReadFastaFlags {
+enum [[deprecated]] EReadFastaFlags {
     fReadFasta_AssumeNuc  = CFastaReader::fAssumeNuc,
     fReadFasta_AssumeProt = CFastaReader::fAssumeProt,
     fReadFasta_ForceType  = CFastaReader::fForceType,
     fReadFasta_NoParseID  = CFastaReader::fNoParseID,
     fReadFasta_ParseGaps  = CFastaReader::fParseGaps,
     fReadFasta_OneSeq     = CFastaReader::fOneSeq,
-    fReadFasta_AllSeqIds  = CFastaReader::fAllSeqIds,
+//    fReadFasta_AllSeqIds  = CFastaReader::fAllSeqIds,
     fReadFasta_NoSeqData  = CFastaReader::fNoSeqData,
     fReadFasta_RequireID  = CFastaReader::fRequireID
 };

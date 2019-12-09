@@ -147,7 +147,7 @@ public:
 
     using TLineInfo = objects::SLineInfo;
     using FIdValidate = 
-        function<void(const objects::CSeq_id&,
+        function<void(const list<CRef<objects::CSeq_id>>&,
                       int,
                       objects::CAlnErrorReporter*)>;
 

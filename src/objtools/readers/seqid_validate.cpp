@@ -44,7 +44,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-void CSeqIdValidate::operator()(const CSeq_id& seqId, 
+static void s_ValidateSingleID(const CSeq_id& seqId, 
         int lineNum, 
         CAlnErrorReporter* pErrorReporter) 
 {
@@ -87,6 +87,17 @@ void CSeqIdValidate::operator()(const CSeq_id& seqId,
     }
     // default implementation only checks local IDs
 }
+
+
+void CSeqIdValidate::operator()(const list<CRef<CSeq_id>>& ids,
+        int lineNum,
+        CAlnErrorReporter* pErrorReporter) {
+    
+    for (auto pSeqId : ids) {
+        s_ValidateSingleID(*pSeqId, lineNum, pErrorReporter);
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

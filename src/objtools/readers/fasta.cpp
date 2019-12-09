@@ -612,9 +612,6 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     PostProcessIDs(data.ids, s, data.has_range, data.range_start, data.range_end);
 
     m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
-    if(data.has_range) {
-        m_ExpectedEnd = data.range_end - data.range_start;
-    }
     FASTA_PROGRESS("Processing Seq-id: " <<
         ( m_BestID ? m_BestID->AsFastaString() : string("UNKNOWN") ) );
 
@@ -2026,8 +2023,7 @@ void CFastaMapper::AssembleSeq(ILineErrorListener * pMessageListener)
 void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
 {
     static const CFastaReader::TFlags kFlags
-        = CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds
-        | CFastaReader::fNoSeqData;
+        = CFastaReader::fAssumeNuc | CFastaReader::fNoSeqData;
 
     if ( !input.is_open() ) {
         return;
@@ -2069,9 +2065,9 @@ CSourceModParser* CFastaReader::xCreateSourceModeParser(
     ILineErrorListener* pErrorListener)
 {
     // first of all, honor any explicit fBadModThrow flag given to the reader:
-    if (TestFlag(fBadModThrow) || TestFlag(fUnknModThrow)) {
-        return new CSourceModParser(CSourceModParser::eHandleBadMod_Throw);
-    }
+//    if (TestFlag(fBadModThrow) || TestFlag(fUnknModThrow)) {
+//        return new CSourceModParser(CSourceModParser::eHandleBadMod_Throw);
+//    }
     // otherwise, try to construct the parser around any given error listener:
     if (pErrorListener != nullptr) {
         return new CSourceModParser(pErrorListener, m_uLineNumber+1);

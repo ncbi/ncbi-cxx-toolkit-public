@@ -305,9 +305,7 @@ void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
     }
 
     if (m_fIdValidate) {
-        for (auto pSeqId : ids) {
-            m_fIdValidate(*pSeqId, seqIdInfo.mNumLine, theErrorReporter.get());
-        }
+        m_fIdValidate(ids, seqIdInfo.mNumLine, theErrorReporter.get());
     }
     return;
 }

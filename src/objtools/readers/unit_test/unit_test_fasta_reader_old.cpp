@@ -478,9 +478,6 @@ namespace {
         try {
             CMemoryLineReader line_reader( sFasta.c_str(), sFasta.length() );
             CFastaReader fasta_reader( line_reader, fFlags );
-            if( pModFilter ) {
-                fasta_reader.SetModFilter( pModFilter );
-            }
 
             CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq(pMessageListener.GetPointer());
             cerr << s_ObjectToTextASN(*pEntry) << endl;
@@ -668,7 +665,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
     CFastaReader::SDefLineParseInfo parseInfo;
     parseInfo.maxIdLength = 40;
     parseInfo.lineNumber = 0;
-    parseInfo.fFastaFlags = CFastaReader::fAllSeqIds;
+    parseInfo.fFastaFlags = 0;
     parseInfo.fBaseFlags = 0;
 
     CFastaReader::TIgnoredProblems noIgnoredErrors;
