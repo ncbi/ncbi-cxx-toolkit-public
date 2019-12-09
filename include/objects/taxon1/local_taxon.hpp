@@ -78,6 +78,8 @@ public:
     string GetScientificName(TTaxid taxid);
     short int GetGeneticCode(TTaxid taxid);
     CConstRef<objects::COrg_ref> GetOrgRef(TTaxid taxid);
+    void LookupMerge(objects::COrg_ref& org);
+
 public: // lookups other than taxid
 
     TTaxid GetTaxIdByName(const string& orgname);

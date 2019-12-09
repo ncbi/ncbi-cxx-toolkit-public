@@ -151,6 +151,86 @@ short int CLocalTaxon::GetGeneticCode(TTaxid taxid)
     }
 }
 
+
+namespace {
+
+//        s_CopyDbTags(org, *new_org);
+void s_CopyDbTags(const COrg_ref& org, COrg_ref& new_org)
+{
+    if( ! org.IsSetDb() ) {
+        return;
+    }
+    new_org.SetDb().insert(
+        new_org.SetDb().end(),
+        const_cast<COrg_ref&>(org).SetDb().begin(),
+        const_cast<COrg_ref&>(org).SetDb().end()
+    );
+
+    for (vector<CRef<CDbtag> >::iterator it1 = new_org.SetDb().begin();
+         it1 != new_org.SetDb().end();  ++it1) {
+
+        vector<CRef<CDbtag> >::iterator it2 = it1;
+        for (++it2;  it2 != new_org.SetDb().end();  ) {
+            if ((*it1)->Equals(**it2)) {
+                it2 = new_org.SetDb().erase(it2);
+            }
+            else {
+                ++it2;
+            }
+        }
+    }
+}
+
+void s_RemoveTaxon(COrg_ref& org)
+{
+    if( ! org.IsSetDb() ) {
+        return;
+    }
+    vector<CRef<CDbtag> >& dbs = org.SetDb();
+    ERASE_ITERATE(vector<CRef<CDbtag> >, it, dbs ) {
+        if ( (*it)->GetDb() == "taxon" ) {
+            VECTOR_ERASE(it, dbs);
+        }
+    }
+}
+
+}
+
+
+
+
+void CLocalTaxon::LookupMerge(objects::COrg_ref& org)
+{
+    if (m_SqliteConn.get()) {
+        int taxid = 0;
+        if( ! org.IsSetDb() ) {
+            taxid = GetTaxIdByOrgRef(org);
+        } else {
+            taxid = org.GetTaxId();
+        }
+        if ( taxid <=0 ) {
+            NCBI_THROW(CException, eUnknown, "s_UpdateOrgRef: organism does not contain tax id or has unequivocal registered taxonomy name");
+        }
+
+        CConstRef<COrg_ref> public_org = GetOrgRef(taxid);
+        CRef<COrg_ref> new_org(new COrg_ref);
+        new_org->Assign(*public_org);
+        if (org.IsSetOrgname() && org.GetOrgname().IsSetMod()) {
+            new_org->SetOrgname().SetMod() =
+                org.GetOrgname().GetMod();
+        }
+        if ( !new_org->Equals(org) ) {
+            s_RemoveTaxon(org);
+            s_CopyDbTags(org, *new_org);
+            org.Assign(*new_org);
+        }
+    }
+    else {
+        m_TaxonConn->LookupMerge(org);
+    }
+}
+
+
 CConstRef<objects::COrg_ref> CLocalTaxon::GetOrgRef(TTaxid taxid)
 {
     if (m_SqliteConn.get()) {
