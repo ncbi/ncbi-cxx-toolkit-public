@@ -704,7 +704,7 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
     return requests;
 }
 
-int CProcessing::Performance(const string& service, size_t user_threads, bool local_queue, ostream& os)
+int CProcessing::Performance(const string& service, size_t user_threads, double delay, bool local_queue, ostream& os)
 {
     SIoRedirector io_redirector(cout, os);
 
@@ -772,6 +772,10 @@ int CProcessing::Performance(const string& service, size_t user_threads, bool lo
             }
 
             if (success) metrics->SetSuccess();
+
+            if (delay) {
+                this_thread::sleep_for(chrono::duration<double>(delay));
+            }
         }
     };
 
