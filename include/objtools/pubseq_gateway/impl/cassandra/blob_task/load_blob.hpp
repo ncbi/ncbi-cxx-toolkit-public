@@ -49,7 +49,6 @@ USING_NCBI_SCOPE;
 class CCassBlobTaskLoadBlob
     : public CCassBlobWaiter
 {
-    static const CBlobRecord::TTimestamp kAnyModified = -1;
     static const size_t kMaxChunksAhead = 4;
     enum EBlobInserterState {
         eInit = 0,
@@ -62,6 +61,8 @@ class CCassBlobTaskLoadBlob
     };
 
  public:
+    static const CBlobRecord::TTimestamp kAnyModified = -1;
+
     using TBlobPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
     using TBlobChunkCallbackEx = function<void(CBlobRecord const & blob,  const unsigned char * data, unsigned int size, int chunk_no)>;
 
@@ -113,7 +114,7 @@ class CCassBlobTaskLoadBlob
 
     CBlobRecord::TSatKey GetSatKey() const
     {
-        return m_Blob ? m_Blob->GetKey() : -1;
+        return m_Blob->GetKey();
     }
 
     CBlobRecord::TTimestamp GetModified() const

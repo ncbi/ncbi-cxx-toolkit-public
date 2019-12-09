@@ -47,8 +47,6 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-static const SSplitHistoryRecord::TSplitVersion kFetchAllVersions = -1;
-
 CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     unsigned int op_timeout_ms,
     unsigned int max_retries,
@@ -59,7 +57,7 @@ CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     TDataErrorCallback data_error_cb
 )
     : CCassBlobTaskFetchSplitHistory(
-        op_timeout_ms, max_retries, conn, keyspace, sat_key, kFetchAllVersions, move(consume_callback), data_error_cb
+        op_timeout_ms, max_retries, conn, keyspace, sat_key, kAllVersions, move(consume_callback), data_error_cb
     )
 {
 }
@@ -133,7 +131,7 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                 auto query = m_QueryArr[0].query;
                 string sql = "SELECT split_version, last_modified, id2_info FROM " + GetKeySpace() +
                     ".blob_split_history WHERE sat_key = ?";
-                if (m_SplitVersion == kFetchAllVersions) {
+                if (m_SplitVersion == kAllVersions) {
                     query->SetSQL(sql, 1);
                     query->BindInt32(0, m_Key);
                 } else {

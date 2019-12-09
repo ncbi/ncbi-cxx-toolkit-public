@@ -67,6 +67,7 @@ class CCassBlobTaskFetchSplitHistory
     };
 
  public:
+    static const SSplitHistoryRecord::TSplitVersion kAllVersions = -1;
     using TConsumeCallback = function<void(vector<SSplitHistoryRecord> &&)>;
 
     CCassBlobTaskFetchSplitHistory(
