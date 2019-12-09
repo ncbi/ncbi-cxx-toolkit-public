@@ -332,7 +332,7 @@ bool CBedGraphWriter::xWriteSingleFeature(
     bedRecord.SetChromId(recordId);
 
     bedRecord.SetChromStart(interval.GetFrom());
-    bedRecord.SetChromEnd(interval.GetTo()-1);
+    bedRecord.SetChromEnd(interval.GetTo()+1);
     bedRecord.SetChromValue(score);
     bedRecord.Write(m_Os);
     return true;
