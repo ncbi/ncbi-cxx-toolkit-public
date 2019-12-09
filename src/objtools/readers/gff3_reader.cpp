@@ -196,7 +196,11 @@ CGff3Reader::ReadSeqAnnot(
  
     mCurrentFeatureCount = 0;
     mParsingAlignment = false;
-    return CReaderBase::ReadSeqAnnot(lr, pEC);
+    auto pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
+    if (pAnnot  &&  pAnnot->GetData().Which() == CSeq_annot::TData::e_not_set) {
+        return CRef<CSeq_annot>();
+    }
+    return pAnnot;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1051,6 +1055,9 @@ CGff3Reader::xNeedsNewSeqAnnot(
             return false;
         }
         m_CurrentSeqId = seqId;
+        if (mCurrentFeatureCount == 0) {
+            return false;
+        }
         m_PendingLine = line;
         return true;
     }

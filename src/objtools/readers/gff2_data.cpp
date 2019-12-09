@@ -61,6 +61,7 @@
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 
+#include <objtools/readers/reader_message.hpp>
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -236,23 +237,21 @@ bool CGff2Record::AssignFromGff(
     m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
     }
     catch (const CException&) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        string message = "Bad data line: Both \"start\" and \"stop\" must be positive integers.";
+        CReaderMessage error(
             eDiag_Error,
             0,
-            "Bad data line: Both \"start\" and \"stop\" must be positive integers.",
-            ILineError::eProblem_FeatureBadStartAndOrStop));
-        pErr->Throw();
+            message);
+        throw error;
     }
     if (m_uSeqStop < m_uSeqStart) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
+        string message = "Bad data line: location start is greater than location stop (start="
+            + string(columns[3]) + ", stop=" + string(columns[4]) + ").";
+        CReaderMessage error(
             eDiag_Error,
             0,
-            "Bad data line: location start is greater than location stop (start="
-            + string(columns[3]) + ", stop=" + string(columns[4]) + ").",
-            ILineError::eProblem_FeatureBadStartAndOrStop) );
-        pErr->Throw();
+            message);
+        throw error;
     }
 
     if ( columns[5] != "." ) {
@@ -1144,13 +1143,12 @@ bool CGff2Record::xInitFeatureData(
     }
     if (!CSoMap::SoTypeToFeature(
         recognizedType, *pFeature, invalidFeaturesToRegion)) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                string("Bad data line: Invalid feature type \"") + recognizedType + "\"",
-                ILineError::eProblem_UnrecognizedFeatureName) );
-        pErr->Throw();
+        string message = "Bad data line: Invalid feature type \"" + recognizedType + "\"";
+        CReaderMessage error(
+            eDiag_Error,
+            0,
+            message);
+        throw error;
     }
     return CGffBaseColumns::xInitFeatureData(flags, pFeature);
 }

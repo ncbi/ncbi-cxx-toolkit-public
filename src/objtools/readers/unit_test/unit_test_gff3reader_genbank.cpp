@@ -94,7 +94,6 @@ public:
                 ||NStr::StartsWith(name, ".")) {
             return;
         }
-
         // extract info from the file name
         const string sFileName = file.GetName();
         vector<CTempString> vecFileNamePieces;
