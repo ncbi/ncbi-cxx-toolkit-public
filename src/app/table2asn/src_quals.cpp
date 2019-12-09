@@ -475,9 +475,9 @@ void g_ApplyMods(
         s_PreprocessNoteMods(mods); // RW-928
 
         auto fReportCommandLineError = 
-            [&](const CModData& /* mod */, const string& msg, EDiagSev sev,
+            [&](const CModData& /* mod */, const string& msg, EDiagSev /* sev */,
                 EModSubcode subcode) {
-                return sReportError(pEC, sev, subcode, "", msg);
+                return sReportError(pEC, eDiag_Warning, subcode, "", msg);
             };
 
 
@@ -518,9 +518,9 @@ void g_ApplyMods(
 
             string seqId = pBioseq->GetId().front()->AsFastaString();
             auto fReportError = 
-                [&](const CModData& /* mod */, const string& msg, EDiagSev sev,
+                [&](const CModData& /* mod */, const string& msg, EDiagSev /* sev */,
                     EModSubcode subcode) {
-                    return sReportError(pEC, sev, subcode, seqId, msg);
+                    return sReportError(pEC, eDiag_Warning, subcode, seqId, msg);
                 };
  
             if (pNamedSrcFileMap && pNamedSrcFileMap->Mapped()) {
