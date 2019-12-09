@@ -106,6 +106,31 @@ class CCassBlobTaskLoadBlob
         m_QueryArr.clear();
     }
 
+    string GetKeyspace() const
+    {
+        return m_Keyspace;
+    }
+
+    CBlobRecord::TSatKey GetSatKey() const
+    {
+        return m_Blob ? m_Blob->GetKey() : -1;
+    }
+
+    CBlobRecord::TTimestamp GetModified() const
+    {
+        return m_Modified;
+    }
+
+    bool LoadChunks() const
+    {
+        return m_LoadChunks;
+    }
+
+    bool BlobPropsProvided() const
+    {
+        return m_ExplicitBlob;
+    }
+
     unique_ptr<CBlobRecord> ConsumeBlobRecord();
     bool IsBlobPropsFound() const;
     void SetChunkCallback(TBlobChunkCallbackEx callback);

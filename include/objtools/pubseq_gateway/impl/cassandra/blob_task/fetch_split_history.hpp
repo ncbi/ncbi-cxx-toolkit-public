@@ -90,6 +90,21 @@ class CCassBlobTaskFetchSplitHistory
         TDataErrorCallback data_error_cb
     );
 
+    string GetKeyspace() const
+    {
+        return m_Keyspace;
+    }
+
+    CBlobRecord::TSatKey GetKey() const
+    {
+        return m_Key;
+    }
+
+    SSplitHistoryRecord::TSplitVersion GetSplitVersion() const
+    {
+        return m_SplitVersion;
+    }
+
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TConsumeCallback callback);

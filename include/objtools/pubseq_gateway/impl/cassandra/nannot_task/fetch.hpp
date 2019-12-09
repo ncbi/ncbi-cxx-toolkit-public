@@ -108,6 +108,39 @@ class CCassNAnnotTaskFetch
     void SetConsumeCallback(TNAnnotConsumeCallback callback);
     void Cancel(void);
 
+    string GetKeyspace() const
+    {
+        return m_Keyspace;
+    }
+
+    string GetAccession() const
+    {
+        return m_Accession;
+    }
+
+    int16_t GetVersion() const
+    {
+        return m_Version;
+    }
+
+    int16_t GetSeqIdType() const
+    {
+        return m_SeqIdType;
+    }
+
+    vector<string> GetAnnotNames() const
+    {
+        if (!m_AnnotNamesTemp.empty()) {
+            vector<string> result;
+            result.reserve(m_AnnotNamesTemp.size());
+            for (CTempString const& item : m_AnnotNamesTemp) {
+                result.push_back(item);
+            }
+            return result;
+        }
+        return m_AnnotNames;
+    }
+
  protected:
     virtual void Wait1(void) override;
 
