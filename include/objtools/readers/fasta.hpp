@@ -89,7 +89,7 @@ public:
         fNoParseID            = 1<< 3, ///< Generate an ID (whole defline -&gt; title)
         fParseGaps            = 1<< 4, ///< Make a delta sequence if gaps found
         fOneSeq               = 1<< 5, ///< Just read the first sequence found
-        fAllSeqIds [[deprecated ("This flag is no longer used in CFastaReader.")]]   = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
+        fAllSeqIds NCBI_STD_DEPRECATED("This flag is no longer used in CFastaReader.")   = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
         fNoSeqData            = 1<< 7, ///< Parse the deflines but skip the data
         fRequireID            = 1<< 8, ///< Reject deflines that lack IDs
         fDLOptional           = 1<< 9, ///< Don't require a leading defline
@@ -103,8 +103,8 @@ public:
         fAddMods              = 1<<17, ///< Parse defline mods and add to SeqEntry
         fLetterGaps           = 1<<18, ///< Parse runs of Ns when splitting data
         fNoUserObjs           = 1<<19, ///< Don't save raw deflines in User-objects
-        fBadModThrow [[deprecated ("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")]]     = 1<<20, 
-        fUnknModThrow [[deprecated ("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")]]    = 1<<21, 
+        fBadModThrow  NCBI_STD_DEPRECATED("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")    = 1<<20, 
+        fUnknModThrow NCBI_STD_DEPRECATED("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")    = 1<<21, 
         fLeaveAsText          = 1<<22, ///< Don't reencode at all, just parse
         fQuickIDCheck         = 1<<23, ///< Just check local IDs' first characters
         fUseIupacaa           = 1<<24, ///< If Prot, use iupacaa instead of the default ncbieaa.
@@ -429,7 +429,7 @@ protected:
 };
 
 
-enum [[deprecated]] EReadFastaFlags {
+enum NCBI_STD_DEPRECATED("") EReadFastaFlags {
     fReadFasta_AssumeNuc  = CFastaReader::fAssumeNuc,
     fReadFasta_AssumeProt = CFastaReader::fAssumeProt,
     fReadFasta_ForceType  = CFastaReader::fForceType,
