@@ -456,6 +456,14 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
                            vector<CConstRef<CSeq_loc> >* lcv = 0,
                            ILineErrorListener * pMessageListener = 0);
 
+/// A const-correct replacement for the deprecated ReadFasta function
+/// @sa CFastaReader
+NCBI_XOBJREAD_EXPORT
+CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags=0,
+                           int* counter = nullptr,
+                           CFastaReader::TMasks* lcv=nullptr,
+                           ILineErrorListener* pMessageListener=nullptr);
+
 //////////////////////////////////////////////////////////////////
 //
 // Class - description of multi-entry FASTA file,

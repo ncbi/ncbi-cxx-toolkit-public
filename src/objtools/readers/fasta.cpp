@@ -1957,6 +1957,26 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
     return seq_entry;
 }
 
+CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
+                           int* counter, CFastaReader::TMasks* lcv,
+                           ILineErrorListener* pMessageListener)
+{
+    CFastaReader reader(in, flags);
+    if (counter) {
+        reader.SetIDGenerator().SetCounter(*counter);
+    }
+    if (lcv) {
+        reader.SaveMasks(lcv);
+    }
+
+    auto pEntry = reader.ReadSet(kMax_Int, pMessageListener);
+
+    if (counter) {
+        *counter = reader.GetIDGenerator().GetCounter();
+    }
+    return pEntry;
+}
+
 
 IFastaEntryScan::~IFastaEntryScan()
 {
