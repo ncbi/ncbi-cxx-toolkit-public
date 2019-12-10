@@ -657,7 +657,7 @@ DISCREPANCY_AUTOFIX(NONWGS_SETS_PRESENT)
 
 DISCREPANCY_CASE(NO_ANNOTATION, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart | eBig, "No annotation")
 {
-    auto all_feat = context.GetFeat();
+    auto all_feat = context.GetAllFeat();
     if (all_feat.begin() == all_feat.end()) {
         m_Objs["[n] bioseq[s] [has] no features"].Add(*context.BioseqObjRef());
     }
@@ -675,7 +675,7 @@ DISCREPANCY_CASE(LONG_NO_ANNOTATION, SEQUENCE, eDisc | eOncaller | eSubmitter | 
     const int kSeqLength = 5000;
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.IsNa() && bioseq.IsSetLength() && bioseq.GetLength() > kSeqLength) {
-        auto all_feat = context.GetFeat();
+        auto all_feat = context.GetAllFeat();
         if (all_feat.begin() == all_feat.end()) {
             m_Objs["[n] bioseq[s] [is] longer than 5000nt and [has] no features"].Add(*context.BioseqObjRef());
         }
