@@ -830,7 +830,8 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "Valine",         'V'  },
     {  "Xle",            'J'  },
     {  "Xxx",            'X'  },
-    {  "fMet",           'M'  }
+    {  "fMet",           'M'  },
+    {  "iMet",           'M'  }
 };
 
 typedef CStaticPairArrayMap <const char*, int, PCase_CStr> TTrnaMap;
@@ -1745,6 +1746,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToRna (
                             CTrna_ext::TAa& taa = trx.SetAa();
                             taa.SetNcbieaa(aaval_it->second);
                             if (aa_string == "fMet" ||
+                                aa_string == "iMet" ||
                                 aa_string == "Ile2") {
                                x_AddGBQualToFeature(sfp, "product", val); 
                             }
