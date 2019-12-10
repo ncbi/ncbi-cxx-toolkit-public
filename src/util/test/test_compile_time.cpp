@@ -199,7 +199,6 @@ using bitset_pair = std::pair<int, bitset>;
 BOOST_AUTO_TEST_CASE(TestConstBitset)
 {
     // this test ensures various approaches of instantiating const bitsets
-//#define constexpr
     constexpr bitset t1{ 1, 10, 20, 30 };
 
     constexpr bitset t2{ 1, 10, 20, 30 };
@@ -248,9 +247,6 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
     BOOST_CHECK(!t10.test(7));
     BOOST_CHECK(!t10.test(8));
     BOOST_CHECK(!t10.test(9));
-#ifdef constexpr
-#undef constexpr
-#endif
 }
 
 BOOST_AUTO_TEST_CASE(TestConstMap)
