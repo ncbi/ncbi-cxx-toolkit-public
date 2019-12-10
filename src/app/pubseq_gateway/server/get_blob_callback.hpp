@@ -92,6 +92,15 @@ class CBlobPropCallback
         void operator()(CBlobRecord const &  blob, bool is_found)
         {
             if (!m_InProcess) {
+                if (m_PendingOp->NeedTrace()) {
+                    if (is_found) {
+                        m_PendingOp->SendTrace("Cassandra blob props: " +
+                            ToJson(blob).Repr(CJsonNode::fStandardJson));
+                    } else {
+                        m_PendingOp->SendTrace("Cassandra blob props not found");
+                    }
+                }
+
                 if (m_NeedTiming) {
                     CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
                     if (is_found)

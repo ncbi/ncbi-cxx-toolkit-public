@@ -36,17 +36,16 @@
 #include "pending_operation.hpp"
 #include "async_bioseq_query.hpp"
 #include "insdc_utils.hpp"
-#include "resolve_trace.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
 
 using namespace std::placeholders;
 
 
 CAsyncBioseqQuery::CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                                     CPendingOperation *  pending_op,
-                                     bool  need_trace) :
+                                     CPendingOperation *  pending_op) :
     m_BioseqResolution(std::move(bioseq_resolution)),
     m_PendingOp(pending_op),
-    m_NeedTrace(need_trace),
+    m_NeedTrace(pending_op->NeedTrace()),
     m_Fetch(nullptr),
     m_NoSeqIdTypeFetch(nullptr)
 {}
@@ -108,10 +107,13 @@ void CAsyncBioseqQuery::MakeRequest(bool  with_seq_id_type)
 
     if (m_NeedTrace) {
         if (with_seq_id_type)
-            ResolveTrace("Cassandra request: " + bioseq_info_request.ToString());
+            m_PendingOp->SendTrace(
+                "Cassandra request: " +
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
         else
-            ResolveTrace("Cassandra request without seq_id_type (INSDC type): " +
-                         bioseq_info_request.ToString());
+            m_PendingOp->SendTrace(
+                "Cassandra request for INSDC types: " +
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
     }
 
     fetch_task->Wait();
@@ -124,11 +126,17 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
     m_Fetch->SetReadFinished();
 
+    if (m_NeedTrace) {
+        string  msg = to_string(records.size()) + " hit(s)";
+        for (const auto &  item : records) {
+            msg += "\n" + ToJson(item, fServAllBioseqFields).
+                            Repr(CJsonNode::fStandardJson);
+        }
+        m_PendingOp->SendTrace(msg);
+    }
+
     if (records.empty()) {
         // Nothing was found
-        if (m_NeedTrace)
-            ResolveTrace("0 records found");
-
         app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
                                   m_BioseqRequestStart);
         app->GetDBCounters().IncBioseqInfoNotFound();
@@ -140,7 +148,8 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         }
 
         if (m_NeedTrace)
-            ResolveTrace("Report not found");
+            m_PendingOp->SendTrace("Report not found");
+
         m_BioseqResolution.m_ResolutionResult = eNotResolved;
         m_PendingOp->OnBioseqDetailsRecord(std::move(m_BioseqResolution));
         return;
@@ -149,8 +158,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (records.size() == 1) {
         // Exactly one match; no complications
         if (m_NeedTrace) {
-            ResolveTrace("1 record found");
-            ResolveTrace("Report 1 found");
+            m_PendingOp->SendTrace("Report found");
         }
 
         m_BioseqResolution.m_ResolutionResult = eBioseqDB;
@@ -164,14 +172,12 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     }
 
     // Here: there are more than one records
-    if (m_NeedTrace)
-        ResolveTrace(to_string(records.size()) + " records found");
-
     if (m_BioseqResolution.m_BioseqInfo.GetVersion() != -1) {
         // More than one with the version provided
         if (m_NeedTrace) {
-            ResolveTrace("Consider as nothing was found");
-            ResolveTrace("Report 0 found");
+            m_PendingOp->SendTrace(
+                "Consider as nothing was found (version was "
+                "specified but many records)\nReport not found");
         }
 
         m_BioseqResolution.m_ResolutionResult = eNotResolved;
@@ -194,9 +200,11 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     }
 
     if (m_NeedTrace) {
-        ResolveTrace("Record with max version " + to_string(version) +
-                     " selected");
-        ResolveTrace("Report 1 found");
+        m_PendingOp->SendTrace(
+            "Record with max version selected\n" +
+            ToJson(records[index], fServAllBioseqFields).
+                Repr(CJsonNode::fStandardJson) +
+            "\nReport found");
     }
 
     m_BioseqResolution.m_ResolutionResult = eBioseqDB;
@@ -218,8 +226,21 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
     auto                request_version = m_BioseqResolution.m_BioseqInfo.GetVersion();
     SINSDCDecision      decision = DecideINSDC(records, request_version);
 
+    if (m_NeedTrace) {
+        string  msg = to_string(records.size()) +
+                      " hit(s); decision status: " + to_string(decision.status);
+        for (const auto &  item : records) {
+            msg += "\n" + ToJson(item, fServAllBioseqFields).
+                            Repr(CJsonNode::fStandardJson);
+        }
+        m_PendingOp->SendTrace(msg);
+    }
+
     switch (decision.status) {
         case CRequestStatus::e200_Ok:
+            if (m_NeedTrace)
+                m_PendingOp->SendTrace("Report found");
+
             m_BioseqResolution.m_ResolutionResult = eBioseqDB;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
@@ -231,6 +252,9 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             m_PendingOp->OnBioseqDetailsRecord(std::move(m_BioseqResolution));
             break;
         case CRequestStatus::e404_NotFound:
+            if (m_NeedTrace)
+                m_PendingOp->SendTrace("Report not found");
+
             m_BioseqResolution.m_ResolutionResult = eNotResolved;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
@@ -241,6 +265,9 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             m_PendingOp->OnBioseqDetailsRecord(std::move(m_BioseqResolution));
             break;
         case CRequestStatus::e500_InternalServerError:
+            if (m_NeedTrace)
+                m_PendingOp->SendTrace("Report not found");
+
             m_BioseqResolution.m_ResolutionResult = eNotResolved;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
@@ -270,7 +297,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfoError(
                                 EDiagSev  severity, const string &  message)
 {
     if (m_NeedTrace)
-        ResolveTrace("Cassandra error: " + message);
+        m_PendingOp->SendTrace("Cassandra error: " + message);
 
     if (m_Fetch)
         m_Fetch->SetReadFinished();

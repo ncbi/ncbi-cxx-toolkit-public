@@ -40,7 +40,6 @@
 #include "get_blob_callback.hpp"
 #include "split_history_callback.hpp"
 #include "insdc_utils.hpp"
-#include "resolve_trace.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -64,7 +63,8 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     m_BlobRequest(blob_request),
     m_Cancelled(false),
     m_RequestContext(request_context),
-    m_ProtocolSupport(initial_reply_chunks)
+    m_ProtocolSupport(initial_reply_chunks),
+    m_CreateTimestamp(chrono::high_resolution_clock::now())
 {
     if (m_BlobRequest.m_BlobIdType == eBySeqId) {
         PSG_TRACE("CPendingOperation::CPendingOperation: blob "
@@ -94,7 +94,8 @@ CPendingOperation::CPendingOperation(const SResolveRequest &  resolve_request,
     m_ResolveRequest(resolve_request),
     m_Cancelled(false),
     m_RequestContext(request_context),
-    m_ProtocolSupport(initial_reply_chunks)
+    m_ProtocolSupport(initial_reply_chunks),
+    m_CreateTimestamp(chrono::high_resolution_clock::now())
 {
     PSG_TRACE("CPendingOperation::CPendingOperation: resolution "
               "request by seq_id/seq_id_type: " <<
@@ -117,7 +118,8 @@ CPendingOperation::CPendingOperation(const SAnnotRequest &  annot_request,
     m_AnnotRequest(annot_request),
     m_Cancelled(false),
     m_RequestContext(request_context),
-    m_ProtocolSupport(initial_reply_chunks)
+    m_ProtocolSupport(initial_reply_chunks),
+    m_CreateTimestamp(chrono::high_resolution_clock::now())
 {
     PSG_TRACE("CPendingOperation::CPendingOperation: annotation "
               "request by seq_id/seq_id_type: " <<
@@ -140,7 +142,8 @@ CPendingOperation::CPendingOperation(const STSEChunkRequest &  tse_chunk_request
     m_TSEChunkRequest(tse_chunk_request),
     m_Cancelled(false),
     m_RequestContext(request_context),
-    m_ProtocolSupport(initial_reply_chunks)
+    m_ProtocolSupport(initial_reply_chunks),
+    m_CreateTimestamp(chrono::high_resolution_clock::now())
 {
     PSG_TRACE("CPendingOperation::CPendingOperation: TSE chunk "
               "request by sat/sat_key: " <<
@@ -392,7 +395,7 @@ void CPendingOperation::x_ProcessGetRequest(SResolveInputSeqIdError &  err,
         CPSGCache           psg_cache(m_UrlUseCache != eCassandraOnly);
         ECacheLookupResult  cache_lookup_result =
                                 psg_cache.LookupBioseqInfo(bioseq_resolution,
-                                                           x_ResolveTrace());
+                                                           this);
         if (cache_lookup_result != eFound) {
             // No cache hit (or not allowed); need to get to DB if allowed
             if (m_UrlUseCache != eCacheOnly) {
@@ -400,7 +403,7 @@ void CPendingOperation::x_ProcessGetRequest(SResolveInputSeqIdError &  err,
                 m_AsyncInterruptPoint = eGetBioseqDetails;
                 m_AsyncBioseqDetailsQuery.reset(
                         new CAsyncBioseqQuery(std::move(bioseq_resolution),
-                                              this, x_ResolveTrace()));
+                                              this));
                 // true => use seq_id_type
                 m_AsyncBioseqDetailsQuery->MakeRequest(true);
                 return;
@@ -573,7 +576,7 @@ void CPendingOperation::x_ProcessResolveRequest(
             CPSGCache   psg_cache(m_UrlUseCache != eCassandraOnly);
             auto        cache_lookup_result =
                                 psg_cache.LookupBioseqInfo(bioseq_resolution,
-                                                           x_ResolveTrace());
+                                                           this);
             if (cache_lookup_result != eFound) {
                 // No cache hit (or not allowed); need to get to DB if allowed
                 if (m_UrlUseCache != eCacheOnly) {
@@ -581,7 +584,7 @@ void CPendingOperation::x_ProcessResolveRequest(
                     m_AsyncInterruptPoint = eResolveBioseqDetails;
                     m_AsyncBioseqDetailsQuery.reset(
                             new CAsyncBioseqQuery(std::move(bioseq_resolution),
-                                                  this, x_ResolveTrace()));
+                                                  this));
                     // true => use seq_id_type
                     m_AsyncBioseqDetailsQuery->MakeRequest(true);
                     return;
@@ -760,7 +763,7 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
     ECacheLookupResult          blob_prop_cache_lookup_result =
         psg_cache.LookupBlobProp(m_TSEChunkRequest.m_TSEId.m_Sat,
                                  m_TSEChunkRequest.m_TSEId.m_SatKey,
-                                 last_modified, *blob_record.get());
+                                 last_modified, this, *blob_record.get());
     if (blob_prop_cache_lookup_result == eFound) {
         do {
             // Step 1: check the id2info presense
@@ -809,7 +812,7 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
             last_modified = INT64_MIN;
             auto  tse_blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
                             chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
-                            last_modified, *blob_record.get());
+                            last_modified, this, *blob_record.get());
             if (tse_blob_prop_cache_lookup_result != eFound) {
                 err_msg = "TSE chunk blob " + chunk_blob_id.ToString() +
                           " properties are not found in cache";
@@ -821,7 +824,8 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
 
             // Step 7: initiate the chunk request
             SBlobRequest        chunk_request(chunk_blob_id, INT64_MIN,
-                                              eUnknownTSE, eUnknownUseCache, "");
+                                              eUnknownTSE, eUnknownUseCache,
+                                              "", NeedTrace());
 
             unique_ptr<CCassBlobFetch>  fetch_details;
             fetch_details.reset(new CCassBlobFetch(chunk_request));
@@ -835,6 +839,11 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
             load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
             load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(), false));
             load_task->SetChunkCallback(CBlobChunkCallback(this, fetch_details.get()));
+
+            if (NeedTrace()) {
+                SendTrace("Cassandra request: " +
+                          ToJson(*load_task).Repr(CJsonNode::fStandardJson));
+            }
 
             m_FetchDetails.push_back(std::move(fetch_details));
             load_task->Wait();  // Initiate cassandra request
@@ -866,6 +875,11 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
     load_task->SetDataReadyCB(GetDataReadyCB());
     load_task->SetErrorCB(CSplitHistoryErrorCallback(this, fetch_details.get()));
     load_task->SetConsumeCallback(CSplitHistoryConsumeCallback(this, fetch_details.get()));
+
+    if (NeedTrace()) {
+        SendTrace("Cassandra request: " +
+            ToJson(*load_task).Repr(CJsonNode::fStandardJson));
+    }
 
     m_FetchDetails.push_back(std::move(fetch_details));
     load_task->Wait();  // Initiate cassandra request
@@ -904,7 +918,7 @@ void CPendingOperation::x_ProcessAnnotRequest(
         CPSGCache           psg_cache(m_UrlUseCache != eCassandraOnly);
         ECacheLookupResult  cache_lookup_result =
                                 psg_cache.LookupBioseqInfo(bioseq_resolution,
-                                                           x_ResolveTrace());
+                                                           this);
         if (cache_lookup_result != eFound) {
             // No cache hit (or not allowed); need to get to DB if allowed
             if (m_UrlUseCache != eCacheOnly) {
@@ -912,7 +926,7 @@ void CPendingOperation::x_ProcessAnnotRequest(
                 m_AsyncInterruptPoint = eAnnotBioseqDetails;
                 m_AsyncBioseqDetailsQuery.reset(
                         new CAsyncBioseqQuery(std::move(bioseq_resolution),
-                                              this, x_ResolveTrace()));
+                                              this));
                 // true => use seq_id_type
                 m_AsyncBioseqDetailsQuery->MakeRequest(true);
                 return;
@@ -962,6 +976,11 @@ void CPendingOperation::x_CompleteAnnotRequest(
             CNamedAnnotationCallback(this, details.get(), bioseq_na_keyspace.second));
         fetch_task->SetErrorCB(CNamedAnnotationErrorCallback(this, details.get()));
         fetch_task->SetDataReadyCB(GetDataReadyCB());
+
+        if (NeedTrace()) {
+            SendTrace("Cassandra request: " +
+                ToJson(*fetch_task).Repr(CJsonNode::fStandardJson));
+        }
 
         m_FetchDetails.push_back(std::move(details));
     }
@@ -1032,7 +1051,7 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                                         m_BlobRequest.m_BlobId.m_Sat,
                                         m_BlobRequest.m_BlobId.m_SatKey,
                                         m_BlobRequest.m_LastModified,
-                                        *blob_record.get());
+                                        this, *blob_record.get());
     CCassBlobTaskLoadBlob *     load_task = nullptr;
     if (blob_prop_cache_lookup_result == eFound) {
         load_task = new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
@@ -1087,6 +1106,11 @@ void CPendingOperation::x_StartMainBlobRequest(void)
     load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
     load_task->SetPropsCallback(CBlobPropCallback(this, fetch_details.get(),
                                                   blob_prop_cache_lookup_result != eFound));
+
+    if (NeedTrace()) {
+        SendTrace("Cassandra request: " +
+                  ToJson(*load_task).Repr(CJsonNode::fStandardJson));
+    }
 
     m_FetchDetails.push_back(std::move(fetch_details));
 
@@ -1250,39 +1274,41 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
                                                          string &  err_msg)
 {
+    bool        need_trace = NeedTrace();
+
     try {
         seq_id.Set(m_UrlSeqId);
-        if (x_ResolveTrace())
-            ResolveTrace("Parsing CSeq_id(" + m_UrlSeqId + ") succeeded");
+        if (need_trace)
+            SendTrace("Parsing CSeq_id(" + m_UrlSeqId + ") succeeded");
 
         if (m_UrlSeqIdType <= 0) {
-            if (x_ResolveTrace())
-                ResolveTrace("Parsing CSeq_id finished OK");
+            if (need_trace)
+                SendTrace("Parsing CSeq_id finished OK");
             return eParsedOK;
         }
 
         // Check the parsed type with the given
         int16_t     eff_seq_id_type;
-        if (x_GetEffectiveSeqIdType(seq_id, eff_seq_id_type)) {
-            if (x_ResolveTrace())
-                ResolveTrace("Parsing CSeq_id finished OK");
+        if (x_GetEffectiveSeqIdType(seq_id, eff_seq_id_type, false)) {
+            if (need_trace)
+                SendTrace("Parsing CSeq_id finished OK");
             return eParsedOK;
         }
 
         // seq_id_type from URL and from CSeq_id differ
         CSeq_id_Base::E_Choice  seq_id_type = seq_id.Which();
 
-        if (x_ResolveTrace())
-            ResolveTrace("CSeq_id provided type " + to_string(seq_id_type) +
-                         " and URL provided seq_id_type " +
-                         to_string(m_UrlSeqIdType) + " mismatch");
+        if (need_trace)
+            SendTrace("CSeq_id provided type " + to_string(seq_id_type) +
+                      " and URL provided seq_id_type " +
+                      to_string(m_UrlSeqIdType) + " mismatch");
 
         if (IsINSDCSeqIdType(m_UrlSeqIdType) &&
             IsINSDCSeqIdType(seq_id_type)) {
             // Both seq_id_types belong to INSDC
-            if (x_ResolveTrace()) {
-                ResolveTrace("Both types belong INSDC types");
-                ResolveTrace("Parsing CSeq_id finished OK");
+            if (need_trace) {
+                SendTrace("Both types belong INSDC types");
+                SendTrace("Parsing CSeq_id finished OK");
             }
             return eParsedOK;
         }
@@ -1294,9 +1320,8 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
                   " while the CSeq_Id detects it as " +
                   to_string(static_cast<int>(seq_id_type));
     } catch (...) {
-        if (x_ResolveTrace())
-            ResolveTrace("Parsing CSeq_id(" + m_UrlSeqId +
-                         ") failed (exception)");
+        if (need_trace)
+            SendTrace("Parsing CSeq_id(" + m_UrlSeqId + ") failed (exception)");
     }
 
     // Second variation of Set()
@@ -1305,23 +1330,23 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
             seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
                        (CSeq_id_Base::E_Choice)(m_UrlSeqIdType),
                        m_UrlSeqId);
-            if (x_ResolveTrace()) {
-                ResolveTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                             to_string(m_UrlSeqIdType) + ", " + m_UrlSeqId +
-                             ") succeeded");
-                ResolveTrace("Parsing CSeq_id finished OK");
+            if (need_trace) {
+                SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
+                          to_string(m_UrlSeqIdType) + ", " + m_UrlSeqId +
+                          ") succeeded");
+                SendTrace("Parsing CSeq_id finished OK");
             }
             return eParsedOK;
         } catch (...) {
-            if (x_ResolveTrace())
-                ResolveTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                             to_string(m_UrlSeqIdType) + ", " + m_UrlSeqId +
-                             ") failed (exception)");
+            if (need_trace)
+                SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
+                          to_string(m_UrlSeqIdType) + ", " + m_UrlSeqId +
+                          ") failed (exception)");
         }
     }
 
-    if (x_ResolveTrace()) {
-        ResolveTrace("Parsing CSeq_id finished FAILED");
+    if (need_trace) {
+        SendTrace("Parsing CSeq_id finished FAILED");
     }
 
     return eParseFailed;
@@ -1416,7 +1441,7 @@ CPendingOperation::x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
                     CPSGCache               psg_cache(true);
                     ECacheLookupResult      bioseq_cache_lookup_result =
                                     psg_cache.LookupBioseqInfo(bioseq_resolution,
-                                                               x_ResolveTrace());
+                                                               this);
 
                     if (bioseq_cache_lookup_result != eFound) {
                         // Not found or error
@@ -1511,7 +1536,7 @@ ECacheLookupResult CPendingOperation::x_ResolvePrimaryOSLTInCache(
         bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
 
         bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(
-                                        bioseq_resolution, x_ResolveTrace());
+                                        bioseq_resolution, this);
         if (bioseq_cache_lookup_result == eFound) {
             bioseq_resolution.m_ResolutionResult = eBioseqCache;
             return eFound;
@@ -1523,7 +1548,7 @@ ECacheLookupResult CPendingOperation::x_ResolvePrimaryOSLTInCache(
 
         ECacheLookupResult  si2csi_cache_lookup_result =
                              psg_cache.LookupSi2csi(bioseq_resolution,
-                                                    x_ResolveTrace());
+                                                    this);
         if (si2csi_cache_lookup_result == eFound) {
             bioseq_resolution.m_ResolutionResult = eSi2csiCache;
             return eFound;
@@ -1551,7 +1576,7 @@ ECacheLookupResult CPendingOperation::x_ResolveSecondaryOSLTInCache(
 
     CPSGCache           psg_cache(true);
     ECacheLookupResult  si2csi_cache_lookup_result =
-                psg_cache.LookupSi2csi(bioseq_resolution, x_ResolveTrace());
+                psg_cache.LookupSi2csi(bioseq_resolution, this);
     if (si2csi_cache_lookup_result == eFound) {
         bioseq_resolution.m_ResolutionResult = eSi2csiCache;
         return eFound;
@@ -1571,10 +1596,12 @@ CPendingOperation::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
                                  list<string> &  secondary_id_list,
                                  string &  primary_id)
 {
-    if (!x_GetEffectiveSeqIdType(parsed_seq_id, effective_seq_id_type)) {
-        if (x_ResolveTrace()) {
-            ResolveTrace("OSLT has not been tried due to mismatch between the "
-                         " parsed CSeq_id version and the URL provided one");
+    bool    need_trace = NeedTrace();
+    if (!x_GetEffectiveSeqIdType(parsed_seq_id,
+                                 effective_seq_id_type, need_trace)) {
+        if (need_trace) {
+            SendTrace("OSLT has not been tried due to mismatch between the "
+                      " parsed CSeq_id seq_id_type and the URL provided one");
         }
         return false;
     }
@@ -1583,23 +1610,24 @@ CPendingOperation::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
         primary_id = parsed_seq_id.ComposeOSLT(&secondary_id_list,
                                                CSeq_id::fGpipeAddSecondary);
     } catch (...) {
-        if (x_ResolveTrace()) {
-            ResolveTrace("OSLT call failure (exception)");
+        if (need_trace) {
+            SendTrace("OSLT call failure (exception)");
         }
         return false;
     }
 
-    if (x_ResolveTrace()) {
-        ResolveTrace("OSLT succeeded");
-        ResolveTrace("OSLT primary id: " + primary_id);
+    if (need_trace) {
+        string  trace_msg("OSLT succeeded");
+        trace_msg += "\nOSLT primary id: " + primary_id;
 
         if (secondary_id_list.empty()) {
-            ResolveTrace("OSLT secondary id list is empty");
+            trace_msg += "\nOSLT secondary id list is empty";
         } else {
             for (const auto &  item : secondary_id_list) {
-                ResolveTrace("OSLT secondary id: " + item);
+                trace_msg += "\nOSLT secondary id: " + item;
             }
         }
+        SendTrace(trace_msg);
     }
 
     return true;
@@ -1716,7 +1744,8 @@ CPendingOperation::x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution,
 
 
 bool CPendingOperation::x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
-                                                int16_t &  eff_seq_id_type)
+                                                int16_t &  eff_seq_id_type,
+                                                bool  need_trace)
 {
     CSeq_id_Base::E_Choice  parsed_seq_id_type = parsed_seq_id.Which();
     bool                    parsed_seq_id_type_found = (parsed_seq_id_type !=
@@ -1746,12 +1775,12 @@ bool CPendingOperation::x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
     // The parsed and url explicit seq_id_type do not match
     if (IsINSDCSeqIdType(parsed_seq_id_type) &&
         IsINSDCSeqIdType(m_UrlSeqIdType)) {
-        if (x_ResolveTrace()) {
-            ResolveTrace("Seq id type mismatch. Parsed CSeq_id reports seq_id_type as " +
-                         to_string(parsed_seq_id_type) + " while the URL reports " +
-                         to_string(m_UrlSeqIdType) +". They both belong to INSDC types so "
-                         "CSeq_id provided type " + to_string(parsed_seq_id_type) +
-                         " is taken as an effective one");
+        if (need_trace) {
+            SendTrace("Seq id type mismatch. Parsed CSeq_id reports seq_id_type as " +
+                      to_string(parsed_seq_id_type) + " while the URL reports " +
+                      to_string(m_UrlSeqIdType) +". They both belong to INSDC types so "
+                      "CSeq_id provided type " + to_string(parsed_seq_id_type) +
+                      " is taken as an effective one");
         }
         eff_seq_id_type = parsed_seq_id_type;
         return true;
@@ -1790,11 +1819,10 @@ void CPendingOperation::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution,
     // Convert to the appropriate format
     string              data_to_send;
     if (effective_output_format == eJsonFormat) {
-        ConvertBioseqInfoToJson(bioseq_resolution.m_BioseqInfo,
-                                x_GetBioseqInfoFields(), data_to_send);
+        data_to_send = ToJson(bioseq_resolution.m_BioseqInfo,
+                              x_GetBioseqInfoFields()).Repr(CJsonNode::fStandardJson);
     } else {
-        ConvertBioseqInfoToBioseqProtobuf(bioseq_resolution.m_BioseqInfo,
-                                          data_to_send);
+        data_to_send = ToBioseqProtobuf(bioseq_resolution.m_BioseqInfo);
     }
 
     if (x_UsePsgProtocol()) {
@@ -1926,10 +1954,9 @@ bool CPendingOperation::OnNamedAnnotData(CNAnnotRecord &&        annot_record,
         fetch_details->SetReadFinished();
         x_SendReplyCompletion();
     } else {
-        CJsonNode   json = ConvertBioseqNAToJson(annot_record, sat);
         m_ProtocolSupport.PrepareNamedAnnotationData(
-                                        annot_record.GetAnnotName(),
-                                        json.Repr(CJsonNode::fStandardJson));
+                annot_record.GetAnnotName(),
+                ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
     }
 
     x_PeekIfNeeded();
@@ -1990,9 +2017,8 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
 
     if (is_found) {
         // Found, send blob props back as JSON
-        CJsonNode   json = ConvertBlobPropToJson(blob);
-        m_ProtocolSupport.PrepareBlobPropData(fetch_details,
-                                              json.Repr(CJsonNode::fStandardJson));
+        m_ProtocolSupport.PrepareBlobPropData(
+            fetch_details,  ToJson(blob).Repr(CJsonNode::fStandardJson));
 
         // Note: initially only blob_props are requested and at that moment the
         //       TSE option is 'known'. So the initial request should be
@@ -2081,6 +2107,7 @@ void CPendingOperation::x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details)
     m_ProtocolSupport.PrepareBlobPropCompletion(fetch_details);
     x_SendReplyCompletion();
 }
+
 
 void CPendingOperation::x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
                                             CBlobRecord const &  blob)
@@ -2387,7 +2414,7 @@ void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_rec
     ECacheLookupResult          blob_prop_cache_lookup_result =
         psg_cache.LookupBlobProp(chunk_blob_id.m_Sat,
                                  chunk_blob_id.m_SatKey,
-                                 last_modified, *blob_record.get());
+                                 last_modified, this, *blob_record.get());
     if (blob_prop_cache_lookup_result != eFound &&
         fetch_details->GetUseCache() == eCacheOnly) {
         // Cassandra is forbidden for the blob prop
@@ -2403,7 +2430,8 @@ void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_rec
     }
 
     SBlobRequest                chunk_request(chunk_blob_id, INT64_MIN,
-                                              eUnknownTSE, eUnknownUseCache, "");
+                                              eUnknownTSE, eUnknownUseCache,
+                                              "", NeedTrace());
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
     cass_blob_fetch.reset(new CCassBlobFetch(chunk_request));
 
@@ -2429,6 +2457,11 @@ void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_rec
     load_task->SetPropsCallback(CBlobPropCallback(this, cass_blob_fetch.get(),
                                                   blob_prop_cache_lookup_result != eFound));
     load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
+
+    if (NeedTrace()) {
+        SendTrace("Cassandra request: " +
+                  ToJson(*load_task).Repr(CJsonNode::fStandardJson));
+    }
 
     m_FetchDetails.push_back(std::move(cass_blob_fetch));
     load_task->Wait();
@@ -2478,7 +2511,8 @@ void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_deta
     SBlobRequest    orig_blob_request(fetch_details->GetBlobId(),
                                       blob.GetModified(), eUnknownTSE,
                                       eUnknownUseCache,
-                                      fetch_details->GetClientId());
+                                      fetch_details->GetClientId(),
+                                      NeedTrace());
 
     // Create the cass async loader
     unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
@@ -2499,6 +2533,11 @@ void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_deta
     load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
     load_task->SetPropsCallback(nullptr);
     load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
+
+    if (NeedTrace()) {
+        SendTrace("Cassandra request: " +
+                  ToJson(*load_task).Repr(CJsonNode::fStandardJson));
+    }
 
     m_FetchDetails.push_back(std::move(cass_blob_fetch));
 
@@ -2540,7 +2579,7 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // eUnknownUseCache is safe here; no further resolution
     // empty client_id means that later on there will be no exclude blobs cache ops
     SBlobRequest    info_blob_request(info_blob_id, INT64_MIN, eUnknownTSE,
-                                      eUnknownUseCache, "");
+                                      eUnknownUseCache, "", NeedTrace());
 
     // Prepare Id2Info retrieval
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
@@ -2553,7 +2592,7 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                                         info_blob_request.m_BlobId.m_Sat,
                                         info_blob_request.m_BlobId.m_SatKey,
                                         info_blob_request.m_LastModified,
-                                        *blob_record.get());
+                                        this, *blob_record.get());
     CCassBlobTaskLoadBlob *     load_task = nullptr;
 
 
@@ -2603,6 +2642,11 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                                                   blob_prop_cache_lookup_result != eFound));
     load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
 
+    if (NeedTrace()) {
+        SendTrace("Cassandra request: " +
+                  ToJson(*load_task).Repr(CJsonNode::fStandardJson));
+    }
+
     m_FetchDetails.push_back(std::move(cass_blob_fetch));
     auto    to_init_iter = m_FetchDetails.end();
     --to_init_iter;
@@ -2636,7 +2680,8 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
         // client_id is "" (empty string) so the split blobs do not participate
         // in the exclude blob cache
         SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN, eUnknownTSE,
-                                      eUnknownUseCache, "");
+                                      eUnknownUseCache, "",
+                                      NeedTrace());
 
         unique_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request));
@@ -2648,7 +2693,7 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
                                             chunk_request.m_BlobId.m_Sat,
                                             chunk_request.m_BlobId.m_SatKey,
                                             chunk_request.m_LastModified,
-                                            *blob_record.get());
+                                            this, *blob_record.get());
         CCassBlobTaskLoadBlob *     load_task = nullptr;
 
         if (blob_prop_cache_lookup_result == eFound) {
@@ -2880,7 +2925,7 @@ CPendingOperation::AdjustBioseqAccession(SBioseqResolution &  bioseq_resolution)
         bioseq_resolution.m_BioseqInfo.GetSeqIdType() != CSeq_id::e_Gi)
         return eNotRequired;
 
-    auto    adj_result = bioseq_resolution.AdjustAccession();
+    auto    adj_result = bioseq_resolution.AdjustAccession(this);
     if (adj_result == eLogicError || adj_result == eSeqIdsEmpty) {
         if (bioseq_resolution.m_ResolutionResult == eBioseqCache)
             PSG_WARNING("BIOSEQ_INFO cache error: " +
@@ -2901,19 +2946,35 @@ TServIncludeData CPendingOperation::x_GetBioseqInfoFields(void) const
 }
 
 
-bool CPendingOperation::x_ResolveTrace(void) const
+bool CPendingOperation::NeedTrace(void) const
 {
+    // Tracing is compatible only wit PSG protocol. The PSG protocol may be not
+    // used in case of resolve request
     switch (m_RequestType) {
         case eResolveRequest:
-            return m_ResolveRequest.m_ResolveTrace;
+            return m_ResolveRequest.m_Trace &&
+                   m_ResolveRequest.m_UsePsgProtocol;
         case eAnnotationRequest:
-            return m_AnnotRequest.m_ResolveTrace;
+            return m_AnnotRequest.m_Trace;
         case eBlobRequest:
-            return m_BlobRequest.m_ResolveTrace;
+            return m_BlobRequest.m_Trace;
+        case eTSEChunkRequest:
+            return m_TSEChunkRequest.m_Trace;
         default:
             break;
     }
     return false;
+}
+
+
+void CPendingOperation::SendTrace(const string &  msg)
+{
+    auto            now = chrono::high_resolution_clock::now();
+    uint64_t        mks = chrono::duration_cast<chrono::microseconds>(now - m_CreateTimestamp).count();
+    string          timestamp = "Timestamp (mks): " + to_string(mks) + "\n";
+    m_ProtocolSupport.PrepareReplyMessage(timestamp + msg,
+                                          CRequestStatus::e200_Ok,
+                                          0, eDiag_Trace);
 }
 
 

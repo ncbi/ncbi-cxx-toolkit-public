@@ -68,7 +68,7 @@ static string  kTSEIdParam = "tse_id";
 static string  kChunkParam = "chunk";
 static string  kSplitVersionParam = "split_version";
 static string  kAccSubstitutionParam = "acc_substitution";
-static string  kResolveTraceParam = "resolve_trace";
+static string  kTraceParam = "trace";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -190,9 +190,8 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
 
         SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
-        bool                resolve_trace = false;
-        if (!x_GetResolveTraceParameter(req, kResolveTraceParam,
-                                        resolve_trace, err_msg)) {
+        bool                trace = false;
+        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
             x_SendMessageAndCompletionChunks(resp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              eMalformedParameter, eDiag_Error);
@@ -207,7 +206,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                  tse_option, use_cache, subst_option,
                                  string(client_id_param.m_Value.data(),
                                         client_id_param.m_Value.size()),
-                                 resolve_trace, now),
+                                 trace, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -275,6 +274,15 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             return 0;
         }
 
+        bool                trace = false;
+        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
         if (blob_id_param.m_Found)
         {
@@ -298,7 +306,8 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                             SBlobRequest(blob_id, last_modified_value,
                                          tse_option, use_cache,
                                          string(client_id_param.m_Value.data(),
-                                                client_id_param.m_Value.size())),
+                                                client_id_param.m_Value.size()),
+                                         trace),
                             0, m_CassConnection, m_TimeoutMs,
                             m_MaxRetries, context));
 
@@ -454,9 +463,8 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             }
         }
 
-        bool                resolve_trace = false;
-        if (!x_GetResolveTraceParameter(req, kResolveTraceParam,
-                                        resolve_trace, err_msg)) {
+        bool                trace = false;
+        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
             if (use_psg_protocol) {
                 x_SendMessageAndCompletionChunks(resp, err_msg,
                                                  CRequestStatus::e400_BadRequest,
@@ -475,7 +483,7 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
                 CPendingOperation(
                     SResolveRequest(seq_id, seq_id_type, include_data_flags,
                                     output_format, use_cache, use_psg_protocol,
-                                    subst_option, resolve_trace, now),
+                                    subst_option, trace, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -599,12 +607,21 @@ int CPubseqGatewayApp::OnGetTSEChunk(HST::CHttpRequest &  req,
             return 0;
         }
 
+        bool                trace = false;
+        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         // All parameters are good
         m_RequestCounters.IncGetTSEChunk();
         resp.Postpone(
                 CPendingOperation(
                     STSEChunkRequest(tse_id, chunk_value,
-                                     split_version_value, use_cache),
+                                     split_version_value, use_cache, trace),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {
@@ -704,9 +721,8 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
             return 0;
         }
 
-        bool                resolve_trace = false;
-        if (!x_GetResolveTraceParameter(req, kResolveTraceParam,
-                                        resolve_trace, err_msg)) {
+        bool                trace = false;
+        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
             if (use_psg_protocol) {
                 x_SendMessageAndCompletionChunks(resp, err_msg,
                                                  CRequestStatus::e400_BadRequest,
@@ -724,7 +740,7 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
         resp.Postpone(
                 CPendingOperation(
                     SAnnotRequest(seq_id, seq_id_type, names,
-                                  use_cache, resolve_trace, now),
+                                  use_cache, trace, now),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries, context));
     } catch (const exception &  exc) {

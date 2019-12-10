@@ -112,6 +112,9 @@ public:
         m_OverallStatus = max(status, m_OverallStatus);
     }
 
+    bool NeedTrace(void) const;
+    void SendTrace(const string &  msg);
+
 public:
     CPendingOperation(const CPendingOperation&) = delete;
     CPendingOperation& operator=(const CPendingOperation&) = delete;
@@ -206,7 +209,8 @@ private:
     void x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
                              SResolveInputSeqIdError &  err);
     bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
-                                 int16_t &  eff_seq_id_type);
+                                 int16_t &  eff_seq_id_type,
+                                 bool  need_trace);
     ESeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id, string &  err_msg);
     void x_OnBioseqError(CRequestStatus::ECode  status, const string &  err_msg,
                          const THighResolutionTimePoint &  start_timestamp);
@@ -277,7 +281,6 @@ private:
     EAccessionSubstitutionOption x_GetAccessionSubstitutionOption(void) const;
     TServIncludeData x_GetBioseqInfoFields(void) const;
     bool x_NonKeyBioseqInfoFieldsRequested(void) const;
-    bool x_ResolveTrace(void) const;
 
     unique_ptr<CPSGId2Info>     m_Id2Info;
 
@@ -326,6 +329,8 @@ private:
     unique_ptr<CAsyncBioseqQuery>           m_AsyncBioseqDetailsQuery;
     EAsyncInterruptPoint                    m_AsyncInterruptPoint;
     THighResolutionTimePoint                m_AsyncCassResolutionStart;
+
+    THighResolutionTimePoint                m_CreateTimestamp;
 };
 
 

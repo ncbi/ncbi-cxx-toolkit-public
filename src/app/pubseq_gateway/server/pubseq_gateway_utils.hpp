@@ -47,6 +47,9 @@ USING_IDBLOB_SCOPE;
 #include <chrono>
 using namespace std;
 
+class CPendingOperation;
+
+
 // The request URLs and the reply content parameters need the blob ID as a
 // string while internally they are represented as a pair of integers. So
 // a few conversion utilities need to be created.
@@ -146,7 +149,7 @@ struct SBioseqResolution
         m_AdjustmentError.clear();
     }
 
-    EAccessionAdjustmentResult AdjustAccession(void);
+    EAccessionAdjustmentResult AdjustAccession(CPendingOperation *  pending_op);
 
     EResolutionResult           m_ResolutionResult;
     THighResolutionTimePoint    m_RequestStartTimestamp;

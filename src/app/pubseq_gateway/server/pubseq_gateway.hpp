@@ -257,10 +257,10 @@ private:
                                             const string &  param_name,
                                             const CTempString &  param_value,
                                             string &  err_msg) const;
-    bool x_GetResolveTraceParameter(HST::CHttpRequest &  req,
-                                    const string &  param_name,
-                                    bool &  resolve_trace,
-                                    string &  err_msg);
+    bool x_GetTraceParameter(HST::CHttpRequest &  req,
+                             const string &  param_name,
+                             bool &  resolve_trace,
+                             string &  err_msg);
 
 private:
     void x_InsufficientArguments(HST::CHttpReply<CPendingOperation> &  resp,

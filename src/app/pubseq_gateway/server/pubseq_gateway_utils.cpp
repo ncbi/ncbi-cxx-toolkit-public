@@ -34,6 +34,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include "pubseq_gateway_utils.hpp"
+#include "pending_operation.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -111,7 +112,7 @@ bool SBlobId::operator == (const SBlobId &  other) const
 // see CXX-10728
 // Need to replace the found accession with the seq_ids found accession
 EAccessionAdjustmentResult
-SBioseqResolution::AdjustAccession(void)
+SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
 {
     if (m_AdjustmentTried)
         return m_AccessionAdjustmentResult;
@@ -126,6 +127,9 @@ SBioseqResolution::AdjustAccession(void)
 
     auto    seq_id_type = m_BioseqInfo.GetSeqIdType();
     if (m_BioseqInfo.GetVersion() > 0 && seq_id_type != CSeq_id::e_Gi) {
+        if (pending_op->NeedTrace())
+            pending_op->SendTrace("No need to adjust accession");
+
         m_AccessionAdjustmentResult = eNotRequired;
         return m_AccessionAdjustmentResult;
     }
@@ -142,6 +146,9 @@ SBioseqResolution::AdjustAccession(void)
             seq_ids.erase(seq_id);
             if (orig_seq_id_type != CSeq_id::e_Gi)
                 seq_ids.insert(make_tuple(orig_seq_id_type, orig_accession));
+
+            if (pending_op->NeedTrace())
+                pending_op->SendTrace("Accession adjusted with Gi");
 
             m_AccessionAdjustmentResult = eAdjustedWithGi;
             return m_AccessionAdjustmentResult;
@@ -167,6 +174,11 @@ SBioseqResolution::AdjustAccession(void)
     seq_ids.erase(*first_seq_id);
     if (orig_seq_id_type != CSeq_id::e_Gi)
         seq_ids.insert(make_tuple(orig_seq_id_type, orig_accession));
+
+    if (pending_op->NeedTrace())
+        pending_op->SendTrace("Accession adjusted with type " +
+                              to_string(m_BioseqInfo.GetSeqIdType()) +
+                              " (first from the seq_ids list)");
 
     m_AccessionAdjustmentResult = eAdjustedWithAny;
     return m_AccessionAdjustmentResult;

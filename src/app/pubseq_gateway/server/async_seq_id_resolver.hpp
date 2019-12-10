@@ -105,6 +105,7 @@ private:
     bool                        m_ComposedOk;
     SBioseqResolution           m_BioseqResolution;
     CPendingOperation *         m_PendingOp;
+    bool                        m_NeedTrace;
 
     EResolveStage               m_ResolveStage;
     CCassFetch *                m_CurrentFetch;

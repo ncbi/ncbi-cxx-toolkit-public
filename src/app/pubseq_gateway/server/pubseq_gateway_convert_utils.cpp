@@ -72,9 +72,18 @@ static const string     kStart = "start";
 static const string     kStop = "stop";
 static const string     kAnnotInfo = "annot_info";
 
+static const string     kRequest = "request";
+static const string     kSecSeqId = "sec_seq_id";
+static const string     kSecSeqIdType = "sec_seq_id_type";
+static const string     kSecSeqState = "sec_seq_state";
+static const string     kSatName = "sat_name";
+static const string     kSplitVersion = "split_version";
+static const string     kBlopPropProvided = "blob_prop_provided";
+static const string     kChunksRequested = "chunk_requested";
+static const string     kAnnotNames = "annotation_names";
 
-void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
-                                       string &  bioseq_protobuf)
+
+string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info)
 {
     // Used to prepare a binary content out of the structured data
     // BioseqInfoReply needs to be sent back
@@ -125,21 +134,14 @@ void ConvertBioseqInfoToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info,
     protobuf_bioseq_info_value->set_name(bioseq_info.GetName());
 
     // Convert to binary
+    string      bioseq_protobuf;
     protobuf_bioseq_info_reply.SerializeToString(&bioseq_protobuf);
+    return bioseq_protobuf;
 }
 
 
-void ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
-                             TServIncludeData  include_data_flags,
-                             string &  bioseq_json)
-{
-    CJsonNode   json = ConvertBioseqInfoToJson(bioseq_info, include_data_flags);
-    bioseq_json = json.Repr(CJsonNode::fStandardJson);
-}
-
-
-CJsonNode  ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
-                                   TServIncludeData  include_data_flags)
+CJsonNode  ToJson(const CBioseqInfoRecord &  bioseq_info,
+                  TServIncludeData  include_data_flags)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
@@ -186,7 +188,7 @@ CJsonNode  ConvertBioseqInfoToJson(const CBioseqInfoRecord &  bioseq_info,
 }
 
 
-CJsonNode  ConvertBlobPropToJson(const CBlobRecord &  blob_prop)
+CJsonNode  ToJson(const CBlobRecord &  blob_prop)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
@@ -203,13 +205,11 @@ CJsonNode  ConvertBlobPropToJson(const CBlobRecord &  blob_prop)
     json.SetInteger(kOwner, blob_prop.GetOwner());
     json.SetString(kUserName, blob_prop.GetUserName());
     json.SetInteger(kNChunks, blob_prop.GetNChunks());
-
     return json;
 }
 
 
-CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record,
-                                int32_t  sat)
+CJsonNode ToJson(const CNAnnotRecord &  annot_record, int32_t  sat)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
@@ -219,7 +219,151 @@ CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record,
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
     json.SetString(kAnnotInfo, annot_record.GetAnnotInfo());
+    return json;
+}
 
+CJsonNode ToJson(const CBioseqInfoFetchRequest &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "BioseqInfo request");
+
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eAccession))
+        json.SetString(kAccession, request.GetAccession());
+    else
+        json.SetNull(kAccession);
+
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eVersion))
+        json.SetInteger(kVersion, request.GetVersion());
+    else
+        json.SetNull(kVersion);
+
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eSeqIdType))
+        json.SetInteger(kSeqIdType, request.GetSeqIdType());
+    else
+        json.SetNull(kSeqIdType);
+
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eGI))
+        json.SetInteger(kGi, request.GetGI());
+    else
+        json.SetNull(kGi);
+
+    return json;
+}
+
+
+CJsonNode ToJson(const CSi2CsiFetchRequest &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "Si2Csi request");
+
+    if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqId))
+        json.SetString(kSecSeqId, request.GetSecSeqId());
+    else
+        json.SetNull(kSecSeqId);
+
+    if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqIdType))
+        json.SetInteger(kSecSeqIdType, request.GetSecSeqIdType());
+    else
+        json.SetNull(kSecSeqIdType);
+
+    return json;
+}
+
+CJsonNode ToJson(const CBlobFetchRequest &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "Blob prop request");
+
+    if (request.HasField(CBlobFetchRequest::EFields::eSat))
+        json.SetInteger(kSat, request.GetSat());
+    else
+        json.SetNull(kSat);
+
+    if (request.HasField(CBlobFetchRequest::EFields::eSatKey))
+        json.SetInteger(kSatKey, request.GetSatKey());
+    else
+        json.SetNull(kSatKey);
+
+    if (request.HasField(CBlobFetchRequest::EFields::eLastModified))
+        json.SetInteger(kLastModified, request.GetLastModified());
+    else
+        json.SetNull(kLastModified);
+
+    return json;
+}
+
+
+CJsonNode ToJson(const CSI2CSIRecord &  record)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kSecSeqId, record.GetSecSeqId());
+    json.SetInteger(kSecSeqIdType, record.GetSecSeqIdType());
+    json.SetString(kAccession, record.GetAccession());
+    json.SetInteger(kGi, record.GetGI());
+    json.SetInteger(kSecSeqState, record.GetSecSeqState());
+    json.SetInteger(kSeqIdType, record.GetSeqIdType());
+    json.SetInteger(kVersion, record.GetVersion());
+    return json;
+}
+
+
+CJsonNode ToJson(const CCassBlobTaskLoadBlob &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "Blob request");
+    json.SetString(kSatName, request.GetKeyspace());
+    json.SetInteger(kSatKey, request.GetSatKey());
+
+    auto    last_modified = request.GetModified();
+    if (last_modified == CCassBlobTaskLoadBlob::kAnyModified)
+        json.SetNull(kLastModified);
+    else
+        json.SetInteger(kLastModified, last_modified);
+
+    json.SetBoolean(kBlopPropProvided, request.BlobPropsProvided());
+    json.SetBoolean(kChunksRequested, request.LoadChunks());
+    return json;
+}
+
+
+CJsonNode ToJson(const CCassBlobTaskFetchSplitHistory &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "Split history request");
+    json.SetString(kSatName, request.GetKeyspace());
+    json.SetInteger(kSatKey, request.GetKey());
+
+    auto    split_version = request.GetSplitVersion();
+    if (split_version == CCassBlobTaskFetchSplitHistory::kAllVersions)
+        json.SetNull(kSplitVersion);
+    else
+        json.SetInteger(kSplitVersion, split_version);
+
+    return json;
+}
+
+
+CJsonNode ToJson(const CCassNAnnotTaskFetch &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "Named annotation request");
+    json.SetString(kSatName, request.GetKeyspace());
+    json.SetString(kAccession, request.GetAccession());
+    json.SetInteger(kVersion, request.GetVersion());
+    json.SetInteger(kSeqIdType, request.GetSeqIdType());
+
+    CJsonNode       names(CJsonNode::NewArrayNode());
+    for (const auto &  item : request.GetAnnotNames()) {
+        names.AppendString(item);
+    }
+    json.SetByKey(kAnnotNames, names);
     return json;
 }
 

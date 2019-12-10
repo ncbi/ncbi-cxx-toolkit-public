@@ -994,23 +994,22 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
 }
 
 
-bool CPubseqGatewayApp::x_GetResolveTraceParameter(HST::CHttpRequest &  req,
-                                                   const string &  param_name,
-                                                   bool &  resolve_trace,
-                                                   string &  err_msg)
+bool CPubseqGatewayApp::x_GetTraceParameter(HST::CHttpRequest &  req,
+                                            const string &  param_name,
+                                            bool &  trace,
+                                            string &  err_msg)
 {
-    resolve_trace = false;
-    SRequestParameter   resolve_trace_protocol_param = x_GetParam(req,
-                                                                  param_name);
+    trace = false;
+    SRequestParameter   trace_protocol_param = x_GetParam(req, param_name);
 
-    if (resolve_trace_protocol_param.m_Found) {
+    if (trace_protocol_param.m_Found) {
         if (!x_IsBoolParamValid(param_name,
-                                resolve_trace_protocol_param.m_Value, err_msg)) {
+                                trace_protocol_param.m_Value, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
             PSG_WARNING(err_msg);
             return false;
         }
-        resolve_trace = resolve_trace_protocol_param.m_Value == "yes";
+        trace = trace_protocol_param.m_Value == "yes";
     }
     return true;
 }

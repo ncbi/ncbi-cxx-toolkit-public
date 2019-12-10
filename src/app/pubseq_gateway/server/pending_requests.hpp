@@ -45,7 +45,8 @@ struct SBlobRequest
                  int64_t  last_modified,
                  ETSEOption  tse_option,
                  ECacheAndCassandraUse  use_cache,
-                 const string &  client_id) :
+                 const string &  client_id,
+                 bool  trace) :
         m_TSEOption(tse_option),
         m_BlobIdType(eBySatAndSatKey),
         m_UseCache(use_cache),
@@ -55,7 +56,7 @@ struct SBlobRequest
         m_BlobId(blob_id),
         m_LastModified(last_modified),
         m_AccSubstOption(eNeverAccSubstitute),
-        m_ResolveTrace(false)
+        m_Trace(trace)
     {}
 
     SBlobRequest() = default;
@@ -68,7 +69,7 @@ struct SBlobRequest
                  ECacheAndCassandraUse  use_cache,
                  EAccessionSubstitutionOption  subst_option,
                  const string &  client_id,
-                 bool  resolve_trace,
+                 bool  trace,
                  const THighResolutionTimePoint &  start_timestamp) :
         m_TSEOption(tse_option),
         m_BlobIdType(eBySeqId),
@@ -81,7 +82,7 @@ struct SBlobRequest
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(std::move(exclude_blobs)),
         m_AccSubstOption(subst_option),
-        m_ResolveTrace(resolve_trace),
+        m_Trace(trace),
         m_StartTimestamp(start_timestamp)
     {}
 
@@ -120,7 +121,7 @@ public:
     int                             m_SeqIdType;
     vector<SBlobId>                 m_ExcludeBlobs;
     EAccessionSubstitutionOption    m_AccSubstOption;
-    bool                            m_ResolveTrace;
+    bool                            m_Trace;
     THighResolutionTimePoint        m_StartTimestamp;
 };
 
@@ -135,7 +136,7 @@ public:
                     ECacheAndCassandraUse  use_cache,
                     bool  use_psg_protocol,
                     EAccessionSubstitutionOption  subst_option,
-                    bool  resolve_trace,
+                    bool  trace,
                     const THighResolutionTimePoint &  start_timestamp) :
         m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
@@ -143,7 +144,7 @@ public:
         m_UseCache(use_cache),
         m_UsePsgProtocol(use_psg_protocol),
         m_AccSubstOption(subst_option),
-        m_ResolveTrace(resolve_trace),
+        m_Trace(trace),
         m_StartTimestamp(start_timestamp)
     {}
 
@@ -157,7 +158,7 @@ public:
     ECacheAndCassandraUse           m_UseCache;
     bool                            m_UsePsgProtocol;
     EAccessionSubstitutionOption    m_AccSubstOption;
-    bool                            m_ResolveTrace;
+    bool                            m_Trace;
     THighResolutionTimePoint        m_StartTimestamp;
 };
 
@@ -169,11 +170,11 @@ public:
                   int  seq_id_type,
                   vector<CTempString>  names,
                   ECacheAndCassandraUse  use_cache,
-                  bool  resolve_trace,
+                  bool  trace,
                   const THighResolutionTimePoint &  start_timestamp) :
         m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
         m_UseCache(use_cache),
-        m_ResolveTrace(resolve_trace),
+        m_Trace(trace),
         m_StartTimestamp(start_timestamp)
     {
         for (const auto &  name : names)
@@ -187,7 +188,7 @@ public:
     int                             m_SeqIdType;
     vector<string>                  m_Names;
     ECacheAndCassandraUse           m_UseCache;
-    bool                            m_ResolveTrace;
+    bool                            m_Trace;
     THighResolutionTimePoint        m_StartTimestamp;
 };
 
@@ -197,11 +198,13 @@ struct STSEChunkRequest
     STSEChunkRequest(const SBlobId &  tse_id,
                      int64_t  chunk,
                      int64_t  split_version,
-                     ECacheAndCassandraUse  use_cache) :
+                     ECacheAndCassandraUse  use_cache,
+                     bool  trace) :
         m_TSEId(tse_id),
         m_Chunk(chunk),
         m_SplitVersion(split_version),
-        m_UseCache(use_cache)
+        m_UseCache(use_cache),
+        m_Trace(trace)
     {}
 
     STSEChunkRequest() = default;
@@ -211,6 +214,7 @@ public:
     int64_t                     m_Chunk;
     int64_t                     m_SplitVersion;
     ECacheAndCassandraUse       m_UseCache;
+    bool                        m_Trace;
 };
 
 

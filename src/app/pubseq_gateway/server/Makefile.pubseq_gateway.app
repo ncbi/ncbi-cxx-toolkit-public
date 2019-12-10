@@ -10,7 +10,7 @@ SRC = pubseq_gateway  \
       pubseq_gateway_cache_utils cass_fetch protocol_utils \
       async_seq_id_resolver async_bioseq_query \
       exclude_blob_cache alerts timing cass_monitor id2info \
-      insdc_utils resolve_trace
+      insdc_utils
 
 LIBS = $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)

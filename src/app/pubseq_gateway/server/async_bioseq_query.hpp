@@ -45,8 +45,7 @@ class CAsyncBioseqQuery
 {
 public:
     CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                      CPendingOperation *   pending_op,
-                      bool  need_trace);
+                      CPendingOperation *   pending_op);
 
 public:
     void MakeRequest(bool  with_seq_id_type);

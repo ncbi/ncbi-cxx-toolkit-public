@@ -42,6 +42,8 @@ using namespace std;
 
 USING_IDBLOB_SCOPE;
 
+class CPendingOperation;
+
 
 class CPSGCache
 {
@@ -51,28 +53,30 @@ public:
     {}
 
     ECacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
-                                         bool  need_trace)
+                                         CPendingOperation *  pending_op)
     {
         if (x_Allowed)
-            return s_LookupBioseqInfo(bioseq_resolution, need_trace);
+            return s_LookupBioseqInfo(bioseq_resolution, pending_op);
         return eNotFound;
     }
 
     ECacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution,
-                                     bool  need_trace)
+                                     CPendingOperation *  pending_op)
     {
         if (x_Allowed)
-            return s_LookupSi2csi(bioseq_resolution, need_trace);
+            return s_LookupSi2csi(bioseq_resolution, pending_op);
         return eNotFound;
     }
 
     ECacheLookupResult  LookupBlobProp(int  sat,
                                        int  sat_key,
                                        int64_t &  last_modified,
+                                       CPendingOperation *  pending_op,
                                        CBlobRecord &  blob_record)
     {
         if (x_Allowed)
-            return s_LookupBlobProp(sat, sat_key, last_modified, blob_record);
+            return s_LookupBlobProp(sat, sat_key, last_modified,
+                                    pending_op, blob_record);
         return eNotFound;
     }
 
@@ -80,20 +84,21 @@ public:
     static
     ECacheLookupResult  s_LookupBioseqInfo(
                                 SBioseqResolution &  bioseq_resolution,
-                                bool  need_trace);
+                                CPendingOperation *  pending_op);
     static
     ECacheLookupResult s_LookupINSDCBioseqInfo(
                                 SBioseqResolution &  bioseq_resolution,
-                                bool  need_trace);
+                                CPendingOperation *  pending_op);
 
     static
     ECacheLookupResult  s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
-                                       bool  need_trace);
+                                       CPendingOperation *  pending_op);
 
     static
     ECacheLookupResult  s_LookupBlobProp(int  sat,
                                          int  sat_key,
                                          int64_t &  last_modified,
+                                         CPendingOperation *  pending_op,
                                          CBlobRecord &  blob_record);
 
 private:

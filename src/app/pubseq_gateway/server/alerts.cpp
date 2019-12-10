@@ -116,7 +116,7 @@ enum EPSGAlertAckResult CPSGAlerts::Acknowledge(const string &  alert_id,
                                                 const string &  user)
 {
     EPSGAlertType   type = x_IdToType(alert_id);
-    if (type == eUnknown)
+    if (type == EPSGAlertType::eUnknown)
         return eAlertNotFound;
 
     return Acknowledge(type, user);
@@ -151,7 +151,7 @@ enum EPSGAlertType CPSGAlerts::x_IdToType(const string &  alert_id) const
         if (NStr::CompareNocase(alert_id, kAlertToIdMap[k].id) == 0)
             return kAlertToIdMap[k].type;
     }
-    return eUnknown;
+    return EPSGAlertType::eUnknown;
 }
 
 

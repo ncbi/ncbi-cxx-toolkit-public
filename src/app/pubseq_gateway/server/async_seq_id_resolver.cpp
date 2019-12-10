@@ -36,6 +36,7 @@
 #include "pending_operation.hpp"
 #include "async_seq_id_resolver.hpp"
 #include "insdc_utils.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
 
 using namespace std::placeholders;
 
@@ -55,6 +56,7 @@ CAsyncSeqIdResolver::CAsyncSeqIdResolver(
     m_ComposedOk(composed_ok),
     m_BioseqResolution(std::move(bioseq_resolution)),
     m_PendingOp(pending_op),
+    m_NeedTrace(pending_op->NeedTrace()),
     m_ResolveStage(eInit),
     m_CurrentFetch(nullptr),
     m_NoSeqIdTypeFetch(nullptr),
@@ -208,6 +210,17 @@ CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(
         m_PendingOp->RegisterFetch(m_NoSeqIdTypeFetch);
     }
 
+    if (m_NeedTrace) {
+        if (with_seq_id_type)
+            m_PendingOp->SendTrace(
+                "Cassandra request: " +
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
+        else
+            m_PendingOp->SendTrace(
+                "Cassandra request for INSDC types: " +
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
+    }
+
     fetch_task->Wait();
 }
 
@@ -243,6 +256,12 @@ void CAsyncSeqIdResolver::x_PrepareSi2csiQuery(const string &  secondary_id,
 
     m_Si2csiStart = chrono::high_resolution_clock::now();
     m_PendingOp->RegisterFetch(m_CurrentFetch);
+
+    if (m_NeedTrace)
+        m_PendingOp->SendTrace(
+            "Cassandra request: " +
+            ToJson(si2csi_request).Repr(CJsonNode::fStandardJson));
+
     fetch_task->Wait();
 }
 
@@ -306,6 +325,15 @@ void CAsyncSeqIdResolver::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     auto    app = CPubseqGatewayApp::GetInstance();
     m_CurrentFetch->SetReadFinished();
 
+    if (m_NeedTrace) {
+        string  msg = to_string(records.size()) + " hit(s)";
+        for (const auto &  item : records) {
+            msg += "\n" + ToJson(item, fServAllBioseqFields).
+                            Repr(CJsonNode::fStandardJson);
+        }
+        m_PendingOp->SendTrace(msg);
+    }
+
     size_t  index_to_pick = 0;
     if (record_count > 1 && m_BioseqInfoRequestedVersion == -1) {
         // Multiple records when the version is not provided:
@@ -365,6 +393,13 @@ void CAsyncSeqIdResolver::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         return;
     }
 
+    if (m_NeedTrace) {
+        m_PendingOp->SendTrace(
+            "Selected record: " +
+            ToJson(records[index_to_pick], fServAllBioseqFields).
+                Repr(CJsonNode::fStandardJson));
+    }
+
     m_BioseqResolution.m_ResolutionResult = eBioseqDB;
     m_BioseqResolution.m_BioseqInfo = std::move(records[index_to_pick]);
 
@@ -396,6 +431,16 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
 
     auto                app = CPubseqGatewayApp::GetInstance();
     SINSDCDecision      decision = DecideINSDC(records, m_BioseqInfoRequestedVersion);
+
+    if (m_NeedTrace) {
+        string  msg = to_string(records.size()) +
+                      " hit(s); decision status: " + to_string(decision.status);
+        for (const auto &  item : records) {
+            msg += "\n" + ToJson(item, fServAllBioseqFields).
+                            Repr(CJsonNode::fStandardJson);
+        }
+        m_PendingOp->SendTrace(msg);
+    }
 
     switch (decision.status) {
         case CRequestStatus::e200_Ok:
@@ -456,6 +501,9 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
 void CAsyncSeqIdResolver::x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
                                               EDiagSev  severity, const string &  message)
 {
+    if (m_NeedTrace)
+        m_PendingOp->SendTrace("Cassandra error: " + message);
+
     if (m_CurrentFetch)
         m_CurrentFetch->SetReadFinished();
     if (m_NoSeqIdTypeFetch)
@@ -473,6 +521,17 @@ void CAsyncSeqIdResolver::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
     auto    record_count = records.size();
     auto    app = CPubseqGatewayApp::GetInstance();
     m_CurrentFetch->SetReadFinished();
+
+    if (m_NeedTrace) {
+        string  msg = to_string(record_count) + " hit(s)";
+        for (const auto &  item : records) {
+            msg += "\n" + ToJson(item).Repr(CJsonNode::fStandardJson);
+        }
+        if (record_count > 1)
+            msg += "\nMore than one record => may be more tries";
+
+        m_PendingOp->SendTrace(msg);
+    }
 
     if (record_count != 1) {
         // Multiple records or did not find anything. Need more tries
@@ -515,6 +574,9 @@ void CAsyncSeqIdResolver::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
 void CAsyncSeqIdResolver::x_OnSi2csiError(CRequestStatus::ECode  status, int  code,
                                           EDiagSev  severity, const string &  message)
 {
+    if (m_NeedTrace)
+        m_PendingOp->SendTrace("Cassandra error: " + message);
+
     auto    app = CPubseqGatewayApp::GetInstance();
 
     m_CurrentFetch->SetReadFinished();
