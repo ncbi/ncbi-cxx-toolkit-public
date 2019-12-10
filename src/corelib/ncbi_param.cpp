@@ -397,7 +397,8 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
 string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* variable,
                                            const char* env_var_name,
-                                           const char* default_value)
+                                           const char* default_value,
+                                           int* src)
 {
     // Check the environment first - if the name is customized CNcbiRegistry
     // will not find it and can use INI file value instead.
@@ -421,6 +422,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
             }
         }
 #endif
+        if (src) *src = CParamBase::eSource_EnvVar;
         return _T_STDSTRING(value);
     }
 
@@ -438,6 +440,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                     " from registry");
                 }
 #endif
+                if (src) *src = CParamBase::eSource_Config;
                 return v;
             }
         }

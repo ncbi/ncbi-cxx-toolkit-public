@@ -110,7 +110,8 @@ BEGIN_NCBI_SCOPE
 string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* variable,
                                            const char* env_var_name,
-                                           const char* default_value);
+                                           const char* default_value,
+                                           int* src = nullptr);
 
 /// Get integer configuration value.
 ///
@@ -214,6 +215,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         static bool sm_DefaultInitialized;                                  \
         static TTls sm_ValueTls;                                            \
         static CParamBase::EParamState sm_State;                            \
+        static CParamBase::EParamSource sm_Source;                          \
     }
 
 // Common definitions related to enum parser.
@@ -238,7 +240,8 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     descname::TStaticValue descname::sm_Default = defval;                   \
     bool descname::sm_DefaultInitialized = false;                           \
     descname::TTls descname::sm_ValueTls;                                   \
-    CParamBase::EParamState descname::sm_State = CParamBase::eState_NotSet  \
+    CParamBase::EParamState descname::sm_State = CParamBase::eState_NotSet; \
+    CParamBase::EParamSource descname::sm_Source = CParamBase::eSource_NotSet
 
 
 /// Generate typename for a parameter from its {section, name} attributes
@@ -475,6 +478,7 @@ public:
     /// the param have been checked. This flag does not indicate where
     /// does the current value originate from. It just shows the stage
     /// of parameter loading process.
+    /// @sa EParamSource
     enum EParamState {
         eState_NotSet = 0, ///< The param's value has not been set yet
         eState_InFunc = 1, ///< The initialization function is being executed
@@ -483,6 +487,17 @@ public:
         eState_EnvVar = 4, ///< The environment variable has been checked
         eState_Config = 5, ///< The app. config file has been checked
         eState_Error = 99  ///< Error reading param value, do not try to re-read
+    };
+
+    /// Source of the value returned by CParam::GetDefault().
+    /// @sa EParamState
+    enum EParamSource {
+        eSource_NotSet,     ///< Not fully initialized
+        eSource_Default,    ///< Hardcoded default
+        eSource_Func,       ///< Initialization function
+        eSource_User,       ///< User code
+        eSource_EnvVar,     ///< Environment
+        eSource_Config      ///< The app. config file
     };
 
     // Allow to disable config dump to avoid recursions/deadlocks (e.g. from SetupDiag).
@@ -552,7 +567,7 @@ public:
     ~CParam(void) {}
 
     /// Get current state of the param.
-    static EParamState GetState(void);
+    static EParamState GetState(bool* sourcing_complete = nullptr, EParamSource* param_source = nullptr);
 
     /// Get current parameter value. It is safe to get value from
     /// multiple threads, but setting a new value is not MT-safe.
@@ -592,6 +607,7 @@ private:
     static TValueType& sx_GetDefault(bool force_reset = false);
     static TTls&       sx_GetTls    (void);
     static EParamState& sx_GetState(void);
+    static EParamSource& sx_GetSource(void);
 
     static bool sx_IsSetFlag(ENcbiParamFlags flag);
     static bool sx_CanGetDefault(void);

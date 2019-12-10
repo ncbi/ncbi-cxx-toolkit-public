@@ -409,6 +409,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
     if ( force_reset ) {
         TDescription::sm_Default = TDescription::sm_ParamDescription.default_value;
         sx_GetState() = eState_NotSet;
+        sx_GetSource() = eSource_Default;
     }
 
     if (sx_GetState() < eState_Func) {
@@ -432,6 +433,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
             }
         }
         sx_GetState() = eState_Func;
+        sx_GetSource() = eSource_Func;
     }
 
     if (sx_GetState() < eState_Config) {
@@ -440,15 +442,18 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
             state = eState_Config; // No need to check anything else.
         }
         else {
+            int src = eSource_NotSet;
             string config_value =
                 g_GetConfigString(TDescription::sm_ParamDescription.section,
                                     TDescription::sm_ParamDescription.name,
                                     TDescription::sm_ParamDescription.env_var_name,
-                                    "");
+                                    "",
+                                    &src);
             if ( !config_value.empty() ) {
                 try {
                     TDescription::sm_Default = TParamParser::StringToValue(config_value,
                         TDescription::sm_ParamDescription);
+                    sx_GetSource() = (EParamSource)src;
                 }
                 catch (...) {
                     sx_GetState() = eState_Error;
@@ -484,6 +489,14 @@ CParam<TDescription>::sx_GetState(void)
 
 
 template<class TDescription>
+typename CParam<TDescription>::EParamSource&
+CParam<TDescription>::sx_GetSource(void)
+{
+    return TDescription::sm_Source;
+}
+
+
+template<class TDescription>
 inline
 bool CParam<TDescription>::sx_IsSetFlag(ENcbiParamFlags flag)
 {
@@ -494,9 +507,16 @@ bool CParam<TDescription>::sx_IsSetFlag(ENcbiParamFlags flag)
 template<class TDescription>
 inline
 typename CParam<TDescription>::EParamState
-CParam<TDescription>::GetState(void)
+CParam<TDescription>::GetState(bool* sourcing_complete, EParamSource* param_source)
 {
-    return sx_GetState();
+    EParamState state = sx_GetState();
+    if (sourcing_complete) {
+        *sourcing_complete = state == eState_Config;
+    }
+    if (param_source) {
+        *param_source = sx_GetSource();
+    }
+    return state;
 }
 
 
@@ -520,6 +540,7 @@ void CParam<TDescription>::SetDefault(const TValueType& val)
     if (state < eState_User) {
         state = eState_User;
     }
+    sx_GetSource() = eSource_User;
 }
 
 
