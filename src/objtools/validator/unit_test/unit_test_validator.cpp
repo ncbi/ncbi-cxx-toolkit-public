@@ -1994,10 +1994,12 @@ void TestStartGapSeg(CMolInfo::TTech tech)
     // expected_errors.push_back(new CExpectedError("lcl|good", tech == CMolInfo::eTech_wgs ? eDiag_Warning : eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at end of sequence"));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     if (tech == CMolInfo::eTech_wgs) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WGSseqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
     }
@@ -3291,15 +3293,16 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     // also try delta sequence
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodDeltaSeq ();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("NNNNNNNNNCCC");
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("CCCNNNNNNNNN");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    ChangeErrorAcc(expected_errors, "lcl|good");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[1]->SetSeverity(eDiag_Warning);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalNs", "N at beginning of sequence"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalNs", "N at end of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 52 percent Ns"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3310,7 +3313,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("NNNNNNNNNNCC");
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("CCNNNNNNNNNN");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[4]->SetErrMsg ("Sequence contains 58 percent Ns");
+    expected_errors[2]->SetErrMsg ("Sequence contains 58 percent Ns");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3340,7 +3343,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetId().SetNumber("1");
     seh = scope.AddTopLevelSeqEntry(*entry);
     ChangeErrorAcc(expected_errors, "pat|USA|1|1");
-    delete expected_errors[4];
+    delete expected_errors[2];
     expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3404,10 +3407,12 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqLit", "Run of 20 Ns in delta component 5 that starts at base 45"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WGSseqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -3419,10 +3424,12 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     SetTech(entry, CMolInfo::eTech_htgs_1);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqLit",
         "Run of 81 Ns in delta component 7 that starts at base 79"));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -3855,10 +3862,12 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     // expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at end of sequence"));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -3878,8 +3887,10 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
     ChangeErrorAcc(expected_errors, "ref|NC_123456|");
+    /*
     expected_errors[2]->SetSeverity(eDiag_Warning);
     expected_errors[3]->SetSeverity(eDiag_Warning);
+    */
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4013,10 +4024,12 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsAdjacentToGap)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 13"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 23"));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -4190,16 +4203,16 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AANNNNNNNNNNGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGTTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCNNNNNNNNNNAAA");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", 
-        "Sequence contains 20 percent Ns"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent5Prime", 
-        "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent3Prime", 
-        "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+        "Sequence contains 20 percent Ns"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent5Prime",
+        "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent3Prime", 
+        "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -4225,10 +4238,12 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     entry->SetSeq().SetInst().SetLength(entry->GetSeq().GetInst().GetLength() + 20);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -4286,10 +4301,12 @@ BOOST_AUTO_TEST_CASE(Test_UnknownLengthGapNot100)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "UnknownLengthGapNot100", "Gap of unknown length should have length 100"));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17967,10 +17984,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureInsideGap)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
                                "Sequence contains 51 percent Ns"));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatureIsMostlyNs",
         "Feature contains more than 50% Ns"));
     //AddChromosomeNoLocation(expected_errors, entry);
@@ -20249,10 +20268,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphNScoreMany)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "GraphNScoreMany", 
                               "6 N bases (25.00%) have positive score value - first one at position 24"));
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    */
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
