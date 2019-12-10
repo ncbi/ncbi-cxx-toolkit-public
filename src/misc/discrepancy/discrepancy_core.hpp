@@ -890,17 +890,6 @@ public:
 
     EType GetType(void) const // Can we use the same enum?
     {
-        //eFile,
-        //eSubmit,
-        //eSeqSet,
-        //eSeqSet_NucProt,
-        //eSeqSet_GenProd,
-        //eSeqSet_SegSet,
-        //eBioseq,
-        //eSeqFeat,
-        //eSeqDesc,
-        //eString
-
         //eType_feature,
         //eType_descriptor,
         //eType_sequence,
@@ -909,7 +898,11 @@ public:
         //eType_string
 
         switch (m_Ref->m_Type) {
+            case CDiscrepancyContext::eSeqSet: return eType_seq_set;
             case CDiscrepancyContext::eBioseq: return eType_sequence;
+            case CDiscrepancyContext::eSeqFeat: return eType_feature;
+            case CDiscrepancyContext::eSeqDesc: return eType_descriptor;
+            case CDiscrepancyContext::eSubmitBlock: return eType_submit_block;
             case CDiscrepancyContext::eString: return eType_string;
             default: break;
         }
