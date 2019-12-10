@@ -404,6 +404,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
     if ( !def_init ) {
         TDescription::sm_Default = TDescription::sm_ParamDescription.default_value;
         def_init = true;
+        sx_GetSource() = eSource_Default;
     }
 
     if ( force_reset ) {
@@ -426,6 +427,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
                 TDescription::sm_Default = TParamParser::StringToValue(
                     TDescription::sm_ParamDescription.init_func(),
                     TDescription::sm_ParamDescription);
+                sx_GetSource() = eSource_Func;
             }
             catch (...) {
                 sx_GetState() = eState_Error;
@@ -433,7 +435,6 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
             }
         }
         sx_GetState() = eState_Func;
-        sx_GetSource() = eSource_Func;
     }
 
     if (sx_GetState() < eState_Config) {
