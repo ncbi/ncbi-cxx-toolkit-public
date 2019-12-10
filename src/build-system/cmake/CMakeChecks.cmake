@@ -99,7 +99,7 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
 else()
     set(NCBI_TREE_BUILDCFG "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_BUILDCFG}")
     set(NCBI_TREE_CMAKECFG "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_CMAKECFG}")
-    set(NCBI_TREE_COMMON_INCLUDE  ${includedir}/common)
+    set(NCBI_TREE_COMMON_INCLUDE  ${NCBI_INC_ROOT}/common)
 endif()
 
 ############################################################################
@@ -151,7 +151,7 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
     if (NOT EXISTS ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
         message(FATAL_ERROR "${NCBI_PTBCFG_INSTALL_EXPORT} was not found in ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}")
     endif()
-    include_directories(${incdir} ${includedir0} ${incinternal} ${_ext_includedir0} ${_ext_incinternal})
+    include_directories(${incdir} ${NCBI_INC_ROOT} ${incinternal} ${_ext_includedir0} ${_ext_incinternal})
 else()
     include_directories(${incdir} ${includedir0} ${incinternal})
 endif()
@@ -160,48 +160,6 @@ include_regular_expression("^.*[.](h|hpp|c|cpp|inl|inc)$")
 #set(CMAKE_MODULE_PATH "${NCBI_SRC_ROOT}/build-system/cmake/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH "${NCBI_TREE_CMAKECFG}")
 
-##############################################################################
-# Find datatool app
-
-if (WIN32)
-    set(NCBI_DATATOOL_BASE "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc")
-elseif(XCODE)
-    set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/XCode")
-else()
-#FIXME: Not just Linux!
-    set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64")
-endif()
-
-if (EXISTS "${NCBI_TREE_BUILDCFG}/datatool_version.txt")
-    FILE(STRINGS "${NCBI_TREE_BUILDCFG}/datatool_version.txt" _datatool_version)
-else()
-    set(_datatool_version "2.20.0")
-    message(WARNING "Failed to find datatool_version.txt, defaulting to version ${_datatool_version})")
-endif()
-message(STATUS "Datatool version required by software: ${_datatool_version}")
-
-if (WIN32)
-    set(NCBI_DATATOOL_BIN "datatool.exe")
-else()
-    set(NCBI_DATATOOL_BIN "datatool")
-endif()
-
-if (EXISTS "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
-    set (NCBI_DATATOOL "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
-    message(STATUS "Datatool location: ${NCBI_DATATOOL}")
-else()
-    if (NCBI_EXPERIMENTAL_CFG)
-        set (NCBI_DATATOOL datatool)
-    else()
-        set (NCBI_DATATOOL $<TARGET_FILE:datatool-app>)
-    endif()
-    message(STATUS "Datatool location: <locally compiled>")
-endif()
-
-#############################################################################
-# Testing
-set(NCBITEST_DRIVER "${NCBI_TREE_CMAKECFG}/TestDriver.cmake")
-enable_testing()
 
 #############################################################################
 # Basic checks
@@ -235,7 +193,7 @@ include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponents.cmake)
 # This sets a version to be used throughout our config process
 # NOTE: Adjust as needed
 #
-set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 21)
+set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 23)
 set(NCBI_CPP_TOOLKIT_VERSION_MINOR 0)
 set(NCBI_CPP_TOOLKIT_VERSION_PATCH 0)
 set(NCBI_CPP_TOOLKIT_VERSION_EXTRA "")
@@ -246,13 +204,17 @@ set(NCBI_CPP_TOOLKIT_VERSION
 # Subversion
 # This is needed for some use cases
 
+include(FindSubversion)
 if (EXISTS ${top_src_dir}/.svn)
-    include(FindSubversion)
     Subversion_WC_INFO(${top_src_dir} TOOLKIT)
-    Subversion_WC_INFO(${top_src_dir}/src/corelib CORELIB)
 else()
     set(TOOLKIT_WC_REVISION 0)
     set(TOOLKIT_WC_URL "")
+endif()
+
+if (EXISTS ${top_src_dir}/src/corelib/.svn)
+    Subversion_WC_INFO(${top_src_dir}/src/corelib CORELIB)
+else()
     set(CORELIB_WC_REVISION 0)
     set(CORELIB_WC_URL "")
 endif()
@@ -418,8 +380,4 @@ set(FEATURES "")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_DIR}/corelib/ncbicfg.c)
 
 endif (NCBI_EXPERIMENTAL_CFG)
-
-#
-# Dump our final diagnostics
-include(${NCBI_TREE_CMAKECFG}/CMakeChecks.final-message.cmake)
 

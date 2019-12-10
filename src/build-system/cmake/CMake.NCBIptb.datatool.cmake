@@ -10,6 +10,44 @@
 
 
 ##############################################################################
+# Find datatool app
+
+if (WIN32)
+    set(NCBI_DATATOOL_BASE "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc")
+elseif(XCODE)
+    set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/XCode")
+else()
+#FIXME: Not just Linux!
+    set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64")
+endif()
+
+if (EXISTS "${NCBI_TREE_BUILDCFG}/datatool_version.txt")
+    FILE(STRINGS "${NCBI_TREE_BUILDCFG}/datatool_version.txt" _datatool_version)
+else()
+    set(_datatool_version "2.20.0")
+    message(WARNING "Failed to find datatool_version.txt, defaulting to version ${_datatool_version})")
+endif()
+message(STATUS "Datatool version required by software: ${_datatool_version}")
+
+if (WIN32)
+    set(NCBI_DATATOOL_BIN "datatool.exe")
+else()
+    set(NCBI_DATATOOL_BIN "datatool")
+endif()
+
+if (EXISTS "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
+    set (NCBI_DATATOOL "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
+    message(STATUS "Datatool location: ${NCBI_DATATOOL}")
+else()
+    if (NCBI_EXPERIMENTAL_CFG)
+        set (NCBI_DATATOOL datatool)
+    else()
+        set (NCBI_DATATOOL $<TARGET_FILE:datatool-app>)
+    endif()
+    message(STATUS "Datatool location: <locally compiled>")
+endif()
+
+##############################################################################
 function(NCBI_internal_process_dataspec _variable _access _value)
     if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS" OR "${_value}" STREQUAL "")
         return()

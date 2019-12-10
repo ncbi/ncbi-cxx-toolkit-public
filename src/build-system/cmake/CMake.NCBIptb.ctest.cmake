@@ -10,6 +10,11 @@
 
 
 ##############################################################################
+# Testing
+set(NCBITEST_DRIVER "${NCBI_TREE_CMAKECFG}/TestDriver.cmake")
+enable_testing()
+
+##############################################################################
 macro(NCBI_internal_process_cmake_test_requires _test)
     set(NCBITEST_REQUIRE_NOTFOUND "")
     set(_all ${NCBITEST__REQUIRES} ${NCBITEST_${_test}_REQUIRES})

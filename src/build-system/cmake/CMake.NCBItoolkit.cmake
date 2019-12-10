@@ -105,3 +105,5 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
     endif()
     NCBI_import_hostinfo(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
 endif()
+
+include(${_prefix}build-system/cmake/CMakeChecks.final-message.cmake)
