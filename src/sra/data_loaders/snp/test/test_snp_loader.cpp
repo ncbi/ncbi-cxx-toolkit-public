@@ -322,12 +322,12 @@ BOOST_AUTO_TEST_CASE(SNPImplicitSNP)
     string seq_id = "NC_000001.11";
     TSeqPos range_from = 0;
     TSeqPos range_to = 100000;
-    size_t snp_count = 16587;
+    size_t snp_count = 17607;
     
     string seq_id2 = "NC_000007";
     TSeqPos range_from2 = 1000000;
     TSeqPos range_to2 = 1100000;
-    size_t snp_count2 = 32321;
+    size_t snp_count2 = 33546;
     
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
     BOOST_REQUIRE(bh);
