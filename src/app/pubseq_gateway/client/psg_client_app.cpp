@@ -269,7 +269,15 @@ const string& s_SetPsgDefaults(const CArgs& args, bool parallel)
         auto io_threads = args["io-threads"].AsInteger();
         TPSG_NumIo::SetDefault(io_threads);
     } else if (parallel) {
-        TPSG_NumIo::SetDefault(6);
+        // Overriding default for TPSG_NumIo but only if it's not configured explicitly
+        bool sourcing_complete;
+        TPSG_NumIo::EParamSource param_source;
+        TPSG_NumIo::GetDefault();
+        TPSG_NumIo::GetState(&sourcing_complete, &param_source);
+
+        if (sourcing_complete && (param_source == TPSG_NumIo::eSource_Default)) {
+            TPSG_NumIo::SetDefault(6);
+        }
     }
 
     if (args["requests-per-io"].HasValue()) {
