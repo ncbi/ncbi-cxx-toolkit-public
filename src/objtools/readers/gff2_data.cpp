@@ -834,10 +834,12 @@ bool CGff2Record::xMigrateAttributes(
     it = attrs_left.find("regulatory_class");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsImp()  &&  (pFeature->GetData().GetImp().GetKey()  == "regulatory")) {
-            pFeature->SetData().SetImp().SetKey(it->second);
+            //pFeature->SetData().SetImp().SetKey(it->second);
+            pFeature->RemoveQualifier("regulatory_class");
+            pFeature->AddQualifier("regulatory_class", it->second);
             attrs_left.erase(it);
         }
-        pFeature->RemoveQualifier("regulatory_class");
+        //pFeature->RemoveQualifier("regulatory_class");
     }
 
     it = attrs_left.find("transl_except");
