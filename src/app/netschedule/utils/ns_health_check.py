@@ -92,11 +92,6 @@ def printVerbose( msg ):
 def printStderr( msg ):
     " Prints onto stderr with a prefix "
     timestamp = datetime.datetime.now().strftime( '%m-%d-%y %H:%M:%S' )
-    import traceback
-    try:
-        raise Exception()
-    except:
-        traceback.print_exception(*sys.exc_info())
     print (timestamp + " NetSchedule check script. " + msg, file=sys.stderr)
     return
 
@@ -305,8 +300,6 @@ def main():
                 log( BASE_RESERVE_CODE + 1,
                      "Error connecting to server: timeout" ) )
     except Exception as exc:
-        import traceback
-        traceback.print_exception(*sys.exc_info())
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 2,
                      "Error connecting to server: " + str( exc ) ) )
@@ -409,8 +402,6 @@ def main():
                 log( BASE_NO_ACTION_ALERT_CODE + 6,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except:
-        import traceback
-        traceback.print_exception(*sys.exc_info())
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_NO_ACTION_ALERT_CODE + 6,
                      "(service " + serviceName + ") Unknown check script error" ) )
@@ -721,13 +712,9 @@ if __name__ == "__main__":
         printStderr( "Ctrl + C received" )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 7
     except Exception as excpt:
-        import traceback
-        traceback.print_exception(*sys.exc_info())
         printStderr( str( excpt ) )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 8
     except:
-        import traceback
-        traceback.print_exception(*sys.exc_info())
         printStderr( "Generic unknown script error" )
         returnValue = BASE_NO_ACTION_ALERT_CODE + 9
 
