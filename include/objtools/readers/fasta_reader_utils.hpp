@@ -112,6 +112,8 @@ public:
                                    const TInfo& info, 
                                    ILineErrorListener* listener)>;
 
+
+
     static void ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
         SDeflineData& data,
@@ -157,6 +159,8 @@ public:
                     const TInfo& info,
                     ILineErrorListener* listener);
 
+    using FReportError = function<void (const string& msg, EDiagSev severity)>;
+
 private:
     static bool x_IsValidLocalID(const CSeq_id& id, const TInfo& info);
 
@@ -167,6 +171,11 @@ private:
     static void x_CheckForExcessiveSeqData(const CSeq_id& id, 
                                     const TInfo& info,
                                     ILineErrorListener* listener);
+
+    static void x_CheckForExcessiveSeqData(const CSeq_id& id,
+                                const TInfo& info,
+                                FReportError fReportError){}
+
 
     static void x_PostIDLengthError(const size_t id_length,
                                      const string& type_string,

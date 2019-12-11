@@ -149,11 +149,11 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
         SDeflineData& data,
         ILineErrorListener* pMessageListener,
         FIdCheck fn_idcheck) 
-    {
-        size_t range_len = 0;
-        const TFastaFlags& fFastaFlags = info.fFastaFlags;
-        const TSeqPos& lineNumber = info.lineNumber;
-        data.has_range = false;
+{
+    size_t range_len = 0;
+    const TFastaFlags& fFastaFlags = info.fFastaFlags;
+    const TSeqPos& lineNumber = info.lineNumber;
+    data.has_range = false;
 
         const size_t len = defline.length();
         if (len <= 1 || 
@@ -638,16 +638,18 @@ void CSeqIdCheck::x_CheckIDLength(const CSeq_id& id,
 
 
 void CSeqIdCheck::x_CheckForExcessiveSeqData(const CSeq_id& id,
-                                               const TInfo& info,
-                                               ILineErrorListener* listener)
+                                             const TInfo& info,
+                                             ILineErrorListener* listener)
 {
+    const bool assume_prot = (info.fFastaFlags & CFastaReader::fAssumeProt);
+    const bool assume_nuc  = (info.fFastaFlags & CFastaReader::fAssumeNuc);
+
     const auto& id_string = id.GetSeqIdString();
 
     const TSeqPos kWarnNumNucCharsAtEnd = 20;
     const TSeqPos kWarnNumAminoAcidCharsAtEnd = 50;
     const TSeqPos kErrNumNucCharsAtEnd = 25;
 
-    const bool assume_prot = (info.fFastaFlags & CFastaReader::fAssumeProt);
 
     if (!assume_prot && id_string.length() > kWarnNumNucCharsAtEnd) {
         TSeqPos numNucChars = 0;
@@ -684,9 +686,11 @@ void CSeqIdCheck::x_CheckForExcessiveSeqData(const CSeq_id& id,
         }
     }
 
-    const bool assume_nuc = (info.fFastaFlags & CFastaReader::fAssumeNuc);
+    if (assume_nuc) { // No check to perform
+        return; 
+    }
     // Check for Aa sequence
-    if (!assume_nuc && id_string.length() > kWarnNumAminoAcidCharsAtEnd) {
+    if (id_string.length() > kWarnNumAminoAcidCharsAtEnd) {
         TSeqPos numAaChars = 0;
         for (size_t i = id_string.size(); i>0; i--) {
             const auto ch = id_string[i - 1];

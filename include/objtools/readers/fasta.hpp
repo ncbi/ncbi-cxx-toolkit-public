@@ -240,6 +240,7 @@ protected:
 
     virtual void ParseDefLine (const TStr& s, ILineErrorListener * pMessageListener);
 
+    NCBI_STD_DEPRECATED("Superseded by CFastaDeflineReader::ParseIDs(). Not used by non-static CFastaReader::ParseDefLine().") 
     virtual bool ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
 
     virtual void PostProcessIDs(const CBioseq::TId& defline_ids, 
@@ -248,6 +249,7 @@ protected:
         TSeqPos range_start=kInvalidSeqPos,
         TSeqPos range_end=kInvalidSeqPos);
 
+    NCBI_STD_DEPRECATED("Superseded by CFastaDeflineReader::ParseIDs(). Not used by static CFastaReader::ParseDefLine().") 
     static bool ParseIDs (const TStr& s, 
         const SDefLineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,
@@ -271,7 +273,7 @@ protected:
         const TStr& sLineText, 
         TSeqPos iLineNum,
         ILineErrorListener * pMessageListener) const;
-    static bool ExcessiveSeqDataInTitle(const string& title, 
+    NCBI_STD_DEPRECATED("") static bool ExcessiveSeqDataInTitle(const string& title, 
                                         TFlags fFastaFlags);
     virtual void   PostWarning(ILineErrorListener * pMessageListener,
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, 
@@ -279,7 +281,8 @@ protected:
             ILineError::EProblem _eProblem, 
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
-    NCBI_DEPRECATED CSourceModParser* xCreateSourceModeParser(ILineErrorListener* pErrorListener);
+    NCBI_STD_DEPRECATED("CFastaReader no longer utilizes CSourceModParser.") 
+    CSourceModParser* xCreateSourceModeParser(ILineErrorListener* pErrorListener);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
