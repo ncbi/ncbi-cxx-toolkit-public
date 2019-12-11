@@ -57,14 +57,14 @@ void CLocalTaxon::AddArguments(CArgDescriptions& arg_desc)
                             CArgDescriptions::eInputFile);
 }
 
-CLocalTaxon::CLocalTaxon()
+CLocalTaxon::CLocalTaxon() : m_db_supports_synonym(false)
 {
     /// Initializing without command-line arguments; use Taxon server
     m_TaxonConn.reset(new CTaxon1);
     m_TaxonConn->Init();
 }
 
-CLocalTaxon::CLocalTaxon(const CArgs &args)
+CLocalTaxon::CLocalTaxon(const CArgs &args) : m_db_supports_synonym(false)
 {
     if (args["taxon-db"]) {
         m_SqliteConn.reset(new CSQLITE_Connection(args["taxon-db"].AsString(),
@@ -73,6 +73,7 @@ CLocalTaxon::CLocalTaxon(const CArgs &args)
                                   CSQLITE_Connection::fTempToMemory |
                                   CSQLITE_Connection::fVacuumOff |
                                   CSQLITE_Connection::fSyncOff));
+        m_db_supports_synonym = x_SupportsSynonym();
     } else {
         m_TaxonConn.reset(new CTaxon1);
         m_TaxonConn->Init();
@@ -330,12 +331,16 @@ CLocalTaxon::TScientificNameRef CLocalTaxon::x_Cache(const string& orgname)
 
     TScientificNameIndex::iterator it = m_ScientificNameIndex.find(orgname);
     if (it == m_ScientificNameIndex.end()  ) {
-        CSQLITE_Statement stmt
-            (m_SqliteConn.get(),
-            "SELECT taxid "
-            "FROM TaxidInfo "
-            "WHERE scientific_name = ? "
-            "COLLATE NOCASE ");
+        //
+        //  do the case-insensitive comparison
+        //
+        string sql = "SELECT taxid FROM TaxidInfo WHERE scientific_name = ?1 COLLATE NOCASE ";
+        if(m_db_supports_synonym) {
+            sql +=             "   UNION "
+            "SELECT taxid FROM Synonym WHERE scientific_name = ?1 COLLATE NOCASE ";
+        }
+        
+        CSQLITE_Statement stmt(m_SqliteConn.get(),sql);
         stmt.Bind(1, orgname);
         stmt.Execute();
         if  (stmt.Step()) {
@@ -429,6 +434,15 @@ void CLocalTaxon::x_GetLineage(TTaxid taxid, TInternalLineage &lineage)
     while(lineage.front()->second.parent != s_InvalidNode) {
         lineage.push_front(lineage.front()->second.parent);
     }
+}
+
+bool CLocalTaxon::x_SupportsSynonym()
+{
+    CSQLITE_Statement stmt(m_SqliteConn.get(),
+         "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='Synonym'");
+    stmt.Execute();
+    stmt.Step();
+    return stmt.GetInt(0) > 0;
 }
 
 END_NCBI_SCOPE

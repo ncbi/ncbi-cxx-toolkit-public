@@ -84,16 +84,13 @@ public: // lookups other than taxid
 
     TTaxid GetTaxIdByName(const string& orgname);
 
-private:
+private: // data types
     struct STaxidNode;
     typedef map<int, STaxidNode> TNodes;
     typedef map<string, STaxidNode> TScientificNameIndex;
     typedef TNodes::const_iterator TNodeRef;
     typedef TScientificNameIndex::const_iterator TScientificNameRef;
     typedef list<TNodeRef> TInternalLineage;
-
-    static TNodes s_DummyNodes;
-    static TNodeRef s_InvalidNode;
 
     struct STaxidNode {
         TTaxid taxid;
@@ -107,15 +104,21 @@ private:
         STaxidNode();
         ~STaxidNode();
     };
-
+private: // static 
+    static TNodes s_DummyNodes;
+    static TNodeRef s_InvalidNode;
+    
+private: // data model
+    bool m_db_supports_synonym;
     unique_ptr<CSQLITE_Connection> m_SqliteConn;
     unique_ptr<objects::CTaxon1> m_TaxonConn;
     TNodes m_Nodes;
     TScientificNameIndex m_ScientificNameIndex;
-
+private: // implementation 
     TNodeRef x_Cache(TTaxid taxid, bool including_org_ref = false);
     TScientificNameRef x_Cache(const string& orgname);
     void x_GetLineage(TTaxid taxid, TInternalLineage &lineage);
+    bool x_SupportsSynonym();
 };
 
 
