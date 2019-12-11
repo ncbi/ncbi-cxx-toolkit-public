@@ -311,7 +311,7 @@ string FixProductName(const CSuspect_rule* rule, CScope& scope, string& prot_nam
     else if (rf.IsHaem_replace()) {
         newtext = ReplaceNoCase(prot_name, "haem", "hem");
     }
-    if (!newtext.empty()) {
+    if (!newtext.empty() && newtext != prot_name) {
         orig_prot_name = move(prot_name);
         prot_name = move(newtext);
         auto mrna = get_mrna();
