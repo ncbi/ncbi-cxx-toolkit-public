@@ -2950,14 +2950,22 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
     E_Choice seqid_type = Which();
 
     switch (seqid_type) {
-    case e_Giim:
+    // CXX-11062 : gibbsq and gibbmt ids are sometimes primary, sometimes
+    // secondary. Since it cannot be determined here which of the two is the case,
+    // they are returned in both fields.
+    // Use same logic for giim, but in fact there are no records in ID with this
+    // Seq-id type at all.
+    case e_Giim: 
         primary_id = NStr::IntToString(GetGiim().GetId());
+        secondary_id = primary_id;
         break;
     case e_Gibbsq: 
         primary_id = NStr::IntToString(GetGibbsq());
+        secondary_id = primary_id;
         break;
     case e_Gibbmt:
         primary_id = NStr::IntToString(GetGibbmt());
+        secondary_id = primary_id;
         break;
     case e_Pir: 
     case e_Prf:
