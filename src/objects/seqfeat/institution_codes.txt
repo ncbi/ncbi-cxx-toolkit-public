@@ -179,6 +179,7 @@ AMCL	s	Macapa, Museu Territorial de Historia Natural "Angelo Moreira da Costa Li
 AMD	s	Hugo de Vries-Laboratory, University of Amsterdam			
 AMDE	s	Brathay Field Centre for Exploration and Field Studies			
 AMES	s	Harvard University			
+AMF	s	Marine Science Museum, Fukushima (Aquamarine Fukushima)			
 AMG	s	Albany Museum	AMGS		
 AMGS	s	Albany Museum			
 AMH	s	Agharkar Research Institute, Mycology and Plant Pathology Department			
@@ -1693,7 +1694,7 @@ DSC<USA-MS>	s	Delta State University, Biological Sciences Department
 DSC<USA-NY>	c	Dicty Stock Center			
 DSEC	s	Universidade Federal da Paraiba			
 DSIR	s	Department of Scientific and Industrial Research			
-DSM	c	Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH	DSMZ	https://www.dsmz.de/catalogues/details/culture/DSM-&spec;.html	
+DSM	c	Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH	DSMZ	https://www.dsmz.de/collection/catalogue/details/culture/DSM-	
 DSM<TZA>	s	University of Dar es Salaam, Botany Department			
 DSMZ	c	Deutsche Sammlung von Mikroorganismen und Zellkulture			
 DSP	s	Fitzsimon's Snake Park			
