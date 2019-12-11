@@ -90,7 +90,7 @@ typedef unsigned int  ticket_t;
  *  first data of that connection, so that the client can reach the endpoint
  *  requested.  If FWD_RR_KEEPALIVE was requested in "flag", the "ticket" can
  *  be returned as 0 to indicate that the client _must_ keep reusing the
- *  existing connection to that FWDaemon to talk to the endpoint.
+ *  existing connection to that FWDaemon in order to talk to the endpoint.
  *  FWDaemon identifies itself in the "origin" field.
  *  Non-zero bit 0 in "flag" of a successful reply indicates that the true
  *  firewall mode (via DMZ) is available (acknowledged when requested), and is
@@ -124,7 +124,7 @@ typedef unsigned int  ticket_t;
 #define FWD_RR_FIREWALL    1  /**< FIREWALL mode client, else RELAY          */
 #define FWD_RR_KEEPALIVE   2  /**< Try to reuse the connection               */
 
-/** FWDaemon rejection codes (the "flag" field, see above) */
+/** FWDaemon FWD_RR_REJECTMASK codes (the "flag" field, see above) */
 #define FWD_RR_BADREQUEST  1  /**< Bad request    (e.g. port 0 and no svc)   */
 #define FWD_RR_USEDIRECT   2  /**< Use directly   (e.g. via direct connect)  */
 #define FWD_RR_NOFORWARD   3  /**< Bad forwarding (e.g. non-local endpoint)  */
