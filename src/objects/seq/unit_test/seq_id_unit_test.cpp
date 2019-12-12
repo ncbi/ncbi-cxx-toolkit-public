@@ -2152,9 +2152,9 @@ BOOST_AUTO_TEST_CASE(TestCase)
 typedef map<string,vector<string> > TFastaOSLTMap;
 static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "lcl|123", { "" } },
-    { "bbs|123", { "123" } },
-    { "bbm|123", { "123" } },
-    { "gim|123", { "123" } },
+    { "bbs|123", { "123", "123" } },
+    { "bbm|123", { "123", "123" } },
+    { "gim|123", { "123", "123" } },
     { "gb|U12345.1|amu12345", { "U12345", "AMU12345" } },
     { "emb|AL123456|MtBh37RV", { "AL123456", "MTBH37RV" } },
     { "pir||S16356", { "S16356" } },
