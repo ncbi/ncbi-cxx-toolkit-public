@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ $# -lt 8 ]; then
-    echo "Usage: $0 SERVICE REQUESTS ITERATIONS USER_THREADS IO_THREADS INPUT_FILE BINARY BINARY [BINARY ...]";
+if [ $# -lt 9 ]; then
+    echo "Usage: $0 SERVICE REQUESTS ITERATIONS USER_THREADS IO_THREADS INPUT_FILE SKIP_FIRST BINARY BINARY [BINARY ...]";
     exit 1;
 fi
 
@@ -11,19 +11,25 @@ ITERATIONS="$3"
 USER_THREADS="$4"
 IO_THREADS="$5"
 INPUT_FILE="$6"
-shift 6
+SKIP_FIRST=$7
+shift 7
 BINARIES=($@)
 
 function create_path
 {
     local IFS="-"
-    OUTPUT_PATH="$*/$SERVICE/$TYPE/$USER_THREADS-$IO_THREADS/$REQUESTS-$ITERATIONS"
+    OUTPUT_PATH="$*/$SERVICE/$TYPE/$USER_THREADS-$IO_THREADS/$REQUESTS-$ITERATIONS-$SKIP_FIRST"
     mkdir -p "$OUTPUT_PATH"
 }
 
 function run
 {
-    head -$REQUESTS $INPUT_FILE |$1/psg_client performance -service $SERVICE -user-threads $USER_THREADS -io-threads $IO_THREADS -local-queue -use-cache yes -raw-metrics;
+    if [ $SKIP_FIRST -eq 0 ]; then
+        head -$REQUESTS $INPUT_FILE |$1/psg_client performance -service $SERVICE -user-threads $USER_THREADS -io-threads $IO_THREADS -local-queue -use-cache yes -raw-metrics;
+    else
+        SKIP_FIRST=$(($REQUESTS+$SKIP_FIRST));
+        head -$SKIP_FIRST $INPUT_FILE |tail -$REQUESTS |$1/psg_client performance -service $SERVICE -user-threads $USER_THREADS -io-threads $IO_THREADS -local-queue -use-cache yes -raw-metrics -delay 1;
+    fi
 }
 
 TYPE=$(basename $INPUT_FILE .json)
@@ -51,8 +57,10 @@ for ((i = 1; 1000; ++i)); do
     fi;
 done
 
-# A warm-up
-run ${BINARIES[0]}
+if [ $SKIP_FIRST -eq 0 ]; then
+    # A warm-up
+    run ${BINARIES[0]};
+fi
 
 for ((i = 1; $i <= $ITERATIONS; ++i)); do
     for bin in "${BINARIES[@]}"; do
