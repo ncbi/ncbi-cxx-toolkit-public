@@ -1,3 +1,10 @@
+Release 1.8.3 (2019-12-12)
+
+    * PSG -- add in-server tracing (CXX-11067)
+    * PSG -- crashes if service port is already occupied by another process
+      (CXX-11066)
+    * PSG server - to stop using primary OSLT id in SI2CSI lookup (CXX-11062)
+
 Release 1.8.2 (2019-12-02)
 
     * PSG - allow to resolve accessions with wrong types (INSDC ones only)
