@@ -858,6 +858,11 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
     if (auto rv = Init()) return rv;
 
     if (nghttp2_session_want_write(m_Session) == 0) {
+        if (nghttp2_session_want_read(m_Session) == 0) {
+            _TRACE(this << " does not want to write and read");
+            return x_DelOnError(-1);
+        }
+
         _TRACE(this << " does not want to write");
         return 0;
     }
