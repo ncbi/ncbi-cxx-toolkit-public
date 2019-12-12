@@ -39,6 +39,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbistr.hpp>
 #include <ctools/ctransition/ncbimem.hpp>
 #include <ctools/ctransition/ncbistr.hpp>
 #include <ctools/ctransition/ncbierr.hpp>
@@ -761,16 +762,16 @@ NLM_EXTERN Nlm_MemMapPtr Nlm_MemMapInit(const Nlm_Char PNTR name)
           *str = '/';  /* name of a file-mapping object cannot contain '\' */
 
       if ( !(mem_mapp->hMap =
-             OpenFileMapping(FILE_MAP_READ, FALSE, x_name)) )
+             OpenFileMapping(FILE_MAP_READ, FALSE, _T_XCSTRING(x_name))) )
         { /* If failed to attach to an existing file-mapping object then
            * create a new one(based on the specified file) */
-          HANDLE hFile= CreateFile(name, GENERIC_READ, FILE_SHARE_READ, NULL,
+          HANDLE hFile= CreateFile(_T_XCSTRING(name), GENERIC_READ, FILE_SHARE_READ, NULL,
                                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
           if (hFile == INVALID_HANDLE_VALUE)
             break;
 
           mem_mapp->hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY,
-                                             0, 0, x_name);
+                                             0, 0, _T_XCSTRING(x_name));
           CloseHandle( hFile );
           if ( !mem_mapp->hMap )
             break;
