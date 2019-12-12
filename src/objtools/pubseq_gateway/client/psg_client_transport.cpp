@@ -927,6 +927,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* io, uv_loop_t* loop, const CNetSer
 
 int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const uint8_t* data, size_t len)
 {
+    _TRACE(this << '/' << stream_id << " received: " << len);
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
@@ -959,6 +960,7 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error
 
 int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
 {
+    _TRACE(this << '/' << stream_id << " closed: " << error_code);
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
@@ -990,10 +992,14 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
     if ((frame->hd.type == NGHTTP2_HEADERS) && (frame->headers.cat == NGHTTP2_HCAT_RESPONSE) &&
             (namelen == sizeof(HTTP_STATUS_HEADER) - 1) && (strcmp((const char*)name, HTTP_STATUS_HEADER) == 0)) {
 
-        auto it = m_Requests.find(frame->hd.stream_id);
+        auto stream_id = frame->hd.stream_id;
+        auto status_str = reinterpret_cast<const char*>(value);
+
+        _TRACE(this << '/' << stream_id << " status: " << status_str);
+        auto it = m_Requests.find(stream_id);
 
         if (it != m_Requests.end()) {
-            auto status = atoi((const char*)value);
+            auto status = atoi(status_str);
 
             if (status == CRequestStatus::e404_NotFound) {
                 it->second->reply->reply_item.GetMTSafe().state.SetState(SPSG_Reply::SState::eNotFound);
@@ -1010,6 +1016,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
 
 void SPSG_IoSession::StartClose()
 {
+    _TRACE(this << " closing");
     Reset(SPSG_Error::eShutdown, "Shutdown is in process");
     m_Tcp.Close();
 }
@@ -1031,6 +1038,8 @@ bool SPSG_IoSession::Send()
 
 void SPSG_IoSession::OnConnect(int status)
 {
+    _TRACE(this << " connected: " << status);
+
     if (status < 0) {
         Reset(status, "Failed to connect/start read");
     } else {
@@ -1040,6 +1049,8 @@ void SPSG_IoSession::OnConnect(int status)
 
 void SPSG_IoSession::OnWrite(int status)
 {
+    _TRACE(this << " wrote: " << status);
+
     if (status < 0) {
         Reset(status, "Failed to submit request");
     } else {
@@ -1049,6 +1060,8 @@ void SPSG_IoSession::OnWrite(int status)
 
 void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
 {
+    _TRACE(this << " read: " << nread);
+
     if (nread < 0) {
         Reset(nread, nread == UV_EOF ? "Server disconnected" : "Failed to receive server reply");
         return;
@@ -1065,6 +1078,8 @@ void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
 
 bool SPSG_IoSession::ProcessRequest()
 {
+    _TRACE(this << " processing requests");
+
     if ((m_Requests.size() >= m_Session.GetMaxStreams()) || m_Tcp.IsWriteBufferFull()) {
         // Continue processing of remaining requests on the next callback
         m_Io->queue.Send();
@@ -1107,6 +1122,7 @@ void SPSG_IoSession::CheckRequestExpiration()
 
 void SPSG_IoSession::Reset(SPSG_Error error)
 {
+    _TRACE(this << " resetting with " << error);
     m_Session.Del();
     m_Tcp.Close();
 
