@@ -197,7 +197,7 @@ static void s_Resolve(SERV_ITER iter)
     }
     if (c  &&  (status = CONN_Create(c, &conn)) == eIO_Success
         /* send all the HTTP data... */
-        &&  CONN_Flush(conn) == eIO_Success) {
+        &&  (status = CONN_Flush(conn)) == eIO_Success) {
         /* ...then trigger the header callback */
         CONN_Close(conn);
     } else {
