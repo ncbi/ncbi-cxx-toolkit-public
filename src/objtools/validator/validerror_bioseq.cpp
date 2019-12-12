@@ -1703,6 +1703,24 @@ bool s_ContainedIn(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
 }
 
 
+bool s_CheckIntervals(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
+{
+    TSeqPos start1 = loc1.GetStart(eExtreme_Positional);
+    TSeqPos stop1 = loc1.GetStop(eExtreme_Positional);
+    TSeqPos start2 = loc2.GetStart(eExtreme_Positional);
+    TSeqPos stop2 = loc2.GetStop(eExtreme_Positional);
+
+    if (start1 == stop2 + 1 || start2 == stop1 + 1) {
+        // abut
+        return false;
+    } else if (TestForOverlapEx(loc1, loc2, eOverlap_CheckIntervals, scope) >= 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CValidError_bioseq::x_ValidateOverlappingRNAFeatures(
     const CBioseq_Handle& bsh)
 {
@@ -6247,7 +6265,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(
             LOG_POST_XX(Corelib_App, 1, "numdseg: " + NStr::IntToString(numdseg) + "\n");
             LOG_POST_XX(Corelib_App, 1, "numjseg: " + NStr::IntToString(numjseg) + "\n");
             */
-            x_ValidateCDSVDJCmatch(m_CurrentHandle, numcds, numcrgn, numvseg, numdseg, numjseg);
+            // x_ValidateCDSVDJCmatch(m_CurrentHandle, numcds, numcrgn, numvseg, numdseg, numjseg);
+            x_ValidateCDSagainstVDJC(m_CurrentHandle);
         }
 
         if (!SeqIsPatent(seq)) {
@@ -6887,6 +6906,112 @@ void CValidError_bioseq::x_CheckOrigProteinAndTranscriptIds(const CCdsMatchInfo&
     }
 
 }
+
+
+static bool x_FeatIsCDS(const CSeq_feat& ft)
+
+{
+    if (ft.IsSetData()) {
+        CSeqFeatData::ESubtype sbt = ft.GetData().GetSubtype();
+        if (sbt == CSeqFeatData::eSubtype_cdregion) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool x_FeatIsVDJC(const CSeq_feat& ft)
+
+{
+    if (ft.IsSetData()) {
+        CSeqFeatData::ESubtype sbt = ft.GetData().GetSubtype();
+        if (sbt == CSeqFeatData::eSubtype_C_region ||
+            sbt == CSeqFeatData::eSubtype_V_segment ||
+            sbt == CSeqFeatData::eSubtype_D_segment ||
+            sbt == CSeqFeatData::eSubtype_J_segment) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool x_BadCDSinVDJC(const CSeq_loc& cdsloc, const CSeq_loc& vdjcloc, CScope* scope)
+
+{
+    if (s_OverlapOrAbut(vdjcloc, cdsloc, scope)) {
+        if (! s_CheckIntervals(vdjcloc, cdsloc, scope)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CValidError_bioseq::x_ValidateCDSagainstVDJC(const CBioseq_Handle& seq)
+{
+    SAnnotSelector sel;
+
+    CFeat_CI it1(seq, sel);
+
+    if (! it1) {
+        return;
+    }
+
+    while (it1) {
+        const CSeq_feat& ft1 = it1->GetOriginalFeature();
+        if ( x_FeatIsCDS(ft1) || x_FeatIsVDJC(ft1) ) {
+            break;
+        }
+        ++it1;
+    }
+
+    if (! it1) {
+        return;
+    }
+
+    CFeat_CI it2 = it1;
+    ++it2;
+
+    while (it2) {
+        const CSeq_feat& ft2 = it2->GetOriginalFeature();
+        if ( x_FeatIsCDS(ft2) || x_FeatIsVDJC(ft2) ) {
+ 
+            const CSeq_feat& ft1 = it1->GetOriginalFeature();
+
+            const CSeq_loc& loc1 = ft1.GetLocation();
+            const CSeq_loc& loc2 = ft2.GetLocation();
+
+            ENa_strand strand1 = eNa_strand_plus;
+            if (loc1.IsSetStrand() && loc1.GetStrand() == eNa_strand_minus) {
+                strand1 = eNa_strand_minus;
+            }
+
+            ENa_strand strand2 = eNa_strand_plus;
+            if (loc2.IsSetStrand() && loc2.GetStrand() == eNa_strand_minus) {
+                strand2 = eNa_strand_minus;
+            }
+
+            if (strand1 == strand2) {
+                bool bad = false;
+                if ( x_FeatIsCDS(ft1) && x_FeatIsVDJC(ft2) ) {
+                    bad = x_BadCDSinVDJC(loc1, loc2, m_Scope);
+                    if (bad) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                                "No parent for CdRegion", ft1);
+                    }
+                } else if ( x_FeatIsVDJC(ft1) && x_FeatIsCDS(ft2) ) {
+                    bad = x_BadCDSinVDJC(loc2, loc1, m_Scope);
+                    if (bad) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                                "No parent for CdRegion", ft2);
+                    }
+                }
+            }
+            it1 = it2;
+        }
+        ++it2;
+    }
+}
+
 
 
 void CValidError_bioseq::x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq,  int numcds,
