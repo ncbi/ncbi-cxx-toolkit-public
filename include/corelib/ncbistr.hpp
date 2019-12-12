@@ -154,9 +154,9 @@ typedef wstring TXString;
     CUtf8::AsBasicString<TXChar>(x, NULL, CUtf8::eValidate)
 #  else
 #    define _T_XSTRING(x) \
-    CUtf8::AsBasicString<TXChar>(x, NULL, CUtf8::eNoValidate)
+    ncbi::CUtf8::AsBasicString<ncbi::TXChar>(x, NULL, ncbi::CUtf8::eNoValidate)
 #  endif
-#  define _T_STDSTRING(x)     CUtf8::AsUTF8(x)
+#  define _T_STDSTRING(x)     ncbi::CUtf8::AsUTF8(x)
 #  define _T_XCSTRING(x)      _T_XSTRING(x).c_str()
 #  define _T_CSTRING(x)       _T_STDSTRING(x).c_str()
 
