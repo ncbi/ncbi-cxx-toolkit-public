@@ -1023,11 +1023,6 @@ void SPSG_IoSession::StartClose()
 
 bool SPSG_IoSession::Send()
 {
-    if (auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
-        Reset(send_rv);
-        return false;
-    }
-
     if (auto write_rv = m_Tcp.Write()) {
         Reset(write_rv, "Failed to write");
         return false;
@@ -1103,6 +1098,12 @@ bool SPSG_IoSession::ProcessRequest()
     }
 
     m_Requests.emplace(stream_id, move(req));
+
+    if (auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
+        Reset(send_rv);
+        return false;
+    }
+
     return Send();
 }
 
