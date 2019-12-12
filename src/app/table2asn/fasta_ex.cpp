@@ -68,7 +68,11 @@ USING_SCOPE(objects);
 
 CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags) :
     objects::CFastaReader(reader, flags), m_context(context),
-    m_gap_editor((objects::CSeq_gap::EType)m_context.m_gap_type, m_context.m_GapsizeToEvidence, m_context.m_gapNmin, m_context.m_gap_Unknown_length)
+    m_gap_editor((objects::CSeq_gap::EType)m_context.m_gap_type, 
+            m_context.m_DefaultEvidence, 
+            m_context.m_GapsizeToEvidence, 
+            m_context.m_gapNmin, 
+            m_context.m_gap_Unknown_length)
 {
 };
 

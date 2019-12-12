@@ -224,6 +224,7 @@ CRef<CSerialObject> CMultiReader::xReadASN1(CObjectIStream& pObjIstrm)
     {
         CGapsEditor gap_edit(
                 (CSeq_gap::EType)m_context.m_gap_type, 
+                m_context.m_DefaultEvidence,
                 m_context.m_GapsizeToEvidence, 
                 m_context.m_gapNmin, 
                 m_context.m_gap_Unknown_length);
@@ -321,9 +322,12 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     }
 
     //if (m_context.m_gap_evidences.size() > 0 || m_context.m_gap_type >= 0)
-    if (!m_context.m_GapsizeToEvidence.empty() || m_context.m_gap_type >= 0) {
+    if (!m_context.m_GapsizeToEvidence.empty() || 
+        !m_context.m_DefaultEvidence.empty() ||    
+        m_context.m_gap_type >= 0) {
         pReader->SetGapLinkageEvidence(
                 (CSeq_gap::EType)m_context.m_gap_type, 
+                m_context.m_DefaultEvidence,
                 m_context.m_GapsizeToEvidence);
     }
 

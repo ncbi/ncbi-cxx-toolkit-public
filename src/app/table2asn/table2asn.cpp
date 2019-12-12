@@ -612,7 +612,7 @@ int CTbl2AsnApp::Run(void)
             try
             {
                 auto value = linkage_evidence_to_value->FindValue(*arg_it);
-                m_context.m_GapsizeToEvidence[0].insert(value);
+                m_context.m_DefaultEvidence.insert(value);
                 m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
             }
             catch (...)

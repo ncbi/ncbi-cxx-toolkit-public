@@ -123,7 +123,9 @@ public:
     TSeqPos m_gapNmin{ 0 };
     TSeqPos m_gap_Unknown_length{ 0 };
     TSeqPos m_minimal_sequence_length{ 0 };
+    objects::CGapsEditor::TEvidenceSet m_DefaultEvidence;
     objects::CGapsEditor::TCountToEvidenceMap m_GapsizeToEvidence;
+
 
 
 

@@ -214,22 +214,29 @@ CRef<CDelta_seq> MakeGap(CBioseq::TInst& inst, TSeqPos gap_start, TSeqPos gap_le
 }
 
 CGapsEditor::CGapsEditor(CSeq_gap::EType gap_type, const TEvidenceSet& evidences,
-    TSeqPos gapNmin, TSeqPos gap_Unknown_length)
-    :m_gap_type(gap_type), m_gapNmin(gapNmin), m_gap_Unknown_length(gap_Unknown_length)
+    TSeqPos gapNmin, TSeqPos gap_Unknown_length) :
+    m_gap_type(gap_type), 
+    m_DefaultEvidence(evidences), 
+    m_gapNmin(gapNmin), 
+    m_gap_Unknown_length(gap_Unknown_length)
 {
-    m_CountToEvidenceMap.emplace(gapNmin, evidences);
 }
 
 
 CGapsEditor::CGapsEditor(CSeq_gap::EType gap_type, 
+        const TEvidenceSet& defaultEvidence,
         const TCountToEvidenceMap& countToEvidenceMap,
         TSeqPos gapNmin, 
         TSeqPos gap_Unknown_length)
-    : m_gap_type(gap_type), 
-      m_gapNmin(gapNmin), 
-      m_CountToEvidenceMap(countToEvidenceMap),
-      m_gap_Unknown_length(gap_Unknown_length)
-{}
+    :
+    m_gap_type(gap_type), 
+    m_DefaultEvidence(defaultEvidence), 
+    m_GapsizeToEvidenceMap(countToEvidenceMap), 
+    m_gapNmin(gapNmin), 
+    m_gap_Unknown_length(gap_Unknown_length)
+{
+}
+        
 
 CRef<CDelta_seq> 
 CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length)
@@ -354,31 +361,24 @@ void CGapsEditor::x_SetGapParameters(CDelta_seq& lit)
     }
 
 
-
     if (gap.IsSetSeq_data() && 
         gap.GetSeq_data().IsGap() && 
         gap.GetSeq_data().GetGap().GetLinkage_evidence().size() > 0)
         return;
 
-    const auto len = gap.GetLength();
-    auto it = find_if(
-        m_CountToEvidenceMap.rbegin(),
-        m_CountToEvidenceMap.rend(),
-        [len](const auto& key_val) {
-            return key_val.first <= len;
-        });
-        
+    if (!m_DefaultEvidence.empty() || !m_GapsizeToEvidenceMap.empty()) {
+        const auto len = gap.GetLength();
+        const auto it = m_GapsizeToEvidenceMap.find(len);
+        const auto& evidenceSet = 
+            (it != m_GapsizeToEvidenceMap.end()) ?
+            it->second :
+            m_DefaultEvidence;
 
-    if (it == m_CountToEvidenceMap.rend() ||
-        it->second.empty()) {
-        return;
-    }
-
-
-    for (const auto& evidence : it->second) {
-        auto pEvidence = Ref(new CLinkage_evidence());
-        pEvidence->SetType(evidence);
-        gap.SetSeq_data().SetGap().SetLinkage_evidence().emplace_back(move(pEvidence));
+        for (const auto& evidence : evidenceSet) {
+            auto pEvidence = Ref(new CLinkage_evidence());
+            pEvidence->SetType(evidence);
+            gap.SetSeq_data().SetGap().SetLinkage_evidence().emplace_back(move(pEvidence));
+        }
     }
 
     gap.SetSeq_data().SetGap().SetLinkage(CSeq_gap::eLinkage_linked);

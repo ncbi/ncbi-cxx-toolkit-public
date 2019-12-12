@@ -1091,19 +1091,13 @@ void CFastaReader::x_CloseGap(
                 }
             }
         }
+
        
-        const auto cit = find_if(
-            m_GapsizeToLinkageEvidence.rbegin(),
-            m_GapsizeToLinkageEvidence.rend(),
-            [len](const auto& key_val) {
-                return key_val.first <= len;
-            });
-
-        const auto gap_linkage_evidence = 
-            (cit != m_GapsizeToLinkageEvidence.rend()) ?
+        const auto cit = m_GapsizeToLinkageEvidence.find(len);
+        const auto& gap_linkage_evidence = 
+            (cit != m_GapsizeToLinkageEvidence.end()) ?
             cit->second :
-            SGap::TLinkEvidSet();  
-
+            m_DefaultLinkageEvidence;
 
         TGapRef pGap( new SGap(
             pos, len,
@@ -1111,7 +1105,6 @@ void CFastaReader::x_CloseGap(
             LineNumber(),
             m_gap_type,
             gap_linkage_evidence));
- 
 
         m_Gaps.push_back(pGap);
         m_TotalGapLength += len;
@@ -2216,16 +2209,15 @@ CFastaReader::SGap::SGap(
 {
 }
 
+
 void CFastaReader::SetGapLinkageEvidence(
     CSeq_gap::EType type,
+    const set<int>& defaultEvidence,
     const map<TSeqPos, set<int>>& countToEvidenceMap 
 )
 {
-    if (type == -1)
-        m_gap_type.Release();
-    else 
-         m_gap_type.Reset(new SGap::TGapTypeObj(type));
-    
+    SetGapLinkageEvidences(type, defaultEvidence);
+
     m_GapsizeToLinkageEvidence.clear();
     for (const auto& key_val : countToEvidenceMap) {
         const auto& input_evidence_set = key_val.second;
@@ -2236,10 +2228,19 @@ void CFastaReader::SetGapLinkageEvidence(
     }
 }
 
+
 void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& evidences)
 {
-   map<TSeqPos, set<int>> gapCountToLinkageEvidence = {{0, evidences}};
-   SetGapLinkageEvidence(type, gapCountToLinkageEvidence);
+    if (type == -1)
+        m_gap_type.Release();
+    else 
+         m_gap_type.Reset(new SGap::TGapTypeObj(type));
+
+
+    m_DefaultLinkageEvidence.clear();
+    for (const auto& evidence : evidences) {
+        m_DefaultLinkageEvidence.insert(static_cast<CLinkage_evidence::EType>(evidence));
+    }
 }
 
 

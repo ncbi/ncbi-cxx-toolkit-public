@@ -204,7 +204,8 @@ public:
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
 
     void SetGapLinkageEvidence(
-            CSeq_gap::EType type, 
+            CSeq_gap::EType type,
+            const set<int>& defaultEvidence, 
             const map<TSeqPos, set<int>>& countToEvidenceMap);
 
     void SetGapLinkageEvidences(
@@ -420,9 +421,14 @@ protected:
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
 
+
+
     using TCountToLinkEvidMap = map<TSeqPos, SGap::TLinkEvidSet>;
     TCountToLinkEvidMap     m_GapsizeToLinkageEvidence;
-    SGap::TLinkEvidSet      m_gap_linkage_evidence;
+    NCBI_STD_DEPRECATED("") SGap::TLinkEvidSet      m_gap_linkage_evidence;
+private:
+    SGap::TLinkEvidSet      m_DefaultLinkageEvidence;
+protected:
     SGap::TNullableGapType  m_gap_type;
 
     TSeqTitles m_CurrentSeqTitles;

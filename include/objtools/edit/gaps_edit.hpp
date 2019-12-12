@@ -60,6 +60,7 @@ public:
                 TSeqPos gap_Unknown_length);
 
     CGapsEditor(CSeq_gap::EType gap_type, 
+                const TEvidenceSet& defaultEvidence,
                 const TCountToEvidenceMap& countToEvidenceMap,
                 TSeqPos m_gapNmin,
                 TSeqPos m_gap_Unknown_length);
@@ -80,7 +81,8 @@ private:
     void x_SetGapParameters(CDelta_seq& gap);
 
     CSeq_gap::EType m_gap_type;
-    TCountToEvidenceMap m_CountToEvidenceMap;
+    TEvidenceSet m_DefaultEvidence;
+    TCountToEvidenceMap m_GapsizeToEvidenceMap;
     TSeqPos         m_gapNmin;
     TSeqPos         m_gap_Unknown_length;
 };
