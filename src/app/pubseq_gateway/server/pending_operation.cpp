@@ -1542,27 +1542,9 @@ ECacheLookupResult CPendingOperation::x_ResolvePrimaryOSLTInCache(
             return eFound;
         }
 
-        // Second try: SI2CSI
-        bioseq_resolution.m_BioseqInfo.SetAccession(primary_id);
-        bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
-
-        ECacheLookupResult  si2csi_cache_lookup_result =
-                             psg_cache.LookupSi2csi(bioseq_resolution,
-                                                    this);
-        if (si2csi_cache_lookup_result == eFound) {
-            bioseq_resolution.m_ResolutionResult = eSi2csiCache;
-            return eFound;
-        }
-
         bioseq_resolution.Reset();
-
-        if (si2csi_cache_lookup_result == eFailure)
-            return eFailure;
     }
-
-    if (bioseq_cache_lookup_result == eFailure)
-        return eFailure;
-    return eNotFound;
+    return bioseq_cache_lookup_result;
 }
 
 

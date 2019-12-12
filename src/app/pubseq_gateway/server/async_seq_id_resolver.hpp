@@ -49,7 +49,6 @@ private:
     enum EResolveStage {
         eInit,                      // Initial stage; nothing has been done yet
         ePrimaryBioseq,             // BIOSEQ_INFO (primary) request issued
-        ePrimarySi2csi,             // SI2CSI (primary) request issued
 
         eSecondarySi2csi,           // loop over all secondary seq_id in SI2CSI
 
@@ -80,7 +79,6 @@ private:
                                          CBioseqInfoRecord::TSeqIdType  seq_id_type,
                                          CBioseqInfoRecord::TGI  gi,
                                          bool  with_seq_id_type);
-    void x_PreparePrimarySi2csiQuery(void);
     void x_PrepareSecondarySi2csiQuery(void);
     void x_PrepareSecondaryAsIsSi2csiQuery(void);
     void x_PrepareSecondaryAsIsModifiedSi2csiQuery(void);

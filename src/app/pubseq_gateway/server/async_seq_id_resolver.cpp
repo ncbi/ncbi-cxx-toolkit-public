@@ -97,15 +97,11 @@ void CAsyncSeqIdResolver::Process(void)
             break;
 
         case ePrimaryBioseq:
-            m_ResolveStage = ePrimarySi2csi;    // Next stage: if not found
+            m_ResolveStage = eSecondarySi2csi;
+
             // true => with seq_id_type
             x_PreparePrimaryBioseqInfoQuery(m_PrimarySeqId, m_EffectiveVersion,
                                             m_EffectiveSeqIdType, -1, true);
-            break;
-
-        case ePrimarySi2csi:
-            m_ResolveStage = eSecondarySi2csi;
-            x_PreparePrimarySi2csiQuery();
             break;
 
         case eSecondarySi2csi:
@@ -263,12 +259,6 @@ void CAsyncSeqIdResolver::x_PrepareSi2csiQuery(const string &  secondary_id,
             ToJson(si2csi_request).Repr(CJsonNode::fStandardJson));
 
     fetch_task->Wait();
-}
-
-
-void CAsyncSeqIdResolver::x_PreparePrimarySi2csiQuery(void)
-{
-    x_PrepareSi2csiQuery(m_PrimarySeqId, m_EffectiveSeqIdType);
 }
 
 
