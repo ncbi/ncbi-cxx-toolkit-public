@@ -2221,6 +2221,7 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
         if (type == e_not_set) {
             // unknown database are reported as 'general'
             type = e_General;
+            tv   = eTV_plain;
         } else {
             tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
             fasta_pieces.pop_front();
