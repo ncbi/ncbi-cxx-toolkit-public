@@ -1605,8 +1605,12 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     if (annots_edit->m_JDomain[1] > 0 && annots_edit->m_DomainInfo[9] > 0 && 
         annots_edit->m_JDomain[1] > annots_edit->m_DomainInfo[9]){      
         annots_edit->m_JDomain[0] = annots_edit->m_DomainInfo[9] + 1 ;
+        //fwr4
+        if (annots_edit->m_JDomain[3] > 0) {
+            annots_edit->m_JDomain[2] = annots_edit->m_JDomain[1] + 1 ;
+        }
     }
-    
+
     if (m_FormatType == CFormattingArgs::eTabular ||
         m_FormatType == CFormattingArgs::eTabularWithComments ||
         m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
@@ -1725,9 +1729,10 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     }
 
     list < CRef<CDisplaySeqalign::DomainInfo> >  domain;
-    int domain_name_length = 6;
-    string kabat_domain_name[] = {"FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3"};
-    string imgt_domain_name[] = {"FR1-IMGT", "CDR1-IMGT", "FR2-IMGT", "CDR2-IMGT", "FR3-IMGT", "CDR3-IMGT"};
+   
+    string kabat_domain_name[] = {"FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4"};
+    string imgt_domain_name[] = {"FR1-IMGT", "CDR1-IMGT", "FR2-IMGT", "CDR2-IMGT", "FR3-IMGT", "CDR3-IMGT", "FR4-IMGT"};
+    int domain_name_length = 7;
     vector<string> domain_name;
     if (m_IgOptions->m_DomainSystem == "kabat") {
         for (int i = 0; i < domain_name_length; i ++) {
@@ -1764,7 +1769,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     }    
 
     //J domain
-
+    //cdr3
     if (annots->m_JDomain[0] > 0 && annots->m_JDomain[1] > 0){      
         CRef<CDisplaySeqalign::DomainInfo> temp(new CDisplaySeqalign::DomainInfo);
         int start = annots->m_JDomain[0];
@@ -1784,7 +1789,26 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         temp->domain_name = domain_name[5];
         domain.push_back(temp); 
     }
-    
+    //fwr4
+    if (annots->m_JDomain[2] > 0 && annots->m_JDomain[3] > 0){      
+        CRef<CDisplaySeqalign::DomainInfo> temp(new CDisplaySeqalign::DomainInfo);
+        int start = annots->m_JDomain[2];
+        int subject_start = -1;
+        int stop = annots->m_JDomain[3];
+        int subject_stop = -1;
+
+        temp->seqloc = new CSeq_loc((CSeq_loc::TId &) aln_set->Get().front()->GetSeq_id(0),
+                                    (CSeq_loc::TPoint) start,
+                                    (CSeq_loc::TPoint) stop);
+        CRef<CSeq_id> id_holder (new CSeq_id);
+        temp->subject_seqloc = new CSeq_loc(*id_holder,
+                                            (CSeq_loc::TPoint) subject_start,
+                                            (CSeq_loc::TPoint) subject_stop);
+        temp->is_subject_start_valid = subject_start > 0 ? true:false;
+        temp->is_subject_stop_valid = subject_stop > 0 ? true:false;
+        temp->domain_name = domain_name[6];
+        domain.push_back(temp); 
+    }
 
     CDisplaySeqalign display(*aln_set, *m_Scope, &masklocs, NULL,  m_MatrixName);
     int num_align_to_show = results.m_NumActualV + results.m_NumActualD + 

@@ -349,6 +349,8 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("cdr2_aa");
         l_ig_opts->m_AirrField.push_back("fwr3");
         l_ig_opts->m_AirrField.push_back("fwr3_aa");
+        l_ig_opts->m_AirrField.push_back("fwr4");
+        l_ig_opts->m_AirrField.push_back("fwr4_aa");
         l_ig_opts->m_AirrField.push_back("cdr3");
         l_ig_opts->m_AirrField.push_back("cdr3_aa");
 
@@ -390,6 +392,8 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("cdr2_end");
         l_ig_opts->m_AirrField.push_back("fwr3_start");
         l_ig_opts->m_AirrField.push_back("fwr3_end");
+        l_ig_opts->m_AirrField.push_back("fwr4_start");
+        l_ig_opts->m_AirrField.push_back("fwr4_end");
         l_ig_opts->m_AirrField.push_back("cdr3_start");
         l_ig_opts->m_AirrField.push_back("cdr3_end");
         l_ig_opts->m_AirrField.push_back("np1");
