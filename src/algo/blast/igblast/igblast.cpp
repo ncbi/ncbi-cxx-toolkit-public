@@ -133,7 +133,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             }  else if (tokens.size() == 5) { //just backward compatible as there was no such field
                 m_DJChainType[tokens[0]] = tokens[2];
                 m_JDomainInfo[tokens[0]] = NStr::StringToInt(tokens[3]);
-                m_Fwr4End[tokens[0]] = NStr::StringToInt(tokens[4]);
+                m_Fwr4EndOffset[tokens[0]] = NStr::StringToInt(tokens[4]);
             } 
             
         }
@@ -1038,9 +1038,9 @@ void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & an
     string sid = s_RemoveLocalPrefix(align->GetSeq_id(1).AsFastaString());
     int j_cdr3end = m_AnnotationInfo.GetJDomain(sid);
     int subject_start = align->GetSeqStart(1);
+    int subject_end = align->GetSeqStop(1);
     //don't try if j starts after cdr3 ends as we don't know for sure where the boundry is
     if (j_cdr3end > 0 && subject_start - j_cdr3end <= 1) {
-        int subject_end = align->GetSeqStop(1);
         CAlnMap j_map(align->GetSegs().GetDenseg());
         
         //+1 actaully is in fwr4 already...need to do this so that a insertion right in front
@@ -1060,7 +1060,6 @@ void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & an
         }
         //allow missed alignment to the first bp and deduce the cdr3 by gapless extension backwards
     } else if (j_cdr3end > 0 && subject_start - j_cdr3end <= 2) {
-        int subject_end = align->GetSeqStop(1);
         CAlnMap j_map(align->GetSegs().GetDenseg());
         
         //+1 actaully is in fwr4 already...need to do this so that a insertion right in front
@@ -1076,6 +1075,28 @@ void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & an
             annot->m_JDomain[1] = annot->m_JDomain[1] - (subject_start - j_cdr3end);
         }
     }
+   
+    //fwr4
+    if (annot->m_JDomain[1] > 0) {
+        int j_fwr4end_offset = m_AnnotationInfo.GetFwr4EndOffset(sid);
+        if (j_fwr4end_offset >= 0) {
+            int j_fwr4end = m_Scope->GetBioseqHandle(align->GetSeq_id(1)).GetBioseqLength() - j_fwr4end_offset - 1;
+            CAlnMap j_map(align->GetSegs().GetDenseg()); 
+            
+            annot->m_JDomain[3] = j_map.GetSeqPosFromSeqPos(0, 1, min(j_fwr4end, subject_end), IAlnExplorer::eRight);
+        
+     
+            if (align->GetSeqStrand(0) == eNa_strand_minus)  {
+                annot->m_JDomain[3] = m_Scope->GetBioseqHandle(align->GetSeq_id(0)).GetBioseqLength() - annot->m_JDomain[3] - 1;
+            }
+            //cdr3 domain at the end of alignment
+            if (annot->m_JDomain[1] == annot->m_JDomain[3]) {
+                annot->m_JDomain[3] = -1;
+            }
+        }
+    }
+
+   
 }
 
 void CIgBlast::x_ProcessDGeneResult(CRef<CSearchResultSet>& results_V, 
