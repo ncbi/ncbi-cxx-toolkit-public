@@ -104,7 +104,7 @@ public:
     int m_DomainInfo_S[10];          // The (start) and (end offset) for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains on topV sequence
 
-    int m_JDomain[2];                // CDr3 start and stop 
+    int m_JDomain[4];                // CDr3 start, stop, FWR4 start, stop.
 
     /// Constructor
     CIgAnnotation() 
@@ -115,7 +115,7 @@ public:
         for (int i=0; i<3; i++) m_FrameInfo[i] = -1;
         for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
         for (int i=0; i<10; i++) m_DomainInfo_S[i] = -1;
-        for (int i=0; i<2; i++) m_JDomain[i] = -1;
+        for (int i=0; i<4; i++) m_JDomain[i] = -1;
     }
 
 };
@@ -157,9 +157,9 @@ public:
 
     }
 
-    int GetFwr4End(const string& sid) {
-        if (m_Fwr4End.find(sid) != m_Fwr4End.end()) {
-            return m_Fwr4End[sid];
+    int GetFwr4EndOffset(const string& sid) {
+        if (m_Fwr4EndOffset.find(sid) != m_Fwr4EndOffset.end()) {
+            return m_Fwr4EndOffset[sid];
         }
         return -1;
 
@@ -179,7 +179,7 @@ private:
     map<string, int> m_FrameOffset;
     map<string, string> m_DJChainType;    
     map<string, int>  m_JDomainInfo;   
-    map<string, int>  m_Fwr4End;
+    map<string, int>  m_Fwr4EndOffset;  //extra number of bases past J end
 };
 
 class CIgBlastResults : public CSearchResults 
