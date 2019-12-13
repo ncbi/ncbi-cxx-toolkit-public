@@ -717,6 +717,8 @@ private:
     vector<string> m_OtherInfo;
     int m_Cdr3Start;
     int m_Cdr3End;
+    int m_Fwr4Start;
+    int m_Fwr4End;
 
     string m_Fwr1Seq;
     string m_Fwr1SeqTrans;
@@ -728,6 +730,8 @@ private:
     string m_Cdr2SeqTrans;
     string m_Fwr3Seq;
     string m_Fwr3SeqTrans;
+    string m_Fwr4Seq;
+    string m_Fwr4SeqTrans;
     string m_Cdr3Seq;
     string m_Cdr3SeqTrans;
     
