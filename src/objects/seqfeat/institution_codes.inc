@@ -362,6 +362,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AUBSN\ts\tAll-Union Botanical Society\t\t\t",
 "AUCE\ts\tEl Azhar University\t\t\t",
 "AUEM\ts\tAuburn University Entomological Museum\t\t\t",
+"AUEZ\ts\tAichi University of Education, Zoological collection\t\t\t",
 "AUG\ts\tAugustana College, Biology Department\t\t\t",
 "AUGD\ts\tDepartment of Geology and Petroleum Geology\t\t\t",
 "AUGIE\ts\tAugustana College\t\t\t",

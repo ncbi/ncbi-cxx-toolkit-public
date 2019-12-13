@@ -329,6 +329,7 @@ AUBL	s	Museum of Natural History, Beirut
 AUBSN	s	All-Union Botanical Society			
 AUCE	s	El Azhar University			
 AUEM	s	Auburn University Entomological Museum			
+AUEZ	s	Aichi University of Education, Zoological collection			
 AUG	s	Augustana College, Biology Department			
 AUGD	s	Department of Geology and Petroleum Geology			
 AUGIE	s	Augustana College			
