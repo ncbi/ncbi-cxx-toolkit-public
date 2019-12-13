@@ -6256,7 +6256,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         x_ValidateCDSmRNAmatch(
             m_CurrentHandle, numgene, numcds, nummrna);
 
-        if (numcds > 0 && numcrgn + numvseg + numdseg + numjseg > 0 && m_Imp.DoCompareVDJCtoCDS()) {
+        if (numcds > 0 && numcrgn + numvseg + numdseg + numjseg > 0 && m_Imp.DoCompareVDJCtoCDS() && m_Imp.IsRefSeq()) {
             /*
             LOG_POST_XX(Corelib_App, 1, "numcds: " + NStr::IntToString(numcds) + "\n");
             LOG_POST_XX(Corelib_App, 1, "nummrna: " + NStr::IntToString(nummrna) + "\n");
@@ -6946,6 +6946,61 @@ static bool x_BadCDSinVDJC(const CSeq_loc& cdsloc, const CSeq_loc& vdjcloc, CSco
     return false;
 }
 
+bool x_IsPseudo(const CGene_ref& ref)
+{
+    if (ref.IsSetPseudo() && ref.GetPseudo()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool x_HasNamedQual(const CSeq_feat& feat, const string& qual)
+{
+    bool rval = false;
+    if (feat.IsSetQual()) {
+        for (auto it : feat.GetQual()) {
+            if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), qual)) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+bool x_IsPseudo(const CSeq_feat& feat, CValidError_imp& imp)
+{
+    if (feat.IsSetPseudo() && feat.GetPseudo()) {
+        return true;
+    } else if (x_HasNamedQual(feat, "pseudogene")) {
+        return true;
+    } else if (feat.IsSetData() && feat.GetData().IsGene() &&
+        x_IsPseudo(feat.GetData().GetGene())) {
+        return true;
+    } else {
+		    try {
+			      CConstRef<CSeq_feat> gene = imp.GetCachedGene(&feat);
+            if (gene) {
+                if (gene->IsSetPseudo() && gene->GetPseudo()) {
+                    return true;
+                }
+                if (gene->IsSetData()) {
+                    const CSeqFeatData& data = gene->GetData();
+                    if (data.IsGene()) {
+                        const CGene_ref& ref = data.GetGene();
+                        if (x_IsPseudo(ref)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+		    } catch (...) {
+		    }
+    }
+    return false;
+}
+
 void CValidError_bioseq::x_ValidateCDSagainstVDJC(const CBioseq_Handle& seq)
 {
     SAnnotSelector sel;
@@ -6995,14 +7050,24 @@ void CValidError_bioseq::x_ValidateCDSagainstVDJC(const CBioseq_Handle& seq)
                 if ( x_FeatIsCDS(ft1) && x_FeatIsVDJC(ft2) ) {
                     bad = x_BadCDSinVDJC(loc1, loc2, m_Scope);
                     if (bad) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
-                                "No parent for CdRegion", ft1);
+                        if ( x_IsPseudo(ft1, m_Imp) || x_IsPseudo(ft2, m_Imp) ) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                                    "No parent for (pseudo) CdRegion", ft1);
+                        } else {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                                    "No parent for CdRegion", ft1);
+                        }
                     }
                 } else if ( x_FeatIsVDJC(ft1) && x_FeatIsCDS(ft2) ) {
                     bad = x_BadCDSinVDJC(loc2, loc1, m_Scope);
                     if (bad) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
-                                "No parent for CdRegion", ft2);
+                        if ( x_IsPseudo(ft1, m_Imp) || x_IsPseudo(ft2, m_Imp) ) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                                    "No parent for (pseudo) CdRegion", ft2);
+                        } else {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
+                                    "No parent for CdRegion", ft2);
+                        }
                     }
                 }
             }
