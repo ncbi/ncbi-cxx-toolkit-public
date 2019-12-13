@@ -1961,6 +1961,9 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
 
         m_AirrData["cdr3"] =  m_Cdr3Seq;
         m_AirrData["cdr3_aa"] = m_Cdr3SeqTrans;
+        m_AirrData["fwr4"] =  m_Fwr4Seq;
+        m_AirrData["fwr4_aa"] = m_Fwr4SeqTrans;
+
         
         double v_score = 0;
         double d_score = 0;
@@ -2072,43 +2075,26 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             if (m_IgDomains[i]->name.find("FR1") !=  string::npos) {
                 m_AirrData["fwr1_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["fwr1_end"] =  NStr::IntToString(m_IgDomains[i]->end);
-                if (m_IgDomains[i]->length > 0) {
-                    m_AirrData["fwr1_identity"] = 
-                        NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
-                }
+               
             } 
             if (m_IgDomains[i]->name.find("CDR1") !=  string::npos) {
                 m_AirrData["cdr1_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["cdr1_end"] =  NStr::IntToString(m_IgDomains[i]->end);
-                if (m_IgDomains[i]->length > 0) {
-                    m_AirrData["cdr1_identity"] = 
-                        NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
-                }
             } 
             if (m_IgDomains[i]->name.find("FR2") !=  string::npos) {
                 m_AirrData["fwr2_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["fwr2_end"] =  NStr::IntToString(m_IgDomains[i]->end);
-                if (m_IgDomains[i]->length > 0) {
-                    m_AirrData["fwr2_identity"] = 
-                        NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
-                }
+               
             } 
             if (m_IgDomains[i]->name.find("CDR2") !=  string::npos) {
                 m_AirrData["cdr2_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["cdr2_end"] =  NStr::IntToString(m_IgDomains[i]->end);
-                if (m_IgDomains[i]->length > 0) {
-                    m_AirrData["cdr2_identity"] = 
-                        NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
-                }
             } 
             if (m_IgDomains[i]->name.find("FR3") !=  string::npos && annot->m_DomainInfo[9] >=0) {
                 m_AirrData["fwr3_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 
                 m_AirrData["fwr3_end"] =  NStr::IntToString(min(m_QueryAlignSeqEnd, annot->m_DomainInfo[9]) + 1);
-                if (m_IgDomains[i]->length > 0) {
-                    m_AirrData["fwr3_identity"] = 
-                        NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
-                }
+             
             } 
         }
 
@@ -2118,6 +2104,13 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 m_AirrData["cdr3_end"] = NStr::IntToString(m_Cdr3End + 1); 
             }     
         }
+        if (m_Fwr4Start > 0){
+            m_AirrData["fwr4_start"] = NStr::IntToString(m_Fwr4Start + 1); 
+            if (m_Cdr3End > 0) {
+                m_AirrData["fwr4_end"] = NStr::IntToString(m_Fwr4End + 1); 
+            }     
+        }
+        
 
     } else {
         SetQueryId(query_handle);
@@ -2367,14 +2360,33 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                 annot->m_DomainInfo_S[8], annot->m_DomainInfo_S[9]+1);
     AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"CDR3 (V gene only)":"CDR3-IMGT (germline)",
                 annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
+
+    m_Fwr4Start = annot->m_JDomain[2];
+    m_Fwr4End = annot->m_JDomain[3];
     m_Cdr3Start = annot->m_JDomain[0];
     m_Cdr3End = annot->m_JDomain[1];
 
+    m_Fwr4Seq = NcbiEmptyString;
+    m_Fwr4SeqTrans = NcbiEmptyString;
     m_Cdr3Seq = NcbiEmptyString;
     m_Cdr3SeqTrans = NcbiEmptyString;
     m_AirrCdr3Seq = NcbiEmptyString;
     m_AirrCdr3SeqTrans = NcbiEmptyString;
    
+    if (m_Fwr4Start > 0 && m_Fwr4End > m_Fwr4Start) {
+        
+        m_Fwr4Seq = m_Query.substr(m_Fwr4Start, m_Fwr4End - m_Fwr4Start + 1);
+        
+        int coding_frame_offset = (m_Fwr4Start - annot->m_FrameInfo[0])%3; 
+        if ((int)m_Fwr4Seq.size() >= 3) {
+            string fwr4_seq_for_translatioin = m_Fwr4Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            
+            CSeqTranslator::Translate(fwr4_seq_for_translatioin, 
+                                      m_Fwr4SeqTrans, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
+    }
+
     if (m_Cdr3Start > 0 && m_Cdr3End > m_Cdr3Start) {
        
         m_Cdr3Seq = m_Query.substr(m_Cdr3Start, m_Cdr3End - m_Cdr3Start + 1);
@@ -2630,6 +2642,8 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_OtherInfo.clear();
     m_Cdr3Start = -1;
     m_Cdr3End =  -1;
+    m_Fwr4Start = -1;
+    m_Fwr4End = -1;
     m_Fwr1Seq = NcbiEmptyString;
     m_Fwr1SeqTrans = NcbiEmptyString;
     m_Cdr1Seq = NcbiEmptyString;
@@ -2643,6 +2657,8 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_QueryAlignSeqEnd = 0;
     m_Cdr3Seq = NcbiEmptyString;
     m_Cdr3SeqTrans = NcbiEmptyString;
+    m_Fwr4Seq = NcbiEmptyString;
+    m_Fwr4SeqTrans = NcbiEmptyString;
 };
 
 void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end, bool isHtml) const
