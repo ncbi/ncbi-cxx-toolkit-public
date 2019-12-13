@@ -1028,6 +1028,16 @@ void SPSG_IoSession::StartClose()
 
 bool SPSG_IoSession::Send()
 {
+    if (auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
+        Reset(send_rv);
+        return false;
+    }
+
+    return Write();
+}
+
+bool SPSG_IoSession::Write()
+{
     if (auto write_rv = m_Tcp.Write()) {
         Reset(write_rv, "Failed to write");
         return false;
@@ -1043,7 +1053,7 @@ void SPSG_IoSession::OnConnect(int status)
     if (status < 0) {
         Reset(status, "Failed to connect/start read");
     } else {
-        Send();
+        Write();
     }
 }
 
@@ -1053,8 +1063,6 @@ void SPSG_IoSession::OnWrite(int status)
 
     if (status < 0) {
         Reset(status, "Failed to submit request");
-    } else {
-        Send();
     }
 }
 
@@ -1103,12 +1111,6 @@ bool SPSG_IoSession::ProcessRequest()
     }
 
     m_Requests.emplace(stream_id, move(req));
-
-    if (auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
-        Reset(send_rv);
-        return false;
-    }
-
     return Send();
 }
 
