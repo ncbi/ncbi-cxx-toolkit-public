@@ -102,6 +102,7 @@ an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
 an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
 an_genbank_pipeline needs gpipe_an_base
 an_genbank_pipeline needs gpipe_fileutils
+an_genbank_pipeline needs gpipe_xmlutil
 an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs gpipe_fileutils
 an_prok_pipeline needs gpipe_kmer_metadata_cache
