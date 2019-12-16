@@ -44,8 +44,8 @@
 #define _STR(x)           #x
 #define STRINGIFY(x)  _STR(x)
 
-#define HELP_EMAIL    (m_Email.empty()                                  \
-                       ? string("NCBI Help Desk info@ncbi.nlm.nih.gov") \
+#define HELP_EMAIL    (m_Email.empty()                                    \
+                       ? string("NCBI Help Desk <info@ncbi.nlm.nih.gov>") \
                        : m_Email)
 
 #define NCBI_FWD_BEMD  "130.14.29.112"
