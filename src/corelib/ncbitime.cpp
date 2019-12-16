@@ -1516,25 +1516,36 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     if ( IsEmpty() ) {
         return kEmptyStr;
     }
-#if !defined(TIMEZONE_IS_UNDEFINED)
-    // MT-Safe protect
-    CMutexGuard LOCK(s_TimeMutex);
-#endif
 
     const CTime* t = this;
     CTime* t_out = 0;
-    // Adjust time for output timezone
-    if (out_tz != eCurrentTimeZone) {
-#if defined(TIMEZONE_IS_UNDEFINED)
-        ERR_POST_X(4, "Output timezone is unsupported on this platform");
-#else
-        if (out_tz != TimeZone()) {
-            t_out = new CTime(*this);
-            t_out->AddSecond(TimeZone() - out_tz);
-            t = t_out;
-        }
-#endif
-    }
+
+    // Cache some not MT-safe values, so we can unlock mutex as fast as possible
+    TSeconds x_timezone, x_dstbias;
+    bool x_isdst;
+    {{
+        CMutexGuard LOCK(s_TimeMutex);
+
+        // Adjust time for output timezone (should be MT protected)
+        {{
+            if (out_tz != eCurrentTimeZone) {
+                #if defined(TIMEZONE_IS_UNDEFINED)
+                    ERR_POST_X(4, "Output timezone is unsupported on this platform");
+                #else
+                    if (out_tz != TimeZone()) {
+                        t_out = new CTime(*this);
+                        t_out->AddSecond(TimeZone() - out_tz);
+                        t = t_out;
+                    }
+                #endif
+            }
+        }}
+        // Cache values - now we should avoid to use functions specified at right side..
+        x_timezone = TimeZone();
+        x_dstbias  = DSTBias();
+        x_isdst    = s_IsDST(*this);
+    }}
+
     string str;
     str.reserve(64); // try to save on memory allocations
     string fmt;
@@ -1606,9 +1617,9 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   }
                   TSeconds tz = out_tz;
                   if (tz == eCurrentTimeZone) {
-                     tz = TimeZone();
-                     if (s_IsDST(*this)) {
-                        tz += DSTBias();  // DST in effect
+                     tz = x_timezone;
+                     if (x_isdst) {
+                        tz += x_dstbias;  // DST in effect
                      }
                   }
                   str += (tz > 0) ? '-' : '+';
@@ -2057,9 +2068,9 @@ CTime& CTime::ToTime(ETimeZone tz)
         struct tm* t;
         time_t timer;
         timer = GetTimeT();
-        if (timer == (time_t)(-1L))
+        if (timer == (time_t)(-1L)) {
             return *this;
-
+        }
         // MT-Safe protect
         CMutexGuard LOCK(s_TimeMutex);
 
@@ -2067,18 +2078,21 @@ CTime& CTime::ToTime(ETimeZone tz)
         struct tm temp;
         if (tz == eLocal) {
             localtime_r(&timer, &temp);
-        } else {
+        }
+        else {
             gmtime_r(&timer, &temp);
         }
         t = &temp;
 #else
-        t = ( tz == eLocal ) ? localtime(&timer) : gmtime(&timer);
-        if ( !t ) {
+        t = (tz == eLocal) ? localtime(&timer) : gmtime(&timer);
+        if (!t) {
             // Error was detected: incorrect timer value or system error
-            NCBI_THROW(CTimeException, eConvert, 
-                       "localtime/gmtime error, possible incorrect time_t value");
+            NCBI_THROW(CTimeException, eConvert,
+                "localtime/gmtime error, possible incorrect time_t value");
         }
 #endif
+        LOCK.Release();
+
         SET_YEAR  (t->tm_year + 1900);
         SET_MONTH (t->tm_mon + 1);
         SET_DAY   (t->tm_mday);
@@ -2239,16 +2253,12 @@ string CTime::TimeZoneName(void)
     if ( !t ) {
         return kEmptyStr;
     }
-    string s;
 #if defined(__USE_BSD)
     if (t->tm_zone) {
-        s = t->tm_zone;
+        return t->tm_zone;
     }
 #endif
-    if (s.empty()) {
-        s = t->tm_isdst > 0 ? TZName()[1] : TZName()[0];
-    }
-    return s;    
+    return t->tm_isdst > 0 ? TZName()[1] : TZName()[0];
 }
 
 
@@ -3901,6 +3911,7 @@ CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
     CMutexGuard LOCK(s_TimeMutex);
     m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
+    LOCK.Release();
 #endif
     m_LocalTime.SetTimeZonePrecision(CTime::eHour);
     m_TunedTime.SetTimeZonePrecision(CTime::eHour);
