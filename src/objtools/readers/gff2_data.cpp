@@ -862,6 +862,14 @@ bool CGff2Record::xMigrateAttributes(
         }
         attrs_left.erase(it);
     }
+
+    it = attrs_left.find("satellite");
+    if (it != attrs_left.end()) {
+        if (pFeature->GetData().IsImp()  &&  pFeature->GetData().GetImp().GetKey() == "repeat_region") {
+            attrs_left.erase(it);
+        }           
+    }
+
     it = attrs_left.find("transl_except");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsCdregion()) {
