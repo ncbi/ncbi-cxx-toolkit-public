@@ -39,14 +39,15 @@ set(SRC_TLS
     )
 
 set(SRC_C
-    ncbi_ansi_ext ncbi_buffer ncbi_types ncbi_priv ncbi_core ncbi_util
-    ncbi_socket ncbi_connutil ncbi_connection ncbi_connector
+    ncbi_ansi_ext ncbi_types ncbi_core ncbi_priv ncbi_util
+    ncbi_buffer ncbi_socket ncbi_connector ncbi_connection
+    ncbi_connutil ncbi_ipv6 ncbi_server_info ncbi_host_info
+    ncbi_service ncbi_sendmail ncbi_base64 ncbi_heapmgr ncbi_lb
     ncbi_socket_connector ncbi_file_connector ncbi_http_connector
-    ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service
-    ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail
-    ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version
-    ncbi_lbos ncbi_linkerd ncbi_namerd parson ncbi_ipv6
-    ncbi_iprange ncbi_localip
+    ncbi_memory_connector ncbi_service_connector ncbi_ftp_connector
+    ncbi_version ncbi_iprange ncbi_local ncbi_dispd
+    ncbi_lbos ncbi_linkerd ncbi_namerd parson
+    ncbi_localip
     ${os_src}
     )
 
@@ -56,7 +57,7 @@ set(SRC_CXX
     ncbi_misc ncbi_namedpipe ncbi_namedpipe_connector
     ncbi_pipe ncbi_pipe_connector ncbi_conn_reader_writer
     ncbi_userhost ncbi_http_session ncbi_lbos_cxx ncbi_monkey
-    ncbi_service_cxx ncbi_blowfish
+    ncbi_service_cxx ncbi_localip_cxx ncbi_blowfish
     ${SRC_TLS}
     )
 
