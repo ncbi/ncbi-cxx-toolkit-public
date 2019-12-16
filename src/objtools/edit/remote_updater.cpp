@@ -311,6 +311,20 @@ void CRemoteUpdater::UpdatePubReferences(CSerialObject& obj)
             xUpdatePubReferences(**it);
         }
     }
+    else
+    if (obj.GetThisTypeInfo()->IsType(CSeq_descr::GetTypeInfo()))
+    {
+        CSeq_descr* desc = (CSeq_descr*)(&obj);
+        xUpdatePubReferences(*desc);
+    }
+    else
+    if (obj.GetThisTypeInfo()->IsType(CSeqdesc::GetTypeInfo()))
+    {
+        CSeqdesc* desc = (CSeqdesc*)(&obj);
+        CSeq_descr tmp;
+        tmp.Set().push_back(CRef<CSeqdesc>(desc));
+        xUpdatePubReferences(tmp);
+    }
 }
 
 void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
