@@ -81,7 +81,7 @@
 #define   SizeOf(a)  (sizeof(a) / sizeof((a)[0]))
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-#  define NCBI_LOCALIP_DEBUG 1
+#  define NCBI_LOCALIP_DEBUG  1
 #endif /*_DEBUG && !NDEBUG*/
 
 
