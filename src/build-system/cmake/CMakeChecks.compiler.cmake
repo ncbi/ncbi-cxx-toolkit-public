@@ -13,6 +13,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 if (NCBI_EXPERIMENTAL_CFG)
 
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+    if (BUILD_SHARED_LIBS)
+        set(NCBI_DLL_BUILD 1)
+        set(NCBI_DLL_SUPPORT 1)
+    endif()
  
 #----------------------------------------------------------------------------
 if (WIN32)
