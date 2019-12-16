@@ -172,9 +172,9 @@ private:
                                     const TInfo& info,
                                     ILineErrorListener* listener);
 
-    static void x_CheckForExcessiveSeqData(const CSeq_id& id,
-                                const TInfo& info,
-                                FReportError fReportError){}
+    static void x_CheckForExcessiveSeqData(const CSeq_id& /*id*/,
+                                const TInfo& /*info*/,
+                                FReportError /*fReportError*/){}
 
 
     static void x_PostIDLengthError(const size_t id_length,
