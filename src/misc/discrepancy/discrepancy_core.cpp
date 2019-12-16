@@ -412,7 +412,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root, const string& fname)
         m_RootNode.Reset(new CParseNode(eFile, 0));
         m_RootNode->m_Ref->m_Text = fname;
     }
-    else {
+    else if (!m_RootNode) {
         m_RootNode.Reset(new CParseNode(eNone, 0));
     }
     m_NodeMap[m_RootNode->m_Ref] = &*m_RootNode;
