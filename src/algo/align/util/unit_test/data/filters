@@ -74,7 +74,7 @@ query_end < 500
 5 7 8
 subject_end > 10000000
 8 11
-query_taxid = 8034
+query_taxid = 8035
 5
 subject_taxid = 7227
 4
