@@ -444,16 +444,12 @@ bool CSoMap::xFeatureMakeNcRna(
         {"ncRNA", "other"},
     };
     feature.SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
-    CRef<CGb_qual> qual(new CGb_qual);
-    qual->SetQual("ncRNA_class");
+    auto normalizedType = so_type;
     auto it = mTypeToClass.find(so_type);
-    if (it == mTypeToClass.end()) {
-        qual->SetVal(so_type);
+    if (it != mTypeToClass.end()) {
+        normalizedType = it->second;
     }
-    else {
-        qual->SetVal(it->second);
-    }
-    feature.SetQual().push_back(qual);
+    feature.SetData().SetRna().SetExt().SetGen().SetClass(normalizedType);
     return true;
 }
 

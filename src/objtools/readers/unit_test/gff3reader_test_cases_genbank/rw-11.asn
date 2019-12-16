@@ -348,10 +348,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ncRNA_class",
-          val "other"
-        },
-        {
           qual "Parent",
           val "gene17"
         },

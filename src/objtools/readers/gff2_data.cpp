@@ -842,6 +842,26 @@ bool CGff2Record::xMigrateAttributes(
         //pFeature->RemoveQualifier("regulatory_class");
     }
 
+    it = attrs_left.find("rpt_type");
+    if (it != attrs_left.end()) {
+        map<string, string> satellites = {
+            {"microsatellite", "microsatellite"},
+            {"minisatellite", "minisatellite"},
+            {"satellite_DNA", "satellite"},
+            {"satellite", "satellite"},
+        };
+        pFeature->RemoveQualifier("rpt_type");
+        pFeature->RemoveQualifier("satellite");
+        auto rpt_type = it->second;
+        auto satelliteIt = satellites.find(rpt_type);
+        if (satelliteIt != satellites.end()) {
+            pFeature->AddQualifier("satellite", satelliteIt->second);
+        }
+        else {
+            pFeature->AddQualifier("rpt_type", rpt_type);
+        }
+        attrs_left.erase(it);
+    }
     it = attrs_left.find("transl_except");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsCdregion()) {
@@ -1128,15 +1148,15 @@ bool CGff2Record::xInitFeatureData(
 
     if (Type() == "ncRNA") {
         string qual_type;
-        if(GetAttribute("ncrna_class", qual_type)) {
-            if (qual_type == "other") {
-                qual_type = "ncRNA";
-            }
-            if (CSoMap::SoTypeToFeature(
-                qual_type, *pFeature, invalidFeaturesToRegion)) {
-                return true;
-            }
-        }
+        //if(GetAttribute("ncrna_class", qual_type)) {
+        //    if (qual_type == "other") {
+        //        qual_type = "ncRNA";
+        //    }
+        //    if (CSoMap::SoTypeToFeature(
+        //        qual_type, *pFeature, invalidFeaturesToRegion)) {
+        //        return true;
+        //    }
+        //}
     }
 
     auto recognizedType = Type();

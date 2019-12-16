@@ -62,10 +62,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ncRNA_class",
-          val "antisense_RNA"
-        },
-        {
           qual "Parent",
           val "gene0"
         },
@@ -87,7 +83,10 @@ Seq-annot ::= {
     {
       id local id 3,
       data rna {
-        type ncRNA
+        type ncRNA,
+        ext gen {
+          class "antisense_RNA"
+        }
       },
       location int {
         from 189,
@@ -99,10 +98,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "ncRNA_class",
-          val "antisense_RNA"
-        },
         {
           qual "Parent",
           val "gene0"
@@ -125,7 +120,10 @@ Seq-annot ::= {
     {
       id local id 4,
       data rna {
-        type ncRNA
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
       },
       location int {
         from 189,
@@ -137,10 +135,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "ncRNA_class",
-          val "other"
-        },
         {
           qual "Parent",
           val "gene0"

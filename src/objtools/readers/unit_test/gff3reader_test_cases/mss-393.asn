@@ -204,10 +204,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ncRNA_class",
-          val "RNase_P_RNA"
-        },
-        {
           qual "Parent",
           val "gene1111"
         },
