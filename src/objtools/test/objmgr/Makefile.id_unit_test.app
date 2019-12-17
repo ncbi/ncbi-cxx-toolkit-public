@@ -12,7 +12,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_COPY = all_readers.sh
+CHECK_COPY = all_readers.sh id_unit_test.ini
 
 CHECK_CMD = all_readers.sh id_unit_test
 CHECK_TIMEOUT = 800
