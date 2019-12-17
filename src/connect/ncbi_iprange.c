@@ -215,8 +215,9 @@ extern const char* NcbiDumpIPRange(const SIPRange* range,
 extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
 {
     unsigned int addr, temp;
-    const char* t;
-    size_t n;
+    const char* p;
+    size_t len, n;
+    int dots;
     char* e;
     long d;
 
@@ -229,17 +230,18 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
         return 1/*success*/;
     }
 
-    t = NcbiStringToAddr(&range->a, str, strlen(str));
-    if (t  &&  t != str) {
-        if (!*t /*t == str + strlen(str)*/) {
+    p = NcbiIPToAddr(&range->a, str, len = strlen(str));
+    if (p) {
+        assert(p > str);
+        if (!*p /*p == str + len*/) {
             range->b    = 0;
             range->type = eIPRange_Host;
             return 1/*success*/;
         }
-        if (*t++ == '/'  &&  !isspace((unsigned char)(*t))) {
+        if (*p++ == '/'  &&  !isspace((unsigned char)(*p))) {
             errno = 0;
-            d = strtol(t, &e, 10);
-            if (!errno  &&  t != e  &&  !*e  &&  d > 0) {
+            d = strtol(p, &e, 10);
+            if (!errno  &&  p != e  &&  !*e  &&  d > 0) {
                 int/*bool*/ ipv4 = NcbiIsIPv4(&range->a);
                 if (ipv4  &&  d <= 32) {
                     if (!d  ||  d == 32) {
@@ -259,9 +261,12 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                         range->type = eIPRange_Host;
                         return 1/*success*/;
                     }
+                    if (NcbiIsEmptyIPv6(&range->a))
+                        return 0/*failure*/;
                     range->b    = (unsigned int) d; /* d > 0 */
                     range->type = eIPRange_Network;
                     d = (long)(sizeof(range->a.octet) << 3) - d;
+                    assert(d > 0);
                     for (n = sizeof(range->a.octet);  n > 0;  --n) {
                         if (d >= 8) {
                             if (range->a.octet[n - 1] & ~0)
@@ -274,131 +279,118 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                         } else
                             break;
                     }
-                    return !NcbiIsEmptyIPv6(&range->a);
+                    return 1/*success*/;
                 } else
                     return 0/*failure*/;
             }
         }
     }
+    if (SOCK_isip(str)) {
+        /* forbid other misleading IP representations */
+        assert(!SOCK_isipEx(str, 1/*fullquad*/));
+        return 0/*failure*/;
+    }
 
-    if (!SOCK_isip(str)) {
-        int dots = 0;
-        const char* p = str;
-        range->type = eIPRange_Host;
-        addr = 0/*not actually necessary*/;
-        for (;;) {
+    p = str;
+    dots = 0;
+    range->type = eIPRange_Host;
+    addr = 0/*not actually necessary*/;
+    for (;;) {
+        const char* t;
+        if (*p != '*') {
             char s[4];
-            if (*p != '*') {
-                errno = 0;
-                d = strtol(p, &e, 10);
-                if (errno  ||  p == e  ||  e - p > 3  ||  d < 0  ||  255 < d
-                    ||  sprintf(s, "%u", (unsigned int) d) != (int)(e - p)) {
-                    break/*goto out*/;
-                }
-                p = e;
-            } else if (!*++p  &&  dots) {
-                temp = (unsigned int)((4 - dots) << 3);
-                addr <<= temp;
-                NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
-                range->b    = SOCK_HostToNetLong((unsigned int)(~0UL << temp));
-                range->type = eIPRange_Network;
-                return 1/*success*/;
-            } else
-                return 0/*failure (asterisks not valid in hostnames)*/;
-            switch (range->type) {
-            case eIPRange_Host:
-                addr <<= 8;
-                addr  |= (unsigned int) d;
-                if (*p != '.') {
-                    addr <<= (3 - dots) << 3;
-                    switch (*p) {
-                    case '/':
-                        range->type = eIPRange_Network;
-                        break;
-                    case '-':
-                        range->type = eIPRange_Range;
-                        p++;
-                        continue;
-                    default:
-                        goto out;
-                    }
-                } else if (++dots <= 3) {
+            errno = 0;
+            d = strtol(p, &e, 10);
+            if (errno  ||  p == e  ||  e - p > 3  ||  d < 0  ||  255 < d
+                ||  sprintf(s, "%u", (unsigned int) d) != (int)(e - p)) {
+                break/*goto out*/;
+            }
+            p = e;
+        } else if (!*++p  &&  dots) {
+            temp = (unsigned int)((4 - dots) << 3);
+            addr <<= temp;
+            NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
+            range->b    = SOCK_HostToNetLong((unsigned int)(~0UL << temp));
+            range->type = eIPRange_Network;
+            return 1/*success*/;
+        } else
+            return 0/*failure (asterisks not valid in hostnames)*/;
+        switch (range->type) {
+        case eIPRange_Host:
+            addr <<= 8;
+            addr  |= (unsigned int) d;
+            if (*p != '.') {
+                addr <<= (3 - dots) << 3;
+                switch (*p) {
+                case '/':
+                    range->type = eIPRange_Network;
+                    break;
+                case '-':
+                    range->type = eIPRange_Range;
                     p++;
                     continue;
-                } else
+                default:
                     goto out;
-                assert(*p == '/'  &&  range->type == eIPRange_Network);
-                t = NcbiStringToIPv4(&range->b, ++p, 0);
-                if (!t  ||  *t)
-                    continue;
-                NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
-                if (!range->b  ||  !(temp = ~SOCK_NetToHostLong(range->b))) {
-                    range->b    = 0;
-                    range->type = eIPRange_Host;
-                    return 1/*success*/;
                 }
-                return !(temp & (temp + 1))  &&  addr  &&  !(addr & temp);
-            case eIPRange_Range:
-                if (*p)
-                    goto out;
-                temp  = dots > 0 ? addr : 0;
-                temp &= (unsigned int)(~((1 << ((4 - dots) << 3)) - 1));
-                temp |= (unsigned int)   (d << ((3 - dots) << 3));
-                temp |= (unsigned int)  ((1 << ((3 - dots) << 3)) - 1);
-                NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
-                if (addr == temp) {
-                    range->b    = 0;
-                    range->type = eIPRange_Host;
-                    return 1/*success*/;
-                }
-                range->b = SOCK_HostToNetLong(temp);
-                return addr < temp;
-            case eIPRange_Network:
-                if (*p  ||  d > 32)
-                    return 0/*failure (slashes not valid in hostnames)*/;
-                NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
-                if (!d  ||  d == 32) {
-                    range->b    = 0;
-                    range->type = eIPRange_Host;
-                    return 1/*success*/;
-                }
-                temp = (unsigned int)(~0UL << (32 - d));
-                range->b = SOCK_HostToNetLong(temp);
-                return addr  &&  !(addr & ~temp);
-            default:
-                assert(0);
-                return 0/*failure*/;
-            }
-        }
-    out:
-        /* last resort (and maybe expensive one): try as a regular host name */
-        ;
-    } else { /* NB: SOCK_gethostbyname() returns 0 on an unknown host */
-        if (strcasecmp(str, "255.255.255.255") == 0) {
-            addr = (unsigned int)(~0UL);
-            NcbiIPv4ToIPv6(&range->a, addr, 0);
-            range->b    = 0;
-            range->type = eIPRange_Host;
-            return 1/*success*/;
-        }
-        for (n = 0;  n < 4;  ++n) {
-            size_t len = 1 + (n << 1);
-            if (strncmp(str, "0.0.0.0", len) == 0  &&  !str[len]) {
-                NcbiIPv4ToIPv6(&range->a, 0, 0);
+            } else if (++dots <= 3) {
+                p++;
+                continue;
+            } else
+                goto out;
+            assert(*p == '/'  &&  range->type == eIPRange_Network);
+            t = NcbiStringToIPv4(&range->b, ++p, 0);
+            if (!t  ||  *t)
+                continue;
+            NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
+            if (!range->b  ||  !(temp = ~SOCK_NetToHostLong(range->b))) {
                 range->b    = 0;
                 range->type = eIPRange_Host;
                 return 1/*success*/;
             }
-        }
-        /* forbid other misleading IP representations */
-        if (!SOCK_isipEx(str, 1/*fullquad*/))
+            return !(temp & (temp + 1))  &&  addr  &&  !(addr & temp);
+        case eIPRange_Range:
+            if (*p)
+                goto out;
+            temp  = dots > 0 ? addr : 0;
+            temp &= (unsigned int)(~((1 << ((4 - dots) << 3)) - 1));
+            temp |= (unsigned int)   (d << ((3 - dots) << 3));
+            temp |= (unsigned int)  ((1 << ((3 - dots) << 3)) - 1);
+            NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
+            if (addr == temp) {
+                range->b    = 0;
+                range->type = eIPRange_Host;
+                return 1/*success*/;
+            }
+            range->b = SOCK_HostToNetLong(temp);
+            return addr < temp;
+        case eIPRange_Network:
+            if (*p  ||  d > 32)
+                return 0/*failure (slashes not valid in hostnames)*/;
+            NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
+            if (!d  ||  d == 32) {
+                range->b    = 0;
+                range->type = eIPRange_Host;
+                return 1/*success*/;
+            }
+            temp = (unsigned int)(~0UL << (32 - d));
+            range->b = SOCK_HostToNetLong(temp);
+            return addr  &&  !(addr & ~temp);
+        default:
+            assert(0);
             return 0/*failure*/;
+        }
     }
+ out:
 
+    /* last resort (and maybe expensive one): try as a regular host name */
+    range->b    = 0;
+    range->type = eIPRange_Host;
+    p = NcbiDNSIPToAddr(&range->a, str, len);
+    assert(!p  ||  p > str);
+    if (p  &&  !*p)
+        return 1/*success*/;
     if (!(addr = SOCK_gethostbyname(str)))
         return 0/*failure*/;
     NcbiIPv4ToIPv6(&range->a, addr, 0);
-    range->b    = 0;
-    range->type = eIPRange_Host;
     return 1/*success*/;
 }

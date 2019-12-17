@@ -77,6 +77,10 @@ const char* NcbiDumpIPRange(const SIPRange* range, char* buf, size_t bufsize);
  * IPv4 CIDR:       123.123/20      (meaning 123.123.0.0 thru 123.123.15.255)
  * IPv4 wildcard:   123.123.*       (meaning 123.123.0.0 thru 123.123.255.255)
  * IPv6[/CIDR]:     aa:bb::cc/64    (IPv6 addr must be complete,/CIDR optional)
+ * hostname:        DNS format
+ * @note
+ *   IP subnets (both IPv4 and IPv6) require that the unmasked "host" portion
+ *   of the address was 0.
  * @return
  *   0 (false) if failed;  non-zero (true) if successful and the parsed range
  *   stored at the location pointed to by "range".
