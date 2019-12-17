@@ -352,9 +352,9 @@ static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 }
 
 
-class CSeqIdValidate {
+class CFastaIdValidate {
 public:
-    virtual ~CSeqIdValidate() = default;
+    virtual ~CFastaIdValidate() = default;
 
     enum EErrCode {
         eUnexpectedNucResidues,
@@ -412,7 +412,7 @@ public:
     void operator() (EDiagSev severity, 
             int lineNum, 
             const string& idString,
-            CSeqIdValidate::EErrCode errCode,
+            CFastaIdValidate::EErrCode errCode,
             const string& msg);
 private:
     using TCodePair = pair<CObjReaderLineException::EProblem, CObjReaderParseException::EErrCode>;
@@ -428,16 +428,16 @@ CIdErrorReporter::CIdErrorReporter(ILineErrorListener* pMessageListener) :
 void CIdErrorReporter::operator()(EDiagSev severity,
         int lineNum,
         const string& idString,
-        CSeqIdValidate::EErrCode errCode,
+        CFastaIdValidate::EErrCode errCode,
         const string& msg)
 {
 
-    static map<CSeqIdValidate::EErrCode,TCodePair> s_CodeMap = /* replace with compile-time map */
+    static map<CFastaIdValidate::EErrCode,TCodePair> s_CodeMap = /* replace with compile-time map */
     {
-     {CSeqIdValidate::eIDTooLong,{ILineError::eProblem_GeneralParsingError, CObjReaderParseException::eIDTooLong}},
-     {CSeqIdValidate::eBadLocalID,{ILineError::eProblem_GeneralParsingError, CObjReaderParseException::eInvalidID}},
-     {CSeqIdValidate::eUnexpectedNucResidues,{ILineError::eProblem_UnexpectedNucResidues, CObjReaderParseException::eFormat}},
-     {CSeqIdValidate::eUnexpectedAminoAcids,{ILineError::eProblem_UnexpectedAminoAcids, CObjReaderParseException::eFormat}}
+     {CFastaIdValidate::eIDTooLong,{ILineError::eProblem_GeneralParsingError, CObjReaderParseException::eIDTooLong}},
+     {CFastaIdValidate::eBadLocalID,{ILineError::eProblem_GeneralParsingError, CObjReaderParseException::eInvalidID}},
+     {CFastaIdValidate::eUnexpectedNucResidues,{ILineError::eProblem_UnexpectedNucResidues, CObjReaderParseException::eFormat}},
+     {CFastaIdValidate::eUnexpectedAminoAcids,{ILineError::eProblem_UnexpectedAminoAcids, CObjReaderParseException::eFormat}}
     };
 
 
@@ -454,7 +454,7 @@ void CIdErrorReporter::operator()(EDiagSev severity,
 }
 
 
-class CDefaultIdValidate : public CSeqIdValidate
+class CDefaultIdValidate : public CFastaIdValidate
 {
 public:
     using TFastaFlags = CFastaReader::TFlags;
@@ -489,22 +489,22 @@ void CDefaultIdValidate::operator()(const TIds& ids,
         CheckForExcessiveProtData(*ids.back(), lineNum, fReportError);
     }
 
-    CSeqIdValidate::operator()(ids, lineNum, fReportError);
+    CFastaIdValidate::operator()(ids, lineNum, fReportError);
 }
 
 
 bool CDefaultIdValidate::IsValidLocalString(const CTempString& idString) 
 {
     if (m_Flags & CFastaReader::fQuickIDCheck) {
-        return CSeqIdValidate::IsValidLocalString(idString.substr(0,1));
+        return CFastaIdValidate::IsValidLocalString(idString.substr(0,1));
     }
     // else
-    return CSeqIdValidate::IsValidLocalString(idString);
+    return CFastaIdValidate::IsValidLocalString(idString);
 }
 
 
 
-void CSeqIdValidate::operator()(const TIds& ids,
+void CFastaIdValidate::operator()(const TIds& ids,
         int lineNum,
         FReportError fReportError) 
 {
@@ -518,7 +518,7 @@ void CSeqIdValidate::operator()(const TIds& ids,
             !IsValidLocalID(*pId)) {
             const auto& idString = pId->GetSeqIdString();
             string msg = "'" + idString + "' is not a valid local ID";
-            fReportError(eDiag_Error, lineNum, idString, CSeqIdValidate::eBadLocalID, msg);
+            fReportError(eDiag_Error, lineNum, idString, CFastaIdValidate::eBadLocalID, msg);
         }
         CheckIDLength(*pId, lineNum, fReportError);
     }
@@ -539,7 +539,7 @@ static string s_GetIDLengthErrorString(int length,
 }
 
 
-void CSeqIdValidate::CheckIDLength(const CSeq_id& id, int lineNum, FReportError fReportError)
+void CFastaIdValidate::CheckIDLength(const CSeq_id& id, int lineNum, FReportError fReportError)
 {
     if (id.IsLocal()) {
         if (id.GetLocal().IsStr() &&
@@ -549,7 +549,7 @@ void CSeqIdValidate::CheckIDLength(const CSeq_id& id, int lineNum, FReportError 
                         "local id", 
                         CFastaDeflineReader::s_MaxLocalIDLength, 
                         lineNum);
-            fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CSeqIdValidate::eIDTooLong, msg);
+            fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CFastaIdValidate::eIDTooLong, msg);
         }
         return;
     }
@@ -566,7 +566,7 @@ void CSeqIdValidate::CheckIDLength(const CSeq_id& id, int lineNum, FReportError 
                             "general id string", 
                             CFastaDeflineReader::s_MaxGeneralTagLength,
                             lineNum);
-                fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CSeqIdValidate::eIDTooLong, msg);
+                fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CFastaIdValidate::eIDTooLong, msg);
             }
         }
         return;
@@ -582,13 +582,13 @@ void CSeqIdValidate::CheckIDLength(const CSeq_id& id, int lineNum, FReportError 
                                 "accession",
                                 CFastaDeflineReader::s_MaxAccessionLength, 
                                 lineNum);
-            fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CSeqIdValidate::eIDTooLong, msg);
+            fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CFastaIdValidate::eIDTooLong, msg);
         }
     }
 }
 
 
-bool CSeqIdValidate::IsValidLocalID(const CSeq_id& id) 
+bool CFastaIdValidate::IsValidLocalID(const CSeq_id& id) 
 {
     if (id.IsLocal()) {
         if (id.GetLocal().IsId()) {
@@ -602,13 +602,13 @@ bool CSeqIdValidate::IsValidLocalID(const CSeq_id& id)
 }
 
 
-bool CSeqIdValidate::IsValidLocalString(const CTempString& idString)
+bool CFastaIdValidate::IsValidLocalString(const CTempString& idString)
 {
     return !(CSeq_id::CheckLocalID(idString)&CSeq_id::fInvalidChar);
 }
 
 
-void CSeqIdValidate::CheckForExcessiveNucData(
+void CFastaIdValidate::CheckForExcessiveNucData(
     const CSeq_id& id,
     int lineNum,
     FReportError fReportError
@@ -644,7 +644,7 @@ void CSeqIdValidate::CheckForExcessiveNucData(
 
 
 
-void CSeqIdValidate::CheckForExcessiveProtData(
+void CFastaIdValidate::CheckForExcessiveProtData(
         const CSeq_id& id,
         int lineNum,
         FReportError fReportError)
