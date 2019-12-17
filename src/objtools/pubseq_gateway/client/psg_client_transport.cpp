@@ -1088,30 +1088,34 @@ bool SPSG_IoSession::ProcessRequest()
 {
     _TRACE(this << " processing requests");
 
-    if ((m_Requests.size() >= m_Session.GetMaxStreams()) || m_Tcp.IsWriteBufferFull()) {
-        // Continue processing of remaining requests on the next callback
-        m_Io->queue.Send();
-        return false;
+    while((m_Requests.size() < m_Session.GetMaxStreams()) && !m_Tcp.IsWriteBufferFull()) {
+        shared_ptr<SPSG_Request> req;
+
+        if (!m_Io->queue.Pop(req)) {
+            return true;
+        }
+
+        m_Io->space->NotifyOne();
+
+        auto stream_id = m_Session.Submit(req);
+
+        if (stream_id < 0) {
+            Retry(req, stream_id);
+            Reset(stream_id);
+            return false;
+        }
+
+        _TRACE(this << '/' << stream_id << " submitted");
+        m_Requests.emplace(stream_id, move(req));
+
+        if (!Send()) {
+            return false;
+        }
     }
 
-    shared_ptr<SPSG_Request> req;
-
-    if (!m_Io->queue.Pop(req)) {
-        return false;
-    }
-
-    m_Io->space->NotifyOne();
-
-    auto stream_id = m_Session.Submit(req);
-
-    if (stream_id < 0) {
-        Retry(req, stream_id);
-        Reset(stream_id);
-        return false;
-    }
-
-    m_Requests.emplace(stream_id, move(req));
-    return Send();
+    // Continue processing of remaining requests on the next callback
+    m_Io->queue.Send();
+    return false;
 }
 
 void SPSG_IoSession::CheckRequestExpiration()
@@ -1174,29 +1178,15 @@ void SPSG_IoThread::OnShutdown(uv_async_t*)
 
 void SPSG_IoThread::OnQueue(uv_async_t*)
 {
-    for (auto& session : m_Sessions) {
-        session.in_progress = true;
-    }
-
-    for (;;) {
-        bool all_done = true;
-
-        for (auto& session : m_Sessions) {
-            if (session.discovered && session.in_progress) {
-                if (session.TryCatch(&SPSG_IoSession::ProcessRequest, false)) {
-                    all_done = false;
-                } else {
-                    session.in_progress = false;
-                }
+    for (auto it = m_Sessions.begin(); it != m_Sessions.end(); ++it) {
+        if (it->discovered && it->TryCatch(&SPSG_IoSession::ProcessRequest, false)) {
+            if (m_Sessions.size() > 1) {
+                // Put yet unused sessions to the beginning to be used first next time
+                m_Sessions.splice(m_Sessions.begin(), m_Sessions, next(it), m_Sessions.end());
             }
+
+            return;
         }
-
-        if (all_done) break;
-    }
-
-    // Rotate left, so a different session will be used first next time
-    if (m_Sessions.size() > 1) {
-        m_Sessions.splice(m_Sessions.end(), m_Sessions, m_Sessions.begin());
     }
 }
 

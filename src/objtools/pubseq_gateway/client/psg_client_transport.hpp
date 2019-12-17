@@ -849,7 +849,6 @@ struct SPSG_IoThread::SSession : SPSG_IoSession
 {
     const CNetServer::SAddress address;
     bool discovered = true;
-    bool in_progress = false;
 
     SSession(SPSG_IoThread* io, uv_loop_t* loop, CNetServer::SAddress a) :
         SPSG_IoSession(io, loop, a),
