@@ -609,9 +609,15 @@ static const char* x_DNSToIPv6(TNCBI_IPv6Addr* addr,
 }
 
 
+enum ENcbiIP_Form {
+    eNcbiIP_Dot = 1,  /* Accept dotted notation */
+    eNcbiIP_Dns = 2   /* Accept DNS notation    */
+};
+typedef unsigned int TNcbiIP_Form;  /* Bitwise OR of ENcbiIP_Form */
+
 static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
                                   const char* str, size_t len,
-                                  int/*bool*/ dns)
+                                  TNcbiIP_Form how)
 {
     unsigned int ipv4;
     const char* tmp;
@@ -638,26 +644,28 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
     if (!(len = n))
         return 0/*failure*/;
 
-    if (dns) {
-        dns = str[--n] == '.' ? 1/*true*/ : 0/*false*/;
+    if (how & eNcbiIP_Dns) {
+        size_t/*bool*/ dns = str[--n] == '.' ? 1/*true*/ : 0/*false*/;
         if (len > kIPv4DNS.len
-            &&  strncasecmp(tmp = str + len - (kIPv4DNS.len + !!dns),
+            &&  strncasecmp(tmp = str + len - (kIPv4DNS.len + dns),
                             kIPv4DNS.sfx, kIPv4DNS.len) == 0) {
-            if (x_DNSToIPv4(&ipv4, str, len - (kIPv4DNS.len + !!dns)) == tmp) {
+            if (x_DNSToIPv4(&ipv4, str, len - (kIPv4DNS.len + dns)) == tmp) {
                 NcbiIPv4ToIPv6(addr, ipv4, 0);
-                return tmp + (kIPv4DNS.len + !!dns);
+                return tmp + (kIPv4DNS.len + dns);
             } else if (dns)
                 return 0/*failure*/;
         }
         if (len > kIPv6DNS.len
-            &&  strncasecmp(tmp = str + len - (kIPv6DNS.len + !!dns),
+            &&  strncasecmp(tmp = str + len - (kIPv6DNS.len + dns),
                             kIPv6DNS.sfx, kIPv6DNS.len) == 0) {
-            if (x_DNSToIPv6(addr,  str, len - (kIPv6DNS.len + !!dns)) == tmp)
-                return tmp + (kIPv6DNS.len + !!dns);
+            if (x_DNSToIPv6(addr,  str, len - (kIPv6DNS.len + dns)) == tmp)
+                return tmp + (kIPv6DNS.len + dns);
             else if (dns)
                 return 0/*failure*/;
         }
     }
+    if (!(how & eNcbiIP_Dot))
+        return 0/*failure*/;
 
     if ((tmp = x_StringToIPv4(&ipv4, str, len)) != 0) {
         NcbiIPv4ToIPv6(addr, ipv4, 0);
@@ -668,16 +676,29 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
 
 
 extern const char* NcbiIPToAddr(TNCBI_IPv6Addr* addr,
-                                    const char* str, size_t len)
+                                const char* str, size_t len)
 {
-    return s_StringToAddr(addr, str, len, 0);
+    const char* rv = s_StringToAddr(addr, str, len, eNcbiIP_Dot);
+    assert(!rv  ||  rv > str);
+    return rv;
 }
 
 
 extern const char* NcbiStringToAddr(TNCBI_IPv6Addr* addr,
                                     const char* str, size_t len)
 {
-    return s_StringToAddr(addr, str, len, 1);
+    const char* rv = s_StringToAddr(addr, str, len, eNcbiIP_Dns | eNcbiIP_Dot);
+    assert(!rv  ||  rv > str);
+    return rv;
+}
+
+
+extern const char* NcbiDNSIPToAddr(TNCBI_IPv6Addr* addr,
+                                   const char* str, size_t len)
+{
+    const char* rv = s_StringToAddr(addr, str, len, eNcbiIP_Dns);    
+    assert(!rv  ||  rv > str);
+    return rv;
 }
 
 

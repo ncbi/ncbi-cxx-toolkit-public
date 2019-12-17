@@ -149,6 +149,18 @@ const char*  NcbiIPToAddr(TNCBI_IPv6Addr* addr,
 
 
 /** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
+ *  0) bytes of "str", which can be either an .in-addr.arpa- or an
+ *  .in6.arpa-domain names; return a non-zero string pointer to the first
+ *  non-converted character; return 0 if no conversion can be made.
+ * @sa
+ *  NcbiAddrToDNS, NcbiStringToAddr
+ */
+extern NCBI_XCONNECT_EXPORT
+const char*  NcbiDNSIPToAddr(TNCBI_IPv6Addr* addr,
+                             const char* str, size_t len);
+
+
+/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
  *  0) bytes of "str", which can be either of a full-quad decimal IPv4, a
  *  hexadecimal colon-separated IPv6, an .in-addr.arpa- or an .in6.arpa-domain
  *  names; return a non-zero string pointer to the first non-converted
@@ -204,7 +216,7 @@ char*        NcbiAddrToString(char* buf, size_t bufsize,
  *  in the "buf" of size "bufsize".  Return non-zero string address past the
  *  stored result, or 0 when the conversion failed for buffer being too small.
  * @sa
- *  NcbiAddrToString
+ *  NcbiAddrToString, NcbiDNSIPToAddr
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiAddrToDNS(char* buf, size_t bufsize,
