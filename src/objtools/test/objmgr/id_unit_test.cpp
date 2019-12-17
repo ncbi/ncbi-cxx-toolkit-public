@@ -721,6 +721,17 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckExtSTS)
+{ 	 
+    if (CGBDataLoader::IsUsingPSGLoader()) return; 	 
+    LOG_POST("Checking ExtAnnot STS"); 	 
+    SAnnotSelector sel(CSeqFeatData::eSubtype_STS); 	 
+    sel.SetResolveAll().SetAdaptiveDepth(); 	 
+    sel.AddNamedAnnots("STS"); 	 
+    s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249220000)); 	 
+}
+
+
 BOOST_AUTO_TEST_CASE(CheckExtTRNA)
 {
     LOG_POST("Checking ExtAnnot tRNA");
