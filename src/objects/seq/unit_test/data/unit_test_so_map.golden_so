@@ -164,18 +164,15 @@ N_region
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "RNase_MRP_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "RNase_MRP_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -184,18 +181,15 @@ RNase_MRP_RNA
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "RNase_P_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "RNase_P_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -204,18 +198,15 @@ RNase_P_RNA
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "SRP_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "SRP_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -320,18 +311,15 @@ X_element_combinatorical_repeat
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "Y_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "Y_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -360,18 +348,15 @@ Y_prime_element
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "antisense_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "antisense_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -400,18 +385,15 @@ attenuator
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "autocatalytically_spliced_intron"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "autocatalytically_spliced_intron"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -701,18 +683,15 @@ gene
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "guide_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "guide_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -721,18 +700,15 @@ guide_RNA
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "hammerhead_ribozyme"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "hammerhead_ribozyme"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -829,18 +805,15 @@ inverted_repeat
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "lnc_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "lnc_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -957,18 +930,15 @@ meiotic_recombination_region
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "miRNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "miRNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1105,18 +1075,15 @@ modified_DNA_base
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "other"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "other"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1287,18 +1254,15 @@ origin_of_replication
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "piRNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "piRNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1505,18 +1469,15 @@ rRNA
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "rasiRNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "rasiRNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1739,18 +1700,15 @@ riboswitch
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "ribozyme"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "ribozyme"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1779,18 +1737,15 @@ satellite_DNA
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "scRNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "scRNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1889,18 +1844,15 @@ sequence_uncertainty
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "siRNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "siRNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1943,18 +1895,15 @@ silencer
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "snRNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "snRNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -1963,18 +1912,15 @@ snRNA
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "snoRNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "snoRNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -2031,18 +1977,15 @@ tandem_repeat
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "telomerase_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "telomerase_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
@@ -2201,18 +2144,15 @@ transit_peptide
 --------------------------------------------------------------------------------
 Seq-feat ::= {
   data rna {
-    type ncRNA
+    type ncRNA,
+    ext gen {
+      class "vault_RNA"
+    }
   },
   location int {
     from 10,
     to 20,
     id gi 1000
-  },
-  qual {
-    {
-      qual "ncRNA_class",
-      val "vault_RNA"
-    }
   }
 }
 --------------------------------------------------------------------------------
