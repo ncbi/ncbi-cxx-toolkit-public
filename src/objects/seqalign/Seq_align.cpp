@@ -1651,7 +1651,6 @@ s_GetFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
         generated_denseg->SetSegs().SetDenseg().OrderAdjacentGaps();
         generated_denseg->SetSegs().SetDenseg().Compact();
         generated_denseg->SetSegs().SetDenseg().RemovePureGapSegs();
-        generated_denseg->SetSegs().SetDenseg().TrimEndGaps();
     }
 
     const CDense_seg &ds = (generated_denseg ? *generated_denseg : align)
