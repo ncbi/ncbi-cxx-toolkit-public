@@ -64,7 +64,7 @@ case "$with_3psw" in
       else
          with_ncbi_c=no
       fi
-      m4_foreach(X, [sss, sssutils, sssdb, vdb, libunwind,
+      m4_foreach(X, [sss, sssutils, sssdb, vdb, ngs, libunwind,
                      z, bz2, lzo, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew, gl2ps,
@@ -253,6 +253,10 @@ AC_ARG_WITH(downloaded-vdb,
    [ --with-downloaded-vdb   download and build SRA/VDB from GitHub])
 AC_ARG_WITH(static-vdb,
    [ --with-static-vdb       always link statically against SRA/VDB])
+AC_ARG_WITH(ngs,
+   [ --with-ngs=DIR          use NCBI NGS SDK installation in DIR])
+AC_ARG_WITH(ngs,
+   [ --without-ngs           do not use the NCBI NGS SDK])
 
 ## Third-party and system packages
 AC_ARG_WITH(libunwind,
@@ -631,8 +635,8 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb static-vdb libunwind libdw backward-cpp \
-backward-cpp-sig \
+geo included-geo vdb downloaded-vdb static-vdb ngs libunwind libdw \
+backward-cpp backward-cpp-sig \
 z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
@@ -696,8 +700,8 @@ for x_arg in "$@" ; do
       --with-vdb=rc ) ;;
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
-      | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-libunwind=* \
-      | --with-libdw=* | --with-backward-cpp=* \
+      | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-ngs=* \
+      | --with-libunwind=* | --with-libdw=* | --with-backward-cpp=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
@@ -7427,6 +7431,50 @@ if test "$with_vdb" != "no" ; then
    # fi
    if test -z "$VDB_LIBS"; then
       NCBI_MISSING_PACKAGE(vdb)
+      NCBI_MISSING_PACKAGE(ngs)
+   fi
+else
+   NCBI_MISSING_PACKAGE(ngs)
+fi
+
+
+### NCBI NGS SDK
+if test "$with_ngs" != "no" ; then
+   if test "${with_ngs:-yes}" != "yes" -a -d "$with_ngs"; then
+      NGS_PATH=$with_ngs
+   fi
+   NGS_INCLUDE="-I$NGS_PATH/include"
+   case "$host_cpu:$bit64_sfx" in
+      *86*:64 ) extra_inc="-I$NGS_PATH/include/ngs/unix/x86_64" ;;
+      *86*:*  ) extra_inc="-I$NGS_PATH/include/ngs/unix/fat86"  ;;
+      *       ) extra_inc=''                                    ;;
+   esac
+   CPPFLAGS="$VDB_INCLUDE $orig_CPPFLAGS"
+   for x in "$vdb_libpath" "lib${bit64_sfx:-32}" lib; do
+      if test -n "$x" -a -d "$NGS_PATH/$x"; then
+         : ${NGS_LIBDIR=$NGS_PATH/$x}
+         break
+      fi
+   done
+   NCBI_RPATHIFY(NGS_LIBPATH, [$NGS_LIBDIR])
+   NCBI_CHECK_THIRD_PARTY_LIB_EX(ngs, NGS, ncbi-ngs-c++,
+      [[AC_LANG_PROGRAM([[#include <ncbi-vdb/NGS.hpp>
+                          #include <ngs-bam/ngs-bam.hpp>]],
+           [[ncbi::NGS::setAppVersionString("conftest.0.0.0");
+             ngs::ReadCollection coll
+             = NGS_BAM::openReadCollection("foo.bam");]])]],
+      [-lngs-bam-c++ -lngs-adapt-c++ -lngs-c++], $VDB_LIBS, $extra_inc)
+   if test -n "$NGS_LIBS"; then
+      if test -f "$NGS_LIBDIR/libncbi-ngs-c++-static.a"; then
+         NGS_STATIC_LIBS="-L$NGS_LIBDIR -lncbi-ngs-c++-static"
+         NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-bam-c++-static"
+         NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-adapt-c++-static"
+         NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-c++-static"
+      else
+         NGS_STATIC_LIBS=$NGS_LIBS
+      fi
+   else
+      NCBI_MISSING_PACKAGE(ngs)
    fi
 fi
 
@@ -9050,6 +9098,7 @@ AC_SUBST(ncbi_xloader_vdbgraph)
 AC_SUBST(ncbi_xloader_wgs)
 AC_SUBST(VDB_REQ)
 AC_SUBST(VDB_POST_LINK)
+AC_SUBST(NGS_STATIC_LIBS)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(ORBACUS_INCLUDE)

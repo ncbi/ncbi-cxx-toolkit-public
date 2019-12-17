@@ -571,6 +571,11 @@ ncbi_xloader_sra      = @ncbi_xloader_sra@
 ncbi_xloader_vdbgraph = @ncbi_xloader_vdbgraph@
 ncbi_xloader_wgs      = @ncbi_xloader_wgs@
 
+# NCBI NGS SDK
+NGS_INCLUDE     = @NGS_INCLUDE@
+NGS_LIBS        = @NGS_LIBS@
+NGS_STATIC_LIBS = @NGS_STATIC_LIBS@
+
 # SP:  headers, libraries
 SP_INCLUDE = @SP_INCLUDE@
 SP_LIBS    = @SP_LIBS@

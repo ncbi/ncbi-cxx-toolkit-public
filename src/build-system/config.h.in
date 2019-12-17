@@ -447,6 +447,9 @@
 /* Define to 1 if libnghttp2 is available. */
 #undef HAVE_LIBNGHTTP2
 
+/* Define to 1 if libncbi-ngs-c++ is available. */
+#undef HAVE_LIBNGS
+
 /* Define to 1 if liboechem is available. */
 #undef HAVE_LIBOECHEM
 
