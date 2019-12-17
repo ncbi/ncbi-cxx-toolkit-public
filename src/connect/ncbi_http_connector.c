@@ -2198,7 +2198,8 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
                 how = "premature EOM in";
             }
         } else if (uuu->expected < uuu->received) {
-            if (uuu->flags & fHCC_UrlDecodeInput) {
+            if (!uuu->net_info->http_version
+                &&  (uuu->flags & fHCC_UrlDecodeInput)) {
                 assert(*n_read);
                 --(*n_read);
             } else {
@@ -2511,7 +2512,8 @@ static EIO_Status s_VT_Write
     }
 
     /* accumulate all output in a memory buffer */
-    if (size  &&  (uuu->flags & fHCC_UrlEncodeOutput)) {
+    if (size  &&  !uuu->net_info->http_version
+        &&  (uuu->flags & fHCC_UrlEncodeOutput)) {
         /* with URL-encoding */
         size_t dst_size = 3 * size;
         void*  dst = malloc(dst_size);
