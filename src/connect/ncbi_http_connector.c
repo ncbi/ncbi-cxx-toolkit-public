@@ -2729,9 +2729,9 @@ static EIO_Status s_CreateHttpConnector
     if (xxx->req_method >=  eReqMethod_v1) {
         xxx->req_method &= ~eReqMethod_v1;
         xxx->http_version = 1;
-        if (flags & fHTTP_PushAuth)
-            xxx->http_push_auth = 1;
     }
+    if (xxx->http_version  &&  (flags & fHTTP_PushAuth))
+        xxx->http_push_auth = 1;
     if (!tunnel) {
         if (xxx->req_method == eReqMethod_Connect
             ||  (xxx->scheme != eURL_Unspec  && 

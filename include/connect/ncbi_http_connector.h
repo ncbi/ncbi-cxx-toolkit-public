@@ -78,16 +78,22 @@ extern "C" {
  *       any server error, which then is made available for reading as well).
  *       *NOTE* this flag disables automatic authorization and redirection.
  *
+ * @var fHCC_UrlDecodeInput
+ *       Assume the response body as single-part, URL-encoded;  perform the
+ *       URL-decoding on read, and deliver decoded data to the user.  Obsolete!
+ *
+ * @var fHTTP_PushAuth
+ *       Present credentials to the server if they are set in the connection
+ *       parameters when sending 1st request.  Normally, the credentials are
+ *       only presented on a retry when the server rejects the initial request
+ *       with 401 / 407.  This saves a hit, but is only honored with HTTP/1.1.
+ *
  * @var fHTTP_WriteThru
  *       Valid only with HTTP/1.1:  Connection to the server is made upon a
  *       first CONN_Write(), or CONN_Flush() if fHTTP_Flushable is set, or
  *       CONN_Wait(eIO_Write), and each CONN_Write() forms a chunk of HTTP
  *       data to be sent to the server.  Reading / waiting for read from the
  *       connector finalizes the body and, if reading, fetches the response.
- *
- * @var fHCC_UrlDecodeInput
- *       Assume the response body as single-part, URL-encoded;  perform the
- *       URL-decoding on read, and deliver decoded data to the user.  Obsolete.
  *
  * @var fHTTP_NoUpread
  *       Do *not* do internal reading into temporary buffer while sending data
@@ -122,10 +128,10 @@ enum EHTTP_Flag {
     fHTTP_AutoReconnect   = 0x1,  /**< See HTTP_CreateConnectorEx()          */
     fHTTP_Flushable       = 0x2,  /**< Connector will really flush on Flush()*/
     fHTTP_KeepHeader      = 0x4,  /**< Keep HTTP header (see limitations)    */
-    /*fHTTP_UrlEncodeArgs = 0x8,       URL-encode "info->args" (w/o fragment)
-    fHTTP_UrlDecodeInput  = 0x10,      URL-decode response body
-    fHTTP_UrlEncodeOutput = 0x20,      URL-encode all output data
-    fHTTP_UrlCodec        = 0x30,      fHTTP_UrlDecodeInput | ...EncodeOutput*/
+  /*fHCC_UrlEncodeArgs    = 0x8,       URL-encode "info->args" (w/o fragment)*/
+  /*fHCC_UrlDecodeInput   = 0x10,      URL-decode response body              */
+  /*fHCC_UrlEncodeOutput  = 0x20,      URL-encode all output data            */
+  /*fHCC_UrlCodec         = 0x30,      fHTTP_UrlDecodeInput | ...EncodeOutput*/
     fHTTP_PushAuth        = 0x10, /**< HTTP/1.1 pushes out auth if present   */
     fHTTP_WriteThru       = 0x20, /**< HTTP/1.1 writes through (chunked)     */
     fHTTP_NoUpread        = 0x40, /**< Do not use SOCK_SetReadOnWrite()      */
@@ -140,17 +146,17 @@ typedef unsigned int THTTP_Flags; /**< Bitwise OR of EHTTP_Flag              */
 NCBI_HTTP_CONNECTOR_DEPRECATED
 /** DEPRECATED, do not use! */
 typedef enum {
-    /*fHCC_AutoReconnect    = fHTTP_AutoReconnect,*/
-    /*fHCC_SureFlush        = fHTTP_Flushable,    */
-    /*fHCC_KeepHeader       = fHTTP_KeepHeader,   */
+  /*fHCC_AutoReconnect    = fHTTP_AutoReconnect,                             */
+  /*fHCC_Flushable        = fHTTP_Flushable,                                 */
+  /*fHCC_SureFlush        = fHTTP_Flushable,                                 */
+  /*fHCC_KeepHeader       = fHTTP_KeepHeader,                                */
     fHCC_UrlEncodeArgs    = 0x8,  /**< NB: Error-prone semantics, do not use!*/
     fHCC_UrlDecodeInput   = 0x10, /**< Obsolete, may not work, do not use!   */
     fHCC_UrlEncodeOutput  = 0x20, /**< Obsolete, may not work, do not use!   */
     fHCC_UrlCodec         = 0x30  /**< fHCC_UrlDecodeInput | ...EncodeOutput */
-    /*fHCC_DropUnread       = fHTTP_DropUnread,   */
-    /*fHCC_NoUpread         = fHTTP_NoUpread,     */
-    /*fHCC_Flushable        = fHTTP_Flushable,    */
-    /*fHCC_NoAutoRetry      = fHTTP_NoAutoRetry   */
+  /*fHCC_NoUpread         = fHTTP_NoUpread,                                  */
+  /*fHCC_DropUnread       = fHTTP_DropUnread,                                */
+  /*fHCC_NoAutoRetry      = fHTTP_NoAutoRetry                                */
 } EHCC_Flag;
 NCBI_HTTP_CONNECTOR_DEPRECATED
 typedef unsigned int THCC_Flags;  /**< bitwise OR of EHCC_Flag, deprecated   */
