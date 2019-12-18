@@ -82,11 +82,23 @@ else
   fi
 fi
 
+dtlock=${DATATOOL_PATH}/${DT}.lock
 if test -x "$DEF_DT"; then
   DATATOOL_EXE="$DEF_DT"
 else
   echo "$DT not found at $DEF_DT"
   DATATOOL_EXE="$DATATOOL_PATH/$DT"
+
+  mkdir -p $DATATOOL_PATH
+  if [ ! -x ${DATATOOL_EXE} ]; then
+    if mkdir $dtlock; then
+        sleep 1
+    else
+      while [ -d $dtlock ]; do
+        sleep 5
+      done 
+    fi
+  fi
 fi
 
 # -------------------------------------------------------------------------
@@ -104,6 +116,9 @@ if test ! -x "$DATATOOL_EXE"; then
   $cmd
   if test "${NCBICONF_MSVC}" != ""; then
     rm "${NCBICONF_MSVC}"
+  fi
+  if [ -d $dtlock ]; then
+    rm -r $dtlock
   fi
 else
   echo "=============================================================================="
