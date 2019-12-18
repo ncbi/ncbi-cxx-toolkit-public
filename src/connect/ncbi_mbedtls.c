@@ -603,6 +603,7 @@ static EIO_Status x_InitLocking(void)
         return eIO_Unknown;
     }
 #  endif /*NCBI_THREADS*/
+
 #  ifdef MBEDTLS_THREADING_PTHREAD
     status = eIO_Success;
 #  elif defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
