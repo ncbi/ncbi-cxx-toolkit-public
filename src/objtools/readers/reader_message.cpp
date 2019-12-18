@@ -42,7 +42,7 @@ static string sGetSeverityName(EDiagSev severity)
 }
 
 //  ============================================================================
-CObjtoolsMessage* CReaderMessage::Clone() const 
+CReaderMessage* CReaderMessage::Clone() const 
 //  ============================================================================
 {
     return new CReaderMessage(GetSeverity(), m_LineNumber, GetText());

@@ -92,8 +92,8 @@ public:
     CProgressMessage(
         int numDone, int numTotal);
 
-    virtual CObjtoolsMessage *Clone() const;
-    virtual void Write(CNcbiOstream& out) const;
+    virtual CProgressMessage *Clone() const override;
+    virtual void Write(CNcbiOstream& out) const override;
   
     virtual int Done() const { return mDone; };
     virtual int Total() const { return mTotal; };

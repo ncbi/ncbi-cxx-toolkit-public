@@ -50,11 +50,9 @@ public:
         CObjtoolsMessage(message, severity), m_LineNumber(lineNumber) 
     {};
 
-    virtual CObjtoolsMessage *Clone() const;
+    virtual CReaderMessage *Clone() const override;
 
-    virtual void Write(CNcbiOstream& out) const;
-    //virtual void WriteAsXML(CNcbiOstream& out) const;
-    //virtual void DumpAsXML(CNcbiOstream& out) const;
+    virtual void Write(CNcbiOstream& out) const override;
 
     virtual string Message() const { return GetText(); };
     virtual EDiagSev Severity() const { return GetSeverity(); };
@@ -77,7 +75,7 @@ public:
     CReaderProgress(int done, int total):
         CProgressMessage(done, total) {};
 
-    virtual void Write(CNcbiOstream& out) const;
+    virtual void Write(CNcbiOstream& out) const override;
 };
 
 END_SCOPE(objects)

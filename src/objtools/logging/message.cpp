@@ -121,7 +121,7 @@ CProgressMessage::CProgressMessage(
     }
 };
 
-CObjtoolsMessage* CProgressMessage::Clone() const 
+CProgressMessage* CProgressMessage::Clone() const 
 {
     return new CProgressMessage(mDone, mTotal);
 }
