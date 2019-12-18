@@ -63,8 +63,8 @@ private:
 public:
     CAsyncSeqIdResolver(CSeq_id &                         oslt_seq_id,
                         int16_t                           effective_seq_id_type,
-                        list<string>                      secondary_id_list,
-                        string                            primary_seq_id,
+                        list<string> &&                   secondary_id_list,
+                        string &&                         primary_seq_id,
                         const CTempString &               url_seq_id,
                         bool                              composed_ok,
                         SBioseqResolution &&              bioseq_resolution,

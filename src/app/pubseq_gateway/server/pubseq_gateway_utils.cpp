@@ -220,17 +220,37 @@ static string   s_InProgress = "inprogress";
 static string   s_Sent = "sent";
 
 // Combinations
+static string   s_AndSize = "&" + s_Size;
+static string   s_AndStatus = "&" + s_Status;
+static string   s_AndCode = "&" + s_Code;
+static string   s_AndSeverity = "&" + s_Severity;
+static string   s_AndNChunks = "&" + s_NChunks;
+static string   s_AndBlobId = "&" + s_BlobId;
+static string   s_AndBlobChunk = "&" + s_BlobChunk;
+static string   s_AndNChunksOne = "&" + s_NChunksOne;
+static string   s_AndReason = "&" + s_Reason;
+static string   s_AndNA = "&" + s_NA;
 static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
+static string   s_AndBioseqInfoItem = "&" + s_BioseqInfoItem;
 static string   s_BlobPropItem = s_ItemType + s_BlobProp;
+static string   s_AndBlobPropItem = "&" + s_BlobPropItem;
 static string   s_BioseqNAItem = s_ItemType + s_BioseqNA;
+static string   s_AndBioseqNAItem = "&" + s_BioseqNAItem;
 static string   s_BlobItem = s_ItemType + s_Blob;
+static string   s_AndBlobItem = "&" + s_BlobItem;
 static string   s_ReplyItem = s_ItemType + s_Reply;
+static string   s_AndReplyItem = "&" + s_ReplyItem;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
+static string   s_AndDataChunk = "&" + s_DataChunk;
 static string   s_MetaChunk = s_ChunkType + s_Meta;
+static string   s_AndMetaChunk = "&" + s_MetaChunk;
 static string   s_MessageChunk = s_ChunkType + s_Message;
+static string   s_AndMessageChunk = "&" + s_MessageChunk;
 static string   s_FmtJson = s_Fmt + s_Json;
+static string   s_AndFmtJson = "&" + s_FmtJson;
 static string   s_FmtProtobuf = s_Fmt + s_Protobuf;
+static string   s_AndFmtProtobuf = "&" + s_FmtProtobuf;
 
 static string   s_ReplyBegin = s_ProtocolPrefix + s_ItemId;
 static string   s_ReplyCompletionFixedPart = s_ReplyBegin + "0&" +
@@ -253,18 +273,14 @@ string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
     string      reply(s_ReplyBegin);
 
     reply.append(to_string(item_id))
-         .append(1, '&')
-         .append(s_BioseqInfoItem)
-         .append(1, '&')
-         .append(s_DataChunk)
-         .append(1, '&')
-         .append(s_Size)
-         .append(to_string(bioseq_info_size))
-         .append(1, '&');
+         .append(s_AndBioseqInfoItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize)
+         .append(to_string(bioseq_info_size));
     if (output_format == eJsonFormat)
-        reply.append(s_FmtJson);
+        reply.append(s_AndFmtJson);
     else
-        reply.append(s_FmtProtobuf);
+        reply.append(s_AndFmtProtobuf);
     return reply.append(1, '\n');
 }
 
@@ -276,21 +292,15 @@ string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BioseqInfoItem)
-                .append(1, '&')
-                .append(s_MessageChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndBioseqInfoItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndSize)
                 .append(to_string(msg_size))
-                .append(1, '&')
-                .append(s_Status)
+                .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
-                .append(1, '&')
-                .append(s_Code)
+                .append(s_AndCode)
                 .append(to_string(code))
-                .append(1, '&')
-                .append(s_Severity)
+                .append(s_AndSeverity)
                 .append(SeverityToLowerString(severity))
                 .append(1, '\n');
 }
@@ -302,12 +312,9 @@ string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BioseqInfoItem)
-                .append(1, '&')
-                .append(s_MetaChunk)
-                .append(1, '&')
-                .append(s_NChunks)
+                .append(s_AndBioseqInfoItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
 }
@@ -321,15 +328,11 @@ string  GetBlobPropHeader(size_t  item_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BlobPropItem)
-                .append(1, '&')
-                .append(s_DataChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndBlobPropItem)
+                .append(s_AndDataChunk)
+                .append(s_AndSize)
                 .append(to_string(blob_prop_size))
-                .append(1, '&')
-                .append(s_BlobId)
+                .append(s_AndBlobId)
                 .append(blob_id.ToString())
                 .append(1, '\n');
 }
@@ -342,21 +345,15 @@ string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BlobPropItem)
-                .append(1, '&')
-                .append(s_MessageChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndBlobPropItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndSize)
                 .append(to_string(msg_size))
-                .append(1, '&')
-                .append(s_Status)
+                .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
-                .append(1, '&')
-                .append(s_Code)
+                .append(s_AndCode)
                 .append(to_string(code))
-                .append(1, '&')
-                .append(s_Severity)
+                .append(s_AndSeverity)
                 .append(SeverityToLowerString(severity))
                 .append(1, '\n');
 }
@@ -367,12 +364,9 @@ string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count)
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BlobPropItem)
-                .append(1, '&')
-                .append(s_MetaChunk)
-                .append(1, '&')
-                .append(s_NChunks)
+                .append(s_AndBlobPropItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
 }
@@ -387,18 +381,13 @@ string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BlobItem)
-                .append(1, '&')
-                .append(s_DataChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndBlobItem)
+                .append(s_AndDataChunk)
+                .append(s_AndSize)
                 .append(to_string(chunk_size))
-                .append(1, '&')
-                .append(s_BlobId)
+                .append(s_AndBlobId)
                 .append(blob_id.ToString())
-                .append(1, '&')
-                .append(s_BlobChunk)
+                .append(s_AndBlobChunk)
                 .append(to_string(chunk_number))
                 .append(1, '\n');
 }
@@ -424,17 +413,12 @@ string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BlobItem)
-                .append(1, '&')
-                .append(s_MetaChunk)
-                .append(1, '&')
-                .append(s_BlobId)
+                .append(s_AndBlobItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndBlobId)
                 .append(blob_id.ToString())
-                .append(1, '&')
-                .append(s_NChunksOne)
-                .append(1, '&')
-                .append(s_Reason)
+                .append(s_AndNChunksOne)
+                .append(s_AndReason)
                 .append(reason)
                 .append(1, '\n');
 }
@@ -446,15 +430,11 @@ string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BlobItem)
-                .append(1, '&')
-                .append(s_MetaChunk)
-                .append(1, '&')
-                .append(s_BlobId)
+                .append(s_AndBlobItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndBlobId)
                 .append(blob_id.ToString())
-                .append(1, '&')
-                .append(s_NChunks)
+                .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
 }
@@ -469,24 +449,17 @@ string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BlobItem)
-                .append(1, '&')
-                .append(s_MessageChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndBlobItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndSize)
                 .append(to_string(msg_size))
-                .append(1, '&')
-                .append(s_BlobId)
+                .append(s_AndBlobId)
                 .append(blob_id.ToString())
-                .append(1, '&')
-                .append(s_Status)
+                .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
-                .append(1, '&')
-                .append(s_Code)
+                .append(s_AndCode)
                 .append(to_string(code))
-                .append(1, '&')
-                .append(s_Severity)
+                .append(s_AndSeverity)
                 .append(SeverityToLowerString(severity))
                 .append(1, '\n');
 }
@@ -510,21 +483,15 @@ string  GetReplyMessageHeader(size_t  msg_size,
     string      reply(s_ReplyBegin);
 
     return reply.append(1, '0')
-                .append(1, '&')
-                .append(s_ReplyItem)
-                .append(1, '&')
-                .append(s_MessageChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndReplyItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndSize)
                 .append(to_string(msg_size))
-                .append(1, '&')
-                .append(s_Status)
+                .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
-                .append(1, '&')
-                .append(s_Code)
+                .append(s_AndCode)
                 .append(to_string(code))
-                .append(1, '&')
-                .append(s_Severity)
+                .append(s_AndSeverity)
                 .append(SeverityToLowerString(severity))
                 .append(1, '\n');
 }
@@ -538,15 +505,11 @@ string GetNamedAnnotationHeader(size_t  item_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BioseqNAItem)
-                .append(1, '&')
-                .append(s_DataChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndBioseqNAItem)
+                .append(s_AndDataChunk)
+                .append(s_AndSize)
                 .append(to_string(annotation_size))
-                .append(1, '&')
-                .append(s_NA)
+                .append(s_AndNA)
                 .append(annot_name)
                 .append(1, '\n');
 }
@@ -564,21 +527,15 @@ string GetNamedAnnotationMessageHeader(size_t  item_id, size_t  msg_size,
     string      reply(s_ReplyBegin);
 
     return reply.append(1, '0')
-                .append(1, '&')
-                .append(s_ReplyItem)
-                .append(1, '&')
-                .append(s_MessageChunk)
-                .append(1, '&')
-                .append(s_Size)
+                .append(s_AndReplyItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndSize)
                 .append(to_string(msg_size))
-                .append(1, '&')
-                .append(s_Status)
+                .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
-                .append(1, '&')
-                .append(s_Code)
+                .append(s_AndCode)
                 .append(to_string(code))
-                .append(1, '&')
-                .append(s_Severity)
+                .append(s_AndSeverity)
                 .append(SeverityToLowerString(severity))
                 .append(1, '\n');
 }
@@ -589,12 +546,9 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count)
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(1, '&')
-                .append(s_BioseqNAItem)
-                .append(1, '&')
-                .append(s_MetaChunk)
-                .append(1, '&')
-                .append(s_NChunks)
+                .append(s_AndBioseqNAItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
 }

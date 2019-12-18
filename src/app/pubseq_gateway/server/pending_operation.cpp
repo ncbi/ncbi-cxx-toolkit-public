@@ -1490,7 +1490,8 @@ CPendingOperation::x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
         // Async request
         m_AsyncSeqIdResolver.reset(new CAsyncSeqIdResolver(
                                             oslt_seq_id, effective_seq_id_type,
-                                            secondary_id_list, primary_id,
+                                            std::move(secondary_id_list),
+                                            std::move(primary_id),
                                             m_UrlSeqId, composed_ok,
                                             std::move(bioseq_resolution), this));
         m_AsyncCassResolutionStart = chrono::high_resolution_clock::now();
