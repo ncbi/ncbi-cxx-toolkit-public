@@ -767,7 +767,6 @@ lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs $(SQLITE3_WRAPPER)
 lds2 needs3party $(SQLITE3_LIBS)
-leveldb includes wgmlst_distances
 linkos_utils needs xid_utils
 linkout needs xser
 linkoutdb needs $(SQLITE3_WRAPPER)
