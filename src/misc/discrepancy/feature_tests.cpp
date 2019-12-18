@@ -49,6 +49,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objtools/edit/cds_fix.hpp>
@@ -2086,15 +2087,39 @@ static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
 }
 
 
+static CSeq_annot_EditHandle GetAnnotHandle(CScope& scope, const CBioseq& bs)
+{
+    CBioseq_Handle bsh = scope.GetBioseqEditHandle(bs);
+    CSeq_annot_Handle ftable;
+    CSeq_annot_CI annot_ci(bsh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for (; annot_ci; ++annot_ci) {
+        if (annot_ci->IsFtable()) {
+            ftable = *annot_ci;
+            break;
+        }
+    }
+    if (!ftable) {
+        CBioseq_EditHandle eh = bsh.GetEditHandle();
+        CRef<CSeq_annot> new_annot(new CSeq_annot());
+        ftable = eh.AttachAnnot(*new_annot);
+    }
+    CSeq_annot_EditHandle aeh(ftable);
+    return aeh;
+}
+
+
 DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 {
     const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
     CConstRef<CSeq_feat> old_mRNA = sequence::GetmRNAforCDS(*sf, context.GetScope());
     CRef<CSeq_feat> new_mRNA = edit::MakemRNAforCDS(*sf, context.GetScope());
     if (old_mRNA.Empty()) {
-        CSeq_feat_EditHandle cds_edit_handle(context.GetScope().GetSeq_featHandle(*sf));
-        CSeq_annot_EditHandle annot_handle = cds_edit_handle.GetAnnot();
-        annot_handle.AddFeat(*new_mRNA);
+        const CSerialObject* so = context.FindObject(*obj, true);
+        const CBioseq_set* bs = dynamic_cast<const CBioseq_set*>(so);
+        if (bs && bs->IsSetClass() && bs->GetClass() == CBioseq_set::eClass_nuc_prot) {
+            CSeq_annot_EditHandle annot_handle = GetAnnotHandle(context.GetScope(), bs->GetNucFromNucProtSet());
+            annot_handle.AddFeat(*new_mRNA);
+        }
     }
     else {
         CSeq_feat_EditHandle old_mRNA_edit(context.GetScope().GetSeq_featHandle(*old_mRNA));
