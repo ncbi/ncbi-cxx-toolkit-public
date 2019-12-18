@@ -43,6 +43,7 @@ test -d ${BUILD_TREE_BIN} || mkdir -p ${BUILD_TREE_BIN}
 echo ${CONFIGURATION} | grep elease > /dev/null
 if test $? -eq 0 -o "$PTB_NOCOPYBIN" != ""; then
   mv -f ${TARGET_BUILD_DIR}/${PRODUCT_NAME}* ${BUILD_TREE_BIN}
+  ln -f ${BUILD_TREE_BIN}/${PRODUCT_NAME} ${TARGET_BUILD_DIR}/${PRODUCT_NAME} 
 else
   cp -f -p -R ${TARGET_BUILD_DIR}/${PRODUCT_NAME}* ${BUILD_TREE_BIN}
 fi
