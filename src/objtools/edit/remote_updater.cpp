@@ -372,7 +372,7 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
             if ((**item_it).IsArticle())
             try
             {
-                int id = m_mlaClient->AskCitmatchpmid(**item_it);
+                id = m_mlaClient->AskCitmatchpmid(**item_it);
                 if (id>0)
                 {
                     CreatePubPMID(*m_mlaClient, arr, id);
@@ -603,7 +603,17 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
         NON_CONST_ITERATE(CAuth_list::TNames::TStd, it, auth_list.SetNames().SetStd()) {
             if ((*it)->GetName().IsMl()) {
                 CRef<CAuthor> new_auth = StdAuthorFromMl((*it)->GetName().GetMl());
-                (*it)->Assign(*new_auth);
+                (*it)->SetName(new_auth->SetName());
+            }
+            if ((*it)->IsSetAffil()) {
+                // we may need to hoist an affiliation
+                if (auth_list.IsSetAffil()) {
+                    ERR_POST(Error << "publication contains multiple affiliations");
+                }
+                else {
+                    auth_list.SetAffil((*it)->SetAffil());
+                    (*it)->ResetAffil();
+                }
             }
         }
     }
