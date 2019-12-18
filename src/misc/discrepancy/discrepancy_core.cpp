@@ -608,7 +608,9 @@ void CDiscrepancyContext::RunTests()
         return;
     }
     else {
-        cout << "Teste for " << TypeName(m_CurrentNode->m_Type) << " are not yet implemented...\n";
+        ERR_POST(Info << "Tests for "
+                 << TypeName(m_CurrentNode->m_Type)
+                 << " are not yet implemented...");
     }
 }
 
