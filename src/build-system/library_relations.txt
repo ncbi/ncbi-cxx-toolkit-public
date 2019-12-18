@@ -450,6 +450,9 @@ gensvc_g needs xser
 geodataset needs biblio
 gif needs3party $(ORIG_LIBS)
 gif needs3party X11
+gl2ps needs3party $(OPENGL_LIBS)
+gl2ps needs3party $(ORIG_LIBS)
+gl2ps needs3party $(PNG_LIBS)
 gmap needs xlinear_prog
 gmap needs xmlwrapp
 gnomon_access needs $(SQLITE3_WRAPPER)
@@ -687,6 +690,7 @@ gui_opengl needs3party $(FTGL_LIBS)
 gui_opengl needs3party $(GLEW_LIBS)
 gui_opengl needs3party $(OPENGL_LIBS)
 gui_print needs gui_opengl
+gui_print needs3party $(GL2PS_LIBS)
 gui_utils needs $(COMPRESS_LIBS)
 gui_utils needs ncbi_xcache_netcache
 gui_utils needs tables
@@ -763,6 +767,7 @@ lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs $(SQLITE3_WRAPPER)
 lds2 needs3party $(SQLITE3_LIBS)
+leveldb includes wgmlst_distances
 linkos_utils needs xid_utils
 linkout needs xser
 linkoutdb needs $(SQLITE3_WRAPPER)
@@ -1110,10 +1115,8 @@ psloader-internal needs3party ncbiobj
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
-python2.7 needs3party $(ORIG_LIBS)
 python_ncbi_dbapi needs connect
 python_ncbi_dbapi needs dbapi
-python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 rcobaltasn_g needs xser
 refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs dbapi
@@ -1453,9 +1456,6 @@ wx_base_xml-3.1 needs3party $(EXPAT_LIBS)
 wx_base_xml-3.1 needs3party $(ORIG_LIBS)
 wx_base_xml-3.1 needs3party $(Z_LIBS)
 wx_gtk2_adv-3.1 needs3party $(ORIG_LIBS)
-wx_gtk2_adv-3.1 needs3party $(PNG_LIBS)
-wx_gtk2_adv-3.1 needs3party $(TIFF_LIBS)
-wx_gtk2_adv-3.1 needs3party X11
 wx_gtk2_aui-3.1 needs3party $(ORIG_LIBS)
 wx_gtk2_aui-3.1 needs3party $(PNG_LIBS)
 wx_gtk2_aui-3.1 needs3party $(TIFF_LIBS)
