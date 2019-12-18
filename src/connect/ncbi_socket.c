@@ -877,19 +877,35 @@ static EIO_Status s_InitAPI_(int secure)
         return s_SSL == &kNoSSL ? eIO_NotSupported : eIO_Success;
 
     if (s_SSLSetup) {
+        const char* what = 0;
         CORE_LOCK_WRITE;
         if (!s_SSL) {
             SOCKSSL ssl;
             if (!s_SSLSetup  ||  !(ssl = s_SSLSetup())) {
+                what   = (const char*)(-1L);
                 s_SSL  = &kNoSSL;
                 status = eIO_NotSupported;
             } else {
+                what   = ssl->Name;
                 s_SSL  = ((status = ssl->Init(s_Recv, s_Send)) == eIO_Success
                           ? ssl : &kNoSSL);
             }
         } else
             status = s_SSL == &kNoSSL ? eIO_NotSupported : eIO_Success;
         CORE_UNLOCK;
+        if (status != eIO_Success  &&  what) {
+            const char* provider;
+            char buf[40];
+            if (what == (const char*)(-1L)) {
+                sprintf(buf, "%p()", s_SSLSetup);
+                provider = buf;
+            } else
+                provider = *what ? what : "???";
+            CORE_LOGF(eLOG_Critical,
+                      ("Failed to %s SSL provider %s: %s",
+                       what == (const char*)(-1L) ? "setup" : "initialize",
+                       provider, IO_StatusStr(status)));
+        }
     } else {
         static void* /*bool*/ s_Once = 0/*false*/;
         if (CORE_Once(&s_Once)) {
