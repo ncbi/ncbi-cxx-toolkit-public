@@ -600,20 +600,25 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
         FixMedLineList(auth_list);
         return;
     } else if (auth_list.GetNames().IsStd()) {
+        list< CRef<CAuthor> > authors_with_affil;
         NON_CONST_ITERATE(CAuth_list::TNames::TStd, it, auth_list.SetNames().SetStd()) {
             if ((*it)->GetName().IsMl()) {
                 CRef<CAuthor> new_auth = StdAuthorFromMl((*it)->GetName().GetMl());
                 (*it)->SetName(new_auth->SetName());
             }
             if ((*it)->IsSetAffil()) {
-                // we may need to hoist an affiliation
-                if (auth_list.IsSetAffil()) {
-                    ERR_POST(Error << "publication contains multiple affiliations");
-                }
-                else {
-                    auth_list.SetAffil((*it)->SetAffil());
-                    (*it)->ResetAffil();
-                }
+                authors_with_affil.push_back(*it);
+            }
+        }
+
+        if (authors_with_affil.size() == 1) {
+            // we may need to hoist an affiliation
+            if (auth_list.IsSetAffil()) {
+                ERR_POST(Error << "publication contains multiple affiliations");
+            }
+            else {
+                auth_list.SetAffil(authors_with_affil.front()->SetAffil());
+                authors_with_affil.front()->ResetAffil();
             }
         }
     }
