@@ -358,7 +358,9 @@ INIT_DISCREPANCY_TYPE(STRING)
     { }
 
     bool AddTest(const string& name);
-    void Parse(const CSerialObject& root, const string& fname);
+    void Push(const CSerialObject& root, const string& fname);
+    void Parse() { ParseAll(*m_RootNode); }
+    //void Parse(const CSerialObject& root, const string& fname);
     void ParseObject(const CBioseq& root);
     void ParseObject(const CBioseq_set& root);
     void ParseObject(const CSeq_entry& root);

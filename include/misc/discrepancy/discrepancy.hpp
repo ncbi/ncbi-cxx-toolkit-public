@@ -138,7 +138,9 @@ public:
     }
 
     virtual bool AddTest(const string& name) = 0;
-    virtual void Parse(const CSerialObject& root, const string& fname = kEmptyStr) = 0;
+    virtual void Push(const CSerialObject& root, const string& fname = kEmptyStr) = 0;
+    virtual void Parse() = 0;
+    virtual void Parse(const CSerialObject& root, const string& fname = kEmptyStr) { Push(root, fname); Parse(); }
     virtual void ParseStream(CObjectIStream& stream, const string& fname, const string& default_header = kEmptyStr) = 0;
     virtual void ParseStrings(const string& fname) = 0;
     virtual void TestString(const string& str) = 0;

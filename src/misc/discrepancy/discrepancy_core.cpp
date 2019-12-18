@@ -400,13 +400,12 @@ REGISTER_DISCREPANCY_TYPE(STRING)
 }
 
 
-void CDiscrepancyContext::Parse(const CSerialObject& root, const string& fname)
+void CDiscrepancyContext::Push(const CSerialObject& root, const string& fname)
 {
     const CBioseq* bs = dynamic_cast<const CBioseq*>(&root);
     const CBioseq_set* st = dynamic_cast<const CBioseq_set*>(&root);
     const CSeq_entry* se = dynamic_cast<const CSeq_entry*>(&root);
     const CSeq_submit* ss = dynamic_cast<const CSeq_submit*>(&root);
-//cout << "Parse bs: " << bs << " st: " << st << " se: " << se << " ss: " << ss << " " << "\n";
 
     if (!fname.empty()) {
         m_RootNode.Reset(new CParseNode(eFile, 0));
@@ -430,7 +429,6 @@ void CDiscrepancyContext::Parse(const CSerialObject& root, const string& fname)
     else if (ss) {
         ParseObject(*ss);
     }
-    ParseAll(*m_RootNode);
 }
 
 
