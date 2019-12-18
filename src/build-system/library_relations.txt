@@ -1114,8 +1114,10 @@ psloader-internal needs3party ncbiobj
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
+python3.7m needs3party $(ORIG_LIBS)
 python_ncbi_dbapi needs connect
 python_ncbi_dbapi needs dbapi
+python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 rcobaltasn_g needs xser
 refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs dbapi
