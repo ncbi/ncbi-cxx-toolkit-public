@@ -69,7 +69,7 @@ CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
 {   
     auto& args = command.args;
     string lastLine = args.back().mData;
-    int lastWhiteSpacePos = lastLine.find_last_of(" \t");
+    auto lastWhiteSpacePos = lastLine.find_last_of(" \t");
     string lastToken = (lastWhiteSpacePos == NPOS) ?
                         lastLine :
                         lastLine.substr(lastWhiteSpacePos);
@@ -117,7 +117,7 @@ CAlnScannerNexus::xProcessCommand(
     SNexusCommand command;
     command.args = commandTokens;
 
-    size_t nameEnd = 
+    auto nameEnd = 
         commandTokens.front().mData.find_first_of(" \t[");
     if (nameEnd == NPOS) {
         command.name = command.args.front().mData;
@@ -612,10 +612,10 @@ CAlnScannerNexus::xGetKeyVal(
     const string& key)
 //  ----------------------------------------------------------------------------
 {
-    int keyPos = NPOS;
-    int valPos = NPOS;
+    auto keyPos = NPOS;
+    auto valPos = NPOS;
     int keyLine = 0;
-    int endPos = 0;
+    size_t endPos = 0;
 
     for (auto lineInfo : command) {
         if (keyPos == NPOS) {
