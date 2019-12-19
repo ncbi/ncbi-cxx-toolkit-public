@@ -463,7 +463,7 @@ void CNetStorageServerListener::OnConnected(
 void CNetStorageServerListener::OnErrorImpl(const string& err_msg,
         CNetServer& server)
 {
-    LOG_POST(Error << "NetStorage server " <<
+    ERR_POST("NetStorage server " <<
             server->m_ServerInPool->m_Address.AsString() <<
             " issued error " << err_msg);
 }

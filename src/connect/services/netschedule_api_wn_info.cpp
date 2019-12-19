@@ -101,7 +101,7 @@ CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api)
                     wn_api.GetService().Iterate().GetServer()));
         }
         catch (CException& e) {
-            LOG_POST(Error << e);
+            ERR_POST(e);
         }
     }
 

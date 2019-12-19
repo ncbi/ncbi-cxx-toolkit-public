@@ -189,7 +189,7 @@ public:
             m_JobPriority = affinity_ladder.size();
         } else {
             // Should not happen
-            LOG_POST(Error << "Got a job " << job.job_id <<
+            ERR_POST("Got a job " << job.job_id <<
                     " with unexpected affinity " << job.affinity);
             m_JobPriority = numeric_limits<size_t>::max();
         }

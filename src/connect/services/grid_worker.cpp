@@ -759,9 +759,9 @@ int SGridWorkerNodeImpl::Run(
             break;
         }
         catch (CException& e) {
-            LOG_POST(Error << e);
             int s = (int) m_NSTimeout;
             do {
+                ERR_POST(e);
                 if (CGridGlobals::GetInstance().IsShuttingDown() ||
                         max_wait_for_servers.GetRemainingTime().IsZero())
                     return 1;

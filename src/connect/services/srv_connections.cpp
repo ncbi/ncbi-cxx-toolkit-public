@@ -785,7 +785,7 @@ CNetServer::SExecResult SNetServerImpl::ConnectAndExec(const string& cmd,
                 throw;
 
             if (deadline.IsExpired()) {
-                LOG_POST(Error << "Timeout (max_connection_time=" <<
+                ERR_POST("Timeout (max_connection_time=" <<
                     max_total_time.GetAsMilliSeconds() << "); cmd=" << cmd << "; exception=" << e.GetMsg());
                 throw;
             }
@@ -798,7 +798,7 @@ CNetServer::SExecResult SNetServerImpl::ConnectAndExec(const string& cmd,
                 throw;
 
             if (deadline.IsExpired()) {
-                LOG_POST(Error << "Timeout (max_connection_time=" <<
+                ERR_POST("Timeout (max_connection_time=" <<
                     max_total_time.GetAsMilliSeconds() << "); cmd=" << cmd << "; exception=" << e.GetMsg());
                 throw;
             }
