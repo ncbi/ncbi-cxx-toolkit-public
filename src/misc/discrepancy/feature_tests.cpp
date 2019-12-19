@@ -2087,9 +2087,8 @@ static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
 }
 
 
-static CSeq_annot_EditHandle GetAnnotHandle(CScope& scope, const CBioseq& bs)
+static CSeq_annot_EditHandle GetAnnotHandle(CScope& scope, CBioseq_Handle bsh)
 {
-    CBioseq_Handle bsh = scope.GetBioseqEditHandle(bs);
     CSeq_annot_Handle ftable;
     CSeq_annot_CI annot_ci(bsh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
     for (; annot_ci; ++annot_ci) {
@@ -2114,12 +2113,9 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
     CConstRef<CSeq_feat> old_mRNA = sequence::GetmRNAforCDS(*sf, context.GetScope());
     CRef<CSeq_feat> new_mRNA = edit::MakemRNAforCDS(*sf, context.GetScope());
     if (old_mRNA.Empty()) {
-        const CSerialObject* so = context.FindObject(*obj, true);
-        const CBioseq_set* bs = dynamic_cast<const CBioseq_set*>(so);
-        if (bs && bs->IsSetClass() && bs->GetClass() == CBioseq_set::eClass_nuc_prot) {
-            CSeq_annot_EditHandle annot_handle = GetAnnotHandle(context.GetScope(), bs->GetNucFromNucProtSet());
-            annot_handle.AddFeat(*new_mRNA);
-        }
+        CBioseq_Handle bh = context.GetScope().GetBioseqHandle(new_mRNA->GetLocation());
+        CSeq_annot_EditHandle annot_handle = GetAnnotHandle(context.GetScope(), bh);
+        annot_handle.AddFeat(*new_mRNA);
     }
     else {
         CSeq_feat_EditHandle old_mRNA_edit(context.GetScope().GetSeq_featHandle(*old_mRNA));
