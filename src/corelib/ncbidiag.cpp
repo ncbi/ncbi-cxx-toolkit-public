@@ -52,6 +52,7 @@
 #include <atomic>
 #include <thread>
 #include <unordered_set>
+#include <sstream>
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -254,19 +255,19 @@ extern "C" {
 NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
 NCBI_PARAM_DEF_EX(bool, Diag, Old_Post_Format, true, eParam_NoThread,
                   DIAG_OLD_POST_FORMAT);
-typedef NCBI_PARAM_TYPE(Diag, Old_Post_Format) TOldPostFormatParam;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, Old_Post_Format)> s_OldPostFormat;
 
 // Auto-print context properties on set/change.
 NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
 NCBI_PARAM_DEF_EX(bool, Diag, AutoWrite_Context, false, eParam_NoThread,
                   DIAG_AUTOWRITE_CONTEXT);
-typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, AutoWrite_Context)> s_AutoWrite_Context;
 
 // Print system TID rather than CThread::GetSelf()
 NCBI_PARAM_DECL(bool, Diag, Print_System_TID);
 NCBI_PARAM_DEF_EX(bool, Diag, Print_System_TID, false, eParam_NoThread,
                   DIAG_PRINT_SYSTEM_TID);
-typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, Print_System_TID)> s_PrintSystemTID;
 
 // Use assert() instead of abort() when printing fatal errors
 // to show the assertion dialog and allow to choose the action
@@ -274,14 +275,12 @@ typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
 NCBI_PARAM_DECL(bool, Diag, Assert_On_Abort);
 NCBI_PARAM_DEF_EX(bool, Diag, Assert_On_Abort, false, eParam_NoThread,
                   DIAG_ASSERT_ON_ABORT);
-typedef NCBI_PARAM_TYPE(Diag, Assert_On_Abort) TAssertOnAbortParam;
 
 // Limit log file size, rotate log when it reaches the limit.
 NCBI_PARAM_DECL(long, Diag, Log_Size_Limit);
 NCBI_PARAM_DEF_EX(long, Diag, Log_Size_Limit, 0, eParam_NoThread,
                   DIAG_LOG_SIZE_LIMIT);
-typedef NCBI_PARAM_TYPE(Diag, Log_Size_Limit) TLogSizeLimitParam;
-
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, Log_Size_Limit)> s_LogSizeLimit;
 
 ///////////////////////////////////////////////////////
 //  Output rate control parameters
@@ -329,37 +328,37 @@ NCBI_PARAM_STATIC_PROXY(CLogRateLimit, CLogRateLimit::TValue);
 NCBI_PARAM_DECL(CLogRateLimit, Diag, AppLog_Rate_Limit);
 NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, AppLog_Rate_Limit, 50000,
                   eParam_NoThread, DIAG_APPLOG_RATE_LIMIT);
-typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Limit) TAppLogRateLimitParam;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, AppLog_Rate_Limit)> s_AppLogRateLimit;
 
 // AppLog period, sec
 NCBI_PARAM_DECL(unsigned int, Diag, AppLog_Rate_Period);
 NCBI_PARAM_DEF_EX(unsigned int, Diag, AppLog_Rate_Period, 10, eParam_NoThread,
                   DIAG_APPLOG_RATE_PERIOD);
-typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Period) TAppLogRatePeriodParam;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, AppLog_Rate_Period)> s_AppLogRatePeriod;
 
 // ErrLog limit per period
 NCBI_PARAM_DECL(CLogRateLimit, Diag, ErrLog_Rate_Limit);
 NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, ErrLog_Rate_Limit, 5000,
                   eParam_NoThread, DIAG_ERRLOG_RATE_LIMIT);
-typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Limit) TErrLogRateLimitParam;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Limit)> s_ErrLogRateLimit;
 
 // ErrLog period, sec
 NCBI_PARAM_DECL(unsigned int, Diag, ErrLog_Rate_Period);
 NCBI_PARAM_DEF_EX(unsigned int, Diag, ErrLog_Rate_Period, 1, eParam_NoThread,
                   DIAG_ERRLOG_RATE_PERIOD);
-typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Period) TErrLogRatePeriodParam;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Period)> s_ErrLogRatePeriod;
 
 // TraceLog limit per period
 NCBI_PARAM_DECL(CLogRateLimit, Diag, TraceLog_Rate_Limit);
 NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, TraceLog_Rate_Limit, 5000,
                   eParam_NoThread, DIAG_TRACELOG_RATE_LIMIT);
-typedef NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Limit) TTraceLogRateLimitParam;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Limit)> s_TraceLogRateLimit;
 
 // TraceLog period, sec
 NCBI_PARAM_DECL(unsigned int, Diag, TraceLog_Rate_Period);
 NCBI_PARAM_DEF_EX(unsigned int, Diag, TraceLog_Rate_Period, 1, eParam_NoThread,
                   DIAG_TRACELOG_RATE_PERIOD);
-typedef NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Period) TTraceLogRatePeriodParam;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Period)> s_TraceLogRatePeriod;
 
 // Duplicate messages to STDERR
 NCBI_PARAM_DECL(bool, Diag, Tee_To_Stderr);
@@ -389,23 +388,19 @@ const EDiagSev kTeeMinSeverityDef =
 NCBI_PARAM_ENUM_DEF_EX(EDiagSev, Diag, Tee_Min_Severity,
                        kTeeMinSeverityDef,
                        eParam_NoThread, DIAG_TEE_MIN_SEVERITY);
-typedef NCBI_PARAM_TYPE(Diag, Tee_Min_Severity) TTeeMinSeverity;
 
 
 NCBI_PARAM_DECL(size_t, Diag, Collect_Limit);
 NCBI_PARAM_DEF_EX(size_t, Diag, Collect_Limit, 1000, eParam_NoThread,
                   DIAG_COLLECT_LIMIT);
-typedef NCBI_PARAM_TYPE(Diag, Collect_Limit) TDiagCollectLimit;
 
 
 NCBI_PARAM_DECL(bool, Log, Truncate);
 NCBI_PARAM_DEF_EX(bool, Log, Truncate, false, eParam_NoThread, LOG_TRUNCATE);
-typedef NCBI_PARAM_TYPE(Log, Truncate) TLogTruncateParam;
 
 
 NCBI_PARAM_DECL(bool, Log, NoCreate);
 NCBI_PARAM_DEF_EX(bool, Log, NoCreate, false, eParam_NoThread, LOG_NOCREATE);
-typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
 
 
 // Logging of environment variables: space separated list of names which
@@ -414,7 +409,6 @@ NCBI_PARAM_DECL(string, Log, LogEnvironment);
 NCBI_PARAM_DEF_EX(string, Log, LogEnvironment, "",
                   eParam_NoThread,
                   DIAG_LOG_ENVIRONMENT);
-typedef NCBI_PARAM_TYPE(Log, LogEnvironment) TLogEnvironment;
 
 
 // Logging of registry values: space separated list of 'section:name' strings.
@@ -422,14 +416,13 @@ NCBI_PARAM_DECL(string, Log, LogRegistry);
 NCBI_PARAM_DEF_EX(string, Log, LogRegistry, "",
                   eParam_NoThread,
                   DIAG_LOG_REGISTRY);
-typedef NCBI_PARAM_TYPE(Log, LogRegistry) TLogRegistry;
 
 
 // Turn off all applog messages (start/stop, request start/stop, extra).
 NCBI_PARAM_DECL(bool, Diag, Disable_AppLog_Messages);
 NCBI_PARAM_DEF_EX(bool, Diag, Disable_AppLog_Messages, false, eParam_NoThread,
     DIAG_DISABLE_APPLOG_MESSAGES);
-typedef NCBI_PARAM_TYPE(Diag, Disable_AppLog_Messages) TDisableAppLog;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, Disable_AppLog_Messages)> s_DisableAppLog;
 
 
 static bool s_FinishedSetupDiag = false;
@@ -817,7 +810,7 @@ struct SRequestCtxWrapper
 
 inline Uint8 s_GetThreadId(void)
 {
-    if (TPrintSystemTID::GetDefault()) {
+    if (s_PrintSystemTID->Get()) {
         return (Uint8)GetCurrentThreadSystemID(); // GCC 3.4.6 gives warning - ignore it.
     } else {
         return CThread::GetSelf();
@@ -1091,7 +1084,7 @@ CDiagCollectGuard* CDiagContextThreadData::GetCollectGuard(void)
 
 void CDiagContextThreadData::CollectDiagMessage(const SDiagMessage& mess)
 {
-    static CSafeStatic<TDiagCollectLimit> s_DiagCollectLimit;
+    static CSafeStatic<NCBI_PARAM_TYPE(Diag, Collect_Limit)> s_DiagCollectLimit;
     if (m_DiagCollectionSize >= s_DiagCollectLimit->Get()) {
         m_DiagCollection.erase(m_DiagCollection.begin());
     }
@@ -1175,12 +1168,11 @@ EDiagAppState s_StrToAppState(const string& state)
 NCBI_PARAM_DECL(bool, Diag, UTC_Timestamp);
 NCBI_PARAM_DEF_EX(bool, Diag, UTC_Timestamp, false,
                   eParam_NoThread, DIAG_UTC_TIMESTAMP);
-typedef NCBI_PARAM_TYPE(Diag, UTC_Timestamp) TUtcTimestamp;
 
 
 static CTime s_GetFastTime(void)
 {
-    static CSafeStatic<TUtcTimestamp> s_UtcTimestamp;
+    static CSafeStatic<NCBI_PARAM_TYPE(Diag, UTC_Timestamp)> s_UtcTimestamp;
     return (s_UtcTimestamp->Get() && !CDiagContext::IsApplogSeverityLocked()) ?
         CTime(CTime::eCurrent, CTime::eGmt) : GetFastLocalTime();
 }
@@ -1296,12 +1288,12 @@ unsigned int CDiagContext::GetLogRate_Limit(ELogRate_Type type) const
 {
     switch ( type ) {
     case eLogRate_App:
-        return TAppLogRateLimitParam::GetDefault();
+        return s_AppLogRateLimit->Get();
     case eLogRate_Err:
-        return TErrLogRateLimitParam::GetDefault();
+        return s_ErrLogRateLimit->Get();
     case eLogRate_Trace:
     default:
-        return TTraceLogRateLimitParam::GetDefault();
+        return s_TraceLogRateLimit->Get();
     }
 }
 
@@ -1310,7 +1302,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
     CMutexGuard lock(s_ApproveMutex);
     switch ( type ) {
     case eLogRate_App:
-        TAppLogRateLimitParam::SetDefault(limit);
+        s_AppLogRateLimit->Set(limit);
         if ( m_AppLogRC.get() ) {
             m_AppLogRC->Reset(limit,
                 CTimeSpan((long)GetLogRate_Period(type)),
@@ -1321,7 +1313,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
         m_AppLogSuspended = false;
         break;
     case eLogRate_Err:
-        TErrLogRateLimitParam::SetDefault(limit);
+        s_ErrLogRateLimit->Set(limit);
         if ( m_ErrLogRC.get() ) {
             m_ErrLogRC->Reset(limit,
                 CTimeSpan((long)GetLogRate_Period(type)),
@@ -1333,7 +1325,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
         break;
     case eLogRate_Trace:
     default:
-        TTraceLogRateLimitParam::SetDefault(limit);
+        s_TraceLogRateLimit->Set(limit);
         if ( m_TraceLogRC.get() ) {
             m_TraceLogRC->Reset(limit,
                 CTimeSpan((long)GetLogRate_Period(type)),
@@ -1350,12 +1342,12 @@ unsigned int CDiagContext::GetLogRate_Period(ELogRate_Type type) const
 {
     switch ( type ) {
     case eLogRate_App:
-        return TAppLogRatePeriodParam::GetDefault();
+        return s_AppLogRatePeriod->Get();
     case eLogRate_Err:
-        return TErrLogRatePeriodParam::GetDefault();
+        return s_ErrLogRatePeriod->Get();
     case eLogRate_Trace:
     default:
-        return TTraceLogRatePeriodParam::GetDefault();
+        return s_TraceLogRatePeriod->Get();
     }
 }
 
@@ -1364,7 +1356,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
     CMutexGuard lock(s_ApproveMutex);
     switch ( type ) {
     case eLogRate_App:
-        TAppLogRatePeriodParam::SetDefault(period);
+        s_AppLogRatePeriod->Set(period);
         if ( m_AppLogRC.get() ) {
             m_AppLogRC->Reset(GetLogRate_Limit(type),
                 CTimeSpan((long)period),
@@ -1375,7 +1367,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
         m_AppLogSuspended = false;
         break;
     case eLogRate_Err:
-        TErrLogRatePeriodParam::SetDefault(period);
+        s_ErrLogRatePeriod->Set(period);
         if ( m_ErrLogRC.get() ) {
             m_ErrLogRC->Reset(GetLogRate_Limit(type),
                 CTimeSpan((long)period),
@@ -1387,7 +1379,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
         break;
     case eLogRate_Trace:
     default:
-        TTraceLogRatePeriodParam::SetDefault(period);
+        s_TraceLogRatePeriod->Set(period);
         if ( m_TraceLogRC.get() ) {
             m_TraceLogRC->Reset(GetLogRate_Limit(type),
                 CTimeSpan((long)period),
@@ -1768,7 +1760,7 @@ void CDiagContext::SetRequestContext(CRequestContext* ctx)
 
 void CDiagContext::SetAutoWrite(bool value)
 {
-    TAutoWrite_Context::SetDefault(value);
+    s_AutoWrite_Context->Set(value);
 }
 
 
@@ -1871,7 +1863,7 @@ void CDiagContext::SetProperty(const string& name,
         _ASSERT(props);
         (*props)[name] = value;
     }
-    if ( sm_Instance  &&  TAutoWrite_Context::GetDefault() ) {
+    if ( sm_Instance  &&  s_AutoWrite_Context->Get() ) {
         CDiagLock lock(CDiagLock::eRead);
         x_PrintMessage(SDiagMessage::eEvent_Extra, name + "=" + value);
     }
@@ -2274,16 +2266,13 @@ void CDiagContext_Extra::Flush(void)
         }
     }
 
-    unique_ptr<CNcbiOstrstream> ostr;
     string s;
     if (m_EventType == SDiagMessage::eEvent_PerfLog) {
-        ostr.reset(new CNcbiOstrstream);
-        *ostr << m_PerfStatus << " " <<
-            NStr::DoubleToString(m_PerfTime, -1, NStr::fDoubleFixed);
-        s = CNcbiOstrstreamToString(*ostr);
+        s.append(to_string(m_PerfStatus)).append(1, ' ')
+            .append(NStr::DoubleToString(m_PerfTime, -1, NStr::fDoubleFixed));
     }
 
-    if (!TDisableAppLog::GetDefault()) {
+    if (!s_DisableAppLog->Get()) {
         SDiagMessage mess(eDiag_Info,
                           s.data(), s.size(),
                           0, 0, // file, line
@@ -2771,13 +2760,13 @@ void CDiagContext::SetAppState(EDiagAppState state, EPropertyMode mode)
 NCBI_PARAM_DECL(string, Log, Http_Session_Id);
 NCBI_PARAM_DEF_EX(string, Log, Http_Session_Id, "", eParam_NoThread,
                   HTTP_NCBI_SID);
-typedef NCBI_PARAM_TYPE(Log, Http_Session_Id) TParamHttpSessionId;
+static CSafeStatic<NCBI_PARAM_TYPE(Log, Http_Session_Id)> s_HttpSessionId;
 
 // Session id set in the environment
 NCBI_PARAM_DECL(string, Log, Session_Id);
 NCBI_PARAM_DEF_EX(string, Log, Session_Id, "", eParam_NoThread,
                   NCBI_LOG_SESSION_ID);
-typedef NCBI_PARAM_TYPE(Log, Session_Id) TParamDefaultSessionId;
+static CSafeStatic<NCBI_PARAM_TYPE(Log, Session_Id)> s_DefaultSessionId;
 
 
 DEFINE_STATIC_MUTEX(s_DefaultSidMutex);
@@ -2795,10 +2784,10 @@ string CDiagContext::GetDefaultSessionID(void) const
     }
     if ( m_DefaultSessionId->IsEmpty() ) {
         string sid = CRequestContext::SelectLastSessionID(
-            TParamHttpSessionId::GetDefault());
+            s_HttpSessionId->Get());
         if ( sid.empty() ) {
             sid = CRequestContext::SelectLastSessionID(
-                TParamDefaultSessionId::GetDefault());
+                s_DefaultSessionId->Get());
         }
         m_DefaultSessionId->SetString(sid);
     }
@@ -2842,18 +2831,18 @@ string CDiagContext::GetEncodedSessionID(void) const
 NCBI_PARAM_DECL(string, Log, Client_Ip);
 NCBI_PARAM_DEF_EX(string, Log, Client_Ip, "", eParam_NoThread,
                   NCBI_LOG_CLIENT_IP);
-typedef NCBI_PARAM_TYPE(Log, Client_Ip) TParamDefaultClientIp;
+static CSafeStatic<NCBI_PARAM_TYPE(Log, Client_Ip)> s_DefaultClientIp;
 
 
 const string CDiagContext::GetDefaultClientIP(void)
 {
-    return TParamDefaultClientIp::GetDefault();
+    return s_DefaultClientIp->Get();
 }
 
 
 void CDiagContext::SetDefaultClientIP(const string& client_ip)
 {
-    TParamDefaultClientIp::SetDefault(client_ip);
+    s_DefaultClientIp->Set(client_ip);
 }
 
 
@@ -2861,13 +2850,13 @@ void CDiagContext::SetDefaultClientIP(const string& client_ip)
 NCBI_PARAM_DECL(string, Log, Http_Hit_Id);
 NCBI_PARAM_DEF_EX(string, Log, Http_Hit_Id, "", eParam_NoThread,
                   HTTP_NCBI_PHID);
-typedef NCBI_PARAM_TYPE(Log, Http_Hit_Id) TParamHttpHitId;
+static CSafeStatic<NCBI_PARAM_TYPE(Log, Http_Hit_Id)> s_HttpHitId;
 
 // Hit id set in the environment or registry
 NCBI_PARAM_DECL(string, Log, Hit_Id);
 NCBI_PARAM_DEF_EX(string, Log, Hit_Id, "", eParam_NoThread,
                   NCBI_LOG_HIT_ID);
-typedef NCBI_PARAM_TYPE(Log, Hit_Id) TParamHitId;
+static CSafeStatic<NCBI_PARAM_TYPE(Log, Hit_Id)> s_HitId;
 
 
 DEFINE_STATIC_MUTEX(s_DefaultHidMutex);
@@ -2922,10 +2911,10 @@ CSharedHitId CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
     }
     if ( m_DefaultHitId->Empty() ) {
         m_DefaultHitId->SetHitId(CRequestContext::SelectLastHitID(
-            TParamHttpHitId::GetDefault()));
+            s_HttpHitId->Get()));
         if ( m_DefaultHitId->Empty() ) {
             string phid = CRequestContext::SelectLastHitID(
-                TParamHitId::GetDefault());
+                s_HitId->Get());
             if ( !phid.empty() ) {
                 const char* c_env_job_id = getenv("JOB_ID");
                 string env_job_id = c_env_job_id ? string(c_env_job_id): "";
@@ -3137,7 +3126,7 @@ void CDiagContext::x_StartRequest(void)
 void CDiagContext::x_LogEnvironment(void)
 {
     // Print selected environment and registry values.
-    static CSafeStatic<TLogEnvironment> s_LogEnvironment;
+    static CSafeStatic<NCBI_PARAM_TYPE(Log, LogEnvironment)> s_LogEnvironment;
     string log_args = s_LogEnvironment->Get();
     if ( !log_args.empty() ) {
         list<string> log_args_list;
@@ -3160,7 +3149,7 @@ void CDiagContext::x_LogEnvironment(void)
         }}
         extra.Flush();
     }
-    static CSafeStatic<TLogRegistry> s_LogRegistry;
+    static CSafeStatic<NCBI_PARAM_TYPE(Log, LogRegistry)> s_LogRegistry;
     log_args = s_LogRegistry->Get();
     if ( !log_args.empty() ) {
         list<string> log_args_list;
@@ -3193,7 +3182,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     if ( IsSetOldPostFormat() ) {
         return;
     }
-    CNcbiOstrstream ostr;
+    string str;
     string prop;
     bool need_space = false;
     CRequestContext& ctx = GetRequestContext();
@@ -3208,10 +3197,9 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
             break;
         }
     case SDiagMessage::eEvent_Stop:
-        ostr << NStr::IntToString(GetExitCode())
-            << " " << m_StopWatch->AsString();
+        str.append(to_string(GetExitCode())).append(1, ' ').append(m_StopWatch->AsString());
         if (GetExitSignal() != 0) {
-            ostr << " SIG=" << GetExitSignal();
+            str.append(" SIG=").append(to_string(GetExitSignal()));
         }
         need_space = true;
         break;
@@ -3223,10 +3211,10 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                 ERR_POST_ONCE(
                     "Duplicate request-stop or missing request-start");
             }
-            ostr << ctx.GetRequestStatus() << " "
-                << ctx.GetRequestTimer().AsString() << " "
-                << ctx.GetBytesRd() << " "
-                << ctx.GetBytesWr();
+            str.append(to_string(ctx.GetRequestStatus())).append(1, ' ')
+                .append(ctx.GetRequestTimer().AsString()).append(1, ' ')
+                .append(to_string(ctx.GetBytesRd())).append(1, ' ')
+                .append(to_string(ctx.GetBytesWr()));
             need_space = true;
             break;
         }
@@ -3235,15 +3223,14 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     }
     if ( !message.empty() ) {
         if (need_space) {
-            ostr << " ";
+            str.append(1, ' ');
         }
-        ostr << message;
+        str.append(message);
     }
 
-    if (!TDisableAppLog::GetDefault()) {
-        string s = CNcbiOstrstreamToString(ostr);
+    if (!s_DisableAppLog->Get()) {
         SDiagMessage mess(eDiag_Info,
-            s.data(), s.size(),
+            str.data(), str.size(),
             0, 0, // file, line
             CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
             NULL,
@@ -3263,25 +3250,25 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
 
 bool CDiagContext::IsSetOldPostFormat(void)
 {
-     return TOldPostFormatParam::GetDefault();
+    return s_OldPostFormat->Get();
 }
 
 
 void CDiagContext::SetOldPostFormat(bool value)
 {
-    TOldPostFormatParam::SetDefault(value);
+    s_OldPostFormat->Set(value);
 }
 
 
 bool CDiagContext::IsUsingSystemThreadId(void)
 {
-     return TPrintSystemTID::GetDefault();
+     return s_PrintSystemTID->Get();
 }
 
 
 void CDiagContext::UseSystemThreadId(bool value)
 {
-    TPrintSystemTID::SetDefault(value);
+    s_PrintSystemTID->Set(value);
 }
 
 
@@ -3382,6 +3369,8 @@ string GetDefaultLogLocation(CNcbiApplication& app)
 }
 
 
+typedef NCBI_PARAM_TYPE(Log, Truncate) TLogTruncateParam;
+
 bool CDiagContext::GetLogTruncate(void)
 {
     return TLogTruncateParam::GetDefault();
@@ -3397,7 +3386,7 @@ void CDiagContext::SetLogTruncate(bool value)
 bool OpenLogFileFromConfig(const string& logname)
 {
     if ( !logname.empty() ) {
-        if ( TLogNoCreate::GetDefault()  &&  !CDirEntry(logname).Exists() ) {
+        if (NCBI_PARAM_TYPE(Log, NoCreate)::GetDefault()  &&  !CDirEntry(logname).Exists() ) {
             return false;
         }
         return SetLogFile(logname, eDiagFile_All, true);
@@ -3722,7 +3711,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         ctx.SetOldPostFormat(false);
         SetDiagPostFlag(eDPF_MergeLines);
         s_MergeLinesSetBySetupDiag = true;
-        TLogSizeLimitParam::SetDefault(0); // No log size limit
+        s_LogSizeLimit->Set(0); // No log size limit
         SetDiagPostLevel(eDiag_Warning);
         // Lock severity level
         SetApplogSeverityLocked(true);
@@ -3908,7 +3897,6 @@ NCBI_PARAM_ENUM_DEF_EX(EDiagSev,
     eDiag_Fatal,
     eParam_NoThread, // No per-thread values
     DEBUG_STACK_TRACE_LEVEL);
-typedef NCBI_PARAM_TYPE(DEBUG, Stack_Trace_Level) TStackTraceLevelParam;
 
 
 void* InitDiagHandler(void)
@@ -4019,7 +4007,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             if ( ctx.ApproveMessage(mess, &show_warning) ) {
                 if (mess.m_Severity >= eDiag_Error &&
                     mess.m_Severity != eDiag_Trace &&
-                    TDisableAppLog::GetDefault() &&
+                    s_DisableAppLog->Get() &&
                     rctx.x_LogHitIDOnError()) {
                     const CNcbiDiag diag(DIAG_COMPILE_INFO);
                     SDiagMessage phid_msg(eDiag_Error,
@@ -4301,7 +4289,7 @@ void CDiagBuffer::Flush(void)
         m_Diag = 0;
 
 #ifdef NCBI_COMPILER_MSVC
-        if ( TAssertOnAbortParam::GetDefault() ) {
+        if (NCBI_PARAM_TYPE(Diag, Assert_On_Abort)::GetDefault() ) {
             int old_mode = _set_error_mode(_OUT_TO_MSGBOX);
             _ASSERT(false); // Show assertion dialog
             _set_error_mode(old_mode);
@@ -4334,7 +4322,8 @@ void CDiagBuffer::PrintMessage(SDiagMessage& mess, const CNcbiDiag& diag)
         }
     }
     if ( !diag.GetOmitStackTrace() ) {
-        EDiagSev stack_sev = TStackTraceLevelParam::GetDefault();
+        static CSafeStatic<NCBI_PARAM_TYPE(DEBUG, Stack_Trace_Level)> s_StackTraceLevel;
+        EDiagSev stack_sev = s_StackTraceLevel->Get();
         mess.m_PrintStackTrace = (sev == stack_sev) || (sev > stack_sev && sev != eDiag_Trace);
     }
     DiagHandler(mess);
@@ -5258,9 +5247,9 @@ bool SDiagMessage::x_IsSetOldFormat(void) const
 
 void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 {
-    CNcbiOstrstream ostr;
+    stringstream ostr;
     Write(ostr, flags);
-    str = CNcbiOstrstreamToString(ostr);
+    str = ostr.str();
 }
 
 
@@ -5417,7 +5406,6 @@ NCBI_PARAM_ENUM_ARRAY(EDiagMergeLines, Diag, Merge_Lines)
 NCBI_PARAM_ENUM_DEF_EX(EDiagMergeLines, Diag, Merge_Lines,
                        eDiagMergeLines_Default,
                        eParam_NoThread, DIAG_MERGE_LINES);
-typedef NCBI_PARAM_TYPE(Diag, Merge_Lines) TDiagMergeLines;
 
 
 // Formatted output of stack trace
@@ -5436,7 +5424,7 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& out_str,
     // Temp stream - the result will be passed to line merging.
     // Error text, module, prefix etc. can have linebreaks which need to
     // be escaped.
-    CNcbiOstrstream os;
+    stringstream os;
 
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
@@ -5591,9 +5579,10 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& out_str,
         s_FormatStackTrace(os, CStackTrace());
     }
 
-    string buf = CNcbiOstrstreamToString(os);
+    string buf = os.str();
     bool merge_lines = IsSetDiagPostFlag(eDPF_MergeLines, m_Flags);
-    switch (TDiagMergeLines::GetDefault()) {
+    static CSafeStatic<NCBI_PARAM_TYPE(Diag, Merge_Lines)> s_DiagMergeLines;
+    switch (s_DiagMergeLines->Get()) {
     case eDiagMergeLines_On:
         merge_lines = true;
         break;
@@ -5623,7 +5612,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& out_str,
     // Temp stream - the result will be passed to line merging.
     // Error text, module, prefix etc. can have linebreaks which need to
     // be escaped.
-    CNcbiOstrstream os;
+    stringstream os;
 
     if ((flags & fNoPrefix) == 0) {
         GetDiagContext().WriteStdPrefix(os, *this);
@@ -5756,7 +5745,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& out_str,
         s_FormatStackTrace(os, CStackTrace());
     }
 
-    string buf = CNcbiOstrstreamToString(os);
+    string buf = os.str();
     // Line merging in new (applog) format is unconditional.
     s_EscapeNewlines(buf);
     out_str << buf;
@@ -6100,7 +6089,7 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 
 
 CTeeDiagHandler::CTeeDiagHandler(CDiagHandler* orig, bool own_orig)
-    : m_MinSev(TTeeMinSeverity::GetDefault()),
+    : m_MinSev(NCBI_PARAM_TYPE(Diag, Tee_Min_Severity)::GetDefault()),
       m_OrigHandler(orig, own_orig ? eTakeOwnership : eNoOwnership)
 {
     // Prevent recursion
@@ -6132,10 +6121,10 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
         return;
     }
 
-    CNcbiOstrstream str_os;
+    stringstream str_os;
     mess.x_OldWrite(str_os);
     CDiagLock lock(CDiagLock::ePost);
-    string str = CNcbiOstrstreamToString(str_os);
+    string str = str_os.str();
     cerr.write(str.data(), str.size());
     cerr << NcbiFlush;
 }
@@ -6220,9 +6209,9 @@ void CDiagHandler::PostToConsole(const SDiagMessage& mess)
         return;
     }
     CDiagLock lock(CDiagLock::ePost);
-    CNcbiOstrstream str_os;
+    stringstream str_os;
     str_os << mess;
-    string str = CNcbiOstrstreamToString(str_os);
+    string str = str_os.str();
     cerr.write(str.data(), str.size());
     cerr << NcbiFlush;
 }
@@ -6294,9 +6283,9 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
     }
     CDiagLock lock(CDiagLock::ePost);
     m_Stream->clear();
-    CNcbiOstrstream str_os;
+    stringstream str_os;
     str_os << mess;
-    string str = CNcbiOstrstreamToString(str_os);
+    string str = str_os.str();
     m_Stream->write(str.data(), str.size());
     if (m_QuickFlush) {
         *m_Stream << NcbiFlush;
@@ -6388,7 +6377,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         // Unix with only one CFileHandleDiagHandler for each physical file.
         // This is how it was requested to work by Denis Vakatov.
         long pos = lseek(m_Handle->GetHandle(), 0, SEEK_CUR);
-        long limit = TLogSizeLimitParam::GetDefault();
+        long limit = s_LogSizeLimit->Get();
         if (limit > 0  &&  pos > limit) {
             CFile f(GetLogName());
             f.Rename(GetLogName() + "-backup", CDirEntry::fRF_Overwrite);
@@ -6514,9 +6503,9 @@ bool CFileHandleDiagHandler::AllowAsyncWrite(const SDiagMessage& /*msg*/) const
 string CFileHandleDiagHandler::ComposeMessage(const SDiagMessage& msg,
                                               EDiagFileType*) const
 {
-    CNcbiOstrstream str_os;
+    stringstream str_os;
     str_os << msg;
-    return CNcbiOstrstreamToString(str_os);
+    return str_os.str();
 }
 
 
@@ -6565,7 +6554,9 @@ bool s_IsSpecialLogName(const string& name)
 {
     return name.empty()
         ||  name == "-"
-        ||  name == "/dev/null";
+        ||  name == "/dev/null"
+        ||  name == "/dev/stdout"
+        ||  name == "/dev/stderr";
 }
 
 
@@ -7048,7 +7039,6 @@ public:
 NCBI_PARAM_DECL(Uint4, Diag, Max_Async_Queue_Size);
 NCBI_PARAM_DEF_EX(Uint4, Diag, Max_Async_Queue_Size, 10000, eParam_NoThread,
                   DIAG_MAX_ASYNC_QUEUE_SIZE);
-typedef NCBI_PARAM_TYPE(Diag, Max_Async_Queue_Size) TMaxAsyncQueueSizeParam;
 
 
 CAsyncDiagHandler::CAsyncDiagHandler(void)
@@ -7121,7 +7111,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
         async.m_Message = new SDiagMessage(mess);
     }
 
-    static CSafeStatic<TMaxAsyncQueueSizeParam> s_MaxAsyncQueueSizeParam;
+    static CSafeStatic<NCBI_PARAM_TYPE(Diag, Max_Async_Queue_Size)> s_MaxAsyncQueueSizeParam;
     if (mess.m_Severity < GetDiagDieLevel()) {
         CFastMutexGuard guard(thr->m_QueueLock);
         while (Uint4(thr->m_MsgsInQueue.Get()) >= s_MaxAsyncQueueSizeParam->Get())
@@ -7172,12 +7162,10 @@ CAsyncDiagThread::~CAsyncDiagThread(void)
 NCBI_PARAM_DECL(size_t, Diag, Async_Buffer_Size);
 NCBI_PARAM_DEF_EX(size_t, Diag, Async_Buffer_Size, 32768,
     eParam_NoThread, DIAG_ASYNC_BUFFER_SIZE);
-typedef NCBI_PARAM_TYPE(Diag, Async_Buffer_Size) TAsyncBufferSizeParam;
 
 NCBI_PARAM_DECL(size_t, Diag, Async_Buffer_Max_Lines);
 NCBI_PARAM_DEF_EX(size_t, Diag, Async_Buffer_Max_Lines, 100,
     eParam_NoThread, DIAG_ASYNC_BUFFER_MAX_LINES);
-typedef NCBI_PARAM_TYPE(Diag, Async_Buffer_Max_Lines) TAsyncBufferMaxLinesParam;
 
 
 struct SMessageBuffer
@@ -7191,11 +7179,11 @@ struct SMessageBuffer
     SMessageBuffer(void)
         : data(0), size(0), pos(0), lines(0)
     {
-        size = TAsyncBufferSizeParam::GetDefault();
+        size = NCBI_PARAM_TYPE(Diag, Async_Buffer_Size)::GetDefault();
         if ( size ) {
             data = new char[size];
         }
-        max_lines = TAsyncBufferMaxLinesParam::GetDefault();
+        max_lines = NCBI_PARAM_TYPE(Diag, Async_Buffer_Max_Lines)::GetDefault();
     }
 
     ~SMessageBuffer(void)
@@ -7234,7 +7222,6 @@ struct SMessageBuffer
 NCBI_PARAM_DECL(int, Diag, Async_Batch_Size);
 NCBI_PARAM_DEF_EX(int, Diag, Async_Batch_Size, 10, eParam_NoThread,
                   DIAG_ASYNC_BATCH_SIZE);
-typedef NCBI_PARAM_TYPE(Diag, Async_Batch_Size) TAsyncBatchSizeParam;
 
 
 void*
@@ -7247,7 +7234,7 @@ CAsyncDiagThread::Main(void)
         SetCurrentThreadName(thr_name);
     }
 
-    const int batch_size = TAsyncBatchSizeParam::GetDefault();
+    const int batch_size = NCBI_PARAM_TYPE(Diag, Async_Batch_Size)::GetDefault();
 
     const size_t buf_count = size_t(eDiagFile_All) + 1;
     SMessageBuffer* buffers[buf_count];
@@ -7616,9 +7603,9 @@ const CNcbiDiag& CNcbiDiag::Put(const CStackTrace*,
 {
     if ( !stacktrace.Empty() ) {
         stacktrace.SetPrefix("      ");
-        CNcbiOstrstream os;
+        stringstream os;
         s_FormatStackTrace(os, stacktrace);
-        *this << (string) CNcbiOstrstreamToString(os);
+        *this << os.str();
     }
     return *this;
 }
@@ -7627,11 +7614,12 @@ static string
 s_GetExceptionText(const CException* pex)
 {
     string text(pex->GetMsg());
-    CNcbiOstrstream os;
+    stringstream os;
     pex->ReportExtra(os);
-    if ( !IsOssEmpty(os) ) {
+    string s = os.str();
+    if ( !s.empty() ) {
         text += " (";
-        text += (string) CNcbiOstrstreamToString(os);
+        text += s;
         text += ')';
     }
     return text;
@@ -7678,10 +7666,10 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         string text(s_GetExceptionText(pex));
         const CStackTrace* stacktrace = pex->GetStackTrace();
         if ( stacktrace ) {
-            CNcbiOstrstream os;
+            stringstream os;
             s_FormatStackTrace(os, *stacktrace);
             m_OmitStackTrace = true;
-            text += (string) CNcbiOstrstreamToString(os);
+            text += os.str();
         }
         string err_type(pex->GetType());
         err_type += "::";
