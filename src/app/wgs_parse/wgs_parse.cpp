@@ -1619,7 +1619,7 @@ int CWGSParseApp::Run(void)
     CWgsParseDiagHandler diag_handler(logfile, overwrite);
 
     GenBankReaders_Register_Pubseq();
-    GenBankReaders_Register_Pubseq2();
+    // GenBankReaders_Register_Pubseq2();
     DBAPI_RegisterDriver_FTDS();
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
