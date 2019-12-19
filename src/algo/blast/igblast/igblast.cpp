@@ -269,6 +269,16 @@ CIgBlast::Run()
 
     /*** search internal V for domain annotation */
     {
+        //restore default settings for internal db search 
+        if (m_IgOptions->m_IsProtein) {
+            opts_hndl->SetOptions().SetCompositionBasedStats(eNoCompositionBasedStats);
+        } else {
+            opts_hndl->SetOptions().SetMismatchPenalty(-1);
+            opts_hndl->SetOptions().SetWordSize(9);
+            opts_hndl->SetOptions().SetGapOpeningCost(4);
+            opts_hndl->SetOptions().SetGapExtensionCost(1);
+        }
+        opts_hndl->SetEvalueThreshold(20);
         opts_hndl->SetHitlistSize(20);  // use a larger number to ensure annotation
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
         blast.SetNumberOfThreads(m_NumThreads);
