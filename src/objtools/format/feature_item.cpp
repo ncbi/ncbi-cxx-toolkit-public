@@ -2408,6 +2408,43 @@ void CFeatureItem::x_AddQualCodonStart(
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualCodonStartIdx( 
+    const CCdregion& cdr,
+    CBioseqContext& ctx,
+    const int inset )
+//  ----------------------------------------------------------------------------
+{
+    CCdregion::TFrame frame = cdr.GetFrame();
+    if (frame == CCdregion::eFrame_not_set) {
+        frame = CCdregion::eFrame_one;
+    }
+
+    if (inset == 1) {
+        if (frame == CCdregion::eFrame_one) {
+            frame = CCdregion::eFrame_three;
+        } else if (frame == CCdregion::eFrame_two) {
+            frame = CCdregion::eFrame_one;
+        } else if (frame == CCdregion::eFrame_three) {
+            frame = CCdregion::eFrame_two;
+        }
+    } else if (inset == 2) {
+        if (frame == CCdregion::eFrame_one) {
+            frame = CCdregion::eFrame_two;
+        } else if (frame == CCdregion::eFrame_two) {
+            frame = CCdregion::eFrame_three;
+        } else if (frame == CCdregion::eFrame_three) {
+            frame = CCdregion::eFrame_one;
+        }
+    }
+
+    // codon_start qualifier is always shown for nucleotides and for proteins mapped
+    // from cDNA, otherwise only when the frame is not 1.
+    if ( !ctx.IsProt() || !IsMappedFromCDNA() || frame != CCdregion::eFrame_one ) {
+        x_AddQual( eFQ_codon_start, new CFlatIntQVal( frame ) );
+    }
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualTranslationException( 
     const CCdregion& cdr,
     CBioseqContext& ctx )
@@ -2848,12 +2885,55 @@ void CFeatureItem::x_AddQualsCdregionIdx(
 
     const CCdregion& cdr = cds.GetData().GetCdregion();
 
+    // const CSeq_loc& cdsloc = cds.GetLocation();
+    const CSeq_loc& orgloc = cds.GetOriginalFeature().GetLocation();
+    const CSeq_loc& bsploc = ctx.GetLocation();
+ 
+    // cerr << "CDS " << MSerial_AsnText << cdsloc;
+    // cerr << "ORG " << MSerial_AsnText << orgloc;
+    // cerr << "BSP " << MSerial_AsnText << bsploc;
+
+    int inset = 0;
+    if ( ! ctx.GetLocation().IsWhole()) {
+        if (bsploc.IsInt()) {
+            const CSeq_interval& bspint = bsploc.GetInt();
+            if ( orgloc.IsSetStrand() && orgloc.GetStrand() == eNa_strand_minus ) {
+                CBioseq_Handle& hdl = ctx.GetHandle();
+                if (hdl) {
+                    int pos = bspint.GetTo();
+                    // cerr << "PS " << pos << endl;
+                    const CSeq_id* bid = bsploc.GetId();
+                    ENa_strand strand = eNa_strand_minus;
+                    CSeq_id& cid = const_cast<CSeq_id&>(*bid);
+                    CConstRef<CSeq_loc> newloc(new CSeq_loc(cid, pos, pos, strand));
+                    // cerr << "NEW " << MSerial_AsnText << newloc;
+                    inset = sequence::LocationOffset(orgloc, *newloc, eOffset_FromStart, &ctx.GetScope());
+                    // cerr << "IS " << inset << endl;
+                }
+            } else {
+                int pos = bspint.GetFrom();
+                // cerr << "PS " << pos << endl;
+                const CSeq_id* bid = bsploc.GetId();
+                ENa_strand strand = eNa_strand_plus;
+                CSeq_id& cid = const_cast<CSeq_id&>(*bid);
+                CConstRef<CSeq_loc> newloc(new CSeq_loc(cid, pos, pos, strand));
+                // cerr << "NEW " << MSerial_AsnText << newloc;
+                inset = sequence::LocationOffset(orgloc, *newloc, eOffset_FromStart, &ctx.GetScope());
+                // cerr << "IS " << inset << endl;
+            }
+        }
+    }
+    if (inset < 0) {
+        inset = 0;
+    }
+    inset = (inset % 3);
+
     const CProt_ref* protRef = 0;
     CMappedFeat protFeat;
     CConstRef<CSeq_id> prot_id;
 
     x_AddQualTranslationTable( cdr, ctx );
-    x_AddQualCodonStart( cdr, ctx );
+    x_AddQualCodonStartIdx( cdr, ctx, inset );
     x_AddQualTranslationException( cdr, ctx );
     x_AddQualProteinConflict( cdr, ctx );
     x_AddQualCodedBy( ctx );

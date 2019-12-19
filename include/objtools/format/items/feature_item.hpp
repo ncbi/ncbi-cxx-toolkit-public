@@ -206,6 +206,7 @@ protected:
     void x_AddQualTranslation( CBioseq_Handle&, CBioseqContext&, bool );
     void x_AddQualTranslationTable( const CCdregion&, CBioseqContext& );
     void x_AddQualCodonStart( const CCdregion&, CBioseqContext& );
+    void x_AddQualCodonStartIdx( const CCdregion&, CBioseqContext&, const int inset );
     void x_AddQualTranslationException( const CCdregion&, CBioseqContext& );
     void x_AddQualProteinConflict( const CCdregion&, CBioseqContext& );
     void x_AddQualCodedBy( CBioseqContext& );
