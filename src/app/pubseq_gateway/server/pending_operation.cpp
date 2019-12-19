@@ -1904,7 +1904,13 @@ void CPendingOperation::x_SendReplyError(const string &  msg,
 {
     m_ProtocolSupport.PrepareReplyMessage(msg, status, code, eDiag_Error);
     UpdateOverallStatus(status);
-    PSG_ERROR(msg);
+
+    if (status >= CRequestStatus::e400_BadRequest &&
+        status < CRequestStatus::e500_InternalServerError) {
+        PSG_WARNING(msg);
+    } else {
+        PSG_ERROR(msg);
+    }
 }
 
 
@@ -2269,7 +2275,12 @@ void CPendingOperation::OnGetBlobError(
                         severity == eDiag_Fatal);
 
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    PSG_ERROR(message);
+    if (status >= CRequestStatus::e400_BadRequest &&
+        status < CRequestStatus::e500_InternalServerError) {
+        PSG_WARNING(message);
+    } else {
+        PSG_ERROR(message);
+    }
 
     if (status == CRequestStatus::e404_NotFound) {
         app->GetErrorCounters().IncGetBlobNotFound();
@@ -2467,7 +2478,12 @@ void CPendingOperation::OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_d
                         severity == eDiag_Fatal);
 
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    PSG_ERROR(message);
+    if (status >= CRequestStatus::e400_BadRequest &&
+        status < CRequestStatus::e500_InternalServerError) {
+        PSG_WARNING(message);
+    } else {
+        PSG_ERROR(message);
+    }
 
     m_ProtocolSupport.PrepareReplyMessage(message, status, code, severity);
 

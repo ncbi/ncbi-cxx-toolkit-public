@@ -1371,7 +1371,7 @@ int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
                 resp.SetContentType(ePlainTextMime);
                 resp.Send400("Bad Request", err_msg.c_str());
                 if (need_log) {
-                    PSG_ERROR(err_msg);
+                    PSG_WARNING(err_msg);
                     x_PrintRequestStop(context,
                                        CRequestStatus::e400_BadRequest);
                 }
@@ -1382,7 +1382,7 @@ int CPubseqGatewayApp::OnTestIO(HST::CHttpRequest &  req,
             resp.SetContentType(ePlainTextMime);
             resp.Send400("Bad Request", err_msg.c_str());
             if (need_log) {
-                PSG_ERROR(err_msg);
+                PSG_WARNING(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             }
             return 0;
