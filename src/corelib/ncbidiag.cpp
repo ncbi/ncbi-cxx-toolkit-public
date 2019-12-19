@@ -5347,8 +5347,9 @@ string SDiagMessage::FormatExtraMessage(void) const
 // 0xFF -> 0xFF 0xFF
 void SDiagMessage::s_EscapeNewlines(string& buf)
 {
-    if (buf.find_first_of("\n\v\377") == NPOS) return;
-    for (size_t p = 0; p < buf.size(); p++) {
+    size_t p = buf.find_first_of("\n\v\377");
+    if (p == NPOS) return;
+    for (; p < buf.size(); p++) {
         switch (buf[p]) {
         case '\377':
         case '\v':
