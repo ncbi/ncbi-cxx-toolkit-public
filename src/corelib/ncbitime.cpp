@@ -1517,38 +1517,8 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         return kEmptyStr;
     }
 
-    const CTime* t = this;
-    CTime* t_out = 0;
+    // Time format
 
-#if defined(TIMEZONE_IS_UNDEFINED)
-    if (out_tz != eCurrentTimeZone) {
-        ERR_POST_X(4, "Output timezone is unsupported on this platform");
-    }
-#else
-    // Cache some not MT-safe values, so we can unlock mutex as fast as possible
-    TSeconds x_timezone = 0, x_dstbias = 0;
-    bool x_isdst = false;
-    {{
-        CMutexGuard LOCK(s_TimeMutex);
-        // Adjust time for output timezone (should be MT protected)
-        {{
-            if (out_tz != eCurrentTimeZone) {
-                if (out_tz != TimeZone()) {
-                    t_out = new CTime(*this);
-                    t_out->AddSecond(TimeZone() - out_tz);
-                    t = t_out;
-                }
-            }
-        }}
-        // Cache values - now we should avoid to use functions specified at right side..
-        x_timezone = TimeZone();
-        x_dstbias  = DSTBias();
-        x_isdst    = s_IsDST(*this);
-    }}
-#endif
-
-    string str;
-    str.reserve(64); // try to save on memory allocations
     string fmt;
     CTimeFormat::TFlags fmt_flags;
     if ( format.IsEmpty() ) {
@@ -1562,6 +1532,45 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     bool is_escaped = ((fmt_flags & CTimeFormat::fFormat_Simple) == 0);
     bool is_format_symbol = !is_escaped;
     STzFormatMake tz_fmt_make;
+
+
+    // Adjust time to timezone if necessary
+
+    const CTime* t = this;
+    CTime* t_out = 0;
+
+#if defined(TIMEZONE_IS_UNDEFINED)
+    if (out_tz != eCurrentTimeZone) {
+        ERR_POST_X(4, "Output timezone is unsupported on this platform");
+    }
+#else
+    // Cache some not MT-safe values, so we can unlock mutex as fast as possible
+    TSeconds x_timezone = 0, x_dstbias = 0;
+    bool x_isdst = false;
+
+    // Speedup:: timezone information can be used if defined or for 'z' format symbols.
+    if (out_tz != eCurrentTimeZone  ||  fmt.find('z') != NPOS) 
+    {{
+        CMutexGuard LOCK(s_TimeMutex);
+        // Adjust time for output timezone (should be MT protected)
+        {{
+            if (out_tz != eCurrentTimeZone) {
+                if (out_tz != TimeZone()) {
+                    t_out = new CTime(*this);
+                    t_out->AddSecond(TimeZone() - out_tz);
+                    t = t_out;
+                }
+            }
+        }}
+        // Cache values - now we should avoid to use functions specified at right side.
+        x_timezone = TimeZone();
+        x_dstbias  = DSTBias();
+        x_isdst    = s_IsDST(*this);
+    }}
+#endif
+
+    string str;
+    str.reserve(64); // try to save on memory allocations
 
     ITERATE(string, it, fmt) {
 
