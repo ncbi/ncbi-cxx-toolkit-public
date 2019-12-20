@@ -471,7 +471,7 @@ void CNetStorageServerListener::OnErrorImpl(const string& err_msg,
 void CNetStorageServerListener::OnWarningImpl(const string& warn_msg,
         CNetServer& server)
 {
-        LOG_POST(Warning << "NetStorage server " <<
+        ERR_POST(Warning << "NetStorage server " <<
                 server->m_ServerInPool->m_Address.AsString() <<
                 " issued warning " << warn_msg);
 }

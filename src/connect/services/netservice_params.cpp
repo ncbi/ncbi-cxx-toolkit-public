@@ -363,7 +363,7 @@ TType CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType
                     separator = ". ";
                 }
 
-                LOG_POST(Warning << msg);
+                ERR_POST(Warning << msg);
                 m_Alert->Set(NStr::JsonEncode(msg));
             }
         }

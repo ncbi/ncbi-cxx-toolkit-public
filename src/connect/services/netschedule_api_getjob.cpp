@@ -283,7 +283,7 @@ CNetScheduleGetJob::EResult CNetScheduleGetJobImpl<TImpl>::GetJobImmediately(TJo
             // Because a connection error has occurred, do not
             // put this server back to the timeline.
             m_ImmediateActions.erase(i);
-            LOG_POST(Warning << e.GetMsg());
+            ERR_POST(Warning << e.GetMsg());
         }
         catch (...) {
             m_ImmediateActions.erase(i);

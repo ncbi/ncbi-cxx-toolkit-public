@@ -198,7 +198,7 @@ void CNetCacheServerListener::OnErrorImpl(const string& err_msg, CNetServer& ser
 void CNetCacheServerListener::OnWarningImpl(const string& warn_msg,
         CNetServer& server)
 {
-        LOG_POST(Warning << "NetCache server at "
+        ERR_POST(Warning << "NetCache server at "
                 << server->m_ServerInPool->m_Address.AsString() <<
                 ": WARNING: " << warn_msg);
 }

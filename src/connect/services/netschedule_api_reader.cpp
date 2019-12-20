@@ -227,7 +227,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
     const bool any_affinity = explicit_affinity || !affinity_ladder;
 
     if (explicit_affinity && affinity_ladder) {
-        LOG_POST(Warning << "Both explicit affinity and affinity ladder are provided, the latter will be ignored");
+        ERR_POST(Warning << "Both explicit affinity and affinity ladder are provided, the latter will be ignored");
     }
 
     switch (m_Timeline.GetJob(deadline, *job, job_status, any_affinity)) {

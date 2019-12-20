@@ -223,7 +223,7 @@ void SWorkerNodeJobContextImpl::PutProgressMessage(const string& msg,
     CheckIfJobIsLost();
     if (!send_immediately &&
             !m_ProgressMsgThrottler.Approve(CRequestRateControl::eErrCode)) {
-        LOG_POST(Warning << "Progress message \"" <<
+        ERR_POST(Warning << "Progress message \"" <<
                 msg << "\" has been suppressed.");
         return;
     }
@@ -733,7 +733,7 @@ bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
     // Already executing this job, so do nothing
     // (and rely on that execution to report its result later)
     if (!m_WorkerNode->m_JobsInProgress.Add(job)) {
-        LOG_POST(Warning << "Got already processing job " << job.job_id);
+        ERR_POST(Warning << "Got already processing job " << job.job_id);
         return false;
     }
 

@@ -301,7 +301,7 @@ void CGridClient::x_ProlongBlobLifetime(const string& blob_key, unsigned ttl)
         m_NetCacheAPI.ProlongBlobLifetime(blob_key, ttl);
     }
     catch (CNetServiceException& e) {
-        LOG_POST(Warning << "Error while prolonging lifetime for " <<
+        ERR_POST(Warning << "Error while prolonging lifetime for " <<
             blob_key << ": " << e.GetMsg());
     }
 }

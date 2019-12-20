@@ -703,7 +703,7 @@ void CNetScheduleServerListener::OnErrorImpl(
 void CNetScheduleServerListener::OnWarningImpl(const string& warn_msg,
         CNetServer& server)
 {
-        LOG_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
+        ERR_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
                 ": " << warn_msg);
 }
 

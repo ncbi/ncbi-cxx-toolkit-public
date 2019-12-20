@@ -76,7 +76,7 @@ bool CRemoteAppReaperTask::operator()(int current, int max_attempts)
     if (first_attempt) {
         if (process.KillGroup()) return true;
 
-        LOG_POST(Warning << "Failed to kill a process: " << process.GetHandle() << ", will wait for it");
+        ERR_POST(Warning << "Failed to kill a process: " << process.GetHandle() << ", will wait for it");
         return false;
     }
 
@@ -142,7 +142,7 @@ bool CRemoteAppRemoverTask::operator()(int current, int max_attempts) const
     }
 
     if (first_attempt) {
-        LOG_POST(Warning << "Failed to remove a path: " << path << ", will try later");
+        ERR_POST(Warning << "Failed to remove a path: " << path << ", will try later");
         return false;
     }
 

@@ -1210,7 +1210,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             }
 
             fail_only_warnings.IssueAndClear();
-            LOG_POST(Warning << "Unable to send [" << cmd << "] to any "
+            ERR_POST(Warning << "Unable to send [" << cmd << "] to any "
                     "of the discovered servers; will retry after delay.");
 
             SleepMilliSec(retry_delay);
