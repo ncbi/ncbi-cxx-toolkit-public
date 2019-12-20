@@ -5,4 +5,4 @@
 # Include projects from this directory
 
 # Recurse subdirectories
-add_subdirectory(unittests)
+NCBI_add_subdirectory(unittests)
