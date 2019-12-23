@@ -506,6 +506,10 @@ RunTest()
     x_timeout="\$7"
     x_authors="\$8"
 
+    if test -f "/etc/nologin"; then
+        echo "Nologin detected, probably host going to reboot. Skipping test:" \$x_name
+        return 0
+    fi
     if \$is_report_err; then
         # Authors are not defined for this test
         test -z "\$x_authors"  &&  return 0
