@@ -52,6 +52,75 @@ public:
             CAlnErrorReporter* pErrorReporter);
 };
 
+//  ----------------------------------------------------------------------------
+class CFastaIdValidate
+//  ----------------------------------------------------------------------------
+{
+public:
+    using TFastaFlags = long;
+
+    CFastaIdValidate(TFastaFlags flags);
+
+    virtual ~CFastaIdValidate() = default;
+
+    enum EErrCode {
+        eUnexpectedNucResidues,
+        eUnexpectedAminoAcids,
+        eIDTooLong,
+        eBadLocalID,
+        eOther
+    };
+
+    using FReportError = 
+        function<void(EDiagSev severity, 
+                      int lineNum, 
+                      const string& idString, 
+                      EErrCode errCode, 
+                      const string& msg)>;
+
+    using TIds = list<CRef<CSeq_id>>;
+
+    virtual void operator()(
+            const TIds& ids, 
+            int lineNum, 
+            FReportError fReportError);
+
+protected:
+    void CheckIDLength(const CSeq_id& id,
+                       int lineNum,
+                       FReportError fReportError) const;
+
+    bool IsValidLocalID(const CSeq_id& id) const;
+
+    virtual bool IsValidLocalString(const CTempString& idString) const;
+
+    void CheckForExcessiveNucData(
+            const CSeq_id& id, 
+            int lineNum,
+            FReportError fReportError) const;
+
+    static size_t CountPossibleNucResidues(
+            const CTempString& idString);
+
+    void CheckForExcessiveProtData(
+            const CSeq_id& id,
+            int lineNum, 
+            FReportError fReportError) const;
+
+    static size_t CountPossibleAminoAcids(
+            const CTempString& idString);
+
+protected:
+    size_t  kWarnNumNucCharsAtEnd = 20;
+    size_t  kErrNumNucCharsAtEnd = 25;
+    size_t  kWarnNumAminoAcidCharsAtEnd = 50;
+    size_t  kMaxLocalIDLength    = CSeq_id::kMaxLocalIDLength;
+    size_t  kMaxGeneralTagLength = CSeq_id::kMaxGeneralTagLength;
+    size_t  kMaxAccessionLength  = CSeq_id::kMaxAccessionLength;
+
+    TFastaFlags m_Flags;
+};
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

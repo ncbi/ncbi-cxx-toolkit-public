@@ -39,6 +39,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
+#include "seqid_validate.hpp"
 
 #define NCBI_USE_ERRCODE_X Objtools_Rd_Fasta // Will need to change this 
 
@@ -351,7 +352,7 @@ static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
     }
 }
 
-
+/*
 class CFastaIdValidate {
 public:
     virtual ~CFastaIdValidate() = default;
@@ -360,7 +361,8 @@ public:
         eUnexpectedNucResidues,
         eUnexpectedAminoAcids,
         eIDTooLong,
-        eBadLocalID
+        eBadLocalID,
+        eOther
     };
 
     using FReportError = 
@@ -380,28 +382,34 @@ public:
 protected:
     void CheckIDLength(const CSeq_id& id,
                        int lineNum,
-                       FReportError fReportError);
+                       FReportError fReportError) const;
 
-    bool IsValidLocalID(const CSeq_id& id);
+    bool IsValidLocalID(const CSeq_id& id) const;
 
-    virtual bool IsValidLocalString(const CTempString& idString);
+    virtual bool IsValidLocalString(const CTempString& idString) const;
 
     void CheckForExcessiveNucData(
             const CSeq_id& id, 
             int lineNum,
-            FReportError fReportError);
+            FReportError fReportError) const;
+
+    static size_t CountPossibleNucResidues(
+            const CTempString& idString);
 
     void CheckForExcessiveProtData(
             const CSeq_id& id,
             int lineNum, 
-            FReportError fReportError);
+            FReportError fReportError) const;
+
+    static size_t CountPossibleAminoAcids(
+            const CTempString& idString);
 
 protected:
     TSeqPos kWarnNumNucCharsAtEnd = 20;
     TSeqPos kErrNumNucCharsAtEnd = 25;
     TSeqPos kWarnNumAminoAcidCharsAtEnd = 50;
 };
-
+*/
 
 
 class CIdErrorReporter
@@ -453,291 +461,6 @@ void CIdErrorReporter::operator()(EDiagSev severity,
     }
 }
 
-
-class CDefaultIdValidate : public CFastaIdValidate
-{
-public:
-    using TFastaFlags = CFastaReader::TFlags;
-    CDefaultIdValidate(TFastaFlags flags);
-
-    void operator()(const TIds& ids,
-            int lineNum,
-            FReportError fReportError) override;
-private:
-
-    bool IsValidLocalString(const CTempString& idString) override;
-
-    TFastaFlags m_Flags;
-};
-
-
-CDefaultIdValidate::CDefaultIdValidate(TFastaFlags flags)
-    : m_Flags(flags) {}
-
-
-void CDefaultIdValidate::operator()(const TIds& ids,
-        int lineNum,
-        FReportError fReportError)
-{ 
-
-    _ASSERT(!ids.empty());
-    if (!(m_Flags&CFastaReader::fAssumeProt)) {
-        CheckForExcessiveNucData(*ids.back(), lineNum, fReportError);
-    } 
-
-    if (!(m_Flags&CFastaReader::fAssumeNuc)) {
-        CheckForExcessiveProtData(*ids.back(), lineNum, fReportError);
-    }
-
-    CFastaIdValidate::operator()(ids, lineNum, fReportError);
-}
-
-
-bool CDefaultIdValidate::IsValidLocalString(const CTempString& idString) 
-{
-    if (m_Flags & CFastaReader::fQuickIDCheck) {
-        return CFastaIdValidate::IsValidLocalString(idString.substr(0,1));
-    }
-    // else
-    return CFastaIdValidate::IsValidLocalString(idString);
-}
-
-
-
-void CFastaIdValidate::operator()(const TIds& ids,
-        int lineNum,
-        FReportError fReportError) 
-{
-    if (ids.empty()) {
-        return;
-    }
-    // x_CheckForExcessiveSeqData(*ids.back())
-    //
-    for (const auto& pId : ids) {
-        if (pId->IsLocal() && 
-            !IsValidLocalID(*pId)) {
-            const auto& idString = pId->GetSeqIdString();
-            string msg = "'" + idString + "' is not a valid local ID";
-            fReportError(eDiag_Error, lineNum, idString, CFastaIdValidate::eBadLocalID, msg);
-        }
-        CheckIDLength(*pId, lineNum, fReportError);
-    }
-}
-
-static string s_GetIDLengthErrorString(int length, 
-        const string& idType, 
-        int maxAllowedLength, 
-        int lineNum) 
-{
-    string err_message =
-        "Near line " + NStr::NumericToString(lineNum) +
-        + ", the " + idType + " is too long.  Its length is " + NStr::NumericToString(length)
-        + " but the maximum allowed " + idType + " length is "+  NStr::NumericToString(maxAllowedLength)
-        + ".  Please find and correct all " + idType + "s that are too long.";
-
-    return err_message;
-}
-
-
-void CFastaIdValidate::CheckIDLength(const CSeq_id& id, int lineNum, FReportError fReportError)
-{
-    if (id.IsLocal()) {
-        if (id.GetLocal().IsStr() &&
-            id.GetLocal().GetStr().length() > CFastaDeflineReader::s_MaxLocalIDLength) {
-            const auto& msg = 
-                s_GetIDLengthErrorString(id.GetLocal().GetStr().length(), 
-                        "local id", 
-                        CFastaDeflineReader::s_MaxLocalIDLength, 
-                        lineNum);
-            fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CFastaIdValidate::eIDTooLong, msg);
-        }
-        return;
-    }
-
-
-
-    if (id.IsGeneral()) {
-        if (id.GetGeneral().IsSetTag() &&
-            id.GetGeneral().GetTag().IsStr()) {
-            const auto length = id.GetGeneral().GetTag().GetStr().length();
-            if (length > CFastaDeflineReader::s_MaxGeneralTagLength) {
-                const auto& msg = 
-                    s_GetIDLengthErrorString(id.GetGeneral().GetTag().GetStr().length(),
-                            "general id string", 
-                            CFastaDeflineReader::s_MaxGeneralTagLength,
-                            lineNum);
-                fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CFastaIdValidate::eIDTooLong, msg);
-            }
-        }
-        return;
-    }
-
-
-    auto pTextId = id.GetTextseq_Id();
-    if (pTextId && pTextId->IsSetAccession()) {
-        const auto length = pTextId->GetAccession().length();
-        if (length > CFastaDeflineReader::s_MaxAccessionLength) {
-            const auto& msg = 
-                s_GetIDLengthErrorString(length,
-                                "accession",
-                                CFastaDeflineReader::s_MaxAccessionLength, 
-                                lineNum);
-            fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CFastaIdValidate::eIDTooLong, msg);
-        }
-    }
-}
-
-
-bool CFastaIdValidate::IsValidLocalID(const CSeq_id& id) 
-{
-    if (id.IsLocal()) {
-        if (id.GetLocal().IsId()) {
-            return true;
-        }
-        if (id.GetLocal().IsStr()) {
-            return IsValidLocalString(id.GetLocal().GetStr());
-        }
-    }
-    return false;
-}
-
-
-bool CFastaIdValidate::IsValidLocalString(const CTempString& idString)
-{
-    return !(CSeq_id::CheckLocalID(idString)&CSeq_id::fInvalidChar);
-}
-
-
-void CFastaIdValidate::CheckForExcessiveNucData(
-    const CSeq_id& id,
-    int lineNum,
-    FReportError fReportError
-)
-{
-    const auto& idString = id.GetSeqIdString();
-    if (idString.length() > kWarnNumNucCharsAtEnd) {
-        TSeqPos numNucChars = 0;
-        for (size_t i = idString.size(); i>0; i--) {
-            const auto ch = idString[i - 1];
-            if (!s_ASCII_IsUnAmbigNuc(ch) && (ch != 'N')) {
-                break;
-            }
-            ++numNucChars;
-        }
-
-        if (numNucChars > kWarnNumNucCharsAtEnd) {
-            const string err_message = 
-            "Fasta Reader: sequence id ends with " +
-            NStr::NumericToString(numNucChars) +
-            " valid nucleotide characters. " +
-            " Was the sequence accidentally placed in the definition line?";    
-
-            auto severity = (numNucChars > kErrNumNucCharsAtEnd) ?
-                            eDiag_Error :
-                            eDiag_Warning;
-
-            fReportError(severity, lineNum, idString, eUnexpectedNucResidues, err_message);
-            return;        
-        }
-    }
-}
-
-
-
-void CFastaIdValidate::CheckForExcessiveProtData(
-        const CSeq_id& id,
-        int lineNum,
-        FReportError fReportError)
-{
-    const auto& idString = id.GetSeqIdString();
-
-    const TSeqPos kWarnNumAminoAcidCharsAtEnd = 50;
-
-    // Check for Aa sequence
-    if (idString.length() > kWarnNumAminoAcidCharsAtEnd) {
-        TSeqPos numAaChars = 0;
-        for (size_t i = idString.size(); i>0; i--) {
-            const auto ch = idString[i - 1];
-            if ( !(ch >= 'A' && ch <= 'Z')  &&
-                 !(ch >= 'a' && ch <= 'z') ) {
-                break;
-            }
-            ++numAaChars;
-        }
-        if (numAaChars > kWarnNumAminoAcidCharsAtEnd) {
-            const string err_message = 
-            "Fasta Reader: sequence id ends with " +
-            NStr::NumericToString(numAaChars) +
-            " valid amino-acid characters. " +
-            " Was the sequence accidentally placed in the definition line?";    
-            fReportError(eDiag_Warning, lineNum, idString, eUnexpectedAminoAcids, err_message);
-        }
-    }
-}
-
-
-
-class CParseIDs {
-public:
-
-enum class EErrorCode {
-    
-};
-
-using FErrorReporter = function<void(EDiagSev severity, int lineNum, const string& idString, int code, const string& msg)>;
-using TIds = list<CRef<CSeq_id>>;
-void operator()(const CTempString& idString, int lineNum, TIds& ids);
-private:
-    CFastaDeflineReader::TFastaFlags m_FastaFlags;
-    FErrorReporter m_fErrorReporter;
-};
-
- 
-
-void CParseIDs::operator() (const CTempString& idString, int lineNum, TIds& ids)
-{
-    ids.clear();
-    CSeq_id::TParseFlags flags = CSeq_id::fParse_PartialOK |
-                                 CSeq_id::fParse_AnyLocal;
-
-    if (m_FastaFlags & CFastaReader::fParseRawID) {
-        flags |= CSeq_id::fParse_RawText;
-    }
-    
-    string localCopy;
-    auto toParse = idString;
-    if (idString.find(',') != NPOS &&
-        idString.find('|') == NPOS) {
-        const string err_message = 
-            "Near line " + NStr::NumericToString(lineNum)
-            + ", the sequence id string contains 'comma' symbol, which has been replaced with 'underscore' "
-            + "symbol. Please correct the sequence id string.";
-/*
-        s_PostWarning(pMessageListener,
-            lineNumber,
-            err_message,
-            ILineError::eProblem_GeneralParsingError,
-            CObjReaderParseException::eFormat);
-*/            
-        localCopy = idString;
-        for (auto& rit : localCopy)
-            if (rit == ',')
-                rit = '_';
-
-        toParse = localCopy;
-    }
-
-    CSeq_id::ParseIDs(ids, toParse, flags);
-
-    ids.remove_if([](CRef<CSeq_id> id_ref){ return NStr::IsBlank(id_ref->GetSeqIdString()); });
-    if (ids.empty()) {
-        NCBI_THROW2(CObjReaderParseException, eNoIDs,
-                "Could not construct seq-id from '" + idString + "'",
-                0);
-    }
-
-//    f_id_check(ids, info, pMessageListener);
-}
 
 
 void CFastaDeflineReader::x_ProcessIDs(
@@ -799,7 +522,7 @@ void CFastaDeflineReader::x_ProcessIDs(
         x_ConvertNumericToLocal(ids);
     }
 
-    CDefaultIdValidate s_IdValidate(info.fFastaFlags);
+    CFastaIdValidate s_IdValidate(info.fFastaFlags);
     s_IdValidate(ids, info.lineNumber, CIdErrorReporter(pMessageListener));
 
     //f_id_check(ids, info, pMessageListener);
