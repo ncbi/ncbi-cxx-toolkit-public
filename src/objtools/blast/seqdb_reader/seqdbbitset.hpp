@@ -83,7 +83,6 @@ public:
           m_End    (0),
           m_Special(eNone)
     {
-        _ASSERT(eWordShift); // must be 32 or 64
         _ASSERT(TByte(0) < TByte(-1)); // must be unsigned
     }
     
@@ -107,7 +106,6 @@ public:
           m_End    (end),
           m_Special(sp)
     {
-        _ASSERT(eWordShift); // must be 32 or 64
         _ASSERT(TByte(0) < TByte(-1)); // must be unsigned
         
         if (sp == eNone) {
