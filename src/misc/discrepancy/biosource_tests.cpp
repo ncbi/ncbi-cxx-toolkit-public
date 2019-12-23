@@ -1243,7 +1243,9 @@ static void GetOrgnameDifferences(const COrgName& first, const COrgName& second,
     }
 
     if (!CCompareValues<COrgName, int>::IsEqualInt(first, second, &COrgName::IsSetMgcode, &COrgName::GetMgcode, -1)) {
-        diffs.push_back("mitochondrial genetic codes differ");
+        if (first.IsSetMgcode() && first.GetMgcode() || second.IsSetMgcode() && second.GetMgcode()) {
+            diffs.push_back("mitochondrial genetic codes differ");
+        }
     }
 
     if (!CCompareValues<COrgName, string>::IsEqualVal(first, second, &COrgName::IsSetAttrib, &COrgName::GetAttrib, "")) {
