@@ -196,10 +196,14 @@ int
 CSearchDatabase::GetFilteringAlgorithm() const
 {
     if (m_MaskType == eNoSubjMasking) return -1;
-    if (m_NeedsFilteringTranslation) {
-        x_TranslateFilteringAlgorithm();
-    } 
-    return m_FilteringAlgorithmId;
+    try {
+        if (m_NeedsFilteringTranslation) {
+            x_TranslateFilteringAlgorithm();
+        } 
+        return m_FilteringAlgorithmId;
+    } catch (const CSeqDBException& e) {         
+        return -1;
+    }    
 }
 
 string
