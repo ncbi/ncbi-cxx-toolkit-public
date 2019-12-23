@@ -138,6 +138,15 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
 	CBlastFormatUtil::FillScanModeBlastDbInfo(m_DbInfo, m_DbIsAA,
                 num_seqs, total_length, m_SubjectTag);
     } else {
+        int filteringAlgorithmId = db_adapter.GetFilteringAlgorithm();        
+        if(filteringAlgorithmId == -1) {
+            CRef <CSearchDatabase> db_Info = db_adapter.GetSearchDatabase();
+            ESubjectMaskingType maskType = db_Info->GetMaskType();
+             if(maskType != eNoSubjMasking) {
+                db_Info->SetFilteringAlgorithm(-1, eNoSubjMasking);
+                ERR_POST(Warning << "Subject mask not found in " + m_DbName +", proceeding without subject masking.");
+             }
+        }
         CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
                                    dbfilt_algorithm, is_remote_search);
     }
