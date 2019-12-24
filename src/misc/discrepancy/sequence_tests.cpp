@@ -378,6 +378,7 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
             string key = feat.GetData().IsGene() ? "gene" : feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
             m_Objs[kEmptyCStr][key].Add(*rep, false);
         }
+        m_Objs[kEmptyCStr][kEmptyCStr].Add(*rep);
     }
 }
 
@@ -386,8 +387,14 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
 {
     if (context.IsGui()) {
         for (auto& it : m_Objs[kEmptyCStr].GetMap()) {
+            if (it.first.empty()) {
+                continue;
+            }
             string label = it.first + ": [n] present";
             map<CReportObj*, size_t> obj2num;
+            for (auto& obj : m_Objs[kEmptyStr][kEmptyStr].GetObjects()) {
+                obj2num[&*obj] = 0;
+            }
             for (auto& obj : m_Objs[kEmptyStr][it.first].GetObjects()) {
                 obj2num[&*obj]++;
             }
