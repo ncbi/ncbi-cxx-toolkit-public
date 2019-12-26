@@ -71,7 +71,7 @@ private:
 
     void x_LoadIds(CNcbiIstream& in);
 
-    void x_ParseResults(istream& istr);
+    void x_ParseResults(istream& istr, bool csv);
 
     CSeq_id_Handle x_NextId(void) {
         CFastMutexGuard guard(m_IdsMutex);
@@ -193,6 +193,8 @@ void CPerfTestApp::Init(void)
     arg_desc->AddDefaultKey("t", "time", "time to show", CArgDescriptions::eString, "r");
     arg_desc->SetConstraint("t", &(*new CArgAllow_Strings, "r", "u", "s"));
     arg_desc->SetDependency("t", CArgDescriptions::eRequires, "stat");
+    arg_desc->AddFlag("csv", "Produce comma separated output");
+    arg_desc->SetDependency("csv", CArgDescriptions::eRequires, "stat");
 
     string prog_description = "C++ object manager performance test\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -203,11 +205,16 @@ void CPerfTestApp::Init(void)
 
 int CPerfTestApp::Run(void)
 {
+    if (GetEnvironment().Get("NCBI_RUN_UNDER_INSPXE") == "1") {
+        cout << "The test is disabled under Intel Inspector." << endl;
+        return 0;
+    }
+
     const CArgs& args = GetArgs();
 
     if (args["stat"]) {
         m_TimeStat = args["t"].AsString()[0];
-        x_ParseResults(args["stat"].AsInputFile());
+        x_ParseResults(args["stat"].AsInputFile(), args["csv"]);
         return 0;
     }
 
@@ -379,9 +386,87 @@ double ParseDouble(const string& s, size_t& pos)
 }
 
 
-void CPerfTestApp::x_ParseResults(istream& istr)
+void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
 {
-    // Done: r=1.07493; u=0.265625; s=0.109375; 10 ids; 0 thr; 1 rep; 1000..1010; psg/split
+    struct SPerfKey {
+        string data;
+        string rep;
+        string threads;
+        string split;
+        string loader;
+        string id_count;
+
+        SPerfKey(const string& key)
+        {
+            vector<string> parts;
+            NStr::Split(key, " ;/'", parts, NStr::fSplit_Tokenize);
+            if (parts.size() < 9) {
+                data = key;
+                return;
+            }
+            size_t idx = 0;
+            data = parts[idx++];
+            loader = parts[idx++];
+            if (loader == "gb") {
+                loader += "/" + parts[idx++];
+            }
+            split = parts[idx++];
+            id_count = parts[idx++];
+            idx++;
+            threads = parts[idx++];
+            idx++;
+            rep = parts[idx++];
+        }
+
+        static string GetTitleRow(bool csv)
+        {
+            stringstream os;
+            if (csv) {
+                os << "name,rep,thr,loader,split,ids";
+            }
+            else {
+                os << left
+                    << setw(21) << "name"
+                    << setw(6) << "rep"
+                    << setw(6) << "thr"
+                    << setw(13) << "loader"
+                    << setw(10) << "split"
+                    << setw(7) << "ids";
+            }
+            return os.str();
+        }
+
+        string AsString(bool csv) const
+        {
+            stringstream os;
+            if (csv) {
+                os << data << ',' << rep << ',' << threads << ',' << loader << ',' << split << ',' << id_count;
+            }
+            else {
+                os << left
+                    << setw(20) << data << ' '
+                    << setw(5) << rep << ' '
+                    << setw(5) << threads << ' '
+                    << setw(12) << loader << ' '
+                    << setw(9) << split << ' '
+                    << setw(6) << id_count;
+            }
+            return os.str();
+        }
+
+        bool operator<(const SPerfKey& other) const
+        {
+            if (data != other.data) return data < other.data;
+            if (rep != other.rep) return rep < other.rep;
+            if (threads != other.threads) return threads < other.threads;
+            if (split != other.split) return split < other.split;
+            if (loader != other.loader) return loader  < other.loader;
+            if (id_count != other.id_count) return id_count < other.id_count;
+            return false;
+        }
+    };
+
+    // Done: r=1.07493; u=0.265625; s=0.109375; 'perf_ids1_acc'; gb/id/no_split; 7967 ids; 0 thr; 1 rep
     struct SPerfStat {
         double r;
         double u;
@@ -395,7 +480,8 @@ void CPerfTestApp::x_ParseResults(istream& istr)
             s += ps.s;
         }
     };
-    typedef map<string, vector<SPerfStat>> TStats;
+
+    typedef map<SPerfKey, vector<SPerfStat>> TStats;
     TStats stats;
     size_t name_len = 0;
     while (!istr.eof() && istr.good()) {
@@ -408,19 +494,25 @@ void CPerfTestApp::x_ParseResults(istream& istr)
         stat.r = ParseDouble(line, pos);
         stat.u = ParseDouble(line, pos);
         stat.s = ParseDouble(line, pos);
-        string test_name = line.substr(pos + 1);
-        NStr::ReplaceInPlace(test_name, " ", "");
-        stats[test_name].push_back(stat);
+        SPerfKey key(line.substr(pos + 1));
+        stats[key].push_back(stat);
+        string test_name = key.AsString(csv);
         if (test_name.size() > name_len) name_len = test_name.size();
     }
-    cout << left << setw(name_len + 2) << "name"
-        << right
-        << setw(8) << "min"
-        << setw(10) << "max"
-        << setw(10) << "avg"
-        << setw(10) << "med"
-        << setw(10) << "p75"
-        << setw(10) << "count" << endl;
+    if (csv) {
+        cout << SPerfKey::GetTitleRow(csv)
+            << ",min,max,avg,med,p75,count" << endl;
+    }
+    else {
+        cout << left << setw(name_len + 2) << SPerfKey::GetTitleRow(csv)
+            << right
+            << setw(8) << "min"
+            << setw(10) << "max"
+            << setw(10) << "avg"
+            << setw(10) << "med"
+            << setw(10) << "p75"
+            << setw(10) << "count" << endl;
+    }
     NON_CONST_ITERATE(TStats, test_it, stats) {
         size_t count = test_it->second.size();
         if (count == 0) continue;
@@ -470,15 +562,29 @@ void CPerfTestApp::x_ParseResults(istream& istr)
             p75 = st[idx75];
         }
 
-        cout << left << setw(name_len + 2) << test_it->first
-            << right << fixed << setprecision(3)
-            << setw(8) << st[0] << "  "
-            << setw(8) << st[count - 1] << "  "
-            << setw(8) << avg << "  "
-            << setw(8) << p50 << "  "
-            << setw(8) << p75 << "  "
-            << setw(8) << count
-            << endl;
+        if (csv) {
+            cout << test_it->first.AsString(csv)
+                << ','
+                << fixed << setprecision(3)
+                << st[0] << ','
+                << st[count - 1] << ','
+                << avg << ','
+                << p50 << ','
+                << p75 << ','
+                << count
+                << endl;
+        }
+        else {
+            cout << left << setw(name_len + 2) << test_it->first.AsString(csv)
+                << right << fixed << setprecision(3)
+                << setw(8) << st[0] << "  "
+                << setw(8) << st[count - 1] << "  "
+                << setw(8) << avg << "  "
+                << setw(8) << p50 << "  "
+                << setw(8) << p75 << "  "
+                << setw(8) << count
+                << endl;
+        }
     }
 }
 
