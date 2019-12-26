@@ -466,7 +466,6 @@ MAKE_TWOWAY_CONST_MAP(sm_FeatKeys, ct::tagStrNocase, CSeqFeatData::ESubtype,
     {  "oriT",               CSeqFeatData::eSubtype_oriT                },
     {  "polyA_signal",       CSeqFeatData::eSubtype_polyA_signal        },
     {  "polyA_site",         CSeqFeatData::eSubtype_polyA_site          },
-    {  "pre_RNA",            CSeqFeatData::eSubtype_preRNA              },
     {  "precursor_RNA",      CSeqFeatData::eSubtype_preRNA              },
     {  "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript     },
     {  "primer_bind",        CSeqFeatData::eSubtype_primer_bind         },
@@ -504,6 +503,9 @@ CSeqFeatData::ESubtype CSeqFeatData::SubtypeNameToValue(CTempString sName)
     auto it = sm_FeatKeys.first.find(sName);
     if (it == sm_FeatKeys.first.end())
         return eSubtype_bad;
+
+    if (sName == "pre_RNA")
+        return eSubtype_preRNA;
 
     return it->second;
 }
