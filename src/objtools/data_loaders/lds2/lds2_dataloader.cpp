@@ -221,7 +221,6 @@ CLDS2_DataLoader::CLDS2_DataLoader(const string&        dl_name,
     if (fasta_flags == -1) {
         fasta_flags =
             CFastaReader::fAssumeNuc  |
-            CFastaReader::fAllSeqIds  |
             CFastaReader::fOneSeq     |
             CFastaReader::fParseGaps  |
             CFastaReader::fParseRawID |

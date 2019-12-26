@@ -941,7 +941,6 @@ CLDS2_Manager::CLDS2_Manager(const string& db_file)
       m_DupIdMode(eDuplicate_Store),
       m_ErrorMode(eError_Report),
       m_FastaFlags(CFastaReader::fAssumeNuc  |
-                   CFastaReader::fAllSeqIds  |
                    CFastaReader::fOneSeq     |
                    CFastaReader::fNoSeqData  |
                    CFastaReader::fParseGaps  |
