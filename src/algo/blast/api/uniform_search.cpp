@@ -201,7 +201,7 @@ CSearchDatabase::GetFilteringAlgorithm() const
             x_TranslateFilteringAlgorithm();
         } 
         return m_FilteringAlgorithmId;
-    } catch (const CSeqDBException& e) {         
+    } catch (const CSeqDBException&) {         
         return -1;
     }    
 }
