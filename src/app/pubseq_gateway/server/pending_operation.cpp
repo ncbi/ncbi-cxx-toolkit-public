@@ -1940,9 +1940,15 @@ bool CPendingOperation::OnNamedAnnotData(CNAnnotRecord &&        annot_record,
     }
 
     if (last) {
+        if (NeedTrace()) {
+            SendTrace("Named annotation no-more-data callback");
+        }
         fetch_details->SetReadFinished();
         x_SendReplyCompletion();
     } else {
+        if (NeedTrace()) {
+            SendTrace("Named annotation data received");
+        }
         m_ProtocolSupport.PrepareNamedAnnotationData(
                 annot_record.GetAnnotName(),
                 ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
@@ -1979,6 +1985,10 @@ void CPendingOperation::OnNamedAnnotError(
             app->GetErrorCounters().IncUnknownError();
     }
 
+    if (NeedTrace()) {
+        SendTrace("Named annotation error callback");
+    }
+
     m_ProtocolSupport.PrepareReplyMessage(message,
                                           CRequestStatus::e500_InternalServerError,
                                           code, severity);
@@ -2003,6 +2013,10 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
 {
     CRequestContextResetter     context_resetter;
     x_SetRequestContext();
+
+    if (NeedTrace()) {
+        SendTrace("Blob prop callback; found: " + to_string(is_found));
+    }
 
     if (is_found) {
         // Found, send blob props back as JSON
@@ -2240,10 +2254,18 @@ void CPendingOperation::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
     }
 
     if (chunk_no >= 0) {
+        if (NeedTrace()) {
+            SendTrace("Blob chunk " + to_string(chunk_no) + " callback");
+        }
+
         // A blob chunk; 0-length chunks are allowed too
         m_ProtocolSupport.PrepareBlobData(fetch_details,
                                           chunk_data, data_size, chunk_no);
     } else {
+        if (NeedTrace()) {
+            SendTrace("Blob chunk no-more-data callback");
+        }
+
         // End of the blob
         m_ProtocolSupport.PrepareBlobCompletion(fetch_details);
         fetch_details->SetReadFinished();
@@ -2280,6 +2302,10 @@ void CPendingOperation::OnGetBlobError(
         PSG_WARNING(message);
     } else {
         PSG_ERROR(message);
+    }
+
+    if (NeedTrace()) {
+        SendTrace("Blob error callback; status " + to_string(status));
     }
 
     if (status == CRequestStatus::e404_NotFound) {
@@ -2350,6 +2376,11 @@ void CPendingOperation::OnGetSplitHistory(CCassSplitHistoryFetch *  fetch_detail
     if (m_Cancelled) {
         fetch_details->GetLoader()->Cancel();
         return;
+    }
+
+    if (NeedTrace()) {
+        SendTrace("Split history callback; found: " +
+                  to_string(result.empty()));
     }
 
     CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
@@ -2483,6 +2514,10 @@ void CPendingOperation::OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_d
         PSG_WARNING(message);
     } else {
         PSG_ERROR(message);
+    }
+
+    if (NeedTrace()) {
+        SendTrace("Split history error callback; status: " + to_string(status));
     }
 
     m_ProtocolSupport.PrepareReplyMessage(message, status, code, severity);
