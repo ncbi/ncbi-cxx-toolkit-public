@@ -1163,7 +1163,11 @@ bool SetParams(const CArgs& args)
     }
 
     params_imp.m_vdb_mode = args["U"].AsBoolean();
-    if (params_imp.m_vdb_mode && params_imp.m_update_mode != eUpdateAssembly && params_imp.m_update_mode != eUpdateNew) {
+    if (params_imp.m_vdb_mode &&
+        params_imp.m_update_mode != eUpdateAssembly &&
+        params_imp.m_update_mode != eUpdateNew &&
+        params_imp.m_update_mode != eUpdatePartial &&
+        params_imp.m_update_mode != eUpdateFull) {
         ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Fatal << "VDB parsing mode (\"-U T\") can be used for brand new projects (\"-u 0\") or reassemblies (\"-u 2\") only.");
         return false;
     }
