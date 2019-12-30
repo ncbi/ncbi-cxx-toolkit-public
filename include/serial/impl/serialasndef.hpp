@@ -59,19 +59,19 @@ typedef TObjectPtr (ASNCALL*TAsnFreeProc)(TObjectPtr);
 typedef TObjectPtr (ASNCALL*TAsnReadProc)(asnio*, asntype*);
 typedef unsigned char (ASNCALL*TAsnWriteProc)(TObjectPtr, asnio*, asntype*);
 
-NCBI_XSERIAL_EXPORT
+//NCBI_XSERIAL_EXPORT
 TTypeInfo COctetStringTypeInfoGetTypeInfo(void);
 
-NCBI_XSERIAL_EXPORT
+//NCBI_XSERIAL_EXPORT
 TTypeInfo CAutoPointerTypeInfoGetTypeInfo(TTypeInfo type);
 
-NCBI_XSERIAL_EXPORT
+//NCBI_XSERIAL_EXPORT
 TTypeInfo CSetOfTypeInfoGetTypeInfo(TTypeInfo type);
 
-NCBI_XSERIAL_EXPORT
+//NCBI_XSERIAL_EXPORT
 TTypeInfo CSequenceOfTypeInfoGetTypeInfo(TTypeInfo type);
 
-NCBI_XSERIAL_EXPORT
+//NCBI_XSERIAL_EXPORT
 TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
                                      TAsnNewProc newProc,
                                      TAsnFreeProc freeProc,

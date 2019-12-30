@@ -56,7 +56,7 @@ struct asntype;
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XSERIAL_EXPORT CSequenceOfTypeInfo : public CContainerTypeInfo {
+class CSequenceOfTypeInfo : public CContainerTypeInfo {
     typedef CContainerTypeInfo CParent;
 public:
     typedef TObjectPtr TObjectType;
@@ -128,7 +128,7 @@ private:
     size_t m_DataOffset;  // offset in struct of data struct (def 0)
 };
 
-class NCBI_XSERIAL_EXPORT CSetOfTypeInfo : public CSequenceOfTypeInfo {
+class CSetOfTypeInfo : public CSequenceOfTypeInfo {
     typedef CSequenceOfTypeInfo CParent;
 public:
     CSetOfTypeInfo(TTypeInfo type);
@@ -139,7 +139,7 @@ public:
     static CTypeInfo* CreateTypeInfo(TTypeInfo base);
 };
 
-class NCBI_XSERIAL_EXPORT COctetStringTypeInfo : public CPrimitiveTypeInfo {
+class COctetStringTypeInfo : public CPrimitiveTypeInfo {
     typedef CPrimitiveTypeInfo CParent;
 public:
     typedef bytestore* TObjectType;
@@ -182,7 +182,7 @@ protected:
                                 TTypeInfo objectType);
 };
 
-class NCBI_XSERIAL_EXPORT COldAsnTypeInfo : public CPrimitiveTypeInfo
+class COldAsnTypeInfo : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
