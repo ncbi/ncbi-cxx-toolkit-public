@@ -83,7 +83,7 @@ NCBI_PARAM_DEF_EX(unsigned, NCBI, UsageReportMaxThreads, kDefault_MaxThreads, eP
 ///
 
 // Global default parameters to report
-static atomic<CUsageReport::TWhat> gs_DefaultParams = CUsageReport::fDefault;
+static atomic<CUsageReport::TWhat> gs_DefaultParams(CUsageReport::fDefault);
 
 void CUsageReportAPI::SetDefaultParameters(TWhat what)
 {
@@ -287,10 +287,12 @@ CUsageReportParameters& CUsageReportParameters::Add(const string& name, bool val
     return Add(name, NStr::BoolToString(value));
 }
 
+#if (SIZEOF_LONG != 8)
 CUsageReportParameters& CUsageReportParameters::Add(const string& name, size_t value)
 {
     return Add(name, NStr::SizetToString(value));
 }
+#endif
 
 string CUsageReportParameters::ToString() const
 {
@@ -400,6 +402,9 @@ CUsageReport::CUsageReport(TWhat what, const string& url)
     // Create thread pool for async reporting
     unsigned thread_pool_size = CUsageReportAPI::GetMaxAsyncThreads();
     m_ThreadPool.resize(thread_pool_size);
+    
+    // Enable reporter
+    m_IsEnabled = true;
 }
 
 CUsageReport::~CUsageReport(void)
@@ -458,7 +463,7 @@ void CUsageReport::x_SendAsync(TJobPtr job)
 
     // Thread pool: clear all finished jobs and find first available slot
     int slot = -1;
-    for (int i = 0; i < m_ThreadPool.size(); i++) {
+    for (int i = 0; i < (int)m_ThreadPool.size(); i++) {
         auto& t = m_ThreadPool[i];
         if (t.m_state == eFinished) {
             if (t.m_thread.joinable()) {

@@ -252,7 +252,9 @@ public:
     CUsageReportParameters& Add(const string& name, unsigned long value);
     CUsageReportParameters& Add(const string& name, double        value);
     CUsageReportParameters& Add(const string& name, bool          value);
+#if (SIZEOF_LONG != 8)
     CUsageReportParameters& Add(const string& name, size_t        value);
+#endif
 
     /// Convert parameters to string. URL-encode all values.
     string ToString() const;
@@ -313,7 +315,9 @@ public:
 
     /// Default constructor.
     CUsageReportJob(void) : m_State(eInvalid), m_Ownership(eNoOwnership) {};
-
+    /// Destructor
+    virtual ~CUsageReportJob(void) {};
+    
     /// Return current job state.
     /// @sa EState
     EState GetState() { return m_State; };
