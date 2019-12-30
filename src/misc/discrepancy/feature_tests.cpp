@@ -332,18 +332,24 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
     if (left < 3) {
         extend_len = left;
         rval = extend_len ? circular ? eExtensibe_none : eExtensibe_fixable : eExtensibe_abut;
-    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
+    }
+    else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
         TSeqPos offset = 0;
         TSeqPos last_gap_stop = 0;
+        bool gap = false;
         for (auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
             if (it->IsLiteral()) {
                 offset += it->GetLiteral().GetLength();
                 if (!it->GetLiteral().IsSetSeq_data()) {
                     last_gap_stop = offset;
-                } else if (it->GetLiteral().GetSeq_data().IsGap()) {
-                    last_gap_stop = offset;
+                    gap = true;
                 }
-            } else if (it->IsLoc()) {
+                else if (it->GetLiteral().GetSeq_data().IsGap()) {
+                    last_gap_stop = offset;
+                    gap = true;
+                }
+            }
+            else if (it->IsLoc()) {
                 offset += sequence::GetLength(it->GetLoc(), scope);
             }
             if (offset > left) {
@@ -352,7 +358,7 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
         }
         if (left >= last_gap_stop && left - last_gap_stop <= 3) {
             extend_len = left - last_gap_stop;
-            rval = extend_len ? eExtensibe_fixable : eExtensibe_abut;
+            rval = extend_len ? (circular && !gap) ? eExtensibe_none : eExtensibe_fixable : eExtensibe_abut;
         }
     }
     if (rval != eExtensibe_fixable) return rval;
@@ -363,8 +369,6 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
         if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
             rval = eExtensibe_none;
         }
-    } else {
-        rval = eExtensibe_none;
     }
     return rval;
 }
@@ -381,15 +385,20 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
     else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
         TSeqPos offset = 0;
         TSeqPos next_gap_start = 0;
+        bool gap = false;
         for (auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
             if (it->IsLiteral()) {
                 if (!it->GetLiteral().IsSetSeq_data()) {
                     next_gap_start = offset;
-                } else if (it->GetLiteral().GetSeq_data().IsGap()) {
+                    gap = true;
+                }
+                else if (it->GetLiteral().GetSeq_data().IsGap()) {
                     next_gap_start = offset;
+                    gap = true;
                 }
                 offset += it->GetLiteral().GetLength();
-            } else if (it->IsLoc()) {
+            }
+            else if (it->IsLoc()) {
                 offset += sequence::GetLength(it->GetLoc(), scope);
             }
             if (offset > right + 3) {
@@ -398,7 +407,7 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
         }
         if (next_gap_start > right && next_gap_start - right - 1 <= 3) {
             extend_len = next_gap_start - right - 1;
-            rval = extend_len ? eExtensibe_fixable : eExtensibe_abut;
+            rval = extend_len ? (circular && !gap) ? eExtensibe_none : eExtensibe_fixable : eExtensibe_abut;
         }
     }
     if (rval != eExtensibe_fixable) return rval;
@@ -409,8 +418,6 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
         if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
             rval = eExtensibe_none;
         }
-    } else {
-        rval = eExtensibe_none;
     }
     return rval;
 }
@@ -526,7 +533,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
                 if (start > 0) {
                     TSeqPos extend_len = 0;
                     if (IsExtendableLeft(start, bioseq, &(context.GetScope()), extend_len, feat.GetLocation().GetStrand()) == eExtensibe_fixable) {
-                        cout << "extend: " << extend_len << "\n";
+                        //cout << "extend start: " << extend_len << "\n";
                         add_this = extend_len > 0 && extend_len <= 3;
                     }
                 }
@@ -536,7 +543,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
                 if (stop < bioseq.GetLength() - 1) {
                     TSeqPos extend_len = 0;
                     if (IsExtendableRight(stop, bioseq, &(context.GetScope()), extend_len, feat.GetLocation().GetStrand()) == eExtensibe_fixable) {
-                        cout << "extend: " << extend_len << "\n";
+                        //cout << "extend end: " << extend_len << "\n";
                         add_this = extend_len > 0 && extend_len <= 3;
                     }
                 }
