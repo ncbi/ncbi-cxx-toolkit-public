@@ -1596,6 +1596,13 @@ public:
     ///   If to ignore the case of the characters
     CArgAllow_Strings(NStr::ECase use_case = NStr::eCase);
 
+    /// Constructor
+    /// @param values
+    ///   Strings to add to the set of allowed string values
+    /// @param use_case
+    ///   If to ignore the case of the characters
+    CArgAllow_Strings(initializer_list<string> values, NStr::ECase use_case = NStr::eCase);
+
     /// Add allowed string values
     /// @param value
     ///   String to add to the set of allowed string values

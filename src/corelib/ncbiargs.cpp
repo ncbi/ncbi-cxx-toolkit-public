@@ -4419,6 +4419,12 @@ CArgAllow_Strings::CArgAllow_Strings(NStr::ECase use_case)
 }
 
 
+CArgAllow_Strings::CArgAllow_Strings(initializer_list<string> values, NStr::ECase use_case)
+    : m_Strings(values, PNocase_Conditional(use_case))
+{
+}
+
+
 CArgAllow_Strings* CArgAllow_Strings::Allow(const string& value)
 {
     m_Strings.insert(value);
