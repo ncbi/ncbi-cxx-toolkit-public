@@ -1005,6 +1005,9 @@ static bool UpdateMasterForExtra(CSeq_entry& id_entry, CSeq_entry& master_entry)
         old_bioseq.SetInst().SetLength(new_length);
     }
 
+    if(GetParams().IsDblinkOverride() && GetParams().GetUpdateMode() == eUpdateFull)
+        return(true);
+
     vector<string> user_obj_types;
     string last_accession;
     GetUserObjTypesAndLastAccession(user_obj_types, last_accession);
