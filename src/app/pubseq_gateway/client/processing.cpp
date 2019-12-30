@@ -31,7 +31,15 @@
 
 #include <numeric>
 
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
 #include <serial/enumvalues.hpp>
+#include <serial/objcopy.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <util/compress/zlib.hpp>
+#include <util/compress/stream.hpp>
 
 #include "performance.hpp"
 #include "processing.hpp"
@@ -352,7 +360,65 @@ void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, co
     os << '\n';
 }
 
-int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, bool blob_only)
+ESerialDataFormat SBlobOnly::SInput::GetFormat()
+{
+    if (format == "asn1-text") return eSerial_AsnText;
+    if (format == "xml")       return eSerial_Xml;
+    if (format == "json")      return eSerial_Json;
+
+    return eSerial_AsnBinary;
+}
+
+ESerialDataFormat SBlobOnly::SOutput::GetFormat()
+{
+    if (!format)           return eSerial_None;
+    if (*format == "asn")  return eSerial_AsnText;
+    if (*format == "asnb") return eSerial_AsnBinary;
+    if (*format == "xml")  return eSerial_Xml;
+    if (*format == "json") return eSerial_Json;
+
+    return eSerial_None;
+}
+
+TTypeInfo SBlobOnly::SOutput::GetType()
+{
+    if (!type)                return objects::CSeq_entry::GetTypeInfo();
+    if (*type == "seqannot")  return objects::CSeq_annot::GetTypeInfo();
+    if (*type == "splitinfo") return objects::CID2S_Split_Info::GetTypeInfo();
+    if (*type == "chunk")     return objects::CID2S_Chunk::GetTypeInfo();
+
+    return objects::CSeq_entry::GetTypeInfo();
+}
+
+void SBlobOnly::Copy(istream& is, ostream& os)
+{
+    auto output_format = output.GetFormat();
+
+    if (output_format == eSerial_None) {
+        os << is.rdbuf();
+        return;
+    }
+
+    auto input_format = input.GetFormat();
+    unique_ptr<CObjectIStream> in;
+
+    if (input.compression.find("zip") == string::npos) {
+        in.reset(CObjectIStream::Open(input_format, is));
+    } else {
+        unique_ptr<CZipStreamDecompressor> zip(new CZipStreamDecompressor);
+        unique_ptr<CCompressionIStream> compressed_is(new CCompressionIStream(is, zip.release(), CCompressionIStream::fOwnAll));
+        in.reset(CObjectIStream::Open(input_format, *compressed_is.release(), eTakeOwnership));
+    }
+
+    _ASSERT(in);
+    in->UseMemoryPool();
+
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(output_format, os));
+    CObjectStreamCopier copier(*in, *out);
+    copier.Copy(output.GetType());
+}
+
+int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SBlobOnly* blob_only)
 {
     CPSG_Queue queue(service);
     SJsonOut json_out;
@@ -410,9 +476,14 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
                     s_ReportErrors(ss, reply_item_status, reply_item, "Item error: ");
                     cerr << ss.rdbuf();
 
+                } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobInfo) {
+                    auto blob_info = static_pointer_cast<CPSG_BlobInfo>(reply_item);
+                    blob_only->input.compression = blob_info->GetCompression();
+                    blob_only->input.format = blob_info->GetFormat();
+
                 } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
                     auto blob_data = static_pointer_cast<CPSG_BlobData>(reply_item);
-                    cout << blob_data->GetStream().rdbuf();
+                    blob_only->Copy(blob_data->GetStream(), cout);
                 }
             } else {
                 ++it;

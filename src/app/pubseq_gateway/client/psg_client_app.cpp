@@ -165,6 +165,14 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
 }
 
+void s_InitBlobOnly(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddFlag("blob-only", "Output blob data only");
+    arg_desc.AddOptionalKey("output-fmt", "FORMAT", "Format for blob data to return in (instead of raw data)", CArgDescriptions::eString);
+    arg_desc.SetConstraint("output-fmt", new CArgAllow_Strings{"asn", "asnb", "xml", "json"});
+    arg_desc.SetDependency("output-fmt", CArgDescriptions::eRequires, "blob-only");
+}
+
 template <class TRequest>
 void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
 {
@@ -172,7 +180,7 @@ void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
-    arg_desc.AddFlag("blob-only", "Output raw blob data only");
+    s_InitBlobOnly(arg_desc);
     s_InitDataFlags(arg_desc);
 }
 
@@ -181,6 +189,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
 {
     arg_desc.AddOptionalPositional("ID", "Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("id-file", "FILENAME", "File containing bio IDs to resolve (one per line)", CArgDescriptions::eInputFile);
+    arg_desc.SetDependency("id-file", CArgDescriptions::eExcludes, "ID");
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of different worker threads", CArgDescriptions::eString, "", CArgDescriptions::fHidden);
@@ -188,12 +197,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
     for (const auto& f : SRequestBuilder::GetInfoFlags()) {
         arg_desc.AddFlag(f.name, f.desc);
     }
-
-    auto id_group = CArgDependencyGroup::Create("ID GROUP", "The group consists of arguments to specify bio ID(s)");
-    id_group->Add("ID");
-    id_group->Add("id-file");
-    id_group->SetMinMembers(1).SetMaxMembers(1);
-    arg_desc.AddDependencyGroup(id_group);
 }
 
 template <>
@@ -201,7 +204,11 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString);
-    arg_desc.AddFlag("blob-only", "Output raw blob data only");
+    s_InitBlobOnly(arg_desc);
+    arg_desc.AddDefaultKey("blob-type", "TYPE", "Blob data type", CArgDescriptions::eString, "seqentry");
+    arg_desc.SetConstraint("blob-type", new CArgAllow_Strings{"seqentry", "seqannot", "splitinfo", "chunk"});
+    arg_desc.SetDependency("blob-type", CArgDescriptions::eRequires, "blob-only");
+    arg_desc.SetDependency("blob-type", CArgDescriptions::eRequires, "output-fmt");
     s_InitDataFlags(arg_desc);
 }
 
@@ -220,7 +227,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_TSE_Chunk>(CArgDescriptions& arg_
     arg_desc.AddPositional("ID", "TSE Blob ID", CArgDescriptions::eString);
     arg_desc.AddPositional("CHUNK_NO", "Chunk number", CArgDescriptions::eInteger);
     arg_desc.AddPositional("SPLIT_VER", "Split version", CArgDescriptions::eInteger);
-    arg_desc.AddFlag("blob-only", "Output raw blob data only");
+    s_InitBlobOnly(arg_desc);
 }
 
 template<>
@@ -312,8 +319,22 @@ template <class TRequest>
 int CPsgClientApp::RunRequest(const string& service, const CArgs& args)
 {
     auto request = SRequestBuilder::Build<TRequest>(args);
-    const auto blob_only = args.Exist("blob-only") && args["blob-only"].HasValue();
-    return CProcessing::OneRequest(service, request, blob_only);
+
+    if (!args.Exist("blob-only") || !args["blob-only"].HasValue()) {
+        return CProcessing::OneRequest(service, request);
+    }
+
+    SBlobOnly blob_only;
+
+    if (args.Exist("output-fmt") && args["output-fmt"].HasValue()) {
+        blob_only.output.format = &args["output-fmt"].AsString();
+
+        if (args.Exist("blob-type")) {
+            blob_only.output.type = &args["blob-type"].AsString();
+        }
+    }
+
+    return CProcessing::OneRequest(service, request, &blob_only);
 }
 
 template<>
@@ -323,7 +344,7 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const string& service, const
 
     if (single_request) {
         auto request = SRequestBuilder::Build<CPSG_Request_Resolve>(args);
-        return CProcessing::OneRequest(service, request, false);
+        return CProcessing::OneRequest(service, request);
     } else {
         auto& ctx = CDiagContext::GetRequestContext();
 
