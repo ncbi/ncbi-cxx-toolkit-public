@@ -6,6 +6,7 @@
 #
 
 set(NCBI_DEFAULT_PCH "ncbi_pch.hpp")
+set(NCBI_DEFAULT_HEADERS "*.h*;*impl/*.h*;*.inl;*impl/*.inl")
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
