@@ -1,3 +1,10 @@
+Release 1.8.4 (2019-12-30)
+
+    * PSG -- log client request errors (4XX) as Warnings rather than Errors
+      (CXX-11098)
+    * PSG -- optimize performance (server side) (CXX-11091)
+    * PSG -- add in-server tracing (CXX-11067)
+
 Release 1.8.3 (2019-12-12)
 
     * PSG -- add in-server tracing (CXX-11067)
