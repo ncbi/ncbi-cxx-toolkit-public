@@ -211,9 +211,9 @@ int CTestHttpUploadApp::Run(void)
         CConn_HttpStream http(kHttpUrl, net_info, user_header,
                               x_ParseHttpHeader, 0, 0, 0, fHTTP_WriteThru);
 
+        size_t i = 0, m = 0;
         char* buf = new char[MAX_REC_SIZE];
-        size_t m = 0;
-        for (size_t i = 0, k = 0;  i < n;  i += k) {
+        for (size_t k = 0;  i < n;  i += k) {
             k = rand() % (MAX_REC_SIZE << 1);
             if (k == 0)
                 k = MAX_REC_SIZE;
@@ -225,14 +225,17 @@ int CTestHttpUploadApp::Run(void)
                 buf[j] = (unsigned char) rand() & 0xFF;
             // cout << "Record size: " << NStr::NumericToString(k) << endl;
             if (!http.write(buf, k)) {
-                ERR_POST(Fatal << "Write error, offset "
+                ERR_POST(Error << "Write error, offset "
                          + NStr::NumericToString(i) + ", size "
                          + NStr::NumericToString(k) + ", iteration "
                          + NStr::NumericToString(m + 1));
+                break;
             }
             ++m;
         }
         delete[] buf;
+        if (i < n)
+            continue;
 
         ERR_POST(Info << file + " (size " + NStr::NumericToString(n) + ")"
                  " sent in " + NStr::NumericToString(m) + " chunk(s)");
