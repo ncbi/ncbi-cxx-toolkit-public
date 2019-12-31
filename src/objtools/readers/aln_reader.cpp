@@ -118,8 +118,8 @@ CAlnError::CAlnError(const CAlnError& e)
 }
 
 
-CAlnReader::CAlnReader(CNcbiIstream& is, FIdValidate fIdValidate) : 
-    m_fIdValidate(fIdValidate),
+CAlnReader::CAlnReader(CNcbiIstream& is, FValidateIds fValidateIds) : 
+    m_fValidateIds(fValidateIds),
     m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
     m_AlignFormat(EAlignFormat::UNKNOWN),
     m_UseNexusInfo(true)
@@ -127,10 +127,31 @@ CAlnReader::CAlnReader(CNcbiIstream& is, FIdValidate fIdValidate) :
     m_Errors.clear();
     SetAlphabet(eAlpha_Protein);
     SetAllGap(".-");
-    if (!m_fIdValidate) {
-        m_fIdValidate = CSeqIdValidate();
+    if (!m_fValidateIds) {
+        m_fValidateIds = CSeqIdValidate();
     }
 }
+
+
+static CAlnReader::FValidateIds s_GetMultiIdValidate(CAlnReader::FIdValidate fSingleIdValidate)
+{
+    if (!fSingleIdValidate) {
+        return CSeqIdValidate();
+    }
+
+    return [fSingleIdValidate](const list<CRef<CSeq_id>>& ids, 
+        int lineNum,
+        CAlnErrorReporter* errorReporter) {
+        for (const auto& pId : ids) {
+            fSingleIdValidate(*pId, lineNum, errorReporter);
+        }
+    };
+}
+
+
+CAlnReader::CAlnReader(CNcbiIstream& is, FIdValidate fSingleIdValidate) : 
+    CAlnReader(is, s_GetMultiIdValidate(fSingleIdValidate)) 
+{}
 
 
 string CAlnReader::GetAlphabetLetters(
@@ -304,8 +325,8 @@ void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
         ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, idString)));
     }
 
-    if (m_fIdValidate) {
-        m_fIdValidate(ids, seqIdInfo.mNumLine, theErrorReporter.get());
+    if (m_fValidateIds) {
+        m_fValidateIds(ids, seqIdInfo.mNumLine, theErrorReporter.get());
     }
     return;
 }

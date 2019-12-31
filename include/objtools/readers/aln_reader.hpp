@@ -146,14 +146,22 @@ public:
         EAlphabet);
 
     using TLineInfo = objects::SLineInfo;
-    using FIdValidate = 
+    using FValidateIds = 
         function<void(const list<CRef<objects::CSeq_id>>&,
                       int,
                       objects::CAlnErrorReporter*)>;
 
+    using FIdValidate = 
+        function<void(const objects::CSeq_id&,
+                      int,
+                      objects::CAlnErrorReporter*)>;
+
+
     // constructor
     // defaults to protein alphabet and A2M gap characters
-    CAlnReader(CNcbiIstream& is, FIdValidate fIdValidate=nullptr);
+    CAlnReader(CNcbiIstream& is, FValidateIds fIdValidate=nullptr);
+
+    CAlnReader(CNcbiIstream& is, FIdValidate fSingleIdValidate);
 
     // destructor
     virtual ~CAlnReader(void);
@@ -278,7 +286,7 @@ private:
     vector<string> m_Organisms; // redundant
     vector<string> m_Deflines; // redundant
     vector<TLineInfo> m_DeflineInfo;
-    FIdValidate m_fIdValidate;
+    FValidateIds m_fValidateIds=nullptr;
     EAlignFormat m_AlignFormat;
 
 

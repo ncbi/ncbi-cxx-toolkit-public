@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-static void s_ValidateSingleID(const CSeq_id& seqId, 
+void CSeqIdValidate::operator()(const CSeq_id& seqId, 
         int lineNum, 
         CAlnErrorReporter* pErrorReporter) 
 {
@@ -91,12 +91,13 @@ static void s_ValidateSingleID(const CSeq_id& seqId,
 }
 
 
+
 void CSeqIdValidate::operator()(const list<CRef<CSeq_id>>& ids,
         int lineNum,
         CAlnErrorReporter* pErrorReporter) {
     
     for (auto pSeqId : ids) {
-        s_ValidateSingleID(*pSeqId, lineNum, pErrorReporter);
+        operator()(*pSeqId, lineNum, pErrorReporter);
     }
 }
 
