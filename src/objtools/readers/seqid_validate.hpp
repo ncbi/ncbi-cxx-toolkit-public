@@ -105,7 +105,7 @@ protected:
             FReportError fReportError) const;
 
     static size_t CountPossibleNucResidues(
-            const CTempString& idString);
+            const string& idString);
 
     void CheckForExcessiveProtData(
             const CSeq_id& id,
@@ -113,7 +113,7 @@ protected:
             FReportError fReportError) const;
 
     static size_t CountPossibleAminoAcids(
-            const CTempString& idString);
+            const string& idString);
 
 protected:
     size_t  kWarnNumNucCharsAtEnd = 20;

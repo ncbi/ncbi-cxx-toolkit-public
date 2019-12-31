@@ -248,9 +248,10 @@ void CFastaIdValidate::CheckForExcessiveNucData(
 }
 
 
-static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
+static bool s_IsPossibleNuc(unsigned char c)
 {
     switch( c ) {
+    case 'N':
     case 'A':
     case 'C':
     case 'G':
@@ -267,17 +268,12 @@ static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 
 
 size_t CFastaIdValidate::CountPossibleNucResidues(
-        const CTempString& idString)
+        const string& idString)
 {
-    size_t numNucChars = 0;
-    for (size_t i = idString.size(); i>0; i--) {
-        const auto ch = idString[i - 1];
-        if (!s_ASCII_IsUnAmbigNuc(ch) && (ch != 'N')) {
-            break;
-        }
-        ++numNucChars;
-    }
-    return numNucChars;
+    const auto first_it = rbegin(idString);
+    const auto it = find_if_not(first_it, rend(idString), s_IsPossibleNuc);
+    
+    return static_cast<size_t>(distance(first_it, it));
 }
 
 
@@ -304,18 +300,14 @@ void CFastaIdValidate::CheckForExcessiveProtData(
 
 
 size_t CFastaIdValidate::CountPossibleAminoAcids(
-        const CTempString& idString) 
+        const string& idString) 
 {
-    TSeqPos numAaChars = 0;
-    for (size_t i = idString.size(); i>0; i--) {
-        const auto ch = idString[i - 1];
-        if ( !(ch >= 'A' && ch <= 'Z')  &&
-                !(ch >= 'a' && ch <= 'z') ) {
-            break;
-        }
-            ++numAaChars;
-    }
-    return numAaChars;
+    const auto first_it = rbegin(idString);
+    const auto it = find_if_not(first_it, rend(idString),
+            [](char c) { return (c >= 'A' && c <= 'Z') || 
+                                (c >= 'a' && c <= 'z'); });
+
+    return static_cast<size_t>(distance(first_it, it));
 }
 
 END_SCOPE(objects)
