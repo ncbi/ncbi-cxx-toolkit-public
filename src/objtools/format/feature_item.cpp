@@ -2582,6 +2582,8 @@ void CFeatureItem::x_GetAssociatedProtInfoIdx(
                     protRef = &( protFeat.GetData().GetProt() );
                 }
             }
+        } else {
+            x_GetAssociatedProtInfo(ctx, protHandle, protRef, protFeat, protId);
         }
     } 
 }
