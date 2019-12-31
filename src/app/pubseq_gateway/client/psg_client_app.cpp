@@ -165,12 +165,19 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
 }
 
-void s_InitBlobOnly(CArgDescriptions& arg_desc)
+void s_InitBlobOnly(CArgDescriptions& arg_desc, initializer_list<string> blob_types = {})
 {
     arg_desc.AddFlag("blob-only", "Output blob data only");
     arg_desc.AddOptionalKey("output-fmt", "FORMAT", "Format for blob data to return in (instead of raw data)", CArgDescriptions::eString);
     arg_desc.SetConstraint("output-fmt", new CArgAllow_Strings{"asn", "asnb", "xml", "json"});
     arg_desc.SetDependency("output-fmt", CArgDescriptions::eRequires, "blob-only");
+
+    if (blob_types.size()) {
+        arg_desc.AddDefaultKey("blob-type", "TYPE", "Blob data type", CArgDescriptions::eString, "seqentry");
+        arg_desc.SetConstraint("blob-type", new CArgAllow_Strings(move(blob_types)));
+        arg_desc.SetDependency("blob-type", CArgDescriptions::eRequires, "blob-only");
+        arg_desc.SetDependency("blob-type", CArgDescriptions::eRequires, "output-fmt");
+    }
 }
 
 template <class TRequest>
@@ -180,7 +187,7 @@ void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
-    s_InitBlobOnly(arg_desc);
+    s_InitBlobOnly(arg_desc, {"seqentry", "splitinfo"});
     s_InitDataFlags(arg_desc);
 }
 
@@ -204,11 +211,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString);
-    s_InitBlobOnly(arg_desc);
-    arg_desc.AddDefaultKey("blob-type", "TYPE", "Blob data type", CArgDescriptions::eString, "seqentry");
-    arg_desc.SetConstraint("blob-type", new CArgAllow_Strings{"seqentry", "seqannot", "splitinfo", "chunk"});
-    arg_desc.SetDependency("blob-type", CArgDescriptions::eRequires, "blob-only");
-    arg_desc.SetDependency("blob-type", CArgDescriptions::eRequires, "output-fmt");
+    s_InitBlobOnly(arg_desc, {"seqentry", "seqannot", "splitinfo", "chunk"});
     s_InitDataFlags(arg_desc);
 }
 

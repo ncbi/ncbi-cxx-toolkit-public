@@ -382,12 +382,12 @@ ESerialDataFormat SBlobOnly::SOutput::GetFormat()
 
 TTypeInfo SBlobOnly::SOutput::GetType()
 {
-    if (!type)                return objects::CSeq_entry::GetTypeInfo();
+    if (!type)                return objects::CID2S_Chunk::GetTypeInfo();
+    if (*type == "seqentry")  return objects::CSeq_entry::GetTypeInfo();
     if (*type == "seqannot")  return objects::CSeq_annot::GetTypeInfo();
     if (*type == "splitinfo") return objects::CID2S_Split_Info::GetTypeInfo();
-    if (*type == "chunk")     return objects::CID2S_Chunk::GetTypeInfo();
 
-    return objects::CSeq_entry::GetTypeInfo();
+    return objects::CID2S_Chunk::GetTypeInfo();
 }
 
 void SBlobOnly::Copy(istream& is, ostream& os)
@@ -406,16 +406,18 @@ void SBlobOnly::Copy(istream& is, ostream& os)
         in.reset(CObjectIStream::Open(input_format, is));
     } else {
         unique_ptr<CZipStreamDecompressor> zip(new CZipStreamDecompressor);
-        unique_ptr<CCompressionIStream> compressed_is(new CCompressionIStream(is, zip.release(), CCompressionIStream::fOwnAll));
+        unique_ptr<CCompressionIStream> compressed_is(new CCompressionIStream(is, zip.release(), CCompressionIStream::fOwnProcessor));
         in.reset(CObjectIStream::Open(input_format, *compressed_is.release(), eTakeOwnership));
     }
 
     _ASSERT(in);
     in->UseMemoryPool();
 
-    unique_ptr<CObjectOStream> out(CObjectOStream::Open(output_format, os));
+    stringstream ss;
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(output_format, ss));
     CObjectStreamCopier copier(*in, *out);
     copier.Copy(output.GetType());
+    os << ss.rdbuf();
 }
 
 int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SBlobOnly* blob_only)
