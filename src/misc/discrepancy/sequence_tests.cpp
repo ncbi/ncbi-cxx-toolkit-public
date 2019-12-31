@@ -51,7 +51,9 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/general/Person_id.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
@@ -2019,6 +2021,50 @@ DISCREPANCY_SUMMARIZE(ALL_SEQS_CIRCULAR)
         rep["All ([n]) sequences are circular"].Severity(m_Objs["F"].GetCount() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning).SetCount(m_Objs["C"].GetCount());
         m_ReportItems = rep.Export(*this, false)->GetSubitems();
     }
+}
+
+
+// SUSPICIOUS_SEQUENCE_ID
+
+static bool SuspiciousId(const string& s)
+{
+    static CRegexp regexp("chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bNW_|\\bNZ_|\\bNM_|\\bNC_|\\bAC_|CP\\d\\d\\d\\d\\d\\d", CRegexp::fCompile_ignore_case);
+    return regexp.IsMatch(s);
+}
+
+DISCREPANCY_CASE(SUSPICIOUS_SEQUENCE_ID, SEQUENCE, eOncaller, "Suspicious sequence identifiers")
+{
+    const CBioseq& bioseq = context.CurrentBioseq();
+    if (bioseq.CanGetId()) {
+        bool report = false;
+        for (auto& id : bioseq.GetId()) {
+            if (id->IsLocal()) {
+                if (id->GetLocal().IsStr() && SuspiciousId(id->GetLocal().GetStr())) {
+                    report = true;
+                    break;
+                }
+            }
+            else if (id->IsGeneral()) {
+                if (id->GetGeneral().IsSetDb() && SuspiciousId(id->GetGeneral().GetDb())) {
+                    report = true;
+                    break;
+                }
+                if (id->GetGeneral().IsSetTag() && id->GetGeneral().GetTag().IsStr() && SuspiciousId(id->GetGeneral().GetTag().GetStr())) {
+                    report = true;
+                    break;
+                }
+            }
+        }
+        if (report) {
+            m_Objs["[n] sequence[s] [has] suspicious identifiers"].Add(*context.BioseqSetObjRef());
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(SUSPICIOUS_SEQUENCE_ID)
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
 
