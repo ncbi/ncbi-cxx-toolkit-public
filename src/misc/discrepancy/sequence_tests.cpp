@@ -2032,7 +2032,7 @@ static bool SuspiciousId(const string& s)
     return regexp.IsMatch(s);
 }
 
-DISCREPANCY_CASE(SUSPICIOUS_SEQUENCE_ID, SEQUENCE, eOncaller, "Suspicious sequence identifiers")
+DISCREPANCY_CASE(SUSPICIOUS_SEQUENCE_ID, SEQUENCE, eOncaller | eSubmitter | eSmart, "Suspicious sequence identifiers")
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.CanGetId()) {
