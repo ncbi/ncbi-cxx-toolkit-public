@@ -600,6 +600,12 @@ BOOST_AUTO_TEST_CASE(Test_ParseCodeBreak)
     BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().IsSetCode_break(), true);
     BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetCode_break().size(), 1);
     BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
+
+    // SQD-4666
+    cds->SetData().SetCdregion().ResetCode_break();
+    cds->SetLocation().SetInt().SetTo(59);
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("transl_except", "(pos:61, aa:TERM)")));
+    BOOST_CHECK_EQUAL(CCleanup::ParseCodeBreaks(*cds, *scope), false);
 }
 
 
@@ -2605,5 +2611,19 @@ BOOST_AUTO_TEST_CASE(Test_MultipleDesc)
     BOOST_CHECK_EQUAL(comment->GetComment(), "a b");
     BOOST_CHECK_EQUAL(createdate.IsSetMinute(), false);
     BOOST_CHECK_EQUAL(createdate.IsSetSecond(), false);
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_PGAP_1320)
+{
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    CRef<CSeqdesc> src(new CSeqdesc());
+    src->SetSource().SetOrg().SetTaxname("X");
+    CRef<CSubSource> alt(new CSubSource(CSubSource::eSubtype_altitude, "634 m."));
+    src->SetSource().SetSubtype().push_back(alt);
+
+    changes = cleanup.BasicCleanup(*src);
+    BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().front()->GetName(), "634 m");
 
 }

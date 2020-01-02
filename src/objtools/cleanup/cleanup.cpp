@@ -4342,10 +4342,12 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const strin
 
     break_loc = ReadLocFromText(pos, feat_loc_seq_id, &scope);
 
-    if (break_loc == NULL
-        || (break_loc->IsInt()
-        && sequence::Compare(*break_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eContained)
-        || (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) > 3)) {
+    if (break_loc == NULL) {
+        return false;
+    } else if (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) > 3) {
+        return false;
+    } else if ((break_loc->IsInt() || break_loc->IsPnt()) &&
+         sequence::Compare(*break_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eContained) {
         return false;
     }
 
