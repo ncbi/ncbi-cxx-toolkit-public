@@ -2095,7 +2095,7 @@ void FeatureAdjustForTrim(CSeq_feat& feat,
     }
 
     if (feat.IsSetData()) {
-        switch (feat.GetData().Which()) {
+        switch (feat.GetData().GetSubtype()) {
             case CSeqFeatData::eSubtype_cdregion:
                 CdregionAdjustForTrim(feat.SetData().SetCdregion(), from, to, seqid);
                 break;
@@ -2143,7 +2143,7 @@ void FeatureAdjustForInsert(CSeq_feat& feat,
     SeqLocAdjustForInsert (feat.SetLocation(), from, to, seqid);
 
     if (feat.IsSetData()) {
-        switch (feat.GetData().Which()) {
+        switch (feat.GetData().GetSubtype()) {
             case CSeqFeatData::eSubtype_cdregion:
                 CdregionAdjustForInsert(feat.SetData().SetCdregion(), from, to, seqid);
                 break;
