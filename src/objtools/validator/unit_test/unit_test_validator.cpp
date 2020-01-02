@@ -12399,7 +12399,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     cds->SetData().SetCdregion().SetCode_break().push_back(codebreak);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSrange",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "CDSrange",
                                                  "Code-break location not in coding region"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
@@ -12417,7 +12417,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSrange",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "CDSrange",
                                                  "Code-break location not in coding region - may be frame problem"));
     //AddChromosomeNoLocation(expected_errors, entry);
     SetDiagFilter(eDiagFilter_All, "!(1210.8)");
@@ -13848,7 +13848,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSrange",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "CDSrange",
                                                  "Code-break location not in coding region - may be frame problem"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranslExceptPhase", 
                               "transl_except qual out of frame."));
