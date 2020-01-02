@@ -49,8 +49,8 @@
 #include <objtools/readers/mod_reader.hpp>
 #include <objtools/logging/listener.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
+#include <objtools/readers/seqid_validate.hpp>
 #include "aln_errors.hpp"
-#include "seqid_validate.hpp"
 
 #include <cassert>
 

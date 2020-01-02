@@ -90,6 +90,9 @@ public:
             int lineNum, 
             FReportError fReportError);
 
+    void SetMaxLocalIDLength(size_t length);
+    void SetMaxGeneralTagLength(size_t length);
+    void SetMaxAccessionLength(size_t length);
 protected:
     void CheckIDLength(const CSeq_id& id,
                        int lineNum,

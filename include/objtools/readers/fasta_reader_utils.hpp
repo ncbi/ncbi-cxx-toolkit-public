@@ -40,14 +40,13 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <objtools/readers/seqid_validate.hpp>
 #include <atomic>
 #include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-class CSeqIdCheck;
 
 class NCBI_XOBJREAD_EXPORT CFastaDeflineReader : public CReaderBase {
     
@@ -112,7 +111,9 @@ public:
                                    const TInfo& info, 
                                    ILineErrorListener* listener)>;
 
-
+    using FIdValidate = function<void(const TIds& id,
+                                      int lineNum,
+                                      CFastaIdValidate::FReportError* fReportError)>;
 
     static void ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
@@ -138,6 +139,13 @@ private:
         ILineErrorListener* pMessageListener,
         FIdCheck fn_id_check);
 
+    static void x_ProcessIDs(
+        const CTempString& id_string,
+        const SDeflineParseInfo& info,
+        TIds& ids,
+        ILineErrorListener* pMessageListener,
+        FIdValidate fnIdValidate){}
+
     static void x_ConvertNumericToLocal(
         TIds& ids);
 
@@ -159,29 +167,7 @@ public:
                     const TInfo& info,
                     ILineErrorListener* listener);
 
-    using FReportError = function<void (const string& msg, EDiagSev severity)>;
-
-private:
-    static bool x_IsValidLocalID(const CSeq_id& id, const TInfo& info);
-
-    static void x_CheckIDLength(const CSeq_id& id, 
-                                const TInfo& info,
-                                ILineErrorListener* listener);
-
-    static void x_CheckForExcessiveSeqData(const CSeq_id& id, 
-                                    const TInfo& info,
-                                    ILineErrorListener* listener);
-
-    //static void x_CheckForExcessiveSeqData(const CSeq_id& /*id*/,
-    //                            const TInfo& /*info*/,
-    //                            FReportError /*fReportError*/){}
-
-
-    static void x_PostIDLengthError(const size_t id_length,
-                                     const string& type_string,
-                                     const size_t max_length,
-                                     const TInfo& info,
-                                     ILineErrorListener* listener);
+    using FReportError NCBI_STD_DEPRECATED("") = function<void (const string& msg, EDiagSev severity)>;
 };
 
 
@@ -203,13 +189,13 @@ public:
     /// Equivalent to GenerateID(false)
     CRef<CSeq_id> GenerateID(void) const;
     
-    const string& GetPrefix (void) const    { return m_Prefix;        }
-    TCount GetCounter(void) const           { return m_Counter;       }
-    const string& GetSuffix (void) const    { return m_Suffix;        }
+    const string& GetPrefix (void) const    { return m_Prefix;  }
+    TCount GetCounter(void) const           { return m_Counter; }
+    const string& GetSuffix (void) const    { return m_Suffix;  }
 
-    void SetPrefix (const string& prefix)   { m_Prefix  = prefix;    }
-    void SetCounter(TCount count)           { m_Counter = count;     }
-    void SetSuffix (const string& suffix)   { m_Suffix  = suffix;    }
+    void SetPrefix (const string& prefix)   { m_Prefix  = prefix; }
+    void SetCounter(TCount count)           { m_Counter = count;  }
+    void SetSuffix (const string& suffix)   { m_Suffix  = suffix; }
 
 protected:
     string m_Prefix; 

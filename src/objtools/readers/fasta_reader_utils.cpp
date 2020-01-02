@@ -39,7 +39,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
-#include "seqid_validate.hpp"
+#include <objtools/readers/seqid_validate.hpp>
 
 #define NCBI_USE_ERRCODE_X Objtools_Rd_Fasta // Will need to change this 
 
@@ -144,6 +144,38 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     ParseDefline(defline, info, data, pMessageListener, fn_idcheck);
 }
 
+/*
+class CDeprecatedIdCheckWrapper {
+public:
+    using FDeprecatedIdCheck = CFastaDeflineReader::FIdCheck;
+    using TParseInfo = CFastaDeflineReader::SDeflineParseInfo;
+
+    CDeprecatedIdCheckWrapper(
+            FDeprecatedIdCheck fDeprecatedCheck, 
+            const TParseInfo& parseInfo, 
+            ILineErrorListener* pMessageListener) : 
+        m_fDeprecatedCheck(fDeprecatedCheck), 
+        m_ParseInfo(parseInfo),
+        m_pMessageListener(pMessageListener) {}
+
+    using TIds = list<CRef<CSeq_id>>;
+    using FReportError = CFastaIdValidate::FReportError;
+
+
+    void operator()(const TIds& ids, 
+            int lineNum, 
+            FReportError //fReportError
+        ) {
+        m_ParseInfo.lineNumber = lineNum;
+        m_fDeprecatedCheck(ids, m_ParseInfo, m_pMessageListener);
+    }
+
+private:
+    TParseInfo m_ParseInfo;
+    FDeprecatedIdCheck m_fDeprecatedCheck=nullptr;
+    ILineErrorListener* m_pMessageListener=nullptr;
+};
+*/
 
 void CFastaDeflineReader::ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
@@ -352,65 +384,6 @@ static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
     }
 }
 
-/*
-class CFastaIdValidate {
-public:
-    virtual ~CFastaIdValidate() = default;
-
-    enum EErrCode {
-        eUnexpectedNucResidues,
-        eUnexpectedAminoAcids,
-        eIDTooLong,
-        eBadLocalID,
-        eOther
-    };
-
-    using FReportError = 
-        function<void(EDiagSev severity, 
-                      int lineNum, 
-                      const string& idString, 
-                      EErrCode errCode, 
-                      const string& msg)>;
-
-    using TIds = list<CRef<CSeq_id>>;
-
-    virtual void operator()(
-            const TIds& ids, 
-            int lineNum, 
-            FReportError fReportError);
-
-protected:
-    void CheckIDLength(const CSeq_id& id,
-                       int lineNum,
-                       FReportError fReportError) const;
-
-    bool IsValidLocalID(const CSeq_id& id) const;
-
-    virtual bool IsValidLocalString(const CTempString& idString) const;
-
-    void CheckForExcessiveNucData(
-            const CSeq_id& id, 
-            int lineNum,
-            FReportError fReportError) const;
-
-    static size_t CountPossibleNucResidues(
-            const CTempString& idString);
-
-    void CheckForExcessiveProtData(
-            const CSeq_id& id,
-            int lineNum, 
-            FReportError fReportError) const;
-
-    static size_t CountPossibleAminoAcids(
-            const CTempString& idString);
-
-protected:
-    TSeqPos kWarnNumNucCharsAtEnd = 20;
-    TSeqPos kErrNumNucCharsAtEnd = 25;
-    TSeqPos kWarnNumAminoAcidCharsAtEnd = 50;
-};
-*/
-
 
 class CIdErrorReporter
 {
@@ -462,13 +435,13 @@ void CIdErrorReporter::operator()(EDiagSev severity,
 }
 
 
-
 void CFastaDeflineReader::x_ProcessIDs(
     const CTempString& id_string,
     const SDeflineParseInfo& info,
     TIds& ids,
     ILineErrorListener* pMessageListener,
-    FIdCheck f_id_check)
+    FIdCheck f_id_check
+    )
 {
     if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
     {
@@ -522,10 +495,9 @@ void CFastaDeflineReader::x_ProcessIDs(
         x_ConvertNumericToLocal(ids);
     }
 
-    CFastaIdValidate s_IdValidate(info.fFastaFlags);
-    s_IdValidate(ids, info.lineNumber, CIdErrorReporter(pMessageListener));
-
-    //f_id_check(ids, info, pMessageListener);
+    //CFastaIdValidate s_IdValidate(info.fFastaFlags);
+    //fnIdValidate(ids, info.lineNumber, CIdErrorReporter(pMessageListener));
+    f_id_check(ids, info, pMessageListener);
 }
 
 
@@ -663,174 +635,9 @@ void CSeqIdCheck::operator()(const TIds& ids,
         return;
     }
 
-    x_CheckForExcessiveSeqData(*(ids.back()), info, listener);
-
-    for (const auto& pId : ids) {
-        if (pId->IsLocal() && 
-            !x_IsValidLocalID(*pId, info)) {
-
-            string msg = "'" + pId->GetSeqIdString() + "' is not a valid local ID";
-            s_PostError(listener,
-                info.lineNumber,
-                msg,
-                ILineError::eProblem_GeneralParsingError,
-                CObjReaderParseException::eInvalidID);
-        }
-        x_CheckIDLength(*pId, info, listener);
-    }
+    CFastaIdValidate s_IdValidate(info.fFastaFlags);
+    s_IdValidate(ids, info.lineNumber, CIdErrorReporter(listener));
 }
-
-
-bool CSeqIdCheck::x_IsValidLocalID(const CSeq_id& id, 
-                                 const TInfo& info)
-{
-    return s_IsValidLocalID(id, info);
-}
-
-
-void CSeqIdCheck::x_PostIDLengthError(const size_t id_length,
-                                      const string& type_string,
-                                      const size_t max_length,
-                                      const TInfo& info,
-                                      ILineErrorListener* listener)
-{
-
-    const string& err_message =
-        "Near line " + NStr::NumericToString(info.lineNumber) +
-        + ", the " + type_string + " is too long.  Its length is " + NStr::NumericToString(id_length)
-        + " but the maximum allowed " + type_string + " length is "+  NStr::NumericToString(max_length)
-        + ".  Please find and correct all " + type_string + "s that are too long.";
-
-    s_PostError(listener, 
-        info.lineNumber,
-        err_message,
-        ILineError::eProblem_GeneralParsingError,
-        CObjReaderParseException::eIDTooLong);
-
-}
-
-
-void CSeqIdCheck::x_CheckIDLength(const CSeq_id& id, 
-                                    const TInfo& info,
-                                    ILineErrorListener* listener) 
-{
-    if (id.IsLocal()) {
-        if (id.GetLocal().IsStr() &&
-            id.GetLocal().GetStr().length() > CFastaDeflineReader::s_MaxLocalIDLength) {
-            x_PostIDLengthError(id.GetLocal().GetStr().length(),
-                                "local id", CFastaDeflineReader::s_MaxLocalIDLength,
-                                info, listener);
-        }
-        return;
-    }
-
-
-    if (id.IsGeneral()) {
-        if (id.GetGeneral().IsSetTag() &&
-            id.GetGeneral().GetTag().IsStr()) {
-            const auto length = id.GetGeneral().GetTag().GetStr().length();
-            if (length > CFastaDeflineReader::s_MaxGeneralTagLength) {
-                x_PostIDLengthError(length,
-                                    "general id string", CFastaDeflineReader::s_MaxGeneralTagLength,
-                                    info, listener);
-            }
-        }
-        return;
-    }
-
-
-   auto pTextId = id.GetTextseq_Id();
-   if (pTextId &&
-       pTextId->IsSetAccession()) {
-        const auto length = pTextId->GetAccession().length();
-        if (length > CFastaDeflineReader::s_MaxAccessionLength) {
-            x_PostIDLengthError(length,
-                                "accession", CFastaDeflineReader::s_MaxAccessionLength, 
-                                info, listener);
-        }
-   }
-}
-
-
-void CSeqIdCheck::x_CheckForExcessiveSeqData(const CSeq_id& id,
-                                             const TInfo& info,
-                                             ILineErrorListener* listener)
-{
-    const bool assume_prot = (info.fFastaFlags & CFastaReader::fAssumeProt);
-    const bool assume_nuc  = (info.fFastaFlags & CFastaReader::fAssumeNuc);
-
-    const auto& id_string = id.GetSeqIdString();
-
-    const TSeqPos kWarnNumNucCharsAtEnd = 20;
-    const TSeqPos kWarnNumAminoAcidCharsAtEnd = 50;
-    const TSeqPos kErrNumNucCharsAtEnd = 25;
-
-
-    if (!assume_prot && id_string.length() > kWarnNumNucCharsAtEnd) {
-        TSeqPos numNucChars = 0;
-        for (size_t i = id_string.size(); i>0; i--) {
-            const auto ch = id_string[i - 1];
-            if (!s_ASCII_IsUnAmbigNuc(ch) && (ch != 'N')) {
-                break;
-            }
-            ++numNucChars;
-        }
-
-        if (numNucChars > kWarnNumNucCharsAtEnd) {
-            const string err_message = 
-            "Fasta Reader: sequence id ends with " +
-            NStr::NumericToString(numNucChars) +
-            " valid nucleotide characters. " +
-            " Was the sequence accidentally placed in the definition line?";    
-       
-            if (numNucChars > kErrNumNucCharsAtEnd) {
-                s_PostError(listener,
-                            info.lineNumber,
-                            err_message,
-                            ILineError::eProblem_UnexpectedNucResidues,
-                            CObjReaderParseException::eFormat);
-            
-            } else{ 
-                s_PostWarning(listener,
-                              info.lineNumber,
-                              err_message,
-                              ILineError::eProblem_UnexpectedNucResidues,
-                              CObjReaderParseException::eFormat);
-            }
-            return;        
-        }
-    }
-
-    if (assume_nuc) { // No check to perform
-        return; 
-    }
-    // Check for Aa sequence
-    if (id_string.length() > kWarnNumAminoAcidCharsAtEnd) {
-        TSeqPos numAaChars = 0;
-        for (size_t i = id_string.size(); i>0; i--) {
-            const auto ch = id_string[i - 1];
-            if ( !(ch >= 'A' && ch <= 'Z')  &&
-                 !(ch >= 'a' && ch <= 'z') ) {
-                break;
-            }
-            ++numAaChars;
-        }
-        if (numAaChars > kWarnNumAminoAcidCharsAtEnd) {
-            const string err_message = 
-            "Fasta Reader: sequence id ends with " +
-            NStr::NumericToString(numAaChars) +
-            " valid amino-acid characters. " +
-            " Was the sequence accidentally placed in the definition line?";    
-        
-            s_PostWarning(listener,
-                          info.lineNumber,
-                          err_message,
-                          ILineError::eProblem_UnexpectedAminoAcids,
-                          CObjReaderParseException::eFormat);
-        }
-    }
-}
-
 
 
 bool 
@@ -885,7 +692,6 @@ CRef<CSeq_id> CFastaIdHandler::GenerateID(bool unique_id)
 }
 
 
-
 CRef<CSeq_id> CFastaIdHandler::GenerateID(const string& defline, const bool unique_id)
 {
     const bool advance = true;
@@ -931,7 +737,6 @@ CRef<CSeq_id> CSeqIdGenerator::GenerateID(void) const
 {
     return const_cast<CSeqIdGenerator*>(this)->GenerateID(false);
 }
-
 
 
 END_SCOPE(objects)

@@ -39,9 +39,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-
-#include "seqid_validate.hpp"
 #include <objtools/readers/aln_error_reporter.hpp>
+#include <objtools/readers/seqid_validate.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -132,6 +131,24 @@ void CFastaIdValidate::operator()(const TIds& ids,
         }
         CheckIDLength(*pId, lineNum, fReportError);
     }
+}
+
+
+void CFastaIdValidate::SetMaxLocalIDLength(size_t length) 
+{
+    kMaxLocalIDLength = length;
+}
+
+
+void CFastaIdValidate::SetMaxGeneralTagLength(size_t length)
+{
+    kMaxGeneralTagLength = length;
+}
+
+
+void CFastaIdValidate::SetMaxAccessionLength(size_t length)
+{
+    kMaxAccessionLength = length;
 }
 
 
