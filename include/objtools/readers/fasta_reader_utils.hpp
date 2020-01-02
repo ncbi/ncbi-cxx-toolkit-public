@@ -148,12 +148,6 @@ private:
 
     static void x_ConvertNumericToLocal(
         TIds& ids);
-
-    static bool x_ExcessiveSeqDataInTitle(const CTempString& title, 
-        TFastaFlags fasta_flags);
-
-    static bool x_ExceedsMaxLength(const CTempString& title, 
-        TSeqPos max_length);
 };
 
 
@@ -167,7 +161,8 @@ public:
                     const TInfo& info,
                     ILineErrorListener* listener);
 
-    using FReportError NCBI_STD_DEPRECATED("") = function<void (const string& msg, EDiagSev severity)>;
+    using FReportError NCBI_STD_DEPRECATED("") = 
+        function<void (const string& msg, EDiagSev severity)>;
 };
 
 
