@@ -118,6 +118,56 @@ CAlnError::CAlnError(const CAlnError& e)
 }
 
 
+class CDefaultIdErrorReporter
+{
+public:
+    CDefaultIdErrorReporter(CAlnErrorReporter* pErrorReporter)
+        : m_pErrorReporter(pErrorReporter) 
+        { _ASSERT(m_pErrorReporter != nullptr); }
+
+
+    void operator()(EDiagSev severity,
+            int lineNum,
+            const string& idString,
+            CFastaIdValidate::EErrCode /*errCode*/,
+            const string& msg)
+    {
+        m_pErrorReporter->Report(
+            lineNum, 
+            severity, 
+            eReader_Alignment,
+            eAlnSubcode_IllegalSequenceId, 
+            msg, 
+            idString);
+    }
+
+private:
+    CAlnErrorReporter* m_pErrorReporter;
+};
+
+
+class CDefaultIdValidate 
+{
+public:
+    using TIds = list<CRef<CSeq_id>>;
+
+    void operator()(const TIds& ids, 
+                    int lineNum,
+                    CAlnErrorReporter* pErrorReporter);
+private:
+    CFastaIdValidate m_FastaIdValidate {0};
+};
+
+
+void CDefaultIdValidate::operator()(
+        const TIds& ids, 
+        int lineNum,
+        CAlnErrorReporter* pErrorReporter)
+{
+    m_FastaIdValidate(ids, lineNum, CDefaultIdErrorReporter(pErrorReporter));
+}
+
+
 CAlnReader::CAlnReader(CNcbiIstream& is, FValidateIds fValidateIds) : 
     m_fValidateIds(fValidateIds),
     m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
@@ -128,7 +178,7 @@ CAlnReader::CAlnReader(CNcbiIstream& is, FValidateIds fValidateIds) :
     SetAlphabet(eAlpha_Protein);
     SetAllGap(".-");
     if (!m_fValidateIds) {
-        m_fValidateIds = CSeqIdValidate();
+        m_fValidateIds = CDefaultIdValidate();
     }
 }
 
@@ -136,7 +186,7 @@ CAlnReader::CAlnReader(CNcbiIstream& is, FValidateIds fValidateIds) :
 static CAlnReader::FValidateIds s_GetMultiIdValidate(CAlnReader::FIdValidate fSingleIdValidate)
 {
     if (!fSingleIdValidate) {
-        return CSeqIdValidate();
+        return CDefaultIdValidate();
     }
 
     return [fSingleIdValidate](const list<CRef<CSeq_id>>& ids, 

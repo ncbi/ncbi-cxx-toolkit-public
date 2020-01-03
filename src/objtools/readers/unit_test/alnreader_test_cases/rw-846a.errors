@@ -1,5 +1,6 @@
+SeqID      : "invalid_id_because_quoted"
 Line No    : 12
 Severity   : Error
 Problem    : Alignment.IllegalSequenceId
-Message    : Local ID ""invalid_id_because_quoted"" contains invalid characters.
+Message    : At ID '"invalid_id_because_quoted"': '"invalid_id_because_quoted"' is not a valid local ID
 
