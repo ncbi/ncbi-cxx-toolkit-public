@@ -2283,7 +2283,7 @@ BOOST_AUTO_TEST_CASE(Test_MoveXrefToProt)
 BOOST_AUTO_TEST_CASE(Test_SQD_4516)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
-    SetSubSource(entry, CSubSource::eSubtype_country, "a:b:c");
+    SetSubSource(entry, CSubSource::eSubtype_country, "USA:b:c");
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
@@ -2294,7 +2294,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4516)
     changes = cleanup.BasicCleanup(*entry);
 
     CSeqdesc_CI src(seh, CSeqdesc::e_Source);
-    BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().back()->GetName(), "a:b,c");
+    BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().back()->GetName(), "USA:b,c");
 }
 
 
@@ -2625,5 +2625,19 @@ BOOST_AUTO_TEST_CASE(Test_PGAP_1320)
 
     changes = cleanup.BasicCleanup(*src);
     BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().front()->GetName(), "634 m");
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_RW_978)
+{
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    CRef<CSeqdesc> src(new CSeqdesc());
+    src->SetSource().SetOrg().SetTaxname("X");
+    CRef<CSubSource> alt(new CSubSource(CSubSource::eSubtype_country, "USA:DE:Wilmington"));
+    src->SetSource().SetSubtype().push_back(alt);
+
+    changes = cleanup.BasicCleanup(*src);
+    BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().front()->GetName(), "USA:DE,Wilmington");
 
 }

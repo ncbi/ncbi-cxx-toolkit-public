@@ -3916,6 +3916,25 @@ string CCountries::NewFixCountry (const string& test)
     return new_country;
 }
 
+
+bool CCountries::ChangeExtraColonsToCommas(string& country)
+{
+    // requested in SQD-4516
+    bool rval = false;
+    int count = 0;
+    for (size_t i = 0; i < country.length(); i++) {
+        if (country[i] == ':') {
+            count++;
+            if (count > 1) {
+                country[i] = ',';
+                rval = true;
+            }
+        }
+    }
+    return rval;
+}
+
+
 string CCountries::CountryFixupItem(const string &input, bool capitalize_after_colon)
 {
     string country = NewFixCountry (input);
@@ -4187,6 +4206,7 @@ string CSubSource::AutoFix(TSubtype subtype, const string& value)
     switch (subtype) {
         case CSubSource::eSubtype_country:
             new_val = CCountries::NewFixCountry(value);
+            CCountries::ChangeExtraColonsToCommas(new_val);
             break;
         case CSubSource::eSubtype_collection_date:
             new_val = FixDateFormat(value);

@@ -290,6 +290,7 @@ public:
     static bool ContainsMultipleCountryNames (const string &phrase);
     static string GetCorrectedCountryCapitalization(const string& country);
     static string NewFixCountry (const string& input);
+    static bool CCountries::ChangeExtraColonsToCommas(string& country);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
     typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
 private:

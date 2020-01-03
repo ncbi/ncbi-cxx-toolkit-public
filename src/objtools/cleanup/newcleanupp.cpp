@@ -1620,18 +1620,6 @@ void CNewCleanup_imp::BiosourceBC (
                     ChangeMade(CCleanupChange::eCleanSubsource);
                 }
 
-                // requested in SQD-4516
-                int count = 0;
-                for (size_t i = 0; i < country.length(); i++) {
-                    if (country[i] == ':') {
-                        count++;
-                        if (count > 1) {
-                            country[i] = ',';
-                            ChangeMade(CCleanupChange::eCleanSubsource);
-                        }
-                    }
-                }
-
             }
 
             if( chs == NCBI_SUBSOURCE(altitude) ) {
