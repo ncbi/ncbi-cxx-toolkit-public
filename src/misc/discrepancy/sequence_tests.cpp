@@ -399,7 +399,7 @@ static bool ReportOnNA(const string& s)
 
 static bool ReportOnAA(const string& s)
 {
-    static const string const bad[] = { "CDS", "gene", "rna", "regulatory" };
+    static const string bad[] = { "CDS", "gene", "rna", "regulatory" };
     static const size_t len = sizeof(bad) / sizeof(bad[0]);
     for (size_t i = 0; i < len; i++) {
         if (NStr::FindCase(s, bad[i]) != -1) {
