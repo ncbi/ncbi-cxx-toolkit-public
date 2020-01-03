@@ -364,6 +364,7 @@ DISCREPANCY_SUMMARIZE(10_PERCENTN)
 
 DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count features present or missing from sequences")
 {
+    // context.SetGui(true); // for debug only!
     for (auto& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
             continue;
@@ -372,6 +373,11 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
         m_Objs[key + ": [n] present"].Info().Incr();
     }
     if (context.IsGui() && context.IsBioseq()) {
+        const CBioseq& bioseq = context.CurrentBioseq();
+        bool na = false;
+        if (bioseq.CanGetInst() && bioseq.GetInst().IsNa()) {
+            na = true;
+        }
         CRef<CReportObj> rep(context.BioseqObjRef());
         for (auto& feat : context.GetAllFeat()) {
             if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
@@ -380,8 +386,27 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
             string key = feat.GetData().IsGene() ? "gene" : feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
             m_Objs[kEmptyCStr][key].Add(*rep, false);
         }
-        m_Objs[kEmptyCStr][kEmptyCStr].Add(*rep);
+        m_Objs[kEmptyCStr][na ? "N" : "A"].Add(*rep);
     }
+}
+
+
+static bool ReportOnNA(const string& s)
+{
+    return true;
+}
+
+
+static bool ReportOnAA(const string& s)
+{
+    static const string const bad[] = { "CDS", "gene", "rna", "regulatory" };
+    static const size_t len = sizeof(bad) / sizeof(bad[0]);
+    for (size_t i = 0; i < len; i++) {
+        if (NStr::FindCase(s, bad[i]) != -1) {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -389,13 +414,20 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
 {
     if (context.IsGui()) {
         for (auto& it : m_Objs[kEmptyCStr].GetMap()) {
-            if (it.first.empty()) {
+            if (it.first == "N" || it.first == "A") {
                 continue;
             }
             string label = it.first + ": [n] present";
             map<CReportObj*, size_t> obj2num;
-            for (auto& obj : m_Objs[kEmptyStr][kEmptyStr].GetObjects()) {
-                obj2num[&*obj] = 0;
+            if (ReportOnNA(it.first)) {
+                for (auto& obj : m_Objs[kEmptyStr]["N"].GetObjects()) {
+                    obj2num[&*obj] = 0;
+                }
+            }
+            if (ReportOnAA(it.first)) {
+                for (auto& obj : m_Objs[kEmptyStr]["A"].GetObjects()) {
+                    obj2num[&*obj] = 0;
+                }
             }
             for (auto& obj : m_Objs[kEmptyStr][it.first].GetObjects()) {
                 obj2num[&*obj]++;
