@@ -5710,7 +5710,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
                    else
                      for ext in .a .so; do
                        name=libboost_system$base$bsfx$ext
-                       path=`$CXX -L$BOOST_LIBPATH_ -print-file-name=$name \
+                       path=`$CXX -B$BOOST_LIBPATH_/ -print-file-name=$name \
                              2>/dev/null`
                        case "$path" in
                          $BOOST_PATH/*/$name ) found=yes; break ;;
