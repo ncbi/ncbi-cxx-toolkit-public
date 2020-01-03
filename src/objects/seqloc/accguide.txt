@@ -205,6 +205,9 @@ version  1 # of file format
 4+8   W???    gb_wgs_nuc
 4+9   W???    gb_wgs_nuc
 4+10  W???    gb_wgs_nuc
+4+8   X???    gb_wgs_nuc
+4+9   X???    gb_wgs_nuc
+4+10  X???    gb_wgs_nuc
 4+8   ????    unreserved_nuc
 4+9   ????    unreserved_nuc
 4+10  ????    unreserved_nuc
@@ -1229,6 +1232,9 @@ version  1 # of file format
 2+6  MS  embl_patent
 2+8  MS  embl_other_nuc
 2+10 MS  embl_other_nuc
+2+6  MT  gb_dirsub
+2+8  MT  gb_other_nuc
+2+10 MT  gb_other_nuc
 2+6  M?  gb_other_nuc
 2+8  M?  gb_other_nuc
 2+10 M?  gb_other_nuc
