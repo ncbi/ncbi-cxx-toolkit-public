@@ -694,7 +694,9 @@ void CDefaultModErrorReporter::operator()(
             mod.GetName(),
             mod.GetValue()));
 
-    m_pErrorListener->PutError(*pErr);
+    if (!m_pErrorListener->PutError(*pErr)) {
+        NCBI_THROW2(CObjReaderParseException, eFormat, msg, 0);
+    }
 }
 
 
