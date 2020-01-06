@@ -48,6 +48,14 @@
 BEGIN_NCBI_SCOPE
 
 
+#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 700
+// No asynchronous reporting for GCC < 7.0.
+// std::thread doesn't support async handlers with arguments (at least as class method).
+#else 
+#  define NCBI_USAGE_REPORT_ACYNC_SUPPORTED 1
+#endif
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -489,8 +497,11 @@ public:
     bool Send(const CUsageReportParameters& params, int* http_status = nullptr);
 
 
+#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
+
     /////////////////////////////////////////////////////////////////////////
     // Asynchronous reporting
+    
 
     /// Report usage statistics asynchronously.
     ///
@@ -558,6 +569,9 @@ public:
     /// Wait all asynchronous reporting jobs to finish (if any).
     void Wait(void);
 
+#endif  // NCBI_USAGE_REPORT_ACYNC_SUPPORTED
+    
+
 private:
     /// Send parameters string synchronously, returns HTTP status if specified. MT-safe.
     bool x_Send(const string& extra_params, int* http_status);
@@ -579,7 +593,8 @@ private:
     string       m_DefaultParams;  ///< Default parameters to report, concatenated and URL-encoded.
     string       m_URL;            ///< Reporting URL
 
-    // Async processing
+ #if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
+   // Async processing
 
     enum EThreadState {
         eReady,
@@ -592,6 +607,8 @@ private:
         EThreadState m_state;
     };
     vector<SThread> m_ThreadPool;   ///< Async thread pool
+#endif  // NCBI_USAGE_REPORT_ACYNC_SUPPORTED
+    
     std::mutex      m_Usage_Mutex;  ///< MT-protection
 };
 

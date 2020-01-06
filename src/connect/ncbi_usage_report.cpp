@@ -363,9 +363,11 @@ CUsageReport::CUsageReport(TWhat what, const string& url)
     // Save URL
     m_URL = url.empty() ? CUsageReportAPI::GetURL() : url;
 
+#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
     // Create thread pool for async reporting
     unsigned thread_pool_size = CUsageReportAPI::GetMaxAsyncThreads();
     m_ThreadPool.resize(thread_pool_size);
+#endif    
     
     // Enable reporter
     m_IsEnabled = true;
@@ -373,8 +375,10 @@ CUsageReport::CUsageReport(TWhat what, const string& url)
 
 CUsageReport::~CUsageReport(void)
 {
+#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
     // Wait all running async jobs (if any) to finish
     Wait();
+#endif    
 }
 
 bool CUsageReport::IsEnabled()
@@ -417,6 +421,9 @@ bool CUsageReport::Send(const CUsageReportParameters& params, int* http_status)
     }
     return x_Send(params.ToString(), http_status);
 }
+
+
+#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
 
 // MT-safe
 //
@@ -533,6 +540,8 @@ void CUsageReport::x_AsyncHandler(TJobPtr job, int thread_pool_slot)
     // the current thread, it doesn't changes while thread is executes.
     m_ThreadPool[thread_pool_slot].m_state = eFinished;
 }
+
+#endif  // NCBI_USAGE_REPORT_ACYNC_SUPPORTED
 
 
 END_NCBI_SCOPE
