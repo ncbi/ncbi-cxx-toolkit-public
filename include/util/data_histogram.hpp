@@ -458,6 +458,9 @@ public:
     /// defining the unit of time (tick) as far as this API is concerned.
     void Rotate();
 
+    /// Reset to the initial state
+    void Reset();
+
     /// Type of the unit of time
     using TTicks = unsigned int;
 
@@ -1101,6 +1104,20 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::Rotate()
 
     m_Mutex.lock();
     x_Shift(0, m_TimeBins.begin());
+    m_Mutex.unlock();
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogramTimeSeries<TValue, TScale, TCounter>::Reset()
+{
+    m_Mutex.lock();
+    m_CurrentTick = 0;
+    while (m_TimeBins.size() > 1)
+        m_TimeBins.pop_back();
+    m_TimeBins.front().histogram.Reset();
+    m_TimeBins.front().n_ticks = 1;     // Just in case
     m_Mutex.unlock();
 }
 
