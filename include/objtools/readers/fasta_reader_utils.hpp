@@ -140,11 +140,11 @@ private:
         FIdCheck fn_id_check);
 
     static void x_ProcessIDs(
-        const CTempString& id_string,
-        const SDeflineParseInfo& info,
-        TIds& ids,
-        ILineErrorListener* pMessageListener,
-        FIdValidate fnIdValidate){}
+        const CTempString& /*id_string*/,
+        const SDeflineParseInfo& /*info*/,
+        TIds& /*ids*/,
+        ILineErrorListener* /*pMessageListener*/,
+        FIdValidate /*fnIdValidate*/){}
 
     static void x_ConvertNumericToLocal(
         TIds& ids);

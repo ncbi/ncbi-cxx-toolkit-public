@@ -34,7 +34,7 @@
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class CSeq_id;
 struct SLineInfo;
