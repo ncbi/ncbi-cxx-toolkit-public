@@ -107,16 +107,16 @@ public:
     /// @note
     ///   Can be specified thought the global parameter:
     ///   Registry file:
-    ///      [NCBI]
-    ///      UsageReportEnabled = true/false
+    ///      [USAGE_REPORT]
+    ///      Enabled = true/false
     ///   Environment variable:
-    ///      NCBI_CONFIG__USAGE_REPORT_ENABLED=1/0
+    ///      NCBI_USAGE_REPORT_ENABLED=1/0
     ///
     /// @sa Enable, Disable, CUsageReport
     ///
     static void SetEnabled(bool enable);
-    static void Enable(void)  { SetEnabled(true);  };
-    static void Disable(void) { SetEnabled(false); };
+    static void Enable(void)  { SetEnabled(true);  }
+    static void Disable(void) { SetEnabled(false); }
 
     /// Indicates whether global application usage statistics collection is enabled.
     /// @sa Enable, Disable
@@ -144,10 +144,10 @@ public:
     /// @note
     ///   Can be specified thought the global parameter:
     ///   Registry file:
-    ///       [NCBI]
-    ///       UsageReportURL = https://...
+    ///       [USAGE_REPORT]
+    ///       URL = https://...
     ///   Environment variable:
-    ///       NCBI_CONFIG__USAGE_REPORT_URL=https://...
+    ///       NCBI_USAGE_REPORT_URL=https://...
     ///
     static void SetURL(const string& url);
     static string GetURL(void);
@@ -162,10 +162,10 @@ public:
     /// @note
     ///   Can be specified thought the global parameter:
     ///   Registry file:
-    ///       [NCBI]
-    ///       UsageReportAppName = ...
+    ///       USAGE_REPORT]
+    ///       AppName = ...
     ///   Environment variable:
-    ///       NCBI_CONFIG__USAGE_REPORT_APPNAME=...
+    ///       NCBI_USAGE_REPORT_APPNAME=...
     ///
     /// @sa CNcbiApplication::GetProgramDisplayName(), GetAppName
     ///
@@ -182,10 +182,10 @@ public:
     /// @note
     ///   Can be specified thought the global parameter:
     ///   Registry file:
-    ///       [NCBI]
-    ///       UsageReportAppVersion = ...
+    ///       [USAGE_REPORT]
+    ///       AppVersion = ...
     ///   Environment variable:
-    ///       NCBI_CONFIG__USAGE_REPORT_APPVERSION=...
+    ///       NCBI_USAGE_REPORT_APPVERSION=...
     ///
     /// @sa CNcbiApplicationAPI::GetVersion(), GetAppVersion
     ///
@@ -201,10 +201,10 @@ public:
     /// @note
     ///   Can be specified thought the global parameter:
     ///   Registry file:
-    ///       [NCBI]
-    ///       UsageReportMaxThreads = ...
+    ///       [USAGE_REPORT]
+    ///       MaxThreads = ...
     ///   Environment variable:
-    ///       NCBI_CONFIG__USAGE_REPORT_MAXTHREADS=...
+    ///       NCBI_USAGE_REPORT_MAXTHREADS=...
     /// @param
     ///   Maximum number of asynchronous threads per reporter.
     ///   0 - (re)set to default value.
@@ -212,11 +212,6 @@ public:
     ///
     static void SetMaxAsyncThreads(unsigned n);
     static unsigned GetMaxAsyncThreads();
-
-    // Auxiliary getters, don't change.
-
-    static string GetOS(void);
-    static string GetHost(void);
 };
 
 
@@ -245,16 +240,8 @@ public:
     ///
     CUsageReportParameters& Add(const string& name, const string& value);
     CUsageReportParameters& Add(const string& name, const char*   value);
-    CUsageReportParameters& Add(const string& name, char          value);
-    CUsageReportParameters& Add(const string& name, int           value);
-    CUsageReportParameters& Add(const string& name, unsigned int  value);
-    CUsageReportParameters& Add(const string& name, long          value);
-    CUsageReportParameters& Add(const string& name, unsigned long value);
-    CUsageReportParameters& Add(const string& name, double        value);
-    CUsageReportParameters& Add(const string& name, bool          value);
-#if (SIZEOF_LONG != 8)
-    CUsageReportParameters& Add(const string& name, size_t        value);
-#endif
+    template <typename TValue>
+    CUsageReportParameters& Add(const string& name, TValue value) { return Add(name, std::to_string(value)); }
 
     /// Convert parameters to string. URL-encode all values.
     string ToString() const;
@@ -453,9 +440,9 @@ public:
     ///
     /// @sa CUsageReportAPI::SetEnabled(), IsEnabled()
     ///
-    void SetEnabled(bool enable) { m_IsEnabled = enable; };
-    void Enable(void)  { SetEnabled(true);  };
-    void Disable(void) { SetEnabled(false); };
+    void SetEnabled(bool enable) { m_IsEnabled = enable; }
+    void Enable(void)  { SetEnabled(true);  }
+    void Disable(void) { SetEnabled(false); }
 
     /// Indicates whether application usage statistics collection is enabled
     /// for a current reporter instance. Takes into account local status and global

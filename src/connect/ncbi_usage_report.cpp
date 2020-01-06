@@ -60,20 +60,20 @@ const unsigned kDefault_MaxThreads = 3;
 //  Global parameters
 //
 
-NCBI_PARAM_DECL(string,     NCBI, UsageReportURL);
-NCBI_PARAM_DEF_EX(string,   NCBI, UsageReportURL, kDefault_URL, eParam_NoThread, NCBI_CONFIG__USAGE_REPORT_URL);
+NCBI_PARAM_DECL(string,     USAGE_REPORT, URL);
+NCBI_PARAM_DEF_EX(string,   USAGE_REPORT, URL, kDefault_URL, eParam_NoThread, NCBI_USAGE_REPORT_URL);
 
-NCBI_PARAM_DECL(bool,       NCBI, UsageReportEnabled);
-NCBI_PARAM_DEF_EX(bool,     NCBI, UsageReportEnabled, kDefault_IsEnabled, eParam_NoThread, NCBI_CONFIG__USAGE_REPORT_ENABLED);
+NCBI_PARAM_DECL(bool,       USAGE_REPORT, Enabled);
+NCBI_PARAM_DEF_EX(bool,     USAGE_REPORT, Enabled, kDefault_IsEnabled, eParam_NoThread, NCBI_USAGE_REPORT_ENABLED);
 
-NCBI_PARAM_DECL(string,     NCBI, UsageReportAppName);
-NCBI_PARAM_DEF_EX(string,   NCBI, UsageReportAppName, "", eParam_NoThread, NCBI_CONFIG__USAGE_REPORT_APPNAME);
+NCBI_PARAM_DECL(string,     USAGE_REPORT, AppName);
+NCBI_PARAM_DEF_EX(string,   USAGE_REPORT, AppName, "", eParam_NoThread, NCBI_USAGE_REPORT_APPNAME);
 
-NCBI_PARAM_DECL(string,     NCBI, UsageReportAppVersion);
-NCBI_PARAM_DEF_EX(string,   NCBI, UsageReportAppVersion, "", eParam_NoThread, NCBI_CONFIG__USAGE_REPORT_APPVERSION);
+NCBI_PARAM_DECL(string,     USAGE_REPORT, AppVersion);
+NCBI_PARAM_DEF_EX(string,   USAGE_REPORT, AppVersion, "", eParam_NoThread, NCBI_USAGE_REPORT_APPVERSION);
 
-NCBI_PARAM_DECL(unsigned,   NCBI, UsageReportMaxThreads);
-NCBI_PARAM_DEF_EX(unsigned, NCBI, UsageReportMaxThreads, kDefault_MaxThreads, eParam_NoThread, NCBI_CONFIG__USAGE_REPORT_MAXTHREADS);
+NCBI_PARAM_DECL(unsigned,   USAGE_REPORT, MaxThreads);
+NCBI_PARAM_DEF_EX(unsigned, USAGE_REPORT, MaxThreads, kDefault_MaxThreads, eParam_NoThread, NCBI_USAGE_REPORT_MAXTHREADS);
 
 
 
@@ -102,7 +102,7 @@ CUsageReportAPI::TWhat CUsageReportAPI::GetDefaultParameters(void)
 // that are MT-protected. Usually they used only once per application,
 // so this should not affect performance.
 
-static bool gs_IsEnabled = NCBI_PARAM_TYPE(NCBI, UsageReportEnabled)::GetDefault();
+static bool gs_IsEnabled = NCBI_PARAM_TYPE(USAGE_REPORT, Enabled)::GetDefault();
 
 bool CUsageReportAPI::IsEnabled()
 {
@@ -116,17 +116,17 @@ void CUsageReportAPI::SetEnabled(bool enable)
 
 void CUsageReportAPI::SetURL(const string& url)
 {
-    NCBI_PARAM_TYPE(NCBI, UsageReportURL)::SetDefault(url);
+    NCBI_PARAM_TYPE(USAGE_REPORT, URL)::SetDefault(url);
 }
 
 void CUsageReportAPI::SetAppName(const string& name)
 {
-    NCBI_PARAM_TYPE(NCBI, UsageReportAppName)::SetDefault(name);
+    NCBI_PARAM_TYPE(USAGE_REPORT, AppName)::SetDefault(name);
 }
 
 void CUsageReportAPI::SetAppVersion(const string& version)
 {
-    NCBI_PARAM_TYPE(NCBI, UsageReportAppVersion)::SetDefault(version);
+    NCBI_PARAM_TYPE(USAGE_REPORT, AppVersion)::SetDefault(version);
 }
 
 void CUsageReportAPI::SetAppVersion(const CVersionInfo& version)
@@ -136,12 +136,12 @@ void CUsageReportAPI::SetAppVersion(const CVersionInfo& version)
 
 void CUsageReportAPI::SetMaxAsyncThreads(unsigned n)
 {
-    NCBI_PARAM_TYPE(NCBI, UsageReportMaxThreads)::SetDefault(n ? n : kDefault_MaxThreads);
+    NCBI_PARAM_TYPE(USAGE_REPORT, MaxThreads)::SetDefault(n ? n : kDefault_MaxThreads);
 }
 
 string CUsageReportAPI::GetURL()
 {
-    return NCBI_PARAM_TYPE(NCBI, UsageReportURL)::GetDefault();
+    return NCBI_PARAM_TYPE(USAGE_REPORT, URL)::GetDefault();
 }
 
 string CUsageReportAPI::GetAppName()
@@ -152,7 +152,7 @@ string CUsageReportAPI::GetAppName()
         name = app->GetProgramDisplayName();
     }
     if (name.empty()) {
-        name = NCBI_PARAM_TYPE(NCBI, UsageReportAppName)::GetDefault();
+        name = NCBI_PARAM_TYPE(USAGE_REPORT, AppName)::GetDefault();
     }
     return name;
 }
@@ -165,59 +165,14 @@ string CUsageReportAPI::GetAppVersion()
         version = app->GetVersion().Print();
     }
     if (version.empty()) {
-        version = NCBI_PARAM_TYPE(NCBI, UsageReportAppVersion)::GetDefault();
+        version = NCBI_PARAM_TYPE(USAGE_REPORT, AppVersion)::GetDefault();
     }
     return version;
 }
 
-string CUsageReportAPI::GetOS()
-{
-    // Check NCBI_OS first, configure can define OS name already
-#if defined(NCBI_OS)
-    return NCBI_OS;
-#endif
-    // Fallback, try to guess
-#if defined(_WIN32)
-    return "MSWIN";         // Windows
-#elif defined(__CYGWIN__)
-    return "CYGWIN";        // Windows (Cygwin POSIX under Microsoft Window)
-#elif defined(__linux__)
-    return "LINUX";
-#elif defined(__FreeBSD__)
-    return "FREEBSD";
-#elif defined(__NetBSD__)
-    return "NETBSD";
-#elif defined(__OpenBSD__)
-    return "OPENBSD";
-#elif defined(__WXOSX__)
-    return "DARWIN";
-#elif defined(__APPLE__)
-    return "MACOS";
-#elif defined(__hpux)
-    return "HPUX";
-#elif defined(__osf__)
-    return "OSF1";
-#elif defined(__sgi)
-    return "IRIX";
-#elif defined(_AIX)
-    return "AIX";
-#elif defined(__sun)
-    return "SOLARIS";
-#elif defined(unix) || defined(__unix__) || defined(__unix)
-    return "UNIX";
-#endif
-    return string();        // Unknown environment
-}
-
-string CUsageReportAPI::GetHost()
-{
-    CDiagContext& ctx = GetDiagContext();
-    return ctx.GetHost();
-}
-
 unsigned CUsageReportAPI::GetMaxAsyncThreads()
 {
-    return NCBI_PARAM_TYPE(NCBI, UsageReportMaxThreads)::GetDefault();
+    return NCBI_PARAM_TYPE(USAGE_REPORT, MaxThreads)::GetDefault();
 }
 
 
@@ -251,62 +206,19 @@ CUsageReportParameters& CUsageReportParameters::Add(const string& name, const ch
     return Add(name, string(value));
 }
 
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, char value)
-{
-    return Add(name, string(1, value));
-}
-
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, int value)
-{
-    return Add(name, NStr::IntToString(value));
-}
-
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, unsigned int value)
-{
-    return Add(name, NStr::UIntToString(value));
-}
-
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, long value)
-{
-    return Add(name, NStr::LongToString(value));
-}
-
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, unsigned long value)
-{
-    return Add(name, NStr::ULongToString(value));
-}
-
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, double value)
-
-{
-    return Add(name, NStr::DoubleToString(value));
-}
-
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, bool value)
-{
-    return Add(name, NStr::BoolToString(value));
-}
-
-#if (SIZEOF_LONG != 8)
-CUsageReportParameters& CUsageReportParameters::Add(const string& name, size_t value)
-{
-    return Add(name, NStr::SizetToString(value));
-}
-#endif
-
 string CUsageReportParameters::ToString() const
 {
-    std::stringstream result;
+    string result;
     bool first = true;
     for (auto const &param : *m_Params) {
         if (first) {
             first = false;
         } else {
-            result << '&';
+            result += '&';
         }
-        result << param.first << '=' << param.second;
+        result += (param.first + '=' += param.second);
     }
-    return result.str();
+    return result;
 }
 
 void CUsageReportParameters::x_CopyFrom(const CUsageReportParameters& other)
@@ -352,6 +264,58 @@ void CUsageReportJob::x_MoveFrom(CUsageReportJob& other)
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// Helpers
+///
+
+static string s_GetOS()
+{
+    // Check NCBI_OS first, configure can define OS name already
+#if defined(NCBI_OS)
+    return NCBI_OS;
+#endif
+    // Fallback, try to guess
+#if defined(_WIN32)
+    return "MSWIN";         // Windows
+#elif defined(__CYGWIN__)
+    return "CYGWIN";        // Windows (Cygwin POSIX under Microsoft Window)
+#elif defined(__linux__)
+    return "LINUX";
+#elif defined(__FreeBSD__)
+    return "FREEBSD";
+#elif defined(__NetBSD__)
+    return "NETBSD";
+#elif defined(__OpenBSD__)
+    return "OPENBSD";
+#elif defined(__WXOSX__)
+    return "DARWIN";
+#elif defined(__APPLE__)
+    return "MACOS";
+#elif defined(__hpux)
+    return "HPUX";
+#elif defined(__osf__)
+    return "OSF1";
+#elif defined(__sgi)
+    return "IRIX";
+#elif defined(_AIX)
+    return "AIX";
+#elif defined(__sun)
+    return "SOLARIS";
+#elif defined(unix) || defined(__unix__) || defined(__unix)
+    return "UNIX";
+#endif
+    return string();        // Unknown environment
+}
+
+static string s_GetHost()
+{
+    CDiagContext& ctx = GetDiagContext();
+    return ctx.GetHost();
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CUsageReport::
 ///
 
@@ -389,10 +353,10 @@ CUsageReport::CUsageReport(TWhat what, const string& url)
         s_AddDefaultParam(params, "version", CUsageReportAPI::GetAppVersion());
     }
     if (what & fOS) {
-        s_AddDefaultParam(params, "os", CUsageReportAPI::GetOS());
+        s_AddDefaultParam(params, "os", s_GetOS());
     }
-    if (what & fAppName) {
-        s_AddDefaultParam(params, "host", CUsageReportAPI::GetHost());
+    if (what & fHost) {
+        s_AddDefaultParam(params, "host", s_GetHost());
     }
     m_DefaultParams = params.ToString();
 
