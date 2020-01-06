@@ -760,9 +760,9 @@ CTime CPSG_BioseqInfo::GetDateChanged() const
     return s_GetTime(m_Data.GetInteger("date_changed"));
 }
 
-Uint8 CPSG_BioseqInfo::GetGi() const
+TGi CPSG_BioseqInfo::GetGi() const
 {
-    return m_Data.GetInteger("gi");
+    return static_cast<TGi>(m_Data.GetInteger("gi"));
 }
 
 CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const

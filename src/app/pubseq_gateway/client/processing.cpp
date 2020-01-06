@@ -300,7 +300,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     if (included_info & CPSG_Request_Resolve::fTaxId)        m_JsonObj["tax_id"].SetValue().SetInt8(bioseq_info->GetTaxId());
     if (included_info & CPSG_Request_Resolve::fHash)         m_JsonObj["hash"].SetValue().SetInt8(bioseq_info->GetHash());
     if (included_info & CPSG_Request_Resolve::fDateChanged)  m_JsonObj["date_changed"].SetValue().SetString(bioseq_info->GetDateChanged().AsString());
-    if (included_info & CPSG_Request_Resolve::fGi)           m_JsonObj["gi"].SetValue().SetUint8(bioseq_info->GetGi());
+    if (included_info & CPSG_Request_Resolve::fGi)           m_JsonObj["gi"].SetValue().SetInt8(bioseq_info->GetGi());
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)

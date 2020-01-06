@@ -659,7 +659,7 @@ public:
     CTime GetDateChanged() const;
 
     /// Get GI
-    Uint8 GetGi() const;
+    TGi GetGi() const;
 
     /// What data is immediately available now. Other data will require
     /// a separate hit to the server.
