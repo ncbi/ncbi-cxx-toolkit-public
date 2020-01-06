@@ -1031,8 +1031,8 @@ CHistogram<TValue, TScale, TCounter>::x_IsEqual(TScale a, TScale b)
     if (std::numeric_limits<TScale>::is_integer) {
         return a == b;
     }
-    // Aproximately check for floating numbers
-    return std::abs(a - b) < 0.0001;
+    // Approximately check for floating numbers
+    return std::fabs(a - b) < 0.0001;
 }
 
 
