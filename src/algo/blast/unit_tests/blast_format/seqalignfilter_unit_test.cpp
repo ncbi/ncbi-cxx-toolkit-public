@@ -291,8 +291,8 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
     string fname_out = "data/out_test.txt";
     string fname_gis = "data/gilist_test.txt";
 
-    string db_name = "nr";
-    bool use_prot = true;
+    string db_name = "nt";
+    bool use_prot = false;
 
     CSeqAlignFilter filter;
     CRef<CSeqDB> db;
