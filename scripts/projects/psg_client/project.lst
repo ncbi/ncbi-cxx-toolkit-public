@@ -4,6 +4,7 @@ util$
 util/checksum
 util/bitset$
 util/cache$
+util/compress
 util/sequtil$
 connect$
 connect/ext$
@@ -21,6 +22,7 @@ objects$
 objects/misc$ update-only
 objects/biblio$
 objects/general$
+objects/id2$
 objects/medline$
 objects/pub$
 objects/seq$
@@ -31,6 +33,7 @@ objects/seqblock$
 objects/seqfeat$
 objects/seqloc$
 objects/seqres$
+objects/seqsplit$
 objects/seqtable
 objtools$
 objtools/pubseq_gateway$
