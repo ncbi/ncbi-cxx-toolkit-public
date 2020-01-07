@@ -65,7 +65,7 @@ public:
     CRef< CStructWrapper<BlastHSPStream> >
     x_GetSampleHspStream(CRef<CBlastOptions> opts, CSeqDB & db)
     {
-        CSeq_id sid("gi|158292535");
+        CSeq_id sid("XP_558472");
         
         vector<int> OIDS;
         db.SeqidToOids(sid, OIDS);
@@ -265,7 +265,7 @@ public:
             subject_seqdb = query_seqdb;
         }
         
-        CSeq_id query("gi|54607139");
+        CSeq_id query("NP_056193");
         auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
         TSeqLocVector qv;
         qv.push_back(*sl);
@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE(SimpleTraceback)
         
         subject_seqdb = query_seqdb;
         
-        CSeq_id query("gi|54607139");
+        CSeq_id query("NP_056193");
         auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
         TSeqLocVector qv;
         qv.push_back(*sl);
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(TracebackWithPssm_AndWarning) {
     // set up the database
     CRef<CSeqDB> subject_seqdb(new CSeqDB("nr", CSeqDB::eProtein));
 
-    CSeq_id query("gi|129295");
+    CSeq_id query("P01013");
     auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
     TSeqLocVector qv;
     qv.push_back(*sl);
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(TracebackWithPssm_AndWarning) {
 
 BOOST_AUTO_TEST_CASE(TracebackEntrez) {
     CRef<CSeqDBGiList> gi_list
-        (new CSeqDBFileGiList("data/Sample_gilist.p.gil"));
+        (new CSeqDBFileGiList("data/Sample_gilist.p.gil", CSeqDBFileGiList::eSiList));
     
     CSearchResultSet rset = x_Traceback(gi_list.GetPointerOrNull());
     
@@ -415,10 +415,7 @@ BOOST_AUTO_TEST_CASE(TracebackEntrez) {
     x_FindUsedGis(*rset[0].GetSeqAlign(), use_these);
     
     BOOST_REQUIRE_EQUAL((int)use_these.size(), 1);
-    if ( !CSeq_id::PreferAccessionOverGi() ) {
-        BOOST_REQUIRE(*(use_these.begin()) == "gi:158292535");
-    }
-    else {
+    if ( CSeq_id::PreferAccessionOverGi() ) {
         BOOST_REQUIRE(*(use_these.begin()) == "seqid:XP_558472.3");
     }
 }
