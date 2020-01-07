@@ -392,20 +392,6 @@ private:
     const CDiagCompileInfo m_Info;
 };
 
-
-//  ===========================================================================
-class CGPipeMessageListener :
-//  ===========================================================================
-    public CMessageListenerBase 
-{
-public:
-    CGPipeMessageListener(bool ignoreBadModValue=false);
-
-    bool PutError(const ILineError& err) override final;
-private:
-    bool m_IgnoreBadModValue;
-};
-
 END_SCOPE(objects)
 
 END_NCBI_SCOPE
