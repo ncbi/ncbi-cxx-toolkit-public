@@ -882,7 +882,7 @@ CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry
 CBNM	s	Cedar Breaks National Monument			
 CBNSA	s	Conservatoire botanique national Sud-Atlantique			
 CBPF	s	Conservatoire Botanique Pierre Fabre			
-CBS	sc	Westerdijk Fungal Biodiversity Institute			
+CBS	sc	Westerdijk Fungal Biodiversity Institute		http://www.wi.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=	
 CBSIZA	s	Caspian Biological Station Institute of Zoology			
 CBTCCCAS	c	The Cell Bank of Type Culture Collection of Chinese Academy of Sciences			
 CBU<CAN>	s	Cape Breton University			
@@ -966,7 +966,7 @@ CCTR	c	Culture Collection Trutnov
 CCTS	s	Universidade Federal de Sao Carlos - campus Sorocaba			
 CCTU	c	Culture Collection of Tabriz University			
 CCUF	s	Universidade Federal de Alagoas, Centro de Ciencias Biologicas			
-CCUG	c	Culture Collection, University of Goteborg, Department of Clinical Bacteriology			
+CCUG	c	Culture Collection, University of Goteborg, Department of Clinical Bacteriology		https://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=	
 CCVC	s	Centenary College, Vertebrate Collection			
 CCVCC	c	China Center For Virus Culture Collection			
 CCW	s	Casper College			
@@ -3280,7 +3280,7 @@ JBVPF	sb	Jardin botanique de la Ville de Paris
 JBWM	s	J.B. Wallis Museum of Entomology			
 JCB	s	Indian Institute of Science (IISc)			
 JCE	s	Jiangxi College of Education, Biology Department			
-JCM	c	Japan Collection of Microorganisms			
+JCM	c	Japan Collection of Microorganisms		https://www.jcm.riken.jp/cgi-bin/jcm/jcm_number?JCM=	
 JCRB	c	Japanese Collection of Research Bioresources Cell Bank			
 JCT	c	James Cook Townsville			
 JE	s	Herbarium Haussknecht, Jena			
@@ -5006,6 +5006,7 @@ NMMH	s	North Manchurian Museum
 NMML	s	National Marine Mammal Laboratory			
 NMMNH	s	New Mexico Museum of Natural History and Science			
 NMMNH:Mamm	s	New Mexico Museum of Natural History and Science, Mammal collection		
+NMMTB	s	National Marine Mammal Tissue Bank			
 NMN	s	Northamptonshire Natural History Society			
 NMND	s	National Museum of Natural History, New Delhi	NMNH,NMNHI		
 NMNH<IND>	s	National Museum of Natural History, New Delhi	NMND,NMNHI		
