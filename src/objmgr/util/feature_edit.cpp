@@ -90,7 +90,7 @@ CRef<CCode_break> CFeatTrim::Apply(const CCode_break& code_break,
 CRef<CTrna_ext> CFeatTrim::Apply(const CTrna_ext& trna_ext,
     const CRange<TSeqPos>& range)
 {
-    CRef<CTrna_ext> trimmed_ext;
+    auto trimmed_ext = Ref(new CTrna_ext());
     if (trna_ext.GetAnticodon().GetTotalRange().IntersectionWith(range).NotEmpty()) 
     {
         trimmed_ext->Assign(trna_ext);
