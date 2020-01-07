@@ -230,6 +230,7 @@ void SPSG_Reply::SItem::SetSuccess()
 void SPSG_Reply::SetSuccess()
 {
     reply_item.GetLock()->SetSuccess();
+    reply_item.NotifyOne();
 
     auto items_locked = items.GetLock();
 
