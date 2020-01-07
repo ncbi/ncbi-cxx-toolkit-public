@@ -117,13 +117,21 @@ void BlastdbCopyApplication::Init(void)
 
     arg_desc->SetCurrentGroup("Configuration options");
 
-    arg_desc->AddKey(
-            kArgGiList,
-            "input_file",
-            "Text or binary gi file to restrict the BLAST "
-            "database provided in -db argument",
-            CArgDescriptions::eString
-    );
+    arg_desc->AddOptionalKey(kArgGiList, "input_file", 
+                             "Text or binary gi file to restrict the BLAST "
+                             "database provided in -db argument\n"
+                             "If text format is provided, it will be converted "
+                             "to binary",
+                             CArgDescriptions::eInputFile);   
+
+    arg_desc->AddOptionalKey(kArgSeqIdList, "input_file", 
+                             "Text sequence id or accession file to restrict "
+                             "the BLAST database provided in -db argument",
+                             CArgDescriptions::eInputFile);
+
+    arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
+                            kArgGiList);
+
 
     arg_desc->AddOptionalKey(
             kArgDbTitle,
@@ -160,7 +168,7 @@ void BlastdbCopyApplication::Init(void)
     arg_desc->AddDefaultKey("blastdb_version", "version",
                              "Version of BLAST database to be created",
                              CArgDescriptions::eInteger,
-                             NStr::NumericToString(static_cast<int>(eBDB_Version4)));
+                             NStr::NumericToString(static_cast<int>(eBDB_Version5)));
     arg_desc->SetConstraint("blastdb_version",
                             new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
 
@@ -199,16 +207,17 @@ public:
     CBlastDbBioseqSource(
             CRef<CSeqDBExpert> blastdb,
             CRef<CSeqDBGiList> gilist,
+            CSeqDBFileGiList::EIdType idtype,
             bool               copy_membership_bits = false,
             bool               copy_leaf_taxids     = true
     )
     {
         CStopWatch total_timer, bioseq_timer, memb_timer, leaf_timer;
         total_timer.Start();
-        for (int i = 0; i < gilist->GetNumGis(); i++) {
-            const CSeqDBGiList::SGiOid& elem = gilist->GetGiOid(i);
-            int oid = 0;
-            if (!blastdb->GiToOid(elem.gi, oid)) {
+        int numSeqs = (idtype == CSeqDBFileGiList::eSiList)  ? gilist->GetNumSis() : gilist->GetNumGis(); 
+        for (int i = 0; i < numSeqs; i++) {            
+           int oid = 0;
+            if(!x_GetOidFromSeqID(blastdb,gilist,idtype,i,oid)) {
                 // not found on source BLASTDB, skip
                 continue;
             }
@@ -290,6 +299,8 @@ public:
         );
     }
 
+    
+
     const TLinkoutMap GetMembershipBits() const
     {
         return m_MembershipBits;
@@ -310,6 +321,19 @@ public:
         return retval;
     }
 private:
+    bool x_GetOidFromSeqID(CRef<CSeqDBExpert> blastdb,CRef<CSeqDBGiList> gilist,CSeqDBFileGiList::EIdType idtype, int ind, int &oid) 
+    {
+        if(idtype == CSeqDBFileGiList::eGiList) {
+            const CSeqDBGiList::SGiOid& elem = gilist->GetGiOid(ind);    
+            return blastdb->GiToOid(elem.gi, oid);                
+        }
+        else { //if(idtype == CSeqDBFileGiList::eSiList) 
+            const CSeqDBGiList::SSiOid& elem = gilist->GetSiOid(ind);            
+            CSeq_id seqID(elem.si);
+            return blastdb->SeqidToOid(seqID, oid);                
+        }        
+    }
+
     typedef list< CConstRef<CBioseq> > TBioseqs;
 
     TBioseqs    m_Bioseqs;
@@ -368,7 +392,7 @@ bool BlastdbCopyApplication::x_ShouldCopyPIGs(const string& dbname,
 int BlastdbCopyApplication::Run(void)
 {
     int retval = 0;
-    const CArgs& args = GetArgs();
+    const CArgs& args = GetArgs();    
 
     // Setup Logging
     if (args["logfile"]) {
@@ -383,8 +407,11 @@ int BlastdbCopyApplication::Run(void)
     try {{
 
         seq_type = ParseMoleculeTypeString(args[kArgDbType].AsString());
+        
+        CSeqDBFileGiList::EIdType idtype = args[kArgSeqIdList] ? CSeqDBFileGiList::eSiList : CSeqDBFileGiList::eGiList;  
+        string seqListFile = args[kArgSeqIdList] ? args[kArgSeqIdList].AsString() : args[kArgGiList].AsString();
         CRef<CSeqDBGiList> gilist(
-                new CSeqDBFileGiList(args[kArgGiList].AsString())
+                new CSeqDBFileGiList(seqListFile,idtype)
         );
 
         CSeqDBExpert* dbexpert;
@@ -424,15 +451,17 @@ int BlastdbCopyApplication::Run(void)
         CBlastDbBioseqSource bioseq_source(
                 sourcedb,
                 gilist,
+                idtype,
                 args[kMembershipBits].AsBoolean()
         );
-        const bool kIsSparse = false;
-        const bool kParseSeqids = x_ShouldParseSeqIds(args[kArgDb].AsString(),
-                                                      seq_type);
+        const bool kIsSparse = false;        
+        const bool kParseSeqids = (idtype == CSeqDBFileGiList::eGiList) ? x_ShouldParseSeqIds(args[kArgDb].AsString(),seq_type): true;
 
 
         const bool kUseGiMask = false;
-        const EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+        EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+        dbver = (dbver != sourcedb->GetBlastDbVersion()) ? sourcedb->GetBlastDbVersion() : dbver;
+        
         CStopWatch timer;
         timer.Start();
         CBuildDatabase destdb(args[kArgOutput].AsString(), title,
