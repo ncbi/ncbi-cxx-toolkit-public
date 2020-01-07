@@ -340,6 +340,8 @@ struct SPSG_Reply
         SPSG_Nullable<size_t> expected;
         size_t received = 0;
         SState state;
+
+        void SetSuccess();
     };
 
     // Forbid signals on reply

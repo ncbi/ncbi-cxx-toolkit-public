@@ -216,27 +216,25 @@ string SPSG_Reply::SState::GetError()
     return rv;
 }
 
-void s_SetSuccessIfReceived(SPSG_Reply::SItem::TTS& ts)
+void SPSG_Reply::SItem::SetSuccess()
 {
-    auto locked = ts.GetLock();
+    if (expected.template Cmp<equal_to>(received)) {
+        state.SetState(SPSG_Reply::SState::eSuccess);
 
-    if (locked->expected.template Cmp<equal_to>(locked->received)) {
-        locked->state.SetState(SPSG_Reply::SState::eSuccess);
-
-    } else if (locked->state.InProgress()) {
+    } else if (state.InProgress()) {
         // If it were 'more' (instead of 'less'), it would not be in progress then
-        locked->state.AddError("Protocol error: received less than expected");
+        state.AddError("Protocol error: received less than expected");
     }
 }
 
 void SPSG_Reply::SetSuccess()
 {
-    s_SetSuccessIfReceived(reply_item);
+    reply_item.GetLock()->SetSuccess();
 
     auto items_locked = items.GetLock();
 
     for (auto& item : *items_locked) {
-        s_SetSuccessIfReceived(item);
+        item.GetLock()->SetSuccess();
     }
 }
 
