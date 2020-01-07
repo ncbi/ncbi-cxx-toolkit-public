@@ -393,16 +393,21 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
 
 static bool ReportOnNA(const string& s)
 {
+    static const vector<const char*> bad = { "prot", "peptide", "bond" };
+    for (auto b : bad) {
+        if (NStr::FindNoCase(s, b) != -1) {
+            return false;
+        }
+    }
     return true;
 }
 
 
 static bool ReportOnAA(const string& s)
 {
-    static const string bad[] = { "CDS", "gene", "rna", "regulatory" };
-    static const size_t len = sizeof(bad) / sizeof(bad[0]);
-    for (size_t i = 0; i < len; i++) {
-        if (NStr::FindCase(s, bad[i]) != -1) {
+    static const vector<const char*> bad = { "CDS", "gene", "rna", "regulatory", "misc" };
+    for (auto b : bad) {
+        if (NStr::FindNoCase(s, b) != -1) {
             return false;
         }
     }
