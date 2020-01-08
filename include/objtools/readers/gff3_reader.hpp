@@ -197,8 +197,7 @@ protected:
         list<CGff2Record>&);
 
     virtual void xPostProcessAnnot(
-        CSeq_annot&,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     void xProcessAlignmentData(
         CSeq_annot& pAnnot);

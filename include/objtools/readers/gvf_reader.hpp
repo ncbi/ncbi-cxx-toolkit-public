@@ -110,8 +110,7 @@ protected:
         ILineErrorListener*);
       
     virtual void xPostProcessAnnot(
-        CSeq_annot&,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     CRef<CSeq_annot> x_GetAnnotById(
         TAnnots& annots,

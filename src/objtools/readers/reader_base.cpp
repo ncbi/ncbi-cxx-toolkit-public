@@ -246,7 +246,7 @@ CReaderBase::ReadSeqAnnot(
         xGuardedProcessData(readerData, *pAnnot, pEL);
         xGuardedGetData(lr, readerData, pEL);
     }
-    xPostProcessAnnot(*pAnnot, pEL);
+    xPostProcessAnnot(*pAnnot);
     return pAnnot;
 }
                 
@@ -457,8 +457,7 @@ CReaderBase::ProcessWarning(
 //  ----------------------------------------------------------------------------
 void CReaderBase::xSetBrowserRegion(
     const string& strRaw,
-    CAnnot_descr& desc,
-    ILineErrorListener*)
+    CAnnot_descr& desc)
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage error(
@@ -517,8 +516,7 @@ void CReaderBase::xSetBrowserRegion(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseBrowserLine(
     const string& strLine,
-    CSeq_annot& annot,
-    ILineErrorListener* pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage error(
@@ -539,7 +537,7 @@ bool CReaderBase::xParseBrowserLine(
             if ( it == fields.end() ) {
                throw error;
             }
-            xSetBrowserRegion(*it, desc, pEC);
+            xSetBrowserRegion(*it, desc);
         }
     }
     return true;
@@ -561,8 +559,7 @@ void CReaderBase::xAssignTrackData(
 
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseTrackLine(
-    const string& strLine,
-    ILineErrorListener* pEC)
+    const string& strLine)
 //  ----------------------------------------------------------------------------
 {
     vector<string> parts;
@@ -576,8 +573,7 @@ bool CReaderBase::xParseTrackLine(
 
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseBrowserLine(
-    const string& strLine,
-    ILineErrorListener* pEC)
+    const string& strLine)
 //  ----------------------------------------------------------------------------
 {
     return true;
@@ -597,8 +593,7 @@ bool CReaderBase::xParseComment(
  
 //  ----------------------------------------------------------------------------
 void CReaderBase::xPostProcessAnnot(
-    CSeq_annot&,
-    ILineErrorListener*)
+    CSeq_annot&)
 //  ----------------------------------------------------------------------------
 {
 }
@@ -606,18 +601,18 @@ void CReaderBase::xPostProcessAnnot(
 //  ----------------------------------------------------------------------------
 void CReaderBase::xAddConversionInfo(
     CSeq_annot& annot,
-    ILineErrorListener *pMessageListener)
+    ILineErrorListener* pML)
 //  ----------------------------------------------------------------------------
 {
     size_t countInfos = m_pMessageHandler->LevelCount(eDiag_Info);
     size_t countWarnings = m_pMessageHandler->LevelCount(eDiag_Warning);
     size_t countErrors = m_pMessageHandler->LevelCount(eDiag_Error);
     size_t countCritical = m_pMessageHandler->LevelCount(eDiag_Critical);
-    if (pMessageListener) {
-        countCritical += pMessageListener->LevelCount(eDiag_Critical);
-        countErrors += pMessageListener->LevelCount(eDiag_Error);
-        countWarnings += pMessageListener->LevelCount(eDiag_Warning);
-        countInfos += pMessageListener->LevelCount(eDiag_Info);
+    if (pML) {
+        countCritical += pML->LevelCount(eDiag_Critical);
+        countErrors += pML->LevelCount(eDiag_Error);
+        countWarnings += pML->LevelCount(eDiag_Warning);
+        countInfos += pML->LevelCount(eDiag_Info);
     }
     if (countInfos + countWarnings + countErrors + countCritical == 0) {
         return;

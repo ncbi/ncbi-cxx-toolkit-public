@@ -248,7 +248,7 @@ CGff3Reader::xGetData(
         }
         if (xIsTrackLine(line)) {
             if (!mCurrentFeatureCount) {
-                xParseTrackLine(line, nullptr);
+                xParseTrackLine(line);
                 xGetData(lr, readerData);
                 return;
             }
@@ -257,7 +257,7 @@ CGff3Reader::xGetData(
         }
         if (xIsTrackTerminator(line)) {
             if (!mCurrentFeatureCount) {
-                xParseTrackLine("track", nullptr);
+                xParseTrackLine("track");
                 xGetData(lr, readerData);
             }
             return;
@@ -1019,8 +1019,7 @@ CGff3Reader::xGetPendingExons(
 
 //  ----------------------------------------------------------------------------
 void CGff3Reader::xPostProcessAnnot(
-    CSeq_annot& annot,
-    ILineErrorListener *pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     if (mAlignmentData) {
@@ -1038,7 +1037,7 @@ void CGff3Reader::xPostProcessAnnot(
             "Bad data line: Record references non-existant Parent=" + it.first);
         m_pMessageHandler->Report(warning);
     }
-    return CGff2Reader::xPostProcessAnnot(annot, pEC);
+    return CGff2Reader::xPostProcessAnnot(annot);
 }
 
 //  ---------------------------------------------------------------------------

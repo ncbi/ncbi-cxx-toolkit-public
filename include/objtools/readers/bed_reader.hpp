@@ -168,8 +168,7 @@ protected:
         vector<string>&);
 
     virtual bool xParseTrackLine(
-        const string&,
-        ILineErrorListener*);
+        const string&);
   
     bool xParseFeature(
         const string&,
@@ -339,8 +338,7 @@ protected:
         const vector<string>&);
 
     virtual void xPostProcessAnnot(
-        CSeq_annot&,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     bool
     xReadBedDataRaw(

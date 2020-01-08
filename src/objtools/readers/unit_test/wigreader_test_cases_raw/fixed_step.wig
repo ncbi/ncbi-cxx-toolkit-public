@@ -1,0 +1,49 @@
+track type=wiggle_0 name="fixedStep1" description="fixedStep format" visibility=full autoScale=off viewLimits=0:1000 db="db1" offset=11
+fixedStep chrom=AC_000017.1 start=1500 step=300 span=300
+1000
+900
+800
+700
+600
+500
+400
+300
+200
+100
+
+fixedStep chrom=AC_000018.1 start=15000 step=3000 span=3000
+10000
+9000
+8000
+7000
+6000
+5000
+4000
+3000
+2000
+1000
+
+track type=wiggle_0 name="fixedStep3" description="fixedStep format" visibility=full autoScale=off viewLimits=0:1000 db="db3" offset=33
+fixedStep chrom=AC_000019.1 start=2500 step=300 span=300
+1001
+901
+801
+701
+601
+501
+401
+301
+201
+101
+
+fixedStep chrom=AC_000020.1 start=15000 step=3000 span=3000
+10001
+9001
+8001
+7001
+6001
+5001
+4001
+3001
+2001
+1001

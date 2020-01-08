@@ -170,14 +170,13 @@ CGff2Reader::ReadObject(
  
 //  ----------------------------------------------------------------------------
 void CGff2Reader::xPostProcessAnnot(
-    CSeq_annot& annot,
-    ILineErrorListener *pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     xAssignAnnotId(annot);
     if (!(m_iFlags & fGenbankMode)) {
         //xAssignTrackData(pAnnot);
-        xAddConversionInfo(annot, pEC);
+        xAddConversionInfo(annot, nullptr);
         xGenerateParentChildXrefs(annot);
     }
 }

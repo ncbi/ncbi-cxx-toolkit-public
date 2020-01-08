@@ -115,7 +115,7 @@ CMicroArrayReader::xProcessData(
 {
     for (const auto& lineInfo: readerData) {
         const auto& line = lineInfo.mData; 
-        if (xParseBrowserLine(line, annot, nullptr)) {
+        if (xParseBrowserLine(line, annot)) {
             return;
         }
         if (xProcessTrackLine(line)) {
@@ -269,7 +269,7 @@ bool CMicroArrayReader::xProcessTrackLine(
     m_iExpScale = -1;
     m_iExpStep = -1;
     
-    if (!CReaderBase::xParseTrackLine(strLine, nullptr)) {
+    if (!CReaderBase::xParseTrackLine(strLine)) {
         return false;
     }
     if ( m_iFlags & fReadAsBed ) {

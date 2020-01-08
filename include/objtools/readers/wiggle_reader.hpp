@@ -39,7 +39,6 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -247,7 +246,8 @@ public:
     CWiggleReader( 
         int = fDefaults,
         const string& = "",
-        const string& = "" );
+        const string& = "",
+        CReaderListener* = nullptr);
         
     virtual ~CWiggleReader();
     
@@ -280,108 +280,106 @@ public:
     //  helpers:
     //
 protected:
-    CRef< CSeq_annot >
-    xReadSeqAnnotGraph(
+    void xGetData(
         ILineReader&,
-        ILineErrorListener* =0 );
+        TReaderData&);
 
-    CRef< CSeq_annot >
-    xReadSeqAnnotTable(
-        ILineReader&,
-        ILineErrorListener* =0 );
+    void xProcessData(
+        const TReaderData&,
+        CSeq_annot&);
+
+    void xPostProcessAnnot(
+        CSeq_annot&);
 
     bool 
-    xProcessBrowserLine(
-        ILineErrorListener*);
+    xParseBrowserLine(
+        const string&);
 
     bool 
     xParseTrackLine(
-        const string&,
-        ILineErrorListener*);
+        const string&);
+
+    bool
+    xProcessFixedStepData(
+        TReaderData::const_iterator&,
+        const TReaderData&);
 
     void
     xGetFixedStepInfo(
-        SFixedStepInfo&,
-        ILineErrorListener*);
+        const string&,
+        SFixedStepInfo&);
 
     void 
     xReadFixedStepData(
         const SFixedStepInfo&,
-        ILineReader&,
-        ILineErrorListener*);
+        TReaderData::const_iterator&,
+        const TReaderData&);
     
     bool
     xReadFixedStepDataRaw(
-        ILineReader&,
-        CRawWiggleTrack&,
-        ILineErrorListener*);
+        const SFixedStepInfo&,
+        TReaderData::const_iterator&,
+        const TReaderData&,
+        CRawWiggleTrack&);
+
+    bool
+    xProcessVariableStepData(
+        TReaderData::const_iterator&,
+        const TReaderData&);
+
+    bool
+    xProcessBedData(
+        TReaderData::const_iterator&,
+        const TReaderData&);
 
     void
-    xGetVarStepInfo(
-        SVarStepInfo&,
-        ILineErrorListener*);
+    xGetVariableStepInfo(
+        const string&,
+        SVarStepInfo&);
 
     void 
     xReadVariableStepData(
         const SVarStepInfo&,
-        ILineReader&,
-        ILineErrorListener*);
+        TReaderData::const_iterator&,
+        const TReaderData&);
 
     bool
     xReadVariableStepDataRaw(
-        ILineReader&,
-        CRawWiggleTrack&,
-        ILineErrorListener*);
-
-    void 
-    xReadBedLine(
-        const string& chrom,
-        ILineErrorListener*);
-
-    CRef<CSeq_annot>
-    xGetAnnot();
-
-    bool 
-    xCommentLine() const;
+        const SVarStepInfo&,
+        TReaderData::const_iterator&,
+        const TReaderData&,
+        CRawWiggleTrack&);
 
     string 
     xGetWord(
-        ILineErrorListener*);
+        string&);
 
     bool 
-    xSkipWS();
+    xSkipWS(
+        string&);
 
     string 
     xGetParamName(
-        ILineErrorListener*);
+        string&);
 
     string 
     xGetParamValue(
-        ILineErrorListener*);
+        string&);
 
     void 
     xGetPos(
-        TSeqPos& v,
-        ILineErrorListener*);
+        string&,
+        TSeqPos& v);
 
     bool 
     xTryGetDoubleSimple(
+        string&,
         double& v);
-
-    bool 
-    xTryGetDouble(
-        double& v,
-        ILineErrorListener*);
-
-    bool 
-    xTryGetPos(
-        TSeqPos& v,
-        ILineErrorListener*);
 
     void 
     xGetDouble(
-        double& v,
-        ILineErrorListener*);
+        string& line,
+        double& v);
 
     CRef<CSeq_id> 
     xMakeChromId();
@@ -391,13 +389,6 @@ protected:
 
     CRef<CSeq_graph> 
     xMakeGraph();
-
-    CRef<CSeq_annot> 
-    xMakeAnnot();
-
-    CRef<CSeq_annot> 
-    xMakeGraphAnnot(
-        void);
 
     void 
     xPreprocessValues(
@@ -420,9 +411,6 @@ protected:
         CSeq_loc& loc, 
         CSeq_id& chrom_id);
 
-    void 
-    xResetChromValues();
-
     void
     xDumpChromValues();
 
@@ -437,7 +425,6 @@ protected:
     //  data:
     //
 protected:
-    string m_CurLine;
     string m_ChromId;
     TValues m_Values;
     double m_GapValue;

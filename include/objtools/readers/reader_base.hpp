@@ -281,29 +281,24 @@ protected:
                 
     virtual bool xParseBrowserLine(
         const string&,
-        CSeq_annot&,
-        ILineErrorListener* = nullptr);
+        CSeq_annot&);
         
     virtual bool xParseTrackLine(
-        const string&,
-        ILineErrorListener* = nullptr);
+        const string&);
         
     virtual bool xParseBrowserLine(
-        const string&,
-        ILineErrorListener*);
+        const string&);
         
     virtual void xSetBrowserRegion(
         const string&,
-        CAnnot_descr&,
-        ILineErrorListener* = nullptr);
+        CAnnot_descr&);
 
     virtual void xPostProcessAnnot(
-        CSeq_annot&,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     virtual void xAddConversionInfo(
         CSeq_annot&,
-        ILineErrorListener* );
+        ILineErrorListener*);
                     
     bool xParseComment(
         const CTempString&,

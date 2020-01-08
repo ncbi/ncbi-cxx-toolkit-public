@@ -128,8 +128,7 @@ public:
         const string&);
 
     virtual void xPostProcessAnnot(
-        CSeq_annot&,
-        ILineErrorListener*);
+        CSeq_annot&);
 
     virtual void xAssignAnnotId(
         CSeq_annot&,

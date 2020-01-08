@@ -227,11 +227,10 @@ CGvfReader::xParseFeature(
 
 //  ----------------------------------------------------------------------------
 void CGvfReader::xPostProcessAnnot(
-    CSeq_annot& annot,
-    ILineErrorListener *pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
-    xAddConversionInfo(annot, pEC);
+    xAddConversionInfo(annot, nullptr);
     xAssignTrackData(annot);
     xAssignAnnotId(annot);
     if (m_Pragmas) {

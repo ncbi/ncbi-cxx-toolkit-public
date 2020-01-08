@@ -225,7 +225,7 @@ CVcfReader::xProcessData(
 {
     for (auto lineInfo: readerData) {
         const auto& line = lineInfo.mData; 
-        if (xParseBrowserLine(line, annot, nullptr)) {
+        if (xParseBrowserLine(line, annot)) {
             return;
         }
         if (xProcessTrackLine(line, annot)) {
@@ -1173,7 +1173,7 @@ CVcfReader::xProcessTrackLine(
             return false;
         }
     }
-    if (!CReaderBase::xParseTrackLine(strLine, nullptr)) {
+    if (!CReaderBase::xParseTrackLine(strLine)) {
         CReaderMessage warning(
             eDiag_Warning, 
             m_uLineNumber, 

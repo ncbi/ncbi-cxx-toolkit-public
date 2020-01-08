@@ -53,10 +53,10 @@ USING_SCOPE(objects);
 //  ============================================================================
 //  Customization data:
 const string extInput("wig");
-const string extOutput("asn");
+const string extOutput("txt");
 const string extErrors("errors");
 const string extKeep("new");
-const string dirTestFiles("wigreader_test_cases");
+const string dirTestFiles("wigreader_test_cases_raw");
 // !!!
 // !!! Must also customize reader type in sRunTest !!!
 // !!!
@@ -146,14 +146,21 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << "Creating new test case from " << input << " ..." << endl;
 
     CErrorLogger logger(errors);
-    //CWiggleReader reader(CWiggleReader::fAsGraph);
     CWiggleReader reader(0);
     CNcbiIfstream ifstr(input.c_str());
+    CStreamLineReader lr(ifstr);
 
-    typedef list<CRef<CSeq_annot> > ANNOTS;
-    ANNOTS annots;
+    CRawWiggleTrack rawData;
+    CNcbiOfstream ofstr(output.c_str());
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        while (!lr.AtEOF()) {
+            if (reader.ReadTrackData(lr, rawData, &logger)) {
+                for (auto record: rawData.m_Records) {
+                    record.Dump(ofstr);
+                }
+                ofstr.flush();
+            }
+        }
     }
     catch (...) {
         ifstr.close();
@@ -161,15 +168,8 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     ifstr.close();
     cerr << "    Produced new error listing " << output << "." << endl;
-
-    CNcbiOfstream ofstr(output.c_str());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        ofstr << MSerial_AsnText << **cit;
-        ofstr.flush();
-    }
     ofstr.close();
-    cerr << "    Produced new ASN1 file " << output << "." << endl;
-
+    cerr << "    Produced new TXT file " << output << "." << endl;
     cerr << " ... Done." << endl;
 }
 
@@ -206,25 +206,25 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     CWiggleReader reader(0);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
+    CStreamLineReader lr(ifstr);
 
-    typedef list<CRef<CSeq_annot> > ANNOTS;
-    ANNOTS annots;
+    CRawWiggleTrack rawData;
     try {
-        reader.ReadSeqAnnots(annots, ifstr, &logger);
+        reader.ReadTrackData(lr, rawData, &logger);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
         ifstr.close();
         return;
     }
+    ifstr.close();
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        ofstr << MSerial_AsnText << **cit;
-        ofstr.flush();
+    for (auto record: rawData.m_Records) {
+        record.Dump(ofstr);
     }
-    ifstr.close();
+    ofstr.flush();
     ofstr.close();
 
     bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);

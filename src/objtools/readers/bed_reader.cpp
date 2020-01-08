@@ -328,10 +328,10 @@ CBedReader::xProcessData(
 {
     for (const auto& lineData: readerData) {
         string line = lineData.mData;
-        if (xParseTrackLine(line, nullptr)) {
+        if (xParseTrackLine(line)) {
             return;
         }
-        if (xParseBrowserLine(line, annot, nullptr)) {
+        if (xParseBrowserLine(line, annot)) {
             return;
         }
         xParseFeature(line, annot, nullptr);
@@ -554,11 +554,10 @@ bool CBedReader::xDetermineLikelyColumnCount(
 
 //  ----------------------------------------------------------------------------
 void CBedReader::xPostProcessAnnot(
-    CSeq_annot& annot,
-    ILineErrorListener *pEC)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
-    xAddConversionInfo(annot, pEC);
+    xAddConversionInfo(annot, nullptr);
     xAssignTrackData(annot);
     xAssignBedColumnCount(annot);
 }
@@ -566,8 +565,7 @@ void CBedReader::xPostProcessAnnot(
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xParseTrackLine(
-    const string& strLine,
-    ILineErrorListener* pEC)
+    const string& strLine)
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage warning(
@@ -591,7 +589,7 @@ CBedReader::xParseTrackLine(
         }
     }
     m_currentId.clear();
-    if (!CReaderBase::xParseTrackLine(strLine, pEC)) {
+    if (!CReaderBase::xParseTrackLine(strLine)) {
         m_pMessageHandler->Report(warning);
     }
     return true;
