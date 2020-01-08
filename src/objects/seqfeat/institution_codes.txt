@@ -446,7 +446,7 @@ BCMM	s	Beijing College of Traditional Chinese Medicine
 BCN	s	Universitat de Barcelona			
 BCNP	s	Bryce Canyon National Park			
 BCPM	s	British Columbia Provincial Museum			
-BCRC	c	Bioresource Collection and Research Center	CCRC		
+BCRC	c	Bioresource Collection and Research Center	CCRC	https://catalog.bcrc.firdi.org.tw/BcrcContent?bid=	
 BCRJ	c	Rio de Janeiro Cell Bank (Banco de Celulas do Rio de Janeiro)			
 BCRU	s	Universidad Nacional del Comahue, Departamento de Botanica			
 BCTC	s	Birmingham Central Technical College			
@@ -882,7 +882,7 @@ CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry
 CBNM	s	Cedar Breaks National Monument			
 CBNSA	s	Conservatoire botanique national Sud-Atlantique			
 CBPF	s	Conservatoire Botanique Pierre Fabre			
-CBS	sc	Westerdijk Fungal Biodiversity Institute		http://www.wi.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=	
+CBS	sc	Westerdijk Fungal Biodiversity Institute		http://www.wi.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+	
 CBSIZA	s	Caspian Biological Station Institute of Zoology			
 CBTCCCAS	c	The Cell Bank of Type Culture Collection of Chinese Academy of Sciences			
 CBU<CAN>	s	Cape Breton University			
@@ -4803,7 +4803,7 @@ NCSM:Fishes	s	North Carolina Museum of Natural Sciences, Fish collection
 NCSM:Herp	s	North Carolina Museum of Natural Sciences, Herpetology Collection	
 NCSM:Mammals	s	North Carolina Museum of Natural Sciences, Mammal collection	
 NCSU	s	North Carolina State University Collections			
-NCTC	c	National Collection of Type Cultures			
+NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC+	
 NCU	s	University of North Carolina, North Carolina Botanical Garden			
 NCUT	s	Nicolaus Copernicus University			
 NCWRF	c	National Collection of Wood Rotting Fungi			
@@ -5131,7 +5131,7 @@ NRM	s	Swedish Museum of Natural History
 NRN	s	Nairn Literary Society Library, Public Library			
 NRNZ	s	Northland Regional Museum			
 NRPSU	c	Department of Agro-industry, Faculty of Natural Resources			
-NRRL	c	Agricultural Research Service Culture Collection			
+NRRL	c	Agricultural Research Service Culture Collection		https://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=#specimen#; http://nrrl.ncaur.usda.gov/cgi-bin/usda/mold/report.html?nrrlcodes=#specimen#; http://nrrl.ncaur.usda.gov/cgi-bin/usda/yeast/report.html?nrrlcodes=&spec;	
 NRRL:MOLD	sc	Agricultural Research Service Culture Collection, Mold collection	http://nrrl.ncaur.usda.gov/cgi-bin/usda/mold/report.html?nrrlcodes=
 NRRL:PROK	sc	Agricultural Research Service Culture Collection, Prokaryotic collection	http://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=
 NRRL:YEAST	sc	Agricultural Research Service Culture Collection, Yeast Collection	http://nrrl.ncaur.usda.gov/cgi-bin/usda/yeast/report.html?nrrlcodes=
@@ -5640,6 +5640,7 @@ PU-HI	s	Department of Palaeontology, Universidad Complutense of Madrid
 PUA	s	Pacific Union College, Biology Department			
 PUC<CHN>	s	Beijing University			
 PUC<ZAF>	s	North-West University			
+PUCMF	s	Pachhunga University College Museum of Fish			
 PUCMNH	s	Pacific Union College, Museum of Natural History			
 PUCP	s	Punjab University			
 PUH	s	University of the Philippines, Institute of Biology			
