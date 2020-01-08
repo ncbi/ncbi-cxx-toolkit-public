@@ -2998,8 +2998,9 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
     {
         const CPDB_seq_id& pdb = GetPdb();
         primary_id = pdb.GetMol().Get();
-        // ID-5995 : Use FASTA-style "mol|chain" format as OSLT - with mixed
-        // case chain values. This is how they are stored in Cassandra.
+        // ID-5995 : Use FASTA-style "mol|chain" format as OSLT - with upper case
+        // mol but mixed case chain values. This is how they are stored in Cassandra.
+        NStr::ToUpper(primary_id);
         if (pdb.IsSetChain_id()) {
             primary_id += "|" + pdb.GetChain_id();
         } else if (pdb.IsSetChain() && pdb.GetChain() != ' ') {

@@ -2174,6 +2174,7 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "pdb|1GAV|", { "1GAV" } },
     { "pdb|1GAV|X", { "1GAV|X" } },
     { "pdb|1GAV|x", { "1GAV|x" } },
+    { "pdb|1gav|x", { "1GAV|x" } },
     { "pdb|1GAV|xyZ", { "1GAV|xyZ" } },
     { "tpg|BK003456|", { "BK003456" } },
     { "tpe|BN000123|", { "BN000123" } },
