@@ -71,6 +71,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #ifdef HAVE_NCBI_VDB
 #  include <sra/data_loaders/wgs/wgsloader.hpp>
@@ -344,19 +345,22 @@ struct SBlobCopier
 {
     SBlobCopier(const CDir& subcache_root,
                 bool        extract_delta,
-                bool        extract_product)
+                bool        extract_product,
+                sequence::EGetIdType id_type)
         : m_BlobCount(0), m_BioseqCount(0), m_SeqIdCount(0),
           m_Scope(*CObjectManager::GetInstance()),
           m_SubcacheRoot( subcache_root ),
           m_LastBlob(NULL),
           m_ExtractDelta(extract_delta),
-          m_ExtractProducts(extract_product)
+          m_ExtractProducts(extract_product),
+          m_IdType(id_type)
     {
         m_Buffer.reserve(128 * 1024 * 1024);
     }
 
     void operator() (const SBlobLocator & main_cache_locator,
-                     SSubcacheIndexData &sub_cache_locator)
+                     SSubcacheIndexData &sub_cache_locator,
+                     CSeq_id_Handle &output_idh)
     {
         if (!sub_cache_locator) {
             /// Blob has been invalidated (because it already exists in
@@ -450,6 +454,13 @@ struct SBlobCopier
         sub_cache_locator.m_SeqIdSize = m_SeqIdChunk.GetOffset()
             - sub_cache_locator.m_SeqIdOffset;
 
+        if (m_IdType != sequence::eGetId_HandleDefault) {
+            output_idh = sequence::GetId(bsh, m_IdType);
+        }
+        if (!output_idh) {
+            output_idh = main_cache_locator.m_Idh;
+        }
+
         ExtractExtraIds(bsh, extra_ids,
                         m_ExtractDelta, m_ExtractProducts);
     }
@@ -474,6 +485,7 @@ private:
     vector<char> m_Buffer;
     bool         m_ExtractDelta;
     bool         m_ExtractProducts;
+    sequence::EGetIdType m_IdType;
 };
 
 
@@ -587,7 +599,8 @@ public:
           m_RecordsInSubCache(0),
           m_RecordsNotFound(0),
           m_RecordsWithdrawn(0),
-          m_MaxRecursionLevel(kMax_Int)
+          m_MaxRecursionLevel(kMax_Int),
+          m_IdType(sequence::eGetId_HandleDefault)
     {
     }
 
@@ -634,11 +647,13 @@ private:
     size_t m_RecordsNotFound;
     size_t m_RecordsWithdrawn;
     int    m_MaxRecursionLevel;
+    sequence::EGetIdType m_IdType;
 
     CStopWatch  m_Stopwatch;
 
     SSubcacheIndexData m_BlankIndexData;
     TCachedSeqIds m_cached_seq_ids;
+    TCachedSeqIds m_output_seq_ids;
 };
 
 
@@ -759,6 +774,13 @@ void CAsnSubCacheCreateApplication::Init(void)
 
     arg_desc->AddOptionalKey("oseqids","oseqids","Seqids that actually made it to the cache", 
         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
+    arg_desc->AddOptionalKey("seq-id-type", "TypeOfId",
+                            "Kind of sequence identifier to use; by default "
+                            "use same seq-id as provided in input",
+                            CArgDescriptions::eString);
+    arg_desc->SetConstraint("seq-id-type",
+                            &(*new CArgAllow_Strings,
+                              "canonical", "best"));
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
 
@@ -807,6 +829,10 @@ int CAsnSubCacheCreateApplication::Run(void)
 
     s_TrimLargeNucprots = args["trim-large-nucprots"];
     s_RemoveAnnot = args["remove-annotation"];
+    if (args["seq-id-type"]) {
+        m_IdType = args["seq-id-type"].AsString() == "best"
+                 ? sequence::eGetId_Best : sequence::eGetId_Canonical;
+    }
 
     vector<CDir> main_cache_roots;
     vector<string> main_cache_paths;
@@ -975,7 +1001,7 @@ int CAsnSubCacheCreateApplication::Run(void)
     
     if(args["oseqids"]) { 
         args["oseqids"].AsOutputFile() <<"#seq-id"<<endl;
-        ITERATE (TCachedSeqIds, it, m_cached_seq_ids) {
+        ITERATE (TCachedSeqIds, it, m_output_seq_ids) {
             args["oseqids"].AsOutputFile() << *it << endl;
         }
     }
@@ -1085,16 +1111,20 @@ size_t CAsnSubCacheCreateApplication::WriteBlobsInSubCache(const vector<CDir>& m
     ///
     {{
         SBlobCopier blob_writer(subcache_root,
-                                 extract_delta, extract_product);
+                                 extract_delta, extract_product, m_IdType);
 
          ITERATE (TIndexMapByBlob, it, index_by_blob) {
            try {
-             blob_writer(it->first, *it->second);
+             CSeq_id_Handle output_idh;
+             blob_writer(it->first, *it->second, output_idh);
              /// Add all biodeq's other ids to index map, pointing to same blob
              ITERATE (vector<CSeq_id_Handle>, id_it, it->second->m_Ids) {
                  if (*id_it != it->first.m_Idh) {
                      index_map.insert(TIndexMapById::value_type(*id_it, it->second));
                  }
+             }
+             if (m_cached_seq_ids.count(it->first.m_Idh)) {
+                 m_output_seq_ids.insert(output_idh);
              }
            } catch (...) {
              LOG_POST(Error << "Error trying to copy " << it->first.m_Idh.AsString());
@@ -1186,18 +1216,18 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
                     NCBI_THROW(CException, eUnknown,
                                "Retrieved bioseq does not have this Seq-id");
                 }
+                if (m_cached_seq_ids.count(idh)) {
+                    CSeq_id_Handle output_idh;
+                    if (m_IdType != sequence::eGetId_HandleDefault) {
+                        output_idh = sequence::GetId(bsh, m_IdType);
+                    }
+                    m_output_seq_ids.insert(output_idh ? output_idh : idh);
+                }
             }
             catch (CException& e) {
                 LOG_POST(Error << "failed to retrieve sequence: "
                          << idh.AsString()
                          << ": " << e);
-                {{
-                    TCachedSeqIds::const_iterator cached_idh
-                        = m_cached_seq_ids.find(idh);
-                    if(cached_idh != m_cached_seq_ids.end()) {
-                        m_cached_seq_ids.erase(cached_idh);
-                    }
-                }}
                 ++ (is_withdrawn ? m_RecordsWithdrawn : m_RecordsNotFound);
                 continue;
             }
