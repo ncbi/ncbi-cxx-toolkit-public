@@ -227,11 +227,16 @@ public:
     /// Reset all data counters.
     void Reset();
 
+    /// Add counters from 'other' histogram to this histogram, 'other' doesn't changes.
+    /// @note Both histograms should have the same structure.
+    /// @sa Clone, Reset, StealCountersFrom
+    void AddCountersFrom(CHistogram& other) { x_AddCountersFrom(other, eAddCounters); }
+
     /// Add counters from 'other' histogram to this histogram,
     /// then reset the counters of 'other' histogram.
     /// @note Both histograms should have the same structure.
-    /// @sa Clone, Reset
-    void StealCountersFrom(CHistogram& other);
+    /// @sa Clone, Reset, AddCountersFrom
+    void StealCountersFrom(CHistogram& other)  { x_AddCountersFrom(other, eStealCounters); }
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -415,6 +420,14 @@ protected:
 
     /// Move data from 'other' histogram. 'other' became invalid.
     void x_MoveFrom(CHistogram& other);
+
+    // Mode for x_AddCountersFrom
+    enum EAddCountersMode {
+        eStealCounters,
+        eAddCounters
+    };
+    /// Add counters from 'other' histogram.
+    void x_AddCountersFrom(CHistogram& other, EAddCountersMode mode);
 
     /// Check that 'a' and 'b' scale values are equal (or almost equal for floating scales).
     bool x_IsEqual(TScale a, TScale b);
@@ -1038,7 +1051,7 @@ CHistogram<TValue, TScale, TCounter>::x_IsEqual(TScale a, TScale b)
 
 template <typename TValue, typename TScale, typename TCounter>
 void
-CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
+CHistogram<TValue, TScale, TCounter>::x_AddCountersFrom(CHistogram& other, EAddCountersMode mode)
 {
     if (this == &other) return;
     // Check structure
@@ -1056,7 +1069,7 @@ CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
             NCBI_THROW(CCoreException, eInvalidArg, "Histograms have different starting positions");
         }
     }
-    // Steal counters
+    // Add counters
     TCounter* counters_cur   = m_Counters.get();
     TCounter* counters_other = other.m_Counters.get();
     for (unsigned i = 0; i < m_NumBins; i++) {
@@ -1067,7 +1080,9 @@ CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
     m_UpperAnomalyCount += other.m_UpperAnomalyCount;
     m_Sum += other.m_Sum;
 
-    other.Reset();
+    if (eStealCounters == mode) {
+        other.Reset();
+    }
 }
 
 
