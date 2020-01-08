@@ -2949,6 +2949,7 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
     string primary_id;
     string secondary_id;
     E_Choice seqid_type = Which();
+    bool mixed_case = false;
 
     switch (seqid_type) {
     // CXX-11062 : gibbsq and gibbmt ids are sometimes primary, sometimes
@@ -2997,25 +2998,14 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
     {
         const CPDB_seq_id& pdb = GetPdb();
         primary_id = pdb.GetMol().Get();
+        // ID-5995 : Use FASTA-style "mol|chain" format as OSLT - with mixed
+        // case chain values. This is how they are stored in Cassandra.
         if (pdb.IsSetChain_id()) {
-            const char* ptr = pdb.GetChain_id().c_str();
-            char buf[256];
-            size_t pos = 0;
-            while (*ptr != '\0') {
-                buf[pos++] = toupper(*ptr);
-                if (islower(*ptr))
-                    buf[pos++] = '+';
-                ++ptr;
-            }
-            buf[pos] = '\0';
-            primary_id += string(buf);
+            primary_id += "|" + pdb.GetChain_id();
         } else if (pdb.IsSetChain() && pdb.GetChain() != ' ') {
-            // Old style single-character chain. For lower case, append a '+' sign
-            char chain = pdb.GetChain();
-            primary_id += string(1, chain);
-            if (islower(chain))
-                primary_id += "+";
+            primary_id += "|" + string(1, (char)pdb.GetChain());
         }
+        mixed_case = true;
         break;
     }
     case e_General:
@@ -3076,7 +3066,8 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
     }
     }
 
-    NStr::ToUpper(primary_id);
+    if (!mixed_case)
+        NStr::ToUpper(primary_id);
     if (secondary_id_list && !secondary_id.empty()) {
         NStr::ToUpper(secondary_id);
         secondary_id_list->emplace_back(secondary_id);

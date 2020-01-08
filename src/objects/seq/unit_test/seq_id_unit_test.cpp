@@ -1099,11 +1099,11 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
 
         "Seq-id ::= pdb { mol \"1GAV\", chain 120 }",
         "pdb", "1GAV_XX", "pdb|1GAV_XX",
-        "pdb|1GAV|XX", "1GAV_XX", "1GAV_XX", "PDB|1GAVX+",
+        "pdb|1GAV|XX", "1GAV_XX", "1GAV_XX", "PDB|1GAV|x",
 
         "Seq-id ::= pdb { mol \"1GAV\", chain-id \"xY\" }",
         "pdb", "1GAV_xY", "pdb|1GAV_xY",
-        "pdb|1GAV|xY", "1GAV_xY", "1GAV_xY", "PDB|1GAVX+Y",
+        "pdb|1GAV|xY", "1GAV_xY", "1GAV_xY", "PDB|1GAV|xY",
         
 
         "Seq-id ::= local str \"abcdABCD\"",
@@ -2172,9 +2172,9 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "dbj|N00068|", { "N00068" } },
     { "prf||0806162C", { "0806162C" } },
     { "pdb|1GAV|", { "1GAV" } },
-    { "pdb|1GAV|X", { "1GAVX" } },
-    { "pdb|1GAV|XX", { "1GAVXX" } },
-    { "pdb|1GAV|xyZ", { "1GAVX+Y+Z" } },
+    { "pdb|1GAV|X", { "1GAV|X" } },
+    { "pdb|1GAV|x", { "1GAV|x" } },
+    { "pdb|1GAV|xyZ", { "1GAV|xyZ" } },
     { "tpg|BK003456|", { "BK003456" } },
     { "tpe|BN000123|", { "BN000123" } },
     { "tpd|FAA00017|", { "FAA00017" } },
