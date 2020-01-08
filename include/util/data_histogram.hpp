@@ -230,7 +230,7 @@ public:
     /// Add counters from 'other' histogram to this histogram, 'other' doesn't changes.
     /// @note Both histograms should have the same structure.
     /// @sa Clone, Reset, StealCountersFrom
-    void AddCountersFrom(CHistogram& other) { x_AddCountersFrom(other, eAddCounters); }
+    void AddCountersFrom(const CHistogram& other) { x_AddCountersFrom(const_cast<CHistogram&>(other), eAddCounters); }
 
     /// Add counters from 'other' histogram to this histogram,
     /// then reset the counters of 'other' histogram.
