@@ -66,6 +66,7 @@ objtools/format$
 objtools/format/items$
 objtools/align_format
 objtools/logging$
+objtools/pubseq_gateway
 dbapi$
 dbapi/driver$
 dbapi/cache$
