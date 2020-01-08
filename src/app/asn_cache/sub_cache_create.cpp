@@ -134,13 +134,14 @@ struct SSeqIdIndex {
 struct SBlobLocator
 {
     SBlobLocator(CSeq_id_Handle idh, const CDir &root_cache)
-    : m_Idh(idh), m_CacheRoot(&root_cache), m_ChunkId(0), m_Offset(0)
+    : m_Idh(idh), m_CacheRoot(&root_cache), m_ChunkId(0), m_Offset(0), m_BlobSize(0)
     {}
 
     SBlobLocator &operator=(const CAsnIndex &main_index)
     {
         m_ChunkId = main_index.GetChunkId();
         m_Offset = main_index.GetOffset();
+        m_BlobSize = main_index.GetSize();
         return *this;
     }
 
@@ -164,6 +165,7 @@ struct SBlobLocator
     const CDir *            m_CacheRoot;
     CAsnIndex::TChunkId     m_ChunkId;
     CAsnIndex::TOffset      m_Offset;
+    CAsnIndex::TSize        m_BlobSize;
 };
 
 struct SSubcacheIndexData
@@ -362,11 +364,6 @@ struct SBlobCopier
                      SSubcacheIndexData &sub_cache_locator,
                      CSeq_id_Handle &output_idh)
     {
-        if (!sub_cache_locator) {
-            /// Blob has been invalidated (because it already exists in
-            /// sub-cache)
-            return;
-        }
 
         if (CSignal::IsSignaled()) {
             NCBI_THROW(CException, eUnknown,
@@ -378,7 +375,10 @@ struct SBlobCopier
             /// This is the same blob we copied on the last call (this can
             /// happen if several bioseqs belong to the same seq-entry
             bsh = m_Scope.GetBioseqHandle(main_cache_locator.m_Idh);
-            if (m_CurrentNucprotSeqEntry) {
+            if (sub_cache_locator) {
+              // If no sub_cache_locations, that's because blob has been
+              // invalidated (because it already exists in sub-cache), so no need to copy
+              if (m_CurrentNucprotSeqEntry) {
                 /// Current blob, containing the previous id and this one, is a
                 /// large Nucprot; create a new trimmed entry with this new id
                 CConstRef<CSeq_entry> trimmed_entry = m_CurrentNucprotSeqEntry;
@@ -396,36 +396,39 @@ struct SBlobCopier
                 sub_cache_locator.m_BlobSize = m_OutputChunk.GetOffset()
                                              - sub_cache_locator.m_Offset;
          
-            } else {
+              } else {
                 sub_cache_locator.m_ChunkId = m_OutputChunk.GetChunkSerialNum();
                 sub_cache_locator.m_Offset = m_LastBlobOffset;
+              }
             }
         } else {
             m_Buffer.clear();
-            m_Buffer.resize( sub_cache_locator.m_BlobSize );
+            m_Buffer.resize(main_cache_locator.m_BlobSize);
 
             m_InputChunk.OpenForRead( main_cache_locator.m_CacheRoot->GetPath(),
                                       main_cache_locator.m_ChunkId );
             m_InputChunk.RawRead( main_cache_locator.m_Offset,
                                   &m_Buffer[0], m_Buffer.size());
 
-            m_OutputChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
-            sub_cache_locator.m_ChunkId = m_OutputChunk.GetChunkSerialNum();
-            m_LastBlobOffset = sub_cache_locator.m_Offset = m_OutputChunk.GetOffset();
-            m_LastBlob = &main_cache_locator;
-
             CRef<CSeq_entry> entry(new CSeq_entry);
             CCache_blob blob;
             CNcbiIstrstream istr(&m_Buffer[0], m_Buffer.size());
             istr >> MSerial_AsnBinary >> blob;
             blob.UnPack(*entry);
-            m_LastBlobTimestamp = blob.GetTimestamp();
 
             CConstRef<CSeq_entry> trimmed_entry = entry;
             m_Scope.ResetDataAndHistory();
             m_Scope.AddTopLevelSeqEntry(*entry);
             bsh = m_Scope.GetBioseqHandle(main_cache_locator.m_Idh);
-            if (TrimEntry(trimmed_entry, bsh)) {
+
+            if (sub_cache_locator) {
+              m_LastBlobTimestamp = blob.GetTimestamp();
+              m_OutputChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
+              sub_cache_locator.m_ChunkId = m_OutputChunk.GetChunkSerialNum();
+              m_LastBlobOffset = sub_cache_locator.m_Offset = m_OutputChunk.GetOffset();
+              m_LastBlob = &main_cache_locator;
+
+              if (TrimEntry(trimmed_entry, bsh)) {
                 /// Seq-entry was trimmed, so we need to create and write
                 /// new smaller blob
                 m_CurrentNucprotSeqEntry = entry;
@@ -435,24 +438,14 @@ struct SBlobCopier
                 m_OutputChunk.Write(small_blob);
                 sub_cache_locator.m_BlobSize = m_OutputChunk.GetOffset()
                                              - sub_cache_locator.m_Offset;
-            } else {
-                m_CurrentNucprotSeqEntry.Reset();
-                m_OutputChunk.RawWrite( &m_Buffer[0], m_Buffer.size());
+              } else {
+                  m_CurrentNucprotSeqEntry.Reset();
+                  m_OutputChunk.RawWrite( &m_Buffer[0], m_Buffer.size());
+              }
+
+              ++m_BlobCount;
             }
-
-            ++m_BlobCount;
         }
-
-        ++m_BioseqCount;
-        m_SeqIdCount += bsh.GetId().size();
-        sub_cache_locator.m_Ids = bsh.GetId();
-
-        /// Write and index bioseq's seqids
-        m_SeqIdChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
-        sub_cache_locator.m_SeqIdOffset = m_SeqIdChunk.GetOffset();
-        m_SeqIdChunk.Write(bsh.GetId());
-        sub_cache_locator.m_SeqIdSize = m_SeqIdChunk.GetOffset()
-            - sub_cache_locator.m_SeqIdOffset;
 
         if (m_IdType != sequence::eGetId_HandleDefault) {
             output_idh = sequence::GetId(bsh, m_IdType);
@@ -461,8 +454,21 @@ struct SBlobCopier
             output_idh = main_cache_locator.m_Idh;
         }
 
-        ExtractExtraIds(bsh, extra_ids,
-                        m_ExtractDelta, m_ExtractProducts);
+        if (sub_cache_locator) {
+            ++m_BioseqCount;
+            m_SeqIdCount += bsh.GetId().size();
+            sub_cache_locator.m_Ids = bsh.GetId();
+
+            /// Write and index bioseq's seqids
+            m_SeqIdChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
+            sub_cache_locator.m_SeqIdOffset = m_SeqIdChunk.GetOffset();
+            m_SeqIdChunk.Write(bsh.GetId());
+            sub_cache_locator.m_SeqIdSize = m_SeqIdChunk.GetOffset()
+                - sub_cache_locator.m_SeqIdOffset;
+
+            ExtractExtraIds(bsh, extra_ids,
+                            m_ExtractDelta, m_ExtractProducts);
+       }
     }
 
 public:
