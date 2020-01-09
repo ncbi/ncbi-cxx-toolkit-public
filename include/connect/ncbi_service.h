@@ -71,7 +71,7 @@ typedef const SSERV_Info* SSERV_InfoCPtr;
 
 
 /** Special "type" bit values that may be combined with server types.
- * @note MSBs should be maintained compatible with EMGHBN_Option.
+ * @note MSW should be maintained compatible with EMGHBN_Option.
  * @sa
  *  ESERV_Type, ESERV_OpenEx, SERV_GetInfoEx
  */
@@ -79,7 +79,7 @@ enum ESERV_TypeSpecial {
     fSERV_Any               = 0,
     fSERV_All               = 0x00007FFF,  /**< Server type mask             */
     fSERV_Stateless         = 0x00008000,  /**< Stateless servers only       */
-    fSERV_Reserved1         = 0x00100000,  /**< Reserved, MBZ                */
+    fSERV_Reserved          = 0x00100000,  /**< Reserved, MBZ                */
     fSERV_DelayOpen         = 0x00400000,  /**< Don't open service until use */
     fSERV_ReverseDns        = 0x00800000,  /**< LB-DNS translation           */
     /* The following allow to get otherwise excluded service instances       */
@@ -108,20 +108,20 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *  Connection information (NULL prevents use of the network dispatching via
  *  DISPD, still allowing use of LBOS/NAMERD/LINKERD).
  * @note If "net_info" is NULL, only the following mappers will be consulted:
- *          LOCAL, LBSMD, LBOS, NAMERD, LINKERD
- *       If "net_info" is not NULL, the above mappers are consulted first,
- *       and then DISPD is consulted last (using the connection information
+ *          LOCAL(if enabled, see below), LBSMD, LBOS, NAMERD, LINKERD
+ *       If "net_info" is not NULL, the above mappers are consulted first, and
+ *       then DISPD is consulted last (using the connection information
  *       provided) but only if mapping with the above mappers (if any occurred)
  *       has failed.
  * @note The registry section [CONN], keys:
- *          LOCAL_DISABLE, LBSMD_DISABLE, LBOS_DISABLE,
+ *          LOCAL_ENABLE, LBSMD_DISABLE, LBOS_DISABLE,
  *          NAMERD_DISABLE, LINKERD_DISABLED, DISPD_DISABLE
  *       which can be overridden by the environment variables:
- *          CONN_LOCAL_DISABLE, CONN_LBSMD_DISABLE, CONN_LBOS_DISABLE,
+ *          CONN_LOCAL_ENABLE, CONN_LBSMD_DISABLE, CONN_LBOS_DISABLE,
  *          CONN_NAMERD_DISABLE, CONN_LINKERD_DISABLE, CONN_DISPD_DISABLE
- *       can be used to skip the corresponding service mappers. This scheme
- *       permits to use any combination of the service mappers
- *       (local/lbsmd/lbos/namerd/linkerd/network-based).
+ *       can be used to add(for LOCAL) or to skip(for other) the corresponding
+ *       service mapper(s).  This scheme  permits to use any combination of the
+ *       service mappers (local/lbsmd/lbos/namerd/linkerd/network-based).
  * @note If "net_info" is not NULL then a non-zero value of
  *       "net_info->stateless" forces "types" to get the "fSERV_Stateless" bit
  *       set implicitly.
@@ -373,6 +373,16 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 extern NCBI_XCONNECT_EXPORT unsigned short SERV_ServerPort
 (const char*          name,
  unsigned int         host
+ );
+
+
+extern NCBI_XCONNECT_EXPORT void       SERV_SetImplicitServerType
+(const char* service,
+ ESERV_Type  type
+ );
+
+extern NCBI_XCONNECT_EXPORT ESERV_Type SERV_GetImplicitServerType
+(const char* service
  );
 
 

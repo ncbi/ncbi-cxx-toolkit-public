@@ -74,6 +74,17 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
+static char* x_tr(char* str, char a, char b, size_t len)
+{
+    size_t n;
+    for (n = 0;  n < len;  ++n) {
+        if (str[n] == a)
+            str[n]  = b;
+    }
+    return str;
+}
+
+
 static char* x_ServiceName(unsigned int depth,
                            const char* service, const char* svc,
                            int/*bool*/ ismask, int/*bool*/ isfast)
@@ -99,7 +110,7 @@ static char* x_ServiceName(unsigned int depth,
     }
     if (!ismask  &&  !isfast) {
         char  tmp[sizeof(buf)];
-        char* s = (char*) memcpy(tmp, svc, len) + len;
+        char* s = x_tr((char*) memcpy(tmp, svc, len), '-', '_', len) + len;
         *s++ = '_';
         memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
         len += 1 + sizeof(CONN_SERVICE_NAME);
@@ -223,11 +234,11 @@ static SERV_ITER x_Open(const char*         service,
 
     if (!(svc = s_ServiceName(service, ismask, s_Fast)))
         return 0;
+    assert(ismask  ||  *svc);
     if (!(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
         free((void*) svc);
         return 0;
     }
-    assert(ismask  ||  *svc);
 
     iter->name              = svc;
     iter->host              = (preferred_host == SERV_LOCALHOST
@@ -1075,6 +1086,58 @@ extern unsigned short SERV_ServerPort(const char*  name,
     free((void*) info);
     assert(port);
     return port;
+}
+
+
+/* NOTE that putenv() leaks memory if the environment is later replaced. */
+extern void SERV_SetImplicitServerType(const char* service, ESERV_Type type)
+{
+    char* buf, *svc = SERV_ServiceName(service);
+    const char* typ = SERV_TypeStr(type);
+    size_t len;
+    if (!svc)
+        return;
+    len = strlen(svc);
+    if (!(buf = (char*) realloc(svc, len + sizeof(DEF_CONN_REG_SECTION)
+                                + sizeof(REG_CONN_IMPLICIT_SERVER_TYPE)
+                                + strlen(typ) + 2/*='\0*/))) {
+        free(svc);
+        return;
+    }
+    memcpy(x_tr(buf, '-','_', len) + len,
+           "_" DEF_CONN_REG_SECTION
+           "_" REG_CONN_IMPLICIT_SERVER_TYPE,
+           sizeof(DEF_CONN_REG_SECTION) +
+           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE));
+    len += sizeof(DEF_CONN_REG_SECTION) +
+           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE);
+    buf[len++] = '=';
+    strcpy(buf + len, typ);
+    CORE_LOCK_WRITE;
+    len = !putenv(buf);
+    CORE_UNLOCK;
+    if (!len)
+        free(buf);
+}
+
+
+extern ESERV_Type SERV_GetImplicitServerType(const char* service)
+{
+    ESERV_Type type;
+    const char *end;
+    char value[40];
+    if (!ConnNetInfo_GetValue(service, REG_CONN_IMPLICIT_SERVER_TYPE,
+                              value, sizeof(value), 0)
+        ||  !*value  ||  !(end = SERV_ReadType(value, &type))  ||  *end) {
+        return SERV_GetImplicitServerTypeDefault();
+    }
+    return type;
+}
+
+
+ESERV_Type SERV_GetImplicitServerTypeDefault(void)
+{
+    return fSERV_Http;
 }
 
 

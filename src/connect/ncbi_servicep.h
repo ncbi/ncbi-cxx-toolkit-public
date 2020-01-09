@@ -39,20 +39,23 @@
 
 
 /* Order:
-   R>0 T>0    Up
+   R>0 T>0    Active
    R<0 T>0    Standby
    R>0 T=0    Reserved
-   R>0 T=INF  Suppressed
+
+   R>0 T=INF  Active+Suppressed
    R<0 T=INF  Standby+Suppressed
    R<0 T=0    Reserved+Suppressed
+
    R=0 T>0    Down
    R=0 T=INF  Down+Suppressed
+
    R=0 T=0    Off (unseen)
 */
 
 
 /* SERV_IfSuppressed() can be applied to any of the SERV_Is*() macros below */
-#define SERV_IfSuppressed(i)  (  (i)->time == NCBI_TIME_INFINITE   ||  \
+#define SERV_IfSuppressed(i)  (  (i)->time == NCBI_TIME_INFINITE  ||  \
                                (!(i)->time  &&  (i)->rate < 0.0))
 #define SERV_IsActive(i)      (  (i)->time  &&  (i)->rate > 0.0)
 #define SERV_IsStandby(i)     (  (i)->time  &&  (i)->rate < 0.0)
@@ -268,6 +271,10 @@ void SERV_PrintFirewallPorts
  size_t  bufsize,
  EFWMode mode
 );
+
+
+/* Return a global default */
+ESERV_Type SERV_GetImplicitServerTypeDefault(void);
 
 
 #ifdef __cplusplus
