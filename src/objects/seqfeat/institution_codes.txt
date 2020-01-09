@@ -841,7 +841,7 @@ CAS:DIA	s	California Academy of Sciences, Diatom collection
 CAS:DS	s	California Academy of Sciences, Dudley Stanford Collection		
 CAS:EGG	s	California Academy of Sciences, Egg & Nest Collection		
 CAS:ENT	s	California Academy of Sciences, Entomology collection	
-CAS:HERP	s	California Academy of Sciences, Herpetology collection	http://collections.calacademy.org/herp/specimen/CAS:HERP:&spec;
+CAS:HERP	s	California Academy of Sciences, Herpetology collection	http://researcharchive.calacademy.org/research/herpetology/catalog/index.asp?xAction=getrec&close=true&CatalogNo=CAS+
 CAS:ICH	s	California Academy of Sciences, Ichthyology collection	
 CAS:IU	s	California Academy of Sciences, Indiana University fish collection		
 CAS:IZ	s	California Academy of Sciences, Invertebrate Zoology collection	
@@ -893,7 +893,7 @@ CCA-Marburg	c	 Culture Collection of Algae at the University of Marburg
 CCAC<BRA>	s	Universidade Federal do Ceara, Centro Ciencias Agrarias			
 CCAC<DEU>	c	Culture Collection of Algae at the University of Cologne			
 CCALA	c	Culture Collection of Autotrophic Organisms			
-CCAP	c	Culture Collection of Algae and Protozoa			
+CCAP	c	Culture Collection of Algae and Protozoa		https://www.ccap.ac.uk/strain_info.php?Strain_No=	
 CCARM	c	Culture Collection of Antimirobial Resistant Microorganisms			
 CCAU	s	Central China Agricultural University			
 CCB<BRZ>	c	Colecao de Culturas de Basidiomicetos			
@@ -1023,7 +1023,7 @@ CFBP	c	French Collection for Plant-associated Bacteria	CFBP
 CFCC	cb	China Forestry Culture Collection Center			
 CFI	s	Genetic Resources and Biotechnology (CENARGEN), EMBRAPA			
 CFIA	s	Canadian Food Inspection Agency			
-CFMR	sc	USDA Forest Service, Center for Forest Mycology Research	FPL		
+CFMR	sc	USDA Forest Service, Center for Forest Mycology Research	FPL	https://www.fpl.fs.fed.us/search/mycologysearch_action.php?sorting_rule=1u&phrasesAndKeywords02=	
 CFN	s	Clifton College, Biology Department			
 CFNL	s	Universidad Autonoma de Nuevo Leon			
 CFQ	c	Cepario de la Facultad de Quimica			
@@ -1638,8 +1638,8 @@ DMNH<USA-DE>:Bird	s	Delaware Museum of Natural History, Birds collection
 DMNH<USA-OH>	s	Dayton Museum of Natural History, Biology Department			
 DMNS	s	Denver Museum of Nature and Science	DMNH<USA-CO>,DNHC		
 DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections	
-DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection	
-DMNS:Para	s	Denver Museum of Nature and Science, Parasite collection		
+DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection	https://arctos.database.museum/guid/DMNS:Mamm:
+DMNS:Para	s	Denver Museum of Nature and Science, Parasite collection	https://arctos.database.museum/guid/DMNS:Para:
 DMPMC	c	Department of Microbiology, University of Western Australia			
 DMSA	s	Durban Museum	DMSA		
 DMSC	s	Medicinal Plants Research Institute, Department of Medical Sciences			
@@ -1697,7 +1697,7 @@ DSEC	s	Universidade Federal da Paraiba
 DSIR	s	Department of Scientific and Industrial Research			
 DSM	c	Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH	DSMZ	https://www.dsmz.de/collection/catalogue/details/culture/DSM-	
 DSM<TZA>	s	University of Dar es Salaam, Botany Department			
-DSMZ	c	Deutsche Sammlung von Mikroorganismen und Zellkulture			
+DSMZ	c	Deutsche Sammlung von Mikroorganismen und Zellkulture		https://www.dsmz.de/catalogues/details/culture/PV-	
 DSP	s	Fitzsimon's Snake Park			
 DSSC<USA-CA>	b	Drosophila Species Stock Center			
 DSU	s	Dnipropetrovsk National University, Department of Geobotany, Soil, and Ecology			
@@ -2089,7 +2089,7 @@ FRLM	s	Faculty of Fisheries, Mie University
 FRM	s	Friends University, Fellow-Reeve Museum of History and Science			
 FRNZ	s	Forest Research Institute, New Zealand			
 FRP	s	Palmengarten			
-FRR	c	Food Science Australia, Ryde			
+FRR	c	Food Science Australia, Ryde		http://www.foodscience.csiro.au/cgi-bin/rilax/search.pl?stpos=0&stype=AND&query=	
 FRS	s	Falconer Museum			
 FRSKU	s	Kyoto University, Fisheries Research Station			
 FRU	s	National Academy of Science, Kyrgyzstan, Laboratory of Flora			
@@ -4803,7 +4803,7 @@ NCSM:Fishes	s	North Carolina Museum of Natural Sciences, Fish collection
 NCSM:Herp	s	North Carolina Museum of Natural Sciences, Herpetology Collection	
 NCSM:Mammals	s	North Carolina Museum of Natural Sciences, Mammal collection	
 NCSU	s	North Carolina State University Collections			
-NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC+	
+NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC&spec;&collection=nctc	
 NCU	s	University of North Carolina, North Carolina Botanical Garden			
 NCUT	s	Nicolaus Copernicus University			
 NCWRF	c	National Collection of Wood Rotting Fungi			
@@ -5131,10 +5131,10 @@ NRM	s	Swedish Museum of Natural History
 NRN	s	Nairn Literary Society Library, Public Library			
 NRNZ	s	Northland Regional Museum			
 NRPSU	c	Department of Agro-industry, Faculty of Natural Resources			
-NRRL	c	Agricultural Research Service Culture Collection		https://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=#specimen#; http://nrrl.ncaur.usda.gov/cgi-bin/usda/mold/report.html?nrrlcodes=#specimen#; http://nrrl.ncaur.usda.gov/cgi-bin/usda/yeast/report.html?nrrlcodes=&spec;	
+NRRL	c	Agricultural Research Service Culture Collection		https://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=	
 NRRL:MOLD	sc	Agricultural Research Service Culture Collection, Mold collection	http://nrrl.ncaur.usda.gov/cgi-bin/usda/mold/report.html?nrrlcodes=
 NRRL:PROK	sc	Agricultural Research Service Culture Collection, Prokaryotic collection	http://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=
-NRRL:YEAST	sc	Agricultural Research Service Culture Collection, Yeast Collection	http://nrrl.ncaur.usda.gov/cgi-bin/usda/yeast/report.html?nrrlcodes=
+NRRL:YEAST	sc	Agricultural Research Service Culture Collection, Yeast Collection	https://nrrl.ncaur.usda.gov/cgi-bin/usda/yeast/report.html?nrrlcodes=
 NRS	s	Naturhistoriska Riksmuseet			
 NRWC	s	N. R. Whitney Collection			
 NRZM	c	German Reference Center for Meningococci			
@@ -5666,7 +5666,7 @@ PW	s	Paleontological Collections
 PWRC	s	Patuxent Wildlife Research Center			
 PWU	s	V.G.Korolenko Poltava National Pedagogical University			
 PY	s	Centro de Estudios y Colecciones Biologicas para la Conservacion			
-PYCC	c	Portuguese Yeast Culture Collection			
+PYCC	c	Portuguese Yeast Culture Collection		http://pycc.bio-aware.com/BioloMICS.aspx?Table=PYCC%20strains&Name=PYCC%20	
 PYU	s	Yunnan University, Laboratory of Pteridophyta			
 PZL	s	Penzance Library			
 PZV	s	Petrozavodsk State University, Department of Botany and Plant Physiology			
@@ -5947,7 +5947,7 @@ SACT	s	California State University, Biological Sciences Department
 SAF	s	Department of Agricultural and Forest Sciences			
 SAFB	s	University of Saskatchewan, Forestry Department			
 SAFU	s	University of San Francisco			
-SAG	c	Sammlung von Algenkulturen at Universitat Gottingen			
+SAG	c	Sammlung von Algenkulturen at Universitat Gottingen		http://sagdb.uni-goettingen.de/detailedList.php?str_number=	
 SAG<CHL>	c	Coleccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero			
 SAIAB	sb	South African Institute of Aquatic Biodiversity			
 SAIM	s	South African Institute for Medical Research	SAIMR		
@@ -6948,13 +6948,13 @@ UAM:Fish	s	University of Alaska, Museum of the North, Fish Collection
 UAM:Herb	s	University of Alaska, Museum of the North, UAM Herbarium		
 UAM:Herp	s	University of Alaska, Museum of the North, Amphibian and Reptile Collection	
 UAM:Inv	s	University of Alaska, Museum of the North, Invertebrate Collection	
-UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection	
+UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection	https://arctos.database.museum/guid/UAM:Mamm:
 UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection		
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection		
 UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria			
 UAM<USA-AL>	s	University of Alabama, Malacology Collection			
 UAM<USA-AR>	s	University of Arkansas at Monticello			
-UAMH	scb	Centre for Global Microfungal Biodiversity			
+UAMH	scb	Centre for Global Microfungal Biodiversity		https://www.uamh.ca/details.php?id=	
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)			
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia			
 UAMM	s	Universidad de los Andes			
