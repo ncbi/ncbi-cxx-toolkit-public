@@ -587,7 +587,7 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
         char hostbuf[40];
         SOCK_ntoa(info->host, hostbuf, sizeof(hostbuf));
         CORE_TRACEF(("Added candidate " FMT_SIZE_T
-            ":   %s:%hu with svc_type '%s'.",
+            ":   %s:%hu with server type '%s'.",
             data->n_cand, hostbuf, info->port, SERV_TypeStr(info->type)));
     }}
 #endif
@@ -896,7 +896,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         /* Iterate through addresses, adding to "candidates". */
         for (it = 0;  it < x_json_array_get_count(address_arr);  ++it) {
             x_JSON_Object   *address;
-            const char      *host, *extra, *svc_type, *mode;
+            const char      *host, *extra, *srv_type, *mode;
             const char      *cpfx, *ctype;
             const char      *local;
             const char      *priv;
@@ -916,7 +916,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 port|port|port ------------+  |  |      | |    | |    |
                 ip|host|host -----------+  |  |  |      | |    | |    |
                 meta.serviceType|       |  |  |  |      | |    | |    |
-                    type|svc_type ---+  |  |  |  |      | |    | |    |
+                    type|srv_type ---+  |  |  |  |      | |    | |    |
                                      [] [] [] [] [__]   [][]   [][]   [] */
             const char* descr_fmt = "%s %s:%u %s %s%s L=%s%s R=%s%s T=%u";
             /*  NOTE: Some fields must not be included in certain situations
@@ -965,30 +965,30 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 goto out;
             }
 
-            /* SSERV_Info.type <=== addrs[i].meta.serviceType */
-            svc_type = x_json_object_dotget_string(address, "meta.serviceType");
-            if ( ! svc_type  ||   ! *svc_type)
-                svc_type = "HTTP";
-
-            /* Make sure the service type matches an allowed type. */
             ESERV_Type  type;
-            if ( ! SERV_ReadType(svc_type, &type))
+            /* SSERV_Info.type <=== addrs[i].meta.serviceType */
+            srv_type = x_json_object_dotget_string(address, "meta.serviceType");
+            if ( ! srv_type  ||   ! *srv_type) {
+                type = SERV_GetImplicitServerType(iter->name);
+                srv_type = SERV_TypeStr(type);
+            } else if ( ! SERV_ReadType(srv_type, &type))
             {
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                    ("Unrecognized service type '%s'.", svc_type));
+                    ("Unrecognized server type '%s'.", srv_type));
                 goto out;
             }
+            /* Make sure the server type matches an allowed type. */
             if (iter->types != fSERV_Any  &&  !(iter->types & type))
             {
                 CORE_TRACEF((
-                    "Ignoring endpoint %s:%d with unallowed svc_type '%s'"
+                    "Ignoring endpoint %s:%d with unallowed server type '%s'"
                     " - allowed types = 0x%lx.",
-                    host, port, svc_type, (unsigned long) iter->types));
+                    host, port, srv_type, (unsigned long) iter->types));
                 continue;
             }
             CORE_TRACEF((
-                "Parsed endpoint %s:%d with allowed svc_type '%s'.",
-                host, port, svc_type));
+                "Parsed endpoint %s:%d with allowed server type '%s'.",
+                host, port, srv_type));
 
             /* SSERV_Info.mode <=== addrs[i].meta.stateful */
             if (x_json_object_dothas_value_of_type(address, "meta.stateful",
@@ -1093,16 +1093,16 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             /* SSERV_Info.extra <=== addrs[i].meta.extra */
             extra = x_json_object_dotget_string(address, "meta.extra");
             if ( ! extra  ||  ! *extra) {
-                if (strcmp(svc_type, "HTTP") == 0) {
+                if (type & fSERV_Http) {
                     CORE_LOG_X(eNSub_Json, eLOG_Error,
                             "Namerd API did not return a path in meta.extra "
-                            "JSON for an HTTP type service");
+                            "JSON for an HTTP type server");
                     extra = "/ERROR/namerd/API/did/not/return/a/path/in"
-                            "/meta.extra/JSON/for/an/HTTP/type/service";
-                } else if (strcmp(svc_type, "NCBID") == 0) {
+                            "/meta.extra/JSON/for/an/HTTP/type/server";
+                } else if (type == fSERV_Ncbid) {
                     CORE_LOG_X(eNSub_Json, eLOG_Warning,
                             "Namerd API did not return args in meta.extra "
-                            "JSON for an NCBID type service");
+                            "JSON for an NCBID type server");
                     extra = "''";
                 } else {
                     extra = "";
@@ -1111,7 +1111,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 
             /* Prepare description */
             size_t length;
-            length = strlen(descr_fmt) + strlen(svc_type) + strlen(host) +
+            length = strlen(descr_fmt) + strlen(srv_type) + strlen(host) +
                      5 /*length of port*/ + strlen(extra) + strlen(cpfx) +
                      strlen(ctype) + strlen(local) + strlen(priv) +
                      strlen(rate_str) + strlen(stateful) +
@@ -1122,7 +1122,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                     "Couldn't alloc for server description.");
                 goto out;
             }
-            sprintf(server_description, descr_fmt, svc_type, host,
+            sprintf(server_description, descr_fmt, srv_type, host,
                     port, extra, cpfx, ctype, local, priv, rate_str, stateful,
                     timeval);
 
