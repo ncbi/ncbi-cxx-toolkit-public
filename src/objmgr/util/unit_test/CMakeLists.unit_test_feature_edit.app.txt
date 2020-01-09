@@ -1,0 +1,12 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_feature_edit)
+  NCBI_sources(unit_test_feature_edit)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xunittestutil xobjutil test_boost)
+  NCBI_project_watchers(foleyjp)
+  NCBI_add_test()
+NCBI_end_app()
+

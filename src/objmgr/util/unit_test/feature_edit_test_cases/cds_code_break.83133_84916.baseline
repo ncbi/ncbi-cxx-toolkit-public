@@ -3,6 +3,16 @@ Seq-feat ::= {
     frame two,
     code {
       id 1
+    },
+    code-break {
+      {
+        loc int {
+          from 83132,
+          to 83134,
+          id gi 693495987
+        },
+        aa ncbieaa 77
+      }
     }
   },
   partial TRUE,

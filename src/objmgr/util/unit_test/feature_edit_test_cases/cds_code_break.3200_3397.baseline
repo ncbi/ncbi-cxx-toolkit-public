@@ -4,6 +4,17 @@ Seq-feat ::= {
     frame two,
     code {
       id 1
+    },
+    code-break {
+      {
+        loc int {
+          from 3396,
+          to 3398,
+          strand minus,
+          id gi 749407087
+        },
+        aa ncbieaa 88
+      }
     }
   },
   partial TRUE,
