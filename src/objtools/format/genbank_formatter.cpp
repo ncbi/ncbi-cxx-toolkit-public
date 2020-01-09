@@ -2160,14 +2160,17 @@ void CGenbankFormatter::FormatWGS
             link = "https://www.ncbi.nlm.nih.gov/nuccore/" + first_id;
         } else {
             string url_arg;
+            // ID-5288 : Allow for variable prefix length
+            // First 2 digits are the major version of the project which must be appended
+            // ID-6000 : For contigs, always use link to WGS browser; for scaffolds,
+            // use Entrez link if ID-based and WGS browser link if VDB-based.
             const bool bIsWGSProject = CWGSItem::eWGS_Projects == wgs.GetType();
-            if (bIsWGSProject) {
-                // ID-5288 : Allow for variable prefix length
-                // First 2 digits are the major version of the project which must be appended
-                SIZE_TYPE prefix_len = first_id.find_first_of("0123456789");
-                const bool bIsWGSScafldWithS = 
-                    ( CWGSItem::eWGS_ScaffoldList == wgs.GetType() &&
-                      first_id.length() > 7 && first_id[prefix_len+2] == 'S' );
+            SIZE_TYPE prefix_len = first_id.find_first_of("0123456789");
+            const bool bIsWGSScafldWithS = 
+                ( CWGSItem::eWGS_ScaffoldList == wgs.GetType() &&
+                  first_id.length() > 7 && first_id[prefix_len+2] == 'S' );
+            
+            if (bIsWGSProject || bIsWGSScafldWithS) {
                 url_arg = first_id.substr(0,prefix_len+2);
                 link = "https://www.ncbi.nlm.nih.gov/Traces/wgs/" + 
                     url_arg + "?display=" + ( bIsWGSScafldWithS ? "scaffolds" : "contigs" );
