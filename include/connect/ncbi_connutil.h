@@ -213,76 +213,76 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 
 /* Defaults and the registry entry names for "SConnNetInfo" fields
  */
-#define DEF_CONN_REG_SECTION       "CONN"
+#define DEF_CONN_REG_SECTION        "CONN"
 
-#define REG_CONN_REQ_METHOD        "REQ_METHOD"
-#define DEF_CONN_REQ_METHOD        "ANY"
+#define REG_CONN_REQ_METHOD         "REQ_METHOD"
+#define DEF_CONN_REQ_METHOD         "ANY"
 
-#define REG_CONN_USER              "USER"
-#define DEF_CONN_USER              ""
+#define REG_CONN_USER               "USER"
+#define DEF_CONN_USER               ""
 
-#define REG_CONN_PASS              "PASS"
-#define DEF_CONN_PASS              ""
+#define REG_CONN_PASS               "PASS"
+#define DEF_CONN_PASS               ""
 
-#define REG_CONN_HOST              "HOST"
-#define DEF_CONN_HOST              "www.ncbi.nlm.nih.gov"
+#define REG_CONN_HOST               "HOST"
+#define DEF_CONN_HOST               "www.ncbi.nlm.nih.gov"
 
-#define REG_CONN_PORT              "PORT"
-#define DEF_CONN_PORT              0/*default*/
+#define REG_CONN_PORT               "PORT"
+#define DEF_CONN_PORT               0/*default*/
 
-#define REG_CONN_PATH              "PATH"
-#define DEF_CONN_PATH              "/Service/dispd.cgi"
+#define REG_CONN_PATH               "PATH"
+#define DEF_CONN_PATH               "/Service/dispd.cgi"
 
-#define REG_CONN_ARGS              "ARGS"
-#define DEF_CONN_ARGS              ""
+#define REG_CONN_ARGS               "ARGS"
+#define DEF_CONN_ARGS               ""
 
-#define REG_CONN_HTTP_PROXY_HOST   "HTTP_PROXY_HOST"
-#define DEF_CONN_HTTP_PROXY_HOST   ""
+#define REG_CONN_HTTP_PROXY_HOST    "HTTP_PROXY_HOST"
+#define DEF_CONN_HTTP_PROXY_HOST    ""
 
-#define REG_CONN_HTTP_PROXY_PORT   "HTTP_PROXY_PORT"
-#define DEF_CONN_HTTP_PROXY_PORT   ""
+#define REG_CONN_HTTP_PROXY_PORT    "HTTP_PROXY_PORT"
+#define DEF_CONN_HTTP_PROXY_PORT    ""
 
-#define REG_CONN_HTTP_PROXY_USER   "HTTP_PROXY_USER"
-#define DEF_CONN_HTTP_PROXY_USER   ""
+#define REG_CONN_HTTP_PROXY_USER    "HTTP_PROXY_USER"
+#define DEF_CONN_HTTP_PROXY_USER    ""
 
-#define REG_CONN_HTTP_PROXY_PASS   "HTTP_PROXY_PASS"
-#define DEF_CONN_HTTP_PROXY_PASS   ""
+#define REG_CONN_HTTP_PROXY_PASS    "HTTP_PROXY_PASS"
+#define DEF_CONN_HTTP_PROXY_PASS    ""
 
-#define REG_CONN_HTTP_PROXY_LEAK   "HTTP_PROXY_LEAK"
-#define DEF_CONN_HTTP_PROXY_LEAK   ""
+#define REG_CONN_HTTP_PROXY_LEAK    "HTTP_PROXY_LEAK"
+#define DEF_CONN_HTTP_PROXY_LEAK    ""
 
-#define REG_CONN_HTTP_PUSH_AUTH    "HTTP_PUSH_AUTH"
-#define DEF_CONN_HTTP_PUSH_AUTH    ""
+#define REG_CONN_HTTP_PUSH_AUTH     "HTTP_PUSH_AUTH"
+#define DEF_CONN_HTTP_PUSH_AUTH     ""
 
-#define REG_CONN_TIMEOUT           "TIMEOUT"
-#define DEF_CONN_TIMEOUT           30.0
+#define REG_CONN_TIMEOUT            "TIMEOUT"
+#define DEF_CONN_TIMEOUT            30.0
 
-#define REG_CONN_MAX_TRY           "MAX_TRY"
-#define DEF_CONN_MAX_TRY           3
+#define REG_CONN_MAX_TRY            "MAX_TRY"
+#define DEF_CONN_MAX_TRY            3
 
-#define REG_CONN_EXTERNAL          "EXTERNAL"
-#define DEF_CONN_EXTERNAL          ""
+#define REG_CONN_EXTERNAL           "EXTERNAL"
+#define DEF_CONN_EXTERNAL           ""
 
-#define REG_CONN_FIREWALL          "FIREWALL"
-#define DEF_CONN_FIREWALL          ""
+#define REG_CONN_FIREWALL           "FIREWALL"
+#define DEF_CONN_FIREWALL           ""
 
-#define REG_CONN_STATELESS         "STATELESS"
-#define DEF_CONN_STATELESS         ""
+#define REG_CONN_STATELESS          "STATELESS"
+#define DEF_CONN_STATELESS          ""
 
-#define REG_CONN_LB_DISABLE        "LB_DISABLE"
-#define DEF_CONN_LB_DISABLE        ""
+#define REG_CONN_LB_DISABLE         "LB_DISABLE"
+#define DEF_CONN_LB_DISABLE         ""
 
-#define REG_CONN_HTTP_VERSION      "HTTP_VERSION"
-#define DEF_CONN_HTTP_VERSION      0
+#define REG_CONN_HTTP_VERSION       "HTTP_VERSION"
+#define DEF_CONN_HTTP_VERSION       0
 
-#define REG_CONN_DEBUG_PRINTOUT    "DEBUG_PRINTOUT"
-#define DEF_CONN_DEBUG_PRINTOUT    ""
+#define REG_CONN_DEBUG_PRINTOUT     "DEBUG_PRINTOUT"
+#define DEF_CONN_DEBUG_PRINTOUT     ""
 
-#define REG_CONN_HTTP_USER_HEADER  "HTTP_USER_HEADER"
-#define DEF_CONN_HTTP_USER_HEADER  ""
+#define REG_CONN_HTTP_USER_HEADER   "HTTP_USER_HEADER"
+#define DEF_CONN_HTTP_USER_HEADER   ""
 
-#define REG_CONN_HTTP_REFERER      "HTTP_REFERER"
-#define DEF_CONN_HTTP_REFERER      0
+#define REG_CONN_HTTP_REFERER       "HTTP_REFERER"
+#define DEF_CONN_HTTP_REFERER       0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
 #define REG_CONN_SERVICE_NAME               "SERVICE_NAME"
@@ -293,6 +293,9 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_NAMERD_FOR_LINKERD_ENABLE  "NAMERD_FOR_LINKERD_ENABLE"
 #define REG_CONN_NAMERD_ENABLE              "NAMERD_ENABLE"
 #define REG_CONN_DISPD_DISABLE              "DISPD_DISABLE"
+
+/* Implicit server type (LINKERD/NAMERD) */
+#define REG_CONN_IMPLICIT_SERVER_TYPE       "IMPLICIT_SERVER_TYPE"
 
 /* Local service dispatcher */
 #define REG_CONN_LOCAL_SERVICES     "LOCAL_SERVICES"
