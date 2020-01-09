@@ -376,11 +376,26 @@ extern NCBI_XCONNECT_EXPORT unsigned short SERV_ServerPort
  );
 
 
+/** Set a server type to use when a service mapper returns typeless entries for
+ * the given service name (typed entries retain their types as received).
+ * @note Current implementation of this call stores the association in the
+ * process environment.
+ * @note Implicit server type designation is managed the same way as any other
+ * service-related parameters, using the REG_CONN_IMPLICIT_SERVER_TYPE key.
+ * @sa
+ *  ConnNetInfo_GetValue, SERV_GetImplicitServerType
+ */
 extern NCBI_XCONNECT_EXPORT void       SERV_SetImplicitServerType
 (const char* service,
  ESERV_Type  type
  );
 
+
+/** Get a server type that would be assigned to typeless entries for the given
+ * service name.
+ * @sa
+ *  ConnNetInfo_GetValue, SERV_SetImplicitServerType, SERV_GetImplicitServerTypeDefault
+ */
 extern NCBI_XCONNECT_EXPORT ESERV_Type SERV_GetImplicitServerType
 (const char* service
  );
