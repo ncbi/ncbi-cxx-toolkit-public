@@ -171,7 +171,7 @@ typedef struct {
     EMIME_Encoding      mime_e; /*         and encoding for content-type     */
     TSERV_Algo            algo; /* rate algorithm for the server             */
     TNCBI_IPv6Addr        addr; /* IPv6 address (for host == INADDR_NONE(-1))*/
-    unsigned char        vhost; /* extra (v)host name size if non-zero       */
+    unsigned char        vhost; /* extra (v)host namelen if non-zero (+'\0') */
     unsigned short       extra; /* extra data size if non-zero               */
     USERV_Info               u; /* server type-specific data/params          */
 } SSERV_Info;
@@ -213,7 +213,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_CreateDnsInfo
  * The server type goes first, and it is followed by a single space.
  * The returned string is '\0'-terminated, and must be deallocated by 'free()'.
  */
-extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
+extern NCBI_XCONNECT_EXPORT char*       SERV_WriteInfo
 (const SSERV_Info* info
  );
 
@@ -231,30 +231,34 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *
  * Server-specific parameters:
  *
- *    STANDALONE servers: None
- *                        Servers of this type do not take any arguments.
+ *    STANDALONE servers:  None
+ *                         Servers of this type do not take any arguments.
  *
- *    NCBID servers: Arguments to CGI in addition to specified by application.
- *                   Empty additional arguments denoted as '' (two single
- *                   quotes, back to back).  Note that the additional arguments
- *                   must not contain space characters.
+ *    NCBID servers:       Arguments to CGI in addition to those specified by
+ *                         the application.  Empty additional arguments should
+ *                         be denoted as '' (two single quotes, back to back)
+ *                         in order for the tags (that may follow) not be
+ *                         treated as the additional arguments.  Note that the
+ *                         arguments  must not contain any space characters.
  *
- *    HTTP* servers: Path (required) and args (optional) in the form
- *                   path[?args] (here brackets denote the optional part).
- *                   Note that no spaces are allowed within these parameters.
+ *    HTTP* servers:       Path (required) and args (optional) in the form
+ *                         path[?args] (brackets denote the optional part).
+ *                         Note that no spaces are allowed within these
+ *                         parameters.
  *
- *    FIREWALL servers: Servers of this type are converted real servers of the
- *                      above types, when only accessible via FIREWALL mode of
- *                      NCBI dispatcher.  The purpose of this fake server type
- *                      is just to let the client know that the service exists.
- *                      Additional parameter is optional and if present, is the
- *                      original type of the server before conversion.  Note
- *                      that servers of this type cannot be configured in
- *                      LBSMD.
+ *    FIREWALL servers:    Servers of this type are converted real servers of
+ *                         the above types, when only accessible via FIREWALL
+ *                         mode of NCBI dispatcher.  The purpose of this fake
+ *                         server type is just to let the client know that the
+ *                         service exists.  Additional parameter is optional
+ *                         and if present, is the original type of the server
+ *                         before the conversion.  Note that servers of this
+ *                         type cannot be configured in LBSMD.
  *
- *    DNS servers: Services for DNS and DB load-balancing, and dynamic reverse-
- *                 proxying (the ProxyPass directive of the Apache HTTP daemon)
- *                 at the NCBI Web entry point.  Never exposed to the outside.
+ *    DNS servers:         Services for DNS, DB load-balancing, and dynamic
+ *                         reverse-proxying (the ProxyPass directive of the
+ *                         Apache HTTP daemon) at the NCBI Web entry points.
+ *                         Never exposed to the outside.
  *
  * Tags may follow in no particular order but no more than one instance of each
  * tag is allowed:
@@ -266,35 +270,37 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *    Bonus coefficient:
  *       B=double       [0.0 = default]
  *           specifies a multiplicative bonus given to a server run locally,
- *           when calculating reachability rate.
+ *           when calculating its reachability rate.
  *           Special rules apply to negative/zero values:
  *           0.0 means not to use the described rate increase at all (default
- *           rate calculation is used, which only slightly increases rates
+ *           rate calculation is used, which only slightly increases the rates
  *           of locally run servers).
- *           Negative value denotes that locally run server should be taken
- *           in the first place, regardless of its rate, if that rate
- *           is as large as the percentage (expressed by the absolute value
- *           of this coefficient) of the average rate coefficient of other
- *           servers for the same service.  In other words, -5 instructs to
- *           ignore locally run server only if its rate is less than 5% of
- *           average status of remaining servers for the same service.
+ *           Negative value denotes that a locally run server should be taken
+ *           in the first place, regardless of its rate, yet if that rate is as
+ *           large as the percentage (expressed by the absolute value of this
+ *           coefficient) of the average rate coefficient of all other servers
+ *           for the same service.  In other words, -5 instructs to ignore
+ *           the locally run server only if its rate is less than 5% of average
+ *           status of the remaining servers for the same service.
  *
  *    Content type indication:
  *       C=type/subtype [no default]
  *           specification of Content-Type (including encoding), which server
  *           accepts.  The value of this flag gets added automatically to any
- *           HTTP packet sent to the server by SERVICE connector. However, in
+ *           HTTP packet sent to the server by SERVICE connector.  However, in
  *           order to communicate, a client still has to know and generate the
  *           data type accepted by the server, i.e. a protocol, which server
  *           understands.  This flag just helps ensure that all HTTP packets
- *           get proper content type, defined at service configuration.
- *           This tag is not allowed in DNS server specifications.
+ *           get proper content type, defined at service configuration.  This
+ *           tag is not allowed in the DNS type server specifications.
  *
  *    (V)Host name:
  *       H=hostname     (optional)
  *           specifies the host name to use when accessing the server.  Can be
  *           implicitly set by server configuration if a hostname (instead of
  *           an IP) is provided as the connection point (the host:port pair).
+ *           Value '' (two single quotes back-to-back) denotes no (v)host for
+ *           cases when it might have been captured from the connection point.
  *
  *    Local server:
  *       L={yes|no}     [default is set by SERV_SetLocalServerDefault()]
@@ -305,11 +311,11 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *    Private server:
  *       P=no           (default)
  *       P=yes
- *           specifies whether the server is private for the host.
- *           Private server cannot be used from anywhere else but
- *           this host.  When non-private (default), the server lacks
- *           'P=no' in verbal representation resulted from SERV_WriteInfo().
- *           This tag is not allowed in DNS server specifications.
+ *           specifies whether the server is private for the host.  Private
+ *           server cannot be used from anywhere else but this host.  When
+ *           non-private (default), the server lacks 'P=no' in verbal
+ *           representation resulted from SERV_WriteInfo().  This tag is not
+ *           allowed in the DNS type server specifications.
  *
  *    Reachability base rate:
  *       R=double       [0.0 = default]
@@ -319,28 +325,26 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *           Intermediate or higher values can be used to make the server less
  *           or more favorable for choosing by LBSM Daemon, as this coefficient
  *           is directly used as a multiplier in the load-average calculation
- *           for the entire family of servers for the same service.
- *           (If equal to 0.0 then defaulted by the LBSM Daemon to 1000.0.)
- *           Normally, LBSMD keeps track of server reachability, and
- *           dynamically switches this rate to be the maximal specified when
- *           the server is up, and to be zero when the server is down.
- *           Note that negative values are reserved for LBSMD private use.
- *           To specify a server as inactive in LBSMD configuration file, one
- *           can use any negative number (note that value "0" in the config
- *           file means "default" and gets replaced with the value 1000.0).
- *           Values less than 0.01 define standby server entries, which are
- *           used by the clients only if there are no working entries with a
- *           higher initial rate available.  Standby entries are not governed
- *           by the host load but are used up according to the values of rates
- *           in descending order (for same-rate entries, an entry is taken at
- *           random).
+ *           for the entire family of servers for the same service.  Normally,
+ *           LBSMD keeps track of server reachability, and dynamically changes
+ *           this rate to be the maximal specified when the server is up, and
+ *           to be zero when the server is down.  Note that negative values are
+ *           reserved for LBSMD private use.  To specify a server as inactive
+ *           in LBSMD configuration file, one can use any negative number (note
+ *           that value "0" in the config file means "default" and gets
+ *           replaced with the value 1000.0).  Values less than 0.01 define
+ *           standby server entries, which are used by the clients only if
+ *           there are no working entries with a higher initial rate available.
+ *           Standby entries are not governed by the host load but are used up
+ *           according to the values of rates in descending order (for
+ *           same-rate entries, an entry is taken at random).
  *
  *    Stateful server:
  *       S=no           (default)
  *       S=yes
  *           indicates whether a server is stateful, which only allows context
- *           bearing, dedicated socket (stateful) connections.
- *           This tag is not allowed for HTTP* and DNS servers.
+ *           bearing, dedicated socket (stateful) connections.  This tag is not
+ *           allowed for HTTP* and DNS servers.
  *
  *    Secure connection:
  *       $=no           (default)
@@ -381,10 +385,10 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  */
 
 
-/* Read full server info (including type) from string "str"
- * (e.g. composed by SERV_WriteInfo). Result can be later freed by 'free()'.
- * If host is not found in the server specification, info->host is
- * set to 0; if port is not found, type-specific default value is used.
+/* Read full server info (including type) from string "str" (e.g. composed by
+ * SERV_WriteInfo).  Result can be later freed by 'free()'.  If host is not
+ * provided in the server specification, info->host is set to 0;  if port is
+ * missing, a type-specific default value is used.
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_ReadInfo
 (const char* info_str
@@ -398,10 +402,10 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_CopyInfo
  );
 
 
-/* Return an actual size (in bytes) the server info occupies
- * (to be used for copying info structures in whole).
+/* Return an actual size (in bytes) the server info occupies (to be used for
+ * copying info structures in whole).
  */
-extern NCBI_XCONNECT_EXPORT size_t SERV_SizeOfInfo
+extern NCBI_XCONNECT_EXPORT size_t      SERV_SizeOfInfo
 (const SSERV_Info* info
  );
 

@@ -43,7 +43,7 @@
 #endif /*fabs*/
 #define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
 
-#define MAX_IP_ADDR_LEN  80  /*IPv6 compatible*/
+#define MAX_IP_ADDR_LEN  80  /*IPv6 friendly*/
 
 #define SERV_VHOSTABLE   (/*fSERV_Ncbid |*/ fSERV_Http | fSERV_Standalone)
 
@@ -140,7 +140,7 @@ extern const char* SERV_ReadType(const char* str,
 
 extern char* SERV_WriteInfo(const SSERV_Info* info)
 {
-    static const char* k_NY[] = { "no", "yes" };
+    static const char* k_YN[] = { "yes", "no" };
     char c_t[CONN_CONTENT_TYPE_LEN+1];
     const SSERV_Attr* attr;
     size_t reserve;
@@ -206,13 +206,13 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
             const char* vhost = (const char*) &info->u + size;
             s += sprintf(s, " H=%.*s", (int) info->vhost, vhost);
         }
-        s += sprintf(s, " L=%s", k_NY[info->site & fSERV_Local]);
+        s += sprintf(s, " L=%s", k_YN[!(info->site & fSERV_Local)]);
         if (info->type != fSERV_Dns  &&  (info->site & fSERV_Private))
             s += sprintf(s, " P=yes");
         s  = NCBI_simple_ftoa(strcpy(s," R=") + 3, info->rate,
                               fabs(info->rate) < 0.01 ? 3 : 2);
         if (!(info->type & fSERV_Http)  &&  info->type != fSERV_Dns)
-            s += sprintf(s, " S=%s", k_NY[info->mode & fSERV_Stateful]);
+            s += sprintf(s, " S=%s", k_YN[!(info->mode & fSERV_Stateful)]);
         if (info->type != fSERV_Dns  &&  (info->mode & fSERV_Secure))
             s += sprintf(s, " $=yes");
         if (info->time)
@@ -270,7 +270,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         }
         if (end) {
             int/*bool*/ ipv6 = *str == '['  &&  len > 2 ? 1/*T*/ : 0/*F*/;
-            const char* tmp = NcbiIPToAddr(&addr, str + ipv6, len - !!ipv6);
+            const char* tmp = NcbiIPToAddr(&addr, str + ipv6, len - ipv6);
             if (tmp  &&  (!ipv6  ||  (*tmp++ == ']'  &&  *tmp == ':'))) {
                 if (tmp != end  &&  *tmp != ':')
                     return 0;
@@ -583,14 +583,15 @@ extern SSERV_Info* SERV_ReadInfo(const char* str)
 SSERV_Info* SERV_CopyInfoEx(const SSERV_Info* orig,
                             const char*       name)
 {
-    size_t      size = SERV_SizeOfInfo(orig);
+    size_t      nlen, size = SERV_SizeOfInfo(orig);
     SSERV_Info* info;
     if (!size)
         return 0;
-    if ((info = (SSERV_Info*)malloc(size + (name ? strlen(name)+1 : 0))) != 0){
+    nlen = name ? strlen(name) + 1 : 0;
+    if ((info = (SSERV_Info*) malloc(size + nlen)) != 0){
         memcpy(info, orig, size);
         if (name) {
-            strcpy((char*) info + size, name);
+            memcpy((char*) info + size, name, nlen);
             if (orig->type == fSERV_Dns)
                 info->u.dns.name = 1/*true*/;
         } else if (orig->type == fSERV_Dns)
