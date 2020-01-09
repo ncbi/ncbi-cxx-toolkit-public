@@ -63,6 +63,53 @@ public:
     // format a FASTA style string
     ostream& AsFastaString(ostream& s) const;
 
+
+    //  Reset both chain and chain-id.  
+    void ResetChainIdentifiers(void);
+
+    //  Set both 'chain' and 'chain-id'.
+    void SetChainIdentifiers(TChain chainIdentifier);
+
+    //  Set 'chain' and 'chain-id' to the same value, when possible.
+    //  When chainIdentifier is not a single-character, 'chain' is reset.
+    //  If chainIdentifier is empty or purely whitespace, both 'chain' and 'chain-id' are reset.
+    void SetChainIdentifiers(const TChain_id& chainIdentifier);
+
+    
+    //  How to define the effective chain identifier when neither 'chain' nor 'chain-id' has been set.
+    enum EBothUnsetPriority {
+        eBothUnset_Chain,     //  a single space ('chain's default value)
+        eBothUnset_ChainId    //  empty string   ('chain-id' does not have a default)
+    };
+    
+    //  Return the effective chain identifier string defined as:
+    //
+    //    i) 'chain-id', when set;
+    //   ii) 'chain', when set;
+    //  iii) when neither are set, as per 'bothUnsetPriority'. 
+    //
+    //  NB:  When both 'chain' and 'chain-id' are set there is no guarantee they are consistent.
+    //  See also:  IsChainConflict
+    string GetEffectiveChain_id(EBothUnsetPriority bothUnsetPriority = eBothUnset_ChainId) const;
+
+    
+    //  "Legacy" encoding represents a lowercase character as the  corresponding uppercase character, doubled.
+    //  E.g., in GenPept pages chain = 65 = 'a' would be displayed as "AA".
+    enum EConflictMode {
+        eConflictMode_default,  //  conflicts detected by string comparisons
+        eConflictMode_legacy    //  ignore conflicts due purely to legacy encoding
+    };
+    
+    //  True iff both 'chain' and 'chain-id' are set and the values aren't equivalent according to the
+    //  specified conflict mode.
+    //  eConflictMode_default  :  chain = 65 = 'a' and chain-id = "AA" are not equivalent.
+    //  eConflictMode_legacy   :  chain = 65 = 'a' and chain-id = "AA" are considered equivalent.
+    //
+    //  Note: eConflictMode_legacy does not require that a lowercase chain value be encoded.
+    bool IsChainConflict(EConflictMode encodingMode = eConflictMode_default) const;
+
+
+
     // The *Chain_id_unified methods parallel the *Chain_id base class methods.  They allow the caller to
     // always treat the PDB chain identifier as a string, ignoring whether it has been populated in
     // the 'chain' and/or 'chain-id' data members (represented an integer or string, respectively).
@@ -80,22 +127,32 @@ public:
     //  unset field if only one of 'chain' and 'chain-id' have been set (as per the above conventions).
 
     // Check whether the chain or chain_id data member has been assigned a value.
+    NCBI_DEPRECATED
     bool IsSetChain_id_unified(void) const;
     // Check whether it is safe to call GetChain_id_unified method.
+    NCBI_DEPRECATED
     bool CanGetChain_id_unified(void) const;
     
+    NCBI_DEPRECATED
     void ResetChain_id_unified(void);
+    NCBI_DEPRECATED
     void SetDefaultChain_id_unified(void);  // Note:  only chain has a default in the ASN.1 spec
 
+    NCBI_DEPRECATED
     const TChain_id& GetChain_id_unified(void) const;
 
+    /// @deprecated
+    /// Use SetChainIdentifiers instead.
+    NCBI_DEPRECATED
     void SetChain_id_unified(const TChain_id& chain_id);
+
+    /// @deprecated
+    /// Use SetChainIdentifiers instead.
+    NCBI_DEPRECATED
     void SetChain_id_unified(TChain chain);
 
+    NCBI_DEPRECATED
     TChain_id& SetChain_id_unified(void);
-
-    //  True iff both 'chain' and 'chain-id' are set and the values aren't equivalent in the sense described above.
-    bool HasChainConflict(void) const;
 
 private:
     // Prohibit copy constructor & assignment operator

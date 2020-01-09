@@ -78,7 +78,6 @@ static string s_GetEffectiveChain_id(const CPDB_seq_id& id)
     return string();
 }
 
-
 int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
 {
     if ( int diff = PCase().Compare(GetMol(), psip2.GetMol()) ) {
@@ -90,7 +89,6 @@ int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
     }
     return PCase().Compare(s_GetEffectiveChain_id(*this), s_GetEffectiveChain_id(psip2));
 }
-
 
 // format a FASTA style string
 ostream& CPDB_seq_id::AsFastaString(ostream& s) const
@@ -113,6 +111,91 @@ ostream& CPDB_seq_id::AsFastaString(ostream& s) const
     } 
     return s << GetMol().Get() << '|' << chain; 
 }
+
+/*
+==================================================
+==================================================
+*/
+
+
+string CPDB_seq_id::GetEffectiveChain_id(EBothUnsetPriority bothUnsetPriority) const
+{
+    //  Use chain's default when neither fields are set
+    if (bothUnsetPriority == eBothUnset_Chain && !IsSetChain() && !IsSetChain_id()) {
+        return string(char(GetChain()), 1);
+    }
+    
+    return s_GetEffectiveChain_id(*this);
+}
+
+bool CPDB_seq_id::IsChainConflict(EConflictMode encodingMode) const
+{
+    if( IsSetChain() && IsSetChain_id() ) {
+
+        TChain chainChar = (char) GetChain();
+		string chain(1, chainChar);
+		if (encodingMode == eConflictMode_default || isupper(chainChar) || isdigit(chainChar) ) {
+            return (chain != GetChain_id());
+		}
+        else {
+
+            //  Historic special case: the vertical bar character
+            if (chainChar == '|' && GetChain_id() == "VB") {
+                return false;
+            }
+
+            if (chain == GetChain_id()) {      //  'a' == "a"
+                return false;
+            } else if (encodingMode == eConflictMode_legacy && islower(chainChar)) {   
+                string chainUpperDoubled = chain + chain;
+                NStr::ToUpper(chainUpperDoubled);
+                return (chainUpperDoubled != GetChain_id());  //  conflict unless 'a' == "AA"
+            }
+            else {
+                return true;  //  unexpected type of conflict
+            }
+		}
+	}
+    return false;
+}
+
+void CPDB_seq_id::ResetChainIdentifiers(void)
+{
+    ResetChain_id();
+    ResetChain();
+}
+
+void CPDB_seq_id::SetChainIdentifiers(const CPDB_seq_id::TChain_id& chainIdentifier)
+{
+    CTempString chain_id = NStr::TruncateSpaces_Unsafe(chainIdentifier, NStr::eTrunc_Both);
+
+    if (chainIdentifier.empty()) {  // sets both fields to default state
+        ResetChain_id_unified();
+    }
+    else if (chain_id.empty()) {    // chainIdentifier contained only whitespace
+        ResetChainIdentifiers();
+	}
+    else if (chain_id.size() == 1) {
+    	SetChain( static_cast<unsigned char>(chain_id[0]) );
+		SetChain_id(chain_id);
+	}
+	else {                         // multi-character chain code 
+        ResetChain();
+        SetChain_id(chain_id);
+	}
+}
+
+void CPDB_seq_id::SetChainIdentifiers(CPDB_seq_id::TChain chain)
+{
+    string s(1, (char) chain);
+    SetChainIdentifiers(s);
+}
+
+/*
+==================================================
+==================================================
+*/
+
 
 bool CPDB_seq_id::IsSetChain_id_unified(void) const
 {
@@ -144,7 +227,7 @@ void CPDB_seq_id::SetDefaultChain_id_unified(void)
 const CPDB_seq_id::TChain_id& CPDB_seq_id::GetChain_id_unified(void) const
 {
 
-    if(HasChainConflict()) {
+    if(IsChainConflict()) {
 	 	ERR_POST(Info << "Inconsistent chain identifiers for PDB Seq-id, mol=" << GetMol().Get() << ":  chain = " 
 	 	              << GetChain() << ", chain-id = " << GetChain_id() <<". Using chain-id.");
         const_cast<CPDB_seq_id*>(this)->ResetChain();
@@ -254,7 +337,7 @@ void CPDB_seq_id::SetChain_id_unified(CPDB_seq_id::TChain chain)
 
 CPDB_seq_id::TChain_id& CPDB_seq_id::SetChain_id_unified(void)
 {
-    if(HasChainConflict()) {
+    if(IsChainConflict()) {
 	 	ERR_POST(Info << "Inconsistent chain identifiers for PDB Seq-id, mol=" << SetMol().Get() << ":  chain = " 
 	 	              << string(1, GetChain()) << ", chain-id = " << GetChain_id() <<". Using chain-id.");
 		return SetChain_id();
@@ -287,34 +370,6 @@ CPDB_seq_id::TChain_id& CPDB_seq_id::SetChain_id_unified(void)
         //  After transition to chain_id:
         //      chain-id has no default and shouldn't be set to chain's default.
         //  return SetChain_id();
-	}
-}
-
-bool CPDB_seq_id::HasChainConflict(void) const
-{
-    if( IsSetChain() && IsSetChain_id() ) {
-		TChain chain = GetChain();
-		string chain_str(1, (char) chain);
-
-		if(chain_str == GetChain_id()) {
-			return false;
-		}
-
-        
-		string chain_strUpperDoubled = chain_str + chain_str;
-        NStr::ToUpper(chain_strUpperDoubled);
-		if (islower(chain) && (chain_strUpperDoubled == GetChain_id()) ) {
-			return false;  //  special case for historic lowercase encoding
-		}
-		else if(chain == '|' && GetChain_id() == "VB") {
-			return false;
-		}
-		else {
-			return true;
-		}
-	}
-	else {
-		return false;
 	}
 }
 
