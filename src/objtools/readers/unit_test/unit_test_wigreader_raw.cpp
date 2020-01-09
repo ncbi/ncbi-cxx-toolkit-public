@@ -91,7 +91,7 @@ public:
 
         CFile file(dirEntry);
         string name = file.GetName();
-        if (NStr::EndsWith(name, ".txt")  ||  NStr::StartsWith(name, ".")) {
+        if (NStr::EndsWith(name, ".doc")  ||  NStr::EndsWith(name, ".new")||  NStr::StartsWith(name, ".")) {
             return;
         }
 
@@ -188,9 +188,6 @@ void sUpdateAll(CDir& test_cases_dir) {
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
-        if (sName != "variable_step") {
-            //continue;
-        }
         sUpdateCase(test_cases_dir, sName);
     }
 }
@@ -209,8 +206,17 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CStreamLineReader lr(ifstr);
 
     CRawWiggleTrack rawData;
+    string resultName = CDirEntry::GetTmpName();
+    CNcbiOfstream ofstr(resultName.c_str());
     try {
-        reader.ReadTrackData(lr, rawData, &logger);
+        while (!lr.AtEOF()) {
+            if (reader.ReadTrackData(lr, rawData, &logger)) {
+                for (auto record: rawData.m_Records) {
+                    record.Dump(ofstr);
+                }
+                ofstr.flush();
+            }
+        }
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
@@ -218,13 +224,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         return;
     }
     ifstr.close();
-
-    string resultName = CDirEntry::GetTmpName();
-    CNcbiOfstream ofstr(resultName.c_str());
-    for (auto record: rawData.m_Records) {
-        record.Dump(ofstr);
-    }
-    ofstr.flush();
     ofstr.close();
 
     bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);
