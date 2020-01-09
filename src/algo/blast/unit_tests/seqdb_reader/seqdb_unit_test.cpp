@@ -865,10 +865,10 @@ BOOST_AUTO_TEST_CASE(TranslateIdents)
 
     CSeqDB nr("nr", CSeqDB::eProtein);
 
-    TGi gi_list[] = {
-        329847,   737263,   1708889,  2612955,  2982661,  3115393,
-        3318935,  3930059,  4868071,  6573653,  7530437,  9657431,
-        9951219,  12698889
+     const char * seqid_list[] = {
+    	"AAA03612.1",   "prf||1922246A",  "P51728.1",  "AAB84238.1",  "BAA25256.1",  "AAC15878.1",
+        "1A8U_A",  "AAC82254.1",  "AAD31141.1",  "1R24_A",  "AAF63214.1",  "AAF95963.1",
+        "WP_003095644.1",  "AAC59341.1"
     };
 
     Uint4 pig_list[] = {
@@ -883,47 +883,30 @@ BOOST_AUTO_TEST_CASE(TranslateIdents)
         394,      174
     };
 
-    size_t L_gi  = ArraySize(gi_list);
+    size_t L_seqid  = ArraySize(seqid_list);
     size_t L_pig = ArraySize(pig_list);
     size_t L_len = ArraySize(len_list);
 
     // In case of hand-editing
-    BOOST_REQUIRE((L_gi == L_len) && (L_len == L_pig));
+    BOOST_REQUIRE((L_seqid == L_len) && (L_len == L_pig));
 
-    for(size_t i = 0; i<L_gi; i++) {
-        TGi arr_gi = ZERO_GI, pig2gi = ZERO_GI, oid2gi = ZERO_GI;
-        int arr_pig(0), arr_len(0),
-            gi2pig(0), gi2oid(0), pig2oid(0),
-            oid2len(0), oid2pig(0),
-            pig2gi2oid(0);
+    for(size_t i = 0; i<L_seqid; i++) {
+        string arr_seqid(seqid_list[i]);
+        int arr_pig(pig_list[i]), arr_len(len_list[i]);
+        vector<int> seqid2oid;
+        int pig2oid = 0, oid2pig=0, oid2len =0;
+        nr.AccessionToOids(arr_seqid, seqid2oid);
 
-        bool b1,b2,b3,b4,b5,b6,b7;
+        BOOST_REQUIRE(nr.PigToOid(arr_pig, pig2oid));
 
-        arr_gi  = gi_list[i];
-        arr_pig = pig_list[i];
-        arr_len = len_list[i];
-
-        b1 = nr.GiToPig(arr_gi, gi2pig);
-        b2 = nr.GiToOid(arr_gi, gi2oid);
-
-        b3 = nr.PigToGi (arr_pig, pig2gi);
-        b4 = nr.GiToOid (pig2gi,  pig2gi2oid);
-        b5 = nr.PigToOid(arr_pig, pig2oid);
-
-        BOOST_CHECK_EQUAL(arr_pig, gi2pig);
-        BOOST_CHECK_EQUAL(pig2oid, gi2oid);
-        BOOST_CHECK_EQUAL(pig2oid, pig2gi2oid);
+        BOOST_CHECK_EQUAL(pig2oid, seqid2oid[0]);
         BOOST_REQUIRE(pig2oid != int(-1));
 
         oid2len = nr.GetSeqLength(pig2oid);
-        b6 = nr.OidToGi (pig2oid, oid2gi);
-        b7 = nr.OidToPig(pig2oid, oid2pig);
+        BOOST_REQUIRE(nr.OidToPig (pig2oid, oid2pig));
 
         BOOST_REQUIRE_EQUAL(arr_len, oid2len);
         BOOST_REQUIRE_EQUAL(arr_pig, oid2pig);
-        BOOST_REQUIRE_EQUAL(pig2gi,  oid2gi);
-
-        BOOST_REQUIRE(b1 && b2 && b3 && b4 && b5 && b6 && b7);
     }
 }
 
@@ -939,31 +922,17 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     const char ** str_list[NUM_ITEMS];
 
     const char * s0[] =
-        { "gi|32894304",   "gb|AAP90888.1", "gi|32894290",
-          "gb|AAP90875.1", "gi|32894276",   "gb|AAP90862.1",
-          "gi|32894262",   "gb|AAP90849.1", "gi|32894248",
-          "gb|AAP90836.1", "gi|32894234",   "gb|AAP90823.1",
-          "gi|32894220",   "gb|AAP90810.1", "gi|32894206",
-          "gb|AAP90797.1", "gi|32894192",   "gb|AAP90784.1",
-          "gi|32894178",   "gb|AAP90771.1", "gi|32894164",
-          "gb|AAP90758.1", "gi|32894150",   "gb|AAP90745.1",
-          "gi|32894136",   "gb|AAP90732.1", "gi|32894122",
-          "gb|AAP90719.1", "gi|32894108",   "gb|AAP90706.1",
-          "gi|32894066",   "gb|AAP90667.1", "gi|32894052",
-          "gb|AAP90654.1", "gi|32894038",   "gb|AAP90641.1",
-          "gi|32894024",   "gb|AAP90628.1", "gi|32894010",
-          "gb|AAP90615.1", 0 };
+        { "AAP90615.1", "AAP90628.1", "AAP90641.1", "AAP90654.1", "AAP90667.1", 0 };
     const char * s1[] =
-        { "gi|129295", "sp|P01013|OVAX_CHICK", 0 };
+        { "P01013", 0 };
     const char * s2[] =
-        { "gi|433552084", "pdb|1NPQ|A", "1NPQ", "1npq_A",
-          "gi|433552085",  "pdb|1NPQ|B", "1npq", 0 };
+        { "1NPQ", "1NPQ_A", "1NPQ_B", 0 };
     const char * s3[] =
         { "1NPQ", 0 };
     const char * s4[] =
-        { "gi|157831779", "pdb|1LCT|A", "1LCT", 0 };
+        { "1LCT_A", "1LCT", 0 };
     const char * s5[] =
-        { "gi|157878050", "gi|28948349", "pdb|1GWB|A", "pdb|1GWB|B", "1GWB", 0 };
+        { "1GWB_A", "1GWB_B", "1GWB", 0 };
 
     str_list[0] = s0;
     str_list[1] = s1;
@@ -971,34 +940,6 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     str_list[3] = s3;
     str_list[4] = s4;
     str_list[5] = s5;
-
-    // Each set of strings should produce a set of GIs.
-
-    TGi * gi_list[NUM_ITEMS];
-
-    TGi g0[] =
-        { 32894304, 32894290, 32894276, 32894262, 32894248,
-          32894234, 32894220, 32894206, 32894192, 32894178,
-          32894164, 32894150, 32894136, 32894122, 32894108,
-          32894066, 32894052, 32894038, 32894024, 32894010,
-          0 };
-    TGi g1[] =
-        { 129295, 0 };
-    TGi g2[] =
-        { 433552084, 433552085, 0 };
-    TGi g3[] =
-        { 433552084, 433552085, 0 };
-    TGi g4[] =
-        { 157831779, 0 };
-    TGi g5[] =
-        { 157878050, 28948349, 0 };
-
-    gi_list[0] = g0;
-    gi_list[1] = g1;
-    gi_list[2] = g2;
-    gi_list[3] = g3;
-    gi_list[4] = g4;
-    gi_list[5] = g5;
 
     Uint4 * len_list[NUM_ITEMS];
 
@@ -1016,32 +957,19 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     len_list[4] = l4;
     len_list[5] = l5;
 
-    size_t L_gi  = ArraySize(gi_list);
-    size_t L_str = ArraySize(gi_list);
+    size_t L_str = ArraySize(str_list);
     size_t L_len = ArraySize(len_list);
 
     // Verify lengths in case of typo.
 
-    BOOST_REQUIRE_EQUAL(L_gi, L_str);
-    BOOST_REQUIRE_EQUAL(L_gi, L_len);
-    BOOST_REQUIRE_EQUAL(L_gi, NUM_ITEMS);
+    BOOST_REQUIRE_EQUAL(NUM_ITEMS, L_str);
+    BOOST_REQUIRE_EQUAL(NUM_ITEMS, L_len);
 
-    for(Uint4 i = 0; i<L_gi; i++) {
+    for(Uint4 i = 0; i< NUM_ITEMS; i++) {
         set<int> str_oids;
-        set<int> gi_oids;
 
         set<int> exp_len;
         set<int> oid_len;
-
-        for(TGi * gip = gi_list[i]; *gip; gip++) {
-            int oid1(-1);
-            bool worked = nr.GiToOid(*gip, oid1);
-
-            BOOST_REQUIRE_MESSAGE(worked, "Failed to find GI " << *gip
-                                  << " in " << kDb);
-
-            gi_oids.insert(oid1);
-        }
 
         for(const char ** strp = str_list[i]; *strp; strp++) {
             vector<int> oids;
@@ -1055,22 +983,11 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
             }
         }
 
-        BOOST_REQUIRE_EQUAL(gi_oids.size(), str_oids.size());
-
-        set<int>::iterator gi_iter, str_iter;
+        set<int>::iterator str_iter;
 
         // Phase 1: compare oids
 
-        gi_iter  = gi_oids .begin();
         str_iter = str_oids.begin();
-
-        while(gi_iter != gi_oids.end()) {
-            BOOST_REQUIRE(str_iter != str_oids.end());
-            BOOST_REQUIRE_EQUAL(*gi_iter, *str_iter);
-
-            gi_iter++;
-            str_iter++;
-        }
 
         // Phase 2: compare lengths
 
@@ -1080,7 +997,7 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
             exp_len.insert(*llp++);
         }
 
-        ITERATE(set<int>, iter, gi_oids) {
+        ITERATE(set<int>, iter, str_oids) {
             oid_len.insert(nr.GetSeqLength(*iter));
         }
 
@@ -2228,10 +2145,7 @@ BOOST_AUTO_TEST_CASE(SeqidToOid)
     vector<int> oids1;
     vector<int> oids2;
 
-    BOOST_REQUIRE(db.GiToOid(129295, oid));
-    oids1.push_back(oid);
-
-    CSeq_id seqid("gi|129295");
+    CSeq_id seqid("P01013.1");
 
     BOOST_REQUIRE(db.SeqidToOid(seqid, oid));
     oids1.push_back(oid);
@@ -2384,32 +2298,11 @@ BOOST_AUTO_TEST_CASE(ExpertIdBounds)
 
     CSeqDBExpert nr("nr", CSeqDB::eProtein);
 
-    // Tests ID bound functions.
-    {
-        TGi low(ZERO_GI);
-        TGi high(ZERO_GI);
-        int count(0);
-
-        nr.GetGiBounds(& low, & high, & count);
-
-        BOOST_REQUIRE(low < high);
-        BOOST_REQUIRE(count);
-    }
 
     {
         int low(0), high(0), count(0);
 
         nr.GetPigBounds(& low, & high, & count);
-
-        BOOST_REQUIRE(low < high);
-        BOOST_REQUIRE(count);
-    }
-
-    {
-        string low, high;
-        int count(0);
-
-        nr.GetStringBounds(& low, & high, & count);
 
         BOOST_REQUIRE(low < high);
         BOOST_REQUIRE(count);
@@ -2421,8 +2314,20 @@ BOOST_AUTO_TEST_CASE(ExpertIdBoundsNoPig)
 
     bool caught_exception = false;
 
+    CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
+    // Tests ID bound functions.
+    {
+        TGi low(ZERO_GI);
+        TGi high(ZERO_GI);
+        int count(0);
+
+        nt.GetGiBounds(& low, & high, & count);
+
+        BOOST_REQUIRE(low < high);
+        BOOST_REQUIRE(count);
+    }
+
     try {
-        CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
 
         int low(0), high(0), count(0);
 
@@ -2447,7 +2352,7 @@ BOOST_AUTO_TEST_CASE(ResolveDbPath)
 
     TStringBoolVec paths;
     paths.push_back(TStringBool(true, "nt.00.nin"));
-    paths.push_back(TStringBool(true, "Trace/Zea_mays_EST.nal"));
+    paths.push_back(TStringBool(true, "Test/ITS_RefSeq_Fungi.nal"));
     paths.push_back(TStringBool(true, "taxdb.bti"));
     paths.push_back(TStringBool(true, "data/seqp.pin"));
     paths.push_back(TStringBool(false, "nr.00")); // missing extension
@@ -2461,7 +2366,6 @@ BOOST_AUTO_TEST_CASE(ResolveDbPath)
 
         if (iter->first) {
             int position = resolved.find(filename);
-
             // Should be found.
             BOOST_REQUIRE(found);
 
@@ -2868,8 +2772,7 @@ public:
                 m_GisOids.push_back(GI_FROM(int, atoi((*p) + 1)));
             } else {
                 string acc(*p);
-                string str_id = SeqDB_SimplifyAccession(acc);
-                if (str_id != "") m_SisOids.push_back(str_id);
+                m_SisOids.push_back(acc);
             }
         }
     }
@@ -2888,15 +2791,15 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
 {
 
     const char * str[] =
-        { "EAL14780.1",
-          "BAB38329.1",
+        { "BAR77217.1",
+          "1P85_G",
           "P66272",
           "WP_003405746.1",
           "NP_688815.1",
-          "BAB37428.1",
+          "MFY79158.1",
           "WP_002211004.1",
           "XP_645408.1",
-          "AAG07133.1",
+          "RMS51295.1",
           NULL };
 
     CRef<CSeqIdList> ids(new CSeqIdList(str));
@@ -2915,7 +2818,7 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
 
     for(int i = 0; i < ids->GetNumSis(); i++) {
         BOOST_CHECK_MESSAGE(ids->GetSiOid(i).oid != -1,
-                    "Seqid " << str[i] << " (index " << i << ") is unresolved");
+                    "Seqid " << ids->GetSiOid(i).si << " is unresolved");
     }
 
     // Check that the set of returned ids is constrained to the same
@@ -3479,22 +3382,21 @@ BOOST_AUTO_TEST_CASE(NegativeGiList)
     BOOST_REQUIRE_EQUAL(diff, 2);
 }
 
-BOOST_AUTO_TEST_CASE(NegativeListNr)
+BOOST_AUTO_TEST_CASE(NegativeListNt)
 {
 
     int gis[] = {
-        129296, 0
+        555, 0
     };
 
     CRef<CSeqDBNegativeList> neg(new CNegativeIdList(gis, false));
 
-    string db = "nr";
+    string db = "nt";
 
-    CSeqDB have_got(db, CSeqDB::eProtein);
-    CSeqDB have_not(db, CSeqDB::eProtein, &* neg);
+    CSeqDB have_got(db, CSeqDB::eNucleotide);
+    CSeqDB have_not(db, CSeqDB::eNucleotide, &* neg);
 
-    BOOST_REQUIRE_EQUAL(have_got.GetTotalLength(), have_not.GetTotalLength());
-    BOOST_REQUIRE_EQUAL(have_got.GetNumSeqs(),     have_not.GetNumSeqs());
+    BOOST_REQUIRE_EQUAL(have_got.GetNumSeqs(),     have_not.GetNumSeqs() + 1);
 
     int oid = -1;
     bool found = have_got.GiToOid(gis[0], oid);
@@ -3515,34 +3417,28 @@ BOOST_AUTO_TEST_CASE(NegativeListSwissprot)
 {
 
     // 1 id from the swissprot database.
+	vector<unsigned int> pigs;
+	pigs.push_back(281224);
 
-    int gis[] = {
-        81723792, 0
-    };
-
-    CRef<CSeqDBNegativeList> neg(new CNegativeIdList(gis, false));
+    CRef<CSeqDBNegativeList> neg(new CSeqDBNegativeList());
+    neg->SetPigList(pigs);
 
     string db = "swissprot";
+    const int len = 134;
 
     CSeqDB have_got(db, CSeqDB::eProtein);
     CSeqDB have_not(db, CSeqDB::eProtein, &* neg);
 
-    BOOST_REQUIRE_EQUAL(have_got.GetTotalLength(), have_not.GetTotalLength());
-    BOOST_REQUIRE_EQUAL(have_got.GetNumSeqs(),     have_not.GetNumSeqs());
+    BOOST_REQUIRE_EQUAL(have_got.GetTotalLength(), have_not.GetTotalLength() + len);
+    BOOST_REQUIRE_EQUAL(have_got.GetNumSeqs(),     have_not.GetNumSeqs() +1);
 
     int oid = -1;
-    bool found = have_got.GiToOid(gis[0], oid);
+    bool found = have_got.PigToOid(pigs[0], oid);
     BOOST_REQUIRE(found);
 
-    vector<TGi> gis_w, gis_wo;
-    have_got.GetGis(oid, gis_w);
-    have_not.GetGis(oid, gis_wo);
-
-    // Check that exactly 1 GI was removed.
-
-    int count_w = (int) gis_w.size();
-    int count_wo = (int) gis_wo.size();
-    BOOST_REQUIRE_EQUAL(count_w, (count_wo+1));
+    int pig_w;
+    have_got.OidToPig(oid, pig_w);
+    BOOST_REQUIRE_EQUAL((unsigned int)pig_w, pigs[0]);
 }
 
 BOOST_AUTO_TEST_CASE(HashToOid)
@@ -3817,7 +3713,7 @@ BOOST_AUTO_TEST_CASE(PdbIdWithChain)
 
     CSeqDB nr("nr", CSeqDB::eProtein);
 
-    string acc("1qcf a");
+    string acc("1QCF_A");
 
     vector<int> oids;
     nr.AccessionToOids(acc, oids);
@@ -4204,53 +4100,37 @@ BOOST_AUTO_TEST_CASE(FindGnomonIds)
 
 BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
 {
-    CTmpFile gilist_tmpfile;
+    CTmpFile seqidlist_tmpfile;
     CTmpFile alias_file_tmpfile;
-    string gilist_name = gilist_tmpfile.GetFileName();
+    string seqidlist_name = seqidlist_tmpfile.GetFileName();
     string blastdb_name = alias_file_tmpfile.GetFileName() + ".pal";
-    CFileDeleteAtExit::Add(gilist_name);
+    CFileDeleteAtExit::Add(seqidlist_name);
     CFileDeleteAtExit::Add(blastdb_name);
-    const TGi kGiIncluded = 129295;
+    const string kSeqIdIncluded = "P01013.1";
 
     {{
-        ofstream stream(gilist_name.c_str());
-        stream << kGiIncluded << endl;
+        ofstream stream(seqidlist_name.c_str());
+        stream << kSeqIdIncluded << endl;
         stream.close();
     }}
     {{
         ofstream stream(blastdb_name.c_str());
         stream << "TITLE test for 129295 JIRA SB-646" << endl;
         stream << "DBLIST nr" << endl;
-        stream << "GILIST " << gilist_name << endl;
+        stream << "SEQIDLIST " << seqidlist_name << endl;
         stream.close();
     }}
 
     CRef<CSeqDB> db(new CSeqDB(alias_file_tmpfile.GetFileName(),
                                CSeqDB::eProtein));
     vector<int> oids;
-    db->AccessionToOids(NStr::NumericToString(kGiIncluded), oids);
+    db->AccessionToOids(kSeqIdIncluded, oids);
     BOOST_REQUIRE_EQUAL(1U, oids.size());
 
-    TGi gi2search = 129;    // shouldn't be found
+    const string seqid2search = "WP_138200753.1";    // shouldn't be found
     oids.clear();
-    db->AccessionToOids(NStr::NumericToString(gi2search), oids);
+    db->AccessionToOids(seqid2search, oids);
     BOOST_CHECK_EQUAL(0U, oids.size());
-    /*
-    list< CRef< CSeq_id> > filtered_ids = db->GetSeqIDs(oids[0]);
-    BOOST_CHECK_EQUAL(0U, filtered_ids.size());
-    */
-
-    int oid = -1;
-    bool found = false;
-    found = db->GiToOid(kGiIncluded, oid);
-    BOOST_REQUIRE_EQUAL(true, found);
-
-    found = false;
-    oid = -1;
-    found = db->GiToOid(gi2search, oid);
-    BOOST_CHECK_EQUAL(true, found);
-    list< CRef< CSeq_id> > filtered_gis = db->GetSeqIDs(oid);
-    BOOST_CHECK_EQUAL(0U, filtered_gis.size());
 }
 
 BOOST_AUTO_TEST_CASE(TestSpaceInDbName)
