@@ -3,7 +3,7 @@ SRC = unit_test_feature_edit
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xobjutil test_boost $(OBJMGR_LIBS)
+LIB = xobjutil test_boost $(SOBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
