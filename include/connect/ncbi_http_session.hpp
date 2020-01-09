@@ -582,12 +582,12 @@ public:
     /// Supported request methods, proxy for EReqMethod.
     /// @sa EReqMethod
     enum ERequestMethod {
-        eHead       = eReqMethod_Head,
-        eGet        = eReqMethod_Get,
-        ePost       = eReqMethod_Post,
-        ePut        = eReqMethod_Put,
-		ePatch		= eReqMethod_Patch,
-        eDelete     = eReqMethod_Delete
+        eHead   = eReqMethod_Head,
+        eGet    = eReqMethod_Get,
+        ePost   = eReqMethod_Post,
+        ePut    = eReqMethod_Put,
+		ePatch  = eReqMethod_Patch,
+        eDelete = eReqMethod_Delete
     };
 
     /// Initialize request. This does not open connection to the server.

@@ -621,6 +621,7 @@ public:
     /// Get the entire HTTP header as received
     const string&     GetHTTPHeader(void) const { return m_StatusData.header; }
 
+    /// Set new URL to hit next
     void              SetURL(const string& url) { m_URL = url; }
 
 protected:
