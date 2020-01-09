@@ -107,6 +107,20 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 }
 
 
+static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
+{
+    int/*bool*/ done = 0/*false*/;
+    size_t n;
+    for (n = 0;  n < len;  ++n) {
+        if (str[n] == a) {
+            str[n]  = b;
+            done = 1/*true*/;
+        }
+    }
+    return done;
+}
+
+
 static const char* x_GetValue(const char* svc, size_t svclen,
                               const char* param, char* value,size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
@@ -125,7 +139,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         /* Service-specific inquiry */
         size_t      len = svclen + 1 + parlen;
         char        tmp[sizeof(buf)];
-        int/*bool*/ end;
+        int/*bool*/ end, tr;
 
         *generic = 0/*false*/;
         if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
@@ -139,6 +153,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 
         /* First, environment search for 'service_CONN_param' */
         s = (char*) memcpy(tmp, svc, svclen) + svclen;
+        tr = x_tr(tmp, '-', '_', svclen);
         *s++ = '_';
         if (!end) {
             memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
@@ -156,6 +171,8 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         CORE_UNLOCK;
 
         /* Next, search for 'CONN_param' in '[service]' registry section */
+        if (tr)
+            memcpy(buf, svc, svclen);  /* re-copy */
         buf[svclen++] = '\0';
         s = buf + svclen;
         rv = CORE_REG_GET(buf, s, value, value_size, end ? def_value : 0);
