@@ -8,9 +8,7 @@ REM #########################################################################
 
 set initial_dir=%CD%
 set script_name=%~nx0
-cd %0\..
-set script_dir=%CD%
-cd %initial_dir%
+set script_dir=%~dp0
 set tree_root=%initial_dir%
 
 set repository=https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++
