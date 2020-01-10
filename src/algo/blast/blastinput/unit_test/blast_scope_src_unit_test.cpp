@@ -170,7 +170,7 @@ KEKLRELVTVEDIFTPNYESRKGLLKTFQTWKKAVDRCLGFYH";
 
 BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData) 
 {
-    CSeq_id seqid(CSeq_id::e_Gi, 129295);
+    CSeq_id seqid("P01013.1");
 
     const char* seq =
 "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE
 
     const char* seq = "MKAIFVLKGWWRTS";
 
-    const string kNonStdDb("ecoli");
+    const string kNonStdDb("ecoli.aa");
     CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseBlastDbDataLoader);
     acf.SetProteinBlastDbDataLoader(kNonStdDb);
     SDataLoaderConfig dlconfig(true);
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE
 
     const char* seq = "MKAIFVLKGWWRTS";
 
-    const string kNonStdDb("ecoli");
+    const string kNonStdDb("ecoli.aa");
     CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseBlastDbDataLoader);
     acf.SetProteinBlastDbDataLoader("dummy db");
     SDataLoaderConfig dlconfig(kNonStdDb, true,
