@@ -110,12 +110,13 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 {
     int/*bool*/ done = 0/*false*/;
-    size_t n;
-    for (n = 0;  n < len;  ++n) {
-        if (str[n] == a) {
-            str[n]  = b;
+    char* end = str + len;
+    while (str < end) {
+        if (*str == a) {
+            *str  = b;
             done = 1/*true*/;
         }
+        ++str;
     }
     return done;
 }

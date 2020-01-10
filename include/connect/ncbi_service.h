@@ -378,8 +378,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short SERV_ServerPort
 
 /** Set a server type to use when a service mapper returns typeless entries for
  * the given service name (typed entries retain their types as received).
- * @note Current implementation of this call stores the association in the
- * process environment.
+ * @note Current implementation of this call tries to store the association in
+ * the application's registry as a transient setting.  Only if that has failed,
+ * then it proceeds to store the association in the application environment.
  * @note Implicit server type designation is managed the same way as any other
  * service-related parameters, using the REG_CONN_IMPLICIT_SERVER_TYPE key.
  * @sa

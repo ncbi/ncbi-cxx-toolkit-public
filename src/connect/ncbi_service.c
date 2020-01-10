@@ -74,14 +74,18 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
-static char* x_tr(char* str, char a, char b, size_t len)
+static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 {
-    size_t n;
-    for (n = 0;  n < len;  ++n) {
-        if (str[n] == a)
-            str[n]  = b;
+    int/*bool*/ done = 0/*false*/;
+    char* end = str + len;
+    while (str < end) {
+        if (*str == a) {
+            *str  = b;
+            done = 1/*true*/;
+        }
+        ++str;
     }
-    return str;
+    return done;
 }
 
 
@@ -110,7 +114,8 @@ static char* x_ServiceName(unsigned int depth,
     }
     if (!ismask  &&  !isfast) {
         char  tmp[sizeof(buf)];
-        char* s = x_tr((char*) memcpy(tmp, svc, len), '-', '_', len) + len;
+        int/*bool*/ tr = x_tr((char*) memcpy(tmp, svc, len), '-', '_', len);
+        char* s = tmp + len;
         *s++ = '_';
         memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
         len += 1 + sizeof(CONN_SERVICE_NAME);
@@ -120,6 +125,8 @@ static char* x_ServiceName(unsigned int depth,
             ||  !*s) {
             /* Looking for "CONN_SERVICE_NAME" in registry section "[svc]" */
             len -= sizeof(CONN_SERVICE_NAME);
+            if (tr)
+                memcpy(buf, svc, len);  /* re-copy */
             buf[len++] = '\0';
             if (!CORE_REG_GET(buf, buf + len, tmp, sizeof(tmp), 0))
                 *tmp = '\0';
@@ -1094,29 +1101,37 @@ extern void SERV_SetImplicitServerType(const char* service, ESERV_Type type)
 {
     char* buf, *svc = SERV_ServiceName(service);
     const char* typ = SERV_TypeStr(type);
-    size_t len;
+    size_t key, val;
     if (!svc)
         return;
-    len = strlen(svc);
-    if (!(buf = (char*) realloc(svc, len + sizeof(DEF_CONN_REG_SECTION)
+    key = strlen(svc);
+    if (!(buf = (char*) realloc(svc, key + sizeof(DEF_CONN_REG_SECTION)
                                 + sizeof(REG_CONN_IMPLICIT_SERVER_TYPE)
-                                + strlen(typ) + 2/*='\0*/))) {
+                                + 2/*='\0*/) + strlen(typ))) {
         free(svc);
         return;
     }
-    memcpy(x_tr(buf, '-','_', len) + len,
-           "_" DEF_CONN_REG_SECTION
-           "_" REG_CONN_IMPLICIT_SERVER_TYPE,
+    val = ++key;
+    memcpy(buf + key,
+                  DEF_CONN_REG_SECTION
+           "_"    REG_CONN_IMPLICIT_SERVER_TYPE,
            sizeof(DEF_CONN_REG_SECTION) +
-           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE));
-    len += sizeof(DEF_CONN_REG_SECTION) +
-           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE);
-    buf[len++] = '=';
-    strcpy(buf + len, typ);
+           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE) - 1);
+    val += sizeof(DEF_CONN_REG_SECTION) +
+           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE) - 1;
+    buf[val++] = '\0';
+    strcpy(buf + val, typ);
+    if (CORE_REG_SET(buf, buf + key, buf + val, eREG_Transient)) {
+        free(buf);
+        return;
+    }
+    buf[--val] = '=';
+    buf[--key] = '_';
+    x_tr(buf, '-', '_', key);
     CORE_LOCK_WRITE;
-    len = !putenv(buf);
+    key = !putenv(buf);
     CORE_UNLOCK;
-    if (!len)
+    if (!key)
         free(buf);
 }
 
