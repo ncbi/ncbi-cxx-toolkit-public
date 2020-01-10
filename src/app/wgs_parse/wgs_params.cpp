@@ -741,7 +741,7 @@ static EAccInvalid IsValidAccession(const string& accession)
     EAccInvalid ret = (num_of_digits == ACC_NUM_OF_DIGITS && non_zero) ? eValidAcc : eInvalidAcc;
 
     if (ret == eValidAcc && num_of_letters == NEW_ACC_NUM_OF_LETTERS) {
-        if (accession[0] < 'A' || accession[0] > 'D') {
+        if (accession[0] < 'A' || accession[0] > 'J') {
             ret = eInvalidNewAccFirstChar;
         }
     }
