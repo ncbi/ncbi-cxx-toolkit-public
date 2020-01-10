@@ -4803,7 +4803,7 @@ NCSM:Fishes	s	North Carolina Museum of Natural Sciences, Fish collection
 NCSM:Herp	s	North Carolina Museum of Natural Sciences, Herpetology Collection	
 NCSM:Mammals	s	North Carolina Museum of Natural Sciences, Mammal collection	
 NCSU	s	North Carolina State University Collections			
-NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC&spec;&collection=nctc	
+NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC&20spec;&collection=nctc	
 NCU	s	University of North Carolina, North Carolina Botanical Garden			
 NCUT	s	Nicolaus Copernicus University			
 NCWRF	c	National Collection of Wood Rotting Fungi			
