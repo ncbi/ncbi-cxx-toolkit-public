@@ -59,8 +59,10 @@
 
 
 #define SERV_SERVICE_NAME_RECURSION  10
-#define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
-
+#define CONN_SERVICE_NAME            DEF_CONN_REG_SECTION               \
+                                     "_" REG_CONN_SERVICE_NAME
+#define CONN_IMPLICIT_SERVER_TYPE    DEF_CONN_REG_SECTION               \
+                                     "_" REG_CONN_IMPLICIT_SERVER_TYPE
 
 static ESwitch s_Fast = eOff;
 
@@ -1096,42 +1098,35 @@ extern unsigned short SERV_ServerPort(const char*  name,
 }
 
 
-/* NOTE that putenv() leaks memory if the environment is later replaced. */
 extern void SERV_SetImplicitServerType(const char* service, ESERV_Type type)
 {
     char* buf, *svc = SERV_ServiceName(service);
     const char* typ = SERV_TypeStr(type);
-    size_t key, val;
+    size_t len;
     if (!svc)
         return;
-    key = strlen(svc);
-    if (!(buf = (char*) realloc(svc, key + sizeof(DEF_CONN_REG_SECTION)
-                                + sizeof(REG_CONN_IMPLICIT_SERVER_TYPE)
-                                + 2/*='\0*/) + strlen(typ))) {
+    if (CORE_REG_SET(svc, CONN_IMPLICIT_SERVER_TYPE, typ, eREG_Transient)) {
         free(svc);
         return;
     }
-    val = ++key;
-    memcpy(buf + key,
-                  DEF_CONN_REG_SECTION
-           "_"    REG_CONN_IMPLICIT_SERVER_TYPE,
-           sizeof(DEF_CONN_REG_SECTION) +
-           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE) - 1);
-    val += sizeof(DEF_CONN_REG_SECTION) +
-           sizeof(REG_CONN_IMPLICIT_SERVER_TYPE) - 1;
-    buf[val++] = '\0';
-    strcpy(buf + val, typ);
-    if (CORE_REG_SET(buf, buf + key, buf + val, eREG_Transient)) {
-        free(buf);
+    len = strlen(svc);
+    if (!(buf = (char*) realloc(svc, len + sizeof(CONN_IMPLICIT_SERVER_TYPE)
+                                + 2/*"=\0"*/) + strlen(typ))) {
+        free(svc);
         return;
     }
-    buf[--val] = '=';
-    buf[--key] = '_';
-    x_tr(buf, '-', '_', key);
+    x_tr(buf, '-', '_', len);
+    memcpy(buf + len,
+           "_"    CONN_IMPLICIT_SERVER_TYPE,
+           sizeof(CONN_IMPLICIT_SERVER_TYPE));
+    len += sizeof(CONN_IMPLICIT_SERVER_TYPE);
+    buf[len++] = '=';
+    strcpy(buf + len, typ);
     CORE_LOCK_WRITE;
-    key = !putenv(buf);
+    /* NOTE that putenv() leaks memory if the environment is later replaced */
+    len = !putenv(buf);
     CORE_UNLOCK;
-    if (!key)
+    if (!len)
         free(buf);
 }
 
