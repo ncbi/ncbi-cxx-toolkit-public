@@ -304,6 +304,7 @@ private:
     unsigned long                       m_MaxStatValue;
     unsigned long                       m_NStatBins;
     string                              m_StatScaleType;
+    unsigned long                       m_TickSpan;
 
     CTime                               m_StartTime;
     string                              m_RootKeyspace;

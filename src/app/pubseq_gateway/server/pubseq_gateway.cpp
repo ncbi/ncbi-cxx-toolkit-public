@@ -118,6 +118,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_MaxStatValue(kMaxStatValue),
     m_NStatBins(kNStatBins),
     m_StatScaleType(kStatScaleType),
+    m_TickSpan(kTickSpan),
     m_StartTime(GetFastLocalTime()),
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
@@ -226,6 +227,7 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_MaxStatValue = registry.GetInt("STATISTICS", "max", kMaxStatValue);
     m_NStatBins = registry.GetInt("STATISTICS", "n_bins", kNStatBins);
     m_StatScaleType = registry.GetString("STATISTICS", "type", kStatScaleType);
+    m_TickSpan = registry.GetInt("STATISTICS", "tick_span", kTickSpan);
 
     // It throws an exception in case of inability to start
     x_ValidateArgs();
@@ -531,6 +533,12 @@ int CPubseqGatewayApp::Run(void)
                 {
                     // This lambda is called once per second.
                     // Earlier implementations printed counters on stdout.
+
+                    static unsigned long   tick_no = 0;
+                    if (++tick_no % m_TickSpan == 0) {
+                        tick_no = 0;
+                        this->m_Timing->Rotate();
+                    }
                 });
     } catch (const CException &  exc) {
         ERR_POST(Critical << exc);
@@ -765,6 +773,15 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             m_NStatBins = kNStatBins;
             m_StatScaleType = kStatScaleType;
         }
+    }
+
+    if (m_TickSpan <= 0) {
+        PSG_WARNING("Invalid [STATISTICS]/tick_span value (" +
+                    to_string(m_TickSpan) + "). "
+                    "The tick span must be greater than 0. The tick span is "
+                    "reset to the default value (" +
+                    to_string(kTickSpan) + ").");
+        m_TickSpan = kTickSpan;
     }
 }
 

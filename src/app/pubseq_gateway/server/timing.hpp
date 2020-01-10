@@ -37,6 +37,7 @@
 
 #include <chrono>
 #include <vector>
+#include <mutex>
 using namespace std;
 
 #include <util/data_histogram.hpp>
@@ -48,6 +49,7 @@ const unsigned long     kMinStatValue = 1;
 const unsigned long     kMaxStatValue = 16 * 1024 * 1024;
 const unsigned long     kNStatBins = 24;
 const string            kStatScaleType = "log";
+const unsigned long     kTickSpan = 10;
 
 
 enum EPSGOperationStatus {
@@ -85,7 +87,12 @@ enum EPSGOperation {
 // - even if something is lost it is not a big deal
 // - the losses are going to be miserable
 // - atomic counters may introduce some delays
-typedef CHistogram<uint64_t, uint64_t, uint64_t>    TPSGTiming;
+typedef CHistogram<uint64_t, uint64_t, uint64_t>            TOnePSGTiming;
+typedef CHistogramTimeSeries<uint64_t, uint64_t, uint64_t>  TPSGTiming;
+
+
+// Returns a serialized dictionary
+CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram);
 
 
 // The base class for all the collected statistics.
@@ -110,8 +117,19 @@ class CPSGTimingBase
                 m_PSGTiming->Reset();
         }
 
+        void Rotate(void)
+        {
+            if (m_PSGTiming)
+                m_PSGTiming->Rotate();
+        }
+
         // Generic serialization to json
-        CJsonNode Serialize(void) const;
+        virtual CJsonNode SerializeCombined(int  most_ancient_time,
+                                            int  most_recent_time,
+                                            unsigned long  tick_span) const;
+        virtual CJsonNode SerializeSeries(int  most_ancient_time,
+                                          int  most_recent_time,
+                                          unsigned long  tick_span) const;
 
     protected:
         unique_ptr<TPSGTiming>      m_PSGTiming;
@@ -126,7 +144,7 @@ class CLmdbCacheTiming : public CPSGTimingBase
         CLmdbCacheTiming(unsigned long  min_stat_value,
                          unsigned long  max_stat_value,
                          unsigned long  n_bins,
-                         TPSGTiming::EScaleType  stat_type,
+                         TOnePSGTiming::EScaleType  stat_type,
                          bool &  reset_to_default);
 };
 
@@ -138,7 +156,7 @@ class CLmdbResolutionTiming : public CPSGTimingBase
         CLmdbResolutionTiming(unsigned long  min_stat_value,
                               unsigned long  max_stat_value,
                               unsigned long  n_bins,
-                              TPSGTiming::EScaleType  stat_type,
+                              TOnePSGTiming::EScaleType  stat_type,
                               bool &  reset_to_default);
 };
 
@@ -152,7 +170,7 @@ class CCassTiming : public CPSGTimingBase
         CCassTiming(unsigned long  min_stat_value,
                     unsigned long  max_stat_value,
                     unsigned long  n_bins,
-                    TPSGTiming::EScaleType  stat_type,
+                    TOnePSGTiming::EScaleType  stat_type,
                     bool &  reset_to_default);
 };
 
@@ -164,7 +182,7 @@ class CCassResolutionTiming : public CPSGTimingBase
         CCassResolutionTiming(unsigned long  min_stat_value,
                               unsigned long  max_stat_value,
                               unsigned long  n_bins,
-                              TPSGTiming::EScaleType  stat_type,
+                              TOnePSGTiming::EScaleType  stat_type,
                               bool &  reset_to_default);
 };
 
@@ -178,12 +196,23 @@ class CBlobRetrieveTiming : public CPSGTimingBase
                             unsigned long  min_stat_value,
                             unsigned long  max_stat_value,
                             unsigned long  n_bins,
-                            TPSGTiming::EScaleType  stat_type,
+                            TOnePSGTiming::EScaleType  stat_type,
                             bool &  reset_to_default);
         ~CBlobRetrieveTiming() {}
 
     public:
-        CJsonNode Serialize(void) const;
+        virtual CJsonNode SerializeCombined(int  most_ancient_time,
+                                            int  most_recent_time,
+                                            unsigned long  tick_span) const;
+        virtual CJsonNode SerializeSeries(int  most_ancient_time,
+                                          int  most_recent_time,
+                                          unsigned long  tick_span) const;
+
+        unsigned long GetMinBlobSize(void) const
+        { return m_MinBlobSize; }
+
+        unsigned long GetMaxBlobSize(void) const
+        { return m_MaxBlobSize; }
 
     private:
         unsigned long      m_MinBlobSize;
@@ -198,7 +227,7 @@ class CHugeBlobRetrieveTiming : public CPSGTimingBase
         CHugeBlobRetrieveTiming(unsigned long  min_stat_value,
                                 unsigned long  max_stat_value,
                                 unsigned long  n_bins,
-                                TPSGTiming::EScaleType  stat_type,
+                                TOnePSGTiming::EScaleType  stat_type,
                                 bool &  reset_to_default);
 };
 
@@ -210,7 +239,7 @@ class CNotFoundBlobRetrieveTiming : public CPSGTimingBase
         CNotFoundBlobRetrieveTiming(unsigned long  min_stat_value,
                                     unsigned long  max_stat_value,
                                     unsigned long  n_bins,
-                                    TPSGTiming::EScaleType  stat_type,
+                                    TOnePSGTiming::EScaleType  stat_type,
                                     bool &  reset_to_default);
 };
 
@@ -222,7 +251,7 @@ class CNARetrieveTiming : public CPSGTimingBase
         CNARetrieveTiming(unsigned long  min_stat_value,
                           unsigned long  max_stat_value,
                           unsigned long  n_bins,
-                          TPSGTiming::EScaleType  stat_type,
+                          TOnePSGTiming::EScaleType  stat_type,
                           bool &  reset_to_default);
 };
 
@@ -234,7 +263,7 @@ class CSplitHistoryRetrieveTiming : public CPSGTimingBase
         CSplitHistoryRetrieveTiming(unsigned long  min_stat_value,
                                     unsigned long  max_stat_value,
                                     unsigned long  n_bins,
-                                    TPSGTiming::EScaleType  stat_type,
+                                    TOnePSGTiming::EScaleType  stat_type,
                                     bool &  reset_to_default);
 };
 
@@ -246,7 +275,7 @@ class CResolutionTiming : public CPSGTimingBase
         CResolutionTiming(unsigned long  min_stat_value,
                           unsigned long  max_stat_value,
                           unsigned long  n_bins,
-                          TPSGTiming::EScaleType  stat_type,
+                          TOnePSGTiming::EScaleType  stat_type,
                           bool &  reset_to_default);
 };
 
@@ -270,14 +299,18 @@ class COperationTiming
                       size_t  blob_size=0);
 
     public:
+        void Rotate(void);
         void Reset(void);
-        CJsonNode Serialize(void) const;
+        CJsonNode Serialize(int  most_ancient_time,
+                            int  most_recent_time,
+                            const vector<CTempString> &  histogram_names,
+                            unsigned long  tick_span) const;
 
     private:
         bool x_SetupBlobSizeBins(unsigned long  min_stat_value,
                                  unsigned long  max_stat_value,
                                  unsigned long  n_bins,
-                                 TPSGTiming::EScaleType  stat_type,
+                                 TOnePSGTiming::EScaleType  stat_type,
                                  unsigned long  small_blob_size);
         ssize_t x_GetBlobRetrievalBinIndex(unsigned long  blob_size);
 
@@ -311,6 +344,11 @@ class COperationTiming
 
         // 1, 2, 3, 4, 5+ trips to cassandra
         vector<unique_ptr<CResolutionTiming>>               m_ResolutionFoundCassandraTiming;
+
+
+        map<string, CPSGTimingBase *>                       m_NamesMap;
+
+        mutable mutex                                       m_Lock; // rotate-serialize lock
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */

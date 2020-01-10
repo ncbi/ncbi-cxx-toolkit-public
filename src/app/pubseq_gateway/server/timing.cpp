@@ -34,11 +34,13 @@
 #include "timing.hpp"
 #include "pubseq_gateway_utils.hpp"
 
+static string           kTimeRangeStart("TimeRangeStart");
+static string           kTimeRangeEnd("TimeRangeEnd");
 
-const unsigned long   kMaxBlobSize = 1024L*1024L*1024L*8L;   // 8 GB
+const unsigned long     kMaxBlobSize = 1024L*1024L*1024L*8L;   // 8 GB
 
 
-CJsonNode CPSGTimingBase::Serialize(void) const
+CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram)
 {
     static string   kBins("Bins");
     static string   kStart("Start");
@@ -52,15 +54,15 @@ CJsonNode CPSGTimingBase::Serialize(void) const
     CJsonNode       ret(CJsonNode::NewObjectNode());
     CJsonNode       bins(CJsonNode::NewArrayNode());
 
-    size_t          bin_count =  m_PSGTiming->GetNumberOfBins();
+    size_t          bin_count =  histogram.GetNumberOfBins();
     size_t          last_bin_index = bin_count - 1;
-    auto            starts = m_PSGTiming->GetBinStarts();
-    auto            counters = m_PSGTiming->GetBinCounters();
+    auto            starts = histogram.GetBinStarts();
+    auto            counters = histogram.GetBinCounters();
     for (size_t  k = 0; k < bin_count; ++k) {
         CJsonNode   bin(CJsonNode::NewObjectNode());
         bin.SetInteger(kStart, starts[k]);
         if (k >= last_bin_index)
-            bin.SetInteger(kEnd, m_PSGTiming->GetMax());
+            bin.SetInteger(kEnd, histogram.GetMax());
         else
             bin.SetInteger(kEnd, starts[k+1] - 1);
         bin.SetInteger(kCount, counters[k]);
@@ -70,13 +72,116 @@ CJsonNode CPSGTimingBase::Serialize(void) const
     ret.SetByKey(kBins, bins);
 
     // GetCount() does not include anomalies!
-    auto    lower_anomalies = m_PSGTiming->GetLowerAnomalyCount();
-    auto    upper_anomalies = m_PSGTiming->GetUpperAnomalyCount();
+    auto    lower_anomalies = histogram.GetLowerAnomalyCount();
+    auto    upper_anomalies = histogram.GetUpperAnomalyCount();
     ret.SetInteger(kLowerAnomaly, lower_anomalies);
     ret.SetInteger(kUpperAnomaly, upper_anomalies);
-    ret.SetInteger(kTotalCount, m_PSGTiming->GetCount() +
+    ret.SetInteger(kTotalCount, histogram.GetCount() +
                                 lower_anomalies + upper_anomalies);
-    ret.SetInteger(kValueSum, m_PSGTiming->GetSum());
+    ret.SetInteger(kValueSum, histogram.GetSum());
+    return ret;
+}
+
+
+
+CJsonNode CPSGTimingBase::SerializeSeries(int  most_ancient_time,
+                                          int  most_recent_time,
+                                          unsigned long  tick_span) const
+{
+    CJsonNode                   ret(CJsonNode::NewArrayNode());
+    TPSGTiming::TTimeBins       bins = m_PSGTiming->GetHistograms();
+
+    int64_t         histogram_start_time = 0;
+
+    for (const auto &  bin : bins) {
+        int64_t     histogram_cover = tick_span * bin.n_ticks;
+        int64_t     histogram_end_time = histogram_start_time + histogram_cover - 1;
+
+        if (most_recent_time >= 0) {
+            // Most recent time defined
+            if (most_recent_time > histogram_end_time) {
+                // It is out of the requested range
+                histogram_start_time = histogram_end_time + 1;
+                continue;
+            }
+        }
+
+        if (most_ancient_time >= 0) {
+            // Most ancient time defined
+            if (most_ancient_time < histogram_start_time) {
+                // It is out of the requested range
+                histogram_start_time = histogram_end_time + 1;
+                continue;
+            }
+        }
+
+        // Histogram is within the range. Take the counters.
+        CJsonNode   slice = SerializeHistogram(bin.histogram);
+        slice.SetInteger(kTimeRangeStart, histogram_start_time);
+        slice.SetInteger(kTimeRangeEnd, histogram_end_time);
+        ret.Append(slice);
+
+        histogram_start_time = histogram_end_time + 1;
+    }
+
+    return ret;
+}
+
+
+CJsonNode CPSGTimingBase::SerializeCombined(int  most_ancient_time,
+                                            int  most_recent_time,
+                                            unsigned long  tick_span) const
+{
+    TPSGTiming::TTimeBins       bins = m_PSGTiming->GetHistograms();
+    TOnePSGTiming               combined_histogram = bins.front().
+                                    histogram.Clone(TOnePSGTiming::eCloneStructureOnly);
+
+    int64_t         histogram_start_time = 0;
+    int64_t         actual_recent_time = -1;    // undefined so far
+    int64_t         actual_ancient_time = -1;   // undefined so far
+
+    for (const auto &  bin : bins) {
+        int64_t     histogram_cover = tick_span * bin.n_ticks;
+        int64_t     histogram_end_time = histogram_start_time + histogram_cover - 1;
+
+        if (most_recent_time >= 0) {
+            // Most recent time defined
+            if (most_recent_time > histogram_end_time) {
+                // It is out of the requested range
+                histogram_start_time = histogram_end_time + 1;
+                continue;
+            }
+        }
+
+        if (most_ancient_time >= 0) {
+            // Most ancient time defined
+            if (most_ancient_time < histogram_start_time) {
+                // It is out of the requested range
+                histogram_start_time = histogram_end_time + 1;
+                continue;
+            }
+        }
+
+        // Histogram is within the range. Take the counters.
+        combined_histogram.AddCountersFrom(bin.histogram);
+
+        // Update actual covered range if needed
+        if (actual_recent_time == -1)
+            actual_recent_time = histogram_start_time;
+        actual_ancient_time = histogram_end_time;
+
+        histogram_start_time = histogram_end_time + 1;
+    }
+
+    // The histograms were combined. Serialize them.
+    if (actual_recent_time == -1 && actual_ancient_time == -1) {
+        // Nothing fit the selected time range
+        return CJsonNode::NewObjectNode();
+    }
+
+    CJsonNode   ret = SerializeHistogram(combined_histogram);
+    ret.SetInteger(kTimeRangeStart, actual_recent_time);
+    ret.SetInteger(kTimeRangeEnd, actual_ancient_time);
     return ret;
 }
 
@@ -84,20 +189,22 @@ CJsonNode CPSGTimingBase::Serialize(void) const
 CLmdbCacheTiming::CLmdbCacheTiming(unsigned long  min_stat_value,
                                    unsigned long  max_stat_value,
                                    unsigned long  n_bins,
-                                   TPSGTiming::EScaleType  stat_type,
+                                   TOnePSGTiming::EScaleType  stat_type,
                                    bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -105,20 +212,22 @@ CLmdbCacheTiming::CLmdbCacheTiming(unsigned long  min_stat_value,
 CLmdbResolutionTiming::CLmdbResolutionTiming(unsigned long  min_stat_value,
                                              unsigned long  max_stat_value,
                                              unsigned long  n_bins,
-                                             TPSGTiming::EScaleType  stat_type,
+                                             TOnePSGTiming::EScaleType  stat_type,
                                              bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -126,20 +235,22 @@ CLmdbResolutionTiming::CLmdbResolutionTiming(unsigned long  min_stat_value,
 CCassTiming::CCassTiming(unsigned long  min_stat_value,
                          unsigned long  max_stat_value,
                          unsigned long  n_bins,
-                         TPSGTiming::EScaleType  stat_type,
+                         TOnePSGTiming::EScaleType  stat_type,
                          bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -147,20 +258,22 @@ CCassTiming::CCassTiming(unsigned long  min_stat_value,
 CCassResolutionTiming::CCassResolutionTiming(unsigned long  min_stat_value,
                                              unsigned long  max_stat_value,
                                              unsigned long  n_bins,
-                                             TPSGTiming::EScaleType  stat_type,
+                                             TOnePSGTiming::EScaleType  stat_type,
                                              bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -170,34 +283,56 @@ CBlobRetrieveTiming::CBlobRetrieveTiming(size_t  min_blob_size,
                                          unsigned long  min_stat_value,
                                          unsigned long  max_stat_value,
                                          unsigned long  n_bins,
-                                         TPSGTiming::EScaleType  stat_type,
+                                         TOnePSGTiming::EScaleType  stat_type,
                                          bool &  reset_to_default) :
     m_MinBlobSize(min_blob_size), m_MaxBlobSize(max_blob_size)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
 
-CJsonNode CBlobRetrieveTiming::Serialize(void) const
-{
-    static string   kMinBlobSize("MinBlobSize");
-    static string   kMaxBlobSize("MaxBlobSize");
+static string   kStartBlobSize("MinBlobSize");
+static string   kEndBlobSize("MaxBlobSize");
 
-    CJsonNode       timing = CPSGTimingBase::Serialize();
-    timing.SetInteger(kMinBlobSize, m_MinBlobSize);
-    timing.SetInteger(kMaxBlobSize, m_MaxBlobSize);
+CJsonNode CBlobRetrieveTiming::SerializeCombined(int  most_ancient_time,
+                                                 int  most_recent_time,
+                                                 unsigned long  tick_span) const
+{
+    CJsonNode       timing = CPSGTimingBase::SerializeCombined(most_ancient_time,
+                                                               most_recent_time,
+                                                               tick_span);
+    timing.SetInteger(kStartBlobSize, m_MinBlobSize);
+    timing.SetInteger(kEndBlobSize, m_MaxBlobSize);
     return timing;
+}
+
+
+CJsonNode CBlobRetrieveTiming::SerializeSeries(int  most_ancient_time,
+                                               int  most_recent_time,
+                                               unsigned long  tick_span) const
+{
+    static string   kBins("Bins");
+
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+    ret.SetByKey(kBins, CPSGTimingBase::SerializeSeries(most_ancient_time,
+                                                        most_recent_time,
+                                                        tick_span));
+    ret.SetInteger(kStartBlobSize, m_MinBlobSize);
+    ret.SetInteger(kEndBlobSize, m_MaxBlobSize);
+    return ret;
 }
 
 
@@ -205,20 +340,22 @@ CHugeBlobRetrieveTiming::CHugeBlobRetrieveTiming(
         unsigned long  min_stat_value,
         unsigned long  max_stat_value,
         unsigned long  n_bins,
-        TPSGTiming::EScaleType  stat_type,
+        TOnePSGTiming::EScaleType  stat_type,
         bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -227,20 +364,22 @@ CNotFoundBlobRetrieveTiming::CNotFoundBlobRetrieveTiming(
         unsigned long  min_stat_value,
         unsigned long  max_stat_value,
         unsigned long  n_bins,
-        TPSGTiming::EScaleType  stat_type,
+        TOnePSGTiming::EScaleType  stat_type,
         bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -248,20 +387,22 @@ CNotFoundBlobRetrieveTiming::CNotFoundBlobRetrieveTiming(
 CNARetrieveTiming::CNARetrieveTiming(unsigned long  min_stat_value,
                                      unsigned long  max_stat_value,
                                      unsigned long  n_bins,
-                                     TPSGTiming::EScaleType  stat_type,
+                                     TOnePSGTiming::EScaleType  stat_type,
                                      bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -269,20 +410,22 @@ CNARetrieveTiming::CNARetrieveTiming(unsigned long  min_stat_value,
 CSplitHistoryRetrieveTiming::CSplitHistoryRetrieveTiming(unsigned long  min_stat_value,
                                                          unsigned long  max_stat_value,
                                                          unsigned long  n_bins,
-                                                         TPSGTiming::EScaleType  stat_type,
+                                                         TOnePSGTiming::EScaleType  stat_type,
                                                          bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -290,20 +433,22 @@ CSplitHistoryRetrieveTiming::CSplitHistoryRetrieveTiming(unsigned long  min_stat
 CResolutionTiming::CResolutionTiming(unsigned long  min_stat_value,
                                      unsigned long  max_stat_value,
                                      unsigned long  n_bins,
-                                     TPSGTiming::EScaleType  stat_type,
+                                     TOnePSGTiming::EScaleType  stat_type,
                                      bool &  reset_to_default)
 {
     reset_to_default = false;
 
     try {
-        m_PSGTiming.reset(new TPSGTiming(min_stat_value, max_stat_value,
-                                         n_bins, stat_type));
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     } catch (...) {
         reset_to_default = true;
-        m_PSGTiming.reset(new TPSGTiming(kMinStatValue,
-                                         kMaxStatValue,
-                                         kNStatBins,
-                                         TPSGTiming::eLog2));
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
     }
 }
 
@@ -316,9 +461,9 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    unsigned long  small_blob_size) :
     m_StartTime(chrono::system_clock::now())
 {
-    auto        scale_type = TPSGTiming::eLog2;
+    auto        scale_type = TOnePSGTiming::eLog2;
     if (NStr::CompareNocase(stat_type, "linear") == 0)
-        scale_type = TPSGTiming::eLinear;
+        scale_type = TOnePSGTiming::eLinear;
 
     bool    reset_to_default = false;
     for (size_t  index = 0; index <= 1; ++index) {
@@ -400,13 +545,54 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     if (reset_to_default)
         ERR_POST("Invalid statistics parameters detected. Default parameters "
                  "were used");
+
+    // fill the map between the histogram name and where it is stored
+    m_NamesMap = {
+        { "LookupLmdbSi2csiFound", m_LookupLmdbSi2csiTiming[0].get() },
+        { "LookupLmdbSi2csiNotFound", m_LookupLmdbSi2csiTiming[1].get() },
+        { "LookupLmdbBioseqInfoFound", m_LookupLmdbBioseqInfoTiming[0].get() },
+        { "LookupLmdbBioseqInfoNotFound", m_LookupLmdbBioseqInfoTiming[1].get() },
+        { "LookupLmdbBlobPropFound", m_LookupLmdbBlobPropTiming[0].get() },
+        { "LookupLmdbBlobPropNotFound", m_LookupLmdbBlobPropTiming[1].get() },
+        { "LookupCassSi2csiFound", m_LookupCassSi2csiTiming[0].get() },
+        { "LookupCassSi2csiNotFound", m_LookupCassSi2csiTiming[1].get() },
+        { "LookupCassBioseqInfoFound", m_LookupCassBioseqInfoTiming[0].get() },
+        { "LookupCassBioseqInfoNotFound", m_LookupCassBioseqInfoTiming[1].get() },
+        { "LookupCassBlobPropFound", m_LookupCassBlobPropTiming[0].get() },
+        { "LookupCassBlobPropNotFound", m_LookupCassBlobPropTiming[1].get() },
+        { "ResolutionLmdbFound", m_ResolutionLmdbTiming[0].get() },
+        { "ResolutionLmdbNotFound", m_ResolutionLmdbTiming[1].get() },
+        { "ResolutionCassFound", m_ResolutionCassTiming[0].get() },
+        { "ResolutionCassNotFound", m_ResolutionCassTiming[1].get() },
+        { "NARetrieveFound", m_NARetrieveTiming[0].get() },
+        { "NARetrieveNotFound", m_NARetrieveTiming[1].get() },
+        { "SplitHistoryRetrieveFound", m_SplitHistoryRetrieveTiming[0].get() },
+        { "SplitHistoryRetrieveNotFound", m_SplitHistoryRetrieveTiming[1].get() },
+        { "HugeBlobRetrieval", m_HugeBlobRetrievalTiming.get() },
+        { "BlobRetrievalNotFound", m_NotFoundBlobRetrievalTiming.get() },
+        { "ResolutionError", m_ResolutionErrorTiming.get() },
+        { "ResolutionNotFound", m_ResolutionNotFoundTiming.get() },
+        { "ResolutionFoundInCache", m_ResolutionFoundInCacheTiming.get() },
+        { "ResolutionFoundCassandraIn1Try", m_ResolutionFoundCassandraTiming[0].get() },
+        { "ResolutionFoundCassandraIn2Tries", m_ResolutionFoundCassandraTiming[1].get() },
+        { "ResolutionFoundCassandraIn3Tries", m_ResolutionFoundCassandraTiming[2].get() },
+        { "ResolutionFoundCassandraIn4Tries", m_ResolutionFoundCassandraTiming[3].get() },
+        { "ResolutionFoundCassandraIn5OrMoreTries", m_ResolutionFoundCassandraTiming[4].get() }
+    };
+
+    for (auto & retieve_timing : m_BlobRetrieveTiming) {
+        string      name = "BlobRetrievalFrom" +
+                           to_string(retieve_timing->GetMinBlobSize()) + "To" +
+                           to_string(retieve_timing->GetMaxBlobSize());
+        m_NamesMap[name] = retieve_timing.get();
+    }
 }
 
 
 bool COperationTiming::x_SetupBlobSizeBins(unsigned long  min_stat_value,
                                            unsigned long  max_stat_value,
                                            unsigned long  n_bins,
-                                           TPSGTiming::EScaleType  stat_type,
+                                           TOnePSGTiming::EScaleType  stat_type,
                                            unsigned long  small_blob_size)
 {
     bool    reset_to_default = false;
@@ -535,6 +721,37 @@ void COperationTiming::Register(EPSGOperation  operation,
 }
 
 
+void COperationTiming::Rotate(void)
+{
+    lock_guard<mutex>   guard(m_Lock);
+
+    for (size_t  k = 0; k <= 1; ++k) {
+        m_LookupLmdbSi2csiTiming[k]->Rotate();
+        m_LookupLmdbBioseqInfoTiming[k]->Rotate();
+        m_LookupLmdbBlobPropTiming[k]->Rotate();
+        m_LookupCassSi2csiTiming[k]->Rotate();
+        m_LookupCassBioseqInfoTiming[k]->Rotate();
+        m_LookupCassBlobPropTiming[k]->Rotate();
+        m_ResolutionLmdbTiming[k]->Rotate();
+        m_ResolutionCassTiming[k]->Rotate();
+        m_NARetrieveTiming[k]->Rotate();
+        m_SplitHistoryRetrieveTiming[k]->Rotate();
+    }
+
+    m_HugeBlobRetrievalTiming->Rotate();
+    m_NotFoundBlobRetrievalTiming->Rotate();
+
+    m_ResolutionErrorTiming->Rotate();
+    m_ResolutionNotFoundTiming->Rotate();
+    m_ResolutionFoundInCacheTiming->Rotate();
+    for (auto &  item : m_ResolutionFoundCassandraTiming)
+        item->Rotate();
+
+    for (auto &  item : m_BlobRetrieveTiming)
+        item->Rotate();
+}
+
+
 void COperationTiming::Reset(void)
 {
     m_StartTime = chrono::system_clock::now();
@@ -566,79 +783,39 @@ void COperationTiming::Reset(void)
 }
 
 
-CJsonNode COperationTiming::Serialize(void) const
+CJsonNode
+COperationTiming::Serialize(int  most_ancient_time,
+                            int  most_recent_time,
+                            const vector<CTempString> &  histogram_names,
+                            unsigned long  tick_span) const
 {
     static string   kStartTime("StartTime");
-    static string   kLookupLmdbSi2csiFound("LookupLmdbSi2csiFound");
-    static string   kLookupLmdbSi2csiNotFound("LookupLmdbSi2csiNotFound");
-    static string   kLookupLmdbBioseqInfoFound("LookupLmdbBioseqInfoFound");
-    static string   kLookupLmdbBioseqInfoNotFound("LookupLmdbBioseqInfoNotFound");
-    static string   kLookupLmdbBlobPropFound("LookupLmdbBlobPropFound");
-    static string   kLookupLmdbBlobPropNotFound("LookupLmdbBlobPropNotFound");
-    static string   kLookupCassSi2csiFound("LookupCassSi2csiFound");
-    static string   kLookupCassSi2csiNotFound("LookupCassSi2csiNotFound");
-    static string   kLookupCassBioseqInfoFound("LookupCassBioseqInfoFound");
-    static string   kLookupCassBioseqInfoNotFound("LookupCassBioseqInfoNotFound");
-    static string   kLookupCassBlobPropFound("LookupCassBlobPropFound");
-    static string   kLookupCassBlobPropNotFound("LookupCassBlobPropNotFound");
-    static string   kResolutionLmdbFound("ResolutionLmdbFound");
-    static string   kResolutionLmdbNotFound("ResolutionLmdbNotFound");
-    static string   kResolutionCassFound("ResolutionCassFound");
-    static string   kResolutionCassNotFound("ResolutionCassNotFound");
-    static string   kNARetrieveFound("NARetrieveFound");
-    static string   kNARetrieveNotFound("NARetrieveNotFound");
-    static string   kSplitHistoryRetrieveFound("SplitHistoryRetrieveFound");
-    static string   kSplitHistoryRetrieveNotFound("SplitHistoryRetrieveNotFound");
-    static string   kHugeBlobRetrieval("HugeBlobRetrieval");
-    static string   kBlobRetrievalNotFound("BlobRetrievalNotFound");
-    static string   kBlobRetrieval("BlobRetrieval");
-    static string   kResolutionError("ResolutionError");
-    static string   kResolutionNotFound("ResolutionNotFound");
-    static string   kResolutionFoundInCache("ResolutionFoundInCache");
-    static string   kResolutionFoundCassandra1("ResolutionFoundCassandraIn1Try");
-    static string   kResolutionFoundCassandra2("ResolutionFoundCassandraIn2Tries");
-    static string   kResolutionFoundCassandra3("ResolutionFoundCassandraIn3Tries");
-    static string   kResolutionFoundCassandra4("ResolutionFoundCassandraIn4Tries");
-    static string   kResolutionFoundCassandra5OrMore("ResolutionFoundCassandraIn5OrMoreTries");
+
+    lock_guard<mutex>       guard(m_Lock);
 
     CJsonNode       ret(CJsonNode::NewObjectNode());
     ret.SetString(kStartTime, FormatPreciseTime(m_StartTime));
 
-    ret.SetByKey(kLookupLmdbSi2csiFound, m_LookupLmdbSi2csiTiming[0]->Serialize());
-    ret.SetByKey(kLookupLmdbSi2csiNotFound, m_LookupLmdbSi2csiTiming[1]->Serialize());
-    ret.SetByKey(kLookupLmdbBioseqInfoFound, m_LookupLmdbBioseqInfoTiming[0]->Serialize());
-    ret.SetByKey(kLookupLmdbBioseqInfoNotFound, m_LookupLmdbBioseqInfoTiming[1]->Serialize());
-    ret.SetByKey(kLookupLmdbBlobPropFound, m_LookupLmdbBlobPropTiming[0]->Serialize());
-    ret.SetByKey(kLookupLmdbBlobPropNotFound, m_LookupLmdbBlobPropTiming[1]->Serialize());
-    ret.SetByKey(kLookupCassSi2csiFound, m_LookupCassSi2csiTiming[0]->Serialize());
-    ret.SetByKey(kLookupCassSi2csiNotFound, m_LookupCassSi2csiTiming[1]->Serialize());
-    ret.SetByKey(kLookupCassBioseqInfoFound, m_LookupCassBioseqInfoTiming[0]->Serialize());
-    ret.SetByKey(kLookupCassBioseqInfoNotFound, m_LookupCassBioseqInfoTiming[1]->Serialize());
-    ret.SetByKey(kLookupCassBlobPropFound, m_LookupCassBlobPropTiming[0]->Serialize());
-    ret.SetByKey(kLookupCassBlobPropNotFound, m_LookupCassBlobPropTiming[1]->Serialize());
-    ret.SetByKey(kResolutionLmdbFound, m_ResolutionLmdbTiming[0]->Serialize());
-    ret.SetByKey(kResolutionLmdbNotFound, m_ResolutionLmdbTiming[1]->Serialize());
-    ret.SetByKey(kResolutionCassFound, m_ResolutionCassTiming[0]->Serialize());
-    ret.SetByKey(kResolutionCassNotFound, m_ResolutionCassTiming[1]->Serialize());
-    ret.SetByKey(kNARetrieveFound, m_NARetrieveTiming[0]->Serialize());
-    ret.SetByKey(kNARetrieveNotFound, m_NARetrieveTiming[1]->Serialize());
-    ret.SetByKey(kSplitHistoryRetrieveFound, m_SplitHistoryRetrieveTiming[0]->Serialize());
-    ret.SetByKey(kSplitHistoryRetrieveNotFound, m_SplitHistoryRetrieveTiming[1]->Serialize());
-    ret.SetByKey(kHugeBlobRetrieval, m_HugeBlobRetrievalTiming->Serialize());
-    ret.SetByKey(kBlobRetrievalNotFound, m_NotFoundBlobRetrievalTiming->Serialize());
-    ret.SetByKey(kResolutionError, m_ResolutionErrorTiming->Serialize());
-    ret.SetByKey(kResolutionNotFound, m_ResolutionNotFoundTiming->Serialize());
-    ret.SetByKey(kResolutionFoundInCache, m_ResolutionFoundInCacheTiming->Serialize());
-    ret.SetByKey(kResolutionFoundCassandra1, m_ResolutionFoundCassandraTiming[0]->Serialize());
-    ret.SetByKey(kResolutionFoundCassandra2, m_ResolutionFoundCassandraTiming[1]->Serialize());
-    ret.SetByKey(kResolutionFoundCassandra3, m_ResolutionFoundCassandraTiming[2]->Serialize());
-    ret.SetByKey(kResolutionFoundCassandra4, m_ResolutionFoundCassandraTiming[3]->Serialize());
-    ret.SetByKey(kResolutionFoundCassandra5OrMore, m_ResolutionFoundCassandraTiming[4]->Serialize());
-
-    CJsonNode       retrieval(CJsonNode::NewArrayNode());
-    for (const auto &  item : m_BlobRetrieveTiming)
-        retrieval.Append(item->Serialize());
-    ret.SetByKey(kBlobRetrieval, retrieval);
+    if (histogram_names.empty()) {
+        for (const auto &  name_to_histogram : m_NamesMap) {
+            ret.SetByKey(name_to_histogram.first,
+                         name_to_histogram.second->SerializeCombined(most_ancient_time,
+                                                                     most_recent_time,
+                                                                     tick_span));
+        }
+    } else {
+        for (const auto &  name : histogram_names) {
+            string      histogram_name(name.data(), name.size());
+            const auto  iter = m_NamesMap.find(histogram_name);
+            if (iter != m_NamesMap.end()) {
+                ret.SetByKey(
+                    histogram_name,
+                    iter->second->SerializeSeries(most_ancient_time,
+                                                  most_recent_time,
+                                                  tick_span));
+            }
+        }
+    }
 
     return ret;
 }

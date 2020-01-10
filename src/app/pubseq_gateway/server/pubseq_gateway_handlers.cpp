@@ -69,6 +69,9 @@ static string  kChunkParam = "chunk";
 static string  kSplitVersionParam = "split_version";
 static string  kAccSubstitutionParam = "acc_substitution";
 static string  kTraceParam = "trace";
+static string  kMostRecentTimeParam = "most_recent_time";
+static string  kMostAncientTimeParam = "most_ancient_time";
+static string  kHistogramNamesParam = "histogram_names";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -1286,6 +1289,10 @@ int CPubseqGatewayApp::OnStatistics(HST::CHttpRequest &  req,
     try {
         m_RequestCounters.IncAdmin();
 
+        // /ADMIN/statistics[?reset=yes(dflt=no)][&most_recent_time=<time>][&most_ancient_time=<time>][histogram_names=name1,name2,...]
+        // /ADMIN/statistics[?reset=yes(dflt=no)][&most_recent_time=<time>][&most_ancient_time=<time>]
+
+
         bool                    reset = false;
         SRequestParameter       reset_param = x_GetParam(req, kResetParam);
         if (reset_param.m_Found) {
@@ -1308,7 +1315,74 @@ int CPubseqGatewayApp::OnStatistics(HST::CHttpRequest &  req,
             return 0;
         }
 
-        CJsonNode   reply(m_Timing->Serialize());
+        int                 most_recent_time = INT_MIN;
+        SRequestParameter   most_recent_time_param = x_GetParam(req, kMostRecentTimeParam);
+        if (most_recent_time_param.m_Found) {
+            string          err_msg;
+            try {
+                most_recent_time = NStr::StringToInt8(most_recent_time_param.m_Value);
+                if (most_recent_time < 0)
+                    err_msg = "Invalid " + kMostRecentTimeParam +
+                              " value (" + most_recent_time_param.m_Value +
+                              "). It must be >= 0.";
+            } catch (...) {
+                err_msg = "Invalid " + kMostRecentTimeParam +
+                          " value (" + most_recent_time_param.m_Value +
+                          "). It must be an integer >= 0.";
+            }
+
+            if (!err_msg.empty()) {
+                resp.SetContentType(ePlainTextMime);
+                resp.Send400("Bad Request", err_msg.c_str());
+                PSG_WARNING(err_msg);
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
+        }
+
+        int                 most_ancient_time = INT_MIN;
+        SRequestParameter   most_ancient_time_param = x_GetParam(req, kMostAncientTimeParam);
+        if (most_ancient_time_param.m_Found) {
+            string          err_msg;
+            try {
+                most_ancient_time = NStr::StringToInt8(most_ancient_time_param.m_Value);
+                if (most_ancient_time < 0)
+                    err_msg = "Invalid " + kMostAncientTimeParam +
+                              " value (" + most_ancient_time_param.m_Value +
+                              "). It must be >= 0.";
+            } catch (...) {
+                err_msg = "Invalid " + kMostAncientTimeParam +
+                          " value (" + most_ancient_time_param.m_Value +
+                          "). It must be an integer >= 0.";
+            }
+
+            if (!err_msg.empty()) {
+                resp.SetContentType(ePlainTextMime);
+                resp.Send400("Bad Request", err_msg.c_str());
+                PSG_WARNING(err_msg);
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
+        }
+
+        if (most_ancient_time >= 0 && most_recent_time >= 0) {
+            // auto reorder the time if needed
+            if (most_recent_time > most_ancient_time) {
+                swap(most_recent_time, most_ancient_time);
+            }
+        }
+
+        vector<CTempString> histogram_names;
+        SRequestParameter   histogram_names_param = x_GetParam(req, kHistogramNamesParam);
+        if (histogram_names_param.m_Found) {
+            NStr::Split(histogram_names_param.m_Value, ",", histogram_names);
+        }
+
+
+        CJsonNode   reply(m_Timing->Serialize(most_ancient_time,
+                                              most_recent_time,
+                                              histogram_names,
+                                              m_TickSpan));
         string      content = reply.Repr(CJsonNode::fStandardJson);
 
         resp.SetContentType(eJsonMime);
