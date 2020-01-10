@@ -1676,6 +1676,12 @@ void CFeatureItem::x_AddQualsIdx(
             // RW-943
             // gene_ref = feat_gene_xref;
             CRef<CFeatureIndex> ft = bsx->GetFeatIndex (m_Feat);
+            if (! ft) {
+                // RW-985 fix for RW-943 dropping xrefs on sig_peptide and mat_peptide
+                if (parentFeatureItem) {
+                    ft = bsx->GetFeatIndex (parentFeatureItem->GetFeat());
+                }
+            }
             if (ft) {
                 CRef<CFeatureIndex> fsx = ft->GetBestGene();
                 if (fsx) {
