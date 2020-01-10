@@ -98,6 +98,7 @@ if "%1"=="help" (
   call :USAGE
   goto :DONE
 )
+echo:
 set prj_name=%~1
 set prj_type=%~2
 set toolkit=%~3
