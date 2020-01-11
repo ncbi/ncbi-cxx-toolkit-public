@@ -64,6 +64,7 @@ Section "DefaultSection" SecDflt
   File "igblastp.exe"
   File "edit_imgt_file.pl"
   File "ncbi-vdb-md.dll"
+  File "makeblastdb.exe"
   
   SetOutPath "$INSTDIR\doc"
   File "README"

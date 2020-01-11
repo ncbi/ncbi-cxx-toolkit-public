@@ -43,7 +43,8 @@ def main():
     
     apps = [ "igblastn.exe", "igblastp.exe",
             "edit_imgt_file.pl",
-             "ncbi-vdb-md.dll"
+             "ncbi-vdb-md.dll",
+             "makeblastdb.exe"
             ]
     
     cwd = os.getcwd()
