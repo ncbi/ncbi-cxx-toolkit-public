@@ -1229,8 +1229,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 server_name = ctl_conn->ServerName();
                 user_name = ctl_conn->UserName();
             } else {
-                ERR_POST_X(1, Error << "Invalid value of ServerName.");
-                //!!!ERR_POST_X(1, Error << "Invalid value of ServerName." << CStackTrace());
+                ERR_POST_X(1, Error << "Invalid value of ServerName." << CStackTrace());
             }
         }
         else if (cs_config(context,
@@ -1445,8 +1444,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                 server_name = ctl_conn->ServerName();
                 user_name = ctl_conn->UserName();
             } else {
-                ERR_POST_X(3, Error << "Invalid value of ServerName.");
-                //!!!ERR_POST_X(3, Error << "Invalid value of ServerName." << CStackTrace());
+                ERR_POST_X(3, Error << "Invalid value of ServerName." << CStackTrace());
             }
         }
         else if (cs_config(context, CS_GET,

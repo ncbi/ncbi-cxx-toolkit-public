@@ -1145,14 +1145,6 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         act_params.SetDatabaseName(db_name);
         act_params.SetPassword(password);
 
-        _TRACE("************************** CDriverContext::MakeConnection() - params: server '" << params.GetServerName()
-               << "', host " << impl::ConvertN2A(params.GetHost())
-               << ", port " << params.GetPort());
-
-        _TRACE("************************** CDriverContext::MakeConnection() - act_params: server '" << act_params.GetServerName()
-               << "', host " << impl::ConvertN2A(act_params.GetHost())
-               << ", port " << act_params.GetPort());
-
         CRef<IDBConnectionFactory> factory = CDbapiConnMgr::Instance().GetConnectionFactory();
         t_con.reset(factory->MakeDBConnection(*this, act_params));
 
