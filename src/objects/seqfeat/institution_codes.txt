@@ -176,7 +176,7 @@ AMB	s	Associazione Micologica Bresadola
 AMC	c	Department of Biologics Research			
 AMCC	s	Ambrose Monell Cryo Collection, American Museum of Natural History			
 AMCL	s	Macapa, Museu Territorial de Historia Natural "Angelo Moreira da Costa Lima"			
-AMD	s	Hugo de Vries-Laboratory, University of Amsterdam			
+AMD	s	Hugo de Vries-Laboratory, University of Amsterdam		 http://data.biodiversitydata.nl/naturalis/specimen/AMD.	
 AMDE	s	Brathay Field Centre for Exploration and Field Studies			
 AMES	s	Harvard University			
 AMF	s	Marine Science Museum, Fukushima (Aquamarine Fukushima)			
@@ -362,7 +362,7 @@ AZB	s	Herbario Ruy Telles Palhinha - Universidade Dos Acores
 AZTI	sc	AZTI Tecnalia			
 AZU	s	Universidade dos Acores, Departamento de Ciencias Agrarias			
 AZUS	s	Citrus College, Biological Sciences Department			
-B	s	Berlin Botanic Garden and Botanical Museum (Herbarium Berolinense)	BGBM		
+B	s	Berlin Botanic Garden and Botanical Museum (Herbarium Berolinense)	BGBM	http://herbarium.bgbm.org/object/B	
 BA	s	Museo Argentino de Ciencias Naturales Bernardino Rivadavia			
 BAA	s	Universidad de Buenos Aires, Facultad de Agronomia			
 BAAC	s	Musee de Beni Abbes			
@@ -1075,7 +1075,7 @@ CHNCB	s	Centre d'Historia Natural de la Conca de Barbera
 CHOCO	s	Universidad Tecnologica del Choco			
 CHOM	s	Okresni muzeum Chomutov			
 CHPU	s	Chelyabinsk State Pedagogical University, Botany Department			
-CHR	s	Allan Herbarium	LCR:CHR	http://scd.landcareresearch.co.nz/Specimen/CHR_&spec;	
+CHR	s	Allan Herbarium	LCR:CHR	 https://scd.landcareresearch.co.nz/Specimen/CHR_	
 CHRB	s	Rutgers University - Cook College			
 CHRG	s	Grosvenor Museum			
 CHSC	s	California State University, Chico			
@@ -1748,7 +1748,7 @@ DZUL	s	Departamento de Zoologia, Universidad de La Laguna
 DZUP	s	Universidade Federal do Parana, Museu de Entomologia Pe. Jesus Santiago Moure			
 DZVMLP	s	Departamento Cientifico de Zoologia de Vertebrados			
 DZVU	s	Universidad de Uruguay			
-E	sb	Royal Botanic Garden Edinburgh			
+E	sb	Royal Botanic Garden Edinburgh		http://data.rbge.org.uk/herb/E	
 EA	s	National Museums of Kenya			
 EAA	s	Estonian Agricultural University			
 EAC	s	Universidade Federal do Ceara, Departamento de Biologia			
@@ -3353,7 +3353,7 @@ JXF	s	Jiangxi Forestry Institute
 JXM	s	Jiangxi Institute of Materia Medica			
 JXU	s	Jiangxi University, Biology Department			
 JYV	s	University of Jyvaeskylae, Natural History Department			
-K	sb	Royal Botanic Gardens, Kew			
+K	sb	Royal Botanic Gardens, Kew		http://specimens.kew.org/herbarium/K	
 K(M)	s	Mycology Collection of Kew Royal Botanical Gardens			
 KA	s	Vytautas Magnus University			
 KABA	s	University of Kabul			
@@ -3586,7 +3586,7 @@ KY	s	University of Kentucky
 KYM	s	University of Helsinki, Kymenlaakso Society of Naturalists			
 KYO	s	Kyoto University, Botany Department			
 KYUM<JPN>	s	Kyushu University Museum			
-L	sb	National Herbarium of the Netherlands (NHN)			
+L	sb	National Herbarium of the Netherlands (NHN)		 http://data.biodiversitydata.nl/naturalis/specimen/L.	
 LA	s	University of California			
 LABCC	c	Lactic acid bacteria culture collection			
 LAC	s	Xian Institute of Lacquer			
@@ -4337,7 +4337,7 @@ MNHM<DEU>	s	Naturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinl
 MNHM<USA-CO>	s	John May Museum of Natural History			
 MNHN	s	Museum National d'Histoire Naturelle			
 MNHN:ALCP	sc	Museum National d'Histoire Naturelle, Microalgae	
-MNHN:AR	s	Museum National d'Histoire Naturelle, Arachnids: Spiders	
+MNHN:AR	s	Museum National d'Histoire Naturelle, Arachnids: Spiders	https://science.mnhn.fr/institution/mnhn/collection/ar/item/ar
 MNHN:CEU	s	Museum National d'Histoire Naturelle, Unicellular eukaryotes	
 MNHN:CH	s	Museum National d'Histoire Naturelle, Chimiotheque	
 MNHN:CX	s	Museum National d'Histoire Naturelle, Extractotheque	
@@ -4363,7 +4363,7 @@ MNHN:IU	s	Museum National d'Histoire Naturelle, Crustaceans
 MNHN:LCP	s	Museum National d'Histoire Naturelle, Laboratory of Cryptogamy	
 MNHN:M	s	Museum National d'Histoire Naturelle, Mammal	
 MNHN:MY	s	Museum National d'Histoire Naturelle, Myriapods	
-MNHN:P	s	Museum National d'Histoire Naturelle, Vascular plants	
+MNHN:P	s	Museum National d'Histoire Naturelle, Vascular plants	 https://science.mnhn.fr/institution/mnhn/collection/p/item/p
 MNHN:PMC	c	Museum National d'Histoire Naturelle, Cyanobacteria	
 MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians	
 MNHN:RF	sc	Museum National d'Histoire Naturelle, Fungal strains	
@@ -4636,10 +4636,10 @@ MVUP	s	Museo de Vertebrados de la Universidad de Panama
 MVZ	s	Museum of Vertebrate Zoology, University of California at Berkeley		http://mvzarctos.berkeley.edu/SpecimenDetail.cfm?guid=	
 MVZ:Bird	s	Museum of Vertebrate Zoology, University of California at Berkeley, Bird Collection	
 MVZ:Egg	s	Museum of Vertebrate Zoology, University of California at Berkeley, Egg Collection	
-MVZ:Herp	s	Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection	
+MVZ:Herp	s	Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection	 http://arctos.database.museum/guid/MVZ:Herp:
 MVZ:Hild	s	Museum of Vertebrate Zoology, University of California at Berkeley, Milton Hildebrand collection	
 MVZ:Img	b	Museum of Vertebrate Zoology, University of California at Berkeley, Image Collection		
-MVZ:Mamm	s	Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection	
+MVZ:Mamm	s	Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection	 http://arctos.database.museum/guid/MVZ:Mamm:
 MVZ:Page	b	Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection		
 MW<NLD>	s	Museum Wasmann			
 MW<RUS>	sb	Moscow State University Herbarium			
@@ -5844,7 +5844,7 @@ RMNH:CRUS	s	Naturalis Biodiversity Center, crustacean collection
 RMNH:CRUS.D	s	Naturalis Biodiversity Center, decapod collection		
 RMNH:INS	s	Naturalis Biodiversity Center, Insect collection		
 RMNH:MAM	s	Naturalis Biodiversity Center, Mammal collection		
-RMNH:MOL	s	Naturalis Biodiversity Center, mollusc collection		
+RMNH:MOL	s	Naturalis Biodiversity Center, mollusc collection	http://data.biodiversitydata.nl/naturalis/specimen/RMNH.MOL.
 RMNH:PISC	s	Naturalis Biodiversity Center, fish collection		
 RMNH:POR	s	Naturalis Biodiversity Center, poriferan collection		
 RMNHD	s	Naturalis Biodiversity Center	RMNH		
@@ -6202,6 +6202,7 @@ SING	s	Singapore Botanic Gardens
 SINU	s	National University of Singapore, Biological Sciences Department			
 SIO	s	Scripps Institution of Oceanography			
 SIO:BIC	s	Scripps Institution of Oceanography, Benthic Invertebrates Collection	http://gdcmp1.ucsd.edu/benthic_invert/
+SIO:Marine Vertebrates	s	Scripps Institution of Oceanography, Marine Vertebrates Collection	http://portal.vertnet.org/o/sio/marine-vertebrates?id=sio-
 SITC	s	Sichuan Teachers College, Biology Department			
 SIU	s	Southern Illinois University, Plant Biology Department			
 SIUC	s	Research Museum of Zoology, Southern Illinois University at Carbondale			
@@ -7187,7 +7188,7 @@ UMML	s	University of Miami Marine Laboratory
 UMMP	s	University of Michigan			
 UMMZ	s	University of Michigan, Museum of Zoology			
 UMMZ:Birds	s	University of Michigan, Museum of Zoology, Birds Collection	
-UMMZ:Herpetology	s	University of Michigan, Museum of Zoology, Herpetology Collection	
+UMMZ:Herpetology	s	University of Michigan, Museum of Zoology, Herpetology Collection	http://portal.vertnet.org/o/ummz/herps?id=
 UMMZ:Mammal	s	University of Michigan, Museum of Zoology, Mammal collection	
 UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection		
 UMNH	s	Utah Museum of Natural History			
@@ -7636,7 +7637,7 @@ WACA<USA-AZ>	s	Walnut Canyon National Monument
 WACA<USA-OR>	s	Work Amber Collection			
 WACC	c	Western Australian Culture Collection			
 WADA	s	Western Australia Department of Agriculture			
-WAG	s	Wageningen University			
+WAG	s	Wageningen University		 http://data.biodiversitydata.nl/naturalis/specimen/WAG	
 WAHO	s	Institute of Horticultural Plant Breeding, Department of Biosystematics			
 WAI	s	Waimea Valley			
 WAIK	s	University of Waikato, Biological Sciences Department			
@@ -7981,6 +7982,7 @@ ZLSYU	s	Zoological Laboratory
 ZLVG	c	Culture collection of the Laboratory of Forest Protection at the Slovenian Forestry Institute			
 ZM	s	Zhejiang Museum of Natural History			
 ZMA	s	Universiteit van Amsterdam, Zoologisch Museum			
+ZMA:MOL	s	Universiteit van Amsterdam, Zoologisch Museum, Mollusc collection	http://data.biodiversitydata.nl/naturalis/specimen/ZMA.MOL.
 ZMA:POR	s	Universiteit van Amsterdam, Zoologisch Museum, Porifera collection		
 ZMAN	s	Instituut voor Taxonomische Zoologie, Zoologisch Museum			
 ZMAU	s	Zoological Museum Andhra University			
