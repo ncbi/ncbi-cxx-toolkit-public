@@ -575,11 +575,11 @@ CDBConnectionFactory::DispatchServerName(
         }
 
         // Try to connect up to a given number of attempts ...
-        unsigned int attepmpts = GetMaxNumOfConnAttempts();
+        unsigned int attempts = GetMaxNumOfConnAttempts();
         ctx.conn_status = IConnValidator::eInvalidConn;
 
         // We don't check value of conn_status inside of a loop below by design.
-        for (; attepmpts > 0; --attepmpts) {
+        for (; attempts > 0; --attempts) {
             try {
                 CDB_DBLB_Delegate cur_params(
                         cur_srv_name,
