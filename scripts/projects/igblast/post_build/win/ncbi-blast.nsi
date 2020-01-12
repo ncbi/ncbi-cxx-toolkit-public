@@ -72,9 +72,9 @@ Section "DefaultSection" SecDflt
   Push "$INSTDIR\doc\README.txt"
   Call unix2dos
 
-  SetOutPath "$INSTDIR\data\optional_file"
+  SetOutPath "$INSTDIR\optional_file"
   File /r "optional_file\*.*"
-  SetOutPath "$INSTDIR\data\internal_data"
+  SetOutPath "$INSTDIR\internal_data"
   File /r "internal_data\*.*"
   
   ;Store installation folder
@@ -86,7 +86,7 @@ Section "DefaultSection" SecDflt
   ;Update PATH
   ${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR\bin"
   ;Create the IGDATA environment variable
-  ${EnvVarUpdate} $0 "IGDATA" "P" "HKCU" "$INSTDIR\data"
+  ${EnvVarUpdate} $0 "IGDATA" "P" "HKCU" "$INSTDIR"
   
 SectionEnd
 
@@ -102,6 +102,6 @@ Section "Uninstall"
   ; Remove installation directory from PATH
   ${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR\bin"
   ; Remove the IGDATA environment variable 
-  ${un.EnvVarUpdate} $0 "IGDATA" "R" "HKCU" "$INSTDIR\data"
+  ${un.EnvVarUpdate} $0 "IGDATA" "R" "HKCU" "$INSTDIR"
 
 SectionEnd
