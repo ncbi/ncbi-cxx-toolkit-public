@@ -719,12 +719,14 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
            								query_info, combined_hsp_list);
         }
 
+/*
         if (getenv("MAPPER_WRITE_SUBJECT_CHUNK")) {
             s_WriteHSPsForChunk(combined_hsp_list, &backup, hit_params,
                                 hsp_stream, subject->length,
                                 backup.full_range.right -
                                 backup.full_range.left);
         }
+*/
 
     } /* End loop on chunks of subject sequence */
 
