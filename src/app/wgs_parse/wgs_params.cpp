@@ -741,7 +741,7 @@ static EAccInvalid IsValidAccession(const string& accession)
     EAccInvalid ret = (num_of_digits == ACC_NUM_OF_DIGITS && non_zero) ? eValidAcc : eInvalidAcc;
 
     if (ret == eValidAcc && num_of_letters == NEW_ACC_NUM_OF_LETTERS) {
-        if (accession[0] < 'A' || accession[0] > 'J') {
+        if (accession[0] < 'A' || (accession[0] > 'D' && accession[0] != 'J')) {
             ret = eInvalidNewAccFirstChar;
         }
     }
@@ -927,7 +927,7 @@ bool SetParams(const CArgs& args)
             ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 or 6 letters + 2 digits (Not 00) or 2 letters + underscore + 4 or 6 letters + 2 digits.");
         }
         else if (validity == eInvalidNewAccFirstChar) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect new format (6+2) accession prefix provided on input: \"" << params_imp.m_accession << "\". Must begin with 'A', 'B', 'C' or 'D' letter.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect new format (6+2) accession prefix provided on input: \"" << params_imp.m_accession << "\". Must begin with 'A', 'B', 'C', 'D' or 'J' letter.");
         }
         return false;
     }
