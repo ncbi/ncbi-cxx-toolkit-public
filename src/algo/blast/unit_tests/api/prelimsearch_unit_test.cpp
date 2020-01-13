@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(ShortProteinSearch) {
     options->SetSegFiltering(false);    // allow hits to be found
 
     // Create the database description (by default will use CSeqDB)
-    CSearchDatabase dbinfo("ecoli", CSearchDatabase::eBlastDbIsProtein);
+    CSearchDatabase dbinfo("ecoli.aa", CSearchDatabase::eBlastDbIsProtein);
 
     CBlastPrelimSearch prelim_search(query_factory, options, dbinfo);
     BOOST_REQUIRE(prelim_search.GetNumberOfThreads() == 1);

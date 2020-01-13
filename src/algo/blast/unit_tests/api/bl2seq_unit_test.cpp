@@ -1574,24 +1574,22 @@ BOOST_AUTO_TEST_CASE(NucleotideMaskedLocation_FromFile) {
 // JIRA SB-732
 BOOST_AUTO_TEST_CASE(InvalidMaskingAlgorithm) {
     CRef<blast::CSearchDatabase> m_SearchDb;
-    m_SearchDb.Reset(new CSearchDatabase("ecoli",
+    m_SearchDb.Reset(new CSearchDatabase("nr",
                                          CSearchDatabase::eBlastDbIsProtein));
     m_SearchDb->SetFilteringAlgorithm(66, eSoftSubjMasking);
     CRef<CLocalDbAdapter> subject_adapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastp));
     vector<TIntId> q_gis;
     // Setup the queries
-    q_gis.push_back(129295);
+    CSeq_id seq_id("P01013.1");
 
     TSeqLocVector queries;
-    ITERATE(vector<TIntId>, itr, q_gis) {
-        CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(*itr);
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetWhole(seq_id);
 
-        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
-        scope->AddDefaults();
-        queries.push_back(SSeqLoc(loc, scope));
-    }
+    CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+    scope->AddDefaults();
+    queries.push_back(SSeqLoc(loc, scope));
 
     CRef<IQueryFactory> query_fact(new CObjMgr_QueryFactory(queries));
     BOOST_REQUIRE_THROW(CLocalBlast blaster(query_fact, opts, subject_adapter),
