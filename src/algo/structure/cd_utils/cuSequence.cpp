@@ -594,13 +594,12 @@ bool ExtractPdbMolChain(const CRef<CBioseq>& bioseq, string& pdbMol, string& pdb
     if (CopyPdbSeqId(bioseq, pdbSeqId, nth)) {
         pdbMol = pdbSeqId->GetPdb().GetMol().Get();
 #ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-        if (pdbSeqId->GetPdb().IsSetChain_id_unified()) {
-            pdbChain = pdbSeqId->GetPdb().GetChain_id_unified();
+        pdbChain = pdbSeqId->GetPdb().GetEffectiveChain_id();
 #else            
         if (pdbSeqId->GetPdb().IsSetChain()) {
             pdbChain = string(1, pdbSeqId->GetPdb().GetChain());
-#endif            
         }
+#endif            
         result = true;
     }
     return result;
@@ -871,7 +870,7 @@ void GetAccessionAndDatabaseSource(const CRef< CSeq_id >& seqID, string& accessi
     else if (seqID->IsPdb()) {
 		const CPDB_seq_id& pPDB_ID = seqID->GetPdb();
 #ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-        accession =  pPDB_ID.GetMol().Get() + " " + pPDB_ID.GetChain_id_unified();
+        accession =  pPDB_ID.GetMol().Get() + " " + pPDB_ID.GetEffectiveChain_id();
 #else
         accession =  pPDB_ID.GetMol().Get() + " " + (char) pPDB_ID.GetChain();
 #endif

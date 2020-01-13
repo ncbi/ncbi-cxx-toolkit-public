@@ -72,7 +72,6 @@ const int CDTreeColorCycle[] = {
 };
 const int kNumColorsInCDTreeColorCycle = sizeof(CDTreeColorCycle)/sizeof(CDTreeColorCycle[0]);
 
-
 void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 //-------------------------------------------------------------------
 // make a string for a seq-id (underscore delimiter for PDBs)
@@ -104,7 +103,7 @@ void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 
       Str += string(buf);
 #else
-      Str += pPDB_ID.GetMol().Get() + "_" + pPDB_ID.GetChain_id_unified();
+      Str += pPDB_ID.GetMol().Get() + "_" + pPDB_ID.GetEffectiveChain_id();
 #endif
       
   }
@@ -134,7 +133,7 @@ string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
 #ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
       Str = pPDB_ID.GetMol().Get() + " " + string(1, (char) pPDB_ID.GetChain());;
 #else
-      Str = pPDB_ID.GetMol().Get() + " " + pPDB_ID.GetChain_id_unified();;
+      Str = pPDB_ID.GetMol().Get() + " " + pPDB_ID.GetEffectiveChain_id();
 #endif
       
   } else if (SeqID->IsOther()) {
