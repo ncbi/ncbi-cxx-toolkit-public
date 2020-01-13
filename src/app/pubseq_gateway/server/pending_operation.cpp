@@ -1279,11 +1279,11 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
     try {
         seq_id.Set(m_UrlSeqId);
         if (need_trace)
-            SendTrace("Parsing CSeq_id(" + m_UrlSeqId + ") succeeded");
+            SendTrace("Parsing CSeq_id('" + m_UrlSeqId + "') succeeded");
 
         if (m_UrlSeqIdType <= 0) {
             if (need_trace)
-                SendTrace("Parsing CSeq_id finished OK");
+                SendTrace("Parsing CSeq_id finished OK (#1)");
             return eParsedOK;
         }
 
@@ -1291,7 +1291,7 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
         int16_t     eff_seq_id_type;
         if (x_GetEffectiveSeqIdType(seq_id, eff_seq_id_type, false)) {
             if (need_trace)
-                SendTrace("Parsing CSeq_id finished OK");
+                SendTrace("Parsing CSeq_id finished OK (#2)");
             return eParsedOK;
         }
 
@@ -1307,21 +1307,21 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
             IsINSDCSeqIdType(seq_id_type)) {
             // Both seq_id_types belong to INSDC
             if (need_trace) {
-                SendTrace("Both types belong INSDC types");
-                SendTrace("Parsing CSeq_id finished OK");
+                SendTrace("Both types belong to INSDC types.\n"
+                          "Parsing CSeq_id finished OK (#3)");
             }
             return eParsedOK;
         }
 
         // Type mismatch: form the error message in case of resolution problems
-        err_msg = "Seq_id " + m_UrlSeqId +
-                  " possible type mismatch: the URL provides " +
+        err_msg = "Seq_id '" + m_UrlSeqId +
+                  "' possible type mismatch: the URL provides " +
                   to_string(m_UrlSeqIdType) +
                   " while the CSeq_Id detects it as " +
                   to_string(static_cast<int>(seq_id_type));
     } catch (...) {
         if (need_trace)
-            SendTrace("Parsing CSeq_id(" + m_UrlSeqId + ") failed (exception)");
+            SendTrace("Parsing CSeq_id('" + m_UrlSeqId + "') failed (exception)");
     }
 
     // Second variation of Set()
@@ -1332,16 +1332,16 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
                        m_UrlSeqId);
             if (need_trace) {
                 SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                          to_string(m_UrlSeqIdType) + ", " + m_UrlSeqId +
-                          ") succeeded");
-                SendTrace("Parsing CSeq_id finished OK");
+                          to_string(m_UrlSeqIdType) + ", '" + m_UrlSeqId +
+                          "') succeeded.\n"
+                          "Parsing CSeq_id finished OK (#4)");
             }
             return eParsedOK;
         } catch (...) {
             if (need_trace)
                 SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                          to_string(m_UrlSeqIdType) + ", " + m_UrlSeqId +
-                          ") failed (exception)");
+                          to_string(m_UrlSeqIdType) + ", '" + m_UrlSeqId +
+                          "') failed (exception)");
         }
     }
 
