@@ -997,7 +997,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     const TIntId kGi = 568815597;
     const TSeqPos kStart = 0;
     const TSeqPos kStop(248956421);
-    SDataLoaderConfig dlconfig("chromosome", is_protein);
+    SDataLoaderConfig dlconfig("GPIPE/9606/current/GCF_000005045.24_top_level", is_protein);
     dlconfig.OptimizeForWholeLargeSequenceRetrieval(true);
 
     CBlastInputSourceConfig iconfig(dlconfig);
@@ -1473,7 +1473,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRetrieveSeqData(false);
-    iconfig.SetDataLoaderConfig().m_BlastDbName = "Trace/Mus_musculus_WGS" ;
+    iconfig.SetDataLoaderConfig().m_BlastDbName = "data/WGS_test" ;
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
 
@@ -1526,7 +1526,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRetrieveSeqData(true);
-    iconfig.SetDataLoaderConfig().m_BlastDbName = "Trace/Mus_musculus_WGS" ;
+    iconfig.SetDataLoaderConfig().m_BlastDbName = "data/WGS_test" ;
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     CScope scope(*CObjectManager::GetInstance());
@@ -1565,8 +1565,8 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
     BOOST_REQUIRE(b.IsNa());
     BOOST_REQUIRE_EQUAL(CSeq_id::e_General, b.GetId().front()->Which());
-    BOOST_REQUIRE_EQUAL(db, b.GetId().front()->GetGeneral().GetDb());
-    BOOST_REQUIRE_EQUAL(ti, b.GetId().front()->GetGeneral().GetTag().GetId());
+    BOOST_REQUIRE_EQUAL(db, b.GetId().back()->GetGeneral().GetDb());
+    BOOST_REQUIRE_EQUAL(ti, b.GetId().back()->GetGeneral().GetTag().GetId());
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
@@ -1579,7 +1579,8 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRetrieveSeqData(false);
-    iconfig.SetDataLoaderConfig().m_BlastDbName = "Trace/Mus_musculus_WGS" ;
+    iconfig.SetDataLoaderConfig().m_BlastDbName = "data/WGS_test" ;
+
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     vector< pair<string, long> > gi_accessions;
